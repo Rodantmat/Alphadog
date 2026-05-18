@@ -1,0 +1,21 @@
+SETUP CHECKLIST
+
+1. Create all 11 D1 databases. DONE based on user confirmation.
+
+2. Create/deploy each Worker using the matching JS file.
+
+3. Add all 11 D1 bindings to every Worker.
+
+4. Add all required secrets to every Worker.
+
+5. Add all required variables to every Worker.
+
+6. Test GET / for each Worker.
+
+7. Test GET /health for each Worker.
+
+8. Confirm all db_bindings, vars, and secrets_present_only are true.
+
+9. Report any missing bindings/secrets/vars.
+
+10. After dummy health passes, next phase is CONFIG_DB + CONTROL_DB schema SQL pack.

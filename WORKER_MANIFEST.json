@@ -1,0 +1,582 @@
+[
+  {
+    "worker_name": "alphadog-v2-control-room",
+    "file": "alphadog-v2-control-room.js",
+    "job_key": "control-room"
+  },
+  {
+    "worker_name": "alphadog-v2-orchestrator",
+    "file": "alphadog-v2-orchestrator.js",
+    "job_key": "orchestrator"
+  },
+  {
+    "worker_name": "alphadog-v2-admin-sql",
+    "file": "alphadog-v2-admin-sql.js",
+    "job_key": "admin-sql"
+  },
+  {
+    "worker_name": "alphadog-v2-safe-cleaner",
+    "file": "alphadog-v2-safe-cleaner.js",
+    "job_key": "safe-cleaner"
+  },
+  {
+    "worker_name": "alphadog-v2-system-health",
+    "file": "alphadog-v2-system-health.js",
+    "job_key": "system-health"
+  },
+  {
+    "worker_name": "alphadog-v2-config-manager",
+    "file": "alphadog-v2-config-manager.js",
+    "job_key": "config-manager"
+  },
+  {
+    "worker_name": "alphadog-v2-certification-center",
+    "file": "alphadog-v2-certification-center.js",
+    "job_key": "certification-center"
+  },
+  {
+    "worker_name": "alphadog-v2-static-teams",
+    "file": "alphadog-v2-static-teams.js",
+    "job_key": "static-teams"
+  },
+  {
+    "worker_name": "alphadog-v2-static-players",
+    "file": "alphadog-v2-static-players.js",
+    "job_key": "static-players"
+  },
+  {
+    "worker_name": "alphadog-v2-static-rosters",
+    "file": "alphadog-v2-static-rosters.js",
+    "job_key": "static-rosters"
+  },
+  {
+    "worker_name": "alphadog-v2-static-player-identity",
+    "file": "alphadog-v2-static-player-identity.js",
+    "job_key": "static-player-identity"
+  },
+  {
+    "worker_name": "alphadog-v2-static-player-aliases",
+    "file": "alphadog-v2-static-player-aliases.js",
+    "job_key": "static-player-aliases"
+  },
+  {
+    "worker_name": "alphadog-v2-static-stadiums",
+    "file": "alphadog-v2-static-stadiums.js",
+    "job_key": "static-stadiums"
+  },
+  {
+    "worker_name": "alphadog-v2-static-park-factors",
+    "file": "alphadog-v2-static-park-factors.js",
+    "job_key": "static-park-factors"
+  },
+  {
+    "worker_name": "alphadog-v2-static-team-context",
+    "file": "alphadog-v2-static-team-context.js",
+    "job_key": "static-team-context"
+  },
+  {
+    "worker_name": "alphadog-v2-static-prop-taxonomy",
+    "file": "alphadog-v2-static-prop-taxonomy.js",
+    "job_key": "static-prop-taxonomy"
+  },
+  {
+    "worker_name": "alphadog-v2-static-certifier",
+    "file": "alphadog-v2-static-certifier.js",
+    "job_key": "static-certifier"
+  },
+  {
+    "worker_name": "alphadog-v2-base-hitter-game-logs",
+    "file": "alphadog-v2-base-hitter-game-logs.js",
+    "job_key": "base-hitter-game-logs"
+  },
+  {
+    "worker_name": "alphadog-v2-base-pitcher-game-logs",
+    "file": "alphadog-v2-base-pitcher-game-logs.js",
+    "job_key": "base-pitcher-game-logs"
+  },
+  {
+    "worker_name": "alphadog-v2-base-hitter-splits",
+    "file": "alphadog-v2-base-hitter-splits.js",
+    "job_key": "base-hitter-splits"
+  },
+  {
+    "worker_name": "alphadog-v2-base-pitcher-splits",
+    "file": "alphadog-v2-base-pitcher-splits.js",
+    "job_key": "base-pitcher-splits"
+  },
+  {
+    "worker_name": "alphadog-v2-base-hitter-metrics",
+    "file": "alphadog-v2-base-hitter-metrics.js",
+    "job_key": "base-hitter-metrics"
+  },
+  {
+    "worker_name": "alphadog-v2-base-pitcher-metrics",
+    "file": "alphadog-v2-base-pitcher-metrics.js",
+    "job_key": "base-pitcher-metrics"
+  },
+  {
+    "worker_name": "alphadog-v2-base-team-game-logs",
+    "file": "alphadog-v2-base-team-game-logs.js",
+    "job_key": "base-team-game-logs"
+  },
+  {
+    "worker_name": "alphadog-v2-base-bullpen-history",
+    "file": "alphadog-v2-base-bullpen-history.js",
+    "job_key": "base-bullpen-history"
+  },
+  {
+    "worker_name": "alphadog-v2-base-starter-history",
+    "file": "alphadog-v2-base-starter-history.js",
+    "job_key": "base-starter-history"
+  },
+  {
+    "worker_name": "alphadog-v2-base-certifier",
+    "file": "alphadog-v2-base-certifier.js",
+    "job_key": "base-certifier"
+  },
+  {
+    "worker_name": "alphadog-v2-delta-finalized-games-router",
+    "file": "alphadog-v2-delta-finalized-games-router.js",
+    "job_key": "delta-finalized-games-router"
+  },
+  {
+    "worker_name": "alphadog-v2-delta-hitter-logs",
+    "file": "alphadog-v2-delta-hitter-logs.js",
+    "job_key": "delta-hitter-logs"
+  },
+  {
+    "worker_name": "alphadog-v2-delta-pitcher-logs",
+    "file": "alphadog-v2-delta-pitcher-logs.js",
+    "job_key": "delta-pitcher-logs"
+  },
+  {
+    "worker_name": "alphadog-v2-delta-hitter-splits",
+    "file": "alphadog-v2-delta-hitter-splits.js",
+    "job_key": "delta-hitter-splits"
+  },
+  {
+    "worker_name": "alphadog-v2-delta-pitcher-splits",
+    "file": "alphadog-v2-delta-pitcher-splits.js",
+    "job_key": "delta-pitcher-splits"
+  },
+  {
+    "worker_name": "alphadog-v2-delta-team-logs",
+    "file": "alphadog-v2-delta-team-logs.js",
+    "job_key": "delta-team-logs"
+  },
+  {
+    "worker_name": "alphadog-v2-delta-bullpen-update",
+    "file": "alphadog-v2-delta-bullpen-update.js",
+    "job_key": "delta-bullpen-update"
+  },
+  {
+    "worker_name": "alphadog-v2-delta-starter-update",
+    "file": "alphadog-v2-delta-starter-update.js",
+    "job_key": "delta-starter-update"
+  },
+  {
+    "worker_name": "alphadog-v2-delta-hitter-metrics",
+    "file": "alphadog-v2-delta-hitter-metrics.js",
+    "job_key": "delta-hitter-metrics"
+  },
+  {
+    "worker_name": "alphadog-v2-delta-pitcher-metrics",
+    "file": "alphadog-v2-delta-pitcher-metrics.js",
+    "job_key": "delta-pitcher-metrics"
+  },
+  {
+    "worker_name": "alphadog-v2-delta-certifier",
+    "file": "alphadog-v2-delta-certifier.js",
+    "job_key": "delta-certifier"
+  },
+  {
+    "worker_name": "alphadog-v2-daily-schedule",
+    "file": "alphadog-v2-daily-schedule.js",
+    "job_key": "daily-schedule"
+  },
+  {
+    "worker_name": "alphadog-v2-daily-games-status",
+    "file": "alphadog-v2-daily-games-status.js",
+    "job_key": "daily-games-status"
+  },
+  {
+    "worker_name": "alphadog-v2-daily-probable-pitchers",
+    "file": "alphadog-v2-daily-probable-pitchers.js",
+    "job_key": "daily-probable-pitchers"
+  },
+  {
+    "worker_name": "alphadog-v2-daily-confirmed-starters",
+    "file": "alphadog-v2-daily-confirmed-starters.js",
+    "job_key": "daily-confirmed-starters"
+  },
+  {
+    "worker_name": "alphadog-v2-daily-lineups",
+    "file": "alphadog-v2-daily-lineups.js",
+    "job_key": "daily-lineups"
+  },
+  {
+    "worker_name": "alphadog-v2-daily-batting-orders",
+    "file": "alphadog-v2-daily-batting-orders.js",
+    "job_key": "daily-batting-orders"
+  },
+  {
+    "worker_name": "alphadog-v2-daily-weather",
+    "file": "alphadog-v2-daily-weather.js",
+    "job_key": "daily-weather"
+  },
+  {
+    "worker_name": "alphadog-v2-daily-roof-status",
+    "file": "alphadog-v2-daily-roof-status.js",
+    "job_key": "daily-roof-status"
+  },
+  {
+    "worker_name": "alphadog-v2-daily-bullpen-availability",
+    "file": "alphadog-v2-daily-bullpen-availability.js",
+    "job_key": "daily-bullpen-availability"
+  },
+  {
+    "worker_name": "alphadog-v2-daily-player-availability",
+    "file": "alphadog-v2-daily-player-availability.js",
+    "job_key": "daily-player-availability"
+  },
+  {
+    "worker_name": "alphadog-v2-daily-usage-pulse",
+    "file": "alphadog-v2-daily-usage-pulse.js",
+    "job_key": "daily-usage-pulse"
+  },
+  {
+    "worker_name": "alphadog-v2-daily-certifier",
+    "file": "alphadog-v2-daily-certifier.js",
+    "job_key": "daily-certifier"
+  },
+  {
+    "worker_name": "alphadog-v2-oddsapi-reference",
+    "file": "alphadog-v2-oddsapi-reference.js",
+    "job_key": "oddsapi-reference"
+  },
+  {
+    "worker_name": "alphadog-v2-prizepicks-github-board",
+    "file": "alphadog-v2-prizepicks-github-board.js",
+    "job_key": "prizepicks-github-board"
+  },
+  {
+    "worker_name": "alphadog-v2-parlay-sleeper-board",
+    "file": "alphadog-v2-parlay-sleeper-board.js",
+    "job_key": "parlay-sleeper-board"
+  },
+  {
+    "worker_name": "alphadog-v2-market-normalizer",
+    "file": "alphadog-v2-market-normalizer.js",
+    "job_key": "market-normalizer"
+  },
+  {
+    "worker_name": "alphadog-v2-market-source-health",
+    "file": "alphadog-v2-market-source-health.js",
+    "job_key": "market-source-health"
+  },
+  {
+    "worker_name": "alphadog-v2-market-line-shape-classifier",
+    "file": "alphadog-v2-market-line-shape-classifier.js",
+    "job_key": "market-line-shape-classifier"
+  },
+  {
+    "worker_name": "alphadog-v2-market-certifier",
+    "file": "alphadog-v2-market-certifier.js",
+    "job_key": "market-certifier"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2a-weather-impact",
+    "file": "alphadog-v2-phase2a-weather-impact.js",
+    "job_key": "phase2a-weather-impact"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2a-roof-impact",
+    "file": "alphadog-v2-phase2a-roof-impact.js",
+    "job_key": "phase2a-roof-impact"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2a-park-impact",
+    "file": "alphadog-v2-phase2a-park-impact.js",
+    "job_key": "phase2a-park-impact"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2a-run-environment",
+    "file": "alphadog-v2-phase2a-run-environment.js",
+    "job_key": "phase2a-run-environment"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2a-game-total-context",
+    "file": "alphadog-v2-phase2a-game-total-context.js",
+    "job_key": "phase2a-game-total-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2a-certifier",
+    "file": "alphadog-v2-phase2a-certifier.js",
+    "job_key": "phase2a-certifier"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2b-hitter-role",
+    "file": "alphadog-v2-phase2b-hitter-role.js",
+    "job_key": "phase2b-hitter-role"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2b-pitcher-role",
+    "file": "alphadog-v2-phase2b-pitcher-role.js",
+    "job_key": "phase2b-pitcher-role"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2b-batting-order",
+    "file": "alphadog-v2-phase2b-batting-order.js",
+    "job_key": "phase2b-batting-order"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2b-lineup-protection",
+    "file": "alphadog-v2-phase2b-lineup-protection.js",
+    "job_key": "phase2b-lineup-protection"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2b-handedness-matchup",
+    "file": "alphadog-v2-phase2b-handedness-matchup.js",
+    "job_key": "phase2b-handedness-matchup"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2b-opposing-starter-matchup",
+    "file": "alphadog-v2-phase2b-opposing-starter-matchup.js",
+    "job_key": "phase2b-opposing-starter-matchup"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2b-bullpen-matchup",
+    "file": "alphadog-v2-phase2b-bullpen-matchup.js",
+    "job_key": "phase2b-bullpen-matchup"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2b-recent-form",
+    "file": "alphadog-v2-phase2b-recent-form.js",
+    "job_key": "phase2b-recent-form"
+  },
+  {
+    "worker_name": "alphadog-v2-phase2b-certifier",
+    "file": "alphadog-v2-phase2b-certifier.js",
+    "job_key": "phase2b-certifier"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3a-rbi-context",
+    "file": "alphadog-v2-phase3a-rbi-context.js",
+    "job_key": "phase3a-rbi-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3a-runs-context",
+    "file": "alphadog-v2-phase3a-runs-context.js",
+    "job_key": "phase3a-runs-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3a-hrr-context",
+    "file": "alphadog-v2-phase3a-hrr-context.js",
+    "job_key": "phase3a-hrr-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3a-rfi-nrfi-context",
+    "file": "alphadog-v2-phase3a-rfi-nrfi-context.js",
+    "job_key": "phase3a-rfi-nrfi-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3a-first-inning-pitcher-context",
+    "file": "alphadog-v2-phase3a-first-inning-pitcher-context.js",
+    "job_key": "phase3a-first-inning-pitcher-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3a-certifier",
+    "file": "alphadog-v2-phase3a-certifier.js",
+    "job_key": "phase3a-certifier"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3b-hits-context",
+    "file": "alphadog-v2-phase3b-hits-context.js",
+    "job_key": "phase3b-hits-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3b-singles-context",
+    "file": "alphadog-v2-phase3b-singles-context.js",
+    "job_key": "phase3b-singles-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3b-doubles-context",
+    "file": "alphadog-v2-phase3b-doubles-context.js",
+    "job_key": "phase3b-doubles-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3b-home-runs-context",
+    "file": "alphadog-v2-phase3b-home-runs-context.js",
+    "job_key": "phase3b-home-runs-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3b-total-bases-context",
+    "file": "alphadog-v2-phase3b-total-bases-context.js",
+    "job_key": "phase3b-total-bases-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3b-walks-context",
+    "file": "alphadog-v2-phase3b-walks-context.js",
+    "job_key": "phase3b-walks-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3b-hitter-strikeouts-context",
+    "file": "alphadog-v2-phase3b-hitter-strikeouts-context.js",
+    "job_key": "phase3b-hitter-strikeouts-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3b-stolen-bases-context",
+    "file": "alphadog-v2-phase3b-stolen-bases-context.js",
+    "job_key": "phase3b-stolen-bases-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3b-certifier",
+    "file": "alphadog-v2-phase3b-certifier.js",
+    "job_key": "phase3b-certifier"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3c-pitcher-strikeouts-context",
+    "file": "alphadog-v2-phase3c-pitcher-strikeouts-context.js",
+    "job_key": "phase3c-pitcher-strikeouts-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3c-pitcher-outs-context",
+    "file": "alphadog-v2-phase3c-pitcher-outs-context.js",
+    "job_key": "phase3c-pitcher-outs-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3c-hits-allowed-context",
+    "file": "alphadog-v2-phase3c-hits-allowed-context.js",
+    "job_key": "phase3c-hits-allowed-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3c-earned-runs-context",
+    "file": "alphadog-v2-phase3c-earned-runs-context.js",
+    "job_key": "phase3c-earned-runs-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3c-walks-allowed-context",
+    "file": "alphadog-v2-phase3c-walks-allowed-context.js",
+    "job_key": "phase3c-walks-allowed-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3c-runs-allowed-context",
+    "file": "alphadog-v2-phase3c-runs-allowed-context.js",
+    "job_key": "phase3c-runs-allowed-context"
+  },
+  {
+    "worker_name": "alphadog-v2-phase3c-certifier",
+    "file": "alphadog-v2-phase3c-certifier.js",
+    "job_key": "phase3c-certifier"
+  },
+  {
+    "worker_name": "alphadog-v2-score-prep",
+    "file": "alphadog-v2-score-prep.js",
+    "job_key": "score-prep"
+  },
+  {
+    "worker_name": "alphadog-v2-score-hits",
+    "file": "alphadog-v2-score-hits.js",
+    "job_key": "score-hits"
+  },
+  {
+    "worker_name": "alphadog-v2-score-rbis",
+    "file": "alphadog-v2-score-rbis.js",
+    "job_key": "score-rbis"
+  },
+  {
+    "worker_name": "alphadog-v2-score-runs",
+    "file": "alphadog-v2-score-runs.js",
+    "job_key": "score-runs"
+  },
+  {
+    "worker_name": "alphadog-v2-score-singles",
+    "file": "alphadog-v2-score-singles.js",
+    "job_key": "score-singles"
+  },
+  {
+    "worker_name": "alphadog-v2-score-doubles",
+    "file": "alphadog-v2-score-doubles.js",
+    "job_key": "score-doubles"
+  },
+  {
+    "worker_name": "alphadog-v2-score-home-runs",
+    "file": "alphadog-v2-score-home-runs.js",
+    "job_key": "score-home-runs"
+  },
+  {
+    "worker_name": "alphadog-v2-score-total-bases",
+    "file": "alphadog-v2-score-total-bases.js",
+    "job_key": "score-total-bases"
+  },
+  {
+    "worker_name": "alphadog-v2-score-hrr",
+    "file": "alphadog-v2-score-hrr.js",
+    "job_key": "score-hrr"
+  },
+  {
+    "worker_name": "alphadog-v2-score-walks",
+    "file": "alphadog-v2-score-walks.js",
+    "job_key": "score-walks"
+  },
+  {
+    "worker_name": "alphadog-v2-score-hitter-strikeouts",
+    "file": "alphadog-v2-score-hitter-strikeouts.js",
+    "job_key": "score-hitter-strikeouts"
+  },
+  {
+    "worker_name": "alphadog-v2-score-stolen-bases",
+    "file": "alphadog-v2-score-stolen-bases.js",
+    "job_key": "score-stolen-bases"
+  },
+  {
+    "worker_name": "alphadog-v2-score-pitcher-strikeouts",
+    "file": "alphadog-v2-score-pitcher-strikeouts.js",
+    "job_key": "score-pitcher-strikeouts"
+  },
+  {
+    "worker_name": "alphadog-v2-score-pitcher-outs",
+    "file": "alphadog-v2-score-pitcher-outs.js",
+    "job_key": "score-pitcher-outs"
+  },
+  {
+    "worker_name": "alphadog-v2-score-hits-allowed",
+    "file": "alphadog-v2-score-hits-allowed.js",
+    "job_key": "score-hits-allowed"
+  },
+  {
+    "worker_name": "alphadog-v2-score-earned-runs",
+    "file": "alphadog-v2-score-earned-runs.js",
+    "job_key": "score-earned-runs"
+  },
+  {
+    "worker_name": "alphadog-v2-score-walks-allowed",
+    "file": "alphadog-v2-score-walks-allowed.js",
+    "job_key": "score-walks-allowed"
+  },
+  {
+    "worker_name": "alphadog-v2-score-runs-allowed",
+    "file": "alphadog-v2-score-runs-allowed.js",
+    "job_key": "score-runs-allowed"
+  },
+  {
+    "worker_name": "alphadog-v2-score-rfi-nrfi",
+    "file": "alphadog-v2-score-rfi-nrfi.js",
+    "job_key": "score-rfi-nrfi"
+  },
+  {
+    "worker_name": "alphadog-v2-score-fantasy",
+    "file": "alphadog-v2-score-fantasy.js",
+    "job_key": "score-fantasy"
+  },
+  {
+    "worker_name": "alphadog-v2-score-final-board",
+    "file": "alphadog-v2-score-final-board.js",
+    "job_key": "score-final-board"
+  },
+  {
+    "worker_name": "alphadog-v2-score-audit",
+    "file": "alphadog-v2-score-audit.js",
+    "job_key": "score-audit"
+  }
+]

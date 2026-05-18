@@ -1,0 +1,49 @@
+DUMMY WORKER TEST PLAN
+
+For each Worker:
+
+1. Browser test:
+GET https://<worker-url>/
+
+PASS if:
+ok=true
+status=DUMMY_READY
+worker_name matches expected worker
+
+2. Health test:
+GET https://<worker-url>/health
+
+PASS if:
+checks.db_bindings all true
+checks.vars all true
+checks.secrets_present_only all true
+
+3. Run test:
+POST https://<worker-url>/run
+Body:
+{
+  "request_id": "manual-test-001",
+  "chain_id": "manual-chain-001",
+  "job_key": "manual_dummy_test",
+  "slate_date": "2026-05-18",
+  "mode": "DUMMY"
+}
+
+PASS if:
+status=DUMMY_READY
+rows_read=0
+rows_written=0
+external_calls_performed=0
+writes_performed=0
+
+4. Diagnostic test:
+POST https://<worker-url>/diagnostic
+Body:
+{
+  "request_id": "manual-diagnostic-001",
+  "mode": "CHECK_BINDINGS"
+}
+
+PASS if:
+No secret values are printed.
+Only true/false secret presence is shown.
