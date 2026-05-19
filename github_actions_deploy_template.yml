@@ -1,0 +1,30 @@
+name: Deploy AlphaDog v2 Workers
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install -D wrangler
+      - name: Create local secrets file
+        run: |
+          cat > secrets.production.json <<'EOF'
+          ${{ secrets.ALPHADOG_V2_SECRETS_JSON }}
+          EOF
+      - run: python generate_wrangler_configs.py
+      - name: Deploy all Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: python deploy_all_workers.py
+      - name: Deploy orchestrator service bindings
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: python deploy_orchestrator_services.py

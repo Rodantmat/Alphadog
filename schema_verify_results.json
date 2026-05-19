@@ -1,0 +1,217 @@
+[
+  {
+    "db": "alphadog-v2-control-db",
+    "type": "table_check",
+    "ok": true,
+    "found": [
+      "control_certification_status",
+      "control_job_queue",
+      "control_job_runs",
+      "control_locks",
+      "control_phase_state",
+      "control_system_state",
+      "control_worker_registry"
+    ],
+    "missing": [],
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-config-db",
+    "type": "table_check",
+    "ok": true,
+    "found": [
+      "config_certification_rules",
+      "config_market_sources",
+      "config_prop_taxonomy",
+      "config_system_settings",
+      "config_worker_definitions",
+      "config_worker_schedules"
+    ],
+    "missing": [],
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-ref-db",
+    "type": "table_check",
+    "ok": true,
+    "found": [
+      "ref_player_aliases",
+      "ref_players",
+      "ref_prop_aliases",
+      "ref_rosters",
+      "ref_stadiums",
+      "ref_teams"
+    ],
+    "missing": [],
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-stats-hitter-db",
+    "type": "table_check",
+    "ok": true,
+    "found": [
+      "hitter_game_logs",
+      "hitter_metrics",
+      "hitter_splits"
+    ],
+    "missing": [],
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-stats-pitcher-db",
+    "type": "table_check",
+    "ok": true,
+    "found": [
+      "pitcher_game_logs",
+      "pitcher_metrics",
+      "pitcher_splits"
+    ],
+    "missing": [],
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-team-db",
+    "type": "table_check",
+    "ok": true,
+    "found": [
+      "bullpen_history",
+      "starter_history",
+      "team_game_logs",
+      "team_metrics"
+    ],
+    "missing": [],
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-daily-db",
+    "type": "table_check",
+    "ok": true,
+    "found": [
+      "daily_lineups",
+      "daily_player_availability",
+      "daily_probable_pitchers",
+      "daily_roof_status",
+      "daily_slate_games",
+      "daily_usage_pulse",
+      "daily_weather"
+    ],
+    "missing": [],
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-market-db",
+    "type": "table_check",
+    "ok": true,
+    "found": [
+      "market_current_lines",
+      "market_line_shape_classification",
+      "market_line_snapshots",
+      "market_raw_snapshots",
+      "market_source_health"
+    ],
+    "missing": [],
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-context-db",
+    "type": "table_check",
+    "ok": true,
+    "found": [
+      "context_certification",
+      "context_factor_scores",
+      "context_packets"
+    ],
+    "missing": [],
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-score-db",
+    "type": "table_check",
+    "ok": true,
+    "found": [
+      "candidate_board",
+      "prop_scores",
+      "release_board",
+      "score_audit",
+      "score_packets"
+    ],
+    "missing": [],
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-archive-db",
+    "type": "table_check",
+    "ok": true,
+    "found": [
+      "archive_market_snapshots",
+      "archive_run_summaries",
+      "archive_score_snapshots",
+      "archive_slate_snapshots"
+    ],
+    "missing": [],
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-control-db",
+    "type": "count_check",
+    "table": "control_worker_registry",
+    "count": 116,
+    "minimum": 116,
+    "ok": true,
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-control-db",
+    "type": "count_check",
+    "table": "control_phase_state",
+    "count": 12,
+    "minimum": 12,
+    "ok": true,
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-control-db",
+    "type": "count_check",
+    "table": "control_system_state",
+    "count": 1,
+    "minimum": 1,
+    "ok": true,
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-config-db",
+    "type": "count_check",
+    "table": "config_worker_definitions",
+    "count": 116,
+    "minimum": 116,
+    "ok": true,
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-config-db",
+    "type": "count_check",
+    "table": "config_prop_taxonomy",
+    "count": 19,
+    "minimum": 19,
+    "ok": true,
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-config-db",
+    "type": "count_check",
+    "table": "config_market_sources",
+    "count": 7,
+    "minimum": 7,
+    "ok": true,
+    "stderr": ""
+  },
+  {
+    "db": "alphadog-v2-config-db",
+    "type": "count_check",
+    "table": "config_certification_rules",
+    "count": 6,
+    "minimum": 6,
+    "ok": true,
+    "stderr": ""
+  }
+]

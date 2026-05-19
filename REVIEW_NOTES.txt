@@ -1,0 +1,14 @@
+REVIEW NOTES
+
+Confirmed from project docs:
+- Current/old backend used OpenWeather API key variants and Open-Meteo fallback.
+- WeatherAPI was considered but not locked.
+- v2 keeps Odds API for reference/scoring only.
+- v2 keeps PrizePicks through GitHub scraper.
+- v2 uses ParlayAPI for Sleeper first.
+- Cloudflare deployment should preserve flat folder handling.
+
+Confirmed from Cloudflare docs:
+- Wrangler config supports bindings/vars in wrangler.jsonc.
+- Wrangler deploy accepts --secrets-file.
+- Service bindings allow one Worker to call another internally.

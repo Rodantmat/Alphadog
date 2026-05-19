@@ -1,0 +1,96 @@
+{
+  "version": "alphadog-v2-schema-phase-pack-v0.1",
+  "date": "2026-05-18",
+  "target": "AlphaDog v2 new D1 databases only",
+  "databases": {
+    "CONTROL_DB": "alphadog-v2-control-db",
+    "CONFIG_DB": "alphadog-v2-config-db",
+    "REF_DB": "alphadog-v2-ref-db",
+    "STATS_HITTER_DB": "alphadog-v2-stats-hitter-db",
+    "STATS_PITCHER_DB": "alphadog-v2-stats-pitcher-db",
+    "TEAM_DB": "alphadog-v2-team-db",
+    "DAILY_DB": "alphadog-v2-daily-db",
+    "MARKET_DB": "alphadog-v2-market-db",
+    "CONTEXT_DB": "alphadog-v2-context-db",
+    "SCORE_DB": "alphadog-v2-score-db",
+    "ARCHIVE_DB": "alphadog-v2-archive-db"
+  },
+  "apply_order": [
+    [
+      "alphadog-v2-control-db",
+      [
+        "schema_control_db.sql",
+        "seed_control_worker_registry.sql",
+        "seed_control_initial_state.sql"
+      ]
+    ],
+    [
+      "alphadog-v2-config-db",
+      [
+        "schema_config_db.sql",
+        "seed_config_system_settings.sql",
+        "seed_config_worker_definitions.sql",
+        "seed_worker_schedules.sql",
+        "seed_prop_taxonomy.sql",
+        "seed_market_sources.sql",
+        "seed_line_shape_policy.sql",
+        "seed_certification_rules.sql"
+      ]
+    ],
+    [
+      "alphadog-v2-ref-db",
+      [
+        "schema_ref_db.sql"
+      ]
+    ],
+    [
+      "alphadog-v2-stats-hitter-db",
+      [
+        "schema_stats_hitter_db.sql"
+      ]
+    ],
+    [
+      "alphadog-v2-stats-pitcher-db",
+      [
+        "schema_stats_pitcher_db.sql"
+      ]
+    ],
+    [
+      "alphadog-v2-team-db",
+      [
+        "schema_team_db.sql"
+      ]
+    ],
+    [
+      "alphadog-v2-daily-db",
+      [
+        "schema_daily_db.sql"
+      ]
+    ],
+    [
+      "alphadog-v2-market-db",
+      [
+        "schema_market_db.sql"
+      ]
+    ],
+    [
+      "alphadog-v2-context-db",
+      [
+        "schema_context_db.sql"
+      ]
+    ],
+    [
+      "alphadog-v2-score-db",
+      [
+        "schema_score_db.sql"
+      ]
+    ],
+    [
+      "alphadog-v2-archive-db",
+      [
+        "schema_archive_db.sql"
+      ]
+    ]
+  ],
+  "expected_worker_count": 116
+}

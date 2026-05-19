@@ -1,0 +1,14 @@
+RUN THESE FROM C:\2\V2
+
+1. Apply schema:
+python apply_schema_all.py
+
+2. Verify schema:
+python verify_schema_all.py
+
+Expected:
+Schema verify passed
+Wrote schema_verify_results.json
+
+If verify fails:
+Send schema_verify_results.json and terminal output.
