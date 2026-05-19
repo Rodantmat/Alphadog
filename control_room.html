@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.5.8-manual-sql-board-group-fix -->
+<!-- alphadog-v2-control-room-v1.5.9-static-park-factors-button -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,7 +28,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.5.8-manual-sql-board-group-fix</div>
+<div id="versionTag">alphadog-v2-control-room-v1.5.9-static-park-factors-button</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
 <div class="small">Access mode: single-user. Control Room enqueues/status. Wake calls real orchestrator once; cron continues automatically.</div>
@@ -68,6 +68,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <div class="section"><h3>STATIC</h3><div class="grid">
 <button class="check" type="button" onclick="runJobButton('STATIC > Teams','orchestrator_enqueue_static_teams')">Teams</button>
 <button class="check" type="button" onclick="runJobButton('STATIC > Stadiums','orchestrator_enqueue_static_stadiums')">Stadiums</button>
+<button class="check" type="button" onclick="runJobButton('STATIC > Park Factors','orchestrator_enqueue_static_park_factors')">Park Factors</button>
 </div><div class="small">Static dictionary/reference data only. No scoring, no board mutation, no opponent backfill.</div></div>
 
 <div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
@@ -136,7 +137,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"wake-now-plus-cron-fallback",version:"alphadog-v2-control-room-v1.5.8-manual-sql-board-group-fix"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"wake-now-plus-cron-fallback",version:"alphadog-v2-control-room-v1.5.9-static-park-factors-button"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
