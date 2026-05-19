@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaDog V2 Control Room</title>
+<!-- alphadog-v2-control-room-v0.2 - cloned from current control room visual shell -->
+<style>
+body{background:#0b0f14;color:#00ff88;font-family:monospace;padding:10px;margin:0}
+h2{font-size:21px;color:#00ff88} h3{color:#fff;font-size:14px}
+.section{border-top:1px solid #30363d;padding-top:8px;margin-top:10px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+button{padding:10px 4px;font-size:12px;border:0;border-radius:7px;background:#1f6feb;color:#fff}
+.clean{background:#da3633}.check{background:#238636}.sql{background:#d29922}.debug{background:#8957e5}.audit{background:#0f766e}.slate{background:#7c3aed}
+.copy{background:#8957e5;width:100%;margin-top:6px}
+input,textarea{width:100%;box-sizing:border-box;background:#111;color:#00ff88;border:1px solid #30363d;border-radius:6px;margin-top:6px;padding:8px}
+textarea{height:90px}
+pre{background:#000;color:#00ff88;padding:8px;margin-top:8px;overflow:auto;max-height:420px;min-height:150px;border:1px solid #30363d;border-radius:6px;white-space:pre-wrap;word-break:break-word}
+.status{background:#111;color:#fff;padding:8px;border-radius:6px;border:1px solid #30363d;margin:8px 0;white-space:pre-wrap}
+.small{font-size:11px;color:#aaa}
+
+.candidateBoard{background:#05070a;border:1px solid #30363d;border-radius:8px;margin-top:8px;padding:8px;color:#d7ffe6}
+.candidateToolbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.candidateToolbar button{width:auto;padding:8px 10px}
+.candidateSummary{font-size:12px;color:#fff;margin-bottom:8px;white-space:pre-wrap}.candidateTableWrap{overflow:auto;border:1px solid #1f2937;border-radius:7px;max-height:520px}
+table.candidateTable{width:100%;border-collapse:collapse;font-size:11px;color:#d7ffe6;background:#05070a}.candidateTable th,.candidateTable td{border-bottom:1px solid #1f2937;padding:6px;text-align:left;vertical-align:top;white-space:nowrap}.candidateTable th{position:sticky;top:0;background:#111827;color:#9ae6b4;z-index:1}
+.badgePlayable{color:#fff;background:#1f6feb;border-radius:999px;padding:2px 6px;font-weight:800}.badgeWatchlist{color:#111;background:#facc15;border-radius:999px;padding:2px 6px;font-weight:800}.badgeQualified{color:#fff;background:#238636;border-radius:999px;padding:2px 6px;font-weight:800}.riskCell{white-space:normal;min-width:180px;color:#ffcf99}
+
+
+.refreshGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0}.refreshItem{display:flex;gap:8px;align-items:flex-start;background:#111;border:1px solid #30363d;border-radius:7px;padding:8px;color:#d7ffe6}.refreshItem input{width:auto;margin:2px 0 0 0}.refreshItem b{display:block;color:#fff;font-size:12px}.refreshItem span{display:block;color:#aaa;font-size:10px;line-height:1.25}.refreshActions{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+@media (max-width:720px){.refreshGrid{grid-template-columns:1fr}.refreshActions{grid-template-columns:repeat(2,1fr)}}
+
+/* label-sql-fix */
+.grid button{min-height:0;height:auto;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.15;padding:10px 4px;}
+textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-events:auto;}
+</style>
+<style id="versionTagStyle">
+#versionTag{
+  color:#9ae6b4;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin-top: 6px;
+  margin-bottom: 12px;
+}
+</style>
+</head>
+<body>
+<h2>ALPHADOG CONTROL ROOM</h2>
+<div id="versionTag">alphadog-v2-control-room-v0.2</div>
+<div class="small">PT Now: <span id="ptNowLabel"></span></div>
+<div class="small">Slate Mode: <span id="slateModeLabel"></span> | Resolved Slate: <span id="targetDateLabel"></span></div>
+<div class="status" id="status">READY</div>
+
+<div class="section"><h3>SLATE</h3><div class="grid">
+<button class="slate" onclick="setSlateMode('AUTO')">Auto</button>
+<button class="slate" onclick="setSlateMode('TODAY')">Today</button>
+<button class="slate" onclick="setSlateMode('TOMORROW')">Tomorrow</button>
+<button class="slate" onclick="setSlateMode('MANUAL')">Manual</button>
+</div><input id="manualDate" placeholder="YYYY-MM-DD manual date" onchange="setManualDate(this.value)"></div>
+
+<div class="section"><h3>DEBUG</h3><div class="grid">
+<button class="debug" onclick="debugConfig()">Config</button>
+<button class="debug" onclick="health()">Health</button>
+<button class="debug" onclick="diagnostic()">Diagnostic</button>
+<button class="debug" onclick="testSQL()">SQL Test</button>
+<button class="debug" onclick="loadConfig()">Reload</button>
+</div></div>
+
+<div class="section"><h3>V2 BOOTSTRAP / SCHEMA</h3><div class="grid">
+<button class="check" onclick="runJobButton('V2 > Schema Status','v2_schema_status')">Schema Status</button>
+<button class="check" onclick="runJobButton('V2 > Worker Registry','v2_worker_registry')">Worker Registry</button>
+<button class="check" onclick="runJobButton('V2 > Config Summary','v2_config_summary')">Config Summary</button>
+<button class="audit" onclick="runJobButton('V2 > Phase State','v2_phase_state')">Phase State</button>
+<button class="audit" onclick="runJobButton('V2 > Market Sources','v2_market_sources')">Market Sources</button>
+<button class="audit" onclick="runJobButton('V2 > Prop Taxonomy','v2_prop_taxonomy')">Prop Taxonomy</button>
+<button class="audit" onclick="runJobButton('V2 > Certification Rules','v2_certification_rules')">Cert Rules</button>
+<button class="debug" onclick="runJobButton('V2 > Bindings Check','v2_bindings_check')">Bindings Check</button>
+</div><div class="small">V2 management only. No mining, no scoring, no old production writes.</div></div>
+
+<div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
+<button class="check" onclick="runJobButton('CONTROL > Queue Status','v2_queue_status')">Queue Status</button>
+<button class="check" onclick="runJobButton('CONTROL > Lock Status','v2_lock_status')">Lock Status</button>
+<button class="audit" onclick="runJobButton('CONTROL > Health Snapshot','v2_health_snapshot')">Health Snapshot</button>
+<button class="clean" onclick="runJobButton('CONTROL > Clear Open V2 Queue','v2_clear_open_queue')">Clear Open Queue</button>
+</div><div class="small">Clear Open Queue only changes v2 CONTROL_DB queue/lock state. It does not delete real data and does not touch old production.</div></div>
+
+<div class="section"><h3>MANUAL SQL</h3><div class="muted">Output guard active: max 50 rows, long text cells truncated to prevent browser/app crashes. V2 auto-routes known table prefixes. Optional first line: -- db: CONFIG_DB</div><textarea id="sqlInput" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" inputmode="text"></textarea><button class="sql" onclick="runManualSQL()">Run SQL</button>
+<button class="debug" type="button" onclick="clearSqlInput()">Clear SQL</button>
+<button class="debug" type="button" onclick="selectSqlInput()">Select SQL</button></div>
+<div id="minePulse" style="display:none;border:1px solid #1f8b4c;border-radius:12px;padding:14px;margin:12px 0;background:#07130d;color:#21f06f;font-family:monospace;font-size:17px;line-height:1.35;white-space:pre-wrap;">Miner Pulse idle.</div><pre id="output">Output will appear here.</pre><button class="copy" onclick="copyOutput()">COPY OUTPUT</button>
+
+<script>
+const BASE="https://alphadog-v2-control-room.rodolfoaamattos.workers.dev", JOB_URL=BASE+"/tasks/run", SQL_URL=BASE+"/debug/sql", HEALTH_URL=BASE+"/health", DIAGNOSTIC_URL=BASE+"/diagnostic", CONFIG_URL="https://raw.githubusercontent.com/Rodantmat/Alphadog/main/config.txt";
+let TOKEN="", CONFIG_LOADED=false, SLATE_MODE=localStorage.getItem("alphadog_slate_mode")||"AUTO", MANUAL_DATE=localStorage.getItem("alphadog_manual_date")||"";
+function pad2(n){return String(n).padStart(2,"0")}
+function addDaysISO(s,d){const p=s.split("-").map(Number),x=new Date(Date.UTC(p[0],p[1]-1,p[2]));x.setUTCDate(x.getUTCDate()+d);return x.getUTCFullYear()+"-"+pad2(x.getUTCMonth()+1)+"-"+pad2(x.getUTCDate())}
+function ptParts(){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(new Date()),m={};parts.forEach(p=>m[p.type]=p.value);return {date:m.year+"-"+m.month+"-"+m.day,hour:Number(m.hour),time:m.hour+":"+m.minute+":"+m.second}}
+function resolveSlateDate(){const p=ptParts();if(SLATE_MODE==="MANUAL"&&/^\d{4}-\d{2}-\d{2}$/.test(MANUAL_DATE))return MANUAL_DATE;if(SLATE_MODE==="TODAY")return p.date;if(SLATE_MODE==="TOMORROW")return addDaysISO(p.date,1);return p.hour>=20?addDaysISO(p.date,1):p.date}
+function updateSlateLabels(){const p=ptParts();document.getElementById("ptNowLabel").textContent=p.date+" "+p.time;document.getElementById("slateModeLabel").textContent=SLATE_MODE;document.getElementById("targetDateLabel").textContent=resolveSlateDate();document.getElementById("manualDate").value=MANUAL_DATE;}
+function setSlateMode(m){SLATE_MODE=m;localStorage.setItem("alphadog_slate_mode",m);updateSlateLabels();setOutput("Slate Mode",{slate_mode:SLATE_MODE,resolved_slate:resolveSlateDate()})}
+function setManualDate(v){MANUAL_DATE=String(v||"").trim();localStorage.setItem("alphadog_manual_date",MANUAL_DATE);updateSlateLabels()}
+function setStatus(m){document.getElementById("status").textContent="["+new Date().toLocaleTimeString()+"] "+m}
+function setOutput(l,o){document.getElementById("output").textContent="ACTION: "+l+"
+TIME: "+new Date().toISOString()+"
+
+"+(typeof o==="string"?o:JSON.stringify(o,null,2));window.scrollTo(0,document.body.scrollHeight)}
+function loading(l,e){setStatus("RUNNING: "+l);setOutput(l,"Loading..."+(e?"
+"+e:""))}
+function tokenFingerprint(){return TOKEN?{loaded:true,length:TOKEN.length,starts_with:TOKEN.slice(0,2),ends_with:TOKEN.slice(-2)}:{loaded:false,length:0}}
+async function loadConfig(){try{loading("Reload Config");const r=await fetch(CONFIG_URL+"?t="+Date.now(),{cache:"no-store"}),t=await r.text(),m=t.match(/^\s*TOKEN\s*=\s*(.+?)\s*$/m);if(m&&m[1].trim()){TOKEN=m[1].trim().replace(/^["']|["']$/g,"");CONFIG_LOADED=true;setStatus("CONFIG LOADED");setOutput("Reload Config",{config_loaded:true,token_fingerprint:tokenFingerprint()})}else{TOKEN="";CONFIG_LOADED=false;setOutput("Reload Config",{config_loaded:false,error:"TOKEN line not found",config_url:CONFIG_URL})}}catch(e){TOKEN="";CONFIG_LOADED=false;setOutput("Reload Config",{config_loaded:false,error:String(e),config_url:CONFIG_URL})}}
+function debugConfig(){setOutput("DEBUG > Config",{base:BASE,config_url:CONFIG_URL,slate_mode:SLATE_MODE,manual_date:MANUAL_DATE,resolved_slate:resolveSlateDate(),pt_now:ptParts(),token_set:Boolean(TOKEN),config_loaded:CONFIG_LOADED,token_fingerprint:tokenFingerprint(),version:"alphadog-v2-control-room-v0.2"})}
+async function rawRequest(l,u,p){if(!CONFIG_LOADED||!TOKEN)await loadConfig();const h={"Content-Type":"application/json","x-ingest-token":TOKEN,"x-admin-token":TOKEN},o=p===null?{method:"GET",headers:h}:{method:"POST",headers:h,body:JSON.stringify(p)};try{const r=await fetch(u,o),txt=await r.text();let b;try{b=JSON.parse(txt)}catch(e){b=txt}return {http_status:r.status,body:b}}catch(e){return {ok:false,error:String(e),action:l}}}
+async function requestJSON(l,u,p){loading(l);const r=await rawRequest(l,u,p);setStatus("DONE: "+l+" / HTTP "+(r.http_status||"ERR"));setOutput(l,r);return r}
+function health(){requestJSON("DEBUG > Health",HEALTH_URL,null)}
+function diagnostic(){requestJSON("DEBUG > Diagnostic",DIAGNOSTIC_URL,null)}
+function testSQL(){requestJSON("DEBUG > SQL Test",SQL_URL,{sql:"SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;"})}
+function runJobButton(l,j){const d=resolveSlateDate();requestJSON(l,JOB_URL,{job:j,slate_date:d,slate_mode:SLATE_MODE,manual_slate_date:MANUAL_DATE})}
+function runManualSQL(){requestJSON("MANUAL SQL > Output",SQL_URL,{sql:document.getElementById("sqlInput").value,max_rows:50,max_chars:900})}
+function copyOutput(){navigator.clipboard.writeText(document.getElementById("output").textContent);setStatus("COPIED OUTPUT")}
+function clearSqlInput(){const el=document.getElementById('sqlInput')||document.querySelector('textarea');if(!el)return;el.removeAttribute('readonly');el.removeAttribute('disabled');el.value='';el.focus();}
+function selectSqlInput(){const el=document.getElementById('sqlInput')||document.querySelector('textarea');if(!el)return;el.removeAttribute('readonly');el.removeAttribute('disabled');el.focus();el.select();}
+document.addEventListener('DOMContentLoaded',()=>{const el=document.getElementById('sqlInput')||document.querySelector('textarea');if(el){el.removeAttribute('readonly');el.removeAttribute('disabled');el.style.userSelect='text';el.style.webkitUserSelect='text';el.style.pointerEvents='auto';}updateSlateLabels();setInterval(updateSlateLabels,1000);loadConfig();});
+</script>
+</body>
+</html>
