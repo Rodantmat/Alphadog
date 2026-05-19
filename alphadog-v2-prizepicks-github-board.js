@@ -1,10 +1,12 @@
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.2-parse-stage-certify-no-promotion";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.3-promote-current-board";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
-const STAGE_CERT_PASS = "certified_not_promoted";
+const STAGE_CERT_PASS = "certified_ready_for_promotion";
 const STAGE_CERT_FAIL = "failed_not_promoted";
+const PROMOTION_CERT_PASS = "promoted_current_board";
+const PROMOTION_CERT_FAIL = "promotion_failed_active_board_preserved";
 const MAX_RAW_JSON_CHARS = 180000;
 const MAX_HEALTH_JSON_CHARS = 7000;
 const MAX_OUTPUT_PREVIEW_CHARS = 900;
@@ -16,6 +18,8 @@ const EXPECTED_MARKET_RAW_SNAPSHOTS_COLUMNS = ["snapshot_id", "source_key", "sla
 const EXPECTED_MARKET_SOURCE_HEALTH_COLUMNS = ["source_key", "status", "last_success_at", "last_error_at", "last_error", "rows_last_fetch", "health_json", "updated_at"];
 const EXPECTED_PP_STAGE_COLUMNS = ["stage_id", "batch_id", "source_key", "slate_date", "fetched_at", "staged_at", "projection_id", "player_id", "player_name", "team", "opponent", "league", "stat_type", "line_score", "description", "start_time", "raw_projection_json", "parse_status", "parse_error", "certification_status", "created_at"];
 const EXPECTED_PP_BATCH_COLUMNS = ["batch_id", "source_key", "slate_date", "fetched_at", "staged_at", "certified_at", "source_path", "source_http_status", "source_size_bytes", "top_level_shape", "total_rows", "staged_rows", "mlb_rows", "valid_rows", "invalid_rows", "certification_status", "certification_reason", "certification_json", "promoted_at", "cleaned_at", "created_at", "updated_at"];
+const EXPECTED_PP_CURRENT_COLUMNS = ["current_row_id", "batch_id", "source_key", "slate_date", "projection_id", "player_id", "player_name", "team", "opponent", "league", "stat_type", "line_score", "description", "start_time", "board_time", "end_time", "game_id", "event_type", "status", "projection_type", "odds_type", "source_line_type", "payout_variant", "is_goblin", "is_demon", "is_standard", "pickable_flag", "raw_projection_json", "row_payload_json", "promoted_at", "updated_at"];
+const EXPECTED_PP_ACTIVE_COLUMNS = ["source_key", "slate_date", "active_batch_id", "certification_status", "row_count", "valid_rows", "activated_at", "updated_at"];
 
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
@@ -87,12 +91,12 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "READY",
     timestamp_utc: nowUtc(),
-    phase: "prizepicks_github_board_parse_stage_certify_v0_1_2",
+    phase: "prizepicks_github_board_parse_stage_certify_promote_v0_1_3",
     notes: [
       "Reads the configured PrizePicks GitHub JSON source.",
       "Parses JSON, stages PrizePicks rows into MARKET_DB.prizepicks_board_stage, and writes a batch certification row.",
-      "Writes only MARKET_DB.market_raw_snapshots, MARKET_DB.market_source_health, MARKET_DB.prizepicks_board_batches, and MARKET_DB.prizepicks_board_stage.",
-      "No market_current_lines writes, no active board replacement, no normalization, no scoring, no ranking, no final board."
+      "Promotes only certified staged rows into MARKET_DB.prizepicks_board_current and flips MARKET_DB.prizepicks_board_active_batches after inserts succeed.",
+      "No market_current_lines writes, no scoring, no ranking, no final board, no scheduling."
     ],
     binding_summary: {
       required_db_bindings_present: allTrue(db),
@@ -115,7 +119,9 @@ async function validateWriteSchema(env) {
   const health = await validateTableColumns(env, "market_source_health", EXPECTED_MARKET_SOURCE_HEALTH_COLUMNS);
   const batches = await validateTableColumns(env, "prizepicks_board_batches", EXPECTED_PP_BATCH_COLUMNS);
   const stage = await validateTableColumns(env, "prizepicks_board_stage", EXPECTED_PP_STAGE_COLUMNS);
-  return { ok: raw.ok && health.ok && batches.ok && stage.ok, market_raw_snapshots: raw, market_source_health: health, prizepicks_board_batches: batches, prizepicks_board_stage: stage };
+  const current = await validateTableColumns(env, "prizepicks_board_current", EXPECTED_PP_CURRENT_COLUMNS);
+  const active = await validateTableColumns(env, "prizepicks_board_active_batches", EXPECTED_PP_ACTIVE_COLUMNS);
+  return { ok: raw.ok && health.ok && batches.ok && stage.ok && current.ok && active.ok, market_raw_snapshots: raw, market_source_health: health, prizepicks_board_batches: batches, prizepicks_board_stage: stage, prizepicks_board_current: current, prizepicks_board_active_batches: active };
 }
 
 async function readConfigSystemSettings(env, keys) {
@@ -370,6 +376,47 @@ function parseProjectionRow(row, index, leagueMap, slateDate, fetchedAt, batchId
   const lineScore = lineRaw === undefined || lineRaw === null || lineRaw === "" ? null : Number(lineRaw);
   const description = safeCell(attrs.description || attrs.board_label || attrs.name, 400);
   const startTime = safeCell(attrs.start_time || attrs.board_time || attrs.end_time, 120);
+  const boardTime = safeCell(attrs.board_time || attrs.start_time || null, 120);
+  const endTime = safeCell(attrs.end_time || null, 120);
+  const gameId = safeCell(attrs.game_id || getDeepValue(row, ["relationships.game.data.id", "game_id"]), 120);
+  const eventType = safeCell(attrs.event_type || null, 120);
+  const boardStatus = safeCell(attrs.status || null, 120);
+  const projectionType = safeCell(attrs.projection_type || null, 120);
+  const oddsType = safeCell(attrs.odds_type || null, 120);
+  const variantHaystack = [attrs.projection_type, attrs.odds_type, attrs.description, attrs.stat_display_name, attrs.event_type, attrs.name].filter(Boolean).join(" ").toLowerCase();
+  const isGoblin = variantHaystack.includes("goblin") ? 1 : 0;
+  const isDemon = variantHaystack.includes("demon") ? 1 : 0;
+  const isStandard = isGoblin || isDemon ? 0 : 1;
+  const payoutVariant = safeCell(isGoblin ? "goblin" : isDemon ? "demon" : (attrs.odds_type || attrs.projection_type || "standard"), 120);
+  const sourceLineType = safeCell(attrs.projection_type || attrs.odds_type || attrs.event_type || null, 120);
+  const pickableFlag = (String(boardStatus || "").toLowerCase() === "removed" || String(boardStatus || "").toLowerCase() === "suspended") ? 0 : 1;
+  const rowPayloadJson = JSON.stringify({
+    projection_id: projectionId,
+    player_id: playerId,
+    player_name: playerName,
+    team,
+    opponent,
+    league: league || (rowLooksMlb(row, leagueMap) ? "mlb" : null),
+    stat_type: statType,
+    line_score: lineScore === null || Number.isNaN(lineScore) ? null : lineScore,
+    description,
+    start_time: startTime,
+    board_time: boardTime,
+    end_time: endTime,
+    game_id: gameId,
+    event_type: eventType,
+    status: boardStatus,
+    projection_type: projectionType,
+    odds_type: oddsType,
+    source_line_type: sourceLineType,
+    payout_variant: payoutVariant,
+    is_goblin: isGoblin,
+    is_demon: isDemon,
+    is_standard: isStandard,
+    pickable_flag: pickableFlag,
+    raw_type: row && row.type ? String(row.type) : null,
+    relationship_keys: row && row.relationships && typeof row.relationships === "object" ? Object.keys(row.relationships).slice(0, 40) : []
+  });
   const rawProjectionJson = JSON.stringify(row || {});
   const isMlb = rowLooksMlb(row, leagueMap) || String(league || "").toLowerCase().includes("mlb") || leagueMap.size === 1;
   const errors = [];
@@ -395,7 +442,21 @@ function parseProjectionRow(row, index, leagueMap, slateDate, fetchedAt, batchId
     line_score: lineScore === null || Number.isNaN(lineScore) ? null : lineScore,
     description,
     start_time: startTime,
+    board_time: boardTime,
+    end_time: endTime,
+    game_id: gameId,
+    event_type: eventType,
+    status: boardStatus,
+    projection_type: projectionType,
+    odds_type: oddsType,
+    source_line_type: sourceLineType,
+    payout_variant: payoutVariant,
+    is_goblin: isGoblin,
+    is_demon: isDemon,
+    is_standard: isStandard,
+    pickable_flag: pickableFlag,
     raw_projection_json: rawProjectionJson,
+    row_payload_json: rowPayloadJson,
     parse_status: parseStatus,
     parse_error: errors.length ? errors.join(",") : null,
     certification_status: "pending",
@@ -424,7 +485,7 @@ function buildCertification(shape, stagedRows, sourceSizeBytes, sourcePath) {
   return {
     passed,
     certification_status: passed ? STAGE_CERT_PASS : STAGE_CERT_FAIL,
-    certification_reason: passed ? "PrizePicks JSON parsed, staged, and certified. No active/current promotion performed in v0.1.2." : `Certification failed: ${failed.join(",")}`,
+    certification_reason: passed ? "PrizePicks JSON parsed, staged, certified, and ready for current-board promotion." : `Certification failed: ${failed.join(",")}`,
     totalRows,
     stagedRows: stagedRows.length,
     mlbRows,
@@ -434,7 +495,7 @@ function buildCertification(shape, stagedRows, sourceSizeBytes, sourcePath) {
     checks,
     failed_checks: failed,
     no_market_current_lines_write: true,
-    no_active_board_replacement: true,
+    promotes_prizepicks_board_current_only: passed,
     no_scoring: true,
     manual_refresh_only: true
   };
@@ -498,13 +559,116 @@ async function finalizeBatch(env, batchId, cert) {
   return { wrote_table: "prizepicks_board_batches", updated_stage_table: "prizepicks_board_stage", batch_id: batchId, certification_status: cert.certification_status };
 }
 
+async function insertCurrentRows(env, rows, batchId, slateDate) {
+  const validRows = rows.filter(r => r.is_mlb && r.parse_status === "valid");
+  const sql = "INSERT INTO prizepicks_board_current (current_row_id, batch_id, source_key, slate_date, projection_id, player_id, player_name, team, opponent, league, stat_type, line_score, description, start_time, board_time, end_time, game_id, event_type, status, projection_type, odds_type, source_line_type, payout_variant, is_goblin, is_demon, is_standard, pickable_flag, raw_projection_json, row_payload_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  let inserted = 0;
+  for (let i = 0; i < validRows.length; i += STAGE_INSERT_CHUNK_SIZE) {
+    const chunk = validRows.slice(i, i + STAGE_INSERT_CHUNK_SIZE);
+    const statements = chunk.map(r => env.MARKET_DB.prepare(sql).bind(
+      `pp_current_${batchId}_${String(r.projection_id || r.stage_id).replace(/[^a-zA-Z0-9_\-]/g, "_")}`,
+      batchId,
+      SOURCE_KEY,
+      slateDate,
+      r.projection_id,
+      r.player_id,
+      r.player_name,
+      r.team,
+      r.opponent,
+      r.league,
+      r.stat_type,
+      r.line_score,
+      r.description,
+      r.start_time,
+      r.board_time,
+      r.end_time,
+      r.game_id,
+      r.event_type,
+      r.status,
+      r.projection_type,
+      r.odds_type,
+      r.source_line_type,
+      r.payout_variant,
+      r.is_goblin,
+      r.is_demon,
+      r.is_standard,
+      r.pickable_flag,
+      r.raw_projection_json,
+      r.row_payload_json
+    ));
+    await env.MARKET_DB.batch(statements);
+    inserted += chunk.length;
+  }
+  return { wrote_table: "prizepicks_board_current", batch_id: batchId, slate_date: slateDate, inserted_rows: inserted, chunk_size: STAGE_INSERT_CHUNK_SIZE };
+}
+
+async function promoteCertifiedBatch(env, batchId, slateDate, cert, stagedRows) {
+  if (!cert.passed || cert.validRows !== cert.mlbRows || cert.validRows !== stagedRows.length) {
+    return {
+      promoted: false,
+      certification_status: PROMOTION_CERT_FAIL,
+      reason: "promotion_blocked_certification_or_row_count_mismatch",
+      checks: {
+        cert_passed: Boolean(cert.passed),
+        valid_rows_equal_mlb_rows: cert.validRows === cert.mlbRows,
+        valid_rows_equal_staged_rows: cert.validRows === stagedRows.length
+      },
+      active_board_preserved: true
+    };
+  }
+
+  const inserted = await insertCurrentRows(env, stagedRows, batchId, slateDate);
+  if (inserted.inserted_rows !== cert.validRows) {
+    throw new Error(`promotion_insert_count_mismatch inserted=${inserted.inserted_rows} valid=${cert.validRows}`);
+  }
+
+  const promotionJson = safeJson({
+    version: VERSION,
+    batch_id: batchId,
+    source_key: SOURCE_KEY,
+    slate_date: slateDate,
+    inserted_rows: inserted.inserted_rows,
+    certification: cert,
+    active_pointer_switch_after_insert: true,
+    old_current_cleanup_after_pointer_switch: true,
+    no_market_current_lines_write: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board_write: true
+  }, 6000);
+
+  await env.MARKET_DB.batch([
+    env.MARKET_DB.prepare("INSERT INTO prizepicks_board_active_batches (source_key, slate_date, active_batch_id, certification_status, row_count, valid_rows, activated_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) ON CONFLICT(source_key, slate_date) DO UPDATE SET active_batch_id=excluded.active_batch_id, certification_status=excluded.certification_status, row_count=excluded.row_count, valid_rows=excluded.valid_rows, activated_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP").bind(SOURCE_KEY, slateDate, batchId, PROMOTION_CERT_PASS, cert.validRows, cert.validRows),
+    env.MARKET_DB.prepare("UPDATE prizepicks_board_batches SET certification_status=?, certification_reason=?, certification_json=?, promoted_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?").bind(PROMOTION_CERT_PASS, "Certified PrizePicks batch promoted to active current board.", promotionJson, batchId),
+    env.MARKET_DB.prepare("DELETE FROM prizepicks_board_stage WHERE batch_id=?").bind(batchId),
+    env.MARKET_DB.prepare("UPDATE prizepicks_board_batches SET cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?").bind(batchId),
+    env.MARKET_DB.prepare("DELETE FROM prizepicks_board_current WHERE source_key=? AND slate_date=? AND batch_id<>?").bind(SOURCE_KEY, slateDate, batchId)
+  ]);
+
+  return {
+    promoted: true,
+    certification_status: PROMOTION_CERT_PASS,
+    batch_id: batchId,
+    slate_date: slateDate,
+    rows_promoted: inserted.inserted_rows,
+    active_pointer: { wrote_table: "prizepicks_board_active_batches", source_key: SOURCE_KEY, slate_date: slateDate, active_batch_id: batchId },
+    current_rows: inserted,
+    old_current_cleanup: { table: "prizepicks_board_current", source_key: SOURCE_KEY, slate_date: slateDate, kept_batch_id: batchId },
+    stage_cleanup: { table: "prizepicks_board_stage", batch_id: batchId, cleaned: true },
+    no_market_current_lines_write: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board_write: true
+  };
+}
+
 async function runBoardParseStageCertify(env, input = {}) {
   const started = Date.now();
   const requestId = input.request_id || null;
   const chainId = input.chain_id || null;
   const schema = await validateWriteSchema(env);
   if (!schema.ok) {
-    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "blocked_schema_mismatch", certification: "SCHEMA_NOT_SAFE_TO_WRITE", schema, rows_read: 0, rows_staged: 0, rows_written: 0, external_calls_performed: 0, error: "MARKET_DB schema is missing required v0.1.2 staging/certification columns. Stop and patch schema only after review.", timestamp_utc: nowUtc() };
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "blocked_schema_mismatch", certification: "SCHEMA_NOT_SAFE_TO_PROMOTE", schema, rows_read: 0, rows_staged: 0, rows_written: 0, external_calls_performed: 0, error: "MARKET_DB schema is missing required v0.1.3 staging/current-board promotion columns. Stop and patch schema only after review.", timestamp_utc: nowUtc() };
   }
 
   const source = await githubSourceConfig(env);
@@ -568,7 +732,27 @@ async function runBoardParseStageCertify(env, input = {}) {
   const cert = buildCertification(shape, stagedRows, sizeBytes, source.path);
   const batchFinalize = await finalizeBatch(env, batchId, cert);
 
-  const healthStatus = cert.passed ? "healthy" : "warning";
+  let promotion = { promoted: false, certification_status: cert.certification_status, reason: cert.passed ? "promotion_not_attempted" : cert.certification_reason, active_board_preserved: true };
+  if (cert.passed) {
+    try {
+      promotion = await promoteCertifiedBatch(env, batchId, slateDate, cert, stagedRows);
+    } catch (err) {
+      const promotionError = safeString(err && err.message ? err.message : err, 900);
+      promotion = { promoted: false, certification_status: PROMOTION_CERT_FAIL, reason: promotionError, active_board_preserved: true };
+      await run(env.MARKET_DB,
+        "UPDATE prizepicks_board_batches SET certification_status=?, certification_reason=?, certification_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
+        PROMOTION_CERT_FAIL,
+        `Promotion failed after successful staging/certification: ${promotionError}`,
+        safeJson({ version: VERSION, batch_id: batchId, promotion_error: promotionError, active_board_preserved_until_pointer_switch: true, no_market_current_lines_write: true, no_scoring: true }, 6000),
+        batchId
+      );
+    }
+  }
+
+  const finalPassed = cert.passed && promotion.promoted;
+  const finalCertification = finalPassed ? PROMOTION_CERT_PASS : (cert.passed ? PROMOTION_CERT_FAIL : cert.certification_status);
+  const finalReason = finalPassed ? "Certified PrizePicks batch promoted to active current board." : (promotion.reason || cert.certification_reason);
+  const healthStatus = finalPassed ? "healthy" : "warning";
   const health = {
     version: VERSION,
     request_id: requestId,
@@ -584,20 +768,20 @@ async function runBoardParseStageCertify(env, input = {}) {
     json_parse_ok: true,
     slate_date: slateDate,
     shape,
-    batch: { batch_id: batchId, certification_status: cert.certification_status, certification_reason: cert.certification_reason, valid_rate: cert.validRate },
+    batch: { batch_id: batchId, certification_status: finalCertification, certification_reason: finalReason, valid_rate: cert.validRate },
+    promotion,
     raw_snapshot: rawWrite,
     no_market_current_lines_write: true,
-    no_active_board_replacement: true,
     no_scoring: true,
     no_ranking: true,
     no_final_board_write: true,
     manual_refresh_only: true
   };
-  const healthWrite = await writeHealth(env, healthStatus, cert.mlbRows || shape.detected_row_count, health, cert.passed ? null : cert.certification_reason);
+  const healthWrite = await writeHealth(env, healthStatus, cert.mlbRows || shape.detected_row_count, health, finalPassed ? null : finalReason);
 
   return {
-    ok: cert.passed,
-    data_ok: cert.passed,
+    ok: finalPassed,
+    data_ok: finalPassed,
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
@@ -605,30 +789,36 @@ async function runBoardParseStageCertify(env, input = {}) {
     chain_id: chainId,
     source_key: SOURCE_KEY,
     status: healthStatus,
-    certification: cert.certification_status,
-    certification_reason: cert.certification_reason,
+    certification: finalCertification,
+    certification_reason: finalReason,
     rows_read: shape.detected_row_count,
     rows_staged: stagedRows.length,
+    rows_promoted: promotion.rows_promoted || 0,
     mlb_rows: cert.mlbRows,
     valid_rows: cert.validRows,
     invalid_rows: cert.invalidRows,
     valid_rate: Number(cert.validRate.toFixed(4)),
-    rows_written: 3 + stagedRows.length,
+    rows_written: 5 + stagedRows.length + (promotion.rows_promoted || 0),
     external_calls_performed: 1,
     elapsed_ms: Date.now() - started,
     source_config_safe: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution },
     shape,
-    batch: { batch_id: batchId, certification_status: cert.certification_status, certification_checks: cert.checks, failed_checks: cert.failed_checks },
-    writes: { raw_snapshot: rawWrite, batch_pending: batchPending, stage: stageWrite, batch_finalize: batchFinalize, source_health: healthWrite },
+    batch: { batch_id: batchId, certification_status: finalCertification, certification_checks: cert.checks, failed_checks: cert.failed_checks },
+    promotion,
+    writes: { raw_snapshot: rawWrite, batch_pending: batchPending, stage: stageWrite, batch_finalize: batchFinalize, promotion, source_health: healthWrite },
     lifecycle_locked: {
-      staged_and_certified_only: true,
+      fetch_parse_stage_certify_promote_complete: finalPassed,
+      active_pointer_table: "prizepicks_board_active_batches",
+      current_board_table: "prizepicks_board_current",
+      stage_cleaned_after_success: Boolean(promotion.stage_cleanup && promotion.stage_cleanup.cleaned),
       no_market_current_lines_write: true,
-      no_active_board_replacement: true,
-      no_promotion: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board_write: true,
       no_scheduling_added: true,
       manual_buttons: ["ORCHESTRATOR > PP Board", "ORCHESTRATOR > Wake"]
     },
-    output_cap_note: "Response contains status/certification only. Full raw JSON stays in GitHub. Parsed rows are staged in prizepicks_board_stage; no active/current promotion occurs in v0.1.2.",
+    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, final board, or scheduling in v0.1.3.",
     timestamp_utc: nowUtc()
   };
 }
