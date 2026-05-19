@@ -1,0 +1,102 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "alphadog-v2-delta-team-logs",
+  "main": "./alphadog-v2-delta-team-logs.js",
+  "compatibility_date": "2026-05-18",
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "SYSTEM_ENV": "production",
+    "SYSTEM_FAMILY": "alphadog-v2",
+    "SYSTEM_VERSION": "v2.0.0",
+    "SYSTEM_TIMEZONE": "America/Los_Angeles",
+    "ACTIVE_SPORT": "MLB",
+    "ACTIVE_SEASON": "2026",
+    "DEFAULT_DAY_SCOPE": "TODAY_TOMORROW",
+    "DEFAULT_SLATE_MODE": "AUTO",
+    "ODDS_API_BASE_URL": "https://api.the-odds-api.com/v4",
+    "PARLAY_API_BASE_URL": "https://parlay-api.com/v4",
+    "MLB_API_BASE_URL": "https://statsapi.mlb.com/api/v1",
+    "OPENWEATHER_BASE_URL": "https://api.openweathermap.org/data/2.5",
+    "OPENWEATHER_ONECALL_BASE_URL": "https://api.openweathermap.org/data/3.0",
+    "OPEN_METEO_BASE_URL": "https://api.open-meteo.com/v1",
+    "WEATHERAPI_BASE_URL": "https://api.weatherapi.com/v1",
+    "PRIZEPICKS_SOURCE_MODE": "GITHUB",
+    "GITHUB_OWNER": "Rodantmat",
+    "GITHUB_REPO": "Alphadog",
+    "GITHUB_BRANCH": "main",
+    "GITHUB_PRIZEPICKS_PATH": "SET_THIS_TO_PRIZEPICKS_OUTPUT_PATH",
+    "MAX_TICK_MS": "20000",
+    "MAX_API_CALLS_PER_TICK": "20",
+    "MAX_ROWS_PER_TICK": "250",
+    "LOCK_STALE_MINUTES": "15",
+    "WORKER_SAFE_MODE": "1",
+    "DEBUG_MODE": "1",
+    "MANUAL_SQL_ENABLED": "1",
+    "CONFIG_PHASE": "1",
+    "MARKET_ODDS_PROVIDER": "ODDS_API_REFERENCE",
+    "SLEEPER_PROVIDER": "PARLAY_API",
+    "PRIZEPICKS_PROVIDER": "GITHUB_SCRAPER",
+    "WEATHER_PRIMARY_PROVIDER": "OPENWEATHER",
+    "WEATHER_FALLBACK_PROVIDER": "OPEN_METEO",
+    "WEATHER_OPTIONAL_PROVIDER": "WEATHERAPI"
+  },
+  "d1_databases": [
+    {
+      "binding": "CONTROL_DB",
+      "database_name": "alphadog-v2-control-db",
+      "database_id": "13cd2d5d-6817-4d5c-88d6-2b7d0a52722a"
+    },
+    {
+      "binding": "CONFIG_DB",
+      "database_name": "alphadog-v2-config-db",
+      "database_id": "e55efd67-b2fb-41e2-8dfe-7e2a9ca78f00"
+    },
+    {
+      "binding": "REF_DB",
+      "database_name": "alphadog-v2-ref-db",
+      "database_id": "c9c87590-f85e-4f19-bc1b-12d4a3e71f49"
+    },
+    {
+      "binding": "STATS_HITTER_DB",
+      "database_name": "alphadog-v2-stats-hitter-db",
+      "database_id": "293b1eaf-ed73-4bfe-9a39-b5ec5d397100"
+    },
+    {
+      "binding": "STATS_PITCHER_DB",
+      "database_name": "alphadog-v2-stats-pitcher-db",
+      "database_id": "ef668380-3493-4445-9a50-08aef533d352"
+    },
+    {
+      "binding": "TEAM_DB",
+      "database_name": "alphadog-v2-team-db",
+      "database_id": "d5b68a35-005c-4e1a-8b3f-fca5515b0075"
+    },
+    {
+      "binding": "DAILY_DB",
+      "database_name": "alphadog-v2-daily-db",
+      "database_id": "b08f5fde-2c26-4c73-848f-4db88ce6fe5e"
+    },
+    {
+      "binding": "MARKET_DB",
+      "database_name": "alphadog-v2-market-db",
+      "database_id": "9c8244c9-a15e-4d2a-a7e7-be1d1154cbdc"
+    },
+    {
+      "binding": "CONTEXT_DB",
+      "database_name": "alphadog-v2-context-db",
+      "database_id": "ca44e9a7-0624-4ac7-857e-5e2af70c6b8f"
+    },
+    {
+      "binding": "SCORE_DB",
+      "database_name": "alphadog-v2-score-db",
+      "database_id": "a078ae79-108f-4d4a-adee-443f83861de0"
+    },
+    {
+      "binding": "ARCHIVE_DB",
+      "database_name": "alphadog-v2-archive-db",
+      "database_id": "71f03ce3-1178-43b6-8228-33cb9803b589"
+    }
+  ]
+}
