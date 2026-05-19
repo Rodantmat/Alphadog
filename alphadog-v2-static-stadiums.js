@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-static-stadiums";
-const VERSION = "alphadog-v2-static-stadiums-v0.1.1-sql-variable-cap-fix";
+const VERSION = "alphadog-v2-static-stadiums-v0.1.2-chase-field-override";
 const JOB_KEY = "static-stadiums";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -7,6 +7,10 @@ const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_
 
 const CONTROLLED_PARK_CONTEXT = {
   ARI: { city: "Phoenix", state: "AZ", timezone: "America/Phoenix", roof_type: "retractable", turf_type: "artificial", aliases: ["Chase Field", "The Bob"] },
+  // MLB StatsAPI currently emits the Diamondbacks abbreviation as AZ in this feed.
+  // Keep ARI for internal/common aliases, and add AZ so Chase Field receives the
+  // same static override when venue metadata lacks timezone/roof/surface fields.
+  AZ: { city: "Phoenix", state: "AZ", timezone: "America/Phoenix", roof_type: "retractable", turf_type: "artificial", aliases: ["Chase Field", "The Bob"] },
   ATL: { city: "Atlanta", state: "GA", timezone: "America/New_York", roof_type: "outdoor", turf_type: "grass", aliases: ["Truist Park", "SunTrust Park"] },
   BAL: { city: "Baltimore", state: "MD", timezone: "America/New_York", roof_type: "outdoor", turf_type: "grass", aliases: ["Oriole Park at Camden Yards", "Camden Yards"] },
   BOS: { city: "Boston", state: "MA", timezone: "America/New_York", roof_type: "outdoor", turf_type: "grass", aliases: ["Fenway Park"] },
