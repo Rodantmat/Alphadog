@@ -1,9 +1,9 @@
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.0-source-shape-staging";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.1-d1-safe-source-shape-staging";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
-const MAX_RAW_JSON_CHARS = 4500000;
+const MAX_RAW_JSON_CHARS = 180000;
 const MAX_HEALTH_JSON_CHARS = 7000;
 const MAX_OUTPUT_PREVIEW_CHARS = 900;
 
@@ -38,20 +38,68 @@ function safeJson(value, max = MAX_HEALTH_JSON_CHARS) {
   return text.length > max ? text.slice(0, max) + "...TRUNCATED" : text;
 }
 
-function boundedRawJson(value) {
+function safeMiniJson(value, maxChars = 9000) {
   const text = JSON.stringify(value || {}, null, 0);
-  if (text.length <= MAX_RAW_JSON_CHARS) return { text, truncated: false, original_chars: text.length, stored_chars: text.length };
+  return text.length > maxChars ? JSON.parse(text.slice(0, maxChars).replace(/[,\[{][^,\[{]*$/, "null")) : value;
+}
+
+function boundedRawJson(value) {
+  const fullText = JSON.stringify(value || {}, null, 0);
+  const detected = detectArray(value);
+  const rows = detected.rows || [];
+  const firstRows = rows.slice(0, 5).map((row) => {
+    const text = JSON.stringify(row || {}, null, 0);
+    if (text.length <= 9000) return row;
+    return { alphadog_row_preview_truncated: true, original_chars: text.length, preview: text.slice(0, 9000) };
+  });
+  const envelope = {
+    alphadog_bounded_source_snapshot: true,
+    storage_reason: "d1_text_cell_size_guard",
+    source_shape_only: true,
+    original_chars: fullText.length,
+    detected_rows_key: detected.key,
+    detected_row_count: rows.length,
+    top_level_type: Array.isArray(value) ? "array" : typeof value,
+    top_level_keys: value && typeof value === "object" && !Array.isArray(value) ? Object.keys(value).slice(0, 80) : [],
+    included_count: value && Array.isArray(value.included) ? value.included.length : 0,
+    first_rows_sample_count: firstRows.length,
+    first_rows_sample: firstRows,
+    note: "Full raw PrizePicks JSON remains in GitHub prizepicks_mlb_current.json. D1 stores bounded source-shape staging only to avoid SQLITE_TOOBIG. No scoring, no ranking, no market_current_lines write."
+  };
+  let text = JSON.stringify(envelope, null, 0);
+  if (text.length > MAX_RAW_JSON_CHARS) {
+    const smaller = {
+      alphadog_bounded_source_snapshot: true,
+      storage_reason: "d1_text_cell_size_guard",
+      original_chars: fullText.length,
+      detected_rows_key: detected.key,
+      detected_row_count: rows.length,
+      top_level_type: Array.isArray(value) ? "array" : typeof value,
+      top_level_keys: envelope.top_level_keys,
+      included_count: envelope.included_count,
+      first_rows_sample_count: 1,
+      first_rows_sample_preview: JSON.stringify(rows[0] || {}).slice(0, 45000),
+      note: envelope.note
+    };
+    text = JSON.stringify(smaller, null, 0);
+  }
+  if (text.length > MAX_RAW_JSON_CHARS) {
+    text = JSON.stringify({
+      alphadog_bounded_source_snapshot: true,
+      storage_reason: "d1_text_cell_size_guard",
+      original_chars: fullText.length,
+      detected_rows_key: detected.key,
+      detected_row_count: rows.length,
+      truncated_to_chars: MAX_RAW_JSON_CHARS,
+      preview: text.slice(0, MAX_RAW_JSON_CHARS - 500),
+      note: envelope.note
+    });
+  }
   return {
-    text: JSON.stringify({
-      alphadog_truncated_raw_snapshot: true,
-      reason: "raw_json_exceeded_first_build_cap",
-      original_chars: text.length,
-      stored_chars_cap: MAX_RAW_JSON_CHARS,
-      preview: text.slice(0, MAX_RAW_JSON_CHARS)
-    }),
+    text,
     truncated: true,
-    original_chars: text.length,
-    stored_chars: MAX_RAW_JSON_CHARS
+    original_chars: fullText.length,
+    stored_chars: text.length
   };
 }
 
@@ -531,7 +579,7 @@ async function runBoardSourceShape(env, input = {}) {
     source_config_safe: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution },
     shape,
     writes: { raw_snapshot: rawWrite, source_health: healthWrite },
-    output_cap_note: "Response contains shape/status only. Raw JSON is stored only in MARKET_DB.market_raw_snapshots, capped by first-build safety limit.",
+    output_cap_note: "Response contains shape/status only. Full raw JSON stays in GitHub; MARKET_DB.market_raw_snapshots stores bounded source-shape staging only to avoid D1 SQLITE_TOOBIG.",
     timestamp_utc: nowUtc()
   };
 }
