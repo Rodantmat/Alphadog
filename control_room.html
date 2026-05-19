@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.5.2-static-teams-enqueue -->
+<!-- alphadog-v2-control-room-v1.5.3-static-group-routing-fix -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,7 +28,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.5.2-static-teams-enqueue</div>
+<div id="versionTag">alphadog-v2-control-room-v1.5.3-static-group-routing-fix</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
 <div class="small">Access mode: single-user. Control Room enqueues/status. Wake calls real orchestrator once; cron continues automatically.</div>
@@ -56,11 +56,15 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <div class="section"><h3>ORCHESTRATOR</h3><div class="grid">
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Status','orchestrator_status')">Status</button>
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Enqueue','orchestrator_enqueue_test')">Enqueue</button>
-<button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Static Teams','orchestrator_enqueue_static_teams')">Static Teams</button>
+<button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > PP Board','orchestrator_enqueue_prizepicks_github_board')">PP Board</button>
 <button class="orch" type="button" onclick="runOrchestratorWake()">Wake</button>
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Logs','orchestrator_logs')">Logs</button>
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Health','orchestrator_health')">OHealth</button>
 </div><div class="small">Wake = one backend call now. Cron = automatic fallback. No browser loops.</div></div>
+
+<div class="section"><h3>STATIC</h3><div class="grid">
+<button class="check" type="button" onclick="runJobButton('STATIC > Static Teams','orchestrator_enqueue_static_teams')">Static Teams</button>
+</div><div class="small">Static dictionary/reference data only. No scoring, no board mutation, no opponent backfill.</div></div>
 
 <div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
 <button class="check" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Queue','v2_queue_status')">Queue</button>
@@ -128,7 +132,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"wake-now-plus-cron-fallback",version:"alphadog-v2-control-room-v1.5.2-static-teams-enqueue"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"wake-now-plus-cron-fallback",version:"alphadog-v2-control-room-v1.5.3-static-group-routing-fix"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
