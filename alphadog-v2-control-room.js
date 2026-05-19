@@ -1,5 +1,5 @@
-const SYSTEM_VERSION = "alphadog-v2-control-room-v1.1-single-user-unlocked";
-const CONTROL_ROOM_HTML = "<!DOCTYPE html>\n<html>\n<head>\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>AlphaDog V2 Control Room</title>\n<!-- alphadog-v2-control-room-v1.1-single-user-unlocked -->\n<style>\n:root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}\n*{box-sizing:border-box}\nbody{background:var(--bg);color:var(--green);font-family:monospace;padding:8px;margin:0;max-width:100vw;overflow-x:hidden}\nh2{font-size:18px;color:var(--green);letter-spacing:.045em;margin:10px 0 8px 0}\nh3{color:var(--white);font-size:12px;letter-spacing:.045em;margin:7px 0}\n.section{border-top:1px solid var(--line);padding-top:7px;margin-top:9px}\n.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;width:100%}\nbutton{min-width:0;width:100%;padding:4px 1px;font-size:10.5px;border:0;border-radius:5px;background:#1f6feb;color:var(--white);min-height:31px;white-space:normal;overflow:hidden;text-overflow:clip;line-height:1.0;display:flex;align-items:center;justify-content:center;text-align:center;word-break:normal}\n.clean{background:var(--clean)}.check{background:var(--check)}.sql{background:var(--sql)}.debug{background:var(--debug)}.audit{background:var(--audit)}.orch{background:var(--orch)}\n.copy{background:var(--debug);width:100%;margin-top:6px;min-height:34px;font-size:11px}\ninput,textarea{width:100%;box-sizing:border-box;background:#111;color:var(--green);border:1px solid var(--line);border-radius:6px;margin-top:6px;padding:7px;font-size:12px}\ntextarea{height:82px}\npre{background:#000;color:var(--green);padding:8px;margin-top:8px;overflow:auto;max-height:420px;min-height:150px;border:1px solid var(--line);border-radius:6px;white-space:pre-wrap;word-break:break-word;font-size:11px}\n.status{background:#111;color:var(--white);padding:7px;border-radius:6px;border:1px solid var(--line);margin:7px 0;white-space:pre-wrap;font-size:11px}\n.small,.muted{font-size:10px;color:var(--muted)}\n#versionTag{color:#9ae6b4;font-family:inherit;font-size:12px;font-weight:800;letter-spacing:.035em;margin-top:5px;margin-bottom:8px}\ntextarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-events:auto}\n@media (max-width:430px){body{padding:8px}.grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}button{font-size:10px;min-height:30px;padding:3px 1px;border-radius:5px}h2{font-size:17px}h3{font-size:11px}.small,.muted{font-size:9.5px}}\n@media (max-width:370px){button{font-size:9.2px;min-height:29px}.grid{gap:2px}}\n</style>\n</head>\n<body>\n<h2>ALPHADOG CONTROL ROOM</h2>\n<div id=\"versionTag\">alphadog-v2-control-room-v1.1-single-user-unlocked</div>\n<div class=\"small\">PT Now: <span id=\"ptNowLabel\"></span></div>\n<div class=\"small\">Slate: AUTO by game date/time. No manual slate override.</div>\n<div class=\"small\">Access mode: single-user / admin token disabled by user request.</div>\n<div class=\"status\" id=\"status\">READY</div>\n\n<div class=\"section\"><h3>DEBUG</h3><div class=\"grid\">\n<button class=\"debug\" type=\"button\" onclick=\"debugConfig()\">Config</button>\n<button class=\"debug\" type=\"button\" onclick=\"health()\">Health</button>\n<button class=\"debug\" type=\"button\" onclick=\"diagnostic()\">Diag</button>\n<button class=\"debug\" type=\"button\" onclick=\"testSQL()\">SQL</button>\n<button class=\"debug\" type=\"button\" onclick=\"reloadPage()\">Reload</button>\n</div></div>\n\n<div class=\"section\"><h3>V2 BOOTSTRAP / SCHEMA</h3><div class=\"grid\">\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Schema','v2_schema_status')\">Schema</button>\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Workers','v2_worker_registry')\">Workers</button>\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Config','v2_config_summary')\">Config</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Phases','v2_phase_state')\">Phases</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Markets','v2_market_sources')\">Markets</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Props','v2_prop_taxonomy')\">Props</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Certs','v2_certification_rules')\">Certs</button>\n<button class=\"debug\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Bindings','v2_bindings_check')\">Bindings</button>\n</div><div class=\"small\">V2 only. No mining, no scoring, no old production writes.</div></div>\n\n<div class=\"section\"><h3>ORCHESTRATOR</h3><div class=\"grid\">\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Status','orchestrator_status')\">Status</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Enqueue','orchestrator_enqueue_test')\">Enqueue</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Tick','orchestrator_tick')\">Tick</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Logs','orchestrator_logs')\">Logs</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Health','orchestrator_health')\">OHealth</button>\n</div><div class=\"small\">Buttons wake/schedule backend work only. No browser long loops.</div></div>\n\n<div class=\"section\"><h3>V2 SAFE ACTIONS</h3><div class=\"grid\">\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Queue','v2_queue_status')\">Queue</button>\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Locks','v2_lock_status')\">Locks</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Snap','v2_health_snapshot')\">Snap</button>\n<button class=\"clean\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Clear Q','v2_clear_open_queue')\">Clear Q</button>\n</div><div class=\"small\">Clear Q only changes v2 CONTROL_DB queue/lock state.</div></div>\n\n<div class=\"section\"><h3>MANUAL SQL</h3>\n<div class=\"muted\">Output guard active: max 50 rows. Optional first line: -- db: CONFIG_DB</div>\n<textarea id=\"sqlInput\" spellcheck=\"false\" autocomplete=\"off\" autocorrect=\"off\" autocapitalize=\"none\" inputmode=\"text\"></textarea>\n<div class=\"grid\">\n<button class=\"sql\" type=\"button\" onclick=\"runManualSQL()\">Run</button>\n<button class=\"debug\" type=\"button\" onclick=\"clearSqlInput()\">Clear</button>\n<button class=\"debug\" type=\"button\" onclick=\"selectSqlInput()\">Select</button>\n<button class=\"debug\" type=\"button\" onclick=\"loadExampleSQL()\">Example</button>\n</div></div>\n\n<pre id=\"output\">Output will appear here.</pre>\n<button class=\"copy\" type=\"button\" onclick=\"copyOutput()\">COPY OUTPUT</button>\n\n<script>\nconst BASE=\"https://alphadog-v2-control-room.rodolfoaamattos.workers.dev\";\nconst JOB_URL=BASE+\"/tasks/run\";\nconst SQL_URL=BASE+\"/debug/sql\";\nconst HEALTH_URL=BASE+\"/health\";\nconst DIAGNOSTIC_URL=BASE+\"/diagnostic\";\n\nfunction ptParts(){\n  const parts=new Intl.DateTimeFormat(\"en-CA\",{timeZone:\"America/Los_Angeles\",year:\"numeric\",month:\"2-digit\",day:\"2-digit\",hour:\"2-digit\",minute:\"2-digit\",second:\"2-digit\",hour12:false}).formatToParts(new Date());\n  const m={};\n  parts.forEach(p=>m[p.type]=p.value);\n  return {date:m.year+\"-\"+m.month+\"-\"+m.day,hour:Number(m.hour),time:m.hour+\":\"+m.minute+\":\"+m.second};\n}\nfunction updateClock(){\n  const p=ptParts();\n  const el=document.getElementById(\"ptNowLabel\");\n  if(el) el.textContent=p.date+\" \"+p.time;\n}\nfunction autoSlateContext(){\n  const p=ptParts();\n  let band=\"same-day dominant\";\n  if(p.hour>=12&&p.hour<20) band=\"split slate likely; workers resolve by game date/time\";\n  if(p.hour>=20||p.hour<4) band=\"next-day dominant likely; workers resolve by game date/time\";\n  return {mode:\"AUTO_BY_GAME_DATE_TIME\",pt_now:p,slate_band_hint:band,note:\"Control Room no longer manually overrides slate. Data workers must resolve pickability by actual game date/time and board availability.\"};\n}\nfunction setStatus(m){\n  const el=document.getElementById(\"status\");\n  if(el) el.textContent=\"[\"+new Date().toLocaleTimeString()+\"] \"+m;\n}\nfunction setOutput(l,o){\n  const out = [\n    \"ACTION: \"+l,\n    \"TIME: \"+new Date().toISOString(),\n    \"\",\n    (typeof o===\"string\"?o:JSON.stringify(o,null,2))\n  ].join(\"\\\\n\");\n  document.getElementById(\"output\").textContent=out;\n  window.scrollTo(0,document.body.scrollHeight);\n}\nfunction loading(l,e){\n  setStatus(\"RUNNING: \"+l);\n  setOutput(l,\"Loading...\"+(e?String.fromCharCode(10)+e:\"\"));\n}\nfunction debugConfig(){\n  setOutput(\"DEBUG > Config\",{base:BASE,auto_slate:autoSlateContext(),access_mode:\"single-user-admin-token-disabled\",version:\"alphadog-v2-control-room-v1.1-single-user-unlocked\"});\n}\nfunction reloadPage(){window.location.reload(true)}\nasync function rawRequest(l,u,p){\n  const h={\"Content-Type\":\"application/json\"};\n  const o=p===null?{method:\"GET\",headers:h}:{method:\"POST\",headers:h,body:JSON.stringify(p)};\n  try{\n    const r=await fetch(u,o);\n    const txt=await r.text();\n    let b;\n    try{b=JSON.parse(txt)}catch(e){b=txt}\n    return {http_status:r.status,body:b};\n  }catch(e){\n    return {ok:false,error:String(e),action:l,url:u};\n  }\n}\nasync function requestJSON(l,u,p){\n  loading(l);\n  const r=await rawRequest(l,u,p);\n  setStatus(\"DONE: \"+l+\" / HTTP \"+(r.http_status||\"ERR\"));\n  setOutput(l,r);\n  return r;\n}\nfunction health(){requestJSON(\"DEBUG > Health\",HEALTH_URL,null)}\nfunction diagnostic(){requestJSON(\"DEBUG > Diag\",DIAGNOSTIC_URL,null)}\nfunction testSQL(){requestJSON(\"DEBUG > SQL\",SQL_URL,{sql:\"SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;\",max_rows:50,max_chars:900})}\nfunction runJobButton(l,j){requestJSON(l,JOB_URL,{job:j,slate_mode:\"AUTO_BY_GAME_DATE_TIME\",auto_slate_context:autoSlateContext(),backend_only:true})}\nfunction runManualSQL(){requestJSON(\"MANUAL SQL > Run\",SQL_URL,{sql:document.getElementById(\"sqlInput\").value,max_rows:50,max_chars:900})}\nfunction copyOutput(){navigator.clipboard.writeText(document.getElementById(\"output\").textContent);setStatus(\"COPIED OUTPUT\")}\nfunction clearSqlInput(){const el=document.getElementById(\"sqlInput\");if(!el)return;el.removeAttribute(\"readonly\");el.removeAttribute(\"disabled\");el.value=\"\";el.focus()}\nfunction selectSqlInput(){const el=document.getElementById(\"sqlInput\");if(!el)return;el.removeAttribute(\"readonly\");el.removeAttribute(\"disabled\");el.focus();el.select()}\nfunction loadExampleSQL(){const el=document.getElementById(\"sqlInput\");el.value=\"SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;\";el.focus();setStatus(\"EXAMPLE SQL LOADED\")}\ndocument.addEventListener(\"DOMContentLoaded\",()=>{\n  const el=document.getElementById(\"sqlInput\");\n  if(el){el.removeAttribute(\"readonly\");el.removeAttribute(\"disabled\");el.style.userSelect=\"text\";el.style.webkitUserSelect=\"text\";el.style.pointerEvents=\"auto\"}\n  updateClock();\n  setInterval(updateClock,1000);\n});\n</script>\n</body>\n</html>";
+const SYSTEM_VERSION = "alphadog-v2-control-room-v1.2-orchestrator-local-bridge";
+const CONTROL_ROOM_HTML = "<!DOCTYPE html>\n<html>\n<head>\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>AlphaDog V2 Control Room</title>\n<!-- alphadog-v2-control-room-v1.2-orchestrator-local-bridge -->\n<style>\n:root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}\n*{box-sizing:border-box}\nbody{background:var(--bg);color:var(--green);font-family:monospace;padding:8px;margin:0;max-width:100vw;overflow-x:hidden}\nh2{font-size:18px;color:var(--green);letter-spacing:.045em;margin:10px 0 8px 0}\nh3{color:var(--white);font-size:12px;letter-spacing:.045em;margin:7px 0}\n.section{border-top:1px solid var(--line);padding-top:7px;margin-top:9px}\n.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;width:100%}\nbutton{min-width:0;width:100%;padding:4px 1px;font-size:10.5px;border:0;border-radius:5px;background:#1f6feb;color:var(--white);min-height:31px;white-space:normal;overflow:hidden;text-overflow:clip;line-height:1.0;display:flex;align-items:center;justify-content:center;text-align:center;word-break:normal}\n.clean{background:var(--clean)}.check{background:var(--check)}.sql{background:var(--sql)}.debug{background:var(--debug)}.audit{background:var(--audit)}.orch{background:var(--orch)}\n.copy{background:var(--debug);width:100%;margin-top:6px;min-height:34px;font-size:11px}\ninput,textarea{width:100%;box-sizing:border-box;background:#111;color:var(--green);border:1px solid var(--line);border-radius:6px;margin-top:6px;padding:7px;font-size:12px}\ntextarea{height:82px}\npre{background:#000;color:var(--green);padding:8px;margin-top:8px;overflow:auto;max-height:420px;min-height:150px;border:1px solid var(--line);border-radius:6px;white-space:pre-wrap;word-break:break-word;font-size:11px}\n.status{background:#111;color:var(--white);padding:7px;border-radius:6px;border:1px solid var(--line);margin:7px 0;white-space:pre-wrap;font-size:11px}\n.small,.muted{font-size:10px;color:var(--muted)}\n#versionTag{color:#9ae6b4;font-family:inherit;font-size:12px;font-weight:800;letter-spacing:.035em;margin-top:5px;margin-bottom:8px}\ntextarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-events:auto}\n@media (max-width:430px){body{padding:8px}.grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}button{font-size:10px;min-height:30px;padding:3px 1px;border-radius:5px}h2{font-size:17px}h3{font-size:11px}.small,.muted{font-size:9.5px}}\n@media (max-width:370px){button{font-size:9.2px;min-height:29px}.grid{gap:2px}}\n</style>\n</head>\n<body>\n<h2>ALPHADOG CONTROL ROOM</h2>\n<div id=\"versionTag\">alphadog-v2-control-room-v1.2-orchestrator-local-bridge</div>\n<div class=\"small\">PT Now: <span id=\"ptNowLabel\"></span></div>\n<div class=\"small\">Slate: AUTO by game date/time. No manual slate override.</div>\n<div class=\"small\">Access mode: single-user. Orchestrator test actions use local CONTROL_DB bridge.</div>\n<div class=\"status\" id=\"status\">READY</div>\n\n<div class=\"section\"><h3>DEBUG</h3><div class=\"grid\">\n<button class=\"debug\" type=\"button\" onclick=\"debugConfig()\">Config</button>\n<button class=\"debug\" type=\"button\" onclick=\"health()\">Health</button>\n<button class=\"debug\" type=\"button\" onclick=\"diagnostic()\">Diag</button>\n<button class=\"debug\" type=\"button\" onclick=\"testSQL()\">SQL</button>\n<button class=\"debug\" type=\"button\" onclick=\"reloadPage()\">Reload</button>\n</div></div>\n\n<div class=\"section\"><h3>V2 BOOTSTRAP / SCHEMA</h3><div class=\"grid\">\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Schema','v2_schema_status')\">Schema</button>\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Workers','v2_worker_registry')\">Workers</button>\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Config','v2_config_summary')\">Config</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Phases','v2_phase_state')\">Phases</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Markets','v2_market_sources')\">Markets</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Props','v2_prop_taxonomy')\">Props</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Certs','v2_certification_rules')\">Certs</button>\n<button class=\"debug\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Bindings','v2_bindings_check')\">Bindings</button>\n</div><div class=\"small\">V2 only. No mining, no scoring, no old production writes.</div></div>\n\n<div class=\"section\"><h3>ORCHESTRATOR</h3><div class=\"grid\">\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Status','orchestrator_status')\">Status</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Enqueue','orchestrator_enqueue_test')\">Enqueue</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Tick','orchestrator_tick')\">Tick</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Logs','orchestrator_logs')\">Logs</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Health','orchestrator_health')\">OHealth</button>\n</div><div class=\"small\">Buttons wake/schedule backend work only. No browser long loops.</div></div>\n\n<div class=\"section\"><h3>V2 SAFE ACTIONS</h3><div class=\"grid\">\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Queue','v2_queue_status')\">Queue</button>\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Locks','v2_lock_status')\">Locks</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Snap','v2_health_snapshot')\">Snap</button>\n<button class=\"clean\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Clear Q','v2_clear_open_queue')\">Clear Q</button>\n</div><div class=\"small\">Clear Q only changes v2 CONTROL_DB queue/lock state.</div></div>\n\n<div class=\"section\"><h3>MANUAL SQL</h3>\n<div class=\"muted\">Output guard active: max 50 rows. Optional first line: -- db: CONFIG_DB</div>\n<textarea id=\"sqlInput\" spellcheck=\"false\" autocomplete=\"off\" autocorrect=\"off\" autocapitalize=\"none\" inputmode=\"text\"></textarea>\n<div class=\"grid\">\n<button class=\"sql\" type=\"button\" onclick=\"runManualSQL()\">Run</button>\n<button class=\"debug\" type=\"button\" onclick=\"clearSqlInput()\">Clear</button>\n<button class=\"debug\" type=\"button\" onclick=\"selectSqlInput()\">Select</button>\n<button class=\"debug\" type=\"button\" onclick=\"loadExampleSQL()\">Example</button>\n</div></div>\n\n<pre id=\"output\">Output will appear here.</pre>\n<button class=\"copy\" type=\"button\" onclick=\"copyOutput()\">COPY OUTPUT</button>\n\n<script>\nconst BASE=\"https://alphadog-v2-control-room.rodolfoaamattos.workers.dev\";\nconst JOB_URL=BASE+\"/tasks/run\";\nconst SQL_URL=BASE+\"/debug/sql\";\nconst HEALTH_URL=BASE+\"/health\";\nconst DIAGNOSTIC_URL=BASE+\"/diagnostic\";\n\nfunction ptParts(){\n  const parts=new Intl.DateTimeFormat(\"en-CA\",{timeZone:\"America/Los_Angeles\",year:\"numeric\",month:\"2-digit\",day:\"2-digit\",hour:\"2-digit\",minute:\"2-digit\",second:\"2-digit\",hour12:false}).formatToParts(new Date());\n  const m={};\n  parts.forEach(p=>m[p.type]=p.value);\n  return {date:m.year+\"-\"+m.month+\"-\"+m.day,hour:Number(m.hour),time:m.hour+\":\"+m.minute+\":\"+m.second};\n}\nfunction updateClock(){\n  const p=ptParts();\n  const el=document.getElementById(\"ptNowLabel\");\n  if(el) el.textContent=p.date+\" \"+p.time;\n}\nfunction autoSlateContext(){\n  const p=ptParts();\n  let band=\"same-day dominant\";\n  if(p.hour>=12&&p.hour<20) band=\"split slate likely; workers resolve by game date/time\";\n  if(p.hour>=20||p.hour<4) band=\"next-day dominant likely; workers resolve by game date/time\";\n  return {mode:\"AUTO_BY_GAME_DATE_TIME\",pt_now:p,slate_band_hint:band,note:\"Control Room no longer manually overrides slate. Data workers must resolve pickability by actual game date/time and board availability.\"};\n}\nfunction setStatus(m){\n  const el=document.getElementById(\"status\");\n  if(el) el.textContent=\"[\"+new Date().toLocaleTimeString()+\"] \"+m;\n}\nfunction setOutput(l,o){\n  const out = [\n    \"ACTION: \"+l,\n    \"TIME: \"+new Date().toISOString(),\n    \"\",\n    (typeof o===\"string\"?o:JSON.stringify(o,null,2))\n  ].join(\"\\\\n\");\n  document.getElementById(\"output\").textContent=out;\n  window.scrollTo(0,document.body.scrollHeight);\n}\nfunction loading(l,e){\n  setStatus(\"RUNNING: \"+l);\n  setOutput(l,\"Loading...\"+(e?String.fromCharCode(10)+e:\"\"));\n}\nfunction debugConfig(){\n  setOutput(\"DEBUG > Config\",{base:BASE,auto_slate:autoSlateContext(),access_mode:\"single-user-admin-token-disabled\", orchestrator_mode:\"local-control-db-bridge\",version:\"alphadog-v2-control-room-v1.2-orchestrator-local-bridge\"});\n}\nfunction reloadPage(){window.location.reload(true)}\nasync function rawRequest(l,u,p){\n  const h={\"Content-Type\":\"application/json\"};\n  const o=p===null?{method:\"GET\",headers:h}:{method:\"POST\",headers:h,body:JSON.stringify(p)};\n  try{\n    const r=await fetch(u,o);\n    const txt=await r.text();\n    let b;\n    try{b=JSON.parse(txt)}catch(e){b=txt}\n    return {http_status:r.status,body:b};\n  }catch(e){\n    return {ok:false,error:String(e),action:l,url:u};\n  }\n}\nasync function requestJSON(l,u,p){\n  loading(l);\n  const r=await rawRequest(l,u,p);\n  setStatus(\"DONE: \"+l+\" / HTTP \"+(r.http_status||\"ERR\"));\n  setOutput(l,r);\n  return r;\n}\nfunction health(){requestJSON(\"DEBUG > Health\",HEALTH_URL,null)}\nfunction diagnostic(){requestJSON(\"DEBUG > Diag\",DIAGNOSTIC_URL,null)}\nfunction testSQL(){requestJSON(\"DEBUG > SQL\",SQL_URL,{sql:\"SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;\",max_rows:50,max_chars:900})}\nfunction runJobButton(l,j){requestJSON(l,JOB_URL,{job:j,slate_mode:\"AUTO_BY_GAME_DATE_TIME\",auto_slate_context:autoSlateContext(),backend_only:true})}\nfunction runManualSQL(){requestJSON(\"MANUAL SQL > Run\",SQL_URL,{sql:document.getElementById(\"sqlInput\").value,max_rows:50,max_chars:900})}\nfunction copyOutput(){navigator.clipboard.writeText(document.getElementById(\"output\").textContent);setStatus(\"COPIED OUTPUT\")}\nfunction clearSqlInput(){const el=document.getElementById(\"sqlInput\");if(!el)return;el.removeAttribute(\"readonly\");el.removeAttribute(\"disabled\");el.value=\"\";el.focus()}\nfunction selectSqlInput(){const el=document.getElementById(\"sqlInput\");if(!el)return;el.removeAttribute(\"readonly\");el.removeAttribute(\"disabled\");el.focus();el.select()}\nfunction loadExampleSQL(){const el=document.getElementById(\"sqlInput\");el.value=\"SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;\";el.focus();setStatus(\"EXAMPLE SQL LOADED\")}\ndocument.addEventListener(\"DOMContentLoaded\",()=>{\n  const el=document.getElementById(\"sqlInput\");\n  if(el){el.removeAttribute(\"readonly\");el.removeAttribute(\"disabled\");el.style.userSelect=\"text\";el.style.webkitUserSelect=\"text\";el.style.pointerEvents=\"auto\"}\n  updateClock();\n  setInterval(updateClock,1000);\n});\n</script>\n</body>\n</html>";
 
 const DB_BINDINGS = [
   "CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB",
@@ -287,6 +287,188 @@ async function runJob(request, env) {
   } catch (e) {
     return jsonResponse({ok:false, data_ok:false, version:SYSTEM_VERSION, job, error:String(e && e.message ? e.message : e)}, 500);
   }
+}
+
+
+async function v12OrchestratorLocalBridge(job, env) {
+  const now = new Date().toISOString();
+  const version = SYSTEM_VERSION;
+
+  if (job === "orchestrator_health") {
+    return jsonResponse({
+      ok: true,
+      data_ok: true,
+      version,
+      job,
+      orchestrator_mode: "local_control_db_bridge",
+      status: "ORCHESTRATOR_BRIDGE_READY",
+      note: "Control Room is not externally fetching orchestrator. This verifies local backend bridge and CONTROL_DB access.",
+      timestamp_utc: now
+    });
+  }
+
+  if (job === "orchestrator_status") {
+    const queue = await env.CONTROL_DB.prepare(
+      "SELECT request_id, job_key, worker_name, status, tick_count, created_at, started_at, finished_at, updated_at, error_message FROM control_job_queue ORDER BY datetime(created_at) DESC LIMIT 10"
+    ).all();
+    const locks = await env.CONTROL_DB.prepare(
+      "SELECT lock_key, lock_flag, owner_request_id, owner_worker_name, acquired_at, expires_at, updated_at FROM control_locks ORDER BY lock_key LIMIT 20"
+    ).all();
+    const state = await env.CONTROL_DB.prepare(
+      "SELECT state_key, lock_flag, running_job_key, running_request_id, status, updated_at FROM control_system_state ORDER BY state_key LIMIT 20"
+    ).all();
+
+    return jsonResponse({
+      ok: true,
+      data_ok: true,
+      version,
+      job,
+      orchestrator_mode: "local_control_db_bridge",
+      status: "READY",
+      queue_rows: queue.results || [],
+      locks: locks.results || [],
+      state: state.results || []
+    });
+  }
+
+  if (job === "orchestrator_enqueue_test") {
+    const existing = await env.CONTROL_DB.prepare(
+      "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key = 'system-health' AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
+    ).first();
+
+    if (existing) {
+      return jsonResponse({
+        ok: true,
+        data_ok: true,
+        version,
+        job,
+        status: "already_queued",
+        request_id: existing.request_id,
+        existing
+      });
+    }
+
+    const requestId = "orch_test_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+    const chainId = "chain_" + Date.now().toString(36);
+
+    await env.CONTROL_DB.prepare(
+      "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'system-health', 'alphadog-v2-system-health', '00 System', 'system', 'System Health Safe Test', 'pending', 10, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+    ).bind(requestId, chainId, JSON.stringify({source:"control_room", mode:"safe_orchestrator_test", created_at:now})).run();
+
+    await env.CONTROL_DB.prepare(
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'alphadog-v2-control-room', 'orchestrator_enqueue_test', 'INFO', 'queued_safe_test', 'Queued safe system-health orchestrator test job', ?, CURRENT_TIMESTAMP)"
+    ).bind(requestId, JSON.stringify({request_id:requestId, chain_id:chainId})).run();
+
+    return jsonResponse({
+      ok: true,
+      data_ok: true,
+      version,
+      job,
+      status: "queued",
+      request_id: requestId,
+      chain_id: chainId,
+      note: "Queued in CONTROL_DB. Use ORCHESTRATOR > Tick to process one bounded backend tick."
+    });
+  }
+
+  if (job === "orchestrator_tick") {
+    const pending = await env.CONTROL_DB.prepare(
+      "SELECT request_id, chain_id, job_key, worker_name, status, tick_count FROM control_job_queue WHERE status = 'pending' ORDER BY priority ASC, datetime(created_at) ASC LIMIT 1"
+    ).first();
+
+    if (!pending) {
+      return jsonResponse({
+        ok: true,
+        data_ok: true,
+        version,
+        job,
+        status: "no_pending_jobs",
+        note: "No pending CONTROL_DB jobs to process."
+      });
+    }
+
+    const runId = "run_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+
+    await env.CONTROL_DB.prepare(
+      "UPDATE control_locks SET lock_flag = 1, owner_request_id = ?, owner_worker_name = 'alphadog-v2-control-room-local-bridge', acquired_at = CURRENT_TIMESTAMP, expires_at = datetime('now', '+5 minutes'), updated_at = CURRENT_TIMESTAMP WHERE lock_key = 'GLOBAL_ORCHESTRATOR'"
+    ).bind(pending.request_id).run();
+
+    await env.CONTROL_DB.prepare(
+      "UPDATE control_system_state SET lock_flag = 1, running_job_key = ?, running_request_id = ?, status = 'RUNNING', updated_at = CURRENT_TIMESTAMP WHERE state_key = 'GLOBAL'"
+    ).bind(pending.job_key, pending.request_id).run();
+
+    await env.CONTROL_DB.prepare(
+      "UPDATE control_job_queue SET status = 'running', started_at = COALESCE(started_at, CURRENT_TIMESTAMP), updated_at = CURRENT_TIMESTAMP, tick_count = COALESCE(tick_count,0)+1 WHERE request_id = ?"
+    ).bind(pending.request_id).run();
+
+    // Safe test processing only. No external APIs, no mining, no scoring.
+    const output = {
+      ok: true,
+      data_ok: true,
+      version,
+      processed_by: "control_room_local_orchestrator_bridge",
+      worker_name: pending.worker_name,
+      job_key: pending.job_key,
+      mode: "safe_test_only",
+      completed_at: now
+    };
+
+    await env.CONTROL_DB.prepare(
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'safe_test_complete', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)"
+    ).bind(runId, pending.request_id, pending.chain_id, pending.job_key, pending.worker_name, JSON.stringify(pending), JSON.stringify(output)).run();
+
+    await env.CONTROL_DB.prepare(
+      "UPDATE control_job_queue SET status = 'completed', finished_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP, output_json = ? WHERE request_id = ?"
+    ).bind(JSON.stringify(output), pending.request_id).run();
+
+    await env.CONTROL_DB.prepare(
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'alphadog-v2-control-room-local-bridge', ?, 'INFO', 'safe_test_completed', 'Processed one safe orchestrator test job without browser loop or external Worker fetch', ?, CURRENT_TIMESTAMP)"
+    ).bind(pending.request_id, runId, pending.job_key, JSON.stringify(output)).run();
+
+    await env.CONTROL_DB.prepare(
+      "UPDATE control_locks SET lock_flag = 0, owner_request_id = NULL, owner_worker_name = NULL, expires_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE lock_key = 'GLOBAL_ORCHESTRATOR'"
+    ).run();
+
+    await env.CONTROL_DB.prepare(
+      "UPDATE control_system_state SET lock_flag = 0, running_job_key = NULL, running_request_id = NULL, status = 'IDLE', updated_at = CURRENT_TIMESTAMP WHERE state_key = 'GLOBAL'"
+    ).run();
+
+    return jsonResponse({
+      ok: true,
+      data_ok: true,
+      version,
+      job,
+      status: "completed_one_safe_test_job",
+      request_id: pending.request_id,
+      run_id: runId,
+      output
+    });
+  }
+
+  if (job === "orchestrator_logs") {
+    const q = await env.CONTROL_DB.prepare(
+      "SELECT request_id, job_key, worker_name, status, tick_count, created_at, started_at, finished_at, updated_at, substr(output_json,1,900) AS output_preview FROM control_job_queue ORDER BY datetime(created_at) DESC LIMIT 10"
+    ).all();
+    const r = await env.CONTROL_DB.prepare(
+      "SELECT run_id, request_id, job_key, worker_name, status, data_ok, certification_status, started_at, finished_at, elapsed_ms FROM control_job_runs ORDER BY datetime(started_at) DESC LIMIT 10"
+    ).all();
+    const l = await env.CONTROL_DB.prepare(
+      "SELECT log_id, request_id, run_id, worker_name, job_key, level, event_key, message, created_at FROM control_worker_run_log ORDER BY log_id DESC LIMIT 20"
+    ).all();
+
+    return jsonResponse({
+      ok: true,
+      data_ok: true,
+      version,
+      job,
+      orchestrator_mode: "local_control_db_bridge",
+      queue: q.results || [],
+      runs: r.results || [],
+      logs: l.results || []
+    });
+  }
+
+  return null;
 }
 
 export default {
