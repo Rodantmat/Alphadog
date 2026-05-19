@@ -5,10 +5,30 @@ CREATE TABLE IF NOT EXISTS ref_teams (
   mlb_team_id INTEGER,
   abbreviation TEXT,
   full_name TEXT,
+  nickname TEXT,
+  location_name TEXT,
+  short_name TEXT,
+  team_code TEXT,
+  file_code TEXT,
   league TEXT,
   division TEXT,
   active INTEGER DEFAULT 1,
+  source_key TEXT,
   raw_json TEXT,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE IF NOT EXISTS ref_team_aliases (
+  alias_key TEXT PRIMARY KEY,
+  team_id TEXT,
+  mlb_team_id INTEGER,
+  alias_value TEXT,
+  alias_normalized TEXT,
+  alias_type TEXT,
+  source_key TEXT,
+  confidence TEXT,
+  active INTEGER DEFAULT 1,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -68,8 +88,12 @@ CREATE TABLE IF NOT EXISTS ref_prop_aliases (
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS idx_ref_teams_mlb ON ref_teams(mlb_team_id);
+CREATE INDEX IF NOT EXISTS idx_ref_teams_abbr ON ref_teams(abbreviation);
+CREATE INDEX IF NOT EXISTS idx_ref_team_aliases_lookup ON ref_team_aliases(alias_normalized, active);
+CREATE INDEX IF NOT EXISTS idx_ref_team_aliases_team ON ref_team_aliases(team_id, active);
 CREATE INDEX IF NOT EXISTS idx_ref_players_team ON ref_players(primary_team_id, active);
 CREATE INDEX IF NOT EXISTS idx_ref_alias_player ON ref_player_aliases(player_id);
 CREATE INDEX IF NOT EXISTS idx_ref_rosters_date_team ON ref_rosters(slate_date, team_id);
 
-INSERT OR REPLACE INTO ref_schema_migrations VALUES ('schema_ref_db_v0_1', 'alphadog-v2-schema-phase-pack-v0.1', CURRENT_TIMESTAMP, 'Initial REF_DB schema');
+INSERT OR REPLACE INTO ref_schema_migrations VALUES ('schema_ref_db_v0_1', 'alphadog-v2-schema-phase-pack-v0.1', CURRENT_TIMESTAMP, 'Initial REF_DB schema plus additive static team dictionary support');
