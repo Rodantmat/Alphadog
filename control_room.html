@@ -3,31 +3,34 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v0.4 - compact phone control room shell -->
+<!-- alphadog-v2-control-room-v0.5 - embedded compact phone UI -->
 <style>
-body{background:#0b0f14;color:#00ff88;font-family:monospace;padding:10px;margin:0}
-h2{font-size:20px;color:#00ff88;letter-spacing:.05em} h3{color:#fff;font-size:13px;letter-spacing:.05em;margin:8px 0}
-.section{border-top:1px solid #30363d;padding-top:7px;margin-top:9px}
-.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
-button{padding:6px 3px;font-size:10px;border:0;border-radius:6px;background:#1f6feb;color:#fff;min-height:38px;white-space:normal;overflow:hidden;text-overflow:clip;line-height:1.05;display:flex;align-items:center;justify-content:center;text-align:center;word-break:normal}
-.clean{background:#da3633}.check{background:#238636}.sql{background:#d29922}.debug{background:#8957e5}.audit{background:#0f766e}.slate{background:#7c3aed}
-.copy{background:#8957e5;width:100%;margin-top:6px}
-input,textarea{width:100%;box-sizing:border-box;background:#111;color:#00ff88;border:1px solid #30363d;border-radius:6px;margin-top:6px;padding:8px}
-textarea{height:88px}
-pre{background:#000;color:#00ff88;padding:8px;margin-top:8px;overflow:auto;max-height:420px;min-height:150px;border:1px solid #30363d;border-radius:6px;white-space:pre-wrap;word-break:break-word}
-.status{background:#111;color:#fff;padding:8px;border-radius:6px;border:1px solid #30363d;margin:8px 0;white-space:pre-wrap}
-.small,.muted{font-size:11px;color:#aaa}
-#versionTag{color:#9ae6b4;font-family:inherit;font-size:13px;font-weight:800;letter-spacing:.04em;margin-top:5px;margin-bottom:10px}
+:root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--green);font-family:monospace;padding:8px;margin:0;max-width:100vw;overflow-x:hidden}
+h2{font-size:18px;color:var(--green);letter-spacing:.045em;margin:10px 0 8px 0}
+h3{color:var(--white);font-size:12px;letter-spacing:.045em;margin:7px 0}
+.section{border-top:1px solid var(--line);padding-top:7px;margin-top:9px}
+.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;width:100%}
+button{min-width:0;width:100%;padding:4px 1px;font-size:8.5px;border:0;border-radius:5px;background:#1f6feb;color:var(--white);min-height:31px;white-space:normal;overflow:hidden;text-overflow:clip;line-height:1.0;display:flex;align-items:center;justify-content:center;text-align:center;word-break:normal}
+.clean{background:var(--clean)}.check{background:var(--check)}.sql{background:var(--sql)}.debug{background:var(--debug)}.audit{background:var(--audit)}
+.copy{background:var(--debug);width:100%;margin-top:6px;min-height:34px;font-size:10px}
+input,textarea{width:100%;box-sizing:border-box;background:#111;color:var(--green);border:1px solid var(--line);border-radius:6px;margin-top:6px;padding:7px;font-size:12px}
+textarea{height:82px}
+pre{background:#000;color:var(--green);padding:8px;margin-top:8px;overflow:auto;max-height:420px;min-height:150px;border:1px solid var(--line);border-radius:6px;white-space:pre-wrap;word-break:break-word;font-size:11px}
+.status{background:#111;color:var(--white);padding:7px;border-radius:6px;border:1px solid var(--line);margin:7px 0;white-space:pre-wrap;font-size:11px}
+.small,.muted{font-size:10px;color:var(--muted)}
+#versionTag{color:#9ae6b4;font-family:inherit;font-size:12px;font-weight:800;letter-spacing:.035em;margin-top:5px;margin-bottom:8px}
 textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-events:auto}
-@media (max-width:720px){body{padding:9px}.grid{grid-template-columns:repeat(5,1fr);gap:4px}button{font-size:10px;min-height:38px;padding:5px 2px;border-radius:6px}h2{font-size:18px}h3{font-size:12px}.small,.muted{font-size:10px}}
-@media (max-width:390px){button{font-size:9px;min-height:36px;padding:4px 1px}.grid{gap:3px}}
+@media (max-width:430px){body{padding:8px}.grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}button{font-size:8px;min-height:30px;padding:3px 1px;border-radius:5px}h2{font-size:17px}h3{font-size:11px}.small,.muted{font-size:9.5px}}
+@media (max-width:370px){button{font-size:7.5px;min-height:29px}.grid{gap:2px}}
 </style>
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v0.4</div>
+<div id="versionTag">alphadog-v2-control-room-v0.5</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
-<div class="small">Slate: AUTO by game date/time. No manual slate override in v2 Control Room.</div>
+<div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
 <div class="status" id="status">READY</div>
 
 <div class="section"><h3>DEBUG</h3><div class="grid">
@@ -47,17 +50,17 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <button class="audit" type="button" onclick="runJobButton('V2 BOOTSTRAP / SCHEMA > Props','v2_prop_taxonomy')">Props</button>
 <button class="audit" type="button" onclick="runJobButton('V2 BOOTSTRAP / SCHEMA > Certs','v2_certification_rules')">Certs</button>
 <button class="debug" type="button" onclick="runJobButton('V2 BOOTSTRAP / SCHEMA > Bindings','v2_bindings_check')">Bindings</button>
-</div><div class="small">V2 management only. No mining, no scoring, no old production writes.</div></div>
+</div><div class="small">V2 only. No mining, no scoring, no old production writes.</div></div>
 
 <div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
 <button class="check" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Queue','v2_queue_status')">Queue</button>
 <button class="check" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Locks','v2_lock_status')">Locks</button>
 <button class="audit" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Snap','v2_health_snapshot')">Snap</button>
 <button class="clean" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Clear Q','v2_clear_open_queue')">Clear Q</button>
-</div><div class="small">Clear Open Queue only changes v2 CONTROL_DB queue/lock state. It does not delete real data and does not touch old production.</div></div>
+</div><div class="small">Clear Q only changes v2 CONTROL_DB queue/lock state.</div></div>
 
 <div class="section"><h3>MANUAL SQL</h3>
-<div class="muted">Output guard active: max 50 rows, long text cells truncated. V2 auto-routes known table prefixes. Optional first line: -- db: CONFIG_DB</div>
+<div class="muted">Output guard active: max 50 rows. Optional first line: -- db: CONFIG_DB</div>
 <textarea id="sqlInput" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" inputmode="text"></textarea>
 <div class="grid">
 <button class="sql" type="button" onclick="runManualSQL()">Run</button>
@@ -79,7 +82,6 @@ const CONFIG_URL="https://raw.githubusercontent.com/Rodantmat/Alphadog/main/conf
 let TOKEN="";
 let CONFIG_LOADED=false;
 
-function pad2(n){return String(n).padStart(2,"0")}
 function ptParts(){
   const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(new Date()),m={};
   parts.forEach(p=>m[p.type]=p.value);
@@ -102,7 +104,7 @@ function loading(l,e){setStatus("RUNNING: "+l);setOutput(l,"Loading..."+(e?"\n"+
 function tokenFingerprint(){return TOKEN?{loaded:true,length:TOKEN.length,starts_with:TOKEN.slice(0,2),ends_with:TOKEN.slice(-2)}:{loaded:false,length:0}}
 async function loadConfig(){
   try{
-    loading("Reload Config");
+    loading("DEBUG > Reload");
     const r=await fetch(CONFIG_URL+"?t="+Date.now(),{cache:"no-store"});
     const t=await r.text();
     const m=t.match(/^\s*TOKEN\s*=\s*(.+?)\s*$/m);
@@ -110,21 +112,21 @@ async function loadConfig(){
       TOKEN=m[1].trim().replace(/^["']|["']$/g,"");
       CONFIG_LOADED=true;
       setStatus("CONFIG LOADED");
-      setOutput("Reload Config",{config_loaded:true,token_fingerprint:tokenFingerprint()})
+      setOutput("DEBUG > Reload",{config_loaded:true,token_fingerprint:tokenFingerprint()})
     }else{
       TOKEN="";
       CONFIG_LOADED=false;
       setStatus("CONFIG NOT LOADED");
-      setOutput("Reload Config",{config_loaded:false,error:"TOKEN line not found. Protected buttons need config.txt with TOKEN=your_admin_token.",config_url:CONFIG_URL})
+      setOutput("DEBUG > Reload",{config_loaded:false,error:"TOKEN line not found. Protected buttons need config.txt with TOKEN=your_admin_token.",config_url:CONFIG_URL})
     }
   }catch(e){
     TOKEN="";
     CONFIG_LOADED=false;
     setStatus("CONFIG LOAD FAILED");
-    setOutput("Reload Config",{config_loaded:false,error:String(e),config_url:CONFIG_URL})
+    setOutput("DEBUG > Reload",{config_loaded:false,error:String(e),config_url:CONFIG_URL})
   }
 }
-function debugConfig(){setOutput("DEBUG > Config",{base:BASE,config_url:CONFIG_URL,auto_slate:autoSlateContext(),token_set:Boolean(TOKEN),config_loaded:CONFIG_LOADED,token_fingerprint:tokenFingerprint(),version:"alphadog-v2-control-room-v0.4"})}
+function debugConfig(){setOutput("DEBUG > Config",{base:BASE,config_url:CONFIG_URL,auto_slate:autoSlateContext(),token_set:Boolean(TOKEN),config_loaded:CONFIG_LOADED,token_fingerprint:tokenFingerprint(),version:"alphadog-v2-control-room-v0.5"})}
 async function rawRequest(l,u,p){
   if(p!==null && (!CONFIG_LOADED||!TOKEN)) await loadConfig();
   const h={"Content-Type":"application/json"};
