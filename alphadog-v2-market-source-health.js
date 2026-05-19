@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-source-health";
-const VERSION = "alphadog-v2-market-source-health-v0.1";
+const VERSION = "alphadog-v2-market-source-health-v0.1.1";
 const JOB_KEY = "market-source-health";
 const SOURCE_KEY = "prizepicks_github";
 
@@ -72,10 +72,11 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "READY",
     timestamp_utc: nowUtc(),
-    phase: "market_source_health_v0_1",
+    phase: "market_source_health_v0_1_1",
     notes: [
       "Bounded source-health worker only.",
-      "Fetches configured PrizePicks GitHub JSON only.",
+      "Fetches configured PrizePicks GitHub source path only.",
+      "Reads CONFIG_DB.config_system_settings first, then Worker vars as fallback.",
       "Writes only MARKET_DB.market_source_health.",
       "No normalization, no scoring, no final board writes."
     ],
@@ -124,17 +125,58 @@ async function validateMarketSourceHealthSchema(env) {
   };
 }
 
-function rawGithubUrl(env) {
-  const owner = String(env.GITHUB_OWNER || "Rodantmat").trim();
-  const repo = String(env.GITHUB_REPO || "Alphadog").trim();
-  const branch = String(env.GITHUB_BRANCH || "main").trim();
-  const path = String(env.GITHUB_PRIZEPICKS_PATH || "prizepicks_mlb_current.json").replace(/^\/+/, "").trim();
+async function readConfigSystemSettings(env, keys) {
+  const out = {};
+  if (!env.CONFIG_DB) return out;
+
+  try {
+    const placeholders = keys.map(() => "?").join(",");
+    const rows = await all(
+      env.CONFIG_DB,
+      `SELECT setting_key, setting_value FROM config_system_settings WHERE setting_key IN (${placeholders})`,
+      ...keys
+    );
+    for (const row of rows) {
+      if (row && row.setting_key) out[String(row.setting_key)] = row.setting_value;
+    }
+  } catch (err) {
+    out.__config_read_error = safeString(err && err.message ? err.message : err, 500);
+  }
+
+  return out;
+}
+
+function buildRawGithubUrl(owner, repo, branch, path) {
+  const cleanPath = String(path || "").replace(/^\/+/, "").trim();
+  return `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${cleanPath.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+async function githubSourceConfig(env) {
+  const keys = ["GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH"];
+  const dbSettings = await readConfigSystemSettings(env, keys);
+
+  const owner = String(dbSettings.GITHUB_OWNER || env.GITHUB_OWNER || "Rodantmat").trim();
+  const repo = String(dbSettings.GITHUB_REPO || env.GITHUB_REPO || "Alphadog").trim();
+  const branch = String(dbSettings.GITHUB_BRANCH || env.GITHUB_BRANCH || "main").trim();
+  const path = String(dbSettings.GITHUB_PRIZEPICKS_PATH || env.GITHUB_PRIZEPICKS_PATH || "alphadog-v2-prizepicks-github-board.js").replace(/^\/+/, "").trim();
+
   return {
     owner,
     repo,
     branch,
     path,
-    url: `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${path.split("/").map(encodeURIComponent).join("/")}`
+    url: buildRawGithubUrl(owner, repo, branch, path),
+    config_resolution: {
+      source: dbSettings.GITHUB_PRIZEPICKS_PATH ? "CONFIG_DB.config_system_settings" : "worker_vars_fallback",
+      config_db_read_error: dbSettings.__config_read_error || null,
+      db_keys_present: {
+        GITHUB_OWNER: dbSettings.GITHUB_OWNER !== undefined,
+        GITHUB_REPO: dbSettings.GITHUB_REPO !== undefined,
+        GITHUB_BRANCH: dbSettings.GITHUB_BRANCH !== undefined,
+        GITHUB_PRIZEPICKS_PATH: dbSettings.GITHUB_PRIZEPICKS_PATH !== undefined
+      },
+      worker_var_keys_present: varPresence(env, keys)
+    }
   };
 }
 
@@ -162,6 +204,31 @@ function detectArray(json) {
   }
 
   return { key: "no_known_array", rows: [] };
+}
+
+function extractConst(text, name) {
+  const re = new RegExp(`const\\s+${name}\\s*=\\s*["']([^"']+)["']`);
+  const match = String(text || "").match(re);
+  return match ? match[1] : null;
+}
+
+function looksLikeAlphaDogWorkerScript(text) {
+  const body = String(text || "");
+  return body.includes("export default") && body.includes("WORKER_NAME") && body.includes("JOB_KEY");
+}
+
+function summarizeWorkerScript(text) {
+  const body = String(text || "");
+  return {
+    file_type: "javascript_worker_script",
+    worker_name: extractConst(body, "WORKER_NAME"),
+    version: extractConst(body, "VERSION"),
+    job_key: extractConst(body, "JOB_KEY"),
+    has_export_default: body.includes("export default"),
+    has_run_route: body.includes('path === "/run"') || body.includes("path === '/run'"),
+    size_bytes_estimate: new TextEncoder().encode(body).length,
+    line_count_estimate: body ? body.split(/\r?\n/).length : 0
+  };
 }
 
 function findFreshness(json) {
@@ -237,7 +304,7 @@ async function runSourceHealth(env, input = {}) {
     };
   }
 
-  const source = rawGithubUrl(env);
+  const source = await githubSourceConfig(env);
   const requestId = input.request_id || null;
   const chainId = input.chain_id || null;
   const fetchStarted = nowUtc();
@@ -324,6 +391,58 @@ async function runSourceHealth(env, input = {}) {
       source_key: SOURCE_KEY,
       status: "error",
       certification: "SOURCE_HTTP_ERROR",
+      rows_read: 0,
+      rows_written: 1,
+      external_calls_performed: 1,
+      elapsed_ms: Date.now() - started,
+      health,
+      write,
+      timestamp_utc: nowUtc()
+    };
+  }
+
+  const pathLower = String(source.path || "").toLowerCase();
+  const isJavascriptSource = pathLower.endsWith(".js") || String(contentType || "").includes("javascript") || looksLikeAlphaDogWorkerScript(text);
+
+  if (isJavascriptSource) {
+    const scriptShape = summarizeWorkerScript(text);
+    const expectedWorker = scriptShape.worker_name === "alphadog-v2-prizepicks-github-board" || String(source.path || "").includes("prizepicks-github-board");
+    const healthy = Boolean(expectedWorker && scriptShape.has_export_default);
+    const status = healthy ? "healthy" : "warning";
+    const certification = healthy ? "SOURCE_REACHABLE_WORKER_SCRIPT_PRESENT" : "SOURCE_REACHABLE_WORKER_SCRIPT_UNVERIFIED";
+    const health = {
+      version: VERSION,
+      request_id: requestId,
+      chain_id: chainId,
+      source_key: SOURCE_KEY,
+      source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution },
+      fetch_started_at: fetchStarted,
+      checked_at: nowUtc(),
+      reachable: true,
+      http_status: httpStatus,
+      content_type: contentType,
+      response_size_bytes: sizeBytes,
+      json_parse_ok: false,
+      source_file_mode: "javascript_worker_script",
+      script_shape: scriptShape,
+      no_normalization: true,
+      no_scoring: true,
+      no_market_line_writes: true,
+      note: "Configured source path is a repository Worker script, not a JSON board dump. v0.1.1 validates reachability and identity only."
+    };
+    const write = await writeHealth(env, status, 0, health, healthy ? null : "Worker script reachable but expected PrizePicks board identity was not verified");
+
+    return {
+      ok: true,
+      data_ok: healthy,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      request_id: requestId,
+      chain_id: chainId,
+      source_key: SOURCE_KEY,
+      status,
+      certification,
       rows_read: 0,
       rows_written: 1,
       external_calls_performed: 1,
@@ -455,7 +574,8 @@ export default {
         checks: {
           db_bindings: db,
           config_values_present: secrets,
-          market_source_health_schema: schema
+          market_source_health_schema: schema,
+          github_source_config: await githubSourceConfig(env)
         },
         safe_secret_note: "Secret/config values are presence-checked only. Values are intentionally never printed."
       });
@@ -480,7 +600,7 @@ export default {
           db_bindings: db,
           config_values_present: secrets,
           market_source_health_schema: schema,
-          github_source_config: rawGithubUrl(env)
+          github_source_config: await githubSourceConfig(env)
         },
         writes_performed: 0,
         external_calls_performed: 0
