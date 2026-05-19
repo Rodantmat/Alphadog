@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-static-park-factors";
-const VERSION = "alphadog-v2-static-park-factors-v0.1.0";
+const VERSION = "alphadog-v2-static-park-factors-v0.1.1-run-key-and-team-fallback";
 const JOB_KEY = "static-park-factors";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -202,40 +202,114 @@ function indexByVenue(rows) {
   return map;
 }
 
-function buildRow({ stadium, overall, left, right, rolling }) {
-  const runFactor = num(overall && overall.index_run);
-  const hrFactor = num(overall && overall.index_hr);
-  const lhbRun = num(left && left.index_run);
-  const rhbRun = num(right && right.index_run);
-  const lhbHr = num(left && left.index_hr);
-  const rhbHr = num(right && right.index_hr);
-  const mlbVenueId = num(stadium.mlb_venue_id);
+function abbrKey(value) {
+  return text(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+function indexByTeamAlt(rows) {
+  const map = new Map();
+  for (const row of rows || []) {
+    const keys = [abbrKey(row.team_name_alt), abbrKey(row.team_name), abbrKey(row.team_code), abbrKey(row.abbreviation)].filter(Boolean);
+    for (const key of keys) if (!map.has(key)) map.set(key, row);
+  }
+  return map;
+}
+
+function getMetric(row, candidateKeys) {
+  if (!row) return { value: null, key: null };
+  for (const key of candidateKeys) {
+    if (Object.prototype.hasOwnProperty.call(row, key)) {
+      const v = num(row[key]);
+      if (v !== null && v !== 0) return { value: v, key };
+    }
+  }
+  for (const key of candidateKeys) {
+    if (Object.prototype.hasOwnProperty.call(row, key)) {
+      const v = num(row[key]);
+      if (v !== null) return { value: v, key };
+    }
+  }
+  return { value: null, key: null };
+}
+
+const RUN_FACTOR_KEYS = ["index_r", "index_run", "index_runs", "index_R", "index_RUN", "r", "R", "run", "runs"];
+const HR_FACTOR_KEYS = ["index_hr", "index_HR", "hr", "HR", "home_run", "home_runs"];
+
+function getCompleteRows(maps, stadium) {
+  if (!maps) return null;
+  const venue = String(num(stadium.mlb_venue_id));
+  const team = abbrKey(stadium.abbreviation);
+  let matchMode = "venue_id";
+  let overall = maps.bothByVenue.get(venue);
+  let left = maps.lByVenue.get(venue);
+  let right = maps.rByVenue.get(venue);
+  if (!(overall && left && right) && team) {
+    const tOverall = maps.bothByTeam.get(team);
+    const tLeft = maps.lByTeam.get(team);
+    const tRight = maps.rByTeam.get(team);
+    if (tOverall && tLeft && tRight) {
+      overall = tOverall;
+      left = tLeft;
+      right = tRight;
+      matchMode = "team_abbreviation_fallback";
+    }
+  }
+  return overall && left && right ? { overall, left, right, matchMode } : null;
+}
+
+function buildRow({ stadium, overall, left, right, rolling, matchMode }) {
+  const run = getMetric(overall, RUN_FACTOR_KEYS);
+  const hr = getMetric(overall, HR_FACTOR_KEYS);
+  const lhbRunMetric = getMetric(left, RUN_FACTOR_KEYS);
+  const rhbRunMetric = getMetric(right, RUN_FACTOR_KEYS);
+  const lhbHrMetric = getMetric(left, HR_FACTOR_KEYS);
+  const rhbHrMetric = getMetric(right, HR_FACTOR_KEYS);
+  const sourceVenueId = num(overall && overall.venue_id);
+  const refVenueId = num(stadium.mlb_venue_id);
+  const mlbVenueId = sourceVenueId !== null ? sourceVenueId : refVenueId;
   const rollingLabel = rolling === PRIMARY_ROLLING ? "3_YEAR" : "1_YEAR_FALLBACK";
   const sourceKey = rolling === PRIMARY_ROLLING ? PRIMARY_SOURCE_KEY : FALLBACK_SOURCE_KEY;
+  const sourceParkName = text(overall && overall.venue_name);
   const raw = {
     extraction_method: "baseball_savant_html_var_data_regex",
     season_year: SEASON_YEAR,
     rolling_window: rollingLabel,
     source_url_base: SOURCE_BASE_URL,
-    matched_by: "ref_stadiums.mlb_venue_id_to_savant_venue_id",
+    matched_by: matchMode || "venue_id",
+    source_metric_keys: {
+      run_factor: run.key,
+      hr_factor: hr.key,
+      lhb_run_factor: lhbRunMetric.key,
+      rhb_run_factor: rhbRunMetric.key,
+      lhb_hr_factor: lhbHrMetric.key,
+      rhb_hr_factor: rhbHrMetric.key
+    },
+    reference_stadium: {
+      stadium_id: stadium.stadium_id,
+      stadium_name: stadium.stadium_name,
+      mlb_venue_id: refVenueId,
+      team_id: stadium.team_id,
+      abbreviation: stadium.abbreviation
+    },
+    source_venue_id_differs_from_ref: sourceVenueId !== null && refVenueId !== null && sourceVenueId !== refVenueId,
     both_source_row: overall,
     lhb_source_row: left,
     rhb_source_row: right
   };
 
   return {
-    park_factor_id: `pf_${SEASON_YEAR}_${rolling === PRIMARY_ROLLING ? "rolling3" : "rolling1fb"}_${safeId(stadium.stadium_id)}`,
+    park_factor_id: `pf_${SEASON_YEAR}_${rolling === PRIMARY_ROLLING ? "rolling3" : "rolling1fb"}_${safeId(stadium.team_id)}_${safeId(sourceParkName || stadium.stadium_name || stadium.stadium_id)}`,
     stadium_id: text(stadium.stadium_id),
     mlb_venue_id: mlbVenueId,
     team_id: text(stadium.team_id),
-    park_name: text(stadium.stadium_name || (overall && overall.venue_name)),
+    park_name: sourceParkName || text(stadium.stadium_name),
     season_year: SEASON_YEAR,
-    run_factor: runFactor,
-    hr_factor: hrFactor,
-    lhb_run_factor: lhbRun,
-    rhb_run_factor: rhbRun,
-    lhb_hr_factor: lhbHr,
-    rhb_hr_factor: rhbHr,
+    run_factor: run.value,
+    hr_factor: hr.value,
+    lhb_run_factor: lhbRunMetric.value,
+    rhb_run_factor: rhbRunMetric.value,
+    lhb_hr_factor: lhbHrMetric.value,
+    rhb_hr_factor: rhbHrMetric.value,
     factor_scale: FACTOR_SCALE,
     source_key: sourceKey,
     source_name: SOURCE_NAME,
@@ -244,7 +318,8 @@ function buildRow({ stadium, overall, left, right, rolling }) {
     raw_json: JSON.stringify(raw).slice(0, 65000),
     rolling_window: rollingLabel,
     team_abbreviation: text(stadium.abbreviation),
-    source_team_name_alt: text(overall && overall.team_name_alt)
+    source_team_name_alt: text(overall && overall.team_name_alt),
+    match_mode: matchMode || "venue_id"
   };
 }
 
@@ -319,13 +394,19 @@ async function runStaticParkFactors(env, input = {}) {
   const primaryL = await fetchSavant({ batSide: "L", rolling: PRIMARY_ROLLING }); fetches.push({ label: "primary_lhb", ...primaryL, rows: undefined });
   const primaryR = await fetchSavant({ batSide: "R", rolling: PRIMARY_ROLLING }); fetches.push({ label: "primary_rhb", ...primaryR, rows: undefined });
 
-  const primaryMaps = { both: indexByVenue(primaryBoth.rows), l: indexByVenue(primaryL.rows), r: indexByVenue(primaryR.rows) };
+  const primaryMaps = {
+    bothByVenue: indexByVenue(primaryBoth.rows),
+    lByVenue: indexByVenue(primaryL.rows),
+    rByVenue: indexByVenue(primaryR.rows),
+    bothByTeam: indexByTeamAlt(primaryBoth.rows),
+    lByTeam: indexByTeamAlt(primaryL.rows),
+    rByTeam: indexByTeamAlt(primaryR.rows)
+  };
 
   let fallbackMaps = null;
   let fallbackFetches = [];
   function primaryCompleteFor(stadium) {
-    const venue = String(num(stadium.mlb_venue_id));
-    return primaryMaps.both.has(venue) && primaryMaps.l.has(venue) && primaryMaps.r.has(venue);
+    return Boolean(getCompleteRows(primaryMaps, stadium));
   }
 
   const needsFallback = activeStadiums.filter(s => !primaryCompleteFor(s));
@@ -333,29 +414,36 @@ async function runStaticParkFactors(env, input = {}) {
     const fbBoth = await fetchSavant({ batSide: "", rolling: FALLBACK_ROLLING }); fallbackFetches.push({ label: "fallback_both", ...fbBoth, rows: undefined });
     const fbL = await fetchSavant({ batSide: "L", rolling: FALLBACK_ROLLING }); fallbackFetches.push({ label: "fallback_lhb", ...fbL, rows: undefined });
     const fbR = await fetchSavant({ batSide: "R", rolling: FALLBACK_ROLLING }); fallbackFetches.push({ label: "fallback_rhb", ...fbR, rows: undefined });
-    fallbackMaps = { both: indexByVenue(fbBoth.rows), l: indexByVenue(fbL.rows), r: indexByVenue(fbR.rows) };
+    fallbackMaps = {
+      bothByVenue: indexByVenue(fbBoth.rows),
+      lByVenue: indexByVenue(fbL.rows),
+      rByVenue: indexByVenue(fbR.rows),
+      bothByTeam: indexByTeamAlt(fbBoth.rows),
+      lByTeam: indexByTeamAlt(fbL.rows),
+      rByTeam: indexByTeamAlt(fbR.rows)
+    };
   }
 
   const finalRows = [];
   const missing = [];
   for (const stadium of activeStadiums) {
-    const venue = String(num(stadium.mlb_venue_id));
-    let maps = primaryMaps;
+    let matched = getCompleteRows(primaryMaps, stadium);
     let rolling = PRIMARY_ROLLING;
-    if (!(maps.both.has(venue) && maps.l.has(venue) && maps.r.has(venue))) {
-      maps = fallbackMaps;
+    if (!matched) {
+      matched = getCompleteRows(fallbackMaps, stadium);
       rolling = FALLBACK_ROLLING;
     }
-    if (!maps || !(maps.both.has(venue) && maps.l.has(venue) && maps.r.has(venue))) {
+    if (!matched) {
       missing.push({ stadium_id: stadium.stadium_id, park_name: stadium.stadium_name, team_id: stadium.team_id, team_abbreviation: stadium.abbreviation, mlb_venue_id: stadium.mlb_venue_id });
       continue;
     }
     finalRows.push(buildRow({
       stadium,
-      overall: maps.both.get(venue),
-      left: maps.l.get(venue),
-      right: maps.r.get(venue),
-      rolling
+      overall: matched.overall,
+      left: matched.left,
+      right: matched.right,
+      rolling,
+      matchMode: matched.matchMode
     }));
   }
 
@@ -366,7 +454,7 @@ async function runStaticParkFactors(env, input = {}) {
       data_ok: false,
       status: "certification_failed_no_writes",
       certification: "STATIC_PARK_FACTORS_CERTIFICATION_FAILED_NO_WRITES",
-      rows_read: activeStadiums.length + primaryBoth.rows.length + primaryL.rows.length + primaryR.rows.length,
+      rows_read: activeStadiums.length + primaryBoth.rows.length + primaryL.rows.length + primaryR.rows.length + fallbackFetches.reduce((a, f) => a + (f.row_count || 0), 0),
       rows_written: 0,
       external_calls_performed: fetches.length + fallbackFetches.length,
       fetch_summary: fetches.concat(fallbackFetches).map(f => ({ label: f.label, url: f.url, http_status: f.http_status, row_count: f.row_count })),
@@ -404,14 +492,14 @@ async function runStaticParkFactors(env, input = {}) {
     primary_rolling_window: "3_YEAR",
     fallback_policy: "Use rolling=1 only for active stadiums missing from rolling=3 payload; never use neutral placeholders.",
     rolling_split: rollingSplit,
-    rows_read: activeStadiums.length + primaryBoth.rows.length + primaryL.rows.length + primaryR.rows.length,
+    rows_read: activeStadiums.length + primaryBoth.rows.length + primaryL.rows.length + primaryR.rows.length + fallbackFetches.reduce((a, f) => a + (f.row_count || 0), 0),
     rows_written: rowsWritten,
     external_calls_performed: fetches.length + fallbackFetches.length,
     elapsed_ms: Date.now() - started,
     fetch_summary: fetches.concat(fallbackFetches).map(f => ({ label: f.label, url: f.url, http_status: f.http_status, row_count: f.row_count })),
     active_after: activeAfter[0] || null,
     validation,
-    sample_written_rows: finalRows.slice(0, 5).map(r => ({ team_abbreviation: r.team_abbreviation, park_name: r.park_name, mlb_venue_id: r.mlb_venue_id, run_factor: r.run_factor, hr_factor: r.hr_factor, lhb_run_factor: r.lhb_run_factor, rhb_run_factor: r.rhb_run_factor, lhb_hr_factor: r.lhb_hr_factor, rhb_hr_factor: r.rhb_hr_factor, rolling_window: r.rolling_window, source_key: r.source_key }))
+    sample_written_rows: finalRows.slice(0, 5).map(r => ({ team_abbreviation: r.team_abbreviation, park_name: r.park_name, mlb_venue_id: r.mlb_venue_id, run_factor: r.run_factor, hr_factor: r.hr_factor, lhb_run_factor: r.lhb_run_factor, rhb_run_factor: r.rhb_run_factor, lhb_hr_factor: r.lhb_hr_factor, rhb_hr_factor: r.rhb_hr_factor, rolling_window: r.rolling_window, match_mode: r.match_mode, source_key: r.source_key }))
   });
 }
 
