@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-static-stadiums";
-const VERSION = "alphadog-v2-static-stadiums-v0.1.0-stadium-dictionary-seed";
+const VERSION = "alphadog-v2-static-stadiums-v0.1.1-sql-variable-cap-fix";
 const JOB_KEY = "static-stadiums";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -312,11 +312,17 @@ function buildAliases(stadium, sourceKey) {
 async function upsertStadiums(env, stadiums, sourceKey) {
   let stadiumRowsWritten = 0;
   let aliasesWritten = 0;
-  const activeIds = [];
-  const activeAliasKeys = [];
+
+  // D1/SQLite has a bounded SQL variable limit. The v0.1.0 worker tried to
+  // deactivate stale aliases with one giant NOT IN (?, ?, ...), which can exceed
+  // the variable cap once stadium aliases are expanded. The safe static refresh
+  // pattern is: mark this worker source inactive first, then upsert the current
+  // canonical 30-team set back to active=1. This is additive/safe for REF_DB and
+  // does not touch TEAM_DB, PrizePicks, scoring, or final board tables.
+  await run(env.REF_DB, "UPDATE ref_stadiums SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key IN ('MLB_STATSAPI_TEAMS_AND_VENUES','CONTROLLED_STATIC_FALLBACK_NON_CERTIFYING')");
+  await run(env.REF_DB, "UPDATE ref_stadium_aliases SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key IN ('MLB_STATSAPI_TEAMS_AND_VENUES','CONTROLLED_STATIC_FALLBACK_NON_CERTIFYING')");
 
   for (const stadium of stadiums) {
-    activeIds.push(stadium.stadium_id);
     const parkJson = {
       abbreviation: stadium.abbreviation,
       mlb_team_id: stadium.mlb_team_id,
@@ -370,7 +376,6 @@ async function upsertStadiums(env, stadiums, sourceKey) {
     stadiumRowsWritten += 1;
 
     for (const alias of buildAliases(stadium, sourceKey)) {
-      activeAliasKeys.push(alias.alias_key);
       await run(env.REF_DB, `INSERT INTO ref_stadium_aliases (
         alias_key, stadium_id, mlb_venue_id, alias_value, alias_normalized, alias_type, source_key, confidence, active, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
@@ -397,12 +402,7 @@ async function upsertStadiums(env, stadiums, sourceKey) {
     }
   }
 
-  await run(env.REF_DB, "UPDATE ref_stadiums SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key IN ('MLB_STATSAPI_TEAMS_AND_VENUES','CONTROLLED_STATIC_FALLBACK_NON_CERTIFYING') AND stadium_id NOT IN (" + activeIds.map(() => "?").join(",") + ")", ...activeIds);
-  if (activeAliasKeys.length) {
-    await run(env.REF_DB, "UPDATE ref_stadium_aliases SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key IN ('MLB_STATSAPI_TEAMS_AND_VENUES','CONTROLLED_STATIC_FALLBACK_NON_CERTIFYING') AND alias_key NOT IN (" + activeAliasKeys.map(() => "?").join(",") + ")", ...activeAliasKeys);
-  }
-
-  return { stadium_rows_written: stadiumRowsWritten, alias_rows_written: aliasesWritten };
+  return { stadium_rows_written: stadiumRowsWritten, alias_rows_written: aliasesWritten, stale_deactivation_mode: "deactivate_source_then_reactivate_current_rows" };
 }
 
 async function counts(env) {
@@ -494,6 +494,7 @@ async function runStaticStadiums(input, env) {
     rows_written: writes.stadium_rows_written + writes.alias_rows_written,
     stadiums_written: writes.stadium_rows_written,
     aliases_written: writes.alias_rows_written,
+    stale_deactivation_mode: writes.stale_deactivation_mode,
     external_calls_performed: fetchInfo ? fetchInfo.external_calls : 0,
     elapsed_ms: Date.now() - started,
     source_key: sourceKey,
