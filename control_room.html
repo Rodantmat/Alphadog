@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v0.8 - fixed frontend script + larger button font -->
+<!-- alphadog-v2-control-room-v1.0-no-admin-token -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,9 +28,10 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v0.8</div>
+<div id="versionTag">alphadog-v2-control-room-v1.0-no-admin-token</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
+<div class="small">Access mode: single-user / admin token disabled by user request.</div>
 <div class="status" id="status">READY</div>
 
 <div class="section"><h3>DEBUG</h3><div class="grid">
@@ -38,7 +39,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <button class="debug" type="button" onclick="health()">Health</button>
 <button class="debug" type="button" onclick="diagnostic()">Diag</button>
 <button class="debug" type="button" onclick="testSQL()">SQL</button>
-<button class="debug" type="button" onclick="loadConfig()">Reload</button>
+<button class="debug" type="button" onclick="reloadPage()">Reload</button>
 </div></div>
 
 <div class="section"><h3>V2 BOOTSTRAP / SCHEMA</h3><div class="grid">
@@ -86,9 +87,6 @@ const JOB_URL=BASE+"/tasks/run";
 const SQL_URL=BASE+"/debug/sql";
 const HEALTH_URL=BASE+"/health";
 const DIAGNOSTIC_URL=BASE+"/diagnostic";
-const CONFIG_URL="https://raw.githubusercontent.com/Rodantmat/Alphadog/main/config.txt";
-let TOKEN="";
-let CONFIG_LOADED=false;
 
 function ptParts(){
   const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(new Date());
@@ -126,40 +124,12 @@ function loading(l,e){
   setStatus("RUNNING: "+l);
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
-function tokenFingerprint(){
-  return TOKEN?{loaded:true,length:TOKEN.length,starts_with:TOKEN.slice(0,2),ends_with:TOKEN.slice(-2)}:{loaded:false,length:0};
-}
-async function loadConfig(){
-  try{
-    loading("DEBUG > Reload");
-    const r=await fetch(CONFIG_URL+"?t="+Date.now(),{cache:"no-store"});
-    const t=await r.text();
-    const m=t.match(/^\\s*TOKEN\\s*=\\s*(.+?)\\s*$/m);
-    if(m&&m[1].trim()){
-      TOKEN=m[1].trim().replace(/^[\\"']|[\\"']$/g,"");
-      CONFIG_LOADED=true;
-      setStatus("CONFIG LOADED");
-      setOutput("DEBUG > Reload",{config_loaded:true,token_fingerprint:tokenFingerprint()});
-    }else{
-      TOKEN="";
-      CONFIG_LOADED=false;
-      setStatus("CONFIG NOT LOADED");
-      setOutput("DEBUG > Reload",{config_loaded:false,error:"TOKEN line not found. Protected buttons need config.txt with TOKEN=your_admin_token.",config_url:CONFIG_URL});
-    }
-  }catch(e){
-    TOKEN="";
-    CONFIG_LOADED=false;
-    setStatus("CONFIG LOAD FAILED");
-    setOutput("DEBUG > Reload",{config_loaded:false,error:String(e),config_url:CONFIG_URL});
-  }
-}
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,config_url:CONFIG_URL,auto_slate:autoSlateContext(),token_set:Boolean(TOKEN),config_loaded:CONFIG_LOADED,token_fingerprint:tokenFingerprint(),version:"alphadog-v2-control-room-v0.8"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled",version:"alphadog-v2-control-room-v1.0-no-admin-token"});
 }
+function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
-  if(p!==null&&(!CONFIG_LOADED||!TOKEN)) await loadConfig();
   const h={"Content-Type":"application/json"};
-  if(TOKEN){h["x-ingest-token"]=TOKEN;h["x-admin-token"]=TOKEN;}
   const o=p===null?{method:"GET",headers:h}:{method:"POST",headers:h,body:JSON.stringify(p)};
   try{
     const r=await fetch(u,o);
