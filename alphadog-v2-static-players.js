@@ -1,22 +1,27 @@
 const WORKER_NAME = "alphadog-v2-static-players";
-const VERSION = "alphadog-v2-dummy-workers-v0.1";
+const VERSION = "alphadog-v2-static-players-v0.1.0-40man-identity-seed";
 const JOB_KEY = "static-players";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
-const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
-const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "ODDS_API_BASE_URL", "PARLAY_API_BASE_URL", "MLB_API_BASE_URL", "PRIZEPICKS_SOURCE_MODE", "MAX_TICK_MS", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK", "LOCK_STALE_MINUTES", "WORKER_SAFE_MODE", "DEBUG_MODE", "MANUAL_SQL_ENABLED", "CONFIG_PHASE"];
+const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "MLB_API_BASE_URL", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 
-function nowUtc() {
-  return new Date().toISOString();
-}
+const SOURCE_KEY = "mlb_statsapi_40man_roster_v0_1_0";
+const SOURCE_NAME = "MLB StatsAPI 40-man roster endpoint";
+const ROSTER_TYPE = "40Man";
+const RAW_JSON_LIMIT = 6000;
+
+function nowUtc() { return new Date().toISOString(); }
+function text(value) { return String(value === undefined || value === null ? "" : value).trim(); }
+function numOrNull(value) { const n = Number(value); return Number.isFinite(n) ? n : null; }
+function boolOne(value) { return Number(value) === 1 ? 1 : 0; }
+function normalize(value) { return text(value).toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " "); }
+function compactJson(value, limit = RAW_JSON_LIMIT) { return JSON.stringify(value || {}).slice(0, limit); }
+function unique(values) { return Array.from(new Set(values.filter(v => v !== null && v !== undefined && String(v).length > 0).map(v => String(v)))); }
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
     status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store"
-    }
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }
   });
 }
 
@@ -32,43 +37,481 @@ function varPresence(env, names) {
   return out;
 }
 
-function allTrue(obj) {
-  return Object.values(obj).every(Boolean);
+function allTrue(obj) { return Object.values(obj).every(Boolean); }
+
+async function readJsonSafe(request) {
+  try { return await request.json(); } catch { return {}; }
 }
 
-function baseIdentity(env) {
-  const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-  const vars = varPresence(env, EXPECTED_VARS);
-  const secrets = varPresence(env, REQUIRED_SECRETS);
+async function all(db, sql, ...binds) {
+  const stmt = db.prepare(sql);
+  const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
+  return res.results || [];
+}
 
+async function first(db, sql, ...binds) {
+  const rows = await all(db, sql, ...binds);
+  return rows[0] || null;
+}
+
+async function run(db, sql, ...binds) {
+  const stmt = db.prepare(sql);
+  return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
+}
+
+function base(env, extra = {}) {
   return {
     ok: true,
     data_ok: true,
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "DUMMY_READY",
+    status: "STATIC_PLAYERS_WORKER_READY",
     timestamp_utc: nowUtc(),
-    phase: "alphadog-v2-config-bootstrap",
-    notes: [
-      "Dummy worker only.",
-      "No mining, scoring, external API calls, or production writes.",
-      "Use /health and /diagnostic to verify bindings/secrets/vars."
-    ],
-    binding_summary: {
-      required_db_bindings_present: allTrue(db),
-      expected_vars_present: allTrue(vars),
-      required_secrets_present: allTrue(secrets)
-    }
+    source_name: SOURCE_NAME,
+    source_key: SOURCE_KEY,
+    roster_type: ROSTER_TYPE,
+    boundaries: {
+      primary_team_source: "REF_DB.ref_teams active MLB teams",
+      primary_player_source: "MLB StatsAPI /teams/{mlb_team_id}/roster/40Man",
+      writes_only: ["REF_DB.ref_players", "REF_DB.ref_player_aliases", "REF_DB.ref_rosters"],
+      no_26man_only_scope: true,
+      no_every_minor_leaguer_scope: true,
+      no_person_detail_hydration_in_v0_1_0: true,
+      no_prizepicks_board_mutation: true,
+      no_prizepicks_alias_guessing: true,
+      no_sleeper_alias_guessing: true,
+      no_opponent_backfill: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board_write: true,
+      no_old_production_touch: true,
+      no_gemini_api: true
+    },
+    bindings: bindingPresence(env, REQUIRED_DB_BINDINGS),
+    vars: varPresence(env, EXPECTED_VARS),
+    ...extra
   };
 }
 
-async function readJsonSafe(request) {
-  try {
-    return await request.json();
-  } catch {
-    return {};
+async function ensureSchema(env) {
+  await run(env.REF_DB, `CREATE TABLE IF NOT EXISTS ref_schema_migrations (
+    migration_key TEXT PRIMARY KEY,
+    package_version TEXT,
+    applied_at TEXT,
+    notes TEXT
+  )`);
+
+  await run(env.REF_DB, `CREATE TABLE IF NOT EXISTS ref_players (
+    player_id INTEGER PRIMARY KEY,
+    player_name TEXT,
+    primary_team_id TEXT,
+    primary_role TEXT,
+    bats TEXT,
+    throws TEXT,
+    active INTEGER DEFAULT 1,
+    raw_json TEXT,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  await run(env.REF_DB, `CREATE TABLE IF NOT EXISTS ref_player_aliases (
+    alias_key TEXT PRIMARY KEY,
+    player_id INTEGER,
+    alias_name TEXT,
+    source_key TEXT,
+    confidence TEXT,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  await run(env.REF_DB, `CREATE TABLE IF NOT EXISTS ref_rosters (
+    roster_key TEXT PRIMARY KEY,
+    slate_date TEXT,
+    team_id TEXT,
+    player_id INTEGER,
+    roster_status TEXT,
+    role TEXT,
+    source_key TEXT,
+    raw_json TEXT,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  await addColumns(env.REF_DB, "ref_players", [
+    ["mlb_player_id", "INTEGER"],
+    ["full_name", "TEXT"],
+    ["first_name", "TEXT"],
+    ["last_name", "TEXT"],
+    ["current_team_id", "TEXT"],
+    ["current_mlb_team_id", "INTEGER"],
+    ["primary_position", "TEXT"],
+    ["bat_side", "TEXT"],
+    ["throw_side", "TEXT"],
+    ["source_key", "TEXT"],
+    ["created_at", "TEXT DEFAULT CURRENT_TIMESTAMP"]
+  ]);
+
+  await addColumns(env.REF_DB, "ref_player_aliases", [
+    ["alias_type", "TEXT"],
+    ["alias_normalized", "TEXT"],
+    ["team_id", "TEXT"],
+    ["mlb_team_id", "INTEGER"],
+    ["active", "INTEGER DEFAULT 1"],
+    ["raw_json", "TEXT"],
+    ["created_at", "TEXT DEFAULT CURRENT_TIMESTAMP"]
+  ]);
+
+  await addColumns(env.REF_DB, "ref_rosters", [
+    ["snapshot_type", "TEXT"],
+    ["mlb_team_id", "INTEGER"],
+    ["player_name", "TEXT"],
+    ["position_abbreviation", "TEXT"],
+    ["roster_date", "TEXT"],
+    ["active", "INTEGER DEFAULT 1"],
+    ["created_at", "TEXT DEFAULT CURRENT_TIMESTAMP"]
+  ]);
+
+  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_players_mlb_player_id ON ref_players(mlb_player_id)");
+  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_players_current_team_active ON ref_players(current_team_id, active)");
+  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_players_source_active ON ref_players(source_key, active)");
+  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_player_aliases_player ON ref_player_aliases(player_id)");
+  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_player_aliases_normalized ON ref_player_aliases(alias_normalized)");
+  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_player_aliases_source_active ON ref_player_aliases(source_key, active)");
+  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_rosters_source_snapshot ON ref_rosters(source_key, snapshot_type)");
+  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_rosters_team_player ON ref_rosters(team_id, player_id)");
+
+  await run(env.REF_DB, `INSERT OR REPLACE INTO ref_schema_migrations
+    (migration_key, package_version, applied_at, notes)
+    VALUES ('schema_ref_db_static_players_40man_v0_1_0', ?, CURRENT_TIMESTAMP, 'Additive REF_DB player identity/alias/static 40-man roster snapshot support; no scoring, no board mutation')`, VERSION);
+}
+
+async function addColumns(db, tableName, columns) {
+  const existingRows = await all(db, `PRAGMA table_info(${tableName})`);
+  const existing = new Set(existingRows.map(r => String(r.name || "").toLowerCase()));
+  for (const [name, type] of columns) {
+    if (!existing.has(String(name).toLowerCase())) {
+      await run(db, `ALTER TABLE ${tableName} ADD COLUMN ${name} ${type}`);
+    }
   }
+}
+
+async function readActiveTeams(env) {
+  return await all(env.REF_DB, `SELECT
+      team_id,
+      mlb_team_id,
+      abbreviation,
+      full_name,
+      active
+    FROM ref_teams
+    WHERE COALESCE(active,1)=1
+      AND mlb_team_id IS NOT NULL
+    ORDER BY abbreviation, team_id`);
+}
+
+function mlbBaseUrl(env) {
+  return text(env.MLB_API_BASE_URL) || "https://statsapi.mlb.com/api/v1";
+}
+
+async function fetchRoster(env, mlbTeamId) {
+  const url = `${mlbBaseUrl(env).replace(/\/$/, "")}/teams/${encodeURIComponent(String(mlbTeamId))}/roster/${ROSTER_TYPE}`;
+  const resp = await fetch(url, {
+    method: "GET",
+    headers: {
+      "accept": "application/json",
+      "cache-control": "no-cache",
+      "user-agent": text(env.MLB_API_USER_AGENT) || "AlphaDogV2StaticPlayers/0.1 (+controlled-reference-refresh)"
+    }
+  });
+  const bodyText = await resp.text();
+  let json = null;
+  try { json = JSON.parse(bodyText); } catch (_) { json = null; }
+  if (!resp.ok || !json || !Array.isArray(json.roster)) {
+    throw new Error(`mlb_statsapi_40man_roster_fetch_failed_team_${mlbTeamId}_http_${resp.status}`);
+  }
+  return { url, http_status: resp.status, roster: json.roster, raw: json };
+}
+
+function extractNameParts(person, fullName) {
+  const firstFromPayload = text(person.firstName || person.useName || "");
+  const lastFromPayload = text(person.lastName || "");
+  if (firstFromPayload && lastFromPayload) return { first_name: firstFromPayload, last_name: lastFromPayload, derived: "payload" };
+
+  const parts = text(fullName).split(/\s+/).filter(Boolean);
+  if (parts.length === 2 && /^[A-Za-z.'-]+$/.test(parts[0]) && /^[A-Za-z.'-]+$/.test(parts[1])) {
+    return { first_name: parts[0], last_name: parts[1], derived: "safe_two_token_full_name" };
+  }
+
+  return { first_name: null, last_name: null, derived: "not_safely_available" };
+}
+
+function playerFromRosterEntry(entry, team) {
+  const person = entry.person || {};
+  const position = entry.position || {};
+  const status = entry.status || {};
+  const mlbPlayerId = numOrNull(person.id);
+  const fullName = text(person.fullName || person.name || entry.personName || "");
+  const names = extractNameParts(person, fullName);
+  const batSide = text(person.batSide?.code || person.batSide?.description || entry.batSide?.code || "") || null;
+  const throwSide = text(person.pitchHand?.code || person.pitchHand?.description || entry.pitchHand?.code || "") || null;
+  const primaryPosition = text(position.abbreviation || position.code || position.name || "") || null;
+
+  return {
+    player_id: mlbPlayerId,
+    mlb_player_id: mlbPlayerId,
+    full_name: fullName || null,
+    player_name: fullName || null,
+    first_name: names.first_name,
+    last_name: names.last_name,
+    name_parts_source: names.derived,
+    current_team_id: text(team.team_id) || null,
+    current_mlb_team_id: numOrNull(team.mlb_team_id),
+    primary_team_id: text(team.team_id) || null,
+    primary_position: primaryPosition,
+    primary_role: primaryPosition,
+    bat_side: batSide,
+    throw_side: throwSide,
+    bats: batSide,
+    throws: throwSide,
+    roster_status: text(status.code || status.description || "40Man") || "40Man",
+    position_abbreviation: primaryPosition,
+    active: 1,
+    source_key: SOURCE_KEY,
+    raw_json: compactJson({ team, roster_entry: entry })
+  };
+}
+
+function aliasKey(playerId, aliasType, aliasName, teamId = "") {
+  return `${playerId}|${aliasType}|${normalize(aliasName)}|${normalize(teamId)}`.slice(0, 240);
+}
+
+function buildAliases(player) {
+  const aliases = [];
+  function add(aliasType, aliasName, confidence = "HIGH", teamScoped = false) {
+    const name = text(aliasName);
+    const norm = normalize(name);
+    if (!name || !norm || !player.player_id) return;
+    const teamId = teamScoped ? player.current_team_id : null;
+    aliases.push({
+      alias_key: aliasKey(player.player_id, aliasType, name, teamId || ""),
+      player_id: player.player_id,
+      alias_name: name,
+      alias_type: aliasType,
+      alias_normalized: norm,
+      team_id: teamId,
+      mlb_team_id: teamScoped ? player.current_mlb_team_id : null,
+      source_key: SOURCE_KEY,
+      confidence,
+      active: 1,
+      raw_json: compactJson({ alias_type: aliasType, alias_name: name, team_id: teamId, mlb_team_id: teamScoped ? player.current_mlb_team_id : null })
+    });
+  }
+
+  add("full_name", player.full_name, "HIGH", false);
+  add("normalized_full_name", normalize(player.full_name), "HIGH", false);
+  if (player.first_name && player.last_name) add("last_first", `${player.last_name}, ${player.first_name}`, "HIGH", false);
+  add("mlb_player_id", String(player.mlb_player_id), "HIGH", false);
+  if (player.current_team_id && player.full_name) add("team_scoped_full_name", `${player.current_team_id}:${player.full_name}`, "HIGH", true);
+
+  const seen = new Set();
+  return aliases.filter(a => {
+    if (seen.has(a.alias_key)) return false;
+    seen.add(a.alias_key);
+    return true;
+  });
+}
+
+async function writePlayer(env, player) {
+  await run(env.REF_DB, `INSERT OR REPLACE INTO ref_players
+    (player_id, mlb_player_id, player_name, full_name, first_name, last_name, primary_team_id, current_team_id, current_mlb_team_id, primary_role, primary_position, bats, throws, bat_side, throw_side, active, source_key, raw_json, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    player.player_id, player.mlb_player_id, player.player_name, player.full_name, player.first_name, player.last_name,
+    player.primary_team_id, player.current_team_id, player.current_mlb_team_id, player.primary_role, player.primary_position,
+    player.bats, player.throws, player.bat_side, player.throw_side, player.active, player.source_key, player.raw_json
+  );
+}
+
+async function writeAlias(env, alias) {
+  await run(env.REF_DB, `INSERT OR REPLACE INTO ref_player_aliases
+    (alias_key, player_id, alias_name, alias_type, alias_normalized, team_id, mlb_team_id, source_key, confidence, active, raw_json, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    alias.alias_key, alias.player_id, alias.alias_name, alias.alias_type, alias.alias_normalized, alias.team_id, alias.mlb_team_id,
+    alias.source_key, alias.confidence, alias.active, alias.raw_json
+  );
+}
+
+async function writeRoster(env, player, team) {
+  const rosterKey = `${SOURCE_KEY}|${team.team_id}|${player.player_id}`.slice(0, 240);
+  await run(env.REF_DB, `INSERT OR REPLACE INTO ref_rosters
+    (roster_key, slate_date, roster_date, snapshot_type, team_id, mlb_team_id, player_id, player_name, roster_status, role, position_abbreviation, source_key, active, raw_json, updated_at)
+    VALUES (?, NULL, date('now'), ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, CURRENT_TIMESTAMP)`,
+    rosterKey, "STATIC_40MAN_SNAPSHOT", team.team_id, numOrNull(team.mlb_team_id), player.player_id, player.full_name,
+    player.roster_status, player.primary_position, player.position_abbreviation, SOURCE_KEY, player.raw_json
+  );
+}
+
+async function runSeed(env, input = {}) {
+  await ensureSchema(env);
+
+  const teams = await readActiveTeams(env);
+  const distinctTeamIds = unique(teams.map(t => t.team_id)).length;
+  const distinctMlbTeamIds = unique(teams.map(t => t.mlb_team_id)).length;
+
+  if (teams.length !== 30 || distinctTeamIds !== 30 || distinctMlbTeamIds !== 30) {
+    return {
+      ok: false,
+      data_ok: false,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      request_id: input.request_id || null,
+      chain_id: input.chain_id || null,
+      status: "blocked_ref_teams_not_ready",
+      certification: "STATIC_PLAYERS_BLOCKED_REF_TEAMS_NOT_30_ACTIVE_MLB_TEAMS",
+      teams_found: teams.length,
+      distinct_team_ids: distinctTeamIds,
+      distinct_mlb_team_ids: distinctMlbTeamIds,
+      rows_read: teams.length,
+      rows_written: 0,
+      external_calls_performed: 0,
+      error: "REF_DB.ref_teams must contain exactly 30 active teams with mlb_team_id before static player seed. Run/verify STATIC > Teams first.",
+      boundaries: base(env).boundaries,
+      timestamp_utc: nowUtc()
+    };
+  }
+
+  await run(env.REF_DB, "UPDATE ref_rosters SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key=? AND snapshot_type='STATIC_40MAN_SNAPSHOT'", SOURCE_KEY);
+
+  const byMlbPlayerId = new Map();
+  const sourceSamples = [];
+  let externalCalls = 0;
+  let rosterRowsRead = 0;
+  let teamsProcessed = 0;
+  let aliasesWritten = 0;
+  let rostersWritten = 0;
+  const rosterSnapshots = [];
+  let missingPosition = 0;
+  let missingBatSide = 0;
+  let missingThrowSide = 0;
+  const teamSummaries = [];
+
+  for (const team of teams) {
+    const mlbTeamId = numOrNull(team.mlb_team_id);
+    const fetched = await fetchRoster(env, mlbTeamId);
+    externalCalls += 1;
+    teamsProcessed += 1;
+    rosterRowsRead += fetched.roster.length;
+    teamSummaries.push({ team_id: team.team_id, mlb_team_id: mlbTeamId, abbreviation: team.abbreviation, roster_rows: fetched.roster.length, http_status: fetched.http_status });
+    if (sourceSamples.length < 3) sourceSamples.push({ team_id: team.team_id, url: fetched.url, roster_rows: fetched.roster.length });
+
+    for (const entry of fetched.roster) {
+      const player = playerFromRosterEntry(entry, team);
+      if (!player.mlb_player_id || !player.full_name) continue;
+      if (!player.primary_position) missingPosition += 1;
+      if (!player.bat_side) missingBatSide += 1;
+      if (!player.throw_side) missingThrowSide += 1;
+
+      rosterSnapshots.push({ player, team });
+      const existing = byMlbPlayerId.get(String(player.mlb_player_id));
+      if (!existing || (existing.current_team_id !== player.current_team_id && !existing.current_team_id)) {
+        byMlbPlayerId.set(String(player.mlb_player_id), player);
+      }
+    }
+  }
+
+  const players = Array.from(byMlbPlayerId.values()).sort((a, b) => String(a.full_name).localeCompare(String(b.full_name)));
+
+  for (const player of players) {
+    await writePlayer(env, player);
+    const aliases = buildAliases(player);
+    for (const alias of aliases) {
+      await writeAlias(env, alias);
+      aliasesWritten += 1;
+    }
+  }
+
+  for (const snapshot of rosterSnapshots) {
+    await writeRoster(env, snapshot.player, snapshot.team);
+    rostersWritten += 1;
+  }
+
+  const checks = await certificationChecks(env);
+  const playerRows = Number(checks.player_rows || 0);
+  const duplicateMlbPlayerIds = Number(checks.duplicate_mlb_player_id_count || 0);
+  const missingMlbPlayerId = Number(checks.missing_mlb_player_id || 0);
+  const missingFullName = Number(checks.missing_full_name_or_player_name || 0);
+  const aliasRows = Number(checks.alias_rows || 0);
+  const rosterRows = Number(checks.static_40man_roster_rows || 0);
+
+  const dataOk = teamsProcessed === 30 && playerRows > 500 && duplicateMlbPlayerIds === 0 && missingMlbPlayerId === 0 && missingFullName === 0 && aliasRows > 0;
+  const certification = dataOk
+    ? "STATIC_PLAYERS_40MAN_IDENTITY_SEEDED_30_TEAMS_PLAYERS_ALIASES_WRITTEN"
+    : "STATIC_PLAYERS_40MAN_IDENTITY_CERTIFICATION_FAILED";
+
+  return {
+    ok: dataOk,
+    data_ok: dataOk,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    request_id: input.request_id || null,
+    chain_id: input.chain_id || null,
+    status: dataOk ? "completed" : "failed_certification",
+    certification,
+    source_key: SOURCE_KEY,
+    source_name: SOURCE_NAME,
+    endpoint_pattern: "/teams/{mlb_team_id}/roster/40Man",
+    source_samples: sourceSamples,
+    teams_processed: teamsProcessed,
+    teams_expected: 30,
+    rows_read: rosterRowsRead,
+    rows_written: playerRows + aliasesWritten + rostersWritten,
+    players_written: playerRows,
+    aliases_written_this_run: aliasesWritten,
+    rosters_written_this_run: rostersWritten,
+    external_calls_performed: externalCalls,
+    missing_detail_counts_from_roster_payload: {
+      primary_position: missingPosition,
+      bat_side: missingBatSide,
+      throw_side: missingThrowSide,
+      note: "v0.1.0 does not make hundreds of person-detail hydration calls. Missing detail is counted, not guessed."
+    },
+    certification_checks: checks,
+    team_summaries: teamSummaries.slice(0, 30),
+    sample_players: await samplePlayers(env),
+    boundaries: base(env).boundaries,
+    timestamp_utc: nowUtc()
+  };
+}
+
+async function certificationChecks(env) {
+  const row = await first(env.REF_DB, `SELECT
+      (SELECT COUNT(*) FROM ref_players WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1) AS player_rows,
+      (SELECT COUNT(*) FROM ref_players WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1 AND (mlb_player_id IS NULL OR mlb_player_id='')) AS missing_mlb_player_id,
+      (SELECT COUNT(*) FROM ref_players WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1 AND (COALESCE(full_name, player_name, '')='')) AS missing_full_name_or_player_name,
+      (SELECT COUNT(*) FROM (
+        SELECT mlb_player_id FROM ref_players WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1 AND mlb_player_id IS NOT NULL GROUP BY mlb_player_id HAVING COUNT(*) > 1
+      )) AS duplicate_mlb_player_id_count,
+      (SELECT COUNT(*) FROM ref_player_aliases WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1) AS alias_rows,
+      (SELECT COUNT(*) FROM ref_rosters WHERE source_key='${SOURCE_KEY}' AND snapshot_type='STATIC_40MAN_SNAPSHOT' AND COALESCE(active,1)=1) AS static_40man_roster_rows`);
+  return row || {};
+}
+
+async function samplePlayers(env) {
+  return await all(env.REF_DB, `SELECT
+      player_id,
+      mlb_player_id,
+      full_name,
+      first_name,
+      last_name,
+      current_team_id,
+      current_mlb_team_id,
+      primary_position,
+      bat_side,
+      throw_side,
+      source_key,
+      active
+    FROM ref_players
+    WHERE source_key=?
+    ORDER BY current_team_id, full_name
+    LIMIT 12`, SOURCE_KEY);
 }
 
 export default {
@@ -78,34 +521,28 @@ export default {
     const method = request.method.toUpperCase();
 
     if (method === "GET" && path === "/") {
-      return jsonResponse(baseIdentity(env));
+      return jsonResponse(base(env));
     }
 
     if (method === "GET" && path === "/health") {
-      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
+      const bindings = bindingPresence(env, REQUIRED_DB_BINDINGS);
       const vars = varPresence(env, EXPECTED_VARS);
-      const secrets = varPresence(env, REQUIRED_SECRETS);
-
-      return jsonResponse({
-        ...baseIdentity(env),
+      return jsonResponse(base(env, {
         route: "/health",
         checks: {
-          db_bindings: db,
-          vars: vars,
-          secrets_present_only: secrets
-        },
-        safe_secret_note: "Secret values are intentionally never printed."
-      });
+          required_db_bindings_present: allTrue(bindings),
+          expected_vars_present: allTrue(vars),
+          db_bindings: bindings,
+          vars
+        }
+      }));
     }
 
     if (method === "POST" && path === "/diagnostic") {
       const input = await readJsonSafe(request);
-      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-      const vars = varPresence(env, EXPECTED_VARS);
-      const secrets = varPresence(env, REQUIRED_SECRETS);
-
-      return jsonResponse({
-        ...baseIdentity(env),
+      let teams = [];
+      try { teams = await readActiveTeams(env); } catch (_) { teams = []; }
+      return jsonResponse(base(env, {
         route: "/diagnostic",
         input_echo_safe: {
           request_id: input.request_id || null,
@@ -113,43 +550,39 @@ export default {
           job_key: input.job_key || null,
           mode: input.mode || null
         },
-        diagnostics: {
-          db_bindings: db,
-          vars: vars,
-          secrets_present_only: secrets
+        ref_teams_probe: {
+          active_team_rows_with_mlb_team_id: teams.length,
+          sample: teams.slice(0, 5)
         },
         writes_performed: 0,
         external_calls_performed: 0
-      });
+      }));
     }
 
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-
-      return jsonResponse({
-        ok: true,
-        data_ok: true,
-        version: VERSION,
-        worker_name: WORKER_NAME,
-        job_key: input.job_key || JOB_KEY,
-        request_id: input.request_id || null,
-        chain_id: input.chain_id || null,
-        status: "DUMMY_READY",
-        certification: "DUMMY_ONLY_NOT_REAL_DATA",
-        rows_read: 0,
-        rows_written: 0,
-        next_action: "ADD_BINDINGS_SECRETS_VARS_AND_VERIFY_HEALTH",
-        block_downstream_reason: null,
-        output_json: {
-          dummy: true,
-          slate_date: input.slate_date || null,
-          mode: input.mode || null,
-          received_input_json: input.input_json || null
-        },
-        timestamp_utc: nowUtc(),
-        writes_performed: 0,
-        external_calls_performed: 0
-      });
+      try {
+        const output = await runSeed(env, input);
+        return jsonResponse(output, output.ok ? 200 : 500);
+      } catch (err) {
+        return jsonResponse({
+          ok: false,
+          data_ok: false,
+          version: VERSION,
+          worker_name: WORKER_NAME,
+          job_key: JOB_KEY,
+          request_id: input.request_id || null,
+          chain_id: input.chain_id || null,
+          status: "error",
+          certification: "STATIC_PLAYERS_40MAN_IDENTITY_RUN_ERROR",
+          error: String(err && err.message ? err.message : err),
+          rows_read: 0,
+          rows_written: 0,
+          external_calls_performed: 0,
+          boundaries: base(env).boundaries,
+          timestamp_utc: nowUtc()
+        }, 500);
+      }
     }
 
     return jsonResponse({
