@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-static-park-factors";
-const VERSION = "alphadog-v2-static-park-factors-v0.1.2-tb-tbr-fallback-alias";
+const VERSION = "alphadog-v2-static-park-factors-v0.1.3-temporary-venue-name-fallback";
 const JOB_KEY = "static-park-factors";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -202,6 +202,17 @@ function indexByVenue(rows) {
   return map;
 }
 
+function indexByVenueName(rows) {
+  const map = new Map();
+  for (const row of rows || []) {
+    const keys = [normalize(row.venue_name), normalize(row.venue), normalize(row.park_name)].filter(Boolean);
+    for (const key of keys) {
+      if (key && !map.has(key)) map.set(key, row);
+    }
+  }
+  return map;
+}
+
 function abbrKey(value) {
   return text(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
@@ -220,6 +231,13 @@ const TEAM_ABBREVIATION_ALIASES = {
   WAS: ["WAS", "WSH", "NATIONALS"]
 };
 
+const TEMPORARY_2025_VENUE_NAME_FALLBACKS = {
+  TB: ["george m steinbrenner field", "george m. steinbrenner field", "steinbrenner field"],
+  TBR: ["george m steinbrenner field", "george m. steinbrenner field", "steinbrenner field"],
+  ATH: ["sutter health park"],
+  OAK: ["sutter health park"]
+};
+
 function teamLookupKeys(value) {
   const key = abbrKey(value);
   const out = [];
@@ -230,6 +248,20 @@ function teamLookupKeys(value) {
     if (k && !out.includes(k)) out.push(k);
   }
   return out;
+}
+
+function temporaryVenueNameKeysForStadium(stadium) {
+  const keys = [];
+  for (const value of [stadium.abbreviation, stadium.nickname, stadium.full_name, stadium.team_id]) {
+    for (const teamKey of teamLookupKeys(value)) {
+      const venueNames = TEMPORARY_2025_VENUE_NAME_FALLBACKS[teamKey] || [];
+      for (const name of venueNames) {
+        const normalized = normalize(name);
+        if (normalized && !keys.includes(normalized)) keys.push(normalized);
+      }
+    }
+  }
+  return keys;
 }
 
 function indexByTeamAlt(rows) {
@@ -290,6 +322,20 @@ function getCompleteRows(maps, stadium) {
         left = tLeft;
         right = tRight;
         matchMode = `team_abbreviation_fallback_${team}`;
+        break;
+      }
+    }
+  }
+  if (!(overall && left && right)) {
+    for (const venueNameKey of temporaryVenueNameKeysForStadium(stadium)) {
+      const vOverall = maps.bothByVenueName && maps.bothByVenueName.get(venueNameKey);
+      const vLeft = maps.lByVenueName && maps.lByVenueName.get(venueNameKey);
+      const vRight = maps.rByVenueName && maps.rByVenueName.get(venueNameKey);
+      if (vOverall && vLeft && vRight) {
+        overall = vOverall;
+        left = vLeft;
+        right = vRight;
+        matchMode = `temporary_2025_venue_name_fallback_${venueNameKey.replace(/\s+/g, "_")}`;
         break;
       }
     }
@@ -440,7 +486,10 @@ async function runStaticParkFactors(env, input = {}) {
     rByVenue: indexByVenue(primaryR.rows),
     bothByTeam: indexByTeamAlt(primaryBoth.rows),
     lByTeam: indexByTeamAlt(primaryL.rows),
-    rByTeam: indexByTeamAlt(primaryR.rows)
+    rByTeam: indexByTeamAlt(primaryR.rows),
+    bothByVenueName: indexByVenueName(primaryBoth.rows),
+    lByVenueName: indexByVenueName(primaryL.rows),
+    rByVenueName: indexByVenueName(primaryR.rows)
   };
 
   let fallbackMaps = null;
@@ -460,7 +509,10 @@ async function runStaticParkFactors(env, input = {}) {
       rByVenue: indexByVenue(fbR.rows),
       bothByTeam: indexByTeamAlt(fbBoth.rows),
       lByTeam: indexByTeamAlt(fbL.rows),
-      rByTeam: indexByTeamAlt(fbR.rows)
+      rByTeam: indexByTeamAlt(fbR.rows),
+      bothByVenueName: indexByVenueName(fbBoth.rows),
+      lByVenueName: indexByVenueName(fbL.rows),
+      rByVenueName: indexByVenueName(fbR.rows)
     };
   }
 
