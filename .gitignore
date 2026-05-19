@@ -1,0 +1,6 @@
+secrets.production.json
+.env
+.env.production
+*.local.json
+.wrangler/
+node_modules/
