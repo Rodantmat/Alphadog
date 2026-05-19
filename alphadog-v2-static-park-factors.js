@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-static-park-factors";
-const VERSION = "alphadog-v2-static-park-factors-v0.1.1-run-key-and-team-fallback";
+const VERSION = "alphadog-v2-static-park-factors-v0.1.2-tb-tbr-fallback-alias";
 const JOB_KEY = "static-park-factors";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -206,10 +206,42 @@ function abbrKey(value) {
   return text(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
+const TEAM_ABBREVIATION_ALIASES = {
+  TB: ["TB", "TBR", "RAYS"],
+  TBR: ["TBR", "TB", "RAYS"],
+  ATH: ["ATH", "OAK", "AS", "ATHLETICS"],
+  OAK: ["OAK", "ATH", "AS", "ATHLETICS"],
+  AZ: ["AZ", "ARI", "DBACKS", "DIAMONDBACKS"],
+  ARI: ["ARI", "AZ", "DBACKS", "DIAMONDBACKS"],
+  CWS: ["CWS", "CHW", "WHITESOX"],
+  CHW: ["CHW", "CWS", "WHITESOX"],
+  LAD: ["LAD", "LA", "DODGERS"],
+  WSH: ["WSH", "WAS", "NATIONALS"],
+  WAS: ["WAS", "WSH", "NATIONALS"]
+};
+
+function teamLookupKeys(value) {
+  const key = abbrKey(value);
+  const out = [];
+  if (key) out.push(key);
+  const aliases = TEAM_ABBREVIATION_ALIASES[key] || [];
+  for (const alias of aliases) {
+    const k = abbrKey(alias);
+    if (k && !out.includes(k)) out.push(k);
+  }
+  return out;
+}
+
 function indexByTeamAlt(rows) {
   const map = new Map();
   for (const row of rows || []) {
-    const keys = [abbrKey(row.team_name_alt), abbrKey(row.team_name), abbrKey(row.team_code), abbrKey(row.abbreviation)].filter(Boolean);
+    const sourceValues = [row.team_name_alt, row.team_name, row.team_code, row.abbreviation];
+    const keys = [];
+    for (const value of sourceValues) {
+      for (const key of teamLookupKeys(value)) {
+        if (key && !keys.includes(key)) keys.push(key);
+      }
+    }
     for (const key of keys) if (!map.has(key)) map.set(key, row);
   }
   return map;
@@ -238,20 +270,28 @@ const HR_FACTOR_KEYS = ["index_hr", "index_HR", "hr", "HR", "home_run", "home_ru
 function getCompleteRows(maps, stadium) {
   if (!maps) return null;
   const venue = String(num(stadium.mlb_venue_id));
-  const team = abbrKey(stadium.abbreviation);
+  const teamKeys = [];
+  for (const value of [stadium.abbreviation, stadium.nickname, stadium.full_name, stadium.team_id]) {
+    for (const key of teamLookupKeys(value)) {
+      if (key && !teamKeys.includes(key)) teamKeys.push(key);
+    }
+  }
   let matchMode = "venue_id";
   let overall = maps.bothByVenue.get(venue);
   let left = maps.lByVenue.get(venue);
   let right = maps.rByVenue.get(venue);
-  if (!(overall && left && right) && team) {
-    const tOverall = maps.bothByTeam.get(team);
-    const tLeft = maps.lByTeam.get(team);
-    const tRight = maps.rByTeam.get(team);
-    if (tOverall && tLeft && tRight) {
-      overall = tOverall;
-      left = tLeft;
-      right = tRight;
-      matchMode = "team_abbreviation_fallback";
+  if (!(overall && left && right) && teamKeys.length) {
+    for (const team of teamKeys) {
+      const tOverall = maps.bothByTeam.get(team);
+      const tLeft = maps.lByTeam.get(team);
+      const tRight = maps.rByTeam.get(team);
+      if (tOverall && tLeft && tRight) {
+        overall = tOverall;
+        left = tLeft;
+        right = tRight;
+        matchMode = `team_abbreviation_fallback_${team}`;
+        break;
+      }
     }
   }
   return overall && left && right ? { overall, left, right, matchMode } : null;
