@@ -1,16 +1,21 @@
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.1-d1-safe-source-shape-staging";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.2-parse-stage-certify-no-promotion";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
+const STAGE_CERT_PASS = "certified_not_promoted";
+const STAGE_CERT_FAIL = "failed_not_promoted";
 const MAX_RAW_JSON_CHARS = 180000;
 const MAX_HEALTH_JSON_CHARS = 7000;
 const MAX_OUTPUT_PREVIEW_CHARS = 900;
+const STAGE_INSERT_CHUNK_SIZE = 20;
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "MARKET_DB"];
 const REQUIRED_CONFIG_VALUES = ["GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH"];
 const EXPECTED_MARKET_RAW_SNAPSHOTS_COLUMNS = ["snapshot_id", "source_key", "slate_date", "fetched_at", "raw_json", "row_count", "status", "error"];
 const EXPECTED_MARKET_SOURCE_HEALTH_COLUMNS = ["source_key", "status", "last_success_at", "last_error_at", "last_error", "rows_last_fetch", "health_json", "updated_at"];
+const EXPECTED_PP_STAGE_COLUMNS = ["stage_id", "batch_id", "source_key", "slate_date", "fetched_at", "staged_at", "projection_id", "player_id", "player_name", "team", "opponent", "league", "stat_type", "line_score", "description", "start_time", "raw_projection_json", "parse_status", "parse_error", "certification_status", "created_at"];
+const EXPECTED_PP_BATCH_COLUMNS = ["batch_id", "source_key", "slate_date", "fetched_at", "staged_at", "certified_at", "source_path", "source_http_status", "source_size_bytes", "top_level_shape", "total_rows", "staged_rows", "mlb_rows", "valid_rows", "invalid_rows", "certification_status", "certification_reason", "certification_json", "promoted_at", "cleaned_at", "created_at", "updated_at"];
 
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
@@ -38,69 +43,10 @@ function safeJson(value, max = MAX_HEALTH_JSON_CHARS) {
   return text.length > max ? text.slice(0, max) + "...TRUNCATED" : text;
 }
 
-function safeMiniJson(value, maxChars = 9000) {
-  const text = JSON.stringify(value || {}, null, 0);
-  return text.length > maxChars ? JSON.parse(text.slice(0, maxChars).replace(/[,\[{][^,\[{]*$/, "null")) : value;
-}
-
-function boundedRawJson(value) {
-  const fullText = JSON.stringify(value || {}, null, 0);
-  const detected = detectArray(value);
-  const rows = detected.rows || [];
-  const firstRows = rows.slice(0, 5).map((row) => {
-    const text = JSON.stringify(row || {}, null, 0);
-    if (text.length <= 9000) return row;
-    return { alphadog_row_preview_truncated: true, original_chars: text.length, preview: text.slice(0, 9000) };
-  });
-  const envelope = {
-    alphadog_bounded_source_snapshot: true,
-    storage_reason: "d1_text_cell_size_guard",
-    source_shape_only: true,
-    original_chars: fullText.length,
-    detected_rows_key: detected.key,
-    detected_row_count: rows.length,
-    top_level_type: Array.isArray(value) ? "array" : typeof value,
-    top_level_keys: value && typeof value === "object" && !Array.isArray(value) ? Object.keys(value).slice(0, 80) : [],
-    included_count: value && Array.isArray(value.included) ? value.included.length : 0,
-    first_rows_sample_count: firstRows.length,
-    first_rows_sample: firstRows,
-    note: "Full raw PrizePicks JSON remains in GitHub prizepicks_mlb_current.json. D1 stores bounded source-shape staging only to avoid SQLITE_TOOBIG. No scoring, no ranking, no market_current_lines write."
-  };
-  let text = JSON.stringify(envelope, null, 0);
-  if (text.length > MAX_RAW_JSON_CHARS) {
-    const smaller = {
-      alphadog_bounded_source_snapshot: true,
-      storage_reason: "d1_text_cell_size_guard",
-      original_chars: fullText.length,
-      detected_rows_key: detected.key,
-      detected_row_count: rows.length,
-      top_level_type: Array.isArray(value) ? "array" : typeof value,
-      top_level_keys: envelope.top_level_keys,
-      included_count: envelope.included_count,
-      first_rows_sample_count: 1,
-      first_rows_sample_preview: JSON.stringify(rows[0] || {}).slice(0, 45000),
-      note: envelope.note
-    };
-    text = JSON.stringify(smaller, null, 0);
-  }
-  if (text.length > MAX_RAW_JSON_CHARS) {
-    text = JSON.stringify({
-      alphadog_bounded_source_snapshot: true,
-      storage_reason: "d1_text_cell_size_guard",
-      original_chars: fullText.length,
-      detected_rows_key: detected.key,
-      detected_row_count: rows.length,
-      truncated_to_chars: MAX_RAW_JSON_CHARS,
-      preview: text.slice(0, MAX_RAW_JSON_CHARS - 500),
-      note: envelope.note
-    });
-  }
-  return {
-    text,
-    truncated: true,
-    original_chars: fullText.length,
-    stored_chars: text.length
-  };
+function safeCell(value, max = 900) {
+  if (value === undefined || value === null) return null;
+  const text = String(value);
+  return text.length > max ? text.slice(0, max) : text;
 }
 
 function bindingPresence(env, names) {
@@ -116,20 +62,12 @@ function valuePresence(env, names) {
 }
 
 function allTrue(obj) { return Object.values(obj).every(Boolean); }
-
-async function readJsonSafe(request) {
-  try { return await request.json(); } catch (_) { return {}; }
-}
+async function readJsonSafe(request) { try { return await request.json(); } catch (_) { return {}; } }
 
 async function all(db, sql, ...binds) {
   const stmt = db.prepare(sql);
   const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
   return res.results || [];
-}
-
-async function first(db, sql, ...binds) {
-  const rows = await all(db, sql, ...binds);
-  return rows[0] || null;
 }
 
 async function run(db, sql, ...binds) {
@@ -149,12 +87,12 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "READY",
     timestamp_utc: nowUtc(),
-    phase: "prizepicks_github_board_source_shape_staging_v0_1_0",
+    phase: "prizepicks_github_board_parse_stage_certify_v0_1_2",
     notes: [
       "Reads the configured PrizePicks GitHub JSON source.",
-      "Parses JSON and inspects source shape only.",
-      "Writes only MARKET_DB.market_raw_snapshots and MARKET_DB.market_source_health.",
-      "No market_current_lines writes, no normalization, no scoring, no ranking, no final board."
+      "Parses JSON, stages PrizePicks rows into MARKET_DB.prizepicks_board_stage, and writes a batch certification row.",
+      "Writes only MARKET_DB.market_raw_snapshots, MARKET_DB.market_source_health, MARKET_DB.prizepicks_board_batches, and MARKET_DB.prizepicks_board_stage.",
+      "No market_current_lines writes, no active board replacement, no normalization, no scoring, no ranking, no final board."
     ],
     binding_summary: {
       required_db_bindings_present: allTrue(db),
@@ -175,7 +113,9 @@ async function validateTableColumns(env, tableName, expectedColumns) {
 async function validateWriteSchema(env) {
   const raw = await validateTableColumns(env, "market_raw_snapshots", EXPECTED_MARKET_RAW_SNAPSHOTS_COLUMNS);
   const health = await validateTableColumns(env, "market_source_health", EXPECTED_MARKET_SOURCE_HEALTH_COLUMNS);
-  return { ok: raw.ok && health.ok, market_raw_snapshots: raw, market_source_health: health };
+  const batches = await validateTableColumns(env, "prizepicks_board_batches", EXPECTED_PP_BATCH_COLUMNS);
+  const stage = await validateTableColumns(env, "prizepicks_board_stage", EXPECTED_PP_STAGE_COLUMNS);
+  return { ok: raw.ok && health.ok && batches.ok && stage.ok, market_raw_snapshots: raw, market_source_health: health, prizepicks_board_batches: batches, prizepicks_board_stage: stage };
 }
 
 async function readConfigSystemSettings(env, keys) {
@@ -275,6 +215,36 @@ function getDeepValue(obj, paths) {
   return null;
 }
 
+function buildIncludedIndex(json) {
+  const byKey = new Map();
+  const byId = new Map();
+  const included = json && Array.isArray(json.included) ? json.included : [];
+  for (const item of included) {
+    if (!item || typeof item !== "object") continue;
+    const type = String(item.type || "");
+    const id = String(item.id || "");
+    if (type && id) byKey.set(`${type}:${id}`, item);
+    if (id && !byId.has(id)) byId.set(id, item);
+  }
+  return { byKey, byId };
+}
+
+function findRelationshipItem(row, index, relationshipNames) {
+  const rels = row && row.relationships && typeof row.relationships === "object" ? row.relationships : {};
+  for (const name of relationshipNames) {
+    const rel = rels[name];
+    const data = rel && rel.data;
+    if (!data) continue;
+    const candidate = Array.isArray(data) ? data[0] : data;
+    if (!candidate) continue;
+    const id = String(candidate.id || "");
+    const type = String(candidate.type || "");
+    if (type && id && index.byKey.has(`${type}:${id}`)) return index.byKey.get(`${type}:${id}`);
+    if (id && index.byId.has(id)) return index.byId.get(id);
+  }
+  return null;
+}
+
 function includedLeagueMap(json) {
   const map = new Map();
   const included = json && Array.isArray(json.included) ? json.included : [];
@@ -296,9 +266,7 @@ function rowLooksMlb(row, leagueMap) {
     getDeepValue(row, ["league", "sport", "sport_name", "league_name", "attributes.league", "attributes.sport", "attributes.sport_name", "attributes.league_name", "attributes.league_abbreviation"]),
     getDeepValue(row, ["attributes.stat_type", "attributes.description", "attributes.name"])
   ].filter(Boolean).map(v => String(v).toLowerCase());
-
   if (haystackValues.some(v => v === "mlb" || v.includes("major league baseball") || v.includes("baseball"))) return true;
-
   const leagueId = getDeepValue(row, ["relationships.league.data.id", "league_id", "attributes.league_id"]);
   if (leagueId && leagueMap.has(String(leagueId))) {
     const name = leagueMap.get(String(leagueId));
@@ -353,6 +321,125 @@ function summarizeJsonShape(json) {
   };
 }
 
+function boundedRawJson(value) {
+  const fullText = JSON.stringify(value || {}, null, 0);
+  const detected = detectArray(value);
+  const rows = detected.rows || [];
+  const firstRows = rows.slice(0, 5).map((row) => {
+    const text = JSON.stringify(row || {}, null, 0);
+    if (text.length <= 9000) return row;
+    return { alphadog_row_preview_truncated: true, original_chars: text.length, preview: text.slice(0, 9000) };
+  });
+  const envelope = {
+    alphadog_bounded_source_snapshot: true,
+    storage_reason: "d1_text_cell_size_guard",
+    source_shape_only: true,
+    original_chars: fullText.length,
+    detected_rows_key: detected.key,
+    detected_row_count: rows.length,
+    top_level_type: Array.isArray(value) ? "array" : typeof value,
+    top_level_keys: value && typeof value === "object" && !Array.isArray(value) ? Object.keys(value).slice(0, 80) : [],
+    included_count: value && Array.isArray(value.included) ? value.included.length : 0,
+    first_rows_sample_count: firstRows.length,
+    first_rows_sample: firstRows,
+    note: "Full raw PrizePicks JSON remains in GitHub prizepicks_mlb_current.json. D1 stores bounded source-shape staging only to avoid SQLITE_TOOBIG. No scoring, no ranking, no market_current_lines write."
+  };
+  let text = JSON.stringify(envelope, null, 0);
+  if (text.length > MAX_RAW_JSON_CHARS) {
+    text = JSON.stringify({ alphadog_bounded_source_snapshot: true, storage_reason: "d1_text_cell_size_guard", original_chars: fullText.length, detected_rows_key: detected.key, detected_row_count: rows.length, preview: text.slice(0, MAX_RAW_JSON_CHARS - 500), note: envelope.note });
+  }
+  return { text, truncated: true, original_chars: fullText.length, stored_chars: text.length };
+}
+
+function parseProjectionRow(row, index, leagueMap, slateDate, fetchedAt, batchId) {
+  const attrs = row && row.attributes && typeof row.attributes === "object" ? row.attributes : {};
+  const projectionId = safeCell(row && row.id, 120);
+  const playerItem = findRelationshipItem(row, index, ["new_player", "player", "participant", "players", "athlete"]);
+  const playerAttrs = playerItem && playerItem.attributes && typeof playerItem.attributes === "object" ? playerItem.attributes : {};
+  const statItem = findRelationshipItem(row, index, ["stat_type", "stat", "market", "projection_type"]);
+  const statAttrs = statItem && statItem.attributes && typeof statItem.attributes === "object" ? statItem.attributes : {};
+  const playerId = safeCell(playerItem && playerItem.id, 120) || safeCell(getDeepValue(row, ["relationships.new_player.data.id", "relationships.player.data.id", "player_id", "attributes.player_id"]), 120);
+  const playerName = safeCell(playerAttrs.name || playerAttrs.display_name || playerAttrs.full_name || playerAttrs.player_name || attrs.player_name || attrs.name || attrs.description, 240);
+  const team = safeCell(playerAttrs.team || playerAttrs.team_name || playerAttrs.team_abbreviation || playerAttrs.team_abbr || attrs.team || attrs.team_abbreviation, 120);
+  const opponent = safeCell(attrs.opponent || attrs.opponent_team || attrs.game_opponent || attrs.away_team || null, 120);
+  const leagueId = getDeepValue(row, ["relationships.league.data.id", "league_id", "attributes.league_id"]);
+  const leagueFromMap = leagueId && leagueMap.has(String(leagueId)) ? leagueMap.get(String(leagueId)) : null;
+  const league = safeCell(attrs.league || attrs.league_name || attrs.league_abbreviation || leagueFromMap || (rowLooksMlb(row, leagueMap) ? "mlb" : null), 80);
+  const statType = safeCell(attrs.stat_type || attrs.stat_display_name || statAttrs.name || statAttrs.display_name || statAttrs.stat_type, 160);
+  const lineRaw = attrs.line_score ?? attrs.flash_sale_line_score ?? attrs.score ?? attrs.line;
+  const lineScore = lineRaw === undefined || lineRaw === null || lineRaw === "" ? null : Number(lineRaw);
+  const description = safeCell(attrs.description || attrs.board_label || attrs.name, 400);
+  const startTime = safeCell(attrs.start_time || attrs.board_time || attrs.end_time, 120);
+  const rawProjectionJson = JSON.stringify(row || {});
+  const isMlb = rowLooksMlb(row, leagueMap) || String(league || "").toLowerCase().includes("mlb") || leagueMap.size === 1;
+  const errors = [];
+  if (!projectionId) errors.push("missing_projection_id");
+  if (!playerName) errors.push("missing_player_name");
+  if (!statType) errors.push("missing_stat_type");
+  if (lineScore === null || Number.isNaN(lineScore)) errors.push("missing_or_invalid_line_score");
+  if (!isMlb) errors.push("not_identified_as_mlb");
+  const parseStatus = errors.length === 0 ? "valid" : "invalid";
+  return {
+    stage_id: rid("pp_stage"),
+    batch_id: batchId,
+    source_key: SOURCE_KEY,
+    slate_date: slateDate,
+    fetched_at: fetchedAt,
+    projection_id: projectionId,
+    player_id: playerId,
+    player_name: playerName,
+    team,
+    opponent,
+    league: league || (isMlb ? "mlb" : null),
+    stat_type: statType,
+    line_score: lineScore === null || Number.isNaN(lineScore) ? null : lineScore,
+    description,
+    start_time: startTime,
+    raw_projection_json: rawProjectionJson,
+    parse_status: parseStatus,
+    parse_error: errors.length ? errors.join(",") : null,
+    certification_status: "pending",
+    is_mlb: isMlb
+  };
+}
+
+function buildCertification(shape, stagedRows, sourceSizeBytes, sourcePath) {
+  const totalRows = shape.detected_row_count || 0;
+  const mlbRows = stagedRows.filter(r => r.is_mlb).length;
+  const validRows = stagedRows.filter(r => r.is_mlb && r.parse_status === "valid").length;
+  const invalidRows = stagedRows.length - validRows;
+  const validRate = mlbRows > 0 ? validRows / mlbRows : 0;
+  const checks = {
+    github_fetch_http_200: true,
+    json_parse_ok: true,
+    recognized_top_level_shape: shape.detected_rows_key === "data" || shape.detected_rows_key === "root_array" || shape.detected_row_count > 0,
+    total_rows_gt_0: totalRows > 0,
+    mlb_rows_min_100: mlbRows >= 100,
+    valid_rate_min_90pct: validRate >= 0.90,
+    source_size_gt_1000: sourceSizeBytes > 1000,
+    not_worker_script: !String(sourcePath || "").toLowerCase().endsWith(".js")
+  };
+  const passed = Object.values(checks).every(Boolean);
+  const failed = Object.entries(checks).filter(([, v]) => !v).map(([k]) => k);
+  return {
+    passed,
+    certification_status: passed ? STAGE_CERT_PASS : STAGE_CERT_FAIL,
+    certification_reason: passed ? "PrizePicks JSON parsed, staged, and certified. No active/current promotion performed in v0.1.2." : `Certification failed: ${failed.join(",")}`,
+    totalRows,
+    stagedRows: stagedRows.length,
+    mlbRows,
+    validRows,
+    invalidRows,
+    validRate,
+    checks,
+    failed_checks: failed,
+    no_market_current_lines_write: true,
+    no_active_board_replacement: true,
+    no_scoring: true,
+    manual_refresh_only: true
+  };
+}
+
 async function writeHealth(env, status, rowsLastFetch, health, errorText = null) {
   const healthJson = safeJson(health);
   if (status === "healthy") {
@@ -376,77 +463,64 @@ async function writeRawSnapshot(env, parsedJson, rowCount, slateDate, status, er
     "INSERT INTO market_raw_snapshots (snapshot_id, source_key, slate_date, fetched_at, raw_json, row_count, status, error) VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)",
     snapshotId, SOURCE_KEY, slateDate, bounded.text, rowCount, status, errorText
   );
-  return {
-    wrote_table: "market_raw_snapshots",
-    snapshot_id: snapshotId,
-    source_key: SOURCE_KEY,
-    slate_date: slateDate,
-    row_count: rowCount,
-    status,
-    raw_json_truncated: bounded.truncated,
-    raw_json_original_chars: bounded.original_chars,
-    raw_json_stored_chars: bounded.stored_chars
-  };
+  return { wrote_table: "market_raw_snapshots", snapshot_id: snapshotId, source_key: SOURCE_KEY, slate_date: slateDate, row_count: rowCount, status, raw_json_truncated: bounded.truncated, raw_json_original_chars: bounded.original_chars, raw_json_stored_chars: bounded.stored_chars };
 }
 
-async function runBoardSourceShape(env, input = {}) {
+async function insertBatchPending(env, batchId, source, fetchedAt, slateDate, httpStatus, sizeBytes, shape) {
+  await run(env.MARKET_DB,
+    "INSERT INTO prizepicks_board_batches (batch_id, source_key, slate_date, fetched_at, staged_at, source_path, source_http_status, source_size_bytes, top_level_shape, total_rows, certification_status, certification_reason, certification_json, created_at, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, 'pending', 'stage_started', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    batchId, SOURCE_KEY, slateDate, fetchedAt, source.path, httpStatus, sizeBytes, JSON.stringify({ detected_rows_key: shape.detected_rows_key, top_level_keys: shape.top_level_keys }), shape.detected_row_count, safeJson({ phase: "stage_started", version: VERSION })
+  );
+  return { wrote_table: "prizepicks_board_batches", batch_id: batchId, status: "pending" };
+}
+
+async function stageRows(env, rows) {
+  const sql = "INSERT INTO prizepicks_board_stage (stage_id, batch_id, source_key, slate_date, fetched_at, projection_id, player_id, player_name, team, opponent, league, stat_type, line_score, description, start_time, raw_projection_json, parse_status, parse_error, certification_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  let inserted = 0;
+  for (let i = 0; i < rows.length; i += STAGE_INSERT_CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + STAGE_INSERT_CHUNK_SIZE);
+    const statements = chunk.map(r => env.MARKET_DB.prepare(sql).bind(r.stage_id, r.batch_id, r.source_key, r.slate_date, r.fetched_at, r.projection_id, r.player_id, r.player_name, r.team, r.opponent, r.league, r.stat_type, r.line_score, r.description, r.start_time, r.raw_projection_json, r.parse_status, r.parse_error, r.certification_status));
+    await env.MARKET_DB.batch(statements);
+    inserted += chunk.length;
+  }
+  return { wrote_table: "prizepicks_board_stage", inserted_rows: inserted, chunk_size: STAGE_INSERT_CHUNK_SIZE };
+}
+
+async function finalizeBatch(env, batchId, cert) {
+  await run(env.MARKET_DB,
+    "UPDATE prizepicks_board_batches SET certified_at=CURRENT_TIMESTAMP, staged_rows=?, mlb_rows=?, valid_rows=?, invalid_rows=?, certification_status=?, certification_reason=?, certification_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
+    cert.stagedRows, cert.mlbRows, cert.validRows, cert.invalidRows, cert.certification_status, cert.certification_reason, safeJson(cert, 6000), batchId
+  );
+  await run(env.MARKET_DB,
+    "UPDATE prizepicks_board_stage SET certification_status=? WHERE batch_id=?",
+    cert.certification_status, batchId
+  );
+  return { wrote_table: "prizepicks_board_batches", updated_stage_table: "prizepicks_board_stage", batch_id: batchId, certification_status: cert.certification_status };
+}
+
+async function runBoardParseStageCertify(env, input = {}) {
   const started = Date.now();
   const requestId = input.request_id || null;
   const chainId = input.chain_id || null;
   const schema = await validateWriteSchema(env);
   if (!schema.ok) {
-    return {
-      ok: false,
-      data_ok: false,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      job_key: JOB_KEY,
-      request_id: requestId,
-      chain_id: chainId,
-      source_key: SOURCE_KEY,
-      status: "blocked_schema_mismatch",
-      certification: "SCHEMA_NOT_SAFE_TO_WRITE",
-      schema,
-      rows_read: 0,
-      rows_written: 0,
-      external_calls_performed: 0,
-      error: "MARKET_DB schema is missing required first-build write columns. Stop and patch schema only after review.",
-      timestamp_utc: nowUtc()
-    };
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "blocked_schema_mismatch", certification: "SCHEMA_NOT_SAFE_TO_WRITE", schema, rows_read: 0, rows_staged: 0, rows_written: 0, external_calls_performed: 0, error: "MARKET_DB schema is missing required v0.1.2 staging/certification columns. Stop and patch schema only after review.", timestamp_utc: nowUtc() };
   }
 
   const source = await githubSourceConfig(env);
   const fetchStarted = nowUtc();
   let response;
   let text = "";
-
   try {
-    const headers = {
-      "user-agent": "AlphaDog-v2 PrizePicks GitHub Board Worker",
-      "accept": "application/json,text/plain,*/*"
-    };
+    const headers = { "user-agent": "AlphaDog-v2 PrizePicks GitHub Board Worker", "accept": "application/json,text/plain,*/*" };
     if (env.GITHUB_TOKEN) headers.authorization = `Bearer ${env.GITHUB_TOKEN}`;
     response = await fetch(source.url, { method: "GET", headers });
     text = await response.text();
   } catch (err) {
     const error = safeString(err && err.message ? err.message : err);
-    const health = {
-      version: VERSION,
-      request_id: requestId,
-      chain_id: chainId,
-      source_key: SOURCE_KEY,
-      source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution },
-      fetch_started_at: fetchStarted,
-      checked_at: nowUtc(),
-      reachable: false,
-      http_status: null,
-      json_parse_ok: false,
-      error,
-      no_market_current_lines_write: true,
-      no_scoring: true
-    };
+    const health = { version: VERSION, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution }, fetch_started_at: fetchStarted, checked_at: nowUtc(), reachable: false, http_status: null, json_parse_ok: false, error, no_market_current_lines_write: true, no_scoring: true };
     const write = await writeHealth(env, "error", 0, health, error);
-    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_UNREACHABLE", rows_read: 0, rows_written: 1, external_calls_performed: 1, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_UNREACHABLE", rows_read: 0, rows_staged: 0, rows_written: 1, external_calls_performed: 1, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
   }
 
   const httpStatus = response ? response.status : null;
@@ -455,26 +529,9 @@ async function runBoardSourceShape(env, input = {}) {
 
   if (!response || !response.ok) {
     const error = `GitHub raw fetch failed with HTTP ${httpStatus}`;
-    const health = {
-      version: VERSION,
-      request_id: requestId,
-      chain_id: chainId,
-      source_key: SOURCE_KEY,
-      source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution },
-      fetch_started_at: fetchStarted,
-      checked_at: nowUtc(),
-      reachable: false,
-      http_status: httpStatus,
-      content_type: contentType,
-      response_size_bytes: sizeBytes,
-      json_parse_ok: false,
-      error,
-      response_preview: safeString(text, 500),
-      no_market_current_lines_write: true,
-      no_scoring: true
-    };
+    const health = { version: VERSION, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution }, fetch_started_at: fetchStarted, checked_at: nowUtc(), reachable: false, http_status: httpStatus, content_type: contentType, response_size_bytes: sizeBytes, json_parse_ok: false, error, response_preview: safeString(text, 500), no_market_current_lines_write: true, no_scoring: true };
     const write = await writeHealth(env, "error", 0, health, error);
-    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_HTTP_ERROR", rows_read: 0, rows_written: 1, external_calls_performed: 1, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_HTTP_ERROR", rows_read: 0, rows_staged: 0, rows_written: 1, external_calls_performed: 1, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
   }
 
   const pathLower = String(source.path || "").toLowerCase();
@@ -482,62 +539,36 @@ async function runBoardSourceShape(env, input = {}) {
   if (isJavascriptSource) {
     const scriptShape = summarizeWorkerScript(text);
     const error = "Configured PrizePicks path reached a Worker script, not the real PrizePicks JSON board dump.";
-    const health = {
-      version: VERSION,
-      request_id: requestId,
-      chain_id: chainId,
-      source_key: SOURCE_KEY,
-      source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution },
-      fetch_started_at: fetchStarted,
-      checked_at: nowUtc(),
-      reachable: true,
-      http_status: httpStatus,
-      content_type: contentType,
-      response_size_bytes: sizeBytes,
-      json_parse_ok: false,
-      source_file_mode: "javascript_worker_script",
-      script_shape: scriptShape,
-      error,
-      no_market_current_lines_write: true,
-      no_scoring: true,
-      no_final_board_write: true
-    };
+    const health = { version: VERSION, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution }, fetch_started_at: fetchStarted, checked_at: nowUtc(), reachable: true, http_status: httpStatus, content_type: contentType, response_size_bytes: sizeBytes, json_parse_ok: false, source_file_mode: "javascript_worker_script", script_shape: scriptShape, error, no_market_current_lines_write: true, no_scoring: true, no_final_board_write: true };
     const write = await writeHealth(env, "error", 0, health, error);
-    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_IS_WORKER_SCRIPT_NOT_BOARD_JSON", rows_read: 0, rows_written: 1, external_calls_performed: 1, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_IS_WORKER_SCRIPT_NOT_BOARD_JSON", rows_read: 0, rows_staged: 0, rows_written: 1, external_calls_performed: 1, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
   }
 
   let parsed;
   let parseError = null;
   try { parsed = JSON.parse(text); } catch (err) { parseError = safeString(err && err.message ? err.message : err); }
   if (parseError) {
-    const health = {
-      version: VERSION,
-      request_id: requestId,
-      chain_id: chainId,
-      source_key: SOURCE_KEY,
-      source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution },
-      fetch_started_at: fetchStarted,
-      checked_at: nowUtc(),
-      reachable: true,
-      http_status: httpStatus,
-      content_type: contentType,
-      response_size_bytes: sizeBytes,
-      json_parse_ok: false,
-      error: parseError,
-      response_preview: safeString(text, 500),
-      no_market_current_lines_write: true,
-      no_scoring: true
-    };
+    const health = { version: VERSION, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution }, fetch_started_at: fetchStarted, checked_at: nowUtc(), reachable: true, http_status: httpStatus, content_type: contentType, response_size_bytes: sizeBytes, json_parse_ok: false, error: parseError, response_preview: safeString(text, 500), no_market_current_lines_write: true, no_scoring: true };
     const write = await writeHealth(env, "error", 0, health, parseError);
-    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "JSON_PARSE_FAILED", rows_read: 0, rows_written: 1, external_calls_performed: 1, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "JSON_PARSE_FAILED", rows_read: 0, rows_staged: 0, rows_written: 1, external_calls_performed: 1, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
   }
 
   const shape = summarizeJsonShape(parsed);
+  const detected = detectArray(parsed);
+  const sourceRows = detected.rows || [];
   const slateDate = slateDateFromJson(parsed, input);
+  const batchId = rid("pp_batch");
+  const includedIndex = buildIncludedIndex(parsed);
+  const leagueMap = includedLeagueMap(parsed);
+  const stagedRows = sourceRows.map(row => parseProjectionRow(row, includedIndex, leagueMap, slateDate, fetchStarted, batchId));
+
   const rawWrite = await writeRawSnapshot(env, parsed, shape.detected_row_count, slateDate, RAW_SNAPSHOT_STATUS_OK, null);
-  const healthy = shape.detected_row_count > 0;
-  const healthStatus = healthy ? "healthy" : "warning";
-  const certification = healthy ? "PRIZEPICKS_JSON_SOURCE_SHAPE_STAGED" : "PRIZEPICKS_JSON_PARSED_NO_ROWS_DETECTED";
+  const batchPending = await insertBatchPending(env, batchId, source, fetchStarted, slateDate, httpStatus, sizeBytes, shape);
+  const stageWrite = await stageRows(env, stagedRows);
+  const cert = buildCertification(shape, stagedRows, sizeBytes, source.path);
+  const batchFinalize = await finalizeBatch(env, batchId, cert);
+
+  const healthStatus = cert.passed ? "healthy" : "warning";
   const health = {
     version: VERSION,
     request_id: requestId,
@@ -553,17 +584,20 @@ async function runBoardSourceShape(env, input = {}) {
     json_parse_ok: true,
     slate_date: slateDate,
     shape,
+    batch: { batch_id: batchId, certification_status: cert.certification_status, certification_reason: cert.certification_reason, valid_rate: cert.validRate },
     raw_snapshot: rawWrite,
     no_market_current_lines_write: true,
+    no_active_board_replacement: true,
     no_scoring: true,
     no_ranking: true,
-    no_final_board_write: true
+    no_final_board_write: true,
+    manual_refresh_only: true
   };
-  const healthWrite = await writeHealth(env, healthStatus, shape.detected_row_count, health, healthy ? null : "JSON parsed but no known row array detected");
+  const healthWrite = await writeHealth(env, healthStatus, cert.mlbRows || shape.detected_row_count, health, cert.passed ? null : cert.certification_reason);
 
   return {
-    ok: true,
-    data_ok: healthy,
+    ok: cert.passed,
+    data_ok: cert.passed,
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
@@ -571,15 +605,30 @@ async function runBoardSourceShape(env, input = {}) {
     chain_id: chainId,
     source_key: SOURCE_KEY,
     status: healthStatus,
-    certification,
+    certification: cert.certification_status,
+    certification_reason: cert.certification_reason,
     rows_read: shape.detected_row_count,
-    rows_written: 2,
+    rows_staged: stagedRows.length,
+    mlb_rows: cert.mlbRows,
+    valid_rows: cert.validRows,
+    invalid_rows: cert.invalidRows,
+    valid_rate: Number(cert.validRate.toFixed(4)),
+    rows_written: 3 + stagedRows.length,
     external_calls_performed: 1,
     elapsed_ms: Date.now() - started,
     source_config_safe: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution },
     shape,
-    writes: { raw_snapshot: rawWrite, source_health: healthWrite },
-    output_cap_note: "Response contains shape/status only. Full raw JSON stays in GitHub; MARKET_DB.market_raw_snapshots stores bounded source-shape staging only to avoid D1 SQLITE_TOOBIG.",
+    batch: { batch_id: batchId, certification_status: cert.certification_status, certification_checks: cert.checks, failed_checks: cert.failed_checks },
+    writes: { raw_snapshot: rawWrite, batch_pending: batchPending, stage: stageWrite, batch_finalize: batchFinalize, source_health: healthWrite },
+    lifecycle_locked: {
+      staged_and_certified_only: true,
+      no_market_current_lines_write: true,
+      no_active_board_replacement: true,
+      no_promotion: true,
+      no_scheduling_added: true,
+      manual_buttons: ["ORCHESTRATOR > PP Board", "ORCHESTRATOR > Wake"]
+    },
+    output_cap_note: "Response contains status/certification only. Full raw JSON stays in GitHub. Parsed rows are staged in prizepicks_board_stage; no active/current promotion occurs in v0.1.2.",
     timestamp_utc: nowUtc()
   };
 }
@@ -589,65 +638,24 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, "") || "/";
     const method = request.method.toUpperCase();
-
     if (method === "OPTIONS") return jsonResponse({ ok: true });
-
     if (method === "GET" && path === "/") return jsonResponse(baseIdentity(env));
-
     if (method === "GET" && path === "/health") {
       let schema = null;
       let source = null;
       try { schema = await validateWriteSchema(env); } catch (err) { schema = { ok: false, error: safeString(err && err.message ? err.message : err) }; }
       try { source = await githubSourceConfig(env); } catch (err) { source = { ok: false, error: safeString(err && err.message ? err.message : err) }; }
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/health",
-        checks: {
-          db_bindings: bindingPresence(env, REQUIRED_DB_BINDINGS),
-          config_values_present: valuePresence(env, REQUIRED_CONFIG_VALUES),
-          write_schema: schema,
-          github_source_config: source
-        },
-        safe_secret_note: "Secret/config values are presence-checked only. GitHub token value is never printed."
-      });
+      return jsonResponse({ ...baseIdentity(env), route: "/health", checks: { db_bindings: bindingPresence(env, REQUIRED_DB_BINDINGS), config_values_present: valuePresence(env, REQUIRED_CONFIG_VALUES), write_schema: schema, github_source_config: source }, safe_secret_note: "Secret/config values are presence-checked only. GitHub token value is never printed." });
     }
-
     if (method === "POST" && path === "/diagnostic") {
       const input = await readJsonSafe(request);
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/diagnostic",
-        input_echo_safe: {
-          request_id: input.request_id || null,
-          chain_id: input.chain_id || null,
-          job_key: input.job_key || null,
-          mode: input.mode || null
-        },
-        diagnostics: {
-          db_bindings: bindingPresence(env, REQUIRED_DB_BINDINGS),
-          config_values_present: valuePresence(env, REQUIRED_CONFIG_VALUES),
-          write_schema: await validateWriteSchema(env),
-          github_source_config: await githubSourceConfig(env)
-        },
-        writes_performed: 0,
-        external_calls_performed: 0
-      });
+      return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", input_echo_safe: { request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || null, mode: input.mode || null }, diagnostics: { db_bindings: bindingPresence(env, REQUIRED_DB_BINDINGS), config_values_present: valuePresence(env, REQUIRED_CONFIG_VALUES), write_schema: await validateWriteSchema(env), github_source_config: await githubSourceConfig(env) }, writes_performed: 0, external_calls_performed: 0 });
     }
-
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const output = await runBoardSourceShape(env, input);
+      const output = await runBoardParseStageCertify(env, input);
       return jsonResponse(output, 200);
     }
-
-    return jsonResponse({
-      ok: false,
-      data_ok: false,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      status: "NOT_FOUND",
-      allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"],
-      timestamp_utc: nowUtc()
-    }, 404);
+    return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }
 };
