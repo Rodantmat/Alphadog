@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.4-real-orchestrator-cron-ready -->
+<!-- alphadog-v2-control-room-v1.5-wake-now -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,10 +28,10 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.4-real-orchestrator-cron-ready</div>
+<div id="versionTag">alphadog-v2-control-room-v1.5-wake-now</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
-<div class="small">Access mode: single-user. Control Room enqueues/status only. Real orchestrator cron continues backend work.</div>
+<div class="small">Access mode: single-user. Control Room enqueues/status. Wake calls real orchestrator once; cron continues automatically.</div>
 <div class="status" id="status">READY</div>
 
 <div class="section"><h3>DEBUG</h3><div class="grid">
@@ -56,10 +56,10 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <div class="section"><h3>ORCHESTRATOR</h3><div class="grid">
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Status','orchestrator_status')">Status</button>
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Enqueue','orchestrator_enqueue_test')">Enqueue</button>
-<button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Cron','orchestrator_tick')">Cron</button>
+<button class="orch" type="button" onclick="runOrchestratorWake()">Wake</button>
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Logs','orchestrator_logs')">Logs</button>
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Health','orchestrator_health')">OHealth</button>
-</div><div class="small">Buttons wake/schedule backend work only. No browser long loops.</div></div>
+</div><div class="small">Wake = one backend call now. Cron = automatic fallback. No browser loops.</div></div>
 
 <div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
 <button class="check" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Queue','v2_queue_status')">Queue</button>
@@ -87,6 +87,8 @@ const JOB_URL=BASE+"/tasks/run";
 const SQL_URL=BASE+"/debug/sql";
 const HEALTH_URL=BASE+"/health";
 const DIAGNOSTIC_URL=BASE+"/diagnostic";
+const ORCH_BASE="https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev";
+const ORCH_TICK_URL=ORCH_BASE+"/tick";
 
 function ptParts(){
   const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(new Date());
@@ -125,7 +127,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"control-db-queue-real-orchestrator-cron",version:"alphadog-v2-control-room-v1.4-real-orchestrator-cron-ready"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"wake-now-plus-cron-fallback",version:"alphadog-v2-control-room-v1.5-wake-now"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
@@ -152,6 +154,11 @@ function health(){requestJSON("DEBUG > Health",HEALTH_URL,null)}
 function diagnostic(){requestJSON("DEBUG > Diag",DIAGNOSTIC_URL,null)}
 function testSQL(){requestJSON("DEBUG > SQL",SQL_URL,{sql:"SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;",max_rows:50,max_chars:900})}
 function runJobButton(l,j){requestJSON(l,JOB_URL,{job:j,slate_mode:"AUTO_BY_GAME_DATE_TIME",auto_slate_context:autoSlateContext(),backend_only:true})}
+
+async function runOrchestratorWake(){
+  requestJSON("ORCHESTRATOR > Wake",ORCH_TICK_URL,{source:"control_room_wake_now",backend_only:true,max_jobs:3,wake_only:true});
+}
+
 function runManualSQL(){requestJSON("MANUAL SQL > Run",SQL_URL,{sql:document.getElementById("sqlInput").value,max_rows:50,max_chars:900})}
 function copyOutput(){navigator.clipboard.writeText(document.getElementById("output").textContent);setStatus("COPIED OUTPUT")}
 function clearSqlInput(){const el=document.getElementById("sqlInput");if(!el)return;el.removeAttribute("readonly");el.removeAttribute("disabled");el.value="";el.focus()}
