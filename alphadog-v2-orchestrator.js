@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.19-base-hitter-lock-busy-backoff";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.20-base-hitter-direct-waituntil-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1145,6 +1145,7 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
       elapsed_ms: Date.now() - started,
       base_backfill_self_continuation_v0_2_0: true,
       lock_busy_backoff_v0_2_3: true,
+      direct_waituntil_continuation_v0_2_4: true,
       backend_self_continuation_ready: true,
       manual_wake_testing_only: true,
       no_browser_pump: true,
@@ -2145,25 +2146,17 @@ async function pump(env, trigger = "auto_pump", maxCycles = 12, maxJobsPerCycle 
   );
 
   if (shouldSelfContinue) {
-    const nextUrl = new URL('/pump', requestUrl).toString();
-    const nextPayload = {
-      source: `${trigger}:self_continue_${depth + 1}`,
-      max_cycles: hardCycles,
-      max_jobs_per_cycle: jobsPerCycle,
-      max_ms: deadlineMs,
-      pump_depth: depth + 1,
-      max_pump_chains: maxChains
-    };
-    ctx.waitUntil(fetch(nextUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(nextPayload)
-    }).catch(async (err) => {
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'ERROR', 'orchestrator_auto_pump_self_continue_failed', 'Self-continuing pump fetch failed', ?, CURRENT_TIMESTAMP)",
-        WORKER_NAME, JSON.stringify({ error: String(err && err.message ? err.message : err), version: SYSTEM_VERSION })
-      );
-    }));
+    const nextSource = `${trigger}:direct_waituntil_self_continue_${depth + 1}`;
+    ctx.waitUntil((async () => {
+      try {
+        await pump(env, nextSource, hardCycles, jobsPerCycle, deadlineMs, ctx, requestUrl, depth + 1, maxChains);
+      } catch (err) {
+        await run(env.CONTROL_DB,
+          "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'ERROR', 'orchestrator_auto_pump_self_continue_failed', 'Direct waitUntil self-continuing pump failed', ?, CURRENT_TIMESTAMP)",
+          WORKER_NAME, JSON.stringify({ error: String(err && err.message ? err.message : err), version: SYSTEM_VERSION, direct_waituntil_continuation_v0_2_4: true })
+        );
+      }
+    })());
   }
 
   const last = cycles.length ? cycles[cycles.length - 1] : null;
