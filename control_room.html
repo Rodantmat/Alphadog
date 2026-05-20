@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.5.18-static-prop-taxonomy-button -->
+<!-- alphadog-v2-control-room-v1.5.21-parlay-sleeper-probe-button -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,10 +28,10 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.5.18-static-prop-taxonomy-button</div>
+<div id="versionTag">alphadog-v2-control-room-v1.5.21-parlay-sleeper-probe-button</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
-<div class="small">Access mode: single-user. Control Room enqueues/status only. Static Players and Static Prop Taxonomy queue only. Orchestrator scheduled backend/cron owns continuation. Wake is manual backend test only.</div>
+<div class="small">Access mode: single-user. Control Room enqueues/status only. Static Players, Static Prop Taxonomy, Static Certifier, Static Full Run, and Sleeper source-probe queue only. Orchestrator scheduled backend/cron owns continuation. Wake is manual backend test only.</div>
 <div class="status" id="status">READY</div>
 
 <div class="section"><h3>DEBUG</h3><div class="grid">
@@ -59,11 +59,15 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <button class="orch" type="button" onclick="runOrchestratorWake()">Wake</button>
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Logs','orchestrator_logs')">Logs</button>
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Health','orchestrator_health')">OHealth</button>
-</div><div class="small">Wake = optional backend trigger for testing. It requests up to 5 safe backend chunks/jobs in one wake. Static Players and Static Prop Taxonomy queue only. Cron/scheduled backend owns fallback continuation. No browser loops.</div></div>
+</div><div class="small">Wake = optional backend trigger for testing. It requests up to 5 safe backend chunks/jobs in one wake. Static Full Run remains backend-chain only. Cron/scheduled backend owns fallback continuation. No browser loops.</div></div>
 
 <div class="section"><h3>BOARD</h3><div class="grid">
 <button class="orch" type="button" onclick="runJobButton('BOARD > PrizePicks','orchestrator_enqueue_prizepicks_github_board')">PrizePicks</button>
-</div><div class="small">Board ingestion/refresh only. No scoring, no ranking, no final board.</div></div>
+</div><div class="small">PrizePicks board ingestion/refresh only. No scoring, no ranking, no final board.</div></div>
+
+<div class="section"><h3>MARKET</h3><div class="grid">
+<button class="orch" type="button" onclick="runJobButton('MARKET > Sleeper Board','orchestrator_enqueue_parlay_sleeper_board')">Sleeper Board</button>
+</div><div class="small">Sleeper source-probe readiness only. Queues backend job. No promotion, no guessed aliases, no scoring, no ranking, no final board.</div></div>
 
 <div class="section"><h3>STATIC</h3><div class="grid">
 <button class="check" type="button" onclick="runJobButton('STATIC > Teams','orchestrator_enqueue_static_teams')">Teams</button>
@@ -71,7 +75,9 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <button class="check" type="button" onclick="runJobButton('STATIC > Park Factors','orchestrator_enqueue_static_park_factors')">Park Factors</button>
 <button class="check" type="button" onclick="runJobButton('STATIC > Players','orchestrator_enqueue_static_players')">Players</button>
 <button class="check" type="button" onclick="runJobButton('STATIC > Prop Taxonomy','orchestrator_enqueue_static_prop_taxonomy')">Prop Tax</button>
-</div><div class="small">Static dictionary/reference data only. No scoring, no board mutation, no opponent backfill.</div></div>
+<button class="audit" type="button" onclick="runJobButton('STATIC > Certifier','orchestrator_enqueue_static_certifier')">Certifier</button>
+<button class="audit" type="button" onclick="runJobButton('STATIC > Full Run','orchestrator_enqueue_static_full_run')">Full Run</button>
+</div><div class="small">Static dictionary/reference data only. Certifier is read-only. Full Run reruns active static workers then certifier. Deferred static-rosters and static-player-aliases stay skipped. No scoring, no board mutation, no opponent backfill.</div></div>
 
 <div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
 <button class="check" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Queue','v2_queue_status')">Queue</button>
@@ -139,7 +145,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.5.18-static-prop-taxonomy-button"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.5.21-parlay-sleeper-probe-button"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
