@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-parlay-sleeper-board";
-const VERSION = "alphadog-v2-parlay-sleeper-board-v0.3.0-stage-certify-alias-audit-no-promotion";
+const VERSION = "alphadog-v2-parlay-sleeper-board-v0.3.1-ref-alias-write-no-promotion";
 const JOB_KEY = "parlay-sleeper-board";
 const SOURCE_KEY = "parlay_sleeper";
 const MAX_PREVIEW_CHARS = 900;
@@ -432,6 +432,48 @@ function auditCanonicalMapping(sourceStatName, taxonomy) {
 }
 
 
+
+function normalizeAliasName(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+async function replaceParlaySleeperPropAliases(env, distinctSourceToCanonical) {
+  if (!env.REF_DB) return { ok: false, rows_written: 0, reason: "missing_REF_DB_binding", aliases_written: [] };
+  const aliases = [];
+  const seen = new Set();
+  for (const row of distinctSourceToCanonical || []) {
+    if (!row || row.parse_status !== "parsed_stage_only_canonical_mapping_audited") continue;
+    const sourceName = normalizeText(row.source_stat_name);
+    const propKey = normalizeText(row.canonical_prop_key);
+    if (!sourceName || !propKey) continue;
+    const normalized = normalizeAliasName(sourceName);
+    const aliasKey = `${SOURCE_KEY}:${normalized}`;
+    if (seen.has(aliasKey)) continue;
+    seen.add(aliasKey);
+    aliases.push({
+      alias_key: aliasKey,
+      prop_key: propKey,
+      source_key: SOURCE_KEY,
+      source_market_name: sourceName,
+      normalized_market_name: normalized
+    });
+  }
+
+  await run(env.REF_DB, "DELETE FROM ref_prop_aliases WHERE source_key=?", SOURCE_KEY);
+  for (const a of aliases) {
+    await run(env.REF_DB, `INSERT INTO ref_prop_aliases
+      (alias_key, prop_key, source_key, source_market_name, normalized_market_name, updated_at)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+      a.alias_key, a.prop_key, a.source_key, a.source_market_name, a.normalized_market_name
+    );
+  }
+  return { ok: true, rows_written: aliases.length, aliases_written: aliases };
+}
+
 function normalizeText(value) {
   if (value === undefined || value === null) return null;
   const text = String(value).trim();
@@ -564,6 +606,7 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
   const unsupportedRows = stageRows.filter(row => String(row.parse_status || "").includes("canonical_not_sleeper_supported")).length;
   const missingTaxonomyRows = stageRows.filter(row => String(row.parse_status || "").includes("canonical_missing_from_taxonomy")).length;
   const distinctSourceToCanonical = Array.from(new Map(stageRows.map(row => [row.source_stat_name, { source_stat_name: row.source_stat_name, canonical_prop_key: row.canonical_prop_key, parse_status: row.parse_status, parse_error: row.parse_error }])).values()).sort((a,b)=>String(a.source_stat_name||"").localeCompare(String(b.source_stat_name||"")));
+  const aliasWrite = await replaceParlaySleeperPropAliases(env, distinctSourceToCanonical);
   const slateDates = Array.from(new Set(stageRows.map(row => row.slate_date).filter(Boolean))).sort();
   const pickableRows = stageRows.filter(row => row.is_pickable === 1).length;
 
@@ -587,8 +630,8 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
     validRows,
     invalidRows,
     mappingBlockedRows + invalidRows,
-    mappingBlockedRows === 0 && invalidRows === 0 ? "STAGE_CERTIFIED_MAPPING_AUDITED_NO_PROMOTION" : "STAGE_CERTIFY_MAPPING_BLOCKED_NO_PROMOTION",
-    mappingBlockedRows === 0 && invalidRows === 0 ? "Rows parsed into Sleeper staging and canonical mappings audited. Promotion still blocked until source-scoped REF_DB aliases are explicitly approved/written." : "Rows parsed into Sleeper staging, but mapping/taxonomy blockers remain. No promotion allowed.",
+    mappingBlockedRows === 0 && invalidRows === 0 ? "STAGE_ALIASES_WRITTEN_NO_PROMOTION" : "STAGE_ALIASES_WRITTEN_MAPPING_BLOCKED_NO_PROMOTION",
+    mappingBlockedRows === 0 && invalidRows === 0 ? "Rows parsed into Sleeper staging and source-scoped REF_DB aliases written for supported/audited mappings. Promotion still blocked until all stage blockers are cleared and promotion is explicitly approved." : "Rows parsed into Sleeper staging and supported/audited REF_DB aliases written, but mapping/taxonomy blockers remain. No promotion allowed.",
     JSON.stringify({
       no_promotion: true,
       no_current_write: true,
@@ -604,7 +647,8 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
       unmapped_rows: unmappedRows,
       unsupported_rows: unsupportedRows,
       missing_taxonomy_rows: missingTaxonomyRows,
-      distinct_source_to_canonical: distinctSourceToCanonical
+      distinct_source_to_canonical: distinctSourceToCanonical,
+      ref_alias_write: { ok: aliasWrite.ok, rows_written: aliasWrite.rows_written, source_key: SOURCE_KEY, aliases_written: aliasWrite.aliases_written }
     })
   );
   await insertStageRows(env, stageRows);
@@ -624,7 +668,8 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
     unsupported_rows: unsupportedRows,
     missing_taxonomy_rows: missingTaxonomyRows,
     distinct_source_to_canonical: distinctSourceToCanonical,
-    certification_status: mappingBlockedRows === 0 && invalidRows === 0 ? "STAGE_CERTIFIED_MAPPING_AUDITED_NO_PROMOTION" : "STAGE_CERTIFY_MAPPING_BLOCKED_NO_PROMOTION",
+    ref_alias_write: aliasWrite,
+    certification_status: mappingBlockedRows === 0 && invalidRows === 0 ? "STAGE_ALIASES_WRITTEN_NO_PROMOTION" : "STAGE_ALIASES_WRITTEN_MAPPING_BLOCKED_NO_PROMOTION",
     current_rows_written: 0,
     active_batch_rows_written: 0
   };
@@ -663,7 +708,7 @@ async function safeProbe(env, input = {}) {
     return blockedProbe("SOURCE_AUTH_CONFIG_UNVERIFIED", auth.block_reason, readiness, endpoint, auth);
   }
 
-  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-Parlay-Sleeper-StageCertifyAliasAudit/0.3.0" });
+  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-Parlay-Sleeper-RefAliasWrite/0.3.1" });
   auth.apply(headers, env);
 
   const started = Date.now();
@@ -730,7 +775,7 @@ async function safeProbe(env, input = {}) {
     job_key: JOB_KEY,
     source_key: SOURCE_KEY,
     status: stagedOk ? "stage_certify_alias_audit_completed_no_promotion" : (response.ok && parsed ? "source_probe_completed_shape_captured_stage_blocked" : "source_probe_completed_shape_unverified"),
-    certification: stagedOk ? (stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0 ? "PARLAY_SLEEPER_STAGE_CERTIFIED_MAPPING_AUDITED_NO_PROMOTION" : "PARLAY_SLEEPER_STAGE_CERTIFY_MAPPING_BLOCKED_NO_PROMOTION") : (response.ok && parsed ? "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_CAPTURED_STAGE_BLOCKED" : "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_UNVERIFIED_NO_PROMOTION"),
+    certification: stagedOk ? (stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0 ? "PARLAY_SLEEPER_STAGE_ALIASES_WRITTEN_NO_PROMOTION" : "PARLAY_SLEEPER_STAGE_ALIASES_WRITTEN_MAPPING_BLOCKED_NO_PROMOTION") : (response.ok && parsed ? "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_CAPTURED_STAGE_BLOCKED" : "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_UNVERIFIED_NO_PROMOTION"),
     block_downstream_reason: stagedOk ? (stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0 ? "promotion_blocked_until_REF_DB_source_scoped_aliases_are_explicitly_approved_written_and_certified" : "promotion_blocked_due_to_unmapped_or_unsupported_source_stat_types") : (stageError || "source_response_not_verified_json_shape"),
     readiness,
     source_config: safeSourceConfig(endpoint, auth),
@@ -750,7 +795,7 @@ async function safeProbe(env, input = {}) {
     stage_only_result: stageResult,
     stage_error: stageError,
     rows_read: rowsRead,
-    rows_written: stagedOk ? ((stageResult.staged_rows || 0) + 1) : 0,
+    rows_written: stagedOk ? ((stageResult.staged_rows || 0) + 1 + ((stageResult.ref_alias_write && stageResult.ref_alias_write.rows_written) || 0)) : 0,
     promoted_rows_written: 0,
     current_rows_written: 0,
     active_batch_rows_written: 0,
@@ -761,7 +806,7 @@ async function safeProbe(env, input = {}) {
     no_final_board: true,
     no_prizepicks_mutation: true,
     no_promotion: true,
-    next_required_approval: "Review mapping audit. If accepted, add source-scoped REF_DB.ref_prop_aliases for source_key=parlay_sleeper and keep promotion blocked until alias certification passes."
+    next_required_approval: "Review source-scoped REF_DB.ref_prop_aliases for source_key=parlay_sleeper. Promotion remains blocked until unsupported stat types are handled and promotion is explicitly approved."
   };
 }
 
@@ -820,13 +865,13 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "SOURCE_PROBE_READY",
     timestamp_utc: nowUtc(),
-    phase: "parlay_sleeper_board_stage_certify_alias_audit_v0_3_0",
+    phase: "parlay_sleeper_board_ref_alias_write_v0_3_1",
     notes: [
-      "Stage+certify alias-audit worker with safe public endpoint/header fallbacks and full-body JSON parsing before bounded preview slicing.",
+      "Stage+certify source-scoped alias write worker with safe public endpoint/header fallbacks and full-body JSON parsing before bounded preview slicing.",
       "Creates/validates additive Sleeper lifecycle schema when /run executes.",
       "Performs safe source fetch and writes parsed rows to Sleeper staging tables only when source shape is captured.",
-      "Audits source market_key values against CONFIG_DB taxonomy using source-proven mapping candidates only.",
-      "Does not write REF_DB aliases, current board, promote rows, score, rank, write final board, or mutate PrizePicks."
+      "Audits source market_key values against CONFIG_DB taxonomy using source-proven mapping candidates only, then writes REF_DB.ref_prop_aliases only for supported/audited Sleeper mappings.",
+      "Does not write current board, promote rows, score, rank, write final board, or mutate PrizePicks. REF_DB alias writes are source-scoped to parlay_sleeper only."
     ],
     binding_summary: {
       required_db_bindings_present: allTrue(db),
