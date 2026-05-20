@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.5.12-static-players-auto-pump-ctx-fix -->
+<!-- alphadog-v2-control-room-v1.5.13-static-players-pump-wake-guard -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,10 +28,10 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.5.12-static-players-auto-pump-ctx-fix</div>
+<div id="versionTag">alphadog-v2-control-room-v1.5.13-static-players-pump-wake-guard</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
-<div class="small">Access mode: single-user. Control Room enqueues/status. Static Players auto-pumps after enqueue; cron continues automatically. No repeated manual wake.</div>
+<div class="small">Access mode: single-user. Control Room enqueues/status. Static Players auto-pumps after enqueue; Wake uses pump; cron continues automatically. No repeated manual wake.</div>
 <div class="status" id="status">READY</div>
 
 <div class="section"><h3>DEBUG</h3><div class="grid">
@@ -59,7 +59,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <button class="orch" type="button" onclick="runOrchestratorWake()">Wake</button>
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Logs','orchestrator_logs')">Logs</button>
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Health','orchestrator_health')">OHealth</button>
-</div><div class="small">Wake = optional one backend call. Static Players auto-pumps after enqueue. Cron = automatic fallback. No browser loops.</div></div>
+</div><div class="small">Wake = optional bounded pump continuation. Static Players auto-pumps after enqueue. Cron = automatic fallback. No browser loops.</div></div>
 
 <div class="section"><h3>BOARD</h3><div class="grid">
 <button class="orch" type="button" onclick="runJobButton('BOARD > PrizePicks','orchestrator_enqueue_prizepicks_github_board')">PrizePicks</button>
@@ -99,7 +99,7 @@ const SQL_URL=BASE+"/debug/sql";
 const HEALTH_URL=BASE+"/health";
 const DIAGNOSTIC_URL=BASE+"/diagnostic";
 const ORCH_BASE="https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev";
-const ORCH_TICK_URL=ORCH_BASE+"/tick";
+const ORCH_TICK_URL=ORCH_BASE+"/pump";
 
 function ptParts(){
   const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(new Date());
@@ -138,7 +138,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"auto-pump-plus-cron-fallback",version:"alphadog-v2-control-room-v1.5.12-static-players-auto-pump-ctx-fix"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"auto-pump-plus-cron-fallback",version:"alphadog-v2-control-room-v1.5.13-static-players-pump-wake-guard"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
