@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-parlay-sleeper-board";
-const VERSION = "alphadog-v2-parlay-sleeper-board-v0.1.3-source-probe-full-body-parse";
+const VERSION = "alphadog-v2-parlay-sleeper-board-v0.2.0-stage-only-no-promotion";
 const JOB_KEY = "parlay-sleeper-board";
 const SOURCE_KEY = "parlay_sleeper";
 const MAX_PREVIEW_CHARS = 900;
@@ -7,7 +7,7 @@ const MAX_PREVIEW_CHARS = 900;
 // Safe public ParlayAPI probe defaults. These are endpoint/header names only, never secret values.
 // They are intentionally coded as fallback defaults because Cloudflare/GitHub deploys may not apply wrangler var-only edits reliably.
 const DEFAULT_PARLAY_API_BASE_URL = "https://parlay-api.com/v1";
-const DEFAULT_PARLAY_SLEEPER_PROBE_ENDPOINT = "/sports/baseball_mlb/props?bookmakers=sleeper";
+const DEFAULT_PARLAY_SLEEPER_PROBE_ENDPOINT = "/sports/baseball_mlb/props?bookmakers=sleeper&limit=10000&dfsOdds=effective";
 const DEFAULT_PARLAY_API_AUTH_HEADER_NAME = "X-API-Key";
 const DEFAULT_PARLAY_API_AUTH_HEADER_PREFIX = "";
 
@@ -358,6 +358,174 @@ function extractStatNames(rows) {
   return Array.from(found).sort().slice(0, 120);
 }
 
+
+function normalizeText(value) {
+  if (value === undefined || value === null) return null;
+  const text = String(value).trim();
+  return text.length ? text : null;
+}
+
+function numberOrNull(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function deriveSlateDate(row) {
+  return normalizeText(row && row.game_date) || (normalizeText(row && row.commence_time) || nowUtc()).slice(0, 10);
+}
+
+function deriveSourceLineId(row) {
+  const parts = [
+    normalizeText(row && row.id),
+    normalizeText(row && row.event_id),
+    normalizeText(row && row.canonical_event_id),
+    normalizeText(row && row.player),
+    normalizeText(row && row.market_key),
+    normalizeText(row && row.market),
+    normalizeText(row && row.line)
+  ].filter(Boolean);
+  return safeString(parts.join("|"), 500) || rid("sleeper_source_line");
+}
+
+function rowRequiredAudit(row) {
+  const missing = [];
+  if (!normalizeText(row && row.player)) missing.push("player");
+  if (!normalizeText(row && row.market_key)) missing.push("market_key");
+  if (numberOrNull(row && row.line) === null) missing.push("line");
+  if (!normalizeText(row && (row.event_id || row.canonical_event_id))) missing.push("event_id_or_canonical_event_id");
+  return { ok: missing.length === 0, missing };
+}
+
+function isFuturePickable(row) {
+  const required = rowRequiredAudit(row).ok;
+  const start = normalizeText(row && row.commence_time);
+  if (!required) return 0;
+  if (!start) return 0;
+  const t = Date.parse(start);
+  if (!Number.isFinite(t)) return 0;
+  return t > Date.now() ? 1 : 0;
+}
+
+function toStageRow(row, batchId, fetchedAt) {
+  const required = rowRequiredAudit(row);
+  const sourceStatName = normalizeText(row && row.market_key) || normalizeText(row && row.market);
+  return {
+    stage_id: rid("sleeper_stage"),
+    batch_id: batchId,
+    source_key: SOURCE_KEY,
+    slate_date: deriveSlateDate(row || {}),
+    fetched_at: fetchedAt,
+    source_event_id: normalizeText(row && (row.event_id || row.canonical_event_id)),
+    source_line_id: deriveSourceLineId(row || {}),
+    source_player_id: normalizeText(row && (row.player_id || row.playerId || row.athlete_id || row.athleteId)),
+    player_name: normalizeText(row && row.player),
+    team: normalizeText(row && row.team),
+    opponent: normalizeText(row && row.opponent),
+    league: "MLB",
+    sport: normalizeText(row && row.sport_key),
+    source_stat_name: sourceStatName,
+    canonical_prop_key: null,
+    line_value: numberOrNull(row && row.line),
+    side: null,
+    price: null,
+    decimal_price: null,
+    is_pickable: isFuturePickable(row || {}),
+    start_time: normalizeText(row && row.commence_time),
+    raw_line_json: safeString(JSON.stringify(row || {}), 3000),
+    parse_status: required.ok ? "parsed_stage_only_alias_unreviewed" : "invalid_missing_required_fields",
+    parse_error: required.ok ? null : `missing:${required.missing.join(",")}`,
+    certification_status: "STAGE_ONLY_NO_PROMOTION_ALIAS_UNREVIEWED"
+  };
+}
+
+async function clearUnpromotedSleeperStage(env) {
+  await run(env.MARKET_DB, "DELETE FROM sleeper_board_stage WHERE source_key = ?", SOURCE_KEY);
+  await run(env.MARKET_DB, "DELETE FROM sleeper_board_batches WHERE source_key = ? AND promoted_at IS NULL", SOURCE_KEY);
+}
+
+async function insertStageRows(env, stageRows) {
+  const chunkSize = 80;
+  for (let i = 0; i < stageRows.length; i += chunkSize) {
+    const chunk = stageRows.slice(i, i + chunkSize);
+    await env.MARKET_DB.batch(chunk.map(row => env.MARKET_DB.prepare(`INSERT INTO sleeper_board_stage (
+      stage_id, batch_id, source_key, slate_date, fetched_at, source_event_id, source_line_id, source_player_id,
+      player_name, team, opponent, league, sport, source_stat_name, canonical_prop_key, line_value, side, price,
+      decimal_price, is_pickable, start_time, raw_line_json, parse_status, parse_error, certification_status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(
+        row.stage_id, row.batch_id, row.source_key, row.slate_date, row.fetched_at, row.source_event_id, row.source_line_id, row.source_player_id,
+        row.player_name, row.team, row.opponent, row.league, row.sport, row.source_stat_name, row.canonical_prop_key, row.line_value, row.side, row.price,
+        row.decimal_price, row.is_pickable, row.start_time, row.raw_line_json, row.parse_status, row.parse_error, row.certification_status
+      )));
+  }
+}
+
+async function stageOnlyRows(env, rows, sourceMeta, shape) {
+  const fetchedAt = nowUtc();
+  const batchId = rid("sleeper_batch");
+  const sourceRows = Array.isArray(rows) ? rows : [];
+  const filtered = sourceRows.filter(row => {
+    if (!row || typeof row !== "object" || Array.isArray(row)) return false;
+    return String(row.bookmaker || "").toLowerCase() === "sleeper" && String(row.sport_key || "").toLowerCase() === "baseball_mlb";
+  });
+  const stageRows = filtered.map(row => toStageRow(row, batchId, fetchedAt));
+  const validRows = stageRows.filter(row => row.parse_status === "parsed_stage_only_alias_unreviewed").length;
+  const invalidRows = stageRows.length - validRows;
+  const slateDates = Array.from(new Set(stageRows.map(row => row.slate_date).filter(Boolean))).sort();
+  const pickableRows = stageRows.filter(row => row.is_pickable === 1).length;
+
+  await clearUnpromotedSleeperStage(env);
+  await run(env.MARKET_DB, `INSERT INTO sleeper_board_batches (
+    batch_id, source_key, slate_date, fetched_at, staged_at, source_base_url, source_endpoint, source_http_status,
+    source_size_bytes, top_level_shape, total_rows, staged_rows, valid_rows, invalid_rows, unmapped_stat_types,
+    certification_status, certification_reason, certification_json
+  ) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    batchId,
+    SOURCE_KEY,
+    slateDates.length === 1 ? slateDates[0] : (slateDates[0] || null),
+    fetchedAt,
+    sourceMeta.base_url_host || null,
+    sourceMeta.endpoint_preview || null,
+    sourceMeta.http_status || null,
+    sourceMeta.size_bytes || null,
+    shape ? shape.top_level_type : null,
+    sourceRows.length,
+    stageRows.length,
+    validRows,
+    invalidRows,
+    stageRows.length,
+    "STAGE_ONLY_NO_PROMOTION_ALIAS_UNREVIEWED",
+    "Rows parsed into Sleeper staging only. Promotion blocked until source-scoped prop aliases are reviewed and certified.",
+    JSON.stringify({
+      no_promotion: true,
+      no_current_write: true,
+      no_prizepicks_mutation: true,
+      source_market_keys: shape ? shape.source_market_keys : [],
+      market_key_distribution: shape ? shape.market_key_distribution : [],
+      bookmaker_distribution: shape ? shape.bookmaker_distribution : [],
+      sport_key_distribution: shape ? shape.sport_key_distribution : [],
+      slate_dates: slateDates,
+      pickable_rows: pickableRows
+    })
+  );
+  await insertStageRows(env, stageRows);
+
+  return {
+    batch_id: batchId,
+    source_total_rows: sourceRows.length,
+    sleeper_baseball_rows: filtered.length,
+    staged_rows: stageRows.length,
+    valid_rows: validRows,
+    invalid_rows: invalidRows,
+    pickable_rows: pickableRows,
+    slate_dates: slateDates,
+    certification_status: "STAGE_ONLY_NO_PROMOTION_ALIAS_UNREVIEWED",
+    current_rows_written: 0,
+    active_batch_rows_written: 0
+  };
+}
+
 async function safeProbe(env, input = {}) {
   const schema = await ensureSleeperSchema(env);
   const endpoint = configuredEndpoint(env, input);
@@ -391,7 +559,7 @@ async function safeProbe(env, input = {}) {
     return blockedProbe("SOURCE_AUTH_CONFIG_UNVERIFIED", auth.block_reason, readiness, endpoint, auth);
   }
 
-  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-Parlay-Sleeper-Probe/0.1.3" });
+  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-Parlay-Sleeper-StageOnly/0.2.0" });
   auth.apply(headers, env);
 
   const started = Date.now();
@@ -430,18 +598,36 @@ async function safeProbe(env, input = {}) {
   let parseError = null;
   try { parsed = JSON.parse(text); } catch (err) { parseError = safeString(err && err.message ? err.message : err, 500); }
   const shape = parsed ? detectShape(parsed) : null;
+  const rows = shape && shape.detected_rows_path === "$" && Array.isArray(parsed) ? parsed : [];
   const rowsRead = shape ? Number(shape.detected_row_count || 0) : 0;
+  let stageResult = null;
+  let stageError = null;
+
+  if (response.ok && parsed && shape && shape.top_level_type === "array" && Array.isArray(rows)) {
+    try {
+      stageResult = await stageOnlyRows(env, rows, {
+        base_url_host: endpoint.base_url_host || null,
+        endpoint_preview: endpoint.endpoint_preview || null,
+        http_status: response.status,
+        size_bytes: text.length
+      }, shape);
+    } catch (err) {
+      stageError = safeString(err && err.message ? err.message : err, 800);
+    }
+  }
+
+  const stagedOk = !!stageResult && !stageError;
 
   return {
     ok: true,
-    data_ok: response.ok && !!parsed && !!shape,
+    data_ok: response.ok && !!parsed && !!shape && stagedOk,
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
     source_key: SOURCE_KEY,
-    status: response.ok && parsed ? "source_probe_completed_shape_captured" : "source_probe_completed_shape_unverified",
-    certification: response.ok && parsed ? "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_CAPTURED_NO_PROMOTION" : "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_UNVERIFIED_NO_PROMOTION",
-    block_downstream_reason: response.ok && parsed ? "promotion_blocked_until_source_stat_aliases_are_reviewed_and_approved" : "source_response_not_verified_json_shape",
+    status: stagedOk ? "stage_only_completed_no_promotion" : (response.ok && parsed ? "source_probe_completed_shape_captured_stage_blocked" : "source_probe_completed_shape_unverified"),
+    certification: stagedOk ? "PARLAY_SLEEPER_STAGE_ONLY_PARSED_NO_PROMOTION_ALIAS_REVIEW_REQUIRED" : (response.ok && parsed ? "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_CAPTURED_STAGE_BLOCKED" : "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_UNVERIFIED_NO_PROMOTION"),
+    block_downstream_reason: stagedOk ? "promotion_blocked_until_source_scoped_aliases_are_reviewed_and_certified" : (stageError || "source_response_not_verified_json_shape"),
     readiness,
     source_config: safeSourceConfig(endpoint, auth),
     source_response: {
@@ -457,9 +643,13 @@ async function safeProbe(env, input = {}) {
     shape_summary: shape,
     source_stat_names: shape ? shape.source_stat_names : [],
     source_market_keys: shape ? shape.source_market_keys : [],
+    stage_only_result: stageResult,
+    stage_error: stageError,
     rows_read: rowsRead,
-    rows_written: 0,
+    rows_written: stagedOk ? ((stageResult.staged_rows || 0) + 1) : 0,
     promoted_rows_written: 0,
+    current_rows_written: 0,
+    active_batch_rows_written: 0,
     external_calls_performed: 1,
     elapsed_ms: Date.now() - started,
     no_scoring: true,
@@ -467,7 +657,7 @@ async function safeProbe(env, input = {}) {
     no_final_board: true,
     no_prizepicks_mutation: true,
     no_promotion: true,
-    next_required_approval: "Review real source_stat_names, add source-proven REF_DB.ref_prop_aliases rows, then approve parse/stage/certify build."
+    next_required_approval: "Review staged Sleeper market_key values, add source-proven REF_DB.ref_prop_aliases rows, then approve stage+certify build."
   };
 }
 
@@ -526,12 +716,12 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "SOURCE_PROBE_READY",
     timestamp_utc: nowUtc(),
-    phase: "parlay_sleeper_board_probe_readiness_v0_1_3",
+    phase: "parlay_sleeper_board_stage_only_v0_2_0",
     notes: [
-      "Source-probe worker only with safe public endpoint/header fallbacks and full-body JSON parsing before bounded preview slicing.",
+      "Stage-only worker with safe public endpoint/header fallbacks and full-body JSON parsing before bounded preview slicing.",
       "Creates/validates additive Sleeper lifecycle schema when /run executes.",
-      "Performs a safe source-shape probe when PARLAY_API_KEY is present, using explicit env config or safe public ParlayAPI defaults.",
-      "Does not parse into current, certify aliases, promote rows, score, rank, write final board, or mutate PrizePicks."
+      "Performs safe source fetch and writes parsed rows to Sleeper staging tables only when source shape is captured.",
+      "Does not write current board, certify aliases, promote rows, score, rank, write final board, or mutate PrizePicks."
     ],
     binding_summary: {
       required_db_bindings_present: allTrue(db),
