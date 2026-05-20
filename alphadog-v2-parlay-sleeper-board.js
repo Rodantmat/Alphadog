@@ -1,9 +1,16 @@
 const WORKER_NAME = "alphadog-v2-parlay-sleeper-board";
-const VERSION = "alphadog-v2-parlay-sleeper-board-v0.1.0-source-probe-readiness";
+const VERSION = "alphadog-v2-parlay-sleeper-board-v0.1.1-source-probe-default-config";
 const JOB_KEY = "parlay-sleeper-board";
 const SOURCE_KEY = "parlay_sleeper";
 const MAX_PREVIEW_CHARS = 900;
 const MAX_TEXT_CHARS = 120000;
+
+// Safe public ParlayAPI probe defaults. These are endpoint/header names only, never secret values.
+// They are intentionally coded as fallback defaults because Cloudflare/GitHub deploys may not apply wrangler var-only edits reliably.
+const DEFAULT_PARLAY_API_BASE_URL = "https://parlay-api.com/v1";
+const DEFAULT_PARLAY_SLEEPER_PROBE_ENDPOINT = "/sports/baseball_mlb/props?bookmakers=sleeper";
+const DEFAULT_PARLAY_API_AUTH_HEADER_NAME = "X-API-Key";
+const DEFAULT_PARLAY_API_AUTH_HEADER_PREFIX = "";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "MARKET_DB"];
 const REQUIRED_SECRET_KEYS = ["PARLAY_API_KEY"];
@@ -206,9 +213,10 @@ function configuredEndpoint(env, input = {}) {
     input.probe_endpoint ||
     env.PARLAY_SLEEPER_PROBE_ENDPOINT ||
     env.PARLAY_API_SLEEPER_ENDPOINT ||
+    DEFAULT_PARLAY_SLEEPER_PROBE_ENDPOINT ||
     ""
   ).trim();
-  const baseUrl = String(env.PARLAY_API_BASE_URL || "").trim().replace(/\/+$/, "");
+  const baseUrl = String(env.PARLAY_API_BASE_URL || DEFAULT_PARLAY_API_BASE_URL || "").trim().replace(/\/+$/, "");
   if (!baseUrl) return { ok: false, reason: "PARLAY_API_BASE_URL_missing", base_url_present: false, endpoint_present: !!rawEndpoint };
   if (!rawEndpoint) return { ok: false, reason: "PARLAY_SLEEPER_PROBE_ENDPOINT_missing", base_url_present: true, endpoint_present: false, base_url_host: safeHost(baseUrl) };
   if (/^https?:\/\//i.test(rawEndpoint)) return { ok: true, url: rawEndpoint, base_url_present: true, endpoint_present: true, endpoint_mode: "absolute", base_url_host: safeHost(baseUrl), endpoint_preview: safeEndpoint(rawEndpoint) };
@@ -234,8 +242,8 @@ function safeEndpoint(urlOrPath) {
 }
 
 function authConfig(env) {
-  const headerName = String(env.PARLAY_API_AUTH_HEADER_NAME || "").trim();
-  const headerPrefix = String(env.PARLAY_API_AUTH_HEADER_PREFIX || "").trim();
+  const headerName = String(env.PARLAY_API_AUTH_HEADER_NAME || DEFAULT_PARLAY_API_AUTH_HEADER_NAME || "").trim();
+  const headerPrefix = String(env.PARLAY_API_AUTH_HEADER_PREFIX || DEFAULT_PARLAY_API_AUTH_HEADER_PREFIX || "").trim();
   const keyPresent = present(env, "PARLAY_API_KEY");
   return {
     ok: keyPresent && !!headerName,
@@ -316,12 +324,19 @@ async function safeProbe(env, input = {}) {
   const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
   const secrets = valuePresence(env, REQUIRED_SECRET_KEYS);
   const cfg = valuePresence(env, CONFIG_KEYS);
+  const effectiveConfig_defaults_used = {
+    PARLAY_API_BASE_URL: !present(env, "PARLAY_API_BASE_URL"),
+    PARLAY_SLEEPER_PROBE_ENDPOINT: !present(env, "PARLAY_SLEEPER_PROBE_ENDPOINT") && !present(env, "PARLAY_API_SLEEPER_ENDPOINT"),
+    PARLAY_API_AUTH_HEADER_NAME: !present(env, "PARLAY_API_AUTH_HEADER_NAME"),
+    PARLAY_API_AUTH_HEADER_PREFIX: !present(env, "PARLAY_API_AUTH_HEADER_PREFIX")
+  };
 
   const readiness = {
     db_bindings_present: db,
     required_db_bindings_present: allTrue(db),
     secrets_present_only: secrets,
     config_present: cfg,
+    effective_config_defaults_used,
     schema
   };
 
@@ -471,15 +486,21 @@ function baseIdentity(env, extra = {}) {
     timestamp_utc: nowUtc(),
     phase: "parlay_sleeper_board_probe_readiness_v0_1_0",
     notes: [
-      "Probe-readiness worker only.",
+      "Source-probe worker only with safe public endpoint/header fallbacks.",
       "Creates/validates additive Sleeper lifecycle schema when /run executes.",
-      "Performs a safe source-shape probe only when explicit endpoint and auth header config are present.",
+      "Performs a safe source-shape probe when PARLAY_API_KEY is present, using explicit env config or safe public ParlayAPI defaults.",
       "Does not parse into current, certify aliases, promote rows, score, rank, write final board, or mutate PrizePicks."
     ],
     binding_summary: {
       required_db_bindings_present: allTrue(db),
       parlay_api_key_present: !!secrets.PARLAY_API_KEY,
       config_present: cfg,
+      effective_default_config_available: {
+        PARLAY_API_BASE_URL: true,
+        PARLAY_SLEEPER_PROBE_ENDPOINT: true,
+        PARLAY_API_AUTH_HEADER_NAME: true,
+        PARLAY_API_AUTH_HEADER_PREFIX: true
+      },
       secret_values_printed: false
     },
     ...extra
