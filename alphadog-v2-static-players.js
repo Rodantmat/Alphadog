@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-static-players";
-const VERSION = "alphadog-v2-static-players-v0.1.0-40man-identity-seed";
+const VERSION = "alphadog-v2-static-players-v0.1.1-40man-chunked-continuation";
 const JOB_KEY = "static-players";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -350,6 +350,11 @@ async function writeRoster(env, player, team) {
 async function runSeed(env, input = {}) {
   await ensureSchema(env);
 
+  const originalInput = input && typeof input.input_json === "object" && input.input_json !== null ? input.input_json : input;
+  const processedMlbTeamIds = new Set(Array.isArray(originalInput.processed_mlb_team_ids) ? originalInput.processed_mlb_team_ids.map(v => String(v)) : []);
+  const maxTeamsPerRunRaw = Number(originalInput.max_teams_per_run || originalInput.maxTeamsPerRun || 3);
+  const maxTeamsPerRun = Math.max(1, Math.min(Number.isFinite(maxTeamsPerRunRaw) ? maxTeamsPerRunRaw : 3, 5));
+
   const teams = await readActiveTeams(env);
   const distinctTeamIds = unique(teams.map(t => t.team_id)).length;
   const distinctMlbTeamIds = unique(teams.map(t => t.mlb_team_id)).length;
@@ -377,14 +382,25 @@ async function runSeed(env, input = {}) {
     };
   }
 
-  await run(env.REF_DB, "UPDATE ref_rosters SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key=? AND snapshot_type='STATIC_40MAN_SNAPSHOT'", SOURCE_KEY);
+  const allMlbTeamIds = teams.map(t => String(t.mlb_team_id));
+  const alreadyProcessedValid = Array.from(processedMlbTeamIds).filter(id => allMlbTeamIds.includes(id));
+  const processedSet = new Set(alreadyProcessedValid);
+  const isFirstChunk = processedSet.size === 0;
+
+  if (isFirstChunk) {
+    await run(env.REF_DB, "UPDATE ref_rosters SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key=? AND snapshot_type='STATIC_40MAN_SNAPSHOT'", SOURCE_KEY);
+  }
+
+  const remainingTeams = teams.filter(t => !processedSet.has(String(t.mlb_team_id)));
+  const teamsThisRun = remainingTeams.slice(0, maxTeamsPerRun);
 
   const byMlbPlayerId = new Map();
   const sourceSamples = [];
   let externalCalls = 0;
   let rosterRowsRead = 0;
-  let teamsProcessed = 0;
+  let teamsProcessedThisRun = 0;
   let aliasesWritten = 0;
+  let playersWrittenThisRun = 0;
   let rostersWritten = 0;
   const rosterSnapshots = [];
   let missingPosition = 0;
@@ -392,12 +408,13 @@ async function runSeed(env, input = {}) {
   let missingThrowSide = 0;
   const teamSummaries = [];
 
-  for (const team of teams) {
+  for (const team of teamsThisRun) {
     const mlbTeamId = numOrNull(team.mlb_team_id);
     const fetched = await fetchRoster(env, mlbTeamId);
     externalCalls += 1;
-    teamsProcessed += 1;
+    teamsProcessedThisRun += 1;
     rosterRowsRead += fetched.roster.length;
+    processedSet.add(String(mlbTeamId));
     teamSummaries.push({ team_id: team.team_id, mlb_team_id: mlbTeamId, abbreviation: team.abbreviation, roster_rows: fetched.roster.length, http_status: fetched.http_status });
     if (sourceSamples.length < 3) sourceSamples.push({ team_id: team.team_id, url: fetched.url, roster_rows: fetched.roster.length });
 
@@ -420,6 +437,7 @@ async function runSeed(env, input = {}) {
 
   for (const player of players) {
     await writePlayer(env, player);
+    playersWrittenThisRun += 1;
     const aliases = buildAliases(player);
     for (const alias of aliases) {
       await writeAlias(env, alias);
@@ -432,7 +450,70 @@ async function runSeed(env, input = {}) {
     rostersWritten += 1;
   }
 
+  const processedNow = Array.from(processedSet).filter(id => allMlbTeamIds.includes(id));
+  const remainingAfter = teams.filter(t => !processedSet.has(String(t.mlb_team_id)));
   const checks = await certificationChecks(env);
+
+  if (remainingAfter.length > 0) {
+    const continuationInputJson = {
+      ...originalInput,
+      mode: "static_players_40man_identity_seed",
+      source_name: SOURCE_NAME,
+      source_mode: "ref_teams_driven_mlb_statsapi_40man_roster",
+      endpoint_pattern: "/teams/{mlb_team_id}/roster/40Man",
+      max_teams_per_run: maxTeamsPerRun,
+      processed_mlb_team_ids: processedNow,
+      continuation_status: "partial_continue",
+      last_continued_at: nowUtc(),
+      no_26man_only_scope: true,
+      no_every_minor_leaguer_scope: true,
+      no_person_detail_hydration_in_v0_1_0: true,
+      no_prizepicks_board_mutation: true,
+      no_prizepicks_alias_guessing: true,
+      no_sleeper_alias_guessing: true,
+      no_scoring: true,
+      no_final_board_write: true
+    };
+
+    return {
+      ok: true,
+      data_ok: false,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      request_id: input.request_id || null,
+      chain_id: input.chain_id || null,
+      status: "partial_continue",
+      certification: "STATIC_PLAYERS_40MAN_IDENTITY_PARTIAL_CONTINUE",
+      source_key: SOURCE_KEY,
+      source_name: SOURCE_NAME,
+      endpoint_pattern: "/teams/{mlb_team_id}/roster/40Man",
+      teams_processed_this_run: teamsProcessedThisRun,
+      teams_processed_total: processedNow.length,
+      teams_remaining: remainingAfter.length,
+      teams_expected: 30,
+      rows_read: rosterRowsRead,
+      rows_written: playersWrittenThisRun + aliasesWritten + rostersWritten,
+      players_written_this_run: playersWrittenThisRun,
+      aliases_written_this_run: aliasesWritten,
+      rosters_written_this_run: rostersWritten,
+      external_calls_performed: externalCalls,
+      max_teams_per_run: maxTeamsPerRun,
+      continuation_input_json: continuationInputJson,
+      source_samples: sourceSamples,
+      team_summaries: teamSummaries,
+      missing_detail_counts_from_roster_payload_this_run: {
+        primary_position: missingPosition,
+        bat_side: missingBatSide,
+        throw_side: missingThrowSide,
+        note: "v0.1.1 remains bounded. It does not make person-detail hydration calls. Missing detail is counted, not guessed."
+      },
+      certification_checks_so_far: checks,
+      boundaries: base(env).boundaries,
+      timestamp_utc: nowUtc()
+    };
+  }
+
   const playerRows = Number(checks.player_rows || 0);
   const duplicateMlbPlayerIds = Number(checks.duplicate_mlb_player_id_count || 0);
   const missingMlbPlayerId = Number(checks.missing_mlb_player_id || 0);
@@ -440,7 +521,7 @@ async function runSeed(env, input = {}) {
   const aliasRows = Number(checks.alias_rows || 0);
   const rosterRows = Number(checks.static_40man_roster_rows || 0);
 
-  const dataOk = teamsProcessed === 30 && playerRows > 500 && duplicateMlbPlayerIds === 0 && missingMlbPlayerId === 0 && missingFullName === 0 && aliasRows > 0;
+  const dataOk = processedNow.length === 30 && playerRows > 500 && duplicateMlbPlayerIds === 0 && missingMlbPlayerId === 0 && missingFullName === 0 && aliasRows > 0;
   const certification = dataOk
     ? "STATIC_PLAYERS_40MAN_IDENTITY_SEEDED_30_TEAMS_PLAYERS_ALIASES_WRITTEN"
     : "STATIC_PLAYERS_40MAN_IDENTITY_CERTIFICATION_FAILED";
@@ -459,22 +540,28 @@ async function runSeed(env, input = {}) {
     source_name: SOURCE_NAME,
     endpoint_pattern: "/teams/{mlb_team_id}/roster/40Man",
     source_samples: sourceSamples,
-    teams_processed: teamsProcessed,
+    teams_processed_this_run: teamsProcessedThisRun,
+    teams_processed_total: processedNow.length,
+    teams_remaining: 0,
     teams_expected: 30,
     rows_read: rosterRowsRead,
-    rows_written: playerRows + aliasesWritten + rostersWritten,
-    players_written: playerRows,
+    rows_written: playersWrittenThisRun + aliasesWritten + rostersWritten,
+    players_written_this_run: playersWrittenThisRun,
+    players_total_active_source_rows: playerRows,
     aliases_written_this_run: aliasesWritten,
+    alias_rows_total: aliasRows,
     rosters_written_this_run: rostersWritten,
+    static_40man_roster_rows_total: rosterRows,
     external_calls_performed: externalCalls,
-    missing_detail_counts_from_roster_payload: {
+    max_teams_per_run: maxTeamsPerRun,
+    missing_detail_counts_from_roster_payload_this_run: {
       primary_position: missingPosition,
       bat_side: missingBatSide,
       throw_side: missingThrowSide,
-      note: "v0.1.0 does not make hundreds of person-detail hydration calls. Missing detail is counted, not guessed."
+      note: "v0.1.1 remains bounded. It does not make person-detail hydration calls. Missing detail is counted, not guessed."
     },
     certification_checks: checks,
-    team_summaries: teamSummaries.slice(0, 30),
+    team_summaries: teamSummaries,
     sample_players: await samplePlayers(env),
     boundaries: base(env).boundaries,
     timestamp_utc: nowUtc()
