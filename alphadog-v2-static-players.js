@@ -1,11 +1,14 @@
 const WORKER_NAME = "alphadog-v2-static-players";
-const VERSION = "alphadog-v2-static-players-v0.1.1-40man-chunked-continuation";
+const VERSION = "alphadog-v2-static-players-v0.1.5-batched-writes-auto-pump";
 const JOB_KEY = "static-players";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "MLB_API_BASE_URL", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 
 const SOURCE_KEY = "mlb_statsapi_40man_roster_v0_1_0";
+const DEFAULT_MAX_TEAMS_PER_RUN = 6;
+const HARD_MAX_TEAMS_PER_RUN = 10;
+const D1_BATCH_SIZE = 50;
 const SOURCE_NAME = "MLB StatsAPI 40-man roster endpoint";
 const ROSTER_TYPE = "40Man";
 const RAW_JSON_LIMIT = 6000;
@@ -318,33 +321,45 @@ function buildAliases(player) {
   });
 }
 
-async function writePlayer(env, player) {
-  await run(env.REF_DB, `INSERT OR REPLACE INTO ref_players
+function playerStmt(env, player) {
+  return env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_players
     (player_id, mlb_player_id, player_name, full_name, first_name, last_name, primary_team_id, current_team_id, current_mlb_team_id, primary_role, primary_position, bats, throws, bat_side, throw_side, active, source_key, raw_json, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`).bind(
     player.player_id, player.mlb_player_id, player.player_name, player.full_name, player.first_name, player.last_name,
     player.primary_team_id, player.current_team_id, player.current_mlb_team_id, player.primary_role, player.primary_position,
     player.bats, player.throws, player.bat_side, player.throw_side, player.active, player.source_key, player.raw_json
   );
 }
 
-async function writeAlias(env, alias) {
-  await run(env.REF_DB, `INSERT OR REPLACE INTO ref_player_aliases
+function aliasStmt(env, alias) {
+  return env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_player_aliases
     (alias_key, player_id, alias_name, alias_type, alias_normalized, team_id, mlb_team_id, source_key, confidence, active, raw_json, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`).bind(
     alias.alias_key, alias.player_id, alias.alias_name, alias.alias_type, alias.alias_normalized, alias.team_id, alias.mlb_team_id,
     alias.source_key, alias.confidence, alias.active, alias.raw_json
   );
 }
 
-async function writeRoster(env, player, team) {
+function rosterStmt(env, player, team) {
   const rosterKey = `${SOURCE_KEY}|${team.team_id}|${player.player_id}`.slice(0, 240);
-  await run(env.REF_DB, `INSERT OR REPLACE INTO ref_rosters
+  return env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_rosters
     (roster_key, slate_date, roster_date, snapshot_type, team_id, mlb_team_id, player_id, player_name, roster_status, role, position_abbreviation, source_key, active, raw_json, updated_at)
-    VALUES (?, NULL, date('now'), ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, CURRENT_TIMESTAMP)`,
+    VALUES (?, NULL, date('now'), ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, CURRENT_TIMESTAMP)`).bind(
     rosterKey, "STATIC_40MAN_SNAPSHOT", team.team_id, numOrNull(team.mlb_team_id), player.player_id, player.full_name,
     player.roster_status, player.primary_position, player.position_abbreviation, SOURCE_KEY, player.raw_json
   );
+}
+
+async function runD1Batch(db, statements, size = D1_BATCH_SIZE) {
+  let executed = 0;
+  for (let i = 0; i < statements.length; i += size) {
+    const chunk = statements.slice(i, i + size);
+    if (chunk.length) {
+      await db.batch(chunk);
+      executed += chunk.length;
+    }
+  }
+  return executed;
 }
 
 async function runSeed(env, input = {}) {
@@ -352,8 +367,8 @@ async function runSeed(env, input = {}) {
 
   const originalInput = input && typeof input.input_json === "object" && input.input_json !== null ? input.input_json : input;
   const processedMlbTeamIds = new Set(Array.isArray(originalInput.processed_mlb_team_ids) ? originalInput.processed_mlb_team_ids.map(v => String(v)) : []);
-  const maxTeamsPerRunRaw = Number(originalInput.max_teams_per_run || originalInput.maxTeamsPerRun || 3);
-  const maxTeamsPerRun = Math.max(1, Math.min(Number.isFinite(maxTeamsPerRunRaw) ? maxTeamsPerRunRaw : 3, 5));
+  const maxTeamsPerRunRaw = Number(originalInput.max_teams_per_run || originalInput.maxTeamsPerRun || DEFAULT_MAX_TEAMS_PER_RUN);
+  const maxTeamsPerRun = Math.max(1, Math.min(Number.isFinite(maxTeamsPerRunRaw) ? maxTeamsPerRunRaw : DEFAULT_MAX_TEAMS_PER_RUN, HARD_MAX_TEAMS_PER_RUN));
 
   const teams = await readActiveTeams(env);
   const distinctTeamIds = unique(teams.map(t => t.team_id)).length;
@@ -435,20 +450,27 @@ async function runSeed(env, input = {}) {
 
   const players = Array.from(byMlbPlayerId.values()).sort((a, b) => String(a.full_name).localeCompare(String(b.full_name)));
 
+  const playerStatements = [];
+  const aliasStatements = [];
+  const rosterStatements = [];
+
   for (const player of players) {
-    await writePlayer(env, player);
+    playerStatements.push(playerStmt(env, player));
     playersWrittenThisRun += 1;
     const aliases = buildAliases(player);
     for (const alias of aliases) {
-      await writeAlias(env, alias);
+      aliasStatements.push(aliasStmt(env, alias));
       aliasesWritten += 1;
     }
   }
 
   for (const snapshot of rosterSnapshots) {
-    await writeRoster(env, snapshot.player, snapshot.team);
+    rosterStatements.push(rosterStmt(env, snapshot.player, snapshot.team));
     rostersWritten += 1;
   }
+
+  const batchStatements = [...playerStatements, ...aliasStatements, ...rosterStatements];
+  const d1BatchStatementsExecuted = await runD1Batch(env.REF_DB, batchStatements, D1_BATCH_SIZE);
 
   const processedNow = Array.from(processedSet).filter(id => allMlbTeamIds.includes(id));
   const remainingAfter = teams.filter(t => !processedSet.has(String(t.mlb_team_id)));
@@ -494,6 +516,8 @@ async function runSeed(env, input = {}) {
       teams_expected: 30,
       rows_read: rosterRowsRead,
       rows_written: playersWrittenThisRun + aliasesWritten + rostersWritten,
+      d1_batch_statements_executed: d1BatchStatementsExecuted,
+      d1_batch_size: D1_BATCH_SIZE,
       players_written_this_run: playersWrittenThisRun,
       aliases_written_this_run: aliasesWritten,
       rosters_written_this_run: rostersWritten,
@@ -506,7 +530,7 @@ async function runSeed(env, input = {}) {
         primary_position: missingPosition,
         bat_side: missingBatSide,
         throw_side: missingThrowSide,
-        note: "v0.1.1 remains bounded. It does not make person-detail hydration calls. Missing detail is counted, not guessed."
+        note: "v0.1.5 remains bounded. It does not make person-detail hydration calls. Missing detail is counted, not guessed."
       },
       certification_checks_so_far: checks,
       boundaries: base(env).boundaries,
@@ -546,6 +570,8 @@ async function runSeed(env, input = {}) {
     teams_expected: 30,
     rows_read: rosterRowsRead,
     rows_written: playersWrittenThisRun + aliasesWritten + rostersWritten,
+    d1_batch_statements_executed: d1BatchStatementsExecuted,
+    d1_batch_size: D1_BATCH_SIZE,
     players_written_this_run: playersWrittenThisRun,
     players_total_active_source_rows: playerRows,
     aliases_written_this_run: aliasesWritten,
@@ -558,7 +584,7 @@ async function runSeed(env, input = {}) {
       primary_position: missingPosition,
       bat_side: missingBatSide,
       throw_side: missingThrowSide,
-      note: "v0.1.1 remains bounded. It does not make person-detail hydration calls. Missing detail is counted, not guessed."
+      note: "v0.1.5 remains bounded. It does not make person-detail hydration calls. Missing detail is counted, not guessed."
     },
     certification_checks: checks,
     team_summaries: teamSummaries,
