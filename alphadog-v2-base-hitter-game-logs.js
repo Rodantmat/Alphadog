@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v0.2.2-fast-bounded-ticks";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v0.2.3-self-owned-lock-recovery";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -12,7 +12,7 @@ const DEFAULT_SOURCE_SEASON = 2026;
 const DEFAULT_CHUNK_SIZE_PLAYERS = 6;
 const DEFAULT_MAX_REQUESTS_PER_TICK = 6;
 const DEFAULT_MAX_ROWS_PER_TICK = 750;
-const DEFAULT_LOCK_STALE_MINUTES = 2;
+const DEFAULT_LOCK_STALE_SECONDS = 90;
 const DEFAULT_MAX_TICK_RUNTIME_MS = 30000;
 const ACTIVE_CURSOR_KEY = "base_hitter_game_logs_active_cursor";
 
@@ -296,7 +296,7 @@ async function ensureSchema(env) {
   ];
   for (const [label, sql] of indexes) await exec(label, sql);
 
-  await exec("record_schema_migration", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_game_logs_v0_2_2_fast_bounded_ticks', ?, CURRENT_TIMESTAMP, 'Base Hitter Game Logs fast bounded backend ticks: safer continuation under 60 seconds')", VERSION);
+  await exec("record_schema_migration", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_game_logs_v0_2_3_self_owned_lock_recovery', ?, CURRENT_TIMESTAMP, 'Base Hitter Game Logs self-owned stale batch lock recovery and fast bounded ticks')", VERSION);
 
   return { attempted: results.length, failed: results.filter(r => !r.ok).length, results };
 }
@@ -470,7 +470,7 @@ async function getOrCreateBaseBackfillState(env, input) {
   ) VALUES (?, ?, ?, ?, 'base_backfill', 'BASE_BACKFILL_RUNNING', ?, ?, ?, ?, ?, ?, NULL, ?, 0, ?, ?, ?, ?, 'not_certified', 'SOURCE_LOCKED_STATSAPI_GAMELOG_HITTING', ?, CURRENT_TIMESTAMP)`,
     batchId, runId, WORKER_NAME, VERSION, DATA_FEED_KEY, SOURCE_KEY, LOCKED_SOURCE_ENDPOINT_PATTERN, sourceSeason,
     cutoffDate, DEFAULT_DELTA_RESERVED_START_DATE, sourceSeason, cursorJson, chunkSize, maxRequests, maxRows,
-    "v0.2.2 fast bounded backend ticks. Base fills only through 2026-05-18. Delta remains blocked. No scoring/ranking/board mutation."
+    "v0.2.3 self-owned stale lock recovery + fast bounded backend ticks. Base fills only through 2026-05-18. Delta remains blocked. No scoring/ranking/board mutation."
   );
 
   await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_cursor (
@@ -485,16 +485,45 @@ async function getOrCreateBaseBackfillState(env, input) {
   return { is_new: true, cursor, batch, players, input_json: inputJson };
 }
 
-async function acquireBatchLock(env, batchId, owner, staleMinutes) {
-  const row = await first(env.STATS_HITTER_DB, "SELECT locked_by, lock_expires_at FROM hitter_game_log_batches WHERE batch_id=?", batchId);
-  if (row && row.locked_by && row.lock_expires_at) {
-    const lockExpires = new Date(String(row.lock_expires_at).replace(" ", "T") + "Z").getTime();
-    if (Number.isFinite(lockExpires) && lockExpires > Date.now()) {
-      return { ok: false, reason: "batch_lock_busy", locked_by: row.locked_by, lock_expires_at: row.lock_expires_at };
-    }
+function parseSqliteUtcMs(value) {
+  if (!value) return NaN;
+  return new Date(String(value).replace(" ", "T") + "Z").getTime();
+}
+
+async function acquireBatchLock(env, batchId, owner, staleSeconds) {
+  const row = await first(env.STATS_HITTER_DB, "SELECT locked_by, lock_acquired_at, lock_expires_at FROM hitter_game_log_batches WHERE batch_id=?", batchId);
+  const nowMs = Date.now();
+  const lockedBy = row && row.locked_by ? String(row.locked_by) : null;
+  const lockAcquiredMs = row && row.lock_acquired_at ? parseSqliteUtcMs(row.lock_acquired_at) : NaN;
+  const lockExpiresMs = row && row.lock_expires_at ? parseSqliteUtcMs(row.lock_expires_at) : NaN;
+  const sameOwner = !!(lockedBy && lockedBy === owner);
+  const expired = !Number.isFinite(lockExpiresMs) || lockExpiresMs <= nowMs;
+  const staleByAge = Number.isFinite(lockAcquiredMs) && (nowMs - lockAcquiredMs >= staleSeconds * 1000);
+
+  if (lockedBy && !expired && !(sameOwner && staleByAge)) {
+    return {
+      ok: false,
+      reason: sameOwner ? "same_owner_lock_not_stale_yet" : "batch_lock_busy",
+      locked_by: lockedBy,
+      lock_acquired_at: row.lock_acquired_at || null,
+      lock_expires_at: row.lock_expires_at || null,
+      same_owner: sameOwner,
+      stale_seconds: staleSeconds,
+      retry_after_seconds: sameOwner ? 20 : Math.max(15, Math.min(90, Math.ceil((lockExpiresMs - nowMs) / 1000)))
+    };
   }
-  await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_batches SET locked_by=?, lock_acquired_at=CURRENT_TIMESTAMP, lock_expires_at=datetime('now', ?), stale_recovery_count=CASE WHEN locked_by IS NOT NULL THEN COALESCE(stale_recovery_count,0)+1 ELSE COALESCE(stale_recovery_count,0) END, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", owner, `+${staleMinutes} minutes`, batchId);
-  return { ok: true, owner, stale_minutes: staleMinutes };
+
+  await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_batches SET locked_by=?, lock_acquired_at=CURRENT_TIMESTAMP, lock_expires_at=datetime('now', ?), stale_recovery_count=CASE WHEN locked_by IS NOT NULL THEN COALESCE(stale_recovery_count,0)+1 ELSE COALESCE(stale_recovery_count,0) END, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", owner, `+${staleSeconds} seconds`, batchId);
+  return {
+    ok: true,
+    owner,
+    stale_seconds: staleSeconds,
+    recovered_previous_lock: !!lockedBy,
+    recovered_same_owner_lock: !!(lockedBy && sameOwner),
+    previous_locked_by: lockedBy,
+    previous_lock_acquired_at: row && row.lock_acquired_at ? row.lock_acquired_at : null,
+    previous_lock_expires_at: row && row.lock_expires_at ? row.lock_expires_at : null
+  };
 }
 
 async function releaseBatchLock(env, batchId, owner) {
@@ -666,8 +695,8 @@ async function runBaseBackfillTick(env, input) {
   const offset = asInt(cursor.current_player_offset, 0);
   const total = players.length;
   const owner = asText(input.request_id, rid("base_hitter_owner"));
-  const staleMinutes = cap(inputJson.lock_stale_minutes || env.LOCK_STALE_MINUTES || DEFAULT_LOCK_STALE_MINUTES, 1, 15);
-  const lock = await acquireBatchLock(env, batchId, owner, staleMinutes);
+  const staleSeconds = cap(inputJson.lock_stale_seconds || env.LOCK_STALE_SECONDS || DEFAULT_LOCK_STALE_SECONDS, 30, 120);
+  const lock = await acquireBatchLock(env, batchId, owner, staleSeconds);
   if (!lock.ok) {
     return {
       ok: true,
@@ -787,6 +816,8 @@ async function runBaseBackfillTick(env, input) {
         cron_role: "rescue_fallback_only",
         manual_wake_required: false,
         fast_bounded_tick: true,
+        self_owned_lock_recovery: true,
+        lock,
         tick_elapsed_ms: Date.now() - tickStartedAtMs,
         tick_runtime_budget_ms: maxTickRuntimeMs,
         tick_stopped_by_runtime_budget: stoppedByRuntimeBudget,

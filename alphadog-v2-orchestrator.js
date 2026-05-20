@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.18-base-hitter-fast-stale-recovery";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.19-base-hitter-lock-busy-backoff";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1144,6 +1144,7 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
       base_backfill_self_continuation_v0_2_0: true,
+      lock_busy_backoff_v0_2_3: true,
       backend_self_continuation_ready: true,
       manual_wake_testing_only: true,
       no_browser_pump: true,
@@ -1163,10 +1164,19 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
   );
 
   if (partialContinue) {
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
-      JSON.stringify(cappedOutput), row.request_id
-    );
+    const isLockBusyRetry = certification === "BASE_HITTER_GAME_LOGS_BATCH_LOCK_BUSY_RETRY";
+    const retryAfterSeconds = Math.max(10, Math.min(90, Number(output && output.lock && output.lock.retry_after_seconds ? output.lock.retry_after_seconds : 20)));
+    if (isLockBusyRetry) {
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='pending', run_after=datetime('now', ?), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+        `+${retryAfterSeconds} seconds`, JSON.stringify(cappedOutput), row.request_id
+      );
+    } else {
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+        JSON.stringify(cappedOutput), row.request_id
+      );
+    }
   } else {
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
