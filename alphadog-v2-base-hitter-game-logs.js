@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v0.2.6-fetch-timeout-safe-microticks";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v0.2.7-player-outcome-certifier";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -264,6 +264,36 @@ async function ensureSchema(env) {
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
 
+
+  await exec("create_hitter_game_log_player_outcomes", `CREATE TABLE IF NOT EXISTS hitter_game_log_player_outcomes (
+    batch_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    player_id INTEGER NOT NULL,
+    player_name TEXT,
+    primary_position TEXT,
+    cursor_offset INTEGER,
+    source_endpoint TEXT,
+    source_http_status INTEGER,
+    source_ok INTEGER DEFAULT 0,
+    raw_payload_split_count INTEGER DEFAULT 0,
+    rows_before_cutoff INTEGER DEFAULT 0,
+    rows_filtered_after_cutoff INTEGER DEFAULT 0,
+    rows_staged INTEGER DEFAULT 0,
+    promoted_row_count INTEGER DEFAULT 0,
+    terminal_category TEXT NOT NULL,
+    category_reason TEXT,
+    source_error TEXT,
+    first_raw_game_date TEXT,
+    last_raw_game_date TEXT,
+    first_promoted_game_date TEXT,
+    last_promoted_game_date TEXT,
+    certification_status TEXT DEFAULT 'player_outcome_unverified',
+    certification_grade TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (batch_id, player_id)
+  )`);
+
   const liveAdds = [
     ["group_type", "TEXT DEFAULT 'hitting'"],
     ["data_feed_key", "TEXT"],
@@ -293,11 +323,13 @@ async function ensureSchema(env) {
     ["idx_hitter_cursor_status", "CREATE INDEX IF NOT EXISTS idx_hitter_cursor_status ON hitter_game_log_cursor(status, mode, updated_at)"],
     ["idx_hitter_logs_identity", "CREATE INDEX IF NOT EXISTS idx_hitter_logs_identity ON hitter_game_logs(player_id, game_pk, group_type)"],
     ["idx_hitter_logs_batch", "CREATE INDEX IF NOT EXISTS idx_hitter_logs_batch ON hitter_game_logs(batch_id, certification_status)"],
-    ["idx_hitter_logs_source", "CREATE INDEX IF NOT EXISTS idx_hitter_logs_source ON hitter_game_logs(source_key, source_season, game_date)"]
+    ["idx_hitter_logs_source", "CREATE INDEX IF NOT EXISTS idx_hitter_logs_source ON hitter_game_logs(source_key, source_season, game_date)"],
+    ["idx_hitter_outcomes_batch_category", "CREATE INDEX IF NOT EXISTS idx_hitter_outcomes_batch_category ON hitter_game_log_player_outcomes(batch_id, terminal_category)"],
+    ["idx_hitter_outcomes_player", "CREATE INDEX IF NOT EXISTS idx_hitter_outcomes_player ON hitter_game_log_player_outcomes(player_id, batch_id)"]
   ];
   for (const [label, sql] of indexes) await exec(label, sql);
 
-  await exec("record_schema_migration", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_game_logs_v0_2_6_fetch_timeout_safe_microticks', ?, CURRENT_TIMESTAMP, 'Base Hitter Game Logs fetch timeout, safe microticks, and deterministic lock release')", VERSION);
+  await exec("record_schema_migration", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_game_logs_v0_2_7_player_outcome_certifier', ?, CURRENT_TIMESTAMP, 'Base Hitter Game Logs player outcome ledger, universe certification, and delta gate')", VERSION);
 
   return { attempted: results.length, failed: results.filter(r => !r.ok).length, results };
 }
@@ -308,12 +340,14 @@ async function schemaStatus(env) {
   const stageCols = await all(env.STATS_HITTER_DB, "PRAGMA table_info(hitter_game_logs_stage)");
   const batchCols = await all(env.STATS_HITTER_DB, "PRAGMA table_info(hitter_game_log_batches)");
   const cursorCols = await all(env.STATS_HITTER_DB, "PRAGMA table_info(hitter_game_log_cursor)");
+  const outcomeCols = await all(env.STATS_HITTER_DB, "PRAGMA table_info(hitter_game_log_player_outcomes)");
   return {
     tables: tables.map(r => r.name),
     hitter_game_logs_columns: liveCols.map(r => r.name),
     hitter_game_logs_stage_columns: stageCols.map(r => r.name),
     hitter_game_log_batches_columns: batchCols.map(r => r.name),
-    hitter_game_log_cursor_columns: cursorCols.map(r => r.name)
+    hitter_game_log_cursor_columns: cursorCols.map(r => r.name),
+    hitter_game_log_player_outcomes_columns: outcomeCols.map(r => r.name)
   };
 }
 
@@ -471,7 +505,7 @@ async function getOrCreateBaseBackfillState(env, input) {
   ) VALUES (?, ?, ?, ?, 'base_backfill', 'BASE_BACKFILL_RUNNING', ?, ?, ?, ?, ?, ?, NULL, ?, 0, ?, ?, ?, ?, 'not_certified', 'SOURCE_LOCKED_STATSAPI_GAMELOG_HITTING', ?, CURRENT_TIMESTAMP)`,
     batchId, runId, WORKER_NAME, VERSION, DATA_FEED_KEY, SOURCE_KEY, LOCKED_SOURCE_ENDPOINT_PATTERN, sourceSeason,
     cutoffDate, DEFAULT_DELTA_RESERVED_START_DATE, sourceSeason, cursorJson, chunkSize, maxRequests, maxRows,
-    "v0.2.6 fetch-timeout safe microticks. Base fills only through 2026-05-18. Delta remains blocked. No scoring/ranking/board mutation."
+    "v0.2.7 player outcome certifier. Base fills only through 2026-05-18. Delta remains blocked until every cursor player has one certified terminal category. No scoring/ranking/board mutation."
   );
 
   await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_cursor (
@@ -545,32 +579,270 @@ async function fetchTextWithTimeout(url, options, timeoutMs) {
   }
 }
 
+function splitGameDate(split) {
+  const game = split && split.game ? split.game : {};
+  return asText(game.gameDate || split.date || split.gameDate, null);
+}
+
+function classifyPlayerOutcome(result) {
+  if (!result || result.status === "source_error") return "SOURCE_ERROR";
+  if (asInt(result.raw_payload_split_count, 0) === 0) return "TRUE_NO_DATA";
+  if (asInt(result.rows_staged, 0) > 0) return "PROMOTED_ROWS";
+  if (asInt(result.rows_filtered_after_cutoff, 0) > 0 && asInt(result.rows_before_cutoff, 0) === 0) return "FILTERED_AFTER_CUTOFF";
+  return "REPAIR_REQUIRED";
+}
+
+function outcomeReason(result, category) {
+  if (category === "PROMOTED_ROWS") return "Source returned regular-season hitting rows within the base cutoff and rows were staged for promotion.";
+  if (category === "TRUE_NO_DATA") return "MLB StatsAPI returned zero hitting game-log splits for this player and season.";
+  if (category === "FILTERED_AFTER_CUTOFF") return "MLB StatsAPI returned hitting game-log splits, but every split was after the base cutoff date and belongs to delta.";
+  if (category === "SOURCE_ERROR") return result && result.error_type ? `Source request failed: ${result.error_type}` : "Source request failed.";
+  return "Source returned data but no rows were staged inside the base cutoff; transformation/cutoff parsing must be repaired before delta opens.";
+}
+
+async function upsertPlayerOutcome(env, batchId, runId, p, cursorOffset, result, endpoint) {
+  const category = classifyPlayerOutcome(result);
+  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_player_outcomes (
+    batch_id,run_id,player_id,player_name,primary_position,cursor_offset,source_endpoint,source_http_status,source_ok,
+    raw_payload_split_count,rows_before_cutoff,rows_filtered_after_cutoff,rows_staged,promoted_row_count,terminal_category,category_reason,source_error,
+    first_raw_game_date,last_raw_game_date,first_promoted_game_date,last_promoted_game_date,certification_status,certification_grade,updated_at
+  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
+    batchId,
+    runId,
+    asInt(p && p.player_id, 0),
+    asText((p && p.player_name) || (result && result.player_name), null),
+    asText(p && p.primary_position, null),
+    asInt(cursorOffset, 0),
+    endpoint || (result && result.source_endpoint) || null,
+    result && result.http_status !== undefined ? asInt(result.http_status, null) : null,
+    category === "SOURCE_ERROR" ? 0 : 1,
+    asInt(result && result.raw_payload_split_count, 0),
+    asInt(result && result.rows_before_cutoff, 0),
+    asInt(result && result.rows_filtered_after_cutoff, 0),
+    asInt(result && result.rows_staged, 0),
+    0,
+    category,
+    outcomeReason(result, category),
+    result && result.error ? String(result.error).slice(0, 900) : null,
+    result && result.first_raw_game_date ? result.first_raw_game_date : null,
+    result && result.last_raw_game_date ? result.last_raw_game_date : null,
+    null,
+    null,
+    "player_outcome_unverified",
+    null
+  );
+  return category;
+}
+
+async function rebuildMissingOutcomeRowsFromCursor(env, batchId, runId) {
+  const cursor = await first(env.STATS_HITTER_DB, "SELECT cursor_json FROM hitter_game_log_cursor WHERE batch_id=? OR cursor_key=? ORDER BY updated_at DESC LIMIT 1", batchId, ACTIVE_CURSOR_KEY);
+  let players = [];
+  try { players = JSON.parse((cursor && cursor.cursor_json) || "{}").players || []; } catch (_) { players = []; }
+  for (let i = 0; i < players.length; i++) {
+    const p = players[i];
+    const existing = await first(env.STATS_HITTER_DB, "SELECT player_id FROM hitter_game_log_player_outcomes WHERE batch_id=? AND player_id=?", batchId, asInt(p.player_id, 0));
+    if (existing) continue;
+    await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_player_outcomes (
+      batch_id,run_id,player_id,player_name,primary_position,cursor_offset,source_ok,raw_payload_split_count,rows_before_cutoff,rows_filtered_after_cutoff,rows_staged,promoted_row_count,terminal_category,category_reason,certification_status,updated_at
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
+      batchId, runId, asInt(p.player_id, 0), asText(p.player_name, null), asText(p.primary_position, null), i, 0, 0, 0, 0, 0, 0, "UNCLEAR",
+      "Player existed in cursor but no per-player source outcome was recorded; rerun/repair required before delta.", "player_outcome_unverified"
+    );
+  }
+}
+
+async function certifyPlayerOutcomeUniverse(env, batchId, runId, cutoffDate) {
+  await rebuildMissingOutcomeRowsFromCursor(env, batchId, runId);
+
+  await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_player_outcomes
+    SET promoted_row_count = COALESCE((
+      SELECT COUNT(*) FROM hitter_game_logs_stage s
+      WHERE s.batch_id = hitter_game_log_player_outcomes.batch_id
+        AND s.player_id = hitter_game_log_player_outcomes.player_id
+    ), 0) + COALESCE((
+      SELECT COUNT(*) FROM hitter_game_logs h
+      WHERE h.batch_id = hitter_game_log_player_outcomes.batch_id
+        AND h.player_id = hitter_game_log_player_outcomes.player_id
+    ), 0),
+    first_promoted_game_date = COALESCE(
+      (SELECT MIN(game_date) FROM hitter_game_logs_stage s WHERE s.batch_id=hitter_game_log_player_outcomes.batch_id AND s.player_id=hitter_game_log_player_outcomes.player_id),
+      (SELECT MIN(game_date) FROM hitter_game_logs h WHERE h.batch_id=hitter_game_log_player_outcomes.batch_id AND h.player_id=hitter_game_log_player_outcomes.player_id)
+    ),
+    last_promoted_game_date = COALESCE(
+      (SELECT MAX(game_date) FROM hitter_game_logs_stage s WHERE s.batch_id=hitter_game_log_player_outcomes.batch_id AND s.player_id=hitter_game_log_player_outcomes.player_id),
+      (SELECT MAX(game_date) FROM hitter_game_logs h WHERE h.batch_id=hitter_game_log_player_outcomes.batch_id AND h.player_id=hitter_game_log_player_outcomes.player_id)
+    ),
+    updated_at=CURRENT_TIMESTAMP
+    WHERE batch_id=?`, batchId);
+
+  const cursorRow = await first(env.STATS_HITTER_DB, "SELECT players_total FROM hitter_game_log_cursor WHERE batch_id=? OR cursor_key=? ORDER BY updated_at DESC LIMIT 1", batchId, ACTIVE_CURSOR_KEY);
+  const playersTotal = asInt(cursorRow && cursorRow.players_total, 0);
+  const totals = await first(env.STATS_HITTER_DB, `SELECT
+      COUNT(*) AS outcome_total,
+      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' THEN 1 ELSE 0 END) AS promoted_players,
+      SUM(CASE WHEN terminal_category='TRUE_NO_DATA' THEN 1 ELSE 0 END) AS true_no_data_players,
+      SUM(CASE WHEN terminal_category='FILTERED_AFTER_CUTOFF' THEN 1 ELSE 0 END) AS filtered_after_cutoff_players,
+      SUM(CASE WHEN terminal_category='SOURCE_ERROR' THEN 1 ELSE 0 END) AS source_error_players,
+      SUM(CASE WHEN terminal_category='REPAIR_REQUIRED' THEN 1 ELSE 0 END) AS repair_required_players,
+      SUM(CASE WHEN terminal_category='UNCLEAR' THEN 1 ELSE 0 END) AS unclear_players,
+      SUM(CASE WHEN terminal_category NOT IN ('PROMOTED_ROWS','TRUE_NO_DATA','FILTERED_AFTER_CUTOFF','SOURCE_ERROR','REPAIR_REQUIRED','UNCLEAR') THEN 1 ELSE 0 END) AS invalid_category_players,
+      SUM(CASE WHEN terminal_category='PROMOTED_ROWS' AND promoted_row_count <= 0 THEN 1 ELSE 0 END) AS promoted_without_rows,
+      SUM(CASE WHEN terminal_category!='PROMOTED_ROWS' AND promoted_row_count > 0 THEN 1 ELSE 0 END) AS non_promoted_with_rows
+    FROM hitter_game_log_player_outcomes
+    WHERE batch_id=?`, batchId);
+
+  const categoryTotal = asInt(totals && totals.promoted_players, 0)
+    + asInt(totals && totals.true_no_data_players, 0)
+    + asInt(totals && totals.filtered_after_cutoff_players, 0)
+    + asInt(totals && totals.source_error_players, 0)
+    + asInt(totals && totals.repair_required_players, 0)
+    + asInt(totals && totals.unclear_players, 0);
+  const pass = playersTotal > 0
+    && asInt(totals && totals.outcome_total, 0) === playersTotal
+    && categoryTotal === playersTotal
+    && asInt(totals && totals.source_error_players, 0) === 0
+    && asInt(totals && totals.repair_required_players, 0) === 0
+    && asInt(totals && totals.unclear_players, 0) === 0
+    && asInt(totals && totals.invalid_category_players, 0) === 0
+    && asInt(totals && totals.promoted_without_rows, 0) === 0
+    && asInt(totals && totals.non_promoted_with_rows, 0) === 0;
+
+  const summary = {
+    version: VERSION,
+    batch_id: batchId,
+    run_id: runId,
+    cutoff_date: cutoffDate,
+    players_total: playersTotal,
+    outcome_total: asInt(totals && totals.outcome_total, 0),
+    category_total: categoryTotal,
+    promoted_players: asInt(totals && totals.promoted_players, 0),
+    true_no_data_players: asInt(totals && totals.true_no_data_players, 0),
+    filtered_after_cutoff_players: asInt(totals && totals.filtered_after_cutoff_players, 0),
+    source_error_players: asInt(totals && totals.source_error_players, 0),
+    repair_required_players: asInt(totals && totals.repair_required_players, 0),
+    unclear_players: asInt(totals && totals.unclear_players, 0),
+    invalid_category_players: asInt(totals && totals.invalid_category_players, 0),
+    promoted_without_rows: asInt(totals && totals.promoted_without_rows, 0),
+    non_promoted_with_rows: asInt(totals && totals.non_promoted_with_rows, 0),
+    pass,
+    delta_gate_open: pass
+  };
+
+  await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_player_outcomes SET certification_status=?, certification_grade=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
+    pass ? "player_outcome_certified" : "player_outcome_certification_failed", pass ? "BASE_PASS" : "BASE_FAIL", batchId);
+
+  return summary;
+}
+
 async function processPlayer(env, p, sourceSeason, batchId, runId, cutoffDate, maxRowsRemaining, fetchTimeoutMs = DEFAULT_FETCH_TIMEOUT_MS) {
   const endpoint = endpointFor(env, p.player_id, sourceSeason);
   const fetched = await fetchTextWithTimeout(endpoint, {
     method: "GET",
-    headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/0.2.6") }
+    headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/0.2.7") }
   }, fetchTimeoutMs);
   if (!fetched.ok) {
-    return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: fetched.timed_out ? "fetch_timeout" : "fetch_exception", error: fetched.error, rows_staged: 0, retry_same_player: true };
+    return {
+      player_id: p.player_id,
+      player_name: p.player_name,
+      status: "source_error",
+      error_type: fetched.timed_out ? "fetch_timeout" : "fetch_exception",
+      error: fetched.error,
+      rows_staged: 0,
+      raw_payload_split_count: 0,
+      rows_before_cutoff: 0,
+      rows_filtered_after_cutoff: 0,
+      source_endpoint: endpoint,
+      retry_same_player: true
+    };
   }
   const resp = fetched.resp;
   const text = fetched.text || "";
-  if (!resp.ok) return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: "http_error", http_status: resp.status, rows_staged: 0, preview: text.slice(0, 240), retry_same_player: true };
+  if (!resp.ok) return {
+    player_id: p.player_id,
+    player_name: p.player_name,
+    status: "source_error",
+    error_type: "http_error",
+    http_status: resp.status,
+    rows_staged: 0,
+    raw_payload_split_count: 0,
+    rows_before_cutoff: 0,
+    rows_filtered_after_cutoff: 0,
+    source_endpoint: endpoint,
+    preview: text.slice(0, 240),
+    retry_same_player: true
+  };
   let body;
   try { body = JSON.parse(text); }
-  catch (err) { return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: "json_parse_error", error: String(err && err.message ? err.message : err), rows_staged: 0, retry_same_player: true }; }
+  catch (err) { return {
+    player_id: p.player_id,
+    player_name: p.player_name,
+    status: "source_error",
+    error_type: "json_parse_error",
+    error: String(err && err.message ? err.message : err),
+    rows_staged: 0,
+    raw_payload_split_count: 0,
+    rows_before_cutoff: 0,
+    rows_filtered_after_cutoff: 0,
+    source_endpoint: endpoint,
+    retry_same_player: true
+  }; }
+
   const splits = body && body.stats && body.stats[0] && Array.isArray(body.stats[0].splits) ? body.stats[0].splits : [];
-  if (!splits.length) return { player_id: p.player_id, player_name: p.player_name, status: "no_data", split_count: 0, rows_staged: 0 };
+  const rawDates = splits.map(splitGameDate).filter(Boolean).sort();
+  const rawSplitCount = splits.length;
+  if (!rawSplitCount) return {
+    player_id: p.player_id,
+    player_name: p.player_name,
+    status: "no_data",
+    http_status: resp.status,
+    split_count: 0,
+    raw_payload_split_count: 0,
+    rows_before_cutoff: 0,
+    rows_filtered_after_cutoff: 0,
+    rows_staged: 0,
+    source_endpoint: endpoint
+  };
+
   let inserted = 0;
+  let beforeCutoff = 0;
+  let filteredAfterCutoff = 0;
+  let invalidBeforeCutoff = 0;
   for (const split of splits) {
     if (inserted >= maxRowsRemaining) break;
+    const gameDate = splitGameDate(split);
+    if (cutoffDate && gameDate && gameDate > cutoffDate) {
+      filteredAfterCutoff++;
+      continue;
+    }
+    beforeCutoff++;
     const row = parseHitterSplit(split, p.player_id, p.player_name, sourceSeason, batchId, runId, "base_backfill", endpoint, cutoffDate);
-    if (!row) continue;
+    if (!row) {
+      invalidBeforeCutoff++;
+      continue;
+    }
     await insertStageRow(env, row);
     inserted++;
   }
-  return { player_id: p.player_id, player_name: p.player_name, status: "success", split_count: splits.length, rows_staged: inserted };
+
+  let status = "success";
+  if (inserted <= 0 && filteredAfterCutoff > 0 && beforeCutoff === 0) status = "filtered_after_cutoff";
+  else if (inserted <= 0) status = "repair_required";
+
+  return {
+    player_id: p.player_id,
+    player_name: p.player_name,
+    status,
+    http_status: resp.status,
+    split_count: rawSplitCount,
+    raw_payload_split_count: rawSplitCount,
+    rows_before_cutoff: beforeCutoff,
+    rows_filtered_after_cutoff: filteredAfterCutoff,
+    invalid_before_cutoff_rows: invalidBeforeCutoff,
+    rows_staged: inserted,
+    source_endpoint: endpoint,
+    first_raw_game_date: rawDates[0] || null,
+    last_raw_game_date: rawDates[rawDates.length - 1] || null
+  };
 }
 
 async function certifyAndPromoteIfClean(env, batchId, runId, cutoffDate) {
@@ -594,6 +866,7 @@ async function certifyAndPromoteIfClean(env, batchId, runId, cutoffDate) {
     )`, batchId);
 
   const batch = await first(env.STATS_HITTER_DB, "SELECT source_request_count, source_success_count, source_no_data_count, source_error_count FROM hitter_game_log_batches WHERE batch_id=?", batchId);
+  const outcomeSummary = await certifyPlayerOutcomeUniverse(env, batchId, runId, cutoffDate);
   const rowsStaged = asInt(summary && summary.rows_staged, 0);
   const duplicateCount = asInt(dup && dup.duplicate_count, 0);
   const sourceErrors = asInt(batch && batch.source_error_count, 0);
@@ -602,7 +875,7 @@ async function certifyAndPromoteIfClean(env, batchId, runId, cutoffDate) {
   const nonHittingRows = asInt(summary && summary.non_hitting_rows, 0);
   const afterCutoffRows = asInt(summary && summary.after_cutoff_rows, 0);
 
-  const pass = rowsStaged > 0 && sourceSuccess > 0 && duplicateCount === 0 && sourceErrors === 0 && missingRequired === 0 && nonHittingRows === 0 && afterCutoffRows === 0;
+  const pass = rowsStaged > 0 && sourceSuccess > 0 && duplicateCount === 0 && sourceErrors === 0 && missingRequired === 0 && nonHittingRows === 0 && afterCutoffRows === 0 && outcomeSummary.pass === true;
   const certification = pass ? "BASE_HITTER_GAME_LOGS_BASE_BACKFILL_CERTIFIED" : "BASE_HITTER_GAME_LOGS_BASE_BACKFILL_CERTIFICATION_FAILED";
   const grade = pass ? "BASE_PASS" : "BASE_FAIL";
   const checks = {
@@ -621,6 +894,8 @@ async function certifyAndPromoteIfClean(env, batchId, runId, cutoffDate) {
     missing_required: missingRequired,
     non_hitting_rows: nonHittingRows,
     after_cutoff_rows: afterCutoffRows,
+    player_outcome_universe: outcomeSummary,
+    delta_gate_open: outcomeSummary.pass === true && sourceErrors === 0,
     pass,
     no_scoring: true,
     no_ranking: true,
@@ -656,11 +931,19 @@ async function certifyAndPromoteIfClean(env, batchId, runId, cutoffDate) {
   const promoted = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_game_logs WHERE batch_id=? AND certification_status='base_backfill_certified_promoted'", batchId);
   const rowsPromoted = asInt(promoted && promoted.c, 0);
 
+  await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_player_outcomes
+    SET promoted_row_count = COALESCE((SELECT COUNT(*) FROM hitter_game_logs h WHERE h.batch_id=hitter_game_log_player_outcomes.batch_id AND h.player_id=hitter_game_log_player_outcomes.player_id), 0),
+        first_promoted_game_date = (SELECT MIN(game_date) FROM hitter_game_logs h WHERE h.batch_id=hitter_game_log_player_outcomes.batch_id AND h.player_id=hitter_game_log_player_outcomes.player_id),
+        last_promoted_game_date = (SELECT MAX(game_date) FROM hitter_game_logs h WHERE h.batch_id=hitter_game_log_player_outcomes.batch_id AND h.player_id=hitter_game_log_player_outcomes.player_id),
+        updated_at=CURRENT_TIMESTAMP
+    WHERE batch_id=?`, batchId);
+
   await run(env.STATS_HITTER_DB, "DELETE FROM hitter_game_logs_stage WHERE batch_id=?", batchId);
   const stageAfter = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_game_logs_stage WHERE batch_id=?", batchId);
   const stageRowsAfterClean = asInt(stageAfter && stageAfter.c, 0);
 
-  const finalChecks = { ...checks, rows_promoted: rowsPromoted, stage_rows_after_clean: stageRowsAfterClean, clean_pass: stageRowsAfterClean === 0 };
+  const finalOutcomeSummary = await certifyPlayerOutcomeUniverse(env, batchId, runId, cutoffDate);
+  const finalChecks = { ...checks, player_outcome_universe: finalOutcomeSummary, delta_gate_open: finalOutcomeSummary.pass === true, rows_promoted: rowsPromoted, stage_rows_after_clean: stageRowsAfterClean, clean_pass: stageRowsAfterClean === 0 };
   const finalChecksJson = JSON.stringify(finalChecks);
   await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_certifications SET rows_promoted=?, checks_json=? WHERE certification_id=?", rowsPromoted, finalChecksJson, `cert_${batchId}`);
   await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_batches SET status='COMPLETED_PROMOTED_CLEANED', rows_promoted=?, duplicate_count=?, certification_status=?, certification_grade=?, certification_json=?, finished_at=CURRENT_TIMESTAMP, certified_at=CURRENT_TIMESTAMP, promoted_at=CURRENT_TIMESTAMP, cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", rowsPromoted, duplicateCount, certification, grade, finalChecksJson, batchId);
@@ -763,7 +1046,9 @@ async function runBaseBackfillTick(env, input) {
       } catch (err) {
         result = { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: "process_player_exception", rows_staged: 0, error: String(err && err.message ? err.message : err), retry_same_player: true };
       }
-      if (result.status === "success") {
+      const category = await upsertPlayerOutcome(env, batchId, runId, p, nextOffset, result, result.source_endpoint || endpointFor(env, p.player_id, sourceSeason));
+      result.terminal_category = category;
+      if (result.status === "success" || result.status === "filtered_after_cutoff") {
         sourceSuccessCount++;
         rowsStagedThisTick += asInt(result.rows_staged, 0);
         processedPlayers.push(result);
@@ -773,6 +1058,13 @@ async function runBaseBackfillTick(env, input) {
         rowsStagedThisTick += asInt(result.rows_staged, 0);
         processedPlayers.push(result);
         nextOffset++;
+      } else if (result.status === "repair_required") {
+        sourceSuccessCount++;
+        rowsStagedThisTick += asInt(result.rows_staged, 0);
+        stoppedBySourceError = true;
+        processedPlayers.push(result);
+        nextOffset++;
+        break;
       } else {
         sourceErrorCount++;
         stoppedBySourceError = true;
