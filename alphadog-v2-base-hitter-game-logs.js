@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v0.2.3-self-owned-lock-recovery";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v0.2.6-fetch-timeout-safe-microticks";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -9,15 +9,16 @@ const GROUP_TYPE = "hitting";
 const DEFAULT_BASE_BACKFILL_CUTOFF_DATE = "2026-05-18";
 const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
 const DEFAULT_SOURCE_SEASON = 2026;
-const DEFAULT_CHUNK_SIZE_PLAYERS = 6;
-const DEFAULT_MAX_REQUESTS_PER_TICK = 6;
-const DEFAULT_MAX_ROWS_PER_TICK = 750;
-const DEFAULT_LOCK_STALE_SECONDS = 90;
-const DEFAULT_MAX_TICK_RUNTIME_MS = 30000;
+const DEFAULT_CHUNK_SIZE_PLAYERS = 3;
+const DEFAULT_MAX_REQUESTS_PER_TICK = 3;
+const DEFAULT_MAX_ROWS_PER_TICK = 450;
+const DEFAULT_LOCK_STALE_SECONDS = 60;
+const DEFAULT_MAX_TICK_RUNTIME_MS = 20000;
+const DEFAULT_FETCH_TIMEOUT_MS = 7000;
 const ACTIVE_CURSOR_KEY = "base_hitter_game_logs_active_cursor";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB"];
-const EXPECTED_VARS = ["MLB_API_BASE_URL", "ACTIVE_SEASON", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK", "LOCK_STALE_MINUTES", "MAX_TICK_RUNTIME_MS"];
+const EXPECTED_VARS = ["MLB_API_BASE_URL", "ACTIVE_SEASON", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK", "LOCK_STALE_SECONDS", "MAX_TICK_RUNTIME_MS", "FETCH_TIMEOUT_MS"];
 const EXPECTED_SECRETS = ["MLB_API_USER_AGENT"];
 
 function nowUtc() { return new Date().toISOString(); }
@@ -296,7 +297,7 @@ async function ensureSchema(env) {
   ];
   for (const [label, sql] of indexes) await exec(label, sql);
 
-  await exec("record_schema_migration", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_game_logs_v0_2_3_self_owned_lock_recovery', ?, CURRENT_TIMESTAMP, 'Base Hitter Game Logs self-owned stale batch lock recovery and fast bounded ticks')", VERSION);
+  await exec("record_schema_migration", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_game_logs_v0_2_6_fetch_timeout_safe_microticks', ?, CURRENT_TIMESTAMP, 'Base Hitter Game Logs fetch timeout, safe microticks, and deterministic lock release')", VERSION);
 
   return { attempted: results.length, failed: results.filter(r => !r.ok).length, results };
 }
@@ -470,7 +471,7 @@ async function getOrCreateBaseBackfillState(env, input) {
   ) VALUES (?, ?, ?, ?, 'base_backfill', 'BASE_BACKFILL_RUNNING', ?, ?, ?, ?, ?, ?, NULL, ?, 0, ?, ?, ?, ?, 'not_certified', 'SOURCE_LOCKED_STATSAPI_GAMELOG_HITTING', ?, CURRENT_TIMESTAMP)`,
     batchId, runId, WORKER_NAME, VERSION, DATA_FEED_KEY, SOURCE_KEY, LOCKED_SOURCE_ENDPOINT_PATTERN, sourceSeason,
     cutoffDate, DEFAULT_DELTA_RESERVED_START_DATE, sourceSeason, cursorJson, chunkSize, maxRequests, maxRows,
-    "v0.2.3 self-owned stale lock recovery + fast bounded backend ticks. Base fills only through 2026-05-18. Delta remains blocked. No scoring/ranking/board mutation."
+    "v0.2.6 fetch-timeout safe microticks. Base fills only through 2026-05-18. Delta remains blocked. No scoring/ranking/board mutation."
   );
 
   await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_cursor (
@@ -530,15 +531,35 @@ async function releaseBatchLock(env, batchId, owner) {
   await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_batches SET locked_by=NULL, lock_acquired_at=NULL, lock_expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE batch_id=? AND locked_by=?", batchId, owner);
 }
 
-async function processPlayer(env, p, sourceSeason, batchId, runId, cutoffDate, maxRowsRemaining) {
+async function fetchTextWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("fetch_timeout"), Math.max(1000, Number(timeoutMs || DEFAULT_FETCH_TIMEOUT_MS)));
+  try {
+    const resp = await fetch(url, { ...options, signal: controller.signal });
+    const text = await resp.text();
+    return { ok: true, resp, text, timed_out: false };
+  } catch (err) {
+    return { ok: false, resp: null, text: "", timed_out: String(err && err.name ? err.name : err).includes("Abort") || String(err).includes("timeout"), error: String(err && err.message ? err.message : err) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function processPlayer(env, p, sourceSeason, batchId, runId, cutoffDate, maxRowsRemaining, fetchTimeoutMs = DEFAULT_FETCH_TIMEOUT_MS) {
   const endpoint = endpointFor(env, p.player_id, sourceSeason);
-  const resp = await fetch(endpoint, {
+  const fetched = await fetchTextWithTimeout(endpoint, {
     method: "GET",
-    headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/0.2.0") }
-  });
-  const text = await resp.text();
-  if (!resp.ok) return { player_id: p.player_id, player_name: p.player_name, status: "source_error", http_status: resp.status, rows_staged: 0, preview: text.slice(0, 240) };
-  const body = JSON.parse(text);
+    headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/0.2.6") }
+  }, fetchTimeoutMs);
+  if (!fetched.ok) {
+    return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: fetched.timed_out ? "fetch_timeout" : "fetch_exception", error: fetched.error, rows_staged: 0, retry_same_player: true };
+  }
+  const resp = fetched.resp;
+  const text = fetched.text || "";
+  if (!resp.ok) return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: "http_error", http_status: resp.status, rows_staged: 0, preview: text.slice(0, 240), retry_same_player: true };
+  let body;
+  try { body = JSON.parse(text); }
+  catch (err) { return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: "json_parse_error", error: String(err && err.message ? err.message : err), rows_staged: 0, retry_same_player: true }; }
   const splits = body && body.stats && body.stats[0] && Array.isArray(body.stats[0].splits) ? body.stats[0].splits : [];
   if (!splits.length) return { player_id: p.player_id, player_name: p.player_name, status: "no_data", split_count: 0, rows_staged: 0 };
   let inserted = 0;
@@ -687,7 +708,8 @@ async function runBaseBackfillTick(env, input) {
   const maxRequests = cap(requestedMaxRequests, 1, DEFAULT_MAX_REQUESTS_PER_TICK);
   const chunkSize = cap(requestedChunkSize, 1, DEFAULT_CHUNK_SIZE_PLAYERS);
   const maxRows = cap(inputJson.max_rows_per_tick || batch.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, DEFAULT_MAX_ROWS_PER_TICK);
-  const maxTickRuntimeMs = cap(inputJson.max_tick_runtime_ms || env.MAX_TICK_RUNTIME_MS || DEFAULT_MAX_TICK_RUNTIME_MS, 10000, 45000);
+  const maxTickRuntimeMs = cap(inputJson.max_tick_runtime_ms || env.MAX_TICK_RUNTIME_MS || DEFAULT_MAX_TICK_RUNTIME_MS, 8000, 30000);
+  const fetchTimeoutMs = cap(inputJson.fetch_timeout_ms || env.FETCH_TIMEOUT_MS || DEFAULT_FETCH_TIMEOUT_MS, 1500, 10000);
   const tickStartedAtMs = Date.now();
   let cursorJsonObj = {};
   try { cursorJsonObj = JSON.parse(cursor.cursor_json || "{}"); } catch (_) { cursorJsonObj = {}; }
@@ -695,7 +717,7 @@ async function runBaseBackfillTick(env, input) {
   const offset = asInt(cursor.current_player_offset, 0);
   const total = players.length;
   const owner = asText(input.request_id, rid("base_hitter_owner"));
-  const staleSeconds = cap(inputJson.lock_stale_seconds || env.LOCK_STALE_SECONDS || DEFAULT_LOCK_STALE_SECONDS, 30, 120);
+  const staleSeconds = cap(inputJson.lock_stale_seconds || env.LOCK_STALE_SECONDS || DEFAULT_LOCK_STALE_SECONDS, 20, 90);
   const lock = await acquireBatchLock(env, batchId, owner, staleSeconds);
   if (!lock.ok) {
     return {
@@ -724,6 +746,7 @@ async function runBaseBackfillTick(env, input) {
   const processedPlayers = [];
   let nextOffset = offset;
   let stoppedByRuntimeBudget = false;
+  let stoppedBySourceError = false;
 
   try {
     const slice = players.slice(offset, Math.min(offset + perTickPlayers, total));
@@ -736,16 +759,26 @@ async function runBaseBackfillTick(env, input) {
       sourceRequestCount++;
       let result;
       try {
-        result = await processPlayer(env, p, sourceSeason, batchId, runId, cutoffDate, Math.max(1, maxRows - rowsStagedThisTick));
+        result = await processPlayer(env, p, sourceSeason, batchId, runId, cutoffDate, Math.max(1, maxRows - rowsStagedThisTick), fetchTimeoutMs);
       } catch (err) {
-        result = { player_id: p.player_id, player_name: p.player_name, status: "source_error", rows_staged: 0, error: String(err && err.message ? err.message : err) };
+        result = { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: "process_player_exception", rows_staged: 0, error: String(err && err.message ? err.message : err), retry_same_player: true };
       }
-      if (result.status === "success") sourceSuccessCount++;
-      else if (result.status === "no_data") sourceNoDataCount++;
-      else sourceErrorCount++;
-      rowsStagedThisTick += asInt(result.rows_staged, 0);
-      processedPlayers.push(result);
-      nextOffset++;
+      if (result.status === "success") {
+        sourceSuccessCount++;
+        rowsStagedThisTick += asInt(result.rows_staged, 0);
+        processedPlayers.push(result);
+        nextOffset++;
+      } else if (result.status === "no_data") {
+        sourceNoDataCount++;
+        rowsStagedThisTick += asInt(result.rows_staged, 0);
+        processedPlayers.push(result);
+        nextOffset++;
+      } else {
+        sourceErrorCount++;
+        stoppedBySourceError = true;
+        processedPlayers.push(result);
+        break;
+      }
     }
 
     const stageCount = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_game_logs_stage WHERE batch_id=?", batchId);
@@ -769,6 +802,8 @@ async function runBaseBackfillTick(env, input) {
     cursorJsonObj.last_tick_elapsed_ms = Date.now() - tickStartedAtMs;
     cursorJsonObj.last_tick_runtime_budget_ms = maxTickRuntimeMs;
     cursorJsonObj.last_tick_stopped_by_runtime_budget = stoppedByRuntimeBudget;
+    cursorJsonObj.last_tick_stopped_by_source_error = stoppedBySourceError;
+    cursorJsonObj.last_tick_fetch_timeout_ms = fetchTimeoutMs;
     cursorJsonObj.last_tick_max_requests = maxRequests;
     cursorJsonObj.current_player_offset = nextOffset;
     await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_cursor SET
@@ -821,6 +856,8 @@ async function runBaseBackfillTick(env, input) {
         tick_elapsed_ms: Date.now() - tickStartedAtMs,
         tick_runtime_budget_ms: maxTickRuntimeMs,
         tick_stopped_by_runtime_budget: stoppedByRuntimeBudget,
+        tick_stopped_by_source_error: stoppedBySourceError,
+        fetch_timeout_ms: fetchTimeoutMs,
         effective_max_requests_per_tick: maxRequests,
         no_browser_pump: true,
         no_scoring: true,
@@ -872,6 +909,8 @@ async function runBaseBackfillTick(env, input) {
       tick_elapsed_ms: Date.now() - tickStartedAtMs,
       tick_runtime_budget_ms: maxTickRuntimeMs,
       tick_stopped_by_runtime_budget: stoppedByRuntimeBudget,
+      tick_stopped_by_source_error: stoppedBySourceError,
+      fetch_timeout_ms: fetchTimeoutMs,
       effective_max_requests_per_tick: maxRequests,
       no_browser_pump: true,
       no_scoring: true,
@@ -904,6 +943,8 @@ async function runBaseBackfillTick(env, input) {
       tick_elapsed_ms: Date.now() - tickStartedAtMs,
       tick_runtime_budget_ms: maxTickRuntimeMs,
       tick_stopped_by_runtime_budget: stoppedByRuntimeBudget,
+      tick_stopped_by_source_error: stoppedBySourceError,
+      fetch_timeout_ms: fetchTimeoutMs,
       effective_max_requests_per_tick: maxRequests,
       no_browser_pump: true,
       rows_read: sourceRequestCount,
