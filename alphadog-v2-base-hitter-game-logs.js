@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v0.1.0-schema-source-lock-probe";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v0.1.2-hitter-only-probe-cert-tighten";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -368,10 +368,44 @@ async function insertStageRow(env, row) {
 
 async function chooseProbePlayers(env, inputJson, limit) {
   const explicit = inputJson && Array.isArray(inputJson.player_ids) ? inputJson.player_ids.map(x => asInt(x, 0)).filter(Boolean) : [];
-  if (explicit.length) return explicit.slice(0, limit).map(player_id => ({ player_id, player_name: null, source: "input_json.player_ids" }));
-  let rows = await all(env.REF_DB, "SELECT player_id, player_name FROM ref_players WHERE active=1 AND player_id IS NOT NULL AND LOWER(COALESCE(primary_role,'')) NOT LIKE '%pitch%' ORDER BY player_id LIMIT ?", limit);
-  if (!rows.length) rows = await all(env.REF_DB, "SELECT player_id, player_name FROM ref_players WHERE active=1 AND player_id IS NOT NULL ORDER BY player_id LIMIT ?", limit);
-  return rows.map(r => ({ player_id: r.player_id, player_name: r.player_name || null, source: "REF_DB.ref_players" }));
+  if (explicit.length) return explicit.slice(0, limit).map(player_id => ({ player_id, player_name: null, primary_position: null, source: "input_json.player_ids" }));
+
+  const hitterPositions = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "OF", "DH"];
+  const placeholders = hitterPositions.map(() => "?").join(",");
+  let rows = await all(env.REF_DB, `
+    SELECT
+      COALESCE(mlb_player_id, player_id) AS player_id,
+      COALESCE(full_name, player_name) AS player_name,
+      primary_position,
+      current_team_id
+    FROM ref_players
+    WHERE COALESCE(active,1)=1
+      AND COALESCE(mlb_player_id, player_id) IS NOT NULL
+      AND UPPER(COALESCE(primary_position, primary_role, '')) IN (${placeholders})
+    ORDER BY current_team_id IS NULL, current_team_id, player_name
+    LIMIT ?`, ...hitterPositions, limit);
+
+  if (!rows.length) {
+    rows = await all(env.REF_DB, `
+      SELECT
+        COALESCE(mlb_player_id, player_id) AS player_id,
+        COALESCE(full_name, player_name) AS player_name,
+        primary_position,
+        current_team_id
+      FROM ref_players
+      WHERE COALESCE(active,1)=1
+        AND COALESCE(mlb_player_id, player_id) IS NOT NULL
+        AND UPPER(COALESCE(primary_position, primary_role, '')) NOT IN ('P', 'SP', 'RP', 'LHP', 'RHP', 'PITCHER')
+      ORDER BY current_team_id IS NULL, current_team_id, player_name
+      LIMIT ?`, limit);
+  }
+
+  return rows.map(r => ({
+    player_id: asInt(r.player_id, 0),
+    player_name: r.player_name || null,
+    primary_position: r.primary_position || null,
+    source: "REF_DB.ref_players_hitter_position_filter"
+  })).filter(r => r.player_id);
 }
 
 async function runSourceShapeProbe(env, input) {
@@ -427,7 +461,7 @@ async function runSourceShapeProbe(env, input) {
     try {
       const resp = await fetch(endpoint, {
         method: "GET",
-        headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/0.1.0") }
+        headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/0.1.2") }
       });
       const text = await resp.text();
       if (!resp.ok) {
@@ -466,16 +500,34 @@ async function runSourceShapeProbe(env, input) {
     }
   }
 
+  const hasUsableSourceShape = sourceSuccessCount > 0 && rowsStaged > 0;
   const status = sourceErrorCount > 0 ? "SOURCE_SHAPE_PROBE_COMPLETED_WITH_ERRORS" : "SOURCE_SHAPE_PROBE_COMPLETED";
-  const certification = sourceRequestCount > 0 && (sourceSuccessCount + sourceNoDataCount) > 0 ? "BASE_HITTER_GAME_LOGS_SOURCE_SHAPE_PROBE_STAGED_NO_PROMOTION" : "BASE_HITTER_GAME_LOGS_SOURCE_SHAPE_PROBE_INSUFFICIENT_DATA";
-  const dataOk = certification === "BASE_HITTER_GAME_LOGS_SOURCE_SHAPE_PROBE_STAGED_NO_PROMOTION";
+  const certification = hasUsableSourceShape ? "BASE_HITTER_GAME_LOGS_SOURCE_SHAPE_PROBE_STAGED_NO_PROMOTION" : "BASE_HITTER_GAME_LOGS_SOURCE_SHAPE_PROBE_INSUFFICIENT_USABLE_ROWS";
+  const dataOk = hasUsableSourceShape;
+  const certificationGrade = dataOk ? "PROBE_PASS" : "PROBE_REVIEW";
+  const checksJson = JSON.stringify({
+    version: VERSION,
+    selected_player_filter: "REF_DB.ref_players hitter primary_position filter, no pitcher-first fallback",
+    sample_shapes: sampleShapes,
+    errors,
+    no_live_promotion: true,
+    required_to_pass: {
+      source_success_count_gt_0: sourceSuccessCount > 0,
+      rows_staged_gt_0: rowsStaged > 0,
+      source_error_count_eq_0: sourceErrorCount === 0
+    }
+  });
 
   await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_batches SET status=?, source_request_count=?, source_success_count=?, source_no_data_count=?, source_error_count=?, rows_staged=?, certification_status=?, certification_grade=?, certification_json=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    status, sourceRequestCount, sourceSuccessCount, sourceNoDataCount, sourceErrorCount, rowsStaged, certification, dataOk ? "PROBE_PASS" : "PROBE_REVIEW", JSON.stringify({ sample_shapes: sampleShapes, errors, no_live_promotion: true }), batchId
+    status, sourceRequestCount, sourceSuccessCount, sourceNoDataCount, sourceErrorCount, rowsStaged, certification, certificationGrade, checksJson, batchId
+  );
+
+  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
+    `cert_${batchId}`, batchId, runId, "base_backfill", certification, certificationGrade, checksJson, rowsStaged, 0, 0, sourceNoDataCount, sourceErrorCount
   );
 
   await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_cursor (cursor_key,batch_id,run_id,mode,status,source_season,base_backfill_cutoff_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,cursor_json,updated_at) VALUES ('base_hitter_game_logs_active_cursor',?,?,?,?,?,?,?,?,?,?,?,datetime('now','+5 minutes'),?,CURRENT_TIMESTAMP)`,
-    batchId, runId, "base_backfill", "SOURCE_SHAPE_PROBE_COMPLETE_READY_FOR_SCHEMA_VALIDATION", sourceSeason, cutoffDate, players.length ? players[players.length - 1].player_id : null, players.length, players.length, sourceRequestCount, sourceRequestCount, JSON.stringify({ v0_1_0_probe_only: true, next_real_backfill_requires_user_approval: true })
+    batchId, runId, "base_backfill", "SOURCE_SHAPE_PROBE_COMPLETE_READY_FOR_SCHEMA_VALIDATION", sourceSeason, cutoffDate, players.length ? players[players.length - 1].player_id : null, players.length, players.length, sourceRequestCount, sourceRequestCount, JSON.stringify({ v0_1_2_probe_only: true, selected_player_filter: "hitter_primary_position", next_real_backfill_requires_user_approval: true })
   );
 
   return {
@@ -511,6 +563,7 @@ async function runSourceShapeProbe(env, input) {
     next_status_for_future_full_backfill: "PARTIAL_CONTINUE",
     output_json: {
       source_shape_probe: true,
+      selected_player_filter: "hitter_primary_position_no_pitcher_first_fallback",
       sample_shapes: sampleShapes,
       errors,
       locked_endpoint_pattern: LOCKED_SOURCE_ENDPOINT_PATTERN,
