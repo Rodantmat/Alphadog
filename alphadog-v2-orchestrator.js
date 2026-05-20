@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.20-base-hitter-direct-waituntil-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.21-base-hitter-hot-continuation-loop";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1146,6 +1146,7 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
       base_backfill_self_continuation_v0_2_0: true,
       lock_busy_backoff_v0_2_3: true,
       direct_waituntil_continuation_v0_2_4: true,
+      hot_continuation_loop_v0_2_5: true,
       backend_self_continuation_ready: true,
       manual_wake_testing_only: true,
       no_browser_pump: true,
@@ -1986,7 +1987,7 @@ async function processOneUnlocked(env, trigger) {
       status: "unsupported_in_v0_2_16_safe_shell",
       job_key: row.job_key,
       worker_name: row.worker_name,
-      note: "v0.2.18 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with fast bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked."
+      note: "v0.2.21 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with fast bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter hot continuation uses backend waitUntil, not browser pump; cron is rescue only."
     };
 
     await run(env.CONTROL_DB,
@@ -2097,14 +2098,19 @@ async function countDueStaticPlayers(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
-async function pump(env, trigger = "auto_pump", maxCycles = 12, maxJobsPerCycle = 2, maxMs = 25000, ctx = null, requestUrl = null, pumpDepth = 0, maxPumpChains = 6) {
+async function pump(env, trigger = "auto_pump", maxCycles = 12, maxJobsPerCycle = 1, maxMs = 90000, ctx = null, requestUrl = null, pumpDepth = 0, maxPumpChains = 12) {
   const started = Date.now();
   const cycles = [];
-  const hardCycles = Math.max(1, Math.min(Number(maxCycles || 12), 20));
-  const jobsPerCycle = Math.max(1, Math.min(Number(maxJobsPerCycle || 2), 5));
-  const deadlineMs = Math.max(5000, Math.min(Number(maxMs || 25000), 28000));
+  const hardCycles = Math.max(1, Math.min(Number(maxCycles || 12), 24));
+  // v0.2.21: one job per cycle is intentional. It prevents overlapping same-row dispatches
+  // while still allowing immediate backend continuation between micro-ticks.
+  const jobsPerCycle = Math.max(1, Math.min(Number(maxJobsPerCycle || 1), 1));
+  // Wall-clock budget, not CPU budget. Each service-binding tick remains bounded by the worker.
+  // This lets the backend drain several micro-ticks in one orchestrator ownership window instead
+  // of waiting for the 5-minute cron cadence.
+  const deadlineMs = Math.max(15000, Math.min(Number(maxMs || 90000), 110000));
   const depth = Math.max(0, Math.min(Number(pumpDepth || 0), 20));
-  const maxChains = Math.max(0, Math.min(Number(maxPumpChains || 6), 20));
+  const maxChains = Math.max(0, Math.min(Number(maxPumpChains || 12), 30));
 
   for (let i = 0; i < hardCycles; i++) {
     if (Date.now() - started >= deadlineMs) {
@@ -2126,7 +2132,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 12, maxJobsPerCycle 
 
   const dueStaticPlayers = await countDueStaticPlayers(env);
   const dueBaseHitterGameLogs = await countDueBaseHitterGameLogs(env);
-  const shouldSelfContinue = (dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0) && depth < maxChains && ctx && requestUrl;
+  const shouldSelfContinue = (dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0) && depth < maxChains && !!ctx;
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -2141,19 +2147,40 @@ async function pump(env, trigger = "auto_pump", maxCycles = 12, maxJobsPerCycle 
       pump_depth: depth,
       max_pump_chains: maxChains,
       self_continue_scheduled: !!shouldSelfContinue,
+      hot_continuation_loop_v0_2_5: true,
+      cron_is_rescue_only_for_base_hitter: true,
       version: SYSTEM_VERSION
     })
   );
 
   if (shouldSelfContinue) {
-    const nextSource = `${trigger}:direct_waituntil_self_continue_${depth + 1}`;
+    const nextSource = `${trigger}:direct_waituntil_hot_continue_${depth + 1}`;
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_direct_waituntil_self_continue_scheduled', 'Scheduled direct backend waitUntil continuation for due work', ?, CURRENT_TIMESTAMP)",
+      WORKER_NAME, JSON.stringify({
+        trigger,
+        next_source: nextSource,
+        due_static_players_after_pump: dueStaticPlayers,
+        due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
+        pump_depth: depth,
+        next_pump_depth: depth + 1,
+        max_pump_chains: maxChains,
+        max_cycles: hardCycles,
+        max_jobs_per_cycle: jobsPerCycle,
+        max_ms: deadlineMs,
+        version: SYSTEM_VERSION,
+        hot_continuation_loop_v0_2_5: true,
+        no_browser_pump: true,
+        cron_rescue_only: true
+      })
+    );
     ctx.waitUntil((async () => {
       try {
         await pump(env, nextSource, hardCycles, jobsPerCycle, deadlineMs, ctx, requestUrl, depth + 1, maxChains);
       } catch (err) {
         await run(env.CONTROL_DB,
           "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'ERROR', 'orchestrator_auto_pump_self_continue_failed', 'Direct waitUntil self-continuing pump failed', ?, CURRENT_TIMESTAMP)",
-          WORKER_NAME, JSON.stringify({ error: String(err && err.message ? err.message : err), version: SYSTEM_VERSION, direct_waituntil_continuation_v0_2_4: true })
+          WORKER_NAME, JSON.stringify({ error: String(err && err.message ? err.message : err), version: SYSTEM_VERSION, direct_waituntil_continuation_v0_2_4: true, hot_continuation_loop_v0_2_5: true })
         );
       }
     })());
@@ -2167,6 +2194,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 12, maxJobsPerCycle 
     max_cycles: hardCycles,
     max_jobs_per_cycle: jobsPerCycle,
     elapsed_ms: Date.now() - started,
+    hot_continuation_loop_v0_2_5: true,
     cycle_count: cycles.length,
     due_static_players_after_pump: dueStaticPlayers,
     due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
@@ -2206,8 +2234,8 @@ export default {
     if (request.method === "POST" && (url.pathname === "/pump" || url.pathname === "/auto-pump" || url.pathname === "/tasks/pump")) {
       const body = await parseJson(request);
       const maxCycles = body.max_cycles || body.maxCycles || 12;
-      const maxJobsPerCycle = body.max_jobs_per_cycle || body.maxJobsPerCycle || 2;
-      const maxMs = body.max_ms || body.maxMs || 25000;
+      const maxJobsPerCycle = body.max_jobs_per_cycle || body.maxJobsPerCycle || 1;
+      const maxMs = body.max_ms || body.maxMs || 90000;
       const source = body.source || "http_auto_pump";
       const pumpDepth = body.pump_depth || body.pumpDepth || 0;
       const maxPumpChains = body.max_pump_chains || body.maxPumpChains || 6;
@@ -2218,7 +2246,7 @@ export default {
       const body = await parseJson(request);
       const maxJobs = body.max_jobs || body.maxJobs || 3;
       if (body.auto_pump || body.pump) {
-        return jsonResponse(await pump(env, "http_manual_wake_auto_pump", body.max_cycles || 12, body.max_jobs_per_cycle || maxJobs || 2, body.max_ms || 25000, ctx, request.url, body.pump_depth || 0, body.max_pump_chains || 6));
+        return jsonResponse(await pump(env, "http_manual_wake_auto_pump", body.max_cycles || 12, body.max_jobs_per_cycle || maxJobs || 1, body.max_ms || 90000, ctx, request.url, body.pump_depth || 0, body.max_pump_chains || 12));
       }
       return jsonResponse(await tick(env, "http_manual_wake", maxJobs));
     }
@@ -2230,7 +2258,7 @@ export default {
     const cronExpression = event && event.cron ? String(event.cron) : "unknown";
     ctx.waitUntil((async () => {
       await enqueueStaticPlayersWeeklyIfDue(env, cronExpression);
-      await pump(env, `cron:${cronExpression}`, 12, 2, 25000, ctx, "https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev/scheduled", 0, 6);
+      await pump(env, `cron:${cronExpression}`, 12, 1, 90000, ctx, "https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev/scheduled", 0, 12);
     })());
   }
 };
