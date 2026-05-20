@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.12-static-prop-taxonomy-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.13-static-certifier-full-run-chain";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -47,12 +47,13 @@ function base(env, extra = {}) {
       "Buttons enqueue/wake backend work only.",
       "Browser does not run long loops.",
       "Scheduled cron calls the same bounded tick path.",
-      "v0.2.9 processes safe system-health, exact market-source-health, exact prizepicks-github-board source-shape staging, exact static-teams dictionary seed, exact static-stadiums dictionary seed, exact static-park-factors source refresh, exact static-players 40-man identity seed, and exact static-prop-taxonomy certifier only.",
+      "v0.2.13 processes safe system-health, exact market-source-health, exact prizepicks-github-board source-shape staging, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
       "No generic worker dispatch, no scoring, no ranking, no final board writes, no old production writes."
     ],
     bindings: {
       CONTROL_DB: !!env.CONTROL_DB,
-      CONFIG_DB: !!env.CONFIG_DB
+      CONFIG_DB: !!env.CONFIG_DB,
+      STATIC_CERTIFIER_WORKER: !!env.STATIC_CERTIFIER_WORKER
     },
     ...extra
   };
@@ -208,6 +209,347 @@ function isStaticPropTaxonomyJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "static-prop-taxonomy" && worker === "alphadog-v2-static-prop-taxonomy";
+}
+
+function isStaticCertifierJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "static-certifier" && worker === "alphadog-v2-static-certifier";
+}
+
+function isStaticFullRunJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "static-full-run" && worker === "alphadog-v2-orchestrator";
+}
+
+const STATIC_FULL_RUN_STAGES = [
+  { job_key: "static-teams", worker_name: "alphadog-v2-static-teams", display_name: "Static Teams", visible_button: "STATIC > Teams" },
+  { job_key: "static-stadiums", worker_name: "alphadog-v2-static-stadiums", display_name: "Static Stadiums", visible_button: "STATIC > Stadiums" },
+  { job_key: "static-park-factors", worker_name: "alphadog-v2-static-park-factors", display_name: "Static Park Factors", visible_button: "STATIC > Park Factors" },
+  { job_key: "static-players", worker_name: "alphadog-v2-static-players", display_name: "Static Players", visible_button: "STATIC > Players" },
+  { job_key: "static-prop-taxonomy", worker_name: "alphadog-v2-static-prop-taxonomy", display_name: "Static Prop Taxonomy", visible_button: "STATIC > Prop Taxonomy" },
+  { job_key: "static-certifier", worker_name: "alphadog-v2-static-certifier", display_name: "Static Certifier", visible_button: "STATIC > Certifier" }
+];
+
+function parseJsonSafeText(text, fallback = {}) {
+  try { return text ? JSON.parse(text) : fallback; } catch (_) { return fallback; }
+}
+
+function childPassedStaticFullRun(stage, child) {
+  if (!child || String(child.status || "") !== "completed") {
+    return { pass: false, reason: "child_not_completed", child_status: child ? child.status : null };
+  }
+  const output = parseJsonSafeText(child.output_json || "{}", {});
+  const cert = String(output.certification || "");
+  if (!output || output.ok !== true) return { pass: false, reason: "child_output_ok_not_true", output_ok: output && output.ok };
+  if (output.data_ok !== true) return { pass: false, reason: "child_data_ok_not_true", data_ok: output && output.data_ok };
+  if (!cert || cert === "DUMMY_ONLY_NOT_REAL_DATA" || cert.toLowerCase().includes("dummy")) return { pass: false, reason: "missing_or_dummy_certification", certification: cert };
+  if (stage.job_key === "static-certifier") {
+    if (output.full_static_certified !== true) return { pass: false, reason: "final_certifier_not_full_static_certified", full_static_certified: output.full_static_certified };
+    if (Number(output.rows_written || 0) !== 0) return { pass: false, reason: "static_certifier_wrote_rows", rows_written: output.rows_written };
+    if (Number(output.external_calls_performed || 0) !== 0) return { pass: false, reason: "static_certifier_external_calls", external_calls_performed: output.external_calls_performed };
+  }
+  const unsafeFalseKeys = ["no_old_production_touch", "no_scoring", "no_ranking", "no_prizepicks_board_mutation"];
+  for (const k of unsafeFalseKeys) {
+    if (Object.prototype.hasOwnProperty.call(output, k) && output[k] === false) return { pass: false, reason: `unsafe_output_${k}_false` };
+  }
+  return { pass: true, certification: cert, data_ok: output.data_ok, rows_read: output.rows_read || 0, rows_written: output.rows_written || 0, output };
+}
+
+function staticFullRunChildInput(parentRow, stage, stepIndex) {
+  return {
+    source: "static_full_run_parent",
+    visible_button: stage.visible_button,
+    mode: `static_full_run_stage_${stepIndex + 1}_${stage.job_key}`,
+    parent_request_id: parentRow.request_id,
+    parent_chain_id: parentRow.chain_id,
+    stage_index: stepIndex,
+    approved_static_full_run_order: STATIC_FULL_RUN_STAGES.map(s => s.job_key),
+    deferred_workers_skipped: ["static-rosters", "static-player-aliases"],
+    backend_scheduled_continuation: true,
+    no_browser_auto_pump: true,
+    no_control_room_to_orchestrator_fetch: true,
+    no_generic_dispatch: true,
+    no_prizepicks_board_mutation: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_sleeper_work: true,
+    no_old_production_touch: true,
+    created_at: nowIso()
+  };
+}
+
+async function processStaticCertifierJob(env, row, runId, trigger) {
+  if (!env.STATIC_CERTIFIER_WORKER || typeof env.STATIC_CERTIFIER_WORKER.fetch !== "function") {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      status: "blocked_missing_service_binding",
+      certification: "STATIC_CERTIFIER_SERVICE_BINDING_MISSING",
+      trigger,
+      note: "Exact dispatch is enabled only through STATIC_CERTIFIER_WORKER service binding. Deploy orchestrator with the services wrangler config."
+    };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_static_certifier_service_binding', 'STATIC_CERTIFIER_WORKER service binding is missing')",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
+    );
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_static_certifier_service_binding', error_message='STATIC_CERTIFIER_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id
+    );
+    return output;
+  }
+
+  const input = {
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    trigger,
+    mode: "orchestrator_exact_static_certifier_read_only_dispatch",
+    input_json: parseJsonSafeText(row.input_json || "{}", {})
+  };
+  const started = Date.now();
+  let output;
+  let httpStatus = null;
+  try {
+    const resp = await env.STATIC_CERTIFIER_WORKER.fetch("https://internal.alphadog-v2-static-certifier/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input)
+    });
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); }
+    catch (_) {
+      output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
+    }
+  } catch (err) {
+    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+  }
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
+  const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
+  const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
+  const certification = String((output && output.certification) || (ok ? "static_certifier_completed" : "static_certifier_failed")).slice(0, 120);
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "static_certifier_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "static certifier worker failed").slice(0, 900);
+  const cappedOutput = {
+    ...output,
+    orchestrator_dispatch: {
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      exact_worker_only: true,
+      trigger,
+      http_status: httpStatus,
+      elapsed_ms: Date.now() - started,
+      static_certifier_read_only: true,
+      no_reruns: true,
+      no_source_fetches: true,
+      no_promotion: true,
+      no_cleanup: true,
+      no_prizepicks_board_mutation: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board_write: true,
+      no_old_production_touch: true
+    }
+  };
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
+  );
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'static_certifier_dispatch_completed', 'Orchestrator completed exact static-certifier read-only dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, certification, data_ok: dataOk, rows_read: rowsRead, rows_written: rowsWritten })
+  );
+  return cappedOutput;
+}
+
+async function processStaticFullRunJob(env, row, runId, trigger) {
+  const started = Date.now();
+  const parentInput = parseJsonSafeText(row.input_json || "{}", {});
+  const approvedStages = STATIC_FULL_RUN_STAGES;
+  const childRows = await all(env.CONTROL_DB,
+    "SELECT request_id, parent_request_id, chain_id, job_key, worker_name, status, output_json, error_code, error_message, created_at, updated_at FROM control_job_queue WHERE parent_request_id=? ORDER BY datetime(created_at) ASC",
+    row.request_id
+  );
+  const childByJob = new Map(childRows.map(c => [String(c.job_key), c]));
+  const stageReports = [];
+
+  for (let i = 0; i < approvedStages.length; i++) {
+    const stage = approvedStages[i];
+    const child = childByJob.get(stage.job_key);
+    if (!child) {
+      const childRequestId = rid(String(stage.job_key).replace(/-/g, "_"));
+      const input = staticFullRunChildInput(row, stage, i);
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'Static', 'static', ?, 'pending', 5, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+        childRequestId, row.chain_id, row.request_id, stage.job_key, stage.worker_name, stage.display_name, JSON.stringify(input)
+      );
+      const output = {
+        ok: true,
+        data_ok: true,
+        version: SYSTEM_VERSION,
+        worker_name: WORKER_NAME,
+        job_key: row.job_key,
+        request_id: row.request_id,
+        chain_id: row.chain_id,
+        status: "partial_continue",
+        current_stage: stage.job_key,
+        enqueued_child_request_id: childRequestId,
+        full_run_certified: false,
+        stages: [...stageReports, { job_key: stage.job_key, child_request_id: childRequestId, child_status: "pending", data_ok: null, certification: null, pass: null }],
+        deferred_workers_skipped: ["static-rosters", "static-player-aliases"],
+        note: "Static Full Run parent enqueued next active static stage. Backend wake/cron continues; browser may close."
+      };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'static_full_run_child_enqueued', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
+        runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
+      );
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+        JSON.stringify(output), row.request_id
+      );
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'static-full-run', 'INFO', 'static_full_run_stage_enqueued', 'Static Full Run parent enqueued next active static stage', ?, CURRENT_TIMESTAMP)",
+        row.request_id, runId, WORKER_NAME, JSON.stringify({ parent_request_id: row.request_id, child_request_id: childRequestId, stage: stage.job_key, stage_index: i, deferred_workers_skipped: ["static-rosters", "static-player-aliases"] })
+      );
+      return output;
+    }
+
+    if (String(child.status || "") === "pending" || String(child.status || "") === "running") {
+      const output = {
+        ok: true,
+        data_ok: true,
+        version: SYSTEM_VERSION,
+        worker_name: WORKER_NAME,
+        job_key: row.job_key,
+        request_id: row.request_id,
+        chain_id: row.chain_id,
+        status: "partial_continue",
+        current_stage: stage.job_key,
+        waiting_on_child_request_id: child.request_id,
+        waiting_on_child_status: child.status,
+        full_run_certified: false,
+        stages: [...stageReports, { job_key: stage.job_key, child_request_id: child.request_id, child_status: child.status, data_ok: null, certification: null, pass: null }],
+        note: "Static Full Run parent is waiting on current child stage. Backend wake/cron continues; browser may close."
+      };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'static_full_run_waiting_on_child', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
+        runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
+      );
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+        JSON.stringify(output), row.request_id
+      );
+      return output;
+    }
+
+    const validation = childPassedStaticFullRun(stage, child);
+    const childOutput = parseJsonSafeText(child.output_json || "{}", {});
+    const report = {
+      job_key: stage.job_key,
+      child_request_id: child.request_id,
+      child_status: child.status,
+      child_certification: childOutput.certification || null,
+      child_data_ok: childOutput.data_ok === true,
+      pass: validation.pass,
+      reason: validation.reason || null,
+      rows_read: childOutput.rows_read || 0,
+      rows_written: childOutput.rows_written || 0
+    };
+    stageReports.push(report);
+
+    if (!validation.pass) {
+      const output = {
+        ok: false,
+        data_ok: false,
+        version: SYSTEM_VERSION,
+        worker_name: WORKER_NAME,
+        job_key: row.job_key,
+        request_id: row.request_id,
+        chain_id: row.chain_id,
+        status: "failed_static_full_run_stage",
+        failed_stage: stage.job_key,
+        failed_child_request_id: child.request_id,
+        failed_reason: validation.reason,
+        stages: stageReports,
+        final_certifier_result: stage.job_key === "static-certifier" ? childOutput : null,
+        full_run_certified: false,
+        deferred_workers_skipped: ["static-rosters", "static-player-aliases"]
+      };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, 'STATIC_FULL_RUN_FAILED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, 'static_full_run_stage_failed', ?)",
+        runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), String(validation.reason || "static full run stage failed").slice(0, 900)
+      );
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='static_full_run_stage_failed', error_message=? WHERE request_id=?",
+        JSON.stringify(output), String(validation.reason || "static full run stage failed").slice(0, 900), row.request_id
+      );
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'static-full-run', 'ERROR', 'static_full_run_failed', 'Static Full Run stopped after failed child stage validation', ?, CURRENT_TIMESTAMP)",
+        row.request_id, runId, WORKER_NAME, JSON.stringify(output)
+      );
+      return output;
+    }
+  }
+
+  const finalCertifierRow = childByJob.get("static-certifier");
+  const finalCertifierOutput = parseJsonSafeText(finalCertifierRow && finalCertifierRow.output_json || "{}", {});
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    worker_name: WORKER_NAME,
+    job_key: row.job_key,
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    status: "completed_static_full_run_certified",
+    certification: "STATIC_FULL_RUN_CERTIFIED_ALL_ACTIVE_STATIC_WORKERS_RERAN_AND_FINAL_CERTIFIER_PASSED",
+    full_run_certified: true,
+    stages: stageReports,
+    final_certifier_result: {
+      child_request_id: finalCertifierRow ? finalCertifierRow.request_id : null,
+      certification: finalCertifierOutput.certification || null,
+      data_ok: finalCertifierOutput.data_ok === true,
+      full_static_certified: finalCertifierOutput.full_static_certified === true
+    },
+    deferred_workers_skipped: ["static-rosters", "static-player-aliases"],
+    no_browser_pump: true,
+    no_control_room_server_side_fetch_to_orchestrator: true,
+    no_generic_dispatch: true,
+    no_prizepicks_board_mutation: true,
+    no_scoring: true,
+    no_final_board_writes: true,
+    elapsed_ms: Date.now() - started
+  };
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'STATIC_FULL_RUN_CERTIFIED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
+  );
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+    JSON.stringify(output), row.request_id
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'static-full-run', 'INFO', 'static_full_run_certified', 'Static Full Run completed all active static stages and final certifier passed', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, JSON.stringify({ request_id: row.request_id, chain_id: row.chain_id, full_run_certified: true, stages: stageReports })
+  );
+  return output;
 }
 
 
@@ -1294,6 +1636,27 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isStaticCertifierJob(row)) {
+    const output = await processStaticCertifierJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_static_certifier_job" : "failed_one_static_certifier_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
+  if (isStaticFullRunJob(row)) {
+    const output = await processStaticFullRunJob(env, row, runId, trigger);
+    const status = output && output.status === "partial_continue" ? "partial_continue_static_full_run_job" : (output && output.ok ? "completed_one_static_full_run_job" : "failed_one_static_full_run_job");
+    return {
+      status,
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (!isSafeTestJob(row)) {
     const output = {
       ok: false,
@@ -1302,16 +1665,16 @@ async function processOneUnlocked(env, trigger) {
       status: "unsupported_in_v0_2_6_safe_shell",
       job_key: row.job_key,
       worker_name: row.worker_name,
-      note: "v0.2.6 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact static-teams, exact static-stadiums, exact static-park-factors, exact static-players, and exact static-prop-taxonomy jobs. Generic dispatch remains blocked."
+      note: "v0.2.13 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked."
     };
 
     await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_6', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact static-teams, exact static-stadiums, exact static-park-factors, exact static-players, and exact static-prop-taxonomy jobs are enabled in orchestrator v0.2.6')",
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_13', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.13')",
       runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
     );
 
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_6', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact static-teams, exact static-stadiums, exact static-park-factors, exact static-players, and exact static-prop-taxonomy jobs are enabled in orchestrator v0.2.6' WHERE request_id=?",
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_13', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.13' WHERE request_id=?",
       JSON.stringify(output), row.request_id
     );
 
@@ -1353,21 +1716,23 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       const result = await processOneUnlocked(env, trigger);
       processed.push(result);
       if (result.status === "no_due_jobs") break;
-      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job") break;
+      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_static_full_run_job") break;
     }
 
     await releaseLock(env, owner, "IDLE");
 
-    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job").length;
-    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job").length;
+    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_static_full_run_job").length;
+    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job").length;
+    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_static_full_run_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
 
     return base(env, {
       job: "orchestrator_tick",
-      status: completed ? "completed" : (blocked ? "blocked" : (noDue ? "no_due_jobs" : "idle")),
+      status: blocked ? "blocked" : (partialContinue ? "partial_continue" : (completed ? "completed" : (noDue ? "no_due_jobs" : "idle"))),
       trigger,
       max_jobs: limit,
       completed_count: completed,
+      partial_continue_count: partialContinue,
       blocked_count: blocked,
       processed
     });
