@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.5.22-board-sleeper-button -->
+<!-- alphadog-v2-control-room-v1.5.23-base-hitter-game-logs-button -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,10 +28,10 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.5.22-board-sleeper-button</div>
+<div id="versionTag">alphadog-v2-control-room-v1.5.23-base-hitter-game-logs-button</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
-<div class="small">Access mode: single-user. Control Room enqueues/status only. Static Players, Static Prop Taxonomy, Static Certifier, Static Full Run, and Sleeper source-probe queue only. Orchestrator scheduled backend/cron owns continuation. Wake is manual backend test only.</div>
+<div class="small">Access mode: single-user. Control Room enqueues/status only. Static Players, Static Prop Taxonomy, Static Certifier, Static Full Run, Sleeper source-probe, and Base Hitter Game Logs source-shape probe queue only. Orchestrator scheduled backend/cron owns continuation. Wake is manual backend test only.</div>
 <div class="status" id="status">READY</div>
 
 <div class="section"><h3>DEBUG</h3><div class="grid">
@@ -75,6 +75,11 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <button class="audit" type="button" onclick="runJobButton('STATIC > Certifier','orchestrator_enqueue_static_certifier')">Certifier</button>
 <button class="audit" type="button" onclick="runJobButton('STATIC > Full Run','orchestrator_enqueue_static_full_run')">Full Run</button>
 </div><div class="small">Static dictionary/reference data only. Certifier is read-only. Full Run reruns active static workers then certifier. Deferred static-rosters and static-player-aliases stay skipped. No scoring, no board mutation, no opponent backfill.</div></div>
+
+
+<div class="section"><h3>BASE</h3><div class="grid">
+<button class="orch" type="button" onclick="runJobButton('BASE > Hitter Game Logs','orchestrator_enqueue_base_hitter_game_logs')">Hitter Logs</button>
+</div><div class="small">Base Hitter Game Logs v0.1.0 queues schema/source-lock probe only. Initial Base design cutoff is 2026-05-18; 2026-05-19+ reserved for later delta testing. Backend/orchestrator continuation only. No browser pump, no scoring, no ranking, no final board, no board mutation.</div></div>
 
 <div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
 <button class="check" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Queue','v2_queue_status')">Queue</button>
@@ -142,7 +147,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.5.22-board-sleeper-button"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.5.23-base-hitter-game-logs-button"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
