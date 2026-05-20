@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-static-players";
-const VERSION = "alphadog-v2-static-players-v0.1.6-source-clean-refresh";
+const VERSION = "alphadog-v2-static-players-v0.1.8-final-cleanup-no-partial-deactivation";
 const JOB_KEY = "static-players";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -149,7 +149,9 @@ async function ensureSchema(env) {
     ["bat_side", "TEXT"],
     ["throw_side", "TEXT"],
     ["source_key", "TEXT"],
-    ["created_at", "TEXT DEFAULT CURRENT_TIMESTAMP"]
+    ["created_at", "TEXT DEFAULT CURRENT_TIMESTAMP"],
+    ["last_seen_request_id", "TEXT"],
+    ["last_seen_at", "TEXT"]
   ]);
 
   await addColumns(env.REF_DB, "ref_player_aliases", [
@@ -159,7 +161,9 @@ async function ensureSchema(env) {
     ["mlb_team_id", "INTEGER"],
     ["active", "INTEGER DEFAULT 1"],
     ["raw_json", "TEXT"],
-    ["created_at", "TEXT DEFAULT CURRENT_TIMESTAMP"]
+    ["created_at", "TEXT DEFAULT CURRENT_TIMESTAMP"],
+    ["last_seen_request_id", "TEXT"],
+    ["last_seen_at", "TEXT"]
   ]);
 
   await addColumns(env.REF_DB, "ref_rosters", [
@@ -169,16 +173,21 @@ async function ensureSchema(env) {
     ["position_abbreviation", "TEXT"],
     ["roster_date", "TEXT"],
     ["active", "INTEGER DEFAULT 1"],
-    ["created_at", "TEXT DEFAULT CURRENT_TIMESTAMP"]
+    ["created_at", "TEXT DEFAULT CURRENT_TIMESTAMP"],
+    ["last_seen_request_id", "TEXT"],
+    ["last_seen_at", "TEXT"]
   ]);
 
   await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_players_mlb_player_id ON ref_players(mlb_player_id)");
   await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_players_current_team_active ON ref_players(current_team_id, active)");
   await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_players_source_active ON ref_players(source_key, active)");
+  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_players_last_seen ON ref_players(source_key, last_seen_request_id)");
   await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_player_aliases_player ON ref_player_aliases(player_id)");
   await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_player_aliases_normalized ON ref_player_aliases(alias_normalized)");
   await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_player_aliases_source_active ON ref_player_aliases(source_key, active)");
+  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_player_aliases_last_seen ON ref_player_aliases(source_key, last_seen_request_id)");
   await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_rosters_source_snapshot ON ref_rosters(source_key, snapshot_type)");
+  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_rosters_last_seen ON ref_rosters(source_key, snapshot_type, last_seen_request_id)");
   await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_rosters_team_player ON ref_rosters(team_id, player_id)");
 
   await run(env.REF_DB, `INSERT OR REPLACE INTO ref_schema_migrations
@@ -321,32 +330,32 @@ function buildAliases(player) {
   });
 }
 
-function playerStmt(env, player) {
+function playerStmt(env, player, requestId) {
   return env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_players
-    (player_id, mlb_player_id, player_name, full_name, first_name, last_name, primary_team_id, current_team_id, current_mlb_team_id, primary_role, primary_position, bats, throws, bat_side, throw_side, active, source_key, raw_json, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`).bind(
+    (player_id, mlb_player_id, player_name, full_name, first_name, last_name, primary_team_id, current_team_id, current_mlb_team_id, primary_role, primary_position, bats, throws, bat_side, throw_side, active, source_key, raw_json, updated_at, last_seen_request_id, last_seen_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP)`).bind(
     player.player_id, player.mlb_player_id, player.player_name, player.full_name, player.first_name, player.last_name,
     player.primary_team_id, player.current_team_id, player.current_mlb_team_id, player.primary_role, player.primary_position,
-    player.bats, player.throws, player.bat_side, player.throw_side, player.active, player.source_key, player.raw_json
+    player.bats, player.throws, player.bat_side, player.throw_side, player.active, player.source_key, player.raw_json, requestId || null
   );
 }
 
-function aliasStmt(env, alias) {
+function aliasStmt(env, alias, requestId) {
   return env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_player_aliases
-    (alias_key, player_id, alias_name, alias_type, alias_normalized, team_id, mlb_team_id, source_key, confidence, active, raw_json, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`).bind(
+    (alias_key, player_id, alias_name, alias_type, alias_normalized, team_id, mlb_team_id, source_key, confidence, active, raw_json, updated_at, last_seen_request_id, last_seen_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP)`).bind(
     alias.alias_key, alias.player_id, alias.alias_name, alias.alias_type, alias.alias_normalized, alias.team_id, alias.mlb_team_id,
-    alias.source_key, alias.confidence, alias.active, alias.raw_json
+    alias.source_key, alias.confidence, alias.active, alias.raw_json, requestId || null
   );
 }
 
-function rosterStmt(env, player, team) {
+function rosterStmt(env, player, team, requestId) {
   const rosterKey = `${SOURCE_KEY}|${team.team_id}|${player.player_id}`.slice(0, 240);
   return env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_rosters
-    (roster_key, slate_date, roster_date, snapshot_type, team_id, mlb_team_id, player_id, player_name, roster_status, role, position_abbreviation, source_key, active, raw_json, updated_at)
-    VALUES (?, NULL, date('now'), ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, CURRENT_TIMESTAMP)`).bind(
+    (roster_key, slate_date, roster_date, snapshot_type, team_id, mlb_team_id, player_id, player_name, roster_status, role, position_abbreviation, source_key, active, raw_json, updated_at, last_seen_request_id, last_seen_at)
+    VALUES (?, NULL, date('now'), ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP)`).bind(
     rosterKey, "STATIC_40MAN_SNAPSHOT", team.team_id, numOrNull(team.mlb_team_id), player.player_id, player.full_name,
-    player.roster_status, player.primary_position, player.position_abbreviation, SOURCE_KEY, player.raw_json
+    player.roster_status, player.primary_position, player.position_abbreviation, SOURCE_KEY, player.raw_json, requestId || null
   );
 }
 
@@ -360,6 +369,26 @@ async function runD1Batch(db, statements, size = D1_BATCH_SIZE) {
     }
   }
   return executed;
+}
+
+async function finalizeSourceCleanup(env, requestId) {
+  // Final-only stale cleanup. Safe for chunked/auto-pumped runs because it executes only after all 30 teams are processed.
+  // Rows from older completed runs remain active during partial refreshes and are deactivated only if absent from the new full refresh.
+  await run(env.REF_DB, `UPDATE ref_players
+    SET active=0, updated_at=CURRENT_TIMESTAMP
+    WHERE source_key=?
+      AND COALESCE(last_seen_request_id, '') <> ?`, SOURCE_KEY, requestId);
+
+  await run(env.REF_DB, `UPDATE ref_player_aliases
+    SET active=0, updated_at=CURRENT_TIMESTAMP
+    WHERE source_key=?
+      AND COALESCE(last_seen_request_id, '') <> ?`, SOURCE_KEY, requestId);
+
+  await run(env.REF_DB, `UPDATE ref_rosters
+    SET active=0, updated_at=CURRENT_TIMESTAMP
+    WHERE source_key=?
+      AND snapshot_type='STATIC_40MAN_SNAPSHOT'
+      AND COALESCE(last_seen_request_id, '') <> ?`, SOURCE_KEY, requestId);
 }
 
 async function runSeed(env, input = {}) {
@@ -401,16 +430,12 @@ async function runSeed(env, input = {}) {
   const alreadyProcessedValid = Array.from(processedMlbTeamIds).filter(id => allMlbTeamIds.includes(id));
   const processedSet = new Set(alreadyProcessedValid);
   const isFirstChunk = processedSet.size === 0;
+  const requestId = input.request_id || originalInput.request_id || null;
 
-  if (isFirstChunk) {
-    // Source-clean refresh guard:
-    // The 40-man snapshot is authoritative for this source_key only.
-    // Deactivate old source rows on the first chunk, then reactivate rows that are present in the current refresh.
-    // This prevents stale players/aliases/roster rows from staying active after future weekly refreshes.
-    await run(env.REF_DB, "UPDATE ref_players SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key=?", SOURCE_KEY);
-    await run(env.REF_DB, "UPDATE ref_player_aliases SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key=?", SOURCE_KEY);
-    await run(env.REF_DB, "UPDATE ref_rosters SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key=? AND snapshot_type='STATIC_40MAN_SNAPSHOT'", SOURCE_KEY);
-  }
+  // v0.1.8 safety rule:
+  // Never deactivate existing active player/alias/roster rows at the start of a chunked refresh.
+  // A browser cancel, manual cancel, cron delay, or bounded pump stop must not leave the reference DB half-deactivated.
+  // Each upsert marks last_seen_request_id for the current refresh; final cleanup runs only after all 30 teams are processed.
 
   const remainingTeams = teams.filter(t => !processedSet.has(String(t.mlb_team_id)));
   const teamsThisRun = remainingTeams.slice(0, maxTeamsPerRun);
@@ -461,17 +486,17 @@ async function runSeed(env, input = {}) {
   const rosterStatements = [];
 
   for (const player of players) {
-    playerStatements.push(playerStmt(env, player));
+    playerStatements.push(playerStmt(env, player, requestId));
     playersWrittenThisRun += 1;
     const aliases = buildAliases(player);
     for (const alias of aliases) {
-      aliasStatements.push(aliasStmt(env, alias));
+      aliasStatements.push(aliasStmt(env, alias, requestId));
       aliasesWritten += 1;
     }
   }
 
   for (const snapshot of rosterSnapshots) {
-    rosterStatements.push(rosterStmt(env, snapshot.player, snapshot.team));
+    rosterStatements.push(rosterStmt(env, snapshot.player, snapshot.team, requestId));
     rostersWritten += 1;
   }
 
@@ -480,6 +505,11 @@ async function runSeed(env, input = {}) {
 
   const processedNow = Array.from(processedSet).filter(id => allMlbTeamIds.includes(id));
   const remainingAfter = teams.filter(t => !processedSet.has(String(t.mlb_team_id)));
+
+  if (remainingAfter.length === 0 && requestId) {
+    await finalizeSourceCleanup(env, requestId);
+  }
+
   const checks = await certificationChecks(env);
 
   if (remainingAfter.length > 0) {
@@ -536,7 +566,7 @@ async function runSeed(env, input = {}) {
         primary_position: missingPosition,
         bat_side: missingBatSide,
         throw_side: missingThrowSide,
-        note: "v0.1.5 remains bounded. It does not make person-detail hydration calls. Missing detail is counted, not guessed."
+        note: "v0.1.8 remains bounded. It does not make person-detail hydration calls. Missing detail is counted, not guessed."
       },
       certification_checks_so_far: checks,
       boundaries: base(env).boundaries,
@@ -550,8 +580,10 @@ async function runSeed(env, input = {}) {
   const missingFullName = Number(checks.missing_full_name_or_player_name || 0);
   const aliasRows = Number(checks.alias_rows || 0);
   const rosterRows = Number(checks.static_40man_roster_rows || 0);
+  const activePlayerTeamCount = Number(checks.active_player_team_count || 0);
+  const activeRosterTeamCount = Number(checks.active_roster_team_count || 0);
 
-  const dataOk = processedNow.length === 30 && playerRows > 500 && duplicateMlbPlayerIds === 0 && missingMlbPlayerId === 0 && missingFullName === 0 && aliasRows > 0;
+  const dataOk = processedNow.length === 30 && playerRows > 500 && rosterRows > 500 && activePlayerTeamCount === 30 && activeRosterTeamCount === 30 && duplicateMlbPlayerIds === 0 && missingMlbPlayerId === 0 && missingFullName === 0 && aliasRows > 0;
   const certification = dataOk
     ? "STATIC_PLAYERS_40MAN_IDENTITY_SEEDED_30_TEAMS_PLAYERS_ALIASES_WRITTEN"
     : "STATIC_PLAYERS_40MAN_IDENTITY_CERTIFICATION_FAILED";
@@ -584,20 +616,22 @@ async function runSeed(env, input = {}) {
     alias_rows_total: aliasRows,
     rosters_written_this_run: rostersWritten,
     static_40man_roster_rows_total: rosterRows,
+    active_player_team_count: activePlayerTeamCount,
+    active_roster_team_count: activeRosterTeamCount,
     external_calls_performed: externalCalls,
     max_teams_per_run: maxTeamsPerRun,
     missing_detail_counts_from_roster_payload_this_run: {
       primary_position: missingPosition,
       bat_side: missingBatSide,
       throw_side: missingThrowSide,
-      note: "v0.1.5 remains bounded. It does not make person-detail hydration calls. Missing detail is counted, not guessed."
+      note: "v0.1.8 remains bounded. It does not make person-detail hydration calls. Missing detail is counted, not guessed."
     },
     certification_checks: checks,
     final_missing_detail_counts_from_active_source_rows: {
       primary_position: Number(checks.missing_primary_position || 0),
       bat_side: Number(checks.missing_bat_side || 0),
       throw_side: Number(checks.missing_throw_side || 0),
-      note: "Bat/throw are not certification blockers in v0.1.6 because the approved 40-man roster endpoint may omit them. They are counted for later bounded hydration design, not guessed."
+      note: "Bat/throw are not certification blockers in v0.1.8 because the approved 40-man roster endpoint may omit them. They are counted for later bounded hydration design, not guessed."
     },
     team_summaries: teamSummaries,
     sample_players: await samplePlayers(env),
@@ -616,6 +650,8 @@ async function certificationChecks(env) {
       )) AS duplicate_mlb_player_id_count,
       (SELECT COUNT(*) FROM ref_player_aliases WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1) AS alias_rows,
       (SELECT COUNT(*) FROM ref_rosters WHERE source_key='${SOURCE_KEY}' AND snapshot_type='STATIC_40MAN_SNAPSHOT' AND COALESCE(active,1)=1) AS static_40man_roster_rows,
+      (SELECT COUNT(*) FROM (SELECT current_team_id FROM ref_players WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1 GROUP BY current_team_id)) AS active_player_team_count,
+      (SELECT COUNT(*) FROM (SELECT team_id FROM ref_rosters WHERE source_key='${SOURCE_KEY}' AND snapshot_type='STATIC_40MAN_SNAPSHOT' AND COALESCE(active,1)=1 GROUP BY team_id)) AS active_roster_team_count,
       (SELECT COUNT(*) FROM ref_players WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1 AND COALESCE(primary_position, primary_role, '')='') AS missing_primary_position,
       (SELECT COUNT(*) FROM ref_players WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1 AND COALESCE(bat_side, bats, '')='') AS missing_bat_side,
       (SELECT COUNT(*) FROM ref_players WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1 AND COALESCE(throw_side, throws, '')='') AS missing_throw_side`);
