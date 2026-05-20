@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v0.2.0-base-backfill-self-continuation";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v0.2.2-fast-bounded-ticks";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -9,14 +9,15 @@ const GROUP_TYPE = "hitting";
 const DEFAULT_BASE_BACKFILL_CUTOFF_DATE = "2026-05-18";
 const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
 const DEFAULT_SOURCE_SEASON = 2026;
-const DEFAULT_CHUNK_SIZE_PLAYERS = 10;
-const DEFAULT_MAX_REQUESTS_PER_TICK = 10;
-const DEFAULT_MAX_ROWS_PER_TICK = 1000;
-const DEFAULT_LOCK_STALE_MINUTES = 3;
+const DEFAULT_CHUNK_SIZE_PLAYERS = 6;
+const DEFAULT_MAX_REQUESTS_PER_TICK = 6;
+const DEFAULT_MAX_ROWS_PER_TICK = 750;
+const DEFAULT_LOCK_STALE_MINUTES = 2;
+const DEFAULT_MAX_TICK_RUNTIME_MS = 30000;
 const ACTIVE_CURSOR_KEY = "base_hitter_game_logs_active_cursor";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB"];
-const EXPECTED_VARS = ["MLB_API_BASE_URL", "ACTIVE_SEASON", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK", "LOCK_STALE_MINUTES"];
+const EXPECTED_VARS = ["MLB_API_BASE_URL", "ACTIVE_SEASON", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK", "LOCK_STALE_MINUTES", "MAX_TICK_RUNTIME_MS"];
 const EXPECTED_SECRETS = ["MLB_API_USER_AGENT"];
 
 function nowUtc() { return new Date().toISOString(); }
@@ -101,6 +102,9 @@ function baseIdentity(env, extra = {}) {
       one_active_run: true,
       cursor_persisted_every_tick: true,
       partial_continue_status: "PARTIAL_CONTINUE_BASE_HITTER_GAME_LOGS",
+      fast_bounded_ticks: true,
+      max_requests_per_tick_default: DEFAULT_MAX_REQUESTS_PER_TICK,
+      max_tick_runtime_ms_default: DEFAULT_MAX_TICK_RUNTIME_MS,
       no_live_promotion_before_certification: true
     },
     binding_summary: {
@@ -292,7 +296,7 @@ async function ensureSchema(env) {
   ];
   for (const [label, sql] of indexes) await exec(label, sql);
 
-  await exec("record_schema_migration", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_game_logs_v0_2_0_self_continuing_backfill', ?, CURRENT_TIMESTAMP, 'Base Hitter Game Logs self-continuing base_backfill lifecycle: stage certify promote clean')", VERSION);
+  await exec("record_schema_migration", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_game_logs_v0_2_2_fast_bounded_ticks', ?, CURRENT_TIMESTAMP, 'Base Hitter Game Logs fast bounded backend ticks: safer continuation under 60 seconds')", VERSION);
 
   return { attempted: results.length, failed: results.filter(r => !r.ok).length, results };
 }
@@ -438,9 +442,9 @@ async function getOrCreateBaseBackfillState(env, input) {
   const batchId = asText(inputJson.batch_id, rid("hitter_base_backfill_batch"));
   const cutoffDate = asText(inputJson.base_backfill_cutoff_date, DEFAULT_BASE_BACKFILL_CUTOFF_DATE);
   const sourceSeason = asInt(inputJson.source_season || env.ACTIVE_SEASON, DEFAULT_SOURCE_SEASON);
-  const chunkSize = cap(inputJson.chunk_size_players || inputJson.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_CHUNK_SIZE_PLAYERS, 1, 30);
-  const maxRequests = cap(inputJson.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_MAX_REQUESTS_PER_TICK, 1, 30);
-  const maxRows = cap(inputJson.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, 5000);
+  const chunkSize = cap(inputJson.chunk_size_players || inputJson.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_CHUNK_SIZE_PLAYERS, 1, DEFAULT_CHUNK_SIZE_PLAYERS);
+  const maxRequests = cap(inputJson.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_MAX_REQUESTS_PER_TICK, 1, DEFAULT_MAX_REQUESTS_PER_TICK);
+  const maxRows = cap(inputJson.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, DEFAULT_MAX_ROWS_PER_TICK);
   const players = await chooseAllHitterPlayers(env, inputJson);
 
   await run(env.STATS_HITTER_DB, "DELETE FROM hitter_game_logs_stage WHERE batch_id LIKE 'hitter_base_probe_batch_%' OR certification_status='source_shape_probe_staged'");
@@ -466,7 +470,7 @@ async function getOrCreateBaseBackfillState(env, input) {
   ) VALUES (?, ?, ?, ?, 'base_backfill', 'BASE_BACKFILL_RUNNING', ?, ?, ?, ?, ?, ?, NULL, ?, 0, ?, ?, ?, ?, 'not_certified', 'SOURCE_LOCKED_STATSAPI_GAMELOG_HITTING', ?, CURRENT_TIMESTAMP)`,
     batchId, runId, WORKER_NAME, VERSION, DATA_FEED_KEY, SOURCE_KEY, LOCKED_SOURCE_ENDPOINT_PATTERN, sourceSeason,
     cutoffDate, DEFAULT_DELTA_RESERVED_START_DATE, sourceSeason, cursorJson, chunkSize, maxRequests, maxRows,
-    "v0.2.0 base_backfill self-continuing backend lifecycle. Base fills only through 2026-05-18. Delta remains blocked. No scoring/ranking/board mutation."
+    "v0.2.2 fast bounded backend ticks. Base fills only through 2026-05-18. Delta remains blocked. No scoring/ranking/board mutation."
   );
 
   await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_cursor (
@@ -649,9 +653,13 @@ async function runBaseBackfillTick(env, input) {
   const runId = batch.run_id;
   const cutoffDate = batch.base_backfill_cutoff_date || DEFAULT_BASE_BACKFILL_CUTOFF_DATE;
   const sourceSeason = asInt(batch.source_season, DEFAULT_SOURCE_SEASON);
-  const maxRequests = cap(inputJson.max_requests_per_tick || batch.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_MAX_REQUESTS_PER_TICK, 1, 30);
-  const chunkSize = cap(inputJson.chunk_size_players || batch.chunk_size_players || maxRequests || DEFAULT_CHUNK_SIZE_PLAYERS, 1, 30);
-  const maxRows = cap(inputJson.max_rows_per_tick || batch.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, 5000);
+  const requestedMaxRequests = inputJson.max_requests_per_tick || batch.max_requests_per_tick || env.MAX_API_CALLS_PER_TICK || DEFAULT_MAX_REQUESTS_PER_TICK;
+  const requestedChunkSize = inputJson.chunk_size_players || batch.chunk_size_players || requestedMaxRequests || DEFAULT_CHUNK_SIZE_PLAYERS;
+  const maxRequests = cap(requestedMaxRequests, 1, DEFAULT_MAX_REQUESTS_PER_TICK);
+  const chunkSize = cap(requestedChunkSize, 1, DEFAULT_CHUNK_SIZE_PLAYERS);
+  const maxRows = cap(inputJson.max_rows_per_tick || batch.max_rows_per_tick || env.MAX_ROWS_PER_TICK || DEFAULT_MAX_ROWS_PER_TICK, 100, DEFAULT_MAX_ROWS_PER_TICK);
+  const maxTickRuntimeMs = cap(inputJson.max_tick_runtime_ms || env.MAX_TICK_RUNTIME_MS || DEFAULT_MAX_TICK_RUNTIME_MS, 10000, 45000);
+  const tickStartedAtMs = Date.now();
   let cursorJsonObj = {};
   try { cursorJsonObj = JSON.parse(cursor.cursor_json || "{}"); } catch (_) { cursorJsonObj = {}; }
   const perTickPlayers = Math.min(maxRequests, chunkSize);
@@ -686,11 +694,16 @@ async function runBaseBackfillTick(env, input) {
   let rowsStagedThisTick = 0;
   const processedPlayers = [];
   let nextOffset = offset;
+  let stoppedByRuntimeBudget = false;
 
   try {
     const slice = players.slice(offset, Math.min(offset + perTickPlayers, total));
     for (const p of slice) {
       if (rowsStagedThisTick >= maxRows) break;
+      if (Date.now() - tickStartedAtMs >= maxTickRuntimeMs) {
+        stoppedByRuntimeBudget = true;
+        break;
+      }
       sourceRequestCount++;
       let result;
       try {
@@ -724,6 +737,10 @@ async function runBaseBackfillTick(env, input) {
     cursorJsonObj.last_tick_at = nowUtc();
     cursorJsonObj.last_tick_processed_players = processedPlayers.slice(0, 20);
     cursorJsonObj.last_tick_rows_staged = rowsStagedThisTick;
+    cursorJsonObj.last_tick_elapsed_ms = Date.now() - tickStartedAtMs;
+    cursorJsonObj.last_tick_runtime_budget_ms = maxTickRuntimeMs;
+    cursorJsonObj.last_tick_stopped_by_runtime_budget = stoppedByRuntimeBudget;
+    cursorJsonObj.last_tick_max_requests = maxRequests;
     cursorJsonObj.current_player_offset = nextOffset;
     await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_cursor SET
       status=?, current_player_id=?, current_player_offset=?, players_total=?, players_processed=?, requests_done=COALESCE(requests_done,0)+?,
@@ -769,6 +786,11 @@ async function runBaseBackfillTick(env, input) {
         orchestrator_should_self_continue: true,
         cron_role: "rescue_fallback_only",
         manual_wake_required: false,
+        fast_bounded_tick: true,
+        tick_elapsed_ms: Date.now() - tickStartedAtMs,
+        tick_runtime_budget_ms: maxTickRuntimeMs,
+        tick_stopped_by_runtime_budget: stoppedByRuntimeBudget,
+        effective_max_requests_per_tick: maxRequests,
         no_browser_pump: true,
         no_scoring: true,
         no_ranking: true,
@@ -815,6 +837,11 @@ async function runBaseBackfillTick(env, input) {
       orchestrator_should_self_continue: false,
       cron_role: "rescue_fallback_only",
       manual_wake_required: false,
+      fast_bounded_tick: true,
+      tick_elapsed_ms: Date.now() - tickStartedAtMs,
+      tick_runtime_budget_ms: maxTickRuntimeMs,
+      tick_stopped_by_runtime_budget: stoppedByRuntimeBudget,
+      effective_max_requests_per_tick: maxRequests,
       no_browser_pump: true,
       no_scoring: true,
       no_ranking: true,
@@ -842,10 +869,18 @@ async function runBaseBackfillTick(env, input) {
       continuation_required: true,
       orchestrator_should_self_continue: true,
       manual_wake_required: false,
+      fast_bounded_tick: true,
+      tick_elapsed_ms: Date.now() - tickStartedAtMs,
+      tick_runtime_budget_ms: maxTickRuntimeMs,
+      tick_stopped_by_runtime_budget: stoppedByRuntimeBudget,
+      effective_max_requests_per_tick: maxRequests,
       no_browser_pump: true,
       rows_read: sourceRequestCount,
       rows_written: rowsStagedThisTick,
-      external_calls_performed: sourceRequestCount
+      external_calls_performed: sourceRequestCount,
+      fast_bounded_tick: true,
+      tick_elapsed_ms: Date.now() - tickStartedAtMs,
+      tick_runtime_budget_ms: maxTickRuntimeMs
     };
   }
 }
