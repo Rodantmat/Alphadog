@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.5.14-static-players-direct-pump-confirm -->
+<!-- alphadog-v2-control-room-v1.5.15-1101-recovery-sync-pump -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,7 +28,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.5.14-static-players-direct-pump-confirm</div>
+<div id="versionTag">alphadog-v2-control-room-v1.5.15-1101-recovery-sync-pump</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
 <div class="small">Access mode: single-user. Control Room enqueues/status. Static Players triggers direct bounded pump after enqueue; Wake uses pump; cron remains fallback. No repeated manual wake.</div>
@@ -138,7 +138,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"auto-pump-plus-cron-fallback",version:"alphadog-v2-control-room-v1.5.14-static-players-direct-pump-confirm"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"auto-pump-plus-cron-fallback",version:"alphadog-v2-control-room-v1.5.15-1101-recovery-sync-pump"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
@@ -165,7 +165,7 @@ function health(){requestJSON("DEBUG > Health",HEALTH_URL,null)}
 function diagnostic(){requestJSON("DEBUG > Diag",DIAGNOSTIC_URL,null)}
 function testSQL(){requestJSON("DEBUG > SQL",SQL_URL,{sql:"SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;",max_rows:50,max_chars:900})}
 async function runJobButton(l,j){
-  const r=await requestJSON(l,JOB_URL,{job:j,slate_mode:"AUTO_BY_GAME_DATE_TIME",auto_slate_context:autoSlateContext(),backend_only:true});
+  const r = await requestJSON(l,JOB_URL,{job:j,slate_mode:"AUTO_BY_GAME_DATE_TIME",auto_slate_context:autoSlateContext(),backend_only:true});
   if(j==="orchestrator_enqueue_static_players" && r && r.body && r.body.ok){
     setStatus("AUTO PUMP RUNNING: "+l);
     const pumpPayload={source:"control_room_static_players_frontend_direct_pump",request_id:r.body.request_id||null,max_cycles:20,max_jobs_per_cycle:5,max_ms:27000,max_pump_chains:20};
@@ -177,7 +177,7 @@ async function runJobButton(l,j){
 }
 
 async function runOrchestratorWake(){
-  requestJSON("ORCHESTRATOR > Wake",ORCH_TICK_URL,{source:"control_room_wake_pump",backend_only:true,max_cycles:20,max_jobs_per_cycle:5,max_ms:27000,max_pump_chains:20,wake_only:true});
+  requestJSON("ORCHESTRATOR > Wake",ORCH_TICK_URL,{source:"control_room_wake_now",backend_only:true,max_jobs:3,wake_only:true,auto_pump:true,max_cycles:12,max_jobs_per_cycle:2,max_ms:25000});
 }
 
 function runManualSQL(){requestJSON("MANUAL SQL > Run",SQL_URL,{sql:document.getElementById("sqlInput").value,max_rows:50,max_chars:900})}
