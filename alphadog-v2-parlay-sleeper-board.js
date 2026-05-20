@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-parlay-sleeper-board";
-const VERSION = "alphadog-v2-parlay-sleeper-board-v0.1.1-source-probe-default-config";
+const VERSION = "alphadog-v2-parlay-sleeper-board-v0.1.2-source-probe-default-config-fix";
 const JOB_KEY = "parlay-sleeper-board";
 const SOURCE_KEY = "parlay_sleeper";
 const MAX_PREVIEW_CHARS = 900;
@@ -324,7 +324,7 @@ async function safeProbe(env, input = {}) {
   const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
   const secrets = valuePresence(env, REQUIRED_SECRET_KEYS);
   const cfg = valuePresence(env, CONFIG_KEYS);
-  const effectiveConfig_defaults_used = {
+  const effective_config_defaults_used = {
     PARLAY_API_BASE_URL: !present(env, "PARLAY_API_BASE_URL"),
     PARLAY_SLEEPER_PROBE_ENDPOINT: !present(env, "PARLAY_SLEEPER_PROBE_ENDPOINT") && !present(env, "PARLAY_API_SLEEPER_ENDPOINT"),
     PARLAY_API_AUTH_HEADER_NAME: !present(env, "PARLAY_API_AUTH_HEADER_NAME"),
@@ -350,7 +350,7 @@ async function safeProbe(env, input = {}) {
     return blockedProbe("SOURCE_AUTH_CONFIG_UNVERIFIED", auth.block_reason, readiness, endpoint, auth);
   }
 
-  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-Parlay-Sleeper-Probe/0.1.0" });
+  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-Parlay-Sleeper-Probe/0.1.2" });
   auth.apply(headers, env);
 
   const started = Date.now();
@@ -484,7 +484,7 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "SOURCE_PROBE_READY",
     timestamp_utc: nowUtc(),
-    phase: "parlay_sleeper_board_probe_readiness_v0_1_0",
+    phase: "parlay_sleeper_board_probe_readiness_v0_1_2",
     notes: [
       "Source-probe worker only with safe public endpoint/header fallbacks.",
       "Creates/validates additive Sleeper lifecycle schema when /run executes.",
