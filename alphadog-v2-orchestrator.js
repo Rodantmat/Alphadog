@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.9-static-players-auto-pump";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.10-static-players-self-continuing-pump";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1246,12 +1246,21 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
 }
 
 
-async function pump(env, trigger = "auto_pump", maxCycles = 12, maxJobsPerCycle = 2, maxMs = 25000) {
+async function countDueStaticPlayers(env) {
+  const row = await first(env.CONTROL_DB,
+    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='static-players' AND worker_name='alphadog-v2-static-players' AND status IN ('pending','partial_continue') AND (run_after IS NULL OR datetime(run_after) <= datetime('now'))"
+  );
+  return Number(row && row.c ? row.c : 0);
+}
+
+async function pump(env, trigger = "auto_pump", maxCycles = 12, maxJobsPerCycle = 2, maxMs = 25000, ctx = null, requestUrl = null, pumpDepth = 0, maxPumpChains = 6) {
   const started = Date.now();
   const cycles = [];
   const hardCycles = Math.max(1, Math.min(Number(maxCycles || 12), 20));
   const jobsPerCycle = Math.max(1, Math.min(Number(maxJobsPerCycle || 2), 5));
   const deadlineMs = Math.max(5000, Math.min(Number(maxMs || 25000), 28000));
+  const depth = Math.max(0, Math.min(Number(pumpDepth || 0), 20));
+  const maxChains = Math.max(0, Math.min(Number(maxPumpChains || 6), 20));
 
   for (let i = 0; i < hardCycles; i++) {
     if (Date.now() - started >= deadlineMs) {
@@ -1271,10 +1280,46 @@ async function pump(env, trigger = "auto_pump", maxCycles = 12, maxJobsPerCycle 
     if (noDue || blocked || lockBusy) break;
   }
 
+  const dueStaticPlayers = await countDueStaticPlayers(env);
+  const shouldSelfContinue = dueStaticPlayers > 0 && depth < maxChains && ctx && requestUrl;
+
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
-    WORKER_NAME, JSON.stringify({ trigger, max_cycles: hardCycles, max_jobs_per_cycle: jobsPerCycle, elapsed_ms: Date.now() - started, cycle_count: cycles.length, version: SYSTEM_VERSION })
+    WORKER_NAME, JSON.stringify({
+      trigger,
+      max_cycles: hardCycles,
+      max_jobs_per_cycle: jobsPerCycle,
+      elapsed_ms: Date.now() - started,
+      cycle_count: cycles.length,
+      due_static_players_after_pump: dueStaticPlayers,
+      pump_depth: depth,
+      max_pump_chains: maxChains,
+      self_continue_scheduled: !!shouldSelfContinue,
+      version: SYSTEM_VERSION
+    })
   );
+
+  if (shouldSelfContinue) {
+    const nextUrl = new URL('/pump', requestUrl).toString();
+    const nextPayload = {
+      source: `${trigger}:self_continue_${depth + 1}`,
+      max_cycles: hardCycles,
+      max_jobs_per_cycle: jobsPerCycle,
+      max_ms: deadlineMs,
+      pump_depth: depth + 1,
+      max_pump_chains: maxChains
+    };
+    ctx.waitUntil(fetch(nextUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(nextPayload)
+    }).catch(async (err) => {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'ERROR', 'orchestrator_auto_pump_self_continue_failed', 'Self-continuing pump fetch failed', ?, CURRENT_TIMESTAMP)",
+        WORKER_NAME, JSON.stringify({ error: String(err && err.message ? err.message : err), version: SYSTEM_VERSION })
+      );
+    }));
+  }
 
   const last = cycles.length ? cycles[cycles.length - 1] : null;
   return base(env, {
@@ -1285,6 +1330,10 @@ async function pump(env, trigger = "auto_pump", maxCycles = 12, maxJobsPerCycle 
     max_jobs_per_cycle: jobsPerCycle,
     elapsed_ms: Date.now() - started,
     cycle_count: cycles.length,
+    due_static_players_after_pump: dueStaticPlayers,
+    self_continue_scheduled: !!shouldSelfContinue,
+    pump_depth: depth,
+    max_pump_chains: maxChains,
     cycles
   });
 }
@@ -1321,14 +1370,16 @@ export default {
       const maxJobsPerCycle = body.max_jobs_per_cycle || body.maxJobsPerCycle || 2;
       const maxMs = body.max_ms || body.maxMs || 25000;
       const source = body.source || "http_auto_pump";
-      return jsonResponse(await pump(env, source, maxCycles, maxJobsPerCycle, maxMs));
+      const pumpDepth = body.pump_depth || body.pumpDepth || 0;
+      const maxPumpChains = body.max_pump_chains || body.maxPumpChains || 6;
+      return jsonResponse(await pump(env, source, maxCycles, maxJobsPerCycle, maxMs, ctx, request.url, pumpDepth, maxPumpChains));
     }
 
     if (request.method === "POST" && (url.pathname === "/tick" || url.pathname === "/run" || url.pathname === "/tasks/tick")) {
       const body = await parseJson(request);
       const maxJobs = body.max_jobs || body.maxJobs || 3;
       if (body.auto_pump || body.pump) {
-        return jsonResponse(await pump(env, "http_manual_wake_auto_pump", body.max_cycles || 12, body.max_jobs_per_cycle || maxJobs || 2, body.max_ms || 25000));
+        return jsonResponse(await pump(env, "http_manual_wake_auto_pump", body.max_cycles || 12, body.max_jobs_per_cycle || maxJobs || 2, body.max_ms || 25000, ctx, request.url, body.pump_depth || 0, body.max_pump_chains || 6));
       }
       return jsonResponse(await tick(env, "http_manual_wake", maxJobs));
     }
@@ -1340,7 +1391,7 @@ export default {
     const cronExpression = event && event.cron ? String(event.cron) : "unknown";
     ctx.waitUntil((async () => {
       await enqueueStaticPlayersWeeklyIfDue(env, cronExpression);
-      await pump(env, `cron:${cronExpression}`, 12, 2, 25000);
+      await pump(env, `cron:${cronExpression}`, 12, 2, 25000, ctx, "https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev/scheduled", 0, 6);
     })());
   }
 };
