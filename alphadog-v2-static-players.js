@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-static-players";
-const VERSION = "alphadog-v2-static-players-v0.1.5-batched-writes-auto-pump";
+const VERSION = "alphadog-v2-static-players-v0.1.6-source-clean-refresh";
 const JOB_KEY = "static-players";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -403,6 +403,12 @@ async function runSeed(env, input = {}) {
   const isFirstChunk = processedSet.size === 0;
 
   if (isFirstChunk) {
+    // Source-clean refresh guard:
+    // The 40-man snapshot is authoritative for this source_key only.
+    // Deactivate old source rows on the first chunk, then reactivate rows that are present in the current refresh.
+    // This prevents stale players/aliases/roster rows from staying active after future weekly refreshes.
+    await run(env.REF_DB, "UPDATE ref_players SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key=?", SOURCE_KEY);
+    await run(env.REF_DB, "UPDATE ref_player_aliases SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key=?", SOURCE_KEY);
     await run(env.REF_DB, "UPDATE ref_rosters SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key=? AND snapshot_type='STATIC_40MAN_SNAPSHOT'", SOURCE_KEY);
   }
 
@@ -587,6 +593,12 @@ async function runSeed(env, input = {}) {
       note: "v0.1.5 remains bounded. It does not make person-detail hydration calls. Missing detail is counted, not guessed."
     },
     certification_checks: checks,
+    final_missing_detail_counts_from_active_source_rows: {
+      primary_position: Number(checks.missing_primary_position || 0),
+      bat_side: Number(checks.missing_bat_side || 0),
+      throw_side: Number(checks.missing_throw_side || 0),
+      note: "Bat/throw are not certification blockers in v0.1.6 because the approved 40-man roster endpoint may omit them. They are counted for later bounded hydration design, not guessed."
+    },
     team_summaries: teamSummaries,
     sample_players: await samplePlayers(env),
     boundaries: base(env).boundaries,
@@ -603,7 +615,10 @@ async function certificationChecks(env) {
         SELECT mlb_player_id FROM ref_players WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1 AND mlb_player_id IS NOT NULL GROUP BY mlb_player_id HAVING COUNT(*) > 1
       )) AS duplicate_mlb_player_id_count,
       (SELECT COUNT(*) FROM ref_player_aliases WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1) AS alias_rows,
-      (SELECT COUNT(*) FROM ref_rosters WHERE source_key='${SOURCE_KEY}' AND snapshot_type='STATIC_40MAN_SNAPSHOT' AND COALESCE(active,1)=1) AS static_40man_roster_rows`);
+      (SELECT COUNT(*) FROM ref_rosters WHERE source_key='${SOURCE_KEY}' AND snapshot_type='STATIC_40MAN_SNAPSHOT' AND COALESCE(active,1)=1) AS static_40man_roster_rows,
+      (SELECT COUNT(*) FROM ref_players WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1 AND COALESCE(primary_position, primary_role, '')='') AS missing_primary_position,
+      (SELECT COUNT(*) FROM ref_players WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1 AND COALESCE(bat_side, bats, '')='') AS missing_bat_side,
+      (SELECT COUNT(*) FROM ref_players WHERE source_key='${SOURCE_KEY}' AND COALESCE(active,1)=1 AND COALESCE(throw_side, throws, '')='') AS missing_throw_side`);
   return row || {};
 }
 
