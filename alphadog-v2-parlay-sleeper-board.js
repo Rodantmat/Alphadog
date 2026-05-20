@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-parlay-sleeper-board";
-const VERSION = "alphadog-v2-parlay-sleeper-board-v0.4.0-promote-board-inventory-no-scoring";
+const VERSION = "alphadog-v2-parlay-sleeper-board-v0.4.1-promoted-batch-replace-cleanup";
 const JOB_KEY = "parlay-sleeper-board";
 const SOURCE_KEY = "parlay_sleeper";
 const MAX_PREVIEW_CHARS = 900;
@@ -698,6 +698,7 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
     WHERE batch_id=? AND source_key=?`, batchId, SOURCE_KEY);
 
   await run(env.MARKET_DB, "DELETE FROM sleeper_board_stage WHERE batch_id=? AND source_key=?", batchId, SOURCE_KEY);
+  await run(env.MARKET_DB, "DELETE FROM sleeper_board_batches WHERE source_key=? AND batch_id<>?", SOURCE_KEY, batchId);
 
   return {
     ok: true,
@@ -1005,7 +1006,7 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "SOURCE_PROBE_READY",
     timestamp_utc: nowUtc(),
-    phase: "parlay_sleeper_board_inventory_promotion_v0_4_0",
+    phase: "parlay_sleeper_board_inventory_promotion_v0_4_1",
     notes: [
       "Sleeper board inventory promotion worker with safe public endpoint/header fallbacks and full-body JSON parsing before bounded preview slicing.",
       "Creates/validates additive Sleeper lifecycle schema when /run executes.",
