@@ -16,7 +16,7 @@
     "DEFAULT_DAY_SCOPE": "TODAY_TOMORROW",
     "DEFAULT_SLATE_MODE": "AUTO",
     "ODDS_API_BASE_URL": "https://api.the-odds-api.com/v4",
-    "PARLAY_API_BASE_URL": "https://parlay-api.com/v4",
+    "PARLAY_API_BASE_URL": "https://parlay-api.com/v1",
     "MLB_API_BASE_URL": "https://statsapi.mlb.com/api/v1",
     "OPENWEATHER_BASE_URL": "https://api.openweathermap.org/data/2.5",
     "OPENWEATHER_ONECALL_BASE_URL": "https://api.openweathermap.org/data/3.0",
@@ -41,9 +41,9 @@
     "WEATHER_PRIMARY_PROVIDER": "OPENWEATHER",
     "WEATHER_FALLBACK_PROVIDER": "OPEN_METEO",
     "WEATHER_OPTIONAL_PROVIDER": "WEATHERAPI",
-    "PARLAY_SLEEPER_PROBE_ENDPOINT": "",
-    "PARLAY_API_SLEEPER_ENDPOINT": "",
-    "PARLAY_API_AUTH_HEADER_NAME": "",
+    "PARLAY_SLEEPER_PROBE_ENDPOINT": "/sports/baseball_mlb/props?bookmakers=sleeper",
+    "PARLAY_API_SLEEPER_ENDPOINT": "/sports/baseball_mlb/props?bookmakers=sleeper",
+    "PARLAY_API_AUTH_HEADER_NAME": "X-API-Key",
     "PARLAY_API_AUTH_HEADER_PREFIX": ""
   },
   "d1_databases": [
