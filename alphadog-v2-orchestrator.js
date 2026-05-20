@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.10-static-players-self-continuing-pump";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.11-static-players-pending-chain-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1247,8 +1247,12 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
 
 
 async function countDueStaticPlayers(env) {
+  // Static Players is intentionally chunked. For this specific job, any pending/running
+  // row without a finished_at must be treated as continuation-eligible, even if run_after
+  // landed on the same second as the current pump completion. This prevents a 24/30 stop
+  // when the bounded pump exits just before SQLite datetime('now') crosses run_after.
   const row = await first(env.CONTROL_DB,
-    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='static-players' AND worker_name='alphadog-v2-static-players' AND status IN ('pending','partial_continue') AND (run_after IS NULL OR datetime(run_after) <= datetime('now'))"
+    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='static-players' AND worker_name='alphadog-v2-static-players' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL"
   );
   return Number(row && row.c ? row.c : 0);
 }
