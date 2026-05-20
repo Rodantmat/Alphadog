@@ -1,9 +1,8 @@
 const WORKER_NAME = "alphadog-v2-parlay-sleeper-board";
-const VERSION = "alphadog-v2-parlay-sleeper-board-v0.1.2-source-probe-default-config-fix";
+const VERSION = "alphadog-v2-parlay-sleeper-board-v0.1.3-source-probe-full-body-parse";
 const JOB_KEY = "parlay-sleeper-board";
 const SOURCE_KEY = "parlay_sleeper";
 const MAX_PREVIEW_CHARS = 900;
-const MAX_TEXT_CHARS = 120000;
 
 // Safe public ParlayAPI probe defaults. These are endpoint/header names only, never secret values.
 // They are intentionally coded as fallback defaults because Cloudflare/GitHub deploys may not apply wrangler var-only edits reliably.
@@ -266,24 +265,32 @@ function detectShape(json) {
   const candidates = [];
   if (Array.isArray(json)) candidates.push({ path: "$", rows: json });
   if (json && typeof json === "object" && !Array.isArray(json)) {
-    for (const key of ["data", "items", "props", "projections", "markets", "lines", "events"]) {
+    for (const key of ["data", "results", "items", "props", "projections", "markets", "lines", "events"]) {
       if (Array.isArray(json[key])) candidates.push({ path: key, rows: json[key] });
     }
     if (json.data && typeof json.data === "object" && !Array.isArray(json.data)) {
-      for (const key of ["items", "props", "projections", "markets", "lines", "events"]) {
+      for (const key of ["results", "items", "props", "projections", "markets", "lines", "events"]) {
         if (Array.isArray(json.data[key])) candidates.push({ path: `data.${key}`, rows: json.data[key] });
       }
     }
   }
   const best = candidates.sort((a, b) => b.rows.length - a.rows.length)[0] || null;
-  const sampleRows = best ? best.rows.slice(0, 5).map(r => sanitizeSampleRow(r)) : [];
+  const rows = best ? best.rows : [];
+  const sampleRows = rows.slice(0, 5).map(r => sanitizeSampleRow(r));
   return {
     top_level_type: topType,
     top_level_keys: topKeys,
     detected_rows_path: best ? best.path : null,
-    detected_row_count: best ? best.rows.length : 0,
+    detected_row_count: rows.length,
+    row_field_names: detectRowFields(rows),
+    market_key_distribution: valueDistribution(rows, "market_key"),
+    market_distribution: valueDistribution(rows, "market"),
+    bookmaker_distribution: valueDistribution(rows, "bookmaker"),
+    sport_key_distribution: valueDistribution(rows, "sport_key"),
+    game_date_distribution: valueDistribution(rows, "game_date"),
     sample_rows: sampleRows,
-    source_stat_names: extractStatNames(best ? best.rows : [])
+    source_stat_names: extractStatNames(rows),
+    source_market_keys: extractUniqueValues(rows, "market_key", 120)
   };
 }
 
@@ -298,8 +305,42 @@ function sanitizeSampleRow(row) {
   return out;
 }
 
+function detectRowFields(rows) {
+  const found = new Set();
+  for (const row of (rows || []).slice(0, 50)) {
+    if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+    for (const key of Object.keys(row)) found.add(key);
+  }
+  return Array.from(found).sort().slice(0, 120);
+}
+
+function extractUniqueValues(rows, key, limit = 80) {
+  const found = new Set();
+  for (const row of rows || []) {
+    if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+    const value = row[key];
+    if (value !== undefined && value !== null && String(value).trim()) found.add(String(value).trim());
+    if (found.size >= limit) break;
+  }
+  return Array.from(found).sort();
+}
+
+function valueDistribution(rows, key, limit = 80) {
+  const counts = new Map();
+  for (const row of rows || []) {
+    if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+    const raw = row[key];
+    const value = raw === undefined || raw === null || String(raw).trim() === "" ? "__MISSING__" : String(raw).trim();
+    counts.set(value, (counts.get(value) || 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([value, count]) => ({ value, count }));
+}
+
 function extractStatNames(rows) {
-  const keys = ["stat_type", "statType", "stat", "market", "market_name", "marketName", "type", "prop", "prop_type", "propType", "name", "category"];
+  const keys = ["market_key", "stat_type", "statType", "stat", "market", "market_name", "marketName", "type", "prop", "prop_type", "propType", "name", "category"];
   const found = new Set();
   for (const row of rows || []) {
     if (!row || typeof row !== "object" || Array.isArray(row)) continue;
@@ -314,7 +355,7 @@ function extractStatNames(rows) {
       }
     }
   }
-  return Array.from(found).sort().slice(0, 80);
+  return Array.from(found).sort().slice(0, 120);
 }
 
 async function safeProbe(env, input = {}) {
@@ -350,7 +391,7 @@ async function safeProbe(env, input = {}) {
     return blockedProbe("SOURCE_AUTH_CONFIG_UNVERIFIED", auth.block_reason, readiness, endpoint, auth);
   }
 
-  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-Parlay-Sleeper-Probe/0.1.2" });
+  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-Parlay-Sleeper-Probe/0.1.3" });
   auth.apply(headers, env);
 
   const started = Date.now();
@@ -387,8 +428,7 @@ async function safeProbe(env, input = {}) {
 
   let parsed = null;
   let parseError = null;
-  const boundedText = text.length > MAX_TEXT_CHARS ? text.slice(0, MAX_TEXT_CHARS) : text;
-  try { parsed = JSON.parse(boundedText); } catch (err) { parseError = safeString(err && err.message ? err.message : err, 500); }
+  try { parsed = JSON.parse(text); } catch (err) { parseError = safeString(err && err.message ? err.message : err, 500); }
   const shape = parsed ? detectShape(parsed) : null;
   const rowsRead = shape ? Number(shape.detected_row_count || 0) : 0;
 
@@ -409,12 +449,14 @@ async function safeProbe(env, input = {}) {
       ok: response.ok,
       content_type: response.headers.get("content-type") || null,
       size_bytes: text.length,
-      text_truncated_for_parse: text.length > MAX_TEXT_CHARS,
+      full_body_parsed_before_preview: !!parsed,
+      preview_truncated: text.length > MAX_PREVIEW_CHARS,
       parse_error: parseError,
       preview: safeString(text, MAX_PREVIEW_CHARS)
     },
     shape_summary: shape,
     source_stat_names: shape ? shape.source_stat_names : [],
+    source_market_keys: shape ? shape.source_market_keys : [],
     rows_read: rowsRead,
     rows_written: 0,
     promoted_rows_written: 0,
@@ -484,9 +526,9 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "SOURCE_PROBE_READY",
     timestamp_utc: nowUtc(),
-    phase: "parlay_sleeper_board_probe_readiness_v0_1_2",
+    phase: "parlay_sleeper_board_probe_readiness_v0_1_3",
     notes: [
-      "Source-probe worker only with safe public endpoint/header fallbacks.",
+      "Source-probe worker only with safe public endpoint/header fallbacks and full-body JSON parsing before bounded preview slicing.",
       "Creates/validates additive Sleeper lifecycle schema when /run executes.",
       "Performs a safe source-shape probe when PARLAY_API_KEY is present, using explicit env config or safe public ParlayAPI defaults.",
       "Does not parse into current, certify aliases, promote rows, score, rank, write final board, or mutate PrizePicks."
