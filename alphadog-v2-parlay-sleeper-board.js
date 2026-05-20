@@ -1,8 +1,10 @@
 const WORKER_NAME = "alphadog-v2-parlay-sleeper-board";
-const VERSION = "alphadog-v2-parlay-sleeper-board-v0.3.1-ref-alias-write-no-promotion";
+const VERSION = "alphadog-v2-parlay-sleeper-board-v0.4.0-promote-board-inventory-no-scoring";
 const JOB_KEY = "parlay-sleeper-board";
 const SOURCE_KEY = "parlay_sleeper";
 const MAX_PREVIEW_CHARS = 900;
+const RFI_NRFI_LOGIC_STATUS = "blocked_pending_rfi_nrfi_design";
+const BOARD_INVENTORY_PROMOTION_STATUS = "promoted_board_inventory_only";
 
 // Safe public ParlayAPI probe defaults. These are endpoint/header names only, never secret values.
 // They are intentionally coded as fallback defaults because Cloudflare/GitHub deploys may not apply wrangler var-only edits reliably.
@@ -403,6 +405,35 @@ async function loadPropTaxonomy(env) {
   return out;
 }
 
+async function ensureRfiNrfiSleeperBoardInventorySupport(env) {
+  if (!env.CONFIG_DB) return { ok: false, changed: false, reason: "missing_CONFIG_DB_binding" };
+  const rows = await all(env.CONFIG_DB, `SELECT prop_key, supported_market_sources, scoring_enabled FROM config_prop_taxonomy WHERE prop_key='rfi_nrfi' LIMIT 1`);
+  const row = rows && rows[0] ? rows[0] : null;
+  if (!row) return { ok: false, changed: false, reason: "rfi_nrfi_missing_from_CONFIG_DB_taxonomy" };
+  const current = String(row.supported_market_sources || "").trim();
+  const parts = current.split(/[|,]/).map(s => s.trim()).filter(Boolean);
+  const hasSleeper = parts.some(s => s.toLowerCase() === "sleeper");
+  const nextSources = hasSleeper ? current : Array.from(new Set([...parts, "Sleeper"])).join(",");
+  if (!hasSleeper) {
+    await run(env.CONFIG_DB, `UPDATE config_prop_taxonomy
+      SET supported_market_sources=?, scoring_enabled=0, updated_at=CURRENT_TIMESTAMP
+      WHERE prop_key='rfi_nrfi'`, nextSources);
+  } else {
+    await run(env.CONFIG_DB, `UPDATE config_prop_taxonomy
+      SET scoring_enabled=0, updated_at=CURRENT_TIMESTAMP
+      WHERE prop_key='rfi_nrfi'`);
+  }
+  return {
+    ok: true,
+    changed: !hasSleeper,
+    prop_key: "rfi_nrfi",
+    previous_supported_market_sources: current,
+    supported_market_sources: nextSources,
+    scoring_enabled_forced: 0,
+    purpose: "board_inventory_support_only_no_scoring_no_ranking_no_final_board"
+  };
+}
+
 function taxonomySupportsSleeper(taxonomyRow) {
   if (!taxonomyRow) return false;
   const sources = String(taxonomyRow.supported_market_sources || "")
@@ -588,10 +619,106 @@ async function insertStageRows(env, stageRows) {
   }
 }
 
+
+function rowPayloadForCurrent(row) {
+  let raw = {};
+  try { raw = row.raw_line_json ? JSON.parse(row.raw_line_json) : {}; } catch (_) { raw = {}; }
+  const isRfiNrfi = row.canonical_prop_key === "rfi_nrfi";
+  return JSON.stringify({
+    source_key: SOURCE_KEY,
+    promotion_status: BOARD_INVENTORY_PROMOTION_STATUS,
+    logic_status: isRfiNrfi ? RFI_NRFI_LOGIC_STATUS : "board_inventory_only_scoring_not_started",
+    scoring_enabled: 0,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_auto_recommendation: true,
+    rfi_nrfi_note: isRfiNrfi ? "Real Sleeper board inventory promoted only; RFI/NRFI logic/mining/scoring remains blocked pending future design." : null,
+    source_market: raw.market ?? null,
+    market_key: raw.market_key ?? row.source_stat_name ?? null,
+    over_price: raw.over_price ?? null,
+    under_price: raw.under_price ?? null,
+    implied_probability: raw.implied_probability ?? null,
+    is_dfs_flat_payout: raw.is_dfs_flat_payout ?? null,
+    dfs_normalized: raw.dfs_normalized ?? null,
+    last_update: raw.last_update ?? null,
+    home_team: raw.home_team ?? null,
+    away_team: raw.away_team ?? null,
+    bookmaker: raw.bookmaker ?? "sleeper",
+    bookmaker_title: raw.bookmaker_title ?? "Sleeper"
+  });
+}
+
+async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
+  const promotableRows = (stageRows || []).filter(row =>
+    row.parse_status === "parsed_stage_only_canonical_mapping_audited" &&
+    row.source_key === SOURCE_KEY &&
+    row.is_pickable === 1 &&
+    row.player_name &&
+    row.source_stat_name &&
+    row.canonical_prop_key &&
+    row.line_value !== null && row.line_value !== undefined &&
+    row.source_event_id
+  );
+  const slateDates = Array.from(new Set(promotableRows.map(row => row.slate_date).filter(Boolean))).sort();
+
+  await run(env.MARKET_DB, "DELETE FROM sleeper_board_current WHERE source_key=?", SOURCE_KEY);
+  await run(env.MARKET_DB, "DELETE FROM sleeper_board_active_batches WHERE source_key=?", SOURCE_KEY);
+
+  const chunkSize = 80;
+  for (let i = 0; i < promotableRows.length; i += chunkSize) {
+    const chunk = promotableRows.slice(i, i + chunkSize);
+    await env.MARKET_DB.batch(chunk.map(row => env.MARKET_DB.prepare(`INSERT INTO sleeper_board_current (
+      current_row_id, batch_id, source_key, slate_date, source_event_id, source_line_id, source_player_id,
+      player_name, team, opponent, league, sport, source_stat_name, canonical_prop_key, line_value, side,
+      price, decimal_price, is_pickable, start_time, raw_line_json, row_payload_json, promoted_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`)
+      .bind(
+        rid("sleeper_current"), batchId, row.source_key, row.slate_date, row.source_event_id, row.source_line_id, row.source_player_id,
+        row.player_name, row.team, row.opponent, row.league, row.sport, row.source_stat_name, row.canonical_prop_key, row.line_value, row.side,
+        row.price, row.decimal_price, row.is_pickable, row.start_time, row.raw_line_json, rowPayloadForCurrent(row)
+      )));
+  }
+
+  for (const slateDate of slateDates) {
+    const count = promotableRows.filter(row => row.slate_date === slateDate).length;
+    await run(env.MARKET_DB, `INSERT OR REPLACE INTO sleeper_board_active_batches (
+      source_key, slate_date, active_batch_id, certification_status, row_count, valid_rows, activated_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      SOURCE_KEY, slateDate, batchId, "PROMOTED_BOARD_INVENTORY_ONLY_NO_SCORING", count, count
+    );
+  }
+
+  await run(env.MARKET_DB, `UPDATE sleeper_board_batches
+    SET promoted_at=CURRENT_TIMESTAMP,
+        cleaned_at=CURRENT_TIMESTAMP,
+        certification_status='PROMOTED_BOARD_INVENTORY_ONLY_NO_SCORING',
+        certification_reason='Promoted valid source-proven Sleeper rows as board inventory only. Scoring/ranking/final-board logic remains disabled; rfi_nrfi rows are inventory-only and logic-blocked pending future design.',
+        updated_at=CURRENT_TIMESTAMP
+    WHERE batch_id=? AND source_key=?`, batchId, SOURCE_KEY);
+
+  await run(env.MARKET_DB, "DELETE FROM sleeper_board_stage WHERE batch_id=? AND source_key=?", batchId, SOURCE_KEY);
+
+  return {
+    ok: true,
+    promoted_rows: promotableRows.length,
+    active_batch_rows: slateDates.length,
+    slate_dates: slateDates,
+    rfi_nrfi_inventory_rows: promotableRows.filter(row => row.canonical_prop_key === "rfi_nrfi").length,
+    promotion_status: BOARD_INVENTORY_PROMOTION_STATUS,
+    logic_status_for_rfi_nrfi: RFI_NRFI_LOGIC_STATUS,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_prizepicks_mutation: true
+  };
+}
+
 async function stageOnlyRows(env, rows, sourceMeta, shape) {
   const fetchedAt = nowUtc();
   const batchId = rid("sleeper_batch");
   const sourceRows = Array.isArray(rows) ? rows : [];
+  const taxonomyPatch = await ensureRfiNrfiSleeperBoardInventorySupport(env);
   const filtered = sourceRows.filter(row => {
     if (!row || typeof row !== "object" || Array.isArray(row)) return false;
     return String(row.bookmaker || "").toLowerCase() === "sleeper" && String(row.sport_key || "").toLowerCase() === "baseball_mlb";
@@ -630,12 +757,16 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
     validRows,
     invalidRows,
     mappingBlockedRows + invalidRows,
-    mappingBlockedRows === 0 && invalidRows === 0 ? "STAGE_ALIASES_WRITTEN_NO_PROMOTION" : "STAGE_ALIASES_WRITTEN_MAPPING_BLOCKED_NO_PROMOTION",
-    mappingBlockedRows === 0 && invalidRows === 0 ? "Rows parsed into Sleeper staging and source-scoped REF_DB aliases written for supported/audited mappings. Promotion still blocked until all stage blockers are cleared and promotion is explicitly approved." : "Rows parsed into Sleeper staging and supported/audited REF_DB aliases written, but mapping/taxonomy blockers remain. No promotion allowed.",
+    mappingBlockedRows === 0 && invalidRows === 0 ? "STAGE_CERTIFIED_READY_FOR_BOARD_INVENTORY_PROMOTION" : "STAGE_CERTIFY_MAPPING_BLOCKED_NO_PROMOTION",
+    mappingBlockedRows === 0 && invalidRows === 0 ? "Rows parsed into Sleeper staging, source-scoped aliases written, and valid pickable rows ready for board-inventory-only promotion. No scoring/ranking/final-board logic enabled." : "Rows parsed into Sleeper staging and supported/audited REF_DB aliases written, but mapping/taxonomy blockers remain. No promotion allowed.",
     JSON.stringify({
-      no_promotion: true,
-      no_current_write: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
       no_prizepicks_mutation: true,
+      promotion_scope: "sleeper_board_inventory_only",
+      rfi_nrfi_logic_status: RFI_NRFI_LOGIC_STATUS,
+      taxonomy_patch: taxonomyPatch,
       source_market_keys: shape ? shape.source_market_keys : [],
       market_key_distribution: shape ? shape.market_key_distribution : [],
       bookmaker_distribution: shape ? shape.bookmaker_distribution : [],
@@ -653,6 +784,11 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
   );
   await insertStageRows(env, stageRows);
 
+  let promotion = null;
+  if (mappingBlockedRows === 0 && invalidRows === 0) {
+    promotion = await promoteBoardInventory(env, batchId, stageRows, fetchedAt);
+  }
+
   return {
     batch_id: batchId,
     source_total_rows: sourceRows.length,
@@ -669,9 +805,11 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
     missing_taxonomy_rows: missingTaxonomyRows,
     distinct_source_to_canonical: distinctSourceToCanonical,
     ref_alias_write: aliasWrite,
-    certification_status: mappingBlockedRows === 0 && invalidRows === 0 ? "STAGE_ALIASES_WRITTEN_NO_PROMOTION" : "STAGE_ALIASES_WRITTEN_MAPPING_BLOCKED_NO_PROMOTION",
-    current_rows_written: 0,
-    active_batch_rows_written: 0
+    taxonomy_patch: taxonomyPatch,
+    promotion,
+    certification_status: promotion && promotion.ok ? "PROMOTED_BOARD_INVENTORY_ONLY_NO_SCORING" : (mappingBlockedRows === 0 && invalidRows === 0 ? "STAGE_CERTIFIED_READY_FOR_BOARD_INVENTORY_PROMOTION" : "STAGE_CERTIFY_MAPPING_BLOCKED_NO_PROMOTION"),
+    current_rows_written: promotion && promotion.ok ? promotion.promoted_rows : 0,
+    active_batch_rows_written: promotion && promotion.ok ? promotion.active_batch_rows : 0
   };
 }
 
@@ -708,7 +846,7 @@ async function safeProbe(env, input = {}) {
     return blockedProbe("SOURCE_AUTH_CONFIG_UNVERIFIED", auth.block_reason, readiness, endpoint, auth);
   }
 
-  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-Parlay-Sleeper-RefAliasWrite/0.3.1" });
+  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-Parlay-Sleeper-BoardInventory/0.4.0" });
   auth.apply(headers, env);
 
   const started = Date.now();
@@ -774,9 +912,9 @@ async function safeProbe(env, input = {}) {
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
     source_key: SOURCE_KEY,
-    status: stagedOk ? "stage_certify_alias_audit_completed_no_promotion" : (response.ok && parsed ? "source_probe_completed_shape_captured_stage_blocked" : "source_probe_completed_shape_unverified"),
-    certification: stagedOk ? (stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0 ? "PARLAY_SLEEPER_STAGE_ALIASES_WRITTEN_NO_PROMOTION" : "PARLAY_SLEEPER_STAGE_ALIASES_WRITTEN_MAPPING_BLOCKED_NO_PROMOTION") : (response.ok && parsed ? "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_CAPTURED_STAGE_BLOCKED" : "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_UNVERIFIED_NO_PROMOTION"),
-    block_downstream_reason: stagedOk ? (stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0 ? "promotion_blocked_until_REF_DB_source_scoped_aliases_are_explicitly_approved_written_and_certified" : "promotion_blocked_due_to_unmapped_or_unsupported_source_stat_types") : (stageError || "source_response_not_verified_json_shape"),
+    status: stagedOk ? (stageResult.promotion && stageResult.promotion.ok ? "promoted_sleeper_board_inventory_only_no_scoring" : "stage_certify_alias_audit_completed_no_promotion") : (response.ok && parsed ? "source_probe_completed_shape_captured_stage_blocked" : "source_probe_completed_shape_unverified"),
+    certification: stagedOk ? (stageResult.promotion && stageResult.promotion.ok ? "PARLAY_SLEEPER_BOARD_INVENTORY_PROMOTED_NO_SCORING" : (stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0 ? "PARLAY_SLEEPER_STAGE_CERTIFIED_READY_NO_PROMOTION" : "PARLAY_SLEEPER_STAGE_ALIASES_WRITTEN_MAPPING_BLOCKED_NO_PROMOTION")) : (response.ok && parsed ? "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_CAPTURED_STAGE_BLOCKED" : "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_UNVERIFIED_NO_PROMOTION"),
+    block_downstream_reason: stagedOk ? (stageResult.promotion && stageResult.promotion.ok ? "scoring_ranking_final_board_blocked; board_inventory_promoted_only" : (stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0 ? "promotion_not_performed_despite_stage_ready" : "promotion_blocked_due_to_unmapped_or_unsupported_source_stat_types")) : (stageError || "source_response_not_verified_json_shape"),
     readiness,
     source_config: safeSourceConfig(endpoint, auth),
     source_response: {
@@ -796,17 +934,19 @@ async function safeProbe(env, input = {}) {
     stage_error: stageError,
     rows_read: rowsRead,
     rows_written: stagedOk ? ((stageResult.staged_rows || 0) + 1 + ((stageResult.ref_alias_write && stageResult.ref_alias_write.rows_written) || 0)) : 0,
-    promoted_rows_written: 0,
-    current_rows_written: 0,
-    active_batch_rows_written: 0,
+    promoted_rows_written: stagedOk && stageResult.promotion && stageResult.promotion.ok ? stageResult.promotion.promoted_rows : 0,
+    current_rows_written: stagedOk ? (stageResult.current_rows_written || 0) : 0,
+    active_batch_rows_written: stagedOk ? (stageResult.active_batch_rows_written || 0) : 0,
     external_calls_performed: 1,
     elapsed_ms: Date.now() - started,
     no_scoring: true,
     no_ranking: true,
     no_final_board: true,
     no_prizepicks_mutation: true,
-    no_promotion: true,
-    next_required_approval: "Review source-scoped REF_DB.ref_prop_aliases for source_key=parlay_sleeper. Promotion remains blocked until unsupported stat types are handled and promotion is explicitly approved."
+    no_promotion: !(stagedOk && stageResult.promotion && stageResult.promotion.ok),
+    board_inventory_only: stagedOk && stageResult.promotion && stageResult.promotion.ok ? true : false,
+    rfi_nrfi_logic_status: RFI_NRFI_LOGIC_STATUS,
+    next_required_approval: "Board inventory promotion is allowed only for source-proven rows. Scoring/ranking/final-board logic remains blocked, especially rfi_nrfi pending future design."
   };
 }
 
@@ -865,13 +1005,13 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "SOURCE_PROBE_READY",
     timestamp_utc: nowUtc(),
-    phase: "parlay_sleeper_board_ref_alias_write_v0_3_1",
+    phase: "parlay_sleeper_board_inventory_promotion_v0_4_0",
     notes: [
-      "Stage+certify source-scoped alias write worker with safe public endpoint/header fallbacks and full-body JSON parsing before bounded preview slicing.",
+      "Sleeper board inventory promotion worker with safe public endpoint/header fallbacks and full-body JSON parsing before bounded preview slicing.",
       "Creates/validates additive Sleeper lifecycle schema when /run executes.",
-      "Performs safe source fetch and writes parsed rows to Sleeper staging tables only when source shape is captured.",
-      "Audits source market_key values against CONFIG_DB taxonomy using source-proven mapping candidates only, then writes REF_DB.ref_prop_aliases only for supported/audited Sleeper mappings.",
-      "Does not write current board, promote rows, score, rank, write final board, or mutate PrizePicks. REF_DB alias writes are source-scoped to parlay_sleeper only."
+      "Performs safe source fetch, stages parsed rows, audits source market_key values against CONFIG_DB taxonomy, and writes source-scoped REF_DB aliases.",
+      "Applies the smallest rfi_nrfi taxonomy adjustment for Sleeper board inventory support only while forcing scoring_enabled=0.",
+      "Promotes valid source-proven Sleeper rows to sleeper_board_current as board inventory only. No scoring, ranking, final board, recommendations, RFI/NRFI logic, PrizePicks mutation, or old production touch."
     ],
     binding_summary: {
       required_db_bindings_present: allTrue(db),
