@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.16-base-hitter-self-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.17-base-hitter-stale-running-recovery";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -47,7 +47,7 @@ function base(env, extra = {}) {
       "Buttons enqueue/wake backend work only.",
       "Browser does not run long loops.",
       "Scheduled cron calls the same bounded tick path.",
-      "v0.2.16 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
+      "v0.2.17 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
       "No generic worker dispatch, no scoring, no ranking, no final board writes, no old production writes."
     ],
     bindings: {
@@ -1742,6 +1742,31 @@ async function recoverStaleStaticPlayersJobs(env, trigger) {
   return { recovered, rows: staleRows };
 }
 
+async function recoverStaleBaseHitterGameLogsJobs(env, trigger) {
+  // Base Hitter Game Logs chunks can survive a terminated service-binding call because
+  // the queue row is set to running before the worker request returns. A stale running row
+  // must be returned to pending so the next backend pump/cron tick can resume from the
+  // STATS_HITTER_DB cursor. This does not create a new batch and does not promote data.
+  const staleRows = await all(env.CONTROL_DB,
+    "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, started_at, updated_at, substr(output_json,1,900) AS output_preview FROM control_job_queue WHERE job_key='base-hitter-game-logs' AND worker_name='alphadog-v2-base-hitter-game-logs' AND status='running' AND finished_at IS NULL AND datetime(updated_at) <= datetime('now','-6 minutes') ORDER BY datetime(updated_at) ASC LIMIT 3"
+  );
+
+  let recovered = 0;
+  for (const row of staleRows) {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND job_key='base-hitter-game-logs' AND worker_name='alphadog-v2-base-hitter-game-logs' AND status='running' AND finished_at IS NULL",
+      row.request_id
+    );
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'base-hitter-game-logs', 'WARN', 'base_hitter_game_logs_stale_running_auto_recovered', 'Recovered stale running base-hitter-game-logs queue row back to pending for cursor-safe continuation', ?, CURRENT_TIMESTAMP)",
+      row.request_id, WORKER_NAME, JSON.stringify({ trigger, recovered_from_status: row.status, started_at: row.started_at, updated_at: row.updated_at, tick_count: row.tick_count, stale_threshold_minutes: 6, no_new_batch: true, resume_from_worker_cursor: true, output_preview: row.output_preview || null, version: SYSTEM_VERSION })
+    );
+    recovered += 1;
+  }
+
+  return { recovered, rows: staleRows };
+}
+
 async function enqueueStaticPlayersWeeklyIfDue(env, cronExpression) {
   const active = await first(env.CONTROL_DB,
     "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key='static-players' AND worker_name='alphadog-v2-static-players' AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
@@ -1950,16 +1975,16 @@ async function processOneUnlocked(env, trigger) {
       status: "unsupported_in_v0_2_16_safe_shell",
       job_key: row.job_key,
       worker_name: row.worker_name,
-      note: "v0.2.16 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked."
+      note: "v0.2.17 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked."
     };
 
     await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_16', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.16')",
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_17', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.17')",
       runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
     );
 
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_16', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.16' WHERE request_id=?",
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_17', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.17' WHERE request_id=?",
       JSON.stringify(output), row.request_id
     );
 
@@ -1993,6 +2018,11 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
     const staleRecovery = await recoverStaleStaticPlayersJobs(env, trigger);
     if (staleRecovery.recovered > 0) {
       processed.push({ status: "stale_static_players_recovered", recovered_count: staleRecovery.recovered });
+    }
+
+    const baseHitterStaleRecovery = await recoverStaleBaseHitterGameLogsJobs(env, trigger);
+    if (baseHitterStaleRecovery.recovered > 0) {
+      processed.push({ status: "stale_base_hitter_game_logs_recovered", recovered_count: baseHitterStaleRecovery.recovered });
     }
 
     const limit = Math.max(1, Math.min(Number(maxJobs || 3), 10));
