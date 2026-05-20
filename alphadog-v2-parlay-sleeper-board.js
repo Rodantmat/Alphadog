@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-parlay-sleeper-board";
-const VERSION = "alphadog-v2-parlay-sleeper-board-v0.2.0-stage-only-no-promotion";
+const VERSION = "alphadog-v2-parlay-sleeper-board-v0.3.0-stage-certify-alias-audit-no-promotion";
 const JOB_KEY = "parlay-sleeper-board";
 const SOURCE_KEY = "parlay_sleeper";
 const MAX_PREVIEW_CHARS = 900;
@@ -8,6 +8,33 @@ const MAX_PREVIEW_CHARS = 900;
 // They are intentionally coded as fallback defaults because Cloudflare/GitHub deploys may not apply wrangler var-only edits reliably.
 const DEFAULT_PARLAY_API_BASE_URL = "https://parlay-api.com/v1";
 const DEFAULT_PARLAY_SLEEPER_PROBE_ENDPOINT = "/sports/baseball_mlb/props?bookmakers=sleeper&limit=10000&dfsOdds=effective";
+
+// Source-proven Parlay/Sleeper market keys observed in live v0.1.3/v0.2.0 probes plus prior recovery audit.
+// These are used for stage-only canonical mapping audit. They do not write REF_DB aliases and do not enable promotion.
+const SLEEPER_MARKET_KEY_TO_CANONICAL_PROP_KEY = {
+  player_hits: "hits",
+  player_rbis: "rbis",
+  player_runs: "runs",
+  player_singles: "singles",
+  player_doubles: "doubles",
+  player_triples: "triples",
+  player_home_runs: "home_runs",
+  player_total_bases: "total_bases",
+  player_hits_runs_rbis: "hits_runs_rbis",
+  player_walks: "walks",
+  player_bat_walks: "walks",
+  player_hitter_strikeouts: "hitter_strikeouts",
+  player_bat_strike_outs: "hitter_strikeouts",
+  player_stolen_bases: "stolen_bases",
+  player_hits_allowed: "hits_allowed",
+  player_earned_runs_allowed: "earned_runs",
+  player_earned_runs: "earned_runs",
+  player_pitching_outs: "pitcher_outs",
+  player_outs: "pitcher_outs",
+  player_pitcher_strikeouts: "pitcher_strikeouts",
+  player_strike_outs: "pitcher_strikeouts",
+  player_first_inning_runs: "rfi_nrfi"
+};
 const DEFAULT_PARLAY_API_AUTH_HEADER_NAME = "X-API-Key";
 const DEFAULT_PARLAY_API_AUTH_HEADER_PREFIX = "";
 
@@ -359,6 +386,52 @@ function extractStatNames(rows) {
 }
 
 
+async function loadPropTaxonomy(env) {
+  const out = new Map();
+  if (!env.CONFIG_DB) return out;
+  const rows = await all(env.CONFIG_DB, `SELECT prop_key, display_name, supported_market_sources, scoring_enabled FROM config_prop_taxonomy`);
+  for (const row of rows || []) {
+    const key = String(row.prop_key || "").trim();
+    if (!key) continue;
+    out.set(key, {
+      prop_key: key,
+      display_name: row.display_name || null,
+      supported_market_sources: String(row.supported_market_sources || ""),
+      scoring_enabled: Number(row.scoring_enabled || 0)
+    });
+  }
+  return out;
+}
+
+function taxonomySupportsSleeper(taxonomyRow) {
+  if (!taxonomyRow) return false;
+  const sources = String(taxonomyRow.supported_market_sources || "")
+    .split(/[|,]/)
+    .map(s => s.trim().toLowerCase())
+    .filter(Boolean);
+  return sources.includes("sleeper");
+}
+
+function auditCanonicalMapping(sourceStatName, taxonomy) {
+  const sourceKey = String(sourceStatName || "").trim();
+  if (!sourceKey) {
+    return { ok: false, canonical_prop_key: null, status: "missing_source_stat_name", reason: "source_stat_name_missing" };
+  }
+  const canonical = SLEEPER_MARKET_KEY_TO_CANONICAL_PROP_KEY[sourceKey] || null;
+  if (!canonical) {
+    return { ok: false, canonical_prop_key: null, status: "unmapped_source_stat_name", reason: "no_source_proven_mapping_for_market_key" };
+  }
+  const taxonomyRow = taxonomy ? taxonomy.get(canonical) : null;
+  if (!taxonomyRow) {
+    return { ok: false, canonical_prop_key: canonical, status: "canonical_missing_from_taxonomy", reason: "canonical_prop_key_not_found_in_CONFIG_DB" };
+  }
+  if (!taxonomySupportsSleeper(taxonomyRow)) {
+    return { ok: false, canonical_prop_key: canonical, status: "canonical_not_sleeper_supported", reason: "CONFIG_DB_taxonomy_does_not_support_Sleeper_for_this_prop_key" };
+  }
+  return { ok: true, canonical_prop_key: canonical, status: "canonical_mapping_audited", reason: null };
+}
+
+
 function normalizeText(value) {
   if (value === undefined || value === null) return null;
   const text = String(value).trim();
@@ -407,9 +480,21 @@ function isFuturePickable(row) {
   return t > Date.now() ? 1 : 0;
 }
 
-function toStageRow(row, batchId, fetchedAt) {
+function toStageRow(row, batchId, fetchedAt, taxonomy) {
   const required = rowRequiredAudit(row);
   const sourceStatName = normalizeText(row && row.market_key) || normalizeText(row && row.market);
+  const mapping = auditCanonicalMapping(sourceStatName, taxonomy);
+  let parseStatus = "parsed_stage_only_alias_audit_pending";
+  let parseError = null;
+  if (!required.ok) {
+    parseStatus = "invalid_missing_required_fields";
+    parseError = `missing:${required.missing.join(",")}`;
+  } else if (mapping.ok) {
+    parseStatus = "parsed_stage_only_canonical_mapping_audited";
+  } else {
+    parseStatus = `parsed_stage_only_mapping_blocked_${mapping.status}`;
+    parseError = mapping.reason;
+  }
   return {
     stage_id: rid("sleeper_stage"),
     batch_id: batchId,
@@ -425,7 +510,7 @@ function toStageRow(row, batchId, fetchedAt) {
     league: "MLB",
     sport: normalizeText(row && row.sport_key),
     source_stat_name: sourceStatName,
-    canonical_prop_key: null,
+    canonical_prop_key: mapping.canonical_prop_key,
     line_value: numberOrNull(row && row.line),
     side: null,
     price: null,
@@ -433,9 +518,9 @@ function toStageRow(row, batchId, fetchedAt) {
     is_pickable: isFuturePickable(row || {}),
     start_time: normalizeText(row && row.commence_time),
     raw_line_json: safeString(JSON.stringify(row || {}), 3000),
-    parse_status: required.ok ? "parsed_stage_only_alias_unreviewed" : "invalid_missing_required_fields",
-    parse_error: required.ok ? null : `missing:${required.missing.join(",")}`,
-    certification_status: "STAGE_ONLY_NO_PROMOTION_ALIAS_UNREVIEWED"
+    parse_status: parseStatus,
+    parse_error: parseError,
+    certification_status: "STAGE_CERTIFY_ALIAS_AUDIT_NO_PROMOTION"
   };
 }
 
@@ -469,9 +554,16 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
     if (!row || typeof row !== "object" || Array.isArray(row)) return false;
     return String(row.bookmaker || "").toLowerCase() === "sleeper" && String(row.sport_key || "").toLowerCase() === "baseball_mlb";
   });
-  const stageRows = filtered.map(row => toStageRow(row, batchId, fetchedAt));
-  const validRows = stageRows.filter(row => row.parse_status === "parsed_stage_only_alias_unreviewed").length;
+  const taxonomy = await loadPropTaxonomy(env);
+  const stageRows = filtered.map(row => toStageRow(row, batchId, fetchedAt, taxonomy));
+  const validRows = stageRows.filter(row => !String(row.parse_status || "").startsWith("invalid_")).length;
   const invalidRows = stageRows.length - validRows;
+  const mappedRows = stageRows.filter(row => row.parse_status === "parsed_stage_only_canonical_mapping_audited").length;
+  const mappingBlockedRows = stageRows.filter(row => String(row.parse_status || "").includes("mapping_blocked")).length;
+  const unmappedRows = stageRows.filter(row => String(row.parse_status || "").includes("unmapped_source_stat_name")).length;
+  const unsupportedRows = stageRows.filter(row => String(row.parse_status || "").includes("canonical_not_sleeper_supported")).length;
+  const missingTaxonomyRows = stageRows.filter(row => String(row.parse_status || "").includes("canonical_missing_from_taxonomy")).length;
+  const distinctSourceToCanonical = Array.from(new Map(stageRows.map(row => [row.source_stat_name, { source_stat_name: row.source_stat_name, canonical_prop_key: row.canonical_prop_key, parse_status: row.parse_status, parse_error: row.parse_error }])).values()).sort((a,b)=>String(a.source_stat_name||"").localeCompare(String(b.source_stat_name||"")));
   const slateDates = Array.from(new Set(stageRows.map(row => row.slate_date).filter(Boolean))).sort();
   const pickableRows = stageRows.filter(row => row.is_pickable === 1).length;
 
@@ -494,9 +586,9 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
     stageRows.length,
     validRows,
     invalidRows,
-    stageRows.length,
-    "STAGE_ONLY_NO_PROMOTION_ALIAS_UNREVIEWED",
-    "Rows parsed into Sleeper staging only. Promotion blocked until source-scoped prop aliases are reviewed and certified.",
+    mappingBlockedRows + invalidRows,
+    mappingBlockedRows === 0 && invalidRows === 0 ? "STAGE_CERTIFIED_MAPPING_AUDITED_NO_PROMOTION" : "STAGE_CERTIFY_MAPPING_BLOCKED_NO_PROMOTION",
+    mappingBlockedRows === 0 && invalidRows === 0 ? "Rows parsed into Sleeper staging and canonical mappings audited. Promotion still blocked until source-scoped REF_DB aliases are explicitly approved/written." : "Rows parsed into Sleeper staging, but mapping/taxonomy blockers remain. No promotion allowed.",
     JSON.stringify({
       no_promotion: true,
       no_current_write: true,
@@ -506,7 +598,13 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
       bookmaker_distribution: shape ? shape.bookmaker_distribution : [],
       sport_key_distribution: shape ? shape.sport_key_distribution : [],
       slate_dates: slateDates,
-      pickable_rows: pickableRows
+      pickable_rows: pickableRows,
+      mapped_rows: mappedRows,
+      mapping_blocked_rows: mappingBlockedRows,
+      unmapped_rows: unmappedRows,
+      unsupported_rows: unsupportedRows,
+      missing_taxonomy_rows: missingTaxonomyRows,
+      distinct_source_to_canonical: distinctSourceToCanonical
     })
   );
   await insertStageRows(env, stageRows);
@@ -520,7 +618,13 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
     invalid_rows: invalidRows,
     pickable_rows: pickableRows,
     slate_dates: slateDates,
-    certification_status: "STAGE_ONLY_NO_PROMOTION_ALIAS_UNREVIEWED",
+    mapped_rows: mappedRows,
+    mapping_blocked_rows: mappingBlockedRows,
+    unmapped_rows: unmappedRows,
+    unsupported_rows: unsupportedRows,
+    missing_taxonomy_rows: missingTaxonomyRows,
+    distinct_source_to_canonical: distinctSourceToCanonical,
+    certification_status: mappingBlockedRows === 0 && invalidRows === 0 ? "STAGE_CERTIFIED_MAPPING_AUDITED_NO_PROMOTION" : "STAGE_CERTIFY_MAPPING_BLOCKED_NO_PROMOTION",
     current_rows_written: 0,
     active_batch_rows_written: 0
   };
@@ -559,7 +663,7 @@ async function safeProbe(env, input = {}) {
     return blockedProbe("SOURCE_AUTH_CONFIG_UNVERIFIED", auth.block_reason, readiness, endpoint, auth);
   }
 
-  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-Parlay-Sleeper-StageOnly/0.2.0" });
+  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-Parlay-Sleeper-StageCertifyAliasAudit/0.3.0" });
   auth.apply(headers, env);
 
   const started = Date.now();
@@ -625,9 +729,9 @@ async function safeProbe(env, input = {}) {
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
     source_key: SOURCE_KEY,
-    status: stagedOk ? "stage_only_completed_no_promotion" : (response.ok && parsed ? "source_probe_completed_shape_captured_stage_blocked" : "source_probe_completed_shape_unverified"),
-    certification: stagedOk ? "PARLAY_SLEEPER_STAGE_ONLY_PARSED_NO_PROMOTION_ALIAS_REVIEW_REQUIRED" : (response.ok && parsed ? "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_CAPTURED_STAGE_BLOCKED" : "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_UNVERIFIED_NO_PROMOTION"),
-    block_downstream_reason: stagedOk ? "promotion_blocked_until_source_scoped_aliases_are_reviewed_and_certified" : (stageError || "source_response_not_verified_json_shape"),
+    status: stagedOk ? "stage_certify_alias_audit_completed_no_promotion" : (response.ok && parsed ? "source_probe_completed_shape_captured_stage_blocked" : "source_probe_completed_shape_unverified"),
+    certification: stagedOk ? (stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0 ? "PARLAY_SLEEPER_STAGE_CERTIFIED_MAPPING_AUDITED_NO_PROMOTION" : "PARLAY_SLEEPER_STAGE_CERTIFY_MAPPING_BLOCKED_NO_PROMOTION") : (response.ok && parsed ? "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_CAPTURED_STAGE_BLOCKED" : "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_UNVERIFIED_NO_PROMOTION"),
+    block_downstream_reason: stagedOk ? (stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0 ? "promotion_blocked_until_REF_DB_source_scoped_aliases_are_explicitly_approved_written_and_certified" : "promotion_blocked_due_to_unmapped_or_unsupported_source_stat_types") : (stageError || "source_response_not_verified_json_shape"),
     readiness,
     source_config: safeSourceConfig(endpoint, auth),
     source_response: {
@@ -657,7 +761,7 @@ async function safeProbe(env, input = {}) {
     no_final_board: true,
     no_prizepicks_mutation: true,
     no_promotion: true,
-    next_required_approval: "Review staged Sleeper market_key values, add source-proven REF_DB.ref_prop_aliases rows, then approve stage+certify build."
+    next_required_approval: "Review mapping audit. If accepted, add source-scoped REF_DB.ref_prop_aliases for source_key=parlay_sleeper and keep promotion blocked until alias certification passes."
   };
 }
 
@@ -716,12 +820,13 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "SOURCE_PROBE_READY",
     timestamp_utc: nowUtc(),
-    phase: "parlay_sleeper_board_stage_only_v0_2_0",
+    phase: "parlay_sleeper_board_stage_certify_alias_audit_v0_3_0",
     notes: [
-      "Stage-only worker with safe public endpoint/header fallbacks and full-body JSON parsing before bounded preview slicing.",
+      "Stage+certify alias-audit worker with safe public endpoint/header fallbacks and full-body JSON parsing before bounded preview slicing.",
       "Creates/validates additive Sleeper lifecycle schema when /run executes.",
       "Performs safe source fetch and writes parsed rows to Sleeper staging tables only when source shape is captured.",
-      "Does not write current board, certify aliases, promote rows, score, rank, write final board, or mutate PrizePicks."
+      "Audits source market_key values against CONFIG_DB taxonomy using source-proven mapping candidates only.",
+      "Does not write REF_DB aliases, current board, promote rows, score, rank, write final board, or mutate PrizePicks."
     ],
     binding_summary: {
       required_db_bindings_present: allTrue(db),
