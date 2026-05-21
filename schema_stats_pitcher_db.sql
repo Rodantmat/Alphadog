@@ -1,4 +1,9 @@
-CREATE TABLE IF NOT EXISTS pitcher_schema_migrations (migration_key TEXT PRIMARY KEY, package_version TEXT NOT NULL, applied_at TEXT DEFAULT CURRENT_TIMESTAMP, notes TEXT);
+CREATE TABLE IF NOT EXISTS pitcher_schema_migrations (
+  migration_key TEXT PRIMARY KEY,
+  package_version TEXT NOT NULL,
+  applied_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  notes TEXT
+);
 
 CREATE TABLE IF NOT EXISTS pitcher_game_logs (
   player_id INTEGER NOT NULL,
@@ -7,9 +12,13 @@ CREATE TABLE IF NOT EXISTS pitcher_game_logs (
   game_date TEXT,
   team_id TEXT,
   opponent_team_id TEXT,
+  opponent_team TEXT,
   is_home INTEGER,
+  group_type TEXT DEFAULT 'pitching',
+  player_name TEXT,
   role TEXT,
   innings_pitched REAL,
+  innings_pitched_decimal REAL,
   outs_recorded INTEGER,
   batters_faced INTEGER,
   hits_allowed INTEGER,
@@ -19,10 +28,17 @@ CREATE TABLE IF NOT EXISTS pitcher_game_logs (
   strikeouts INTEGER,
   home_runs_allowed INTEGER,
   pitches INTEGER,
+  balls INTEGER,
+  strikes INTEGER,
+  wins INTEGER,
+  losses INTEGER,
+  saves INTEGER,
+  holds INTEGER,
+  blown_saves INTEGER,
+  stat_shape_json TEXT,
   raw_json TEXT,
-  source_key TEXT,
-  source_confidence TEXT,
   data_feed_key TEXT,
+  source_key TEXT,
   source_endpoint TEXT,
   source_season INTEGER,
   source_game_type TEXT,
@@ -31,65 +47,13 @@ CREATE TABLE IF NOT EXISTS pitcher_game_logs (
   run_id TEXT,
   certification_status TEXT,
   certification_grade TEXT,
+  source_confidence TEXT,
   certified_at TEXT,
   promoted_at TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  group_type TEXT DEFAULT 'pitching',
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (player_id, game_pk)
 );
-
-CREATE TABLE IF NOT EXISTS pitcher_splits (
-  player_id INTEGER NOT NULL,
-  season INTEGER NOT NULL,
-  split_key TEXT NOT NULL,
-  split_description TEXT,
-  innings_pitched REAL,
-  outs_recorded INTEGER,
-  batters_faced INTEGER,
-  hits_allowed INTEGER,
-  earned_runs INTEGER,
-  walks_allowed INTEGER,
-  strikeouts INTEGER,
-  era TEXT,
-  whip TEXT,
-  raw_json TEXT,
-  source_key TEXT,
-  source_confidence TEXT,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (player_id, season, split_key)
-);
-
-CREATE TABLE IF NOT EXISTS pitcher_metrics (
-  player_id INTEGER PRIMARY KEY,
-  player_name TEXT,
-  team_id TEXT,
-  season INTEGER,
-  games_logged INTEGER,
-  starts_logged INTEGER,
-  first_game_date TEXT,
-  last_game_date TEXT,
-  total_outs_recorded INTEGER,
-  total_batters_faced INTEGER,
-  total_hits_allowed INTEGER,
-  total_runs_allowed INTEGER,
-  total_earned_runs INTEGER,
-  total_walks_allowed INTEGER,
-  total_strikeouts INTEGER,
-  last3_json TEXT, last5_json TEXT, last10_json TEXT, last20_json TEXT,
-  source_key TEXT,
-  source_confidence TEXT,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_pitcher_logs_date ON pitcher_game_logs(game_date);
-CREATE INDEX IF NOT EXISTS idx_pitcher_logs_team ON pitcher_game_logs(team_id, game_date);
-CREATE INDEX IF NOT EXISTS idx_pitcher_metrics_last ON pitcher_metrics(last_game_date);
-
-INSERT OR REPLACE INTO pitcher_schema_migrations VALUES ('schema_stats_pitcher_db_v0_1', 'alphadog-v2-schema-phase-pack-v0.1', CURRENT_TIMESTAMP, 'Initial STATS_PITCHER_DB schema');
-
--- alphadog-v2-base-pitcher-game-logs-v0.1.0-schema-source-lock-probe
--- Additive pitcher game-log lifecycle schema only. Supports future base_backfill and delta_update, but v0.1.0 only runs source-shape probe and never promotes live rows.
 
 CREATE TABLE IF NOT EXISTS pitcher_game_log_batches (
   batch_id TEXT PRIMARY KEY,
@@ -239,10 +203,62 @@ CREATE TABLE IF NOT EXISTS pitcher_game_log_certifications (
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS pitcher_splits (
+  player_id INTEGER NOT NULL,
+  season INTEGER NOT NULL,
+  split_key TEXT NOT NULL,
+  split_description TEXT,
+  innings_pitched REAL,
+  outs_recorded INTEGER,
+  batters_faced INTEGER,
+  hits_allowed INTEGER,
+  earned_runs INTEGER,
+  walks_allowed INTEGER,
+  strikeouts INTEGER,
+  era TEXT,
+  whip TEXT,
+  raw_json TEXT,
+  source_key TEXT,
+  source_confidence TEXT,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (player_id, season, split_key)
+);
+
+CREATE TABLE IF NOT EXISTS pitcher_metrics (
+  player_id INTEGER PRIMARY KEY,
+  player_name TEXT,
+  team_id TEXT,
+  season INTEGER,
+  games_logged INTEGER,
+  starts_logged INTEGER,
+  first_game_date TEXT,
+  last_game_date TEXT,
+  total_outs_recorded INTEGER,
+  total_batters_faced INTEGER,
+  total_hits_allowed INTEGER,
+  total_runs_allowed INTEGER,
+  total_earned_runs INTEGER,
+  total_walks_allowed INTEGER,
+  total_strikeouts INTEGER,
+  last3_json TEXT,
+  last5_json TEXT,
+  last10_json TEXT,
+  last20_json TEXT,
+  source_key TEXT,
+  source_confidence TEXT,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_pitcher_logs_date ON pitcher_game_logs(game_date);
+CREATE INDEX IF NOT EXISTS idx_pitcher_logs_team ON pitcher_game_logs(team_id, game_date);
+CREATE INDEX IF NOT EXISTS idx_pitcher_logs_lineage ON pitcher_game_logs(data_feed_key, batch_id, ingestion_mode);
+CREATE INDEX IF NOT EXISTS idx_pitcher_logs_group_key ON pitcher_game_logs(player_id, game_pk, group_type);
+CREATE INDEX IF NOT EXISTS idx_pitcher_logs_batch_promoted ON pitcher_game_logs(batch_id, data_feed_key, game_date);
+CREATE INDEX IF NOT EXISTS idx_pitcher_metrics_last ON pitcher_metrics(last_game_date);
 CREATE INDEX IF NOT EXISTS idx_pitcher_game_log_batches_status ON pitcher_game_log_batches(status, mode);
 CREATE INDEX IF NOT EXISTS idx_pitcher_game_log_stage_batch ON pitcher_game_log_stage(batch_id, player_id, game_date);
 CREATE INDEX IF NOT EXISTS idx_pitcher_game_log_stage_key ON pitcher_game_log_stage(player_id, game_pk, group_type);
 CREATE INDEX IF NOT EXISTS idx_pitcher_game_log_outcomes_batch ON pitcher_game_log_player_outcomes(batch_id, outcome_category);
 CREATE INDEX IF NOT EXISTS idx_pitcher_game_log_cursors_status ON pitcher_game_log_cursors(status, mode);
 
-INSERT OR REPLACE INTO pitcher_schema_migrations VALUES ('pitcher_game_logs_lifecycle_v0_1_0', 'alphadog-v2-base-pitcher-game-logs-v0.1.0-schema-source-lock-probe', CURRENT_TIMESTAMP, 'Additive pitcher game-log lifecycle schema and live lineage columns; source-probe only, no promotion');
+INSERT OR REPLACE INTO pitcher_schema_migrations VALUES ('schema_stats_pitcher_db_v0_3_0_base_promotion', 'alphadog-v2-base-pitcher-game-logs-v0.3.0-base-promotion-microphase', CURRENT_TIMESTAMP, 'Pitcher game-log lifecycle schema with certified-stage promotion microphase support');

@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-game-logs";
-const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.2.2-stage-lineage-grade-repair";
+const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.3.0-base-promotion-microphase";
 const JOB_KEY = "base-pitcher-game-logs";
 const GROUP_TYPE = "pitching";
 const SOURCE_KEY = "mlb_statsapi_pitcher_game_logs_v0_2_0";
@@ -12,6 +12,8 @@ const DEFAULT_DELTA_START = "2026-05-19";
 const NO_DATA_PROBE_SEASON = 1901;
 const DEFAULT_MAX_API_CALLS_PER_TICK = 8;
 const DEFAULT_MAX_STAGE_ROWS_PER_TICK = 1000;
+const DEFAULT_MAX_PROMOTE_ROWS_PER_TICK = 500;
+const BASE_LIVE_DATA_FEED_KEY = "mlb_statsapi_pitcher_game_logs_2026_base_v0_3_0_promoted";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_PITCHER_DB"];
 const EXPECTED_VARS = ["ACTIVE_SEASON", "MLB_API_BASE_URL", "MLB_API_USER_AGENT", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK"];
@@ -253,7 +255,18 @@ async function ensureSchema(env) {
     "ALTER TABLE pitcher_game_logs ADD COLUMN certified_at TEXT",
     "ALTER TABLE pitcher_game_logs ADD COLUMN promoted_at TEXT",
     "ALTER TABLE pitcher_game_logs ADD COLUMN created_at TEXT",
-    "ALTER TABLE pitcher_game_logs ADD COLUMN group_type TEXT DEFAULT 'pitching'"
+    "ALTER TABLE pitcher_game_logs ADD COLUMN group_type TEXT DEFAULT 'pitching'",
+    "ALTER TABLE pitcher_game_logs ADD COLUMN player_name TEXT",
+    "ALTER TABLE pitcher_game_logs ADD COLUMN opponent_team TEXT",
+    "ALTER TABLE pitcher_game_logs ADD COLUMN innings_pitched_decimal REAL",
+    "ALTER TABLE pitcher_game_logs ADD COLUMN balls INTEGER",
+    "ALTER TABLE pitcher_game_logs ADD COLUMN strikes INTEGER",
+    "ALTER TABLE pitcher_game_logs ADD COLUMN wins INTEGER",
+    "ALTER TABLE pitcher_game_logs ADD COLUMN losses INTEGER",
+    "ALTER TABLE pitcher_game_logs ADD COLUMN saves INTEGER",
+    "ALTER TABLE pitcher_game_logs ADD COLUMN holds INTEGER",
+    "ALTER TABLE pitcher_game_logs ADD COLUMN blown_saves INTEGER",
+    "ALTER TABLE pitcher_game_logs ADD COLUMN stat_shape_json TEXT"
   ];
   for (const sql of alterStatements) ddlResults.push(await tryRun(db, sql));
 
@@ -264,12 +277,13 @@ async function ensureSchema(env) {
     "CREATE INDEX IF NOT EXISTS idx_pitcher_game_log_outcomes_batch ON pitcher_game_log_player_outcomes(batch_id, outcome_category)",
     "CREATE INDEX IF NOT EXISTS idx_pitcher_game_log_cursors_status ON pitcher_game_log_cursors(status, mode)",
     "CREATE INDEX IF NOT EXISTS idx_pitcher_logs_lineage ON pitcher_game_logs(data_feed_key, batch_id, ingestion_mode)",
-    "CREATE INDEX IF NOT EXISTS idx_pitcher_logs_group_key ON pitcher_game_logs(player_id, game_pk, group_type)"
+    "CREATE INDEX IF NOT EXISTS idx_pitcher_logs_group_key ON pitcher_game_logs(player_id, game_pk, group_type)",
+    "CREATE INDEX IF NOT EXISTS idx_pitcher_logs_batch_promoted ON pitcher_game_logs(batch_id, data_feed_key, game_date)"
   ];
   for (const sql of indexes) ddlResults.push(await tryRun(db, sql));
 
   await tryRun(db,
-    "INSERT OR REPLACE INTO pitcher_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('pitcher_game_logs_lifecycle_v0_1_0', ?, CURRENT_TIMESTAMP, 'Additive pitcher game-log lifecycle schema and live lineage columns; source-probe only, no promotion')",
+    "INSERT OR REPLACE INTO pitcher_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('pitcher_game_logs_lifecycle_v0_3_0', ?, CURRENT_TIMESTAMP, 'Additive pitcher game-log lifecycle schema, promotion live columns, and base promotion microphase support')",
     VERSION
   );
 
@@ -802,10 +816,196 @@ async function runBaseBackfillStageOnly(env, input) {
   return { ok: true, data_ok: final.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: final.status, certification: final.certification, certification_grade: final.certification_grade, mode: "base_backfill", batch_id: batch.batch_id, run_id: batch.run_id, cursor_offset_before: offset, cursor_offset_after: newOffset, expected_pitcher_universe_count: expected, players_processed_this_tick: players.length, players_remaining: 0, rows_read: rowsRead, rows_written: stageWritten + players.length + 3, rows_staged_this_tick: stageWritten, rows_staged: final.stage_rows, rows_promoted: 0, live_rows_before: final.live_rows_before, live_rows_after: final.live_rows_after, external_calls_performed: externalCalls, tick_outcomes: tickOutcomes, final_stage_certification: final, continuation_required: false, orchestrator_should_self_continue: false, no_live_promotion: true, next_safe_step: final.pass ? "Review stage-only outputs. v0.3.0 promotion/certification gates can be designed only after approval." : "Review failed stage-only gates before any promotion design." };
 }
 
+
+async function latestPromotionCandidateBatch(env) {
+  return await first(env.STATS_PITCHER_DB,
+    "SELECT * FROM pitcher_game_log_batches WHERE mode='base_backfill' AND data_feed_key=? ORDER BY datetime(created_at) DESC LIMIT 1",
+    BASE_STAGE_DATA_FEED_KEY
+  );
+}
+
+async function promotionGate(env, batch) {
+  const batchId = batch && batch.batch_id;
+  if (!batchId) return { pass: false, reason: "NO_BASE_STAGE_BATCH", checks: {} };
+  const stageCount = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_log_stage WHERE batch_id=?", batchId);
+  const outcomeCount = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_log_player_outcomes WHERE batch_id=?", batchId);
+  const dupOut = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM (SELECT player_id, COUNT(*) n FROM pitcher_game_log_player_outcomes WHERE batch_id=? GROUP BY player_id HAVING n>1)", batchId);
+  const badOut = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_log_player_outcomes WHERE batch_id=? AND outcome_category IN ('SOURCE_ERROR','REPAIR_REQUIRED','UNCLEAR')", batchId);
+  const dupStage = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM (SELECT player_id, game_pk, COALESCE(group_type,'pitching') AS g, COUNT(*) n FROM pitcher_game_log_stage WHERE batch_id=? GROUP BY player_id, game_pk, COALESCE(group_type,'pitching') HAVING n>1)", batchId);
+  const missing = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_log_stage WHERE batch_id=? AND (player_id IS NULL OR game_pk IS NULL OR game_date IS NULL OR team_id IS NULL OR source_endpoint IS NULL OR raw_json IS NULL OR data_feed_key IS NULL OR batch_id IS NULL OR run_id IS NULL OR certification_status IS NULL OR certification_grade IS NULL OR source_confidence IS NULL)", batchId);
+  const afterCutoff = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_log_stage WHERE batch_id=? AND date(game_date) > date(?)", batchId, batch.base_backfill_cutoff_date || DEFAULT_BASE_CUTOFF);
+  const badStats = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS c FROM pitcher_game_log_stage WHERE batch_id=? AND (
+    COALESCE(strikeouts,0) < 0 OR COALESCE(walks_allowed,0) < 0 OR COALESCE(hits_allowed,0) < 0 OR COALESCE(runs_allowed,0) < 0 OR COALESCE(earned_runs,0) < 0 OR COALESCE(home_runs_allowed,0) < 0 OR COALESCE(outs_recorded,0) < 0 OR COALESCE(batters_faced,0) < 0 OR COALESCE(pitches,0) < 0 OR COALESCE(strikes,0) < 0 OR (strikes > pitches AND pitches IS NOT NULL AND strikes IS NOT NULL) OR (earned_runs > runs_allowed AND earned_runs IS NOT NULL AND runs_allowed IS NOT NULL)
+  )`, batchId);
+  const liveExisting = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_logs WHERE batch_id=? OR data_feed_key=?", batchId, BASE_LIVE_DATA_FEED_KEY);
+  const expected = Number(batch.expected_pitcher_universe_count || 0);
+  const checks = {
+    stage_batch_status_safe: ["BASE_BACKFILL_STAGE_ONLY_COMPLETED_NO_PROMOTION", "PROMOTING_BASE_BACKFILL_MICROPHASE", "BASE_BACKFILL_PROMOTION_REVIEW_REQUIRED"].includes(String(batch.status || "")),
+    stage_certified: (
+      (String(batch.certification_status || "") === "PITCHER_GAME_LOGS_BASE_BACKFILL_STAGE_ONLY_CERTIFIED_NO_PROMOTION" && String(batch.certification_grade || "") === "STAGE_PASS") ||
+      (String(batch.certification_status || "") === "PITCHER_GAME_LOGS_BASE_PROMOTION_MICROPHASE" && String(batch.certification_grade || "") === "PROMOTION_RUNNING")
+    ),
+    stage_rows_gt_zero: Number(stageCount && stageCount.c || 0) > 0,
+    outcome_rows_equal_universe: Number(outcomeCount && outcomeCount.c || 0) === expected,
+    duplicate_outcome_rows_zero: Number(dupOut && dupOut.c || 0) === 0,
+    bad_outcomes_zero: Number(badOut && badOut.c || 0) === 0,
+    duplicate_stage_keys_zero: Number(dupStage && dupStage.c || 0) === 0,
+    missing_required_stage_fields_zero: Number(missing && missing.c || 0) === 0,
+    rows_after_cutoff_zero: Number(afterCutoff && afterCutoff.c || 0) === 0,
+    bad_stat_sanity_rows_zero: Number(badStats && badStats.c || 0) === 0,
+    no_unexpected_prior_live_rows: Number(liveExisting && liveExisting.c || 0) === 0 || String(batch.status || "") === "PROMOTING_BASE_BACKFILL_MICROPHASE"
+  };
+  const pass = Object.values(checks).every(Boolean);
+  return {
+    pass,
+    reason: pass ? "PROMOTION_GATE_PASS" : "PROMOTION_GATE_FAIL",
+    checks,
+    counts: {
+      stage_rows: Number(stageCount && stageCount.c || 0),
+      outcome_rows: Number(outcomeCount && outcomeCount.c || 0),
+      duplicate_outcome_rows: Number(dupOut && dupOut.c || 0),
+      bad_outcomes: Number(badOut && badOut.c || 0),
+      duplicate_stage_keys: Number(dupStage && dupStage.c || 0),
+      missing_required_stage_fields: Number(missing && missing.c || 0),
+      rows_after_cutoff: Number(afterCutoff && afterCutoff.c || 0),
+      bad_stat_sanity_rows: Number(badStats && badStats.c || 0),
+      prior_live_rows_for_batch_or_feed: Number(liveExisting && liveExisting.c || 0)
+    }
+  };
+}
+
+async function promotePitcherStageChunk(env, batch, chunkSize) {
+  const rows = await all(env.STATS_PITCHER_DB,
+    "SELECT stage_id FROM pitcher_game_log_stage WHERE batch_id=? AND ingestion_mode='base_backfill' AND promoted_at IS NULL ORDER BY player_id, game_date, game_pk LIMIT ?",
+    batch.batch_id, chunkSize
+  );
+  if (!rows.length) return { promoted_this_tick: 0, remaining_after: 0 };
+  const ids = rows.map(r => r.stage_id);
+  const ph = ids.map(() => "?").join(",");
+  await run(env.STATS_PITCHER_DB,
+    `INSERT OR REPLACE INTO pitcher_game_logs (
+      player_id, game_pk, season, game_date, team_id, opponent_team_id, is_home, role,
+      innings_pitched, outs_recorded, batters_faced, hits_allowed, runs_allowed, earned_runs,
+      walks_allowed, strikeouts, home_runs_allowed, pitches, raw_json, source_key, source_confidence, updated_at,
+      data_feed_key, source_endpoint, source_season, source_game_type, ingestion_mode, batch_id, run_id,
+      certification_status, certification_grade, certified_at, promoted_at, created_at, group_type,
+      player_name, opponent_team, innings_pitched_decimal, balls, strikes, wins, losses, saves, holds, blown_saves, stat_shape_json
+    )
+    SELECT
+      player_id, game_pk, season, game_date, team_id, opponent_team_id, is_home, role,
+      innings_pitched_decimal, outs_recorded, batters_faced, hits_allowed, runs_allowed, earned_runs,
+      walks_allowed, strikeouts, home_runs_allowed, pitches, raw_json, source_key, source_confidence, CURRENT_TIMESTAMP,
+      ?, source_endpoint, source_season, source_game_type, 'base_backfill', batch_id, run_id,
+      'PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFIED', 'BASE_PASS', COALESCE(certified_at, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, COALESCE(created_at, CURRENT_TIMESTAMP), COALESCE(group_type,'pitching'),
+      player_name, opponent_team, innings_pitched_decimal, balls, strikes, wins, losses, saves, holds, blown_saves, stat_shape_json
+    FROM pitcher_game_log_stage
+    WHERE stage_id IN (${ph})`,
+    BASE_LIVE_DATA_FEED_KEY, ...ids
+  );
+  await run(env.STATS_PITCHER_DB,
+    `UPDATE pitcher_game_log_stage SET promoted_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE stage_id IN (${ph})`,
+    ...ids
+  );
+  const remaining = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_log_stage WHERE batch_id=? AND ingestion_mode='base_backfill' AND promoted_at IS NULL", batch.batch_id);
+  return { promoted_this_tick: ids.length, remaining_after: Number(remaining && remaining.c || 0) };
+}
+
+async function finalizePromotionAndClean(env, batch, gate) {
+  const batchId = batch.batch_id;
+  const stageRowsBeforeClean = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_log_stage WHERE batch_id=?", batchId);
+  const liveRows = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_logs WHERE batch_id=? AND data_feed_key=?", batchId, BASE_LIVE_DATA_FEED_KEY);
+  const dupLive = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM (SELECT player_id, game_pk, COALESCE(group_type,'pitching') AS g, COUNT(*) n FROM pitcher_game_logs WHERE batch_id=? AND data_feed_key=? GROUP BY player_id, game_pk, COALESCE(group_type,'pitching') HAVING n>1)", batchId, BASE_LIVE_DATA_FEED_KEY);
+  const afterCutoffLive = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_logs WHERE batch_id=? AND data_feed_key=? AND date(game_date) > date(?)", batchId, BASE_LIVE_DATA_FEED_KEY, batch.base_backfill_cutoff_date || DEFAULT_BASE_CUTOFF);
+  const missingLive = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_logs WHERE batch_id=? AND data_feed_key=? AND (player_id IS NULL OR game_pk IS NULL OR game_date IS NULL OR team_id IS NULL OR source_endpoint IS NULL OR raw_json IS NULL OR certification_grade IS NULL OR certification_status IS NULL)", batchId, BASE_LIVE_DATA_FEED_KEY);
+  const expectedRows = Number(batch.rows_staged || (gate && gate.counts && gate.counts.stage_rows) || stageRowsBeforeClean && stageRowsBeforeClean.c || 0);
+  const checks = {
+    live_rows_match_stage_rows: Number(liveRows && liveRows.c || 0) === expectedRows,
+    duplicate_live_keys_zero: Number(dupLive && dupLive.c || 0) === 0,
+    live_rows_after_cutoff_zero: Number(afterCutoffLive && afterCutoffLive.c || 0) === 0,
+    missing_required_live_fields_zero: Number(missingLive && missingLive.c || 0) === 0
+  };
+  const pass = Object.values(checks).every(Boolean);
+  if (!pass) {
+    await run(env.STATS_PITCHER_DB,
+      "UPDATE pitcher_game_log_batches SET status='BASE_BACKFILL_PROMOTION_REVIEW_REQUIRED', certification_status='PITCHER_GAME_LOGS_BASE_PROMOTION_REVIEW_REQUIRED', certification_grade='PROMOTION_REVIEW', rows_promoted=?, live_rows_after=?, error_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
+      Number(liveRows && liveRows.c || 0), Number(liveRows && liveRows.c || 0), JSON.stringify({ checks, gate }), batchId
+    );
+    return { pass: false, status: "BASE_BACKFILL_PROMOTION_REVIEW_REQUIRED", certification: "PITCHER_GAME_LOGS_BASE_PROMOTION_REVIEW_REQUIRED", certification_grade: "PROMOTION_REVIEW", checks, stage_rows_after_clean: Number(stageRowsBeforeClean && stageRowsBeforeClean.c || 0), live_rows: Number(liveRows && liveRows.c || 0) };
+  }
+  await run(env.STATS_PITCHER_DB, "DELETE FROM pitcher_game_log_stage WHERE batch_id=?", batchId);
+  const stageAfterClean = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_log_stage WHERE batch_id=?", batchId);
+  await run(env.STATS_PITCHER_DB,
+    `UPDATE pitcher_game_log_batches SET
+      status='COMPLETED_PROMOTED_CLEANED',
+      certification_status='BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFIED',
+      certification_grade='BASE_PASS',
+      rows_promoted=?,
+      live_rows_after=?,
+      duplicate_stage_keys=0,
+      rows_after_cutoff=0,
+      promoted_at=CURRENT_TIMESTAMP,
+      cleaned_at=CURRENT_TIMESTAMP,
+      finished_at=CURRENT_TIMESTAMP,
+      updated_at=CURRENT_TIMESTAMP
+    WHERE batch_id=?`,
+    Number(liveRows && liveRows.c || 0), Number(liveRows && liveRows.c || 0), batchId
+  );
+  await run(env.STATS_PITCHER_DB,
+    "UPDATE pitcher_game_log_cursors SET status='COMPLETED_PROMOTED_CLEANED', continuation_required=0, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
+    batchId
+  );
+  await run(env.STATS_PITCHER_DB,
+    `INSERT OR REPLACE INTO pitcher_game_log_certifications (certification_id, batch_id, run_id, mode, status, certification_status, certification_grade, check_key, check_status, expected_value, actual_value, details_json, created_at)
+     VALUES (?, ?, ?, 'base_backfill', 'COMPLETED_PROMOTED_CLEANED', 'BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFIED', 'BASE_PASS', 'v0_3_0_base_promotion_and_cleanup', 'PASS', ?, ?, ?, CURRENT_TIMESTAMP)`,
+    `${batchId}_base_promotion_cleaned`, batchId, batch.run_id, String(expectedRows), String(Number(liveRows && liveRows.c || 0)), JSON.stringify({ checks, gate, stage_rows_before_clean: expectedRows, stage_rows_after_clean: Number(stageAfterClean && stageAfterClean.c || 0) })
+  );
+  return { pass: true, status: "COMPLETED_PROMOTED_CLEANED", certification: "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFIED", certification_grade: "BASE_PASS", checks, stage_rows_after_clean: Number(stageAfterClean && stageAfterClean.c || 0), live_rows: Number(liveRows && liveRows.c || 0) };
+}
+
+async function runBasePromotionMicrophase(env, input) {
+  const schema = await ensureSchema(env);
+  const batch = await latestPromotionCandidateBatch(env);
+  if (!batch) {
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BLOCKED_NO_CERTIFIED_STAGE_BATCH", certification: "BASE_PITCHER_GAME_LOGS_PROMOTION_BLOCKED_NO_STAGE_BATCH", mode: "base_backfill", rows_promoted: 0, external_calls_performed: 0, schema_status: schema };
+  }
+  if (String(batch.status || "") === "COMPLETED_PROMOTED_CLEANED") {
+    const liveRows = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_logs WHERE batch_id=? AND data_feed_key=?", batch.batch_id, BASE_LIVE_DATA_FEED_KEY);
+    const stageRows = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_log_stage WHERE batch_id=?", batch.batch_id);
+    return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "NOOP_BASE_ALREADY_PROMOTED_CLEANED", certification: "BASE_PITCHER_GAME_LOGS_BASE_BACKFILL_CERTIFIED", certification_grade: "BASE_PASS", mode: "base_backfill", batch_id: batch.batch_id, run_id: batch.run_id, rows_read: 0, rows_written: 0, rows_promoted: Number(liveRows && liveRows.c || 0), live_rows_after: Number(liveRows && liveRows.c || 0), stage_rows_after_clean: Number(stageRows && stageRows.c || 0), external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false };
+  }
+  const gate = await promotionGate(env, batch);
+  if (!gate.pass) {
+    await run(env.STATS_PITCHER_DB,
+      "UPDATE pitcher_game_log_batches SET status='BASE_BACKFILL_PROMOTION_BLOCKED_GATE_FAIL', certification_status='PITCHER_GAME_LOGS_BASE_PROMOTION_GATE_FAILED', certification_grade='PROMOTION_BLOCKED', error_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
+      JSON.stringify(gate), batch.batch_id
+    );
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_BACKFILL_PROMOTION_BLOCKED_GATE_FAIL", certification: "PITCHER_GAME_LOGS_BASE_PROMOTION_GATE_FAILED", certification_grade: "PROMOTION_BLOCKED", mode: "base_backfill", batch_id: batch.batch_id, run_id: batch.run_id, promotion_gate: gate, rows_promoted: 0, external_calls_performed: 0, no_mlb_calls: true };
+  }
+
+  await run(env.STATS_PITCHER_DB,
+    "UPDATE pitcher_game_log_batches SET status='PROMOTING_BASE_BACKFILL_MICROPHASE', certification_status='PITCHER_GAME_LOGS_BASE_PROMOTION_MICROPHASE', certification_grade='PROMOTION_RUNNING', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
+    batch.batch_id
+  );
+  const chunkSize = Math.max(1, Math.min(Number(input.max_promote_rows_per_tick || DEFAULT_MAX_PROMOTE_ROWS_PER_TICK), 500));
+  const beforeRemaining = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_log_stage WHERE batch_id=? AND ingestion_mode='base_backfill' AND promoted_at IS NULL", batch.batch_id);
+  const promoted = await promotePitcherStageChunk(env, batch, chunkSize);
+  const liveRowsNow = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_logs WHERE batch_id=? AND data_feed_key=?", batch.batch_id, BASE_LIVE_DATA_FEED_KEY);
+  await run(env.STATS_PITCHER_DB,
+    "UPDATE pitcher_game_log_batches SET rows_promoted=?, live_rows_after=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
+    Number(liveRowsNow && liveRowsNow.c || 0), Number(liveRowsNow && liveRowsNow.c || 0), batch.batch_id
+  );
+  if (promoted.remaining_after > 0) {
+    return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "PARTIAL_CONTINUE_BASE_PITCHER_GAME_LOGS_PROMOTION", certification: "PITCHER_GAME_LOGS_BASE_PROMOTION_MICROPHASE", certification_grade: "PROMOTION_RUNNING", mode: "base_backfill", batch_id: batch.batch_id, run_id: batch.run_id, rows_read: promoted.promoted_this_tick, rows_written: promoted.promoted_this_tick, rows_promoted: Number(liveRowsNow && liveRowsNow.c || 0), promoted_this_tick: promoted.promoted_this_tick, remaining_unpromoted_stage_rows_before: Number(beforeRemaining && beforeRemaining.c || 0), remaining_unpromoted_stage_rows_after: promoted.remaining_after, live_rows_after: Number(liveRowsNow && liveRowsNow.c || 0), external_calls_performed: 0, continuation_required: true, orchestrator_should_self_continue: true, no_mlb_calls: true, no_delta: true, no_hitter_mutation: true, no_market_mutation: true };
+  }
+  const freshBatch = await first(env.STATS_PITCHER_DB, "SELECT * FROM pitcher_game_log_batches WHERE batch_id=?", batch.batch_id);
+  const final = await finalizePromotionAndClean(env, freshBatch || batch, gate);
+  return { ok: true, data_ok: final.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: final.status, certification: final.certification, certification_grade: final.certification_grade, mode: "base_backfill", batch_id: batch.batch_id, run_id: batch.run_id, rows_read: promoted.promoted_this_tick, rows_written: promoted.promoted_this_tick + 3, rows_promoted: final.live_rows, promoted_this_tick: promoted.promoted_this_tick, live_rows_after: final.live_rows, stage_rows_after_clean: final.stage_rows_after_clean, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false, final_promotion_verification: final, promotion_gate: gate, no_mlb_calls: true, no_delta: true, no_hitter_mutation: true, no_market_mutation: true, next_safe_step: final.pass ? "Base pitcher game logs locked. Delta design can be audited next, but do not build delta without approval." : "Review promotion verification failure before any cleanup or delta." };
+}
+
 function identity(env) {
   const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
   const vars = varPresence(env, EXPECTED_VARS);
-  return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_BACKFILL_STAGE_ONLY_READY", timestamp_utc: nowIso(), source_endpoint_template: SOURCE_ENDPOINT_TEMPLATE, base_backfill_cutoff_date_reserved: DEFAULT_BASE_CUTOFF, delta_start_date_reserved: DEFAULT_DELTA_START, active_scope: "pitcher source probe + base_backfill stage-only; no live promotion", hard_blocks: ["no live promotion", "no delta execution", "no hitter mutation", "no market mutation", "no scoring/ranking/final board"], binding_summary: { required_db_bindings_present: allTrue(db), expected_vars_present: allTrue(vars) }, bindings: db, vars };
+  return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_PROMOTION_MICROPHASE_READY", timestamp_utc: nowIso(), source_endpoint_template: SOURCE_ENDPOINT_TEMPLATE, base_backfill_cutoff_date_reserved: DEFAULT_BASE_CUTOFF, delta_start_date_reserved: DEFAULT_DELTA_START, active_scope: "base_backfill promotion microphase from certified stage; no MLB calls, no delta", hard_blocks: ["promotion only from certified stage", "no delta execution", "no hitter mutation", "no market mutation", "no scoring/ranking/final board"], binding_summary: { required_db_bindings_present: allTrue(db), expected_vars_present: allTrue(vars) }, bindings: db, vars };
 }
 
 export default {
@@ -828,11 +1028,11 @@ export default {
         const out = await runSourceProbe(env, { ...mergedInput, mode: "source_probe" });
         return jsonResponse({ ...out, request_id: input.request_id || null, chain_id: input.chain_id || null, orchestrator_should_self_continue: false, continuation_required: false });
       }
-      if (["base_backfill", "base_backfill_stage_only", "orchestrator_exact_base_pitcher_game_logs_base_backfill_stage_only_dispatch"].includes(requestedMode)) {
-        const out = await runBaseBackfillStageOnly(env, { ...mergedInput, mode: "base_backfill" });
+      if (["base_backfill", "base_backfill_stage_only", "base_backfill_promote", "base_promotion_microphase", "orchestrator_exact_base_pitcher_game_logs_base_backfill_stage_only_dispatch"].includes(requestedMode)) {
+        const out = await runBasePromotionMicrophase(env, { ...mergedInput, mode: "base_backfill" });
         return jsonResponse({ ...out, request_id: input.request_id || null, chain_id: input.chain_id || null });
       }
-      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BLOCKED_MODE_NOT_ENABLED_IN_V0_2_0", certification: "PITCHER_GAME_LOGS_V0_2_0_STAGE_ONLY_OR_SOURCE_PROBE_ONLY", requested_mode: requestedMode, enabled_modes: ["source_probe", "base_backfill_stage_only", "base_backfill"], rows_promoted: 0, external_calls_performed: 0 }, 200);
+      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BLOCKED_MODE_NOT_ENABLED_IN_V0_3_0", certification: "PITCHER_GAME_LOGS_V0_3_0_PROMOTION_OR_SOURCE_PROBE_ONLY", requested_mode: requestedMode, enabled_modes: ["source_probe", "base_backfill_promote", "base_promotion_microphase", "base_backfill"], rows_promoted: 0, external_calls_performed: 0 }, 200);
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /diagnostic", "POST /run"] }, 404);
   }

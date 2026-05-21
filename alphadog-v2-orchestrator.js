@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.25-base-pitcher-stage-only-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.26-base-pitcher-promotion-microphase";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -47,7 +47,7 @@ function base(env, extra = {}) {
       "Buttons enqueue/wake backend work only.",
       "Browser does not run long loops.",
       "Scheduled cron calls the same bounded tick path.",
-      "v0.2.17 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-pitcher-game-logs stage-only continuation, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
+      "v0.2.17 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-pitcher-game-logs promotion microphase, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
       "No generic worker dispatch, no scoring, no ranking, no final board writes, no old production writes."
     ],
     bindings: {
@@ -1246,8 +1246,8 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
     job_key: row.job_key,
     worker_name: row.worker_name,
     trigger,
-    mode: "orchestrator_exact_base_pitcher_game_logs_base_backfill_stage_only_dispatch",
-    input_json: { ...rowInput, mode: rowInput.mode || "base_backfill_stage_only" }
+    mode: "orchestrator_exact_base_pitcher_game_logs_base_promotion_microphase_dispatch",
+    input_json: { ...rowInput, mode: rowInput.mode || "base_promotion_microphase" }
   };
 
   const started = Date.now();
@@ -1286,11 +1286,11 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
   const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
   const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
   const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
-  const certification = String((output && output.certification) || (ok ? "base_pitcher_game_logs_stage_only_completed" : "base_pitcher_game_logs_stage_only_failed")).slice(0, 120);
+  const certification = String((output && output.certification) || (ok ? "base_pitcher_game_logs_promotion_microphase_completed" : "base_pitcher_game_logs_promotion_microphase_failed")).slice(0, 120);
   const queueStatus = partialContinue ? "pending" : (ok ? "completed" : "failed");
   const runStatus = partialContinue ? "partial_continue" : (ok ? "completed" : "failed");
   const errorCode = ok || partialContinue ? null : "base_pitcher_game_logs_worker_failed";
-  const errorMessage = ok || partialContinue ? null : String((output && (output.error || output.status)) || "Base Pitcher Game Logs stage-only worker failed").slice(0, 900);
+  const errorMessage = ok || partialContinue ? null : String((output && (output.error || output.status)) || "Base Pitcher Game Logs promotion microphase worker failed").slice(0, 900);
 
   const cappedOutput = {
     ...output,
@@ -1301,11 +1301,11 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_pitcher_game_logs_stage_only_v0_2_0: true,
-      base_backfill_stage_only: true,
+      base_pitcher_game_logs_promotion_microphase_v0_3_0: true,
+      base_promotion_microphase: true,
       no_generic_dispatch: true,
-      no_live_promotion: true,
-      no_full_base_backfill_promotion: true,
+      live_promotion_from_certified_stage_only: true,
+      no_mlb_calls_expected: true,
       no_delta: true,
       no_hitter_mutation: true,
       no_prizepicks_mutation: true,
@@ -1336,8 +1336,8 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
   }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_game_logs_dispatch_completed', 'Orchestrator completed exact base-pitcher-game-logs stage-only dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, no_live_promotion: true, partial_continue: partialContinue })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_game_logs_dispatch_completed', 'Orchestrator completed exact base-pitcher-game-logs promotion microphase dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, promotion_microphase: true, partial_continue: partialContinue })
   );
 
   return cappedOutput;
@@ -2161,16 +2161,16 @@ async function processOneUnlocked(env, trigger) {
       status: "unsupported_in_v0_2_16_safe_shell",
       job_key: row.job_key,
       worker_name: row.worker_name,
-      note: "v0.2.22 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs stage-only continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter hot continuation uses backend waitUntil, not browser pump; cron is rescue only."
+      note: "v0.2.22 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs promotion microphase with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter hot continuation uses backend waitUntil, not browser pump; cron is rescue only. Base Pitcher promotion uses certified stage only and makes no MLB calls."
     };
 
     await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_18', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs stage-only continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.18')",
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_26', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs promotion microphase with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.18')",
       runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
     );
 
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_18', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs stage-only continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.18' WHERE request_id=?",
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_26', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs promotion microphase with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.18' WHERE request_id=?",
       JSON.stringify(output), row.request_id
     );
 
