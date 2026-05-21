@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-splits";
-const VERSION = "alphadog-v2-base-hitter-splits-v0.3.0-certified-stage-promotion";
+const VERSION = "alphadog-v2-base-hitter-splits-v0.3.1-promotion-partial-resume-fix";
 const JOB_KEY = "base-hitter-splits";
 
 const SOURCE_SEASON = 2026;
@@ -300,7 +300,7 @@ async function ensureSchema(env) {
   ];
   for (const [label, sql] of indexes) await exec(label, sql);
 
-  await exec("record_schema_migration_v0_2_0", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_splits_v0_2_0_base_backfill_stage_only', ?, CURRENT_TIMESTAMP, 'Base Hitter Splits v0.3.0: certified-stage promotion support; SQL-safe promotion from v0.2.0 stage only; no MLB calls; no delta execution')", VERSION);
+  await exec("record_schema_migration_v0_2_0", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_splits_v0_2_0_base_backfill_stage_only', ?, CURRENT_TIMESTAMP, 'Base Hitter Splits v0.3.1: certified-stage promotion partial-resume fix; SQL-safe promotion from v0.2.0 stage only; no MLB calls; no delta execution')", VERSION);
   return { attempted: results.length, failed: results.filter(r => !r.ok).length, results };
 }
 
@@ -763,14 +763,43 @@ async function finalizeStageOnly(env, batchId, runId, universe, sourceSnapshotDa
 
 
 async function getCertifiedStageForPromotion(env, requestedBatchId = null) {
+  // v0.3.1 repair: promotion is multi-tick. After the first chunk, the same
+  // certified v0.2.0 stage batch is intentionally marked BASE_PROMOTION_PARTIAL_CONTINUE.
+  // The next tick must resume that same batch instead of blocking because the status
+  // is no longer the original stage-only certification status.
+  const allowedStatuses = [
+    CERTIFIED_STAGE_STATUS,
+    "BASE_PROMOTION_PARTIAL_CONTINUE",
+    "BASE_PROMOTION_REVIEW_REQUIRED"
+  ];
+  const allowedCertifications = [
+    CERTIFIED_STAGE_CERTIFICATION,
+    "BASE_HITTER_SPLITS_PROMOTION_PARTIAL_CONTINUE"
+  ];
+  const statusMarks = allowedStatuses.map(() => "?").join(",");
+  const certMarks = allowedCertifications.map(() => "?").join(",");
+  const argsBase = [CERTIFIED_STAGE_WORKER_VERSION, ...allowedStatuses, ...allowedCertifications];
+
   if (requestedBatchId) {
     return await first(env.STATS_HITTER_DB, `SELECT * FROM hitter_split_batches
-      WHERE batch_id=? AND worker_version=? AND mode='base_backfill_stage_only' AND status=? AND certification_status=? AND certification_grade='STAGE_PASS'
-      LIMIT 1`, requestedBatchId, CERTIFIED_STAGE_WORKER_VERSION, CERTIFIED_STAGE_STATUS, CERTIFIED_STAGE_CERTIFICATION);
+      WHERE batch_id=?
+        AND worker_version=?
+        AND mode='base_backfill_stage_only'
+        AND status IN (${statusMarks})
+        AND certification_status IN (${certMarks})
+        AND certification_grade IN ('STAGE_PASS','PARTIAL')
+      LIMIT 1`, requestedBatchId, ...argsBase);
   }
   return await first(env.STATS_HITTER_DB, `SELECT * FROM hitter_split_batches
-    WHERE worker_version=? AND mode='base_backfill_stage_only' AND status=? AND certification_status=? AND certification_grade='STAGE_PASS'
-    ORDER BY datetime(updated_at) DESC LIMIT 1`, CERTIFIED_STAGE_WORKER_VERSION, CERTIFIED_STAGE_STATUS, CERTIFIED_STAGE_CERTIFICATION);
+    WHERE worker_version=?
+      AND mode='base_backfill_stage_only'
+      AND status IN (${statusMarks})
+      AND certification_status IN (${certMarks})
+      AND certification_grade IN ('STAGE_PASS','PARTIAL')
+    ORDER BY
+      CASE WHEN status='BASE_PROMOTION_PARTIAL_CONTINUE' THEN 0 ELSE 1 END,
+      datetime(updated_at) DESC
+    LIMIT 1`, ...argsBase);
 }
 
 async function promoteCertifiedStageChunk(env, batchId, limit) {
