@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.24-base-pitcher-game-logs-source-probe-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.25-base-pitcher-stage-only-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -47,7 +47,7 @@ function base(env, extra = {}) {
       "Buttons enqueue/wake backend work only.",
       "Browser does not run long loops.",
       "Scheduled cron calls the same bounded tick path.",
-      "v0.2.17 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-pitcher-game-logs source-probe, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
+      "v0.2.17 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-pitcher-game-logs stage-only continuation, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
       "No generic worker dispatch, no scoring, no ranking, no final board writes, no old production writes."
     ],
     bindings: {
@@ -1246,8 +1246,8 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
     job_key: row.job_key,
     worker_name: row.worker_name,
     trigger,
-    mode: "orchestrator_exact_base_pitcher_game_logs_source_probe_dispatch",
-    input_json: { ...rowInput, mode: "source_probe" }
+    mode: "orchestrator_exact_base_pitcher_game_logs_base_backfill_stage_only_dispatch",
+    input_json: { ...rowInput, mode: rowInput.mode || "base_backfill_stage_only" }
   };
 
   const started = Date.now();
@@ -1271,16 +1271,26 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
     output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
   }
 
+  const rawStatus = String((output && output.status) || "").toLowerCase();
+  const partialContinue = !!(output && output.ok && (
+    rawStatus === "partial_continue" ||
+    rawStatus === "partial_continue_base_pitcher_game_logs" ||
+    rawStatus === "partial_continue_base_pitcher_game_logs_stage_only" ||
+    rawStatus === "partial_continue_base_pitcher_game_logs_job" ||
+    rawStatus === "partial_continue_base_pitcher_game_logs_stage_only_job" ||
+    output.continuation_required === true ||
+    output.orchestrator_should_self_continue === true
+  ));
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
   const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
   const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
   const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
-  const certification = String((output && output.certification) || (ok ? "base_pitcher_game_logs_source_probe_completed" : "base_pitcher_game_logs_source_probe_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "base_pitcher_game_logs_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Base Pitcher Game Logs source-probe worker failed").slice(0, 900);
+  const certification = String((output && output.certification) || (ok ? "base_pitcher_game_logs_stage_only_completed" : "base_pitcher_game_logs_stage_only_failed")).slice(0, 120);
+  const queueStatus = partialContinue ? "pending" : (ok ? "completed" : "failed");
+  const runStatus = partialContinue ? "partial_continue" : (ok ? "completed" : "failed");
+  const errorCode = ok || partialContinue ? null : "base_pitcher_game_logs_worker_failed";
+  const errorMessage = ok || partialContinue ? null : String((output && (output.error || output.status)) || "Base Pitcher Game Logs stage-only worker failed").slice(0, 900);
 
   const cappedOutput = {
     ...output,
@@ -1291,11 +1301,11 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_pitcher_game_logs_source_probe_v0_1_0: true,
-      source_probe_only: true,
+      base_pitcher_game_logs_stage_only_v0_2_0: true,
+      base_backfill_stage_only: true,
       no_generic_dispatch: true,
       no_live_promotion: true,
-      no_full_base_backfill: true,
+      no_full_base_backfill_promotion: true,
       no_delta: true,
       no_hitter_mutation: true,
       no_prizepicks_mutation: true,
@@ -1313,14 +1323,21 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partialContinue) {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_game_logs_dispatch_completed', 'Orchestrator completed exact base-pitcher-game-logs source-probe dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, no_live_promotion: true })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_game_logs_dispatch_completed', 'Orchestrator completed exact base-pitcher-game-logs stage-only dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, no_live_promotion: true, partial_continue: partialContinue })
   );
 
   return cappedOutput;
@@ -2048,8 +2065,16 @@ async function processOneUnlocked(env, trigger) {
 
   if (isBasePitcherGameLogsJob(row)) {
     const output = await processBasePitcherGameLogsJob(env, row, runId, trigger);
+    const rawStatus = String((output && output.status) || "").toLowerCase();
+    const partial = !!(output && output.ok && (
+      rawStatus === "partial_continue" ||
+      rawStatus === "partial_continue_base_pitcher_game_logs" ||
+      rawStatus === "partial_continue_base_pitcher_game_logs_stage_only" ||
+      output.continuation_required === true ||
+      output.orchestrator_should_self_continue === true
+    ));
     return {
-      status: output && output.ok ? "completed_one_base_pitcher_game_logs_job" : "failed_one_base_pitcher_game_logs_job",
+      status: partial ? "partial_continue_base_pitcher_game_logs_job" : (output && output.ok ? "completed_one_base_pitcher_game_logs_job" : "failed_one_base_pitcher_game_logs_job"),
       request_id: row.request_id,
       run_id: runId,
       output
@@ -2136,16 +2161,16 @@ async function processOneUnlocked(env, trigger) {
       status: "unsupported_in_v0_2_16_safe_shell",
       job_key: row.job_key,
       worker_name: row.worker_name,
-      note: "v0.2.22 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs source-probe with fast bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter hot continuation uses backend waitUntil, not browser pump; cron is rescue only."
+      note: "v0.2.22 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs stage-only continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter hot continuation uses backend waitUntil, not browser pump; cron is rescue only."
     };
 
     await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_18', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs source-probe with fast bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.18')",
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_18', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs stage-only continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.18')",
       runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
     );
 
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_18', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs source-probe with fast bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.18' WHERE request_id=?",
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_18', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs stage-only continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.18' WHERE request_id=?",
       JSON.stringify(output), row.request_id
     );
 
@@ -2198,7 +2223,7 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
     await releaseLock(env, owner, "IDLE");
 
     const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_static_full_run_job").length;
-    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job").length;
+    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_pitcher_game_logs_job").length;
     const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_static_full_run_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
 
