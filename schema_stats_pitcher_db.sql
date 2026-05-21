@@ -22,6 +22,19 @@ CREATE TABLE IF NOT EXISTS pitcher_game_logs (
   raw_json TEXT,
   source_key TEXT,
   source_confidence TEXT,
+  data_feed_key TEXT,
+  source_endpoint TEXT,
+  source_season INTEGER,
+  source_game_type TEXT,
+  ingestion_mode TEXT,
+  batch_id TEXT,
+  run_id TEXT,
+  certification_status TEXT,
+  certification_grade TEXT,
+  certified_at TEXT,
+  promoted_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  group_type TEXT DEFAULT 'pitching',
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (player_id, game_pk)
 );
@@ -74,3 +87,162 @@ CREATE INDEX IF NOT EXISTS idx_pitcher_logs_team ON pitcher_game_logs(team_id, g
 CREATE INDEX IF NOT EXISTS idx_pitcher_metrics_last ON pitcher_metrics(last_game_date);
 
 INSERT OR REPLACE INTO pitcher_schema_migrations VALUES ('schema_stats_pitcher_db_v0_1', 'alphadog-v2-schema-phase-pack-v0.1', CURRENT_TIMESTAMP, 'Initial STATS_PITCHER_DB schema');
+
+-- alphadog-v2-base-pitcher-game-logs-v0.1.0-schema-source-lock-probe
+-- Additive pitcher game-log lifecycle schema only. Supports future base_backfill and delta_update, but v0.1.0 only runs source-shape probe and never promotes live rows.
+
+CREATE TABLE IF NOT EXISTS pitcher_game_log_batches (
+  batch_id TEXT PRIMARY KEY,
+  run_id TEXT,
+  mode TEXT NOT NULL,
+  status TEXT NOT NULL,
+  certification_status TEXT,
+  certification_grade TEXT,
+  worker_version TEXT,
+  data_feed_key TEXT,
+  source_key TEXT,
+  source_endpoint TEXT,
+  source_season INTEGER,
+  source_game_type TEXT,
+  group_type TEXT,
+  base_backfill_cutoff_date TEXT,
+  delta_start_date TEXT,
+  expected_pitcher_universe_count INTEGER DEFAULT 0,
+  outcome_rows INTEGER DEFAULT 0,
+  duplicate_outcome_rows INTEGER DEFAULT 0,
+  source_request_count INTEGER DEFAULT 0,
+  source_success_count INTEGER DEFAULT 0,
+  source_no_data_count INTEGER DEFAULT 0,
+  source_error_count INTEGER DEFAULT 0,
+  rows_staged INTEGER DEFAULT 0,
+  rows_promoted INTEGER DEFAULT 0,
+  rows_after_cutoff INTEGER DEFAULT 0,
+  duplicate_stage_keys INTEGER DEFAULT 0,
+  live_rows_before INTEGER DEFAULT 0,
+  live_rows_after INTEGER DEFAULT 0,
+  universe_audit_json TEXT,
+  source_probe_json TEXT,
+  no_data_probe_json TEXT,
+  error_json TEXT,
+  started_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  finished_at TEXT,
+  certified_at TEXT,
+  promoted_at TEXT,
+  cleaned_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pitcher_game_log_stage (
+  stage_id TEXT PRIMARY KEY,
+  player_id INTEGER NOT NULL,
+  player_name TEXT,
+  game_pk INTEGER,
+  season INTEGER NOT NULL,
+  game_date TEXT,
+  team_id TEXT,
+  opponent_team_id TEXT,
+  opponent_team TEXT,
+  is_home INTEGER,
+  group_type TEXT DEFAULT 'pitching',
+  role TEXT,
+  innings_pitched TEXT,
+  innings_pitched_decimal REAL,
+  outs_recorded INTEGER,
+  batters_faced INTEGER,
+  hits_allowed INTEGER,
+  runs_allowed INTEGER,
+  earned_runs INTEGER,
+  walks_allowed INTEGER,
+  strikeouts INTEGER,
+  home_runs_allowed INTEGER,
+  pitches INTEGER,
+  balls INTEGER,
+  strikes INTEGER,
+  wins INTEGER,
+  losses INTEGER,
+  saves INTEGER,
+  holds INTEGER,
+  blown_saves INTEGER,
+  stat_shape_json TEXT,
+  raw_json TEXT,
+  data_feed_key TEXT,
+  source_key TEXT,
+  source_endpoint TEXT,
+  source_season INTEGER,
+  source_game_type TEXT,
+  ingestion_mode TEXT,
+  batch_id TEXT NOT NULL,
+  run_id TEXT,
+  certification_status TEXT,
+  certification_grade TEXT,
+  source_confidence TEXT,
+  certified_at TEXT,
+  promoted_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(batch_id, player_id, game_pk, group_type)
+);
+
+CREATE TABLE IF NOT EXISTS pitcher_game_log_player_outcomes (
+  outcome_key TEXT PRIMARY KEY,
+  batch_id TEXT NOT NULL,
+  run_id TEXT,
+  mode TEXT NOT NULL,
+  player_id INTEGER NOT NULL,
+  player_name TEXT,
+  team_id TEXT,
+  role_source TEXT,
+  outcome_category TEXT NOT NULL,
+  row_count INTEGER DEFAULT 0,
+  filtered_after_cutoff_count INTEGER DEFAULT 0,
+  source_http_status INTEGER,
+  source_season INTEGER,
+  source_endpoint TEXT,
+  source_error TEXT,
+  source_response_preview TEXT,
+  raw_outcome_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(batch_id, player_id)
+);
+
+CREATE TABLE IF NOT EXISTS pitcher_game_log_cursors (
+  batch_id TEXT PRIMARY KEY,
+  run_id TEXT,
+  mode TEXT NOT NULL,
+  status TEXT NOT NULL,
+  expected_pitcher_universe_count INTEGER DEFAULT 0,
+  cursor_offset INTEGER DEFAULT 0,
+  current_player_id INTEGER,
+  max_api_calls_per_tick INTEGER DEFAULT 0,
+  max_rows_per_tick INTEGER DEFAULT 0,
+  continuation_required INTEGER DEFAULT 0,
+  last_error TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pitcher_game_log_certifications (
+  certification_id TEXT PRIMARY KEY,
+  batch_id TEXT NOT NULL,
+  run_id TEXT,
+  mode TEXT NOT NULL,
+  status TEXT NOT NULL,
+  certification_status TEXT,
+  certification_grade TEXT,
+  check_key TEXT,
+  check_status TEXT,
+  expected_value TEXT,
+  actual_value TEXT,
+  details_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_pitcher_game_log_batches_status ON pitcher_game_log_batches(status, mode);
+CREATE INDEX IF NOT EXISTS idx_pitcher_game_log_stage_batch ON pitcher_game_log_stage(batch_id, player_id, game_date);
+CREATE INDEX IF NOT EXISTS idx_pitcher_game_log_stage_key ON pitcher_game_log_stage(player_id, game_pk, group_type);
+CREATE INDEX IF NOT EXISTS idx_pitcher_game_log_outcomes_batch ON pitcher_game_log_player_outcomes(batch_id, outcome_category);
+CREATE INDEX IF NOT EXISTS idx_pitcher_game_log_cursors_status ON pitcher_game_log_cursors(status, mode);
+
+INSERT OR REPLACE INTO pitcher_schema_migrations VALUES ('pitcher_game_logs_lifecycle_v0_1_0', 'alphadog-v2-base-pitcher-game-logs-v0.1.0-schema-source-lock-probe', CURRENT_TIMESTAMP, 'Additive pitcher game-log lifecycle schema and live lineage columns; source-probe only, no promotion');

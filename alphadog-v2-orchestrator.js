@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.23-delta-partial-continue-queue-fix";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.24-base-pitcher-game-logs-source-probe-dispatch";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -47,7 +47,7 @@ function base(env, extra = {}) {
       "Buttons enqueue/wake backend work only.",
       "Browser does not run long loops.",
       "Scheduled cron calls the same bounded tick path.",
-      "v0.2.17 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
+      "v0.2.17 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-pitcher-game-logs source-probe, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
       "No generic worker dispatch, no scoring, no ranking, no final board writes, no old production writes."
     ],
     bindings: {
@@ -55,7 +55,8 @@ function base(env, extra = {}) {
       CONFIG_DB: !!env.CONFIG_DB,
       STATIC_CERTIFIER_WORKER: !!env.STATIC_CERTIFIER_WORKER,
       PARLAY_SLEEPER_BOARD_WORKER: !!env.PARLAY_SLEEPER_BOARD_WORKER,
-      BASE_HITTER_GAME_LOGS_WORKER: !!env.BASE_HITTER_GAME_LOGS_WORKER
+      BASE_HITTER_GAME_LOGS_WORKER: !!env.BASE_HITTER_GAME_LOGS_WORKER,
+      BASE_PITCHER_GAME_LOGS_WORKER: !!env.BASE_PITCHER_GAME_LOGS_WORKER
     },
     ...extra
   };
@@ -193,6 +194,12 @@ function isBaseHitterGameLogsJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "base-hitter-game-logs" && worker === "alphadog-v2-base-hitter-game-logs";
+}
+
+function isBasePitcherGameLogsJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "base-pitcher-game-logs" && worker === "alphadog-v2-base-pitcher-game-logs";
 }
 
 function isStaticTeamsJob(row) {
@@ -1204,6 +1211,121 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
+async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
+  if (!env.BASE_PITCHER_GAME_LOGS_WORKER || typeof env.BASE_PITCHER_GAME_LOGS_WORKER.fetch !== "function") {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      status: "blocked_missing_service_binding",
+      certification: "BASE_PITCHER_GAME_LOGS_SERVICE_BINDING_MISSING",
+      trigger,
+      note: "Exact dispatch is enabled only through BASE_PITCHER_GAME_LOGS_WORKER service binding. Deploy orchestrator with the services wrangler config."
+    };
+
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_base_pitcher_game_logs_service_binding', 'BASE_PITCHER_GAME_LOGS_WORKER service binding is missing')",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
+    );
+
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_base_pitcher_game_logs_service_binding', error_message='BASE_PITCHER_GAME_LOGS_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id
+    );
+
+    return output;
+  }
+
+  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const input = {
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    trigger,
+    mode: "orchestrator_exact_base_pitcher_game_logs_source_probe_dispatch",
+    input_json: { ...rowInput, mode: "source_probe" }
+  };
+
+  const started = Date.now();
+  let output;
+  let httpStatus = null;
+
+  try {
+    const resp = await env.BASE_PITCHER_GAME_LOGS_WORKER.fetch("https://internal.alphadog-v2-base-pitcher-game-logs/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input)
+    });
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try {
+      output = JSON.parse(text);
+    } catch (_) {
+      output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
+    }
+  } catch (err) {
+    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+  }
+
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
+  const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
+  const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
+  const certification = String((output && output.certification) || (ok ? "base_pitcher_game_logs_source_probe_completed" : "base_pitcher_game_logs_source_probe_failed")).slice(0, 120);
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "base_pitcher_game_logs_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Base Pitcher Game Logs source-probe worker failed").slice(0, 900);
+
+  const cappedOutput = {
+    ...output,
+    orchestrator_dispatch: {
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      exact_worker_only: true,
+      trigger,
+      http_status: httpStatus,
+      elapsed_ms: Date.now() - started,
+      base_pitcher_game_logs_source_probe_v0_1_0: true,
+      source_probe_only: true,
+      no_generic_dispatch: true,
+      no_live_promotion: true,
+      no_full_base_backfill: true,
+      no_delta: true,
+      no_hitter_mutation: true,
+      no_prizepicks_mutation: true,
+      no_sleeper_mutation: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board_write: true,
+      manual_wake_testing_only: true,
+      no_browser_pump: true
+    }
+  };
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
+  );
+
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+  );
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_game_logs_dispatch_completed', 'Orchestrator completed exact base-pitcher-game-logs source-probe dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, no_live_promotion: true })
+  );
+
+  return cappedOutput;
+}
+
 async function processStaticTeamsJob(env, row, runId, trigger) {
   if (!env.STATIC_TEAMS_WORKER || typeof env.STATIC_TEAMS_WORKER.fetch !== "function") {
     const output = {
@@ -1924,6 +2046,16 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isBasePitcherGameLogsJob(row)) {
+    const output = await processBasePitcherGameLogsJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_base_pitcher_game_logs_job" : "failed_one_base_pitcher_game_logs_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isStaticTeamsJob(row)) {
     const output = await processStaticTeamsJob(env, row, runId, trigger);
     return {
@@ -2004,16 +2136,16 @@ async function processOneUnlocked(env, trigger) {
       status: "unsupported_in_v0_2_16_safe_shell",
       job_key: row.job_key,
       worker_name: row.worker_name,
-      note: "v0.2.22 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with fast bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter hot continuation uses backend waitUntil, not browser pump; cron is rescue only."
+      note: "v0.2.22 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs source-probe with fast bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter hot continuation uses backend waitUntil, not browser pump; cron is rescue only."
     };
 
     await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_18', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with fast bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.18')",
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_18', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs source-probe with fast bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.18')",
       runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
     );
 
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_18', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with fast bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.18' WHERE request_id=?",
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_18', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs source-probe with fast bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.18' WHERE request_id=?",
       JSON.stringify(output), row.request_id
     );
 
@@ -2060,14 +2192,14 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       const result = await processOneUnlocked(env, trigger);
       processed.push(result);
       if (result.status === "no_due_jobs") break;
-      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_static_full_run_job") break;
+      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_static_full_run_job") break;
     }
 
     await releaseLock(env, owner, "IDLE");
 
-    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_static_full_run_job").length;
+    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_static_full_run_job").length;
     const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job").length;
-    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_static_full_run_job").length;
+    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_static_full_run_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
 
     return base(env, {
