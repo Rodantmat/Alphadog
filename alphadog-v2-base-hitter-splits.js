@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-splits";
-const VERSION = "alphadog-v2-base-hitter-splits-v0.3.1-promotion-partial-resume-fix";
+const VERSION = "alphadog-v2-base-hitter-splits-v0.4.0-delta-noop-restore-gate";
 const JOB_KEY = "base-hitter-splits";
 
 const SOURCE_SEASON = 2026;
@@ -12,6 +12,7 @@ const LOCKED_HITTER_GAME_LOG_BATCH_ID = "hitter_base_backfill_batch_mpelpq0t_aky
 const PROBE_CURSOR_KEY = "base_hitter_splits_source_probe_cursor";
 const STAGE_CURSOR_KEY = "base_hitter_splits_base_backfill_stage_cursor";
 const PROMOTION_CURSOR_KEY = "base_hitter_splits_certified_stage_promotion_cursor";
+const DELTA_CURSOR_KEY = "base_hitter_splits_delta_update_cursor";
 const CERTIFIED_STAGE_WORKER_VERSION = "alphadog-v2-base-hitter-splits-v0.2.0-base-backfill-stage-only";
 const CERTIFIED_STAGE_STATUS = "BASE_BACKFILL_STAGE_ONLY_COMPLETED_NO_PROMOTION";
 const CERTIFIED_STAGE_CERTIFICATION = "BASE_HITTER_SPLITS_BASE_BACKFILL_STAGE_ONLY_CERTIFIED_NO_PROMOTION";
@@ -57,9 +58,9 @@ function baseIdentity(env) {
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "CERTIFIED_STAGE_PROMOTION_READY",
+    status: "DELTA_NOOP_RESTORE_GATE_READY",
     timestamp_utc: nowUtc(),
-    phase: "base_hitter_splits_v0_3_0_certified_stage_promotion",
+    phase: "base_hitter_splits_v0_4_0_delta_noop_restore_gate",
     source_lock: {
       endpoint_pattern: SOURCE_ENDPOINT_PATTERN,
       source_key: SOURCE_KEY,
@@ -72,9 +73,10 @@ function baseIdentity(env) {
     },
     hard_blocks: {
       live_promotion_from_certified_stage_only: true,
-      no_new_mlb_calls: true,
+      delta_noop_before_queue_if_current: true,
+      retained_stage_restore_if_available: true,
+      no_new_mlb_calls_for_noop_gate: true,
       no_remine: true,
-      no_delta_update_execution: true,
       no_hitter_game_log_mutation: true,
       no_pitcher_mutation: true,
       no_market_mutation: true,
@@ -300,7 +302,7 @@ async function ensureSchema(env) {
   ];
   for (const [label, sql] of indexes) await exec(label, sql);
 
-  await exec("record_schema_migration_v0_2_0", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_splits_v0_2_0_base_backfill_stage_only', ?, CURRENT_TIMESTAMP, 'Base Hitter Splits v0.3.1: certified-stage promotion partial-resume fix; SQL-safe promotion from v0.2.0 stage only; no MLB calls; no delta execution')", VERSION);
+  await exec("record_schema_migration_v0_2_0", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_splits_v0_2_0_base_backfill_stage_only', ?, CURRENT_TIMESTAMP, 'Base Hitter Splits v0.4.0: delta no-op/restore gate; base already promoted; no-op if live source snapshot is current; retained-stage restore only if retained rows exist; no MLB calls during no-op')", VERSION);
   return { attempted: results.length, failed: results.filter(r => !r.ok).length, results };
 }
 
@@ -1057,6 +1059,213 @@ async function runCertifiedStagePromotion(env, input) {
   };
 }
 
+
+
+async function getLatestCompletedBaseBatch(env) {
+  return await first(env.STATS_HITTER_DB, `SELECT * FROM hitter_split_batches
+    WHERE status='COMPLETED_PROMOTED_CLEANED'
+      AND certification_status='BASE_HITTER_SPLITS_BASE_BACKFILL_CERTIFIED_PROMOTED_CLEANED'
+      AND certification_grade='BASE_PASS'
+      AND rows_promoted > 0
+    ORDER BY datetime(promoted_at) DESC, datetime(updated_at) DESC
+    LIMIT 1`);
+}
+
+async function liveSplitQuality(env, batchId) {
+  const live = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_splits WHERE batch_id=?", batchId);
+  const dup = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS c FROM (
+    SELECT player_id, season, group_type, split_code, COUNT(*) AS n
+    FROM hitter_splits
+    WHERE batch_id=?
+    GROUP BY player_id, season, group_type, split_code
+    HAVING n>1
+  )`, batchId);
+  const bad = await first(env.STATS_HITTER_DB, `SELECT
+    SUM(CASE WHEN player_id IS NULL THEN 1 ELSE 0 END) AS missing_player_id,
+    SUM(CASE WHEN season IS NULL THEN 1 ELSE 0 END) AS missing_season,
+    SUM(CASE WHEN group_type IS NULL OR group_type='' THEN 1 ELSE 0 END) AS missing_group_type,
+    SUM(CASE WHEN split_code IS NULL OR split_code='' THEN 1 ELSE 0 END) AS missing_split_code,
+    SUM(CASE WHEN group_type!='hitting' THEN 1 ELSE 0 END) AS bad_group_type,
+    SUM(CASE WHEN split_code NOT IN ('vs_left','vs_right') THEN 1 ELSE 0 END) AS invalid_split_code,
+    SUM(CASE WHEN raw_json IS NULL OR raw_json='' THEN 1 ELSE 0 END) AS missing_raw_json,
+    SUM(CASE WHEN batch_id IS NULL OR run_id IS NULL OR source_endpoint IS NULL OR source_snapshot_date IS NULL THEN 1 ELSE 0 END) AS missing_lineage
+    FROM hitter_splits WHERE batch_id=?`, batchId);
+  const splitRows = await all(env.STATS_HITTER_DB, "SELECT split_code, COUNT(*) AS rows FROM hitter_splits WHERE batch_id=? GROUP BY split_code ORDER BY split_code", batchId);
+  return {
+    live_rows: asInt(live && live.c, 0),
+    duplicate_live_keys: asInt(dup && dup.c, 0),
+    missing_player_id: asInt(bad && bad.missing_player_id, 0),
+    missing_season: asInt(bad && bad.missing_season, 0),
+    missing_group_type: asInt(bad && bad.missing_group_type, 0),
+    missing_split_code: asInt(bad && bad.missing_split_code, 0),
+    bad_group_type: asInt(bad && bad.bad_group_type, 0),
+    invalid_split_code: asInt(bad && bad.invalid_split_code, 0),
+    missing_raw_json: asInt(bad && bad.missing_raw_json, 0),
+    missing_lineage: asInt(bad && bad.missing_lineage, 0),
+    split_rows: splitRows
+  };
+}
+
+async function runDeltaUpdate(env, input) {
+  const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
+  const started = Date.now();
+  const runId = input.run_id || rid("run_hitter_splits_delta_gate");
+  const requestId = input.request_id || inputJson.request_id || null;
+  const sourceSnapshotDate = inputJson.source_snapshot_date || nowUtc().slice(0, 10);
+  const schema = await ensureSchema(env);
+  const baseBatch = await getLatestCompletedBaseBatch(env);
+
+  if (!baseBatch) {
+    return {
+      ok: false,
+      data_ok: false,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      status: "DELTA_HITTER_SPLITS_BLOCKED_BASE_NOT_LOCKED",
+      certification: "DELTA_HITTER_SPLITS_BASE_INTEGRITY_GATE_FAILED",
+      certification_grade: "BLOCKED",
+      mode: "delta_update",
+      rows_read: 0,
+      rows_written: 0,
+      rows_promoted: 0,
+      external_calls_performed: 0,
+      schema,
+      note: "Delta update is blocked until Base Hitter Splits has a completed promoted/cleaned BASE_PASS batch."
+    };
+  }
+
+  const batchId = baseBatch.batch_id;
+  const expectedRows = asInt(baseBatch.rows_promoted, 0);
+  const quality = await liveSplitQuality(env, batchId);
+  const liveSnapshotDate = baseBatch.source_snapshot_date || null;
+  const baseIntegrityPass = expectedRows > 0 && quality.live_rows === expectedRows && quality.duplicate_live_keys === 0 && quality.missing_player_id === 0 && quality.missing_season === 0 && quality.missing_group_type === 0 && quality.missing_split_code === 0 && quality.bad_group_type === 0 && quality.invalid_split_code === 0 && quality.missing_raw_json === 0 && quality.missing_lineage === 0;
+
+  const retainedRows = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_split_stage WHERE batch_id=?", batchId);
+  const retainedStageRows = asInt(retainedRows && retainedRows.c, 0);
+
+  const checks = {
+    request_id: requestId,
+    base_batch_id: batchId,
+    base_status: baseBatch.status,
+    base_certification_status: baseBatch.certification_status,
+    base_certification_grade: baseBatch.certification_grade,
+    expected_live_rows_from_base: expectedRows,
+    live_snapshot_date: liveSnapshotDate,
+    requested_source_snapshot_date: sourceSnapshotDate,
+    base_integrity_pass: baseIntegrityPass,
+    retained_stage_rows_for_base_batch: retainedStageRows,
+    ...quality,
+    source_model: "season_to_date_aggregate_snapshot",
+    delta_strategy: "game-log-style gate adapted to aggregate splits: base integrity gate -> retained-stage/live parity check -> no-op before queue when live snapshot is current -> restore only from retained stage if available -> otherwise block repair; no MLB calls in no-op gate",
+    no_external_calls: true,
+    no_new_mining: true,
+    no_live_mutation: true,
+    no_hitter_game_log_mutation: true,
+    no_pitcher_mutation: true,
+    no_market_mutation: true,
+    no_scoring_ranking_final_board: true
+  };
+
+  if (!baseIntegrityPass) {
+    const canRestore = retainedStageRows >= expectedRows && expectedRows > 0;
+    const certification = canRestore ? "DELTA_HITTER_SPLITS_REPAIR_REQUIRED_RETAINED_STAGE_AVAILABLE" : "DELTA_HITTER_SPLITS_REPAIR_BLOCKED_NO_RETAINED_STAGE";
+    const status = canRestore ? "DELTA_HITTER_SPLITS_REPAIR_REQUIRED_RETAINED_STAGE_AVAILABLE" : "DELTA_HITTER_SPLITS_BLOCKED_LIVE_BASE_PARITY_MISSING_NO_RETAINED_STAGE";
+    await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_certifications (
+      certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date
+    ) VALUES (?, ?, ?, 'delta_update', ?, 'BLOCKED', ?, 0, ?, ?, 0, 0, ?)`, `${batchId}_delta_gate_${Date.now().toString(36)}`, batchId, runId, certification, safeJson(checks), quality.live_rows, quality.duplicate_live_keys, sourceSnapshotDate);
+    return {
+      ok: false,
+      data_ok: false,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      status,
+      certification,
+      certification_grade: "BLOCKED",
+      mode: "delta_update",
+      batch_id: batchId,
+      run_id: runId,
+      rows_read: quality.live_rows,
+      rows_written: 1,
+      rows_promoted: 0,
+      external_calls_performed: 0,
+      continuation_required: false,
+      orchestrator_should_self_continue: false,
+      elapsed_ms: Date.now() - started,
+      checks,
+      note: canRestore ? "Retained stage exists but restore execution is intentionally not automatic in v0.4.0 until reviewed." : "Live base rows are missing/corrupt and no retained stage rows exist for safe restore. Stop and repair manually or rebuild through a certified path."
+    };
+  }
+
+  const currentEnough = liveSnapshotDate === sourceSnapshotDate;
+  if (currentEnough) {
+    const certification = "DELTA_HITTER_SPLITS_NOOP_LIVE_SOURCE_SNAPSHOT_CURRENT";
+    const grade = "DELTA_NOOP_PASS";
+    const status = "DELTA_HITTER_SPLITS_NOOP_CURRENT_SOURCE_SNAPSHOT";
+    await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
+      VALUES (?, ?, ?, 'delta_update', ?, ?, ?, NULL, ?, ?, ?, 0, CURRENT_TIMESTAMP, NULL, ?, CURRENT_TIMESTAMP)`,
+      DELTA_CURSOR_KEY, batchId, runId, status, SOURCE_SEASON, sourceSnapshotDate, expectedRows, expectedRows, expectedRows, safeJson(checks));
+    await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_certifications (
+      certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date
+    ) VALUES (?, ?, ?, 'delta_update', ?, ?, ?, 0, ?, ?, 0, 0, ?)`, `${batchId}_delta_noop_${sourceSnapshotDate}`, batchId, runId, certification, grade, safeJson(checks), quality.live_rows, quality.duplicate_live_keys, sourceSnapshotDate);
+    return {
+      ok: true,
+      data_ok: true,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      status,
+      certification,
+      certification_grade: grade,
+      mode: "delta_update",
+      batch_id: batchId,
+      run_id: runId,
+      source_snapshot_date: sourceSnapshotDate,
+      rows_read: quality.live_rows,
+      rows_written: 2,
+      rows_promoted: 0,
+      live_rows: quality.live_rows,
+      external_calls_performed: 0,
+      continuation_required: false,
+      orchestrator_should_self_continue: false,
+      elapsed_ms: Date.now() - started,
+      checks,
+      hard_blocks_confirmed: { no_new_mlb_calls: true, no_new_mining: true, no_live_mutation: true, no_hitter_game_log_mutation: true, no_pitcher_mutation: true, no_market_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true },
+      next_phase_gate: "Delta no-op/live-current gate is locked if validation passes. If a future source_snapshot_date is newer, next build should stage a full snapshot delta and retain that delta stage before promotion."
+    };
+  }
+
+  const certification = "DELTA_HITTER_SPLITS_NEW_SOURCE_SNAPSHOT_REQUIRED_STAGE_REFRESH_NOT_ENABLED_V0_4_0";
+  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_certifications (
+    certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date
+  ) VALUES (?, ?, ?, 'delta_update', ?, 'BLOCKED', ?, 0, ?, ?, 0, 0, ?)`, `${batchId}_delta_refresh_required_${sourceSnapshotDate}`, batchId, runId, certification, safeJson(checks), quality.live_rows, quality.duplicate_live_keys, sourceSnapshotDate);
+  return {
+    ok: false,
+    data_ok: false,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    status: "DELTA_HITTER_SPLITS_BLOCKED_NEW_SNAPSHOT_REQUIRES_STAGE_REFRESH",
+    certification,
+    certification_grade: "BLOCKED",
+    mode: "delta_update",
+    batch_id: batchId,
+    run_id: runId,
+    source_snapshot_date: sourceSnapshotDate,
+    live_source_snapshot_date: liveSnapshotDate,
+    rows_read: quality.live_rows,
+    rows_written: 1,
+    rows_promoted: 0,
+    external_calls_performed: 0,
+    continuation_required: false,
+    orchestrator_should_self_continue: false,
+    elapsed_ms: Date.now() - started,
+    checks,
+    note: "v0.4.0 intentionally proves delta base-integrity/no-op/repair gate only. Newer snapshot refresh must be a separate stage-retain build."
+  };
+}
+
 async function runBaseBackfillStageOnly(env, input) {
   const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
   const started = Date.now();
@@ -1332,11 +1541,11 @@ export default {
       const input = await readJsonSafe(request);
       const rowInput = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
       const mode = rowInput.mode || input.mode || "base_promotion_microphase";
-      if (mode === "delta_update") return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "DELTA_UPDATE_BLOCKED_IN_V0_3_0", certification: "BASE_HITTER_SPLITS_DELTA_NOT_PROVEN", rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, note: "v0.3.0 is certified-stage promotion only. Delta/update remains structurally reserved and blocked until audited from game-log delta logic." }, 200);
+      if (mode === "delta_update") return jsonResponse(await runDeltaUpdate(env, input));
       if (mode === "base_promotion_microphase" || mode === "base_promote_from_certified_stage" || mode === "promote_certified_stage") return jsonResponse(await runCertifiedStagePromotion(env, input));
       if (mode === "source_shape_probe") return jsonResponse(await runSourceProbe(env, input));
       if (mode === "base_backfill_stage_only" || mode === "base_backfill") return jsonResponse(await runBaseBackfillStageOnly(env, input));
-      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BLOCKED_UNSUPPORTED_MODE", mode, allowed_modes: ["base_promotion_microphase", "base_promote_from_certified_stage", "base_backfill_stage_only", "source_shape_probe"], rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0 }, 200);
+      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BLOCKED_UNSUPPORTED_MODE", mode, allowed_modes: ["delta_update", "base_promotion_microphase", "base_promote_from_certified_stage", "base_backfill_stage_only", "source_shape_probe"], rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0 }, 200);
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "GET /schema", "POST /diagnostic", "POST /run"], timestamp_utc: nowUtc() }, 404);
   }
