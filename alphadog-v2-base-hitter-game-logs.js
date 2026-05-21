@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.7-surgical-gap-repair-planner";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.8-true-increment-date-discovery";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -1433,7 +1433,7 @@ function isFinalMlbGame(game) {
 async function determineLatestCompleteGameDate(env, deltaFloorDate, fetchTimeoutMs) {
   const today = todayUtcDate();
   const endpoint = `${String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "")}/schedule?sportId=1&gameTypes=R&startDate=${encodeURIComponent(deltaFloorDate)}&endDate=${encodeURIComponent(today)}`;
-  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/1.6.4") } }, fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS);
+  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/1.6.8") } }, fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS);
   if (!fetched.ok || !fetched.resp || !fetched.resp.ok) {
     return { ok: false, endpoint, error: fetched.error || (fetched.resp ? `HTTP_${fetched.resp.status}` : "schedule_fetch_failed") };
   }
@@ -1503,7 +1503,7 @@ function parseHitterSplitForWindow(split, playerId, playerName, season, batchId,
 
 async function processPlayerDelta(env, p, sourceSeason, batchId, runId, windowStart, windowEnd, maxRowsRemaining, fetchTimeoutMs) {
   const endpoint = endpointFor(env, p.player_id, sourceSeason);
-  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/1.6.4") } }, fetchTimeoutMs);
+  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/1.6.8") } }, fetchTimeoutMs);
   if (!fetched.ok) return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: fetched.timed_out ? "fetch_timeout" : "fetch_exception", error: fetched.error, rows_staged: 0, raw_payload_split_count: 0, rows_before_cutoff: 0, rows_filtered_after_cutoff: 0, source_endpoint: endpoint, retry_same_player: true };
   const resp = fetched.resp;
   const text = fetched.text || "";
@@ -1898,7 +1898,7 @@ function gameFeedEndpoint(env, gamePk) {
 
 async function fetchFinalGamePksForDate(env, dateStr, fetchTimeoutMs) {
   const endpoint = `${String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "")}/schedule?sportId=1&gameTypes=R&startDate=${encodeURIComponent(dateStr)}&endDate=${encodeURIComponent(dateStr)}`;
-  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/1.6.7") } }, fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS);
+  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/1.6.8") } }, fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS);
   if (!fetched.ok || !fetched.resp || !fetched.resp.ok) return { ok: false, endpoint, error: fetched.error || (fetched.resp ? `HTTP_${fetched.resp.status}` : "schedule_fetch_failed"), games: [] };
   let body;
   try { body = JSON.parse(fetched.text || "{}"); } catch (err) { return { ok: false, endpoint, error: `schedule_json_parse_failed:${String(err && err.message ? err.message : err)}`, games: [] }; }
@@ -1971,7 +1971,7 @@ async function stageDeltaRowsFromFinalGameFeedDate(env, batchId, runId, sourceSe
   for (const g of schedule.games) {
     if (rowsStaged >= maxRows) break;
     const endpoint = gameFeedEndpoint(env, g.gamePk);
-    const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/1.6.7") } }, fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS);
+    const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/1.6.8") } }, fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS);
     externalCalls++;
     if (!fetched.ok || !fetched.resp || !fetched.resp.ok) return { ok: false, date: dateStr, schedule, external_calls: externalCalls, rows_staged: rowsStaged, games_fetched: gamesFetched, error: fetched.error || (fetched.resp ? `HTTP_${fetched.resp.status}` : "feed_fetch_failed"), failed_game_pk: g.gamePk };
     let body;
@@ -2036,6 +2036,78 @@ async function repairRetainedDeltaStageFromGameFeedWindow(env, latestDelta, fetc
   return { ok: repairs.every(r => r.ok), dates_repaired: dates, rows_staged_this_repair: rowsStaged, retained_stage_rows_after_repair: stageRows, external_calls: externalCalls, repairs };
 }
 
+
+async function appendNewFinalDatesToRetainedDelta(env, retainedDeltaGuard, latestCompleteGameDate, fetchTimeoutMs) {
+  const latest = retainedDeltaGuard.latest_delta;
+  const batchId = latest.batch_id;
+  const runId = latest.run_id || rid("run_delta_retained_increment");
+  const sourceSeason = asInt(latest.source_season, DEFAULT_SOURCE_SEASON);
+  const retainedMax = [retainedDeltaGuard.stage_max_game_date, retainedDeltaGuard.live_max_game_date]
+    .map(v => asText(v, null))
+    .filter(Boolean)
+    .sort()
+    .pop();
+  if (!retainedMax || !latestCompleteGameDate || latestCompleteGameDate <= retainedMax) {
+    return { ok: true, no_new_final_dates: true, retained_max_game_date: retainedMax, latest_complete_game_date: latestCompleteGameDate, dates_repaired: [], rows_staged_this_repair: 0, external_calls: 0 };
+  }
+  const dates = [];
+  for (let d = addDays(retainedMax, 1); d <= latestCompleteGameDate; d = addDays(d, 1)) dates.push(d);
+
+  const repairs = [];
+  let externalCalls = 0, rowsStaged = 0;
+  for (const d of dates) {
+    const r = await stageDeltaRowsFromFinalGameFeedDate(env, batchId, runId, sourceSeason, d, fetchTimeoutMs, 1200);
+    repairs.push(r);
+    externalCalls += asInt(r.external_calls, 0);
+    rowsStaged += asInt(r.rows_staged, 0);
+    if (!r.ok) break;
+  }
+  const stage = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c, MIN(date(game_date)) AS min_game_date, MAX(date(game_date)) AS max_game_date FROM hitter_game_logs_stage WHERE batch_id=?", batchId);
+  const stageRows = asInt(stage && stage.c, 0);
+  const ok = repairs.every(r => r.ok);
+  await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_batches
+    SET rows_staged=?, status=?, certification_status=?, certification_grade=?, updated_at=CURRENT_TIMESTAMP
+    WHERE batch_id=?`,
+    stageRows,
+    ok ? 'DELTA_PROMOTING' : 'DELTA_RETAINED_INCREMENT_STAGE_REPAIR_FAILED',
+    ok ? 'DELTA_HITTER_GAME_LOGS_CERTIFIED_READY_TO_PROMOTE' : 'DELTA_HITTER_GAME_LOGS_INCREMENT_STAGE_REPAIR_FAILED',
+    ok ? 'DELTA_PASS' : 'DELTA_FAIL',
+    batchId
+  );
+  await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_cursor SET batch_id=?, run_id=?, status=?, next_run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE cursor_key=?", batchId, runId, ok ? 'DELTA_PROMOTING' : 'DELTA_RETAINED_INCREMENT_STAGE_REPAIR_FAILED', DELTA_CURSOR_KEY);
+  return { ok, repair_type: 'APPEND_NEW_FINAL_DATES_TO_RETAINED_DELTA', retained_max_game_date: retainedMax, latest_complete_game_date: latestCompleteGameDate, dates_repaired: dates, rows_staged_this_repair: rowsStaged, retained_stage_rows_after_repair: stageRows, retained_stage_min_game_date: stage && stage.min_game_date, retained_stage_max_game_date: stage && stage.max_game_date, external_calls: externalCalls, repairs };
+}
+
+async function runRetainedDeltaNewFinalDateIncrement(env, retainedDeltaGuard, latestCompleteGameDate, input, inputJson, baseGate) {
+  const latest = retainedDeltaGuard.latest_delta;
+  const fetchTimeoutMs = cap(inputJson.fetch_timeout_ms || DEFAULT_FETCH_TIMEOUT_MS, 3000, 15000);
+  const owner = asText(input.request_id, rid("delta_retained_increment_owner"));
+  const lock = await acquireBatchLock(env, latest.batch_id, owner, DEFAULT_LOCK_STALE_SECONDS);
+  if (!lock.ok) return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: "DELTA_HITTER_GAME_LOGS_RETAINED_INCREMENT_LOCK_BUSY", batch_id: latest.batch_id, mode: "delta_update", base_integrity_gate: baseGate, repeat_full_delta_guard: retainedDeltaGuard, latest_complete_game_date: latestCompleteGameDate, continuation_required: true, orchestrator_should_self_continue: true, external_calls_performed: 0, rows_read: 0, rows_written: 0, lock };
+  try {
+    const append = await appendNewFinalDatesToRetainedDelta(env, retainedDeltaGuard, latestCompleteGameDate, fetchTimeoutMs);
+    if (!append.ok) {
+      await releaseBatchLock(env, latest.batch_id, owner);
+      return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "DELTA_RETAINED_INCREMENT_STAGE_REPAIR_FAILED", certification: "DELTA_HITTER_GAME_LOGS_NEW_FINAL_DATE_STAGE_REPAIR_FAILED", batch_id: latest.batch_id, mode: "delta_update", base_integrity_gate: baseGate, repeat_full_delta_guard: retainedDeltaGuard, new_final_date_increment: append, continuation_required: false, external_calls_performed: asInt(append.external_calls, 0), rows_read: asInt(append.external_calls, 0), rows_written: asInt(append.rows_staged_this_repair, 0) };
+    }
+    const windowInfo = {
+      ok: true,
+      delta_start_date: asText(latest.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE, DEFAULT_DELTA_RESERVED_START_DATE),
+      delta_end_date: latestCompleteGameDate,
+      latest_complete_game_date: latestCompleteGameDate,
+      true_increment_date_discovery: true,
+      repair_plan: "APPEND_NEW_FINAL_DATES_TO_RETAINED_DELTA",
+      retained_previous_max_game_date: append.retained_max_game_date
+    };
+    const cert = await finalizeDeltaIfReady(env, latest.batch_id, latest.run_id || rid("run_delta_retained_increment"), windowInfo, 0, baseGate, inputJson);
+    await releaseBatchLock(env, latest.batch_id, owner);
+    return { ok: cert.pass, data_ok: cert.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: cert.done ? cert.status : "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: cert.certification, certification_grade: cert.grade, batch_id: latest.batch_id, mode: "delta_update", base_integrity_gate: baseGate, repeat_full_delta_guard: retainedDeltaGuard, true_increment_date_discovery: true, new_final_date_increment: append, rows_read: asInt(append.external_calls, 0), rows_written: asInt(append.rows_staged_this_repair, 0) + asInt(cert.rows_promoted, 0), rows_promoted: cert.rows_promoted || 0, stage_rows_after_clean: cert.stage_rows_after_clean, external_calls_performed: asInt(append.external_calls, 0), continuation_required: !cert.done, orchestrator_should_self_continue: !cert.done, manual_wake_required: false, no_browser_pump: true, final_checks: cert.checks, timestamp_utc: nowUtc() };
+  } catch (err) {
+    await releaseBatchLock(env, latest.batch_id, owner);
+    return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: "DELTA_HITTER_GAME_LOGS_RETAINED_INCREMENT_RETRYABLE", batch_id: latest.batch_id, mode: "delta_update", error: String(err && err.message ? err.message : err).slice(0, 900), continuation_required: true, orchestrator_should_self_continue: true, external_calls_performed: 0, rows_read: 0, rows_written: 0 };
+  }
+}
+
 async function runRetainedDeltaSurgicalRepairIfNeeded(env, retainedDeltaGuard, input, inputJson, baseGate) {
   const latestBase = retainedDeltaGuard.latest_delta;
   if (!latestBase || !latestBase.batch_id) return null;
@@ -2081,6 +2153,12 @@ async function runDeltaUpdateTick(env, input, inputJson) {
   if (!allowRepeatFullRefresh) {
     const retainedDeltaGuard = await getCompletedRetainedDeltaGuard(env);
     if (retainedDeltaGuard.pass) {
+      const guardFetchTimeoutMs = cap(inputJson.fetch_timeout_ms || env.FETCH_TIMEOUT_MS || DEFAULT_FETCH_TIMEOUT_MS, 1500, 10000);
+      const sourceWindow = await determineLatestCompleteGameDate(env, asText(retainedDeltaGuard.latest_delta.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE, DEFAULT_DELTA_RESERVED_START_DATE), guardFetchTimeoutMs);
+      const retainedMax = [retainedDeltaGuard.stage_max_game_date, retainedDeltaGuard.live_max_game_date].map(v => asText(v, null)).filter(Boolean).sort().pop();
+      if (sourceWindow.ok && retainedMax && sourceWindow.latest_complete_game_date > retainedMax) {
+        return await runRetainedDeltaNewFinalDateIncrement(env, retainedDeltaGuard, sourceWindow.latest_complete_game_date, input, inputJson, baseGate);
+      }
       return {
         ok: true,
         data_ok: true,
@@ -2095,22 +2173,24 @@ async function runDeltaUpdateTick(env, input, inputJson) {
         mode: "delta_update",
         base_integrity_gate: baseGate,
         repeat_full_delta_guard: retainedDeltaGuard,
+        source_final_date_check: sourceWindow,
+        retained_max_game_date: retainedMax,
         preserved_batch_id: retainedDeltaGuard.latest_delta.batch_id,
         retained_stage_rows: retainedDeltaGuard.retained_stage_rows,
         live_rows_for_delta_batch: retainedDeltaGuard.live_rows_for_delta_batch,
-        rows_read: 0,
+        rows_read: sourceWindow.ok ? 1 : 0,
         rows_written: 0,
-        external_calls_performed: 0,
+        external_calls_performed: sourceWindow.ok ? 1 : 0,
         continuation_required: false,
         orchestrator_should_self_continue: false,
         manual_wake_required: false,
         no_browser_pump: true,
         no_new_batch: true,
-        no_mlb_calls: true,
+        no_mlb_calls: sourceWindow.ok ? false : true,
         no_stage_writes: true,
         no_promotion: true,
         no_cleanup: true,
-        note: "Blocked repeat full-refresh delta because a completed promoted retained-stage delta already exists. Surgical gap repair planner found no missing retained-stage/live rows."
+        note: "Blocked repeat full-refresh delta because retained stage/live are healthy and no newer final MLB game date was discovered. If source_final_date_check is unavailable, no live mutation is allowed."
       };
     }
     if (retainedDeltaGuard.latest_delta && ["REPAIR_FROM_RETAINED_STAGE_ONLY","REPAIR_STAGE_FROM_FINAL_GAME_FEED_WINDOW"].includes(retainedDeltaGuard.repair_plan)) {
