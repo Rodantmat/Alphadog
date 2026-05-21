@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.4-delta-stage-retention";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.5-delta-promotion-column-fix";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -1018,7 +1018,7 @@ async function promoteStageRowsChunk(env, batchId, grade, limit) {
             AND h.game_pk=s.game_pk
             AND h.group_type=s.group_type
         )`, batchId);
-    return { promoted_this_tick: 0, remaining_unpromoted: asInt(remainingNone && remainingNone.c, 0), sql_variable_safe: true, promote_limit: safeLimit, insert_mode: "single_row_variable_clamp" };
+    return { promoted_this_tick: 0, remaining_unpromoted: asInt(remainingNone && remainingNone.c, 0), sql_variable_safe: true, promote_limit: safeLimit, insert_mode: "single_row_column_aligned_variable_clamp" };
   }
 
   let promotedThisTick = 0;
@@ -1027,7 +1027,7 @@ async function promoteStageRowsChunk(env, batchId, grade, limit) {
       player_id,game_pk,season,game_date,team_id,opponent_team_id,is_home,batting_order,
       pa,ab,hits,singles,doubles,triples,home_runs,runs,rbi,walks,strikeouts,stolen_bases,total_bases,
       raw_json,source_key,source_confidence,updated_at,group_type,data_feed_key,source_endpoint,source_season,source_game_type,ingestion_mode,batch_id,run_id,certification_status,certification_grade,certified_at,promoted_at,created_at
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
       r.player_id, r.game_pk, r.season, r.game_date, r.team_id, r.opponent_team_id, r.is_home, r.batting_order,
       r.pa, r.ab, r.hits, r.singles, r.doubles, r.triples, r.home_runs, r.runs, r.rbi, r.walks, r.strikeouts, r.stolen_bases, r.total_bases,
       r.raw_json, r.source_key, r.source_confidence, r.group_type, r.data_feed_key, r.source_endpoint, r.source_season, r.source_game_type, r.ingestion_mode, r.batch_id, r.run_id, r.ingestion_mode === 'delta_update' ? 'delta_update_certified_promoted' : 'base_backfill_certified_promoted', grade
@@ -1049,7 +1049,7 @@ async function promoteStageRowsChunk(env, batchId, grade, limit) {
           AND h.game_pk=s.game_pk
           AND h.group_type=s.group_type
       )`, batchId);
-  return { promoted_this_tick: promotedThisTick, remaining_unpromoted: asInt(remaining && remaining.c, 0), sql_variable_safe: true, promote_limit: safeLimit, insert_mode: "single_row_variable_clamp", max_bound_variables_per_insert: 34 };
+  return { promoted_this_tick: promotedThisTick, remaining_unpromoted: asInt(remaining && remaining.c, 0), sql_variable_safe: true, promote_limit: safeLimit, insert_mode: "single_row_column_aligned_variable_clamp", max_bound_variables_per_insert: 34 };
 }
 
 async function cleanStageRowsChunk(env, batchId, limit) {
