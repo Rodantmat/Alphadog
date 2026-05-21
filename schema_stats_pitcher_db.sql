@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS pitcher_game_log_batches (
   group_type TEXT,
   base_backfill_cutoff_date TEXT,
   delta_start_date TEXT,
+  delta_end_date TEXT,
   expected_pitcher_universe_count INTEGER DEFAULT 0,
   outcome_rows INTEGER DEFAULT 0,
   duplicate_outcome_rows INTEGER DEFAULT 0,
