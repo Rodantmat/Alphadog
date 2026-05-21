@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.6.9-retained-batch-immutable-increment-source-safe -->
+<!-- alphadog-v2-control-room-v1.6.10-final-retained-status-closeout -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,7 +28,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.6.9-retained-batch-immutable-increment-source-safe</div>
+<div id="versionTag">alphadog-v2-control-room-v1.6.10-final-retained-status-closeout</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
 <div class="small">Access mode: single-user. Control Room enqueues/status only. Static Players, Static Prop Taxonomy, Static Certifier, Static Full Run, Sleeper source-probe, Base Hitter Game Logs base_backfill, and Hitter Game Logs delta_update queue plus backend self-continuation launch. Orchestrator scheduled backend/cron owns continuation. Wake is optional backend test/rescue only.</div>
@@ -80,7 +80,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <div class="section"><h3>BASE / DELTA</h3><div class="grid">
 <button class="orch" type="button" onclick="runJobButton('BASE > Hitter Game Logs','orchestrator_enqueue_base_hitter_game_logs')">Base Logs</button>
 <button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Game Logs','orchestrator_enqueue_delta_hitter_game_logs')">Delta Logs</button>
-</div><div class="small">Base is locked at 2026-05-18. Delta Hitter Game Logs v1.6.9 keeps retained batch immutable on failed increment attempts, uses source-safe feed/boxscore fallback, and queues only when a newer final MLB date or surgical repair is needed. No scoring, no ranking, no board mutation. No browser pump, no scoring, no ranking, no final board, no board mutation.</div></div>
+</div><div class="small">Base is locked at 2026-05-18. Delta Hitter Game Logs v1.6.10 closes retained delta batches only after stage/live promotion parity is verified, keeps retained batch immutable on failed increment attempts, and queues only when a newer final MLB date or surgical repair is needed. No scoring, no ranking, no board mutation. No browser pump, no scoring, no ranking, no final board, no board mutation.</div></div>
 
 <div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
 <button class="check" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Queue','v2_queue_status')">Queue</button>
@@ -148,7 +148,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.6.9-retained-batch-immutable-increment-source-safe"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.6.10-final-retained-status-closeout"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
