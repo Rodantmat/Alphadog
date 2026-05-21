@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.26-base-pitcher-promotion-microphase";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.27-base-pitcher-hot-promotion-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -2161,7 +2161,7 @@ async function processOneUnlocked(env, trigger) {
       status: "unsupported_in_v0_2_16_safe_shell",
       job_key: row.job_key,
       worker_name: row.worker_name,
-      note: "v0.2.22 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs promotion microphase with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter hot continuation uses backend waitUntil, not browser pump; cron is rescue only. Base Pitcher promotion uses certified stage only and makes no MLB calls."
+      note: "v0.2.22 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-pitcher-game-logs promotion microphase with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter hot continuation uses backend waitUntil, not browser pump; cron is rescue only. Base Pitcher promotion uses certified stage only, makes no MLB calls, and is included in direct waitUntil backend continuation."
     };
 
     await run(env.CONTROL_DB,
@@ -2261,6 +2261,13 @@ async function countDueBaseHitterGameLogs(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
+async function countDueBasePitcherGameLogs(env) {
+  const row = await first(env.CONTROL_DB,
+    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='base-pitcher-game-logs' AND worker_name='alphadog-v2-base-pitcher-game-logs' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL"
+  );
+  return Number(row && row.c ? row.c : 0);
+}
+
 async function countDueStaticPlayers(env) {
   // Static Players is intentionally chunked. For this specific job, any pending/running
   // row without a finished_at must be treated as continuation-eligible, even if run_after
@@ -2306,7 +2313,8 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
 
   const dueStaticPlayers = await countDueStaticPlayers(env);
   const dueBaseHitterGameLogs = await countDueBaseHitterGameLogs(env);
-  const shouldSelfContinue = (dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0) && depth < maxChains && !!ctx;
+  const dueBasePitcherGameLogs = await countDueBasePitcherGameLogs(env);
+  const shouldSelfContinue = (dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBasePitcherGameLogs > 0) && depth < maxChains && !!ctx;
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -2318,6 +2326,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       cycle_count: cycles.length,
       due_static_players_after_pump: dueStaticPlayers,
       due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
+      due_base_pitcher_game_logs_after_pump: dueBasePitcherGameLogs,
       pump_depth: depth,
       max_pump_chains: maxChains,
       self_continue_scheduled: !!shouldSelfContinue,
@@ -2336,6 +2345,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         next_source: nextSource,
         due_static_players_after_pump: dueStaticPlayers,
         due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
+        due_base_pitcher_game_logs_after_pump: dueBasePitcherGameLogs,
         pump_depth: depth,
         next_pump_depth: depth + 1,
         max_pump_chains: maxChains,

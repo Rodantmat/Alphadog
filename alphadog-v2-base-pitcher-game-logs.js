@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-game-logs";
-const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.3.1-sql-variable-safe-promotion";
+const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.3.2-hot-promotion-continuation";
 const JOB_KEY = "base-pitcher-game-logs";
 const GROUP_TYPE = "pitching";
 const SOURCE_KEY = "mlb_statsapi_pitcher_game_logs_v0_2_0";
@@ -875,7 +875,7 @@ async function promotionGate(env, batch) {
 }
 
 async function promotePitcherStageChunk(env, batch, chunkSize) {
-  const safeChunkSize = Math.max(1, Math.min(Number(chunkSize || 25), 25));
+  const safeChunkSize = Math.max(1, Math.min(Number(chunkSize || DEFAULT_MAX_PROMOTE_ROWS_PER_TICK), DEFAULT_MAX_PROMOTE_ROWS_PER_TICK));
   const pending = await first(env.STATS_PITCHER_DB,
     `SELECT COUNT(*) AS c FROM (
        SELECT stage_id
@@ -1009,7 +1009,7 @@ async function runBasePromotionMicrophase(env, input) {
     "UPDATE pitcher_game_log_batches SET status='PROMOTING_BASE_BACKFILL_MICROPHASE', certification_status='PITCHER_GAME_LOGS_BASE_PROMOTION_MICROPHASE', certification_grade='PROMOTION_RUNNING', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
     batch.batch_id
   );
-  const chunkSize = Math.max(1, Math.min(Number(input.max_promote_rows_per_tick || DEFAULT_MAX_PROMOTE_ROWS_PER_TICK), 25));
+  const chunkSize = Math.max(1, Math.min(Number(input.max_promote_rows_per_tick || DEFAULT_MAX_PROMOTE_ROWS_PER_TICK), DEFAULT_MAX_PROMOTE_ROWS_PER_TICK));
   const beforeRemaining = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_log_stage WHERE batch_id=? AND ingestion_mode='base_backfill' AND promoted_at IS NULL", batch.batch_id);
   const promoted = await promotePitcherStageChunk(env, batch, chunkSize);
   const liveRowsNow = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_logs WHERE batch_id=? AND data_feed_key=?", batch.batch_id, BASE_LIVE_DATA_FEED_KEY);
