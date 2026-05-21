@@ -15,7 +15,7 @@ const DEFAULT_MAX_ROWS_PER_TICK = 450;
 const DEFAULT_LOCK_STALE_SECONDS = 60;
 const DEFAULT_MAX_TICK_RUNTIME_MS = 20000;
 const DEFAULT_FETCH_TIMEOUT_MS = 7000;
-const DEFAULT_PROMOTE_ROWS_PER_TICK = 150;
+const DEFAULT_PROMOTE_ROWS_PER_TICK = 25;
 const DEFAULT_CLEAN_ROWS_PER_TICK = 300;
 const FINALIZATION_STATUSES = new Set([
   "BASE_BACKFILL_STAGED_READY_FOR_CERTIFICATION",
@@ -974,9 +974,12 @@ async function processPlayer(env, p, sourceSeason, batchId, runId, cutoffDate, m
 }
 
 async function promoteStageRowsChunk(env, batchId, grade, limit) {
-  const safeLimit = cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 10, 150);
-  const selected = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS c FROM (
-    SELECT s.stage_id
+  const safeLimit = cap(limit || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 25);
+  const rows = await all(env.STATS_HITTER_DB, `SELECT
+      s.stage_id,
+      s.player_id,s.game_pk,s.season,s.game_date,s.team_id,s.opponent_team_id,s.is_home,s.batting_order,
+      s.pa,s.ab,s.hits,s.singles,s.doubles,s.triples,s.home_runs,s.runs,s.rbi,s.walks,s.strikeouts,s.stolen_bases,s.total_bases,
+      s.raw_json,s.source_key,s.source_confidence,s.group_type,s.data_feed_key,s.source_endpoint,s.source_season,s.source_game_type,s.ingestion_mode,s.batch_id,s.run_id
     FROM hitter_game_logs_stage s
     WHERE s.batch_id=?
       AND NOT EXISTS (
@@ -988,10 +991,9 @@ async function promoteStageRowsChunk(env, batchId, grade, limit) {
           AND h.group_type=s.group_type
       )
     ORDER BY s.stage_id
-    LIMIT ?
-  )`, batchId, safeLimit);
-  const selectedCount = asInt(selected && selected.c, 0);
-  if (selectedCount <= 0) {
+    LIMIT ${safeLimit}`, batchId);
+
+  if (!rows.length) {
     const remainingNone = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS c
       FROM hitter_game_logs_stage s
       WHERE s.batch_id=?
@@ -1003,46 +1005,25 @@ async function promoteStageRowsChunk(env, batchId, grade, limit) {
             AND h.game_pk=s.game_pk
             AND h.group_type=s.group_type
         )`, batchId);
-    return { promoted_this_tick: 0, remaining_unpromoted: asInt(remainingNone && remainingNone.c, 0), sql_variable_safe: true, promote_limit: safeLimit };
+    return { promoted_this_tick: 0, remaining_unpromoted: asInt(remainingNone && remainingNone.c, 0), sql_variable_safe: true, promote_limit: safeLimit, insert_mode: "single_row_variable_clamp" };
   }
 
-  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_logs (
-    player_id,game_pk,season,game_date,team_id,opponent_team_id,is_home,batting_order,
-    pa,ab,hits,singles,doubles,triples,home_runs,runs,rbi,walks,strikeouts,stolen_bases,total_bases,
-    raw_json,source_key,source_confidence,updated_at,group_type,data_feed_key,source_endpoint,source_season,source_game_type,ingestion_mode,batch_id,run_id,certification_status,certification_grade,certified_at,promoted_at,created_at
-  )
-  SELECT
-    s.player_id,s.game_pk,s.season,s.game_date,s.team_id,s.opponent_team_id,s.is_home,s.batting_order,
-    s.pa,s.ab,s.hits,s.singles,s.doubles,s.triples,s.home_runs,s.runs,s.rbi,s.walks,s.strikeouts,s.stolen_bases,s.total_bases,
-    s.raw_json,s.source_key,s.source_confidence,CURRENT_TIMESTAMP,s.group_type,s.data_feed_key,s.source_endpoint,s.source_season,s.source_game_type,s.ingestion_mode,s.batch_id,s.run_id,'base_backfill_certified_promoted',?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
-  FROM hitter_game_logs_stage s
-  WHERE s.stage_id IN (
-    SELECT stage_id
-    FROM hitter_game_logs_stage
-    WHERE batch_id=?
-      AND NOT EXISTS (
-        SELECT 1
-        FROM hitter_game_logs h
-        WHERE h.batch_id=hitter_game_logs_stage.batch_id
-          AND h.player_id=hitter_game_logs_stage.player_id
-          AND h.game_pk=hitter_game_logs_stage.game_pk
-          AND h.group_type=hitter_game_logs_stage.group_type
-      )
-    ORDER BY stage_id
-    LIMIT ?
-  )`, grade, batchId, safeLimit);
-
-  await run(env.STATS_HITTER_DB, `UPDATE hitter_game_logs_stage
-    SET row_status='promoted', certification_status='base_backfill_certified', certification_grade=?, promoted_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
-    WHERE batch_id=?
-      AND EXISTS (
-        SELECT 1
-        FROM hitter_game_logs h
-        WHERE h.batch_id=hitter_game_logs_stage.batch_id
-          AND h.player_id=hitter_game_logs_stage.player_id
-          AND h.game_pk=hitter_game_logs_stage.game_pk
-          AND h.group_type=hitter_game_logs_stage.group_type
-      )`, grade, batchId);
+  let promotedThisTick = 0;
+  for (const r of rows) {
+    await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_logs (
+      player_id,game_pk,season,game_date,team_id,opponent_team_id,is_home,batting_order,
+      pa,ab,hits,singles,doubles,triples,home_runs,runs,rbi,walks,strikeouts,stolen_bases,total_bases,
+      raw_json,source_key,source_confidence,updated_at,group_type,data_feed_key,source_endpoint,source_season,source_game_type,ingestion_mode,batch_id,run_id,certification_status,certification_grade,certified_at,promoted_at,created_at
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+      r.player_id, r.game_pk, r.season, r.game_date, r.team_id, r.opponent_team_id, r.is_home, r.batting_order,
+      r.pa, r.ab, r.hits, r.singles, r.doubles, r.triples, r.home_runs, r.runs, r.rbi, r.walks, r.strikeouts, r.stolen_bases, r.total_bases,
+      r.raw_json, r.source_key, r.source_confidence, r.group_type, r.data_feed_key, r.source_endpoint, r.source_season, r.source_game_type, r.ingestion_mode, r.batch_id, r.run_id, 'base_backfill_certified_promoted', grade
+    );
+    await run(env.STATS_HITTER_DB, `UPDATE hitter_game_logs_stage
+      SET row_status='promoted', certification_status='base_backfill_certified', certification_grade=?, promoted_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
+      WHERE stage_id=? AND batch_id=?`, grade, r.stage_id, batchId);
+    promotedThisTick += 1;
+  }
 
   const remaining = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS c
     FROM hitter_game_logs_stage s
@@ -1055,7 +1036,7 @@ async function promoteStageRowsChunk(env, batchId, grade, limit) {
           AND h.game_pk=s.game_pk
           AND h.group_type=s.group_type
       )`, batchId);
-  return { promoted_this_tick: selectedCount, remaining_unpromoted: asInt(remaining && remaining.c, 0), sql_variable_safe: true, promote_limit: safeLimit };
+  return { promoted_this_tick: promotedThisTick, remaining_unpromoted: asInt(remaining && remaining.c, 0), sql_variable_safe: true, promote_limit: safeLimit, insert_mode: "single_row_variable_clamp", max_bound_variables_per_insert: 34 };
 }
 
 async function cleanStageRowsChunk(env, batchId, limit) {
@@ -1065,8 +1046,8 @@ async function cleanStageRowsChunk(env, batchId, limit) {
     FROM hitter_game_logs_stage
     WHERE batch_id=?
     ORDER BY stage_id
-    LIMIT ?
-  )`, batchId, safeLimit);
+    LIMIT ${safeLimit}
+  )`, batchId);
   const selectedCount = asInt(selected && selected.c, 0);
   if (selectedCount <= 0) return { cleaned_this_tick: 0, stage_rows_after_clean: 0, sql_variable_safe: true, clean_limit: safeLimit };
   await run(env.STATS_HITTER_DB, `DELETE FROM hitter_game_logs_stage
@@ -1075,8 +1056,8 @@ async function cleanStageRowsChunk(env, batchId, limit) {
       FROM hitter_game_logs_stage
       WHERE batch_id=?
       ORDER BY stage_id
-      LIMIT ?
-    )`, batchId, safeLimit);
+      LIMIT ${safeLimit}
+    )`, batchId);
   const remaining = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_game_logs_stage WHERE batch_id=?", batchId);
   return { cleaned_this_tick: selectedCount, stage_rows_after_clean: asInt(remaining && remaining.c, 0), sql_variable_safe: true, clean_limit: safeLimit };
 }
@@ -1160,7 +1141,7 @@ async function buildPrePromotionChecks(env, batchId, runId, cutoffDate) {
 }
 
 async function certifyAndPromoteIfClean(env, batchId, runId, cutoffDate, options = {}) {
-  const promoteLimit = cap(options.promote_rows_per_tick || DEFAULT_PROMOTE_ROWS_PER_TICK, 10, 150);
+  const promoteLimit = cap(options.promote_rows_per_tick || DEFAULT_PROMOTE_ROWS_PER_TICK, 1, 25);
   const cleanLimit = cap(options.clean_rows_per_tick || DEFAULT_CLEAN_ROWS_PER_TICK, 25, 300);
   let batch = await first(env.STATS_HITTER_DB, "SELECT * FROM hitter_game_log_batches WHERE batch_id=?", batchId);
   let status = batch && batch.status ? String(batch.status) : "";
