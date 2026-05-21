@@ -88,7 +88,7 @@ CREATE INDEX IF NOT EXISTS idx_hitter_metrics_last ON hitter_metrics(last_game_d
 INSERT OR REPLACE INTO hitter_schema_migrations VALUES ('schema_stats_hitter_db_v0_1', 'alphadog-v2-schema-phase-pack-v0.1', CURRENT_TIMESTAMP, 'Initial STATS_HITTER_DB schema');
 
 -- ============================================================================
--- alphadog-v2-base-hitter-game-logs-v0.1.0-schema-source-lock-probe
+-- alphadog-v2-base-hitter-game-logs-v0.2.0-base-backfill-stage-only
 -- Additive lifecycle schema for Base Hitter Game Logs.
 -- Source lock:
 --   GET /people/{playerId}/stats?stats=gameLog&group=hitting&season={season}
@@ -255,10 +255,10 @@ CREATE INDEX IF NOT EXISTS idx_hitter_logs_source ON hitter_game_logs(source_key
 -- ALTER TABLE hitter_game_logs ADD COLUMN promoted_at TEXT;
 -- ALTER TABLE hitter_game_logs ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP;
 
-INSERT OR REPLACE INTO hitter_schema_migrations VALUES ('base_hitter_game_logs_v0_1_0_lifecycle_probe', 'alphadog-v2-base-hitter-game-logs-v0.1.0-schema-source-lock-probe', CURRENT_TIMESTAMP, 'Additive lifecycle schema for Base Hitter Game Logs source-lock probe');
+INSERT OR REPLACE INTO hitter_schema_migrations VALUES ('base_hitter_game_logs_v0_1_0_lifecycle_probe', 'alphadog-v2-base-hitter-game-logs-v0.2.0-base-backfill-stage-only', CURRENT_TIMESTAMP, 'Additive lifecycle schema for Base Hitter Game Logs source-lock probe');
 
 -- ============================================================================
--- alphadog-v2-base-hitter-splits-v0.1.0-schema-source-lock-probe
+-- alphadog-v2-base-hitter-splits-v0.2.0-base-backfill-stage-only
 -- Additive lifecycle schema for Base Hitter Splits.
 -- Source lock:
 --   GET /people/{playerId}/stats?stats=statSplits&group=hitting&season={season}&sitCodes=vl%2Cvr
@@ -438,4 +438,9 @@ CREATE INDEX IF NOT EXISTS idx_hitter_split_cursor_status ON hitter_split_cursor
 CREATE INDEX IF NOT EXISTS idx_hitter_split_outcomes_batch_category ON hitter_split_outcomes(batch_id, terminal_category);
 CREATE INDEX IF NOT EXISTS idx_hitter_split_outcomes_player ON hitter_split_outcomes(player_id, batch_id);
 
-INSERT OR REPLACE INTO hitter_schema_migrations VALUES ('base_hitter_splits_v0_1_0_schema_source_lock_probe', 'alphadog-v2-base-hitter-splits-v0.1.0-schema-source-lock-probe', CURRENT_TIMESTAMP, 'Additive hitter split lifecycle schema and lineage-ready live columns; source-lock/probe only; no live promotion/delta execution');
+INSERT OR REPLACE INTO hitter_schema_migrations VALUES ('base_hitter_splits_v0_1_0_schema_source_lock_probe', 'alphadog-v2-base-hitter-splits-v0.2.0-base-backfill-stage-only', CURRENT_TIMESTAMP, 'Additive hitter split lifecycle schema and lineage-ready live columns; base_backfill stage-only; no live promotion/delta execution');
+
+
+-- v0.2.0 note: base-hitter-splits uses the same additive lifecycle schema created in v0.1.0.
+-- v0.2.0 writes full hitter-universe stage/outcome/cursor/certification rows only.
+-- v0.2.0 performs no live hitter_splits promotion and no delta_update execution.
