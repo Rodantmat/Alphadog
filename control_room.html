@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.5.29-finalization-sql-variable-clamp -->
+<!-- alphadog-v2-control-room-v1.5.30-cleanup-only-state-machine -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,7 +28,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.5.29-finalization-sql-variable-clamp</div>
+<div id="versionTag">alphadog-v2-control-room-v1.5.30-cleanup-only-state-machine</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
 <div class="small">Access mode: single-user. Control Room enqueues/status only. Static Players, Static Prop Taxonomy, Static Certifier, Static Full Run, Sleeper source-probe, and Base Hitter Game Logs base_backfill queue plus backend self-continuation launch. Orchestrator scheduled backend/cron owns continuation. Wake is optional backend test/rescue only.</div>
@@ -79,7 +79,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 
 <div class="section"><h3>BASE</h3><div class="grid">
 <button class="orch" type="button" onclick="runJobButton('BASE > Hitter Game Logs','orchestrator_enqueue_base_hitter_game_logs')">Hitter Logs</button>
-</div><div class="small">Base Hitter Game Logs v1.5.29 resumes existing full staged base batch in FINALIZATION_ONLY repair mode with zero MLB calls, frozen outcome-derived counters, and SQL-variable-clamped promote/clean microphases. Initial Base design cutoff is 2026-05-18; 2026-05-19+ reserved for later delta testing. Backend/orchestrator continuation only. No browser pump, no scoring, no ranking, no final board, no board mutation.</div></div>
+</div><div class="small">Base Hitter Game Logs v1.5.30 resumes existing full staged base batch in FINALIZATION_ONLY cleanup-only mode with zero MLB calls, frozen outcome-derived counters, promotion skip when live count is complete, and tiny stage_id cleanup chunks. Initial Base design cutoff is 2026-05-18; 2026-05-19+ reserved for later delta testing. Backend/orchestrator continuation only. No browser pump, no scoring, no ranking, no final board, no board mutation.</div></div>
 
 <div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
 <button class="check" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Queue','v2_queue_status')">Queue</button>
@@ -147,7 +147,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.5.29-finalization-sql-variable-clamp"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.5.30-cleanup-only-state-machine"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
