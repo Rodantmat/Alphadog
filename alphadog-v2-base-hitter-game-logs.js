@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.0-delta-certifying-repair-engine";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.2-delta-partial-continue-and-full-catchup";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -1432,7 +1432,7 @@ function isFinalMlbGame(game) {
 async function determineLatestCompleteGameDate(env, deltaFloorDate, fetchTimeoutMs) {
   const today = todayUtcDate();
   const endpoint = `${String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "")}/schedule?sportId=1&gameTypes=R&startDate=${encodeURIComponent(deltaFloorDate)}&endDate=${encodeURIComponent(today)}`;
-  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/1.6.0") } }, fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS);
+  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/1.6.2") } }, fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS);
   if (!fetched.ok || !fetched.resp || !fetched.resp.ok) {
     return { ok: false, endpoint, error: fetched.error || (fetched.resp ? `HTTP_${fetched.resp.status}` : "schedule_fetch_failed") };
   }
@@ -1456,11 +1456,23 @@ async function getDeltaWindow(env, inputJson, fetchTimeoutMs) {
   const schedule = await determineLatestCompleteGameDate(env, deltaFloor, fetchTimeoutMs);
   if (!schedule.ok) return { ok: false, ...schedule, delta_start_date: deltaFloor };
   const latest = schedule.latest_complete_game_date;
+
+  // v1.6.2: first delta after locked base must not be capped to only the last 7 days.
+  // It must catch up the full post-base window from 2026-05-19 through latest finalized MLB date.
+  // After at least one certified/promoted/cleaned delta exists, normal repair-aware lookback applies.
+  const existingDeltaLive = await first(env.STATS_HITTER_DB, `SELECT MAX(game_date) AS max_delta_game_date
+    FROM hitter_game_logs
+    WHERE ingestion_mode='delta_update'
+      AND date(game_date) >= date(?)`, deltaFloor);
+  const maxDeltaGameDate = asText(existingDeltaLive && existingDeltaLive.max_delta_game_date, null);
+  const hasPriorDeltaLive = !!(maxDeltaGameDate && maxDeltaGameDate >= deltaFloor);
+
   const lookbackStart = addDays(latest, -(DEFAULT_DELTA_LOOKBACK_DAYS - 1));
-  let start = lookbackStart < deltaFloor ? deltaFloor : lookbackStart;
+  let start = hasPriorDeltaLive ? (lookbackStart < deltaFloor ? deltaFloor : lookbackStart) : deltaFloor;
+
   const failed = await first(env.STATS_HITTER_DB, `SELECT MIN(delta_start_date) AS min_start
     FROM hitter_game_log_batches
-    WHERE mode='delta_update' AND status IN ('CERTIFICATION_FAILED','DELTA_FAILED','PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS','DELTA_RUNNING')
+    WHERE mode='delta_update' AND status IN ('CERTIFICATION_FAILED','DELTA_FAILED','PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS','DELTA_RUNNING','DELTA_STAGED_READY_FOR_CERTIFICATION','DELTA_CERTIFIED_READY_TO_PROMOTE','DELTA_PROMOTING','DELTA_PROMOTED_READY_TO_CLEAN','DELTA_CLEANING')
       AND delta_start_date IS NOT NULL`);
   const failedStart = asText(failed && failed.min_start, null);
   if (failedStart && failedStart >= deltaFloor && failedStart < start) start = failedStart;
@@ -1471,6 +1483,8 @@ async function getDeltaWindow(env, inputJson, fetchTimeoutMs) {
     delta_floor_date: deltaFloor,
     latest_complete_game_date: latest,
     repair_lookback_days: DEFAULT_DELTA_LOOKBACK_DAYS,
+    initial_full_delta_catchup: !hasPriorDeltaLive,
+    prior_delta_live_max_game_date: maxDeltaGameDate,
     schedule_endpoint: schedule.endpoint
   };
 }
@@ -1488,7 +1502,7 @@ function parseHitterSplitForWindow(split, playerId, playerName, season, batchId,
 
 async function processPlayerDelta(env, p, sourceSeason, batchId, runId, windowStart, windowEnd, maxRowsRemaining, fetchTimeoutMs) {
   const endpoint = endpointFor(env, p.player_id, sourceSeason);
-  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/1.6.0") } }, fetchTimeoutMs);
+  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-game-logs/1.6.2") } }, fetchTimeoutMs);
   if (!fetched.ok) return { player_id: p.player_id, player_name: p.player_name, status: "source_error", error_type: fetched.timed_out ? "fetch_timeout" : "fetch_exception", error: fetched.error, rows_staged: 0, raw_payload_split_count: 0, rows_before_cutoff: 0, rows_filtered_after_cutoff: 0, source_endpoint: endpoint, retry_same_player: true };
   const resp = fetched.resp;
   const text = fetched.text || "";

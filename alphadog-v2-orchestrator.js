@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.22-base-hitter-watchdog-hot-loop";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.23-delta-partial-continue-queue-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1096,7 +1096,9 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
     job_key: row.job_key,
     worker_name: row.worker_name,
     trigger,
-    mode: "orchestrator_exact_base_hitter_game_logs_base_backfill_self_continuation_dispatch",
+    mode: rowInput && rowInput.mode === "delta_update"
+      ? "orchestrator_exact_base_hitter_game_logs_delta_update_self_continuation_dispatch"
+      : "orchestrator_exact_base_hitter_game_logs_base_backfill_self_continuation_dispatch",
     input_json: rowInput
   };
 
@@ -1122,7 +1124,14 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
   }
 
   const rawStatus = String((output && output.status) || "").toLowerCase();
-  const partialContinue = rawStatus === "partial_continue" || rawStatus === "partial_continue_base_hitter_game_logs" || rawStatus === "source_shape_probe_partial_continue";
+  const partialContinue = !!(output && output.ok && (
+    rawStatus === "partial_continue" ||
+    rawStatus === "partial_continue_base_hitter_game_logs" ||
+    rawStatus === "partial_continue_delta_hitter_game_logs" ||
+    rawStatus === "source_shape_probe_partial_continue" ||
+    output.continuation_required === true ||
+    output.orchestrator_should_self_continue === true
+  ));
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
   const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
@@ -1156,7 +1165,8 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
       no_scoring: true,
       no_ranking: true,
       no_final_board_write: true,
-      no_live_promotion_before_certification: true
+      no_live_promotion_before_certification: true,
+      delta_partial_continue_queue_fix_v0_2_23: true
     }
   };
 
@@ -1898,7 +1908,14 @@ async function processOneUnlocked(env, trigger) {
   if (isBaseHitterGameLogsJob(row)) {
     const output = await processBaseHitterGameLogsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
-    const partial = rawStatus === "partial_continue" || rawStatus === "partial_continue_base_hitter_game_logs" || rawStatus === "source_shape_probe_partial_continue";
+    const partial = !!(output && output.ok && (
+      rawStatus === "partial_continue" ||
+      rawStatus === "partial_continue_base_hitter_game_logs" ||
+      rawStatus === "partial_continue_delta_hitter_game_logs" ||
+      rawStatus === "source_shape_probe_partial_continue" ||
+      output.continuation_required === true ||
+      output.orchestrator_should_self_continue === true
+    ));
     return {
       status: partial ? "partial_continue_base_hitter_game_logs_job" : (output && output.ok ? "completed_one_base_hitter_game_logs_job" : "failed_one_base_hitter_game_logs_job"),
       request_id: row.request_id,
