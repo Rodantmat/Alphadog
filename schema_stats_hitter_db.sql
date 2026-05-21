@@ -43,6 +43,24 @@ CREATE TABLE IF NOT EXISTS hitter_splits (
   raw_json TEXT,
   source_key TEXT,
   source_confidence TEXT,
+  group_type TEXT DEFAULT 'hitting',
+  split_code TEXT,
+  split_source_code TEXT,
+  data_feed_key TEXT,
+  source_endpoint TEXT,
+  source_season INTEGER,
+  source_game_type TEXT,
+  ingestion_mode TEXT,
+  batch_id TEXT,
+  run_id TEXT,
+  certification_status TEXT,
+  certification_grade TEXT,
+  certified_at TEXT,
+  promoted_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  source_snapshot_date TEXT,
+  babip TEXT,
+  stat_shape_json TEXT,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (player_id, season, split_key)
 );
@@ -238,3 +256,186 @@ CREATE INDEX IF NOT EXISTS idx_hitter_logs_source ON hitter_game_logs(source_key
 -- ALTER TABLE hitter_game_logs ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP;
 
 INSERT OR REPLACE INTO hitter_schema_migrations VALUES ('base_hitter_game_logs_v0_1_0_lifecycle_probe', 'alphadog-v2-base-hitter-game-logs-v0.1.0-schema-source-lock-probe', CURRENT_TIMESTAMP, 'Additive lifecycle schema for Base Hitter Game Logs source-lock probe');
+
+-- ============================================================================
+-- alphadog-v2-base-hitter-splits-v0.1.0-schema-source-lock-probe
+-- Additive lifecycle schema for Base Hitter Splits.
+-- Source lock:
+--   GET /people/{playerId}/stats?stats=statSplits&group=hitting&season={season}&sitCodes=vl%2Cvr
+-- Design:
+--   v0.1.0 is schema/source-shape probe only.
+--   No live hitter_splits promotion.
+--   No full base split mining.
+--   No delta_update execution.
+--   Splits are treated as season/source snapshots unless source proves date-window support.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS hitter_split_stage (
+  stage_id TEXT PRIMARY KEY,
+  batch_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  player_id INTEGER NOT NULL,
+  player_name TEXT,
+  season INTEGER NOT NULL,
+  group_type TEXT NOT NULL DEFAULT 'hitting',
+  split_code TEXT NOT NULL,
+  split_source_code TEXT,
+  split_description TEXT,
+  pa INTEGER,
+  ab INTEGER,
+  hits INTEGER,
+  singles INTEGER,
+  doubles INTEGER,
+  triples INTEGER,
+  home_runs INTEGER,
+  runs INTEGER,
+  rbi INTEGER,
+  walks INTEGER,
+  strikeouts INTEGER,
+  stolen_bases INTEGER,
+  total_bases INTEGER,
+  avg TEXT,
+  obp TEXT,
+  slg TEXT,
+  ops TEXT,
+  babip TEXT,
+  data_feed_key TEXT NOT NULL,
+  source_key TEXT NOT NULL,
+  source_endpoint TEXT NOT NULL,
+  source_season INTEGER NOT NULL,
+  source_game_type TEXT,
+  ingestion_mode TEXT NOT NULL,
+  certification_status TEXT DEFAULT 'source_shape_probe_staged',
+  certification_grade TEXT,
+  source_confidence TEXT DEFAULT 'SOURCE_LOCKED_STATSAPI_STATSPLITS_SITCODES_VL_VR_PROBE',
+  certified_at TEXT,
+  promoted_at TEXT,
+  source_snapshot_date TEXT,
+  raw_json TEXT NOT NULL,
+  stat_shape_json TEXT,
+  row_status TEXT DEFAULT 'source_shape_probe_staged',
+  row_error TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(batch_id, player_id, season, group_type, split_code)
+);
+
+CREATE TABLE IF NOT EXISTS hitter_split_batches (
+  batch_id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL,
+  worker_name TEXT NOT NULL,
+  worker_version TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  status TEXT NOT NULL,
+  data_feed_key TEXT NOT NULL,
+  source_key TEXT NOT NULL,
+  source_endpoint TEXT NOT NULL,
+  source_season INTEGER NOT NULL,
+  source_game_type TEXT,
+  source_snapshot_date TEXT,
+  cursor_player_id INTEGER,
+  cursor_season INTEGER,
+  cursor_offset INTEGER DEFAULT 0,
+  cursor_state_json TEXT,
+  expected_hitter_universe_count INTEGER DEFAULT 0,
+  sample_size INTEGER DEFAULT 0,
+  source_request_count INTEGER DEFAULT 0,
+  source_success_count INTEGER DEFAULT 0,
+  source_no_data_count INTEGER DEFAULT 0,
+  source_error_count INTEGER DEFAULT 0,
+  rows_staged INTEGER DEFAULT 0,
+  rows_promoted INTEGER DEFAULT 0,
+  duplicate_stage_keys INTEGER DEFAULT 0,
+  split_identifier_summary_json TEXT,
+  field_summary_json TEXT,
+  source_snapshot_assessment TEXT,
+  certification_status TEXT DEFAULT 'not_certified',
+  certification_grade TEXT,
+  certification_json TEXT,
+  source_confidence TEXT DEFAULT 'SOURCE_LOCKED_STATSAPI_STATSPLITS_SITCODES_VL_VR_PROBE',
+  locked_by TEXT,
+  lock_acquired_at TEXT,
+  lock_expires_at TEXT,
+  stale_recovery_count INTEGER DEFAULT 0,
+  started_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  finished_at TEXT,
+  certified_at TEXT,
+  promoted_at TEXT,
+  cleaned_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS hitter_split_outcomes (
+  batch_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  player_id INTEGER NOT NULL,
+  player_name TEXT,
+  cursor_offset INTEGER,
+  source_endpoint TEXT NOT NULL,
+  source_http_status INTEGER,
+  source_ok INTEGER DEFAULT 0,
+  raw_payload_split_count INTEGER DEFAULT 0,
+  rows_staged INTEGER DEFAULT 0,
+  promoted_row_count INTEGER DEFAULT 0,
+  terminal_category TEXT NOT NULL,
+  category_reason TEXT,
+  source_error TEXT,
+  source_snapshot_date TEXT,
+  split_identifier_json TEXT,
+  field_names_json TEXT,
+  certification_status TEXT DEFAULT 'player_outcome_unverified',
+  certification_grade TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (batch_id, player_id)
+);
+
+CREATE TABLE IF NOT EXISTS hitter_split_cursor (
+  cursor_key TEXT PRIMARY KEY,
+  batch_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  status TEXT NOT NULL,
+  source_season INTEGER,
+  source_snapshot_date TEXT,
+  current_player_id INTEGER,
+  current_player_offset INTEGER DEFAULT 0,
+  players_total INTEGER DEFAULT 0,
+  players_processed INTEGER DEFAULT 0,
+  requests_done INTEGER DEFAULT 0,
+  next_run_after TEXT,
+  last_error TEXT,
+  cursor_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS hitter_split_certifications (
+  certification_id TEXT PRIMARY KEY,
+  batch_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  certification_status TEXT NOT NULL,
+  certification_grade TEXT,
+  checks_json TEXT NOT NULL,
+  rows_staged INTEGER DEFAULT 0,
+  rows_promoted INTEGER DEFAULT 0,
+  duplicate_count INTEGER DEFAULT 0,
+  no_data_count INTEGER DEFAULT 0,
+  error_count INTEGER DEFAULT 0,
+  source_snapshot_date TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_hitter_split_stage_batch ON hitter_split_stage(batch_id, row_status);
+CREATE INDEX IF NOT EXISTS idx_hitter_split_stage_player ON hitter_split_stage(player_id, season, split_code);
+CREATE INDEX IF NOT EXISTS idx_hitter_split_stage_cert ON hitter_split_stage(certification_status, batch_id);
+CREATE INDEX IF NOT EXISTS idx_hitter_split_batches_status ON hitter_split_batches(status, mode, updated_at);
+CREATE INDEX IF NOT EXISTS idx_hitter_split_batches_lock ON hitter_split_batches(locked_by, lock_expires_at);
+CREATE INDEX IF NOT EXISTS idx_hitter_split_cursor_status ON hitter_split_cursor(status, mode, updated_at);
+CREATE INDEX IF NOT EXISTS idx_hitter_split_outcomes_batch_category ON hitter_split_outcomes(batch_id, terminal_category);
+CREATE INDEX IF NOT EXISTS idx_hitter_split_outcomes_player ON hitter_split_outcomes(player_id, batch_id);
+
+INSERT OR REPLACE INTO hitter_schema_migrations VALUES ('base_hitter_splits_v0_1_0_schema_source_lock_probe', 'alphadog-v2-base-hitter-splits-v0.1.0-schema-source-lock-probe', CURRENT_TIMESTAMP, 'Additive hitter split lifecycle schema and lineage-ready live columns; source-lock/probe only; no live promotion/delta execution');
