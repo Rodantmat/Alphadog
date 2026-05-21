@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-game-logs";
-const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.2.0-base-backfill-stage-only";
+const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.2.1-counter-finalization-fix";
 const JOB_KEY = "base-pitcher-game-logs";
 const GROUP_TYPE = "pitching";
 const SOURCE_KEY = "mlb_statsapi_pitcher_game_logs_v0_2_0";
@@ -695,11 +695,21 @@ async function finalizeBaseStageOnly(env, batch, input, universeAudit) {
   const status = pass ? "BASE_BACKFILL_STAGE_ONLY_COMPLETED_NO_PROMOTION" : "BASE_BACKFILL_STAGE_ONLY_REVIEW_REQUIRED_NO_PROMOTION";
   const certification = pass ? "PITCHER_GAME_LOGS_BASE_BACKFILL_STAGE_ONLY_CERTIFIED_NO_PROMOTION" : "PITCHER_GAME_LOGS_BASE_BACKFILL_STAGE_ONLY_REVIEW_REQUIRED_NO_PROMOTION";
   const grade = pass ? "STAGE_PASS" : "STAGE_REVIEW";
+  const finalOutcomeRows = Number(outcomeCount && outcomeCount.c ? outcomeCount.c : 0);
+  const finalDuplicateOutcomeRows = Number(dupOut && dupOut.c ? dupOut.c : 0);
+  const finalSourceRequestCount = finalOutcomeRows;
+  const finalSourceSuccessCount = byOutcome
+    .filter(r => ["PROMOTED_ROWS", "FILTERED_AFTER_CUTOFF"].includes(String(r.outcome_category || "")))
+    .reduce((a, r) => a + Number(r.c || 0), 0);
+  const finalSourceNoDataCount = byOutcome
+    .filter(r => String(r.outcome_category || "") === "TRUE_NO_DATA")
+    .reduce((a, r) => a + Number(r.c || 0), 0);
+  const finalSourceErrorCount = Number(sourceErrors && sourceErrors.c ? sourceErrors.c : 0);
   await run(env.STATS_PITCHER_DB,
     `UPDATE pitcher_game_log_batches SET status=?, certification_status=?, certification_grade=?, outcome_rows=?, duplicate_outcome_rows=?, source_request_count=?, source_success_count=?, source_no_data_count=?, source_error_count=?, rows_staged=?, rows_promoted=0, rows_after_cutoff=?, duplicate_stage_keys=?, live_rows_after=?, certified_at=CURRENT_TIMESTAMP, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    status, certification, grade, Number(outcomeCount && outcomeCount.c ? outcomeCount.c : 0), Number(dupOut && dupOut.c ? dupOut.c : 0), expected, byOutcome.filter(r => ["PROMOTED_ROWS","FILTERED_AFTER_CUTOFF","TRUE_NO_DATA"].includes(r.outcome_category)).reduce((a,r)=>a+Number(r.c||0),0), byOutcome.filter(r => r.outcome_category === "TRUE_NO_DATA").reduce((a,r)=>a+Number(r.c||0),0), Number(sourceErrors && sourceErrors.c ? sourceErrors.c : 0), Number(stageCount && stageCount.c ? stageCount.c : 0), Number(afterCutoff && afterCutoff.c ? afterCutoff.c : 0), Number(dupStage && dupStage.c ? dupStage.c : 0), liveNow, batchId);
+    status, certification, grade, finalOutcomeRows, finalDuplicateOutcomeRows, finalSourceRequestCount, finalSourceSuccessCount, finalSourceNoDataCount, finalSourceErrorCount, Number(stageCount && stageCount.c ? stageCount.c : 0), Number(afterCutoff && afterCutoff.c ? afterCutoff.c : 0), Number(dupStage && dupStage.c ? dupStage.c : 0), liveNow, batchId);
   await run(env.STATS_PITCHER_DB, "UPDATE pitcher_game_log_cursors SET status=?, cursor_offset=?, continuation_required=0, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", status, expected, batchId);
-  await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_game_log_certifications (certification_id, batch_id, run_id, mode, status, certification_status, certification_grade, check_key, check_status, expected_value, actual_value, details_json, created_at) VALUES (?, ?, ?, 'base_backfill', ?, ?, ?, 'v0_2_0_stage_only_no_promotion', ?, ?, ?, ?, CURRENT_TIMESTAMP)`, `${batchId}_stage_only_final`, batchId, batch.run_id, status, certification, grade, pass ? "PASS" : "REVIEW", JSON.stringify({ expected_pitcher_universe_count: expected }), JSON.stringify({ stage_rows: Number(stageCount && stageCount.c ? stageCount.c : 0), outcome_rows: Number(outcomeCount && outcomeCount.c ? outcomeCount.c : 0), live_rows_after: liveNow }), JSON.stringify({ checks, by_outcome: byOutcome }));
+  await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_game_log_certifications (certification_id, batch_id, run_id, mode, status, certification_status, certification_grade, check_key, check_status, expected_value, actual_value, details_json, created_at) VALUES (?, ?, ?, 'base_backfill', ?, ?, ?, 'v0_2_1_counter_finalization_no_promotion', ?, ?, ?, ?, CURRENT_TIMESTAMP)`, `${batchId}_stage_only_final`, batchId, batch.run_id, status, certification, grade, pass ? "PASS" : "REVIEW", JSON.stringify({ expected_pitcher_universe_count: expected }), JSON.stringify({ stage_rows: Number(stageCount && stageCount.c ? stageCount.c : 0), outcome_rows: Number(outcomeCount && outcomeCount.c ? outcomeCount.c : 0), live_rows_after: liveNow }), JSON.stringify({ checks, by_outcome: byOutcome }));
   return { pass, status, certification, certification_grade: grade, checks, by_outcome: byOutcome, stage_rows: Number(stageCount && stageCount.c ? stageCount.c : 0), outcome_rows: Number(outcomeCount && outcomeCount.c ? outcomeCount.c : 0), live_rows_before: liveBefore, live_rows_after: liveNow };
 }
 
