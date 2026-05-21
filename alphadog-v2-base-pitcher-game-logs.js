@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-game-logs";
-const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.1.0-schema-source-lock-probe";
+const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.1.1-certification-bind-fix";
 const JOB_KEY = "base-pitcher-game-logs";
 const GROUP_TYPE = "pitching";
 const SOURCE_KEY = "mlb_statsapi_pitcher_game_logs_v0_1_0";
@@ -655,7 +655,7 @@ async function runSourceProbe(env, input) {
 
   await run(env.STATS_PITCHER_DB,
     `INSERT OR REPLACE INTO pitcher_game_log_certifications (certification_id, batch_id, run_id, mode, status, certification_status, certification_grade, check_key, check_status, expected_value, actual_value, details_json, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'v0_1_0_source_probe_no_promotion', ?, 'live_row_count_unchanged_and_source_shape_checked', ?, ?, CURRENT_TIMESTAMP)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'v0_1_0_source_probe_no_promotion', ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
     `${batchId}_source_probe`, batchId, runId, mode, finalStatus, certification, dataOk ? "PROBE_PASS" : "PROBE_REVIEW", dataOk ? "PASS" : "REVIEW", String(Number(liveBefore && liveBefore.c ? liveBefore.c : 0)), String(Number(liveAfter && liveAfter.c ? liveAfter.c : 0)), JSON.stringify({ universe_audit: universeAudit, source_probe: sourceProbeJson, no_data_probe: noDataProbeJson })
   );
 
