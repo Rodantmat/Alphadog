@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.5-delta-promotion-column-fix";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.6-repeat-full-delta-guard";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -1838,10 +1838,70 @@ async function finalizeDeltaIfReady(env, batchId, runId, windowInfo, playersTota
   return { pass: false, done: true, continuation_required: false, status: "CERTIFICATION_FAILED", certification: "DELTA_HITTER_GAME_LOGS_UNKNOWN_STATUS", grade: "DELTA_FAIL", checks: { status, batchId }, rows_promoted: 0, stage_rows_after_clean: await getStageCount() };
 }
 
+
+async function getCompletedRetainedDeltaGuard(env) {
+  const latest = await first(env.STATS_HITTER_DB, "SELECT batch_id, mode, status, rows_staged, rows_promoted, certification_status, certification_grade, promoted_at, cleaned_at, updated_at FROM hitter_game_log_batches WHERE mode='delta_update' AND status='COMPLETED_PROMOTED_STAGE_RETAINED' AND certification_status='DELTA_HITTER_GAME_LOGS_CERTIFIED_PROMOTED_STAGE_RETAINED' AND certification_grade='DELTA_PASS' AND COALESCE(rows_promoted,0) > 0 AND cleaned_at IS NULL ORDER BY datetime(created_at) DESC LIMIT 1");
+  if (!latest) return { pass: false, reason: "NO_COMPLETED_RETAINED_DELTA" };
+  const stage = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_game_logs_stage WHERE batch_id=?", latest.batch_id);
+  const live = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_game_logs WHERE batch_id=?", latest.batch_id);
+  const stageRows = asInt(stage && stage.c, 0);
+  const liveRows = asInt(live && live.c, 0);
+  const rowsStaged = asInt(latest.rows_staged, 0);
+  const rowsPromoted = asInt(latest.rows_promoted, 0);
+  const pass = stageRows > 0 && rowsStaged === stageRows && rowsPromoted === liveRows && liveRows > 0;
+  return {
+    pass,
+    reason: pass ? "COMPLETED_RETAINED_FULL_REFRESH_DELTA_ALREADY_EXISTS" : "COMPLETED_DELTA_INCONSISTENT_REQUIRES_MANUAL_REVIEW",
+    latest_delta: latest,
+    retained_stage_rows: stageRows,
+    live_rows_for_delta_batch: liveRows,
+    no_new_batch_safe: pass,
+    no_mlb_calls_safe: pass,
+    no_stage_write_safe: pass
+  };
+}
+
 async function runDeltaUpdateTick(env, input, inputJson) {
   const baseGate = await getLockedBaseIntegrity(env);
   if (!baseGate.pass) {
     return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_INTEGRITY_FAIL", certification: "DELTA_BLOCKED_BASE_INTEGRITY_FAIL", base_integrity_gate: baseGate, rows_read: 0, rows_written: 0, external_calls_performed: 0, continuation_required: false, no_live_mutation: true };
+  }
+  const allowRepeatFullRefresh = inputJson.force_full_delta_refresh === true || inputJson.allow_repeat_full_delta_refresh === true;
+  if (!allowRepeatFullRefresh) {
+    const retainedDeltaGuard = await getCompletedRetainedDeltaGuard(env);
+    if (retainedDeltaGuard.pass) {
+      return {
+        ok: true,
+        data_ok: true,
+        version: VERSION,
+        worker_name: WORKER_NAME,
+        job_key: JOB_KEY,
+        request_id: input.request_id || null,
+        chain_id: input.chain_id || null,
+        status: "NOOP_ALREADY_CURRENT_RETAINED_FULL_REFRESH_DELTA",
+        certification: "DELTA_HITTER_GAME_LOGS_REPEAT_FULL_REFRESH_BLOCKED",
+        certification_grade: "NOOP_PASS",
+        mode: "delta_update",
+        base_integrity_gate: baseGate,
+        repeat_full_delta_guard: retainedDeltaGuard,
+        preserved_batch_id: retainedDeltaGuard.latest_delta.batch_id,
+        retained_stage_rows: retainedDeltaGuard.retained_stage_rows,
+        live_rows_for_delta_batch: retainedDeltaGuard.live_rows_for_delta_batch,
+        rows_read: 0,
+        rows_written: 0,
+        external_calls_performed: 0,
+        continuation_required: false,
+        orchestrator_should_self_continue: false,
+        manual_wake_required: false,
+        no_browser_pump: true,
+        no_new_batch: true,
+        no_mlb_calls: true,
+        no_stage_writes: true,
+        no_promotion: true,
+        no_cleanup: true,
+        note: "Blocked repeat full-refresh delta because a completed promoted retained-stage delta already exists. Build the true daily hybrid delta separately before running another normal delta."
+      };
+    }
   }
   const fetchTimeoutMs = cap(inputJson.fetch_timeout_ms || env.FETCH_TIMEOUT_MS || DEFAULT_FETCH_TIMEOUT_MS, 1500, 10000);
   let windowInfo = await getDeltaWindow(env, inputJson, fetchTimeoutMs);
