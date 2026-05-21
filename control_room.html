@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.5.31-autonomous-final-cleanup -->
+<!-- alphadog-v2-control-room-v1.6.0-delta-certifying-repair-engine -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,10 +28,10 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.5.31-autonomous-final-cleanup</div>
+<div id="versionTag">alphadog-v2-control-room-v1.6.0-delta-certifying-repair-engine</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
-<div class="small">Access mode: single-user. Control Room enqueues/status only. Static Players, Static Prop Taxonomy, Static Certifier, Static Full Run, Sleeper source-probe, and Base Hitter Game Logs base_backfill queue plus backend self-continuation launch. Orchestrator scheduled backend/cron owns continuation. Wake is optional backend test/rescue only.</div>
+<div class="small">Access mode: single-user. Control Room enqueues/status only. Static Players, Static Prop Taxonomy, Static Certifier, Static Full Run, Sleeper source-probe, Base Hitter Game Logs base_backfill, and Hitter Game Logs delta_update queue plus backend self-continuation launch. Orchestrator scheduled backend/cron owns continuation. Wake is optional backend test/rescue only.</div>
 <div class="status" id="status">READY</div>
 
 <div class="section"><h3>DEBUG</h3><div class="grid">
@@ -77,9 +77,10 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </div><div class="small">Static dictionary/reference data only. Certifier is read-only. Full Run reruns active static workers then certifier. Deferred static-rosters and static-player-aliases stay skipped. No scoring, no board mutation, no opponent backfill.</div></div>
 
 
-<div class="section"><h3>BASE</h3><div class="grid">
-<button class="orch" type="button" onclick="runJobButton('BASE > Hitter Game Logs','orchestrator_enqueue_base_hitter_game_logs')">Hitter Logs</button>
-</div><div class="small">Base Hitter Game Logs v1.5.31 finishes the existing promoted base batch through autonomous final cleanup: zero MLB calls, frozen outcome-derived counters, promotion skip when live count is complete, rowid-subquery cleanup chunks, and no repeated manual wake/tick dependency. Initial Base design cutoff is 2026-05-18; 2026-05-19+ reserved for later delta testing. Backend/orchestrator continuation only. No browser pump, no scoring, no ranking, no final board, no board mutation.</div></div>
+<div class="section"><h3>BASE / DELTA</h3><div class="grid">
+<button class="orch" type="button" onclick="runJobButton('BASE > Hitter Game Logs','orchestrator_enqueue_base_hitter_game_logs')">Base Logs</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Game Logs','orchestrator_enqueue_delta_hitter_game_logs')">Delta Logs</button>
+</div><div class="small">Base is locked at 2026-05-18. Delta Hitter Game Logs v1.6.0 is a certifying repair/update engine: base integrity gate first, safe finalized-game window from 2026-05-19+, 7-day repair lookback, stage-certify-promote-clean lifecycle, SQL-safe microchunks, backend self-continuation only. No browser pump, no scoring, no ranking, no final board, no board mutation.</div></div>
 
 <div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
 <button class="check" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Queue','v2_queue_status')">Queue</button>
@@ -147,7 +148,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.5.31-autonomous-final-cleanup"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.6.0-delta-certifying-repair-engine"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
