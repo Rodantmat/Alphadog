@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.28-base-pitcher-delta-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.29-base-pitcher-scoped-delta-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1301,8 +1301,11 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_pitcher_game_logs_base_delta_v0_4_0: true,
+      base_pitcher_game_logs_scoped_delta_v0_4_1: true,
       base_or_delta_continuation: true,
+      retained_stage_restore_before_queue_control_room: true,
+      scoped_delta_targets_only: true,
+      no_normal_full_universe_sweep: true,
       no_generic_dispatch: true,
       live_promotion_from_certified_stage_or_delta_retained_stage: true,
       mlb_calls_allowed_only_for_delta_update: true,
@@ -1337,7 +1340,10 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_game_logs_dispatch_completed', 'Orchestrator completed exact base-pitcher-game-logs base/delta continuation dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, base_or_delta_continuation: true, partial_continue: partialContinue })
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, base_or_delta_continuation: true,
+      retained_stage_restore_before_queue_control_room: true,
+      scoped_delta_targets_only: true,
+      no_normal_full_universe_sweep: true, partial_continue: partialContinue })
   );
 
   return cappedOutput;
