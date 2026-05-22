@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.42-hitter-splits-scoped-repair-gate";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.43-hitter-splits-daily-affected-refresh";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1321,15 +1321,16 @@ async function processBaseHitterSplitsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_hitter_splits_v0_4_1_scoped_repair_dispatch: true,
-      delta_hitter_splits_noop_restore_scoped_repair_gate: isDeltaHitterSplits,
+      base_hitter_splits_v0_4_2_daily_affected_refresh_dispatch: true,
+      delta_hitter_splits_noop_restore_scoped_repair_daily_affected_refresh_gate: isDeltaHitterSplits,
       certified_stage_promotion_v0_3_0: !isDeltaHitterSplits,
       locked_endpoint_sitcodes_vl_vr: true,
       no_browser_pump: true,
       no_generic_dispatch: true,
       live_hitter_splits_promotion_from_certified_stage_only: !isDeltaHitterSplits,
-      no_new_mlb_calls_expected: isDeltaHitterSplits ? true : true,
-      no_remine: true,
+      no_new_mlb_calls_expected: isDeltaHitterSplits ? false : true,
+      no_full_universe_remine: true,
+      daily_affected_player_refresh_allowed: isDeltaHitterSplits,
       no_delta_update: !isDeltaHitterSplits,
       no_hitter_game_log_mutation: true,
       no_pitcher_mutation: true,
@@ -1360,7 +1361,7 @@ async function processBaseHitterSplitsJob(env, row, runId, trigger) {
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_hitter_splits_dispatch_completed', 'Orchestrator completed exact base-hitter-splits dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, delta_hitter_splits_noop_restore_scoped_repair_gate: isDeltaHitterSplits, certified_stage_promotion: !isDeltaHitterSplits, no_new_mlb_calls_expected: true })
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, delta_hitter_splits_noop_restore_scoped_repair_daily_affected_refresh_gate: isDeltaHitterSplits, certified_stage_promotion: !isDeltaHitterSplits, no_new_mlb_calls_expected: !isDeltaHitterSplits, daily_affected_player_refresh_allowed: isDeltaHitterSplits })
   );
 
   return cappedOutput;

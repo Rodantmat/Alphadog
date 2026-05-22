@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-splits";
-const VERSION = "alphadog-v2-base-hitter-splits-v0.4.1-scoped-repair-gold-standard";
+const VERSION = "alphadog-v2-base-hitter-splits-v0.4.2-daily-affected-player-refresh";
 const JOB_KEY = "base-hitter-splits";
 
 const SOURCE_SEASON = 2026;
@@ -27,6 +27,7 @@ const EXPECTED_VARS = ["MLB_API_BASE_URL", "ACTIVE_SEASON"];
 const EXPECTED_SECRETS = ["MLB_API_USER_AGENT"];
 
 function nowUtc() { return new Date().toISOString(); }
+function todayUtc() { return new Date().toISOString().slice(0, 10); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
 function asInt(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? Math.trunc(n) : fallback; }
 function safeJson(v) { try { return JSON.stringify(v ?? null); } catch (_) { return JSON.stringify({ stringify_error: true }); } }
@@ -60,7 +61,7 @@ function baseIdentity(env) {
     job_key: JOB_KEY,
     status: "DELTA_NOOP_RESTORE_GATE_READY",
     timestamp_utc: nowUtc(),
-    phase: "base_hitter_splits_v0_4_1_scoped_repair_gate",
+    phase: "base_hitter_splits_v0_4_2_daily_affected_player_refresh",
     source_lock: {
       endpoint_pattern: SOURCE_ENDPOINT_PATTERN,
       source_key: SOURCE_KEY,
@@ -76,7 +77,8 @@ function baseIdentity(env) {
       delta_noop_before_queue_if_current: true,
       retained_stage_restore_if_available: true,
       no_new_mlb_calls_for_noop_gate: true,
-      no_remine: true,
+      no_full_universe_remine_for_repair: true,
+      daily_affected_player_refresh_enabled: true,
       no_hitter_game_log_mutation: true,
       no_pitcher_mutation: true,
       no_market_mutation: true,
@@ -323,7 +325,7 @@ async function ensureSchema(env) {
   ];
   for (const [label, sql] of indexes) await exec(label, sql);
 
-  await exec("record_schema_migration_v0_2_0", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_splits_v0_2_0_base_backfill_stage_only', ?, CURRENT_TIMESTAMP, 'Base Hitter Splits v0.4.1: delta no-op / retained registry restore / scoped re-mine repair gate; no full universe default repair')", VERSION);
+  await exec("record_schema_migration_v0_2_0", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_splits_v0_2_0_base_backfill_stage_only', ?, CURRENT_TIMESTAMP, 'Base Hitter Splits v0.4.2: delta no-op / retained registry restore / scoped repair / daily affected-player split refresh; no full universe default repair')", VERSION);
   return { attempted: results.length, failed: results.filter(r => !r.ok).length, results };
 }
 
@@ -1232,6 +1234,125 @@ async function scopedRemineHitterSplitMissingKey(env, baseBatch, key, input) {
   return { ok: true, data_ok: liveChecks.duplicate_live_keys === 0, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'DELTA_HITTER_SPLITS_SCOPED_REPAIR_COMPLETED', certification: 'DELTA_HITTER_SPLITS_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED', certification_grade: 'DELTA_REPAIR_PASS', missing_live_rows_detected: 1, retained_restore_rows_available: 0, scoped_players_to_refetch: 1, external_calls_performed: 1, no_full_sweep: true, rows_read: 1, rows_written: 2, rows_staged: 1, rows_promoted: 1, continuation_required: false, orchestrator_should_self_continue: false, scoped_repair: checks, timestamp_utc: nowUtc() };
 }
 
+
+function dateOnlyUtc(value) {
+  if (!value) return null;
+  const s = String(value).slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
+}
+function addDays(dateStr, days) {
+  const d = new Date(String(dateStr) + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + Number(days || 0));
+  return d.toISOString().slice(0, 10);
+}
+function isFinalMlbGame(game) {
+  const status = game && game.status ? game.status : {};
+  const abstractState = String(status.abstractGameState || "").toLowerCase();
+  const detailed = String(status.detailedState || "").toLowerCase();
+  const coded = String(status.codedGameState || "").toUpperCase();
+  return abstractState === "final" || coded === "F" || detailed === "final" || detailed === "game over" || detailed === "completed early";
+}
+async function fetchLatestCompleteGameDate(env, startDate) {
+  const start = dateOnlyUtc(startDate) || todayUtc();
+  const today = todayUtc();
+  const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "");
+  const endpoint = `${base}/schedule?sportId=1&gameTypes=R&startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(today)}`;
+  try {
+    const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-splits") } }, FETCH_TIMEOUT_MS);
+    if (!fetched.ok || !fetched.resp || !fetched.resp.ok) return { ok: false, endpoint, error: fetched.error || `HTTP_${fetched.resp && fetched.resp.status}`, today_utc: today };
+    const body = JSON.parse(fetched.text || "{}");
+    let latest = null;
+    for (const d of (Array.isArray(body.dates) ? body.dates : [])) {
+      const dateStr = dateOnlyUtc(d && d.date);
+      const games = Array.isArray(d && d.games) ? d.games : [];
+      if (!dateStr || !games.length) continue;
+      if (games.every(isFinalMlbGame) && (!latest || dateStr > latest)) latest = dateStr;
+    }
+    if (!latest) return { ok: false, endpoint, error: "NO_COMPLETE_FINAL_MLB_GAME_DATE_IN_RANGE", today_utc: today };
+    return { ok: true, endpoint, latest_complete_game_date: latest, today_utc: today };
+  } catch (err) {
+    return { ok: false, endpoint, error: String(err && err.message ? err.message : err), today_utc: today };
+  }
+}
+async function readAffectedHitterSplitPlayers(env, afterDate, throughDate) {
+  const rows = await all(env.STATS_HITTER_DB, `SELECT player_id, MIN(game_date) AS first_game_date, MAX(game_date) AS last_game_date, COUNT(DISTINCT game_pk) AS games
+    FROM hitter_game_logs
+    WHERE game_date > ? AND game_date <= ? AND player_id IS NOT NULL
+    GROUP BY player_id
+    ORDER BY player_id`, afterDate, throughDate);
+  return rows.map((r, idx) => ({ player_id: asInt(r.player_id, 0), player_name: null, first_game_date: r.first_game_date, last_game_date: r.last_game_date, games: asInt(r.games, 0), cursor_offset: idx })).filter(p => p.player_id);
+}
+async function refreshOneAffectedHitterSplitPlayer(env, player, baseBatch, runId, sourceSnapshotDate) {
+  const endpoint = endpointFor(env, player.player_id, SOURCE_SEASON);
+  const headers = { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-splits") };
+  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers }, FETCH_TIMEOUT_MS);
+  if (!fetched.ok || !fetched.resp || !fetched.resp.ok) return { player_id: player.player_id, outcome: "SOURCE_ERROR", rows_staged: 0, rows_promoted: 0, source_error: fetched.error || `HTTP_${fetched.resp && fetched.resp.status}`, external_calls: 1 };
+  let sourcePayload;
+  try { sourcePayload = JSON.parse(fetched.text || "{}"); }
+  catch (err) { return { player_id: player.player_id, outcome: "SOURCE_ERROR", rows_staged: 0, rows_promoted: 0, source_error: `JSON_PARSE_FAILED:${String(err && err.message ? err.message : err)}`, external_calls: 1 }; }
+  const splits = extractSplits(sourcePayload);
+  if (!splits.length) return { player_id: player.player_id, outcome: "TRUE_NO_DATA", rows_staged: 0, rows_promoted: 0, raw_split_count: 0, external_calls: 1 };
+  let rowsStaged = 0;
+  let rowsPromoted = 0;
+  const promotedSplitCodes = [];
+  for (const split of splits) {
+    const row = parseStageRow(split, player, SOURCE_SEASON, baseBatch.batch_id, runId, endpoint, sourceSnapshotDate, "delta_daily_affected_player_refresh_retained");
+    if (!row.split_code || !["vs_left", "vs_right"].includes(row.split_code)) continue;
+    row.ingestion_mode = "delta_daily_affected_player_refresh_retained";
+    row.certification_status = "DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH_CERTIFIED_PROMOTED_RETAINED";
+    row.certification_grade = "DELTA_REFRESH_PASS";
+    row.source_confidence = "SOURCE_LOCKED_STATSAPI_STATSPLITS_HITTING_SITCODES_VL_VR_DAILY_AFFECTED_REFRESH";
+    row.row_status = "delta_daily_affected_player_refresh_retained";
+    await insertStageRow(env, row);
+    rowsStaged++;
+    const livePayload = hitterLivePayloadFromRow(row);
+    livePayload.ingestion_mode = "delta_daily_affected_player_refresh_promoted_retained";
+    livePayload.certification_status = "DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH_CERTIFIED_PROMOTED_RETAINED";
+    livePayload.certification_grade = "DELTA_REFRESH_PASS";
+    await upsertHitterSplitLiveRow(env, livePayload, "SOURCE_LOCKED_STATSAPI_STATSPLITS_HITTING_SITCODES_VL_VR_DAILY_AFFECTED_REFRESH");
+    rowsPromoted++;
+    promotedSplitCodes.push(row.split_code);
+  }
+  return { player_id: player.player_id, player_name: player.player_name, outcome: rowsPromoted ? "PROMOTED_ROWS" : "NO_MAPPED_SPLITS", raw_split_count: splits.length, rows_staged: rowsStaged, rows_promoted: rowsPromoted, split_codes: promotedSplitCodes, external_calls: 1 };
+}
+async function refreshDailyAffectedHitterSplits(env, baseBatch, input, liveChecks, latestCompleteDate) {
+  const runId = input.run_id || rid("run_delta_hitter_splits_daily_affected_refresh");
+  const cursor = await first(env.STATS_HITTER_DB, "SELECT * FROM hitter_split_cursor WHERE cursor_key='base_hitter_splits_daily_affected_refresh_cursor' AND status='PARTIAL_CONTINUE_DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH' ORDER BY datetime(updated_at) DESC LIMIT 1");
+  let cursorJson = {};
+  if (cursor && cursor.cursor_json) { try { cursorJson = JSON.parse(cursor.cursor_json || '{}'); } catch (_) { cursorJson = {}; } }
+  const afterDate = dateOnlyUtc(cursorJson.source_snapshot_date_before) || dateOnlyUtc(liveChecks.max_source_snapshot_date) || dateOnlyUtc(baseBatch.source_snapshot_date);
+  const throughDate = dateOnlyUtc(cursorJson.latest_complete_game_date) || dateOnlyUtc(latestCompleteDate);
+  if (!afterDate || !throughDate || throughDate <= afterDate) return null;
+  const affectedPlayers = await readAffectedHitterSplitPlayers(env, afterDate, throughDate);
+  if (!affectedPlayers.length) {
+    return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "DELTA_HITTER_SPLITS_DAILY_REFRESH_BLOCKED_NO_AFFECTED_PLAYERS", certification: "DELTA_HITTER_SPLITS_DAILY_REFRESH_BLOCKED_NO_AFFECTED_PLAYERS", certification_grade: "BLOCKED", source_snapshot_date_before: afterDate, latest_complete_game_date: throughDate, rows_read: 0, rows_written: 1, rows_staged: 0, rows_promoted: 0, external_calls_performed: 0, no_full_sweep: true, continuation_required: false, orchestrator_should_self_continue: false, note: "New finalized date exists, but hitter_game_logs has no affected hitter rows for that date. Run Hitter Game Logs delta first, then Hitter Splits delta." };
+  }
+  const startOffset = cursor && cursor.batch_id === baseBatch.batch_id ? cap(cursor.current_player_offset, 0, affectedPlayers.length) : 0;
+  const chunkSize = cap((input.input_json && input.input_json.chunk_size) || DEFAULT_STAGE_CHUNK_SIZE, 1, MAX_STAGE_CHUNK_SIZE);
+  const players = affectedPlayers.slice(startOffset, startOffset + chunkSize);
+  let rowsStaged = 0, rowsPromoted = 0, externalCalls = 0, sourceErrors = 0, noData = 0;
+  const outcomes = [];
+  for (const player of players) {
+    const out = await refreshOneAffectedHitterSplitPlayer(env, player, baseBatch, runId, throughDate);
+    externalCalls += out.external_calls || 0;
+    rowsStaged += out.rows_staged || 0;
+    rowsPromoted += out.rows_promoted || 0;
+    if (out.outcome === "SOURCE_ERROR") sourceErrors++;
+    if (out.outcome === "TRUE_NO_DATA") noData++;
+    outcomes.push(out);
+  }
+  const nextOffset = startOffset + players.length;
+  const remaining = Math.max(0, affectedPlayers.length - nextOffset);
+  const liveAfter = await hitterCurrentLiveIntegrity(env, baseBatch.batch_id);
+  const checks = { locked_base_batch_id: baseBatch.batch_id, source_snapshot_date_before: afterDate, latest_complete_game_date: throughDate, affected_player_count: affectedPlayers.length, players_processed_this_tick: players.length, cursor_offset_before: startOffset, cursor_offset_after: nextOffset, rows_staged_this_tick: rowsStaged, rows_promoted_this_tick: rowsPromoted, external_calls_this_tick: externalCalls, no_full_sweep: true, no_full_hitter_universe_refresh: true, source_errors_this_tick: sourceErrors, no_data_this_tick: noData, live_rows_after: liveAfter.live_rows, distinct_live_keys_after: liveAfter.distinct_live_keys, duplicate_live_keys: liveAfter.duplicate_live_keys, invalid_split_code: liveAfter.invalid_split_code, missing_raw_json: liveAfter.missing_raw_json, min_source_snapshot_date_after: liveAfter.min_source_snapshot_date, max_source_snapshot_date_after: liveAfter.max_source_snapshot_date, outcomes };
+  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
+    VALUES ('base_hitter_splits_daily_affected_refresh_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, baseBatch.batch_id, runId, 'delta_daily_affected_player_refresh', remaining > 0 ? 'PARTIAL_CONTINUE_DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH' : 'COMPLETED_DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH', SOURCE_SEASON, throughDate, players.length ? players[players.length - 1].player_id : null, nextOffset, affectedPlayers.length, nextOffset, nextOffset, remaining > 0 ? new Date(Date.now()+1000).toISOString() : null, sourceErrors ? 'SOURCE_ERRORS_IN_TICK' : null, safeJson(checks));
+  await run(env.STATS_HITTER_DB, `INSERT INTO hitter_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('hitter_splits_daily_affected_refresh_cert'), baseBatch.batch_id, runId, 'delta_daily_affected_player_refresh', remaining > 0 ? 'DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH_PARTIAL_CONTINUE' : 'DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH_CERTIFIED_PROMOTED_RETAINED', sourceErrors ? 'REVIEW' : (remaining > 0 ? 'PARTIAL' : 'DELTA_REFRESH_PASS'), safeJson(checks), rowsStaged, rowsPromoted, liveAfter.duplicate_live_keys, noData, sourceErrors, throughDate);
+  const dataOk = sourceErrors === 0 && liveAfter.duplicate_live_keys === 0 && liveAfter.invalid_split_code === 0 && liveAfter.missing_raw_json === 0;
+  return { ok: true, data_ok: dataOk, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: remaining > 0 ? 'PARTIAL_CONTINUE_DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH' : 'COMPLETED_DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH', certification: remaining > 0 ? 'DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH_PARTIAL_CONTINUE' : 'DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH_CERTIFIED_PROMOTED_RETAINED', certification_grade: sourceErrors ? 'REVIEW' : (remaining > 0 ? 'PARTIAL' : 'DELTA_REFRESH_PASS'), source_snapshot_date_before: afterDate, latest_complete_game_date: throughDate, affected_player_count: affectedPlayers.length, cursor_offset_before: startOffset, cursor_offset_after: nextOffset, players_processed_this_tick: players.length, players_remaining: remaining, rows_read: externalCalls, rows_written: rowsStaged + rowsPromoted + 2, rows_staged: rowsStaged, rows_promoted: rowsPromoted, external_calls_performed: externalCalls, no_full_sweep: true, no_full_hitter_universe_refresh: true, continuation_required: remaining > 0, orchestrator_should_self_continue: remaining > 0, daily_affected_refresh: checks, timestamp_utc: nowUtc() };
+}
+
 async function runDeltaUpdate(env, input) {
   const schema = await ensureSchema(env);
   const baseBatch = await getLatestCompletedBaseBatch(env);
@@ -1239,6 +1360,15 @@ async function runDeltaUpdate(env, input) {
   const liveChecks = await hitterCurrentLiveIntegrity(env, baseBatch.batch_id);
   const expectedRows = asInt(baseBatch.rows_promoted, 0);
   const baseComplete = liveChecks.live_rows === expectedRows && liveChecks.distinct_live_keys === liveChecks.live_rows && liveChecks.duplicate_live_keys === 0 && liveChecks.invalid_split_code === 0 && liveChecks.missing_raw_json === 0 && liveChecks.missing_source_snapshot_date === 0;
+  const pendingDailyCursor = await first(env.STATS_HITTER_DB, "SELECT * FROM hitter_split_cursor WHERE cursor_key='base_hitter_splits_daily_affected_refresh_cursor' AND status='PARTIAL_CONTINUE_DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH' ORDER BY datetime(updated_at) DESC LIMIT 1");
+  if (baseComplete && pendingDailyCursor) {
+    let cj = {}; try { cj = JSON.parse(pendingDailyCursor.cursor_json || '{}'); } catch (_) { cj = {}; }
+    return await refreshDailyAffectedHitterSplits(env, baseBatch, input, liveChecks, cj.latest_complete_game_date || liveChecks.max_source_snapshot_date || todayUtc());
+  }
+  const latestCompleteCheck = await fetchLatestCompleteGameDate(env, addDays(liveChecks.max_source_snapshot_date || baseBatch.source_snapshot_date || todayUtc(), 1));
+  if (baseComplete && latestCompleteCheck.ok && latestCompleteCheck.latest_complete_game_date && latestCompleteCheck.latest_complete_game_date > (liveChecks.max_source_snapshot_date || baseBatch.source_snapshot_date || '0000-00-00')) {
+    return await refreshDailyAffectedHitterSplits(env, baseBatch, input, liveChecks, latestCompleteCheck.latest_complete_game_date);
+  }
   const registry = await latestHitterSplitRepairRegistry(env);
   const cursorKey = await getHitterSplitRepairCursorKey(env);
   const expectedKey = hitterRegistryToKey(registry, cursorKey);
@@ -1247,7 +1377,7 @@ async function runDeltaUpdate(env, input) {
   const exists = await hitterSplitRowExistsLive(env, expectedKey);
   if (exists) {
     const runId = input.run_id || rid('run_delta_hitter_splits_noop_repair_gate');
-    const checks = { locked_base_batch_id: baseBatch.batch_id, expected_key: expectedKey, live_rows: liveChecks.live_rows, expected_rows: expectedRows, distinct_live_keys: liveChecks.distinct_live_keys, duplicate_live_keys: liveChecks.duplicate_live_keys, source_snapshot_date_today_utc: todayUtc(), no_mlb_calls: true, no_full_sweep: true, no_live_mutation: true, retained_registry_available: Boolean(registry), does_not_require_balanced_splits: true, does_not_use_outcome_rows_staged_for_physical_truth: true };
+    const checks = { locked_base_batch_id: baseBatch.batch_id, expected_key: expectedKey, live_rows: liveChecks.live_rows, expected_rows: expectedRows, distinct_live_keys: liveChecks.distinct_live_keys, duplicate_live_keys: liveChecks.duplicate_live_keys, source_snapshot_date_today_utc: todayUtc(), no_mlb_calls: true, no_full_sweep: true, no_live_mutation: true, retained_registry_available: Boolean(registry), does_not_require_balanced_splits: true, does_not_use_outcome_rows_staged_for_physical_truth: true, latest_complete_game_date_check: latestCompleteCheck };
     await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
       VALUES ('base_hitter_splits_delta_update_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, baseBatch.batch_id, runId, 'delta_noop_restore_scoped_repair_gate', 'DELTA_HITTER_SPLITS_NOOP_CURRENT_SOURCE_SNAPSHOT', SOURCE_SEASON, liveChecks.max_source_snapshot_date || todayUtc(), expectedKey.player_id, 0, liveChecks.live_rows, liveChecks.live_rows, 0, null, null, safeJson(checks));
     await run(env.STATS_HITTER_DB, `INSERT INTO hitter_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
