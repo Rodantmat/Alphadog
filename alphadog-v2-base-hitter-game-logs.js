@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.13-scoped-repair-gold-standard";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.14-new-final-date-before-anchor-fix";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -2384,6 +2384,40 @@ async function scopedRemineHitterGameLogKey(env, registry, input, fetchTimeoutMs
   return { ok: promoted === 1, endpoint, external_calls: 1, raw_split_count: splits.length, matched_raw_splits: matchedRawSplits, rows_staged: staged, rows_promoted: promoted, player_id: playerId, game_pk: gamePk, game_date: gameDate };
 }
 
+
+async function shouldBypassHitterAnchorNoopForNewFinalDate(env, latestGuard, inputJson) {
+  if (!latestGuard || !latestGuard.pass || !latestGuard.latest_delta) {
+    return { bypass: false, reason: "retained_delta_not_clean" };
+  }
+  const latest = latestGuard.latest_delta;
+  const retainedMax = [latestGuard.stage_max_game_date, latestGuard.live_max_game_date]
+    .map(v => asText(v, null))
+    .filter(Boolean)
+    .sort()
+    .pop();
+  if (!retainedMax) return { bypass: false, reason: "no_retained_max_game_date" };
+  const timeoutMs = cap((inputJson && (inputJson.fetch_timeout_ms || inputJson.FETCH_TIMEOUT_MS)) || DEFAULT_FETCH_TIMEOUT_MS, 1500, 10000);
+  const sourceWindow = await determineLatestCompleteGameDate(
+    env,
+    asText(latest.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE, DEFAULT_DELTA_RESERVED_START_DATE),
+    timeoutMs
+  );
+  if (sourceWindow && sourceWindow.ok && sourceWindow.latest_complete_game_date > retainedMax) {
+    return {
+      bypass: true,
+      reason: "NEW_FINAL_DATE_AVAILABLE_BYPASS_REPAIR_ANCHOR_NOOP",
+      retained_max_game_date: retainedMax,
+      source_final_date_check: sourceWindow
+    };
+  }
+  return {
+    bypass: false,
+    reason: sourceWindow && sourceWindow.ok ? "NO_NEW_FINAL_DATE" : "SOURCE_FINAL_DATE_CHECK_UNAVAILABLE_NO_MUTATION_FROM_ANCHOR_GATE",
+    retained_max_game_date: retainedMax,
+    source_final_date_check: sourceWindow
+  };
+}
+
 async function runHitterGameLogsGoldRepairGate(env, input, inputJson, baseGate) {
   const latestGuard = await getCompletedRetainedDeltaGuard(env);
   if (!latestGuard.latest_delta) return { handled: false, reason: "no_completed_retained_delta_available" };
@@ -2428,7 +2462,11 @@ async function runHitterGameLogsGoldRepairGate(env, input, inputJson, baseGate) 
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, DELTA_CURSOR_KEY, batchId, input.run_id || rid("run_delta_hitter_stage_scoped_repair"), "delta_update", status, asInt(registry.season, DEFAULT_SOURCE_SEASON), DEFAULT_BASE_BACKFILL_CUTOFF_DATE, registry.game_date || DEFAULT_DELTA_RESERVED_START_DATE, 1, 1, 1, asInt(repair.external_calls, 0), JSON.stringify(cursorJson));
       return { handled: true, output: { ok: repair.ok === true, data_ok: repair.ok === true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status, certification: repair.ok ? "DELTA_HITTER_GAME_LOGS_RETAINED_STAGE_SCOPED_REPAIR_CERTIFIED" : "DELTA_HITTER_GAME_LOGS_RETAINED_STAGE_SCOPED_REPAIR_FAILED", certification_grade: repair.ok ? "DELTA_REPAIR_PASS" : "DELTA_REPAIR_FAIL", scoped_players_to_refetch: 1, no_full_sweep: true, rows_read: asInt(repair.external_calls, 0), rows_written: asInt(repair.rows_staged, 0), rows_staged: asInt(repair.rows_staged, 0), rows_promoted: 0, external_calls_performed: asInt(repair.external_calls, 0), continuation_required: false, orchestrator_should_self_continue: false, delta_stage_repair_gate: cursorJson, repair, base_integrity_gate: baseGate, retained_delta_guard: latestGuard, timestamp_utc: nowUtc() } };
     }
-    const cursorJson = { locked_delta_batch_id: batchId, repair_registry_key: registry.registry_key, anchor_player_id: playerId, anchor_game_pk: gamePk, anchor_game_date: registry.game_date, live_rows: liveTruthBefore.live_rows, distinct_live_keys: liveTruthBefore.distinct_live_keys, duplicate_live_keys: liveTruthBefore.duplicate_live_keys, no_mlb_calls: true, no_full_sweep: true, no_live_mutation: true, repair_anchor_present: true, next_test: "delete this exact live key only to test retained-stage restore; delete live and retained stage key to test scoped re-fetch" };
+    const newFinalDateGate = await shouldBypassHitterAnchorNoopForNewFinalDate(env, latestGuard, inputJson || {});
+    if (newFinalDateGate.bypass) {
+      return { handled: false, reason: newFinalDateGate.reason, retained_delta_guard: latestGuard, source_final_date_check: newFinalDateGate.source_final_date_check, retained_max_game_date: newFinalDateGate.retained_max_game_date };
+    }
+    const cursorJson = { locked_delta_batch_id: batchId, repair_registry_key: registry.registry_key, anchor_player_id: playerId, anchor_game_pk: gamePk, anchor_game_date: registry.game_date, live_rows: liveTruthBefore.live_rows, distinct_live_keys: liveTruthBefore.distinct_live_keys, duplicate_live_keys: liveTruthBefore.duplicate_live_keys, no_mlb_calls: true, no_full_sweep: true, no_live_mutation: true, repair_anchor_present: true, source_final_date_gate: newFinalDateGate, next_test: "delete this exact live key only to test retained-stage restore; delete live and retained stage key to test scoped re-fetch" };
     await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_cursor
       (cursor_key,batch_id,run_id,mode,status,source_season,base_backfill_cutoff_date,delta_start_date,current_player_offset,players_total,players_processed,requests_done,cursor_json,updated_at)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, DELTA_CURSOR_KEY, batchId, input.run_id || rid("run_delta_hitter_anchor_noop"), "delta_update", "DELTA_HITTER_GAME_LOGS_REPAIR_ANCHOR_RETAINED_NOOP", asInt(registry.season, DEFAULT_SOURCE_SEASON), DEFAULT_BASE_BACKFILL_CUTOFF_DATE, registry.game_date || DEFAULT_DELTA_RESERVED_START_DATE, 1, liveTruthBefore.live_rows, liveTruthBefore.live_rows, 0, JSON.stringify(cursorJson));
@@ -2436,9 +2474,13 @@ async function runHitterGameLogsGoldRepairGate(env, input, inputJson, baseGate) 
   }
 
   if (latestGuard.pass) {
+    const newFinalDateGate = await shouldBypassHitterAnchorNoopForNewFinalDate(env, latestGuard, inputJson || {});
+    if (newFinalDateGate.bypass) {
+      return { handled: false, reason: newFinalDateGate.reason, retained_delta_guard: latestGuard, source_final_date_check: newFinalDateGate.source_final_date_check, retained_max_game_date: newFinalDateGate.retained_max_game_date };
+    }
     const anchor = await createOrRefreshHitterRepairAnchor(env, latest);
     const reg = anchor.registry;
-    const cursorJson = { locked_delta_batch_id: latest.batch_id, repair_registry_key: reg ? reg.registry_key : null, anchor_player_id: reg ? asInt(reg.player_id, null) : null, anchor_game_pk: reg ? asInt(reg.game_pk, null) : null, anchor_game_date: reg ? reg.game_date : null, live_rows: liveTruthBefore.live_rows, distinct_live_keys: liveTruthBefore.distinct_live_keys, duplicate_live_keys: liveTruthBefore.duplicate_live_keys, no_mlb_calls: true, no_full_sweep: true, no_live_mutation: true, repair_anchor_created: !!(anchor.created), anchor_reason: anchor.reason || null };
+    const cursorJson = { locked_delta_batch_id: latest.batch_id, repair_registry_key: reg ? reg.registry_key : null, anchor_player_id: reg ? asInt(reg.player_id, null) : null, anchor_game_pk: reg ? asInt(reg.game_pk, null) : null, anchor_game_date: reg ? reg.game_date : null, live_rows: liveTruthBefore.live_rows, distinct_live_keys: liveTruthBefore.distinct_live_keys, duplicate_live_keys: liveTruthBefore.duplicate_live_keys, no_mlb_calls: true, no_full_sweep: true, no_live_mutation: true, repair_anchor_created: !!(anchor.created), anchor_reason: anchor.reason || null, source_final_date_gate: newFinalDateGate };
     await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_game_log_cursor
       (cursor_key,batch_id,run_id,mode,status,source_season,base_backfill_cutoff_date,delta_start_date,current_player_offset,players_total,players_processed,requests_done,cursor_json,updated_at)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, DELTA_CURSOR_KEY, latest.batch_id, input.run_id || rid("run_delta_hitter_anchor_create"), "delta_update", "DELTA_HITTER_GAME_LOGS_REPAIR_ANCHOR_RETAINED_NOOP", asInt(latest.source_season, DEFAULT_SOURCE_SEASON), DEFAULT_BASE_BACKFILL_CUTOFF_DATE, latest.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE, 1, liveTruthBefore.live_rows, liveTruthBefore.live_rows, 0, JSON.stringify(cursorJson));
