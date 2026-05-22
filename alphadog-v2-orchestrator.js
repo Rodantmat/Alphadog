@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.45-base-team-game-logs-probe";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.46-base-team-game-logs-base-backfill";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1164,6 +1164,7 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
     rawStatus === "partial_continue_base_hitter_game_logs" ||
     rawStatus === "partial_continue_delta_hitter_game_logs" ||
     rawStatus === "source_shape_probe_partial_continue" ||
+    rawStatus === "partial_continue_base_team_game_logs" ||
     output.continuation_required === true ||
     output.orchestrator_should_self_continue === true
   ));
@@ -1665,8 +1666,8 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
     job_key: row.job_key,
     worker_name: row.worker_name,
     trigger,
-    mode: "orchestrator_exact_base_team_game_logs_schema_source_lock_probe_dispatch",
-    input_json: { ...rowInput, mode: rowInput.mode || "source_shape_probe", source_probe_only: true, no_live_promotion: true }
+    mode: "orchestrator_exact_base_team_game_logs_dispatch",
+    input_json: { ...rowInput, mode: rowInput.mode || "base_backfill" }
   };
 
   const started = Date.now();
@@ -1695,6 +1696,7 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
     rawStatus === "partial_continue" ||
     rawStatus === "partial_continue_base_team_game_logs" ||
     rawStatus === "source_shape_probe_partial_continue" ||
+    rawStatus === "partial_continue_base_team_game_logs" ||
     output.continuation_required === true ||
     output.orchestrator_should_self_continue === true
   ));
@@ -1718,14 +1720,13 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_team_game_logs_probe_v0_1_0: true,
+      base_team_game_logs_base_backfill_v0_2_0: true,
       hot_continuation_ready: true,
       backend_self_continuation_ready: true,
       manual_wake_testing_only: true,
       no_browser_pump: true,
       no_generic_dispatch: true,
-      no_live_promotion: true,
-      no_full_base_backfill: true,
+      base_backfill_allowed: rowInput.mode === "base_backfill",
       no_delta_update_execution: true,
       no_hitter_mutation: true,
       no_pitcher_mutation: true,
@@ -1756,8 +1757,8 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
   }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_team_game_logs_dispatch_completed', 'Orchestrator completed exact base-team-game-logs v0.1.0 source/schema probe dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, rows_promoted: output && output.rows_promoted ? output.rows_promoted : 0, external_calls: externalCalls, probe_only: true, no_live_promotion: true, partial_continue: partialContinue })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_team_game_logs_dispatch_completed', 'Orchestrator completed exact base-team-game-logs v0.2.0 base_backfill dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, rows_promoted: output && output.rows_promoted ? output.rows_promoted : 0, external_calls: externalCalls, mode: rowInput.mode || "base_backfill", base_backfill: rowInput.mode === "base_backfill", partial_continue: partialContinue })
   );
 
   return cappedOutput;
@@ -2472,6 +2473,7 @@ async function processOneUnlocked(env, trigger) {
       rawStatus === "partial_continue_base_hitter_game_logs" ||
       rawStatus === "partial_continue_delta_hitter_game_logs" ||
       rawStatus === "source_shape_probe_partial_continue" ||
+    rawStatus === "partial_continue_base_team_game_logs" ||
       output.continuation_required === true ||
       output.orchestrator_should_self_continue === true
     ));
@@ -2520,6 +2522,7 @@ async function processOneUnlocked(env, trigger) {
       rawStatus === "partial_continue" ||
       rawStatus === "partial_continue_base_team_game_logs" ||
       rawStatus === "source_shape_probe_partial_continue" ||
+    rawStatus === "partial_continue_base_team_game_logs" ||
       output.continuation_required === true ||
       output.orchestrator_should_self_continue === true
     ));
