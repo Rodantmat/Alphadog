@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.51-base-starter-history-hot-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.52-base-starter-history-stale-running-recovery";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -2484,6 +2484,32 @@ async function recoverStaleBaseHitterGameLogsJobs(env, trigger) {
   return { recovered, rows: staleRows };
 }
 
+async function recoverStaleBaseStarterHistoryJobs(env, trigger) {
+  // Base Starter History stage-only chunks make many MLB boxscore calls. A service-binding
+  // chunk can finish writing TEAM_DB stage rows but fail to flip the CONTROL_DB queue row
+  // back from running to pending before the request window ends. Recovery must mirror the
+  // successful game-log workers: return the same queue row to pending, then the worker
+  // resumes from starter_history_outcomes/stage without creating a new batch or promoting live.
+  const staleRows = await all(env.CONTROL_DB,
+    "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, started_at, updated_at, substr(output_json,1,900) AS output_preview FROM control_job_queue WHERE job_key='base-starter-history' AND worker_name='alphadog-v2-base-starter-history' AND status='running' AND finished_at IS NULL AND datetime(updated_at) <= datetime('now','-2 minutes') ORDER BY datetime(updated_at) ASC LIMIT 3"
+  );
+
+  let recovered = 0;
+  for (const row of staleRows) {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND job_key='base-starter-history' AND worker_name='alphadog-v2-base-starter-history' AND status='running' AND finished_at IS NULL",
+      row.request_id
+    );
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'base-starter-history', 'WARN', 'base_starter_history_stale_running_auto_recovered', 'Recovered stale running base-starter-history queue row back to pending for cursor-safe stage-only continuation', ?, CURRENT_TIMESTAMP)",
+      row.request_id, WORKER_NAME, JSON.stringify({ trigger, recovered_from_status: row.status, started_at: row.started_at, updated_at: row.updated_at, tick_count: row.tick_count, stale_threshold_minutes: 2, no_new_batch: true, resume_from_stage_outcomes: true, no_live_promotion: true, output_preview: row.output_preview || null, version: SYSTEM_VERSION })
+    );
+    recovered += 1;
+  }
+
+  return { recovered, rows: staleRows };
+}
+
 async function enqueueStaticPlayersWeeklyIfDue(env, cronExpression) {
   const active = await first(env.CONTROL_DB,
     "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key='static-players' AND worker_name='alphadog-v2-static-players' AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
@@ -2834,6 +2860,11 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       processed.push({ status: "stale_base_hitter_game_logs_recovered", recovered_count: baseHitterStaleRecovery.recovered });
     }
 
+    const baseStarterStaleRecovery = await recoverStaleBaseStarterHistoryJobs(env, trigger);
+    if (baseStarterStaleRecovery.recovered > 0) {
+      processed.push({ status: "stale_base_starter_history_recovered", recovered_count: baseStarterStaleRecovery.recovered });
+    }
+
     const limit = Math.max(1, Math.min(Number(maxJobs || 3), 10));
 
     for (let i = 0; i < limit; i++) {
@@ -2845,9 +2876,9 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
 
     await releaseLock(env, owner, "IDLE");
 
-    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_static_full_run_job").length;
-    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job").length;
-    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_static_full_run_job").length;
+    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_static_full_run_job").length;
+    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job").length;
+    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_static_full_run_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
 
     return base(env, {
