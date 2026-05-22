@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.35-base-pitcher-splits-probe";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.36-base-pitcher-splits-stage-only";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1399,7 +1399,7 @@ async function processBasePitcherSplitsJob(env, row, runId, trigger) {
     job_key: row.job_key,
     worker_name: row.worker_name,
     trigger,
-    mode: "orchestrator_exact_base_pitcher_splits_source_shape_probe",
+    mode: "orchestrator_exact_base_pitcher_splits_stage_only",
     input_json: rowInput
   };
   const started = Date.now();
@@ -1425,7 +1425,7 @@ async function processBasePitcherSplitsJob(env, row, runId, trigger) {
   const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
   const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
   const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
-  const certification = String((output && output.certification) || (ok ? "base_pitcher_splits_source_shape_probe_completed" : "base_pitcher_splits_source_shape_probe_failed")).slice(0, 120);
+  const certification = String((output && output.certification) || (ok ? "base_pitcher_splits_stage_only_completed" : "base_pitcher_splits_stage_only_failed")).slice(0, 120);
   const queueStatus = partialContinue ? "pending" : (ok ? "completed" : "failed");
   const runStatus = partialContinue ? "partial_continue" : (ok ? "completed" : "failed");
   const errorCode = ok || partialContinue ? null : "base_pitcher_splits_worker_failed";
@@ -1439,12 +1439,12 @@ async function processBasePitcherSplitsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_pitcher_splits_v0_1_0_source_shape_probe_dispatch: true,
+      base_pitcher_splits_v0_2_0_stage_only_dispatch: true,
       service_binding: "BASE_PITCHER_SPLITS_WORKER",
       no_browser_pump: true,
       no_generic_dispatch: true,
       no_live_pitcher_splits_promotion: true,
-      no_full_base_mining: true,
+      full_universe_stage_only_enabled: true,
       no_delta_update_execution: true,
       no_hitter_splits_mutation: true,
       no_hitter_game_log_mutation: true,
@@ -1466,8 +1466,8 @@ async function processBasePitcherSplitsJob(env, row, runId, trigger) {
     await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
   }
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_splits_dispatch_completed', 'Orchestrator completed exact base-pitcher-splits source-shape probe dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, source_shape_probe_only: true, rows_promoted: 0 })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_splits_dispatch_completed', 'Orchestrator completed exact base-pitcher-splits stage-only dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, stage_only_full_universe: true, rows_promoted: 0 })
   );
   return cappedOutput;
 }
