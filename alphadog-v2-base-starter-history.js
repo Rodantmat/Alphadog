@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-starter-history";
-const VERSION = "alphadog-v2-base-starter-history-v0.4.3-scoped-source-repair";
+const VERSION = "alphadog-v2-base-starter-history-v0.4.4-scoped-repair-order-fix";
 const JOB_KEY = "base-starter-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -44,11 +44,11 @@ function baseIdentity(env) {
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "BASE_STARTER_HISTORY_SCOPED_SOURCE_REPAIR_READY",
+    status: "BASE_STARTER_HISTORY_SCOPED_REPAIR_ORDER_FIXED",
     timestamp_utc: nowUtc(),
-    phase: "starter-history-v0.4.3-scoped-source-repair",
+    phase: "starter-history-v0.4.4-scoped-repair-order-fix",
     notes: [
-      "v0.4.3 adds scoped source repair after base promotion, retained-stage delta, delta no-op, and retained-stage restore are locked.",
+      "v0.4.4 fixes scoped repair ordering: retained-stage restore is checked before scoped source repair, matching final game-log worker logic.",
       "Allowed writes: repair missing live + retained-stage delta keys by refetching only the affected game/key, rewriting the retained stage row, and promoting that key. No full sweep, no new batch.",
       "Forbidden in this version: full sweep, new batch, scoring, ranking, board mutation, and browser pump.",
       "Starter history is source-classified as GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS via official final boxscore gamesStarted == 1."
@@ -1583,6 +1583,30 @@ async function scopedSourceRepairMissingDeltaKeys(env, input) {
   const probe = await latestCompleteStarterHistoryDateFromSchedule(env, startDate, endDate);
   const targetLimit = Math.max(1, Math.min(3, Number(rowInput.scoped_repair_limit || input.scoped_repair_limit || 1) || 1));
 
+  // Gold-standard game-log order: retained-stage restore must happen before scoped source repair.
+  // If live is missing but retained delta stage still has the key, do not source-refetch.
+  const retainedRestoreAvailable = await first(env.TEAM_DB, `SELECT COUNT(*) AS c
+    FROM starter_history_stage s
+    LEFT JOIN starter_history h ON h.starter_key = s.starter_key
+    WHERE s.batch_id = ?
+      AND h.starter_key IS NULL`, deltaBatch.batch_id);
+  const retainedRestoreAvailableCount = num(retainedRestoreAvailable && retainedRestoreAvailable.c) || 0;
+  if (retainedRestoreAvailableCount > 0) {
+    const restoreInput = { ...input, input_json: { ...(input.input_json || {}), mode: 'delta_retained_stage_restore_before_queue' }, mode: 'delta_retained_stage_restore_before_queue' };
+    const restored = await restoreMissingLiveRowsFromRetainedDeltaStage(env, restoreInput);
+    return {
+      ...restored,
+      version: VERSION,
+      status: restored.status,
+      certification: restored.certification,
+      certification_grade: restored.certification_grade,
+      scoped_source_repair_bypassed_for_retained_restore: true,
+      retained_restore_rows_available: retainedRestoreAvailableCount,
+      correct_repair_order: true,
+      no_source_refetch_when_stage_has_row: true
+    };
+  }
+
   const missingRows = await all(env.TEAM_DB, `SELECT
       o.game_pk,
       o.game_date,
@@ -1728,10 +1752,12 @@ async function scopedSourceRepairMissingDeltaKeys(env, input) {
   const missingLiveIdentity = num(after && after.missing_live_identity_count) || 0;
   const missingStageIdentity = num(after && after.missing_stage_identity_count) || 0;
   const missingBothBefore = missingRows.length;
-  const pass = expectedRows > 0 && missingBothBefore > 0 && rowsPromoted === missingBothBefore && retainedRows === expectedRows && liveRowsAfter === expectedRows && missingStageAfter === 0 && missingLiveAfter === 0 && duplicateLiveKeys === 0 && duplicateStageKeys === 0 && missingLiveIdentity === 0 && missingStageIdentity === 0 && sourceErrorCount === 0 && unclearCount === 0;
-  const certificationStatus = pass ? 'STARTER_HISTORY_DELTA_SCOPED_SOURCE_REPAIR_CERTIFIED_PROMOTED_RETAINED' : (missingBothBefore === 0 ? 'STARTER_HISTORY_DELTA_SCOPED_SOURCE_REPAIR_NOOP_NO_MISSING_KEYS' : 'STARTER_HISTORY_DELTA_SCOPED_SOURCE_REPAIR_BLOCKED_VERIFY_FAILED');
-  const certificationGrade = pass ? 'DELTA_REPAIR_PASS' : (missingBothBefore === 0 ? 'DELTA_NOOP_PASS' : 'DELTA_REPAIR_BLOCKED');
-  const status = pass ? 'DELTA_STARTER_HISTORY_SCOPED_SOURCE_REPAIR_COMPLETED' : (missingBothBefore === 0 ? 'DELTA_STARTER_HISTORY_SCOPED_REPAIR_NOOP_CURRENT' : 'DELTA_STARTER_HISTORY_SCOPED_SOURCE_REPAIR_VERIFY_FAILED');
+  const repairPass = expectedRows > 0 && missingBothBefore > 0 && rowsPromoted === missingBothBefore && retainedRows === expectedRows && liveRowsAfter === expectedRows && missingStageAfter === 0 && missingLiveAfter === 0 && duplicateLiveKeys === 0 && duplicateStageKeys === 0 && missingLiveIdentity === 0 && missingStageIdentity === 0 && sourceErrorCount === 0 && unclearCount === 0;
+  const noopPass = expectedRows > 0 && missingBothBefore === 0 && retainedRows === expectedRows && liveRowsAfter === expectedRows && missingStageAfter === 0 && missingLiveAfter === 0 && duplicateLiveKeys === 0 && duplicateStageKeys === 0 && missingLiveIdentity === 0 && missingStageIdentity === 0;
+  const pass = repairPass || noopPass;
+  const certificationStatus = repairPass ? 'STARTER_HISTORY_DELTA_SCOPED_SOURCE_REPAIR_CERTIFIED_PROMOTED_RETAINED' : (noopPass ? 'STARTER_HISTORY_DELTA_SCOPED_SOURCE_REPAIR_NOOP_NO_MISSING_KEYS' : 'STARTER_HISTORY_DELTA_SCOPED_SOURCE_REPAIR_BLOCKED_VERIFY_FAILED');
+  const certificationGrade = repairPass ? 'DELTA_REPAIR_PASS' : (noopPass ? 'DELTA_NOOP_PASS' : 'DELTA_REPAIR_BLOCKED');
+  const status = repairPass ? 'DELTA_STARTER_HISTORY_SCOPED_SOURCE_REPAIR_COMPLETED' : (noopPass ? 'DELTA_STARTER_HISTORY_SCOPED_REPAIR_NOOP_CURRENT' : 'DELTA_STARTER_HISTORY_SCOPED_SOURCE_REPAIR_VERIFY_FAILED');
   const output = {
     source_shape_classification: 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS',
     actual_starter_identification_path: 'MLB StatsAPI /api/v1/game/{gamePk}/boxscore -> teams.{away,home}.players.ID*.stats.pitching.gamesStarted == 1',
@@ -1769,7 +1795,7 @@ async function scopedSourceRepairMissingDeltaKeys(env, input) {
     no_scoring: true,
     no_ranking: true,
     no_board_mutation: true,
-    next_action: pass ? 'SCOPED_SOURCE_REPAIR_LOCKED_STARTER_HISTORY_INCREMENTAL_READY' : 'INSPECT_SCOPED_SOURCE_REPAIR_FAILURE'
+    next_action: repairPass ? 'SCOPED_SOURCE_REPAIR_LOCKED_STARTER_HISTORY_INCREMENTAL_READY' : (noopPass ? 'NO_MISSING_KEYS_CURRENT_REPAIR_ORDER_OK' : 'INSPECT_SCOPED_SOURCE_REPAIR_FAILURE')
   };
   await run(env.TEAM_DB, `INSERT INTO starter_history_certifications (
     certification_id, batch_id, run_id, request_id, worker_name, version, certification_status, certification_grade, source_shape_classification, actual_starter_identification_path, safest_key_model,

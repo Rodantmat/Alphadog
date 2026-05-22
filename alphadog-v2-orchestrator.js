@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.56-base-starter-history-retained-restore";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.57-base-starter-history-scoped-repair-order-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1852,7 +1852,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_starter_history_v0_4_3_scoped_source_repair: starterMode === "delta_scoped_source_repair",
+      base_starter_history_v0_4_4_scoped_repair_order_fix: starterMode === "delta_scoped_source_repair",
       base_starter_history_v0_4_2_retained_stage_restore_before_queue: starterMode === "delta_retained_stage_restore_before_queue",
       base_starter_history_v0_4_1_delta_noop_current_state: starterMode === "delta_noop_current_state",
       base_starter_history_v0_4_0_delta_update_retained_stage: starterMode === "delta_update",
