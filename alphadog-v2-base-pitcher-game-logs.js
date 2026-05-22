@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-game-logs";
-const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.4.2-scoped-repair-gold-standard";
+const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.4.3-scoped-repair-live-column-align-fix";
 const JOB_KEY = "base-pitcher-game-logs";
 const GROUP_TYPE = "pitching";
 const SOURCE_KEY = "mlb_statsapi_pitcher_game_logs_v0_2_0";
@@ -15,7 +15,7 @@ const DEFAULT_MAX_STAGE_ROWS_PER_TICK = 1000;
 const DEFAULT_MAX_PROMOTE_ROWS_PER_TICK = 500;
 const DEFAULT_DELTA_LOOKBACK_DAYS = 7;
 const BASE_LIVE_DATA_FEED_KEY = "mlb_statsapi_pitcher_game_logs_2026_base_v0_3_1_promoted";
-const DELTA_DATA_FEED_KEY = "mlb_statsapi_pitcher_game_logs_2026_delta_v0_4_2_scoped_repair";
+const DELTA_DATA_FEED_KEY = "mlb_statsapi_pitcher_game_logs_2026_delta_v0_4_3_scoped_repair";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_PITCHER_DB"];
 const EXPECTED_VARS = ["ACTIVE_SEASON", "MLB_API_BASE_URL", "MLB_API_USER_AGENT", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK"];
@@ -1321,10 +1321,23 @@ async function createOrRefreshPitcherRepairAnchor(env, latest) {
 }
 
 async function insertOrReplaceLivePitcherRowFromStageKey(env, batchId, playerId, gamePk, groupType, grade) {
+  const safeGroupType = COALESCE_GROUP_TYPE(groupType);
   const r = await first(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_game_log_stage
     WHERE batch_id=? AND player_id=? AND game_pk=? AND COALESCE(group_type,'pitching')=?
-    LIMIT 1`, batchId, playerId, gamePk, groupType || GROUP_TYPE);
+    LIMIT 1`, batchId, playerId, gamePk, safeGroupType);
   if (!r) return { restored: 0, reason: "stage_row_not_found" };
+
+  // v0.4.3 safety cleanup: remove malformed scoped-repair live rows for the same player/game
+  // before inserting the certified row from retained stage. This prevents a previous bad repair
+  // row with updated_at accidentally stored in group_type from surviving as an orphan key.
+  await run(env.STATS_PITCHER_DB, `DELETE FROM pitcher_game_logs
+    WHERE batch_id=?
+      AND player_id=?
+      AND game_pk=?
+      AND COALESCE(group_type,'pitching') <> ?`, batchId, playerId, gamePk, safeGroupType);
+
+  // v0.4.3 column-aligned repair promotion: use INSERT ... SELECT from the retained stage row
+  // instead of a long JS bind list, so group_type, created_at, promoted_at, and updated_at cannot shift.
   await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_game_logs (
       player_id, game_pk, season, game_date, team_id, opponent_team_id, is_home, role,
       innings_pitched, outs_recorded, batters_faced, hits_allowed, runs_allowed, earned_runs,
@@ -1332,14 +1345,17 @@ async function insertOrReplaceLivePitcherRowFromStageKey(env, batchId, playerId,
       data_feed_key, source_endpoint, source_season, source_game_type, ingestion_mode, batch_id, run_id,
       certification_status, certification_grade, certified_at, promoted_at, created_at, group_type,
       player_name, opponent_team, innings_pitched_decimal, balls, strikes, wins, losses, saves, holds, blown_saves, stat_shape_json
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?,?,?,?,?,?,?,?,?,?,?)`,
-      r.player_id, r.game_pk, r.season, r.game_date, r.team_id, r.opponent_team_id, r.is_home, r.role,
-      r.innings_pitched, r.outs_recorded, r.batters_faced, r.hits_allowed, r.runs_allowed, r.earned_runs,
-      r.walks_allowed, r.strikeouts, r.home_runs_allowed, r.pitches, r.raw_json, r.source_key, r.source_confidence,
-      r.data_feed_key, r.source_endpoint, r.source_season, r.source_game_type, 'delta_update', r.batch_id, r.run_id,
-      'DELTA_PITCHER_GAME_LOGS_CERTIFIED_PROMOTED_STAGE_RETAINED', grade || 'DELTA_REPAIR_PASS', COALESCE_GROUP_TYPE(r.group_type),
-      r.player_name, r.opponent_team, r.innings_pitched_decimal, r.balls, r.strikes, r.wins, r.losses, r.saves, r.holds, r.blown_saves, r.stat_shape_json
-  );
+    )
+    SELECT
+      player_id, game_pk, season, game_date, team_id, opponent_team_id, is_home, role,
+      innings_pitched, outs_recorded, batters_faced, hits_allowed, runs_allowed, earned_runs,
+      walks_allowed, strikeouts, home_runs_allowed, pitches, raw_json, source_key, source_confidence, CURRENT_TIMESTAMP,
+      data_feed_key, source_endpoint, source_season, source_game_type, 'delta_update', batch_id, run_id,
+      'DELTA_PITCHER_GAME_LOGS_CERTIFIED_PROMOTED_STAGE_RETAINED', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, COALESCE(created_at, CURRENT_TIMESTAMP), COALESCE(group_type,'pitching'),
+      player_name, opponent_team, innings_pitched_decimal, balls, strikes, wins, losses, saves, holds, blown_saves, stat_shape_json
+    FROM pitcher_game_log_stage
+    WHERE stage_id=? AND batch_id=?`, grade || 'DELTA_REPAIR_PASS', r.stage_id, batchId);
+
   await run(env.STATS_PITCHER_DB, `UPDATE pitcher_game_log_stage
     SET certification_status='DELTA_PITCHER_GAME_LOGS_CERTIFIED_PROMOTED_STAGE_RETAINED', certification_grade=?, promoted_at=COALESCE(promoted_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP
     WHERE stage_id=? AND batch_id=?`, grade || 'DELTA_REPAIR_PASS', r.stage_id, batchId);
