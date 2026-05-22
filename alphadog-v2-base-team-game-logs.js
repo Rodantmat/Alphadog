@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-team-game-logs";
-const VERSION = "alphadog-v2-base-team-game-logs-v0.1.0-schema-source-lock-probe";
+const VERSION = "alphadog-v2-base-team-game-logs-v0.1.0-endpoint-normalization-hotfix";
 const JOB_KEY = "base-team-game-logs";
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
 const SOURCE_KEY = "mlb_statsapi_schedule_boxscore_team_totals_probe_v0_1_0";
@@ -297,7 +297,15 @@ async function ensureSchema(env) {
   return { ok: failures.length === 0, applied_count: applied.length, failure_count: failures.length, failures: failures.slice(0, 10) };
 }
 
-function getBaseUrl(env) { return String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com").replace(/\/$/, ""); }
+function getBaseUrl(env) {
+  // Normalize optional env override so both of these are safe:
+  // - https://statsapi.mlb.com
+  // - https://statsapi.mlb.com/api/v1
+  // Probe endpoints are appended with /api/v1/... below, so a pre-suffixed base must be trimmed.
+  return String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com")
+    .replace(/\/$/, "")
+    .replace(/\/api\/v1$/i, "");
+}
 async function fetchJson(url, env) {
   const headers = {};
   if (env.MLB_API_USER_AGENT) headers["user-agent"] = String(env.MLB_API_USER_AGENT);
