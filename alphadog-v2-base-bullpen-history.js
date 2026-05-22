@@ -1,59 +1,56 @@
 const WORKER_NAME = "alphadog-v2-base-bullpen-history";
-const VERSION = "alphadog-v2-dummy-workers-v0.1";
+const VERSION = "alphadog-v2-base-bullpen-history-v0.1.0-schema-source-lock-probe";
 const JOB_KEY = "base-bullpen-history";
+
+const DEFAULT_SAMPLE_DATE = "2026-05-18";
+const DEFAULT_SAMPLE_LIMIT = 3;
+const DEFAULT_BASE_CUTOFF_DATE = "2026-05-18";
+const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
+const SOURCE_KEY = "mlb_statsapi_schedule_boxscore_bullpen_history_v0_1_0";
+const SOURCE_CONFIDENCE = "SOURCE_PROBE_PENDING_OFFICIAL_FINAL_BOXSCORE";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "ODDS_API_BASE_URL", "PARLAY_API_BASE_URL", "MLB_API_BASE_URL", "PRIZEPICKS_SOURCE_MODE", "MAX_TICK_MS", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK", "LOCK_STALE_MINUTES", "WORKER_SAFE_MODE", "DEBUG_MODE", "MANUAL_SQL_ENABLED", "CONFIG_PHASE"];
 
-function nowUtc() {
-  return new Date().toISOString();
-}
+function nowUtc() { return new Date().toISOString(); }
+function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
+function safeJson(value) { try { return JSON.stringify(value == null ? null : value); } catch { return JSON.stringify({ serialization_error: true }); } }
+function str(value) { return value == null ? null : String(value); }
+function num(value) { const n = Number(value); return Number.isFinite(n) ? n : null; }
+function ymd(value) { return String(value || "").slice(0, 10); }
+function seasonFromDate(value) { return Number(String(value || DEFAULT_SAMPLE_DATE).slice(0, 4)) || 2026; }
+function asInt(value) { const n = Number(value); return Number.isFinite(n) ? Math.trunc(n) : null; }
 
 function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body, null, 2), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store"
-    }
-  });
+  return new Response(JSON.stringify(body, null, 2), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 }
-
-function bindingPresence(env, names) {
-  const out = {};
-  for (const name of names) out[name] = Boolean(env && env[name]);
-  return out;
-}
-
-function varPresence(env, names) {
-  const out = {};
-  for (const name of names) out[name] = env && env[name] !== undefined && env[name] !== null && String(env[name]).length > 0;
-  return out;
-}
-
-function allTrue(obj) {
-  return Object.values(obj).every(Boolean);
-}
+function bindingPresence(env, names) { const out = {}; for (const name of names) out[name] = Boolean(env && env[name]); return out; }
+function varPresence(env, names) { const out = {}; for (const name of names) out[name] = env && env[name] !== undefined && env[name] !== null && String(env[name]).length > 0; return out; }
+function allTrue(obj) { return Object.values(obj).every(Boolean); }
+async function readJsonSafe(request) { try { return await request.json(); } catch { return {}; } }
+async function run(db, sql, ...binds) { const stmt = db.prepare(sql); return binds.length ? stmt.bind(...binds).run() : stmt.run(); }
+async function all(db, sql, ...binds) { const stmt = db.prepare(sql); const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all(); return res.results || []; }
+async function first(db, sql, ...binds) { const rows = await all(db, sql, ...binds); return rows[0] || null; }
 
 function baseIdentity(env) {
   const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
   const vars = varPresence(env, EXPECTED_VARS);
   const secrets = varPresence(env, REQUIRED_SECRETS);
-
   return {
     ok: true,
     data_ok: true,
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "DUMMY_READY",
+    status: "BULLPEN_HISTORY_SCHEMA_SOURCE_LOCK_PROBE_READY",
     timestamp_utc: nowUtc(),
-    phase: "alphadog-v2-config-bootstrap",
+    phase: "bullpen-history-v0.1.0-source-probe-only",
     notes: [
-      "Dummy worker only.",
-      "No mining, scoring, external API calls, or production writes.",
-      "Use /health and /diagnostic to verify bindings/secrets/vars."
+      "v0.1.0 is schema/source-lock probe only.",
+      "Allowed writes: additive TEAM_DB bullpen lifecycle schema plus probe stage/outcome/batch/certification/cursor metadata.",
+      "Forbidden in this version: live promotion, full base backfill, delta execution, daily bullpen availability, scoring, ranking, final board, PrizePicks/Sleeper mutation, and browser pump.",
+      "Classification target is GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS if official completed MLB boxscore exposes relief pitchers through gamesStarted == 0. Daily Bullpen Availability remains a later derived worker."
     ],
     binding_summary: {
       required_db_bindings_present: allTrue(db),
@@ -63,12 +60,583 @@ function baseIdentity(env) {
   };
 }
 
-async function readJsonSafe(request) {
+async function tableColumns(db, tableName) {
   try {
-    return await request.json();
+    const rows = await all(db, `PRAGMA table_info(${tableName})`);
+    return new Set(rows.map(r => String(r.name)));
   } catch {
-    return {};
+    return new Set();
   }
+}
+
+async function addColumnIfMissing(db, tableName, columnName, columnDef) {
+  const cols = await tableColumns(db, tableName);
+  if (cols.has(columnName)) return { column: columnName, added: false, reason: "already_exists" };
+  await run(db, `ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDef}`);
+  return { column: columnName, added: true };
+}
+
+async function ensureSchema(env) {
+  const db = env.TEAM_DB;
+  const schemaActions = [];
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS team_schema_migrations (migration_key TEXT PRIMARY KEY, package_version TEXT NOT NULL, applied_at TEXT DEFAULT CURRENT_TIMESTAMP, notes TEXT)`,
+    `CREATE TABLE IF NOT EXISTS bullpen_history (
+      bullpen_key TEXT PRIMARY KEY,
+      team_id TEXT,
+      game_date TEXT,
+      game_pk INTEGER,
+      usage_json TEXT,
+      availability_json TEXT,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS bullpen_history_batches (
+      batch_id TEXT PRIMARY KEY,
+      run_id TEXT,
+      request_id TEXT,
+      chain_id TEXT,
+      job_key TEXT,
+      worker_name TEXT,
+      version TEXT,
+      ingestion_mode TEXT,
+      probe_only INTEGER DEFAULT 1,
+      source_key TEXT,
+      source_confidence TEXT,
+      source_season INTEGER,
+      source_game_type TEXT,
+      base_backfill_cutoff_date TEXT,
+      delta_reserved_start_date TEXT,
+      sample_start_date TEXT,
+      sample_end_date TEXT,
+      sample_limit INTEGER,
+      source_shape_classification TEXT,
+      relief_identification_path TEXT,
+      starter_exclusion_path TEXT,
+      safest_key_model TEXT,
+      expected_game_count INTEGER DEFAULT 0,
+      expected_bullpen_rows INTEGER DEFAULT 0,
+      staged_bullpen_rows INTEGER DEFAULT 0,
+      duplicate_stage_keys INTEGER DEFAULT 0,
+      final_games_sampled INTEGER DEFAULT 0,
+      teams_with_zero_bullpen_rows INTEGER DEFAULT 0,
+      games_with_zero_bullpen_team INTEGER DEFAULT 0,
+      games_started_zero_reliever_rows INTEGER DEFAULT 0,
+      games_started_missing_rows INTEGER DEFAULT 0,
+      opener_bulk_edge_case_count INTEGER DEFAULT 0,
+      source_error_count INTEGER DEFAULT 0,
+      unclear_count INTEGER DEFAULT 0,
+      status TEXT,
+      certification_status TEXT,
+      certification_grade TEXT,
+      output_json TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      certified_at TEXT,
+      promoted_at TEXT,
+      cleaned_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS bullpen_history_stage (
+      stage_id TEXT PRIMARY KEY,
+      bullpen_key TEXT,
+      game_pk INTEGER,
+      game_date TEXT,
+      season INTEGER,
+      game_type TEXT,
+      game_status TEXT,
+      team_id TEXT,
+      team_name TEXT,
+      opponent_team_id TEXT,
+      opponent_team_name TEXT,
+      is_home INTEGER,
+      venue_id INTEGER,
+      pitcher_id INTEGER,
+      pitcher_name TEXT,
+      pitcher_hand TEXT,
+      pitcher_role TEXT,
+      relief_classification TEXT,
+      relief_appearance INTEGER,
+      games_started INTEGER,
+      games_pitched INTEGER,
+      pitcher_order_index INTEGER,
+      bullpen_appearance_index INTEGER,
+      innings_pitched TEXT,
+      innings_pitched_decimal REAL,
+      outs_recorded INTEGER,
+      batters_faced INTEGER,
+      pitches INTEGER,
+      strikes INTEGER,
+      hits_allowed INTEGER,
+      runs_allowed INTEGER,
+      earned_runs INTEGER,
+      walks_allowed INTEGER,
+      strikeouts INTEGER,
+      home_runs_allowed INTEGER,
+      inherited_runners INTEGER,
+      inherited_runners_scored INTEGER,
+      holds INTEGER,
+      saves INTEGER,
+      blown_saves INTEGER,
+      field_map_json TEXT,
+      source_path TEXT,
+      data_feed_key TEXT,
+      source_key TEXT,
+      source_endpoint TEXT,
+      source_season INTEGER,
+      source_game_type TEXT,
+      ingestion_mode TEXT,
+      batch_id TEXT,
+      run_id TEXT,
+      request_id TEXT,
+      certification_status TEXT,
+      certification_grade TEXT,
+      source_confidence TEXT,
+      source_snapshot_date TEXT,
+      raw_json TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      certified_at TEXT,
+      promoted_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS bullpen_history_outcomes (
+      outcome_id TEXT PRIMARY KEY,
+      batch_id TEXT,
+      run_id TEXT,
+      request_id TEXT,
+      game_pk INTEGER,
+      game_date TEXT,
+      season INTEGER,
+      team_id TEXT,
+      opponent_team_id TEXT,
+      pitcher_id INTEGER,
+      bullpen_key TEXT,
+      outcome_level TEXT,
+      outcome_category TEXT,
+      status TEXT,
+      reason TEXT,
+      source_endpoint TEXT,
+      source_key TEXT,
+      source_confidence TEXT,
+      source_snapshot_date TEXT,
+      details_json TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS bullpen_history_cursor (
+      cursor_key TEXT PRIMARY KEY,
+      ingestion_mode TEXT,
+      source_key TEXT,
+      source_season INTEGER,
+      source_game_type TEXT,
+      base_backfill_cutoff_date TEXT,
+      delta_reserved_start_date TEXT,
+      last_sample_date TEXT,
+      last_game_pk INTEGER,
+      last_batch_id TEXT,
+      last_request_id TEXT,
+      status TEXT,
+      cursor_json TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS bullpen_history_certifications (
+      certification_id TEXT PRIMARY KEY,
+      batch_id TEXT,
+      run_id TEXT,
+      request_id TEXT,
+      certification_status TEXT,
+      certification_grade TEXT,
+      expected_game_count INTEGER DEFAULT 0,
+      expected_bullpen_rows INTEGER DEFAULT 0,
+      staged_bullpen_rows INTEGER DEFAULT 0,
+      rows_promoted INTEGER DEFAULT 0,
+      duplicate_stage_keys INTEGER DEFAULT 0,
+      non_final_games INTEGER DEFAULT 0,
+      source_error_count INTEGER DEFAULT 0,
+      repair_required_count INTEGER DEFAULT 0,
+      unclear_count INTEGER DEFAULT 0,
+      missing_game_pk INTEGER DEFAULT 0,
+      missing_game_date INTEGER DEFAULT 0,
+      missing_team_id INTEGER DEFAULT 0,
+      missing_opponent_team_id INTEGER DEFAULT 0,
+      missing_pitcher_id INTEGER DEFAULT 0,
+      starter_rows_included INTEGER DEFAULT 0,
+      invalid_relief_classification INTEGER DEFAULT 0,
+      raw_json_missing INTEGER DEFAULT 0,
+      lineage_missing_count INTEGER DEFAULT 0,
+      source_shape_classification TEXT,
+      relief_identification_path TEXT,
+      starter_exclusion_path TEXT,
+      safest_key_model TEXT,
+      field_map_json TEXT,
+      details_json TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_bullpen_history_stage_batch ON bullpen_history_stage(batch_id, game_pk, team_id, pitcher_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_bullpen_history_stage_game_team ON bullpen_history_stage(game_pk, team_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_bullpen_history_outcomes_batch ON bullpen_history_outcomes(batch_id, outcome_category)`,
+    `CREATE INDEX IF NOT EXISTS idx_bullpen_history_batches_status ON bullpen_history_batches(status, updated_at)`
+  ];
+  for (const sql of statements) {
+    try { await run(db, sql); schemaActions.push({ action: "run", ok: true, sql_preview: sql.slice(0, 80) }); }
+    catch (err) { schemaActions.push({ action: "run", ok: false, sql_preview: sql.slice(0, 80), error: String(err && err.message ? err.message : err) }); throw err; }
+  }
+
+  const liveColumns = [
+    ["game_type", "TEXT"], ["game_status", "TEXT"], ["season", "INTEGER"], ["opponent_team_id", "TEXT"], ["is_home", "INTEGER"], ["venue_id", "INTEGER"],
+    ["pitcher_id", "INTEGER"], ["pitcher_name", "TEXT"], ["pitcher_hand", "TEXT"], ["pitcher_role", "TEXT"], ["relief_classification", "TEXT"], ["relief_appearance", "INTEGER"], ["games_started", "INTEGER"], ["games_pitched", "INTEGER"], ["pitcher_order_index", "INTEGER"], ["bullpen_appearance_index", "INTEGER"],
+    ["innings_pitched", "TEXT"], ["innings_pitched_decimal", "REAL"], ["outs_recorded", "INTEGER"], ["batters_faced", "INTEGER"], ["pitches", "INTEGER"], ["strikes", "INTEGER"], ["hits_allowed", "INTEGER"], ["runs_allowed", "INTEGER"], ["earned_runs", "INTEGER"], ["walks_allowed", "INTEGER"], ["strikeouts", "INTEGER"], ["home_runs_allowed", "INTEGER"],
+    ["inherited_runners", "INTEGER"], ["inherited_runners_scored", "INTEGER"], ["holds", "INTEGER"], ["saves", "INTEGER"], ["blown_saves", "INTEGER"], ["field_map_json", "TEXT"], ["source_path", "TEXT"],
+    ["data_feed_key", "TEXT"], ["raw_json", "TEXT"], ["source_key", "TEXT"], ["source_endpoint", "TEXT"], ["source_season", "INTEGER"], ["source_game_type", "TEXT"], ["ingestion_mode", "TEXT"], ["batch_id", "TEXT"], ["run_id", "TEXT"], ["certification_status", "TEXT"], ["certification_grade", "TEXT"], ["source_confidence", "TEXT"], ["source_snapshot_date", "TEXT"], ["certified_at", "TEXT"], ["promoted_at", "TEXT"], ["created_at", "TEXT"]
+  ];
+  for (const [name, def] of liveColumns) {
+    try { schemaActions.push({ action: "add_column_if_missing", table: "bullpen_history", ...(await addColumnIfMissing(db, "bullpen_history", name, def)) }); }
+    catch (err) { schemaActions.push({ action: "add_column_if_missing", table: "bullpen_history", column: name, added: false, error: String(err && err.message ? err.message : err) }); }
+  }
+
+  for (const liveIndexSql of [
+    `CREATE INDEX IF NOT EXISTS idx_bullpen_history_game_team_pitcher ON bullpen_history(game_pk, team_id, pitcher_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_bullpen_history_batch ON bullpen_history(batch_id)`
+  ]) {
+    try { await run(db, liveIndexSql); schemaActions.push({ action: "run_live_index_after_columns", ok: true, sql_preview: liveIndexSql.slice(0, 100) }); }
+    catch (err) { schemaActions.push({ action: "run_live_index_after_columns", ok: false, sql_preview: liveIndexSql.slice(0, 100), error: String(err && err.message ? err.message : err) }); }
+  }
+
+  await run(db, `INSERT OR REPLACE INTO team_schema_migrations (migration_key, package_version, notes) VALUES ('bullpen_history_v0_1_0_schema_source_lock_probe', ?, 'Additive bullpen history lifecycle schema for source-lock probe only; no live promotion')`, VERSION);
+  return schemaActions;
+}
+
+async function insertOutcome(env, row) {
+  await run(env.TEAM_DB,
+    `INSERT INTO bullpen_history_outcomes (outcome_id,batch_id,run_id,request_id,game_pk,game_date,season,team_id,opponent_team_id,pitcher_id,bullpen_key,outcome_level,outcome_category,status,reason,source_endpoint,source_key,source_confidence,source_snapshot_date,details_json,created_at,updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+    rid("bh_outcome"), row.batch_id || null, row.run_id || null, row.request_id || null, row.game_pk || null, row.game_date || null, row.season || null, row.team_id == null ? null : String(row.team_id), row.opponent_team_id == null ? null : String(row.opponent_team_id), row.pitcher_id || null, row.bullpen_key || null,
+    row.outcome_level || null, row.outcome_category || null, row.status || null, row.reason || null, row.source_endpoint || null, row.source_key || SOURCE_KEY, row.source_confidence || SOURCE_CONFIDENCE, row.source_snapshot_date || ymd(nowUtc()), safeJson(row.details || null)
+  );
+}
+
+function scheduleEndpointCandidates(sampleDate) {
+  const d = ymd(sampleDate || DEFAULT_SAMPLE_DATE);
+  return [
+    `/api/v1/schedule?sportId=1&gameType=R&startDate=${d}&endDate=${d}`,
+    `/api/v1/schedule?sportId=1&startDate=${d}&endDate=${d}`,
+    `/api/v1/schedule?sportId=1&date=${d}`,
+    `/api/v1/schedule?sportId=1&gameTypes=R&startDate=${d}&endDate=${d}`
+  ];
+}
+function mlbBase(env) { return String((env && env.MLB_API_BASE_URL) || "https://statsapi.mlb.com").replace(/\/$/, ""); }
+async function fetchMlbJson(env, endpoint) {
+  const url = `${mlbBase(env)}${endpoint}`;
+  const headers = { "accept": "application/json" };
+  if (env && env.MLB_API_USER_AGENT) headers["user-agent"] = String(env.MLB_API_USER_AGENT);
+  try {
+    const resp = await fetch(url, { headers });
+    const text = await resp.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch {}
+    return { ok: resp.ok && !!json, http_status: resp.status, endpoint, url, json, text_preview: text.slice(0, 500) };
+  } catch (err) {
+    return { ok: false, http_status: 0, endpoint, url, json: null, text_preview: String(err && err.message ? err.message : err).slice(0, 500) };
+  }
+}
+async function fetchScheduleWithFallbacks(env, sampleDate) {
+  const attempts = [];
+  for (const endpoint of scheduleEndpointCandidates(sampleDate)) {
+    const res = await fetchMlbJson(env, endpoint);
+    attempts.push({ endpoint, ok: res.ok && res.json && Array.isArray(res.json.dates), http_status: res.http_status, has_dates_array: !!(res.json && Array.isArray(res.json.dates)), text_preview: res.text_preview });
+    if (res.ok && res.json && Array.isArray(res.json.dates)) return { ok: true, endpoint, json: res.json, attempts };
+  }
+  return { ok: false, endpoint: attempts.length ? attempts[attempts.length - 1].endpoint : null, json: null, attempts };
+}
+function isFinalRegularSeasonGame(game) {
+  const status = game && game.status ? game.status : {};
+  const detailed = String(status.detailedState || "").toLowerCase();
+  const coded = String(status.statusCode || status.codedGameState || "").toUpperCase();
+  const gameType = String(game && game.gameType || "").toUpperCase();
+  const isFinal = coded === "F" || detailed === "final" || detailed === "game over" || detailed.includes("final");
+  return isFinal && (!gameType || gameType === "R");
+}
+function teamBox(boxscore, side) { return boxscore && boxscore.teams && boxscore.teams[side] ? boxscore.teams[side] : null; }
+function teamIdFromBox(box) { return box && box.team && box.team.id != null ? String(box.team.id) : null; }
+function playerNodeByPitcherId(box, pitcherId) {
+  const players = (box && box.players) || {};
+  const direct = players[`ID${pitcherId}`];
+  if (direct) return direct;
+  for (const key of Object.keys(players)) {
+    const p = players[key];
+    if (p && p.person && String(p.person.id) === String(pitcherId)) return p;
+  }
+  return null;
+}
+function statLine(playerNode) { return playerNode && playerNode.stats && playerNode.stats.pitching ? playerNode.stats.pitching : {}; }
+function inningsToDecimal(ip, outs) {
+  if (outs != null) return Number((Number(outs) / 3).toFixed(3));
+  const text = String(ip || "");
+  if (!text) return null;
+  const parts = text.split(".");
+  const whole = Number(parts[0] || 0);
+  const fracOuts = Number(parts[1] || 0);
+  if (!Number.isFinite(whole) || !Number.isFinite(fracOuts)) return null;
+  return Number((whole + fracOuts / 3).toFixed(3));
+}
+function fieldPresence(line) {
+  const fields = ["gamesStarted", "gamesPitched", "inningsPitched", "outs", "battersFaced", "numberOfPitches", "strikes", "hits", "runs", "earnedRuns", "baseOnBalls", "strikeOuts", "homeRuns", "holds", "saves", "blownSaves", "inheritedRunners", "inheritedRunnersScored"];
+  const out = {};
+  for (const f of fields) out[f] = Object.prototype.hasOwnProperty.call(line || {}, f);
+  return out;
+}
+function bullpenStageRowFromPitcher({ game, boxscore, side, pitcherId, pitcherOrderIndex, bullpenIndex, batchId, runId, requestId, endpoint }) {
+  const box = teamBox(boxscore, side);
+  const oppSide = side === "home" ? "away" : "home";
+  const oppBox = teamBox(boxscore, oppSide);
+  const player = playerNodeByPitcherId(box, pitcherId);
+  const line = statLine(player);
+  const teamId = teamIdFromBox(box);
+  const oppId = teamIdFromBox(oppBox);
+  const gamePk = num(game.gamePk);
+  const gameDate = ymd(game.officialDate || game.gameDate);
+  const season = seasonFromDate(gameDate);
+  const gamesStarted = line.gamesStarted == null ? null : asInt(line.gamesStarted);
+  const bullpenKey = `${gamePk}_${teamId}_${pitcherId}`;
+  const outs = line.outs == null ? null : asInt(line.outs);
+  const fieldMap = fieldPresence(line);
+  return {
+    stage_id: rid("bh_stage"),
+    bullpen_key: bullpenKey,
+    game_pk: gamePk,
+    game_date: gameDate,
+    season,
+    game_type: str(game.gameType || "R"),
+    game_status: str(game.status && (game.status.detailedState || game.status.statusCode)),
+    team_id: teamId,
+    team_name: str(box && box.team && box.team.name),
+    opponent_team_id: oppId,
+    opponent_team_name: str(oppBox && oppBox.team && oppBox.team.name),
+    is_home: side === "home" ? 1 : 0,
+    venue_id: game.venue && game.venue.id != null ? num(game.venue.id) : null,
+    pitcher_id: num(pitcherId),
+    pitcher_name: str(player && player.person && player.person.fullName),
+    pitcher_hand: str(player && player.person && player.person.pitchHand && player.person.pitchHand.code),
+    pitcher_role: "reliever",
+    relief_classification: gamesStarted === 0 ? "official_boxscore_gamesStarted_0" : "unlocked_missing_or_nonzero_gamesStarted",
+    relief_appearance: gamesStarted === 0 ? 1 : 0,
+    games_started: gamesStarted,
+    games_pitched: line.gamesPitched == null ? null : asInt(line.gamesPitched),
+    pitcher_order_index: pitcherOrderIndex,
+    bullpen_appearance_index: bullpenIndex,
+    innings_pitched: str(line.inningsPitched),
+    innings_pitched_decimal: inningsToDecimal(line.inningsPitched, outs),
+    outs_recorded: outs,
+    batters_faced: line.battersFaced == null ? null : asInt(line.battersFaced),
+    pitches: line.numberOfPitches == null ? null : asInt(line.numberOfPitches),
+    strikes: line.strikes == null ? null : asInt(line.strikes),
+    hits_allowed: line.hits == null ? null : asInt(line.hits),
+    runs_allowed: line.runs == null ? null : asInt(line.runs),
+    earned_runs: line.earnedRuns == null ? null : asInt(line.earnedRuns),
+    walks_allowed: line.baseOnBalls == null ? null : asInt(line.baseOnBalls),
+    strikeouts: line.strikeOuts == null ? null : asInt(line.strikeOuts),
+    home_runs_allowed: line.homeRuns == null ? null : asInt(line.homeRuns),
+    inherited_runners: line.inheritedRunners == null ? null : asInt(line.inheritedRunners),
+    inherited_runners_scored: line.inheritedRunnersScored == null ? null : asInt(line.inheritedRunnersScored),
+    holds: line.holds == null ? null : asInt(line.holds),
+    saves: line.saves == null ? null : asInt(line.saves),
+    blown_saves: line.blownSaves == null ? null : asInt(line.blownSaves),
+    field_map_json: safeJson(fieldMap),
+    source_path: `boxscore.teams.${side}.players.ID${pitcherId}.stats.pitching`,
+    data_feed_key: "bullpen_history_relief_appearance",
+    source_key: SOURCE_KEY,
+    source_endpoint: endpoint,
+    source_season: season,
+    source_game_type: str(game.gameType || "R"),
+    ingestion_mode: "source_lock_probe",
+    batch_id: batchId,
+    run_id: runId,
+    request_id: requestId,
+    certification_status: "BULLPEN_HISTORY_SOURCE_PROBE_ONLY",
+    certification_grade: "PROBE_ONLY",
+    source_confidence: SOURCE_CONFIDENCE,
+    source_snapshot_date: gameDate,
+    raw_json: safeJson({ side, game_summary: game, pitcher_id: pitcherId, player_node: player, pitching_line: line })
+  };
+}
+async function insertStageRow(env, row) {
+  await run(env.TEAM_DB,
+    `INSERT OR REPLACE INTO bullpen_history_stage (
+      stage_id,bullpen_key,game_pk,game_date,season,game_type,game_status,team_id,team_name,opponent_team_id,opponent_team_name,is_home,venue_id,pitcher_id,pitcher_name,pitcher_hand,pitcher_role,relief_classification,relief_appearance,games_started,games_pitched,pitcher_order_index,bullpen_appearance_index,innings_pitched,innings_pitched_decimal,outs_recorded,batters_faced,pitches,strikes,hits_allowed,runs_allowed,earned_runs,walks_allowed,strikeouts,home_runs_allowed,inherited_runners,inherited_runners_scored,holds,saves,blown_saves,field_map_json,source_path,data_feed_key,source_key,source_endpoint,source_season,source_game_type,ingestion_mode,batch_id,run_id,request_id,certification_status,certification_grade,source_confidence,source_snapshot_date,raw_json,created_at,updated_at,certified_at,promoted_at
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,NULL,NULL)`,
+    row.stage_id,row.bullpen_key,row.game_pk,row.game_date,row.season,row.game_type,row.game_status,row.team_id,row.team_name,row.opponent_team_id,row.opponent_team_name,row.is_home,row.venue_id,row.pitcher_id,row.pitcher_name,row.pitcher_hand,row.pitcher_role,row.relief_classification,row.relief_appearance,row.games_started,row.games_pitched,row.pitcher_order_index,row.bullpen_appearance_index,row.innings_pitched,row.innings_pitched_decimal,row.outs_recorded,row.batters_faced,row.pitches,row.strikes,row.hits_allowed,row.runs_allowed,row.earned_runs,row.walks_allowed,row.strikeouts,row.home_runs_allowed,row.inherited_runners,row.inherited_runners_scored,row.holds,row.saves,row.blown_saves,row.field_map_json,row.source_path,row.data_feed_key,row.source_key,row.source_endpoint,row.source_season,row.source_game_type,row.ingestion_mode,row.batch_id,row.run_id,row.request_id,row.certification_status,row.certification_grade,row.source_confidence,row.source_snapshot_date,row.raw_json
+  );
+}
+
+async function runSourceProbe(env, input = {}) {
+  const schemaActions = await ensureSchema(env);
+  const requestId = input.request_id || rid("bullpen_probe_request");
+  const chainId = input.chain_id || rid("bullpen_probe_chain");
+  const runId = input.run_id || rid("bullpen_probe_run");
+  const batchId = input.batch_id || rid("bullpen_probe_batch");
+  const sampleDate = ymd(input.sample_date || input.sample_start_date || DEFAULT_SAMPLE_DATE);
+  const sampleLimit = Math.max(1, Math.min(Number(input.sample_limit || DEFAULT_SAMPLE_LIMIT), 5));
+  const season = seasonFromDate(sampleDate);
+  const scheduleEndpointsAttempted = scheduleEndpointCandidates(sampleDate);
+  let externalCalls = 0;
+
+  await run(env.TEAM_DB,
+    `INSERT OR REPLACE INTO bullpen_history_batches (batch_id,run_id,request_id,chain_id,job_key,worker_name,version,ingestion_mode,probe_only,source_key,source_confidence,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,sample_start_date,sample_end_date,sample_limit,status,certification_status,certification_grade,output_json,created_at,updated_at)
+     VALUES (?,?,?,?,?,?,?,'source_lock_probe',1,?,?,?,'R',?,?,?,?,?,'RUNNING_SOURCE_PROBE','BULLPEN_HISTORY_SOURCE_PROBE_RUNNING','PROBE_ONLY',NULL,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+    batchId, runId, requestId, chainId, JOB_KEY, WORKER_NAME, VERSION, SOURCE_KEY, SOURCE_CONFIDENCE, season, DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, sampleDate, sampleDate, sampleLimit
+  );
+
+  const schedule = await fetchScheduleWithFallbacks(env, sampleDate); externalCalls += schedule.attempts.length;
+  for (const attempt of schedule.attempts) {
+    await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_date: sampleDate, season, outcome_level: "SOURCE", outcome_category: attempt.ok ? "SOURCE_PROBE" : "SOURCE_ERROR", status: attempt.ok ? "SCHEDULE_ENDPOINT_OK" : "SCHEDULE_ENDPOINT_FAILED", reason: attempt.ok ? "schedule_endpoint_returned_usable_dates_array" : "schedule_endpoint_http_or_shape_error", source_endpoint: attempt.endpoint, details: attempt });
+  }
+  if (!schedule.ok) {
+    const output = { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "SOURCE_PROBE_BLOCKED_SCHEDULE", certification: "BULLPEN_HISTORY_SOURCE_PROBE_SCHEDULE_FAILED", schedule_endpoints_attempted: scheduleEndpointsAttempted, schedule_attempts: schedule.attempts, no_live_promotion: true, rows_written: 0, external_calls_performed: externalCalls, schema_actions: schemaActions };
+    await run(env.TEAM_DB, `UPDATE bullpen_history_batches SET status='FAILED_SOURCE_PROBE_SCHEDULE', certification_status='BULLPEN_HISTORY_SOURCE_PROBE_SCHEDULE_FAILED', certification_grade='PROBE_BLOCKED', source_error_count=1, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, safeJson(output), batchId);
+    return output;
+  }
+
+  const games = [];
+  for (const dateNode of (schedule.json && schedule.json.dates ? schedule.json.dates : [])) {
+    for (const game of (dateNode.games || [])) if (isFinalRegularSeasonGame(game)) games.push(game);
+  }
+  const sampleGames = games.slice(0, sampleLimit);
+  let sourceErrors = 0, unclear = 0, stagedRows = 0, zeroBullpenTeams = 0, gamesWithZeroBullpenTeam = 0, gamesStartedZeroRows = 0, gamesStartedMissingRows = 0, openerBulkEdgeCases = 0;
+  const fieldSeen = {};
+  const gameProbes = [];
+
+  for (const game of sampleGames) {
+    const gamePk = num(game.gamePk);
+    const gameDate = ymd(game.officialDate || game.gameDate || sampleDate);
+    const boxEndpoint = `/api/v1/game/${gamePk}/boxscore`;
+    const box = await fetchMlbJson(env, boxEndpoint); externalCalls += 1;
+    const gameProbe = { game_pk: gamePk, game_date: gameDate, game_status: game.status || null, boxscore_http_status: box.http_status, teams: [] };
+    if (!box.ok || !box.json) {
+      sourceErrors += 1;
+      await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season, outcome_level: "GAME", outcome_category: "SOURCE_ERROR", status: "SOURCE_ERROR", reason: "boxscore_http_error", source_endpoint: boxEndpoint, details: { http_status: box.http_status, text_preview: box.text_preview } });
+      continue;
+    }
+    let gameHadZeroBullpenTeam = false;
+    for (const side of ["away", "home"]) {
+      const boxSide = teamBox(box.json, side);
+      const oppSide = side === "home" ? "away" : "home";
+      const oppBox = teamBox(box.json, oppSide);
+      const teamId = teamIdFromBox(boxSide);
+      const oppId = teamIdFromBox(oppBox);
+      const pitchers = Array.isArray(boxSide && boxSide.pitchers) ? boxSide.pitchers.map(x => num(x)).filter(x => x != null) : [];
+      let starters = 0, relievers = 0, missingGs = 0, bullpenIndex = 0;
+      for (let i = 0; i < pitchers.length; i++) {
+        const pitcherId = pitchers[i];
+        const player = playerNodeByPitcherId(boxSide, pitcherId);
+        const line = statLine(player);
+        const fp = fieldPresence(line);
+        for (const [k, v] of Object.entries(fp)) fieldSeen[k] = Boolean(fieldSeen[k] || v);
+        const gs = line.gamesStarted == null ? null : asInt(line.gamesStarted);
+        if (gs === 1) { starters += 1; continue; }
+        if (gs === 0) {
+          relievers += 1;
+          gamesStartedZeroRows += 1;
+          const stageRow = bullpenStageRowFromPitcher({ game, boxscore: box.json, side, pitcherId, pitcherOrderIndex: i, bullpenIndex, batchId, runId, requestId, endpoint: boxEndpoint });
+          bullpenIndex += 1;
+          await insertStageRow(env, stageRow); stagedRows += 1;
+          await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season, team_id: teamId, opponent_team_id: oppId, pitcher_id: pitcherId, bullpen_key: stageRow.bullpen_key, outcome_level: "BULLPEN_APPEARANCE", outcome_category: "PROMOTED_ROWS", status: "STAGED_PROBE_ONLY", reason: "official_final_boxscore_gamesStarted_0_identified_relief_pitcher_appearance", source_endpoint: boxEndpoint, details: { side, bullpen_key: stageRow.bullpen_key, no_live_promotion: true, field_presence: fp } });
+        } else {
+          missingGs += 1; gamesStartedMissingRows += 1; unclear += 1;
+          await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season, team_id: teamId, opponent_team_id: oppId, pitcher_id: pitcherId, outcome_level: "BULLPEN_APPEARANCE", outcome_category: "UNCLEAR", status: "UNCLEAR", reason: "pitcher_gamesStarted_missing_cannot_classify_as_relief_without_guessing", source_endpoint: boxEndpoint, details: { side, pitcher_id: pitcherId, pitcher_order_index: i, line_keys: Object.keys(line || {}) } });
+        }
+      }
+      if (starters !== 1 && pitchers.length > 0) openerBulkEdgeCases += 1;
+      if (relievers === 0) { zeroBullpenTeams += 1; gameHadZeroBullpenTeam = true; }
+      gameProbe.teams.push({ side, team_id: teamId, opponent_team_id: oppId, pitcher_count: pitchers.length, official_starters_gamesStarted_1: starters, official_relievers_gamesStarted_0: relievers, gamesStarted_missing_pitchers: missingGs, zero_bullpen_rows: relievers === 0, complete_game_or_no_relief_possible: relievers === 0 && starters === 1 });
+      await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season, team_id: teamId, opponent_team_id: oppId, outcome_level: "TEAM", outcome_category: relievers > 0 ? "TEAM_BULLPEN_ROWS_STAGED" : "TRUE_NO_DATA", status: relievers > 0 ? "TEAM_STAGED_PROBE_ONLY" : "TEAM_ZERO_BULLPEN_ROWS_REPRESENTED", reason: relievers > 0 ? "team_relief_pitcher_appearances_staged_from_final_boxscore" : "zero_relief_pitchers_in_final_boxscore_represented_without_false_failure", source_endpoint: boxEndpoint, details: { side, starters, relievers, missingGs, pitcher_count: pitchers.length, no_live_promotion: true } });
+    }
+    if (gameHadZeroBullpenTeam) gamesWithZeroBullpenTeam += 1;
+    await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season, outcome_level: "GAME", outcome_category: "GAME_SOURCE_PROBED", status: "GAME_PROBED_STAGE_ONLY", reason: "completed_final_game_boxscore_probed_for_variable_bullpen_appearance_rows", source_endpoint: boxEndpoint, details: { no_live_promotion: true, variable_bullpen_rows: true } });
+    gameProbes.push(gameProbe);
+  }
+
+  const dup = await first(env.TEAM_DB, `SELECT COALESCE(SUM(c-1),0) AS duplicate_count FROM (SELECT bullpen_key, COUNT(*) AS c FROM bullpen_history_stage WHERE batch_id=? GROUP BY bullpen_key HAVING COUNT(*)>1)`, batchId);
+  const duplicateStageKeys = Number(dup && dup.duplicate_count ? dup.duplicate_count : 0);
+  const missing = await first(env.TEAM_DB, `SELECT
+    SUM(CASE WHEN game_pk IS NULL THEN 1 ELSE 0 END) AS missing_game_pk,
+    SUM(CASE WHEN game_date IS NULL OR game_date='' THEN 1 ELSE 0 END) AS missing_game_date,
+    SUM(CASE WHEN team_id IS NULL OR team_id='' THEN 1 ELSE 0 END) AS missing_team_id,
+    SUM(CASE WHEN opponent_team_id IS NULL OR opponent_team_id='' THEN 1 ELSE 0 END) AS missing_opponent_team_id,
+    SUM(CASE WHEN pitcher_id IS NULL THEN 1 ELSE 0 END) AS missing_pitcher_id,
+    SUM(CASE WHEN relief_appearance<>1 OR games_started<>0 THEN 1 ELSE 0 END) AS invalid_relief_classification,
+    SUM(CASE WHEN raw_json IS NULL OR raw_json='' THEN 1 ELSE 0 END) AS raw_json_missing,
+    SUM(CASE WHEN data_feed_key IS NULL OR source_key IS NULL OR source_endpoint IS NULL OR ingestion_mode IS NULL OR batch_id IS NULL OR run_id IS NULL THEN 1 ELSE 0 END) AS lineage_missing_count
+    FROM bullpen_history_stage WHERE batch_id=?`, batchId);
+
+  const requiredFieldsConfirmed = ["gamesStarted", "inningsPitched", "outs", "battersFaced", "numberOfPitches", "strikes", "hits", "runs", "earnedRuns", "baseOnBalls", "strikeOuts", "homeRuns"].every(k => !!fieldSeen[k]);
+  const optionalDecision = {
+    holds: fieldSeen.holds ? "source_field_present_in_sample" : "unlocked_not_required_for_v0_1_0_source_lock",
+    saves: fieldSeen.saves ? "source_field_present_in_sample" : "unlocked_not_required_for_v0_1_0_source_lock",
+    blown_saves: fieldSeen.blownSaves ? "source_field_present_in_sample" : "unlocked_not_required_for_v0_1_0_source_lock",
+    inherited_runners: fieldSeen.inheritedRunners ? "source_field_present_in_sample" : "unlocked_not_required_for_v0_1_0_source_lock",
+    inherited_runners_scored: fieldSeen.inheritedRunnersScored ? "source_field_present_in_sample" : "unlocked_not_required_for_v0_1_0_source_lock"
+  };
+  const classificationLocked = sampleGames.length > 0 && stagedRows > 0 && gamesStartedMissingRows === 0 && duplicateStageKeys === 0 && sourceErrors === 0 && requiredFieldsConfirmed;
+  const sourceShapeClassification = classificationLocked ? "GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS" : "HYBRID_OR_UNCLEAR_NEEDS_REVIEW";
+  const certification = classificationLocked ? "BULLPEN_HISTORY_SOURCE_LOCK_PROBE_PASSED_GAME_LOG_STYLE" : "BULLPEN_HISTORY_SOURCE_LOCK_PROBE_REVIEW_REQUIRED";
+  const grade = classificationLocked ? "PROBE_PASS" : "PROBE_REVIEW";
+  const status = classificationLocked ? "SOURCE_LOCK_PROBE_PASSED" : "SOURCE_LOCK_PROBE_REVIEW_REQUIRED";
+  const reliefPath = "MLB StatsAPI /api/v1/game/{gamePk}/boxscore -> teams.{away,home}.pitchers[] -> players.ID*.stats.pitching.gamesStarted == 0";
+  const starterPath = "Exclude actual starters using MLB StatsAPI final boxscore stats.pitching.gamesStarted == 1; opener/bulk role labels are not guessed in base history.";
+  const safestKey = duplicateStageKeys === 0 ? "game_pk + team_id + pitcher_id" : "game_pk + team_id + pitcher_id + bullpen_appearance_index_REQUIRED_REVIEW";
+  const output = {
+    ok: true,
+    data_ok: classificationLocked,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    request_id: requestId,
+    chain_id: chainId,
+    run_id: runId,
+    batch_id: batchId,
+    status,
+    certification,
+    certification_grade: grade,
+    source_shape_classification: sourceShapeClassification,
+    hybrid_note: "Raw bullpen appearance rows are game-log style. Daily Bullpen Availability/workload is derived later and is not built here.",
+    source_endpoints_tested: { schedule_endpoint_selected: schedule.endpoint, schedule_endpoints_attempted: scheduleEndpointsAttempted, boxscore_endpoint_pattern_tested: "/api/v1/game/{gamePk}/boxscore" },
+    sample: { sample_date: sampleDate, sample_limit: sampleLimit, final_regular_season_games_found: games.length, final_games_sampled: sampleGames.length, game_pks_sampled: sampleGames.map(g => g.gamePk) },
+    relief_starter_classification: { relief_identification_path: reliefPath, starter_exclusion_path: starterPath, gamesStarted_zero_reliever_rows: gamesStartedZeroRows, gamesStarted_missing_rows: gamesStartedMissingRows, opener_bulk_edge_case_count: openerBulkEdgeCases, complete_game_zero_bullpen_team_cases_represented: zeroBullpenTeams },
+    fields_confirmed: fieldSeen,
+    optional_fields_decision: optionalDecision,
+    safest_key_model: safestKey,
+    counts: { expected_game_count: sampleGames.length, expected_bullpen_rows: stagedRows, staged_bullpen_rows: stagedRows, duplicate_stage_keys: duplicateStageKeys, source_error_count: sourceErrors, unclear_count: unclear, teams_with_zero_bullpen_rows: zeroBullpenTeams, games_with_zero_bullpen_team: gamesWithZeroBullpenTeam },
+    certification_checks: { required_core_pitching_fields_confirmed: requiredFieldsConfirmed, missing, no_live_promotion: true, no_full_base_backfill: true, no_delta_update_execution: true, no_daily_bullpen_availability: true, no_scoring: true, no_ranking: true, no_final_board: true, no_board_mutation: true, variable_bullpen_row_model: true },
+    game_probes: gameProbes,
+    schema_actions: schemaActions,
+    rows_read: sampleGames.length,
+    rows_written: stagedRows,
+    writes_performed: stagedRows,
+    external_calls_performed: externalCalls,
+    no_live_promotion: true,
+    next_safe_step: classificationLocked ? "v0.2.0_base_backfill_stage_only_is_safe_to_design_next_but_not_built_here" : "review_probe_output_before_v0_2_0",
+    gemini_source_research_needed: classificationLocked ? false : true,
+    timestamp_utc: nowUtc()
+  };
+
+  await run(env.TEAM_DB,
+    `UPDATE bullpen_history_batches SET source_shape_classification=?, relief_identification_path=?, starter_exclusion_path=?, safest_key_model=?, expected_game_count=?, expected_bullpen_rows=?, staged_bullpen_rows=?, duplicate_stage_keys=?, final_games_sampled=?, teams_with_zero_bullpen_rows=?, games_with_zero_bullpen_team=?, games_started_zero_reliever_rows=?, games_started_missing_rows=?, opener_bulk_edge_case_count=?, source_error_count=?, unclear_count=?, status=?, certification_status=?, certification_grade=?, output_json=?, certified_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    sourceShapeClassification, reliefPath, starterPath, safestKey, sampleGames.length, stagedRows, stagedRows, duplicateStageKeys, sampleGames.length, zeroBullpenTeams, gamesWithZeroBullpenTeam, gamesStartedZeroRows, gamesStartedMissingRows, openerBulkEdgeCases, sourceErrors, unclear, status, certification, grade, safeJson(output), batchId
+  );
+  await run(env.TEAM_DB,
+    `INSERT OR REPLACE INTO bullpen_history_certifications (certification_id,batch_id,run_id,request_id,certification_status,certification_grade,expected_game_count,expected_bullpen_rows,staged_bullpen_rows,rows_promoted,duplicate_stage_keys,non_final_games,source_error_count,repair_required_count,unclear_count,missing_game_pk,missing_game_date,missing_team_id,missing_opponent_team_id,missing_pitcher_id,starter_rows_included,invalid_relief_classification,raw_json_missing,lineage_missing_count,source_shape_classification,relief_identification_path,starter_exclusion_path,safest_key_model,field_map_json,details_json,created_at,updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,0,?,0,?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+    rid("bh_cert"), batchId, runId, requestId, certification, grade, sampleGames.length, stagedRows, stagedRows, duplicateStageKeys, sourceErrors, unclear,
+    missing && missing.missing_game_pk || 0, missing && missing.missing_game_date || 0, missing && missing.missing_team_id || 0, missing && missing.missing_opponent_team_id || 0, missing && missing.missing_pitcher_id || 0, 0, missing && missing.invalid_relief_classification || 0, missing && missing.raw_json_missing || 0, missing && missing.lineage_missing_count || 0,
+    sourceShapeClassification, reliefPath, starterPath, safestKey, safeJson(fieldSeen), safeJson(output)
+  );
+  await run(env.TEAM_DB,
+    `INSERT OR REPLACE INTO bullpen_history_cursor (cursor_key,ingestion_mode,source_key,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,last_sample_date,last_game_pk,last_batch_id,last_request_id,status,cursor_json,created_at,updated_at)
+     VALUES ('bullpen_history_source_lock_probe_cursor','source_lock_probe',?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+    SOURCE_KEY, season, "R", DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, sampleDate, sampleGames.length ? num(sampleGames[sampleGames.length - 1].gamePk) : null, batchId, requestId, status, safeJson({ source_shape_classification: sourceShapeClassification, field_seen: fieldSeen, safest_key_model: safestKey, no_live_promotion: true })
+  );
+
+  return output;
 }
 
 export default {
@@ -77,89 +645,25 @@ export default {
     const path = url.pathname.replace(/\/$/, "") || "/";
     const method = request.method.toUpperCase();
 
-    if (method === "GET" && path === "/") {
-      return jsonResponse(baseIdentity(env));
-    }
-
+    if (method === "GET" && path === "/") return jsonResponse(baseIdentity(env));
     if (method === "GET" && path === "/health") {
       const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
       const vars = varPresence(env, EXPECTED_VARS);
       const secrets = varPresence(env, REQUIRED_SECRETS);
-
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/health",
-        checks: {
-          db_bindings: db,
-          vars: vars,
-          secrets_present_only: secrets
-        },
-        safe_secret_note: "Secret values are intentionally never printed."
-      });
+      return jsonResponse({ ...baseIdentity(env), route: "/health", checks: { db_bindings: db, vars, secrets_present_only: secrets }, safe_secret_note: "Secret values are intentionally never printed." });
     }
-
     if (method === "POST" && path === "/diagnostic") {
       const input = await readJsonSafe(request);
-      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-      const vars = varPresence(env, EXPECTED_VARS);
-      const secrets = varPresence(env, REQUIRED_SECRETS);
-
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/diagnostic",
-        input_echo_safe: {
-          request_id: input.request_id || null,
-          chain_id: input.chain_id || null,
-          job_key: input.job_key || null,
-          mode: input.mode || null
-        },
-        diagnostics: {
-          db_bindings: db,
-          vars: vars,
-          secrets_present_only: secrets
-        },
-        writes_performed: 0,
-        external_calls_performed: 0
-      });
+      return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", input_echo_safe: { request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || null, mode: input.mode || null }, writes_performed: 0, external_calls_performed: 0 });
     }
-
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-
-      return jsonResponse({
-        ok: true,
-        data_ok: true,
-        version: VERSION,
-        worker_name: WORKER_NAME,
-        job_key: input.job_key || JOB_KEY,
-        request_id: input.request_id || null,
-        chain_id: input.chain_id || null,
-        status: "DUMMY_READY",
-        certification: "DUMMY_ONLY_NOT_REAL_DATA",
-        rows_read: 0,
-        rows_written: 0,
-        next_action: "ADD_BINDINGS_SECRETS_VARS_AND_VERIFY_HEALTH",
-        block_downstream_reason: null,
-        output_json: {
-          dummy: true,
-          slate_date: input.slate_date || null,
-          mode: input.mode || null,
-          received_input_json: input.input_json || null
-        },
-        timestamp_utc: nowUtc(),
-        writes_performed: 0,
-        external_calls_performed: 0
-      });
+      const mode = String(input.mode || (input.input_json && input.input_json.mode) || "source_lock_probe");
+      if (mode !== "source_lock_probe") {
+        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode_v0_1_0_probe_only", mode, allowed_modes: ["source_lock_probe"], blocked_reason: "v0.1.0 forbids live promotion, full base backfill, delta execution, and daily bullpen availability.", no_live_promotion: true }, 400);
+      }
+      return jsonResponse(await runSourceProbe(env, input));
     }
-
-    return jsonResponse({
-      ok: false,
-      data_ok: false,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      status: "NOT_FOUND",
-      allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"],
-      timestamp_utc: nowUtc()
-    }, 404);
+    return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }
 };

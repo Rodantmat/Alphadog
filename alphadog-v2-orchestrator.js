@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.57-base-starter-history-scoped-repair-order-fix";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.58-base-bullpen-history-source-probe";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -47,7 +47,7 @@ function base(env, extra = {}) {
       "Buttons enqueue/wake backend work only.",
       "Browser does not run long loops.",
       "Scheduled cron calls the same bounded tick path.",
-      "v0.2.32 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-pitcher-game-logs base/delta continuation, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
+      "v0.2.58 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-pitcher-game-logs base/delta continuation, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.1.0 source probe, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
       "No generic worker dispatch, no scoring, no ranking, no final board writes, no old production writes."
     ],
     bindings: {
@@ -60,6 +60,7 @@ function base(env, extra = {}) {
       BASE_PITCHER_GAME_LOGS_WORKER: !!env.BASE_PITCHER_GAME_LOGS_WORKER,
       BASE_TEAM_GAME_LOGS_WORKER: !!env.BASE_TEAM_GAME_LOGS_WORKER,
       BASE_STARTER_HISTORY_WORKER: !!env.BASE_STARTER_HISTORY_WORKER,
+      BASE_BULLPEN_HISTORY_WORKER: !!env.BASE_BULLPEN_HISTORY_WORKER,
       BASE_PITCHER_SPLITS_WORKER: !!env.BASE_PITCHER_SPLITS_WORKER
     },
     ...extra
@@ -222,6 +223,12 @@ function isBaseStarterHistoryJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "base-starter-history" && worker === "alphadog-v2-base-starter-history";
+}
+
+function isBaseBullpenHistoryJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "base-bullpen-history" && worker === "alphadog-v2-base-bullpen-history";
 }
 
 function isBasePitcherSplitsJob(row) {
@@ -1773,6 +1780,130 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
 }
 
 
+
+async function processBaseBullpenHistoryJob(env, row, runId, trigger) {
+  if (!env.BASE_BULLPEN_HISTORY_WORKER || typeof env.BASE_BULLPEN_HISTORY_WORKER.fetch !== "function") {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      request_id: row.request_id,
+      run_id: runId,
+      status: "blocked_missing_base_bullpen_history_service_binding",
+      certification: "BASE_BULLPEN_HISTORY_SERVICE_BINDING_MISSING",
+      note: "Exact dispatch is enabled only through BASE_BULLPEN_HISTORY_WORKER service binding. Deploy orchestrator with the services wrangler config.",
+      trigger
+    };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_base_bullpen_history_service_binding', 'BASE_BULLPEN_HISTORY_WORKER service binding is missing')",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, row.input_json || "{}", JSON.stringify(output)
+    );
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_base_bullpen_history_service_binding', error_message='BASE_BULLPEN_HISTORY_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id
+    );
+    return output;
+  }
+
+  const started = Date.now();
+  let input = {};
+  try { input = row.input_json ? JSON.parse(row.input_json) : {}; } catch { input = {}; }
+  const bullpenMode = String(input.mode || "source_lock_probe");
+  const payload = {
+    ...input,
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    run_id: runId,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    mode: bullpenMode,
+    orchestrator_trigger: trigger,
+    no_live_promotion: true,
+    no_full_base_backfill: true,
+    no_delta_update_execution: true,
+    no_daily_bullpen_availability: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_board_mutation: true
+  };
+
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status='running', started_at=COALESCE(started_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP, tick_count=COALESCE(tick_count,0)+1 WHERE request_id=?",
+    row.request_id
+  );
+
+  let output, errorCode = null, errorMessage = null;
+  try {
+    const resp = await env.BASE_BULLPEN_HISTORY_WORKER.fetch("https://internal.alphadog-v2-base-bullpen-history/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const text = await resp.text();
+    try { output = JSON.parse(text); } catch { output = { ok: false, data_ok: false, raw_text: text, http_status: resp.status }; }
+    if (!resp.ok) {
+      errorCode = "base_bullpen_history_http_" + resp.status;
+      errorMessage = String((output && (output.error || output.status || output.blocked_reason)) || text || "Base Bullpen History worker HTTP failure").slice(0, 500);
+    }
+  } catch (err) {
+    errorCode = "base_bullpen_history_dispatch_exception";
+    errorMessage = String(err && err.message ? err.message : err).slice(0, 500);
+    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: row.worker_name, job_key: row.job_key, status: "dispatch_exception", error: errorMessage };
+  }
+
+  const ok = !!(output && output.ok && !errorCode);
+  const dataOk = !!(output && output.data_ok && !errorCode);
+  const rawStatus = String((output && output.status) || "").toLowerCase();
+  const partialContinue = !!(ok && (rawStatus === "partial_continue" || rawStatus === "source_shape_probe_partial_continue" || output.continuation_required === true || output.orchestrator_should_self_continue === true));
+  const certification = String((output && (output.certification || output.certification_status)) || (ok ? "BASE_BULLPEN_HISTORY_SOURCE_PROBE_COMPLETED" : "BASE_BULLPEN_HISTORY_SOURCE_PROBE_FAILED"));
+  const rowsRead = Number((output && output.rows_read) || 0);
+  const rowsWritten = Number((output && output.rows_written) || output && output.writes_performed || 0);
+  const externalCalls = Number((output && output.external_calls_performed) || output && output.external_calls || 0);
+  const runStatus = ok ? "completed" : "failed";
+  const queueStatus = partialContinue ? "pending" : (ok ? "completed" : "failed");
+  const cappedOutput = {
+    ...output,
+    processed_by_orchestrator_version: SYSTEM_VERSION,
+    exact_dispatch: "BASE_BULLPEN_HISTORY_WORKER",
+    v0_1_0_probe_only: true,
+    no_live_promotion: true,
+    no_full_base_backfill: true,
+    no_delta_update_execution: true,
+    no_daily_bullpen_availability: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board_write: true
+  };
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(payload), JSON.stringify(cappedOutput), errorCode, errorMessage
+  );
+
+  if (partialContinue) {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_bullpen_history_dispatch_completed', 'Orchestrator completed exact base-bullpen-history v0.1.0 source-probe dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, mode: bullpenMode, source_probe_only: true, no_live_promotion: true, no_full_base_backfill: true, no_delta_update_execution: true, no_daily_bullpen_availability: true, partial_continue: partialContinue })
+  );
+
+  return cappedOutput;
+}
+
 async function processBaseStarterHistoryJob(env, row, runId, trigger) {
   if (!env.BASE_STARTER_HISTORY_WORKER || typeof env.BASE_STARTER_HISTORY_WORKER.fetch !== "function") {
     const output = {
@@ -2520,6 +2651,26 @@ async function recoverStaleBaseStarterHistoryJobs(env, trigger) {
   return { recovered, rows: staleRows };
 }
 
+
+async function recoverStaleBaseBullpenHistoryJobs(env, trigger) {
+  const staleRows = await all(env.CONTROL_DB,
+    "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, started_at, updated_at, substr(output_json,1,900) AS output_preview FROM control_job_queue WHERE job_key='base-bullpen-history' AND worker_name='alphadog-v2-base-bullpen-history' AND status='running' AND finished_at IS NULL AND datetime(updated_at) <= datetime('now','-2 minutes') ORDER BY datetime(updated_at) ASC LIMIT 3"
+  );
+  let recovered = 0;
+  for (const row of staleRows) {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND job_key='base-bullpen-history' AND worker_name='alphadog-v2-base-bullpen-history' AND status='running' AND finished_at IS NULL",
+      row.request_id
+    );
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'base-bullpen-history', 'WARN', 'base_bullpen_history_stale_running_auto_recovered', 'Recovered stale running base-bullpen-history probe queue row back to pending for safe backend continuation', ?, CURRENT_TIMESTAMP)",
+      row.request_id, WORKER_NAME, JSON.stringify({ trigger, recovered_from_status: row.status, started_at: row.started_at, updated_at: row.updated_at, tick_count: row.tick_count, stale_threshold_minutes: 2, no_new_batch_required_for_probe: true, no_live_promotion: true, output_preview: row.output_preview || null, version: SYSTEM_VERSION })
+    );
+    recovered += 1;
+  }
+  return { recovered, rows: staleRows };
+}
+
 async function enqueueStaticPlayersWeeklyIfDue(env, cronExpression) {
   const active = await first(env.CONTROL_DB,
     "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key='static-players' AND worker_name='alphadog-v2-static-players' AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
@@ -2723,6 +2874,24 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+
+  if (isBaseBullpenHistoryJob(row)) {
+    const output = await processBaseBullpenHistoryJob(env, row, runId, trigger);
+    const rawStatus = String((output && output.status) || "").toLowerCase();
+    const partial = !!(output && output.ok && (
+      rawStatus === "partial_continue" ||
+      rawStatus === "source_shape_probe_partial_continue" ||
+      output.continuation_required === true ||
+      output.orchestrator_should_self_continue === true
+    ));
+    return {
+      status: partial ? "partial_continue_base_bullpen_history_job" : (output && output.ok ? "completed_one_base_bullpen_history_job" : "failed_one_base_bullpen_history_job"),
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isBasePitcherSplitsJob(row)) {
     const output = await processBasePitcherSplitsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
@@ -2875,20 +3044,25 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       processed.push({ status: "stale_base_starter_history_recovered", recovered_count: baseStarterStaleRecovery.recovered });
     }
 
+    const baseBullpenStaleRecovery = await recoverStaleBaseBullpenHistoryJobs(env, trigger);
+    if (baseBullpenStaleRecovery.recovered > 0) {
+      processed.push({ status: "stale_base_bullpen_history_recovered", recovered_count: baseBullpenStaleRecovery.recovered });
+    }
+
     const limit = Math.max(1, Math.min(Number(maxJobs || 3), 10));
 
     for (let i = 0; i < limit; i++) {
       const result = await processOneUnlocked(env, trigger);
       processed.push(result);
       if (result.status === "no_due_jobs") break;
-      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_static_full_run_job") break;
+      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_base_starter_history_job" || result.status === "failed_one_base_bullpen_history_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_static_full_run_job") break;
     }
 
     await releaseLock(env, owner, "IDLE");
 
-    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_static_full_run_job").length;
-    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job").length;
-    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_static_full_run_job").length;
+    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_static_full_run_job").length;
+    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job").length;
+    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_static_full_run_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
 
     return base(env, {
@@ -2964,6 +3138,14 @@ async function countDueBaseStarterHistory(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
+
+async function countDueBaseBullpenHistory(env) {
+  const row = await first(env.CONTROL_DB,
+    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='base-bullpen-history' AND worker_name='alphadog-v2-base-bullpen-history' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL"
+  );
+  return Number(row && row.c ? row.c : 0);
+}
+
 async function countDueStaticPlayers(env) {
   // Static Players is intentionally chunked. For this specific job, any pending/running
   // row without a finished_at must be treated as continuation-eligible, even if run_after
@@ -3014,7 +3196,8 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const dueBaseTeamGameLogs = await countDueBaseTeamGameLogs(env);
   const dueBasePitcherSplits = await countDueBasePitcherSplits(env);
   const dueBaseStarterHistory = await countDueBaseStarterHistory(env);
-  const shouldSelfContinue = (dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0) && depth < maxChains && !!ctx;
+  const dueBaseBullpenHistory = await countDueBaseBullpenHistory(env);
+  const shouldSelfContinue = (dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0) && depth < maxChains && !!ctx;
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -3031,6 +3214,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       due_base_team_game_logs_after_pump: dueBaseTeamGameLogs,
       due_base_pitcher_splits_after_pump: dueBasePitcherSplits,
       due_base_starter_history_after_pump: dueBaseStarterHistory,
+      due_base_bullpen_history_after_pump: dueBaseBullpenHistory,
       pump_depth: depth,
       max_pump_chains: maxChains,
       self_continue_scheduled: !!shouldSelfContinue,
@@ -3054,6 +3238,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       due_base_team_game_logs_after_pump: dueBaseTeamGameLogs,
       due_base_pitcher_splits_after_pump: dueBasePitcherSplits,
       due_base_starter_history_after_pump: dueBaseStarterHistory,
+      due_base_bullpen_history_after_pump: dueBaseBullpenHistory,
         pump_depth: depth,
         next_pump_depth: depth + 1,
         max_pump_chains: maxChains,
@@ -3091,6 +3276,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
     cycle_count: cycles.length,
     due_static_players_after_pump: dueStaticPlayers,
     due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
+    due_base_bullpen_history_after_pump: dueBaseBullpenHistory,
     self_continue_scheduled: !!shouldSelfContinue,
     pump_depth: depth,
     max_pump_chains: maxChains,
