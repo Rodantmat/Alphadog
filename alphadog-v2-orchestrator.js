@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.52-base-starter-history-stale-running-recovery";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.53-base-starter-history-promotion";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1809,7 +1809,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
     job_key: row.job_key,
     worker_name: row.worker_name,
     trigger,
-    mode: "orchestrator_exact_base_starter_history_stage_only_dispatch",
+    mode: "orchestrator_exact_base_starter_history_dispatch",
     input_json: { ...rowInput, mode: starterMode }
   };
 
@@ -1852,7 +1852,8 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_starter_history_v0_2_1_hot_continuation_stage_only: true,
+      base_starter_history_v0_3_0_base_promotion_stage_clean: starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion",
+      base_starter_history_v0_2_1_hot_continuation_stage_only: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill",
       hot_continuation_ready: true,
       backend_self_continuation_ready: true,
       manual_wake_testing_only: true,
@@ -1860,7 +1861,8 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       no_generic_dispatch: true,
       source_probe_only: starterMode === "source_lock_probe",
       stage_only_base_backfill_allowed: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill",
-      no_live_promotion: true,
+      base_promotion_stage_clean_allowed: starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion",
+      no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion"),
       no_delta_update_execution: true,
       no_hitter_mutation: true,
       no_pitcher_mutation: true,
@@ -1892,8 +1894,8 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
   }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_starter_history_dispatch_completed', 'Orchestrator completed exact base-starter-history v0.2.0 stage-only dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, mode: starterMode, source_probe_only: starterMode === "source_lock_probe", stage_only_base_backfill: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill", no_live_promotion: true, partial_continue: partialContinue })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_starter_history_dispatch_completed', 'Orchestrator completed exact base-starter-history exact dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, mode: starterMode, source_probe_only: starterMode === "source_lock_probe", stage_only_base_backfill: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill", no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion"), partial_continue: partialContinue })
   );
 
   return cappedOutput;

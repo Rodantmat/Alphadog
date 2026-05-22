@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.6.44-base-starter-history-hot-continuation -->
+<!-- alphadog-v2-control-room-v1.6.45-base-starter-history-promotion -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,7 +28,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.6.44-base-starter-history-hot-continuation</div>
+<div id="versionTag">alphadog-v2-control-room-v1.6.45-base-starter-history-promotion</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
 <div class="small">Access mode: single-user. Control Room enqueues/status only. Static Players, Static Prop Taxonomy, Static Certifier, Static Full Run, Sleeper source-probe, Base Hitter Game Logs base_backfill, Hitter Game Logs delta_update queue plus backend self-continuation launch, and Base Pitcher Game Logs base is locked; BASE > Pitcher Splits is locked promoted/cleaned and DELTA > Pitcher Splits runs the no-op, retained-restore, and scoped-repair gate and Pitcher Delta Game Logs uses retained-stage restore/no-op before queue and scoped delta_update; visible buttons are in BASE / DELTA. Base Hitter Splits is locked promoted/cleaned, and DELTA > Hitter Splits runs the no-op/current-snapshot and retained-stage repair gate with no MLB calls when current. Orchestrator scheduled backend/cron owns continuation. Wake is optional backend test/rescue only.</div>
@@ -81,7 +81,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <button class="orch" type="button" onclick="runJobButton('BASE > Hitter Game Logs','orchestrator_enqueue_base_hitter_game_logs')">Base Logs</button>
 <button class="orch" type="button" onclick="runJobButton('BASE > Pitcher Game Logs','orchestrator_enqueue_base_pitcher_game_logs')">Pitcher Logs</button>
 <button class="orch" type="button" onclick="runJobButton('BASE > Team Game Logs','orchestrator_enqueue_base_team_game_logs')">Team Logs</button>
-<button class="orch" type="button" onclick="runJobButton('BASE > Starter History','orchestrator_enqueue_base_starter_history')">Starter Base</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Starter History','orchestrator_enqueue_base_starter_history')">Starter Promote</button>
 <button class="orch" type="button" onclick="runJobButton('BASE > Pitcher Splits','orchestrator_enqueue_base_pitcher_splits')">Pitcher Splits</button>
 <button class="orch" type="button" onclick="runJobButton('BASE > Hitter Splits','orchestrator_enqueue_base_hitter_splits')">Hitter Splits</button>
 <button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Game Logs','orchestrator_enqueue_delta_hitter_game_logs')">Delta Logs</button>
@@ -157,7 +157,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.6.44-base-starter-history-hot-continuation"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.6.45-base-starter-history-promotion"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){

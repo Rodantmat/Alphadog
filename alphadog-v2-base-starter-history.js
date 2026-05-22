@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-starter-history";
-const VERSION = "alphadog-v2-base-starter-history-v0.2.1-hot-continuation-stage-only";
+const VERSION = "alphadog-v2-base-starter-history-v0.3.0-base-promotion-stage-clean";
 const JOB_KEY = "base-starter-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -49,8 +49,8 @@ function baseIdentity(env) {
     phase: "starter-history-v0.2.0-stage-only-base-backfill",
     notes: [
       "v0.2.0 is stage-only base backfill after v0.1.1 source lock passed.",
-      "Allowed writes: additive TEAM_DB lifecycle schema, starter_history_stage rows, outcomes, batches, cursor, and certifications only.",
-      "Forbidden in this version: live starter_history promotion, delta_update execution, scoring, ranking, board mutation, and browser pump.",
+      "Allowed writes: additive TEAM_DB lifecycle schema, certified starter_history_stage rows, outcomes, batches, cursor, certifications, and live starter_history promotion only after certification.",
+      "Forbidden in this version: delta_update execution, scoring, ranking, board mutation, and browser pump. Live starter_history promotion is allowed only from certified base stage.",
       "Starter history is source-classified as GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS via official final boxscore gamesStarted == 1."
     ],
     binding_summary: {
@@ -271,7 +271,27 @@ async function ensureSchema(env) {
     `ALTER TABLE starter_history ADD COLUMN raw_json TEXT`,
     `ALTER TABLE starter_history ADD COLUMN created_at TEXT`,
     `ALTER TABLE starter_history ADD COLUMN certified_at TEXT`,
-    `ALTER TABLE starter_history ADD COLUMN promoted_at TEXT`
+    `ALTER TABLE starter_history ADD COLUMN promoted_at TEXT`,
+    `ALTER TABLE starter_history ADD COLUMN starter_player_id INTEGER`,
+    `ALTER TABLE starter_history ADD COLUMN started_game INTEGER`,
+    `ALTER TABLE starter_history ADD COLUMN starter_source_path TEXT`,
+    `ALTER TABLE starter_history ADD COLUMN starter_source_type TEXT`,
+    `ALTER TABLE starter_history ADD COLUMN innings_pitched TEXT`,
+    `ALTER TABLE starter_history ADD COLUMN outs_recorded INTEGER`,
+    `ALTER TABLE starter_history ADD COLUMN batters_faced INTEGER`,
+    `ALTER TABLE starter_history ADD COLUMN pitches INTEGER`,
+    `ALTER TABLE starter_history ADD COLUMN strikes INTEGER`,
+    `ALTER TABLE starter_history ADD COLUMN hits_allowed INTEGER`,
+    `ALTER TABLE starter_history ADD COLUMN runs_allowed INTEGER`,
+    `ALTER TABLE starter_history ADD COLUMN earned_runs INTEGER`,
+    `ALTER TABLE starter_history ADD COLUMN walks_allowed INTEGER`,
+    `ALTER TABLE starter_history ADD COLUMN strikeouts INTEGER`,
+    `ALTER TABLE starter_history ADD COLUMN home_runs_allowed INTEGER`,
+    `ALTER TABLE starter_history_batches ADD COLUMN rows_promoted INTEGER DEFAULT 0`,
+    `ALTER TABLE starter_history_batches ADD COLUMN stage_rows_after_clean INTEGER DEFAULT 0`,
+    `ALTER TABLE starter_history_batches ADD COLUMN live_rows_for_batch INTEGER DEFAULT 0`,
+    `ALTER TABLE starter_history_batches ADD COLUMN duplicate_live_keys INTEGER DEFAULT 0`,
+    `ALTER TABLE starter_history_batches ADD COLUMN missing_live_identity_count INTEGER DEFAULT 0`
   ];
 
   const applied = [];
@@ -930,6 +950,144 @@ async function runBaseBackfillStageOnly(env, input) {
   return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batch.batch_id, status: "partial_continue_base_starter_history_finalization_only", certification: "STARTER_HISTORY_BASE_STAGE_ONLY_FINALIZATION_ONLY_READY", certification_grade: "STAGE_ONLY_FINALIZATION_PENDING", rows_read: rowsRead, rows_written: rowsWritten, rows_promoted: 0, external_calls_performed: externalCalls, schema, output_json: output, continuation_required: true, orchestrator_should_self_continue: true, finalization_only_next: true, no_live_promotion: true, no_delta_update_execution: true, no_browser_pump: true, timestamp_utc: nowUtc() };
 }
 
+
+async function loadCertifiedBaseStageForPromotion(env, input) {
+  const rowInput = input.input_json || {};
+  const requestedBatchId = rowInput.batch_id || input.batch_id || rowInput.certified_stage_batch_id || input.certified_stage_batch_id || null;
+  if (requestedBatchId) {
+    return await first(env.TEAM_DB, `SELECT * FROM starter_history_batches WHERE batch_id=? AND ingestion_mode='base_backfill_stage_only' LIMIT 1`, requestedBatchId);
+  }
+  return await first(env.TEAM_DB, `SELECT * FROM starter_history_batches WHERE ingestion_mode='base_backfill_stage_only' AND status='COMPLETED_STAGE_ONLY_CERTIFIED_NO_PROMOTION' AND certification_status='STARTER_HISTORY_BASE_STAGE_ONLY_CERTIFIED_NO_PROMOTION' AND certification_grade='BASE_STAGE_ONLY_PASS' ORDER BY datetime(certified_at) DESC, datetime(updated_at) DESC LIMIT 1`);
+}
+async function livePromotionCounts(env, batchId) {
+  return await first(env.TEAM_DB, `SELECT
+    (SELECT COUNT(*) FROM starter_history WHERE batch_id=?) AS live_rows,
+    (SELECT COUNT(*) FROM (SELECT starter_key, COUNT(*) c FROM starter_history WHERE batch_id=? GROUP BY starter_key HAVING c > 1)) AS duplicate_live_keys,
+    (SELECT COUNT(*) FROM starter_history WHERE batch_id=? AND (game_pk IS NULL OR game_date IS NULL OR team_id IS NULL OR opponent_team_id IS NULL OR starter_player_id IS NULL OR raw_json IS NULL OR starter_source_type IS NULL OR starter_source_path IS NULL)) AS missing_live_identity_count,
+    (SELECT COUNT(*) FROM starter_history_stage WHERE batch_id=?) AS stage_rows_after_clean
+  `, batchId, batchId, batchId, batchId);
+}
+async function certifyStageReadyForPromotion(env, batch) {
+  const batchId = batch.batch_id;
+  const counts = await first(env.TEAM_DB, `SELECT
+    (SELECT COUNT(*) FROM starter_history_outcomes WHERE batch_id=? AND outcome_level='GAME' AND outcome_category='GAME_STAGED') AS games_staged,
+    (SELECT COUNT(*) FROM starter_history_stage WHERE batch_id=?) AS staged_rows,
+    (SELECT COUNT(*) FROM (SELECT starter_key, COUNT(*) c FROM starter_history_stage WHERE batch_id=? GROUP BY starter_key HAVING c > 1)) AS duplicate_stage_keys,
+    (SELECT COUNT(*) FROM starter_history_stage WHERE batch_id=? AND (game_pk IS NULL OR game_date IS NULL OR team_id IS NULL OR opponent_team_id IS NULL OR starter_player_id IS NULL OR raw_json IS NULL OR starter_source_type IS NULL OR starter_source_path IS NULL)) AS missing_stage_identity_count,
+    (SELECT COUNT(*) FROM starter_history_outcomes WHERE batch_id=? AND outcome_category IN ('SOURCE_ERROR','GAME_SOURCE_ERROR')) AS source_error_count,
+    (SELECT COUNT(*) FROM starter_history_outcomes WHERE batch_id=? AND outcome_category IN ('UNCLEAR','GAME_UNCLEAR')) AS unclear_count,
+    (SELECT COUNT(*) FROM starter_history_stage WHERE batch_id=? AND lower(COALESCE(game_status,'')) NOT IN ('final','game over','completed early')) AS non_final_stage_rows,
+    (SELECT COUNT(*) FROM starter_history_outcomes WHERE batch_id=? AND outcome_level='GAME' AND outcome_category='GAME_NOT_FINAL' AND status='FILTERED_NON_FINAL_OR_NO_DATA') AS filtered_non_final_games,
+    (SELECT COUNT(*) FROM starter_history_outcomes o LEFT JOIN starter_history_stage s ON s.batch_id=o.batch_id AND s.game_pk=o.game_pk WHERE o.batch_id=? AND o.outcome_level='GAME' AND o.outcome_category='GAME_NOT_FINAL' AND s.starter_key IS NOT NULL) AS filtered_games_with_stage_rows
+  `, batchId, batchId, batchId, batchId, batchId, batchId, batchId, batchId, batchId);
+  const expectedGameCount = num(batch.expected_game_count) || num(counts.games_staged) || 0;
+  const expectedStarterRows = num(batch.expected_starter_rows) || expectedGameCount * 2;
+  const stagedRows = num(counts.staged_rows) || 0;
+  const pass = String(batch.status || '') === 'COMPLETED_STAGE_ONLY_CERTIFIED_NO_PROMOTION'
+    && String(batch.certification_status || '') === 'STARTER_HISTORY_BASE_STAGE_ONLY_CERTIFIED_NO_PROMOTION'
+    && String(batch.certification_grade || '') === 'BASE_STAGE_ONLY_PASS'
+    && expectedGameCount > 0
+    && stagedRows === expectedStarterRows
+    && (num(counts.games_staged) || 0) === expectedGameCount
+    && (num(counts.duplicate_stage_keys) || 0) === 0
+    && (num(counts.missing_stage_identity_count) || 0) === 0
+    && (num(counts.source_error_count) || 0) === 0
+    && (num(counts.unclear_count) || 0) === 0
+    && (num(counts.non_final_stage_rows) || 0) === 0
+    && (num(counts.filtered_games_with_stage_rows) || 0) === 0;
+  return { pass, expectedGameCount, expectedStarterRows, stagedRows, counts };
+}
+async function promoteCertifiedBaseStage(env, input) {
+  const schema = await ensureSchema(env);
+  if (!schema.ok) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: 'schema_failed', certification: 'STARTER_HISTORY_SCHEMA_FAILED', schema, rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0 };
+  const requestId = input.request_id || rid('starter_promote_req');
+  const chainId = input.chain_id || null;
+  const runId = input.run_id || rid('starter_promote_run');
+  const batch = await loadCertifiedBaseStageForPromotion(env, input);
+  if (!batch) {
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, status: 'blocked_no_certified_stage_batch', certification: 'STARTER_HISTORY_BASE_PROMOTION_BLOCKED_NO_CERTIFIED_STAGE_BATCH', certification_grade: 'PROMOTION_BLOCKED', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, schema, no_delta_update_execution: true, no_live_promotion: false };
+  }
+  const batchId = batch.batch_id;
+  const ready = await certifyStageReadyForPromotion(env, batch);
+  if (!ready.pass) {
+    const output = { batch_id: batchId, stage_ready: false, expected_game_count: ready.expectedGameCount, expected_starter_rows: ready.expectedStarterRows, staged_rows: ready.stagedRows, counts: ready.counts, reason: 'certified_stage_pre_promotion_gate_failed' };
+    await run(env.TEAM_DB, `UPDATE starter_history_batches SET status='BASE_PROMOTION_BLOCKED_STAGE_GATE_FAILED', certification_status='STARTER_HISTORY_BASE_PROMOTION_BLOCKED_STAGE_GATE_FAILED', certification_grade='PROMOTION_BLOCKED', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, safeJson(output), batchId);
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, status: 'blocked_stage_gate_failed', certification: 'STARTER_HISTORY_BASE_PROMOTION_BLOCKED_STAGE_GATE_FAILED', certification_grade: 'PROMOTION_BLOCKED', rows_read: ready.stagedRows, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, schema, output_json: output, no_delta_update_execution: true };
+  }
+
+  await run(env.TEAM_DB, `INSERT OR REPLACE INTO starter_history (
+    starter_key, player_id, team_id, game_date, game_pk, starter_json, updated_at,
+    season, game_type, game_status, opponent_team_id, is_home, venue_id, starter_name, throws,
+    source_key, source_endpoint, source_confidence, data_feed_key, source_season, source_game_type, ingestion_mode, batch_id, run_id,
+    certification_status, certification_grade, source_snapshot_date, raw_json, created_at, certified_at, promoted_at,
+    starter_player_id, started_game, starter_source_path, starter_source_type, innings_pitched, outs_recorded, batters_faced, pitches, strikes,
+    hits_allowed, runs_allowed, earned_runs, walks_allowed, strikeouts, home_runs_allowed
+  )
+  SELECT
+    starter_key, starter_player_id, team_id, game_date, game_pk, raw_json, CURRENT_TIMESTAMP,
+    season, game_type, game_status, opponent_team_id, is_home, venue_id, starter_name, throws,
+    source_key, source_endpoint, source_confidence, data_feed_key, source_season, source_game_type, 'base_backfill_promoted', batch_id, ?,
+    'STARTER_HISTORY_BASE_PROMOTED_CLEANED', 'BASE_PROMOTION_PASS', source_snapshot_date, raw_json, COALESCE(created_at, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+    starter_player_id, started_game, starter_source_path, starter_source_type, innings_pitched, outs_recorded, batters_faced, pitches, strikes,
+    hits_allowed, runs_allowed, earned_runs, walks_allowed, strikeouts, home_runs_allowed
+  FROM starter_history_stage
+  WHERE batch_id=?`, runId, batchId);
+
+  await run(env.TEAM_DB, `UPDATE starter_history_stage SET certification_status='STARTER_HISTORY_BASE_PROMOTED_TO_LIVE', certification_grade='BASE_PROMOTION_PASS', promoted_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, batchId);
+  const preClean = await livePromotionCounts(env, batchId);
+  const liveRows = num(preClean.live_rows) || 0;
+  const duplicateLiveKeys = num(preClean.duplicate_live_keys) || 0;
+  const missingLiveIdentity = num(preClean.missing_live_identity_count) || 0;
+  const expectedStarterRows = ready.expectedStarterRows;
+  const livePass = liveRows === expectedStarterRows && duplicateLiveKeys === 0 && missingLiveIdentity === 0;
+  if (!livePass) {
+    const output = { batch_id: batchId, promoted_live_verification_pass: false, expected_starter_rows: expectedStarterRows, live_rows: liveRows, duplicate_live_keys: duplicateLiveKeys, missing_live_identity_count: missingLiveIdentity, stage_rows_retained: ready.stagedRows, no_cleanup: true };
+    await run(env.TEAM_DB, `UPDATE starter_history_batches SET rows_promoted=?, live_rows_for_batch=?, duplicate_live_keys=?, missing_live_identity_count=?, status='BASE_PROMOTION_BLOCKED_LIVE_VERIFY_FAILED', certification_status='STARTER_HISTORY_BASE_PROMOTION_BLOCKED_LIVE_VERIFY_FAILED', certification_grade='PROMOTION_BLOCKED', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, liveRows, liveRows, duplicateLiveKeys, missingLiveIdentity, safeJson(output), batchId);
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, status: 'blocked_live_verification_failed_stage_retained', certification: 'STARTER_HISTORY_BASE_PROMOTION_BLOCKED_LIVE_VERIFY_FAILED', certification_grade: 'PROMOTION_BLOCKED', rows_read: ready.stagedRows, rows_written: liveRows, rows_promoted: liveRows, external_calls_performed: 0, schema, output_json: output, stage_retained: true, no_delta_update_execution: true };
+  }
+
+  await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, outcome_level: 'BATCH', outcome_category: 'PROMOTED_ROWS', status: 'LIVE_PROMOTED_VERIFIED', reason: 'certified_base_stage_promoted_to_live_and_verified_before_cleanup', source_endpoint: 'starter_history_stage_to_live_insert_select', details: { expected_starter_rows: expectedStarterRows, live_rows: liveRows, duplicate_live_keys: duplicateLiveKeys, missing_live_identity_count: missingLiveIdentity } });
+  await run(env.TEAM_DB, `DELETE FROM starter_history_stage WHERE batch_id=?`, batchId);
+  const post = await livePromotionCounts(env, batchId);
+  const stageAfterClean = num(post.stage_rows_after_clean) || 0;
+  const finalPass = stageAfterClean === 0 && (num(post.live_rows) || 0) === expectedStarterRows && (num(post.duplicate_live_keys) || 0) === 0 && (num(post.missing_live_identity_count) || 0) === 0;
+  const status = finalPass ? 'COMPLETED_PROMOTED_CLEANED' : 'BASE_PROMOTION_CLEANUP_VERIFY_FAILED';
+  const certificationStatus = finalPass ? 'STARTER_HISTORY_BASE_PROMOTED_CLEANED' : 'STARTER_HISTORY_BASE_PROMOTION_CLEANUP_VERIFY_FAILED';
+  const certificationGrade = finalPass ? 'BASE_PROMOTION_PASS' : 'PROMOTION_BLOCKED';
+  const output = {
+    source_shape_classification: 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS',
+    actual_starter_identification_path: 'MLB StatsAPI /api/v1/game/{gamePk}/boxscore -> teams.{away,home}.players.ID*.stats.pitching.gamesStarted == 1',
+    actual_starter_source_official_final: true,
+    base_backfill_cutoff_date: batch.base_backfill_cutoff_date || DEFAULT_BASE_CUTOFF_DATE,
+    delta_reserved_start_date: DEFAULT_DELTA_RESERVED_START_DATE,
+    expected_game_count: ready.expectedGameCount,
+    expected_starter_rows: expectedStarterRows,
+    rows_promoted: num(post.live_rows) || 0,
+    live_rows_for_batch: num(post.live_rows) || 0,
+    duplicate_live_keys: num(post.duplicate_live_keys) || 0,
+    missing_live_identity_count: num(post.missing_live_identity_count) || 0,
+    stage_rows_after_clean: stageAfterClean,
+    cleaned_base_stage: stageAfterClean === 0,
+    no_delta_update_execution: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_board_mutation: true,
+    next_action: finalPass ? 'BASE_PROMOTION_LOCKED_DELTA_DESIGN_ALLOWED_NEXT' : 'INSPECT_BEFORE_DELTA'
+  };
+  await run(env.TEAM_DB, `UPDATE starter_history_batches SET rows_promoted=?, live_rows_for_batch=?, duplicate_live_keys=?, missing_live_identity_count=?, stage_rows_after_clean=?, status=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP, promoted_at=CURRENT_TIMESTAMP, cleaned_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    output.rows_promoted, output.live_rows_for_batch, output.duplicate_live_keys, output.missing_live_identity_count, output.stage_rows_after_clean, status, certificationStatus, certificationGrade, safeJson(output), batchId);
+  await run(env.TEAM_DB, `INSERT INTO starter_history_certifications (
+    certification_id, batch_id, run_id, request_id, worker_name, version, certification_status, certification_grade, source_shape_classification, actual_starter_identification_path, safest_key_model,
+    expected_game_count, expected_starter_rows, staged_starter_rows, duplicate_stage_keys, missing_required_identity_count, source_error_count, unclear_count, no_live_promotion, full_base_backfill_blocked, delta_update_blocked, output_json
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS', ?, ?, ?, ?, ?, 0, 0, 0, 0, 0, 0, 1, ?)`,
+    rid('starter_cert'), batchId, runId, requestId, WORKER_NAME, VERSION, certificationStatus, certificationGrade,
+    output.actual_starter_identification_path, 'game_pk + team_id; pitcher_id + game_pk + team_id is secondary validation', output.expected_game_count, output.expected_starter_rows, 0, safeJson(output));
+  await run(env.TEAM_DB, `INSERT OR REPLACE INTO starter_history_cursor (cursor_key, worker_name, version, ingestion_mode, status, source_shape_classification, base_backfill_cutoff_date, delta_reserved_start_date, last_probe_date, last_completed_game_date, last_batch_id, last_run_id, output_json, updated_at)
+    VALUES ('starter_history_base_promoted', ?, ?, 'base_promotion_stage_clean', ?, 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    WORKER_NAME, VERSION, certificationStatus, batch.base_backfill_cutoff_date || DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, batch.sample_start_date || DEFAULT_BASE_START_DATE, batch.base_backfill_cutoff_date || DEFAULT_BASE_CUTOFF_DATE, batchId, runId, safeJson(output));
+  return { ok: finalPass, data_ok: finalPass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, status: status.toLowerCase(), certification: certificationStatus, certification_grade: certificationGrade, rows_read: ready.stagedRows, rows_written: output.rows_promoted, rows_promoted: output.rows_promoted, external_calls_performed: 0, schema, output_json: output, no_delta_update_execution: true, no_browser_pump: true, timestamp_utc: nowUtc() };
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -947,10 +1105,11 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const mode = String((input.input_json && input.input_json.mode) || input.mode || "base_backfill_stage_only");
-      if (mode === "delta_update") return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "delta_update_blocked_in_v0_2_0", certification: "STARTER_HISTORY_DELTA_UPDATE_BLOCKED_UNTIL_BASE_STAGE_AND_PROMOTION_LOCKED", no_live_promotion: true, no_delta_update_execution: true }, 409);
+      if (mode === "delta_update") return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "delta_update_blocked_in_v0_3_0", certification: "STARTER_HISTORY_DELTA_UPDATE_BLOCKED_UNTIL_BASE_PROMOTION_LOCKED", no_delta_update_execution: true }, 409);
       if (mode === "source_lock_probe") return jsonResponse(await runSourceProbe(env, input));
       if (mode === "base_backfill" || mode === "base_backfill_stage_only") return jsonResponse(await runBaseBackfillStageOnly(env, input));
-      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode", mode, allowed_modes: ["source_lock_probe", "base_backfill_stage_only"], no_live_promotion: true }, 400);
+      if (mode === "base_promotion_stage_clean" || mode === "base_promotion") return jsonResponse(await promoteCertifiedBaseStage(env, input));
+      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode", mode, allowed_modes: ["source_lock_probe", "base_backfill_stage_only", "base_promotion_stage_clean"], no_live_promotion: true }, 400);
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }
