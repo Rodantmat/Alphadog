@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.1.0-schema-source-lock-probe";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.1.1-pitcher-universe-fix";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
@@ -322,22 +322,61 @@ function endpointFor(env, playerId, season) {
 }
 
 async function readPitcherUniverse(env) {
-  const rows = await all(env.REF_DB, `SELECT DISTINCT r.player_id AS player_id, COALESCE(p.player_name, CAST(r.player_id AS TEXT)) AS player_name, r.team_id AS team_id, r.role AS role, r.source_key AS source_key
+  // v0.1.1: use the deployed REF_DB shape verified by Manual SQL on 2026-05-22.
+  // Safe pitcher definition: active REF roster/player rows where role/position abbreviation is source-proven P.
+  const rows = await all(env.REF_DB, `SELECT
+      r.player_id AS player_id,
+      COALESCE(MAX(p.player_name), MAX(p.full_name), MAX(r.player_name), CAST(r.player_id AS TEXT)) AS player_name,
+      MAX(r.team_id) AS team_id,
+      MAX(r.role) AS role,
+      MAX(r.position_abbreviation) AS position_abbreviation,
+      MAX(r.source_key) AS source_key,
+      MAX(r.snapshot_type) AS snapshot_type,
+      MAX(r.roster_date) AS roster_date
     FROM ref_rosters r
     LEFT JOIN ref_players p ON p.player_id = r.player_id
     WHERE r.player_id IS NOT NULL
-      AND (lower(COALESCE(r.role,'')) LIKE '%pitch%' OR lower(COALESCE(p.primary_role,'')) LIKE '%pitch%')
+      AND COALESCE(r.active, 1) = 1
+      AND COALESCE(p.active, 1) = 1
+      AND (
+        r.role = 'P'
+        OR r.position_abbreviation = 'P'
+        OR p.primary_role = 'P'
+        OR p.primary_position = 'P'
+      )
+    GROUP BY r.player_id
     ORDER BY r.player_id`);
-  const seen = new Map();
-  const duplicates = [];
-  for (const r of rows) {
-    const id = asInt(r.player_id, 0);
-    if (!id) continue;
-    if (seen.has(id)) duplicates.push(id);
-    else seen.set(id, { player_id: id, player_name: r.player_name || null, team_id: r.team_id || null, role: r.role || null, source_key: r.source_key || null });
-  }
-  const players = Array.from(seen.values()).sort((a, b) => a.player_id - b.player_id).map((p, idx) => ({ ...p, cursor_offset: idx, universe_source: "REF_DB.ref_rosters.role/ref_players.primary_role" }));
-  return { ok: players.length > 0 && duplicates.length === 0, source: "REF_DB.ref_rosters + ref_players", expected_count: players.length, duplicate_count: duplicates.length, duplicate_player_ids: duplicates.slice(0, 20), players };
+
+  const duplicateRows = await all(env.REF_DB, `SELECT player_id, COUNT(*) AS c
+    FROM ref_rosters
+    WHERE player_id IS NOT NULL
+      AND COALESCE(active, 1) = 1
+      AND (role = 'P' OR position_abbreviation = 'P')
+    GROUP BY player_id
+    HAVING COUNT(*) > 1
+    ORDER BY c DESC, player_id
+    LIMIT 20`);
+
+  const players = rows.map((r, idx) => ({
+    player_id: asInt(r.player_id, 0),
+    player_name: r.player_name || null,
+    team_id: r.team_id || null,
+    role: r.role || r.position_abbreviation || null,
+    source_key: r.source_key || null,
+    snapshot_type: r.snapshot_type || null,
+    roster_date: r.roster_date || null,
+    cursor_offset: idx,
+    universe_source: "REF_DB.ref_rosters.active_role_P_position_P_join_ref_players_active"
+  })).filter(p => p.player_id);
+
+  return {
+    ok: players.length > 0,
+    source: "REF_DB.ref_rosters active role/position P + ref_players active",
+    expected_count: players.length,
+    duplicate_count: duplicateRows.length,
+    duplicate_player_ids: duplicateRows.map(r => ({ player_id: asInt(r.player_id, 0), rows: asInt(r.c, 0) })),
+    players
+  };
 }
 
 async function chooseSamplePitchers(env, inputJson) {
