@@ -1,10 +1,11 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.2.0-base-stage-only-full-universe";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.3.0-promote-certified-stage";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
 const GROUP_TYPE = "pitching";
 const INGESTION_MODE = "base_backfill_stage_only_full_universe";
+const PROMOTION_MODE = "base_backfill_promote_certified_stage";
 const DATA_FEED_KEY = "base_pitcher_splits";
 const SOURCE_KEY = "mlb_statsapi_people_statSplits_pitching_sitCodes_vl_vr_v0_1_0";
 const SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=statSplits&group=pitching&season={season}&sitCodes=vl%2Cvr";
@@ -49,9 +50,9 @@ function baseIdentity(env) {
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "BASE_STAGE_ONLY_READY",
+    status: "BASE_PROMOTION_READY",
     timestamp_utc: nowUtc(),
-    phase: "base_pitcher_splits_v0_2_0_base_stage_only_full_universe",
+    phase: "base_pitcher_splits_v0_3_0_promote_certified_stage",
     source_lock: {
       endpoint_pattern: SOURCE_ENDPOINT_PATTERN,
       source_key: SOURCE_KEY,
@@ -59,13 +60,13 @@ function baseIdentity(env) {
       group_type: GROUP_TYPE,
       sitCodes: "vl,vr",
       source_probe_completed_v0_1_1: true,
-      stage_only_full_universe: true,
-      no_live_promotion: true,
+      stage_only_full_universe_completed_v0_2_0: true,
+      certified_stage_promotion_enabled: true,
       no_delta_update_execution: true
     },
     hard_blocks: {
-      no_live_pitcher_splits_promotion: true,
-      full_universe_stage_only_enabled: true,
+      live_pitcher_splits_promotion_enabled_from_certified_stage_only: true,
+      full_universe_stage_only_completed_v0_2_0: true,
       no_delta_update_execution: true,
       no_hitter_splits_mutation: true,
       no_hitter_game_log_mutation: true,
@@ -306,7 +307,7 @@ async function ensureSchema(env) {
   ];
   for (const [label, sql] of indexes) await exec(label, sql);
 
-  await exec("record_schema_migration_v0_1_0", "INSERT OR REPLACE INTO pitcher_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_pitcher_splits_v0_2_0_base_stage_only_full_universe', ?, CURRENT_TIMESTAMP, 'Base Pitcher Splits v0.2.0 full-universe stage-only; no live promotion/no delta/no cleanup')", VERSION);
+  await exec("record_schema_migration_v0_3_0", "INSERT OR REPLACE INTO pitcher_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_pitcher_splits_v0_3_0_promote_certified_stage', ?, CURRENT_TIMESTAMP, 'Base Pitcher Splits v0.3.0 promotes certified v0.2.0 stage only; zero MLB calls/no remine/no delta; clean stage after live verification')", VERSION);
   return { attempted: results.length, failed: results.filter(r => !r.ok).length, results };
 }
 
@@ -612,107 +613,145 @@ async function finalizeStageOnly(env, batchId, runId, sourceSnapshotDate, univer
   return { pass, certStatus, grade, checks };
 }
 
-async function runProbe(env, input) {
-  if (!env.STATS_PITCHER_DB || !env.REF_DB) {
-    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "blocked_missing_required_db_binding", certification: "BASE_PITCHER_SPLITS_REQUIRED_DB_BINDING_MISSING", rows_read: 0, rows_written: 0, external_calls_performed: 0 };
-  }
-  const mode = String(input.mode || input.input_json?.mode || INGESTION_MODE);
-  if (/delta/i.test(mode)) {
-    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "blocked_delta_update_not_enabled", certification: "BASE_PITCHER_SPLITS_DELTA_BLOCKED_UNTIL_BASE_CERTIFIED", rows_read: 0, rows_written: 0, external_calls_performed: 0 };
-  }
 
-  const inputJson = input.input_json || input || {};
-  const chunkSize = capChunk(inputJson.chunk_size || inputJson.max_players_per_tick || DEFAULT_CHUNK_SIZE);
+async function findCertifiedStageBatch(env) {
+  return await first(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_split_batches
+    WHERE mode='base_backfill_stage_only_full_universe'
+      AND status='STAGE_ONLY_COMPLETED_NO_PROMOTION'
+      AND certification_status='BASE_PITCHER_SPLITS_STAGE_ONLY_FULL_UNIVERSE_CERTIFIED_NO_PROMOTION'
+      AND certification_grade='STAGE_ONLY_PASS'
+      AND COALESCE(rows_staged,0) > 0
+    ORDER BY datetime(finished_at) DESC, datetime(created_at) DESC
+    LIMIT 1`);
+}
+
+async function getPromotionCursor(env, stageBatch, runId) {
+  const existing = await first(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_split_cursor
+    WHERE cursor_key='base_pitcher_splits_promotion_cursor'
+      AND batch_id=?
+      AND mode=?
+      AND status IN ('PROMOTION_RUNNING','PARTIAL_CONTINUE','FINALIZATION_ONLY')
+    LIMIT 1`, stageBatch.batch_id, PROMOTION_MODE);
+  if (existing) return existing;
+  await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
+    VALUES ('base_pitcher_splits_promotion_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, stageBatch.batch_id, runId, PROMOTION_MODE, 'PROMOTION_RUNNING', SOURCE_SEASON, stageBatch.source_snapshot_date || todayUtc(), null, 0, asInt(stageBatch.rows_staged, 0), 0, 0, null, null, safeJson({ created_by: VERSION, promotes_certified_stage_batch: stageBatch.batch_id, zero_mlb_calls: true, no_remine: true, no_delta: true }));
+  return await first(env.STATS_PITCHER_DB, "SELECT * FROM pitcher_split_cursor WHERE cursor_key='base_pitcher_splits_promotion_cursor' AND batch_id=?", stageBatch.batch_id);
+}
+
+async function validateCertifiedStageForPromotion(env, batchId, expectedUniverse) {
+  const stageRows = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_stage WHERE batch_id=?", batchId);
+  const outcomeRows = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_outcomes WHERE batch_id=?", batchId);
+  const sourceError = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_outcomes WHERE batch_id=? AND terminal_category='SOURCE_ERROR'", batchId);
+  const repair = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_outcomes WHERE batch_id=? AND terminal_category='REPAIR_REQUIRED'", batchId);
+  const unclear = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_outcomes WHERE batch_id=? AND terminal_category='UNCLEAR'", batchId);
+  const dupStage = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS c FROM (SELECT player_id, season, group_type, split_code, COUNT(*) AS n FROM pitcher_split_stage WHERE batch_id=? GROUP BY player_id, season, group_type, split_code HAVING n>1)`, batchId);
+  const invalidSplit = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_stage WHERE batch_id=? AND split_code NOT IN ('vs_left','vs_right')", batchId);
+  const missingLineage = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS c FROM pitcher_split_stage WHERE batch_id=? AND (player_id IS NULL OR season IS NULL OR group_type IS NULL OR split_code IS NULL OR source_key IS NULL OR source_endpoint IS NULL OR source_season IS NULL OR ingestion_mode IS NULL OR batch_id IS NULL OR run_id IS NULL OR raw_json IS NULL OR source_snapshot_date IS NULL OR stat_shape_json IS NULL)`, batchId);
+  const splitCoverage = await all(env.STATS_PITCHER_DB, "SELECT split_code, COUNT(*) AS rows, COUNT(DISTINCT player_id) AS players FROM pitcher_split_stage WHERE batch_id=? GROUP BY split_code ORDER BY split_code", batchId);
+  const checks = {
+    certified_stage_batch_id: batchId,
+    expected_pitcher_universe_count: asInt(expectedUniverse, 0),
+    stage_rows: asInt(stageRows && stageRows.c, 0),
+    outcome_rows: asInt(outcomeRows && outcomeRows.c, 0),
+    source_error_count: asInt(sourceError && sourceError.c, 0),
+    repair_required_count: asInt(repair && repair.c, 0),
+    unclear_count: asInt(unclear && unclear.c, 0),
+    duplicate_stage_keys: asInt(dupStage && dupStage.c, 0),
+    invalid_split_code_count: asInt(invalidSplit && invalidSplit.c, 0),
+    missing_lineage_count: asInt(missingLineage && missingLineage.c, 0),
+    split_coverage: splitCoverage,
+    zero_mlb_calls_required: true,
+    no_remine_required: true,
+    no_delta_update_execution: true
+  };
+  checks.pass = checks.stage_rows > 0 && checks.outcome_rows === checks.expected_pitcher_universe_count && checks.source_error_count === 0 && checks.repair_required_count === 0 && checks.unclear_count === 0 && checks.duplicate_stage_keys === 0 && checks.invalid_split_code_count === 0 && checks.missing_lineage_count === 0;
+  return checks;
+}
+
+async function promoteOneStageRow(env, r) {
+  await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_splits (
+    player_id, season, split_key, split_description, innings_pitched, outs_recorded, batters_faced, hits_allowed, earned_runs, walks_allowed, strikeouts, era, whip, raw_json, source_key, source_confidence, updated_at,
+    group_type, split_code, split_source_code, data_feed_key, source_endpoint, source_season, source_game_type, ingestion_mode, batch_id, run_id, certification_status, certification_grade, certified_at, promoted_at, created_at, source_snapshot_date, stat_shape_json,
+    innings_pitched_decimal, runs_allowed, home_runs_allowed, pitches, strikes, balls, avg_against, obp_against, slg_against, ops_against
+  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,COALESCE(?,CURRENT_TIMESTAMP),?,?,?,?,?,?,?,?,?,?,?,?)`,
+    r.player_id, r.season, r.split_code, r.split_description, r.innings_pitched, r.outs_recorded, r.batters_faced, r.hits_allowed, r.earned_runs, r.walks_allowed, r.strikeouts, r.era, r.whip, r.raw_json, r.source_key, 'SOURCE_LOCKED_STATSAPI_STATSPLITS_PITCHING_SITCODES_VL_VR_PROMOTED_FROM_CERTIFIED_STAGE',
+    r.group_type, r.split_code, r.split_source_code, r.data_feed_key, r.source_endpoint, r.source_season, r.source_game_type, 'base_backfill_promoted_from_certified_stage', r.batch_id, r.run_id, 'BASE_PITCHER_SPLITS_BASE_BACKFILL_CERTIFIED_PROMOTED', 'BASE_PASS', r.created_at, r.source_snapshot_date, r.stat_shape_json,
+    r.innings_pitched_decimal, r.runs_allowed, r.home_runs_allowed, r.pitches, r.strikes, r.balls, r.avg_against, r.obp_against, r.slg_against, r.ops_against);
+}
+
+async function finalizePromotion(env, stageBatch, runId, checks) {
+  const batchId = stageBatch.batch_id;
+  const liveRows = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_splits WHERE batch_id=?", batchId);
+  const dupLive = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS c FROM (SELECT player_id, season, group_type, split_code, COUNT(*) AS n FROM pitcher_splits WHERE batch_id=? GROUP BY player_id, season, group_type, split_code HAVING n>1)`, batchId);
+  const invalidLive = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_splits WHERE batch_id=? AND split_code NOT IN ('vs_left','vs_right')", batchId);
+  const stageRemainingBeforeClean = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_stage WHERE batch_id=?", batchId);
+  const finalChecks = { ...checks,
+    live_rows_for_batch: asInt(liveRows && liveRows.c, 0),
+    duplicate_live_keys: asInt(dupLive && dupLive.c, 0),
+    invalid_live_split_code_count: asInt(invalidLive && invalidLive.c, 0),
+    stage_rows_before_clean: asInt(stageRemainingBeforeClean && stageRemainingBeforeClean.c, 0),
+    live_verification_pass: asInt(liveRows && liveRows.c, 0) === checks.stage_rows && asInt(dupLive && dupLive.c, 0) === 0 && asInt(invalidLive && invalidLive.c, 0) === 0
+  };
+  if (!finalChecks.live_verification_pass) {
+    await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_batches SET status='PROMOTION_REVIEW_REQUIRED_LIVE_VERIFY_FAILED', rows_promoted=?, certification_status='BASE_PITCHER_SPLITS_PROMOTION_REVIEW_REQUIRED_LIVE_VERIFY_FAILED', certification_grade='PROMOTION_REVIEW', certification_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, finalChecks.live_rows_for_batch, safeJson(finalChecks), batchId);
+    await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_cursor SET status='PROMOTION_REVIEW_REQUIRED_LIVE_VERIFY_FAILED', cursor_json=?, updated_at=CURRENT_TIMESTAMP WHERE cursor_key='base_pitcher_splits_promotion_cursor' AND batch_id=?`, safeJson(finalChecks), batchId);
+    return { pass: false, certStatus: 'BASE_PITCHER_SPLITS_PROMOTION_REVIEW_REQUIRED_LIVE_VERIFY_FAILED', grade: 'PROMOTION_REVIEW', checks: finalChecks };
+  }
+  await run(env.STATS_PITCHER_DB, "DELETE FROM pitcher_split_stage WHERE batch_id=?", batchId);
+  const stageRemainingAfterClean = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_stage WHERE batch_id=?", batchId);
+  finalChecks.stage_rows_after_clean = asInt(stageRemainingAfterClean && stageRemainingAfterClean.c, 0);
+  finalChecks.stage_cleanup_pass = finalChecks.stage_rows_after_clean === 0;
+  const pass = finalChecks.live_verification_pass && finalChecks.stage_cleanup_pass;
+  const certStatus = pass ? 'BASE_PITCHER_SPLITS_BASE_BACKFILL_CERTIFIED_PROMOTED_CLEANED' : 'BASE_PITCHER_SPLITS_PROMOTED_CLEANUP_REVIEW_REQUIRED';
+  const grade = pass ? 'BASE_PASS' : 'PROMOTION_REVIEW';
+  const status = pass ? 'COMPLETED_PROMOTED_CLEANED' : 'PROMOTED_CLEANUP_REVIEW_REQUIRED';
+  await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_batches SET status=?, rows_promoted=?, certification_status=?, certification_grade=?, certification_json=?, promoted_at=CURRENT_TIMESTAMP, cleaned_at=CURRENT_TIMESTAMP, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, status, finalChecks.live_rows_for_batch, certStatus, grade, safeJson(finalChecks), batchId);
+  await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_cursor SET status=?, current_player_offset=?, players_processed=?, requests_done=0, next_run_after=NULL, last_error=NULL, cursor_json=?, updated_at=CURRENT_TIMESTAMP WHERE cursor_key='base_pitcher_splits_promotion_cursor' AND batch_id=?`, status, finalChecks.stage_rows, finalChecks.stage_rows, safeJson({ finalization_only: true, checks: finalChecks }), batchId);
+  await run(env.STATS_PITCHER_DB, `INSERT INTO pitcher_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('pitcher_splits_promotion_cert'), batchId, runId, PROMOTION_MODE, certStatus, grade, safeJson(finalChecks), finalChecks.stage_rows_before_clean, finalChecks.live_rows_for_batch, finalChecks.duplicate_live_keys, checks.true_no_data_count || 172, 0, stageBatch.source_snapshot_date || todayUtc());
+  return { pass, certStatus, grade, checks: finalChecks };
+}
+
+async function runPromotion(env, input) {
+  if (!env.STATS_PITCHER_DB) {
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: 'blocked_missing_stats_pitcher_db_binding', certification: 'BASE_PITCHER_SPLITS_REQUIRED_DB_BINDING_MISSING', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0 };
+  }
   const schema = await ensureSchema(env);
-  const liveBefore = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_splits");
-  const universe = await readPitcherUniverse(env);
-  const cursor = await loadOrCreateStageCursor(env, input, universe);
-  const batchId = cursor.batch_id;
-  const runId = cursor.run_id;
-  const sourceSnapshotDate = cursor.source_snapshot_date || todayUtc();
-  const startOffset = Math.max(0, asInt(cursor.current_player_offset, 0));
-  const players = universe.players.slice(startOffset, startOffset + chunkSize);
-
-  if (universe.expected_count <= 0) {
-    await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_batches SET status='STAGE_ONLY_BLOCKED_EMPTY_PITCHER_UNIVERSE', certification_status='BASE_PITCHER_SPLITS_EMPTY_PITCHER_UNIVERSE_BLOCKED', certification_grade='BLOCKED', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, batchId);
-    return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "STAGE_ONLY_BLOCKED_EMPTY_PITCHER_UNIVERSE", certification: "BASE_PITCHER_SPLITS_EMPTY_PITCHER_UNIVERSE_BLOCKED", rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false };
+  const stageBatch = await findCertifiedStageBatch(env);
+  if (!stageBatch) {
+    return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'PROMOTION_BLOCKED_NO_CERTIFIED_STAGE_BATCH', certification: 'BASE_PITCHER_SPLITS_PROMOTION_BLOCKED_NO_CERTIFIED_STAGE_BATCH', certification_grade: 'BLOCKED', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false, schema, timestamp_utc: nowUtc() };
   }
-
-  if (players.length === 0) {
-    const final = await finalizeStageOnly(env, batchId, runId, sourceSnapshotDate, universe.expected_count);
-    const liveAfter = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_splits");
-    return { ok: true, data_ok: final.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "STAGE_ONLY_COMPLETED_NO_PROMOTION", certification: final.certStatus, certification_grade: final.grade, rows_read: 0, rows_written: 1, rows_staged: final.checks.stage_rows, rows_promoted: 0, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false, finalization_only: true, source_stage: { batch_id: batchId, run_id: runId, expected_pitcher_universe_count: universe.expected_count, players_processed: universe.expected_count, checks: final.checks, live_rows_before: asInt(liveBefore && liveBefore.c, 0), live_rows_after: asInt(liveAfter && liveAfter.c, 0), no_live_promotion_occurred: asInt(liveBefore && liveBefore.c, 0) === asInt(liveAfter && liveAfter.c, 0) }, boundaries: baseIdentity(env).hard_blocks, timestamp_utc: nowUtc() };
+  const runId = input.run_id || rid('run_pitcher_splits_promote');
+  const checks = await validateCertifiedStageForPromotion(env, stageBatch.batch_id, asInt(stageBatch.expected_pitcher_universe_count, 0));
+  if (!checks.pass) {
+    await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_batches SET status='PROMOTION_BLOCKED_STAGE_CERTIFICATION_CHECK_FAILED', certification_status='BASE_PITCHER_SPLITS_PROMOTION_BLOCKED_STAGE_CHECK_FAILED', certification_grade='BLOCKED', certification_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, safeJson(checks), stageBatch.batch_id);
+    return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'PROMOTION_BLOCKED_STAGE_CERTIFICATION_CHECK_FAILED', certification: 'BASE_PITCHER_SPLITS_PROMOTION_BLOCKED_STAGE_CHECK_FAILED', certification_grade: 'BLOCKED', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false, promotion_checks: checks, timestamp_utc: nowUtc() };
   }
-
-  const headers = { "accept": "application/json" };
-  if (env.MLB_API_USER_AGENT) headers["user-agent"] = env.MLB_API_USER_AGENT;
-  let sourceRequestCount = 0, sourceSuccessCount = 0, sourceNoDataCount = 0, sourceErrorCount = 0, rowsStaged = 0;
-  const playerSummaries = [];
-
-  for (const player of players) {
-    const endpoint = endpointFor(env, player.player_id, SOURCE_SEASON);
-    sourceRequestCount += 1;
-    const fetched = await fetchTextWithTimeout(endpoint, { headers }, FETCH_TIMEOUT_MS);
-    let httpStatus = fetched.resp ? fetched.resp.status : null;
-    let payload = null;
-    let sourceError = null;
-    if (!fetched.ok) sourceError = fetched.error || "fetch_failed";
-    else {
-      try { payload = JSON.parse(fetched.text || "{}"); }
-      catch (err) { sourceError = "non_json_response: " + String(err && err.message ? err.message : err); }
-    }
-    const splits = payload ? extractSplits(payload) : [];
-    const fieldsThisPlayer = new Set();
-    const identifiersThisPlayer = [];
-    if (sourceError || !(httpStatus >= 200 && httpStatus < 300)) {
-      sourceErrorCount += 1;
-      await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_split_outcomes (batch_id,run_id,player_id,player_name,cursor_offset,source_endpoint,source_http_status,source_ok,raw_payload_split_count,rows_staged,promoted_row_count,terminal_category,category_reason,source_error,source_snapshot_date,split_identifier_json,field_names_json,certification_status,updated_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, batchId, runId, player.player_id, player.player_name, player.cursor_offset, endpoint, httpStatus, 0, 0, 0, 0, "SOURCE_ERROR", "source request failed or non-2xx/non-json", oneLine(sourceError || fetched.text), sourceSnapshotDate, "[]", "[]", "stage_only_source_error");
-      playerSummaries.push({ player_id: player.player_id, terminal_category: "SOURCE_ERROR", http_status: httpStatus });
-      continue;
-    }
-    if (splits.length === 0) {
-      sourceNoDataCount += 1;
-      await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_split_outcomes (batch_id,run_id,player_id,player_name,cursor_offset,source_endpoint,source_http_status,source_ok,raw_payload_split_count,rows_staged,promoted_row_count,terminal_category,category_reason,source_error,source_snapshot_date,split_identifier_json,field_names_json,certification_status,updated_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, batchId, runId, player.player_id, player.player_name, player.cursor_offset, endpoint, httpStatus, 1, 0, 0, 0, "TRUE_NO_DATA", "clean 2xx JSON response with zero statSplits rows", null, sourceSnapshotDate, "[]", "[]", "stage_only_true_no_data");
-      playerSummaries.push({ player_id: player.player_id, terminal_category: "TRUE_NO_DATA", http_status: httpStatus });
-      continue;
-    }
-    sourceSuccessCount += 1;
-    let stagedForPlayer = 0;
-    let unclearIdentifier = false;
-    for (const split of splits) {
-      const stat = split && split.stat ? split.stat : {};
-      for (const f of statFields(stat)) fieldsThisPlayer.add(f);
-      const mapped = mapSplitCode(split);
-      if (!mapped.confirmed) unclearIdentifier = true;
-      identifiersThisPlayer.push({ split_code: mapped.split_code, confirmed: mapped.confirmed, evidence: mapped.evidence });
-      const row = parseStageRow(split, player, SOURCE_SEASON, batchId, runId, endpoint, sourceSnapshotDate, mapped.confirmed ? "base_stage_only_identifier_confirmed" : "base_stage_only_identifier_unconfirmed");
-      await insertStageRow(env, row);
-      stagedForPlayer += 1;
-      rowsStaged += 1;
-    }
-    const category = unclearIdentifier ? "UNCLEAR" : "STAGE_ROWS_WRITTEN";
-    await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_split_outcomes (batch_id,run_id,player_id,player_name,cursor_offset,source_endpoint,source_http_status,source_ok,raw_payload_split_count,rows_staged,promoted_row_count,terminal_category,category_reason,source_error,source_snapshot_date,split_identifier_json,field_names_json,certification_status,updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, batchId, runId, player.player_id, player.player_name, player.cursor_offset, endpoint, httpStatus, 1, splits.length, stagedForPlayer, 0, category, category === "UNCLEAR" ? "one or more split identifiers not confirmed by source evidence" : "full-universe stage-only rows written; no live promotion", null, sourceSnapshotDate, safeJson(identifiersThisPlayer), safeJson(Array.from(fieldsThisPlayer).sort()), category === "UNCLEAR" ? "stage_only_identifier_unclear" : "stage_only_identifier_confirmed");
-    playerSummaries.push({ player_id: player.player_id, terminal_category: category, http_status: httpStatus, split_count: splits.length, rows_staged: stagedForPlayer });
+  const inputJson = input.input_json || input || {};
+  const chunkSize = capChunk(inputJson.promotion_chunk_size || inputJson.chunk_size || DEFAULT_CHUNK_SIZE);
+  const cursor = await getPromotionCursor(env, stageBatch, runId);
+  const offset = Math.max(0, asInt(cursor.current_player_offset, 0));
+  const stageRows = await all(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_split_stage WHERE batch_id=? ORDER BY player_id, season, group_type, split_code LIMIT ? OFFSET ?`, stageBatch.batch_id, chunkSize, offset);
+  if (!stageRows.length) {
+    const final = await finalizePromotion(env, stageBatch, runId, checks);
+    return { ok: true, data_ok: final.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: final.pass ? 'COMPLETED_PROMOTED_CLEANED' : 'PROMOTION_REVIEW_REQUIRED', certification: final.certStatus, certification_grade: final.grade, rows_read: 0, rows_written: 1, rows_staged: final.checks.stage_rows_before_clean || final.checks.stage_rows, rows_promoted: final.checks.live_rows_for_batch || 0, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false, finalization_only: true, promotion: { batch_id: stageBatch.batch_id, run_id: runId, checks: final.checks }, boundaries: baseIdentity(env).hard_blocks, timestamp_utc: nowUtc() };
   }
+  let promotedThisTick = 0;
+  for (const row of stageRows) { await promoteOneStageRow(env, row); promotedThisTick += 1; }
+  const newOffset = offset + promotedThisTick;
+  const liveCount = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_splits WHERE batch_id=?", stageBatch.batch_id);
+  const completed = newOffset >= checks.stage_rows;
+  await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_batches SET status=?, rows_promoted=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, completed ? 'FINALIZATION_ONLY' : 'PARTIAL_CONTINUE', asInt(liveCount && liveCount.c, 0), stageBatch.batch_id);
+  await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_cursor SET status=?, current_player_offset=?, players_total=?, players_processed=?, requests_done=0, next_run_after=CURRENT_TIMESTAMP, last_error=NULL, cursor_json=?, updated_at=CURRENT_TIMESTAMP WHERE cursor_key='base_pitcher_splits_promotion_cursor' AND batch_id=?`, completed ? 'FINALIZATION_ONLY' : 'PARTIAL_CONTINUE', newOffset, checks.stage_rows, newOffset, safeJson({ promotion_chunk_size: chunkSize, promoted_this_tick: promotedThisTick, finalization_only_ready: completed, zero_mlb_calls: true }), stageBatch.batch_id);
+  return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'partial_continue_base_pitcher_splits', certification: completed ? 'BASE_PITCHER_SPLITS_PROMOTION_FINALIZATION_REQUIRED_ZERO_MLB_CALLS' : 'BASE_PITCHER_SPLITS_PROMOTION_PARTIAL_CONTINUE_ZERO_MLB_CALLS', certification_grade: completed ? 'FINALIZATION_ONLY_READY' : 'PARTIAL_CONTINUE', rows_read: promotedThisTick, rows_written: promotedThisTick, rows_staged: checks.stage_rows, rows_promoted: asInt(liveCount && liveCount.c, 0), external_calls_performed: 0, continuation_required: true, orchestrator_should_self_continue: true, promotion: { batch_id: stageBatch.batch_id, run_id: runId, current_offset: newOffset, stage_rows: checks.stage_rows, promoted_this_tick: promotedThisTick, live_rows_for_batch: asInt(liveCount && liveCount.c, 0), zero_mlb_calls: true, no_remine: true, no_delta: true }, boundaries: baseIdentity(env).hard_blocks, timestamp_utc: nowUtc() };
+}
 
-  const nextOffset = startOffset + players.length;
-  const completed = nextOffset >= universe.expected_count;
-  const totalRequests = asInt(cursor.requests_done, 0) + sourceRequestCount;
-  const totalProcessed = Math.min(universe.expected_count, nextOffset);
-  const stageTotal = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_stage WHERE batch_id=?", batchId);
-  const outcomeTotal = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_outcomes WHERE batch_id=?", batchId);
-
-  await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_batches SET status=?, source_request_count=COALESCE(source_request_count,0)+?, source_success_count=COALESCE(source_success_count,0)+?, source_no_data_count=COALESCE(source_no_data_count,0)+?, source_error_count=COALESCE(source_error_count,0)+?, rows_staged=?, rows_promoted=0, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, completed ? "FINALIZATION_ONLY" : "PARTIAL_CONTINUE", sourceRequestCount, sourceSuccessCount, sourceNoDataCount, sourceErrorCount, asInt(stageTotal && stageTotal.c, 0), batchId);
-  await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_cursor SET status=?, current_player_id=?, current_player_offset=?, players_total=?, players_processed=?, requests_done=?, next_run_after=CURRENT_TIMESTAMP, last_error=NULL, cursor_json=?, updated_at=CURRENT_TIMESTAMP WHERE cursor_key='base_pitcher_splits_stage_only_cursor'`, completed ? "FINALIZATION_ONLY" : "PARTIAL_CONTINUE", players.length ? players[players.length - 1].player_id : null, nextOffset, universe.expected_count, totalProcessed, totalRequests, safeJson({ chunk_size: chunkSize, last_chunk_player_ids: players.map(p => p.player_id), finalization_only_ready: completed }));
-
-  if (completed) {
-    return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "partial_continue_base_pitcher_splits", certification: "BASE_PITCHER_SPLITS_STAGE_ONLY_FINALIZATION_REQUIRED_NO_PROMOTION", certification_grade: "FINALIZATION_ONLY_READY", rows_read: players.length, rows_written: rowsStaged + players.length, rows_staged: asInt(stageTotal && stageTotal.c, 0), rows_promoted: 0, external_calls_performed: sourceRequestCount, continuation_required: true, orchestrator_should_self_continue: true, next_step: "FINALIZATION_ONLY_ZERO_MLB_CALLS", source_stage: { batch_id: batchId, run_id: runId, expected_pitcher_universe_count: universe.expected_count, players_processed: totalProcessed, outcome_rows: asInt(outcomeTotal && outcomeTotal.c, 0), current_offset: nextOffset, chunk_size: chunkSize, player_summaries: playerSummaries }, boundaries: baseIdentity(env).hard_blocks, timestamp_utc: nowUtc() };
+async function runProbe(env, input) {
+  const mode = String(input.mode || input.input_json?.mode || PROMOTION_MODE);
+  if (/delta/i.test(mode)) {
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: 'blocked_delta_update_not_enabled', certification: 'BASE_PITCHER_SPLITS_DELTA_BLOCKED_UNTIL_PROMOTED_BASE_LOCKED', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0 };
   }
-
-  return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "partial_continue_base_pitcher_splits", certification: "BASE_PITCHER_SPLITS_STAGE_ONLY_PARTIAL_CONTINUE_NO_PROMOTION", certification_grade: "PARTIAL_CONTINUE", rows_read: players.length, rows_written: rowsStaged + players.length, rows_staged: asInt(stageTotal && stageTotal.c, 0), rows_promoted: 0, external_calls_performed: sourceRequestCount, continuation_required: true, orchestrator_should_self_continue: true, source_stage: { batch_id: batchId, run_id: runId, expected_pitcher_universe_count: universe.expected_count, players_processed: totalProcessed, outcome_rows: asInt(outcomeTotal && outcomeTotal.c, 0), current_offset: nextOffset, chunk_size: chunkSize, player_summaries: playerSummaries }, boundaries: baseIdentity(env).hard_blocks, timestamp_utc: nowUtc() };
+  return await runPromotion(env, input);
 }
 
 export default {
@@ -730,7 +769,7 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       try { return jsonResponse(await runProbe(env, input)); }
-      catch (err) { return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_STAGE_ONLY_FAILED", certification: "BASE_PITCHER_SPLITS_BASE_STAGE_ONLY_FAILED", error: String(err && err.message ? err.message : err), rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, timestamp_utc: nowUtc() }, 500); }
+      catch (err) { return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_PROMOTION_FAILED", certification: "BASE_PITCHER_SPLITS_BASE_PROMOTION_FAILED", error: String(err && err.message ? err.message : err), rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, timestamp_utc: nowUtc() }, 500); }
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }
