@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.48-team-game-logs-dynamic-delta-window";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.49-base-starter-history-probe";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -59,6 +59,7 @@ function base(env, extra = {}) {
       BASE_HITTER_SPLITS_WORKER: !!env.BASE_HITTER_SPLITS_WORKER,
       BASE_PITCHER_GAME_LOGS_WORKER: !!env.BASE_PITCHER_GAME_LOGS_WORKER,
       BASE_TEAM_GAME_LOGS_WORKER: !!env.BASE_TEAM_GAME_LOGS_WORKER,
+      BASE_STARTER_HISTORY_WORKER: !!env.BASE_STARTER_HISTORY_WORKER,
       BASE_PITCHER_SPLITS_WORKER: !!env.BASE_PITCHER_SPLITS_WORKER
     },
     ...extra
@@ -215,6 +216,12 @@ function isBaseTeamGameLogsJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "base-team-game-logs" && worker === "alphadog-v2-base-team-game-logs";
+}
+
+function isBaseStarterHistoryJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "base-starter-history" && worker === "alphadog-v2-base-starter-history";
 }
 
 function isBasePitcherSplitsJob(row) {
@@ -1765,6 +1772,132 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
+
+async function processBaseStarterHistoryJob(env, row, runId, trigger) {
+  if (!env.BASE_STARTER_HISTORY_WORKER || typeof env.BASE_STARTER_HISTORY_WORKER.fetch !== "function") {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      status: "blocked_missing_service_binding",
+      certification: "BASE_STARTER_HISTORY_SERVICE_BINDING_MISSING",
+      trigger,
+      note: "Exact dispatch is enabled only through BASE_STARTER_HISTORY_WORKER service binding. Deploy orchestrator with the services wrangler config."
+    };
+
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_base_starter_history_service_binding', 'BASE_STARTER_HISTORY_WORKER service binding is missing')",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
+    );
+
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_base_starter_history_service_binding', error_message='BASE_STARTER_HISTORY_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id
+    );
+
+    return output;
+  }
+
+  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const input = {
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    trigger,
+    mode: "orchestrator_exact_base_starter_history_source_lock_probe_dispatch",
+    input_json: { ...rowInput, mode: "source_lock_probe" }
+  };
+
+  const started = Date.now();
+  let output;
+  let httpStatus = null;
+  try {
+    const resp = await env.BASE_STARTER_HISTORY_WORKER.fetch("https://internal.alphadog-v2-base-starter-history/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input)
+    });
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); }
+    catch (_) { output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) }; }
+  } catch (err) {
+    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+  }
+
+  const rawStatus = String((output && output.status) || "").toLowerCase();
+  const partialContinue = !!(output && output.ok && (rawStatus === "partial_continue" || rawStatus === "source_shape_probe_partial_continue" || output.continuation_required === true || output.orchestrator_should_self_continue === true));
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
+  const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
+  const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
+  const certification = String((output && output.certification) || (ok ? "starter_history_source_probe_completed" : "starter_history_source_probe_failed")).slice(0, 120);
+  const queueStatus = partialContinue ? "pending" : (ok ? "completed" : "failed");
+  const runStatus = partialContinue ? "partial_continue" : (ok ? "completed" : "failed");
+  const errorCode = ok || partialContinue ? null : "base_starter_history_worker_failed";
+  const errorMessage = ok || partialContinue ? null : String((output && (output.error || output.status)) || "Base Starter History source probe worker failed").slice(0, 900);
+
+  const cappedOutput = {
+    ...output,
+    orchestrator_dispatch: {
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      exact_worker_only: true,
+      trigger,
+      http_status: httpStatus,
+      elapsed_ms: Date.now() - started,
+      base_starter_history_v0_1_0_source_lock_probe: true,
+      hot_continuation_ready: true,
+      backend_self_continuation_ready: true,
+      manual_wake_testing_only: true,
+      no_browser_pump: true,
+      no_generic_dispatch: true,
+      source_probe_only: true,
+      no_live_promotion: true,
+      no_full_base_backfill: true,
+      no_delta_update_execution: true,
+      no_hitter_mutation: true,
+      no_pitcher_mutation: true,
+      no_splits_mutation: true,
+      no_team_game_log_mutation: true,
+      no_prizepicks_mutation: true,
+      no_sleeper_mutation: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board_write: true
+    }
+  };
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
+  );
+
+  if (partialContinue) {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_starter_history_dispatch_completed', 'Orchestrator completed exact base-starter-history v0.1.0 source-lock probe dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, source_probe_only: true, no_live_promotion: true, partial_continue: partialContinue })
+  );
+
+  return cappedOutput;
+}
+
 async function processStaticTeamsJob(env, row, runId, trigger) {
   if (!env.STATIC_TEAMS_WORKER || typeof env.STATIC_TEAMS_WORKER.fetch !== "function") {
     const output = {
@@ -2535,6 +2668,24 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+
+  if (isBaseStarterHistoryJob(row)) {
+    const output = await processBaseStarterHistoryJob(env, row, runId, trigger);
+    const rawStatus = String((output && output.status) || "").toLowerCase();
+    const partial = !!(output && output.ok && (
+      rawStatus === "partial_continue" ||
+      rawStatus === "source_shape_probe_partial_continue" ||
+      output.continuation_required === true ||
+      output.orchestrator_should_self_continue === true
+    ));
+    return {
+      status: partial ? "partial_continue_base_starter_history_job" : (output && output.ok ? "completed_one_base_starter_history_job" : "failed_one_base_starter_history_job"),
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isBasePitcherSplitsJob(row)) {
     const output = await processBasePitcherSplitsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
@@ -2764,6 +2915,13 @@ async function countDueBasePitcherSplits(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
+async function countDueBaseStarterHistory(env) {
+  const row = await first(env.CONTROL_DB,
+    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='base-starter-history' AND worker_name='alphadog-v2-base-starter-history' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL"
+  );
+  return Number(row && row.c ? row.c : 0);
+}
+
 async function countDueStaticPlayers(env) {
   // Static Players is intentionally chunked. For this specific job, any pending/running
   // row without a finished_at must be treated as continuation-eligible, even if run_after
@@ -2813,7 +2971,8 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const dueBasePitcherGameLogs = await countDueBasePitcherGameLogs(env);
   const dueBaseTeamGameLogs = await countDueBaseTeamGameLogs(env);
   const dueBasePitcherSplits = await countDueBasePitcherSplits(env);
-  const shouldSelfContinue = (dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0) && depth < maxChains && !!ctx;
+  const dueBaseStarterHistory = await countDueBaseStarterHistory(env);
+  const shouldSelfContinue = (dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0) && depth < maxChains && !!ctx;
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -2829,6 +2988,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       due_base_pitcher_game_logs_after_pump: dueBasePitcherGameLogs,
       due_base_team_game_logs_after_pump: dueBaseTeamGameLogs,
       due_base_pitcher_splits_after_pump: dueBasePitcherSplits,
+      due_base_starter_history_after_pump: dueBaseStarterHistory,
       pump_depth: depth,
       max_pump_chains: maxChains,
       self_continue_scheduled: !!shouldSelfContinue,
@@ -2851,6 +3011,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         due_base_pitcher_game_logs_after_pump: dueBasePitcherGameLogs,
       due_base_team_game_logs_after_pump: dueBaseTeamGameLogs,
       due_base_pitcher_splits_after_pump: dueBasePitcherSplits,
+      due_base_starter_history_after_pump: dueBaseStarterHistory,
         pump_depth: depth,
         next_pump_depth: depth + 1,
         max_pump_chains: maxChains,

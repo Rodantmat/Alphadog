@@ -268,3 +268,184 @@ CREATE INDEX IF NOT EXISTS idx_team_game_log_outcomes_batch ON team_game_log_out
 CREATE INDEX IF NOT EXISTS idx_team_game_log_batches_status ON team_game_log_batches(status, created_at);
 
 INSERT OR REPLACE INTO team_schema_migrations VALUES ('team_game_logs_v0_1_0_schema_source_lock_probe', 'alphadog-v2-base-team-game-logs-v0.1.0-schema-source-lock-probe', CURRENT_TIMESTAMP, 'Additive lifecycle schema for Base Team Game Logs source-lock probe');
+
+-- alphadog-v2-base-starter-history-v0.1.0-schema-source-lock-probe
+-- Additive starter-history lifecycle schema only. Probe/stage/certification metadata; no live promotion required by this migration.
+
+CREATE TABLE IF NOT EXISTS starter_history_batches (
+  batch_id TEXT PRIMARY KEY,
+  run_id TEXT,
+  request_id TEXT,
+  chain_id TEXT,
+  job_key TEXT,
+  worker_name TEXT,
+  version TEXT,
+  ingestion_mode TEXT,
+  probe_only INTEGER DEFAULT 1,
+  source_key TEXT,
+  source_confidence TEXT,
+  source_season INTEGER,
+  source_game_type TEXT,
+  base_backfill_cutoff_date TEXT,
+  delta_reserved_start_date TEXT,
+  sample_start_date TEXT,
+  sample_end_date TEXT,
+  sample_limit INTEGER,
+  source_shape_classification TEXT,
+  actual_starter_identification_path TEXT,
+  safest_key_model TEXT,
+  expected_game_count INTEGER DEFAULT 0,
+  expected_starter_rows INTEGER DEFAULT 0,
+  staged_starter_rows INTEGER DEFAULT 0,
+  duplicate_stage_keys INTEGER DEFAULT 0,
+  final_games_sampled INTEGER DEFAULT 0,
+  games_with_two_actual_starters INTEGER DEFAULT 0,
+  missing_actual_starter_games INTEGER DEFAULT 0,
+  probable_only_games INTEGER DEFAULT 0,
+  source_error_count INTEGER DEFAULT 0,
+  unclear_count INTEGER DEFAULT 0,
+  status TEXT,
+  certification_status TEXT,
+  certification_grade TEXT,
+  output_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  certified_at TEXT,
+  promoted_at TEXT,
+  cleaned_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS starter_history_stage (
+  stage_id TEXT PRIMARY KEY,
+  starter_key TEXT,
+  game_pk INTEGER,
+  game_date TEXT,
+  season INTEGER,
+  game_type TEXT,
+  game_status TEXT,
+  team_id TEXT,
+  team_name TEXT,
+  opponent_team_id TEXT,
+  opponent_team_name TEXT,
+  is_home INTEGER,
+  venue_id INTEGER,
+  starter_player_id INTEGER,
+  starter_name TEXT,
+  throws TEXT,
+  started_game INTEGER,
+  starter_source_path TEXT,
+  starter_source_type TEXT,
+  innings_pitched TEXT,
+  outs_recorded INTEGER,
+  batters_faced INTEGER,
+  pitches INTEGER,
+  strikes INTEGER,
+  hits_allowed INTEGER,
+  runs_allowed INTEGER,
+  earned_runs INTEGER,
+  walks_allowed INTEGER,
+  strikeouts INTEGER,
+  home_runs_allowed INTEGER,
+  wins INTEGER,
+  losses INTEGER,
+  no_decision INTEGER,
+  days_rest INTEGER,
+  days_rest_is_derived INTEGER DEFAULT 0,
+  season_stat_context_json TEXT,
+  data_feed_key TEXT,
+  source_key TEXT,
+  source_endpoint TEXT,
+  source_season INTEGER,
+  source_game_type TEXT,
+  ingestion_mode TEXT,
+  batch_id TEXT,
+  run_id TEXT,
+  request_id TEXT,
+  certification_status TEXT,
+  certification_grade TEXT,
+  source_confidence TEXT,
+  source_snapshot_date TEXT,
+  raw_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  certified_at TEXT,
+  promoted_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS starter_history_outcomes (
+  outcome_id TEXT PRIMARY KEY,
+  batch_id TEXT,
+  run_id TEXT,
+  request_id TEXT,
+  game_pk INTEGER,
+  game_date TEXT,
+  season INTEGER,
+  team_id TEXT,
+  opponent_team_id TEXT,
+  starter_player_id INTEGER,
+  outcome_level TEXT,
+  outcome_category TEXT,
+  status TEXT,
+  reason TEXT,
+  source_endpoint TEXT,
+  source_key TEXT,
+  source_confidence TEXT,
+  source_snapshot_date TEXT,
+  details_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS starter_history_cursor (
+  cursor_key TEXT PRIMARY KEY,
+  worker_name TEXT,
+  version TEXT,
+  ingestion_mode TEXT,
+  status TEXT,
+  source_shape_classification TEXT,
+  base_backfill_cutoff_date TEXT,
+  delta_reserved_start_date TEXT,
+  last_probe_date TEXT,
+  last_completed_game_date TEXT,
+  last_batch_id TEXT,
+  last_run_id TEXT,
+  output_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS starter_history_certifications (
+  certification_id TEXT PRIMARY KEY,
+  batch_id TEXT,
+  run_id TEXT,
+  request_id TEXT,
+  worker_name TEXT,
+  version TEXT,
+  certification_status TEXT,
+  certification_grade TEXT,
+  source_shape_classification TEXT,
+  actual_starter_identification_path TEXT,
+  safest_key_model TEXT,
+  expected_game_count INTEGER,
+  expected_starter_rows INTEGER,
+  staged_starter_rows INTEGER,
+  duplicate_stage_keys INTEGER,
+  missing_required_identity_count INTEGER,
+  source_error_count INTEGER,
+  unclear_count INTEGER,
+  no_live_promotion INTEGER DEFAULT 1,
+  full_base_backfill_blocked INTEGER DEFAULT 1,
+  delta_update_blocked INTEGER DEFAULT 1,
+  output_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_starter_history_stage_batch ON starter_history_stage(batch_id);
+CREATE INDEX IF NOT EXISTS idx_starter_history_stage_game_team ON starter_history_stage(game_pk, team_id);
+CREATE INDEX IF NOT EXISTS idx_starter_history_stage_pitcher_date ON starter_history_stage(starter_player_id, game_date);
+CREATE INDEX IF NOT EXISTS idx_starter_history_outcomes_batch ON starter_history_outcomes(batch_id, outcome_category);
+CREATE INDEX IF NOT EXISTS idx_starter_history_batches_status ON starter_history_batches(status, updated_at);
+CREATE INDEX IF NOT EXISTS idx_starter_history_game_team ON starter_history(game_pk, team_id);
+
+INSERT OR IGNORE INTO team_schema_migrations (migration_key, package_version, notes)
+VALUES ('starter_history_v0_1_0_schema_source_lock_probe', 'alphadog-v2-base-starter-history-v0.1.0-schema-source-lock-probe', 'Additive starter history lifecycle schema for source-lock probe only; no live promotion');
