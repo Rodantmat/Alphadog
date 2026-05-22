@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-team-game-logs";
-const VERSION = "alphadog-v2-base-team-game-logs-v0.3.1-hitter-pitcher-equivalent-delta-window";
+const VERSION = "alphadog-v2-base-team-game-logs-v0.3.2-delta-scoped-source-repair";
 const JOB_KEY = "base-team-game-logs";
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
 const SOURCE_KEY = "mlb_statsapi_schedule_boxscore_team_totals_probe_v0_1_0";
@@ -483,6 +483,219 @@ async function retainedDeltaStageTruth(env, batchId) {
 }
 
 
+async function findMissingDeltaStageRows(env, batchId, limit = 4) {
+  const res = await env.TEAM_DB.prepare(`
+    SELECT
+      o.game_pk,
+      o.game_date,
+      o.season,
+      o.team_id,
+      o.opponent_team_id,
+      o.details_json
+    FROM team_game_log_outcomes o
+    WHERE o.batch_id=?
+      AND o.outcome_level='team_game'
+      AND o.team_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1
+        FROM team_game_log_stage s
+        WHERE s.batch_id=o.batch_id
+          AND s.game_pk=o.game_pk
+          AND CAST(s.team_id AS TEXT)=CAST(o.team_id AS TEXT)
+      )
+    ORDER BY o.game_date, o.game_pk, o.team_id
+    LIMIT ?
+  `).bind(batchId, limit).all();
+  return res.results || [];
+}
+
+async function scopedRepairMissingDeltaStageRows(env, { batch, truth, baseUrl, sourceWindow, requestId, chainId, runId }) {
+  const batchId = batch.batch_id;
+  const expectedRows = Number(batch.expected_team_game_rows || 0);
+  const missingStageCount = Math.max(0, expectedRows - Number(truth.stage_rows || 0));
+  const missingLiveCount = Math.max(0, expectedRows - Number(truth.live_rows || 0));
+  const targets = await findMissingDeltaStageRows(env, batchId, Math.max(1, Math.min(4, missingStageCount || 1)));
+  if (!targets.length) {
+    return {
+      ok:false,
+      data_ok:false,
+      version:VERSION,
+      worker_name:WORKER_NAME,
+      job_key:JOB_KEY,
+      request_id:requestId,
+      chain_id:chainId,
+      batch_id:batchId,
+      status:"DELTA_TEAM_GAME_LOGS_SCOPED_REPAIR_BLOCKED_NO_OUTCOME_ANCHOR",
+      certification:"DELTA_TEAM_GAME_LOGS_SCOPED_REPAIR_BLOCKED_NO_OUTCOME_ANCHOR",
+      certification_grade:"DELTA_REPAIR_BLOCKED",
+      missing_stage_rows:missingStageCount,
+      missing_live_rows:missingLiveCount,
+      retained_restore_rows_available:Number(truth.missing_live_rows || 0),
+      rows_read:0,
+      rows_written:0,
+      rows_promoted:0,
+      external_calls_performed:1,
+      no_full_sweep:true,
+      source_final_date_check:sourceWindow
+    };
+  }
+
+  let externalCalls = 1; // the final-date probe already happened before this repair gate
+  let rowsWritten = 0;
+  let scopedGamesRefetched = 0;
+  const repairedKeys = [];
+  for (const t of targets) {
+    const gamePk = parseIntSafe(t.game_pk);
+    const targetTeamId = String(t.team_id || "");
+    const details = parseJsonSafeText(t.details_json, {});
+    const boxscoreEndpoint = `${baseUrl}/api/v1/game/${gamePk}/boxscore`;
+    const fetched = await fetchJson(boxscoreEndpoint, env);
+    externalCalls += 1;
+    if (!fetched.ok) {
+      await insertOutcome(env, {
+        outcome_id:`${batchId}_${gamePk}_${targetTeamId}_scoped_repair_source_error`,
+        batch_id:batchId,
+        run_id:runId,
+        request_id:requestId,
+        game_pk:gamePk,
+        game_date:t.game_date,
+        season:ymdToSeason(t.game_date),
+        team_id:targetTeamId,
+        opponent_team_id:t.opponent_team_id == null ? null : String(t.opponent_team_id),
+        outcome_level:"team_game",
+        outcome_category:"GAME_SOURCE_ERROR",
+        status:"SCOPED_REPAIR_BOXSCORE_FETCH_FAILED",
+        reason:"Scoped team game log repair could not fetch MLB boxscore for missing retained stage/live row.",
+        source_endpoint:boxscoreEndpoint,
+        source_key:SOURCE_KEY,
+        source_confidence:SOURCE_CONFIDENCE,
+        source_snapshot_date:sourceWindow?.latest_complete_game_date || t.game_date,
+        details_json:safeJson({ http_status:fetched.http_status, text_preview:fetched.text_preview })
+      });
+      continue;
+    }
+    scopedGamesRefetched += 1;
+    const homeTeam = fetched.json?.teams?.home?.team || {};
+    const awayTeam = fetched.json?.teams?.away?.team || {};
+    const schedulePair = {
+      home_team_id:parseIntSafe(homeTeam.id),
+      home_team_name:homeTeam.name || null,
+      away_team_id:parseIntSafe(awayTeam.id),
+      away_team_name:awayTeam.name || null
+    };
+    let side = null;
+    if (String(homeTeam.id || "") === targetTeamId) side = "home";
+    if (String(awayTeam.id || "") === targetTeamId) side = "away";
+    if (!side && details && details.is_home !== undefined) side = Number(details.is_home) === 1 ? "home" : "away";
+    if (!side) {
+      await insertOutcome(env, {
+        outcome_id:`${batchId}_${gamePk}_${targetTeamId}_scoped_repair_unclear_side`,
+        batch_id:batchId,
+        run_id:runId,
+        request_id:requestId,
+        game_pk:gamePk,
+        game_date:t.game_date,
+        season:ymdToSeason(t.game_date),
+        team_id:targetTeamId,
+        opponent_team_id:t.opponent_team_id == null ? null : String(t.opponent_team_id),
+        outcome_level:"team_game",
+        outcome_category:"GAME_UNCLEAR",
+        status:"SCOPED_REPAIR_TEAM_SIDE_UNCLEAR",
+        reason:"Scoped team game log repair could not determine whether missing team row was home or away.",
+        source_endpoint:boxscoreEndpoint,
+        source_key:SOURCE_KEY,
+        source_confidence:SOURCE_CONFIDENCE,
+        source_snapshot_date:sourceWindow?.latest_complete_game_date || t.game_date,
+        details_json:safeJson({ home_team:homeTeam, away_team:awayTeam, target_team_id:targetTeamId, prior_details:details })
+      });
+      continue;
+    }
+    const game = {
+      gamePk,
+      officialDate:t.game_date,
+      gameDate:t.game_date,
+      gameType:"R",
+      status:{ detailedState:"Final", abstractGameState:"Final", codedGameState:"F" },
+      teams:{ home:{ team:homeTeam }, away:{ team:awayTeam } }
+    };
+    const row = buildTeamRow({ side, game, boxscore:fetched.json, schedulePair, batchId, runId, requestId, sourceEndpoint:boxscoreEndpoint, sampleDate:t.game_date });
+    row.ingestion_mode = "delta_update";
+    row.certification_status = "DELTA_SCOPED_REPAIR_STAGE_READY_FOR_PROMOTION";
+    row.certification_grade = "DELTA_REPAIR_PASS";
+    row.source_confidence = SOURCE_CONFIDENCE;
+    row.source_snapshot_date = sourceWindow?.latest_complete_game_date || t.game_date;
+    await insertStageRow(env, row);
+    await insertOutcome(env, {
+      outcome_id:`${batchId}_${row.game_pk}_${row.team_id}`,
+      batch_id:batchId,
+      run_id:runId,
+      request_id:requestId,
+      game_pk:row.game_pk,
+      game_date:row.game_date,
+      season:row.season,
+      team_id:row.team_id,
+      opponent_team_id:row.opponent_team_id,
+      outcome_level:"team_game",
+      outcome_category:"PROMOTED_ROWS",
+      status:"SCOPED_REPAIR_STAGE_REWRITTEN_FOR_PROMOTION",
+      reason:"Scoped source repair rewrote one missing retained-stage/live team-game key without a full sweep.",
+      source_endpoint:boxscoreEndpoint,
+      source_key:SOURCE_KEY,
+      source_confidence:SOURCE_CONFIDENCE,
+      source_snapshot_date:row.source_snapshot_date,
+      details_json:safeJson({ team_game_key:row.team_game_key, is_home:row.is_home, scoped_repair:true })
+    });
+    rowsWritten += 2;
+    repairedKeys.push(row.team_game_key);
+  }
+
+  const beforeLive = Number(truth.live_rows || 0);
+  await promoteTeamStageRows(env, batchId, "DELTA_TEAM_GAME_LOGS_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED", "DELTA_REPAIR_PASS", true);
+  const afterTruth = await retainedDeltaStageTruth(env, batchId);
+  const promotedRows = Math.max(0, afterTruth.live_rows - beforeLive);
+  await run(env.TEAM_DB,
+    "UPDATE team_game_log_batches SET version=?, status='COMPLETED_PROMOTED_STAGE_RETAINED', certification_status='DELTA_TEAM_GAME_LOGS_CERTIFIED_PROMOTED_STAGE_RETAINED', certification_grade='DELTA_PASS', staged_team_game_rows=?, rows_promoted=MAX(rows_promoted, ?), output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
+    VERSION,
+    afterTruth.stage_rows,
+    afterTruth.live_rows,
+    safeJson({ scoped_repair:true, repaired_keys:repairedKeys, missing_stage_rows_before:missingStageCount, missing_live_rows_before:missingLiveCount, retained_stage_rows_after:afterTruth.stage_rows, live_rows_after:afterTruth.live_rows, source_final_date_check:sourceWindow }),
+    batchId
+  );
+  return {
+    ok:true,
+    data_ok:true,
+    version:VERSION,
+    worker_name:WORKER_NAME,
+    job_key:JOB_KEY,
+    request_id:requestId,
+    chain_id:chainId,
+    batch_id:batchId,
+    status:"DELTA_TEAM_GAME_LOGS_SCOPED_REPAIR_COMPLETED",
+    certification:"DELTA_TEAM_GAME_LOGS_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED",
+    certification_grade:"DELTA_REPAIR_PASS",
+    missing_live_rows_detected:missingLiveCount,
+    missing_stage_rows_detected:missingStageCount,
+    retained_restore_rows_available:Number(truth.missing_live_rows || 0),
+    scoped_team_game_keys_to_refetch:targets.length,
+    scoped_games_refetched:scopedGamesRefetched,
+    repaired_keys:repairedKeys,
+    rows_read:targets.length,
+    rows_written:rowsWritten + promotedRows + 1,
+    rows_staged:afterTruth.stage_rows,
+    rows_promoted:promotedRows,
+    external_calls_performed:externalCalls,
+    no_full_sweep:true,
+    no_new_batch:true,
+    stage_retained:true,
+    live_rows_after:afterTruth.live_rows,
+    retained_stage_rows_after:afterTruth.stage_rows,
+    missing_stage_rows_after:Math.max(0, expectedRows - afterTruth.stage_rows),
+    missing_live_rows_after:Math.max(0, expectedRows - afterTruth.live_rows),
+    source_final_date_check:sourceWindow
+  };
+}
+
+
 async function initializeBaseBackfill(env, input, requestId, chainId, runId, startDate, cutoffDate, season, baseUrl) {
   const batchId = rid("team_game_logs_base_backfill_batch");
   const scheduleEndpoint = `${baseUrl}/api/v1/schedule?sportId=1&gameTypes=R&startDate=${startDate}&endDate=${cutoffDate}`;
@@ -801,6 +1014,18 @@ async function runDeltaUpdate(env, input) {
   }
 
   const retainedTruth = retained ? await retainedDeltaStageTruth(env, retained.batch_id) : null;
+  if (retained && retainedTruth) {
+    const expectedRows = Number(retained.expected_team_game_rows || retainedTruth.stage_rows || 0);
+    if (expectedRows > 0 && (retainedTruth.stage_rows < expectedRows || retainedTruth.live_rows < expectedRows)) {
+      if (retainedTruth.missing_live_rows > 0) {
+        const before = retainedTruth.live_rows;
+        await promoteTeamStageRows(env, retained.batch_id, "DELTA_TEAM_GAME_LOGS_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE", "DELTA_REPAIR_PASS", true);
+        const afterTruth = await retainedDeltaStageTruth(env, retained.batch_id);
+        return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, batch_id:retained.batch_id, status:"REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE", certification:"DELTA_TEAM_GAME_LOGS_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE", certification_grade:"DELTA_REPAIR_PASS", restored_rows:afterTruth.live_rows-before, rows_read:retainedTruth.missing_live_rows, rows_written:retainedTruth.missing_live_rows, rows_promoted:retainedTruth.missing_live_rows, external_calls_performed:1, queued:false, request_id_created:null, no_mining_calls:true, no_stage_writes:true, no_full_sweep:true, no_new_batch:true, no_cleanup:true, source_final_date_check:sourceWindow };
+      }
+      return await scopedRepairMissingDeltaStageRows(env, { batch:retained, truth:retainedTruth, baseUrl, sourceWindow, requestId, chainId, runId });
+    }
+  }
   const retainedMaxDate = retainedTruth?.max_game_date || retained?.sample_end_date || null;
   const effectiveStart = retainedMaxDate ? addDaysYmd(retainedMaxDate, 1) : deltaFloor;
   const effectiveEnd = sourceWindow.latest_complete_game_date;
@@ -819,6 +1044,10 @@ async function runDeltaUpdate(env, input) {
       await promoteTeamStageRows(env, existingDelta.batch_id, "DELTA_TEAM_GAME_LOGS_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE", "DELTA_REPAIR_PASS", true);
       const afterTruth = await retainedDeltaStageTruth(env, existingDelta.batch_id);
       return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, batch_id:existingDelta.batch_id, status:"REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE", certification:"DELTA_TEAM_GAME_LOGS_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE", certification_grade:"DELTA_REPAIR_PASS", restored_rows:afterTruth.live_rows-before, rows_read:truth.missing_live_rows, rows_written:truth.missing_live_rows, rows_promoted:truth.missing_live_rows, external_calls_performed:1, queued:false, request_id_created:null, no_mining_calls:true, no_stage_writes:true, no_full_sweep:true, no_new_batch:true, no_cleanup:true, source_final_date_check:sourceWindow };
+    }
+    const existingExpectedRows = Number(existingDelta.expected_team_game_rows || truth.stage_rows || 0);
+    if (existingExpectedRows > 0 && (truth.stage_rows < existingExpectedRows || truth.live_rows < existingExpectedRows)) {
+      return await scopedRepairMissingDeltaStageRows(env, { batch:existingDelta, truth, baseUrl, sourceWindow, requestId, chainId, runId });
     }
     if (truth.stage_rows === truth.live_rows && truth.stage_rows === Number(existingDelta.expected_team_game_rows || truth.stage_rows)) {
       return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, batch_id:existingDelta.batch_id, status:"DELTA_TEAM_GAME_LOGS_NOOP_CURRENT_SOURCE_SNAPSHOT", certification:"DELTA_TEAM_GAME_LOGS_NOOP_LIVE_SOURCE_SNAPSHOT_CURRENT", certification_grade:"DELTA_NOOP_PASS", rows_read:truth.stage_rows, rows_written:2, rows_promoted:0, external_calls_performed:1, queued:false, no_full_sweep:true, no_mining_calls:true, no_live_mutation:true, stage_retained:true, source_final_date_check:sourceWindow };
