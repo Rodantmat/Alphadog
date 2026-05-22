@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-bullpen-history";
-const VERSION = "alphadog-v2-base-bullpen-history-v0.2.1-duplicate-key-resume-fix";
+const VERSION = "alphadog-v2-base-bullpen-history-v0.2.2-stage-idempotent-insert-post-repair";
 const JOB_KEY = "base-bullpen-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -484,6 +484,9 @@ function bullpenStageRowFromPitcher({ game, boxscore, side, pitcherId, pitcherOr
   };
 }
 async function insertStageRow(env, row) {
+  // v0.2.2: make staging idempotent by bullpen_key, not only stage_id.
+  // This protects active/resumed batches that still contain pre-v0.2.1 random stage_id rows.
+  await run(env.TEAM_DB, `DELETE FROM bullpen_history_stage WHERE batch_id=? AND bullpen_key=?`, row.batch_id, row.bullpen_key);
   await run(env.TEAM_DB,
     `INSERT OR REPLACE INTO bullpen_history_stage (
       stage_id,bullpen_key,game_pk,game_date,season,game_type,game_status,team_id,team_name,opponent_team_id,opponent_team_name,is_home,venue_id,pitcher_id,pitcher_name,pitcher_hand,pitcher_role,relief_classification,relief_appearance,games_started,games_pitched,pitcher_order_index,bullpen_appearance_index,innings_pitched,innings_pitched_decimal,outs_recorded,batters_faced,pitches,strikes,hits_allowed,runs_allowed,earned_runs,walks_allowed,strikeouts,home_runs_allowed,inherited_runners,inherited_runners_scored,holds,saves,blown_saves,field_map_json,source_path,data_feed_key,source_key,source_endpoint,source_season,source_game_type,ingestion_mode,batch_id,run_id,request_id,certification_status,certification_grade,source_confidence,source_snapshot_date,raw_json,created_at,updated_at,certified_at,promoted_at
@@ -665,6 +668,8 @@ async function runBaseBackfillStageOnly(env, input = {}) {
     tickOpenerBulk += res.openerBulkEdgeCases || 0;
     for (const [k,v] of Object.entries(res.fieldSeen || {})) fieldsSeen[k] = Boolean(fieldsSeen[k] || v);
   }
+  const duplicateRepairAfterTick = await repairDuplicateStageKeysForBatch(env, batchId);
+  const uniqueStageIndexReadyAfterTick = await ensureStageUniqueIndexIfClean(env, batchId);
   const summary = await summarizeBatch(env, batchId);
   const processedNow = await processedGamePkSet(env, batchId);
   const remaining = Math.max(0, finalGames.length - processedNow.size);
