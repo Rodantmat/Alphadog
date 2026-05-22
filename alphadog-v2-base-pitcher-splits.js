@@ -617,11 +617,23 @@ async function finalizeStageOnly(env, batchId, runId, sourceSnapshotDate, univer
 async function findCertifiedStageBatch(env) {
   return await first(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_split_batches
     WHERE mode='base_backfill_stage_only_full_universe'
-      AND status='STAGE_ONLY_COMPLETED_NO_PROMOTION'
-      AND certification_status='BASE_PITCHER_SPLITS_STAGE_ONLY_FULL_UNIVERSE_CERTIFIED_NO_PROMOTION'
-      AND certification_grade='STAGE_ONLY_PASS'
       AND COALESCE(rows_staged,0) > 0
-    ORDER BY datetime(finished_at) DESC, datetime(created_at) DESC
+      AND (
+        (
+          status='STAGE_ONLY_COMPLETED_NO_PROMOTION'
+          AND certification_status='BASE_PITCHER_SPLITS_STAGE_ONLY_FULL_UNIVERSE_CERTIFIED_NO_PROMOTION'
+          AND certification_grade='STAGE_ONLY_PASS'
+        )
+        OR status IN ('PROMOTION_RUNNING','PARTIAL_CONTINUE','FINALIZATION_ONLY')
+      )
+    ORDER BY
+      CASE
+        WHEN status IN ('PROMOTION_RUNNING','PARTIAL_CONTINUE','FINALIZATION_ONLY') THEN 0
+        ELSE 1
+      END,
+      datetime(updated_at) DESC,
+      datetime(finished_at) DESC,
+      datetime(created_at) DESC
     LIMIT 1`);
 }
 
