@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.43-hitter-splits-daily-affected-refresh";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.44-pitcher-splits-daily-affected-refresh";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1441,12 +1441,15 @@ async function processBasePitcherSplitsJob(env, row, runId, trigger) {
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
       base_pitcher_splits_exact_dispatch: true,
+      base_pitcher_splits_v0_5_3_delta_noop_restore_scoped_repair_daily_affected_refresh_dispatch: rowInput.mode === "delta_update_noop_restore_scoped_repair_gate",
       base_pitcher_splits_v0_5_1_delta_noop_restore_scoped_repair_gate_dispatch: rowInput.mode === "delta_update_noop_restore_scoped_repair_gate",
       base_pitcher_splits_v0_4_0_delta_noop_restore_gate_dispatch: rowInput.mode === "delta_update_noop_restore_gate",
       base_pitcher_splits_v0_3_0_promote_certified_stage_dispatch: !(rowInput.mode || "").includes("delta"),
       service_binding: "BASE_PITCHER_SPLITS_WORKER",
       no_browser_pump: true,
       no_generic_dispatch: true,
+      daily_affected_pitcher_refresh_allowed: rowInput.mode === "delta_update_noop_restore_scoped_repair_gate",
+      no_full_pitcher_universe_refresh: rowInput.mode === "delta_update_noop_restore_scoped_repair_gate",
       live_pitcher_splits_promotion_from_certified_stage_only: true,
       delta_noop_restore_scoped_repair_gate_allowed_when_requested: true,
       retained_restore_and_scoped_repair_allowed_when_requested: true,
