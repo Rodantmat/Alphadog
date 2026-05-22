@@ -1,12 +1,12 @@
 const WORKER_NAME = "alphadog-v2-base-starter-history";
-const VERSION = "alphadog-v2-base-starter-history-v0.1.0-schema-source-lock-probe";
+const VERSION = "alphadog-v2-base-starter-history-v0.1.1-schedule-endpoint-fallback-probe";
 const JOB_KEY = "base-starter-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
 const DEFAULT_SAMPLE_LIMIT = 3;
 const DEFAULT_BASE_CUTOFF_DATE = "2026-05-18";
 const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
-const SOURCE_KEY = "mlb_statsapi_schedule_boxscore_feed_starter_probe_v0_1_0";
+const SOURCE_KEY = "mlb_statsapi_schedule_boxscore_feed_starter_probe_v0_1_1";
 const SOURCE_CONFIDENCE = "SOURCE_PROBE_ONLY_NOT_BASE_LOCKED";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -42,11 +42,11 @@ function baseIdentity(env) {
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "SCHEMA_SOURCE_LOCK_PROBE_READY",
+    status: "SCHEDULE_ENDPOINT_FALLBACK_PROBE_READY",
     timestamp_utc: nowUtc(),
-    phase: "starter-history-v0.1.0-probe-only",
+    phase: "starter-history-v0.1.1-schedule-fallback-probe-only",
     notes: [
-      "v0.1.0 is schema/source-lock probe only.",
+      "v0.1.1 is schedule-endpoint fallback/source-lock probe only.",
       "Allowed writes: additive TEAM_DB lifecycle schema and probe rows only.",
       "Forbidden in this version: live starter_history promotion, full base backfill, delta_update execution, scoring, ranking, board mutation, and browser pump.",
       "The worker classifies starter_history as game-log style, snapshot style, or hybrid based on official completed-game sample evidence."
@@ -291,16 +291,51 @@ async function ensureSchema(env) {
 }
 
 function mlbBaseUrl(env) {
-  return String((env && env.MLB_API_BASE_URL) || "https://statsapi.mlb.com").replace(/\/$/, "");
+  // Normalize optional env override so both are safe:
+  // - https://statsapi.mlb.com
+  // - https://statsapi.mlb.com/api/v1
+  // This worker passes endpoints beginning with /api/v1/... below.
+  return String((env && env.MLB_API_BASE_URL) || "https://statsapi.mlb.com")
+    .replace(/\/$/, "")
+    .replace(/\/api\/v1$/i, "");
 }
 async function fetchMlbJson(env, endpoint) {
-  const url = endpoint.startsWith("http") ? endpoint : `${mlbBaseUrl(env)}${endpoint}`;
-  const headers = { "accept": "application/json", "user-agent": String((env && env.MLB_API_USER_AGENT) || "AlphaDog-v2-starter-history-probe/0.1.0") };
+  const base = mlbBaseUrl(env);
+  const url = endpoint.startsWith("http") ? endpoint : `${base}${endpoint}`;
+  const headers = { "accept": "application/json", "user-agent": String((env && env.MLB_API_USER_AGENT) || "AlphaDog-v2-starter-history-probe/0.1.1") };
   const resp = await fetch(url, { headers });
   const text = await resp.text();
   let json = null;
   try { json = JSON.parse(text); } catch (_) { json = { parse_error: true, preview: text.slice(0, 500) }; }
-  return { url, endpoint: url.replace(mlbBaseUrl(env), ""), http_status: resp.status, ok: resp.ok, json };
+  return { url, endpoint: url.replace(base, ""), http_status: resp.status, ok: resp.ok, json, text_preview: text.slice(0, 500) };
+}
+function scheduleEndpointCandidates(sampleDate) {
+  const d = encodeURIComponent(sampleDate);
+  return [
+    `/api/v1/schedule?sportId=1&gameType=R&startDate=${d}&endDate=${d}`,
+    `/api/v1/schedule?sportId=1&startDate=${d}&endDate=${d}`,
+    `/api/v1/schedule?sportId=1&date=${d}`,
+    `/api/v1/schedule?sportId=1&gameTypes=R&startDate=${d}&endDate=${d}`
+  ];
+}
+async function fetchScheduleWithFallbacks(env, sampleDate) {
+  const attempts = [];
+  for (const endpoint of scheduleEndpointCandidates(sampleDate)) {
+    const result = await fetchMlbJson(env, endpoint);
+    const attempt = {
+      endpoint: result.endpoint,
+      url: result.url,
+      http_status: result.http_status,
+      ok: Boolean(result.ok && result.json && Array.isArray(result.json.dates)),
+      text_preview: result.text_preview,
+      has_dates_array: Boolean(result.json && Array.isArray(result.json.dates)),
+      dates_count: result.json && Array.isArray(result.json.dates) ? result.json.dates.length : 0
+    };
+    attempts.push(attempt);
+    if (attempt.ok) return { ...result, attempts };
+  }
+  const last = attempts[attempts.length - 1] || null;
+  return { ok: false, endpoint: last ? last.endpoint : null, url: last ? last.url : null, http_status: last ? last.http_status : null, json: null, attempts, text_preview: last ? last.text_preview : null };
 }
 function isFinalStatus(status) {
   const s = String(status || "").toLowerCase();
@@ -395,7 +430,7 @@ async function runSourceProbe(env, input) {
   const sampleDate = ymd((input.input_json && input.input_json.sample_date) || input.sample_date || DEFAULT_SAMPLE_DATE);
   const sampleLimit = Math.max(1, Math.min(8, Number((input.input_json && input.input_json.sample_limit) || input.sample_limit || DEFAULT_SAMPLE_LIMIT) || DEFAULT_SAMPLE_LIMIT));
   const season = seasonFromDate(sampleDate);
-  const scheduleEndpoint = `/api/v1/schedule?sportId=1&gameTypes=R&startDate=${sampleDate}&endDate=${sampleDate}&hydrate=team,venue`;
+  const scheduleEndpointsAttempted = scheduleEndpointCandidates(sampleDate);
 
   await run(env.TEAM_DB, `INSERT INTO starter_history_batches (
     batch_id, run_id, request_id, chain_id, job_key, worker_name, version, ingestion_mode, probe_only, source_key, source_confidence, source_season, source_game_type,
@@ -405,9 +440,19 @@ async function runSourceProbe(env, input) {
   );
 
   let externalCalls = 0;
-  const schedule = await fetchMlbJson(env, scheduleEndpoint); externalCalls += 1;
+  const schedule = await fetchScheduleWithFallbacks(env, sampleDate); externalCalls += schedule.attempts.length;
+  for (const attempt of schedule.attempts) {
+    await insertOutcome(env, {
+      batch_id: batchId, run_id: runId, request_id: requestId, outcome_level: "SOURCE",
+      outcome_category: attempt.ok ? "SOURCE_PROBE" : "SOURCE_ERROR",
+      status: attempt.ok ? "SCHEDULE_ENDPOINT_OK" : "SCHEDULE_ENDPOINT_FAILED",
+      reason: attempt.ok ? "schedule_endpoint_returned_usable_dates_array" : "schedule_endpoint_http_or_shape_error",
+      source_endpoint: attempt.endpoint,
+      details: { http_status: attempt.http_status, ok: attempt.ok, has_dates_array: attempt.has_dates_array, dates_count: attempt.dates_count, url: attempt.url, text_preview: attempt.text_preview }
+    });
+  }
   if (!schedule.ok) {
-    await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, outcome_level: "SOURCE", outcome_category: "SOURCE_ERROR", status: "SOURCE_ERROR", reason: "schedule_http_error", source_endpoint: schedule.endpoint, details: { http_status: schedule.http_status } });
+    await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, outcome_level: "SOURCE", outcome_category: "SOURCE_ERROR", status: "SOURCE_ERROR", reason: "all_schedule_endpoint_fallbacks_failed", source_endpoint: schedule.endpoint, details: { attempts: schedule.attempts } });
   }
 
   const gamesRaw = [];
@@ -519,7 +564,9 @@ async function runSourceProbe(env, input) {
     source_shape_classification: sourceShapeClassification,
     actual_starter_identification_path: actualStarterIdentificationPath,
     actual_starter_source_official_final: sourceShapeClassification === "GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS",
-    schedule_endpoint_tested: schedule.endpoint,
+    schedule_endpoint_selected: schedule.endpoint,
+    schedule_endpoints_attempted: scheduleEndpointsAttempted,
+    schedule_attempts: schedule.attempts,
     boxscore_endpoint_pattern_tested: "/api/v1/game/{gamePk}/boxscore",
     feed_endpoint_pattern_tested_if_needed: "/api/v1.1/game/{gamePk}/feed/live",
     completed_game_sample_date: sampleDate,
@@ -623,7 +670,7 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const mode = String((input.input_json && input.input_json.mode) || input.mode || "source_lock_probe");
-      if (mode === "delta_update") return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "delta_update_blocked_in_v0_1_0", certification: "STARTER_HISTORY_DELTA_UPDATE_BLOCKED_UNTIL_BASE_SOURCE_LOCKED", no_live_promotion: true, no_delta_update_execution: true }, 409);
+      if (mode === "delta_update") return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "delta_update_blocked_in_v0_1_1", certification: "STARTER_HISTORY_DELTA_UPDATE_BLOCKED_UNTIL_BASE_SOURCE_LOCKED", no_live_promotion: true, no_delta_update_execution: true }, 409);
       return jsonResponse(await runSourceProbe(env, input));
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
