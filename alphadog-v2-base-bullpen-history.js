@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-bullpen-history";
-const VERSION = "alphadog-v2-base-bullpen-history-v0.2.0-base-backfill-stage-only";
+const VERSION = "alphadog-v2-base-bullpen-history-v0.2.1-duplicate-key-resume-fix";
 const JOB_KEY = "base-bullpen-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -425,7 +425,7 @@ function bullpenStageRowFromPitcher({ game, boxscore, side, pitcherId, pitcherOr
   const outs = line.outs == null ? null : asInt(line.outs);
   const fieldMap = fieldPresence(line);
   return {
-    stage_id: rid("bh_stage"),
+    stage_id: `bh_stage_${batchId}_${bullpenKey}`,
     bullpen_key: bullpenKey,
     game_pk: gamePk,
     game_date: gameDate,
@@ -492,6 +492,35 @@ async function insertStageRow(env, row) {
   );
 }
 
+
+
+async function repairDuplicateStageKeysForBatch(env, batchId) {
+  const before = await first(env.TEAM_DB, `SELECT COALESCE(SUM(c-1),0) AS duplicate_count FROM (SELECT bullpen_key, COUNT(*) AS c FROM bullpen_history_stage WHERE batch_id=? GROUP BY bullpen_key HAVING COUNT(*)>1)`, batchId);
+  const beforeCount = Number(before && before.duplicate_count || 0);
+  if (beforeCount > 0) {
+    await run(env.TEAM_DB,
+      `DELETE FROM bullpen_history_stage
+       WHERE batch_id=?
+         AND rowid NOT IN (
+           SELECT MIN(rowid)
+           FROM bullpen_history_stage
+           WHERE batch_id=?
+           GROUP BY bullpen_key
+         )`,
+      batchId, batchId
+    );
+  }
+  const after = await first(env.TEAM_DB, `SELECT COALESCE(SUM(c-1),0) AS duplicate_count FROM (SELECT bullpen_key, COUNT(*) AS c FROM bullpen_history_stage WHERE batch_id=? GROUP BY bullpen_key HAVING COUNT(*)>1)`, batchId);
+  return { before: beforeCount, after: Number(after && after.duplicate_count || 0), repaired: Math.max(0, beforeCount - Number(after && after.duplicate_count || 0)) };
+}
+async function ensureStageUniqueIndexIfClean(env, batchId) {
+  const dup = await first(env.TEAM_DB, `SELECT COALESCE(SUM(c-1),0) AS duplicate_count FROM (SELECT bullpen_key, COUNT(*) AS c FROM bullpen_history_stage WHERE batch_id=? GROUP BY bullpen_key HAVING COUNT(*)>1)`, batchId);
+  if (Number(dup && dup.duplicate_count || 0) === 0) {
+    await run(env.TEAM_DB, `CREATE UNIQUE INDEX IF NOT EXISTS idx_bullpen_history_stage_batch_key_unique ON bullpen_history_stage(batch_id,bullpen_key)`);
+    return true;
+  }
+  return false;
+}
 
 async function fetchScheduleRange(env, startDate, endDate) {
   const endpoint = `/api/v1/schedule?sportId=1&gameType=R&startDate=${ymd(startDate)}&endDate=${ymd(endDate)}`;
@@ -605,6 +634,9 @@ async function runBaseBackfillStageOnly(env, input = {}) {
   } else {
     await run(env.TEAM_DB, `UPDATE bullpen_history_batches SET run_id=?, version=?, status='RUNNING_BASE_BACKFILL_STAGE_ONLY', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, runId, VERSION, batchId);
   }
+
+  const duplicateRepairAtStart = await repairDuplicateStageKeysForBatch(env, batchId);
+  const uniqueStageIndexReady = await ensureStageUniqueIndexIfClean(env, batchId);
 
   const schedule = await fetchScheduleRange(env, startDate, cutoffDate); externalCalls += 1;
   if (!schedule.ok) {

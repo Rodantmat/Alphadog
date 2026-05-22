@@ -731,3 +731,6 @@ CREATE INDEX IF NOT EXISTS idx_bullpen_history_batches_status ON bullpen_history
 
 INSERT OR REPLACE INTO team_schema_migrations (migration_key, package_version, notes)
 VALUES ('bullpen_history_v0_2_0_base_backfill_stage_only', 'alphadog-v2-base-bullpen-history-v0.2.0-base-backfill-stage-only', 'Additive bullpen history lifecycle schema for source-lock probe plus base_backfill_stage_only; no live promotion, no delta, no daily bullpen availability');
+
+-- Bullpen History v0.2.1 duplicate-key guard after retained stage cleanup/repair.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_bullpen_history_stage_batch_key_unique ON bullpen_history_stage(batch_id,bullpen_key);
