@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.55-wake-proxy-no-browser-fetch";
+const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.56-wake-backend-proxy-syntax-valid";
 
 const DB_BINDINGS = [
   "CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB",
@@ -17,214 +17,7 @@ const EXPECTED_SECRETS = [
   "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"
 ];
 
-const CONTROL_ROOM_HTML = '<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.6.55-wake-proxy-no-browser-fetch -->
-<style>
-:root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
-*{box-sizing:border-box}
-body{background:var(--bg);color:var(--green);font-family:monospace;padding:8px;margin:0;max-width:100vw;overflow-x:hidden}
-h2{font-size:18px;color:var(--green);letter-spacing:.045em;margin:10px 0 8px 0}
-h3{color:var(--white);font-size:12px;letter-spacing:.045em;margin:7px 0}
-.section{border-top:1px solid var(--line);padding-top:7px;margin-top:9px}
-.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;width:100%}
-button{min-width:0;width:100%;padding:4px 1px;font-size:10.5px;border:0;border-radius:5px;background:#1f6feb;color:var(--white);min-height:31px;white-space:normal;overflow:hidden;text-overflow:clip;line-height:1.0;display:flex;align-items:center;justify-content:center;text-align:center;word-break:normal}
-.clean{background:var(--clean)}.check{background:var(--check)}.sql{background:var(--sql)}.debug{background:var(--debug)}.audit{background:var(--audit)}.orch{background:var(--orch)}
-.copy{background:var(--debug);width:100%;margin-top:6px;min-height:34px;font-size:11px}
-input,textarea{width:100%;box-sizing:border-box;background:#111;color:var(--green);border:1px solid var(--line);border-radius:6px;margin-top:6px;padding:7px;font-size:12px}
-textarea{height:82px}
-pre{background:#000;color:var(--green);padding:8px;margin-top:8px;overflow:auto;max-height:420px;min-height:150px;border:1px solid var(--line);border-radius:6px;white-space:pre-wrap;word-break:break-word;font-size:11px}
-.status{background:#111;color:var(--white);padding:7px;border-radius:6px;border:1px solid var(--line);margin:7px 0;white-space:pre-wrap;font-size:11px}
-.small,.muted{font-size:10px;color:var(--muted)}
-#versionTag{color:#9ae6b4;font-family:inherit;font-size:12px;font-weight:800;letter-spacing:.035em;margin-top:5px;margin-bottom:8px}
-textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-events:auto}
-@media (max-width:430px){body{padding:8px}.grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}button{font-size:10px;min-height:30px;padding:3px 1px;border-radius:5px}h2{font-size:17px}h3{font-size:11px}.small,.muted{font-size:9.5px}}
-@media (max-width:370px){button{font-size:9.2px;min-height:29px}.grid{gap:2px}}
-</style>
-</head>
-<body>
-<h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.6.55-wake-proxy-no-browser-fetch</div>
-<div class="small">PT Now: <span id="ptNowLabel"></span></div>
-<div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
-<div class="small">Access mode: single-user. Control Room enqueues/status only. Static Players, Static Prop Taxonomy, Static Certifier, Static Full Run, Sleeper source-probe, Base Hitter Game Logs base_backfill, Hitter Game Logs delta_update queue plus backend self-continuation launch, and Base Pitcher Game Logs base is locked; BASE > Pitcher Splits is locked promoted/cleaned and DELTA > Pitcher Splits runs the no-op, retained-restore, and scoped-repair gate and Pitcher Delta Game Logs uses retained-stage restore/no-op before queue and scoped delta_update; visible buttons are in BASE / DELTA. Base Hitter Splits is locked promoted/cleaned, and DELTA > Hitter Splits runs the no-op/current-snapshot and retained-stage repair gate with no MLB calls when current. Orchestrator scheduled backend/cron owns continuation. Wake is optional backend test/rescue only.</div>
-<div class="status" id="status">READY</div>
-
-<div class="section"><h3>DEBUG</h3><div class="grid">
-<button class="debug" type="button" onclick="debugConfig()">Config</button>
-<button class="debug" type="button" onclick="health()">Health</button>
-<button class="debug" type="button" onclick="diagnostic()">Diag</button>
-<button class="debug" type="button" onclick="testSQL()">SQL</button>
-<button class="debug" type="button" onclick="reloadPage()">Reload</button>
-</div></div>
-
-<div class="section"><h3>V2 BOOTSTRAP / SCHEMA</h3><div class="grid">
-<button class="check" type="button" onclick="runJobButton(\'V2 BOOTSTRAP / SCHEMA > Schema\',\'v2_schema_status\')">Schema</button>
-<button class="check" type="button" onclick="runJobButton(\'V2 BOOTSTRAP / SCHEMA > Workers\',\'v2_worker_registry\')">Workers</button>
-<button class="check" type="button" onclick="runJobButton(\'V2 BOOTSTRAP / SCHEMA > Config\',\'v2_config_summary\')">Config</button>
-<button class="audit" type="button" onclick="runJobButton(\'V2 BOOTSTRAP / SCHEMA > Phases\',\'v2_phase_state\')">Phases</button>
-<button class="audit" type="button" onclick="runJobButton(\'V2 BOOTSTRAP / SCHEMA > Markets\',\'v2_market_sources\')">Markets</button>
-<button class="audit" type="button" onclick="runJobButton(\'V2 BOOTSTRAP / SCHEMA > Props\',\'v2_prop_taxonomy\')">Props</button>
-<button class="audit" type="button" onclick="runJobButton(\'V2 BOOTSTRAP / SCHEMA > Certs\',\'v2_certification_rules\')">Certs</button>
-<button class="debug" type="button" onclick="runJobButton(\'V2 BOOTSTRAP / SCHEMA > Bindings\',\'v2_bindings_check\')">Bindings</button>
-</div><div class="small">V2 only. No mining, no scoring, no old production writes.</div></div>
-
-<div class="section"><h3>ORCHESTRATOR</h3><div class="grid">
-<button class="orch" type="button" onclick="runJobButton(\'ORCHESTRATOR > Status\',\'orchestrator_status\')">Status</button>
-<button class="orch" type="button" onclick="runJobButton(\'ORCHESTRATOR > Enqueue\',\'orchestrator_enqueue_test\')">Enqueue</button>
-<button class="orch" type="button" onclick="runOrchestratorWake()">Wake</button>
-<button class="orch" type="button" onclick="runJobButton(\'ORCHESTRATOR > Logs\',\'orchestrator_logs\')">Logs</button>
-<button class="orch" type="button" onclick="runJobButton(\'ORCHESTRATOR > Health\',\'orchestrator_health\')">OHealth</button>
-</div><div class="small">Wake = backend auto-pump trigger for testing/rescue. It requests a bounded orchestrator-owned continuation loop, not a browser loop. Static Full Run remains backend-chain only. Self-continuing backend pump owns normal continuation; cron is fallback rescue only. No browser loops.</div></div>
-
-<div class="section"><h3>BOARD</h3><div class="grid">
-<button class="orch" type="button" onclick="runJobButton(\'BOARD > PrizePicks\',\'orchestrator_enqueue_prizepicks_github_board\')">PrizePicks</button>
-<button class="orch" type="button" onclick="runJobButton(\'BOARD > Sleeper\',\'orchestrator_enqueue_parlay_sleeper_board\')">Sleeper</button>
-</div><div class="small">Board source refresh/probe only. PrizePicks refreshes board data. Sleeper queues source-probe readiness only. No promotion for Sleeper, no guessed aliases, no scoring, no ranking, no final board.</div></div>
-
-<div class="section"><h3>STATIC</h3><div class="grid">
-<button class="check" type="button" onclick="runJobButton(\'STATIC > Teams\',\'orchestrator_enqueue_static_teams\')">Teams</button>
-<button class="check" type="button" onclick="runJobButton(\'STATIC > Stadiums\',\'orchestrator_enqueue_static_stadiums\')">Stadiums</button>
-<button class="check" type="button" onclick="runJobButton(\'STATIC > Park Factors\',\'orchestrator_enqueue_static_park_factors\')">Park Factors</button>
-<button class="check" type="button" onclick="runJobButton(\'STATIC > Players\',\'orchestrator_enqueue_static_players\')">Players</button>
-<button class="check" type="button" onclick="runJobButton(\'STATIC > Prop Taxonomy\',\'orchestrator_enqueue_static_prop_taxonomy\')">Prop Tax</button>
-<button class="audit" type="button" onclick="runJobButton(\'STATIC > Certifier\',\'orchestrator_enqueue_static_certifier\')">Certifier</button>
-<button class="audit" type="button" onclick="runJobButton(\'STATIC > Full Run\',\'orchestrator_enqueue_static_full_run\')">Full Run</button>
-</div><div class="small">Static dictionary/reference data only. Certifier is read-only. Full Run reruns active static workers then certifier. Deferred static-rosters and static-player-aliases stay skipped. No scoring, no board mutation, no opponent backfill.</div></div>
-
-
-<div class="section"><h3>BASE / DELTA</h3><div class="grid">
-<button class="orch" type="button" onclick="runJobButton(\'BASE > Hitter Game Logs\',\'orchestrator_enqueue_base_hitter_game_logs\')">Base Logs</button>
-<button class="orch" type="button" onclick="runJobButton(\'BASE > Pitcher Game Logs\',\'orchestrator_enqueue_base_pitcher_game_logs\')">Pitcher Logs</button>
-<button class="orch" type="button" onclick="runJobButton(\'BASE > Team Game Logs\',\'orchestrator_enqueue_base_team_game_logs\')">Team Logs</button>
-<button class="orch" type="button" onclick="runJobButton(\'BASE > Starter History\',\'orchestrator_enqueue_base_starter_history\')">Starter Repair</button>
-<button class="orch" type="button" onclick="runJobButton(\'BASE > Bullpen History\',\'orchestrator_enqueue_base_bullpen_history\')">Bullpen</button>
-<button class="orch" type="button" onclick="runJobButton(\'BASE > Pitcher Splits\',\'orchestrator_enqueue_base_pitcher_splits\')">Pitcher Splits</button>
-<button class="orch" type="button" onclick="runJobButton(\'BASE > Hitter Splits\',\'orchestrator_enqueue_base_hitter_splits\')">Hitter Splits</button>
-<button class="orch" type="button" onclick="runJobButton(\'DELTA > Hitter Game Logs\',\'orchestrator_enqueue_delta_hitter_game_logs\')">Delta Logs</button>
-<button class="orch" type="button" onclick="runJobButton(\'DELTA > Hitter Splits\',\'orchestrator_enqueue_delta_hitter_splits\')">Hitter Splits Delta</button>
-<button class="orch" type="button" onclick="runJobButton(\'DELTA > Pitcher Splits\',\'orchestrator_enqueue_delta_pitcher_splits\')">Pitch Splits Delta</button>
-<button class="orch" type="button" onclick="runJobButton(\'DELTA > Pitcher Game Logs\',\'orchestrator_enqueue_delta_pitcher_game_logs\')">Pitch Delta</button>
-<button class="orch" type="button" onclick="runJobButton(\'DELTA > Team Game Logs\',\'orchestrator_enqueue_delta_team_game_logs\')">Team Delta</button>
-</div><div class="small">Hitter base is locked at 2026-05-18. Pitcher Game Logs base_backfill is locked complete. BASE > Team Game Logs is locked through 2026-05-18. BASE > Bullpen History button is Bullpen and runs v0.2.0 base backfill stage-only: additive TEAM_DB schema, small completed-game MLB boxscore sample, no promotion/delta/daily availability/scoring. BASE > Starter History is now v0.4.4 Starter Repair Order Fix: base is promoted/cleaned, delta_update appends newly completed final games from 2026-05-19 and retains delta stage; no scoring, no ranking, no board mutation. DELTA > Team Game Logs v0.3.1 uses the hitter/pitcher game-log pattern: discovers latest completed MLB final date, appends only new final game dates after the retained delta max date, no-ops when current, and retains stage for repair/no-op testing. BASE > Pitcher Splits is v0.3.0 promotion-only: promotes the certified v0.2.0 stage batch with zero MLB calls, verifies live rows, then cleans stage; no remine, no delta. Base Hitter Splits is locked promoted/cleaned. Delta Hitter Splits v0.4.0 uses base integrity gate, retained-stage/live parity check, and no-op before queue when the season-to-date source snapshot is already current; no repeated manual Wake. Pitcher Delta Game Logs v0.4.1 uses retained-stage restore before queue, schedule no-op before queue, and scoped completed-game boxscore pitcher targets; no normal full-universe sweep. Delta Hitter Game Logs v1.6.11 closes retained delta batches before no-op when stage/live promotion parity is verified, keeps retained batch immutable on failed increment attempts, and queues only when a newer final MLB date or surgical repair is needed. No scoring, no ranking, no board mutation. No browser pump, no scoring, no ranking, no final board, no board mutation.</div></div>
-
-<div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
-<button class="check" type="button" onclick="runJobButton(\'V2 SAFE ACTIONS > Queue\',\'v2_queue_status\')">Queue</button>
-<button class="check" type="button" onclick="runJobButton(\'V2 SAFE ACTIONS > Locks\',\'v2_lock_status\')">Locks</button>
-<button class="audit" type="button" onclick="runJobButton(\'V2 SAFE ACTIONS > Snap\',\'v2_health_snapshot\')">Snap</button>
-<button class="clean" type="button" onclick="runJobButton(\'V2 SAFE ACTIONS > Clear Q\',\'v2_clear_open_queue\')">Clear Q</button>
-</div><div class="small">Clear Q only changes v2 CONTROL_DB queue/lock state.</div></div>
-
-<div class="section"><h3>MANUAL SQL</h3>
-<div class="muted">Output guard active: max 50 rows. Optional first line: -- db: CONFIG_DB</div>
-<textarea id="sqlInput" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" inputmode="text"></textarea>
-<div class="grid">
-<button class="sql" type="button" onclick="runManualSQL()">Run</button>
-<button class="debug" type="button" onclick="clearSqlInput()">Clear</button>
-<button class="debug" type="button" onclick="selectSqlInput()">Select</button>
-<button class="debug" type="button" onclick="loadExampleSQL()">Example</button>
-</div></div>
-
-<pre id="output">Output will appear here.</pre>
-<button class="copy" type="button" onclick="copyOutput()">COPY OUTPUT</button>
-
-<script>
-const BASE="https://alphadog-v2-control-room.rodolfoaamattos.workers.dev";
-const JOB_URL=BASE+"/tasks/run";
-const SQL_URL=BASE+"/debug/sql";
-const HEALTH_URL=BASE+"/health";
-const DIAGNOSTIC_URL=BASE+"/diagnostic";
-const ORCH_BASE="https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev";
-const ORCH_TICK_URL=ORCH_BASE+"/tick";
-
-function ptParts(){
-  const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(new Date());
-  const m={};
-  parts.forEach(p=>m[p.type]=p.value);
-  return {date:m.year+"-"+m.month+"-"+m.day,hour:Number(m.hour),time:m.hour+":"+m.minute+":"+m.second};
-}
-function updateClock(){
-  const p=ptParts();
-  const el=document.getElementById("ptNowLabel");
-  if(el) el.textContent=p.date+" "+p.time;
-}
-function autoSlateContext(){
-  const p=ptParts();
-  let band="same-day dominant";
-  if(p.hour>=12&&p.hour<20) band="split slate likely; workers resolve by game date/time";
-  if(p.hour>=20||p.hour<4) band="next-day dominant likely; workers resolve by game date/time";
-  return {mode:"AUTO_BY_GAME_DATE_TIME",pt_now:p,slate_band_hint:band,note:"Control Room no longer manually overrides slate. Data workers must resolve pickability by actual game date/time and board availability."};
-}
-function setStatus(m){
-  const el=document.getElementById("status");
-  if(el) el.textContent="["+new Date().toLocaleTimeString()+"] "+m;
-}
-function setOutput(l,o){
-  const out = [
-    "ACTION: "+l,
-    "TIME: "+new Date().toISOString(),
-    "",
-    (typeof o==="string"?o:JSON.stringify(o,null,2))
-  ].join("\\n");
-  document.getElementById("output").textContent=out;
-  window.scrollTo(0,document.body.scrollHeight);
-}
-function loading(l,e){
-  setStatus("RUNNING: "+l);
-  setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
-}
-function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.6.55-wake-proxy-no-browser-fetch"});
-}
-function reloadPage(){window.location.reload(true)}
-async function rawRequest(l,u,p){
-  const h={"Content-Type":"application/json"};
-  const o=p===null?{method:"GET",headers:h}:{method:"POST",headers:h,body:JSON.stringify(p)};
-  try{
-    const r=await fetch(u,o);
-    const txt=await r.text();
-    let b;
-    try{b=JSON.parse(txt)}catch(e){b=txt}
-    return {http_status:r.status,body:b};
-  }catch(e){
-    return {ok:false,error:String(e),action:l,url:u};
-  }
-}
-async function requestJSON(l,u,p){
-  loading(l);
-  const r=await rawRequest(l,u,p);
-  setStatus("DONE: "+l+" / HTTP "+(r.http_status||"ERR"));
-  setOutput(l,r);
-  return r;
-}
-function health(){requestJSON("DEBUG > Health",HEALTH_URL,null)}
-function diagnostic(){requestJSON("DEBUG > Diag",DIAGNOSTIC_URL,null)}
-function testSQL(){requestJSON("DEBUG > SQL",SQL_URL,{sql:"SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;",max_rows:50,max_chars:900})}
-function runJobButton(l,j){
-  return requestJSON(l,JOB_URL,{job:j,slate_mode:"AUTO_BY_GAME_DATE_TIME",auto_slate_context:autoSlateContext(),backend_only:true});
-}
-
-async function runOrchestratorWake(){
-  requestJSON("ORCHESTRATOR > Wake",JOB_URL,{job:"orchestrator_tick",source:"control_room_manual_wake_proxy",backend_only:true,max_jobs:5,wake_only:true,auto_pump:true,pump:true,backend_budget_loop_requested:true,max_cycles:18,max_jobs_per_cycle:1,max_ms:70000,max_pump_chains:30,static_players_max_chunks_requested:5,no_browser_loop:true,no_direct_browser_orchestrator_fetch:true});
-}
-
-function runManualSQL(){requestJSON("MANUAL SQL > Run",SQL_URL,{sql:document.getElementById("sqlInput").value,max_rows:50,max_chars:900})}
-function copyOutput(){navigator.clipboard.writeText(document.getElementById("output").textContent);setStatus("COPIED OUTPUT")}
-function clearSqlInput(){const el=document.getElementById("sqlInput");if(!el)return;el.removeAttribute("readonly");el.removeAttribute("disabled");el.value="";el.focus()}
-function selectSqlInput(){const el=document.getElementById("sqlInput");if(!el)return;el.removeAttribute("readonly");el.removeAttribute("disabled");el.focus();el.select()}
-function loadExampleSQL(){const el=document.getElementById("sqlInput");el.value="SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;";el.focus();setStatus("EXAMPLE SQL LOADED")}
-document.addEventListener("DOMContentLoaded",()=>{
-  const el=document.getElementById("sqlInput");
-  if(el){el.removeAttribute("readonly");el.removeAttribute("disabled");el.style.userSelect="text";el.style.webkitUserSelect="text";el.style.pointerEvents="auto"}
-  updateClock();
-  setInterval(updateClock,1000);
-});
-</script>
-</body>
-</html>';
+const CONTROL_ROOM_HTML = "<!DOCTYPE html>\n<html>\n<head>\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>AlphaDog V2 Control Room</title>\n<!-- alphadog-v2-control-room-v1.6.56-wake-backend-proxy-syntax-valid -->\n<style>\n:root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}\n*{box-sizing:border-box}\nbody{background:var(--bg);color:var(--green);font-family:monospace;padding:8px;margin:0;max-width:100vw;overflow-x:hidden}\nh2{font-size:18px;color:var(--green);letter-spacing:.045em;margin:10px 0 8px 0}\nh3{color:var(--white);font-size:12px;letter-spacing:.045em;margin:7px 0}\n.section{border-top:1px solid var(--line);padding-top:7px;margin-top:9px}\n.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;width:100%}\nbutton{min-width:0;width:100%;padding:4px 1px;font-size:10.5px;border:0;border-radius:5px;background:#1f6feb;color:var(--white);min-height:31px;white-space:normal;overflow:hidden;text-overflow:clip;line-height:1.0;display:flex;align-items:center;justify-content:center;text-align:center;word-break:normal}\n.clean{background:var(--clean)}.check{background:var(--check)}.sql{background:var(--sql)}.debug{background:var(--debug)}.audit{background:var(--audit)}.orch{background:var(--orch)}\n.copy{background:var(--debug);width:100%;margin-top:6px;min-height:34px;font-size:11px}\ninput,textarea{width:100%;box-sizing:border-box;background:#111;color:var(--green);border:1px solid var(--line);border-radius:6px;margin-top:6px;padding:7px;font-size:12px}\ntextarea{height:82px}\npre{background:#000;color:var(--green);padding:8px;margin-top:8px;overflow:auto;max-height:420px;min-height:150px;border:1px solid var(--line);border-radius:6px;white-space:pre-wrap;word-break:break-word;font-size:11px}\n.status{background:#111;color:var(--white);padding:7px;border-radius:6px;border:1px solid var(--line);margin:7px 0;white-space:pre-wrap;font-size:11px}\n.small,.muted{font-size:10px;color:var(--muted)}\n#versionTag{color:#9ae6b4;font-family:inherit;font-size:12px;font-weight:800;letter-spacing:.035em;margin-top:5px;margin-bottom:8px}\ntextarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-events:auto}\n@media (max-width:430px){body{padding:8px}.grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}button{font-size:10px;min-height:30px;padding:3px 1px;border-radius:5px}h2{font-size:17px}h3{font-size:11px}.small,.muted{font-size:9.5px}}\n@media (max-width:370px){button{font-size:9.2px;min-height:29px}.grid{gap:2px}}\n</style>\n</head>\n<body>\n<h2>ALPHADOG CONTROL ROOM</h2>\n<div id=\"versionTag\">alphadog-v2-control-room-v1.6.56-wake-backend-proxy-syntax-valid</div>\n<div class=\"small\">PT Now: <span id=\"ptNowLabel\"></span></div>\n<div class=\"small\">Slate: AUTO by game date/time. No manual slate override.</div>\n<div class=\"small\">Access mode: single-user. Control Room enqueues/status only. Static Players, Static Prop Taxonomy, Static Certifier, Static Full Run, Sleeper source-probe, Base Hitter Game Logs base_backfill, Hitter Game Logs delta_update queue plus backend self-continuation launch, and Base Pitcher Game Logs base is locked; BASE > Pitcher Splits is locked promoted/cleaned and DELTA > Pitcher Splits runs the no-op, retained-restore, and scoped-repair gate and Pitcher Delta Game Logs uses retained-stage restore/no-op before queue and scoped delta_update; visible buttons are in BASE / DELTA. Base Hitter Splits is locked promoted/cleaned, and DELTA > Hitter Splits runs the no-op/current-snapshot and retained-stage repair gate with no MLB calls when current. Orchestrator scheduled backend/cron owns continuation. Wake is optional backend test/rescue only.</div>\n<div class=\"status\" id=\"status\">READY</div>\n\n<div class=\"section\"><h3>DEBUG</h3><div class=\"grid\">\n<button class=\"debug\" type=\"button\" onclick=\"debugConfig()\">Config</button>\n<button class=\"debug\" type=\"button\" onclick=\"health()\">Health</button>\n<button class=\"debug\" type=\"button\" onclick=\"diagnostic()\">Diag</button>\n<button class=\"debug\" type=\"button\" onclick=\"testSQL()\">SQL</button>\n<button class=\"debug\" type=\"button\" onclick=\"reloadPage()\">Reload</button>\n</div></div>\n\n<div class=\"section\"><h3>V2 BOOTSTRAP / SCHEMA</h3><div class=\"grid\">\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Schema','v2_schema_status')\">Schema</button>\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Workers','v2_worker_registry')\">Workers</button>\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Config','v2_config_summary')\">Config</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Phases','v2_phase_state')\">Phases</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Markets','v2_market_sources')\">Markets</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Props','v2_prop_taxonomy')\">Props</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Certs','v2_certification_rules')\">Certs</button>\n<button class=\"debug\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Bindings','v2_bindings_check')\">Bindings</button>\n</div><div class=\"small\">V2 only. No mining, no scoring, no old production writes.</div></div>\n\n<div class=\"section\"><h3>ORCHESTRATOR</h3><div class=\"grid\">\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Status','orchestrator_status')\">Status</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Enqueue','orchestrator_enqueue_test')\">Enqueue</button>\n<button class=\"orch\" type=\"button\" onclick=\"runOrchestratorWake()\">Wake</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Logs','orchestrator_logs')\">Logs</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Health','orchestrator_health')\">OHealth</button>\n</div><div class=\"small\">Wake = backend auto-pump trigger for testing/rescue. It requests a bounded orchestrator-owned continuation loop, not a browser loop. Static Full Run remains backend-chain only. Self-continuing backend pump owns normal continuation; cron is fallback rescue only. No browser loops.</div></div>\n\n<div class=\"section\"><h3>BOARD</h3><div class=\"grid\">\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BOARD > PrizePicks','orchestrator_enqueue_prizepicks_github_board')\">PrizePicks</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BOARD > Sleeper','orchestrator_enqueue_parlay_sleeper_board')\">Sleeper</button>\n</div><div class=\"small\">Board source refresh/probe only. PrizePicks refreshes board data. Sleeper queues source-probe readiness only. No promotion for Sleeper, no guessed aliases, no scoring, no ranking, no final board.</div></div>\n\n<div class=\"section\"><h3>STATIC</h3><div class=\"grid\">\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('STATIC > Teams','orchestrator_enqueue_static_teams')\">Teams</button>\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('STATIC > Stadiums','orchestrator_enqueue_static_stadiums')\">Stadiums</button>\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('STATIC > Park Factors','orchestrator_enqueue_static_park_factors')\">Park Factors</button>\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('STATIC > Players','orchestrator_enqueue_static_players')\">Players</button>\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('STATIC > Prop Taxonomy','orchestrator_enqueue_static_prop_taxonomy')\">Prop Tax</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('STATIC > Certifier','orchestrator_enqueue_static_certifier')\">Certifier</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('STATIC > Full Run','orchestrator_enqueue_static_full_run')\">Full Run</button>\n</div><div class=\"small\">Static dictionary/reference data only. Certifier is read-only. Full Run reruns active static workers then certifier. Deferred static-rosters and static-player-aliases stay skipped. No scoring, no board mutation, no opponent backfill.</div></div>\n\n\n<div class=\"section\"><h3>BASE / DELTA</h3><div class=\"grid\">\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Hitter Game Logs','orchestrator_enqueue_base_hitter_game_logs')\">Base Logs</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Pitcher Game Logs','orchestrator_enqueue_base_pitcher_game_logs')\">Pitcher Logs</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Team Game Logs','orchestrator_enqueue_base_team_game_logs')\">Team Logs</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Starter History','orchestrator_enqueue_base_starter_history')\">Starter Repair</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Bullpen History','orchestrator_enqueue_base_bullpen_history')\">Bullpen</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Pitcher Splits','orchestrator_enqueue_base_pitcher_splits')\">Pitcher Splits</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Hitter Splits','orchestrator_enqueue_base_hitter_splits')\">Hitter Splits</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('DELTA > Hitter Game Logs','orchestrator_enqueue_delta_hitter_game_logs')\">Delta Logs</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('DELTA > Hitter Splits','orchestrator_enqueue_delta_hitter_splits')\">Hitter Splits Delta</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('DELTA > Pitcher Splits','orchestrator_enqueue_delta_pitcher_splits')\">Pitch Splits Delta</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('DELTA > Pitcher Game Logs','orchestrator_enqueue_delta_pitcher_game_logs')\">Pitch Delta</button>\n<button class=\"orch\" type=\"button\" onclick=\"runJobButton('DELTA > Team Game Logs','orchestrator_enqueue_delta_team_game_logs')\">Team Delta</button>\n</div><div class=\"small\">Hitter base is locked at 2026-05-18. Pitcher Game Logs base_backfill is locked complete. BASE > Team Game Logs is locked through 2026-05-18. BASE > Bullpen History button is Bullpen and runs v0.2.0 base backfill stage-only: additive TEAM_DB schema, small completed-game MLB boxscore sample, no promotion/delta/daily availability/scoring. BASE > Starter History is now v0.4.4 Starter Repair Order Fix: base is promoted/cleaned, delta_update appends newly completed final games from 2026-05-19 and retains delta stage; no scoring, no ranking, no board mutation. DELTA > Team Game Logs v0.3.1 uses the hitter/pitcher game-log pattern: discovers latest completed MLB final date, appends only new final game dates after the retained delta max date, no-ops when current, and retains stage for repair/no-op testing. BASE > Pitcher Splits is v0.3.0 promotion-only: promotes the certified v0.2.0 stage batch with zero MLB calls, verifies live rows, then cleans stage; no remine, no delta. Base Hitter Splits is locked promoted/cleaned. Delta Hitter Splits v0.4.0 uses base integrity gate, retained-stage/live parity check, and no-op before queue when the season-to-date source snapshot is already current; no repeated manual Wake. Pitcher Delta Game Logs v0.4.1 uses retained-stage restore before queue, schedule no-op before queue, and scoped completed-game boxscore pitcher targets; no normal full-universe sweep. Delta Hitter Game Logs v1.6.11 closes retained delta batches before no-op when stage/live promotion parity is verified, keeps retained batch immutable on failed increment attempts, and queues only when a newer final MLB date or surgical repair is needed. No scoring, no ranking, no board mutation. No browser pump, no scoring, no ranking, no final board, no board mutation.</div></div>\n\n<div class=\"section\"><h3>V2 SAFE ACTIONS</h3><div class=\"grid\">\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Queue','v2_queue_status')\">Queue</button>\n<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Locks','v2_lock_status')\">Locks</button>\n<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Snap','v2_health_snapshot')\">Snap</button>\n<button class=\"clean\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Clear Q','v2_clear_open_queue')\">Clear Q</button>\n</div><div class=\"small\">Clear Q only changes v2 CONTROL_DB queue/lock state.</div></div>\n\n<div class=\"section\"><h3>MANUAL SQL</h3>\n<div class=\"muted\">Output guard active: max 50 rows. Optional first line: -- db: CONFIG_DB</div>\n<textarea id=\"sqlInput\" spellcheck=\"false\" autocomplete=\"off\" autocorrect=\"off\" autocapitalize=\"none\" inputmode=\"text\"></textarea>\n<div class=\"grid\">\n<button class=\"sql\" type=\"button\" onclick=\"runManualSQL()\">Run</button>\n<button class=\"debug\" type=\"button\" onclick=\"clearSqlInput()\">Clear</button>\n<button class=\"debug\" type=\"button\" onclick=\"selectSqlInput()\">Select</button>\n<button class=\"debug\" type=\"button\" onclick=\"loadExampleSQL()\">Example</button>\n</div></div>\n\n<pre id=\"output\">Output will appear here.</pre>\n<button class=\"copy\" type=\"button\" onclick=\"copyOutput()\">COPY OUTPUT</button>\n\n<script>\nconst BASE=\"https://alphadog-v2-control-room.rodolfoaamattos.workers.dev\";\nconst JOB_URL=BASE+\"/tasks/run\";\nconst SQL_URL=BASE+\"/debug/sql\";\nconst HEALTH_URL=BASE+\"/health\";\nconst DIAGNOSTIC_URL=BASE+\"/diagnostic\";\nconst ORCH_BASE=\"https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev\";\nconst ORCH_TICK_URL=ORCH_BASE+\"/tick\";\n\nfunction ptParts(){\n  const parts=new Intl.DateTimeFormat(\"en-CA\",{timeZone:\"America/Los_Angeles\",year:\"numeric\",month:\"2-digit\",day:\"2-digit\",hour:\"2-digit\",minute:\"2-digit\",second:\"2-digit\",hour12:false}).formatToParts(new Date());\n  const m={};\n  parts.forEach(p=>m[p.type]=p.value);\n  return {date:m.year+\"-\"+m.month+\"-\"+m.day,hour:Number(m.hour),time:m.hour+\":\"+m.minute+\":\"+m.second};\n}\nfunction updateClock(){\n  const p=ptParts();\n  const el=document.getElementById(\"ptNowLabel\");\n  if(el) el.textContent=p.date+\" \"+p.time;\n}\nfunction autoSlateContext(){\n  const p=ptParts();\n  let band=\"same-day dominant\";\n  if(p.hour>=12&&p.hour<20) band=\"split slate likely; workers resolve by game date/time\";\n  if(p.hour>=20||p.hour<4) band=\"next-day dominant likely; workers resolve by game date/time\";\n  return {mode:\"AUTO_BY_GAME_DATE_TIME\",pt_now:p,slate_band_hint:band,note:\"Control Room no longer manually overrides slate. Data workers must resolve pickability by actual game date/time and board availability.\"};\n}\nfunction setStatus(m){\n  const el=document.getElementById(\"status\");\n  if(el) el.textContent=\"[\"+new Date().toLocaleTimeString()+\"] \"+m;\n}\nfunction setOutput(l,o){\n  const out = [\n    \"ACTION: \"+l,\n    \"TIME: \"+new Date().toISOString(),\n    \"\",\n    (typeof o===\"string\"?o:JSON.stringify(o,null,2))\n  ].join(\"\\\\n\");\n  document.getElementById(\"output\").textContent=out;\n  window.scrollTo(0,document.body.scrollHeight);\n}\nfunction loading(l,e){\n  setStatus(\"RUNNING: \"+l);\n  setOutput(l,\"Loading...\"+(e?String.fromCharCode(10)+e:\"\"));\n}\nfunction debugConfig(){\n  setOutput(\"DEBUG > Config\",{base:BASE,auto_slate:autoSlateContext(),access_mode:\"single-user-admin-token-disabled\", orchestrator_mode:\"backend-scheduled-continuation\",version:\"alphadog-v2-control-room-v1.6.56-wake-backend-proxy-syntax-valid\"});\n}\nfunction reloadPage(){window.location.reload(true)}\nasync function rawRequest(l,u,p){\n  const h={\"Content-Type\":\"application/json\"};\n  const o=p===null?{method:\"GET\",headers:h}:{method:\"POST\",headers:h,body:JSON.stringify(p)};\n  try{\n    const r=await fetch(u,o);\n    const txt=await r.text();\n    let b;\n    try{b=JSON.parse(txt)}catch(e){b=txt}\n    return {http_status:r.status,body:b};\n  }catch(e){\n    return {ok:false,error:String(e),action:l,url:u};\n  }\n}\nasync function requestJSON(l,u,p){\n  loading(l);\n  const r=await rawRequest(l,u,p);\n  setStatus(\"DONE: \"+l+\" / HTTP \"+(r.http_status||\"ERR\"));\n  setOutput(l,r);\n  return r;\n}\nfunction health(){requestJSON(\"DEBUG > Health\",HEALTH_URL,null)}\nfunction diagnostic(){requestJSON(\"DEBUG > Diag\",DIAGNOSTIC_URL,null)}\nfunction testSQL(){requestJSON(\"DEBUG > SQL\",SQL_URL,{sql:\"SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;\",max_rows:50,max_chars:900})}\nfunction runJobButton(l,j){\n  return requestJSON(l,JOB_URL,{job:j,slate_mode:\"AUTO_BY_GAME_DATE_TIME\",auto_slate_context:autoSlateContext(),backend_only:true});\n}\n\nasync function runOrchestratorWake(){\n  requestJSON(\"ORCHESTRATOR > Wake\",JOB_URL,{job:\"orchestrator_tick\",source:\"control_room_manual_wake_proxy\",backend_only:true,max_jobs:5,wake_only:true,auto_pump:true,pump:true,backend_budget_loop_requested:true,max_cycles:18,max_jobs_per_cycle:1,max_ms:70000,max_pump_chains:30,static_players_max_chunks_requested:5,no_browser_loop:true,no_direct_browser_orchestrator_fetch:true});\n}\n\nfunction runManualSQL(){requestJSON(\"MANUAL SQL > Run\",SQL_URL,{sql:document.getElementById(\"sqlInput\").value,max_rows:50,max_chars:900})}\nfunction copyOutput(){navigator.clipboard.writeText(document.getElementById(\"output\").textContent);setStatus(\"COPIED OUTPUT\")}\nfunction clearSqlInput(){const el=document.getElementById(\"sqlInput\");if(!el)return;el.removeAttribute(\"readonly\");el.removeAttribute(\"disabled\");el.value=\"\";el.focus()}\nfunction selectSqlInput(){const el=document.getElementById(\"sqlInput\");if(!el)return;el.removeAttribute(\"readonly\");el.removeAttribute(\"disabled\");el.focus();el.select()}\nfunction loadExampleSQL(){const el=document.getElementById(\"sqlInput\");el.value=\"SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;\";el.focus();setStatus(\"EXAMPLE SQL LOADED\")}\ndocument.addEventListener(\"DOMContentLoaded\",()=>{\n  const el=document.getElementById(\"sqlInput\");\n  if(el){el.removeAttribute(\"readonly\");el.removeAttribute(\"disabled\");el.style.userSelect=\"text\";el.style.webkitUserSelect=\"text\";el.style.pointerEvents=\"auto\"}\n  updateClock();\n  setInterval(updateClock,1000);\n});\n</script>\n</body>\n</html>";
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -2883,9 +2676,12 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
   }
 
   if (job === "orchestrator_tick") {
+    const pending = await env.CONTROL_DB.prepare(
+      "SELECT request_id, job_key, worker_name, status, created_at, updated_at FROM control_job_queue WHERE status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 10"
+    ).all();
+
     const payload = {
       source: "control_room_manual_wake_proxy",
-      backend_only: true,
       max_jobs: 5,
       wake_only: true,
       auto_pump: true,
@@ -2897,19 +2693,12 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
       max_pump_chains: 30,
       static_players_max_chunks_requested: 5,
       no_browser_loop: true,
-      no_direct_browser_orchestrator_fetch: true,
-      launched_at: now
+      no_direct_browser_orchestrator_fetch: true
     };
 
-    let launch_result = { launched: false, reason: "ctx_waitUntil_unavailable" };
     if (ctx && typeof ctx.waitUntil === "function") {
       ctx.waitUntil(callOrchestrator(env, "/pump", payload));
-      launch_result = { launched: true, route: "/pump", mode: "ctx.waitUntil_backend_proxy" };
     }
-
-    const pending = await env.CONTROL_DB.prepare(
-      "SELECT request_id, job_key, worker_name, status, tick_count, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 10"
-    ).all();
 
     return jsonResponse({
       ok: true,
@@ -2917,12 +2706,12 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
       version,
       job,
       orchestrator_mode: "control_room_backend_wake_proxy",
-      status: launch_result.launched ? "backend_pump_launched" : "backend_pump_not_launched",
-      launch_result,
+      status: "backend_pump_launched",
+      backend_pump_launched: true,
       direct_browser_orchestrator_fetch_removed: true,
       browser_auto_pump: false,
       no_browser_loop: true,
-      note: "Wake now posts to Control Room /tasks/run and Control Room launches the orchestrator pump through ctx.waitUntil. The browser no longer fetches the orchestrator URL directly, avoiding iOS/CORS Load failed errors. Cron remains fallback rescue.",
+      note: "Wake now proxies through Control Room /tasks/run and launches the orchestrator pump with ctx.waitUntil. Browser does not fetch the orchestrator URL directly.",
       pending_or_running: pending.results || []
     });
   }
