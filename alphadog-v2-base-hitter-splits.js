@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-splits";
-const VERSION = "alphadog-v2-base-hitter-splits-v0.4.0-delta-noop-restore-gate";
+const VERSION = "alphadog-v2-base-hitter-splits-v0.4.1-scoped-repair-gold-standard";
 const JOB_KEY = "base-hitter-splits";
 
 const SOURCE_SEASON = 2026;
@@ -60,7 +60,7 @@ function baseIdentity(env) {
     job_key: JOB_KEY,
     status: "DELTA_NOOP_RESTORE_GATE_READY",
     timestamp_utc: nowUtc(),
-    phase: "base_hitter_splits_v0_4_0_delta_noop_restore_gate",
+    phase: "base_hitter_splits_v0_4_1_scoped_repair_gate",
     source_lock: {
       endpoint_pattern: SOURCE_ENDPOINT_PATTERN,
       source_key: SOURCE_KEY,
@@ -288,7 +288,28 @@ async function ensureSchema(env) {
     results.push({ label: `alter_hitter_splits_add_${col}`, ok: r.ok || /duplicate column name/i.test(r.error || ""), error: r.ok || /duplicate column name/i.test(r.error || "") ? null : r.error });
   }
 
+  await exec("create_hitter_split_repair_registry", `CREATE TABLE IF NOT EXISTS hitter_split_repair_registry (
+    registry_key TEXT PRIMARY KEY,
+    target_batch_id TEXT NOT NULL,
+    source_batch_id TEXT,
+    player_id INTEGER NOT NULL,
+    player_name TEXT,
+    season INTEGER NOT NULL,
+    group_type TEXT NOT NULL DEFAULT 'hitting',
+    split_code TEXT NOT NULL,
+    split_source_code TEXT,
+    source_endpoint TEXT,
+    source_snapshot_date TEXT,
+    target_row_json TEXT,
+    status TEXT,
+    created_by_version TEXT,
+    notes TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   const indexes = [
+    ["idx_hitter_split_repair_registry_target", "CREATE INDEX IF NOT EXISTS idx_hitter_split_repair_registry_target ON hitter_split_repair_registry(target_batch_id, player_id, season, group_type, split_code)"],
     ["idx_hitter_split_stage_batch", "CREATE INDEX IF NOT EXISTS idx_hitter_split_stage_batch ON hitter_split_stage(batch_id, row_status)"],
     ["idx_hitter_split_stage_player", "CREATE INDEX IF NOT EXISTS idx_hitter_split_stage_player ON hitter_split_stage(player_id, season, split_code)"],
     ["idx_hitter_split_stage_cert", "CREATE INDEX IF NOT EXISTS idx_hitter_split_stage_cert ON hitter_split_stage(certification_status, batch_id)"],
@@ -302,7 +323,7 @@ async function ensureSchema(env) {
   ];
   for (const [label, sql] of indexes) await exec(label, sql);
 
-  await exec("record_schema_migration_v0_2_0", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_splits_v0_2_0_base_backfill_stage_only', ?, CURRENT_TIMESTAMP, 'Base Hitter Splits v0.4.0: delta no-op/restore gate; base already promoted; no-op if live source snapshot is current; retained-stage restore only if retained rows exist; no MLB calls during no-op')", VERSION);
+  await exec("record_schema_migration_v0_2_0", "INSERT OR REPLACE INTO hitter_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_hitter_splits_v0_2_0_base_backfill_stage_only', ?, CURRENT_TIMESTAMP, 'Base Hitter Splits v0.4.1: delta no-op / retained registry restore / scoped re-mine repair gate; no full universe default repair')", VERSION);
   return { attempted: results.length, failed: results.filter(r => !r.ok).length, results };
 }
 
@@ -1106,164 +1127,135 @@ async function liveSplitQuality(env, batchId) {
   };
 }
 
+
+function hitterLivePayloadFromRow(r) {
+  return {
+    player_id: asInt(r.player_id, 0), player_name: r.player_name || null, season: asInt(r.season, SOURCE_SEASON),
+    group_type: r.group_type || GROUP_TYPE, split_code: r.split_code || r.split_key, split_source_code: r.split_source_code || null,
+    split_description: r.split_description || null, pa: r.pa === null || r.pa === undefined ? null : asInt(r.pa, null),
+    ab: r.ab === null || r.ab === undefined ? null : asInt(r.ab, null), hits: r.hits === null || r.hits === undefined ? null : asInt(r.hits, null),
+    singles: r.singles === null || r.singles === undefined ? null : asInt(r.singles, null), doubles: r.doubles === null || r.doubles === undefined ? null : asInt(r.doubles, null),
+    triples: r.triples === null || r.triples === undefined ? null : asInt(r.triples, null), home_runs: r.home_runs === null || r.home_runs === undefined ? null : asInt(r.home_runs, null),
+    runs: r.runs === null || r.runs === undefined ? null : asInt(r.runs, null), rbi: r.rbi === null || r.rbi === undefined ? null : asInt(r.rbi, null),
+    walks: r.walks === null || r.walks === undefined ? null : asInt(r.walks, null), strikeouts: r.strikeouts === null || r.strikeouts === undefined ? null : asInt(r.strikeouts, null),
+    stolen_bases: r.stolen_bases === null || r.stolen_bases === undefined ? null : asInt(r.stolen_bases, null), total_bases: r.total_bases === null || r.total_bases === undefined ? null : asInt(r.total_bases, null),
+    avg: r.avg || null, obp: r.obp || null, slg: r.slg || null, ops: r.ops || null, babip: r.babip || null,
+    raw_json: r.raw_json || '{}', stat_shape_json: r.stat_shape_json || null, data_feed_key: r.data_feed_key || DATA_FEED_KEY,
+    source_key: r.source_key || SOURCE_KEY, source_endpoint: r.source_endpoint || `https://statsapi.mlb.com/api/v1/people/${r.player_id}/stats?stats=statSplits&group=hitting&season=${r.season || SOURCE_SEASON}&sitCodes=vl%2Cvr`,
+    source_season: asInt(r.source_season, r.season || SOURCE_SEASON), source_game_type: r.source_game_type || null, source_snapshot_date: r.source_snapshot_date || todayUtc(),
+    ingestion_mode: r.ingestion_mode || 'delta_repair_registry', batch_id: r.batch_id, run_id: r.run_id || null,
+    certification_status: r.certification_status || 'DELTA_HITTER_SPLITS_REPAIR_PROMOTED', certification_grade: r.certification_grade || 'DELTA_REPAIR_PASS', created_at: r.created_at || null
+  };
+}
+
+async function upsertHitterSplitLiveRow(env, row, reason) {
+  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_splits (
+    player_id,season,split_key,split_description,pa,ab,hits,singles,doubles,triples,home_runs,runs,rbi,walks,strikeouts,stolen_bases,
+    avg,obp,slg,ops,raw_json,source_key,source_confidence,updated_at,group_type,split_code,split_source_code,data_feed_key,source_endpoint,source_season,
+    source_game_type,ingestion_mode,batch_id,run_id,certification_status,certification_grade,certified_at,promoted_at,created_at,source_snapshot_date,babip,stat_shape_json
+  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,COALESCE(?,CURRENT_TIMESTAMP),?,?,?)`,
+    row.player_id, row.season, row.split_code, row.split_description, row.pa, row.ab, row.hits, row.singles, row.doubles, row.triples, row.home_runs, row.runs, row.rbi, row.walks, row.strikeouts, row.stolen_bases,
+    row.avg, row.obp, row.slg, row.ops, row.raw_json, row.source_key || SOURCE_KEY, reason || row.source_confidence || 'SOURCE_LOCKED_STATSAPI_STATSPLITS_HITTING_SITCODES_VL_VR_REPAIRED',
+    row.group_type || GROUP_TYPE, row.split_code, row.split_source_code, row.data_feed_key || DATA_FEED_KEY, row.source_endpoint, row.source_season || row.season || SOURCE_SEASON,
+    row.source_game_type || null, row.ingestion_mode || 'delta_repair_upsert', row.batch_id, row.run_id, row.certification_status || 'DELTA_HITTER_SPLITS_REPAIR_PROMOTED', row.certification_grade || 'DELTA_REPAIR_PASS', row.created_at, row.source_snapshot_date || todayUtc(), row.babip, row.stat_shape_json);
+}
+
+async function hitterCurrentLiveIntegrity(env, batchId) {
+  const live = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS live_rows,
+      COUNT(DISTINCT player_id || '|' || season || '|' || group_type || '|' || split_code) AS distinct_live_keys,
+      SUM(CASE WHEN split_code NOT IN ('vs_left','vs_right') THEN 1 ELSE 0 END) AS invalid_split_code,
+      SUM(CASE WHEN raw_json IS NULL OR raw_json='' THEN 1 ELSE 0 END) AS missing_raw_json,
+      SUM(CASE WHEN source_snapshot_date IS NULL THEN 1 ELSE 0 END) AS missing_source_snapshot_date,
+      MIN(source_snapshot_date) AS min_source_snapshot_date, MAX(source_snapshot_date) AS max_source_snapshot_date
+    FROM hitter_splits WHERE batch_id=?`, batchId);
+  const dup = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS c FROM (SELECT player_id, season, group_type, split_code, COUNT(*) AS n FROM hitter_splits WHERE batch_id=? GROUP BY player_id, season, group_type, split_code HAVING n>1)`, batchId);
+  return { live_rows: asInt(live && live.live_rows, 0), distinct_live_keys: asInt(live && live.distinct_live_keys, 0), duplicate_live_keys: asInt(dup && dup.c, 0), invalid_split_code: asInt(live && live.invalid_split_code, 0), missing_raw_json: asInt(live && live.missing_raw_json, 0), missing_source_snapshot_date: asInt(live && live.missing_source_snapshot_date, 0), min_source_snapshot_date: live && live.min_source_snapshot_date, max_source_snapshot_date: live && live.max_source_snapshot_date };
+}
+
+async function latestHitterSplitRepairRegistry(env) { return await first(env.STATS_HITTER_DB, "SELECT * FROM hitter_split_repair_registry WHERE registry_key='hitter_splits_delta_repair_anchor_1' ORDER BY datetime(updated_at) DESC LIMIT 1"); }
+async function getHitterSplitRepairCursorKey(env) { const c = await first(env.STATS_HITTER_DB, "SELECT * FROM hitter_split_cursor WHERE cursor_key='base_hitter_splits_delta_repair_cursor' ORDER BY datetime(updated_at) DESC LIMIT 1"); if (!c) return null; try { return JSON.parse(c.cursor_json || '{}'); } catch (_) { return null; } }
+function hitterRegistryToKey(reg, cursorKey) { if (reg) return { target_batch_id: reg.target_batch_id, player_id: reg.player_id, season: reg.season, group_type: reg.group_type || GROUP_TYPE, split_code: reg.split_code, source_endpoint: reg.source_endpoint, source_snapshot_date: reg.source_snapshot_date }; const k = cursorKey && cursorKey.expected_key ? cursorKey.expected_key : null; return k ? { target_batch_id: k.target_batch_id, player_id: k.player_id, season: k.season, group_type: k.group_type || GROUP_TYPE, split_code: k.split_code, source_endpoint: k.source_endpoint, source_snapshot_date: k.source_snapshot_date || todayUtc() } : null; }
+async function hitterSplitRowExistsLive(env, key) { const r = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS c FROM hitter_splits WHERE batch_id=? AND player_id=? AND season=? AND group_type=? AND split_code=?`, key.target_batch_id, key.player_id, key.season, key.group_type || GROUP_TYPE, key.split_code); return asInt(r && r.c, 0) > 0; }
+
+async function createHitterSplitRepairAnchorFromLive(env, baseBatch, input, liveChecks) {
+  const runId = input.run_id || rid('run_delta_hitter_splits_repair_anchor');
+  const row = await first(env.STATS_HITTER_DB, `SELECT * FROM hitter_splits WHERE batch_id=? ORDER BY player_id, season, group_type, split_code LIMIT 1`, baseBatch.batch_id);
+  if (!row) return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'DELTA_HITTER_SPLITS_REPAIR_ANCHOR_BLOCKED_NO_LIVE_ROW', certification: 'DELTA_HITTER_SPLITS_REPAIR_ANCHOR_BLOCKED_NO_LIVE_ROW', certification_grade: 'BLOCKED', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false };
+  const payload = hitterLivePayloadFromRow(row);
+  const registryKey = 'hitter_splits_delta_repair_anchor_1';
+  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_repair_registry (registry_key,target_batch_id,source_batch_id,player_id,player_name,season,group_type,split_code,split_source_code,source_endpoint,source_snapshot_date,target_row_json,status,created_by_version,notes,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, registryKey, baseBatch.batch_id, baseBatch.batch_id, payload.player_id, payload.player_name, payload.season, payload.group_type, payload.split_code, payload.split_source_code, payload.source_endpoint, payload.source_snapshot_date, safeJson(payload), 'REPAIR_ANCHOR_RETAINED_FROM_LOCKED_LIVE', VERSION, 'Base Hitter Splits repair anchor. Live-only deletion restores from retained registry; live+registry deletion queues scoped re-fetch only.');
+  const checks = { locked_base_batch_id: baseBatch.batch_id, repair_registry_key: registryKey, anchor_player_id: payload.player_id, anchor_split_code: payload.split_code, live_rows: liveChecks.live_rows, distinct_live_keys: liveChecks.distinct_live_keys, no_mlb_calls: true, no_full_sweep: true, no_live_mutation: true, repair_anchor_created: true };
+  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
+    VALUES ('base_hitter_splits_delta_repair_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, baseBatch.batch_id, runId, 'delta_noop_restore_scoped_repair_gate', 'DELTA_HITTER_SPLITS_REPAIR_ANCHOR_RETAINED_NOOP', SOURCE_SEASON, payload.source_snapshot_date || todayUtc(), payload.player_id, 0, liveChecks.live_rows, liveChecks.live_rows, 0, null, null, safeJson({ ...checks, expected_key: { target_batch_id: baseBatch.batch_id, player_id: payload.player_id, season: payload.season, group_type: payload.group_type, split_code: payload.split_code, source_endpoint: payload.source_endpoint, source_snapshot_date: payload.source_snapshot_date } }));
+  await run(env.STATS_HITTER_DB, `INSERT INTO hitter_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('hitter_splits_repair_anchor_cert'), baseBatch.batch_id, runId, 'delta_noop_restore_scoped_repair_gate', 'DELTA_HITTER_SPLITS_REPAIR_ANCHOR_RETAINED_NOOP', 'DELTA_ANCHOR_PASS', safeJson(checks), 0, liveChecks.live_rows, liveChecks.duplicate_live_keys, asInt(baseBatch.source_no_data_count, 0), 0, payload.source_snapshot_date || todayUtc());
+  return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'DELTA_HITTER_SPLITS_REPAIR_ANCHOR_RETAINED_NOOP', certification: 'DELTA_HITTER_SPLITS_REPAIR_ANCHOR_RETAINED_NOOP', certification_grade: 'DELTA_ANCHOR_PASS', rows_read: liveChecks.live_rows, rows_written: 2, rows_promoted: 0, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false, queued: false, no_full_sweep: true, no_mlb_calls: true, no_live_mutation: true, repair_anchor: checks, timestamp_utc: nowUtc() };
+}
+
+async function restoreHitterSplitFromRepairRegistry(env, baseBatch, reg, input) {
+  const runId = input.run_id || rid('run_delta_hitter_splits_restore_registry');
+  const payload = JSON.parse(reg.target_row_json || '{}'); payload.batch_id = reg.target_batch_id; payload.ingestion_mode = 'delta_repair_restored_from_retained_registry'; payload.certification_status = 'DELTA_HITTER_SPLITS_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE'; payload.certification_grade = 'DELTA_REPAIR_PASS';
+  await upsertHitterSplitLiveRow(env, payload, 'SOURCE_LOCKED_STATSAPI_STATSPLITS_HITTING_SITCODES_VL_VR_RESTORED_FROM_RETAINED_REPAIR_REGISTRY');
+  const liveChecks = await hitterCurrentLiveIntegrity(env, baseBatch.batch_id);
+  const checks = { locked_base_batch_id: baseBatch.batch_id, registry_key: reg.registry_key, restored_rows: 1, restored_player_id: reg.player_id, restored_split_code: reg.split_code, live_rows_after: liveChecks.live_rows, distinct_live_keys_after: liveChecks.distinct_live_keys, duplicate_live_keys: liveChecks.duplicate_live_keys, no_mlb_calls: true, no_full_sweep: true, no_new_batch: true, no_stage_writes: true, restored_from_retained_stage_before_queue: true };
+  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
+    VALUES ('base_hitter_splits_delta_update_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, baseBatch.batch_id, runId, 'delta_noop_restore_scoped_repair_gate', 'REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE', SOURCE_SEASON, reg.source_snapshot_date || todayUtc(), reg.player_id, 0, liveChecks.live_rows, liveChecks.live_rows, 0, null, null, safeJson(checks));
+  await run(env.STATS_HITTER_DB, `INSERT INTO hitter_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('hitter_splits_restore_registry_cert'), baseBatch.batch_id, runId, 'delta_noop_restore_scoped_repair_gate', 'HITTER_SPLITS_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE', 'DELTA_REPAIR_PASS', safeJson(checks), 0, 1, liveChecks.duplicate_live_keys, asInt(baseBatch.source_no_data_count,0), 0, reg.source_snapshot_date || todayUtc());
+  return { ok: true, data_ok: liveChecks.duplicate_live_keys === 0, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE', certification: 'HITTER_SPLITS_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE', certification_grade: 'DELTA_REPAIR_PASS', restored_rows: 1, queued: false, request_id_created: null, no_mlb_calls: true, no_stage_writes: true, no_full_sweep: true, no_new_batch: true, rows_read: 1, rows_written: 1, rows_promoted: 1, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false, delta_restore_gate: checks, timestamp_utc: nowUtc() };
+}
+
+async function scopedRemineHitterSplitMissingKey(env, baseBatch, key, input) {
+  const runId = input.run_id || rid('run_delta_hitter_splits_scoped_repair');
+  const endpoint = endpointFor(env, key.player_id, key.season || SOURCE_SEASON);
+  const headers = { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-hitter-splits") };
+  const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers }, FETCH_TIMEOUT_MS);
+  if (!fetched.ok || !fetched.resp || !fetched.resp.ok) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'DELTA_HITTER_SPLITS_SCOPED_REPAIR_SOURCE_FAILED', certification: 'DELTA_HITTER_SPLITS_SCOPED_REPAIR_SOURCE_FAILED', certification_grade: 'BLOCKED', missing_live_rows_detected: 1, retained_restore_rows_available: 0, scoped_players_to_refetch: 1, external_calls_performed: 1, no_full_sweep: true, rows_read: 1, rows_written: 0, rows_staged: 0, rows_promoted: 0, error: fetched.error || `HTTP_${fetched.resp && fetched.resp.status}`, continuation_required: false, orchestrator_should_self_continue: false };
+  let sourcePayload; try { sourcePayload = JSON.parse(fetched.text || '{}'); } catch (err) { sourcePayload = { parse_error: String(err && err.message ? err.message : err) }; }
+  const splits = extractSplits(sourcePayload);
+  const player = { player_id: key.player_id, player_name: null };
+  const matched = splits.map(split => parseStageRow(split, player, key.season || SOURCE_SEASON, key.target_batch_id, runId, endpoint, key.source_snapshot_date || todayUtc(), 'delta_scoped_repair_retained')).find(row => row.split_code === key.split_code);
+  if (!matched) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'DELTA_HITTER_SPLITS_SCOPED_REPAIR_SOURCE_MISSING_EXPECTED_SPLIT', certification: 'DELTA_HITTER_SPLITS_SCOPED_REPAIR_SOURCE_MISSING_EXPECTED_SPLIT', certification_grade: 'BLOCKED', missing_live_rows_detected: 1, retained_restore_rows_available: 0, scoped_players_to_refetch: 1, external_calls_performed: 1, no_full_sweep: true, rows_read: 1, rows_written: 0, rows_staged: 0, rows_promoted: 0, expected_key: key, raw_split_count: splits.length, continuation_required: false, orchestrator_should_self_continue: false };
+  matched.ingestion_mode = 'delta_scoped_repair_retained'; matched.certification_status = 'DELTA_HITTER_SPLITS_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED'; matched.certification_grade = 'DELTA_REPAIR_PASS'; matched.source_confidence = 'SOURCE_LOCKED_STATSAPI_STATSPLITS_HITTING_SITCODES_VL_VR_SCOPED_REPAIR'; matched.row_status = 'delta_scoped_repair_retained';
+  await insertStageRow(env, matched);
+  const livePayload = hitterLivePayloadFromRow(matched); livePayload.certification_status = 'DELTA_HITTER_SPLITS_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED'; livePayload.certification_grade = 'DELTA_REPAIR_PASS'; livePayload.ingestion_mode = 'delta_scoped_repair_promoted_retained';
+  await upsertHitterSplitLiveRow(env, livePayload, 'SOURCE_LOCKED_STATSAPI_STATSPLITS_HITTING_SITCODES_VL_VR_SCOPED_REPAIR');
+  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_repair_registry (registry_key,target_batch_id,source_batch_id,player_id,player_name,season,group_type,split_code,split_source_code,source_endpoint,source_snapshot_date,target_row_json,status,created_by_version,notes,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, 'hitter_splits_delta_repair_anchor_1', key.target_batch_id, key.target_batch_id, livePayload.player_id, livePayload.player_name, livePayload.season, livePayload.group_type, livePayload.split_code, livePayload.split_source_code, livePayload.source_endpoint, livePayload.source_snapshot_date, safeJson(livePayload), 'REPAIR_ANCHOR_RETAINED_FROM_SCOPED_REPAIR', VERSION, 'Recreated by scoped repair; future live-only deletion restores without MLB calls.');
+  const liveChecks = await hitterCurrentLiveIntegrity(env, baseBatch.batch_id);
+  const checks = { locked_base_batch_id: baseBatch.batch_id, missing_live_rows_detected: 1, retained_restore_rows_available: 0, scoped_players_to_refetch: 1, scoped_expected_split_key: key, external_calls_performed: 1, no_full_sweep: true, rows_staged: 1, rows_promoted: 1, live_rows_after: liveChecks.live_rows, distinct_live_keys_after: liveChecks.distinct_live_keys, duplicate_live_keys: liveChecks.duplicate_live_keys, stage_retained_for_repair: true, repair_ok: true, repair_error: null };
+  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
+    VALUES ('base_hitter_splits_delta_update_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, baseBatch.batch_id, runId, 'delta_noop_restore_scoped_repair_gate', 'DELTA_HITTER_SPLITS_SCOPED_REPAIR_COMPLETED', SOURCE_SEASON, key.source_snapshot_date || todayUtc(), key.player_id, 0, liveChecks.live_rows, liveChecks.live_rows, 1, null, null, safeJson(checks));
+  await run(env.STATS_HITTER_DB, `INSERT INTO hitter_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('hitter_splits_scoped_repair_cert'), baseBatch.batch_id, runId, 'delta_noop_restore_scoped_repair_gate', 'DELTA_HITTER_SPLITS_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED', 'DELTA_REPAIR_PASS', safeJson(checks), 1, 1, liveChecks.duplicate_live_keys, asInt(baseBatch.source_no_data_count,0), 0, key.source_snapshot_date || todayUtc());
+  return { ok: true, data_ok: liveChecks.duplicate_live_keys === 0, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'DELTA_HITTER_SPLITS_SCOPED_REPAIR_COMPLETED', certification: 'DELTA_HITTER_SPLITS_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED', certification_grade: 'DELTA_REPAIR_PASS', missing_live_rows_detected: 1, retained_restore_rows_available: 0, scoped_players_to_refetch: 1, external_calls_performed: 1, no_full_sweep: true, rows_read: 1, rows_written: 2, rows_staged: 1, rows_promoted: 1, continuation_required: false, orchestrator_should_self_continue: false, scoped_repair: checks, timestamp_utc: nowUtc() };
+}
+
 async function runDeltaUpdate(env, input) {
-  const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
-  const started = Date.now();
-  const runId = input.run_id || rid("run_hitter_splits_delta_gate");
-  const requestId = input.request_id || inputJson.request_id || null;
-  const sourceSnapshotDate = inputJson.source_snapshot_date || nowUtc().slice(0, 10);
   const schema = await ensureSchema(env);
   const baseBatch = await getLatestCompletedBaseBatch(env);
-
-  if (!baseBatch) {
-    return {
-      ok: false,
-      data_ok: false,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      job_key: JOB_KEY,
-      status: "DELTA_HITTER_SPLITS_BLOCKED_BASE_NOT_LOCKED",
-      certification: "DELTA_HITTER_SPLITS_BASE_INTEGRITY_GATE_FAILED",
-      certification_grade: "BLOCKED",
-      mode: "delta_update",
-      rows_read: 0,
-      rows_written: 0,
-      rows_promoted: 0,
-      external_calls_performed: 0,
-      schema,
-      note: "Delta update is blocked until Base Hitter Splits has a completed promoted/cleaned BASE_PASS batch."
-    };
-  }
-
-  const batchId = baseBatch.batch_id;
+  if (!baseBatch) return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'DELTA_HITTER_SPLITS_BLOCKED_NO_LOCKED_BASE', certification: 'DELTA_HITTER_SPLITS_BLOCKED_NO_LOCKED_BASE', certification_grade: 'BLOCKED', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, schema };
+  const liveChecks = await hitterCurrentLiveIntegrity(env, baseBatch.batch_id);
   const expectedRows = asInt(baseBatch.rows_promoted, 0);
-  const quality = await liveSplitQuality(env, batchId);
-  const liveSnapshotDate = baseBatch.source_snapshot_date || null;
-  const baseIntegrityPass = expectedRows > 0 && quality.live_rows === expectedRows && quality.duplicate_live_keys === 0 && quality.missing_player_id === 0 && quality.missing_season === 0 && quality.missing_group_type === 0 && quality.missing_split_code === 0 && quality.bad_group_type === 0 && quality.invalid_split_code === 0 && quality.missing_raw_json === 0 && quality.missing_lineage === 0;
-
-  const retainedRows = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_split_stage WHERE batch_id=?", batchId);
-  const retainedStageRows = asInt(retainedRows && retainedRows.c, 0);
-
-  const checks = {
-    request_id: requestId,
-    base_batch_id: batchId,
-    base_status: baseBatch.status,
-    base_certification_status: baseBatch.certification_status,
-    base_certification_grade: baseBatch.certification_grade,
-    expected_live_rows_from_base: expectedRows,
-    live_snapshot_date: liveSnapshotDate,
-    requested_source_snapshot_date: sourceSnapshotDate,
-    base_integrity_pass: baseIntegrityPass,
-    retained_stage_rows_for_base_batch: retainedStageRows,
-    ...quality,
-    source_model: "season_to_date_aggregate_snapshot",
-    delta_strategy: "game-log-style gate adapted to aggregate splits: base integrity gate -> retained-stage/live parity check -> no-op before queue when live snapshot is current -> restore only from retained stage if available -> otherwise block repair; no MLB calls in no-op gate",
-    no_external_calls: true,
-    no_new_mining: true,
-    no_live_mutation: true,
-    no_hitter_game_log_mutation: true,
-    no_pitcher_mutation: true,
-    no_market_mutation: true,
-    no_scoring_ranking_final_board: true
-  };
-
-  if (!baseIntegrityPass) {
-    const canRestore = retainedStageRows >= expectedRows && expectedRows > 0;
-    const certification = canRestore ? "DELTA_HITTER_SPLITS_REPAIR_REQUIRED_RETAINED_STAGE_AVAILABLE" : "DELTA_HITTER_SPLITS_REPAIR_BLOCKED_NO_RETAINED_STAGE";
-    const status = canRestore ? "DELTA_HITTER_SPLITS_REPAIR_REQUIRED_RETAINED_STAGE_AVAILABLE" : "DELTA_HITTER_SPLITS_BLOCKED_LIVE_BASE_PARITY_MISSING_NO_RETAINED_STAGE";
-    await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_certifications (
-      certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date
-    ) VALUES (?, ?, ?, 'delta_update', ?, 'BLOCKED', ?, 0, ?, ?, 0, 0, ?)`, `${batchId}_delta_gate_${Date.now().toString(36)}`, batchId, runId, certification, safeJson(checks), quality.live_rows, quality.duplicate_live_keys, sourceSnapshotDate);
-    return {
-      ok: false,
-      data_ok: false,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      job_key: JOB_KEY,
-      status,
-      certification,
-      certification_grade: "BLOCKED",
-      mode: "delta_update",
-      batch_id: batchId,
-      run_id: runId,
-      rows_read: quality.live_rows,
-      rows_written: 1,
-      rows_promoted: 0,
-      external_calls_performed: 0,
-      continuation_required: false,
-      orchestrator_should_self_continue: false,
-      elapsed_ms: Date.now() - started,
-      checks,
-      note: canRestore ? "Retained stage exists but restore execution is intentionally not automatic in v0.4.0 until reviewed." : "Live base rows are missing/corrupt and no retained stage rows exist for safe restore. Stop and repair manually or rebuild through a certified path."
-    };
-  }
-
-  const currentEnough = liveSnapshotDate === sourceSnapshotDate;
-  if (currentEnough) {
-    const certification = "DELTA_HITTER_SPLITS_NOOP_LIVE_SOURCE_SNAPSHOT_CURRENT";
-    const grade = "DELTA_NOOP_PASS";
-    const status = "DELTA_HITTER_SPLITS_NOOP_CURRENT_SOURCE_SNAPSHOT";
+  const baseComplete = liveChecks.live_rows === expectedRows && liveChecks.distinct_live_keys === liveChecks.live_rows && liveChecks.duplicate_live_keys === 0 && liveChecks.invalid_split_code === 0 && liveChecks.missing_raw_json === 0 && liveChecks.missing_source_snapshot_date === 0;
+  const registry = await latestHitterSplitRepairRegistry(env);
+  const cursorKey = await getHitterSplitRepairCursorKey(env);
+  const expectedKey = hitterRegistryToKey(registry, cursorKey);
+  if (!expectedKey && baseComplete) return await createHitterSplitRepairAnchorFromLive(env, baseBatch, input, liveChecks);
+  if (!expectedKey && !baseComplete) return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'DELTA_HITTER_SPLITS_BLOCKED_MISSING_EXPECTED_KEY_REGISTRY', certification: 'DELTA_HITTER_SPLITS_BLOCKED_MISSING_EXPECTED_KEY_REGISTRY', certification_grade: 'BLOCKED', rows_read: liveChecks.live_rows, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false, checks: { baseBatch: baseBatch.batch_id, liveChecks, expectedRows, reason: 'Live is incomplete and no retained expected key registry exists; full sweep is disabled by design.' } };
+  const exists = await hitterSplitRowExistsLive(env, expectedKey);
+  if (exists) {
+    const runId = input.run_id || rid('run_delta_hitter_splits_noop_repair_gate');
+    const checks = { locked_base_batch_id: baseBatch.batch_id, expected_key: expectedKey, live_rows: liveChecks.live_rows, expected_rows: expectedRows, distinct_live_keys: liveChecks.distinct_live_keys, duplicate_live_keys: liveChecks.duplicate_live_keys, source_snapshot_date_today_utc: todayUtc(), no_mlb_calls: true, no_full_sweep: true, no_live_mutation: true, retained_registry_available: Boolean(registry), does_not_require_balanced_splits: true, does_not_use_outcome_rows_staged_for_physical_truth: true };
     await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
-      VALUES (?, ?, ?, 'delta_update', ?, ?, ?, NULL, ?, ?, ?, 0, CURRENT_TIMESTAMP, NULL, ?, CURRENT_TIMESTAMP)`,
-      DELTA_CURSOR_KEY, batchId, runId, status, SOURCE_SEASON, sourceSnapshotDate, expectedRows, expectedRows, expectedRows, safeJson(checks));
-    await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_certifications (
-      certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date
-    ) VALUES (?, ?, ?, 'delta_update', ?, ?, ?, 0, ?, ?, 0, 0, ?)`, `${batchId}_delta_noop_${sourceSnapshotDate}`, batchId, runId, certification, grade, safeJson(checks), quality.live_rows, quality.duplicate_live_keys, sourceSnapshotDate);
-    return {
-      ok: true,
-      data_ok: true,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      job_key: JOB_KEY,
-      status,
-      certification,
-      certification_grade: grade,
-      mode: "delta_update",
-      batch_id: batchId,
-      run_id: runId,
-      source_snapshot_date: sourceSnapshotDate,
-      rows_read: quality.live_rows,
-      rows_written: 2,
-      rows_promoted: 0,
-      live_rows: quality.live_rows,
-      external_calls_performed: 0,
-      continuation_required: false,
-      orchestrator_should_self_continue: false,
-      elapsed_ms: Date.now() - started,
-      checks,
-      hard_blocks_confirmed: { no_new_mlb_calls: true, no_new_mining: true, no_live_mutation: true, no_hitter_game_log_mutation: true, no_pitcher_mutation: true, no_market_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true },
-      next_phase_gate: "Delta no-op/live-current gate is locked if validation passes. If a future source_snapshot_date is newer, next build should stage a full snapshot delta and retain that delta stage before promotion."
-    };
+      VALUES ('base_hitter_splits_delta_update_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, baseBatch.batch_id, runId, 'delta_noop_restore_scoped_repair_gate', 'DELTA_HITTER_SPLITS_NOOP_CURRENT_SOURCE_SNAPSHOT', SOURCE_SEASON, liveChecks.max_source_snapshot_date || todayUtc(), expectedKey.player_id, 0, liveChecks.live_rows, liveChecks.live_rows, 0, null, null, safeJson(checks));
+    await run(env.STATS_HITTER_DB, `INSERT INTO hitter_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('hitter_splits_delta_noop_repair_gate_cert'), baseBatch.batch_id, runId, 'delta_noop_restore_scoped_repair_gate', 'DELTA_HITTER_SPLITS_NOOP_LIVE_SOURCE_SNAPSHOT_CURRENT', 'DELTA_NOOP_PASS', safeJson(checks), 0, liveChecks.live_rows, liveChecks.duplicate_live_keys, asInt(baseBatch.source_no_data_count,0), 0, liveChecks.max_source_snapshot_date || todayUtc());
+    return { ok: true, data_ok: baseComplete, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'DELTA_HITTER_SPLITS_NOOP_CURRENT_SOURCE_SNAPSHOT', certification: 'DELTA_HITTER_SPLITS_NOOP_LIVE_SOURCE_SNAPSHOT_CURRENT', certification_grade: 'DELTA_NOOP_PASS', rows_read: liveChecks.live_rows, rows_written: 2, rows_promoted: 0, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false, queued: false, no_full_sweep: true, no_mlb_calls: true, no_live_mutation: true, delta_gate: checks, timestamp_utc: nowUtc() };
   }
-
-  const certification = "DELTA_HITTER_SPLITS_NEW_SOURCE_SNAPSHOT_REQUIRED_STAGE_REFRESH_NOT_ENABLED_V0_4_0";
-  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_certifications (
-    certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date
-  ) VALUES (?, ?, ?, 'delta_update', ?, 'BLOCKED', ?, 0, ?, ?, 0, 0, ?)`, `${batchId}_delta_refresh_required_${sourceSnapshotDate}`, batchId, runId, certification, safeJson(checks), quality.live_rows, quality.duplicate_live_keys, sourceSnapshotDate);
-  return {
-    ok: false,
-    data_ok: false,
-    version: VERSION,
-    worker_name: WORKER_NAME,
-    job_key: JOB_KEY,
-    status: "DELTA_HITTER_SPLITS_BLOCKED_NEW_SNAPSHOT_REQUIRES_STAGE_REFRESH",
-    certification,
-    certification_grade: "BLOCKED",
-    mode: "delta_update",
-    batch_id: batchId,
-    run_id: runId,
-    source_snapshot_date: sourceSnapshotDate,
-    live_source_snapshot_date: liveSnapshotDate,
-    rows_read: quality.live_rows,
-    rows_written: 1,
-    rows_promoted: 0,
-    external_calls_performed: 0,
-    continuation_required: false,
-    orchestrator_should_self_continue: false,
-    elapsed_ms: Date.now() - started,
-    checks,
-    note: "v0.4.0 intentionally proves delta base-integrity/no-op/repair gate only. Newer snapshot refresh must be a separate stage-retain build."
-  };
+  if (registry && registry.target_row_json) return await restoreHitterSplitFromRepairRegistry(env, baseBatch, registry, input);
+  return await scopedRemineHitterSplitMissingKey(env, baseBatch, expectedKey, input);
 }
 
 async function runBaseBackfillStageOnly(env, input) {

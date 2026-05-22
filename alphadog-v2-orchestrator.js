@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.41-pitcher-splits-run-log-sql-fix";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.42-hitter-splits-scoped-repair-gate";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1321,8 +1321,8 @@ async function processBaseHitterSplitsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_hitter_splits_v0_4_0_dispatch: true,
-      delta_hitter_splits_noop_restore_gate: isDeltaHitterSplits,
+      base_hitter_splits_v0_4_1_scoped_repair_dispatch: true,
+      delta_hitter_splits_noop_restore_scoped_repair_gate: isDeltaHitterSplits,
       certified_stage_promotion_v0_3_0: !isDeltaHitterSplits,
       locked_endpoint_sitcodes_vl_vr: true,
       no_browser_pump: true,
@@ -1360,7 +1360,7 @@ async function processBaseHitterSplitsJob(env, row, runId, trigger) {
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_hitter_splits_dispatch_completed', 'Orchestrator completed exact base-hitter-splits dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, delta_hitter_splits_noop_restore_gate: isDeltaHitterSplits, certified_stage_promotion: !isDeltaHitterSplits, no_new_mlb_calls_expected: true })
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, delta_hitter_splits_noop_restore_scoped_repair_gate: isDeltaHitterSplits, certified_stage_promotion: !isDeltaHitterSplits, no_new_mlb_calls_expected: true })
   );
 
   return cappedOutput;

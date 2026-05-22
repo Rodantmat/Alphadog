@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.31-pitcher-game-logs-scoped-repair-gate";
+const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.32-hitter-splits-scoped-repair-gate";
 
 const DB_BINDINGS = [
   "CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB",
@@ -1418,7 +1418,7 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
       visible_button: "DELTA > Hitter Splits",
       mode: "delta_update",
       created_at: now,
-      worker_scope: "delta_noop_restore_scoped_repair_gate_v0_5_1",
+      worker_scope: "delta_noop_restore_scoped_repair_gate_v0_4_1",
       source_name: "MLB StatsAPI people statSplits hitting endpoint with sitCodes=vl,vr",
       source_key: "mlb_statsapi_people_statSplits_hitting_sitCodes_vl_vr_v0_2_0",
       source_season: 2026,
@@ -1448,11 +1448,11 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
     };
 
     await env.CONTROL_DB.prepare(
-      "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'base-hitter-splits', 'alphadog-v2-base-hitter-splits', 'Delta', 'delta', 'Delta Hitter Splits No-Op/Restore Gate v0.4.0', 'pending', 5, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+      "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'base-hitter-splits', 'alphadog-v2-base-hitter-splits', 'Delta', 'delta', 'Delta Hitter Splits Scoped Repair Gate v0.4.1', 'pending', 5, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
     ).bind(requestId, chainId, JSON.stringify(input)).run();
 
     await env.CONTROL_DB.prepare(
-      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'alphadog-v2-control-room', 'orchestrator_enqueue_delta_hitter_splits', 'INFO', 'queued_delta_hitter_splits_noop_restore_gate', 'Queued exact Delta Hitter Splits v0.4.0 no-op/restore gate job', ?, CURRENT_TIMESTAMP)"
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'alphadog-v2-control-room', 'orchestrator_enqueue_delta_hitter_splits', 'INFO', 'queued_delta_hitter_splits_scoped_repair_gate', 'Queued exact Delta Hitter Splits v0.4.1 scoped repair gate job', ?, CURRENT_TIMESTAMP)"
     ).bind(requestId, JSON.stringify({request_id:requestId, chain_id:chainId, visible_button:"DELTA > Hitter Splits", delta_update:true, noop_before_queue_if_current:true, restore_before_queue_if_retained_stage_available:true, no_new_mlb_calls_when_current:true})).run();
 
     return jsonResponse({
@@ -1474,7 +1474,7 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
       backend_scheduled_continuation: true,
       auto_pump_triggered: false,
       browser_auto_pump: false,
-      note: "Queued v0.4.0 delta no-op/restore gate in CONTROL_DB. Tap ORCHESTRATOR > Wake once to dispatch. If live split snapshot is current, this should complete with zero MLB calls and no live mutation."
+      note: "Queued v0.4.1 delta no-op / retained-registry restore / scoped-repair gate in CONTROL_DB. Tap ORCHESTRATOR > Wake once to dispatch. It must not run a full hitter universe refresh."
     });
   }
 
@@ -1586,7 +1586,7 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
       visible_button: "DELTA > Pitcher Splits",
       mode: "delta_update_noop_restore_scoped_repair_gate",
       created_at: now,
-      worker_scope: "delta_noop_restore_scoped_repair_gate_v0_5_1",
+      worker_scope: "delta_noop_restore_scoped_repair_gate_v0_4_1",
       source_name: "MLB StatsAPI people statSplits pitching endpoint with sitCodes=vl,vr",
       source_key: "mlb_statsapi_people_statSplits_pitching_sitCodes_vl_vr_v0_1_0",
       source_season: 2026,
