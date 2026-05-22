@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.40-pitcher-splits-scoped-remine-fix";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.41-pitcher-splits-run-log-sql-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1468,9 +1468,14 @@ async function processBasePitcherSplitsJob(env, row, runId, trigger) {
   } else {
     await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
   }
+  const pitcherSplitsDispatchMessage = rowInput.mode === "delta_update_noop_restore_scoped_repair_gate"
+    ? "Orchestrator completed exact base-pitcher-splits delta no-op/restore/scoped-repair gate dispatch"
+    : (rowInput.mode === "delta_update_noop_restore_gate"
+      ? "Orchestrator completed exact base-pitcher-splits delta/no-op restore gate dispatch"
+      : "Orchestrator completed exact base-pitcher-splits promotion dispatch");
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_splits_dispatch_completed', rowInput.mode === 'delta_update_noop_restore_scoped_repair_gate' ? 'Orchestrator completed exact base-pitcher-splits delta no-op/restore/scoped-repair gate dispatch' : (rowInput.mode === 'delta_update_noop_restore_gate' ? 'Orchestrator completed exact base-pitcher-splits delta/no-op restore gate dispatch' : 'Orchestrator completed exact base-pitcher-splits promotion dispatch'), ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, promote_certified_stage_only: !(rowInput.mode || "").includes("delta"), delta_noop_restore_scoped_repair_gate: rowInput.mode === "delta_update_noop_restore_scoped_repair_gate", delta_noop_restore_gate: rowInput.mode === "delta_update_noop_restore_gate", rows_promoted: output && output.rows_promoted ? output.rows_promoted : 0 })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_splits_dispatch_completed', ?, ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", pitcherSplitsDispatchMessage, JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, promote_certified_stage_only: !(rowInput.mode || "").includes("delta"), delta_noop_restore_scoped_repair_gate: rowInput.mode === "delta_update_noop_restore_scoped_repair_gate", delta_noop_restore_gate: rowInput.mode === "delta_update_noop_restore_gate", rows_promoted: output && output.rows_promoted ? output.rows_promoted : 0 })
   );
   return cappedOutput;
 }
