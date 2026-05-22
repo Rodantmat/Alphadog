@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.58-base-bullpen-history-source-probe";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.59-base-bullpen-history-stage-only";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -47,7 +47,7 @@ function base(env, extra = {}) {
       "Buttons enqueue/wake backend work only.",
       "Browser does not run long loops.",
       "Scheduled cron calls the same bounded tick path.",
-      "v0.2.58 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-pitcher-game-logs base/delta continuation, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.1.0 source probe, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
+      "v0.2.59 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-pitcher-game-logs base/delta continuation, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.2.0 source probe/base stage-only, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
       "No generic worker dispatch, no scoring, no ranking, no final board writes, no old production writes."
     ],
     bindings: {
@@ -1822,7 +1822,7 @@ async function processBaseBullpenHistoryJob(env, row, runId, trigger) {
     mode: bullpenMode,
     orchestrator_trigger: trigger,
     no_live_promotion: true,
-    no_full_base_backfill: true,
+    no_full_base_backfill: bullpenMode === "source_lock_probe",
     no_delta_update_execution: true,
     no_daily_bullpen_availability: true,
     no_scoring: true,
@@ -1869,9 +1869,11 @@ async function processBaseBullpenHistoryJob(env, row, runId, trigger) {
     ...output,
     processed_by_orchestrator_version: SYSTEM_VERSION,
     exact_dispatch: "BASE_BULLPEN_HISTORY_WORKER",
-    v0_1_0_probe_only: true,
+    v0_2_0_stage_only_capable: true,
+    source_probe_only: bullpenMode === "source_lock_probe",
+    base_backfill_stage_only: bullpenMode !== "source_lock_probe",
     no_live_promotion: true,
-    no_full_base_backfill: true,
+    no_full_base_backfill: bullpenMode === "source_lock_probe",
     no_delta_update_execution: true,
     no_daily_bullpen_availability: true,
     no_scoring: true,
@@ -1897,8 +1899,8 @@ async function processBaseBullpenHistoryJob(env, row, runId, trigger) {
   }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_bullpen_history_dispatch_completed', 'Orchestrator completed exact base-bullpen-history v0.1.0 source-probe dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, mode: bullpenMode, source_probe_only: true, no_live_promotion: true, no_full_base_backfill: true, no_delta_update_execution: true, no_daily_bullpen_availability: true, partial_continue: partialContinue })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_bullpen_history_dispatch_completed', 'Orchestrator completed exact base-bullpen-history v0.2.0 source-probe/base-stage dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, mode: bullpenMode, source_probe_only: bullpenMode === "source_lock_probe", base_backfill_stage_only: bullpenMode !== "source_lock_probe", no_live_promotion: true, no_full_base_backfill: bullpenMode === "source_lock_probe", no_delta_update_execution: true, no_daily_bullpen_availability: true, partial_continue: partialContinue })
   );
 
   return cappedOutput;
