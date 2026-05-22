@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.49-base-starter-history-probe";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.50-base-starter-history-stage-only";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1802,14 +1802,15 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const starterMode = rowInput.mode || "base_backfill_stage_only";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
     job_key: row.job_key,
     worker_name: row.worker_name,
     trigger,
-    mode: "orchestrator_exact_base_starter_history_source_lock_probe_dispatch",
-    input_json: { ...rowInput, mode: "source_lock_probe" }
+    mode: "orchestrator_exact_base_starter_history_stage_only_dispatch",
+    input_json: { ...rowInput, mode: starterMode }
   };
 
   const started = Date.now();
@@ -1830,17 +1831,17 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
   }
 
   const rawStatus = String((output && output.status) || "").toLowerCase();
-  const partialContinue = !!(output && output.ok && (rawStatus === "partial_continue" || rawStatus === "source_shape_probe_partial_continue" || output.continuation_required === true || output.orchestrator_should_self_continue === true));
+  const partialContinue = !!(output && output.ok && (rawStatus === "partial_continue" || rawStatus === "source_shape_probe_partial_continue" || rawStatus === "partial_continue_base_starter_history_stage_only" || rawStatus === "partial_continue_base_starter_history_finalization_only" || output.continuation_required === true || output.orchestrator_should_self_continue === true));
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
   const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
   const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
   const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
-  const certification = String((output && output.certification) || (ok ? "starter_history_source_probe_completed" : "starter_history_source_probe_failed")).slice(0, 120);
+  const certification = String((output && output.certification) || (ok ? "starter_history_stage_only_completed" : "starter_history_stage_only_failed")).slice(0, 120);
   const queueStatus = partialContinue ? "pending" : (ok ? "completed" : "failed");
   const runStatus = partialContinue ? "partial_continue" : (ok ? "completed" : "failed");
   const errorCode = ok || partialContinue ? null : "base_starter_history_worker_failed";
-  const errorMessage = ok || partialContinue ? null : String((output && (output.error || output.status)) || "Base Starter History source probe worker failed").slice(0, 900);
+  const errorMessage = ok || partialContinue ? null : String((output && (output.error || output.status)) || "Base Starter History stage-only worker failed").slice(0, 900);
 
   const cappedOutput = {
     ...output,
@@ -1851,15 +1852,15 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_starter_history_v0_1_0_source_lock_probe: true,
+      base_starter_history_v0_2_0_stage_only_base_backfill: true,
       hot_continuation_ready: true,
       backend_self_continuation_ready: true,
       manual_wake_testing_only: true,
       no_browser_pump: true,
       no_generic_dispatch: true,
-      source_probe_only: true,
+      source_probe_only: starterMode === "source_lock_probe",
+      stage_only_base_backfill_allowed: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill",
       no_live_promotion: true,
-      no_full_base_backfill: true,
       no_delta_update_execution: true,
       no_hitter_mutation: true,
       no_pitcher_mutation: true,
@@ -1891,8 +1892,8 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
   }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_starter_history_dispatch_completed', 'Orchestrator completed exact base-starter-history v0.1.0 source-lock probe dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, source_probe_only: true, no_live_promotion: true, partial_continue: partialContinue })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_starter_history_dispatch_completed', 'Orchestrator completed exact base-starter-history v0.2.0 stage-only dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, mode: starterMode, source_probe_only: starterMode === "source_lock_probe", stage_only_base_backfill: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill", no_live_promotion: true, partial_continue: partialContinue })
   );
 
   return cappedOutput;
