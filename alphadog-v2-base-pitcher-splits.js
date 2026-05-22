@@ -1,11 +1,12 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.4.0-delta-noop-restore-gate";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.0-delta-stage-retain-refresh";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
 const GROUP_TYPE = "pitching";
 const INGESTION_MODE = "base_backfill_stage_only_full_universe";
 const PROMOTION_MODE = "base_backfill_promote_certified_stage";
+const DELTA_REFRESH_MODE = "delta_update_stage_retain_refresh";
 const DATA_FEED_KEY = "base_pitcher_splits";
 const SOURCE_KEY = "mlb_statsapi_people_statSplits_pitching_sitCodes_vl_vr_v0_1_0";
 const SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=statSplits&group=pitching&season={season}&sitCodes=vl%2Cvr";
@@ -52,7 +53,7 @@ function baseIdentity(env) {
     job_key: JOB_KEY,
     status: "BASE_PROMOTION_READY",
     timestamp_utc: nowUtc(),
-    phase: "base_pitcher_splits_v0_3_0_promote_certified_stage",
+    phase: "base_pitcher_splits_v0_5_0_delta_stage_retain_refresh",
     source_lock: {
       endpoint_pattern: SOURCE_ENDPOINT_PATTERN,
       source_key: SOURCE_KEY,
@@ -62,12 +63,12 @@ function baseIdentity(env) {
       source_probe_completed_v0_1_1: true,
       stage_only_full_universe_completed_v0_2_0: true,
       certified_stage_promotion_enabled: true,
-      delta_noop_restore_gate_enabled: true
+      delta_stage_retain_refresh_enabled: true
     },
     hard_blocks: {
       live_pitcher_splits_promotion_enabled_from_certified_stage_only: true,
       full_universe_stage_only_completed_v0_2_0: true,
-      delta_noop_restore_gate_enabled: true,
+      delta_stage_retain_refresh_enabled: true,
       no_hitter_splits_mutation: true,
       no_hitter_game_log_mutation: true,
       no_pitcher_game_log_mutation: true,
@@ -307,7 +308,7 @@ async function ensureSchema(env) {
   ];
   for (const [label, sql] of indexes) await exec(label, sql);
 
-  await exec("record_schema_migration_v0_4_0", "INSERT OR REPLACE INTO pitcher_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_pitcher_splits_v0_4_0_delta_noop_restore_gate', ?, CURRENT_TIMESTAMP, 'Base Pitcher Splits v0.4.0 adds delta/no-op/restore gate; zero MLB calls when current; no balanced split assumption; outcome rows_staged not authoritative')", VERSION);
+  await exec("record_schema_migration_v0_5_0", "INSERT OR REPLACE INTO pitcher_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_pitcher_splits_v0_5_0_delta_stage_retain_refresh', ?, CURRENT_TIMESTAMP, 'Base Pitcher Splits v0.5.0 adds real delta stage retained refresh, certified promotion/upsert, and retained-stage repair before queue')", VERSION);
   return { attempted: results.length, failed: results.filter(r => !r.ok).length, results };
 }
 
@@ -848,8 +849,302 @@ async function runDeltaGate(env, input) {
   return { ok: true, data_ok: baseOk && current, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status, certification: cert, certification_grade: grade, rows_read: checks.live_rows, rows_written: 2, rows_promoted: 0, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false, delta_gate: checks, boundaries: { no_hitter_splits_mutation: true, no_hitter_game_log_mutation: true, no_pitcher_game_log_mutation: true, no_prizepicks_mutation: true, no_sleeper_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true }, timestamp_utc: nowUtc() };
 }
 
+
+
+async function latestRetainedDeltaBatch(env) {
+  return await first(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_split_batches
+    WHERE mode=?
+      AND status IN ('DELTA_COMPLETED_PROMOTED_RETAINED','DELTA_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE','DELTA_NOOP_RETAINED_STAGE_LIVE_PARITY')
+      AND certification_status IN ('DELTA_PITCHER_SPLITS_REFRESH_CERTIFIED_PROMOTED_RETAINED','DELTA_PITCHER_SPLITS_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE','DELTA_PITCHER_SPLITS_NOOP_RETAINED_STAGE_LIVE_PARITY')
+      AND COALESCE(rows_staged,0) > 0
+    ORDER BY datetime(COALESCE(promoted_at, finished_at, updated_at, created_at)) DESC
+    LIMIT 1`, DELTA_REFRESH_MODE);
+}
+
+async function getActiveDeltaRefreshCursor(env) {
+  return await first(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_split_cursor
+    WHERE cursor_key='base_pitcher_splits_delta_retain_refresh_cursor'
+      AND mode=?
+      AND status IN ('DELTA_STAGE_RUNNING','PARTIAL_CONTINUE','FINALIZATION_ONLY','DELTA_PROMOTION_RUNNING','DELTA_PROMOTION_PARTIAL_CONTINUE','DELTA_PROMOTION_FINALIZATION_ONLY')
+    ORDER BY datetime(updated_at) DESC
+    LIMIT 1`, DELTA_REFRESH_MODE);
+}
+
+async function createDeltaRefreshBatch(env, input, universe) {
+  const batchId = rid("pitcher_splits_delta_batch");
+  const runId = input.run_id || rid("run_delta_pitcher_splits_refresh");
+  const sourceSnapshotDate = todayUtc();
+  await run(env.STATS_PITCHER_DB, `INSERT INTO pitcher_split_batches (batch_id,run_id,worker_name,worker_version,mode,status,data_feed_key,source_key,source_endpoint,source_season,source_game_type,source_snapshot_date,expected_pitcher_universe_count,sample_size,rows_promoted,notes)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?)`, batchId, runId, WORKER_NAME, VERSION, DELTA_REFRESH_MODE, "DELTA_STAGE_RUNNING", DATA_FEED_KEY, SOURCE_KEY, SOURCE_ENDPOINT_PATTERN, SOURCE_SEASON, null, sourceSnapshotDate, universe.expected_count || 0, universe.expected_count || 0, "v0.5.0 real delta refresh: stage/certify/promote/upsert and retain delta stage for restore; no scoring/no board");
+  await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
+    VALUES ('base_pitcher_splits_delta_retain_refresh_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, batchId, runId, DELTA_REFRESH_MODE, "DELTA_STAGE_RUNNING", SOURCE_SEASON, sourceSnapshotDate, null, 0, universe.expected_count || 0, 0, 0, null, null, safeJson({ created_by: VERSION, real_delta_refresh: true, retain_stage_after_promotion: true, no_live_mutation_until_certified: true }));
+  return { batch_id: batchId, run_id: runId, source_snapshot_date: sourceSnapshotDate, current_player_offset: 0, players_processed: 0, requests_done: 0, status: 'DELTA_STAGE_RUNNING' };
+}
+
+async function loadOrCreateDeltaRefreshCursor(env, input, universe) {
+  const active = await getActiveDeltaRefreshCursor(env);
+  if (active) return {
+    batch_id: active.batch_id,
+    run_id: active.run_id,
+    source_snapshot_date: active.source_snapshot_date || todayUtc(),
+    current_player_offset: asInt(active.current_player_offset, 0),
+    players_processed: asInt(active.players_processed, 0),
+    requests_done: asInt(active.requests_done, 0),
+    status: active.status,
+    resumed: true
+  };
+  return { ...(await createDeltaRefreshBatch(env, input, universe)), resumed: false };
+}
+
+function makeDeltaStageRow(split, player, season, batchId, runId, endpoint, sourceSnapshotDate) {
+  const row = parseStageRow(split, player, season, batchId, runId, endpoint, sourceSnapshotDate, 'delta_stage_identifier_confirmed');
+  row.ingestion_mode = DELTA_REFRESH_MODE;
+  row.certification_status = row.row_error ? 'delta_stage_identifier_unconfirmed' : 'delta_stage_identifier_confirmed';
+  row.source_confidence = 'SOURCE_LOCKED_STATSAPI_STATSPLITS_PITCHING_SITCODES_VL_VR_DELTA_STAGE_RETAIN_REFRESH';
+  row.row_status = 'delta_stage_retained_pending_certification';
+  return row;
+}
+
+async function finalizeDeltaStage(env, batchId, runId, sourceSnapshotDate, universeCount) {
+  const outcomeTotal = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_outcomes WHERE batch_id=?", batchId);
+  const stageTotal = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_stage WHERE batch_id=?", batchId);
+  const catRows = await all(env.STATS_PITCHER_DB, "SELECT terminal_category, COUNT(*) AS c FROM pitcher_split_outcomes WHERE batch_id=? GROUP BY terminal_category ORDER BY terminal_category", batchId);
+  const sourceErrors = catRows.filter(r => String(r.terminal_category) === "SOURCE_ERROR").reduce((a,r)=>a+asInt(r.c,0),0);
+  const repairRows = catRows.filter(r => String(r.terminal_category) === "REPAIR_REQUIRED").reduce((a,r)=>a+asInt(r.c,0),0);
+  const unclearRows = catRows.filter(r => String(r.terminal_category) === "UNCLEAR").reduce((a,r)=>a+asInt(r.c,0),0);
+  const trueNoData = catRows.filter(r => String(r.terminal_category) === "TRUE_NO_DATA").reduce((a,r)=>a+asInt(r.c,0),0);
+  const successRows = catRows.filter(r => String(r.terminal_category) === "STAGE_ROWS_WRITTEN").reduce((a,r)=>a+asInt(r.c,0),0);
+  const dupStage = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS c FROM (SELECT batch_id, player_id, season, group_type, split_code, COUNT(*) AS n FROM pitcher_split_stage WHERE batch_id=? GROUP BY batch_id, player_id, season, group_type, split_code HAVING n>1)`, batchId);
+  const dupOutcome = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS c FROM (SELECT batch_id, player_id, COUNT(*) AS n FROM pitcher_split_outcomes WHERE batch_id=? GROUP BY batch_id, player_id HAVING n>1)`, batchId);
+  const invalidSplit = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_stage WHERE batch_id=? AND split_code NOT IN ('vs_left','vs_right')", batchId);
+  const missingLineage = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS c FROM pitcher_split_stage WHERE batch_id=? AND (player_id IS NULL OR season IS NULL OR group_type IS NULL OR split_code IS NULL OR source_key IS NULL OR source_endpoint IS NULL OR source_season IS NULL OR ingestion_mode IS NULL OR batch_id IS NULL OR run_id IS NULL OR raw_json IS NULL OR source_snapshot_date IS NULL OR stat_shape_json IS NULL)`, batchId);
+  const splitCoverage = await all(env.STATS_PITCHER_DB, "SELECT split_code, COUNT(*) AS rows, COUNT(DISTINCT player_id) AS players FROM pitcher_split_stage WHERE batch_id=? GROUP BY split_code ORDER BY split_code", batchId);
+  const oneSided = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS c FROM (SELECT player_id FROM pitcher_split_stage WHERE batch_id=? GROUP BY player_id HAVING COUNT(DISTINCT split_code) < 2)`, batchId);
+  const checks = {
+    delta_stage_retain_refresh: true,
+    no_live_mutation_before_certification: true,
+    retain_stage_after_promotion_required: true,
+    expected_pitcher_universe_count: universeCount,
+    outcome_rows_player_level: asInt(outcomeTotal && outcomeTotal.c, 0),
+    stage_rows: asInt(stageTotal && stageTotal.c, 0),
+    success_outcomes: successRows,
+    true_no_data_count: trueNoData,
+    source_error_count: sourceErrors,
+    repair_required_count: repairRows,
+    unclear_count: unclearRows,
+    duplicate_stage_keys: asInt(dupStage && dupStage.c, 0),
+    duplicate_outcome_rows: asInt(dupOutcome && dupOutcome.c, 0),
+    invalid_split_code_count: asInt(invalidSplit && invalidSplit.c, 0),
+    missing_lineage_count: asInt(missingLineage && missingLineage.c, 0),
+    split_coverage: splitCoverage,
+    one_sided_successful_players: asInt(oneSided && oneSided.c, 0),
+    does_not_require_balanced_splits: true,
+    does_not_use_outcome_rows_staged_for_physical_truth: true,
+    source_snapshot_assessment: "SEASON_TO_DATE_SOURCE_SNAPSHOT_DELTA_STAGE_RETAIN_REFRESH_NO_CUTOFF_DATE_APPLIED"
+  };
+  checks.pass = checks.stage_rows > 0 && checks.outcome_rows_player_level === universeCount && checks.duplicate_stage_keys === 0 && checks.duplicate_outcome_rows === 0 && checks.source_error_count === 0 && checks.repair_required_count === 0 && checks.unclear_count === 0 && checks.invalid_split_code_count === 0 && checks.missing_lineage_count === 0;
+  const certStatus = checks.pass ? 'DELTA_PITCHER_SPLITS_STAGE_CERTIFIED_PROMOTION_PENDING' : 'DELTA_PITCHER_SPLITS_STAGE_REVIEW_REQUIRED_NO_PROMOTION';
+  const grade = checks.pass ? 'DELTA_STAGE_PASS' : 'DELTA_STAGE_REVIEW';
+  await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_batches SET status=?, rows_staged=?, rows_promoted=0, duplicate_stage_keys=?, duplicate_outcome_rows=?, source_error_count=?, source_no_data_count=?, split_identifier_summary_json=?, true_no_data_assessment=?, source_snapshot_assessment=?, certification_status=?, certification_grade=?, certification_json=?, finished_at=CURRENT_TIMESTAMP, certified_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    checks.pass ? 'DELTA_STAGE_CERTIFIED_PROMOTION_PENDING' : 'DELTA_STAGE_REVIEW_REQUIRED_NO_PROMOTION', checks.stage_rows, checks.duplicate_stage_keys, checks.duplicate_outcome_rows, checks.source_error_count, checks.true_no_data_count, safeJson(splitCoverage), checks.true_no_data_count > 0 ? 'TRUE_NO_DATA_OBSERVED_ON_CLEAN_EMPTY_2XX_JSON' : 'TRUE_NO_DATA_NOT_OBSERVED_IN_DELTA_STAGE', checks.source_snapshot_assessment, certStatus, grade, safeJson(checks), batchId);
+  await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_cursor SET status=?, current_player_offset=?, players_processed=?, next_run_after=CURRENT_TIMESTAMP, last_error=NULL, cursor_json=?, updated_at=CURRENT_TIMESTAMP WHERE cursor_key='base_pitcher_splits_delta_retain_refresh_cursor' AND batch_id=?`, checks.pass ? 'DELTA_PROMOTION_RUNNING' : 'DELTA_STAGE_REVIEW_REQUIRED_NO_PROMOTION', checks.stage_rows, universeCount, safeJson({ finalization_only: true, checks, next_step: checks.pass ? 'promote_certified_delta_stage_and_retain_stage' : 'review_required_no_promotion' }), batchId);
+  await run(env.STATS_PITCHER_DB, `INSERT INTO pitcher_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('pitcher_splits_delta_stage_cert'), batchId, runId, DELTA_REFRESH_MODE, certStatus, grade, safeJson(checks), checks.stage_rows, 0, checks.duplicate_stage_keys, checks.true_no_data_count, checks.source_error_count, sourceSnapshotDate);
+  return { pass: checks.pass, certStatus, grade, checks };
+}
+
+async function promoteOneDeltaStageRow(env, r) {
+  await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_splits (
+    player_id, season, split_key, split_description, innings_pitched, outs_recorded, batters_faced, hits_allowed, earned_runs, walks_allowed, strikeouts, era, whip, raw_json, source_key, source_confidence, updated_at,
+    group_type, split_code, split_source_code, data_feed_key, source_endpoint, source_season, source_game_type, ingestion_mode, batch_id, run_id, certification_status, certification_grade, certified_at, promoted_at, created_at, source_snapshot_date, stat_shape_json,
+    innings_pitched_decimal, runs_allowed, home_runs_allowed, pitches, strikes, balls, avg_against, obp_against, slg_against, ops_against
+  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,COALESCE(?,CURRENT_TIMESTAMP),?,?,?,?,?,?,?,?,?,?,?,?)`,
+    r.player_id, r.season, r.split_code, r.split_description, r.innings_pitched, r.outs_recorded, r.batters_faced, r.hits_allowed, r.earned_runs, r.walks_allowed, r.strikeouts, r.era, r.whip, r.raw_json, r.source_key, 'SOURCE_LOCKED_STATSAPI_STATSPLITS_PITCHING_SITCODES_VL_VR_DELTA_PROMOTED_FROM_RETAINED_STAGE',
+    r.group_type, r.split_code, r.split_source_code, r.data_feed_key, r.source_endpoint, r.source_season, r.source_game_type, 'delta_update_promoted_from_retained_stage', r.batch_id, r.run_id, 'DELTA_PITCHER_SPLITS_REFRESH_CERTIFIED_PROMOTED', 'DELTA_PASS', r.created_at, r.source_snapshot_date, r.stat_shape_json,
+    r.innings_pitched_decimal, r.runs_allowed, r.home_runs_allowed, r.pitches, r.strikes, r.balls, r.avg_against, r.obp_against, r.slg_against, r.ops_against);
+}
+
+async function finalizeDeltaPromotion(env, batchId, runId, stageRowsExpected, noDataCount, sourceErrorCount) {
+  const liveRows = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_splits WHERE batch_id=?", batchId);
+  const stageRows = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_stage WHERE batch_id=?", batchId);
+  const dupLive = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS c FROM (SELECT player_id, season, group_type, split_code, COUNT(*) AS n FROM pitcher_splits WHERE batch_id=? GROUP BY player_id, season, group_type, split_code HAVING n>1)`, batchId);
+  const invalidLive = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_splits WHERE batch_id=? AND split_code NOT IN ('vs_left','vs_right')", batchId);
+  const splitCoverage = await all(env.STATS_PITCHER_DB, "SELECT split_code, COUNT(*) AS rows, COUNT(DISTINCT player_id) AS players FROM pitcher_splits WHERE batch_id=? GROUP BY split_code ORDER BY split_code", batchId);
+  const checks = {
+    delta_completed_promoted_retained: true,
+    retained_stage_available_for_restore: asInt(stageRows && stageRows.c, 0) === stageRowsExpected,
+    stage_rows_retained: asInt(stageRows && stageRows.c, 0),
+    live_rows_for_batch: asInt(liveRows && liveRows.c, 0),
+    stage_rows_expected: stageRowsExpected,
+    duplicate_live_keys: asInt(dupLive && dupLive.c, 0),
+    invalid_live_split_code_count: asInt(invalidLive && invalidLive.c, 0),
+    split_coverage: splitCoverage,
+    live_verification_pass: asInt(liveRows && liveRows.c, 0) === stageRowsExpected && asInt(dupLive && dupLive.c, 0) === 0 && asInt(invalidLive && invalidLive.c, 0) === 0,
+    stage_retention_pass: asInt(stageRows && stageRows.c, 0) === stageRowsExpected,
+    does_not_require_balanced_splits: true,
+    does_not_use_outcome_rows_staged_for_physical_truth: true
+  };
+  checks.pass = checks.live_verification_pass && checks.stage_retention_pass;
+  const certStatus = checks.pass ? 'DELTA_PITCHER_SPLITS_REFRESH_CERTIFIED_PROMOTED_RETAINED' : 'DELTA_PITCHER_SPLITS_PROMOTION_REVIEW_REQUIRED';
+  const grade = checks.pass ? 'DELTA_PASS' : 'DELTA_REVIEW';
+  const status = checks.pass ? 'DELTA_COMPLETED_PROMOTED_RETAINED' : 'DELTA_PROMOTION_REVIEW_REQUIRED';
+  await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_batches SET status=?, rows_promoted=?, certification_status=?, certification_grade=?, certification_json=?, promoted_at=CURRENT_TIMESTAMP, cleaned_at=NULL, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, status, checks.live_rows_for_batch, certStatus, grade, safeJson(checks), batchId);
+  await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_cursor SET status=?, current_player_offset=?, players_processed=?, requests_done=0, next_run_after=NULL, last_error=NULL, cursor_json=?, updated_at=CURRENT_TIMESTAMP WHERE cursor_key='base_pitcher_splits_delta_retain_refresh_cursor' AND batch_id=?`, status, stageRowsExpected, stageRowsExpected, safeJson({ finalization_only: true, checks }), batchId);
+  await run(env.STATS_PITCHER_DB, `INSERT INTO pitcher_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('pitcher_splits_delta_promote_cert'), batchId, runId, DELTA_REFRESH_MODE, certStatus, grade, safeJson(checks), checks.stage_rows_retained, checks.live_rows_for_batch, checks.duplicate_live_keys, noDataCount, sourceErrorCount, todayUtc());
+  return { pass: checks.pass, certStatus, grade, status, checks };
+}
+
+async function restoreMissingFromRetainedDeltaStage(env, retainedBatch, input) {
+  const batchId = retainedBatch.batch_id;
+  const runId = input.run_id || rid('run_delta_pitcher_splits_restore');
+  const chunkSize = capChunk((input.input_json && input.input_json.restore_chunk_size) || (input.input_json && input.input_json.chunk_size) || DEFAULT_CHUNK_SIZE);
+  const stageRows = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_stage WHERE batch_id=?", batchId);
+  const missingBefore = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS c FROM pitcher_split_stage s WHERE s.batch_id=? AND NOT EXISTS (SELECT 1 FROM pitcher_splits p WHERE p.batch_id=s.batch_id AND p.player_id=s.player_id AND p.season=s.season AND p.group_type=s.group_type AND p.split_code=s.split_code)`, batchId);
+  const missing = asInt(missingBefore && missingBefore.c, 0);
+  if (missing <= 0) {
+    const liveRows = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_splits WHERE batch_id=?", batchId);
+    const checks = { retained_delta_batch_id: batchId, stage_rows_retained: asInt(stageRows && stageRows.c, 0), live_rows: asInt(liveRows && liveRows.c, 0), missing_live_rows_from_retained_stage: 0, no_mlb_calls: true, no_new_batch: true, no_live_mutation: true, does_not_require_balanced_splits: true };
+    await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
+      VALUES ('base_pitcher_splits_delta_update_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, batchId, runId, 'delta_update_retained_stage_restore_gate', 'DELTA_NOOP_RETAINED_STAGE_LIVE_PARITY', SOURCE_SEASON, retainedBatch.source_snapshot_date || todayUtc(), null, checks.live_rows, checks.stage_rows_retained, checks.stage_rows_retained, 0, null, null, safeJson(checks));
+    return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'DELTA_NOOP_RETAINED_STAGE_LIVE_PARITY', certification: 'DELTA_PITCHER_SPLITS_NOOP_RETAINED_STAGE_LIVE_PARITY', certification_grade: 'DELTA_NOOP_PASS', rows_read: checks.live_rows, rows_written: 1, rows_promoted: 0, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false, delta_restore_gate: checks, timestamp_utc: nowUtc() };
+  }
+  const rows = await all(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_split_stage s WHERE s.batch_id=? AND NOT EXISTS (SELECT 1 FROM pitcher_splits p WHERE p.batch_id=s.batch_id AND p.player_id=s.player_id AND p.season=s.season AND p.group_type=s.group_type AND p.split_code=s.split_code) ORDER BY s.player_id, s.season, s.group_type, s.split_code LIMIT ?`, batchId, chunkSize);
+  let restored = 0;
+  for (const r of rows) { await promoteOneDeltaStageRow(env, r); restored += 1; }
+  const missingAfter = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS c FROM pitcher_split_stage s WHERE s.batch_id=? AND NOT EXISTS (SELECT 1 FROM pitcher_splits p WHERE p.batch_id=s.batch_id AND p.player_id=s.player_id AND p.season=s.season AND p.group_type=s.group_type AND p.split_code=s.split_code)`, batchId);
+  const stillMissing = asInt(missingAfter && missingAfter.c, 0);
+  const final = stillMissing === 0;
+  const liveRows = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_splits WHERE batch_id=?", batchId);
+  const checks = { retained_delta_batch_id: batchId, stage_rows_retained: asInt(stageRows && stageRows.c, 0), live_rows: asInt(liveRows && liveRows.c, 0), missing_before: missing, restored_this_tick: restored, missing_after: stillMissing, no_mlb_calls: true, no_new_batch: true, restored_from_retained_stage_before_queue: true };
+  await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_batches SET status=?, rows_promoted=?, certification_status=?, certification_grade=?, certification_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, final ? 'DELTA_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE' : 'PARTIAL_CONTINUE', checks.live_rows, final ? 'DELTA_PITCHER_SPLITS_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE' : 'DELTA_PITCHER_SPLITS_RETAINED_STAGE_REPAIR_PARTIAL_CONTINUE', final ? 'DELTA_REPAIR_PASS' : 'PARTIAL_CONTINUE', safeJson(checks), batchId);
+  await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
+    VALUES ('base_pitcher_splits_delta_update_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, batchId, runId, 'delta_update_retained_stage_restore_gate', final ? 'DELTA_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE' : 'PARTIAL_CONTINUE', SOURCE_SEASON, retainedBatch.source_snapshot_date || todayUtc(), null, checks.live_rows, checks.stage_rows_retained, checks.live_rows, 0, final ? null : 'CURRENT_TIMESTAMP', null, safeJson(checks));
+  return { ok: true, data_ok: final, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: final ? 'DELTA_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE' : 'partial_continue_base_pitcher_splits', certification: final ? 'DELTA_PITCHER_SPLITS_REPAIRED_FROM_RETAINED_STAGE_BEFORE_QUEUE' : 'DELTA_PITCHER_SPLITS_RETAINED_STAGE_REPAIR_PARTIAL_CONTINUE', certification_grade: final ? 'DELTA_REPAIR_PASS' : 'PARTIAL_CONTINUE', rows_read: restored, rows_written: restored, rows_promoted: restored, external_calls_performed: 0, continuation_required: !final, orchestrator_should_self_continue: !final, delta_restore_gate: checks, timestamp_utc: nowUtc() };
+}
+
+async function runDeltaStageRetainRefresh(env, input) {
+  if (!env.STATS_PITCHER_DB || !env.REF_DB) {
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: 'blocked_missing_required_db_binding', certification: 'DELTA_PITCHER_SPLITS_REQUIRED_DB_BINDING_MISSING', rows_read: 0, rows_written: 0, external_calls_performed: 0 };
+  }
+  const schema = await ensureSchema(env);
+  const inputJson = input.input_json || input || {};
+  const retained = await latestRetainedDeltaBatch(env);
+  if (retained && String(retained.source_snapshot_date || '') === todayUtc()) {
+    return await restoreMissingFromRetainedDeltaStage(env, retained, input);
+  }
+
+  const universe = await readPitcherUniverse(env);
+  const cursor = await loadOrCreateDeltaRefreshCursor(env, input, universe);
+  const batchId = cursor.batch_id;
+  const runId = cursor.run_id;
+  const sourceSnapshotDate = cursor.source_snapshot_date || todayUtc();
+  const status = String(cursor.status || 'DELTA_STAGE_RUNNING');
+  const chunkSize = capChunk(inputJson.chunk_size || inputJson.max_players_per_tick || DEFAULT_CHUNK_SIZE);
+
+  if (universe.expected_count <= 0) {
+    await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_batches SET status='DELTA_BLOCKED_EMPTY_PITCHER_UNIVERSE', certification_status='DELTA_PITCHER_SPLITS_EMPTY_PITCHER_UNIVERSE_BLOCKED', certification_grade='BLOCKED', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, batchId);
+    return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: 'DELTA_BLOCKED_EMPTY_PITCHER_UNIVERSE', certification: 'DELTA_PITCHER_SPLITS_EMPTY_PITCHER_UNIVERSE_BLOCKED', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false };
+  }
+
+  if (status === 'FINALIZATION_ONLY') {
+    const final = await finalizeDeltaStage(env, batchId, runId, sourceSnapshotDate, universe.expected_count);
+    return { ok: true, data_ok: final.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: final.pass ? 'partial_continue_base_pitcher_splits' : 'DELTA_STAGE_REVIEW_REQUIRED_NO_PROMOTION', certification: final.certStatus, certification_grade: final.grade, rows_read: 0, rows_written: 1, rows_staged: final.checks.stage_rows, rows_promoted: 0, external_calls_performed: 0, continuation_required: final.pass, orchestrator_should_self_continue: final.pass, next_step: final.pass ? 'PROMOTE_CERTIFIED_DELTA_STAGE_AND_RETAIN_STAGE' : 'REVIEW_REQUIRED', delta_stage: { batch_id: batchId, run_id: runId, checks: final.checks }, timestamp_utc: nowUtc() };
+  }
+
+  if (status === 'DELTA_PROMOTION_RUNNING' || status === 'DELTA_PROMOTION_PARTIAL_CONTINUE' || status === 'DELTA_PROMOTION_FINALIZATION_ONLY') {
+    const stageRows = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_stage WHERE batch_id=?", batchId);
+    const batch = await first(env.STATS_PITCHER_DB, "SELECT * FROM pitcher_split_batches WHERE batch_id=?", batchId);
+    const offset = asInt(cursor.current_player_offset, 0);
+    const total = asInt(stageRows && stageRows.c, 0);
+    const rows = await all(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_split_stage WHERE batch_id=? ORDER BY player_id, season, group_type, split_code LIMIT ? OFFSET ?`, batchId, chunkSize, offset);
+    if (!rows.length) {
+      const final = await finalizeDeltaPromotion(env, batchId, runId, total, asInt(batch && batch.source_no_data_count, 0), asInt(batch && batch.source_error_count, 0));
+      return { ok: true, data_ok: final.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: final.status, certification: final.certStatus, certification_grade: final.grade, rows_read: 0, rows_written: 1, rows_staged: total, rows_promoted: final.checks.live_rows_for_batch, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false, finalization_only: true, delta_promotion: { batch_id: batchId, checks: final.checks }, timestamp_utc: nowUtc() };
+    }
+    let promoted = 0;
+    for (const r of rows) { await promoteOneDeltaStageRow(env, r); promoted += 1; }
+    const newOffset = offset + rows.length;
+    const completed = newOffset >= total;
+    const liveRows = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_splits WHERE batch_id=?", batchId);
+    await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_batches SET status=?, rows_promoted=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, completed ? 'DELTA_PROMOTION_FINALIZATION_ONLY' : 'DELTA_PROMOTION_PARTIAL_CONTINUE', asInt(liveRows && liveRows.c, 0), batchId);
+    await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_cursor SET status=?, current_player_offset=?, players_total=?, players_processed=?, requests_done=0, next_run_after=CURRENT_TIMESTAMP, last_error=NULL, cursor_json=?, updated_at=CURRENT_TIMESTAMP WHERE cursor_key='base_pitcher_splits_delta_retain_refresh_cursor' AND batch_id=?`, completed ? 'DELTA_PROMOTION_FINALIZATION_ONLY' : 'DELTA_PROMOTION_PARTIAL_CONTINUE', newOffset, total, newOffset, safeJson({ promotion_chunk_size: chunkSize, promoted_this_tick: promoted, finalization_only_ready: completed, retain_stage_after_promotion: true, zero_mlb_calls_during_promotion: true }), batchId);
+    return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'partial_continue_base_pitcher_splits', certification: completed ? 'DELTA_PITCHER_SPLITS_PROMOTION_FINALIZATION_REQUIRED_RETAIN_STAGE' : 'DELTA_PITCHER_SPLITS_PROMOTION_PARTIAL_CONTINUE_RETAIN_STAGE', certification_grade: completed ? 'FINALIZATION_ONLY_READY' : 'PARTIAL_CONTINUE', rows_read: promoted, rows_written: promoted, rows_staged: total, rows_promoted: asInt(liveRows && liveRows.c, 0), external_calls_performed: 0, continuation_required: true, orchestrator_should_self_continue: true, delta_promotion: { batch_id: batchId, promoted_this_tick: promoted, current_offset: newOffset, stage_rows: total, live_rows_for_batch: asInt(liveRows && liveRows.c, 0), retain_stage_after_promotion: true }, timestamp_utc: nowUtc() };
+  }
+
+  const startOffset = Math.max(0, asInt(cursor.current_player_offset, 0));
+  const players = universe.players.slice(startOffset, startOffset + chunkSize);
+  if (players.length === 0) {
+    await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_cursor SET status='FINALIZATION_ONLY', next_run_after=CURRENT_TIMESTAMP, cursor_json=?, updated_at=CURRENT_TIMESTAMP WHERE cursor_key='base_pitcher_splits_delta_retain_refresh_cursor' AND batch_id=?`, safeJson({ finalization_only_ready: true, no_mlb_calls_next_tick: true }), batchId);
+    return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'partial_continue_base_pitcher_splits', certification: 'DELTA_PITCHER_SPLITS_STAGE_FINALIZATION_REQUIRED_NO_PROMOTION_YET', certification_grade: 'FINALIZATION_ONLY_READY', rows_read: 0, rows_written: 1, rows_staged: 0, rows_promoted: 0, external_calls_performed: 0, continuation_required: true, orchestrator_should_self_continue: true, next_step: 'FINALIZE_DELTA_STAGE_ZERO_MLB_CALLS', delta_stage: { batch_id: batchId, run_id: runId }, timestamp_utc: nowUtc() };
+  }
+
+  const headers = { "accept": "application/json" };
+  if (env.MLB_API_USER_AGENT) headers["user-agent"] = env.MLB_API_USER_AGENT;
+  let sourceRequestCount = 0, sourceSuccessCount = 0, sourceNoDataCount = 0, sourceErrorCount = 0, rowsStaged = 0;
+  const playerSummaries = [];
+  for (const player of players) {
+    const endpoint = endpointFor(env, player.player_id, SOURCE_SEASON);
+    sourceRequestCount += 1;
+    const fetched = await fetchTextWithTimeout(endpoint, { headers }, FETCH_TIMEOUT_MS);
+    let httpStatus = fetched.resp ? fetched.resp.status : null;
+    let payload = null;
+    let sourceError = null;
+    if (!fetched.ok) sourceError = fetched.error || 'fetch_failed';
+    else { try { payload = JSON.parse(fetched.text || '{}'); } catch (err) { sourceError = 'non_json_response: ' + String(err && err.message ? err.message : err); } }
+    const splits = payload ? extractSplits(payload) : [];
+    const fieldsThisPlayer = new Set();
+    const identifiersThisPlayer = [];
+    if (sourceError || !(httpStatus >= 200 && httpStatus < 300)) {
+      sourceErrorCount += 1;
+      await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_split_outcomes (batch_id,run_id,player_id,player_name,cursor_offset,source_endpoint,source_http_status,source_ok,raw_payload_split_count,rows_staged,promoted_row_count,terminal_category,category_reason,source_error,source_snapshot_date,split_identifier_json,field_names_json,certification_status,updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, batchId, runId, player.player_id, player.player_name, player.cursor_offset, endpoint, httpStatus, 0, 0, 0, 0, 'SOURCE_ERROR', 'delta source request failed or non-2xx/non-json', oneLine(sourceError || fetched.text), sourceSnapshotDate, '[]', '[]', 'delta_stage_source_error');
+      playerSummaries.push({ player_id: player.player_id, terminal_category: 'SOURCE_ERROR', http_status: httpStatus });
+      continue;
+    }
+    if (splits.length === 0) {
+      sourceNoDataCount += 1;
+      await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_split_outcomes (batch_id,run_id,player_id,player_name,cursor_offset,source_endpoint,source_http_status,source_ok,raw_payload_split_count,rows_staged,promoted_row_count,terminal_category,category_reason,source_error,source_snapshot_date,split_identifier_json,field_names_json,certification_status,updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, batchId, runId, player.player_id, player.player_name, player.cursor_offset, endpoint, httpStatus, 1, 0, 0, 0, 'TRUE_NO_DATA', 'clean 2xx JSON response with zero statSplits rows', null, sourceSnapshotDate, '[]', '[]', 'delta_stage_true_no_data');
+      playerSummaries.push({ player_id: player.player_id, terminal_category: 'TRUE_NO_DATA', http_status: httpStatus });
+      continue;
+    }
+    sourceSuccessCount += 1;
+    let stagedForPlayer = 0;
+    let unclearIdentifier = false;
+    for (const split of splits) {
+      const stat = split && split.stat ? split.stat : {};
+      for (const f of statFields(stat)) fieldsThisPlayer.add(f);
+      const mapped = mapSplitCode(split);
+      if (!mapped.confirmed) unclearIdentifier = true;
+      identifiersThisPlayer.push({ split_code: mapped.split_code, confirmed: mapped.confirmed, evidence: mapped.evidence });
+      const row = makeDeltaStageRow(split, player, SOURCE_SEASON, batchId, runId, endpoint, sourceSnapshotDate);
+      await insertStageRow(env, row);
+      stagedForPlayer += 1;
+      rowsStaged += 1;
+    }
+    const category = unclearIdentifier ? 'UNCLEAR' : 'STAGE_ROWS_WRITTEN';
+    await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_split_outcomes (batch_id,run_id,player_id,player_name,cursor_offset,source_endpoint,source_http_status,source_ok,raw_payload_split_count,rows_staged,promoted_row_count,terminal_category,category_reason,source_error,source_snapshot_date,split_identifier_json,field_names_json,certification_status,updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, batchId, runId, player.player_id, player.player_name, player.cursor_offset, endpoint, httpStatus, 1, splits.length, stagedForPlayer, 0, category, category === 'UNCLEAR' ? 'one or more split identifiers not confirmed by source evidence' : 'delta stage retained rows written; no live promotion before certification', null, sourceSnapshotDate, safeJson(identifiersThisPlayer), safeJson(Array.from(fieldsThisPlayer).sort()), category === 'UNCLEAR' ? 'delta_stage_identifier_unclear' : 'delta_stage_identifier_confirmed');
+    playerSummaries.push({ player_id: player.player_id, terminal_category: category, http_status: httpStatus, split_count: splits.length, rows_staged: stagedForPlayer });
+  }
+
+  const nextOffset = startOffset + players.length;
+  const completed = nextOffset >= universe.expected_count;
+  const totalRequests = asInt(cursor.requests_done, 0) + sourceRequestCount;
+  const totalProcessed = Math.min(universe.expected_count, nextOffset);
+  const stageTotal = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_stage WHERE batch_id=?", batchId);
+  const outcomeTotal = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_split_outcomes WHERE batch_id=?", batchId);
+  await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_batches SET status=?, source_request_count=COALESCE(source_request_count,0)+?, source_success_count=COALESCE(source_success_count,0)+?, source_no_data_count=COALESCE(source_no_data_count,0)+?, source_error_count=COALESCE(source_error_count,0)+?, rows_staged=?, rows_promoted=0, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, completed ? 'FINALIZATION_ONLY' : 'PARTIAL_CONTINUE', sourceRequestCount, sourceSuccessCount, sourceNoDataCount, sourceErrorCount, asInt(stageTotal && stageTotal.c, 0), batchId);
+  await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_cursor SET status=?, current_player_id=?, current_player_offset=?, players_total=?, players_processed=?, requests_done=?, next_run_after=CURRENT_TIMESTAMP, last_error=NULL, cursor_json=?, updated_at=CURRENT_TIMESTAMP WHERE cursor_key='base_pitcher_splits_delta_retain_refresh_cursor' AND batch_id=?`, completed ? 'FINALIZATION_ONLY' : 'PARTIAL_CONTINUE', players.length ? players[players.length - 1].player_id : null, nextOffset, universe.expected_count, totalProcessed, totalRequests, safeJson({ chunk_size: chunkSize, last_chunk_player_ids: players.map(p => p.player_id), finalization_only_ready: completed, retain_stage_after_promotion: true }), batchId);
+  return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'partial_continue_base_pitcher_splits', certification: completed ? 'DELTA_PITCHER_SPLITS_STAGE_FINALIZATION_REQUIRED_NO_PROMOTION_YET' : 'DELTA_PITCHER_SPLITS_STAGE_PARTIAL_CONTINUE_RETAIN_STAGE', certification_grade: completed ? 'FINALIZATION_ONLY_READY' : 'PARTIAL_CONTINUE', rows_read: players.length, rows_written: rowsStaged + players.length, rows_staged: asInt(stageTotal && stageTotal.c, 0), rows_promoted: 0, external_calls_performed: sourceRequestCount, continuation_required: true, orchestrator_should_self_continue: true, source_stage: { batch_id: batchId, run_id: runId, expected_pitcher_universe_count: universe.expected_count, players_processed: totalProcessed, outcome_rows: asInt(outcomeTotal && outcomeTotal.c, 0), current_offset: nextOffset, chunk_size: chunkSize, player_summaries: playerSummaries, retain_stage_after_promotion: true }, timestamp_utc: nowUtc() };
+}
+
 async function runProbe(env, input) {
   const mode = String(input.mode || input.input_json?.mode || PROMOTION_MODE);
+  if (mode === DELTA_REFRESH_MODE || /stage_retain_refresh|retain_refresh/.test(mode)) {
+    return await runDeltaStageRetainRefresh(env, input);
+  }
   if (/delta/i.test(mode)) {
     return await runDeltaGate(env, input);
   }
@@ -871,7 +1166,7 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       try { return jsonResponse(await runProbe(env, input)); }
-      catch (err) { return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_PROMOTION_FAILED", certification: "BASE_PITCHER_SPLITS_BASE_PROMOTION_FAILED", error: String(err && err.message ? err.message : err), rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, timestamp_utc: nowUtc() }, 500); }
+      catch (err) { return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_PITCHER_SPLITS_FAILED", certification: "BASE_PITCHER_SPLITS_RUN_FAILED", error: String(err && err.message ? err.message : err), rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, timestamp_utc: nowUtc() }, 500); }
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }
