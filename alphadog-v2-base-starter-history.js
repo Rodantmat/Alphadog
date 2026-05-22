@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-starter-history";
-const VERSION = "alphadog-v2-base-starter-history-v0.2.0-stage-only-base-backfill";
+const VERSION = "alphadog-v2-base-starter-history-v0.2.1-hot-continuation-stage-only";
 const JOB_KEY = "base-starter-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -7,7 +7,7 @@ const DEFAULT_SAMPLE_LIMIT = 3;
 const DEFAULT_BASE_CUTOFF_DATE = "2026-05-18";
 const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
 const DEFAULT_BASE_START_DATE = "2026-03-01";
-const DEFAULT_BASE_MAX_GAMES_PER_TICK = 15;
+const DEFAULT_BASE_MAX_GAMES_PER_TICK = 50;
 const SOURCE_KEY = "mlb_statsapi_schedule_boxscore_starter_history_v0_2_0";
 const SOURCE_CONFIDENCE = "OFFICIAL_FINAL_BOXSCORE_GAMES_STARTED_SOURCE_LOCKED";
 
@@ -887,7 +887,10 @@ async function runBaseBackfillStageOnly(env, input) {
   const cutoffDate = ymd(rowInput.base_backfill_cutoff_date || input.base_backfill_cutoff_date || DEFAULT_BASE_CUTOFF_DATE);
   const baseStartDate = ymd(rowInput.base_start_date || input.base_start_date || DEFAULT_BASE_START_DATE);
   const season = seasonFromDate(cutoffDate);
-  const maxGamesPerTick = Math.max(1, Math.min(25, Number(rowInput.max_games_per_tick || input.max_games_per_tick || DEFAULT_BASE_MAX_GAMES_PER_TICK) || DEFAULT_BASE_MAX_GAMES_PER_TICK));
+  const requestedMaxGames = Number(rowInput.max_games_per_tick || input.max_games_per_tick || DEFAULT_BASE_MAX_GAMES_PER_TICK) || DEFAULT_BASE_MAX_GAMES_PER_TICK;
+  // v0.2.1: Starter History uses the same backend hot-continuation philosophy as the locked game-log workers.
+  // Existing v0.2.0 queue rows may carry max_games_per_tick=15; raise them safely to the default so one backend pump can drain the stage-only backfill without repeated manual Wake taps.
+  const maxGamesPerTick = Math.max(1, Math.min(60, Math.max(requestedMaxGames, DEFAULT_BASE_MAX_GAMES_PER_TICK)));
   let batch = await loadActiveBaseBatch(env, requestId);
   let batchId = batch && batch.batch_id;
   let externalCalls = 0;

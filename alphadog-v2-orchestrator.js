@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.50-base-starter-history-stage-only";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.51-base-starter-history-hot-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1852,7 +1852,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_starter_history_v0_2_0_stage_only_base_backfill: true,
+      base_starter_history_v0_2_1_hot_continuation_stage_only: true,
       hot_continuation_ready: true,
       backend_self_continuation_ready: true,
       manual_wake_testing_only: true,
@@ -3097,8 +3097,10 @@ export default {
     if (request.method === "POST" && (url.pathname === "/tick" || url.pathname === "/run" || url.pathname === "/tasks/tick")) {
       const body = await parseJson(request);
       const maxJobs = body.max_jobs || body.maxJobs || 3;
-      if (body.auto_pump || body.pump) {
-        return jsonResponse(await pump(env, "http_manual_wake_auto_pump", body.max_cycles || 10, body.max_jobs_per_cycle || maxJobs || 1, body.max_ms || 65000, ctx, request.url, body.pump_depth || 0, body.max_pump_chains || 12));
+      // v0.2.51: Control Room Wake may request a backend budget loop. This is not a browser loop;
+      // it runs the same orchestrator-owned pump/waitUntil continuation used by the locked base workers.
+      if (body.auto_pump || body.pump || body.backend_budget_loop_requested) {
+        return jsonResponse(await pump(env, "http_manual_wake_auto_pump", body.max_cycles || 18, body.max_jobs_per_cycle || maxJobs || 1, body.max_ms || 70000, ctx, request.url, body.pump_depth || 0, body.max_pump_chains || 30));
       }
       return jsonResponse(await tick(env, "http_manual_wake", maxJobs));
     }

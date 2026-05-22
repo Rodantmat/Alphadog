@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.6.43-base-starter-history-stage-only -->
+<!-- alphadog-v2-control-room-v1.6.44-base-starter-history-hot-continuation -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,7 +28,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.6.43-base-starter-history-stage-only</div>
+<div id="versionTag">alphadog-v2-control-room-v1.6.44-base-starter-history-hot-continuation</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
 <div class="small">Access mode: single-user. Control Room enqueues/status only. Static Players, Static Prop Taxonomy, Static Certifier, Static Full Run, Sleeper source-probe, Base Hitter Game Logs base_backfill, Hitter Game Logs delta_update queue plus backend self-continuation launch, and Base Pitcher Game Logs base is locked; BASE > Pitcher Splits is locked promoted/cleaned and DELTA > Pitcher Splits runs the no-op, retained-restore, and scoped-repair gate and Pitcher Delta Game Logs uses retained-stage restore/no-op before queue and scoped delta_update; visible buttons are in BASE / DELTA. Base Hitter Splits is locked promoted/cleaned, and DELTA > Hitter Splits runs the no-op/current-snapshot and retained-stage repair gate with no MLB calls when current. Orchestrator scheduled backend/cron owns continuation. Wake is optional backend test/rescue only.</div>
@@ -59,7 +59,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <button class="orch" type="button" onclick="runOrchestratorWake()">Wake</button>
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Logs','orchestrator_logs')">Logs</button>
 <button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Health','orchestrator_health')">OHealth</button>
-</div><div class="small">Wake = optional backend trigger for testing. It requests up to 5 safe backend chunks/jobs in one wake. Static Full Run remains backend-chain only. Self-continuing backend pump owns normal continuation; cron is fallback rescue only. No browser loops.</div></div>
+</div><div class="small">Wake = backend auto-pump trigger for testing/rescue. It requests a bounded orchestrator-owned continuation loop, not a browser loop. Static Full Run remains backend-chain only. Self-continuing backend pump owns normal continuation; cron is fallback rescue only. No browser loops.</div></div>
 
 <div class="section"><h3>BOARD</h3><div class="grid">
 <button class="orch" type="button" onclick="runJobButton('BOARD > PrizePicks','orchestrator_enqueue_prizepicks_github_board')">PrizePicks</button>
@@ -157,7 +157,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.6.43-base-starter-history-stage-only"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",version:"alphadog-v2-control-room-v1.6.44-base-starter-history-hot-continuation"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
@@ -188,7 +188,7 @@ function runJobButton(l,j){
 }
 
 async function runOrchestratorWake(){
-  requestJSON("ORCHESTRATOR > Wake",ORCH_TICK_URL,{source:"control_room_manual_wake_tick",backend_only:true,max_jobs:5,wake_only:true,backend_budget_loop_requested:true,static_players_max_chunks_requested:5,no_browser_loop:true,no_control_room_to_orchestrator_fetch:true});
+  requestJSON("ORCHESTRATOR > Wake",ORCH_TICK_URL,{source:"control_room_manual_wake_auto_pump",backend_only:true,max_jobs:5,wake_only:true,auto_pump:true,pump:true,backend_budget_loop_requested:true,max_cycles:18,max_jobs_per_cycle:1,max_ms:70000,max_pump_chains:30,static_players_max_chunks_requested:5,no_browser_loop:true,no_control_room_to_orchestrator_fetch:true});
 }
 
 function runManualSQL(){requestJSON("MANUAL SQL > Run",SQL_URL,{sql:document.getElementById("sqlInput").value,max_rows:50,max_chars:900})}
