@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-starter-history";
-const VERSION = "alphadog-v2-base-starter-history-v0.4.2-retained-stage-restore-before-queue";
+const VERSION = "alphadog-v2-base-starter-history-v0.4.3-scoped-source-repair";
 const JOB_KEY = "base-starter-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -44,13 +44,13 @@ function baseIdentity(env) {
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "BASE_STARTER_HISTORY_DELTA_NOOP_CURRENT_STATE_READY",
+    status: "BASE_STARTER_HISTORY_SCOPED_SOURCE_REPAIR_READY",
     timestamp_utc: nowUtc(),
-    phase: "starter-history-v0.4.2-retained-stage-restore-before-queue",
+    phase: "starter-history-v0.4.3-scoped-source-repair",
     notes: [
-      "v0.4.2 adds retained-stage restore-before-queue after base promotion, retained-stage delta, and delta no-op are locked.",
-      "Allowed writes: restore missing live delta rows from retained stage only, plus metadata/certification/cursor. No stage mutation, no new batch, no source mining.",
-      "Forbidden in this version: mining, promotion, scoring, ranking, board mutation, and browser pump.",
+      "v0.4.3 adds scoped source repair after base promotion, retained-stage delta, delta no-op, and retained-stage restore are locked.",
+      "Allowed writes: repair missing live + retained-stage delta keys by refetching only the affected game/key, rewriting the retained stage row, and promoting that key. No full sweep, no new batch.",
+      "Forbidden in this version: full sweep, new batch, scoring, ranking, board mutation, and browser pump.",
       "Starter history is source-classified as GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS via official final boxscore gamesStarted == 1."
     ],
     binding_summary: {
@@ -1566,6 +1566,224 @@ async function restoreMissingLiveRowsFromRetainedDeltaStage(env, input) {
   return { ok: pass, data_ok: pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: deltaBatch.batch_id, status, certification: certificationStatus, certification_grade: certificationGrade, rows_read: retainedRows, rows_written: missingBefore > 0 ? missingBefore : 2, rows_promoted: missingBefore > 0 && pass ? missingBefore : 0, external_calls_performed: probe.external_calls || 1, schema, output_json: output, restored_rows: output.restored_rows, queued: false, request_id_created: null, no_mining_calls: true, no_stage_writes: true, no_full_sweep: true, no_new_batch: true, no_cleanup: true, no_browser_pump: true, timestamp_utc: nowUtc() };
 }
 
+async function scopedSourceRepairMissingDeltaKeys(env, input) {
+  const schema = await ensureSchema(env);
+  if (!schema.ok) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: 'schema_failed', certification: 'STARTER_HISTORY_SCHEMA_FAILED', schema, rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0 };
+  const requestId = input.request_id || rid('starter_delta_scoped_repair_req');
+  const chainId = input.chain_id || null;
+  const runId = input.run_id || rid('starter_delta_scoped_repair_run');
+  const rowInput = input.input_json || {};
+  const base = await loadPromotedBaseBatch(env);
+  if (!base) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, status: 'blocked_base_not_promoted', certification: 'STARTER_HISTORY_DELTA_SCOPED_REPAIR_BLOCKED_BASE_NOT_PROMOTED', certification_grade: 'DELTA_REPAIR_BLOCKED', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, schema, no_full_sweep: true, no_new_batch: true };
+  const deltaBatch = await latestPromotedDeltaBatch(env);
+  if (!deltaBatch) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, status: 'blocked_no_promoted_retained_delta_batch', certification: 'STARTER_HISTORY_DELTA_SCOPED_REPAIR_BLOCKED_NO_PROMOTED_RETAINED_DELTA_BATCH', certification_grade: 'DELTA_REPAIR_BLOCKED', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, schema, no_full_sweep: true, no_new_batch: true };
+
+  const startDate = ymd(rowInput.delta_start_date || rowInput.delta_reserved_start_date || input.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE);
+  const endDate = ymd(rowInput.delta_end_date || input.delta_end_date || new Date().toISOString().slice(0,10));
+  const probe = await latestCompleteStarterHistoryDateFromSchedule(env, startDate, endDate);
+  const targetLimit = Math.max(1, Math.min(3, Number(rowInput.scoped_repair_limit || input.scoped_repair_limit || 1) || 1));
+
+  const missingRows = await all(env.TEAM_DB, `SELECT
+      o.game_pk,
+      o.game_date,
+      o.team_id,
+      o.opponent_team_id,
+      o.starter_player_id,
+      o.details_json,
+      o.source_endpoint,
+      CAST(o.game_pk AS TEXT) || '_' || o.team_id AS starter_key
+    FROM starter_history_outcomes o
+    LEFT JOIN starter_history h
+      ON h.starter_key = CAST(o.game_pk AS TEXT) || '_' || o.team_id
+    LEFT JOIN starter_history_stage s
+      ON s.batch_id = o.batch_id
+     AND s.starter_key = CAST(o.game_pk AS TEXT) || '_' || o.team_id
+    WHERE o.batch_id = ?
+      AND o.outcome_level = 'STARTER'
+      AND o.outcome_category = 'PROMOTED_ROWS'
+      AND o.status IN ('STAGED_DELTA_RETAINED','STAGED_BASE_ONLY','STAGED_PROBE_ONLY')
+      AND h.starter_key IS NULL
+      AND s.starter_key IS NULL
+    ORDER BY o.game_date DESC, o.game_pk DESC, o.team_id
+    LIMIT ?`, deltaBatch.batch_id, targetLimit);
+
+  const missingStageOnly = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM starter_history_outcomes o
+    LEFT JOIN starter_history_stage s ON s.batch_id=o.batch_id AND s.starter_key=CAST(o.game_pk AS TEXT) || '_' || o.team_id
+    WHERE o.batch_id=? AND o.outcome_level='STARTER' AND o.outcome_category='PROMOTED_ROWS' AND o.status IN ('STAGED_DELTA_RETAINED','STAGED_BASE_ONLY','STAGED_PROBE_ONLY') AND s.starter_key IS NULL`, deltaBatch.batch_id);
+  const missingLiveOnly = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM starter_history_outcomes o
+    LEFT JOIN starter_history h ON h.starter_key=CAST(o.game_pk AS TEXT) || '_' || o.team_id
+    WHERE o.batch_id=? AND o.outcome_level='STARTER' AND o.outcome_category='PROMOTED_ROWS' AND o.status IN ('STAGED_DELTA_RETAINED','STAGED_BASE_ONLY','STAGED_PROBE_ONLY') AND h.starter_key IS NULL`, deltaBatch.batch_id);
+
+  let externalCalls = probe.external_calls || 1;
+  let scopedGamesRefetched = 0;
+  let rowsStaged = 0;
+  let rowsPromoted = 0;
+  let sourceErrorCount = 0;
+  let unclearCount = 0;
+  const repairedKeys = [];
+  const failedKeys = [];
+  const seenGames = new Set();
+
+  for (const miss of missingRows) {
+    const gamePk = num(miss.game_pk);
+    const targetTeamId = str(miss.team_id);
+    const gameDate = ymd(miss.game_date);
+    let starterDetails = {};
+    try { starterDetails = JSON.parse(miss.details_json || '{}'); } catch (_) { starterDetails = {}; }
+    let gameDetails = await first(env.TEAM_DB, `SELECT details_json FROM starter_history_outcomes WHERE batch_id=? AND outcome_level='GAME' AND game_pk=? ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC LIMIT 1`, deltaBatch.batch_id, gamePk);
+    try { gameDetails = gameDetails ? JSON.parse(gameDetails.details_json || '{}') : {}; } catch (_) { gameDetails = {}; }
+    const boxEndpoint = `/api/v1/game/${gamePk}/boxscore`;
+    const box = await fetchMlbJson(env, boxEndpoint);
+    externalCalls += 1;
+    seenGames.add(gamePk);
+    scopedGamesRefetched = seenGames.size;
+    if (!box.ok) {
+      sourceErrorCount += 1;
+      failedKeys.push({ starter_key: miss.starter_key, reason: 'boxscore_http_error_scoped_repair', http_status: box.http_status });
+      await insertOutcome(env, { batch_id: deltaBatch.batch_id, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season: seasonFromDate(gameDate), team_id: targetTeamId, opponent_team_id: miss.opponent_team_id, starter_player_id: miss.starter_player_id, outcome_level: 'STARTER', outcome_category: 'REPAIR_REQUIRED', status: 'SOURCE_ERROR', reason: 'boxscore_http_error_scoped_repair', source_endpoint: box.endpoint, details: { starter_key: miss.starter_key, http_status: box.http_status, text_preview: box.text_preview } });
+      continue;
+    }
+    let side = starterDetails.side || null;
+    if (!side) {
+      const awayTeamNode = teamBox(box.json, 'away');
+      const homeTeamNode = teamBox(box.json, 'home');
+      const awayParent = awayTeamNode && awayTeamNode.team && awayTeamNode.team.id != null ? String(awayTeamNode.team.id) : null;
+      const homeParent = homeTeamNode && homeTeamNode.team && homeTeamNode.team.id != null ? String(homeTeamNode.team.id) : null;
+      if (awayParent === targetTeamId) side = 'away';
+      if (homeParent === targetTeamId) side = 'home';
+    }
+    if (!side || !['away','home'].includes(side)) {
+      unclearCount += 1;
+      failedKeys.push({ starter_key: miss.starter_key, reason: 'target_side_unresolved_scoped_repair' });
+      await insertOutcome(env, { batch_id: deltaBatch.batch_id, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season: seasonFromDate(gameDate), team_id: targetTeamId, opponent_team_id: miss.opponent_team_id, starter_player_id: miss.starter_player_id, outcome_level: 'STARTER', outcome_category: 'REPAIR_REQUIRED', status: 'UNCLEAR', reason: 'target_side_unresolved_scoped_repair', source_endpoint: box.endpoint, details: { starter_key: miss.starter_key, starter_details: starterDetails } });
+      continue;
+    }
+    const otherSide = side === 'away' ? 'home' : 'away';
+    const teamNode = teamBox(box.json, side);
+    const starter = findStarterFromBoxTeam(teamNode);
+    const playerId = playerIdFromStarter(starter);
+    const teamId = targetTeamId;
+    const opponentTeamId = str(miss.opponent_team_id || gameDetails[`${otherSide}_team_id`] || null);
+    if (!starter || !playerId || starter.source_type !== 'official_final_boxscore_games_started' || String(playerId) !== String(miss.starter_player_id || playerId) || !teamId || !opponentTeamId) {
+      unclearCount += 1;
+      failedKeys.push({ starter_key: miss.starter_key, reason: 'actual_starter_not_confirmed_by_boxscore_gamesStarted_scoped_repair', player_id: playerId, expected_player_id: miss.starter_player_id });
+      await insertOutcome(env, { batch_id: deltaBatch.batch_id, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season: seasonFromDate(gameDate), team_id: teamId, opponent_team_id: opponentTeamId, starter_player_id: playerId || miss.starter_player_id, outcome_level: 'STARTER', outcome_category: 'REPAIR_REQUIRED', status: 'UNCLEAR', reason: 'actual_starter_not_confirmed_by_boxscore_gamesStarted_scoped_repair', source_endpoint: box.endpoint, details: { starter_key: miss.starter_key, side, player_id: playerId, expected_player_id: miss.starter_player_id, starter_source_type: starter ? starter.source_type : null } });
+      continue;
+    }
+    const line = extractPitchingLine(starter.player_node);
+    const starterKey = `${gamePk}_${teamId}`;
+    const stageRow = {
+      batch_id: deltaBatch.batch_id, run_id: runId, request_id: requestId, starter_key: starterKey, game_pk: gamePk, game_date: gameDate, season: seasonFromDate(gameDate), game_type: str(gameDetails.game_type || 'R'), game_status: str(gameDetails.game_status || 'Final'),
+      team_id: teamId, team_name: null, opponent_team_id: opponentTeamId, opponent_team_name: null, is_home: side === 'home', venue_id: num(gameDetails.venue_id),
+      starter_player_id: playerId, starter_name: playerNameFromStarter(starter), throws: throwsFromStarter(starter), starter_source_path: starter.source_path.replace('{side}', side), starter_source_type: starter.source_type,
+      source_endpoint: box.endpoint, raw_json: { side, game_context: gameDetails, starter_player_node: starter.player_node, pitching_line: line, scoped_source_repair: true, stage_retained: true, repaired_starter_key: starterKey }, ...line
+    };
+    await insertStage(env, stageRow);
+    await run(env.TEAM_DB, `UPDATE starter_history_stage SET ingestion_mode='delta_scoped_source_repair', certification_status='STARTER_HISTORY_DELTA_SCOPED_SOURCE_REPAIR_CERTIFIED_PROMOTED_RETAINED', certification_grade='DELTA_REPAIR_PASS', promoted_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=? AND starter_key=?`, deltaBatch.batch_id, starterKey);
+    await run(env.TEAM_DB, `INSERT OR REPLACE INTO starter_history (
+      starter_key, player_id, team_id, game_date, game_pk, starter_json, updated_at,
+      season, game_type, game_status, opponent_team_id, is_home, venue_id, starter_name, throws,
+      source_key, source_endpoint, source_confidence, data_feed_key, source_season, source_game_type, ingestion_mode, batch_id, run_id,
+      certification_status, certification_grade, source_snapshot_date, raw_json, created_at, certified_at, promoted_at,
+      starter_player_id, started_game, starter_source_path, starter_source_type, innings_pitched, outs_recorded, batters_faced, pitches, strikes,
+      hits_allowed, runs_allowed, earned_runs, walks_allowed, strikeouts, home_runs_allowed
+    )
+    SELECT
+      starter_key, starter_player_id, team_id, game_date, game_pk, raw_json, CURRENT_TIMESTAMP,
+      season, game_type, game_status, opponent_team_id, is_home, venue_id, starter_name, throws,
+      source_key, source_endpoint, source_confidence, data_feed_key, source_season, source_game_type, 'delta_scoped_source_repair_promoted', batch_id, ?,
+      'STARTER_HISTORY_DELTA_SCOPED_SOURCE_REPAIR_CERTIFIED_PROMOTED_RETAINED', 'DELTA_REPAIR_PASS', source_snapshot_date, raw_json, COALESCE(created_at, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+      starter_player_id, started_game, starter_source_path, starter_source_type, innings_pitched, outs_recorded, batters_faced, pitches, strikes,
+      hits_allowed, runs_allowed, earned_runs, walks_allowed, strikeouts, home_runs_allowed
+    FROM starter_history_stage
+    WHERE batch_id=? AND starter_key=?`, runId, deltaBatch.batch_id, starterKey);
+    await insertOutcome(env, { batch_id: deltaBatch.batch_id, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season: seasonFromDate(gameDate), team_id: teamId, opponent_team_id: opponentTeamId, starter_player_id: playerId, outcome_level: 'STARTER', outcome_category: 'REPAIR_REQUIRED', status: 'SCOPED_SOURCE_REPAIR_COMPLETED', reason: 'missing_live_and_retained_stage_key_refetched_from_official_boxscore', source_endpoint: box.endpoint, details: { starter_key: starterKey, side, no_full_sweep: true, no_new_batch: true, stage_retained: true } });
+    rowsStaged += 1;
+    rowsPromoted += 1;
+    repairedKeys.push(starterKey);
+  }
+
+  const after = await first(env.TEAM_DB, `SELECT
+    (SELECT COUNT(DISTINCT starter_key) FROM starter_history_stage WHERE batch_id=?) AS retained_stage_rows,
+    (SELECT COUNT(DISTINCT starter_key) FROM starter_history WHERE batch_id=?) AS live_rows_for_batch,
+    (SELECT COUNT(*) FROM starter_history_stage s LEFT JOIN starter_history h ON h.starter_key=s.starter_key WHERE s.batch_id=? AND h.starter_key IS NULL) AS missing_live_rows_after,
+    (SELECT COUNT(*) FROM starter_history_outcomes o LEFT JOIN starter_history_stage s ON s.batch_id=o.batch_id AND s.starter_key=CAST(o.game_pk AS TEXT) || '_' || o.team_id WHERE o.batch_id=? AND o.outcome_level='STARTER' AND o.outcome_category='PROMOTED_ROWS' AND o.status IN ('STAGED_DELTA_RETAINED','STAGED_BASE_ONLY','STAGED_PROBE_ONLY') AND s.starter_key IS NULL) AS missing_stage_rows_after,
+    (SELECT COUNT(*) FROM (SELECT starter_key, COUNT(*) c FROM starter_history WHERE batch_id=? GROUP BY starter_key HAVING c>1)) AS duplicate_live_keys,
+    (SELECT COUNT(*) FROM (SELECT starter_key, COUNT(*) c FROM starter_history_stage WHERE batch_id=? GROUP BY starter_key HAVING c>1)) AS duplicate_stage_keys,
+    (SELECT COUNT(*) FROM starter_history WHERE batch_id=? AND (game_pk IS NULL OR game_date IS NULL OR team_id IS NULL OR opponent_team_id IS NULL OR starter_player_id IS NULL OR raw_json IS NULL OR starter_source_type IS NULL OR starter_source_path IS NULL)) AS missing_live_identity_count,
+    (SELECT COUNT(*) FROM starter_history_stage WHERE batch_id=? AND (game_pk IS NULL OR game_date IS NULL OR team_id IS NULL OR opponent_team_id IS NULL OR starter_player_id IS NULL OR raw_json IS NULL OR starter_source_type IS NULL OR starter_source_path IS NULL)) AS missing_stage_identity_count,
+    (SELECT COUNT(*) FROM starter_history) AS total_live_rows,
+    (SELECT COUNT(DISTINCT starter_key) FROM starter_history) AS distinct_starter_keys,
+    (SELECT COUNT(DISTINCT game_pk) FROM starter_history) AS distinct_games,
+    (SELECT MAX(game_date) FROM starter_history_stage WHERE batch_id=?) AS retained_max_game_date,
+    (SELECT MAX(game_date) FROM starter_history WHERE batch_id=?) AS live_max_game_date
+  `, deltaBatch.batch_id, deltaBatch.batch_id, deltaBatch.batch_id, deltaBatch.batch_id, deltaBatch.batch_id, deltaBatch.batch_id, deltaBatch.batch_id, deltaBatch.batch_id, deltaBatch.batch_id, deltaBatch.batch_id);
+  const expectedRows = num(deltaBatch.expected_starter_rows) || 0;
+  const retainedRows = num(after && after.retained_stage_rows) || 0;
+  const liveRowsAfter = num(after && after.live_rows_for_batch) || 0;
+  const missingStageAfter = num(after && after.missing_stage_rows_after) || 0;
+  const missingLiveAfter = num(after && after.missing_live_rows_after) || 0;
+  const duplicateLiveKeys = num(after && after.duplicate_live_keys) || 0;
+  const duplicateStageKeys = num(after && after.duplicate_stage_keys) || 0;
+  const missingLiveIdentity = num(after && after.missing_live_identity_count) || 0;
+  const missingStageIdentity = num(after && after.missing_stage_identity_count) || 0;
+  const missingBothBefore = missingRows.length;
+  const pass = expectedRows > 0 && missingBothBefore > 0 && rowsPromoted === missingBothBefore && retainedRows === expectedRows && liveRowsAfter === expectedRows && missingStageAfter === 0 && missingLiveAfter === 0 && duplicateLiveKeys === 0 && duplicateStageKeys === 0 && missingLiveIdentity === 0 && missingStageIdentity === 0 && sourceErrorCount === 0 && unclearCount === 0;
+  const certificationStatus = pass ? 'STARTER_HISTORY_DELTA_SCOPED_SOURCE_REPAIR_CERTIFIED_PROMOTED_RETAINED' : (missingBothBefore === 0 ? 'STARTER_HISTORY_DELTA_SCOPED_SOURCE_REPAIR_NOOP_NO_MISSING_KEYS' : 'STARTER_HISTORY_DELTA_SCOPED_SOURCE_REPAIR_BLOCKED_VERIFY_FAILED');
+  const certificationGrade = pass ? 'DELTA_REPAIR_PASS' : (missingBothBefore === 0 ? 'DELTA_NOOP_PASS' : 'DELTA_REPAIR_BLOCKED');
+  const status = pass ? 'DELTA_STARTER_HISTORY_SCOPED_SOURCE_REPAIR_COMPLETED' : (missingBothBefore === 0 ? 'DELTA_STARTER_HISTORY_SCOPED_REPAIR_NOOP_CURRENT' : 'DELTA_STARTER_HISTORY_SCOPED_SOURCE_REPAIR_VERIFY_FAILED');
+  const output = {
+    source_shape_classification: 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS',
+    actual_starter_identification_path: 'MLB StatsAPI /api/v1/game/{gamePk}/boxscore -> teams.{away,home}.players.ID*.stats.pitching.gamesStarted == 1',
+    source_final_date_check: probe,
+    retained_delta_batch_id: deltaBatch.batch_id,
+    expected_starter_rows: expectedRows,
+    missing_live_rows_detected: num(missingLiveOnly && missingLiveOnly.c) || 0,
+    missing_stage_rows_detected: num(missingStageOnly && missingStageOnly.c) || 0,
+    retained_restore_rows_available: 0,
+    scoped_starter_keys_to_refetch: missingBothBefore,
+    scoped_games_refetched: scopedGamesRefetched,
+    repaired_keys: repairedKeys,
+    failed_keys: failedKeys,
+    rows_staged: rowsStaged,
+    rows_promoted: rowsPromoted,
+    retained_stage_rows: retainedRows,
+    live_rows_for_batch: liveRowsAfter,
+    missing_stage_rows_after: missingStageAfter,
+    missing_live_rows_after: missingLiveAfter,
+    duplicate_stage_keys: duplicateStageKeys,
+    duplicate_live_keys: duplicateLiveKeys,
+    missing_stage_identity_count: missingStageIdentity,
+    missing_live_identity_count: missingLiveIdentity,
+    source_error_count: sourceErrorCount,
+    unclear_count: unclearCount,
+    total_live_rows: num(after && after.total_live_rows) || 0,
+    distinct_starter_keys: num(after && after.distinct_starter_keys) || 0,
+    distinct_games: num(after && after.distinct_games) || 0,
+    retained_max_game_date: ymd(after && after.retained_max_game_date),
+    live_max_game_date: ymd(after && after.live_max_game_date),
+    no_full_sweep: true,
+    no_new_batch: true,
+    stage_retained: true,
+    no_delta_stage_cleanup: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_board_mutation: true,
+    next_action: pass ? 'SCOPED_SOURCE_REPAIR_LOCKED_STARTER_HISTORY_INCREMENTAL_READY' : 'INSPECT_SCOPED_SOURCE_REPAIR_FAILURE'
+  };
+  await run(env.TEAM_DB, `INSERT INTO starter_history_certifications (
+    certification_id, batch_id, run_id, request_id, worker_name, version, certification_status, certification_grade, source_shape_classification, actual_starter_identification_path, safest_key_model,
+    expected_game_count, expected_starter_rows, staged_starter_rows, duplicate_stage_keys, missing_required_identity_count, source_error_count, unclear_count, no_live_promotion, full_base_backfill_blocked, delta_update_blocked, output_json
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS', ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 1, ?)`,
+    rid('starter_cert'), deltaBatch.batch_id, runId, requestId, WORKER_NAME, VERSION, certificationStatus, certificationGrade,
+    output.actual_starter_identification_path, 'game_pk + team_id; pitcher_id + game_pk + team_id is secondary validation', num(deltaBatch.expected_game_count) || 0, expectedRows, retainedRows, duplicateStageKeys, missingStageIdentity, sourceErrorCount, unclearCount, safeJson(output));
+  await run(env.TEAM_DB, `INSERT OR REPLACE INTO starter_history_cursor (cursor_key, worker_name, version, ingestion_mode, status, source_shape_classification, base_backfill_cutoff_date, delta_reserved_start_date, last_probe_date, last_completed_game_date, last_batch_id, last_run_id, output_json, updated_at)
+    VALUES ('starter_history_delta_scoped_source_repair', ?, ?, 'delta_scoped_source_repair', ?, 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    WORKER_NAME, VERSION, certificationStatus, DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, startDate, ymd(probe.latest_complete_game_date || after.live_max_game_date || after.retained_max_game_date), deltaBatch.batch_id, runId, safeJson(output));
+  return { ok: pass, data_ok: pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: deltaBatch.batch_id, status, certification: certificationStatus, certification_grade: certificationGrade, rows_read: missingBothBefore, rows_written: rowsStaged + rowsPromoted + 2, rows_staged: rowsStaged, rows_promoted: rowsPromoted, external_calls_performed: externalCalls, schema, output_json: output, missing_live_rows_detected: output.missing_live_rows_detected, missing_stage_rows_detected: output.missing_stage_rows_detected, scoped_starter_keys_to_refetch: missingBothBefore, scoped_games_refetched: scopedGamesRefetched, repaired_keys: repairedKeys, no_full_sweep: true, no_new_batch: true, stage_retained: true, no_delta_stage_cleanup: true, no_browser_pump: true, timestamp_utc: nowUtc() };
+}
+
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -1583,13 +1801,14 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const mode = String((input.input_json && input.input_json.mode) || input.mode || "base_backfill_stage_only");
+      if (mode === "delta_scoped_source_repair") return jsonResponse(await scopedSourceRepairMissingDeltaKeys(env, input));
       if (mode === "delta_retained_stage_restore_before_queue") return jsonResponse(await restoreMissingLiveRowsFromRetainedDeltaStage(env, input));
       if (mode === "delta_noop_current_state") return jsonResponse(await runDeltaNoopCurrentState(env, input));
       if (mode === "delta_update") return jsonResponse(await runDeltaUpdateRetainedStage(env, input));
       if (mode === "source_lock_probe") return jsonResponse(await runSourceProbe(env, input));
       if (mode === "base_backfill" || mode === "base_backfill_stage_only") return jsonResponse(await runBaseBackfillStageOnly(env, input));
       if (mode === "base_promotion_stage_clean" || mode === "base_promotion") return jsonResponse(await promoteCertifiedBaseStage(env, input));
-      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode", mode, allowed_modes: ["source_lock_probe", "base_backfill_stage_only", "base_promotion_stage_clean", "delta_update", "delta_noop_current_state", "delta_retained_stage_restore_before_queue"], no_live_promotion: true }, 400);
+      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode", mode, allowed_modes: ["source_lock_probe", "base_backfill_stage_only", "base_promotion_stage_clean", "delta_update", "delta_noop_current_state", "delta_retained_stage_restore_before_queue", "delta_scoped_source_repair"], no_live_promotion: true }, 400);
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }
