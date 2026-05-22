@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.46-base-team-game-logs-base-backfill";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.47-team-game-logs-delta-update";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1720,14 +1720,15 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_team_game_logs_base_backfill_v0_2_0: true,
+      base_team_game_logs_base_backfill_or_delta_v0_3_0: true,
       hot_continuation_ready: true,
       backend_self_continuation_ready: true,
       manual_wake_testing_only: true,
       no_browser_pump: true,
       no_generic_dispatch: true,
       base_backfill_allowed: rowInput.mode === "base_backfill",
-      no_delta_update_execution: true,
+      delta_update_allowed: rowInput.mode === "delta_update",
+      no_delta_update_execution: rowInput.mode !== "delta_update",
       no_hitter_mutation: true,
       no_pitcher_mutation: true,
       no_splits_mutation: true,
@@ -1757,8 +1758,8 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
   }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_team_game_logs_dispatch_completed', 'Orchestrator completed exact base-team-game-logs v0.2.0 base_backfill dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, rows_promoted: output && output.rows_promoted ? output.rows_promoted : 0, external_calls: externalCalls, mode: rowInput.mode || "base_backfill", base_backfill: rowInput.mode === "base_backfill", partial_continue: partialContinue })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_team_game_logs_dispatch_completed', 'Orchestrator completed exact base-team-game-logs v0.3.0 base/delta dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, rows_promoted: output && output.rows_promoted ? output.rows_promoted : 0, external_calls: externalCalls, mode: rowInput.mode || "base_backfill", base_backfill: rowInput.mode === "base_backfill", delta_update: rowInput.mode === "delta_update", partial_continue: partialContinue })
   );
 
   return cappedOutput;
