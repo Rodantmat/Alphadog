@@ -145,6 +145,24 @@ CREATE TABLE IF NOT EXISTS hitter_game_logs_stage (
   UNIQUE(batch_id, player_id, game_pk, group_type)
 );
 
+CREATE TABLE IF NOT EXISTS hitter_game_log_repair_registry (
+  registry_key TEXT PRIMARY KEY,
+  target_batch_id TEXT NOT NULL,
+  player_id INTEGER NOT NULL,
+  game_pk INTEGER NOT NULL,
+  season INTEGER NOT NULL,
+  group_type TEXT NOT NULL DEFAULT 'hitting',
+  game_date TEXT,
+  source_endpoint TEXT,
+  status TEXT,
+  created_by_version TEXT,
+  notes TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_hitter_game_log_repair_registry_target ON hitter_game_log_repair_registry(target_batch_id, player_id, game_pk, group_type);
+
 CREATE TABLE IF NOT EXISTS hitter_game_log_batches (
   batch_id TEXT PRIMARY KEY,
   run_id TEXT NOT NULL,
