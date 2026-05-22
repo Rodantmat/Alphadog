@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.53-base-starter-history-promotion";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.54-base-starter-history-delta-retained-stage";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1831,7 +1831,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
   }
 
   const rawStatus = String((output && output.status) || "").toLowerCase();
-  const partialContinue = !!(output && output.ok && (rawStatus === "partial_continue" || rawStatus === "source_shape_probe_partial_continue" || rawStatus === "partial_continue_base_starter_history_stage_only" || rawStatus === "partial_continue_base_starter_history_finalization_only" || output.continuation_required === true || output.orchestrator_should_self_continue === true));
+  const partialContinue = !!(output && output.ok && (rawStatus === "partial_continue" || rawStatus === "source_shape_probe_partial_continue" || rawStatus === "partial_continue_base_starter_history_stage_only" || rawStatus === "partial_continue_base_starter_history_finalization_only" || rawStatus === "partial_continue_base_starter_history_delta_update" || output.continuation_required === true || output.orchestrator_should_self_continue === true));
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
   const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
@@ -1852,6 +1852,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      base_starter_history_v0_4_0_delta_update_retained_stage: starterMode === "delta_update",
       base_starter_history_v0_3_0_base_promotion_stage_clean: starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion",
       base_starter_history_v0_2_1_hot_continuation_stage_only: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill",
       hot_continuation_ready: true,
@@ -1862,8 +1863,9 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       source_probe_only: starterMode === "source_lock_probe",
       stage_only_base_backfill_allowed: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill",
       base_promotion_stage_clean_allowed: starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion",
-      no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion"),
-      no_delta_update_execution: true,
+      delta_update_retained_stage_allowed: starterMode === "delta_update",
+      no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion" || starterMode === "delta_update"),
+      no_delta_update_execution: starterMode !== "delta_update",
       no_hitter_mutation: true,
       no_pitcher_mutation: true,
       no_splits_mutation: true,
@@ -1895,7 +1897,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_starter_history_dispatch_completed', 'Orchestrator completed exact base-starter-history exact dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, mode: starterMode, source_probe_only: starterMode === "source_lock_probe", stage_only_base_backfill: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill", no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion"), partial_continue: partialContinue })
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, mode: starterMode, source_probe_only: starterMode === "source_lock_probe", stage_only_base_backfill: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill", delta_update: starterMode === "delta_update", no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion" || starterMode === "delta_update"), partial_continue: partialContinue })
   );
 
   return cappedOutput;
