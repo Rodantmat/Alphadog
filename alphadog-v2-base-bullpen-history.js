@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-bullpen-history";
-const VERSION = "alphadog-v2-base-bullpen-history-v0.1.0-schema-source-lock-probe";
+const VERSION = "alphadog-v2-base-bullpen-history-v0.1.1-mlb-base-url-normalizer";
 const JOB_KEY = "base-bullpen-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -302,7 +302,7 @@ async function ensureSchema(env) {
     catch (err) { schemaActions.push({ action: "run_live_index_after_columns", ok: false, sql_preview: liveIndexSql.slice(0, 100), error: String(err && err.message ? err.message : err) }); }
   }
 
-  await run(db, `INSERT OR REPLACE INTO team_schema_migrations (migration_key, package_version, notes) VALUES ('bullpen_history_v0_1_0_schema_source_lock_probe', ?, 'Additive bullpen history lifecycle schema for source-lock probe only; no live promotion')`, VERSION);
+  await run(db, `INSERT OR REPLACE INTO team_schema_migrations (migration_key, package_version, notes) VALUES ('bullpen_history_v0_1_1_mlb_base_url_normalizer', ?, 'v0.1.1 keeps v0.1.0 additive lifecycle schema and fixes MLB_API_BASE_URL normalization for source-lock probe; no live promotion')`, VERSION);
   return schemaActions;
 }
 
@@ -324,9 +324,21 @@ function scheduleEndpointCandidates(sampleDate) {
     `/api/v1/schedule?sportId=1&gameTypes=R&startDate=${d}&endDate=${d}`
   ];
 }
-function mlbBase(env) { return String((env && env.MLB_API_BASE_URL) || "https://statsapi.mlb.com").replace(/\/$/, ""); }
+function mlbBase(env) {
+  let base = String((env && env.MLB_API_BASE_URL) || "https://statsapi.mlb.com").replace(/\/+$/, "");
+  // Some deployed environments store MLB_API_BASE_URL as https://statsapi.mlb.com/api/v1.
+  // This worker keeps endpoint paths in official /api/v1/... form, so normalize the base
+  // back to the StatsAPI origin to avoid api/v1/api/v1 double-prefix 404s.
+  base = base.replace(/\/api\/v1$/i, "");
+  return base || "https://statsapi.mlb.com";
+}
+function normalizeMlbEndpoint(endpoint) {
+  const e = String(endpoint || "");
+  return e.startsWith("/") ? e : `/${e}`;
+}
 async function fetchMlbJson(env, endpoint) {
-  const url = `${mlbBase(env)}${endpoint}`;
+  const normalizedEndpoint = normalizeMlbEndpoint(endpoint);
+  const url = `${mlbBase(env)}${normalizedEndpoint}`;
   const headers = { "accept": "application/json" };
   if (env && env.MLB_API_USER_AGENT) headers["user-agent"] = String(env.MLB_API_USER_AGENT);
   try {
@@ -334,9 +346,9 @@ async function fetchMlbJson(env, endpoint) {
     const text = await resp.text();
     let json = null;
     try { json = JSON.parse(text); } catch {}
-    return { ok: resp.ok && !!json, http_status: resp.status, endpoint, url, json, text_preview: text.slice(0, 500) };
+    return { ok: resp.ok && !!json, http_status: resp.status, endpoint: normalizedEndpoint, url, json, text_preview: text.slice(0, 500) };
   } catch (err) {
-    return { ok: false, http_status: 0, endpoint, url, json: null, text_preview: String(err && err.message ? err.message : err).slice(0, 500) };
+    return { ok: false, http_status: 0, endpoint: normalizedEndpoint, url, json: null, text_preview: String(err && err.message ? err.message : err).slice(0, 500) };
   }
 }
 async function fetchScheduleWithFallbacks(env, sampleDate) {
