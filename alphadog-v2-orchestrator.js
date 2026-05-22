@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.39-delta-pitcher-splits-stage-retain-refresh";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.40-pitcher-splits-scoped-remine-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {

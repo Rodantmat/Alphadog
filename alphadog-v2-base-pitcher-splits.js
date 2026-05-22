@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.1-delta-noop-restore-scoped-repair-gate";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.2-scoped-remine-repair-fix";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
@@ -36,9 +36,10 @@ function bindingPresence(env, names) { const out = {}; for (const n of names) ou
 function varPresence(env, names) { const out = {}; for (const n of names) out[n] = !!(env && env[n] !== undefined && env[n] !== null && String(env[n]).length > 0); return out; }
 function allTrue(obj) { return Object.values(obj).every(Boolean); }
 async function readJsonSafe(request) { try { return await request.json(); } catch (_) { return {}; } }
-async function all(db, sql, ...binds) { const s = db.prepare(sql); const r = binds.length ? await s.bind(...binds).all() : await s.all(); return r.results || []; }
+function cleanBinds(binds) { return binds.map(v => v === undefined ? null : v); }
+async function all(db, sql, ...binds) { const s = db.prepare(sql); const r = binds.length ? await s.bind(...cleanBinds(binds)).all() : await s.all(); return r.results || []; }
 async function first(db, sql, ...binds) { const rows = await all(db, sql, ...binds); return rows[0] || null; }
-async function run(db, sql, ...binds) { const s = db.prepare(sql); return binds.length ? await s.bind(...binds).run() : await s.run(); }
+async function run(db, sql, ...binds) { const s = db.prepare(sql); return binds.length ? await s.bind(...cleanBinds(binds)).run() : await s.run(); }
 async function tryRun(db, sql, ...binds) { try { const r = await run(db, sql, ...binds); return { ok: true, meta: r && r.meta ? r.meta : null }; } catch (err) { return { ok: false, error: String(err && err.message ? err.message : err) }; } }
 
 function baseIdentity(env) {
@@ -53,7 +54,7 @@ function baseIdentity(env) {
     job_key: JOB_KEY,
     status: "BASE_PROMOTION_READY",
     timestamp_utc: nowUtc(),
-    phase: "base_pitcher_splits_v0_5_1_delta_noop_restore_scoped_repair_gate",
+    phase: "base_pitcher_splits_v0_5_2_scoped_remine_repair_fix",
     source_lock: {
       endpoint_pattern: SOURCE_ENDPOINT_PATTERN,
       source_key: SOURCE_KEY,
@@ -63,7 +64,8 @@ function baseIdentity(env) {
       source_probe_completed_v0_1_1: true,
       stage_only_full_universe_completed_v0_2_0: true,
       certified_stage_promotion_enabled: true,
-      delta_noop_restore_scoped_repair_gate_enabled: true
+      delta_noop_restore_scoped_repair_gate_enabled: true,
+      scoped_remine_repair_bind_sanitizer_v0_5_2: true
     },
     hard_blocks: {
       live_pitcher_splits_promotion_enabled_from_certified_stage_only: true,
@@ -327,7 +329,7 @@ async function ensureSchema(env) {
   ];
   for (const [label, sql] of indexes) await exec(label, sql);
 
-  await exec("record_schema_migration_v0_5_1", "INSERT OR REPLACE INTO pitcher_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_pitcher_splits_v0_5_1_delta_noop_restore_scoped_repair_gate', ?, CURRENT_TIMESTAMP, 'Base Pitcher Splits v0.5.1 disables default full refresh and adds no-op, retained-registry restore, and scoped repair gate')", VERSION);
+  await exec("record_schema_migration_v0_5_1", "INSERT OR REPLACE INTO pitcher_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('base_pitcher_splits_v0_5_2_scoped_remine_repair_fix', ?, CURRENT_TIMESTAMP, 'Base Pitcher Splits v0.5.2 fixes scoped re-mine undefined bind handling; no full sweep; one-player repair only')", VERSION);
   return { attempted: results.length, failed: results.filter(r => !r.ok).length, results };
 }
 
@@ -1007,7 +1009,7 @@ async function scopedRemineMissingKey(env, baseBatch, key, input) {
     VALUES ('base_pitcher_splits_delta_update_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, baseBatch.batch_id, runId, 'delta_noop_restore_scoped_repair_gate', 'DELTA_PITCHER_SPLITS_SCOPED_REPAIR_COMPLETED', SOURCE_SEASON, key.source_snapshot_date || todayUtc(), key.player_id, 0, liveChecks.live_rows, liveChecks.live_rows, 1, null, null, safeJson(checks));
   await run(env.STATS_PITCHER_DB, `INSERT INTO pitcher_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('pitcher_splits_scoped_repair_cert'), baseBatch.batch_id, runId, 'delta_noop_restore_scoped_repair_gate', 'DELTA_PITCHER_SPLITS_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED', 'DELTA_REPAIR_PASS', safeJson(checks), 1, 1, liveChecks.duplicate_live_keys, asInt(baseBatch.source_no_data_count,0), 0, key.source_snapshot_date || todayUtc());
-  return { ok: true, data_ok: liveChecks.duplicate_live_keys === 0, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: 'DELTA_PITCHER_SPLITS_SCOPED_REPAIR_COMPLETED', certification: 'DELTA_PITCHER_SPLITS_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED', certification_grade: 'DELTA_REPAIR_PASS', missing_live_rows_detected: 1, retained_restore_rows_available: 0, scoped_players_to_refetch: 1, external_calls_performed: 1, no_full_sweep: true, rows_read: 1, rows_written: 2, rows_staged: 1, rows_promoted: 1, continuation_required: false, orchestrator_should_self_continue: false, scoped_repair: checks, timestamp_utc: nowUtc() };
+  return { ok: true, data_ok: liveChecks.duplicate_live_keys === 0, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'DELTA_PITCHER_SPLITS_SCOPED_REPAIR_COMPLETED', certification: 'DELTA_PITCHER_SPLITS_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED', certification_grade: 'DELTA_REPAIR_PASS', missing_live_rows_detected: 1, retained_restore_rows_available: 0, scoped_players_to_refetch: 1, external_calls_performed: 1, no_full_sweep: true, rows_read: 1, rows_written: 2, rows_staged: 1, rows_promoted: 1, continuation_required: false, orchestrator_should_self_continue: false, scoped_repair: checks, timestamp_utc: nowUtc() };
 }
 
 async function runDeltaNoopRestoreScopedRepairGate(env, input) {
