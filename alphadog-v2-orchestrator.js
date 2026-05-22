@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.55-base-starter-history-delta-noop";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.56-base-starter-history-retained-restore";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1852,6 +1852,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      base_starter_history_v0_4_2_retained_stage_restore_before_queue: starterMode === "delta_retained_stage_restore_before_queue",
       base_starter_history_v0_4_1_delta_noop_current_state: starterMode === "delta_noop_current_state",
       base_starter_history_v0_4_0_delta_update_retained_stage: starterMode === "delta_update",
       base_starter_history_v0_3_0_base_promotion_stage_clean: starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion",
@@ -1864,6 +1865,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       source_probe_only: starterMode === "source_lock_probe",
       stage_only_base_backfill_allowed: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill",
       base_promotion_stage_clean_allowed: starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion",
+      delta_retained_stage_restore_before_queue_allowed: starterMode === "delta_retained_stage_restore_before_queue",
       delta_noop_current_state_allowed: starterMode === "delta_noop_current_state",
       delta_update_retained_stage_allowed: starterMode === "delta_update",
       no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion" || starterMode === "delta_update"),
