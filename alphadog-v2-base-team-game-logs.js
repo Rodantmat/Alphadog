@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-team-game-logs";
-const VERSION = "alphadog-v2-base-team-game-logs-v0.2.0-base-backfill-through-2026-05-18";
+const VERSION = "alphadog-v2-base-team-game-logs-v0.2.1-distinct-game-universe-cert-fix";
 const JOB_KEY = "base-team-game-logs";
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
 const SOURCE_KEY = "mlb_statsapi_schedule_boxscore_team_totals_probe_v0_1_0";
@@ -451,7 +451,17 @@ async function initializeBaseBackfill(env, input, requestId, chainId, runId, sta
 
   const allGames = [];
   for (const date of (schedule.json?.dates || [])) for (const game of (date.games || [])) allGames.push(game);
-  const finalGames = allGames.filter(g => String(g.gameType || "") === "R" && gameIsFinal(g) && dateGte(normalizeDate(g.officialDate || g.gameDate), startDate) && dateLeq(normalizeDate(g.officialDate || g.gameDate), cutoffDate));
+  const finalGamesRaw = allGames.filter(g => String(g.gameType || "") === "R" && gameIsFinal(g) && dateGte(normalizeDate(g.officialDate || g.gameDate), startDate) && dateLeq(normalizeDate(g.officialDate || g.gameDate), cutoffDate));
+  // MLB schedule date-range responses can include duplicate gamePk rows for special/suspended/resumed listings.
+  // Team game logs are keyed by game_pk + team_id, so the certifiable universe must be DISTINCT game_pk.
+  const seenGamePks = new Set();
+  const finalGames = [];
+  for (const g of finalGamesRaw) {
+    const pk = String(g?.gamePk || "");
+    if (!pk || seenGamePks.has(pk)) continue;
+    seenGamePks.add(pk);
+    finalGames.push(g);
+  }
   let written = 0;
   for (const game of finalGames) {
     const gameDate = normalizeDate(game.officialDate || game.gameDate);
@@ -467,23 +477,26 @@ async function initializeBaseBackfill(env, input, requestId, chainId, runId, sta
   }
   await run(env.TEAM_DB,
     `UPDATE team_game_log_batches SET expected_game_count=?, expected_team_game_rows=?, staged_team_game_rows=0, rows_promoted=0, status='BASE_BACKFILL_RUNNING', certification_status='BASE_BACKFILL_RUNNING', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    finalGames.length, finalGames.length * 2, safeJson({ schedule_endpoint: scheduleEndpoint, games_read: allGames.length, final_regular_season_games_through_cutoff: finalGames.length, expected_team_game_rows: finalGames.length * 2, live_count_before: Number(liveBefore?.c || 0) }), batchId
+    finalGames.length, finalGames.length * 2, safeJson({ schedule_endpoint: scheduleEndpoint, games_read: allGames.length, final_regular_season_games_raw_through_cutoff: finalGamesRaw.length, distinct_final_regular_season_games_through_cutoff: finalGames.length, duplicate_schedule_game_rows_filtered: Math.max(0, finalGamesRaw.length - finalGames.length), expected_team_game_rows: finalGames.length * 2, live_count_before: Number(liveBefore?.c || 0) }), batchId
   );
   await run(env.TEAM_DB,
     `INSERT OR REPLACE INTO team_game_log_cursor (cursor_key, ingestion_mode, source_key, source_season, source_game_type, base_backfill_cutoff_date, delta_reserved_start_date, last_batch_id, last_request_id, status, cursor_json, created_at, updated_at)
      VALUES (?, 'base_backfill', ?, ?, 'R', ?, ?, ?, ?, 'BASE_BACKFILL_RUNNING', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-    BASE_CURSOR_KEY, SOURCE_KEY, season, cutoffDate, DEFAULT_DELTA_START_DATE, batchId, requestId, safeJson({ start_date: startDate, cutoff_date: cutoffDate, schedule_endpoint: scheduleEndpoint, expected_game_count: finalGames.length, expected_team_game_rows: finalGames.length * 2, games_per_tick: DEFAULT_GAMES_PER_TICK })
+    BASE_CURSOR_KEY, SOURCE_KEY, season, cutoffDate, DEFAULT_DELTA_START_DATE, batchId, requestId, safeJson({ start_date: startDate, cutoff_date: cutoffDate, schedule_endpoint: scheduleEndpoint, expected_game_count: finalGames.length, expected_team_game_rows: finalGames.length * 2, duplicate_schedule_game_rows_filtered: Math.max(0, finalGamesRaw.length - finalGames.length), games_per_tick: DEFAULT_GAMES_PER_TICK })
   );
   return { ok: true, data_ok: true, initialized: true, batch_id: batchId, external_calls_performed: externalCalls, rows_read: allGames.length, rows_written: written + 2, expected_game_count: finalGames.length, expected_team_game_rows: finalGames.length * 2 };
 }
 
 async function certifyAndPromoteBaseBackfill(env, batchId, runId, requestId, cutoffDate, externalCallsSoFar, rowsWrittenSoFar) {
   const batch = await first(env.TEAM_DB, "SELECT * FROM team_game_log_batches WHERE batch_id=?", batchId);
-  const expectedGames = Number(batch?.expected_game_count || 0);
-  const expectedRows = Number(batch?.expected_team_game_rows || 0);
+  // Certification derives expected volume from distinct game-level outcome truth, not raw schedule row count.
+  // This lets failed v0.2.0 batches recover when the date-range schedule contained duplicate gamePk entries.
+  const expectedTruth = await first(env.TEAM_DB, "SELECT COUNT(DISTINCT game_pk) AS games FROM team_game_log_outcomes WHERE batch_id=? AND outcome_level='game'", batchId);
+  const expectedGames = Number(expectedTruth?.games || batch?.expected_game_count || 0);
+  const expectedRows = expectedGames * 2;
   const staged = await first(env.TEAM_DB, "SELECT COUNT(*) AS c FROM team_game_log_stage WHERE batch_id=?", batchId);
   const dup = await first(env.TEAM_DB, "SELECT COUNT(*) AS c FROM (SELECT game_pk, team_id, COUNT(*) AS n FROM team_game_log_stage WHERE batch_id=? GROUP BY game_pk, team_id HAVING n>1)", batchId);
-  const missing = await first(env.TEAM_DB, "SELECT SUM(CASE WHEN game_pk IS NULL THEN 1 ELSE 0 END) AS missing_game_pk, SUM(CASE WHEN game_date IS NULL OR game_date='' THEN 1 ELSE 0 END) AS missing_game_date, SUM(CASE WHEN team_id IS NULL OR team_id='' THEN 1 ELSE 0 END) AS missing_team_id, SUM(CASE WHEN opponent_team_id IS NULL OR opponent_team_id='' THEN 1 ELSE 0 END) AS missing_opponent_team_id, SUM(CASE WHEN raw_json IS NULL OR raw_json='' THEN 1 ELSE 0 END) AS raw_json_missing, SUM(CASE WHEN game_date > ? THEN 1 ELSE 0 END) AS after_cutoff_rows, SUM(CASE WHEN game_status IS NULL OR lower(game_status) NOT LIKE '%final%' THEN 1 ELSE 0 END) AS non_final_rows FROM team_game_log_stage WHERE batch_id=?", cutoffDate, batchId);
+  const missing = await first(env.TEAM_DB, "SELECT SUM(CASE WHEN game_pk IS NULL THEN 1 ELSE 0 END) AS missing_game_pk, SUM(CASE WHEN game_date IS NULL OR game_date='' THEN 1 ELSE 0 END) AS missing_game_date, SUM(CASE WHEN team_id IS NULL OR team_id='' THEN 1 ELSE 0 END) AS missing_team_id, SUM(CASE WHEN opponent_team_id IS NULL OR opponent_team_id='' THEN 1 ELSE 0 END) AS missing_opponent_team_id, SUM(CASE WHEN raw_json IS NULL OR raw_json='' THEN 1 ELSE 0 END) AS raw_json_missing, SUM(CASE WHEN game_date > ? THEN 1 ELSE 0 END) AS after_cutoff_rows, SUM(CASE WHEN game_status IS NULL OR NOT (lower(game_status) LIKE '%final%' OR lower(game_status)='game over') THEN 1 ELSE 0 END) AS non_final_rows FROM team_game_log_stage WHERE batch_id=?", cutoffDate, batchId);
   const sourceErrors = await first(env.TEAM_DB, "SELECT COUNT(*) AS c FROM team_game_log_outcomes WHERE batch_id=? AND outcome_category IN ('GAME_SOURCE_ERROR','SOURCE_ERROR')", batchId);
   const badPairs = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM (
     SELECT game_pk,
@@ -513,7 +526,7 @@ async function certifyAndPromoteBaseBackfill(env, batchId, runId, requestId, cut
     `${batchId}_base_cert`, batchId, runId, requestId, certification, grade, expectedGames, expectedRows, stagedRows, Number(dup?.c || 0), Number(missing?.non_final_rows || 0), Number(sourceErrors?.c || 0), Number(missing?.missing_game_pk || 0), Number(missing?.missing_game_date || 0), Number(missing?.missing_team_id || 0), Number(missing?.missing_opponent_team_id || 0), Number(badPairs?.c || 0), Number(missing?.raw_json_missing || 0), safeJson(fieldMap), safeJson({ cutoff_date: cutoffDate, after_cutoff_rows: Number(missing?.after_cutoff_rows || 0), pass })
   );
   if (!pass) {
-    await run(env.TEAM_DB, "UPDATE team_game_log_batches SET status='CERTIFICATION_FAILED', certification_status=?, certification_grade=?, staged_team_game_rows=?, duplicate_stage_keys=?, source_error_count=?, output_json=?, updated_at=CURRENT_TIMESTAMP, certified_at=CURRENT_TIMESTAMP WHERE batch_id=?", certification, grade, stagedRows, Number(dup?.c || 0), Number(sourceErrors?.c || 0), safeJson({ expected_game_count: expectedGames, expected_team_game_rows: expectedRows, staged_team_game_rows: stagedRows, bad_home_away_pair_count: Number(badPairs?.c || 0), missing }), batchId);
+    await run(env.TEAM_DB, "UPDATE team_game_log_batches SET status='CERTIFICATION_FAILED', certification_status=?, certification_grade=?, expected_game_count=?, expected_team_game_rows=?, staged_team_game_rows=?, duplicate_stage_keys=?, source_error_count=?, output_json=?, updated_at=CURRENT_TIMESTAMP, certified_at=CURRENT_TIMESTAMP WHERE batch_id=?", certification, grade, expectedGames, expectedRows, stagedRows, Number(dup?.c || 0), Number(sourceErrors?.c || 0), safeJson({ expected_game_count: expectedGames, expected_team_game_rows: expectedRows, staged_team_game_rows: stagedRows, bad_home_away_pair_count: Number(badPairs?.c || 0), missing }), batchId);
     await run(env.TEAM_DB, "UPDATE team_game_log_cursor SET status='CERTIFICATION_FAILED', cursor_json=?, updated_at=CURRENT_TIMESTAMP WHERE cursor_key=?", safeJson({ batch_id: batchId, certification, grade }), BASE_CURSOR_KEY);
     return { ok: false, data_ok: false, status: "CERTIFICATION_FAILED", certification, certification_grade: grade, rows_read: 0, rows_written: rowsWrittenSoFar + 1, rows_promoted: 0, external_calls_performed: externalCallsSoFar, continuation_required: false };
   }
@@ -547,7 +560,7 @@ async function certifyAndPromoteBaseBackfill(env, batchId, runId, requestId, cut
   await run(env.TEAM_DB, "UPDATE team_game_log_certifications SET rows_promoted=?, updated_at=CURRENT_TIMESTAMP WHERE certification_id=?", rowsPromoted, `${batchId}_base_cert`);
   await run(env.TEAM_DB, "DELETE FROM team_game_log_stage WHERE batch_id=?", batchId);
   const stageAfter = await first(env.TEAM_DB, "SELECT COUNT(*) AS c FROM team_game_log_stage WHERE batch_id=?", batchId);
-  await run(env.TEAM_DB, "UPDATE team_game_log_batches SET status='COMPLETED_PROMOTED_CLEANED', certification_status=?, certification_grade=?, staged_team_game_rows=?, rows_promoted=?, duplicate_stage_keys=0, source_error_count=0, output_json=?, updated_at=CURRENT_TIMESTAMP, certified_at=COALESCE(certified_at,CURRENT_TIMESTAMP), promoted_at=CURRENT_TIMESTAMP, cleaned_at=CURRENT_TIMESTAMP WHERE batch_id=?", certification, grade, stagedRows, rowsPromoted, safeJson({ expected_game_count: expectedGames, expected_team_game_rows: expectedRows, rows_promoted: rowsPromoted, stage_rows_after_clean: Number(stageAfter?.c || 0), delta_reserved_start_date: DEFAULT_DELTA_START_DATE }), batchId);
+  await run(env.TEAM_DB, "UPDATE team_game_log_batches SET status='COMPLETED_PROMOTED_CLEANED', certification_status=?, certification_grade=?, expected_game_count=?, expected_team_game_rows=?, staged_team_game_rows=?, rows_promoted=?, duplicate_stage_keys=0, source_error_count=0, output_json=?, updated_at=CURRENT_TIMESTAMP, certified_at=COALESCE(certified_at,CURRENT_TIMESTAMP), promoted_at=CURRENT_TIMESTAMP, cleaned_at=CURRENT_TIMESTAMP WHERE batch_id=?", certification, grade, expectedGames, expectedRows, stagedRows, rowsPromoted, safeJson({ expected_game_count: expectedGames, expected_team_game_rows: expectedRows, rows_promoted: rowsPromoted, stage_rows_after_clean: Number(stageAfter?.c || 0), delta_reserved_start_date: DEFAULT_DELTA_START_DATE }), batchId);
   await run(env.TEAM_DB, "UPDATE team_game_log_cursor SET status='COMPLETED_PROMOTED_CLEANED', last_batch_id=?, last_request_id=?, cursor_json=?, updated_at=CURRENT_TIMESTAMP WHERE cursor_key=?", batchId, requestId, safeJson({ batch_id: batchId, cutoff_date: cutoffDate, expected_game_count: expectedGames, expected_team_game_rows: expectedRows, rows_promoted: rowsPromoted, stage_rows_after_clean: Number(stageAfter?.c || 0), delta_reserved_start_date: DEFAULT_DELTA_START_DATE }), BASE_CURSOR_KEY);
   return { ok: true, data_ok: true, status: "COMPLETED_PROMOTED_CLEANED", certification, certification_grade: grade, rows_read: expectedGames, rows_written: rowsWrittenSoFar + rowsPromoted + 3, rows_promoted: rowsPromoted, external_calls_performed: externalCallsSoFar, expected_game_count: expectedGames, expected_team_game_rows: expectedRows, staged_team_game_rows: stagedRows, stage_rows_after_clean: Number(stageAfter?.c || 0), duplicate_stage_keys: Number(dup?.c || 0), bad_home_away_pair_count: Number(badPairs?.c || 0), continuation_required: false };
 }
