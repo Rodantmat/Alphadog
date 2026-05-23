@@ -27,6 +27,13 @@ def make_config(worker_name, include_services=False):
     }
     if worker_name == "alphadog-v2-orchestrator":
         cfg["triggers"] = {"crons": ORCHESTRATOR_CRONS}
+    if worker_name == "alphadog-v2-control-room":
+        # Required for ORCHESTRATOR > Wake / Control Room hot-start.
+        # The GitHub workflow regenerates wrangler files before deploy, so this binding
+        # must live in the generator or it will be erased before Wrangler deploys.
+        cfg["services"] = [
+            {"binding": "ORCHESTRATOR_WORKER", "service": "alphadog-v2-orchestrator"}
+        ]
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
