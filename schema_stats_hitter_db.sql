@@ -462,3 +462,159 @@ INSERT OR REPLACE INTO hitter_schema_migrations VALUES ('base_hitter_splits_v0_1
 -- v0.2.0 note: base-hitter-splits uses the same additive lifecycle schema created in v0.1.0.
 -- v0.2.0 writes full hitter-universe stage/outcome/cursor/certification rows only.
 -- v0.2.0 performs no live hitter_splits promotion and no delta_update execution.
+
+-- ============================================================================
+-- alphadog-v2-base-hitter-metrics-v0.1.0-schema-formula-input-audit
+-- Additive lifecycle schema for Base Hitter Metrics.
+-- Purpose: neutral D1-derived hitter metric schema/config/input/formula readiness only.
+-- Hard blocks: no live metric promotion, no hitter_game_logs mutation, no hitter_splits
+-- mutation, no external MLB calls, no scoring/ranking/final board writes.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS hitter_metric_batches (
+  batch_id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL,
+  worker_name TEXT NOT NULL,
+  worker_version TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  status TEXT NOT NULL,
+  data_feed_key TEXT NOT NULL,
+  source_key TEXT NOT NULL,
+  source_season INTEGER,
+  input_log_row_count INTEGER DEFAULT 0,
+  input_split_row_count INTEGER DEFAULT 0,
+  input_latest_game_date TEXT,
+  input_latest_split_snapshot_date TEXT,
+  expected_hitter_universe_count INTEGER DEFAULT 0,
+  config_profile_id TEXT,
+  formula_version TEXT,
+  metric_catalog_json TEXT,
+  formula_readiness_json TEXT,
+  config_readiness_json TEXT,
+  input_readiness_json TEXT,
+  rows_staged INTEGER DEFAULT 0,
+  rows_promoted INTEGER DEFAULT 0,
+  duplicate_count INTEGER DEFAULT 0,
+  certification_status TEXT DEFAULT 'audit_only_not_promoted',
+  certification_grade TEXT,
+  certification_json TEXT,
+  locked_by TEXT,
+  lock_acquired_at TEXT,
+  lock_expires_at TEXT,
+  stale_recovery_count INTEGER DEFAULT 0,
+  started_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  finished_at TEXT,
+  certified_at TEXT,
+  promoted_at TEXT,
+  cleaned_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS hitter_metric_stage (
+  stage_id TEXT PRIMARY KEY,
+  batch_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  metric_key TEXT NOT NULL,
+  player_id INTEGER NOT NULL,
+  season INTEGER NOT NULL,
+  metric_scope TEXT NOT NULL,
+  metric_window TEXT NOT NULL,
+  metric_family TEXT NOT NULL,
+  source_start_date TEXT,
+  source_end_date TEXT,
+  source_snapshot_date TEXT,
+  input_log_row_count INTEGER DEFAULT 0,
+  input_split_row_count INTEGER DEFAULT 0,
+  input_latest_game_date TEXT,
+  metric_value REAL,
+  metric_text_value TEXT,
+  numerator REAL,
+  denominator REAL,
+  data_feed_key TEXT NOT NULL,
+  source_key TEXT NOT NULL,
+  ingestion_mode TEXT NOT NULL,
+  certification_status TEXT DEFAULT 'audit_only_not_promoted',
+  certification_grade TEXT,
+  certified_at TEXT,
+  promoted_at TEXT,
+  formula_version TEXT,
+  config_profile_id TEXT,
+  raw_input_summary_json TEXT,
+  metric_json TEXT,
+  missing_data_reason TEXT,
+  reliability_label TEXT,
+  row_status TEXT DEFAULT 'audit_only_staged',
+  row_error TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(batch_id, metric_key, player_id, season, metric_scope, metric_window)
+);
+
+CREATE TABLE IF NOT EXISTS hitter_metric_outcomes (
+  outcome_id TEXT PRIMARY KEY,
+  batch_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  player_id INTEGER,
+  season INTEGER,
+  metric_family TEXT,
+  metric_window TEXT,
+  terminal_category TEXT NOT NULL,
+  category_reason TEXT,
+  input_log_row_count INTEGER DEFAULT 0,
+  input_split_row_count INTEGER DEFAULT 0,
+  missing_data_reason TEXT,
+  formula_version TEXT,
+  config_profile_id TEXT,
+  outcome_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS hitter_metric_cursor (
+  cursor_key TEXT PRIMARY KEY,
+  batch_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  status TEXT NOT NULL,
+  source_season INTEGER,
+  current_player_id INTEGER,
+  current_player_offset INTEGER DEFAULT 0,
+  players_total INTEGER DEFAULT 0,
+  players_processed INTEGER DEFAULT 0,
+  next_run_after TEXT,
+  last_error TEXT,
+  cursor_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS hitter_metric_certifications (
+  certification_id TEXT PRIMARY KEY,
+  batch_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  certification_status TEXT NOT NULL,
+  certification_grade TEXT,
+  checks_json TEXT NOT NULL,
+  rows_staged INTEGER DEFAULT 0,
+  rows_promoted INTEGER DEFAULT 0,
+  duplicate_count INTEGER DEFAULT 0,
+  formula_error_count INTEGER DEFAULT 0,
+  denominator_error_count INTEGER DEFAULT 0,
+  config_profile_id TEXT,
+  formula_version TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_hitter_metric_batches_status ON hitter_metric_batches(status, mode, updated_at);
+CREATE INDEX IF NOT EXISTS idx_hitter_metric_batches_lock ON hitter_metric_batches(locked_by, lock_expires_at);
+CREATE INDEX IF NOT EXISTS idx_hitter_metric_stage_batch ON hitter_metric_stage(batch_id, row_status);
+CREATE INDEX IF NOT EXISTS idx_hitter_metric_stage_player ON hitter_metric_stage(player_id, season, metric_key, metric_window);
+CREATE INDEX IF NOT EXISTS idx_hitter_metric_stage_cert ON hitter_metric_stage(certification_status, batch_id);
+CREATE INDEX IF NOT EXISTS idx_hitter_metric_outcomes_batch ON hitter_metric_outcomes(batch_id, terminal_category);
+CREATE INDEX IF NOT EXISTS idx_hitter_metric_cursor_status ON hitter_metric_cursor(status, mode, updated_at);
+CREATE INDEX IF NOT EXISTS idx_hitter_metric_cert_batch ON hitter_metric_certifications(batch_id, certification_status);
+
+INSERT OR REPLACE INTO hitter_schema_migrations VALUES ('base_hitter_metrics_v0_1_0_schema_formula_input_audit', 'alphadog-v2-base-hitter-metrics-v0.1.0-schema-formula-input-audit', CURRENT_TIMESTAMP, 'Additive lifecycle schema for neutral Base Hitter Metrics readiness only; no live metric promotion');

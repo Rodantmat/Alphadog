@@ -170,3 +170,117 @@ CREATE INDEX IF NOT EXISTS idx_config_cert_phase ON config_certification_rules(p
 
 INSERT OR REPLACE INTO config_schema_migrations (migration_key, package_version, notes)
 VALUES ('schema_config_db_v0_1', 'alphadog-v2-schema-phase-pack-v0.1', 'Initial AlphaDog v2 CONFIG_DB schema');
+
+-- ============================================================================
+-- alphadog-v2-base-hitter-metrics-v0.1.0-schema-formula-input-audit
+-- Additive neutral metric config/calibration schema.
+-- This is not scoring. It stores tunable metric windows, thresholds, formula
+-- versions, and calibration profiles outside JS.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS config_metric_calibration_profiles (
+  profile_id TEXT PRIMARY KEY,
+  display_name TEXT NOT NULL,
+  sport TEXT DEFAULT 'MLB',
+  metric_domain TEXT DEFAULT 'hitter',
+  active INTEGER DEFAULT 0,
+  profile_status TEXT DEFAULT 'draft',
+  profile_json TEXT,
+  notes TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS config_metric_formula_versions (
+  formula_version TEXT PRIMARY KEY,
+  sport TEXT DEFAULT 'MLB',
+  metric_domain TEXT DEFAULT 'hitter',
+  active INTEGER DEFAULT 0,
+  version_status TEXT DEFAULT 'draft',
+  formula_catalog_json TEXT,
+  notes TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS config_metric_definitions (
+  metric_key TEXT PRIMARY KEY,
+  metric_family TEXT NOT NULL,
+  metric_scope TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  description TEXT,
+  numerator_field TEXT,
+  denominator_field TEXT,
+  source_table TEXT NOT NULL,
+  formula_version TEXT,
+  enabled INTEGER DEFAULT 1,
+  neutral_metric_only INTEGER DEFAULT 1,
+  future_scoring_bridge_flag INTEGER DEFAULT 0,
+  defer_reason TEXT,
+  config_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS config_metric_windows (
+  window_key TEXT PRIMARY KEY,
+  metric_domain TEXT DEFAULT 'hitter',
+  metric_scope TEXT NOT NULL,
+  window_type TEXT NOT NULL,
+  window_size INTEGER,
+  enabled INTEGER DEFAULT 1,
+  sort_order INTEGER DEFAULT 100,
+  config_profile_id TEXT,
+  notes TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS config_metric_thresholds (
+  threshold_key TEXT PRIMARY KEY,
+  config_profile_id TEXT NOT NULL,
+  metric_domain TEXT DEFAULT 'hitter',
+  metric_family TEXT,
+  metric_key TEXT,
+  threshold_type TEXT NOT NULL,
+  threshold_value REAL,
+  threshold_json TEXT,
+  label TEXT,
+  enabled INTEGER DEFAULT 1,
+  notes TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_config_metric_definitions_family ON config_metric_definitions(metric_family, enabled);
+CREATE INDEX IF NOT EXISTS idx_config_metric_windows_domain ON config_metric_windows(metric_domain, metric_scope, enabled);
+CREATE INDEX IF NOT EXISTS idx_config_metric_thresholds_profile ON config_metric_thresholds(config_profile_id, metric_domain, threshold_type, enabled);
+
+INSERT OR REPLACE INTO config_schema_migrations (migration_key, package_version, notes)
+VALUES ('base_hitter_metrics_config_v0_1_0_neutral_metric_calibration', 'alphadog-v2-base-hitter-metrics-v0.1.0-schema-formula-input-audit', 'Additive neutral metric calibration config tables; not scoring');
+
+INSERT OR IGNORE INTO config_metric_calibration_profiles (profile_id, display_name, sport, metric_domain, active, profile_status, profile_json, notes)
+VALUES ('hitter_metrics_neutral_v0_1_0', 'Hitter Metrics Neutral v0.1.0 Draft', 'MLB', 'hitter', 1, 'draft', '{"no_scoring":true,"promotion_locked":false,"tuning_owner":"CONFIG_DB"}', 'Neutral metric readiness/calibration profile. Draft only; no prop scoring weights.');
+
+INSERT OR IGNORE INTO config_metric_formula_versions (formula_version, sport, metric_domain, active, version_status, formula_catalog_json, notes)
+VALUES ('hitter_metrics_formula_v0_1_0_readiness', 'MLB', 'hitter', 1, 'readiness_only', '{"direct_aggregates":true,"rates_denominator_safe":true,"split_readiness_only":true,"production_promotion_locked":false}', 'Formula catalog shell for v0.1.0 readiness only. Not production promotion locked.');
+
+INSERT OR IGNORE INTO config_metric_windows (window_key, metric_domain, metric_scope, window_type, window_size, enabled, sort_order, config_profile_id, notes) VALUES
+('last_3_games', 'hitter', 'last_3_games', 'last_n_games', 3, 1, 10, 'hitter_metrics_neutral_v0_1_0', 'Rolling last 3 games window for neutral hitter metrics.'),
+('last_5_games', 'hitter', 'last_5_games', 'last_n_games', 5, 1, 20, 'hitter_metrics_neutral_v0_1_0', 'Rolling last 5 games window for neutral hitter metrics.'),
+('last_10_games', 'hitter', 'last_10_games', 'last_n_games', 10, 1, 30, 'hitter_metrics_neutral_v0_1_0', 'Rolling last 10 games window for neutral hitter metrics.'),
+('last_20_games', 'hitter', 'last_20_games', 'last_n_games', 20, 1, 40, 'hitter_metrics_neutral_v0_1_0', 'Rolling last 20 games window for neutral hitter metrics.'),
+('season_to_date', 'hitter', 'season_to_date', 'season_to_date', NULL, 1, 90, 'hitter_metrics_neutral_v0_1_0', 'Season-to-date neutral hitter metric window.');
+
+INSERT OR IGNORE INTO config_metric_thresholds (threshold_key, config_profile_id, metric_domain, threshold_type, threshold_value, label, enabled, notes) VALUES
+('min_games_sample_none', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'sample_size', 0, 'sample_none', 1, 'Draft neutral metric threshold. DB-configurable; not a prop scoring penalty or bonus.'),
+('min_games_sample_tiny', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'sample_size', 1, 'sample_tiny', 1, 'Draft neutral metric threshold. DB-configurable; not a prop scoring penalty or bonus.'),
+('min_games_sample_thin', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'sample_size', 3, 'sample_thin', 1, 'Draft neutral metric threshold. DB-configurable; not a prop scoring penalty or bonus.'),
+('min_games_sample_usable', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'sample_size', 5, 'sample_usable', 1, 'Draft neutral metric threshold. DB-configurable; not a prop scoring penalty or bonus.'),
+('min_games_sample_strong', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'sample_size', 10, 'sample_strong', 1, 'Draft neutral metric threshold. DB-configurable; not a prop scoring penalty or bonus.'),
+('denominator_floor_pa', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'denominator_floor', 1, 'pa_floor', 1, 'Draft neutral metric denominator floor. DB-configurable.'),
+('denominator_floor_ab', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'denominator_floor', 1, 'ab_floor', 1, 'Draft neutral metric denominator floor. DB-configurable.'),
+('split_pa_sample_tiny', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'split_sample_size', 10, 'split_tiny', 1, 'Draft neutral split reliability threshold. DB-configurable.'),
+('split_pa_sample_usable', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'split_sample_size', 25, 'split_usable', 1, 'Draft neutral split reliability threshold. DB-configurable.'),
+('split_pa_sample_strong', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'split_sample_size', 50, 'split_strong', 1, 'Draft neutral split reliability threshold. DB-configurable.'),
+('stale_input_days_warn', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'stale_input_rule', 2, 'stale_warn', 1, 'Draft stale-input warning threshold. DB-configurable.');
