@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-bullpen-history";
-const VERSION = "alphadog-v2-base-bullpen-history-v0.4.3-delta-enddate-build-fix";
+const VERSION = "alphadog-v2-base-bullpen-history-v0.4.4-delta-cursor-column-fix";
 const JOB_KEY = "base-bullpen-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -1379,7 +1379,7 @@ async function runDeltaUpdate(env, input={}) {
   let endDate = input.end_date || input.schedule_end_date || todayYmdUtc();
   if (compareYmd(startDate, endDate) > 0) {
     const output = { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, run_id:runId, mode:'delta_update', status:'DELTA_BULLPEN_HISTORY_NOOP_CURRENT', certification:'DELTA_BULLPEN_HISTORY_NOOP_LIVE_CURRENT', certification_grade:'DELTA_NOOP_PASS', source_shape_classification:'GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS', max_live_game_date:maxLive, schedule_start_date:startDate, schedule_end_date:endDate, no_new_batch:true, no_mining_calls:true, external_calls_performed:0, no_daily_bullpen_availability:true, no_scoring:true };
-    await run(env.TEAM_DB, `INSERT OR REPLACE INTO bullpen_history_cursor (cursor_key,ingestion_mode,source_key,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,last_sample_date,last_batch_id,last_request_id,status,cursor_json,created_at,updated_at) VALUES ('bullpen_history_delta_update_cursor','delta_update',?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, SOURCE_KEY, seasonFromDate(endDate), 'R', DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, maxLive, null, null, requestId, output.status, safeJson(output));
+    await run(env.TEAM_DB, `INSERT OR REPLACE INTO bullpen_history_cursor (cursor_key,ingestion_mode,source_key,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,last_sample_date,last_game_pk,last_batch_id,last_request_id,status,cursor_json,created_at,updated_at) VALUES ('bullpen_history_delta_update_cursor','delta_update',?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, SOURCE_KEY, seasonFromDate(endDate), 'R', DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, maxLive, null, null, requestId, output.status, safeJson(output));
     return output;
   }
   const schedule = await fetchScheduleRange(env, startDate, endDate);
@@ -1398,7 +1398,7 @@ async function runDeltaUpdate(env, input={}) {
   }
   if (!candidates.length) {
     const output = { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, run_id:runId, mode:'delta_update', status:'DELTA_BULLPEN_HISTORY_NOOP_CURRENT', certification:'DELTA_BULLPEN_HISTORY_NOOP_LIVE_CURRENT', certification_grade:'DELTA_NOOP_PASS', source_shape_classification:'GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS', schedule_start_date:startDate, schedule_end_date:endDate, final_games_seen:finalGamesAll.length, candidate_new_games:0, no_new_batch:true, no_mining_calls:true, external_calls_performed:1, no_daily_bullpen_availability:true, no_scoring:true };
-    await run(env.TEAM_DB, `INSERT OR REPLACE INTO bullpen_history_cursor (cursor_key,ingestion_mode,source_key,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,last_sample_date,last_batch_id,last_request_id,status,cursor_json,created_at,updated_at) VALUES ('bullpen_history_delta_update_cursor','delta_update',?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, SOURCE_KEY, seasonFromDate(endDate), 'R', DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, maxLive, null, null, requestId, output.status, safeJson(output));
+    await run(env.TEAM_DB, `INSERT OR REPLACE INTO bullpen_history_cursor (cursor_key,ingestion_mode,source_key,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,last_sample_date,last_game_pk,last_batch_id,last_request_id,status,cursor_json,created_at,updated_at) VALUES ('bullpen_history_delta_update_cursor','delta_update',?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, SOURCE_KEY, seasonFromDate(endDate), 'R', DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, maxLive, null, null, requestId, output.status, safeJson(output));
     return output;
   }
   let batch = openBatch || await first(env.TEAM_DB, `SELECT * FROM bullpen_history_batches WHERE request_id=? AND ingestion_mode='delta_update' ORDER BY datetime(created_at) DESC LIMIT 1`, requestId);
