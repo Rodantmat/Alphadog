@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.60-base-bullpen-history-promote-clean";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.61-base-bullpen-history-delta-ready";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -47,7 +47,7 @@ function base(env, extra = {}) {
       "Buttons enqueue/wake backend work only.",
       "Browser does not run long loops.",
       "Scheduled cron calls the same bounded tick path.",
-      "v0.2.60 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-pitcher-game-logs base/delta continuation, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.3.0 source probe/base stage/promote-clean, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
+      "v0.2.60 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-pitcher-game-logs base/delta continuation, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.4.0 source probe/base stage/promote-clean/delta-update, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
       "No generic worker dispatch, no scoring, no ranking, no final board writes, no old production writes."
     ],
     bindings: {
@@ -1813,6 +1813,7 @@ async function processBaseBullpenHistoryJob(env, row, runId, trigger) {
   try { input = row.input_json ? JSON.parse(row.input_json) : {}; } catch { input = {}; }
   const bullpenMode = String(input.mode || "source_lock_probe");
   const bullpenPromotionMode = bullpenMode === "base_promote_clean" || bullpenMode === "base_backfill_promote_clean";
+  const bullpenDeltaMode = bullpenMode === "delta_update";
   const payload = {
     ...input,
     request_id: row.request_id,
@@ -1822,12 +1823,12 @@ async function processBaseBullpenHistoryJob(env, row, runId, trigger) {
     worker_name: row.worker_name,
     mode: bullpenMode,
     orchestrator_trigger: trigger,
-    no_live_promotion: !bullpenPromotionMode,
+    no_live_promotion: !(bullpenPromotionMode || bullpenDeltaMode),
     no_full_base_backfill: bullpenMode === "source_lock_probe",
     no_mining: bullpenPromotionMode ? true : !!input.no_mining,
     no_new_batch: bullpenPromotionMode ? true : !!input.no_new_batch,
     no_source_calls: bullpenPromotionMode ? true : !!input.no_source_calls,
-    no_delta_update_execution: true,
+    no_delta_update_execution: !bullpenDeltaMode,
     no_daily_bullpen_availability: true,
     no_scoring: true,
     no_ranking: true,
@@ -1873,16 +1874,16 @@ async function processBaseBullpenHistoryJob(env, row, runId, trigger) {
     ...output,
     processed_by_orchestrator_version: SYSTEM_VERSION,
     exact_dispatch: "BASE_BULLPEN_HISTORY_WORKER",
-    v0_3_0_promote_clean_capable: true,
+    v0_4_0_delta_update_capable: true,
     source_probe_only: bullpenMode === "source_lock_probe",
     base_backfill_stage_only: bullpenMode === "base_backfill_stage_only" || bullpenMode === "base_backfill",
     base_promote_clean: bullpenPromotionMode,
-    no_live_promotion: !bullpenPromotionMode,
+    no_live_promotion: !(bullpenPromotionMode || bullpenDeltaMode),
     no_full_base_backfill: bullpenMode === "source_lock_probe",
     no_mining: bullpenPromotionMode ? true : !!input.no_mining,
     no_new_batch: bullpenPromotionMode ? true : !!input.no_new_batch,
     no_source_calls: bullpenPromotionMode ? true : !!input.no_source_calls,
-    no_delta_update_execution: true,
+    no_delta_update_execution: !bullpenDeltaMode,
     no_daily_bullpen_availability: true,
     no_scoring: true,
     no_ranking: true,
@@ -1908,7 +1909,7 @@ async function processBaseBullpenHistoryJob(env, row, runId, trigger) {
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_bullpen_history_dispatch_completed', 'Orchestrator completed exact base-bullpen-history v0.3.0 source-probe/base-stage/promote-clean dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, mode: bullpenMode, source_probe_only: bullpenMode === "source_lock_probe", base_backfill_stage_only: bullpenMode === "base_backfill_stage_only" || bullpenMode === "base_backfill", base_promote_clean: bullpenPromotionMode, no_live_promotion: !bullpenPromotionMode, no_mining: bullpenPromotionMode ? true : !!input.no_mining, no_new_batch: bullpenPromotionMode ? true : !!input.no_new_batch, no_source_calls: bullpenPromotionMode ? true : !!input.no_source_calls, no_full_base_backfill: bullpenMode === "source_lock_probe", no_delta_update_execution: true, no_daily_bullpen_availability: true, partial_continue: partialContinue })
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, mode: bullpenMode, source_probe_only: bullpenMode === "source_lock_probe", base_backfill_stage_only: bullpenMode === "base_backfill_stage_only" || bullpenMode === "base_backfill", base_promote_clean: bullpenPromotionMode, delta_update: bullpenDeltaMode, no_live_promotion: !(bullpenPromotionMode || bullpenDeltaMode), no_mining: bullpenPromotionMode ? true : !!input.no_mining, no_new_batch: bullpenPromotionMode ? true : !!input.no_new_batch, no_source_calls: bullpenPromotionMode ? true : !!input.no_source_calls, no_full_base_backfill: bullpenMode === "source_lock_probe", no_delta_update_execution: !bullpenDeltaMode, no_daily_bullpen_availability: true, partial_continue: partialContinue })
   );
 
   return cappedOutput;
