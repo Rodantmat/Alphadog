@@ -98,5 +98,11 @@
       "database_name": "alphadog-v2-archive-db",
       "database_id": "71f03ce3-1178-43b6-8228-33cb9803b589"
     }
+  ],
+  "services": [
+    {
+      "binding": "ORCHESTRATOR_WORKER",
+      "service": "alphadog-v2-orchestrator"
+    }
   ]
 }
