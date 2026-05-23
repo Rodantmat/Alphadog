@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-bullpen-history";
-const VERSION = "alphadog-v2-base-bullpen-history-v0.4.0-delta-update-retained-repair";
+const VERSION = "alphadog-v2-base-bullpen-history-v0.4.1-delta-cursor-resume-fix";
 const JOB_KEY = "base-bullpen-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -592,7 +592,7 @@ async function processBullpenGameToStage(env, { game, batchId, runId, requestId,
 async function summarizeBatch(env, batchId) {
   const dup = await first(env.TEAM_DB, `SELECT COALESCE(SUM(c-1),0) AS duplicate_count FROM (SELECT bullpen_key, COUNT(*) AS c FROM bullpen_history_stage WHERE batch_id=? GROUP BY bullpen_key HAVING COUNT(*)>1)`, batchId);
   const stage = await first(env.TEAM_DB, `SELECT COUNT(*) AS rows FROM bullpen_history_stage WHERE batch_id=?`, batchId);
-  const games = await first(env.TEAM_DB, `SELECT COUNT(DISTINCT game_pk) AS games FROM bullpen_history_outcomes WHERE batch_id=? AND outcome_level='GAME' AND status='GAME_STAGED_STAGE_ONLY'`, batchId);
+  const games = await first(env.TEAM_DB, `SELECT COUNT(DISTINCT game_pk) AS games FROM bullpen_history_outcomes WHERE batch_id=? AND outcome_level='GAME' AND status IN ('GAME_STAGED_STAGE_ONLY','GAME_STAGED_DELTA_ONLY')`, batchId);
   const errors = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM bullpen_history_outcomes WHERE batch_id=? AND outcome_category='SOURCE_ERROR'`, batchId);
   const unclear = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM bullpen_history_outcomes WHERE batch_id=? AND outcome_category='UNCLEAR'`, batchId);
   const zeroTeams = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM bullpen_history_outcomes WHERE batch_id=? AND outcome_level='TEAM' AND outcome_category='TRUE_NO_DATA'`, batchId);
@@ -1385,15 +1385,23 @@ async function runDeltaUpdate(env, input={}) {
   const schedule = await fetchScheduleRange(env, startDate, endDate);
   if (!schedule.ok) return { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, run_id:runId, mode:'delta_update', status:'DELTA_SCHEDULE_FAILED', certification:'DELTA_BULLPEN_HISTORY_SCHEDULE_FAILED', certification_grade:'BLOCKED', schedule_start_date:startDate, schedule_end_date:endDate, external_calls_performed:1, error_preview:schedule.text_preview };
   const finalGamesAll = finalGamesFromSchedule(schedule.json);
-  const liveGamesRows = await all(env.TEAM_DB, `SELECT DISTINCT game_pk FROM bullpen_history WHERE game_date>=? AND game_date<=?`, startDate, endDate);
-  const liveGames = new Set(liveGamesRows.map(r=>Number(r.game_pk)).filter(Number.isFinite));
-  const candidates = finalGamesAll.filter(g => !liveGames.has(Number(g.gamePk)));
+  const openBatch = await first(env.TEAM_DB, `SELECT * FROM bullpen_history_batches WHERE ingestion_mode='delta_update' AND status IN ('PARTIAL_CONTINUE','RUNNING_DELTA_UPDATE') ORDER BY datetime(created_at) DESC LIMIT 1`);
+  let candidates;
+  if (openBatch && openBatch.batch_id) {
+    startDate = openBatch.schedule_start_date || startDate;
+    endDate = openBatch.schedule_end_date || endDate;
+    candidates = finalGamesAll;
+  } else {
+    const liveGamesRows = await all(env.TEAM_DB, `SELECT DISTINCT game_pk FROM bullpen_history WHERE game_date>=? AND game_date<=?`, startDate, endDate);
+    const liveGames = new Set(liveGamesRows.map(r=>Number(r.game_pk)).filter(Number.isFinite));
+    candidates = finalGamesAll.filter(g => !liveGames.has(Number(g.gamePk)));
+  }
   if (!candidates.length) {
     const output = { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, run_id:runId, mode:'delta_update', status:'DELTA_BULLPEN_HISTORY_NOOP_CURRENT', certification:'DELTA_BULLPEN_HISTORY_NOOP_LIVE_CURRENT', certification_grade:'DELTA_NOOP_PASS', source_shape_classification:'GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS', schedule_start_date:startDate, schedule_end_date:endDate, final_games_seen:finalGamesAll.length, candidate_new_games:0, no_new_batch:true, no_mining_calls:true, external_calls_performed:1, no_daily_bullpen_availability:true, no_scoring:true };
     await run(env.TEAM_DB, `INSERT OR REPLACE INTO bullpen_history_cursor (cursor_key,ingestion_mode,source_key,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,last_sample_date,last_batch_id,last_request_id,status,cursor_json,created_at,updated_at) VALUES ('bullpen_history_delta_update_cursor','delta_update',?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, SOURCE_KEY, seasonFromDate(endDate), 'R', DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, maxLive, null, requestId, output.status, safeJson(output));
     return output;
   }
-  let batch = await first(env.TEAM_DB, `SELECT * FROM bullpen_history_batches WHERE request_id=? AND ingestion_mode='delta_update' ORDER BY datetime(created_at) DESC LIMIT 1`, requestId);
+  let batch = openBatch || await first(env.TEAM_DB, `SELECT * FROM bullpen_history_batches WHERE request_id=? AND ingestion_mode='delta_update' ORDER BY datetime(created_at) DESC LIMIT 1`, requestId);
   const batchId = batch && batch.batch_id ? batch.batch_id : (input.batch_id || rid('bullpen_delta_batch'));
   if (!batch) {
     await run(env.TEAM_DB, `INSERT OR REPLACE INTO bullpen_history_batches (batch_id,run_id,request_id,chain_id,job_key,worker_name,version,ingestion_mode,probe_only,stage_only,source_key,source_confidence,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,schedule_start_date,schedule_end_date,total_game_count,processed_game_count,remaining_game_count,status,certification_status,certification_grade,created_at,updated_at) VALUES (?,?,?,?,?,?,?,'delta_update',0,0,?,?,?,?,?,?,?,?,?,0,?,'RUNNING_DELTA_UPDATE','DELTA_BULLPEN_HISTORY_DELTA_UPDATE_PARTIAL_CONTINUE','DELTA_PARTIAL',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, batchId, runId, requestId, chainId, JOB_KEY, WORKER_NAME, VERSION, SOURCE_KEY, SOURCE_CONFIDENCE, seasonFromDate(startDate), 'R', DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, startDate, endDate, candidates.length, candidates.length);
@@ -1421,7 +1429,7 @@ async function runDeltaUpdate(env, input={}) {
   const grade = complete ? (pass ? 'DELTA_PASS' : 'DELTA_REVIEW') : 'DELTA_PARTIAL';
   const output = { ok: pass || !complete, data_ok: pass || !complete, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, run_id:runId, batch_id:batchId, mode:'delta_update', status, certification:cert, certification_grade:grade, source_shape_classification:'GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS', schedule_start_date:startDate, schedule_end_date:endDate, total_game_count:candidates.length, processed_game_count:processedCount, remaining_game_count:remainingCount, expected_bullpen_rows:summary.staged_bullpen_rows, staged_bullpen_rows:summary.staged_bullpen_rows, live_rows_for_batch:liveRows, rows_promoted:liveRows, duplicate_stage_keys:summary.duplicate_stage_keys, duplicate_live_keys:duplicateLiveKeys, source_error_count:summary.source_error_count, unclear_count:summary.unclear_count, teams_with_zero_bullpen_rows:summary.teams_with_zero_bullpen_rows, rows_read:todo.length, rows_written:stagedRows, external_calls_performed:externalCalls, stage_retained:true, no_full_sweep:true, continuation_required:!complete, orchestrator_should_self_continue:!complete, no_daily_bullpen_availability:true, no_scoring:true, no_ranking:true, no_final_board:true };
   await run(env.TEAM_DB, `UPDATE bullpen_history_batches SET expected_game_count=?, expected_bullpen_rows=?, staged_bullpen_rows=?, duplicate_stage_keys=?, teams_with_zero_bullpen_rows=?, games_started_zero_reliever_rows=games_started_zero_reliever_rows+?, games_started_missing_rows=games_started_missing_rows+?, opener_bulk_edge_case_count=opener_bulk_edge_case_count+?, source_error_count=?, unclear_count=?, status=?, certification_status=?, certification_grade=?, output_json=?, processed_game_count=?, remaining_game_count=?, rows_promoted=?, partial_continue_count=partial_continue_count+?, certified_at=CASE WHEN ?=1 THEN CURRENT_TIMESTAMP ELSE certified_at END, promoted_at=CASE WHEN ?=1 THEN COALESCE(promoted_at,CURRENT_TIMESTAMP) ELSE promoted_at END, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, candidates.length, summary.staged_bullpen_rows, summary.staged_bullpen_rows, summary.duplicate_stage_keys, summary.teams_with_zero_bullpen_rows, gsZero, gsMissing, opener, summary.source_error_count, summary.unclear_count, status, cert, grade, safeJson(output), processedCount, remainingCount, liveRows, complete ? 0 : 1, complete ? 1 : 0, complete ? 1 : 0, batchId);
-  await run(env.TEAM_DB, `INSERT OR REPLACE INTO bullpen_history_cursor (cursor_key,ingestion_mode,source_key,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,last_sample_date,last_game_pk,last_batch_id,last_request_id,status,cursor_json,created_at,updated_at) VALUES ('bullpen_history_delta_update_cursor','delta_update',?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, SOURCE_KEY, seasonFromDate(endDate), 'R', DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, endDate, candidates.length ? num(candidates[candidates.length-1].gamePk) : null, batchId, requestId, status, safeJson(output));
+  await run(env.TEAM_DB, `INSERT OR REPLACE INTO bullpen_history_cursor (cursor_key,ingestion_mode,source_key,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,last_sample_date,last_game_pk,last_batch_id,last_request_id,status,cursor_json,created_at,updated_at) VALUES ('bullpen_history_delta_update_cursor','delta_update',?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, SOURCE_KEY, seasonFromDate(endDate), 'R', DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, endDate, candidates.length ? num(candidates[candidates.length-1].gamePk) : null, batchId, requestId, status, safeJson(output));
   return output;
 }
 
