@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-bullpen-history";
-const VERSION = "alphadog-v2-base-bullpen-history-v0.2.2-stage-idempotent-insert-post-repair";
+const VERSION = "alphadog-v2-base-bullpen-history-v0.3.0-base-promote-clean";
 const JOB_KEY = "base-bullpen-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -47,11 +47,11 @@ function baseIdentity(env) {
     job_key: JOB_KEY,
     status: "BULLPEN_HISTORY_SCHEMA_SOURCE_LOCK_PROBE_READY",
     timestamp_utc: nowUtc(),
-    phase: "bullpen-history-v0.2.0-base-backfill-stage-only",
+    phase: "bullpen-history-v0.3.0-base-promote-clean",
     notes: [
-      "v0.2.0 supports source-lock probe plus base_backfill_stage_only.",
-      "Allowed writes: additive TEAM_DB bullpen lifecycle schema plus probe stage/outcome/batch/certification/cursor metadata.",
-      "Forbidden in this version: live promotion, delta execution, daily bullpen availability, scoring, ranking, final board, PrizePicks/Sleeper mutation, and browser pump.",
+      "v0.3.0 supports source-lock probe, base_backfill_stage_only, and base_promote_clean for the certified bullpen base stage batch.",
+      "Allowed writes: TEAM_DB bullpen_history live promotion from certified stage, batch/certification metadata, and stage cleanup after live verification.",
+      "Forbidden in this version: mining during promotion, new base batches during promotion, delta execution, daily bullpen availability, scoring, ranking, final board, PrizePicks/Sleeper mutation, and browser pump.",
       "Classification target is GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS if official completed MLB boxscore exposes relief pitchers through gamesStarted == 0. Daily Bullpen Availability remains a later derived worker."
     ],
     binding_summary: {
@@ -314,7 +314,7 @@ async function ensureSchema(env) {
     catch (err) { schemaActions.push({ action: "add_column_if_missing", table: "bullpen_history_batches", column: name, added: false, error: String(err && err.message ? err.message : err) }); }
   }
 
-  await run(db, `INSERT OR REPLACE INTO team_schema_migrations (migration_key, package_version, notes) VALUES ('bullpen_history_v0_2_0_base_backfill_stage_only', ?, 'v0.2.0 adds source-locked base_backfill_stage_only support through cutoff; no live promotion')`, VERSION);
+  await run(db, `INSERT OR REPLACE INTO team_schema_migrations (migration_key, package_version, notes) VALUES ('bullpen_history_v0_3_0_base_promote_clean', ?, 'v0.3.0 promotes only certified bullpen base stage batch to live with explicit column mapping and clean-after-verify')`, VERSION);
   return schemaActions;
 }
 
@@ -926,6 +926,254 @@ async function runSourceProbe(env, input = {}) {
   return output;
 }
 
+
+const CERTIFIED_BASE_STAGE_BATCH_ID = "bullpen_base_stage_batch_mphjoj0p_rwldp7";
+const CERTIFIED_BASE_STAGE_EXPECTED_ROWS = 4621;
+const DEFAULT_PROMOTION_CHUNK_ROWS = 500;
+
+async function liveDuplicateCountForBatch(env, batchId) {
+  const row = await first(env.TEAM_DB, `SELECT COALESCE(SUM(c-1),0) AS duplicate_count FROM (SELECT bullpen_key, COUNT(*) AS c FROM bullpen_history WHERE batch_id=? GROUP BY bullpen_key HAVING COUNT(*)>1)`, batchId);
+  return Number(row && row.duplicate_count || 0);
+}
+
+async function stageRowsAfterClean(env, batchId) {
+  const row = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM bullpen_history_stage WHERE batch_id=?`, batchId);
+  return Number(row && row.c || 0);
+}
+
+async function promoteBullpenStageChunk(env, batchId, limit) {
+  await run(env.TEAM_DB,
+    `WITH promote_keys AS (
+       SELECT stage_id
+       FROM bullpen_history_stage
+       WHERE batch_id=? AND promoted_at IS NULL
+       ORDER BY game_date, game_pk, team_id, pitcher_id
+       LIMIT ?
+     )
+     INSERT OR REPLACE INTO bullpen_history (
+       bullpen_key, team_id, game_date, game_pk, usage_json, availability_json, updated_at,
+       game_type, game_status, season, opponent_team_id, is_home, venue_id,
+       pitcher_id, pitcher_name, pitcher_hand, pitcher_role, relief_classification,
+       relief_appearance, games_started, games_pitched, pitcher_order_index, bullpen_appearance_index,
+       innings_pitched, innings_pitched_decimal, outs_recorded, batters_faced, pitches, strikes,
+       hits_allowed, runs_allowed, earned_runs, walks_allowed, strikeouts, home_runs_allowed,
+       inherited_runners, inherited_runners_scored,
+       holds, saves, blown_saves,
+       field_map_json, source_path, data_feed_key, raw_json,
+       source_key, source_endpoint, source_season, source_game_type, ingestion_mode,
+       batch_id, run_id, certification_status, certification_grade, source_confidence, source_snapshot_date,
+       certified_at, promoted_at, created_at
+     )
+     SELECT
+       s.bullpen_key, s.team_id, s.game_date, s.game_pk, NULL, NULL, CURRENT_TIMESTAMP,
+       s.game_type, s.game_status, s.season, s.opponent_team_id, s.is_home, s.venue_id,
+       s.pitcher_id, s.pitcher_name, s.pitcher_hand, s.pitcher_role, s.relief_classification,
+       s.relief_appearance, s.games_started, s.games_pitched, s.pitcher_order_index, s.bullpen_appearance_index,
+       s.innings_pitched, s.innings_pitched_decimal, s.outs_recorded, s.batters_faced, s.pitches, s.strikes,
+       s.hits_allowed, s.runs_allowed, s.earned_runs, s.walks_allowed, s.strikeouts, s.home_runs_allowed,
+       s.inherited_runners, s.inherited_runners_scored,
+       s.holds, s.saves, s.blown_saves,
+       s.field_map_json, s.source_path, s.data_feed_key, s.raw_json,
+       s.source_key, s.source_endpoint, s.source_season, s.source_game_type, 'base_backfill',
+       s.batch_id, s.run_id, 'BASE_BULLPEN_HISTORY_BASE_PROMOTED_FROM_CERTIFIED_STAGE', 'BASE_PASS', s.source_confidence, s.source_snapshot_date,
+       CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, COALESCE(s.created_at, CURRENT_TIMESTAMP)
+     FROM bullpen_history_stage s
+     WHERE s.stage_id IN (SELECT stage_id FROM promote_keys)`,
+    batchId, limit
+  );
+  await run(env.TEAM_DB,
+    `UPDATE bullpen_history_stage
+     SET promoted_at=CURRENT_TIMESTAMP,
+         certification_status='BASE_BULLPEN_HISTORY_BASE_PROMOTED_FROM_CERTIFIED_STAGE',
+         certification_grade='BASE_PASS',
+         updated_at=CURRENT_TIMESTAMP
+     WHERE stage_id IN (
+       SELECT stage_id FROM (
+         SELECT stage_id
+         FROM bullpen_history_stage
+         WHERE batch_id=? AND promoted_at IS NULL
+         ORDER BY game_date, game_pk, team_id, pitcher_id
+         LIMIT ?
+       )
+     )`,
+    batchId, limit
+  );
+}
+
+async function runBasePromoteClean(env, input = {}) {
+  await ensureSchema(env);
+  const requestId = input.request_id || rid("bullpen_base_promote_request");
+  const chainId = input.chain_id || rid("bullpen_base_promote_chain");
+  const runId = input.run_id || rid("bullpen_base_promote_run");
+  const batchId = String(input.batch_id || CERTIFIED_BASE_STAGE_BATCH_ID);
+  const limit = Math.max(25, Math.min(Number(input.max_rows_per_tick || input.chunk_rows || DEFAULT_PROMOTION_CHUNK_ROWS), 750));
+
+  if (batchId !== CERTIFIED_BASE_STAGE_BATCH_ID) {
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, status: "BLOCKED_WRONG_BATCH", certification: "BASE_BULLPEN_HISTORY_PROMOTION_BLOCKED_WRONG_BATCH", certification_grade: "BLOCKED", expected_batch_id: CERTIFIED_BASE_STAGE_BATCH_ID, no_mining: true, external_calls_performed: 0 };
+  }
+
+  const batch = await first(env.TEAM_DB, `SELECT * FROM bullpen_history_batches WHERE batch_id=?`, batchId);
+  if (!batch) {
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, status: "BLOCKED_BATCH_NOT_FOUND", certification: "BASE_BULLPEN_HISTORY_PROMOTION_BLOCKED_BATCH_NOT_FOUND", certification_grade: "BLOCKED", no_mining: true, external_calls_performed: 0 };
+  }
+  const batchStatus = String(batch.status || "");
+  const batchCert = String(batch.certification_status || "");
+  const batchGrade = String(batch.certification_grade || "");
+  const certifiedOrPromoting = (
+    (batchStatus === "BASE_BACKFILL_STAGE_ONLY_CERTIFIED" && batchCert === "BASE_BULLPEN_HISTORY_BASE_STAGE_ONLY_CERTIFIED_READY_FOR_PROMOTION_REVIEW" && batchGrade === "STAGE_PASS") ||
+    (batchStatus === "PROMOTING_BASE_BACKFILL" && batchCert === "BASE_BULLPEN_HISTORY_BASE_PROMOTION_PARTIAL_CONTINUE" && batchGrade === "PROMOTION_PARTIAL")
+  );
+  if (!certifiedOrPromoting) {
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, status: "BLOCKED_BATCH_NOT_CERTIFIED_FOR_PROMOTION", certification: "BASE_BULLPEN_HISTORY_PROMOTION_BLOCKED_STAGE_NOT_CERTIFIED", certification_grade: "BLOCKED", current_batch_status: batch.status, current_certification_status: batch.certification_status, current_certification_grade: batch.certification_grade, no_mining: true, external_calls_performed: 0 };
+  }
+
+  const stageBefore = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM bullpen_history_stage WHERE batch_id=?`, batchId);
+  const stageCount = Number(stageBefore && stageBefore.c || 0);
+  const stageDup = await first(env.TEAM_DB, `SELECT COALESCE(SUM(c-1),0) AS duplicate_count FROM (SELECT bullpen_key, COUNT(*) AS c FROM bullpen_history_stage WHERE batch_id=? GROUP BY bullpen_key HAVING COUNT(*)>1)`, batchId);
+  const duplicateStageKeys = Number(stageDup && stageDup.duplicate_count || 0);
+  const invalid = await first(env.TEAM_DB,
+    `SELECT
+       SUM(CASE WHEN relief_appearance<>1 OR games_started<>0 THEN 1 ELSE 0 END) AS invalid_relief,
+       SUM(CASE WHEN game_pk IS NULL THEN 1 ELSE 0 END) AS missing_game_pk,
+       SUM(CASE WHEN game_date IS NULL OR game_date='' THEN 1 ELSE 0 END) AS missing_game_date,
+       SUM(CASE WHEN team_id IS NULL OR team_id='' THEN 1 ELSE 0 END) AS missing_team_id,
+       SUM(CASE WHEN opponent_team_id IS NULL OR opponent_team_id='' THEN 1 ELSE 0 END) AS missing_opponent_team_id,
+       SUM(CASE WHEN pitcher_id IS NULL THEN 1 ELSE 0 END) AS missing_pitcher_id,
+       SUM(CASE WHEN raw_json IS NULL OR raw_json='' THEN 1 ELSE 0 END) AS raw_json_missing
+     FROM bullpen_history_stage WHERE batch_id=?`, batchId);
+  const invalidCount = Number(invalid && (invalid.invalid_relief || invalid.missing_game_pk || invalid.missing_game_date || invalid.missing_team_id || invalid.missing_opponent_team_id || invalid.missing_pitcher_id || invalid.raw_json_missing) || 0);
+
+  if (stageCount !== CERTIFIED_BASE_STAGE_EXPECTED_ROWS || duplicateStageKeys !== 0 || invalidCount !== 0) {
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, status: "BLOCKED_STAGE_QUALITY_GATE_FAILED", certification: "BASE_BULLPEN_HISTORY_PROMOTION_BLOCKED_STAGE_QUALITY_GATE_FAILED", certification_grade: "BLOCKED", stage_count: stageCount, expected_stage_count: CERTIFIED_BASE_STAGE_EXPECTED_ROWS, duplicate_stage_keys: duplicateStageKeys, invalid_summary: invalid, no_mining: true, external_calls_performed: 0 };
+  }
+
+  const remainingBefore = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM bullpen_history_stage WHERE batch_id=? AND promoted_at IS NULL`, batchId);
+  const remaining = Number(remainingBefore && remainingBefore.c || 0);
+  if (remaining > 0) {
+    await run(env.TEAM_DB, `UPDATE bullpen_history_batches SET status='PROMOTING_BASE_BACKFILL', certification_status='BASE_BULLPEN_HISTORY_BASE_PROMOTION_PARTIAL_CONTINUE', certification_grade='PROMOTION_PARTIAL', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, batchId);
+    await promoteBullpenStageChunk(env, batchId, limit);
+  }
+
+  const promotedStage = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM bullpen_history_stage WHERE batch_id=? AND promoted_at IS NOT NULL`, batchId);
+  const remainingAfter = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM bullpen_history_stage WHERE batch_id=? AND promoted_at IS NULL`, batchId);
+  const live = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM bullpen_history WHERE batch_id=?`, batchId);
+  const liveRows = Number(live && live.c || 0);
+  const promotedStageRows = Number(promotedStage && promotedStage.c || 0);
+  const remainingRows = Number(remainingAfter && remainingAfter.c || 0);
+  const duplicateLiveKeys = await liveDuplicateCountForBatch(env, batchId);
+  const partial = remainingRows > 0;
+
+  if (partial) {
+    const output = {
+      ok: true,
+      data_ok: true,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      request_id: requestId,
+      chain_id: chainId,
+      run_id: runId,
+      batch_id: batchId,
+      mode: "base_promote_clean",
+      status: "PARTIAL_CONTINUE",
+      certification: "BASE_BULLPEN_HISTORY_BASE_PROMOTION_PARTIAL_CONTINUE",
+      certification_grade: "PROMOTION_PARTIAL",
+      rows_read: stageCount,
+      rows_written: promotedStageRows,
+      rows_promoted: liveRows,
+      live_rows_for_batch: liveRows,
+      promoted_stage_rows: promotedStageRows,
+      remaining_stage_rows_to_promote: remainingRows,
+      duplicate_live_keys: duplicateLiveKeys,
+      no_mining: true,
+      external_calls_performed: 0,
+      continuation_required: true,
+      orchestrator_should_self_continue: true,
+      no_delta_update_execution: true,
+      no_daily_bullpen_availability: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true
+    };
+    await run(env.TEAM_DB, `UPDATE bullpen_history_batches SET rows_promoted=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, liveRows, safeJson(output), batchId);
+    return output;
+  }
+
+  if (liveRows !== CERTIFIED_BASE_STAGE_EXPECTED_ROWS || duplicateLiveKeys !== 0) {
+    const output = { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, mode: "base_promote_clean", status: "BLOCKED_LIVE_VERIFICATION_FAILED", certification: "BASE_BULLPEN_HISTORY_PROMOTION_BLOCKED_LIVE_VERIFICATION_FAILED", certification_grade: "BLOCKED", rows_promoted: liveRows, live_rows_for_batch: liveRows, expected_live_rows: CERTIFIED_BASE_STAGE_EXPECTED_ROWS, duplicate_live_keys: duplicateLiveKeys, stage_rows_before_clean: stageCount, no_cleanup: true, no_mining: true, external_calls_performed: 0 };
+    await run(env.TEAM_DB, `UPDATE bullpen_history_batches SET status=?, certification_status=?, certification_grade=?, rows_promoted=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, output.status, output.certification, output.certification_grade, liveRows, safeJson(output), batchId);
+    return output;
+  }
+
+  await run(env.TEAM_DB, `DELETE FROM bullpen_history_stage WHERE batch_id=?`, batchId);
+  const stageAfterClean = await stageRowsAfterClean(env, batchId);
+  if (stageAfterClean !== 0) {
+    const output = { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, mode: "base_promote_clean", status: "BLOCKED_STAGE_CLEANUP_FAILED", certification: "BASE_BULLPEN_HISTORY_PROMOTION_BLOCKED_STAGE_CLEANUP_FAILED", certification_grade: "BLOCKED", rows_promoted: liveRows, live_rows_for_batch: liveRows, duplicate_live_keys: duplicateLiveKeys, stage_rows_after_clean: stageAfterClean, no_mining: true, external_calls_performed: 0 };
+    await run(env.TEAM_DB, `UPDATE bullpen_history_batches SET status=?, certification_status=?, certification_grade=?, rows_promoted=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, output.status, output.certification, output.certification_grade, liveRows, safeJson(output), batchId);
+    return output;
+  }
+
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    request_id: requestId,
+    chain_id: chainId,
+    run_id: runId,
+    batch_id: batchId,
+    mode: "base_promote_clean",
+    status: "COMPLETED_PROMOTED_CLEANED",
+    certification: "BASE_BULLPEN_HISTORY_BASE_PROMOTED_CLEANED_CERTIFIED",
+    certification_status: "BASE_BULLPEN_HISTORY_BASE_PROMOTED_CLEANED_CERTIFIED",
+    certification_grade: "BASE_PASS",
+    source_shape_classification: "GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS",
+    rows_read: stageCount,
+    rows_written: liveRows,
+    rows_promoted: liveRows,
+    live_rows_for_batch: liveRows,
+    expected_live_rows: CERTIFIED_BASE_STAGE_EXPECTED_ROWS,
+    duplicate_live_keys: duplicateLiveKeys,
+    stage_rows_after_clean: stageAfterClean,
+    saves_holds_blown_saves_field_rule: "stored_as_source_provided_advisory_fields_not_hard_certified_core_fields",
+    no_mining: true,
+    external_calls_performed: 0,
+    no_new_batch: true,
+    no_source_calls: true,
+    no_delta_update_execution: true,
+    no_daily_bullpen_availability: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    timestamp_utc: nowUtc()
+  };
+
+  await run(env.TEAM_DB,
+    `UPDATE bullpen_history_batches
+     SET status='COMPLETED_PROMOTED_CLEANED',
+         certification_status='BASE_BULLPEN_HISTORY_BASE_PROMOTED_CLEANED_CERTIFIED',
+         certification_grade='BASE_PASS',
+         rows_promoted=?,
+         stage_only=0,
+         probe_only=0,
+         promoted_at=COALESCE(promoted_at,CURRENT_TIMESTAMP),
+         cleaned_at=CURRENT_TIMESTAMP,
+         output_json=?,
+         updated_at=CURRENT_TIMESTAMP
+     WHERE batch_id=?`,
+    liveRows, safeJson(output), batchId
+  );
+
+  await run(env.TEAM_DB,
+    `INSERT OR REPLACE INTO bullpen_history_certifications (certification_id,batch_id,run_id,request_id,certification_status,certification_grade,expected_game_count,expected_bullpen_rows,staged_bullpen_rows,rows_promoted,duplicate_stage_keys,non_final_games,source_error_count,repair_required_count,unclear_count,missing_game_pk,missing_game_date,missing_team_id,missing_opponent_team_id,missing_pitcher_id,starter_rows_included,invalid_relief_classification,raw_json_missing,lineage_missing_count,source_shape_classification,relief_identification_path,starter_exclusion_path,safest_key_model,field_map_json,details_json,created_at,updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+    rid("bh_cert"), batchId, runId, requestId, 'BASE_BULLPEN_HISTORY_BASE_PROMOTED_CLEANED_CERTIFIED', 'BASE_PASS', Number(batch.total_game_count || 712), CERTIFIED_BASE_STAGE_EXPECTED_ROWS, 0, liveRows, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS', batch.relief_identification_path || 'MLB StatsAPI final boxscore gamesStarted == 0', batch.starter_exclusion_path || 'Exclude gamesStarted == 1', batch.safest_key_model || 'game_pk + team_id + pitcher_id', safeJson({ advisory_fields: ['holds','saves','blown_saves'] }), safeJson(output)
+  );
+
+  return output;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -948,7 +1196,8 @@ export default {
       const mode = String(input.mode || (input.input_json && input.input_json.mode) || "source_lock_probe");
       if (mode === "source_lock_probe") return jsonResponse(await runSourceProbe(env, input));
       if (mode === "base_backfill_stage_only" || mode === "base_backfill") return jsonResponse(await runBaseBackfillStageOnly(env, input));
-      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode_v0_2_0", mode, allowed_modes: ["source_lock_probe","base_backfill_stage_only"], blocked_reason: "v0.2.0 forbids live promotion, delta execution, and daily bullpen availability.", no_live_promotion: true }, 400);
+      if (mode === "base_promote_clean" || mode === "base_backfill_promote_clean") return jsonResponse(await runBasePromoteClean(env, input));
+      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode_v0_3_0", mode, allowed_modes: ["source_lock_probe","base_backfill_stage_only","base_promote_clean"], blocked_reason: "v0.3.0 forbids delta execution, daily bullpen availability, scoring, ranking, and final board.", no_delta_update_execution: true, no_daily_bullpen_availability: true }, 400);
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }
