@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-metrics";
-const VERSION = "alphadog-v2-base-hitter-metrics-v0.1.0-schema-formula-input-audit";
+const VERSION = "alphadog-v2-base-hitter-metrics-v0.2.0-sample-stage-calibration";
 const JOB_KEY = "base-hitter-metrics";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB"];
@@ -336,9 +336,9 @@ function baseIdentity(env) {
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "SCHEMA_FORMULA_INPUT_AUDIT_READY",
+    status: "SAMPLE_STAGE_CALIBRATION_READY",
     timestamp_utc: nowUtc(),
-    phase: "incremental_base_derived_metrics_readiness",
+    phase: "incremental_base_derived_metrics_sample_stage_calibration",
     hard_blocks: {
       no_live_metric_promotion: true,
       no_source_table_mutation: true,
@@ -463,6 +463,293 @@ function metricReadiness(logCols, splitCols) {
   return { aggregate, rates, split_metrics: splitMetrics, deferred };
 }
 
+
+function thresholdNumber(thresholds, key, fallback = null) {
+  const row = (thresholds || []).find(t => String(t.threshold_key || "") === key);
+  if (!row || row.threshold_value === null || row.threshold_value === undefined) return fallback;
+  const n = Number(row.threshold_value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function sampleLabelFromGames(gamesCount, thresholds) {
+  const strong = thresholdNumber(thresholds, "min_games_sample_strong", null);
+  const usable = thresholdNumber(thresholds, "min_games_sample_usable", null);
+  const thin = thresholdNumber(thresholds, "min_games_sample_thin", null);
+  const tiny = thresholdNumber(thresholds, "min_games_sample_tiny", null);
+  if (strong !== null && gamesCount >= strong) return "sample_strong";
+  if (usable !== null && gamesCount >= usable) return "sample_usable";
+  if (thin !== null && gamesCount >= thin) return "sample_thin";
+  if (tiny !== null && gamesCount >= tiny) return "sample_tiny";
+  return "sample_none";
+}
+
+function splitLabelFromPa(pa, thresholds) {
+  const strong = thresholdNumber(thresholds, "split_pa_sample_strong", null);
+  const usable = thresholdNumber(thresholds, "split_pa_sample_usable", null);
+  const tiny = thresholdNumber(thresholds, "split_pa_sample_tiny", null);
+  if (strong !== null && pa >= strong) return "split_strong";
+  if (usable !== null && pa >= usable) return "split_usable";
+  if (tiny !== null && pa >= tiny) return "split_tiny";
+  return "split_none";
+}
+
+function num(v) {
+  const n = Number(v || 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function safeDivide(numerator, denominator) {
+  const n = Number(numerator);
+  const d = Number(denominator);
+  if (!Number.isFinite(n) || !Number.isFinite(d) || d <= 0) return null;
+  const out = n / d;
+  return Number.isFinite(out) ? out : null;
+}
+
+function windowRowsFor(logRows, window) {
+  if (!window || String(window.window_type) === "season_to_date" || String(window.window_key) === "season_to_date") return logRows.slice();
+  const size = Number(window.window_size || 0);
+  if (!Number.isFinite(size) || size <= 0) return logRows.slice();
+  return logRows.slice(Math.max(0, logRows.length - size));
+}
+
+function sumWindow(rows) {
+  const sums = {
+    games_count: new Set(), pa_sum: 0, ab_sum: 0, hits_sum: 0, singles_sum: 0, doubles_sum: 0,
+    triples_sum: 0, home_runs_sum: 0, walks_sum: 0, strikeouts_sum: 0, runs_sum: 0, rbi_sum: 0,
+    stolen_bases_sum: 0, total_bases_source_sum: 0, total_bases_calc_sum: 0
+  };
+  for (const r of rows) {
+    if (r.game_pk !== null && r.game_pk !== undefined) sums.games_count.add(String(r.game_pk));
+    sums.pa_sum += num(r.pa); sums.ab_sum += num(r.ab); sums.hits_sum += num(r.hits);
+    sums.singles_sum += num(r.singles); sums.doubles_sum += num(r.doubles); sums.triples_sum += num(r.triples);
+    sums.home_runs_sum += num(r.home_runs); sums.walks_sum += num(r.walks); sums.strikeouts_sum += num(r.strikeouts);
+    sums.runs_sum += num(r.runs); sums.rbi_sum += num(r.rbi); sums.stolen_bases_sum += num(r.stolen_bases);
+    sums.total_bases_source_sum += num(r.total_bases);
+    sums.total_bases_calc_sum += num(r.singles) + (2 * num(r.doubles)) + (3 * num(r.triples)) + (4 * num(r.home_runs));
+  }
+  sums.games_count = sums.games_count.size;
+  return sums;
+}
+
+function metricRowsForWindow(playerId, season, windowKey, rows, logTotalRows, splitRows, latestGameDate, formulaVersion, configProfileId, batchId, runId, sourceStartDate, sourceEndDate, thresholds) {
+  const s = sumWindow(rows);
+  const rel = sampleLabelFromGames(s.games_count, thresholds);
+  const tbMismatch = Math.abs(s.total_bases_source_sum - s.total_bases_calc_sum) > 0.000001;
+  const baseMeta = {
+    batch_id: batchId, run_id: runId, player_id: playerId, season, metric_scope: "sample_stage", metric_window: windowKey,
+    source_start_date: sourceStartDate, source_end_date: sourceEndDate, source_snapshot_date: null,
+    input_log_row_count: rows.length, input_split_row_count: splitRows.length, input_latest_game_date: latestGameDate,
+    data_feed_key: "derived_hitter_metrics_v0_2_0_sample_stage", source_key: "d1_hitter_game_logs", ingestion_mode: "sample_stage_calibration",
+    certification_status: "sample_stage_not_promoted", certification_grade: "SAMPLE_STAGE", certified_at: null, promoted_at: null,
+    formula_version: formulaVersion, config_profile_id: configProfileId, reliability_label: rel
+  };
+  const rawSummary = { games_count: s.games_count, available_log_rows: rows.length, window_key: windowKey, tb_source_sum: s.total_bases_source_sum, tb_calc_sum: s.total_bases_calc_sum, tb_mismatch: tbMismatch };
+  const out = [];
+  function add(metric_key, family, value, numerator = null, denominator = null, extra = {}) {
+    const missing = extra.missing_data_reason || (rows.length === 0 ? "NO_LOG_ROWS_IN_WINDOW" : (tbMismatch && metric_key.includes("total_bases") ? "TOTAL_BASES_SOURCE_CALC_MISMATCH_REVIEW" : null));
+    out.push({ ...baseMeta, metric_key, metric_family: family, metric_value: value, metric_text_value: extra.metric_text_value || null, numerator, denominator, raw_input_summary_json: JSON.stringify(rawSummary), metric_json: JSON.stringify({ ...extra, sample_stage_only: true, no_promotion: true }), missing_data_reason: missing, row_status: extra.row_status || (missing ? "review_flag" : "sample_stage_staged"), row_error: null });
+  }
+  add("games_count", "sample_size", s.games_count, s.games_count, null);
+  for (const key of ["pa_sum","ab_sum","hits_sum","singles_sum","doubles_sum","triples_sum","home_runs_sum","walks_sum","strikeouts_sum","runs_sum","rbi_sum","stolen_bases_sum","total_bases_source_sum","total_bases_calc_sum"]) add(key, "direct_aggregate", s[key], s[key], null);
+  add("batting_average", "rate", safeDivide(s.hits_sum, s.ab_sum), s.hits_sum, s.ab_sum, s.ab_sum <= 0 ? { missing_data_reason: "DENOMINATOR_ZERO_AB", row_status: "review_flag" } : {});
+  add("slugging_percentage", "rate", safeDivide(s.total_bases_calc_sum, s.ab_sum), s.total_bases_calc_sum, s.ab_sum, s.ab_sum <= 0 ? { missing_data_reason: "DENOMINATOR_ZERO_AB", row_status: "review_flag" } : {});
+  add("strikeout_rate", "rate", safeDivide(s.strikeouts_sum, s.pa_sum), s.strikeouts_sum, s.pa_sum, s.pa_sum <= 0 ? { missing_data_reason: "DENOMINATOR_ZERO_PA", row_status: "review_flag" } : {});
+  add("walk_rate", "rate", safeDivide(s.walks_sum, s.pa_sum), s.walks_sum, s.pa_sum, s.pa_sum <= 0 ? { missing_data_reason: "DENOMINATOR_ZERO_PA", row_status: "review_flag" } : {});
+  add("hr_rate", "rate", safeDivide(s.home_runs_sum, s.pa_sum), s.home_runs_sum, s.pa_sum, s.pa_sum <= 0 ? { missing_data_reason: "DENOMINATOR_ZERO_PA", row_status: "review_flag" } : {});
+  add("tb_per_pa", "rate", safeDivide(s.total_bases_calc_sum, s.pa_sum), s.total_bases_calc_sum, s.pa_sum, s.pa_sum <= 0 ? { missing_data_reason: "DENOMINATOR_ZERO_PA", row_status: "review_flag" } : {});
+  add("h_per_ab", "rate", safeDivide(s.hits_sum, s.ab_sum), s.hits_sum, s.ab_sum, s.ab_sum <= 0 ? { missing_data_reason: "DENOMINATOR_ZERO_AB", row_status: "review_flag" } : {});
+  add("raw_ob_rate", "rate_proxy", safeDivide(s.hits_sum + s.walks_sum, s.pa_sum), s.hits_sum + s.walks_sum, s.pa_sum, { proxy_only: true, not_true_obp: true, missing_data_reason: s.pa_sum <= 0 ? "DENOMINATOR_ZERO_PA" : "RAW_OB_RATE_PROXY_NOT_TRUE_OBP", row_status: "review_flag" });
+  add("sample_size_label", "sample_label", null, s.games_count, null, { metric_text_value: rel, row_status: "sample_stage_staged" });
+  return out;
+}
+
+function splitMetricRows(playerId, season, splitRows, logRows, latestGameDate, formulaVersion, configProfileId, batchId, runId, thresholds) {
+  const out = [];
+  const have = new Set(splitRows.map(r => String(r.split_code || r.split_key || "")));
+  const missingSides = ["vs_left", "vs_right"].filter(s => !have.has(s));
+  for (const split of splitRows.filter(r => ["vs_left", "vs_right"].includes(String(r.split_code || r.split_key)))) {
+    const splitKey = String(split.split_code || split.split_key);
+    const label = splitLabelFromPa(num(split.pa), thresholds);
+    const baseMeta = {
+      batch_id: batchId, run_id: runId, player_id: playerId, season, metric_scope: "sample_stage", metric_window: splitKey,
+      source_start_date: null, source_end_date: null, source_snapshot_date: split.source_snapshot_date || null,
+      input_log_row_count: logRows.length, input_split_row_count: splitRows.length, input_latest_game_date: latestGameDate,
+      data_feed_key: "derived_hitter_metrics_v0_2_0_sample_stage", source_key: "d1_hitter_splits_source_provided", ingestion_mode: "sample_stage_calibration",
+      certification_status: "sample_stage_not_promoted", certification_grade: "SAMPLE_STAGE", certified_at: null, promoted_at: null,
+      formula_version: formulaVersion, config_profile_id: configProfileId, reliability_label: label
+    };
+    function add(metric_key, family, value, numerator = null, denominator = null, text = null) {
+      out.push({ ...baseMeta, metric_key: `${splitKey}_${metric_key}`, metric_family: family, metric_value: value, metric_text_value: text, numerator, denominator, raw_input_summary_json: JSON.stringify({ split_key: splitKey, split_pa: num(split.pa), missing_sides: missingSides }), metric_json: JSON.stringify({ source_pass_through: true, sample_stage_only: true, no_promotion: true }), missing_data_reason: missingSides.length ? `MISSING_SPLIT_SIDE_${missingSides.join("_")}` : null, row_status: missingSides.length ? "review_flag" : "sample_stage_staged", row_error: null });
+    }
+    add("split_pa", "split_context", num(split.pa), num(split.pa), null);
+    add("split_ab", "split_context", num(split.ab), num(split.ab), null);
+    add("split_hits", "split_context", num(split.hits), num(split.hits), null);
+    add("split_home_runs", "split_context", num(split.home_runs), num(split.home_runs), null);
+    add("split_walks", "split_context", num(split.walks), num(split.walks), null);
+    add("split_strikeouts", "split_context", num(split.strikeouts), num(split.strikeouts), null);
+    add("split_avg", "split_context_source_rate", split.avg === null || split.avg === undefined ? null : Number(split.avg), null, null);
+    add("split_obp", "split_context_source_rate", split.obp === null || split.obp === undefined ? null : Number(split.obp), null, null);
+    add("split_slg", "split_context_source_rate", split.slg === null || split.slg === undefined ? null : Number(split.slg), null, null);
+    add("split_ops", "split_context_source_rate", split.ops === null || split.ops === undefined ? null : Number(split.ops), null, null);
+    add("split_babip", "split_context_source_rate", split.babip === null || split.babip === undefined ? null : Number(split.babip), null, null);
+    add("split_sample_label", "sample_label", null, num(split.pa), null, label);
+  }
+  if (!splitRows.length) {
+    out.push({ batch_id: batchId, run_id: runId, metric_key: "missing_split_rows", player_id: playerId, season, metric_scope: "sample_stage", metric_window: "split_context", metric_family: "missing_data_review", source_start_date: null, source_end_date: null, source_snapshot_date: null, input_log_row_count: logRows.length, input_split_row_count: 0, input_latest_game_date: latestGameDate, metric_value: null, metric_text_value: "missing_splits", numerator: null, denominator: null, data_feed_key: "derived_hitter_metrics_v0_2_0_sample_stage", source_key: "d1_hitter_splits_source_provided", ingestion_mode: "sample_stage_calibration", certification_status: "sample_stage_not_promoted", certification_grade: "SAMPLE_STAGE", certified_at: null, promoted_at: null, formula_version: formulaVersion, config_profile_id: configProfileId, raw_input_summary_json: JSON.stringify({ missing_splits: true }), metric_json: JSON.stringify({ review_flag: true, no_promotion: true }), missing_data_reason: "PLAYER_HAS_LOGS_NO_SPLIT_ROWS", reliability_label: "split_none", row_status: "review_flag", row_error: null, created_at: null, updated_at: null });
+  }
+  return out;
+}
+
+async function loadMetricConfig(env) {
+  const profile = await queryFirst(env.CONFIG_DB, "SELECT profile_id, profile_status, profile_json FROM config_metric_calibration_profiles WHERE metric_domain='hitter' AND active=1 LIMIT 1");
+  const formula = await queryFirst(env.CONFIG_DB, "SELECT formula_version, version_status, formula_catalog_json FROM config_metric_formula_versions WHERE metric_domain='hitter' AND active=1 LIMIT 1");
+  const windows = await queryAll(env.CONFIG_DB, "SELECT window_key, metric_scope, window_type, window_size, sort_order FROM config_metric_windows WHERE metric_domain='hitter' AND enabled=1 ORDER BY sort_order ASC");
+  const definitions = await queryAll(env.CONFIG_DB, "SELECT metric_key, metric_family, metric_scope, source_table, numerator_field, denominator_field, enabled, neutral_metric_only FROM config_metric_definitions WHERE enabled=1 AND neutral_metric_only=1");
+  const thresholds = profile ? await queryAll(env.CONFIG_DB, "SELECT threshold_key, config_profile_id, metric_family, metric_key, threshold_type, threshold_value, threshold_json, label, enabled FROM config_metric_thresholds WHERE enabled=1 AND config_profile_id=?", [profile.profile_id]) : [];
+  const blockers = [];
+  if (!profile) blockers.push("CONFIG_PROFILE_UNAVAILABLE");
+  if (!formula) blockers.push("FORMULA_VERSION_UNAVAILABLE");
+  if (!windows.length) blockers.push("METRIC_WINDOWS_UNAVAILABLE");
+  if (!thresholds.length) blockers.push("THRESHOLDS_UNAVAILABLE");
+  return { profile, formula, windows, definitions, thresholds, blockers };
+}
+
+async function selectSamplePlayers(env, limit = 30) {
+  const queries = [
+    ["high_volume", "SELECT player_id FROM hitter_game_logs GROUP BY player_id ORDER BY SUM(COALESCE(pa,0)) DESC, player_id ASC LIMIT 5"],
+    ["low_volume", "SELECT player_id FROM hitter_game_logs GROUP BY player_id HAVING SUM(COALESCE(pa,0)) > 0 ORDER BY SUM(COALESCE(pa,0)) ASC, player_id ASC LIMIT 5"],
+    ["few_games", "SELECT player_id FROM hitter_game_logs GROUP BY player_id HAVING COUNT(DISTINCT game_pk) < 20 ORDER BY COUNT(DISTINCT game_pk) ASC, SUM(COALESCE(pa,0)) ASC, player_id ASC LIMIT 5"],
+    ["split_complete", "SELECT l.player_id FROM hitter_game_logs l JOIN hitter_splits s ON s.player_id=l.player_id GROUP BY l.player_id HAVING COUNT(DISTINCT CASE WHEN s.split_code IN ('vs_left','vs_right') THEN s.split_code END)=2 ORDER BY l.player_id ASC LIMIT 5"],
+    ["split_missing", "SELECT l.player_id FROM hitter_game_logs l LEFT JOIN hitter_splits s ON s.player_id=l.player_id AND s.split_code IN ('vs_left','vs_right') GROUP BY l.player_id HAVING COUNT(DISTINCT s.split_code)<2 ORDER BY SUM(COALESCE(l.pa,0)) DESC, l.player_id ASC LIMIT 5"],
+    ["power", "SELECT player_id FROM hitter_game_logs GROUP BY player_id ORDER BY SUM(COALESCE(home_runs,0)) DESC, SUM(COALESCE(total_bases,0)) DESC, player_id ASC LIMIT 5"],
+    ["contact", "SELECT player_id FROM hitter_game_logs GROUP BY player_id HAVING SUM(COALESCE(ab,0)) > 0 ORDER BY (1.0*SUM(COALESCE(hits,0))/SUM(COALESCE(ab,0))) DESC, SUM(COALESCE(ab,0)) DESC, player_id ASC LIMIT 5"],
+    ["high_k", "SELECT player_id FROM hitter_game_logs GROUP BY player_id HAVING SUM(COALESCE(pa,0)) > 0 ORDER BY (1.0*SUM(COALESCE(strikeouts,0))/SUM(COALESCE(pa,0))) DESC, SUM(COALESCE(pa,0)) DESC, player_id ASC LIMIT 5"],
+    ["speed", "SELECT player_id FROM hitter_game_logs GROUP BY player_id ORDER BY SUM(COALESCE(stolen_bases,0)) DESC, player_id ASC LIMIT 5"]
+  ];
+  const seen = new Set();
+  const players = [];
+  const groups = [];
+  for (const [group, sql] of queries) {
+    const rows = await queryAll(env.STATS_HITTER_DB, sql);
+    for (const r of rows) {
+      const id = Number(r.player_id);
+      if (!seen.has(id) && players.length < limit) { seen.add(id); players.push(id); }
+      groups.push({ group, player_id: id });
+    }
+  }
+  return { players, groups };
+}
+
+async function insertStageRow(env, row) {
+  await execSql(env.STATS_HITTER_DB,
+    "INSERT OR REPLACE INTO hitter_metric_stage (stage_id, batch_id, run_id, metric_key, player_id, season, metric_scope, metric_window, metric_family, source_start_date, source_end_date, source_snapshot_date, input_log_row_count, input_split_row_count, input_latest_game_date, metric_value, metric_text_value, numerator, denominator, data_feed_key, source_key, ingestion_mode, certification_status, certification_grade, certified_at, promoted_at, formula_version, config_profile_id, raw_input_summary_json, metric_json, missing_data_reason, reliability_label, row_status, row_error, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    [rid("hitter_metric_stage"), row.batch_id, row.run_id, row.metric_key, row.player_id, row.season, row.metric_scope, row.metric_window, row.metric_family, row.source_start_date, row.source_end_date, row.source_snapshot_date, row.input_log_row_count, row.input_split_row_count, row.input_latest_game_date, row.metric_value, row.metric_text_value, row.numerator, row.denominator, row.data_feed_key, row.source_key, row.ingestion_mode, row.certification_status, row.certification_grade, row.certified_at, row.promoted_at, row.formula_version, row.config_profile_id, row.raw_input_summary_json, row.metric_json, row.missing_data_reason, row.reliability_label, row.row_status, row.row_error]
+  );
+}
+
+async function runSampleStage(env, input) {
+  const runId = input.run_id || rid("run_hitter_metrics_sample");
+  const batchId = input.batch_id || rid("hitter_metrics_sample_batch");
+  const schema = await ensureSchema(env);
+  const logInfo = await tableInfo(env.STATS_HITTER_DB, "hitter_game_logs");
+  const splitInfo = await tableInfo(env.STATS_HITTER_DB, "hitter_splits");
+  const logAudit = logInfo.ok ? await auditHitterLogs(env, logInfo.columns) : { table: "hitter_game_logs", ok: false, error: logInfo.error };
+  const splitAudit = splitInfo.ok ? await auditHitterSplits(env, splitInfo.columns) : { table: "hitter_splits", ok: false, error: splitInfo.error };
+  const config = await loadMetricConfig(env);
+  const blockerCodes = [...config.blockers];
+  if (!logInfo.ok || !logAudit.required_columns_present) blockerCodes.push("UPSTREAM_SCHEMA_UNSAFE_HITTER_GAME_LOGS");
+  if (!splitInfo.ok || !splitAudit.required_columns_present) blockerCodes.push("UPSTREAM_SCHEMA_UNSAFE_HITTER_SPLITS");
+  const logDup = Number((((logAudit.duplicates || {}).rows || [])[0] || {}).duplicate_keys || 0);
+  const splitDup = Number((((splitAudit.duplicates || {}).rows || [])[0] || {}).duplicate_keys || 0);
+  if (logDup > 0) blockerCodes.push("UPSTREAM_DUPLICATES_FOUND_HITTER_GAME_LOGS");
+  if (splitDup > 0) blockerCodes.push("UPSTREAM_DUPLICATES_FOUND_HITTER_SPLITS");
+  const logRows = Number((((logAudit.row_count || {}).rows || [])[0] || {}).c || 0);
+  const splitRowsCount = Number((((splitAudit.row_count || {}).rows || [])[0] || {}).c || 0);
+  if (logRows <= 0) blockerCodes.push("UPSTREAM_INPUT_NOT_CERTIFIED_HITTER_GAME_LOGS_EMPTY");
+  const sample = blockerCodes.length ? { players: [], groups: [] } : await selectSamplePlayers(env, 30);
+  if (!blockerCodes.length && sample.players.length === 0) blockerCodes.push("SAMPLE_COHORT_EMPTY");
+
+  let stagedRows = 0;
+  const rowErrors = [];
+  const latestGameDate = (((logAudit.date_range || {}).rows || [])[0] || {}).max_game_date || null;
+  const season = Number(input.source_season || 2026);
+  const formulaVersion = (config.formula && config.formula.formula_version) || input.formula_version || "hitter_metrics_formula_v0_1_0_readiness";
+  const configProfileId = (config.profile && config.profile.profile_id) || input.config_profile_id || "hitter_metrics_neutral_v0_1_0";
+  if (!blockerCodes.length) {
+    for (const playerId of sample.players) {
+      const logs = await queryAll(env.STATS_HITTER_DB, "SELECT * FROM hitter_game_logs WHERE player_id=? AND season=? ORDER BY date(game_date) ASC, game_pk ASC", [playerId, season]);
+      const splits = await queryAll(env.STATS_HITTER_DB, "SELECT * FROM hitter_splits WHERE player_id=? AND season=? AND split_code IN ('vs_left','vs_right') ORDER BY split_code ASC", [playerId, season]);
+      const firstDate = logs.length ? logs[0].game_date : null;
+      const lastDate = logs.length ? logs[logs.length - 1].game_date : null;
+      for (const w of config.windows) {
+        const wRows = windowRowsFor(logs, w);
+        const startDate = wRows.length ? wRows[0].game_date : firstDate;
+        const endDate = wRows.length ? wRows[wRows.length - 1].game_date : lastDate;
+        for (const row of metricRowsForWindow(playerId, season, String(w.window_key), wRows, logs.length, splits, latestGameDate, formulaVersion, configProfileId, batchId, runId, startDate, endDate, config.thresholds)) {
+          try { await insertStageRow(env, row); stagedRows++; } catch (err) { rowErrors.push({ player_id: playerId, metric_key: row.metric_key, error: String(err && err.message ? err.message : err).slice(0, 300) }); }
+        }
+      }
+      for (const row of splitMetricRows(playerId, season, splits, logs, latestGameDate, formulaVersion, configProfileId, batchId, runId, config.thresholds)) {
+        try { await insertStageRow(env, row); stagedRows++; } catch (err) { rowErrors.push({ player_id: playerId, metric_key: row.metric_key, error: String(err && err.message ? err.message : err).slice(0, 300) }); }
+      }
+    }
+  }
+  if (rowErrors.length) blockerCodes.push("STAGE_ROW_INSERT_ERRORS");
+  const dupRows = blockerCodes.length ? [] : await queryAll(env.STATS_HITTER_DB, "SELECT player_id, season, metric_scope, metric_window, metric_key, COUNT(*) AS c FROM hitter_metric_stage WHERE batch_id=? GROUP BY player_id, season, metric_scope, metric_window, metric_key HAVING COUNT(*) > 1 LIMIT 20", [batchId]);
+  if (dupRows.length) blockerCodes.push("DUPLICATE_STAGED_METRIC_KEYS");
+  const promotedStageRows = blockerCodes.length ? 0 : Number((await queryFirst(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c FROM hitter_metric_stage WHERE batch_id=? AND promoted_at IS NOT NULL", [batchId]) || {}).c || 0);
+  if (promotedStageRows > 0) blockerCodes.push("PROMOTED_STAGE_ROWS_FOUND");
+  if (!blockerCodes.length && stagedRows <= 0) blockerCodes.push("STAGED_ROWS_ZERO");
+
+  const status = blockerCodes.length ? "BLOCKED_SAMPLE_STAGE_CALIBRATION_NO_PROMOTION" : "COMPLETED_SAMPLE_STAGE_CALIBRATION_NO_PROMOTION";
+  const certification = blockerCodes.length ? "BASE_HITTER_METRICS_V0_2_0_SAMPLE_STAGE_CALIBRATION_BLOCKED_NO_PROMOTION" : "BASE_HITTER_METRICS_V0_2_0_SAMPLE_STAGE_CALIBRATION_COMPLETED_NO_PROMOTION";
+  const grade = blockerCodes.length ? "BLOCKED" : "SAMPLE_STAGE_PASS_NO_PROMOTION";
+  const output = {
+    ok: blockerCodes.length === 0,
+    data_ok: blockerCodes.length === 0,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    request_id: input.request_id || null,
+    chain_id: input.chain_id || null,
+    run_id: runId,
+    batch_id: batchId,
+    status,
+    certification,
+    mode: "sample_stage_calibration",
+    sample_stage_only: true,
+    sample_player_count: sample.players.length,
+    sample_players: sample.players,
+    rows_read: logRows + splitRowsCount,
+    rows_written: stagedRows + 2,
+    rows_staged: stagedRows,
+    rows_promoted: 0,
+    duplicate_count: dupRows.length,
+    external_calls_performed: 0,
+    writes_performed: { metric_stage_rows: stagedRows, metric_live_promotion_rows: 0, source_table_mutations: 0, board_scoring_final_rows: 0 },
+    hard_blocks_enforced: { no_live_metric_promotion: true, no_hitter_game_log_mutation: true, no_hitter_split_mutation: true, no_pitcher_team_starter_bullpen_mutation: true, no_market_board_mutation: true, no_scoring_ranking_final_board: true, no_external_mlb_calls: true },
+    config_used: { config_profile_id: configProfileId, formula_version: formulaVersion, window_count: config.windows.length, threshold_count: config.thresholds.length, definition_count: config.definitions.length },
+    sample_selection: { groups: sample.groups.slice(0, 100), cap: 30, deterministic_order: true },
+    input_readiness: { hitter_game_logs: logAudit, hitter_splits: splitAudit, blockers: blockerCodes },
+    row_errors: rowErrors.slice(0, 20),
+    validation_notes: ["Stage rows only; no live hitter_metrics promotion.", "raw_ob_rate is proxy only and is not OBP.", "split_obp/split_ops/split_babip are source-provided split pass-through metrics only.", "Volatility/stdev, true OBP, true OPS, and log-derived BABIP are deferred."],
+    next_action: blockerCodes.length ? "FIX_BLOCKERS_BEFORE_SAMPLE_REVIEW" : "RUN_POST_DEPLOY_SQL_AND_MANUAL_SAMPLE_REVIEW_BEFORE_FORMULA_LOCK",
+    timestamp_utc: nowUtc()
+  };
+  try {
+    await execSql(env.STATS_HITTER_DB,
+      "INSERT OR REPLACE INTO hitter_metric_batches (batch_id, run_id, worker_name, worker_version, mode, status, data_feed_key, source_key, source_season, input_log_row_count, input_split_row_count, input_latest_game_date, input_latest_split_snapshot_date, expected_hitter_universe_count, config_profile_id, formula_version, metric_catalog_json, formula_readiness_json, config_readiness_json, input_readiness_json, rows_staged, rows_promoted, duplicate_count, certification_status, certification_grade, certification_json, finished_at, updated_at, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)",
+      [batchId, runId, WORKER_NAME, VERSION, "sample_stage_calibration", status, "derived_hitter_metrics_v0_2_0_sample_stage", "d1_hitter_game_logs_hitter_splits", season, logRows, splitRowsCount, latestGameDate, (((splitAudit.snapshot_dates || {}).rows || [])[0] || {}).max_snapshot_date || null, Number((((logAudit.player_count || {}).rows || [])[0] || {}).distinct_players || 0), configProfileId, formulaVersion, JSON.stringify({ required_metrics: ["games_count","pa_sum","ab_sum","hits_sum","total_bases_calc_sum","batting_average","slugging_percentage","strikeout_rate","walk_rate","hr_rate","tb_per_pa","h_per_ab","raw_ob_rate","split_source_pass_through"], deferred: ["true_obp","true_ops","log_babip","statcast","stdev","scoring"] }), JSON.stringify({ formulas_locked_for_production_promotion: false, sample_stage_only: true }), JSON.stringify({ config_profile: config.profile, formula: config.formula, windows: config.windows, threshold_count: config.thresholds.length }), JSON.stringify(output.input_readiness), stagedRows, dupRows.length, certification, grade, JSON.stringify({ blockerCodes, sample_players: sample.players, no_promotion: true, row_errors: rowErrors.slice(0, 20) }), "v0.2.0 sample-stage calibration only. No live promotion performed."]
+    );
+    await execSql(env.STATS_HITTER_DB,
+      "INSERT OR REPLACE INTO hitter_metric_certifications (certification_id, batch_id, run_id, mode, certification_status, certification_grade, checks_json, rows_staged, rows_promoted, duplicate_count, formula_error_count, denominator_error_count, config_profile_id, formula_version) VALUES (?, ?, ?, 'sample_stage_calibration', ?, ?, ?, ?, 0, ?, ?, 0, ?, ?)",
+      [rid("hitter_metrics_cert"), batchId, runId, certification, grade, JSON.stringify({ blockerCodes, rows_staged: stagedRows, sample_player_count: sample.players.length, no_promotion: true, no_external_calls: true, no_scoring: true }), stagedRows, dupRows.length, rowErrors.length, configProfileId, formulaVersion]
+    );
+  } catch (err) { output.batch_persistence_warning = String(err && err.message ? err.message : err); }
+  return output;
+}
+
 async function runAudit(env, input) {
   const runId = input.run_id || rid("run_hitter_metrics_audit");
   const batchId = input.batch_id || rid("hitter_metrics_audit_batch");
@@ -578,7 +865,8 @@ export default {
     }
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const output = await runAudit(env, input || {});
+      const mode = String((input && input.mode) || "schema_formula_input_audit");
+      const output = mode === "sample_stage_calibration" ? await runSampleStage(env, input || {}) : await runAudit(env, input || {});
       return jsonResponse(output);
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
