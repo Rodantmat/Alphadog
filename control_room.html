@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.6.74-hitter-metrics-promote-delta-route -->
+<!-- alphadog-v2-control-room-v1.6.75-hitter-metrics-delta-repair-route -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,10 +28,10 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.6.74-hitter-metrics-promote-delta-route</div>
+<div id="versionTag">alphadog-v2-control-room-v1.6.75-hitter-metrics-delta-repair-route</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
-<div class="small">Access mode: single-user. Control Room enqueues/status only. Static Players, Static Prop Taxonomy, Static Certifier, Static Full Run, Sleeper source-probe, Base Hitter Game Logs base_backfill, Hitter Game Logs delta_update queue plus backend self-continuation launch, and Base Pitcher Game Logs base is locked; BASE > Pitcher Splits is locked promoted/cleaned and DELTA > Pitcher Splits runs the no-op, retained-restore, and scoped-repair gate and Pitcher Delta Game Logs uses retained-stage restore/no-op before queue and scoped delta_update; visible buttons are in BASE / DELTA. Base Hitter Metrics v0.4.0 promotes certified snapshot stage to live hitter_metric_snapshots and retains stage; DELTA > Hitter Metrics no-ops when live is current or promotes the latest certified snapshot batch. No scoring. Base Hitter Splits is locked promoted/cleaned, and DELTA > Hitter Splits runs the no-op/current-snapshot and retained-stage repair gate with no MLB calls when current. Orchestrator scheduled backend/cron owns continuation. Wake is optional backend test/rescue only.</div>
+<div class="small">Access mode: single-user. Control Room enqueues/status only. Static Players, Static Prop Taxonomy, Static Certifier, Static Full Run, Sleeper source-probe, Base Hitter Game Logs base_backfill, Hitter Game Logs delta_update queue plus backend self-continuation launch, and Base Pitcher Game Logs base is locked; BASE > Pitcher Splits is locked promoted/cleaned and DELTA > Pitcher Splits runs the no-op, retained-restore, and scoped-repair gate and Pitcher Delta Game Logs uses retained-stage restore/no-op before queue and scoped delta_update; visible buttons are in BASE / DELTA. Base Hitter Metrics v0.4.1 supports snapshot retained-stage parity repair after live promotion; no source mutation, no MLB calls, no scoring. Base Hitter Splits is locked promoted/cleaned, and DELTA > Hitter Splits runs the no-op/current-snapshot and retained-stage repair gate with no MLB calls when current. Orchestrator scheduled backend/cron owns continuation. Wake is optional backend test/rescue only.</div>
 <div class="status" id="status">READY</div>
 
 <div class="section"><h3>DEBUG</h3><div class="grid">
@@ -80,11 +80,13 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 
 <div class="section"><h3>BASE HITTER METRICS</h3><div class="grid">
 <button class="orch" type="button" onclick="runJobButton('BASE > Hitter Metrics','orchestrator_enqueue_base_hitter_metrics')">BASE > Hitter Metrics</button>
-</div><div class="small">Dedicated visible route sentinel for Base Hitter Metrics v0.4.0 snapshot promote-retain. Promotes certified compact snapshot stage into live hitter_metric_snapshots, retains stage, no MLB calls, no source mutation, no scoring, no board mutation.</div></div>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Metrics','orchestrator_enqueue_delta_hitter_metrics')">DELTA > Hitter Metrics</button>
+</div><div class="small">Dedicated visible route sentinel for Base Hitter Metrics snapshot prep. DELTA > Hitter Metrics repairs missing live snapshot rows from retained stage; no MLB calls, no source mutation, no scoring.</div></div>
 
 <div class="section"><h3>BASE / DELTA</h3><div class="grid">
 <button class="orch" type="button" onclick="runJobButton('BASE > Hitter Game Logs','orchestrator_enqueue_base_hitter_game_logs')">Base Logs</button>
 <button class="orch" type="button" onclick="runJobButton('BASE > Hitter Metrics','orchestrator_enqueue_base_hitter_metrics')">Hitter Metrics</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Metrics','orchestrator_enqueue_delta_hitter_metrics')">Metric Delta</button>
 <button class="orch" type="button" onclick="runJobButton('BASE > Pitcher Game Logs','orchestrator_enqueue_base_pitcher_game_logs')">Pitcher Logs</button>
 <button class="orch" type="button" onclick="runJobButton('BASE > Team Game Logs','orchestrator_enqueue_base_team_game_logs')">Team Logs</button>
 <button class="orch" type="button" onclick="runJobButton('BASE > Starter History','orchestrator_enqueue_base_starter_history')">Starter Repair</button>
@@ -93,7 +95,6 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <button class="orch" type="button" onclick="runJobButton('BASE > Hitter Splits','orchestrator_enqueue_base_hitter_splits')">Hitter Splits</button>
 <button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Game Logs','orchestrator_enqueue_delta_hitter_game_logs')">Delta Logs</button>
 <button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Splits','orchestrator_enqueue_delta_hitter_splits')">Hitter Splits Delta</button>
-<button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Metrics','orchestrator_enqueue_delta_hitter_metrics')">Hitter Metrics Delta</button>
 <button class="orch" type="button" onclick="runJobButton('DELTA > Pitcher Splits','orchestrator_enqueue_delta_pitcher_splits')">Pitch Splits Delta</button>
 <button class="orch" type="button" onclick="runJobButton('DELTA > Pitcher Game Logs','orchestrator_enqueue_delta_pitcher_game_logs')">Pitch Delta</button>
 <button class="orch" type="button" onclick="runJobButton('DELTA > Team Game Logs','orchestrator_enqueue_delta_team_game_logs')">Team Delta</button>
@@ -165,7 +166,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",wake_binding_required:"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator",public_url_fallback_disabled:true,version:"alphadog-v2-control-room-v1.6.74-hitter-metrics-promote-delta-route", visible_hitter_metrics_button_required:true, hitter_metrics_route:"orchestrator_enqueue_base_hitter_metrics", delta_hitter_metrics_route:"orchestrator_enqueue_delta_hitter_metrics", ui_sentinel:"BASE_HITTER_METRICS_PROMOTE_RETAIN_V1_6_74", hitter_metrics_mode:"snapshot_promote_retain", delta_hitter_metrics_mode:"snapshot_delta_gate"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",wake_binding_required:"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator",public_url_fallback_disabled:true,version:"alphadog-v2-control-room-v1.6.75-hitter-metrics-delta-repair-route", visible_hitter_metrics_button_required:true, hitter_metrics_route:"orchestrator_enqueue_base_hitter_metrics", ui_sentinel:"BASE_HITTER_METRICS_DELTA_REPAIR_V1_6_75", hitter_metrics_mode:"snapshot_delta_gate_repair_ready"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
