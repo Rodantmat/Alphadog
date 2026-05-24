@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.77-hitter-delta-mode-contract-fix";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.78-pitcher-delta-mode-contract-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1800,14 +1800,23 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const rawRequestedMode = String((rowInput && rowInput.mode) || "base_promotion_microphase");
+  const normalizedWorkerMode = rawRequestedMode === "delta_retained_stage_restore_before_queue" ? "delta_update" : rawRequestedMode;
+  const normalizedRowInput = {
+    ...rowInput,
+    mode: normalizedWorkerMode,
+    original_mode: rawRequestedMode,
+    normalized_worker_mode: normalizedWorkerMode,
+    pitcher_delta_mode_normalization_v0_2_78: rawRequestedMode === "delta_retained_stage_restore_before_queue"
+  };
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
     job_key: row.job_key,
     worker_name: row.worker_name,
     trigger,
-    mode: "orchestrator_exact_base_pitcher_game_logs_base_promotion_microphase_dispatch",
-    input_json: { ...rowInput, mode: rowInput.mode || "base_promotion_microphase" }
+    mode: normalizedWorkerMode,
+    input_json: normalizedRowInput
   };
 
   const started = Date.now();
@@ -1877,7 +1886,11 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
       no_ranking: true,
       no_final_board_write: true,
       manual_wake_testing_only: true,
-      no_browser_pump: true
+      no_browser_pump: true,
+      pitcher_delta_mode_normalization_v0_2_78: true,
+      raw_requested_mode: rawRequestedMode,
+      normalized_worker_mode: normalizedWorkerMode,
+      legacy_preflight_mode_normalized: rawRequestedMode === "delta_retained_stage_restore_before_queue"
     }
   };
 
@@ -1903,7 +1916,7 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
     row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, base_or_delta_continuation: true,
       retained_stage_restore_before_queue_control_room: true,
       scoped_delta_targets_only: true,
-      no_normal_full_universe_sweep: true, partial_continue: partialContinue })
+      no_normal_full_universe_sweep: true, partial_continue: partialContinue, raw_requested_mode: rawRequestedMode, normalized_worker_mode: normalizedWorkerMode, pitcher_delta_mode_normalization_v0_2_78: rawRequestedMode === 'delta_retained_stage_restore_before_queue' })
   );
 
   return cappedOutput;
