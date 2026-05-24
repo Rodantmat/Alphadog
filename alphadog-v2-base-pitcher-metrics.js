@@ -1,12 +1,12 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-metrics";
-const VERSION = "alphadog-v2-base-pitcher-metrics-v0.2.1-sample-stage-batch-write-fix";
+const VERSION = "alphadog-v2-base-pitcher-metrics-v0.3.0-full-granular-stage-only";
 const JOB_KEY = "base-pitcher-metrics";
 
-const PROFILE_ID = "pitcher_metrics_neutral_v0_2_0_sample_stage";
-const FORMULA_VERSION = "pitcher_metrics_formula_v0_2_0_sample_stage";
-const DATA_FEED_KEY = "derived_pitcher_metrics_v0_2_0_sample_stage_calibration";
+const PROFILE_ID = "pitcher_metrics_neutral_v0_3_0_base_stage";
+const FORMULA_VERSION = "pitcher_metrics_formula_v0_3_0_base_stage";
+const DATA_FEED_KEY = "derived_pitcher_metrics_v0_3_0_base_stage_only";
 const DEFAULT_SEASON = 2026;
-const DEFAULT_SAMPLE_TARGET = 30;
+const DEFAULT_CHUNK_SIZE = 40;
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "STATS_PITCHER_DB"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN"];
@@ -21,36 +21,36 @@ const REQUIRED_PITCHER_SPLIT_COLUMNS = [
 ];
 
 const METRIC_DEFS = [
-  { key: "pitcher_v020_games_count", family: "direct_aggregate", source: "pitcher_game_logs", num: "games_count", den: null },
-  { key: "pitcher_v020_appearances_count", family: "direct_aggregate", source: "pitcher_game_logs", num: "appearances_count", den: null },
-  { key: "pitcher_v020_starts_count", family: "role_readiness", source: "pitcher_game_logs", num: "starts_count", den: null },
-  { key: "pitcher_v020_innings_pitched_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "outs_recorded/3", den: null },
-  { key: "pitcher_v020_outs_recorded_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "outs_recorded", den: null },
-  { key: "pitcher_v020_batters_faced_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "batters_faced", den: null },
-  { key: "pitcher_v020_pitches_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "pitches", den: null },
-  { key: "pitcher_v020_strikes_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "strikes", den: null },
-  { key: "pitcher_v020_hits_allowed_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "hits_allowed", den: null },
-  { key: "pitcher_v020_runs_allowed_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "runs_allowed", den: null },
-  { key: "pitcher_v020_earned_runs_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "earned_runs", den: null },
-  { key: "pitcher_v020_walks_allowed_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "walks_allowed", den: null },
-  { key: "pitcher_v020_strikeouts_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "strikeouts", den: null },
-  { key: "pitcher_v020_home_runs_allowed_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "home_runs_allowed", den: null },
-  { key: "pitcher_v020_era_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "earned_runs*27", den: "outs_recorded" },
-  { key: "pitcher_v020_whip_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "walks_allowed+hits_allowed", den: "outs_recorded/3" },
-  { key: "pitcher_v020_k_rate_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "strikeouts", den: "batters_faced" },
-  { key: "pitcher_v020_bb_rate_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "walks_allowed", den: "batters_faced" },
-  { key: "pitcher_v020_hr_rate_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "home_runs_allowed", den: "batters_faced" },
-  { key: "pitcher_v020_k_minus_bb_rate_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "strikeouts-walks_allowed", den: "batters_faced" },
-  { key: "pitcher_v020_pitches_per_out_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "pitches", den: "outs_recorded" },
-  { key: "pitcher_v020_strikes_per_pitch_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "strikes", den: "pitches" },
-  { key: "pitcher_v020_innings_per_appearance_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "outs_recorded/3", den: "appearances_count" },
-  { key: "pitcher_v020_role_sample_bucket", family: "role_readiness", source: "pitcher_game_logs", num: "outs_per_appearance_bucket", den: null },
-  { key: "pitcher_v020_split_vs_left_era_pass_through", family: "split_pass_through", source: "pitcher_splits", num: "era", den: null, split: "vs_left" },
-  { key: "pitcher_v020_split_vs_left_whip_pass_through", family: "split_pass_through", source: "pitcher_splits", num: "whip", den: null, split: "vs_left" },
-  { key: "pitcher_v020_split_vs_left_ops_against_pass_through", family: "split_pass_through", source: "pitcher_splits", num: "ops_against", den: null, split: "vs_left" },
-  { key: "pitcher_v020_split_vs_right_era_pass_through", family: "split_pass_through", source: "pitcher_splits", num: "era", den: null, split: "vs_right" },
-  { key: "pitcher_v020_split_vs_right_whip_pass_through", family: "split_pass_through", source: "pitcher_splits", num: "whip", den: null, split: "vs_right" },
-  { key: "pitcher_v020_split_vs_right_ops_against_pass_through", family: "split_pass_through", source: "pitcher_splits", num: "ops_against", den: null, split: "vs_right" }
+  { key: "pitcher_v030_games_count", family: "direct_aggregate", source: "pitcher_game_logs", num: "games_count", den: null },
+  { key: "pitcher_v030_appearances_count", family: "direct_aggregate", source: "pitcher_game_logs", num: "appearances_count", den: null },
+  { key: "pitcher_v030_starts_count", family: "role_readiness", source: "pitcher_game_logs", num: "starts_count", den: null },
+  { key: "pitcher_v030_innings_pitched_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "outs_recorded/3", den: null },
+  { key: "pitcher_v030_outs_recorded_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "outs_recorded", den: null },
+  { key: "pitcher_v030_batters_faced_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "batters_faced", den: null },
+  { key: "pitcher_v030_pitches_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "pitches", den: null },
+  { key: "pitcher_v030_strikes_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "strikes", den: null },
+  { key: "pitcher_v030_hits_allowed_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "hits_allowed", den: null },
+  { key: "pitcher_v030_runs_allowed_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "runs_allowed", den: null },
+  { key: "pitcher_v030_earned_runs_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "earned_runs", den: null },
+  { key: "pitcher_v030_walks_allowed_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "walks_allowed", den: null },
+  { key: "pitcher_v030_strikeouts_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "strikeouts", den: null },
+  { key: "pitcher_v030_home_runs_allowed_sum", family: "direct_aggregate", source: "pitcher_game_logs", num: "home_runs_allowed", den: null },
+  { key: "pitcher_v030_era_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "earned_runs*27", den: "outs_recorded" },
+  { key: "pitcher_v030_whip_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "walks_allowed+hits_allowed", den: "outs_recorded/3" },
+  { key: "pitcher_v030_k_rate_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "strikeouts", den: "batters_faced" },
+  { key: "pitcher_v030_bb_rate_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "walks_allowed", den: "batters_faced" },
+  { key: "pitcher_v030_hr_rate_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "home_runs_allowed", den: "batters_faced" },
+  { key: "pitcher_v030_k_minus_bb_rate_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "strikeouts-walks_allowed", den: "batters_faced" },
+  { key: "pitcher_v030_pitches_per_out_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "pitches", den: "outs_recorded" },
+  { key: "pitcher_v030_strikes_per_pitch_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "strikes", den: "pitches" },
+  { key: "pitcher_v030_innings_per_appearance_calculated", family: "denominator_safe_rate", source: "pitcher_game_logs", num: "outs_recorded/3", den: "appearances_count" },
+  { key: "pitcher_v030_role_sample_bucket", family: "role_readiness", source: "pitcher_game_logs", num: "outs_per_appearance_bucket", den: null },
+  { key: "pitcher_v030_split_vs_left_era_pass_through", family: "split_pass_through", source: "pitcher_splits", num: "era", den: null, split: "vs_left" },
+  { key: "pitcher_v030_split_vs_left_whip_pass_through", family: "split_pass_through", source: "pitcher_splits", num: "whip", den: null, split: "vs_left" },
+  { key: "pitcher_v030_split_vs_left_ops_against_pass_through", family: "split_pass_through", source: "pitcher_splits", num: "ops_against", den: null, split: "vs_left" },
+  { key: "pitcher_v030_split_vs_right_era_pass_through", family: "split_pass_through", source: "pitcher_splits", num: "era", den: null, split: "vs_right" },
+  { key: "pitcher_v030_split_vs_right_whip_pass_through", family: "split_pass_through", source: "pitcher_splits", num: "whip", den: null, split: "vs_right" },
+  { key: "pitcher_v030_split_vs_right_ops_against_pass_through", family: "split_pass_through", source: "pitcher_splits", num: "ops_against", den: null, split: "vs_right" }
 ];
 
 const METRIC_SCHEMA_SQL = [
@@ -68,9 +68,9 @@ const METRIC_SCHEMA_SQL = [
     stage_id TEXT PRIMARY KEY, batch_id TEXT NOT NULL, run_id TEXT NOT NULL, metric_key TEXT NOT NULL, player_id INTEGER NOT NULL, season INTEGER NOT NULL,
     metric_scope TEXT NOT NULL, metric_window TEXT NOT NULL, metric_family TEXT NOT NULL, source_start_date TEXT, source_end_date TEXT, source_snapshot_date TEXT,
     input_log_row_count INTEGER DEFAULT 0, input_split_row_count INTEGER DEFAULT 0, input_latest_game_date TEXT, metric_value REAL, metric_text_value TEXT,
-    numerator REAL, denominator REAL, data_feed_key TEXT NOT NULL, source_key TEXT NOT NULL, ingestion_mode TEXT NOT NULL, certification_status TEXT DEFAULT 'sample_stage_not_promoted',
+    numerator REAL, denominator REAL, data_feed_key TEXT NOT NULL, source_key TEXT NOT NULL, ingestion_mode TEXT NOT NULL, certification_status TEXT DEFAULT 'base_stage_not_promoted',
     certification_grade TEXT, certified_at TEXT, promoted_at TEXT, formula_version TEXT, config_profile_id TEXT, raw_input_summary_json TEXT, metric_json TEXT,
-    missing_data_reason TEXT, reliability_label TEXT, row_status TEXT DEFAULT 'sample_stage_staged', row_error TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    missing_data_reason TEXT, reliability_label TEXT, row_status TEXT DEFAULT 'base_stage_staged', row_error TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP, UNIQUE(batch_id, metric_key, player_id, season, metric_scope, metric_window))`,
   `CREATE TABLE IF NOT EXISTS pitcher_metric_outcomes (outcome_id TEXT PRIMARY KEY, batch_id TEXT NOT NULL, run_id TEXT NOT NULL, player_id INTEGER, season INTEGER, metric_family TEXT, metric_window TEXT, terminal_category TEXT NOT NULL, category_reason TEXT, input_log_row_count INTEGER DEFAULT 0, input_split_row_count INTEGER DEFAULT 0, missing_data_reason TEXT, formula_version TEXT, config_profile_id TEXT, outcome_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`,
   `CREATE TABLE IF NOT EXISTS pitcher_metric_cursor (cursor_key TEXT PRIMARY KEY, mode TEXT NOT NULL, status TEXT NOT NULL, batch_id TEXT, run_id TEXT, source_season INTEGER, players_total INTEGER DEFAULT 0, players_processed INTEGER DEFAULT 0, last_player_id INTEGER, last_game_date TEXT, last_split_snapshot_date TEXT, requests_done INTEGER DEFAULT 0, no_external_calls INTEGER DEFAULT 1, cursor_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`,
@@ -84,7 +84,7 @@ const METRIC_SCHEMA_SQL = [
   `CREATE INDEX IF NOT EXISTS idx_pitcher_metric_outcomes_batch ON pitcher_metric_outcomes(batch_id, terminal_category)`,
   `CREATE INDEX IF NOT EXISTS idx_pitcher_metric_snapshot_stage_batch ON pitcher_metric_snapshot_stage(snapshot_batch_id, player_id, metric_window)`,
   `CREATE INDEX IF NOT EXISTS idx_pitcher_metric_snapshots_player ON pitcher_metric_snapshots(player_id, season, metric_window)`,
-  `INSERT OR IGNORE INTO pitcher_metric_schema_migrations (migration_key, worker_version, notes) VALUES ('pitcher_metrics_v0_2_0_sample_stage_schema_safe', '${VERSION}', 'Pitcher Metrics v0.2.1 sample-stage calibration batch-write fix. Uses existing lifecycle tables only. No promotion, no source mutation, no external calls.')`
+  `INSERT OR IGNORE INTO pitcher_metric_schema_migrations (migration_key, worker_version, notes) VALUES ('pitcher_metrics_v0_3_0_base_stage_schema_safe', '${VERSION}', 'Pitcher Metrics v0.3.0 full granular base-stage only. Uses existing lifecycle tables only. No promotion, no source mutation, no external calls.')`
 ];
 
 const CONFIG_SCHEMA_SQL = [
@@ -122,27 +122,27 @@ function formulaCatalog(){return {profile_id:PROFILE_ID,formula_version:FORMULA_
 function configSeedItems(){
   const catalog=formulaCatalog();
   const items=[
-    {sql:"INSERT OR IGNORE INTO config_metric_calibration_profiles (profile_id, display_name, sport, metric_domain, active, profile_status, profile_json, notes) VALUES (?, ?, 'MLB', 'pitcher', 1, 'sample_stage_calibration', ?, ?)",binds:[PROFILE_ID,"Pitcher Metrics Neutral v0.2.0 Sample Stage",JSON.stringify({no_scoring:true,promotion_locked:true,tuning_owner:"CONFIG_DB",sample_stage_only:true,default_sample_target:DEFAULT_SAMPLE_TARGET,mirror_hitter_metrics_structure:true}),"Pitcher neutral metrics v0.2.0 sample-stage calibration profile. Stage rows only; no promotion."]},
-    {sql:"INSERT OR IGNORE INTO config_metric_formula_versions (formula_version, sport, metric_domain, active, version_status, formula_catalog_json, notes) VALUES (?, 'MLB', 'pitcher', 1, 'sample_stage_calibration', ?, ?)",binds:[FORMULA_VERSION,JSON.stringify(catalog),"Pitcher formula catalog for v0.2.0 sample-stage calibration only. No production promotion."]}
+    {sql:"INSERT OR IGNORE INTO config_metric_calibration_profiles (profile_id, display_name, sport, metric_domain, active, profile_status, profile_json, notes) VALUES (?, ?, 'MLB', 'pitcher', 1, 'base_rebuild_stage_locked', ?, ?)",binds:[PROFILE_ID,"Pitcher Metrics Neutral v0.3.0 Base Stage",JSON.stringify({no_scoring:true,promotion_locked:true,tuning_owner:"CONFIG_DB",base_stage_only:true,default_chunk_size:DEFAULT_CHUNK_SIZE,mirror_hitter_metrics_structure:true}),"Pitcher neutral metrics v0.3.0 full granular base-stage profile. Stage rows only; no promotion."]},
+    {sql:"INSERT OR IGNORE INTO config_metric_formula_versions (formula_version, sport, metric_domain, active, version_status, formula_catalog_json, notes) VALUES (?, 'MLB', 'pitcher', 1, 'base_rebuild_stage_locked', ?, ?)",binds:[FORMULA_VERSION,JSON.stringify(catalog),"Pitcher formula catalog for v0.3.0 full granular base-stage only. No production promotion."]}
   ];
   const windows=[
-    ["pitcher_v020_last_3_games","last_3_games","last_n_games",3,10],
-    ["pitcher_v020_last_5_games","last_5_games","last_n_games",5,20],
-    ["pitcher_v020_last_10_games","last_10_games","last_n_games",10,30],
-    ["pitcher_v020_last_20_games","last_20_games","last_n_games",20,40],
-    ["pitcher_v020_season_to_date","season_to_date","season_to_date",null,90]
+    ["pitcher_v030_last_3_games","last_3_games","last_n_games",3,10],
+    ["pitcher_v030_last_5_games","last_5_games","last_n_games",5,20],
+    ["pitcher_v030_last_10_games","last_10_games","last_n_games",10,30],
+    ["pitcher_v030_last_20_games","last_20_games","last_n_games",20,40],
+    ["pitcher_v030_season_to_date","season_to_date","season_to_date",null,90]
   ];
-  for(const w of windows){items.push({sql:"INSERT OR IGNORE INTO config_metric_windows (window_key, metric_domain, metric_scope, window_type, window_size, enabled, sort_order, config_profile_id, notes) VALUES (?, 'pitcher', ?, ?, ?, 1, ?, ?, ?)",binds:[w[0],w[1],w[2],w[3],w[4],PROFILE_ID,`Pitcher v0.2.0 sample-stage ${w[1]} window.`]});}
+  for(const w of windows){items.push({sql:"INSERT OR IGNORE INTO config_metric_windows (window_key, metric_domain, metric_scope, window_type, window_size, enabled, sort_order, config_profile_id, notes) VALUES (?, 'pitcher', ?, ?, ?, 1, ?, ?, ?)",binds:[w[0],w[1],w[2],w[3],w[4],PROFILE_ID,`Pitcher v0.3.0 base-stage ${w[1]} window.`]});}
   const thresholds=[
-    ["pitcher_v020_sample_target",null,null,"sample_target",DEFAULT_SAMPLE_TARGET,"sample target; mirrors hitter sample-stage small footprint"],
-    ["pitcher_v020_min_bf_rate_ready",null,null,"minimum_batters_faced_for_ready_rate_label",100,"BF threshold for READY rate label; lower stages value with LOW_SAMPLE"],
-    ["pitcher_v020_min_outs_ip_rate_ready",null,null,"minimum_outs_recorded_for_ready_ip_rate_label",81,"outs threshold for ERA/WHIP READY label; 81 outs = 27 IP"],
-    ["pitcher_v020_min_pitches_ready",null,null,"minimum_pitches_for_ready_pitch_rate_label",100,"pitch threshold for strikes_per_pitch READY label"],
-    ["pitcher_v020_min_appearances_ready",null,null,"minimum_appearances_for_ready_label",5,"appearances threshold for innings per appearance READY label"],
-    ["pitcher_v020_min_split_bf_ready",null,null,"minimum_split_batters_faced_for_ready_label",30,"split BF threshold for pass-through split READY label"]
+    ["pitcher_v030_base_stage_chunk_size",null,null,"base_stage_chunk_size",DEFAULT_CHUNK_SIZE,"base stage chunk size for backend continuation"],
+    ["pitcher_v030_min_bf_rate_ready",null,null,"minimum_batters_faced_for_ready_rate_label",100,"BF threshold for READY rate label; lower stages value with LOW_SAMPLE"],
+    ["pitcher_v030_min_outs_ip_rate_ready",null,null,"minimum_outs_recorded_for_ready_ip_rate_label",81,"outs threshold for ERA/WHIP READY label; 81 outs = 27 IP"],
+    ["pitcher_v030_min_pitches_ready",null,null,"minimum_pitches_for_ready_pitch_rate_label",100,"pitch threshold for strikes_per_pitch READY label"],
+    ["pitcher_v030_min_appearances_ready",null,null,"minimum_appearances_for_ready_label",5,"appearances threshold for innings per appearance READY label"],
+    ["pitcher_v030_min_split_bf_ready",null,null,"minimum_split_batters_faced_for_ready_label",30,"split BF threshold for pass-through split READY label"]
   ];
-  for(const t of thresholds){items.push({sql:"INSERT OR IGNORE INTO config_metric_thresholds (threshold_key, config_profile_id, metric_domain, metric_family, metric_key, threshold_type, threshold_value, label, enabled, notes) VALUES (?, ?, 'pitcher', ?, ?, ?, ?, ?, 1, 'DB-configurable sample-stage calibration threshold; not scoring.')",binds:[t[0],PROFILE_ID,t[1],t[2],t[3],t[4],t[5]]});}
-  for(const d of METRIC_DEFS){items.push({sql:"INSERT OR IGNORE INTO config_metric_definitions (metric_key, metric_family, metric_scope, display_name, description, source_table, numerator_field, denominator_field, formula_version, enabled, neutral_metric_only, future_scoring_bridge_flag, config_json) VALUES (?, ?, 'sample_stage_calibration', ?, ?, ?, ?, ?, ?, 1, 1, 0, ?)",binds:[d.key,d.family,d.key,`Pitcher v0.2.0 sample-stage metric: ${d.key}`,d.source,d.num,d.den,FORMULA_VERSION,JSON.stringify({sample_stage_only:true,no_promotion:true,split:d.split||null,pitcher_domain:true})]});}
+  for(const t of thresholds){items.push({sql:"INSERT OR IGNORE INTO config_metric_thresholds (threshold_key, config_profile_id, metric_domain, metric_family, metric_key, threshold_type, threshold_value, label, enabled, notes) VALUES (?, ?, 'pitcher', ?, ?, ?, ?, ?, 1, 'DB-configurable full granular base-stage threshold; not scoring.')",binds:[t[0],PROFILE_ID,t[1],t[2],t[3],t[4],t[5]]});}
+  for(const d of METRIC_DEFS){items.push({sql:"INSERT OR IGNORE INTO config_metric_definitions (metric_key, metric_family, metric_scope, display_name, description, source_table, numerator_field, denominator_field, formula_version, enabled, neutral_metric_only, future_scoring_bridge_flag, config_json) VALUES (?, ?, 'base_rebuild_stage_locked', ?, ?, ?, ?, ?, ?, 1, 1, 0, ?)",binds:[d.key,d.family,d.key,`Pitcher v0.3.0 base-stage metric: ${d.key}`,d.source,d.num,d.den,FORMULA_VERSION,JSON.stringify({base_stage_only:true,no_promotion:true,split:d.split||null,pitcher_domain:true})]});}
   return items;
 }
 
@@ -150,7 +150,7 @@ async function ensureSchema(env){
   const failures=[]; let statsOk=0,statsFailed=0,configOk=0,configFailed=0,seedOk=0,seedFailed=0;
   for(const sql of METRIC_SCHEMA_SQL){try{await execSql(env.STATS_PITCHER_DB,sql);statsOk++;}catch(err){statsFailed++;failures.push({target:"STATS_PITCHER_DB",sql_preview:sql.slice(0,80),error:String(err&&err.message?err.message:err)});}}
   for(const sql of CONFIG_SCHEMA_SQL){try{await execSql(env.CONFIG_DB,sql);configOk++;}catch(err){configFailed++;failures.push({target:"CONFIG_DB",sql_preview:sql.slice(0,80),error:String(err&&err.message?err.message:err)});}}
-  for(const item of configSeedItems()){try{await execSql(env.CONFIG_DB,item.sql,item.binds);seedOk++;}catch(err){seedFailed++;failures.push({target:"CONFIG_DB",action:"pitcher_metric_v020_config_seed",sql_preview:item.sql.slice(0,80),error:String(err&&err.message?err.message:err)});}}
+  for(const item of configSeedItems()){try{await execSql(env.CONFIG_DB,item.sql,item.binds);seedOk++;}catch(err){seedFailed++;failures.push({target:"CONFIG_DB",action:"pitcher_metric_v030_config_seed",sql_preview:item.sql.slice(0,80),error:String(err&&err.message?err.message:err)});}}
   return {ok:statsFailed===0&&configFailed===0&&seedFailed===0,stats_schema_ok:statsOk,stats_schema_failed:statsFailed,config_schema_ok:configOk,config_schema_failed:configFailed,config_seed_ok:seedOk,config_seed_failed:seedFailed,failures};
 }
 
@@ -211,30 +211,30 @@ function metricFor(def, a, splitRow, thresholds, sample_bucket){
   const pitchTh=thresholds.minimum_pitches_for_ready_pitch_rate_label ?? 100;
   const appTh=thresholds.minimum_appearances_for_ready_label ?? 5;
   const splitTh=thresholds.minimum_split_batters_faced_for_ready_label ?? 30;
-  if(def.key==="pitcher_v020_games_count") value=a.games_count;
-  else if(def.key==="pitcher_v020_appearances_count") value=a.appearances_count;
-  else if(def.key==="pitcher_v020_starts_count") value=a.starts_count;
-  else if(def.key==="pitcher_v020_innings_pitched_sum") value=a.innings_pitched_sum;
-  else if(def.key==="pitcher_v020_outs_recorded_sum") value=a.outs_recorded_sum;
-  else if(def.key==="pitcher_v020_batters_faced_sum") value=a.batters_faced_sum;
-  else if(def.key==="pitcher_v020_pitches_sum") value=a.pitches_sum;
-  else if(def.key==="pitcher_v020_strikes_sum") value=a.strikes_sum;
-  else if(def.key==="pitcher_v020_hits_allowed_sum") value=a.hits_allowed_sum;
-  else if(def.key==="pitcher_v020_runs_allowed_sum") value=a.runs_allowed_sum;
-  else if(def.key==="pitcher_v020_earned_runs_sum") value=a.earned_runs_sum;
-  else if(def.key==="pitcher_v020_walks_allowed_sum") value=a.walks_allowed_sum;
-  else if(def.key==="pitcher_v020_strikeouts_sum") value=a.strikeouts_sum;
-  else if(def.key==="pitcher_v020_home_runs_allowed_sum") value=a.home_runs_allowed_sum;
-  else if(def.key==="pitcher_v020_era_calculated"){numerator=a.earned_runs_sum*27; denominator=a.outs_recorded_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,outsTh);} 
-  else if(def.key==="pitcher_v020_whip_calculated"){numerator=a.walks_allowed_sum+a.hits_allowed_sum; denominator=a.outs_recorded_sum/3; value=denominator?numerator/denominator:null; label=reliability(flags,a.outs_recorded_sum,outsTh);} 
-  else if(def.key==="pitcher_v020_k_rate_calculated"){numerator=a.strikeouts_sum; denominator=a.batters_faced_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,bfTh);} 
-  else if(def.key==="pitcher_v020_bb_rate_calculated"){numerator=a.walks_allowed_sum; denominator=a.batters_faced_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,bfTh);} 
-  else if(def.key==="pitcher_v020_hr_rate_calculated"){numerator=a.home_runs_allowed_sum; denominator=a.batters_faced_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,bfTh);} 
-  else if(def.key==="pitcher_v020_k_minus_bb_rate_calculated"){numerator=a.strikeouts_sum-a.walks_allowed_sum; denominator=a.batters_faced_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,bfTh);} 
-  else if(def.key==="pitcher_v020_pitches_per_out_calculated"){numerator=a.pitches_sum; denominator=a.outs_recorded_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,outsTh);} 
-  else if(def.key==="pitcher_v020_strikes_per_pitch_calculated"){numerator=a.strikes_sum; denominator=a.pitches_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,pitchTh); if(value!==null&&value>1) flags.push("STRIKES_EXCEED_PITCHES");}
-  else if(def.key==="pitcher_v020_innings_per_appearance_calculated"){numerator=a.innings_pitched_sum; denominator=a.appearances_count; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,appTh);} 
-  else if(def.key==="pitcher_v020_role_sample_bucket"){text=sample_bucket||sampleBucket(a); label="REVIEW_ONLY"; flags.push("ROLE_BUCKET_SAMPLE_METADATA_ONLY");}
+  if(def.key==="pitcher_v030_games_count") value=a.games_count;
+  else if(def.key==="pitcher_v030_appearances_count") value=a.appearances_count;
+  else if(def.key==="pitcher_v030_starts_count") value=a.starts_count;
+  else if(def.key==="pitcher_v030_innings_pitched_sum") value=a.innings_pitched_sum;
+  else if(def.key==="pitcher_v030_outs_recorded_sum") value=a.outs_recorded_sum;
+  else if(def.key==="pitcher_v030_batters_faced_sum") value=a.batters_faced_sum;
+  else if(def.key==="pitcher_v030_pitches_sum") value=a.pitches_sum;
+  else if(def.key==="pitcher_v030_strikes_sum") value=a.strikes_sum;
+  else if(def.key==="pitcher_v030_hits_allowed_sum") value=a.hits_allowed_sum;
+  else if(def.key==="pitcher_v030_runs_allowed_sum") value=a.runs_allowed_sum;
+  else if(def.key==="pitcher_v030_earned_runs_sum") value=a.earned_runs_sum;
+  else if(def.key==="pitcher_v030_walks_allowed_sum") value=a.walks_allowed_sum;
+  else if(def.key==="pitcher_v030_strikeouts_sum") value=a.strikeouts_sum;
+  else if(def.key==="pitcher_v030_home_runs_allowed_sum") value=a.home_runs_allowed_sum;
+  else if(def.key==="pitcher_v030_era_calculated"){numerator=a.earned_runs_sum*27; denominator=a.outs_recorded_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,outsTh);} 
+  else if(def.key==="pitcher_v030_whip_calculated"){numerator=a.walks_allowed_sum+a.hits_allowed_sum; denominator=a.outs_recorded_sum/3; value=denominator?numerator/denominator:null; label=reliability(flags,a.outs_recorded_sum,outsTh);} 
+  else if(def.key==="pitcher_v030_k_rate_calculated"){numerator=a.strikeouts_sum; denominator=a.batters_faced_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,bfTh);} 
+  else if(def.key==="pitcher_v030_bb_rate_calculated"){numerator=a.walks_allowed_sum; denominator=a.batters_faced_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,bfTh);} 
+  else if(def.key==="pitcher_v030_hr_rate_calculated"){numerator=a.home_runs_allowed_sum; denominator=a.batters_faced_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,bfTh);} 
+  else if(def.key==="pitcher_v030_k_minus_bb_rate_calculated"){numerator=a.strikeouts_sum-a.walks_allowed_sum; denominator=a.batters_faced_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,bfTh);} 
+  else if(def.key==="pitcher_v030_pitches_per_out_calculated"){numerator=a.pitches_sum; denominator=a.outs_recorded_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,outsTh);} 
+  else if(def.key==="pitcher_v030_strikes_per_pitch_calculated"){numerator=a.strikes_sum; denominator=a.pitches_sum; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,pitchTh); if(value!==null&&value>1) flags.push("STRIKES_EXCEED_PITCHES");}
+  else if(def.key==="pitcher_v030_innings_per_appearance_calculated"){numerator=a.innings_pitched_sum; denominator=a.appearances_count; value=denominator?numerator/denominator:null; label=reliability(flags,denominator,appTh);} 
+  else if(def.key==="pitcher_v030_role_sample_bucket"){text=sample_bucket||sampleBucket(a); label="REVIEW_ONLY"; flags.push("ROLE_BUCKET_SAMPLE_METADATA_ONLY");}
   else if(def.family==="split_pass_through"){
     if(!splitRow){label="MISSING_INPUT"; flags.push(`MISSING_SPLIT_SIDE_${def.split}`);} else {value=nval(splitRow[def.num]); numerator=value; denominator=nval(splitRow.batters_faced); label=denominator!==null&&denominator<splitTh?"LOW_SAMPLE":"SOURCE_PASS_THROUGH"; if(denominator===0) flags.push(`ZERO_DENOMINATOR_SPLIT_BATTERS_FACED_${def.split}`);} 
   }
@@ -244,11 +244,11 @@ function metricFor(def, a, splitRow, thresholds, sample_bucket){
     if(label==="ZERO_DENOMINATOR"){ if(def.den&&String(def.den).includes("outs")) flags.push("ZERO_DENOMINATOR_OUTS_RECORDED"); if(def.den&&String(def.den).includes("batters")) flags.push("ZERO_DENOMINATOR_BATTERS_FACED"); if(def.den&&String(def.den).includes("pitches")) flags.push("ZERO_DENOMINATOR_PITCHES"); if(def.den&&String(def.den).includes("appearances")) flags.push("ZERO_DENOMINATOR_APPEARANCES"); }
     if(label==="LOW_SAMPLE") flags.push("LOW_SAMPLE");
   }
-  const rowStatus=(flags.length||label==="LOW_SAMPLE"||label==="MISSING_INPUT"||label==="ZERO_DENOMINATOR"||label==="REVIEW_ONLY")?"review_flag":"sample_stage_staged";
+  const rowStatus=(flags.length||label==="LOW_SAMPLE"||label==="MISSING_INPUT"||label==="ZERO_DENOMINATOR"||label==="REVIEW_ONLY")?"review_flag":"base_stage_staged";
   return {metric_value:round(value),metric_text_value:text,numerator:round(numerator),denominator:round(denominator),reliability_label:label,missing_data_reason:flagString(flags),row_status:rowStatus};
 }
 
-const STAGE_INSERT_SQL = `INSERT OR REPLACE INTO pitcher_metric_stage (stage_id,batch_id,run_id,metric_key,player_id,season,metric_scope,metric_window,metric_family,source_start_date,source_end_date,source_snapshot_date,input_log_row_count,input_split_row_count,input_latest_game_date,metric_value,metric_text_value,numerator,denominator,data_feed_key,source_key,ingestion_mode,certification_status,certification_grade,certified_at,promoted_at,formula_version,config_profile_id,raw_input_summary_json,metric_json,missing_data_reason,reliability_label,row_status,row_error,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'sample_stage_not_promoted','SAMPLE_STAGE_NOT_PROMOTED',NULL,NULL,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`;
+const STAGE_INSERT_SQL = `INSERT OR REPLACE INTO pitcher_metric_stage (stage_id,batch_id,run_id,metric_key,player_id,season,metric_scope,metric_window,metric_family,source_start_date,source_end_date,source_snapshot_date,input_log_row_count,input_split_row_count,input_latest_game_date,metric_value,metric_text_value,numerator,denominator,data_feed_key,source_key,ingestion_mode,certification_status,certification_grade,certified_at,promoted_at,formula_version,config_profile_id,raw_input_summary_json,metric_json,missing_data_reason,reliability_label,row_status,row_error,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'base_stage_not_promoted','BASE_STAGE_NOT_PROMOTED',NULL,NULL,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`;
 
 function stageBinds(row){return [row.stage_id,row.batch_id,row.run_id,row.metric_key,row.player_id,row.season,row.metric_scope,row.metric_window,row.metric_family,row.source_start_date,row.source_end_date,row.source_snapshot_date,row.input_log_row_count,row.input_split_row_count,row.input_latest_game_date,row.metric_value,row.metric_text_value,row.numerator,row.denominator,DATA_FEED_KEY,row.source_key,row.ingestion_mode,FORMULA_VERSION,PROFILE_ID,JSON.stringify(row.raw_input_summary_json),JSON.stringify(row.metric_json),row.missing_data_reason,row.reliability_label,row.row_status,row.row_error||null];}
 
@@ -277,59 +277,108 @@ async function insertStageRowsChunked(env, rows, chunkSize=100){
   return {written, errors};
 }
 
-async function runSampleStage(input, env){
+
+async function selectAllEligiblePitchers(env, season){
+  const q = await safeQueryAll(env.STATS_PITCHER_DB, `SELECT player_id, season, COUNT(*) AS appearances_count,
+    SUM(CASE WHEN lower(COALESCE(role,'')) LIKE '%start%' THEN 1 ELSE 0 END) AS starts_count,
+    SUM(COALESCE(outs_recorded,0)) AS outs_recorded_sum,
+    SUM(COALESCE(batters_faced,0)) AS batters_faced_sum,
+    SUM(COALESCE(pitches,0)) AS pitches_sum,
+    MAX(game_date) AS latest_game_date
+    FROM pitcher_game_logs
+    WHERE season=?
+    GROUP BY player_id, season
+    HAVING COUNT(*) > 0
+    ORDER BY player_id ASC`, [season]);
+  if(!q.ok) return {ok:false,error:q.error,players:[]};
+  return {ok:true,players:q.rows||[]};
+}
+
+async function countStageRows(env, batchId){
+  const r = await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_metric_stage WHERE batch_id=?", [batchId]);
+  return num(r.row && r.row.c);
+}
+
+async function runBaseRebuildStageOnly(input, env){
   const schemaReadiness=await ensureSchema(env);
   const inputReadiness=await auditInputReadiness(env);
   const config=await loadConfig(env);
   const season=Number(input.source_season||DEFAULT_SEASON);
-  const sampleTarget=Number((config.threshold_map&&config.threshold_map.sample_target)||input.sample_target||DEFAULT_SAMPLE_TARGET);
-  const batchId=input.batch_id||rid("pitcher_metrics_sample_batch");
-  const runId=input.run_id||rid("pitcher_metrics_sample_run");
-  const select=await selectSamplePlayers(env,season,sampleTarget);
-  if(!schemaReadiness.ok||!inputReadiness.ok||!config.ok||!select.ok){
-    const certification="PITCHER_METRICS_V0_2_0_SAMPLE_STAGE_CALIBRATION_BLOCKED";
-    await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_batches (batch_id,run_id,worker_name,worker_version,mode,status,data_feed_key,source_key,source_season,input_log_row_count,input_split_row_count,config_profile_id,formula_version,rows_staged,rows_promoted,duplicate_count,certification_status,certification_grade,certification_json,finished_at,notes,updated_at) VALUES (?,?,?,?, 'sample_stage_calibration','BLOCKED_SAMPLE_STAGE_CALIBRATION_NO_PROMOTION',?,'d1_internal_pitcher_game_logs_and_splits',?,?,?,?,?,0,0,0,?,?,?,CURRENT_TIMESTAMP,'v0.2.0 blocked before staging. No promotion, no source mutation.',CURRENT_TIMESTAMP)`,[batchId,runId,WORKER_NAME,VERSION,DATA_FEED_KEY,season,num(inputReadiness.pitcher_game_logs?.counts?.rows),num(inputReadiness.pitcher_splits?.counts?.rows),PROFILE_ID,FORMULA_VERSION,certification,"SAMPLE_STAGE_BLOCKED_NO_PROMOTION",JSON.stringify({schemaReadiness,inputReadiness,config,sample_selection:select})]);
-    return {ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,mode:"sample_stage_calibration",status:"BLOCKED_SAMPLE_STAGE_CALIBRATION_NO_PROMOTION",certification,certification_grade:"SAMPLE_STAGE_BLOCKED_NO_PROMOTION",batch_id:batchId,run_id:runId,schema_readiness:schemaReadiness,input_readiness:inputReadiness,config_readiness:config,sample_selection:select,rows_staged:0,rows_promoted:0,external_calls_performed:0};
+  const requestId=String(input.request_id||"manual_base_pitcher_metrics");
+  const cursorKey=`base_pitcher_metrics_v0_3_0_${requestId}`;
+  const existingCursor=await safeQueryFirst(env.STATS_PITCHER_DB,"SELECT * FROM pitcher_metric_cursor WHERE cursor_key=?",[cursorKey]);
+  const cursor=existingCursor.row||null;
+  const batchId=input.batch_id || (cursor && cursor.batch_id) || rid("pitcher_metrics_base_stage_batch");
+  const runId=(cursor && cursor.run_id) || input.run_id || rid("pitcher_metrics_base_stage_run");
+  const chunkSizeRaw=Number(input.chunk_size || (config.threshold_map && config.threshold_map.base_stage_chunk_size) || DEFAULT_CHUNK_SIZE);
+  const chunkSize=Math.max(10, Math.min(60, Number.isFinite(chunkSizeRaw)?chunkSizeRaw:DEFAULT_CHUNK_SIZE));
+  const eligible=await selectAllEligiblePitchers(env, season);
+  const blockers=[];
+  if(!schemaReadiness.ok) blockers.push("SCHEMA_READINESS_FAILED");
+  if(!inputReadiness.ok) blockers.push("INPUT_READINESS_FAILED");
+  if(!config.ok) blockers.push("CONFIG_READINESS_FAILED");
+  if(!eligible.ok || !eligible.players.length) blockers.push("NO_ELIGIBLE_PITCHERS");
+  const logRows=num(inputReadiness.pitcher_game_logs.counts&&inputReadiness.pitcher_game_logs.counts.rows);
+  const splitRows=num(inputReadiness.pitcher_splits.counts&&inputReadiness.pitcher_splits.counts.rows);
+  if(blockers.length){
+    const certification="PITCHER_METRICS_V0_3_0_BASE_REBUILD_STAGE_ONLY_BLOCKED_NO_PROMOTION";
+    await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_batches (batch_id,run_id,worker_name,worker_version,mode,status,data_feed_key,source_key,source_season,input_log_row_count,input_split_row_count,config_profile_id,formula_version,rows_staged,rows_promoted,duplicate_count,certification_status,certification_grade,certification_json,finished_at,notes,updated_at) VALUES (?,?,?,?, 'base_rebuild_stage_only','BLOCKED_BASE_REBUILD_STAGE_ONLY_NO_PROMOTION',?,'d1_internal_pitcher_game_logs_and_splits',?,?,?,?,?,0,0,0,?,?,?,CURRENT_TIMESTAMP,'v0.3.0 blocked before full granular stage. No promotion, no source mutation.',CURRENT_TIMESTAMP)`,[batchId,runId,WORKER_NAME,VERSION,DATA_FEED_KEY,season,logRows,splitRows,PROFILE_ID,FORMULA_VERSION,certification,"BASE_STAGE_BLOCKED_NO_PROMOTION",JSON.stringify({blockers,schemaReadiness,inputReadiness,config,eligible})]);
+    return {ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,mode:"base_rebuild_stage_only",status:"BLOCKED_BASE_REBUILD_STAGE_ONLY_NO_PROMOTION",certification,certification_grade:"BASE_STAGE_BLOCKED_NO_PROMOTION",batch_id:batchId,run_id:runId,blockers,rows_staged:0,rows_promoted:0,external_calls_performed:0};
   }
-  let rowsStaged=0,rowErrors=0,reviewRows=0; const sampleIds=[]; const stageRows=[];
-  for(const p of select.players){
-    sampleIds.push(Number(p.player_id));
+  const allPlayers=eligible.players;
+  const offset=cursor?Number(cursor.players_processed||cursor.current_player_offset||0):0;
+  if(!cursor){
+    await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_cursor (cursor_key,mode,status,batch_id,run_id,source_season,players_total,players_processed,last_player_id,last_game_date,last_split_snapshot_date,requests_done,no_external_calls,cursor_json,updated_at) VALUES (?,'base_rebuild_stage_only','RUNNING',?,?,?,?,NULL,?,?,0,1,?,CURRENT_TIMESTAMP)`,[cursorKey,batchId,runId,season,allPlayers.length,0,inputReadiness.pitcher_game_logs.counts.max_game_date,inputReadiness.pitcher_splits.counts.max_snapshot_date,JSON.stringify({request_id:requestId,chunk_size:chunkSize,full_eligible_pitchers:true,no_promotion:true})]);
+  }
+  const chunkPlayers=allPlayers.slice(offset, offset+chunkSize);
+  let reviewRows=0; const stageRows=[]; const processedIds=[];
+  for(const p of chunkPlayers){
+    processedIds.push(Number(p.player_id));
     const logs=await loadPlayerLogs(env,p.player_id,p.season||season);
     const splits=await loadPlayerSplits(env,p.player_id,p.season||season);
-    const splitByKey={}; for(const s of splits){const key=String(s.split_key||s.split_code||"").toLowerCase(); if(key.includes("left")||key==="vs_left"||key==="l") splitByKey.vs_left=s; if(key.includes("right")||key==="vs_right"||key==="r") splitByKey.vs_right=s;}
-    if(splits.length===0){await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_outcomes (outcome_id,batch_id,run_id,player_id,season,metric_family,metric_window,terminal_category,category_reason,input_log_row_count,input_split_row_count,missing_data_reason,formula_version,config_profile_id,outcome_json) VALUES (?,?,?,?,?,'split_pass_through','season_to_date','review_flag','pitcher has logs but no split rows',?,?, 'PITCHER_HAS_LOGS_NO_SPLIT_ROWS',?,?,?)`,[rid("pitcher_metric_outcome"),batchId,runId,Number(p.player_id),Number(p.season||season),logs.length,splits.length,FORMULA_VERSION,PROFILE_ID,JSON.stringify({sample_bucket:p.sample_bucket})]);}
+    const splitByKey={}; for(const sp of splits){const key=String(sp.split_key||sp.split_code||"").toLowerCase(); if(key.includes("left")||key==="vs_left"||key==="l") splitByKey.vs_left=sp; if(key.includes("right")||key==="vs_right"||key==="r") splitByKey.vs_right=sp;}
+    const bucket=sampleBucket(p);
+    if(splits.length===0){await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_outcomes (outcome_id,batch_id,run_id,player_id,season,metric_family,metric_window,terminal_category,category_reason,input_log_row_count,input_split_row_count,missing_data_reason,formula_version,config_profile_id,outcome_json) VALUES (?,?,?,?,?,'split_pass_through','season_to_date','review_flag','pitcher has logs but no split rows',?,?, 'PITCHER_HAS_LOGS_NO_SPLIT_ROWS',?,?,?)`,[rid("pitcher_metric_outcome"),batchId,runId,Number(p.player_id),Number(p.season||season),logs.length,splits.length,FORMULA_VERSION,PROFILE_ID,JSON.stringify({sample_bucket:bucket,base_stage_only:true})]);}
     for(const w of config.windows){
-      const windowLogs=pickWindowLogs(logs,w); const a=aggregateLogs(windowLogs); const bucket=p.sample_bucket||sampleBucket(a);
+      const windowLogs=pickWindowLogs(logs,w);
+      const a=aggregateLogs(windowLogs);
+      const metricScope=String(w.metric_scope||"season_to_date");
+      const metricWindow=metricScope;
       for(const def of METRIC_DEFS){
-        const splitRow=def.split?splitByKey[def.split]:null;
-        const mf=metricFor(def,a,splitRow,config.threshold_map||{},bucket);
-        const metricScope=def.family==="split_pass_through"?def.split:String(w.metric_scope);
-        const metricWindow=def.family==="split_pass_through"?"season_to_date":String(w.metric_scope);
-        if(def.family==="split_pass_through" && w.metric_scope!=="season_to_date") continue;
-        const stageRow={stage_id:rid("pitcher_metric_stage"),batch_id:batchId,run_id:runId,metric_key:def.key,player_id:Number(p.player_id),season:Number(p.season||season),metric_scope:metricScope,metric_window:metricWindow,metric_family:def.family,source_start_date:a.source_start_date,source_end_date:a.source_end_date,source_snapshot_date:splitRow?splitRow.source_snapshot_date:null,input_log_row_count:windowLogs.length,input_split_row_count:splits.length,input_latest_game_date:a.input_latest_game_date,metric_value:mf.metric_value,metric_text_value:mf.metric_text_value,numerator:mf.numerator,denominator:mf.denominator,source_key:def.source,ingestion_mode:"sample_stage_calibration",raw_input_summary_json:{sample_bucket:bucket,window_key:w.window_key,window_type:w.window_type,window_size:w.window_size,logs_in_window:windowLogs.length,splits_found:splits.length},metric_json:{definition:def,profile_id:PROFILE_ID,formula_version:FORMULA_VERSION,no_promotion:true,no_scoring:true},missing_data_reason:mf.missing_data_reason,reliability_label:mf.reliability_label,row_status:mf.row_status,row_error:null};
+        let splitRow=null;
+        if(def.family==="split_pass_through"){
+          if(w.metric_scope!=="season_to_date") continue;
+          splitRow=splitByKey[def.split];
+        }
+        const mf=metricFor(def,a,splitRow,config.threshold_map,bucket);
+        const stageRow={stage_id:rid("pitcher_metric_stage"),batch_id:batchId,run_id:runId,metric_key:def.key,player_id:Number(p.player_id),season:Number(p.season||season),metric_scope:metricScope,metric_window:metricWindow,metric_family:def.family,source_start_date:a.source_start_date,source_end_date:a.source_end_date,source_snapshot_date:splitRow?splitRow.source_snapshot_date:null,input_log_row_count:windowLogs.length,input_split_row_count:splits.length,input_latest_game_date:a.input_latest_game_date,metric_value:mf.metric_value,metric_text_value:mf.metric_text_value,numerator:mf.numerator,denominator:mf.denominator,source_key:def.source,ingestion_mode:"base_rebuild_stage_only",raw_input_summary_json:{sample_bucket:bucket,window_key:w.window_key,window_type:w.window_type,window_size:w.window_size,logs_in_window:windowLogs.length,splits_found:splits.length,base_stage_only:true},metric_json:{definition:def,profile_id:PROFILE_ID,formula_version:FORMULA_VERSION,no_promotion:true,no_scoring:true,base_stage_only:true},missing_data_reason:mf.missing_data_reason,reliability_label:mf.reliability_label,row_status:mf.row_status,row_error:null};
         stageRows.push(stageRow);
         if(stageRow.row_status==="review_flag") reviewRows++;
       }
     }
   }
   const insertResult=await insertStageRowsChunked(env, stageRows, 100);
-  rowsStaged=insertResult.written;
-  rowErrors=insertResult.errors.length;
+  const rowErrors=insertResult.errors.length;
   for(const e of insertResult.errors.slice(0,50)){
     const row=e.row||{};
     await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_outcomes (outcome_id,batch_id,run_id,player_id,season,metric_family,metric_window,terminal_category,category_reason,input_log_row_count,input_split_row_count,missing_data_reason,formula_version,config_profile_id,outcome_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,[rid("pitcher_metric_error"),batchId,runId,Number(row.player_id||0),Number(row.season||season),row.metric_family||null,row.metric_window||null,"row_error","stage insert failed",Number(row.input_log_row_count||0),Number(row.input_split_row_count||0),e.error,FORMULA_VERSION,PROFILE_ID,JSON.stringify({metric_key:row.metric_key||null,error:e.error})]);
   }
+  const newOffset=offset+chunkPlayers.length;
+  const partialContinue = rowErrors===0 && newOffset < allPlayers.length;
+  const stagedRowsTotal=await countStageRows(env,batchId);
   const dup=await safeQueryFirst(env.STATS_PITCHER_DB,"SELECT COUNT(*) AS duplicate_natural_keys FROM (SELECT metric_key, player_id, season, metric_scope, metric_window, COUNT(*) c FROM pitcher_metric_stage WHERE batch_id=? GROUP BY metric_key, player_id, season, metric_scope, metric_window HAVING c>1)",[batchId]);
   const duplicateCount=num(dup.row&&dup.row.duplicate_natural_keys);
-  const status=(rowErrors===0&&duplicateCount===0&&rowsStaged>0)?"COMPLETED_SAMPLE_STAGE_CALIBRATION_NO_PROMOTION":"COMPLETED_SAMPLE_STAGE_CALIBRATION_WITH_REVIEW_NO_PROMOTION";
-  const certification=(rowErrors===0&&duplicateCount===0&&rowsStaged>0)?"PITCHER_METRICS_V0_2_0_SAMPLE_STAGE_CALIBRATION_COMPLETED_NO_PROMOTION":"PITCHER_METRICS_V0_2_0_SAMPLE_STAGE_CALIBRATION_REVIEW_NO_PROMOTION";
-  const grade=(rowErrors===0&&duplicateCount===0&&rowsStaged>0)?"SAMPLE_STAGE_PASS_NO_PROMOTION":"SAMPLE_STAGE_REVIEW_NO_PROMOTION";
-  const logRows=num(inputReadiness.pitcher_game_logs.counts&&inputReadiness.pitcher_game_logs.counts.rows), splitRows=num(inputReadiness.pitcher_splits.counts&&inputReadiness.pitcher_splits.counts.rows);
-  await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_batches (batch_id,run_id,worker_name,worker_version,mode,status,data_feed_key,source_key,source_season,input_log_row_count,input_split_row_count,input_latest_game_date,input_latest_split_snapshot_date,expected_pitcher_universe_count,config_profile_id,formula_version,metric_catalog_json,formula_readiness_json,config_readiness_json,input_readiness_json,rows_staged,rows_promoted,duplicate_count,certification_status,certification_grade,certification_json,finished_at,certified_at,notes,updated_at) VALUES (?,?,?,?, 'sample_stage_calibration',?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?,CURRENT_TIMESTAMP)`,[batchId,runId,WORKER_NAME,VERSION,status,DATA_FEED_KEY,"d1_internal_pitcher_game_logs_and_splits",season,logRows,splitRows,inputReadiness.pitcher_game_logs.counts.max_game_date,inputReadiness.pitcher_splits.counts.max_snapshot_date,num(inputReadiness.pitcher_game_logs.counts.players),PROFILE_ID,FORMULA_VERSION,JSON.stringify(formulaCatalog()),JSON.stringify({sample_stage_formula_locked:true,advanced_metrics_deferred:true}),JSON.stringify(config),JSON.stringify(inputReadiness),rowsStaged,duplicateCount,certification,grade,JSON.stringify({sample_selection:select.sample_strategy,sample_player_ids:sampleIds,review_rows:reviewRows,row_errors:rowErrors,duplicate_count:duplicateCount,no_promotion:true,no_source_mutation:true,no_external_calls:true}),"v0.2.0 sample-stage calibration. Stage rows only. No snapshots, no promotion, no source mutation, no scoring."]);
-  await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_certifications (certification_id,batch_id,run_id,certification_status,certification_grade,rows_staged,rows_promoted,duplicate_count,input_log_row_count,input_split_row_count,validation_json) VALUES (?,?,?,?,?,?,0,?,?,?,?)`,[rid("pitcher_metrics_sample_cert"),batchId,runId,certification,grade,rowsStaged,duplicateCount,logRows,splitRows,JSON.stringify({sample_selection:select.sample_strategy,sample_player_ids:sampleIds,row_errors:rowErrors,review_rows:reviewRows})]);
-  await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_cursor (cursor_key,mode,status,batch_id,run_id,source_season,players_total,players_processed,last_game_date,last_split_snapshot_date,requests_done,no_external_calls,cursor_json,updated_at) VALUES ('pitcher_metrics_v0_2_0_sample_stage_cursor','sample_stage_calibration',?,?,?,?,?,?,?,?,1,1,?,CURRENT_TIMESTAMP)`,[status,batchId,runId,season,select.players.length,select.players.length,inputReadiness.pitcher_game_logs.counts.max_game_date,inputReadiness.pitcher_splits.counts.max_snapshot_date,JSON.stringify({next_phase:"v0.3.x full granular stage only after review",no_promotion:true})]);
-  return {ok:rowErrors===0&&duplicateCount===0&&rowsStaged>0,data_ok:rowErrors===0&&duplicateCount===0&&rowsStaged>0,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,chain_id:input.chain_id||null,run_id:runId,batch_id:batchId,mode:"sample_stage_calibration",status,certification,certification_grade:grade,profile_id:PROFILE_ID,formula_version:FORMULA_VERSION,sample_player_count:select.players.length,sample_player_ids:sampleIds,sample_strategy:select.sample_strategy,windows_used:config.windows.map(w=>({metric_scope:w.metric_scope,window_type:w.window_type,window_size:w.window_size})),metric_definitions_count:METRIC_DEFS.length,rows_read:logRows+splitRows,rows_staged:rowsStaged,rows_written:rowsStaged+3,rows_promoted:0,duplicate_count:duplicateCount,row_errors:rowErrors,review_rows:reviewRows,stage_insert_mode:"d1_batch_chunked_with_individual_fallback",external_calls_performed:0,live_promotion_performed:false,source_table_mutation_performed:false,scoring_performed:false,ranking_performed:false,final_board_write_performed:false,allowed_next_phase:"v0.3.x full granular stage only after SQL review",blocked_downstream_reason:"v0.2.0 is sample-stage calibration only; snapshot prep, live promotion, delta, repair/no-op, scoring are intentionally blocked.",config_used:{profile_id:PROFILE_ID,formula_version:FORMULA_VERSION,thresholds:config.thresholds,windows:config.windows},input_readiness:inputReadiness,output_json:{mirrors_hitter_metrics_structure:true,hitter_formulas_copied:false,pitcher_specific_denominators:true,no_mlb_calls:true,no_source_mutation:true,no_promotion:true},timestamp_utc:nowUtc()};
+  const status=rowErrors>0||duplicateCount>0?"COMPLETED_BASE_REBUILD_STAGE_ONLY_WITH_REVIEW_NO_PROMOTION":(partialContinue?"PARTIAL_CONTINUE_BASE_PITCHER_METRICS":"COMPLETED_BASE_REBUILD_STAGE_ONLY_NO_PROMOTION");
+  const certification=rowErrors>0||duplicateCount>0?"BASE_PITCHER_METRICS_V0_3_0_BASE_REBUILD_STAGE_ONLY_REVIEW_NO_PROMOTION":(partialContinue?"BASE_PITCHER_METRICS_V0_3_0_BASE_REBUILD_STAGE_ONLY_PARTIAL_CONTINUE":"BASE_PITCHER_METRICS_V0_3_0_BASE_REBUILD_STAGE_ONLY_COMPLETED_NO_PROMOTION");
+  const grade=rowErrors>0||duplicateCount>0?"BASE_STAGE_REVIEW_NO_PROMOTION":(partialContinue?"PARTIAL_CONTINUE":"BASE_STAGE_PASS_NO_PROMOTION");
+  await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_batches (batch_id,run_id,worker_name,worker_version,mode,status,data_feed_key,source_key,source_season,input_log_row_count,input_split_row_count,input_latest_game_date,input_latest_split_snapshot_date,expected_pitcher_universe_count,config_profile_id,formula_version,metric_catalog_json,formula_readiness_json,config_readiness_json,input_readiness_json,rows_staged,rows_promoted,duplicate_count,certification_status,certification_grade,certification_json,finished_at,certified_at,notes,updated_at) VALUES (?,?,?,?, 'base_rebuild_stage_only',?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,[batchId,runId,WORKER_NAME,VERSION,status,DATA_FEED_KEY,"d1_internal_pitcher_game_logs_and_splits",season,logRows,splitRows,inputReadiness.pitcher_game_logs.counts.max_game_date,inputReadiness.pitcher_splits.counts.max_snapshot_date,allPlayers.length,PROFILE_ID,FORMULA_VERSION,JSON.stringify(formulaCatalog()),JSON.stringify({base_stage_formula_locked:true,advanced_metrics_deferred:true,full_granular_stage_only:true,promotion_locked:true}),JSON.stringify(config),JSON.stringify(inputReadiness),stagedRowsTotal,duplicateCount,certification,grade,JSON.stringify({offset_before:offset,offset_after:newOffset,players_total:allPlayers.length,chunk_size:chunkSize,chunk_player_ids:processedIds,review_rows_this_chunk:reviewRows,row_errors:rowErrors,duplicate_count:duplicateCount,no_promotion:true,no_source_mutation:true,no_external_calls:true}),partialContinue?null:nowUtc(),partialContinue?null:nowUtc(),"v0.3.0 full granular base stage only. No snapshots, no live promotion, no source mutation, no scoring."]);
+  await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_cursor (cursor_key,mode,status,batch_id,run_id,source_season,players_total,players_processed,last_player_id,last_game_date,last_split_snapshot_date,requests_done,no_external_calls,cursor_json,updated_at) VALUES (?,'base_rebuild_stage_only',?,?,?,?,?,?,?,?,COALESCE((SELECT requests_done FROM pitcher_metric_cursor WHERE cursor_key=?),0)+1,1,?,CURRENT_TIMESTAMP)`,[cursorKey,partialContinue?"PARTIAL_CONTINUE":"COMPLETED",batchId,runId,season,allPlayers.length,newOffset,processedIds.length?processedIds[processedIds.length-1]:null,inputReadiness.pitcher_game_logs.counts.max_game_date,inputReadiness.pitcher_splits.counts.max_snapshot_date,cursorKey,JSON.stringify({request_id:requestId,chunk_size:chunkSize,offset_before:offset,offset_after:newOffset,chunk_player_ids:processedIds,no_promotion:true})]);
+  if(!partialContinue && rowErrors===0 && duplicateCount===0){
+    await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_certifications (certification_id,batch_id,run_id,certification_status,certification_grade,rows_staged,rows_promoted,duplicate_count,input_log_row_count,input_split_row_count,validation_json) VALUES (?,?,?,?,?,?,0,?,?,?,?)`,[rid("pitcher_metrics_base_stage_cert"),batchId,runId,certification,grade,stagedRowsTotal,duplicateCount,logRows,splitRows,JSON.stringify({players_total:allPlayers.length,rows_staged:stagedRowsTotal,row_errors:rowErrors,duplicate_count:duplicateCount})]);
+  }
+  return {ok:rowErrors===0&&duplicateCount===0&&stagedRowsTotal>0,data_ok:rowErrors===0&&duplicateCount===0&&stagedRowsTotal>0,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,chain_id:input.chain_id||null,run_id:runId,batch_id:batchId,mode:"base_rebuild_stage_only",base_rebuild_stage_only:true,status,certification,certification_grade:grade,profile_id:PROFILE_ID,formula_version:FORMULA_VERSION,players_total:allPlayers.length,chunk_size:chunkSize,offset_before:offset,offset_after:newOffset,chunk_player_count:chunkPlayers.length,chunk_player_ids:processedIds,continuation_required:partialContinue,orchestrator_should_self_continue:partialContinue,windows_used:config.windows.map(w=>({metric_scope:w.metric_scope,window_type:w.window_type,window_size:w.window_size})),metric_definitions_count:METRIC_DEFS.length,rows_read:logRows+splitRows,rows_staged:stagedRowsTotal,rows_written:insertResult.written+2,rows_promoted:0,duplicate_count:duplicateCount,row_errors:rowErrors,review_rows_this_chunk:reviewRows,stage_insert_mode:"d1_batch_chunked_with_individual_fallback",external_calls_performed:0,live_promotion_performed:false,source_table_mutation_performed:false,scoring_performed:false,ranking_performed:false,final_board_write_performed:false,allowed_next_phase:partialContinue?"Continue same queued job until complete":"snapshot prep only after SQL review and approval",blocked_downstream_reason:"v0.3.0 is full granular base-stage only; snapshot prep, live promotion, delta, repair/no-op, scoring are intentionally blocked.",config_used:{profile_id:PROFILE_ID,formula_version:FORMULA_VERSION,thresholds:config.thresholds,windows:config.windows},input_readiness:inputReadiness,output_json:{mirrors_hitter_metrics_structure:true,hitter_formulas_copied:false,pitcher_specific_denominators:true,no_mlb_calls:true,no_source_mutation:true,no_promotion:true},timestamp_utc:nowUtc()};
 }
+
 
 export default {async fetch(request, env, ctx){
   const url=new URL(request.url); const path=url.pathname.replace(/\/$/,"")||"/"; const method=request.method.toUpperCase();
@@ -339,7 +388,7 @@ export default {async fetch(request, env, ctx){
   if(method==="POST"&&path==="/run"){
     const input=await readJsonSafe(request); const missingDb=REQUIRED_DB_BINDINGS.filter(name=>!env[name]);
     if(missingDb.length) return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"BLOCKED_MISSING_DB_BINDINGS",missing_db_bindings:missingDb,external_calls_performed:0,rows_written:0},500);
-    try{return jsonResponse(await runSampleStage(input,env));}catch(err){return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,status:"SAMPLE_STAGE_WORKER_EXCEPTION",certification:"PITCHER_METRICS_V0_2_0_SAMPLE_STAGE_EXCEPTION",error:String(err&&err.message?err.message:err),stack:String(err&&err.stack?err.stack:"").slice(0,2000),rows_written:0,rows_promoted:0,external_calls_performed:0,timestamp_utc:nowUtc()},500);}
+    try{return jsonResponse(await runBaseRebuildStageOnly(input,env));}catch(err){return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,status:"BASE_STAGE_WORKER_EXCEPTION",certification:"PITCHER_METRICS_V0_2_0_SAMPLE_STAGE_EXCEPTION",error:String(err&&err.message?err.message:err),stack:String(err&&err.stack?err.stack:"").slice(0,2000),rows_written:0,rows_promoted:0,external_calls_performed:0,timestamp_utc:nowUtc()},500);}
   }
   return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"NOT_FOUND",allowed_routes:["GET /","GET /health","POST /run","POST /diagnostic"],timestamp_utc:nowUtc()},404);
 }};
