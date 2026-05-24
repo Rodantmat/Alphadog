@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-metrics";
-const VERSION = "alphadog-v2-base-pitcher-metrics-v0.4.0-snapshot-promote-retained-stage";
+const VERSION = "alphadog-v2-base-pitcher-metrics-v0.4.1-snapshot-retained-stage-parity-repair";
 const JOB_KEY = "base-pitcher-metrics";
 
 const PROFILE_ID = "pitcher_metrics_neutral_v0_3_0_base_stage";
@@ -84,7 +84,7 @@ const METRIC_SCHEMA_SQL = [
   `CREATE INDEX IF NOT EXISTS idx_pitcher_metric_outcomes_batch ON pitcher_metric_outcomes(batch_id, terminal_category)`,
   `CREATE INDEX IF NOT EXISTS idx_pitcher_metric_snapshot_stage_batch ON pitcher_metric_snapshot_stage(snapshot_batch_id, player_id, metric_window)`,
   `CREATE INDEX IF NOT EXISTS idx_pitcher_metric_snapshots_player ON pitcher_metric_snapshots(player_id, season, metric_window)`,
-  `INSERT OR IGNORE INTO pitcher_metric_schema_migrations (migration_key, worker_version, notes) VALUES ('pitcher_metrics_v0_4_0_snapshot_promote_retained_stage', '${VERSION}', 'Pitcher Metrics v0.4.0 promotes retained snapshot stage to live snapshots. Stage retained. No source mutation, no external calls, no scoring.')`
+  `INSERT OR IGNORE INTO pitcher_metric_schema_migrations (migration_key, worker_version, notes) VALUES ('pitcher_metrics_v0_4_1_snapshot_delta_repair_gate', '${VERSION}', 'Pitcher Metrics v0.4.1 adds retained-stage/live parity repair and no-op gate. No source mutation, no external calls, no scoring.')`
 ];
 
 const CONFIG_SCHEMA_SQL = [
@@ -536,6 +536,63 @@ async function runSnapshotPromoteRetainedStage(input, env){
 }
 
 
+
+async function runSnapshotDeltaGate(input, env){
+  const runId = input.run_id || rid("run");
+  const schemaReadiness = await ensureSchema(env);
+  await ensureSnapshotTypedColumns(env);
+  const blockers=[];
+  if(!schemaReadiness.ok) blockers.push("SCHEMA_READINESS_FAILED");
+  const batchRow = await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT * FROM pitcher_metric_snapshot_batches WHERE status IN ('COMPLETED_SNAPSHOT_PROMOTED_RETAINED_STAGE','COMPLETED_SNAPSHOT_REPAIRED_FROM_RETAINED_STAGE') OR rows_promoted > 0 ORDER BY datetime(promoted_at) DESC, datetime(updated_at) DESC LIMIT 1");
+  const snapshotBatchId = input.snapshot_batch_id || (batchRow.row && batchRow.row.snapshot_batch_id) || null;
+  if(!snapshotBatchId) blockers.push("NO_PROMOTED_RETAINED_SNAPSHOT_BATCH_FOUND");
+  const stageCounts = snapshotBatchId ? await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS rows, COUNT(DISTINCT player_id) AS players, COUNT(DISTINCT metric_window) AS windows FROM pitcher_metric_snapshot_stage WHERE snapshot_batch_id=?", [snapshotBatchId]) : {row:null};
+  const liveCountsBefore = snapshotBatchId ? await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS rows, COUNT(DISTINCT player_id) AS players, COUNT(DISTINCT metric_window) AS windows FROM pitcher_metric_snapshots WHERE snapshot_batch_id=?", [snapshotBatchId]) : {row:null};
+  const missingBefore = snapshotBatchId ? await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS missing_live_rows FROM pitcher_metric_snapshot_stage s WHERE s.snapshot_batch_id=? AND NOT EXISTS (SELECT 1 FROM pitcher_metric_snapshots l WHERE l.player_id=s.player_id AND l.season=s.season AND l.metric_window=s.metric_window AND l.config_profile_id=s.config_profile_id AND l.formula_version=s.formula_version)", [snapshotBatchId]) : {row:null};
+  const duplicateLive = await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS duplicate_live_keys FROM (SELECT player_id, season, metric_window, config_profile_id, formula_version, COUNT(*) c FROM pitcher_metric_snapshots GROUP BY player_id, season, metric_window, config_profile_id, formula_version HAVING c>1)");
+  const stageRows = Number(stageCounts.row&&stageCounts.row.rows||0);
+  const liveRowsBefore = Number(liveCountsBefore.row&&liveCountsBefore.row.rows||0);
+  const missingLiveRowsBefore = Number(missingBefore.row&&missingBefore.row.missing_live_rows||0);
+  const duplicateLiveKeys = Number(duplicateLive.row&&duplicateLive.row.duplicate_live_keys||0);
+  if(stageRows<=0) blockers.push("RETAINED_SNAPSHOT_STAGE_EMPTY");
+  if(duplicateLiveKeys>0) blockers.push("DUPLICATE_LIVE_SNAPSHOT_KEYS");
+  if(blockers.length){
+    return {ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,chain_id:input.chain_id||null,run_id:runId,snapshot_batch_id:snapshotBatchId,mode:"snapshot_delta_gate",snapshot_delta_gate:true,status:"BLOCKED_DELTA_PITCHER_METRICS_SNAPSHOT_GATE",certification:"DELTA_PITCHER_METRICS_SNAPSHOT_GATE_BLOCKED",certification_grade:"DELTA_GATE_BLOCKED",blockers,stage_rows:stageRows,live_rows_before:liveRowsBefore,missing_live_rows_before:missingLiveRowsBefore,duplicate_live_keys:duplicateLiveKeys,rows_written:0,rows_promoted:0,external_calls_performed:0,no_new_batch:true,retained_stage_preserved:true,source_table_mutation_performed:false,scoring_performed:false,ranking_performed:false,final_board_write_performed:false,timestamp_utc:nowUtc()};
+  }
+  let rowsWritten = 0;
+  let rowsPromoted = 0;
+  if(missingLiveRowsBefore>0){
+    const typed = SNAPSHOT_TYPED_COLUMNS.map(c=>c[0]);
+    const targetCols = ["player_id","season","metric_window","config_profile_id","formula_version","snapshot_batch_id","source_batch_id",...typed,"metrics_json","input_summary_json","reliability_json","review_flags_json","certification_status","certification_grade","promoted_at","updated_at"];
+    const selectCols = ["s.player_id","s.season","s.metric_window","s.config_profile_id","s.formula_version","s.snapshot_batch_id","s.source_batch_id",...typed.map(c=>"s."+c),"s.metrics_json","s.input_summary_json","s.reliability_json","s.review_flags_json", "'snapshot_delta_repaired_from_retained_stage'", "'DELTA_REPAIR_PROMOTED_RETAINED_STAGE'", "CURRENT_TIMESTAMP", "CURRENT_TIMESTAMP"];
+    await execSql(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_metric_snapshots (${targetCols.join(",")}) SELECT ${selectCols.join(",")} FROM pitcher_metric_snapshot_stage s WHERE s.snapshot_batch_id=? AND NOT EXISTS (SELECT 1 FROM pitcher_metric_snapshots l WHERE l.player_id=s.player_id AND l.season=s.season AND l.metric_window=s.metric_window AND l.config_profile_id=s.config_profile_id AND l.formula_version=s.formula_version)`, [snapshotBatchId]);
+    rowsWritten += missingLiveRowsBefore;
+    rowsPromoted += missingLiveRowsBefore;
+    await execSql(env.STATS_PITCHER_DB, "UPDATE pitcher_metric_snapshot_stage SET promoted_at=COALESCE(promoted_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE snapshot_batch_id=?", [snapshotBatchId]);
+  }
+  const liveCountsAfter = await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS rows, COUNT(DISTINCT player_id) AS players, COUNT(DISTINCT metric_window) AS windows FROM pitcher_metric_snapshots WHERE snapshot_batch_id=?", [snapshotBatchId]);
+  const missingAfter = await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS missing_live_rows FROM pitcher_metric_snapshot_stage s WHERE s.snapshot_batch_id=? AND NOT EXISTS (SELECT 1 FROM pitcher_metric_snapshots l WHERE l.player_id=s.player_id AND l.season=s.season AND l.metric_window=s.metric_window AND l.config_profile_id=s.config_profile_id AND l.formula_version=s.formula_version)", [snapshotBatchId]);
+  const liveRowsAfter = Number(liveCountsAfter.row&&liveCountsAfter.row.rows||0);
+  const missingLiveRowsAfter = Number(missingAfter.row&&missingAfter.row.missing_live_rows||0);
+  let status, certification, grade;
+  if(missingLiveRowsBefore===0 && liveRowsBefore===stageRows && missingLiveRowsAfter===0){
+    status = "DELTA_PITCHER_METRICS_SNAPSHOT_NOOP_CURRENT";
+    certification = "DELTA_PITCHER_METRICS_SNAPSHOT_NOOP_LIVE_CURRENT";
+    grade = "DELTA_NOOP_PASS";
+  } else if(missingLiveRowsBefore>0 && missingLiveRowsAfter===0 && liveRowsAfter===stageRows){
+    status = "DELTA_PITCHER_METRICS_SNAPSHOT_REPAIRED_FROM_RETAINED_STAGE";
+    certification = "DELTA_PITCHER_METRICS_SNAPSHOT_REPAIR_CERTIFIED_PROMOTED_RETAINED";
+    grade = "DELTA_REPAIR_PASS";
+    await execSql(env.STATS_PITCHER_DB, "UPDATE pitcher_metric_snapshot_batches SET status='COMPLETED_SNAPSHOT_REPAIRED_FROM_RETAINED_STAGE', rows_promoted=?, duplicate_count=0, certification_status=?, certification_grade=?, certification_json=?, promoted_at=COALESCE(promoted_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP, notes='v0.4.1 repaired missing live snapshot rows from retained snapshot stage. No source mutation, no external calls, no scoring.' WHERE snapshot_batch_id=?", [liveRowsAfter, certification, grade, JSON.stringify({snapshot_batch_id:snapshotBatchId,missing_live_rows_before:missingLiveRowsBefore,missing_live_rows_after:missingLiveRowsAfter,rows_promoted:rowsPromoted,retained_stage_preserved:true,no_new_batch:true,no_source_mutation:true,no_external_calls:true,no_scoring:true}), snapshotBatchId]);
+  } else {
+    status = "DELTA_PITCHER_METRICS_SNAPSHOT_REVIEW_REQUIRED";
+    certification = "DELTA_PITCHER_METRICS_SNAPSHOT_REVIEW_REQUIRED";
+    grade = "DELTA_REVIEW";
+  }
+  const ok = (grade === "DELTA_NOOP_PASS" || grade === "DELTA_REPAIR_PASS");
+  return {ok,data_ok:ok,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,chain_id:input.chain_id||null,run_id:runId,snapshot_batch_id:snapshotBatchId,source_metric_batch_id:batchRow.row&&batchRow.row.source_batch_id||null,mode:"snapshot_delta_gate",snapshot_delta_gate:true,status,certification,certification_grade:grade,stage_rows:stageRows,stage_players:Number(stageCounts.row&&stageCounts.row.players||0),stage_windows:Number(stageCounts.row&&stageCounts.row.windows||0),live_rows_before:liveRowsBefore,live_rows_after:liveRowsAfter,live_players:Number(liveCountsAfter.row&&liveCountsAfter.row.players||0),live_windows:Number(liveCountsAfter.row&&liveCountsAfter.row.windows||0),missing_live_rows_before:missingLiveRowsBefore,missing_live_rows_after:missingLiveRowsAfter,rows_written:rowsWritten,rows_promoted:rowsPromoted,external_calls_performed:0,no_new_batch:true,retained_stage_preserved:true,source_table_mutation_performed:false,scoring_performed:false,ranking_performed:false,final_board_write_performed:false,allowed_next_phase:"Pitcher Metrics snapshot delta/no-op gate is current; scoring remains blocked until explicitly approved.",blocked_downstream_reason:"v0.4.1 is retained-stage/live parity repair and no-op gate only; scoring/ranking/final board remain blocked.",timestamp_utc:nowUtc()};
+}
+
 export default {async fetch(request, env, ctx){
   const url=new URL(request.url); const path=url.pathname.replace(/\/$/,"")||"/"; const method=request.method.toUpperCase();
   if(method==="GET"&&path==="/") return jsonResponse(baseIdentity(env));
@@ -545,12 +602,13 @@ export default {async fetch(request, env, ctx){
     const input=await readJsonSafe(request); const missingDb=REQUIRED_DB_BINDINGS.filter(name=>!env[name]);
     if(missingDb.length) return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"BLOCKED_MISSING_DB_BINDINGS",missing_db_bindings:missingDb,external_calls_performed:0,rows_written:0},500);
     try{
+      if(String(input.mode||"")==="snapshot_delta_gate") return jsonResponse(await runSnapshotDeltaGate(input,env));
       if(String(input.mode||"")==="snapshot_promote_retained_stage") return jsonResponse(await runSnapshotPromoteRetainedStage(input,env));
       if(String(input.mode||"")==="snapshot_prep_stage_only") return jsonResponse(await runSnapshotPrepStageOnly(input,env));
       return jsonResponse(await runBaseRebuildStageOnly(input,env));
     }catch(err){
       const m=String(input.mode||"");
-      return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,status:m==="snapshot_promote_retained_stage"?"SNAPSHOT_PROMOTE_WORKER_EXCEPTION":(m==="snapshot_prep_stage_only"?"SNAPSHOT_PREP_WORKER_EXCEPTION":"BASE_STAGE_WORKER_EXCEPTION"),certification:m==="snapshot_promote_retained_stage"?"PITCHER_METRICS_V0_4_0_SNAPSHOT_PROMOTE_EXCEPTION":(m==="snapshot_prep_stage_only"?"PITCHER_METRICS_V0_3_4_SNAPSHOT_PREP_EXCEPTION":"PITCHER_METRICS_V0_3_3_BASE_STAGE_EXCEPTION"),error:String(err&&err.message?err.message:err),stack:String(err&&err.stack?err.stack:"").slice(0,2000),rows_written:0,rows_promoted:0,external_calls_performed:0,timestamp_utc:nowUtc()},500);}
+      return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,status:m==="snapshot_delta_gate"?"SNAPSHOT_DELTA_GATE_WORKER_EXCEPTION":(m==="snapshot_promote_retained_stage"?"SNAPSHOT_PROMOTE_WORKER_EXCEPTION":(m==="snapshot_prep_stage_only"?"SNAPSHOT_PREP_WORKER_EXCEPTION":"BASE_STAGE_WORKER_EXCEPTION")),certification:m==="snapshot_delta_gate"?"PITCHER_METRICS_V0_4_1_SNAPSHOT_DELTA_GATE_EXCEPTION":(m==="snapshot_promote_retained_stage"?"PITCHER_METRICS_V0_4_0_SNAPSHOT_PROMOTE_EXCEPTION":(m==="snapshot_prep_stage_only"?"PITCHER_METRICS_V0_3_4_SNAPSHOT_PREP_EXCEPTION":"PITCHER_METRICS_V0_3_3_BASE_STAGE_EXCEPTION")),error:String(err&&err.message?err.message:err),stack:String(err&&err.stack?err.stack:"").slice(0,2000),rows_written:0,rows_promoted:0,external_calls_performed:0,timestamp_utc:nowUtc()},500);}
   }
   return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"NOT_FOUND",allowed_routes:["GET /","GET /health","POST /run","POST /diagnostic"],timestamp_utc:nowUtc()},404);
 }};
