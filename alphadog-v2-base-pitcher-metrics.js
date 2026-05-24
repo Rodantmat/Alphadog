@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-metrics";
-const VERSION = "alphadog-v2-base-pitcher-metrics-v0.3.4-snapshot-prep-schema-call-fix";
+const VERSION = "alphadog-v2-base-pitcher-metrics-v0.4.0-snapshot-promote-retained-stage";
 const JOB_KEY = "base-pitcher-metrics";
 
 const PROFILE_ID = "pitcher_metrics_neutral_v0_3_0_base_stage";
@@ -84,7 +84,7 @@ const METRIC_SCHEMA_SQL = [
   `CREATE INDEX IF NOT EXISTS idx_pitcher_metric_outcomes_batch ON pitcher_metric_outcomes(batch_id, terminal_category)`,
   `CREATE INDEX IF NOT EXISTS idx_pitcher_metric_snapshot_stage_batch ON pitcher_metric_snapshot_stage(snapshot_batch_id, player_id, metric_window)`,
   `CREATE INDEX IF NOT EXISTS idx_pitcher_metric_snapshots_player ON pitcher_metric_snapshots(player_id, season, metric_window)`,
-  `INSERT OR IGNORE INTO pitcher_metric_schema_migrations (migration_key, worker_version, notes) VALUES ('pitcher_metrics_v0_3_1_cursor_insert_value_fix', '${VERSION}', 'Pitcher Metrics v0.3.1 full granular base-stage only cursor insert value fix. Uses existing lifecycle tables only. No promotion, no source mutation, no external calls.')`
+  `INSERT OR IGNORE INTO pitcher_metric_schema_migrations (migration_key, worker_version, notes) VALUES ('pitcher_metrics_v0_4_0_snapshot_promote_retained_stage', '${VERSION}', 'Pitcher Metrics v0.4.0 promotes retained snapshot stage to live snapshots. Stage retained. No source mutation, no external calls, no scoring.')`
 ];
 
 const CONFIG_SCHEMA_SQL = [
@@ -500,6 +500,41 @@ async function runSnapshotPrepStageOnly(input, env){
   return {ok:rowErrors===0&&duplicateCount===0&&snapshotRowsCount>0,data_ok:rowErrors===0&&duplicateCount===0&&snapshotRowsCount>0,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,chain_id:input.chain_id||null,run_id:runId,snapshot_batch_id:snapshotBatchId,source_metric_batch_id:sourceBatchId,mode:"snapshot_prep_stage_only",snapshot_prep_stage_only:true,status,certification,certification_grade:grade,source_stage_rows:Number(sourceCounts.row.rows||0),source_stage_players:Number(sourceCounts.row.players||0),source_stage_windows:Number(sourceCounts.row.windows||0),source_metric_keys:Number(sourceCounts.row.metric_keys||0),snapshot_rows:snapshotRowsCount,snapshot_players:snapshotPlayers,snapshot_windows:Number(snapCounts.row&&snapCounts.row.windows||0),rows_written:insertResult.written+1,rows_promoted:0,duplicate_count:duplicateCount,row_errors:rowErrors,external_calls_performed:0,live_promotion_performed:false,source_table_mutation_performed:false,scoring_performed:false,ranking_performed:false,final_board_write_performed:false,retained_stage_preserved:true,allowed_next_phase:"live snapshot promotion only after SQL review and approval",blocked_downstream_reason:"v0.3.4 is snapshot prep stage-only; live promotion, delta, repair/no-op, scoring are intentionally blocked.",timestamp_utc:nowUtc()};
 }
 
+async function runSnapshotPromoteRetainedStage(input, env){
+  const runId = input.run_id || rid("run");
+  const snapshotBatchId = input.snapshot_batch_id || (await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT snapshot_batch_id FROM pitcher_metric_snapshot_batches WHERE mode='snapshot_prep_stage_only' AND status='COMPLETED_SNAPSHOT_PREP_STAGE_ONLY_NO_PROMOTION' ORDER BY datetime(updated_at) DESC LIMIT 1")).row?.snapshot_batch_id;
+  const blockers=[];
+  if(!snapshotBatchId) blockers.push("NO_COMPLETED_SNAPSHOT_PREP_BATCH_FOUND");
+  const schemaReadiness = await ensureSchema(env);
+  await ensureSnapshotTypedColumns(env);
+  if(!schemaReadiness.ok) blockers.push("SCHEMA_READINESS_FAILED");
+  const batch = snapshotBatchId ? await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT * FROM pitcher_metric_snapshot_batches WHERE snapshot_batch_id=? LIMIT 1", [snapshotBatchId]) : {row:null};
+  if(snapshotBatchId && !batch.row) blockers.push("SNAPSHOT_BATCH_NOT_FOUND");
+  if(batch.row && String(batch.row.status)!=="COMPLETED_SNAPSHOT_PREP_STAGE_ONLY_NO_PROMOTION" && String(batch.row.status)!=="COMPLETED_SNAPSHOT_PROMOTED_RETAINED_STAGE") blockers.push("SNAPSHOT_BATCH_NOT_READY_FOR_PROMOTION");
+  const stageCounts = snapshotBatchId ? await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS rows, COUNT(DISTINCT player_id) AS players, COUNT(DISTINCT metric_window) AS windows FROM pitcher_metric_snapshot_stage WHERE snapshot_batch_id=?", [snapshotBatchId]) : {row:null};
+  const dup = snapshotBatchId ? await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS duplicate_natural_keys FROM (SELECT player_id, season, metric_window, config_profile_id, formula_version, COUNT(*) c FROM pitcher_metric_snapshot_stage WHERE snapshot_batch_id=? GROUP BY player_id, season, metric_window, config_profile_id, formula_version HAVING c>1)", [snapshotBatchId]) : {row:null};
+  const duplicateCount = Number(dup.row&&dup.row.duplicate_natural_keys||0);
+  if(stageCounts.row && Number(stageCounts.row.rows||0)<=0) blockers.push("SNAPSHOT_STAGE_EMPTY");
+  if(duplicateCount>0) blockers.push("DUPLICATE_SNAPSHOT_STAGE_KEYS");
+  if(blockers.length){
+    const certification="BASE_PITCHER_METRICS_V0_4_0_SNAPSHOT_PROMOTE_BLOCKED";
+    return {ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,chain_id:input.chain_id||null,run_id:runId,snapshot_batch_id:snapshotBatchId||null,mode:"snapshot_promote_retained_stage",status:"BLOCKED_SNAPSHOT_PROMOTE_RETAINED_STAGE",certification,certification_grade:"SNAPSHOT_PROMOTE_BLOCKED",blockers,stage_counts:stageCounts.row||null,duplicate_count:duplicateCount,rows_promoted:0,external_calls_performed:0,source_table_mutation_performed:false,scoring_performed:false,ranking_performed:false,final_board_write_performed:false,timestamp_utc:nowUtc()};
+  }
+  const typed = SNAPSHOT_TYPED_COLUMNS.map(c=>c[0]);
+  const targetCols = ["player_id","season","metric_window","config_profile_id","formula_version","snapshot_batch_id","source_batch_id",...typed,"metrics_json","input_summary_json","reliability_json","review_flags_json","certification_status","certification_grade","promoted_at","updated_at"];
+  const selectCols = ["player_id","season","metric_window","config_profile_id","formula_version","snapshot_batch_id","source_batch_id",...typed,"metrics_json","input_summary_json","reliability_json","review_flags_json", "'snapshot_promoted_retained_stage'", "'SNAPSHOT_PROMOTED_RETAINED_STAGE'", "CURRENT_TIMESTAMP", "CURRENT_TIMESTAMP"];
+  await execSql(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_metric_snapshots (${targetCols.join(",")}) SELECT ${selectCols.join(",")} FROM pitcher_metric_snapshot_stage WHERE snapshot_batch_id=?`, [snapshotBatchId]);
+  const liveCounts = await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS rows, COUNT(DISTINCT player_id) AS players, COUNT(DISTINCT metric_window) AS windows FROM pitcher_metric_snapshots WHERE snapshot_batch_id=?", [snapshotBatchId]);
+  const rowsPromoted = Number(liveCounts.row&&liveCounts.row.rows||0);
+  const expectedRows = Number(stageCounts.row&&stageCounts.row.rows||0);
+  const status = rowsPromoted===expectedRows && rowsPromoted>0 ? "COMPLETED_SNAPSHOT_PROMOTED_RETAINED_STAGE" : "COMPLETED_SNAPSHOT_PROMOTE_REVIEW_RETAINED_STAGE";
+  const certification = rowsPromoted===expectedRows && rowsPromoted>0 ? "BASE_PITCHER_METRICS_V0_4_0_SNAPSHOT_PROMOTED_RETAINED" : "BASE_PITCHER_METRICS_V0_4_0_SNAPSHOT_PROMOTE_REVIEW_RETAINED";
+  const grade = rowsPromoted===expectedRows && rowsPromoted>0 ? "SNAPSHOT_PROMOTE_PASS_RETAINED" : "SNAPSHOT_PROMOTE_REVIEW_RETAINED";
+  await execSql(env.STATS_PITCHER_DB, "UPDATE pitcher_metric_snapshot_stage SET certification_status='snapshot_promoted_retained_stage', certification_grade='SNAPSHOT_PROMOTED_RETAINED_STAGE', promoted_at=COALESCE(promoted_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE snapshot_batch_id=?", [snapshotBatchId]);
+  await execSql(env.STATS_PITCHER_DB, "UPDATE pitcher_metric_snapshot_batches SET status=?, rows_promoted=?, duplicate_count=?, certification_status=?, certification_grade=?, certification_json=?, promoted_at=COALESCE(promoted_at,CURRENT_TIMESTAMP), finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP, notes='v0.4.0 snapshot promoted to live with retained stage preserved. No source mutation, no external calls, no scoring.' WHERE snapshot_batch_id=?", [status, rowsPromoted, duplicateCount, certification, grade, JSON.stringify({snapshot_batch_id:snapshotBatchId,stage_counts:stageCounts.row,live_counts:liveCounts.row,duplicate_count:duplicateCount,retained_stage_preserved:true,no_source_mutation:true,no_external_calls:true,no_scoring:true}), snapshotBatchId]);
+  return {ok:status==="COMPLETED_SNAPSHOT_PROMOTED_RETAINED_STAGE",data_ok:status==="COMPLETED_SNAPSHOT_PROMOTED_RETAINED_STAGE",version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,chain_id:input.chain_id||null,run_id:runId,snapshot_batch_id:snapshotBatchId,source_metric_batch_id:batch.row&&batch.row.source_batch_id||null,mode:"snapshot_promote_retained_stage",snapshot_promote_retained_stage:true,status,certification,certification_grade:grade,snapshot_stage_rows:expectedRows,snapshot_stage_players:Number(stageCounts.row&&stageCounts.row.players||0),snapshot_stage_windows:Number(stageCounts.row&&stageCounts.row.windows||0),live_rows:rowsPromoted,live_players:Number(liveCounts.row&&liveCounts.row.players||0),live_windows:Number(liveCounts.row&&liveCounts.row.windows||0),rows_promoted:rowsPromoted,duplicate_count:duplicateCount,external_calls_performed:0,live_promotion_performed:true,retained_stage_preserved:true,source_table_mutation_performed:false,scoring_performed:false,ranking_performed:false,final_board_write_performed:false,allowed_next_phase:"retained-stage/live repair and no-op gate only after SQL review and approval",blocked_downstream_reason:"v0.4.0 promotes neutral pitcher metric snapshots only; scoring/ranking/final board remain blocked.",timestamp_utc:nowUtc()};
+}
+
 
 export default {async fetch(request, env, ctx){
   const url=new URL(request.url); const path=url.pathname.replace(/\/$/,"")||"/"; const method=request.method.toUpperCase();
@@ -510,9 +545,12 @@ export default {async fetch(request, env, ctx){
     const input=await readJsonSafe(request); const missingDb=REQUIRED_DB_BINDINGS.filter(name=>!env[name]);
     if(missingDb.length) return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"BLOCKED_MISSING_DB_BINDINGS",missing_db_bindings:missingDb,external_calls_performed:0,rows_written:0},500);
     try{
+      if(String(input.mode||"")==="snapshot_promote_retained_stage") return jsonResponse(await runSnapshotPromoteRetainedStage(input,env));
       if(String(input.mode||"")==="snapshot_prep_stage_only") return jsonResponse(await runSnapshotPrepStageOnly(input,env));
       return jsonResponse(await runBaseRebuildStageOnly(input,env));
-    }catch(err){return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,status:String(input.mode||"")==="snapshot_prep_stage_only"?"SNAPSHOT_PREP_WORKER_EXCEPTION":"BASE_STAGE_WORKER_EXCEPTION",certification:String(input.mode||"")==="snapshot_prep_stage_only"?"PITCHER_METRICS_V0_3_4_SNAPSHOT_PREP_EXCEPTION":"PITCHER_METRICS_V0_3_3_BASE_STAGE_EXCEPTION",error:String(err&&err.message?err.message:err),stack:String(err&&err.stack?err.stack:"").slice(0,2000),rows_written:0,rows_promoted:0,external_calls_performed:0,timestamp_utc:nowUtc()},500);}
+    }catch(err){
+      const m=String(input.mode||"");
+      return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,status:m==="snapshot_promote_retained_stage"?"SNAPSHOT_PROMOTE_WORKER_EXCEPTION":(m==="snapshot_prep_stage_only"?"SNAPSHOT_PREP_WORKER_EXCEPTION":"BASE_STAGE_WORKER_EXCEPTION"),certification:m==="snapshot_promote_retained_stage"?"PITCHER_METRICS_V0_4_0_SNAPSHOT_PROMOTE_EXCEPTION":(m==="snapshot_prep_stage_only"?"PITCHER_METRICS_V0_3_4_SNAPSHOT_PREP_EXCEPTION":"PITCHER_METRICS_V0_3_3_BASE_STAGE_EXCEPTION"),error:String(err&&err.message?err.message:err),stack:String(err&&err.stack?err.stack:"").slice(0,2000),rows_written:0,rows_promoted:0,external_calls_performed:0,timestamp_utc:nowUtc()},500);}
   }
   return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"NOT_FOUND",allowed_routes:["GET /","GET /health","POST /run","POST /diagnostic"],timestamp_utc:nowUtc()},404);
 }};
