@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.6.76-clear-base-delta-labels -->
+<!-- alphadog-v2-control-room-v1.6.77-clear-labels-original-layout -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -11,8 +11,8 @@ body{background:var(--bg);color:var(--green);font-family:monospace;padding:8px;m
 h2{font-size:18px;color:var(--green);letter-spacing:.045em;margin:10px 0 8px 0}
 h3{color:var(--white);font-size:12px;letter-spacing:.045em;margin:7px 0}
 .section{border-top:1px solid var(--line);padding-top:7px;margin-top:9px}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;width:100%}
-button{min-width:0;width:100%;padding:5px 3px;font-size:10.5px;border:0;border-radius:5px;background:#1f6feb;color:var(--white);min-height:42px;white-space:normal;overflow:hidden;text-overflow:clip;line-height:1.0;display:flex;align-items:center;justify-content:center;text-align:center;word-break:normal}
+.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;width:100%}
+button{min-width:0;width:100%;padding:4px 1px;font-size:10.5px;border:0;border-radius:5px;background:#1f6feb;color:var(--white);min-height:31px;white-space:normal;overflow:hidden;text-overflow:clip;line-height:1.0;display:flex;align-items:center;justify-content:center;text-align:center;word-break:normal}
 .clean{background:var(--clean)}.check{background:var(--check)}.sql{background:var(--sql)}.debug{background:var(--debug)}.audit{background:var(--audit)}.orch{background:var(--orch)}
 .copy{background:var(--debug);width:100%;margin-top:6px;min-height:34px;font-size:11px}
 input,textarea{width:100%;box-sizing:border-box;background:#111;color:var(--green);border:1px solid var(--line);border-radius:6px;margin-top:6px;padding:7px;font-size:12px}
@@ -22,16 +22,15 @@ pre{background:#000;color:var(--green);padding:8px;margin-top:8px;overflow:auto;
 .small,.muted{font-size:10px;color:var(--muted)}
 #versionTag{color:#9ae6b4;font-family:inherit;font-size:12px;font-weight:800;letter-spacing:.035em;margin-top:5px;margin-bottom:8px}
 textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-events:auto}
-@media (max-width:430px){body{padding:8px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}button{font-size:10px;min-height:42px;padding:4px 2px;border-radius:5px}h2{font-size:17px}h3{font-size:11px}.small,.muted{font-size:9.5px}}
-@media (max-width:370px){button{font-size:9.4px;min-height:42px}.grid{gap:3px}}
+@media (max-width:430px){body{padding:8px}.grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}button{font-size:10px;min-height:30px;padding:3px 1px;border-radius:5px}h2{font-size:17px}h3{font-size:11px}.small,.muted{font-size:9.5px}}
+@media (max-width:370px){button{font-size:9.2px;min-height:29px}.grid{gap:2px}}
 </style>
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.6.76-clear-base-delta-labels</div>
+<div id="versionTag">alphadog-v2-control-room-v1.6.77-clear-labels-original-layout</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time. No manual slate override.</div>
-<div class="small">Buttons enqueue backend jobs only. No browser long loops.</div>
 <div class="status" id="status">READY</div>
 
 <div class="section"><h3>DEBUG</h3><div class="grid">
@@ -77,23 +76,23 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </div></div>
 
 <div class="section"><h3>BASE JOBS</h3><div class="grid">
-<button class="orch" type="button" onclick="runJobButton('BASE > Hitter Game Logs','orchestrator_enqueue_base_hitter_game_logs')">BASE &gt; Hitter Game Logs</button>
-<button class="orch" type="button" onclick="runJobButton('BASE > Hitter Metrics Snapshot Prep','orchestrator_enqueue_base_hitter_metrics')">BASE &gt; Hitter Metrics Snapshot Prep</button>
-<button class="orch" type="button" onclick="runJobButton('BASE > Pitcher Game Logs','orchestrator_enqueue_base_pitcher_game_logs')">BASE &gt; Pitcher Game Logs</button>
-<button class="orch" type="button" onclick="runJobButton('BASE > Team Game Logs','orchestrator_enqueue_base_team_game_logs')">BASE &gt; Team Game Logs</button>
-<button class="orch" type="button" onclick="runJobButton('BASE > Starter History','orchestrator_enqueue_base_starter_history')">BASE &gt; Starter History</button>
-<button class="orch" type="button" onclick="runJobButton('BASE > Bullpen History','orchestrator_enqueue_base_bullpen_history')">BASE &gt; Bullpen History</button>
-<button class="orch" type="button" onclick="runJobButton('BASE > Hitter Splits','orchestrator_enqueue_base_hitter_splits')">BASE &gt; Hitter Splits</button>
-<button class="orch" type="button" onclick="runJobButton('BASE > Pitcher Splits','orchestrator_enqueue_base_pitcher_splits')">BASE &gt; Pitcher Splits</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Hitter Game Logs','orchestrator_enqueue_base_hitter_game_logs')">Hitter Game Logs</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Hitter Metrics Snapshot Prep','orchestrator_enqueue_base_hitter_metrics')">Hitter Metrics</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Pitcher Game Logs','orchestrator_enqueue_base_pitcher_game_logs')">Pitcher Game Logs</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Team Game Logs','orchestrator_enqueue_base_team_game_logs')">Team Game Logs</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Starter History','orchestrator_enqueue_base_starter_history')">Starter History</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Bullpen History','orchestrator_enqueue_base_bullpen_history')">Bullpen History</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Hitter Splits','orchestrator_enqueue_base_hitter_splits')">Hitter Splits</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Pitcher Splits','orchestrator_enqueue_base_pitcher_splits')">Pitcher Splits</button>
 </div></div>
 
 <div class="section"><h3>DELTA / REPAIR JOBS</h3><div class="grid">
-<button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Game Logs','orchestrator_enqueue_delta_hitter_game_logs')">DELTA &gt; Hitter Game Logs</button>
-<button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Metrics Live Repair','orchestrator_enqueue_delta_hitter_metrics')">DELTA &gt; Hitter Metrics Live Repair</button>
-<button class="orch" type="button" onclick="runJobButton('DELTA > Pitcher Game Logs','orchestrator_enqueue_delta_pitcher_game_logs')">DELTA &gt; Pitcher Game Logs</button>
-<button class="orch" type="button" onclick="runJobButton('DELTA > Team Game Logs','orchestrator_enqueue_delta_team_game_logs')">DELTA &gt; Team Game Logs</button>
-<button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Splits','orchestrator_enqueue_delta_hitter_splits')">DELTA &gt; Hitter Splits</button>
-<button class="orch" type="button" onclick="runJobButton('DELTA > Pitcher Splits','orchestrator_enqueue_delta_pitcher_splits')">DELTA &gt; Pitcher Splits</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Game Logs','orchestrator_enqueue_delta_hitter_game_logs')">Hitter Game Logs</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Metrics Live Repair','orchestrator_enqueue_delta_hitter_metrics')">Hitter Metrics Repair</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Pitcher Game Logs','orchestrator_enqueue_delta_pitcher_game_logs')">Pitcher Game Logs</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Team Game Logs','orchestrator_enqueue_delta_team_game_logs')">Team Game Logs</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Splits','orchestrator_enqueue_delta_hitter_splits')">Hitter Splits</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Pitcher Splits','orchestrator_enqueue_delta_pitcher_splits')">Pitcher Splits</button>
 </div></div>
 
 <div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
@@ -162,7 +161,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",wake_binding_required:"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator",public_url_fallback_disabled:true,version:"alphadog-v2-control-room-v1.6.76-clear-base-delta-labels", visible_hitter_metrics_button_required:true, hitter_metrics_route:"orchestrator_enqueue_base_hitter_metrics", ui_sentinel:"CLEAR_BASE_DELTA_LABELS_V1_6_76", hitter_metrics_mode:"snapshot_delta_gate_repair_ready"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled", orchestrator_mode:"backend-scheduled-continuation",wake_binding_required:"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator",public_url_fallback_disabled:true,version:"alphadog-v2-control-room-v1.6.77-clear-labels-original-layout", visible_hitter_metrics_button_required:true, hitter_metrics_route:"orchestrator_enqueue_base_hitter_metrics", ui_sentinel:"CLEAR_LABELS_ORIGINAL_LAYOUT_V1_6_77", hitter_metrics_mode:"snapshot_delta_gate_repair_ready"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
