@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.85-delta-pitcher-metrics-visible-button-fix";
+const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.86-deployed-worker-js-truth-fix";
 
 const DB_BINDINGS = [
   "CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB",
@@ -24,7 +24,7 @@ const CONTROL_ROOM_HTML = "<!DOCTYPE html>
 <head>
 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.6.85-delta-pitcher-metrics-visible-button-fix -->
+<!-- alphadog-v2-control-room-v1.6.86-deployed-worker-js-truth-fix -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -49,7 +49,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id=\"versionTag\">alphadog-v2-control-room-v1.6.85-delta-pitcher-metrics-visible-button-fix</div>
+<div id=\"versionTag\">alphadog-v2-control-room-v1.6.86-deployed-worker-js-truth-fix</div>
 <div class=\"small\">PT Now: <span id=\"ptNowLabel\"></span></div>
 <div class=\"small\">Slate: AUTO by game date/time.</div>
 <div class=\"status\" id=\"status\">READY</div>
@@ -184,7 +184,7 @@ function loading(l,e){
   setOutput(l,\"Loading...\"+(e?String.fromCharCode(10)+e:\"\"));
 }
 function debugConfig(){
-  setOutput(\"DEBUG > Config\",{base:BASE,auto_slate:autoSlateContext(),access_mode:\"single-user-admin-token-disabled\",orchestrator_mode:\"backend-scheduled-continuation\",wake_binding_required:\"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator\",public_url_fallback_disabled:true,version:\"alphadog-v2-control-room-v1.6.85-delta-pitcher-metrics-visible-button-fix\",ui_sentinel:\"LAYOUT_PARITY_CLEAN_BUTTONS_V1_6_78\",button_layout:\"five_columns_original_compact\",html_source:\"embedded_worker_html_and_static_html_identical\",delta_pitcher_metrics_button:\"present_in_embedded_and_static_html\"});
+  setOutput(\"DEBUG > Config\",{base:BASE,auto_slate:autoSlateContext(),access_mode:\"single-user-admin-token-disabled\",orchestrator_mode:\"backend-scheduled-continuation\",wake_binding_required:\"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator\",public_url_fallback_disabled:true,version:\"alphadog-v2-control-room-v1.6.86-deployed-worker-js-truth-fix\",ui_sentinel:\"LAYOUT_PARITY_CLEAN_BUTTONS_V1_6_78\",button_layout:\"five_columns_original_compact\",html_source:\"embedded_worker_html_and_static_html_identical\",delta_pitcher_metrics_button:\"present_in_embedded_and_static_html\"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
