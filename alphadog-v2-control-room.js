@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.86-deployed-worker-js-truth-fix";
+const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.87-embedded-html-string-literal-fix";
 
 const DB_BINDINGS = [
   "CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB",
@@ -19,12 +19,12 @@ const EXPECTED_SECRETS = [
 
 const SERVICE_BINDINGS = ["ORCHESTRATOR_WORKER"];
 
-const CONTROL_ROOM_HTML = "<!DOCTYPE html>
+const CONTROL_ROOM_HTML = `<!DOCTYPE html>
 <html>
 <head>
-<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.6.86-deployed-worker-js-truth-fix -->
+<!-- alphadog-v2-control-room-v1.6.87-embedded-html-string-literal-fix -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -49,147 +49,147 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id=\"versionTag\">alphadog-v2-control-room-v1.6.86-deployed-worker-js-truth-fix</div>
-<div class=\"small\">PT Now: <span id=\"ptNowLabel\"></span></div>
-<div class=\"small\">Slate: AUTO by game date/time.</div>
-<div class=\"status\" id=\"status\">READY</div>
+<div id="versionTag">alphadog-v2-control-room-v1.6.87-embedded-html-string-literal-fix</div>
+<div class="small">PT Now: <span id="ptNowLabel"></span></div>
+<div class="small">Slate: AUTO by game date/time.</div>
+<div class="status" id="status">READY</div>
 
-<div class=\"section\"><h3>DEBUG</h3><div class=\"grid\">
-<button class=\"debug\" type=\"button\" onclick=\"debugConfig()\">Config</button>
-<button class=\"debug\" type=\"button\" onclick=\"health()\">Health</button>
-<button class=\"debug\" type=\"button\" onclick=\"diagnostic()\">Diag</button>
-<button class=\"debug\" type=\"button\" onclick=\"testSQL()\">SQL</button>
-<button class=\"debug\" type=\"button\" onclick=\"reloadPage()\">Reload</button>
+<div class="section"><h3>DEBUG</h3><div class="grid">
+<button class="debug" type="button" onclick="debugConfig()">Config</button>
+<button class="debug" type="button" onclick="health()">Health</button>
+<button class="debug" type="button" onclick="diagnostic()">Diag</button>
+<button class="debug" type="button" onclick="testSQL()">SQL</button>
+<button class="debug" type="button" onclick="reloadPage()">Reload</button>
 </div></div>
 
-<div class=\"section\"><h3>V2 BOOTSTRAP / SCHEMA</h3><div class=\"grid\">
-<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Schema','v2_schema_status')\">Schema</button>
-<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Workers','v2_worker_registry')\">Workers</button>
-<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Config','v2_config_summary')\">Config</button>
-<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Phases','v2_phase_state')\">Phases</button>
-<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Markets','v2_market_sources')\">Markets</button>
-<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Props','v2_prop_taxonomy')\">Props</button>
-<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Certs','v2_certification_rules')\">Certs</button>
-<button class=\"debug\" type=\"button\" onclick=\"runJobButton('V2 BOOTSTRAP / SCHEMA > Bindings','v2_bindings_check')\">Bindings</button>
+<div class="section"><h3>V2 BOOTSTRAP / SCHEMA</h3><div class="grid">
+<button class="check" type="button" onclick="runJobButton('V2 BOOTSTRAP / SCHEMA > Schema','v2_schema_status')">Schema</button>
+<button class="check" type="button" onclick="runJobButton('V2 BOOTSTRAP / SCHEMA > Workers','v2_worker_registry')">Workers</button>
+<button class="check" type="button" onclick="runJobButton('V2 BOOTSTRAP / SCHEMA > Config','v2_config_summary')">Config</button>
+<button class="audit" type="button" onclick="runJobButton('V2 BOOTSTRAP / SCHEMA > Phases','v2_phase_state')">Phases</button>
+<button class="audit" type="button" onclick="runJobButton('V2 BOOTSTRAP / SCHEMA > Markets','v2_market_sources')">Markets</button>
+<button class="audit" type="button" onclick="runJobButton('V2 BOOTSTRAP / SCHEMA > Props','v2_prop_taxonomy')">Props</button>
+<button class="audit" type="button" onclick="runJobButton('V2 BOOTSTRAP / SCHEMA > Certs','v2_certification_rules')">Certs</button>
+<button class="debug" type="button" onclick="runJobButton('V2 BOOTSTRAP / SCHEMA > Bindings','v2_bindings_check')">Bindings</button>
 </div></div>
 
-<div class=\"section\"><h3>ORCHESTRATOR</h3><div class=\"grid\">
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Status','orchestrator_status')\">Status</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Enqueue','orchestrator_enqueue_test')\">Enqueue</button>
-<button class=\"orch\" type=\"button\" onclick=\"runOrchestratorWake()\">Wake</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Logs','orchestrator_logs')\">Logs</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('ORCHESTRATOR > Health','orchestrator_health')\">OHealth</button>
+<div class="section"><h3>ORCHESTRATOR</h3><div class="grid">
+<button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Status','orchestrator_status')">Status</button>
+<button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Enqueue','orchestrator_enqueue_test')">Enqueue</button>
+<button class="orch" type="button" onclick="runOrchestratorWake()">Wake</button>
+<button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Logs','orchestrator_logs')">Logs</button>
+<button class="orch" type="button" onclick="runJobButton('ORCHESTRATOR > Health','orchestrator_health')">OHealth</button>
 </div></div>
 
-<div class=\"section\"><h3>BOARD</h3><div class=\"grid\">
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BOARD > PrizePicks','orchestrator_enqueue_prizepicks_github_board')\">PrizePicks</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BOARD > Sleeper','orchestrator_enqueue_parlay_sleeper_board')\">Sleeper</button>
+<div class="section"><h3>BOARD</h3><div class="grid">
+<button class="orch" type="button" onclick="runJobButton('BOARD > PrizePicks','orchestrator_enqueue_prizepicks_github_board')">PrizePicks</button>
+<button class="orch" type="button" onclick="runJobButton('BOARD > Sleeper','orchestrator_enqueue_parlay_sleeper_board')">Sleeper</button>
 </div></div>
 
-<div class=\"section\"><h3>STATIC</h3><div class=\"grid\">
-<button class=\"check\" type=\"button\" onclick=\"runJobButton('STATIC > Teams','orchestrator_enqueue_static_teams')\">Teams</button>
-<button class=\"check\" type=\"button\" onclick=\"runJobButton('STATIC > Stadiums','orchestrator_enqueue_static_stadiums')\">Stadiums</button>
-<button class=\"check\" type=\"button\" onclick=\"runJobButton('STATIC > Park Factors','orchestrator_enqueue_static_park_factors')\">Park Factors</button>
-<button class=\"check\" type=\"button\" onclick=\"runJobButton('STATIC > Players','orchestrator_enqueue_static_players')\">Players</button>
-<button class=\"check\" type=\"button\" onclick=\"runJobButton('STATIC > Prop Taxonomy','orchestrator_enqueue_static_prop_taxonomy')\">Prop Tax</button>
-<button class=\"audit\" type=\"button\" onclick=\"runJobButton('STATIC > Certifier','orchestrator_enqueue_static_certifier')\">Certifier</button>
-<button class=\"audit\" type=\"button\" onclick=\"runJobButton('STATIC > Full Run','orchestrator_enqueue_static_full_run')\">Full Run</button>
+<div class="section"><h3>STATIC</h3><div class="grid">
+<button class="check" type="button" onclick="runJobButton('STATIC > Teams','orchestrator_enqueue_static_teams')">Teams</button>
+<button class="check" type="button" onclick="runJobButton('STATIC > Stadiums','orchestrator_enqueue_static_stadiums')">Stadiums</button>
+<button class="check" type="button" onclick="runJobButton('STATIC > Park Factors','orchestrator_enqueue_static_park_factors')">Park Factors</button>
+<button class="check" type="button" onclick="runJobButton('STATIC > Players','orchestrator_enqueue_static_players')">Players</button>
+<button class="check" type="button" onclick="runJobButton('STATIC > Prop Taxonomy','orchestrator_enqueue_static_prop_taxonomy')">Prop Tax</button>
+<button class="audit" type="button" onclick="runJobButton('STATIC > Certifier','orchestrator_enqueue_static_certifier')">Certifier</button>
+<button class="audit" type="button" onclick="runJobButton('STATIC > Full Run','orchestrator_enqueue_static_full_run')">Full Run</button>
 </div></div>
 
-<div class=\"section\"><h3>BASE JOBS</h3><div class=\"grid\">
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Hitter Game Logs','orchestrator_enqueue_base_hitter_game_logs')\">Hitter Game Logs</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Hitter Metrics','orchestrator_enqueue_base_hitter_metrics')\">Hitter Metrics</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Pitcher Game Logs','orchestrator_enqueue_base_pitcher_game_logs')\">Pitcher Game Logs</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Pitcher Metrics','orchestrator_enqueue_base_pitcher_metrics')\">Pitcher Metrics</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Team Game Logs','orchestrator_enqueue_base_team_game_logs')\">Team Game Logs</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Starter History','orchestrator_enqueue_base_starter_history')\">Starter History</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Bullpen History','orchestrator_enqueue_base_bullpen_history')\">Bullpen History</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Hitter Splits','orchestrator_enqueue_base_hitter_splits')\">Hitter Splits</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('BASE > Pitcher Splits','orchestrator_enqueue_base_pitcher_splits')\">Pitcher Splits</button>
+<div class="section"><h3>BASE JOBS</h3><div class="grid">
+<button class="orch" type="button" onclick="runJobButton('BASE > Hitter Game Logs','orchestrator_enqueue_base_hitter_game_logs')">Hitter Game Logs</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Hitter Metrics','orchestrator_enqueue_base_hitter_metrics')">Hitter Metrics</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Pitcher Game Logs','orchestrator_enqueue_base_pitcher_game_logs')">Pitcher Game Logs</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Pitcher Metrics','orchestrator_enqueue_base_pitcher_metrics')">Pitcher Metrics</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Team Game Logs','orchestrator_enqueue_base_team_game_logs')">Team Game Logs</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Starter History','orchestrator_enqueue_base_starter_history')">Starter History</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Bullpen History','orchestrator_enqueue_base_bullpen_history')">Bullpen History</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Hitter Splits','orchestrator_enqueue_base_hitter_splits')">Hitter Splits</button>
+<button class="orch" type="button" onclick="runJobButton('BASE > Pitcher Splits','orchestrator_enqueue_base_pitcher_splits')">Pitcher Splits</button>
 </div></div>
 
-<div class=\"section\"><h3>DELTA / REPAIR JOBS</h3><div class=\"grid\">
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('DELTA > Hitter Game Logs','orchestrator_enqueue_delta_hitter_game_logs')\">Hitter Game Logs</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('DELTA > Hitter Metrics','orchestrator_enqueue_delta_hitter_metrics')\">Hitter Metrics</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('DELTA > Pitcher Metrics','orchestrator_enqueue_delta_pitcher_metrics')\">Pitcher Metrics</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('DELTA > Pitcher Game Logs','orchestrator_enqueue_delta_pitcher_game_logs')\">Pitcher Game Logs</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('DELTA > Team Game Logs','orchestrator_enqueue_delta_team_game_logs')\">Team Game Logs</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('DELTA > Hitter Splits','orchestrator_enqueue_delta_hitter_splits')\">Hitter Splits</button>
-<button class=\"orch\" type=\"button\" onclick=\"runJobButton('DELTA > Pitcher Splits','orchestrator_enqueue_delta_pitcher_splits')\">Pitcher Splits</button>
+<div class="section"><h3>DELTA / REPAIR JOBS</h3><div class="grid">
+<button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Game Logs','orchestrator_enqueue_delta_hitter_game_logs')">Hitter Game Logs</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Metrics','orchestrator_enqueue_delta_hitter_metrics')">Hitter Metrics</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Pitcher Metrics','orchestrator_enqueue_delta_pitcher_metrics')">Pitcher Metrics</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Pitcher Game Logs','orchestrator_enqueue_delta_pitcher_game_logs')">Pitcher Game Logs</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Team Game Logs','orchestrator_enqueue_delta_team_game_logs')">Team Game Logs</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Splits','orchestrator_enqueue_delta_hitter_splits')">Hitter Splits</button>
+<button class="orch" type="button" onclick="runJobButton('DELTA > Pitcher Splits','orchestrator_enqueue_delta_pitcher_splits')">Pitcher Splits</button>
 </div></div>
 
-<div class=\"section\"><h3>V2 SAFE ACTIONS</h3><div class=\"grid\">
-<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Queue','v2_queue_status')\">Queue</button>
-<button class=\"check\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Locks','v2_lock_status')\">Locks</button>
-<button class=\"audit\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Snap','v2_health_snapshot')\">Snap</button>
-<button class=\"clean\" type=\"button\" onclick=\"runJobButton('V2 SAFE ACTIONS > Clear Q','v2_clear_open_queue')\">Clear Q</button>
+<div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
+<button class="check" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Queue','v2_queue_status')">Queue</button>
+<button class="check" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Locks','v2_lock_status')">Locks</button>
+<button class="audit" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Snap','v2_health_snapshot')">Snap</button>
+<button class="clean" type="button" onclick="runJobButton('V2 SAFE ACTIONS > Clear Q','v2_clear_open_queue')">Clear Q</button>
 </div></div>
 
-<div class=\"section\"><h3>MANUAL SQL</h3>
-<div class=\"muted\">Output guard active: max 50 rows. Optional first line: -- db: CONFIG_DB</div>
-<textarea id=\"sqlInput\" spellcheck=\"false\" autocomplete=\"off\" autocorrect=\"off\" autocapitalize=\"none\" inputmode=\"text\"></textarea>
-<div class=\"grid\">
-<button class=\"sql\" type=\"button\" onclick=\"runManualSQL()\">Run</button>
-<button class=\"debug\" type=\"button\" onclick=\"clearSqlInput()\">Clear</button>
-<button class=\"debug\" type=\"button\" onclick=\"selectSqlInput()\">Select</button>
-<button class=\"debug\" type=\"button\" onclick=\"loadExampleSQL()\">Example</button>
+<div class="section"><h3>MANUAL SQL</h3>
+<div class="muted">Output guard active: max 50 rows. Optional first line: -- db: CONFIG_DB</div>
+<textarea id="sqlInput" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" inputmode="text"></textarea>
+<div class="grid">
+<button class="sql" type="button" onclick="runManualSQL()">Run</button>
+<button class="debug" type="button" onclick="clearSqlInput()">Clear</button>
+<button class="debug" type="button" onclick="selectSqlInput()">Select</button>
+<button class="debug" type="button" onclick="loadExampleSQL()">Example</button>
 </div></div>
 
-<pre id=\"output\">Output will appear here.</pre>
-<button class=\"copy\" type=\"button\" onclick=\"copyOutput()\">COPY OUTPUT</button>
+<pre id="output">Output will appear here.</pre>
+<button class="copy" type="button" onclick="copyOutput()">COPY OUTPUT</button>
 
 <script>
-const BASE=\"https://alphadog-v2-control-room.rodolfoaamattos.workers.dev\";
-const JOB_URL=BASE+\"/tasks/run\";
-const SQL_URL=BASE+\"/debug/sql\";
-const HEALTH_URL=BASE+\"/health\";
-const DIAGNOSTIC_URL=BASE+\"/diagnostic\";
-const ORCH_BASE=\"https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev\";
-const ORCH_TICK_URL=ORCH_BASE+\"/tick\";
+const BASE="https://alphadog-v2-control-room.rodolfoaamattos.workers.dev";
+const JOB_URL=BASE+"/tasks/run";
+const SQL_URL=BASE+"/debug/sql";
+const HEALTH_URL=BASE+"/health";
+const DIAGNOSTIC_URL=BASE+"/diagnostic";
+const ORCH_BASE="https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev";
+const ORCH_TICK_URL=ORCH_BASE+"/tick";
 
 function ptParts(){
-  const parts=new Intl.DateTimeFormat(\"en-CA\",{timeZone:\"America/Los_Angeles\",year:\"numeric\",month:\"2-digit\",day:\"2-digit\",hour:\"2-digit\",minute:\"2-digit\",second:\"2-digit\",hour12:false}).formatToParts(new Date());
+  const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(new Date());
   const m={};
   parts.forEach(p=>m[p.type]=p.value);
-  return {date:m.year+\"-\"+m.month+\"-\"+m.day,hour:Number(m.hour),time:m.hour+\":\"+m.minute+\":\"+m.second};
+  return {date:m.year+"-"+m.month+"-"+m.day,hour:Number(m.hour),time:m.hour+":"+m.minute+":"+m.second};
 }
 function updateClock(){
   const p=ptParts();
-  const el=document.getElementById(\"ptNowLabel\");
-  if(el) el.textContent=p.date+\" \"+p.time;
+  const el=document.getElementById("ptNowLabel");
+  if(el) el.textContent=p.date+" "+p.time;
 }
 function autoSlateContext(){
   const p=ptParts();
-  let band=\"same-day dominant\";
-  if(p.hour>=12&&p.hour<20) band=\"split slate likely; workers resolve by game date/time\";
-  if(p.hour>=20||p.hour<4) band=\"next-day dominant likely; workers resolve by game date/time\";
-  return {mode:\"AUTO_BY_GAME_DATE_TIME\",pt_now:p,slate_band_hint:band,note:\"Control Room no longer manually overrides slate. Data workers resolve pickability by actual game date/time and board availability.\"};
+  let band="same-day dominant";
+  if(p.hour>=12&&p.hour<20) band="split slate likely; workers resolve by game date/time";
+  if(p.hour>=20||p.hour<4) band="next-day dominant likely; workers resolve by game date/time";
+  return {mode:"AUTO_BY_GAME_DATE_TIME",pt_now:p,slate_band_hint:band,note:"Control Room no longer manually overrides slate. Data workers resolve pickability by actual game date/time and board availability."};
 }
 function setStatus(m){
-  const el=document.getElementById(\"status\");
-  if(el) el.textContent=\"[\"+new Date().toLocaleTimeString()+\"] \"+m;
+  const el=document.getElementById("status");
+  if(el) el.textContent="["+new Date().toLocaleTimeString()+"] "+m;
 }
 function setOutput(l,o){
   const out = [
-    \"ACTION: \"+l,
-    \"TIME: \"+new Date().toISOString(),
-    \"\",
-    (typeof o===\"string\"?o:JSON.stringify(o,null,2))
-  ].join(\"\n\");
-  document.getElementById(\"output\").textContent=out;
+    "ACTION: "+l,
+    "TIME: "+new Date().toISOString(),
+    "",
+    (typeof o==="string"?o:JSON.stringify(o,null,2))
+  ].join("\n");
+  document.getElementById("output").textContent=out;
   window.scrollTo(0,document.body.scrollHeight);
 }
 function loading(l,e){
-  setStatus(\"RUNNING: \"+l);
-  setOutput(l,\"Loading...\"+(e?String.fromCharCode(10)+e:\"\"));
+  setStatus("RUNNING: "+l);
+  setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput(\"DEBUG > Config\",{base:BASE,auto_slate:autoSlateContext(),access_mode:\"single-user-admin-token-disabled\",orchestrator_mode:\"backend-scheduled-continuation\",wake_binding_required:\"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator\",public_url_fallback_disabled:true,version:\"alphadog-v2-control-room-v1.6.86-deployed-worker-js-truth-fix\",ui_sentinel:\"LAYOUT_PARITY_CLEAN_BUTTONS_V1_6_78\",button_layout:\"five_columns_original_compact\",html_source:\"embedded_worker_html_and_static_html_identical\",delta_pitcher_metrics_button:\"present_in_embedded_and_static_html\"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled",orchestrator_mode:"backend-scheduled-continuation",wake_binding_required:"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator",public_url_fallback_disabled:true,version:"alphadog-v2-control-room-v1.6.87-embedded-html-string-literal-fix",ui_sentinel:"LAYOUT_PARITY_CLEAN_BUTTONS_V1_6_78",button_layout:"five_columns_original_compact",html_source:"embedded_worker_html_and_static_html_identical",delta_pitcher_metrics_button:"present_in_embedded_worker_js",deployed_file_truth:"alphadog-v2-control-room.js",must_deploy_worker_js:true});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
-  const h={\"Content-Type\":\"application/json\"};
-  const o=p===null?{method:\"GET\",headers:h}:{method:\"POST\",headers:h,body:JSON.stringify(p)};
+  const h={"Content-Type":"application/json"};
+  const o=p===null?{method:"GET",headers:h}:{method:"POST",headers:h,body:JSON.stringify(p)};
   try{
     const r=await fetch(u,o);
     const txt=await r.text();
@@ -203,33 +203,33 @@ async function rawRequest(l,u,p){
 async function requestJSON(l,u,p){
   loading(l);
   const r=await rawRequest(l,u,p);
-  setStatus(\"DONE: \"+l+\" / HTTP \"+(r.http_status||\"ERR\"));
+  setStatus("DONE: "+l+" / HTTP "+(r.http_status||"ERR"));
   setOutput(l,r);
   return r;
 }
-function health(){requestJSON(\"DEBUG > Health\",HEALTH_URL,null)}
-function diagnostic(){requestJSON(\"DEBUG > Diag\",DIAGNOSTIC_URL,null)}
-function testSQL(){requestJSON(\"DEBUG > SQL\",SQL_URL,{sql:\"SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;\",max_rows:50,max_chars:900})}
+function health(){requestJSON("DEBUG > Health",HEALTH_URL,null)}
+function diagnostic(){requestJSON("DEBUG > Diag",DIAGNOSTIC_URL,null)}
+function testSQL(){requestJSON("DEBUG > SQL",SQL_URL,{sql:"SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;",max_rows:50,max_chars:900})}
 function runJobButton(l,j){
-  return requestJSON(l,JOB_URL,{job:j,slate_mode:\"AUTO_BY_GAME_DATE_TIME\",auto_slate_context:autoSlateContext(),backend_only:true});
+  return requestJSON(l,JOB_URL,{job:j,slate_mode:"AUTO_BY_GAME_DATE_TIME",auto_slate_context:autoSlateContext(),backend_only:true});
 }
 async function runOrchestratorWake(){
-  requestJSON(\"ORCHESTRATOR > Wake\",JOB_URL,{job:\"orchestrator_tick\",source:\"control_room_manual_wake_proxy\",backend_only:true,max_jobs:5,wake_only:true,auto_pump:true,pump:true,backend_budget_loop_requested:true,max_cycles:4,max_jobs_per_cycle:1,max_ms:30000,max_pump_chains:30,static_players_max_chunks_requested:5,no_browser_loop:true,no_direct_browser_orchestrator_fetch:true,direct_backend_proxy_expected:true,cron_rescue_only:true});
+  requestJSON("ORCHESTRATOR > Wake",JOB_URL,{job:"orchestrator_tick",source:"control_room_manual_wake_proxy",backend_only:true,max_jobs:5,wake_only:true,auto_pump:true,pump:true,backend_budget_loop_requested:true,max_cycles:4,max_jobs_per_cycle:1,max_ms:30000,max_pump_chains:30,static_players_max_chunks_requested:5,no_browser_loop:true,no_direct_browser_orchestrator_fetch:true,direct_backend_proxy_expected:true,cron_rescue_only:true});
 }
-function runManualSQL(){requestJSON(\"MANUAL SQL > Run\",SQL_URL,{sql:document.getElementById(\"sqlInput\").value,max_rows:50,max_chars:900})}
-function copyOutput(){navigator.clipboard.writeText(document.getElementById(\"output\").textContent);setStatus(\"COPIED OUTPUT\")}
-function clearSqlInput(){const el=document.getElementById(\"sqlInput\");if(!el)return;el.removeAttribute(\"readonly\");el.removeAttribute(\"disabled\");el.value=\"\";el.focus()}
-function selectSqlInput(){const el=document.getElementById(\"sqlInput\");if(!el)return;el.removeAttribute(\"readonly\");el.removeAttribute(\"disabled\");el.focus();el.select()}
-function loadExampleSQL(){const el=document.getElementById(\"sqlInput\");el.value=\"SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;\";el.focus();setStatus(\"EXAMPLE SQL LOADED\")}
-document.addEventListener(\"DOMContentLoaded\",()=>{
-  const el=document.getElementById(\"sqlInput\");
-  if(el){el.removeAttribute(\"readonly\");el.removeAttribute(\"disabled\");el.style.userSelect=\"text\";el.style.webkitUserSelect=\"text\";el.style.pointerEvents=\"auto\"}
+function runManualSQL(){requestJSON("MANUAL SQL > Run",SQL_URL,{sql:document.getElementById("sqlInput").value,max_rows:50,max_chars:900})}
+function copyOutput(){navigator.clipboard.writeText(document.getElementById("output").textContent);setStatus("COPIED OUTPUT")}
+function clearSqlInput(){const el=document.getElementById("sqlInput");if(!el)return;el.removeAttribute("readonly");el.removeAttribute("disabled");el.value="";el.focus()}
+function selectSqlInput(){const el=document.getElementById("sqlInput");if(!el)return;el.removeAttribute("readonly");el.removeAttribute("disabled");el.focus();el.select()}
+function loadExampleSQL(){const el=document.getElementById("sqlInput");el.value="SELECT COUNT(*) AS control_worker_registry_rows FROM control_worker_registry;";el.focus();setStatus("EXAMPLE SQL LOADED")}
+document.addEventListener("DOMContentLoaded",()=>{
+  const el=document.getElementById("sqlInput");
+  if(el){el.removeAttribute("readonly");el.removeAttribute("disabled");el.style.userSelect="text";el.style.webkitUserSelect="text";el.style.pointerEvents="auto"}
   updateClock();
   setInterval(updateClock,1000);
 });
 </script>
 </body>
-</html>";
+</html>`;
 
 function nowIso() { return new Date().toISOString(); }
 
