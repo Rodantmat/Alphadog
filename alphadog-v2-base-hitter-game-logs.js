@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.14-new-final-date-before-anchor-fix";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.15-retained-stage-promotion-before-anchor-noop";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -1827,6 +1827,7 @@ async function finalizeDeltaIfReady(env, batchId, runId, windowInfo, playersTota
     await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_certifications SET rows_promoted=?, checks_json=? WHERE certification_id=?", liveRows, JSON.stringify(checks), `cert_${batchId}`);
     await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_batches SET
       status=CASE WHEN ? THEN 'COMPLETED_PROMOTED_STAGE_RETAINED' ELSE 'CERTIFICATION_FAILED' END,
+      rows_staged=?,
       rows_promoted=?,
       source_request_count=?,
       source_success_count=?,
@@ -1838,7 +1839,7 @@ async function finalizeDeltaIfReady(env, batchId, runId, windowInfo, playersTota
       finished_at=CURRENT_TIMESTAMP,
       cleaned_at=cleaned_at,
       updated_at=CURRENT_TIMESTAMP
-      WHERE batch_id=?`, finalPass ? 1 : 0, liveRows, sourceTruth.source_request_count, sourceTruth.source_success_count, sourceTruth.source_no_data_count, sourceTruth.source_error_count, finalPass ? 1 : 0, finalPass ? 1 : 0, JSON.stringify(checks), batchId);
+      WHERE batch_id=?`, finalPass ? 1 : 0, retainedStageRows, liveRows, sourceTruth.source_request_count, sourceTruth.source_success_count, sourceTruth.source_no_data_count, sourceTruth.source_error_count, finalPass ? 1 : 0, finalPass ? 1 : 0, JSON.stringify(checks), batchId);
     await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_cursor SET status=?, next_run_after=NULL, updated_at=CURRENT_TIMESTAMP WHERE cursor_key=?", finalPass ? "COMPLETED_PROMOTED_STAGE_RETAINED" : "CERTIFICATION_FAILED", DELTA_CURSOR_KEY);
     return {
       pass: finalPass,
@@ -2495,9 +2496,25 @@ async function runDeltaUpdateTick(env, input, inputJson) {
   if (!baseGate.pass) {
     return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_INTEGRITY_FAIL", certification: "DELTA_BLOCKED_BASE_INTEGRITY_FAIL", base_integrity_gate: baseGate, rows_read: 0, rows_written: 0, external_calls_performed: 0, continuation_required: false, no_live_mutation: true };
   }
+  const allowRepeatFullRefresh = inputJson.force_full_delta_refresh === true || inputJson.allow_repeat_full_delta_refresh === true;
+  if (!allowRepeatFullRefresh) {
+    const preAnchorRetainedDeltaGuard = await getCompletedRetainedDeltaGuard(env);
+    if (preAnchorRetainedDeltaGuard.latest_delta && ["REPAIR_FROM_RETAINED_STAGE_ONLY","REPAIR_STAGE_FROM_FINAL_GAME_FEED_WINDOW"].includes(preAnchorRetainedDeltaGuard.repair_plan)) {
+      const repaired = await runRetainedDeltaSurgicalRepairIfNeeded(env, preAnchorRetainedDeltaGuard, input, inputJson, baseGate);
+      if (repaired) {
+        return {
+          ...repaired,
+          retained_stage_promotion_before_anchor_noop_v1_6_15: true,
+          anchor_noop_blocked_until_retained_stage_live_parity: true
+        };
+      }
+    }
+    if (preAnchorRetainedDeltaGuard.latest_delta && preAnchorRetainedDeltaGuard.repair_plan === "BLOCK_RETAINED_DELTA_INCONSISTENT_MANUAL_REVIEW") {
+      return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "DELTA_RETAINED_GAP_REPAIR_BLOCKED", certification: "DELTA_HITTER_GAME_LOGS_RETAINED_DELTA_INCONSISTENT_MANUAL_REVIEW", mode: "delta_update", base_integrity_gate: baseGate, repeat_full_delta_guard: preAnchorRetainedDeltaGuard, no_new_batch: true, no_mlb_calls: true, no_live_mutation: true, anchor_noop_blocked_until_retained_stage_live_parity: true, continuation_required: false };
+    }
+  }
   const goldGate = await runHitterGameLogsGoldRepairGate(env, input, inputJson || {}, baseGate);
   if (goldGate && goldGate.handled) return goldGate.output;
-  const allowRepeatFullRefresh = inputJson.force_full_delta_refresh === true || inputJson.allow_repeat_full_delta_refresh === true;
   if (!allowRepeatFullRefresh) {
     const closeoutCandidate = await getRetainedDeltaCloseoutCandidate(env);
     if (closeoutCandidate.found) {
