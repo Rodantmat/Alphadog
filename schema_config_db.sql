@@ -329,3 +329,36 @@ VALUES
 ('pitcher_split_era_pass_through','split_pass_through','readiness_catalog','pitcher_split_era_pass_through','Readiness only in v0.1.0; pass-through audit only.','pitcher_splits','era',NULL,'pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"pass_through_only":true,"pitcher_domain":true}'),
 ('pitcher_split_whip_pass_through','split_pass_through','readiness_catalog','pitcher_split_whip_pass_through','Readiness only in v0.1.0; pass-through audit only.','pitcher_splits','whip',NULL,'pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"pass_through_only":true,"pitcher_domain":true}'),
 ('pitcher_split_ops_against_pass_through','split_pass_through','readiness_catalog','pitcher_split_ops_against_pass_through','Readiness only in v0.1.0; pass-through audit only.','pitcher_splits','ops_against',NULL,'pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"pass_through_only":true,"pitcher_domain":true}');
+
+-- ============================================================
+-- Pitcher Metrics v0.2.0 Sample-Stage Calibration Config Seeds
+-- Additive only. Do not delete hitter or v0.1 pitcher lineage.
+-- ============================================================
+INSERT OR IGNORE INTO config_metric_calibration_profiles
+(profile_id, display_name, sport, metric_domain, active, profile_status, profile_json, notes)
+VALUES
+('pitcher_metrics_neutral_v0_2_0_sample_stage', 'Pitcher Metrics Neutral v0.2.0 Sample Stage', 'MLB', 'pitcher', 1, 'sample_stage_calibration', '{"no_scoring":true,"promotion_locked":true,"tuning_owner":"CONFIG_DB","sample_stage_only":true,"default_sample_target":30,"mirror_hitter_metrics_structure":true}', 'Pitcher neutral metrics v0.2.0 sample-stage calibration profile. Stage rows only; no promotion.');
+
+INSERT OR IGNORE INTO config_metric_formula_versions
+(formula_version, sport, metric_domain, active, version_status, formula_catalog_json, notes)
+VALUES
+('pitcher_metrics_formula_v0_2_0_sample_stage', 'MLB', 'pitcher', 1, 'sample_stage_calibration', '{"stage_only":true,"no_promotion":true,"no_scoring":true,"advanced_metrics_deferred":true}', 'Pitcher formula catalog for v0.2.0 sample-stage calibration only. No production promotion.');
+
+INSERT OR IGNORE INTO config_metric_windows
+(window_key, metric_domain, metric_scope, window_type, window_size, enabled, sort_order, config_profile_id, notes)
+VALUES
+('pitcher_v020_last_3_games', 'pitcher', 'last_3_games', 'last_n_games', 3, 1, 10, 'pitcher_metrics_neutral_v0_2_0_sample_stage', 'Pitcher v0.2.0 sample-stage last_3_games window.'),
+('pitcher_v020_last_5_games', 'pitcher', 'last_5_games', 'last_n_games', 5, 1, 20, 'pitcher_metrics_neutral_v0_2_0_sample_stage', 'Pitcher v0.2.0 sample-stage last_5_games window.'),
+('pitcher_v020_last_10_games', 'pitcher', 'last_10_games', 'last_n_games', 10, 1, 30, 'pitcher_metrics_neutral_v0_2_0_sample_stage', 'Pitcher v0.2.0 sample-stage last_10_games window.'),
+('pitcher_v020_last_20_games', 'pitcher', 'last_20_games', 'last_n_games', 20, 1, 40, 'pitcher_metrics_neutral_v0_2_0_sample_stage', 'Pitcher v0.2.0 sample-stage last_20_games window.'),
+('pitcher_v020_season_to_date', 'pitcher', 'season_to_date', 'season_to_date', NULL, 1, 90, 'pitcher_metrics_neutral_v0_2_0_sample_stage', 'Pitcher v0.2.0 sample-stage season_to_date window.');
+
+INSERT OR IGNORE INTO config_metric_thresholds
+(threshold_key, config_profile_id, metric_domain, metric_family, metric_key, threshold_type, threshold_value, label, enabled, notes)
+VALUES
+('pitcher_v020_sample_target', 'pitcher_metrics_neutral_v0_2_0_sample_stage', 'pitcher', NULL, NULL, 'sample_target', 30, 'sample target; mirrors hitter sample-stage small footprint', 1, 'DB-configurable sample-stage calibration threshold; not scoring.'),
+('pitcher_v020_min_bf_rate_ready', 'pitcher_metrics_neutral_v0_2_0_sample_stage', 'pitcher', NULL, NULL, 'minimum_batters_faced_for_ready_rate_label', 100, 'BF threshold for READY rate label; lower stages value with LOW_SAMPLE', 1, 'DB-configurable sample-stage calibration threshold; not scoring.'),
+('pitcher_v020_min_outs_ip_rate_ready', 'pitcher_metrics_neutral_v0_2_0_sample_stage', 'pitcher', NULL, NULL, 'minimum_outs_recorded_for_ready_ip_rate_label', 81, 'outs threshold for ERA/WHIP READY label; 81 outs = 27 IP', 1, 'DB-configurable sample-stage calibration threshold; not scoring.'),
+('pitcher_v020_min_pitches_ready', 'pitcher_metrics_neutral_v0_2_0_sample_stage', 'pitcher', NULL, NULL, 'minimum_pitches_for_ready_pitch_rate_label', 100, 'pitch threshold for strikes_per_pitch READY label', 1, 'DB-configurable sample-stage calibration threshold; not scoring.'),
+('pitcher_v020_min_appearances_ready', 'pitcher_metrics_neutral_v0_2_0_sample_stage', 'pitcher', NULL, NULL, 'minimum_appearances_for_ready_label', 5, 'appearances threshold for innings per appearance READY label', 1, 'DB-configurable sample-stage calibration threshold; not scoring.'),
+('pitcher_v020_min_split_bf_ready', 'pitcher_metrics_neutral_v0_2_0_sample_stage', 'pitcher', NULL, NULL, 'minimum_split_batters_faced_for_ready_label', 30, 'split BF threshold for pass-through split READY label', 1, 'DB-configurable sample-stage calibration threshold; not scoring.');

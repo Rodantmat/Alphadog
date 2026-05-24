@@ -704,3 +704,7 @@ CREATE INDEX IF NOT EXISTS idx_pitcher_metric_snapshots_player ON pitcher_metric
 
 INSERT OR IGNORE INTO pitcher_metric_schema_migrations (migration_key, worker_version, notes)
 VALUES ('pitcher_metrics_v0_1_0_lifecycle_schema', 'alphadog-v2-base-pitcher-metrics-v0.1.0-schema-formula-input-audit', 'Additive Pitcher Metrics audit-only lifecycle schema. No promotion, no source mutation, no external calls.');
+
+-- Pitcher Metrics v0.2.0 sample-stage migration marker. Lifecycle tables are additive and shared from v0.1.0.
+INSERT OR IGNORE INTO pitcher_metric_schema_migrations (migration_key, worker_version, notes)
+VALUES ('pitcher_metrics_v0_2_0_sample_stage_schema_safe', 'alphadog-v2-base-pitcher-metrics-v0.2.0-sample-stage-calibration', 'Pitcher Metrics v0.2.0 sample-stage calibration uses existing lifecycle tables only. No promotion, no source mutation, no external calls.');
