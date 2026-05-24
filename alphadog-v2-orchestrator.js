@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.76-base-pitcher-metrics-delta-repair-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.77-hitter-delta-mode-contract-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1181,16 +1181,23 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const rawRequestedMode = String((rowInput && rowInput.mode) || "base_backfill");
+  const normalizedWorkerMode = rawRequestedMode === "delta_retained_stage_restore_before_queue" ? "delta_update" : rawRequestedMode;
+  const normalizedRowInput = {
+    ...rowInput,
+    mode: normalizedWorkerMode,
+    original_mode: rawRequestedMode,
+    normalized_worker_mode: normalizedWorkerMode,
+    hitter_delta_mode_normalization_v0_2_77: rawRequestedMode === "delta_retained_stage_restore_before_queue"
+  };
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
     job_key: row.job_key,
     worker_name: row.worker_name,
     trigger,
-    mode: rowInput && rowInput.mode === "delta_update"
-      ? "orchestrator_exact_base_hitter_game_logs_delta_update_self_continuation_dispatch"
-      : "orchestrator_exact_base_hitter_game_logs_base_backfill_self_continuation_dispatch",
-    input_json: rowInput
+    mode: normalizedWorkerMode,
+    input_json: normalizedRowInput
   };
 
   const started = Date.now();
@@ -1258,7 +1265,11 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
       no_ranking: true,
       no_final_board_write: true,
       no_live_promotion_before_certification: true,
-      delta_partial_continue_queue_fix_v0_2_23: true
+      delta_partial_continue_queue_fix_v0_2_23: true,
+      hitter_delta_mode_normalization_v0_2_77: true,
+      raw_requested_mode: rawRequestedMode,
+      normalized_worker_mode: normalizedWorkerMode,
+      legacy_preflight_mode_normalized: rawRequestedMode === "delta_retained_stage_restore_before_queue"
     }
   };
 
@@ -1289,8 +1300,8 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
   }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_hitter_game_logs_dispatch_completed', 'Orchestrator completed exact base-hitter-game-logs self-continuing base_backfill dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_hitter_game_logs_dispatch_completed', 'Orchestrator completed exact base-hitter-game-logs normalized base/delta dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, raw_requested_mode: rawRequestedMode, normalized_worker_mode: normalizedWorkerMode, hitter_delta_mode_normalization_v0_2_77: rawRequestedMode === 'delta_retained_stage_restore_before_queue' })
   );
 
   return cappedOutput;
