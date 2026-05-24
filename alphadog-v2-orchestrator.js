@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.70-hitter-metrics-delta-repair-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.71-base-pitcher-metrics-audit-dispatch";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -47,7 +47,7 @@ function base(env, extra = {}) {
       "Buttons enqueue/wake backend work only.",
       "Browser does not run long loops.",
       "Scheduled cron calls the same bounded tick path.",
-      "v0.2.60 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-game-logs base/delta continuation, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.4.0 source probe/base stage/promote-clean/delta-update, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
+      "v0.2.60 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.1.0 audit-only dispatch, exact base-pitcher-game-logs base/delta continuation, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.4.0 source probe/base stage/promote-clean/delta-update, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
       "No generic worker dispatch, no scoring, no ranking, no final board writes, no old production writes."
     ],
     bindings: {
@@ -58,6 +58,7 @@ function base(env, extra = {}) {
       BASE_HITTER_GAME_LOGS_WORKER: !!env.BASE_HITTER_GAME_LOGS_WORKER,
       BASE_HITTER_SPLITS_WORKER: !!env.BASE_HITTER_SPLITS_WORKER,
       BASE_HITTER_METRICS_WORKER: !!env.BASE_HITTER_METRICS_WORKER,
+      BASE_PITCHER_METRICS_WORKER: !!env.BASE_PITCHER_METRICS_WORKER,
       BASE_PITCHER_GAME_LOGS_WORKER: !!env.BASE_PITCHER_GAME_LOGS_WORKER,
       BASE_TEAM_GAME_LOGS_WORKER: !!env.BASE_TEAM_GAME_LOGS_WORKER,
       BASE_STARTER_HISTORY_WORKER: !!env.BASE_STARTER_HISTORY_WORKER,
@@ -212,6 +213,12 @@ function isBaseHitterMetricsJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "base-hitter-metrics" && worker === "alphadog-v2-base-hitter-metrics";
+}
+
+function isBasePitcherMetricsJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "base-pitcher-metrics" && worker === "alphadog-v2-base-pitcher-metrics";
 }
 
 function isBasePitcherGameLogsJob(row) {
@@ -1501,6 +1508,96 @@ async function processBaseHitterMetricsJob(env, row, runId, trigger) {
     row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, no_promotion: true, no_external_mlb_calls: true, no_scoring: true, base_rebuild_stage_only: String((output && output.mode) || "") === "base_rebuild_stage_only", snapshot_prep_stage_only: String((output && output.mode) || "") === "snapshot_prep_stage_only", performance_tune: true,
     snapshot_prep: String(input.mode || "") === "snapshot_prep_stage_only",
     snapshot_delta_gate: String(input.mode || "") === "snapshot_delta_gate" })
+  );
+  return cappedOutput;
+}
+
+
+async function processBasePitcherMetricsJob(env, row, runId, trigger) {
+  if (!env.BASE_PITCHER_METRICS_WORKER || typeof env.BASE_PITCHER_METRICS_WORKER.fetch !== "function") {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      status: "blocked_missing_service_binding",
+      certification: "BASE_PITCHER_METRICS_SERVICE_BINDING_MISSING",
+      trigger,
+      note: "Exact dispatch is enabled only through BASE_PITCHER_METRICS_WORKER service binding. Deploy orchestrator with the services wrangler config."
+    };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_base_pitcher_metrics_service_binding', 'BASE_PITCHER_METRICS_WORKER service binding is missing')",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
+    );
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_base_pitcher_metrics_service_binding', error_message='BASE_PITCHER_METRICS_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id
+    );
+    return output;
+  }
+
+  const started = Date.now();
+  let input = {};
+  try { input = row.input_json ? JSON.parse(row.input_json) : {}; } catch { input = {}; }
+  const payload = {
+    ...input,
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    run_id: runId,
+    job_key: row.job_key,
+    mode: "schema_formula_input_audit",
+    trigger,
+    orchestrator_version: SYSTEM_VERSION,
+    no_live_metric_promotion: true,
+    no_source_table_mutation: true,
+    no_external_mlb_calls: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    promotion_locked: true
+  };
+
+  let output;
+  try {
+    const resp = await env.BASE_PITCHER_METRICS_WORKER.fetch("https://internal.alphadog-v2-base-pitcher-metrics/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const txt = await resp.text();
+    try { output = JSON.parse(txt); } catch { output = { ok: false, data_ok: false, status: "invalid_json_from_base_pitcher_metrics", raw: txt.slice(0, 1500) }; }
+  } catch (err) {
+    output = { ok: false, data_ok: false, status: "service_binding_fetch_failed", error: String(err && err.message ? err.message : err) };
+  }
+
+  const elapsed = Date.now() - started;
+  const ok = !!(output && output.ok);
+  const dataOk = output && output.data_ok === true ? 1 : 0;
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const certification = String((output && output.certification) || (ok ? "BASE_PITCHER_METRICS_V0_1_0_AUDIT_COMPLETED" : "BASE_PITCHER_METRICS_V0_1_0_AUDIT_FAILED"));
+  const rowsRead = Number((output && output.rows_read) || 0);
+  const rowsWritten = Number((output && output.rows_written) || 0);
+  const externalCalls = Number((output && output.external_calls_performed) || 0);
+  const cappedOutput = { ...output, processed_by_orchestrator: SYSTEM_VERSION, trigger };
+  const errorCode = ok ? null : "base_pitcher_metrics_dispatch_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Base Pitcher Metrics v0.1.0 audit-only dispatch failed").slice(0, 500);
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk, certification, rowsRead, rowsWritten, externalCalls, elapsed, JSON.stringify(payload), JSON.stringify(cappedOutput), errorCode, errorMessage
+  );
+
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+  );
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_metrics_dispatch_completed', 'Orchestrator completed exact base-pitcher-metrics v0.1.0 audit-only dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, no_promotion: true, no_external_mlb_calls: true, no_scoring: true, schema_formula_input_audit_only: true })
   );
   return cappedOutput;
 }
@@ -2961,6 +3058,17 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+
+  if (isBasePitcherMetricsJob(row)) {
+    const output = await processBasePitcherMetricsJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_base_pitcher_metrics_job" : "failed_one_base_pitcher_metrics_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isBasePitcherGameLogsJob(row)) {
     const output = await processBasePitcherGameLogsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
@@ -3132,16 +3240,16 @@ async function processOneUnlocked(env, trigger) {
       status: "unsupported_in_v0_2_16_safe_shell",
       job_key: row.job_key,
       worker_name: row.worker_name,
-      note: "v0.2.32 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter and Base Hitter Splits promotion/delta hot continuation use backend waitUntil, not browser pump; cron is rescue only. Base Pitcher supports locked base promotion and delta_update retained-stage continuation; base promotion makes no MLB calls, delta uses MLB StatsAPI only after base integrity gate."
+      note: "v0.2.32 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.1.0 audit-only dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter and Base Hitter Splits promotion/delta hot continuation use backend waitUntil, not browser pump; cron is rescue only. Base Pitcher supports locked base promotion and delta_update retained-stage continuation; base promotion makes no MLB calls, delta uses MLB StatsAPI only after base integrity gate."
     };
 
     await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_31', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.32')",
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_31', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.1.0 audit-only dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.32')",
       runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
     );
 
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_31', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.32' WHERE request_id=?",
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_31', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.1.0 audit-only dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.32' WHERE request_id=?",
       JSON.stringify(output), row.request_id
     );
 

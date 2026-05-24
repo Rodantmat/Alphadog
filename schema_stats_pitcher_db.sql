@@ -477,3 +477,230 @@ CREATE INDEX IF NOT EXISTS idx_pitcher_splits_player_split_code ON pitcher_split
 -- Then add only missing columns. Do not run guessed ALTER statements blindly.
 
 INSERT OR REPLACE INTO pitcher_schema_migrations VALUES ('base_pitcher_splits_v0_1_0_schema_source_lock_probe', 'alphadog-v2-base-pitcher-splits-v0.1.0-schema-source-lock-probe', CURRENT_TIMESTAMP, 'Additive pitcher split lifecycle schema and lineage-ready live columns; source-shape probe only; no live promotion/full mining/delta execution');
+
+-- ============================================================================
+-- alphadog-v2-base-pitcher-metrics-v0.1.0-schema-formula-input-audit
+-- Additive lifecycle schema for internal derived Pitcher Metrics.
+-- Scope: schema/formula/input/config audit only.
+-- No live promotion, no source table mutation, no external MLB calls, no scoring.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS pitcher_metric_schema_migrations (
+  migration_key TEXT PRIMARY KEY,
+  worker_version TEXT NOT NULL,
+  applied_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS pitcher_metric_batches (
+  batch_id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL,
+  worker_name TEXT NOT NULL,
+  worker_version TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  status TEXT NOT NULL,
+  data_feed_key TEXT NOT NULL,
+  source_key TEXT NOT NULL,
+  source_season INTEGER,
+  input_log_row_count INTEGER DEFAULT 0,
+  input_split_row_count INTEGER DEFAULT 0,
+  input_latest_game_date TEXT,
+  input_latest_split_snapshot_date TEXT,
+  expected_pitcher_universe_count INTEGER DEFAULT 0,
+  config_profile_id TEXT,
+  formula_version TEXT,
+  metric_catalog_json TEXT,
+  formula_readiness_json TEXT,
+  config_readiness_json TEXT,
+  input_readiness_json TEXT,
+  rows_staged INTEGER DEFAULT 0,
+  rows_promoted INTEGER DEFAULT 0,
+  duplicate_count INTEGER DEFAULT 0,
+  certification_status TEXT DEFAULT 'audit_only_not_promoted',
+  certification_grade TEXT,
+  certification_json TEXT,
+  locked_by TEXT,
+  lock_acquired_at TEXT,
+  lock_expires_at TEXT,
+  stale_recovery_count INTEGER DEFAULT 0,
+  started_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  finished_at TEXT,
+  certified_at TEXT,
+  promoted_at TEXT,
+  cleaned_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS pitcher_metric_stage (
+  stage_id TEXT PRIMARY KEY,
+  batch_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  metric_key TEXT NOT NULL,
+  player_id INTEGER NOT NULL,
+  season INTEGER NOT NULL,
+  metric_scope TEXT NOT NULL,
+  metric_window TEXT NOT NULL,
+  metric_family TEXT NOT NULL,
+  source_start_date TEXT,
+  source_end_date TEXT,
+  source_snapshot_date TEXT,
+  input_log_row_count INTEGER DEFAULT 0,
+  input_split_row_count INTEGER DEFAULT 0,
+  input_latest_game_date TEXT,
+  metric_value REAL,
+  metric_text_value TEXT,
+  numerator REAL,
+  denominator REAL,
+  data_feed_key TEXT NOT NULL,
+  source_key TEXT NOT NULL,
+  ingestion_mode TEXT NOT NULL,
+  certification_status TEXT DEFAULT 'audit_only_not_promoted',
+  certification_grade TEXT,
+  certified_at TEXT,
+  promoted_at TEXT,
+  formula_version TEXT,
+  config_profile_id TEXT,
+  raw_input_summary_json TEXT,
+  metric_json TEXT,
+  missing_data_reason TEXT,
+  reliability_label TEXT,
+  row_status TEXT DEFAULT 'audit_only_staged',
+  row_error TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(batch_id, metric_key, player_id, season, metric_scope, metric_window)
+);
+
+CREATE TABLE IF NOT EXISTS pitcher_metric_outcomes (
+  outcome_id TEXT PRIMARY KEY,
+  batch_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  player_id INTEGER,
+  season INTEGER,
+  metric_family TEXT,
+  metric_window TEXT,
+  terminal_category TEXT NOT NULL,
+  category_reason TEXT,
+  input_log_row_count INTEGER DEFAULT 0,
+  input_split_row_count INTEGER DEFAULT 0,
+  missing_data_reason TEXT,
+  formula_version TEXT,
+  config_profile_id TEXT,
+  outcome_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pitcher_metric_cursor (
+  cursor_key TEXT PRIMARY KEY,
+  mode TEXT NOT NULL,
+  status TEXT NOT NULL,
+  batch_id TEXT,
+  run_id TEXT,
+  source_season INTEGER,
+  players_total INTEGER DEFAULT 0,
+  players_processed INTEGER DEFAULT 0,
+  last_player_id INTEGER,
+  last_game_date TEXT,
+  last_split_snapshot_date TEXT,
+  requests_done INTEGER DEFAULT 0,
+  no_external_calls INTEGER DEFAULT 1,
+  cursor_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pitcher_metric_certifications (
+  certification_id TEXT PRIMARY KEY,
+  batch_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  certification_status TEXT NOT NULL,
+  certification_grade TEXT,
+  rows_staged INTEGER DEFAULT 0,
+  rows_promoted INTEGER DEFAULT 0,
+  duplicate_count INTEGER DEFAULT 0,
+  input_log_row_count INTEGER DEFAULT 0,
+  input_split_row_count INTEGER DEFAULT 0,
+  validation_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pitcher_metric_snapshot_batches (
+  snapshot_batch_id TEXT PRIMARY KEY,
+  source_batch_id TEXT,
+  run_id TEXT NOT NULL,
+  worker_name TEXT NOT NULL,
+  worker_version TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  status TEXT NOT NULL,
+  config_profile_id TEXT,
+  formula_version TEXT,
+  source_rows INTEGER DEFAULT 0,
+  source_players INTEGER DEFAULT 0,
+  snapshot_rows INTEGER DEFAULT 0,
+  snapshot_players INTEGER DEFAULT 0,
+  rows_promoted INTEGER DEFAULT 0,
+  duplicate_count INTEGER DEFAULT 0,
+  certification_status TEXT DEFAULT 'audit_only_not_promoted',
+  certification_grade TEXT,
+  certification_json TEXT,
+  started_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  finished_at TEXT,
+  promoted_at TEXT,
+  cleaned_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS pitcher_metric_snapshot_stage (
+  snapshot_stage_id TEXT PRIMARY KEY,
+  snapshot_batch_id TEXT NOT NULL,
+  source_batch_id TEXT,
+  run_id TEXT NOT NULL,
+  player_id INTEGER NOT NULL,
+  season INTEGER NOT NULL,
+  metric_window TEXT NOT NULL,
+  config_profile_id TEXT NOT NULL,
+  formula_version TEXT NOT NULL,
+  metrics_json TEXT NOT NULL,
+  input_summary_json TEXT,
+  reliability_json TEXT,
+  review_flags_json TEXT,
+  certification_status TEXT DEFAULT 'audit_only_not_promoted',
+  certification_grade TEXT,
+  promoted_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(snapshot_batch_id, player_id, season, metric_window, config_profile_id, formula_version)
+);
+
+CREATE TABLE IF NOT EXISTS pitcher_metric_snapshots (
+  player_id INTEGER NOT NULL,
+  season INTEGER NOT NULL,
+  metric_window TEXT NOT NULL,
+  config_profile_id TEXT NOT NULL,
+  formula_version TEXT NOT NULL,
+  snapshot_batch_id TEXT NOT NULL,
+  source_batch_id TEXT,
+  metrics_json TEXT NOT NULL,
+  input_summary_json TEXT,
+  reliability_json TEXT,
+  review_flags_json TEXT,
+  certification_status TEXT NOT NULL,
+  certification_grade TEXT,
+  promoted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(player_id, season, metric_window, config_profile_id, formula_version)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pitcher_metric_batches_status ON pitcher_metric_batches(status, mode);
+CREATE INDEX IF NOT EXISTS idx_pitcher_metric_stage_batch ON pitcher_metric_stage(batch_id, player_id, metric_window);
+CREATE INDEX IF NOT EXISTS idx_pitcher_metric_stage_key ON pitcher_metric_stage(metric_key, season, metric_scope, metric_window);
+CREATE INDEX IF NOT EXISTS idx_pitcher_metric_outcomes_batch ON pitcher_metric_outcomes(batch_id, terminal_category);
+CREATE INDEX IF NOT EXISTS idx_pitcher_metric_snapshot_stage_batch ON pitcher_metric_snapshot_stage(snapshot_batch_id, player_id, metric_window);
+CREATE INDEX IF NOT EXISTS idx_pitcher_metric_snapshots_player ON pitcher_metric_snapshots(player_id, season, metric_window);
+
+INSERT OR IGNORE INTO pitcher_metric_schema_migrations (migration_key, worker_version, notes)
+VALUES ('pitcher_metrics_v0_1_0_lifecycle_schema', 'alphadog-v2-base-pitcher-metrics-v0.1.0-schema-formula-input-audit', 'Additive Pitcher Metrics audit-only lifecycle schema. No promotion, no source mutation, no external calls.');

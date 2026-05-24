@@ -284,3 +284,48 @@ INSERT OR IGNORE INTO config_metric_thresholds (threshold_key, config_profile_id
 ('split_pa_sample_usable', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'split_sample_size', 25, 'split_usable', 1, 'Draft neutral split reliability threshold. DB-configurable.'),
 ('split_pa_sample_strong', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'split_sample_size', 50, 'split_strong', 1, 'Draft neutral split reliability threshold. DB-configurable.'),
 ('stale_input_days_warn', 'hitter_metrics_neutral_v0_1_0', 'hitter', 'stale_input_rule', 2, 'stale_warn', 1, 'Draft stale-input warning threshold. DB-configurable.');
+
+-- ============================================================================
+-- alphadog-v2-base-pitcher-metrics-v0.1.0-schema-formula-input-audit
+-- Pitcher-domain metric config seed rows only. Hitter rows are not modified.
+-- Promotion remains locked. Thresholds are DB-driven and audit-only.
+-- ============================================================================
+
+INSERT OR IGNORE INTO config_metric_calibration_profiles
+(profile_id, display_name, sport, metric_domain, active, profile_status, profile_json, notes)
+VALUES
+('pitcher_metrics_neutral_v0_1_0_audit', 'Pitcher Metrics Neutral v0.1.0 Audit', 'MLB', 'pitcher', 1, 'audit_only', '{"no_scoring":true,"promotion_locked":true,"tuning_owner":"CONFIG_DB","audit_only":true}', 'Pitcher neutral metric audit profile. Promotion locked. Thresholds are DB-configurable and not scoring weights.');
+
+INSERT OR IGNORE INTO config_metric_formula_versions
+(formula_version, sport, metric_domain, active, version_status, formula_catalog_json, notes)
+VALUES
+('pitcher_metrics_formula_v0_1_0_readiness', 'MLB', 'pitcher', 1, 'readiness_only', '{"promotion_locked":true,"audit_only":true,"direct_aggregates_from_pitcher_game_logs":true,"denominator_safe_rate_candidates":true,"split_pass_through_candidates_from_pitcher_splits":true,"deferred":["FIP","xFIP","SIERA","Stuff+","park/weather/opponent context","market edge","scoring/ranking","starter-vs-reliever weighting"]}', 'Pitcher formula readiness shell for v0.1.0 audit only. No production promotion.');
+
+INSERT OR IGNORE INTO config_metric_windows (window_key, metric_domain, metric_scope, window_type, window_size, enabled, sort_order, config_profile_id, notes) VALUES
+('pitcher_last_3_games', 'pitcher', 'last_3_games', 'last_n_games', 3, 1, 10, 'pitcher_metrics_neutral_v0_1_0_audit', 'Rolling last 3 games window for neutral pitcher metric readiness.'),
+('pitcher_last_5_games', 'pitcher', 'last_5_games', 'last_n_games', 5, 1, 20, 'pitcher_metrics_neutral_v0_1_0_audit', 'Rolling last 5 games window for neutral pitcher metric readiness.'),
+('pitcher_last_10_games', 'pitcher', 'last_10_games', 'last_n_games', 10, 1, 30, 'pitcher_metrics_neutral_v0_1_0_audit', 'Rolling last 10 games window for neutral pitcher metric readiness.'),
+('pitcher_last_20_games', 'pitcher', 'last_20_games', 'last_n_games', 20, 1, 40, 'pitcher_metrics_neutral_v0_1_0_audit', 'Rolling last 20 games window for neutral pitcher metric readiness.'),
+('pitcher_season_to_date', 'pitcher', 'season_to_date', 'season_to_date', NULL, 1, 90, 'pitcher_metrics_neutral_v0_1_0_audit', 'Season-to-date neutral pitcher metric readiness window.');
+
+INSERT OR IGNORE INTO config_metric_thresholds (threshold_key, config_profile_id, metric_domain, threshold_type, threshold_value, label, enabled, notes) VALUES
+('pitcher_min_batters_faced_rate_audit_v0_1_0', 'pitcher_metrics_neutral_v0_1_0_audit', 'pitcher', 'minimum_batters_faced_for_rates', 25, 'audit minimum BF for denominator-rate review', 1, 'DB-configurable audit threshold only; not scoring.'),
+('pitcher_min_outs_recorded_era_whip_audit_v0_1_0', 'pitcher_metrics_neutral_v0_1_0_audit', 'pitcher', 'minimum_outs_recorded_for_ip_rates', 15, 'audit minimum outs for IP-rate review', 1, 'DB-configurable audit threshold only; not scoring.'),
+('pitcher_min_split_bf_pass_through_audit_v0_1_0', 'pitcher_metrics_neutral_v0_1_0_audit', 'pitcher', 'minimum_split_batters_faced_review', 10, 'audit minimum split BF for pass-through reliability label', 1, 'DB-configurable audit threshold only; not scoring.');
+
+INSERT OR IGNORE INTO config_metric_definitions
+(metric_key, metric_family, metric_scope, display_name, description, source_table, numerator_field, denominator_field, formula_version, enabled, neutral_metric_only, future_scoring_bridge_flag, config_json)
+VALUES
+('pitcher_games_count','direct_aggregate','readiness_catalog','pitcher_games_count','Readiness only in v0.1.0; no promotion.','pitcher_game_logs','games_count',NULL,'pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"no_promotion_v0_1_0":true,"pitcher_domain":true}'),
+('pitcher_appearances_count','direct_aggregate','readiness_catalog','pitcher_appearances_count','Readiness only in v0.1.0; no promotion.','pitcher_game_logs','appearances_count',NULL,'pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"no_promotion_v0_1_0":true,"pitcher_domain":true}'),
+('pitcher_starts_count','role_readiness','readiness_catalog','pitcher_starts_count','Readiness only in v0.1.0; no role weighting.','pitcher_game_logs','starts_count',NULL,'pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"role_weighting_deferred":true,"pitcher_domain":true}'),
+('pitcher_innings_pitched_sum','direct_aggregate','readiness_catalog','pitcher_innings_pitched_sum','Readiness only in v0.1.0; no promotion.','pitcher_game_logs','innings_pitched_decimal',NULL,'pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"no_promotion_v0_1_0":true,"pitcher_domain":true}'),
+('pitcher_outs_recorded_sum','direct_aggregate','readiness_catalog','pitcher_outs_recorded_sum','Readiness only in v0.1.0; no promotion.','pitcher_game_logs','outs_recorded',NULL,'pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"no_promotion_v0_1_0":true,"pitcher_domain":true}'),
+('pitcher_batters_faced_sum','direct_aggregate','readiness_catalog','pitcher_batters_faced_sum','Readiness only in v0.1.0; no promotion.','pitcher_game_logs','batters_faced',NULL,'pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"no_promotion_v0_1_0":true,"pitcher_domain":true}'),
+('pitcher_k_rate_candidate','denominator_safe_rate','readiness_catalog','pitcher_k_rate_candidate','Readiness only in v0.1.0; denominator-guarded later.','pitcher_game_logs','strikeouts','batters_faced','pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"denominator_guard_required":true,"pitcher_domain":true}'),
+('pitcher_bb_rate_candidate','denominator_safe_rate','readiness_catalog','pitcher_bb_rate_candidate','Readiness only in v0.1.0; denominator-guarded later.','pitcher_game_logs','walks_allowed','batters_faced','pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"denominator_guard_required":true,"pitcher_domain":true}'),
+('pitcher_era_candidate','denominator_safe_rate','readiness_catalog','pitcher_era_candidate','Readiness only in v0.1.0; denominator-guarded later.','pitcher_game_logs','earned_runs','outs_recorded','pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"denominator_guard_required":true,"pitcher_domain":true}'),
+('pitcher_whip_candidate','denominator_safe_rate','readiness_catalog','pitcher_whip_candidate','Readiness only in v0.1.0; denominator-guarded later.','pitcher_game_logs','walks_allowed_plus_hits_allowed','innings_pitched_decimal','pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"denominator_guard_required":true,"pitcher_domain":true}'),
+('pitcher_split_era_pass_through','split_pass_through','readiness_catalog','pitcher_split_era_pass_through','Readiness only in v0.1.0; pass-through audit only.','pitcher_splits','era',NULL,'pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"pass_through_only":true,"pitcher_domain":true}'),
+('pitcher_split_whip_pass_through','split_pass_through','readiness_catalog','pitcher_split_whip_pass_through','Readiness only in v0.1.0; pass-through audit only.','pitcher_splits','whip',NULL,'pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"pass_through_only":true,"pitcher_domain":true}'),
+('pitcher_split_ops_against_pass_through','split_pass_through','readiness_catalog','pitcher_split_ops_against_pass_through','Readiness only in v0.1.0; pass-through audit only.','pitcher_splits','ops_against',NULL,'pitcher_metrics_formula_v0_1_0_readiness',1,1,1,'{"readiness_only":true,"pass_through_only":true,"pitcher_domain":true}');
