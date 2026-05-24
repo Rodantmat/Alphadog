@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.78-pitcher-delta-mode-contract-fix";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.79-pitcher-game-logs-stale-running-recovery";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -47,7 +47,7 @@ function base(env, extra = {}) {
       "Buttons enqueue/wake backend work only.",
       "Browser does not run long loops.",
       "Scheduled cron calls the same bounded tick path.",
-      "v0.2.60 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.4.0 source probe/base stage/promote-clean/delta-update, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
+      "v0.2.60 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with stale running recovery, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.4.0 source probe/base stage/promote-clean/delta-update, exact active static workers, exact static-certifier read-only validation, and exact static-full-run backend chain only.",
       "No generic worker dispatch, no scoring, no ranking, no final board writes, no old production writes."
     ],
     bindings: {
@@ -2935,6 +2935,33 @@ async function recoverStaleBaseHitterGameLogsJobs(env, trigger) {
   return { recovered, rows: staleRows };
 }
 
+
+async function recoverStaleBasePitcherGameLogsJobs(env, trigger) {
+  // Base Pitcher Game Logs delta chunks can complete partial DB work and then lose the
+  // service-binding response before CONTROL_DB is flipped back to pending. This mirrors
+  // the locked Hitter Game Logs stale-running recovery: return the same queue row to
+  // pending so the worker resumes from its retained delta batch/cursor. No new batch,
+  // no base rerun, no manual SQL promotion, no full pitcher-universe sweep.
+  const staleRows = await all(env.CONTROL_DB,
+    "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, started_at, updated_at, substr(output_json,1,900) AS output_preview FROM control_job_queue WHERE job_key='base-pitcher-game-logs' AND worker_name='alphadog-v2-base-pitcher-game-logs' AND status='running' AND finished_at IS NULL AND datetime(updated_at) <= datetime('now','-2 minutes') ORDER BY datetime(updated_at) ASC LIMIT 3"
+  );
+
+  let recovered = 0;
+  for (const row of staleRows) {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND job_key='base-pitcher-game-logs' AND worker_name='alphadog-v2-base-pitcher-game-logs' AND status='running' AND finished_at IS NULL",
+      row.request_id
+    );
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'base-pitcher-game-logs', 'WARN', 'base_pitcher_game_logs_stale_running_auto_recovered', 'Recovered stale running base-pitcher-game-logs queue row back to pending for scoped delta continuation', ?, CURRENT_TIMESTAMP)",
+      row.request_id, WORKER_NAME, JSON.stringify({ trigger, recovered_from_status: row.status, started_at: row.started_at, updated_at: row.updated_at, tick_count: row.tick_count, stale_threshold_minutes: 2, no_new_batch: true, resume_from_worker_cursor: true, scoped_delta_targets_only: true, no_normal_full_universe_sweep: true, output_preview: row.output_preview || null, version: SYSTEM_VERSION })
+    );
+    recovered += 1;
+  }
+
+  return { recovered, rows: staleRows };
+}
+
 async function recoverStaleBaseStarterHistoryJobs(env, trigger) {
   // Base Starter History stage-only chunks make many MLB boxscore calls. A service-binding
   // chunk can finish writing TEAM_DB stage rows but fail to flip the CONTROL_DB queue row
@@ -3375,6 +3402,11 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
     const baseHitterStaleRecovery = await recoverStaleBaseHitterGameLogsJobs(env, trigger);
     if (baseHitterStaleRecovery.recovered > 0) {
       processed.push({ status: "stale_base_hitter_game_logs_recovered", recovered_count: baseHitterStaleRecovery.recovered });
+    }
+
+    const basePitcherStaleRecovery = await recoverStaleBasePitcherGameLogsJobs(env, trigger);
+    if (basePitcherStaleRecovery.recovered > 0) {
+      processed.push({ status: "stale_base_pitcher_game_logs_recovered", recovered_count: basePitcherStaleRecovery.recovered });
     }
 
     const baseStarterStaleRecovery = await recoverStaleBaseStarterHistoryJobs(env, trigger);
