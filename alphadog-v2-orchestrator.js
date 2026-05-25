@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.80-team-delta-mode-contract-fix";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.81-starter-delta-mode-contract-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -2237,7 +2237,10 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  const starterMode = rowInput.mode || "base_backfill_stage_only";
+  const rawRequestedMode = rowInput.mode || "base_backfill_stage_only";
+  const starterDailyIncrementalLaunch = rowInput.daily_incremental_launch === true || (rowInput.visible_button === "BASE > Starter History" && rowInput.requested_preflight_behavior === "delta_scoped_source_repair");
+  const legacyPreflightModeNormalized = !!(starterDailyIncrementalLaunch && rawRequestedMode !== "delta_update");
+  const starterMode = legacyPreflightModeNormalized ? "delta_update" : rawRequestedMode;
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -2245,7 +2248,13 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
     worker_name: row.worker_name,
     trigger,
     mode: "orchestrator_exact_base_starter_history_dispatch",
-    input_json: { ...rowInput, mode: starterMode }
+    input_json: {
+      ...rowInput,
+      mode: starterMode,
+      raw_requested_mode: rawRequestedMode,
+      normalized_worker_mode: starterMode,
+      legacy_preflight_mode_normalized: legacyPreflightModeNormalized
+    }
   };
 
   const started = Date.now();
@@ -2276,7 +2285,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
   const queueStatus = partialContinue ? "pending" : (ok ? "completed" : "failed");
   const runStatus = partialContinue ? "partial_continue" : (ok ? "completed" : "failed");
   const errorCode = ok || partialContinue ? null : "base_starter_history_worker_failed";
-  const errorMessage = ok || partialContinue ? null : String((output && (output.error || output.status)) || "Base Starter History stage-only worker failed").slice(0, 900);
+  const errorMessage = ok || partialContinue ? null : String((output && (output.error || output.status)) || "Base Starter History worker failed").slice(0, 900);
 
   const cappedOutput = {
     ...output,
@@ -2291,6 +2300,11 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       base_starter_history_v0_4_2_retained_stage_restore_before_queue: starterMode === "delta_retained_stage_restore_before_queue",
       base_starter_history_v0_4_1_delta_noop_current_state: starterMode === "delta_noop_current_state",
       base_starter_history_v0_4_0_delta_update_retained_stage: starterMode === "delta_update",
+      raw_requested_mode: rawRequestedMode,
+      normalized_worker_mode: starterMode,
+      requested_preflight_behavior: rowInput.requested_preflight_behavior || null,
+      starter_delta_mode_normalization_v0_2_81: legacyPreflightModeNormalized,
+      legacy_preflight_mode_normalized: legacyPreflightModeNormalized,
       base_starter_history_v0_3_0_base_promotion_stage_clean: starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion",
       base_starter_history_v0_2_1_hot_continuation_stage_only: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill",
       hot_continuation_ready: true,
@@ -2305,6 +2319,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       delta_retained_stage_restore_before_queue_allowed: starterMode === "delta_retained_stage_restore_before_queue",
       delta_noop_current_state_allowed: starterMode === "delta_noop_current_state",
       delta_update_retained_stage_allowed: starterMode === "delta_update",
+      delta_update_allowed: starterMode === "delta_update",
       no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion" || starterMode === "delta_update" || starterMode === "delta_scoped_source_repair"),
       no_delta_update_execution: starterMode !== "delta_update",
       no_hitter_mutation: true,
@@ -2338,7 +2353,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_starter_history_dispatch_completed', 'Orchestrator completed exact base-starter-history exact dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, mode: starterMode, source_probe_only: starterMode === "source_lock_probe", stage_only_base_backfill: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill", delta_update: starterMode === "delta_update", no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion" || starterMode === "delta_update" || starterMode === "delta_scoped_source_repair"), partial_continue: partialContinue })
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, raw_requested_mode: rawRequestedMode, normalized_worker_mode: starterMode, requested_preflight_behavior: rowInput.requested_preflight_behavior || null, legacy_preflight_mode_normalized: legacyPreflightModeNormalized, mode: starterMode, source_probe_only: starterMode === "source_lock_probe", stage_only_base_backfill: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill", delta_update: starterMode === "delta_update", delta_update_allowed: starterMode === "delta_update", no_delta_update_execution: starterMode !== "delta_update", no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion" || starterMode === "delta_update" || starterMode === "delta_scoped_source_repair"), partial_continue: partialContinue })
   );
 
   return cappedOutput;
