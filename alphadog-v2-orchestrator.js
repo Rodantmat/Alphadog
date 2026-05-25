@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.83-pitcher-splits-auto-continuation-contract-fix";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.84-pitcher-splits-running-rescue-sql-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -3108,12 +3108,12 @@ async function processOneUnlocked(env, trigger) {
     "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json FROM control_job_queue WHERE status='pending' AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP) ORDER BY priority ASC, datetime(created_at) ASC LIMIT 1"
   );
 
-  // v0.2.83: Pitcher Splits daily affected refresh can safely require several
+  // v0.2.84: Pitcher Splits daily affected refresh can safely require several
   // backend ticks. If a prior hot continuation is interrupted after marking the
   // queue row running, the row must remain continuation-eligible; otherwise the
   // pump reports no_due_jobs while the request is still unfinished. This rescue
-  // is scoped only to base-pitcher-splits rows whose last output was an explicit
-  // PARTIAL_CONTINUE daily affected refresh with no finished_at.
+  // is scoped only to base-pitcher-splits running rows with no finished_at.
+  // Do NOT use output_json LIKE here; large JSON can trigger D1 pattern-complexity errors.
   if (!row) {
     row = await first(env.CONTROL_DB,
       `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
@@ -3122,7 +3122,6 @@ async function processOneUnlocked(env, trigger) {
          AND worker_name='alphadog-v2-base-pitcher-splits'
          AND status='running'
          AND finished_at IS NULL
-         AND output_json LIKE '%PARTIAL_CONTINUE_DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH%'
          AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds')
        ORDER BY datetime(updated_at) ASC
        LIMIT 1`
@@ -3130,7 +3129,7 @@ async function processOneUnlocked(env, trigger) {
     if (row) {
       await run(env.CONTROL_DB,
         "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'base_pitcher_splits_running_partial_rescued_as_due', 'Recovered running Pitcher Splits partial-continue row as due work for backend continuation', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, pitcher_splits_auto_continuation_contract_fix_v0_2_83: true })
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, pitcher_splits_running_rescue_sql_fix_v0_2_84: true })
       );
     }
   }

@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.7-auto-continuation-contract-fix";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.8-running-rescue-sql-fix";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
