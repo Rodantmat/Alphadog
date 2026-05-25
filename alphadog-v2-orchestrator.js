@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.87-hitter-splits-pitcher-parity-delta";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.88-hitter-splits-running-rescue-parity";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -3107,6 +3107,30 @@ async function processOneUnlocked(env, trigger) {
   let row = await first(env.CONTROL_DB,
     "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json FROM control_job_queue WHERE status='pending' AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP) ORDER BY priority ASC, datetime(created_at) ASC LIMIT 1"
   );
+
+  // v0.2.88: Hitter Splits daily affected refresh uses the same safe running-row
+  // continuation rescue as Pitcher Splits. If a backend hot loop is interrupted
+  // after the queue row is marked running, the unfinished row must be treated as due.
+  // Do NOT use output_json LIKE here; large JSON can trigger D1 pattern-complexity errors.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+       FROM control_job_queue
+       WHERE job_key='base-hitter-splits'
+         AND worker_name='alphadog-v2-base-hitter-splits'
+         AND status='running'
+         AND finished_at IS NULL
+         AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds')
+       ORDER BY datetime(updated_at) ASC
+       LIMIT 1`
+    );
+    if (row) {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'base_hitter_splits_running_partial_rescued_as_due', 'Recovered running Hitter Splits partial-continue row as due work for backend continuation', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, hitter_splits_running_rescue_parity_v0_2_88: true })
+      );
+    }
+  }
 
   // v0.2.84: Pitcher Splits daily affected refresh can safely require several
   // backend ticks. If a prior hot continuation is interrupted after marking the
