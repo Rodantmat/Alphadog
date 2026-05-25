@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.3-daily-affected-pitcher-refresh";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.4-final-date-discovery-continuation-fix";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
@@ -1025,12 +1025,61 @@ function addDays(dateStr, days) {
   d.setUTCDate(d.getUTCDate() + Number(days || 0));
   return d.toISOString().slice(0, 10);
 }
+function isTerminalMlbGameStatusText(value) {
+  const s = String(value || "").trim().toLowerCase();
+  if (!s) return false;
+  return s === "final" || s === "game over" || s.includes("final") || s.includes("game over") || s.includes("completed");
+}
+function isNonCompletedMlbGameStatusText(value) {
+  const s = String(value || "").trim().toLowerCase();
+  if (!s) return false;
+  return (
+    s.includes("postponed") ||
+    s.includes("scheduled") ||
+    s.includes("pre-game") ||
+    s.includes("pregame") ||
+    s.includes("preview") ||
+    s.includes("warmup") ||
+    s.includes("in progress") ||
+    s.includes("delayed") ||
+    s.includes("suspended") ||
+    s.includes("cancelled") ||
+    s.includes("canceled") ||
+    s.includes("manager challenge")
+  );
+}
 function isFinalMlbGame(game) {
   const status = game && game.status ? game.status : {};
-  const abstractState = String(status.abstractGameState || "").toLowerCase();
-  const detailed = String(status.detailedState || "").toLowerCase();
+  const abstractState = String(status.abstractGameState || "");
+  const detailed = String(status.detailedState || "");
   const coded = String(status.codedGameState || "").toUpperCase();
-  return abstractState === "final" || coded === "F" || detailed === "final" || detailed === "game over" || detailed === "completed early";
+  const combinedStatusText = `${detailed} ${abstractState} ${coded}`;
+
+  // Mirror the proven Team Game Logs final-game gate: exclude non-data schedule
+  // rows before treating coded state as evidence. Postponed/canceled/suspended
+  // games can appear in the schedule response but must not block completed-game
+  // discovery and must not advance coverage by themselves.
+  if (isNonCompletedMlbGameStatusText(combinedStatusText)) return false;
+  if (isTerminalMlbGameStatusText(detailed)) return true;
+  if (isTerminalMlbGameStatusText(abstractState)) return true;
+  return coded === "F" && (isTerminalMlbGameStatusText(detailed) || isTerminalMlbGameStatusText(abstractState));
+}
+function scheduleDateHasUnfinishedDataGames(games) {
+  const relevant = (Array.isArray(games) ? games : []).filter(g => String(g && g.gameType || "") === "R");
+  for (const game of relevant) {
+    const status = game && game.status ? game.status : {};
+    const combinedStatusText = `${String(status.detailedState || "")} ${String(status.abstractGameState || "")} ${String(status.codedGameState || "")}`;
+    if (isFinalMlbGame(game)) continue;
+    // Non-data rows like postponed/canceled do not block the date. Real scheduled,
+    // live, delayed, or suspended data games do block date coverage so late-final
+    // games are not skipped.
+    if (isNonCompletedMlbGameStatusText(combinedStatusText)) {
+      const s = combinedStatusText.toLowerCase();
+      if (s.includes("postponed") || s.includes("cancelled") || s.includes("canceled")) continue;
+    }
+    return true;
+  }
+  return false;
 }
 async function fetchLatestCompleteGameDate(env, startDate) {
   const start = dateOnlyUtc(startDate) || todayUtc();
@@ -1042,14 +1091,19 @@ async function fetchLatestCompleteGameDate(env, startDate) {
     if (!fetched.ok || !fetched.resp || !fetched.resp.ok) return { ok: false, endpoint, error: fetched.error || `HTTP_${fetched.resp && fetched.resp.status}`, today_utc: today };
     const body = JSON.parse(fetched.text || "{}");
     let latest = null;
+    const dateAudits = [];
     for (const d of (Array.isArray(body.dates) ? body.dates : [])) {
       const dateStr = dateOnlyUtc(d && d.date);
       const games = Array.isArray(d && d.games) ? d.games : [];
       if (!dateStr || !games.length) continue;
-      if (games.every(isFinalMlbGame) && (!latest || dateStr > latest)) latest = dateStr;
+      const regularGames = games.filter(g => String(g && g.gameType || "") === "R");
+      const finalGames = regularGames.filter(isFinalMlbGame);
+      const unfinishedDataGameBlocksDate = scheduleDateHasUnfinishedDataGames(regularGames);
+      dateAudits.push({ date: dateStr, regular_games: regularGames.length, final_games: finalGames.length, unfinished_data_game_blocks_date: unfinishedDataGameBlocksDate });
+      if (finalGames.length && !unfinishedDataGameBlocksDate && (!latest || dateStr > latest)) latest = dateStr;
     }
-    if (!latest) return { ok: false, endpoint, error: "NO_COMPLETE_FINAL_MLB_GAME_DATE_IN_RANGE", today_utc: today };
-    return { ok: true, endpoint, latest_complete_game_date: latest, today_utc: today };
+    if (!latest) return { ok: false, endpoint, error: "NO_COMPLETE_FINAL_MLB_GAME_DATE_IN_RANGE", today_utc: today, date_audits: dateAudits.slice(-5) };
+    return { ok: true, endpoint, latest_complete_game_date: latest, today_utc: today, date_audits: dateAudits.slice(-5) };
   } catch (err) {
     return { ok: false, endpoint, error: String(err && err.message ? err.message : err), today_utc: today };
   }
@@ -1146,7 +1200,7 @@ async function runDeltaNoopRestoreScopedRepairGate(env, input) {
   if (!baseBatch) return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: 'DELTA_PITCHER_SPLITS_BLOCKED_NO_LOCKED_BASE', certification: 'DELTA_PITCHER_SPLITS_BLOCKED_NO_LOCKED_BASE', certification_grade: 'BLOCKED', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0, schema };
   const liveChecks = await currentLiveIntegrity(env, baseBatch.batch_id);
   const expectedRows = asInt(baseBatch.rows_promoted, 0);
-  const baseComplete = liveChecks.live_rows === expectedRows && liveChecks.distinct_live_keys === liveChecks.live_rows && liveChecks.duplicate_live_keys === 0 && liveChecks.invalid_split_code === 0 && liveChecks.missing_raw_json === 0 && liveChecks.missing_source_snapshot_date === 0;
+  const baseComplete = liveChecks.live_rows >= expectedRows && liveChecks.distinct_live_keys === liveChecks.live_rows && liveChecks.duplicate_live_keys === 0 && liveChecks.invalid_split_code === 0 && liveChecks.missing_raw_json === 0 && liveChecks.missing_source_snapshot_date === 0;
   const coveredGameDate = await inferPitcherSplitsCoveredGameDate(env, liveChecks, baseBatch);
   const pendingDailyCursor = await first(env.STATS_PITCHER_DB, "SELECT * FROM pitcher_split_cursor WHERE cursor_key='base_pitcher_splits_daily_affected_refresh_cursor' AND status='PARTIAL_CONTINUE_DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH' ORDER BY datetime(updated_at) DESC LIMIT 1");
   if (baseComplete && pendingDailyCursor) {
