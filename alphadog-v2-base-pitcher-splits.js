@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.9-covered-date-inference-fix";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.10-stale-duplicate-current-cursor-rescue";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
@@ -1360,7 +1360,54 @@ async function runDeltaNoopRestoreScopedRepairGate(env, input) {
   const pendingDailyCursor = await first(env.STATS_PITCHER_DB, "SELECT * FROM pitcher_split_cursor WHERE cursor_key='base_pitcher_splits_daily_affected_refresh_cursor' AND status='PARTIAL_CONTINUE_DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH' ORDER BY datetime(updated_at) DESC LIMIT 1");
   if (baseComplete && pendingDailyCursor) {
     let cj = {}; try { cj = JSON.parse(pendingDailyCursor.cursor_json || '{}'); } catch (_) { cj = {}; }
-    return await refreshDailyAffectedPitcherSplits(env, baseBatch, input, liveChecks, cj.latest_complete_game_date || coveredGameDate || todayUtc(), cj.covered_game_date_before || coveredGameDate);
+    const pendingThroughDate = dateOnlyUtc(cj.latest_complete_game_date) || dateOnlyUtc(cj.daily_affected_refresh && cj.daily_affected_refresh.latest_complete_game_date) || dateOnlyUtc(pendingDailyCursor.source_snapshot_date);
+    const currentCoveredDate = dateOnlyUtc(coveredGameDate) || dateOnlyUtc(liveChecks.max_source_snapshot_date);
+
+    // v0.5.10: stale duplicate rescue. If a previous request already completed the
+    // same daily affected refresh and advanced the main delta cursor/live snapshot,
+    // do not re-run the affected pitcher set from the stale daily cursor. Close the
+    // stale cursor as a no-op/current rescue so the active queue row can terminalize.
+    if (pendingThroughDate && currentCoveredDate && currentCoveredDate >= pendingThroughDate && liveChecks.duplicate_live_keys === 0 && liveChecks.invalid_split_code === 0 && liveChecks.missing_raw_json === 0) {
+      const runId = input.run_id || rid('run_delta_pitcher_splits_stale_duplicate_current_rescue');
+      const rescueChecks = {
+        locked_base_batch_id: baseBatch.batch_id,
+        stale_daily_cursor_detected: true,
+        stale_duplicate_current_cursor_rescue_v0_5_10: true,
+        pending_cursor_status: pendingDailyCursor.status,
+        pending_cursor_offset: asInt(pendingDailyCursor.current_player_offset, 0),
+        pending_players_total: asInt(pendingDailyCursor.players_total, 0),
+        pending_players_processed: asInt(pendingDailyCursor.players_processed, 0),
+        pending_latest_complete_game_date: pendingThroughDate,
+        current_covered_game_date: currentCoveredDate,
+        live_rows: liveChecks.live_rows,
+        distinct_live_keys: liveChecks.distinct_live_keys,
+        duplicate_live_keys: liveChecks.duplicate_live_keys,
+        invalid_split_code: liveChecks.invalid_split_code,
+        missing_raw_json: liveChecks.missing_raw_json,
+        max_source_snapshot_date: liveChecks.max_source_snapshot_date,
+        no_full_sweep: true,
+        no_full_pitcher_universe_refresh: true,
+        no_live_mutation: true,
+        no_mlb_calls: true
+      };
+      await run(env.STATS_PITCHER_DB, `UPDATE pitcher_split_cursor
+        SET status='STALE_DUPLICATE_COMPLETED_BY_MAIN_CURSOR',
+            current_player_offset=players_total,
+            players_processed=players_total,
+            next_run_after=NULL,
+            last_error=NULL,
+            cursor_json=?,
+            updated_at=CURRENT_TIMESTAMP
+        WHERE cursor_key='base_pitcher_splits_daily_affected_refresh_cursor'
+          AND status='PARTIAL_CONTINUE_DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH'`, safeJson(rescueChecks));
+      await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
+        VALUES ('base_pitcher_splits_delta_update_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, baseBatch.batch_id, runId, 'delta_noop_current_after_stale_duplicate_rescue', 'DELTA_PITCHER_SPLITS_NOOP_CURRENT_SOURCE_SNAPSHOT', SOURCE_SEASON, currentCoveredDate, null, 0, liveChecks.live_rows, liveChecks.live_rows, 0, null, null, safeJson(rescueChecks));
+      await run(env.STATS_PITCHER_DB, `INSERT INTO pitcher_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('pitcher_splits_stale_duplicate_rescue_cert'), baseBatch.batch_id, runId, 'delta_noop_current_after_stale_duplicate_rescue', 'DELTA_PITCHER_SPLITS_STALE_DUPLICATE_CURRENT_CURSOR_RESCUED', 'DELTA_NOOP_PASS', safeJson(rescueChecks), 0, liveChecks.live_rows, liveChecks.duplicate_live_keys, asInt(baseBatch.source_no_data_count,0), 0, currentCoveredDate);
+      return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: 'DELTA_PITCHER_SPLITS_NOOP_CURRENT_SOURCE_SNAPSHOT', certification: 'DELTA_PITCHER_SPLITS_STALE_DUPLICATE_CURRENT_CURSOR_RESCUED', certification_grade: 'DELTA_NOOP_PASS', rows_read: liveChecks.live_rows, rows_written: 3, rows_promoted: 0, external_calls_performed: 0, continuation_required: false, orchestrator_should_self_continue: false, queued: false, no_full_sweep: true, no_mlb_calls: true, no_live_mutation: true, stale_duplicate_rescue: rescueChecks, timestamp_utc: nowUtc() };
+    }
+
+    return await refreshDailyAffectedPitcherSplits(env, baseBatch, input, liveChecks, pendingThroughDate || coveredGameDate || todayUtc(), cj.covered_game_date_before || coveredGameDate);
   }
   const latestCompleteCheck = await fetchLatestCompleteGameDate(env, addDays(coveredGameDate || liveChecks.max_source_snapshot_date || baseBatch.source_snapshot_date || todayUtc(), 1));
   if (baseComplete && latestCompleteCheck.ok && latestCompleteCheck.latest_complete_game_date && latestCompleteCheck.latest_complete_game_date > (coveredGameDate || '0000-00-00')) {
