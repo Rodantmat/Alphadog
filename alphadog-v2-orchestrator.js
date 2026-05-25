@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.92-pitcher-metrics-affected-delta-preserve-mode";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.93-hitter-metrics-affected-delta-preserve-mode";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1478,7 +1478,9 @@ async function processBaseHitterMetricsJob(env, row, runId, trigger) {
     chain_id: row.chain_id,
     run_id: runId,
     job_key: row.job_key,
-    mode: input.mode || "schema_formula_input_audit",
+    mode: String(input.mode || "").trim() || "schema_formula_input_audit",
+    raw_requested_mode: input.mode || null,
+    normalized_worker_mode: String(input.mode || "").trim() || "schema_formula_input_audit",
     trigger,
     orchestrator_version: SYSTEM_VERSION,
     no_live_metric_promotion: String(input.mode || "") === "delta_recalculate_affected_players" ? false : true,
@@ -1543,7 +1545,7 @@ async function processBaseHitterMetricsJob(env, row, runId, trigger) {
   }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_hitter_metrics_dispatch_completed', 'Orchestrator completed exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch', ?, CURRENT_TIMESTAMP)",
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_hitter_metrics_dispatch_completed', 'Orchestrator completed exact base-hitter-metrics v0.5.0 affected-player delta or snapshot/base dispatch', ?, CURRENT_TIMESTAMP)",
     row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, no_promotion: String((output && output.mode) || "") !== "delta_recalculate_affected_players", affected_player_delta: String((output && output.mode) || "") === "delta_recalculate_affected_players", no_external_mlb_calls: true, no_scoring: true, base_rebuild_stage_only: String((output && output.mode) || "") === "base_rebuild_stage_only", snapshot_prep_stage_only: String((output && output.mode) || "") === "snapshot_prep_stage_only", performance_tune: true,
     snapshot_prep: String(input.mode || "") === "snapshot_prep_stage_only",
     snapshot_delta_gate: String(input.mode || "") === "snapshot_delta_gate" })
