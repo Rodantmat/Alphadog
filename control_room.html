@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.6.104-hitter-metrics-affected-delta-button-lock -->
+<!-- alphadog-v2-control-room-v1.6.105-incremental-morning-full-run-button -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,7 +28,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.6.104-hitter-metrics-affected-delta-button-lock</div>
+<div id="versionTag">alphadog-v2-control-room-v1.6.105-incremental-morning-full-run-button</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time.</div>
 <div class="status" id="status">READY</div>
@@ -95,6 +95,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <button class="orch" type="button" onclick="runJobButton('DELTA > Team Game Logs','orchestrator_enqueue_delta_team_game_logs')">Team Game Logs</button>
 <button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Splits','orchestrator_enqueue_delta_hitter_splits')">Hitter Splits</button>
 <button class="orch" type="button" onclick="runJobButton('DELTA > Pitcher Splits','orchestrator_enqueue_delta_pitcher_splits')">Pitcher Splits</button>
+<button class="audit" type="button" onclick="runJobButton('DELTA > Full Run','orchestrator_enqueue_incremental_morning_full_run')">Full Run</button>
 </div></div>
 
 <div class="section"><h3>V2 SAFE ACTIONS</h3><div class="grid">
@@ -163,7 +164,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled",orchestrator_mode:"backend-scheduled-continuation",wake_binding_required:"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator",public_url_fallback_disabled:true,version:"alphadog-v2-control-room-v1.6.104-hitter-metrics-affected-delta-button-lock",ui_sentinel:"LAYOUT_PARITY_CLEAN_BUTTONS_V1_6_78",button_layout:"five_columns_original_compact",html_source:"embedded_worker_html_and_static_html_identical",delta_pitcher_metrics_button:"present_in_working_escaped_embedded_html",deployed_file_truth:"alphadog-v2-control-room.js",working_html_string_mode:"escaped_one_line_string_restored"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled",orchestrator_mode:"backend-scheduled-continuation",wake_binding_required:"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator",public_url_fallback_disabled:true,version:"alphadog-v2-control-room-v1.6.105-incremental-morning-full-run-button",ui_sentinel:"LAYOUT_PARITY_CLEAN_BUTTONS_V1_6_78",button_layout:"five_columns_original_compact",html_source:"embedded_worker_html_and_static_html_identical",delta_pitcher_metrics_button:"present_in_working_escaped_embedded_html",deployed_file_truth:"alphadog-v2-control-room.js",working_html_string_mode:"escaped_one_line_string_restored"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){

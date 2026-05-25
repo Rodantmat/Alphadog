@@ -1,1 +1,3 @@
-alphadog-v2-schema-phase-pack-v0.1
+alphadog-v2-incremental-morning-full-run-package-v2026-05-25
+Control Room: alphadog-v2-control-room-v1.6.105-incremental-morning-full-run-button
+Orchestrator: alphadog-v2-orchestrator-v0.2.94-incremental-morning-full-run
