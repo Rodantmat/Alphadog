@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-team-game-logs";
-const VERSION = "alphadog-v2-base-team-game-logs-v0.3.2-delta-scoped-source-repair";
+const VERSION = "alphadog-v2-base-team-game-logs-v0.3.3-delta-final-status-filter";
 const JOB_KEY = "base-team-game-logs";
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
 const SOURCE_KEY = "mlb_statsapi_schedule_boxscore_team_totals_probe_v0_1_0";
@@ -326,11 +326,41 @@ function isTerminalGameStatusText(value) {
   if (!s) return false;
   return s === "final" || s === "game over" || s.includes("final") || s.includes("game over") || s.includes("completed");
 }
+function isNonCompletedGameStatusText(value) {
+  const s = String(value || "").trim().toLowerCase();
+  if (!s) return false;
+  return (
+    s.includes("postponed") ||
+    s.includes("scheduled") ||
+    s.includes("pre-game") ||
+    s.includes("pregame") ||
+    s.includes("preview") ||
+    s.includes("warmup") ||
+    s.includes("in progress") ||
+    s.includes("delayed") ||
+    s.includes("suspended") ||
+    s.includes("cancelled") ||
+    s.includes("canceled") ||
+    s.includes("manager challenge")
+  );
+}
 function gameIsFinal(game) {
   const detailed = String(game?.status?.detailedState || "");
   const abstract = String(game?.status?.abstractGameState || "");
   const coded = String(game?.status?.codedGameState || "").toUpperCase();
-  return isTerminalGameStatusText(detailed) || isTerminalGameStatusText(abstract) || coded === "F";
+  const combinedStatusText = `${detailed} ${abstract} ${coded}`;
+
+  // Hard exclusion: schedule rows like Postponed can carry terminal-looking
+  // coded status values from MLB StatsAPI, but they are not completed team-game data.
+  // Exclude them before expected counts, boxscore fetches, staging, and promotion.
+  if (isNonCompletedGameStatusText(combinedStatusText)) return false;
+
+  if (isTerminalGameStatusText(detailed)) return true;
+  if (isTerminalGameStatusText(abstract)) return true;
+
+  // Do not accept codedGameState=F by itself. It is only a secondary confirmation
+  // after a human-readable completed/final state is present.
+  return coded === "F" && (isTerminalGameStatusText(detailed) || isTerminalGameStatusText(abstract));
 }
 function getTeamPairFromSchedule(game) {
   const away = game?.teams?.away?.team || {};
