@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.91-pitcher-metrics-delta-route-hardening";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.92-pitcher-metrics-affected-delta-preserve-mode";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1521,7 +1521,7 @@ async function processBaseHitterMetricsJob(env, row, runId, trigger) {
   const rowsRead = Number((output && output.rows_read) || 0);
   const rowsWritten = Number((output && output.rows_written) || 0);
   const externalCalls = Number((output && output.external_calls_performed) || 0);
-  const cappedOutput = { ...output, processed_by_orchestrator: SYSTEM_VERSION, trigger };
+  const cappedOutput = { ...output, processed_by_orchestrator: SYSTEM_VERSION, trigger, raw_requested_mode: payload.raw_requested_mode, normalized_worker_mode: payload.normalized_worker_mode };
   const errorCode = ok ? null : "base_hitter_metrics_dispatch_failed";
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Base Hitter Metrics snapshot-prep stage-only dispatch failed").slice(0, 500);
 
@@ -1586,7 +1586,9 @@ async function processBasePitcherMetricsJob(env, row, runId, trigger) {
     chain_id: row.chain_id,
     run_id: runId,
     job_key: row.job_key,
-    mode: input.mode || "base_rebuild_stage_only",
+    mode: String(input.mode || "").trim() || "base_rebuild_stage_only",
+    raw_requested_mode: input.mode || null,
+    normalized_worker_mode: String(input.mode || "").trim() || "base_rebuild_stage_only",
     trigger,
     orchestrator_version: SYSTEM_VERSION,
     no_live_metric_promotion: String(input.mode || "") === "delta_recalculate_affected_players" ? false : true,
@@ -1627,7 +1629,7 @@ async function processBasePitcherMetricsJob(env, row, runId, trigger) {
   const rowsRead = Number((output && output.rows_read) || 0);
   const rowsWritten = Number((output && output.rows_written) || 0);
   const externalCalls = Number((output && output.external_calls_performed) || 0);
-  const cappedOutput = { ...output, processed_by_orchestrator: SYSTEM_VERSION, trigger };
+  const cappedOutput = { ...output, processed_by_orchestrator: SYSTEM_VERSION, trigger, raw_requested_mode: payload.raw_requested_mode, normalized_worker_mode: payload.normalized_worker_mode };
   const errorCode = ok ? null : "base_pitcher_metrics_dispatch_failed";
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Base Pitcher Metrics v0.4.0 snapshot-promote/snapshot-prep/full-stage dispatch failed").slice(0, 500);
 
@@ -1649,7 +1651,7 @@ async function processBasePitcherMetricsJob(env, row, runId, trigger) {
   }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_metrics_dispatch_completed', 'Orchestrator completed exact base-pitcher-metrics v0.5.0 affected-player delta or snapshot/full-stage dispatch', ?, CURRENT_TIMESTAMP)",
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_metrics_dispatch_completed', 'Orchestrator completed exact base-pitcher-metrics v0.5.2 affected-player delta or snapshot/full-stage dispatch', ?, CURRENT_TIMESTAMP)",
     row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, no_promotion: String((output && output.mode) || "") !== "delta_recalculate_affected_players", affected_player_delta: String((output && output.mode) || "") === "delta_recalculate_affected_players", no_external_mlb_calls: true, no_scoring: true, base_rebuild_stage_only: String((output && output.mode) || "") === "base_rebuild_stage_only", snapshot_prep_stage_only: String((output && output.mode) || "") === "snapshot_prep_stage_only", partial_continue: partialContinue })
   );
   return cappedOutput;

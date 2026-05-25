@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-metrics";
-const VERSION = "alphadog-v2-base-pitcher-metrics-v0.5.1-delta-route-hardening";
+const VERSION = "alphadog-v2-base-pitcher-metrics-v0.5.2-affected-delta-cursor-route-fix";
 const JOB_KEY = "base-pitcher-metrics";
 
 const PROFILE_ID = "pitcher_metrics_neutral_v0_3_0_base_stage";
@@ -111,6 +111,8 @@ async function safeQueryFirst(db,sql,binds=[]){try{const stmt=db.prepare(sql); c
 async function pragmaColumns(db, table){const res=await safeQueryAll(db,`PRAGMA table_info(${table})`); if(!res.ok)return{ok:false,table,error:res.error,columns:[],column_names:[]}; const columns=res.rows||[]; return{ok:true,table,columns,column_names:columns.map(r=>r.name)};}
 function missingColumns(actual, required){const set=new Set(actual||[]); return required.filter(c=>!set.has(c));}
 function num(v){const n=Number(v); return Number.isFinite(n)?n:0;}
+function numericIds(values){return Array.from(new Set((values||[]).map(x=>Number(x)).filter(Number.isFinite))).sort((a,b)=>a-b);}
+function playerIdUnionSql(ids){const safe=numericIds(ids); return safe.length ? safe.map(id=>`SELECT ${id} AS player_id`).join(" UNION ALL ") : "SELECT -1 AS player_id WHERE 0";}
 function nval(v){const n=Number(v); return Number.isFinite(n)?n:null;}
 function round(v){return v===null||typeof v==="undefined"||!Number.isFinite(Number(v))?null:Number(Number(v).toFixed(6));}
 function sampleBucket(agg){const apps=Math.max(1,num(agg.appearances_count)); const opa=num(agg.outs_recorded_sum)/apps; const starts=num(agg.starts_count); if(starts>0 || opa>=15) return "high_opa_or_start_sample"; if(opa<9) return "low_opa_reliever_like_sample"; return "middle_opa_swing_review_sample";}
@@ -442,31 +444,40 @@ async function insertSnapshotRowsChunked(env, rows, chunkSize=100){
 }
 
 
-async function selectAffectedPitcherMetricPlayers(env, season, cursor, baseBatch){
+async function selectAffectedPitcherMetricPlayers(env, season, partialCursor, baseBatch){
   let baselineGameDate = null;
   let baselineSplitSnapshotDate = null;
   let priorAffectedIds = null;
-  if(cursor && cursor.cursor_json){
+  if(partialCursor && partialCursor.cursor_json){
     try{
-      const cj = JSON.parse(cursor.cursor_json);
+      const cj = JSON.parse(partialCursor.cursor_json);
       baselineGameDate = cj.baseline_game_date || null;
       baselineSplitSnapshotDate = cj.baseline_split_snapshot_date || null;
-      if(Array.isArray(cj.affected_player_ids)) priorAffectedIds = cj.affected_player_ids.map(x=>Number(x)).filter(Number.isFinite);
+      if(Array.isArray(cj.affected_player_ids)) priorAffectedIds = numericIds(cj.affected_player_ids);
     }catch{}
   }
-  if(!baselineGameDate) baselineGameDate = cursor && cursor.last_game_date ? cursor.last_game_date : (baseBatch && baseBatch.input_latest_game_date ? baseBatch.input_latest_game_date : null);
-  if(!baselineSplitSnapshotDate) baselineSplitSnapshotDate = cursor && cursor.last_split_snapshot_date ? cursor.last_split_snapshot_date : (baseBatch && baseBatch.input_latest_split_snapshot_date ? baseBatch.input_latest_split_snapshot_date : null);
+  if(!baselineGameDate) baselineGameDate = baseBatch && baseBatch.input_latest_game_date ? baseBatch.input_latest_game_date : null;
+  if(!baselineSplitSnapshotDate) baselineSplitSnapshotDate = baseBatch && baseBatch.input_latest_split_snapshot_date ? baseBatch.input_latest_split_snapshot_date : null;
   const latest = await safeQueryFirst(env.STATS_PITCHER_DB, "SELECT (SELECT MAX(game_date) FROM pitcher_game_logs WHERE season=?) AS latest_game_date, (SELECT MAX(source_snapshot_date) FROM pitcher_splits WHERE season=?) AS latest_split_snapshot_date", [season, season]);
+  const hydratePlayers = async (ids) => {
+    const cleanIds = numericIds(ids);
+    if(!cleanIds.length) return {ok:true,rows:[]};
+    const idSql = playerIdUnionSql(cleanIds);
+    return await safeQueryAll(env.STATS_PITCHER_DB, `SELECT ids.player_id, ? AS season,
+      COUNT(l.game_pk) AS appearances_count,
+      SUM(CASE WHEN lower(COALESCE(l.role,'')) LIKE '%start%' THEN 1 ELSE 0 END) AS starts_count,
+      SUM(COALESCE(l.outs_recorded,0)) AS outs_recorded_sum,
+      SUM(COALESCE(l.batters_faced,0)) AS batters_faced_sum,
+      SUM(COALESCE(l.pitches,0)) AS pitches_sum,
+      MAX(l.game_date) AS latest_game_date
+      FROM (${idSql}) ids
+      LEFT JOIN pitcher_game_logs l ON l.player_id=ids.player_id AND l.season=?
+      GROUP BY ids.player_id
+      ORDER BY ids.player_id ASC`, [season, season]);
+  };
   if(priorAffectedIds && priorAffectedIds.length){
-    const idList = priorAffectedIds.join(",");
-    const q = await safeQueryAll(env.STATS_PITCHER_DB, `SELECT player_id, season, COUNT(*) AS appearances_count,
-      SUM(CASE WHEN lower(COALESCE(role,'')) LIKE '%start%' THEN 1 ELSE 0 END) AS starts_count,
-      SUM(COALESCE(outs_recorded,0)) AS outs_recorded_sum,
-      SUM(COALESCE(batters_faced,0)) AS batters_faced_sum,
-      SUM(COALESCE(pitches,0)) AS pitches_sum,
-      MAX(game_date) AS latest_game_date
-      FROM pitcher_game_logs WHERE season=? AND player_id IN (${idList}) GROUP BY player_id, season ORDER BY player_id ASC`, [season]);
-    return {ok:q.ok, error:q.error||null, players:q.rows||[], affected_player_ids:priorAffectedIds, baseline_game_date:baselineGameDate, baseline_split_snapshot_date:baselineSplitSnapshotDate, latest_game_date:latest.row&&latest.row.latest_game_date||null, latest_split_snapshot_date:latest.row&&latest.row.latest_split_snapshot_date||null, reused_cursor_player_list:true};
+    const q = await hydratePlayers(priorAffectedIds);
+    return {ok:q.ok, error:q.error||null, players:q.rows||[], affected_player_ids:priorAffectedIds, baseline_game_date:baselineGameDate, baseline_split_snapshot_date:baselineSplitSnapshotDate, latest_game_date:latest.row&&latest.row.latest_game_date||null, latest_split_snapshot_date:latest.row&&latest.row.latest_split_snapshot_date||null, reused_partial_cursor_player_list:true};
   }
   const affected = await safeQueryAll(env.STATS_PITCHER_DB, `SELECT DISTINCT player_id FROM (
       SELECT player_id FROM pitcher_game_logs WHERE season=? AND (? IS NULL OR date(game_date) > date(?))
@@ -474,16 +485,9 @@ async function selectAffectedPitcherMetricPlayers(env, season, cursor, baseBatch
       SELECT player_id FROM pitcher_splits WHERE season=? AND (? IS NULL OR date(source_snapshot_date) > date(?))
     ) WHERE player_id IS NOT NULL ORDER BY player_id ASC`, [season, baselineGameDate, baselineGameDate, season, baselineSplitSnapshotDate, baselineSplitSnapshotDate]);
   if(!affected.ok) return {ok:false,error:affected.error,players:[],affected_player_ids:[],baseline_game_date:baselineGameDate,baseline_split_snapshot_date:baselineSplitSnapshotDate,latest_game_date:latest.row&&latest.row.latest_game_date||null,latest_split_snapshot_date:latest.row&&latest.row.latest_split_snapshot_date||null};
-  const ids = (affected.rows||[]).map(r=>Number(r.player_id)).filter(Number.isFinite);
+  const ids = numericIds((affected.rows||[]).map(r=>r.player_id));
   if(!ids.length) return {ok:true,players:[],affected_player_ids:[],baseline_game_date:baselineGameDate,baseline_split_snapshot_date:baselineSplitSnapshotDate,latest_game_date:latest.row&&latest.row.latest_game_date||null,latest_split_snapshot_date:latest.row&&latest.row.latest_split_snapshot_date||null};
-  const idList = ids.join(",");
-  const players = await safeQueryAll(env.STATS_PITCHER_DB, `SELECT player_id, season, COUNT(*) AS appearances_count,
-    SUM(CASE WHEN lower(COALESCE(role,'')) LIKE '%start%' THEN 1 ELSE 0 END) AS starts_count,
-    SUM(COALESCE(outs_recorded,0)) AS outs_recorded_sum,
-    SUM(COALESCE(batters_faced,0)) AS batters_faced_sum,
-    SUM(COALESCE(pitches,0)) AS pitches_sum,
-    MAX(game_date) AS latest_game_date
-    FROM pitcher_game_logs WHERE season=? AND player_id IN (${idList}) GROUP BY player_id, season ORDER BY player_id ASC`, [season]);
+  const players = await hydratePlayers(ids);
   return {ok:players.ok,error:players.error||null,players:players.rows||[],affected_player_ids:ids,baseline_game_date:baselineGameDate,baseline_split_snapshot_date:baselineSplitSnapshotDate,latest_game_date:latest.row&&latest.row.latest_game_date||null,latest_split_snapshot_date:latest.row&&latest.row.latest_split_snapshot_date||null};
 }
 
@@ -613,9 +617,9 @@ async function runDeltaRecalculateAffectedPlayers(input, env){
     const snapCounts=await safeQueryFirst(env.STATS_PITCHER_DB,"SELECT COUNT(*) AS rows, COUNT(DISTINCT player_id) AS players, COUNT(DISTINCT metric_window) AS windows FROM pitcher_metric_snapshot_stage WHERE snapshot_batch_id=?",[snapshotBatchId]);
     snapshotRowsCount=Number(snapCounts.row&&snapCounts.row.rows||0); snapshotPlayers=Number(snapCounts.row&&snapCounts.row.players||0);
     if(snapshotInsertErrors>0 || rowsPromoted!==snapshotRowsCount){status="DELTA_PITCHER_METRICS_AFFECTED_RECALC_SNAPSHOT_REVIEW_REQUIRED";certification="DELTA_PITCHER_METRICS_AFFECTED_RECALC_SNAPSHOT_REVIEW_REQUIRED";grade="DELTA_RECALC_REVIEW";}
-    await execSql(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_metric_snapshot_batches (snapshot_batch_id,source_batch_id,run_id,worker_name,worker_version,mode,status,config_profile_id,formula_version,source_rows,source_players,snapshot_rows,snapshot_players,rows_promoted,duplicate_count,certification_status,certification_grade,certification_json,finished_at,promoted_at,notes,updated_at) VALUES (?,?,?,?,?,'delta_recalculate_affected_players',?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'v0.5.0 affected-player delta recalculated fresh pitcher metrics from updated pitcher_game_logs/pitcher_splits; scoped live snapshot upsert only.',CURRENT_TIMESTAMP)`,[snapshotBatchId,batchId,runId,WORKER_NAME,VERSION,status,PROFILE_ID,FORMULA_VERSION,stagedRowsTotal,allPlayers.length,snapshotRowsCount,snapshotPlayers,rowsPromoted,duplicateCount,certification,grade,JSON.stringify({baseline_game_date:affected.baseline_game_date,baseline_split_snapshot_date:affected.baseline_split_snapshot_date,latest_game_date:affected.latest_game_date,latest_split_snapshot_date:affected.latest_split_snapshot_date,affected_player_count:allPlayers.length,snapshot_insert_errors:snapshotInsertErrors,no_full_rebuild:true,no_source_mutation:true,no_external_calls:true,no_scoring:true})]);
+    await execSql(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_metric_snapshot_batches (snapshot_batch_id,source_batch_id,run_id,worker_name,worker_version,mode,status,config_profile_id,formula_version,source_rows,source_players,snapshot_rows,snapshot_players,rows_promoted,duplicate_count,certification_status,certification_grade,certification_json,finished_at,promoted_at,notes,updated_at) VALUES (?,?,?,?,?,'delta_recalculate_affected_players',?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'v0.5.2 affected-player delta recalculated fresh pitcher metrics from updated pitcher_game_logs/pitcher_splits; scoped live snapshot upsert only.',CURRENT_TIMESTAMP)`,[snapshotBatchId,batchId,runId,WORKER_NAME,VERSION,status,PROFILE_ID,FORMULA_VERSION,stagedRowsTotal,allPlayers.length,snapshotRowsCount,snapshotPlayers,rowsPromoted,duplicateCount,certification,grade,JSON.stringify({baseline_game_date:affected.baseline_game_date,baseline_split_snapshot_date:affected.baseline_split_snapshot_date,latest_game_date:affected.latest_game_date,latest_split_snapshot_date:affected.latest_split_snapshot_date,affected_player_count:allPlayers.length,snapshot_insert_errors:snapshotInsertErrors,no_full_rebuild:true,no_source_mutation:true,no_external_calls:true,no_scoring:true})]);
   }
-  await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_batches (batch_id,run_id,worker_name,worker_version,mode,status,data_feed_key,source_key,source_season,input_log_row_count,input_split_row_count,input_latest_game_date,input_latest_split_snapshot_date,expected_pitcher_universe_count,config_profile_id,formula_version,metric_catalog_json,formula_readiness_json,config_readiness_json,input_readiness_json,rows_staged,rows_promoted,duplicate_count,certification_status,certification_grade,certification_json,finished_at,certified_at,promoted_at,notes,updated_at) VALUES (?,?,?,?, 'delta_recalculate_affected_players',?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,[batchId,runId,WORKER_NAME,VERSION,status,DATA_FEED_KEY,"d1_internal_pitcher_game_logs_and_splits_delta",season,num(inputReadiness.pitcher_game_logs.counts&&inputReadiness.pitcher_game_logs.counts.rows),num(inputReadiness.pitcher_splits.counts&&inputReadiness.pitcher_splits.counts.rows),affected.latest_game_date,affected.latest_split_snapshot_date,allPlayers.length,PROFILE_ID,FORMULA_VERSION,JSON.stringify(formulaCatalog()),JSON.stringify({affected_player_delta:true,base_stage_formula_locked:true}),JSON.stringify(config),JSON.stringify(inputReadiness),stagedRowsTotal,rowsPromoted,duplicateCount,certification,grade,JSON.stringify({offset_before:offset,offset_after:newOffset,players_total:allPlayers.length,chunk_size:chunkSize,chunk_player_ids:chunkPlayers.map(x=>Number(x.player_id)),baseline_game_date:affected.baseline_game_date,baseline_split_snapshot_date:affected.baseline_split_snapshot_date,latest_game_date:affected.latest_game_date,latest_split_snapshot_date:affected.latest_split_snapshot_date,snapshot_batch_id:snapshotBatchId,row_errors:rowErrors,duplicate_count:duplicateCount,no_full_rebuild:true,no_source_mutation:true,no_external_calls:true,no_scoring:true}),partialContinue?null:nowUtc(),partialContinue?null:nowUtc(),partialContinue?null:nowUtc(),"v0.5.0 true affected-player delta. Recalculates only pitchers touched by fresh logs/splits, then scoped snapshot/live upsert."]);
+  await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_batches (batch_id,run_id,worker_name,worker_version,mode,status,data_feed_key,source_key,source_season,input_log_row_count,input_split_row_count,input_latest_game_date,input_latest_split_snapshot_date,expected_pitcher_universe_count,config_profile_id,formula_version,metric_catalog_json,formula_readiness_json,config_readiness_json,input_readiness_json,rows_staged,rows_promoted,duplicate_count,certification_status,certification_grade,certification_json,finished_at,certified_at,promoted_at,notes,updated_at) VALUES (?,?,?,?, 'delta_recalculate_affected_players',?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,[batchId,runId,WORKER_NAME,VERSION,status,DATA_FEED_KEY,"d1_internal_pitcher_game_logs_and_splits_delta",season,num(inputReadiness.pitcher_game_logs.counts&&inputReadiness.pitcher_game_logs.counts.rows),num(inputReadiness.pitcher_splits.counts&&inputReadiness.pitcher_splits.counts.rows),affected.latest_game_date,affected.latest_split_snapshot_date,allPlayers.length,PROFILE_ID,FORMULA_VERSION,JSON.stringify(formulaCatalog()),JSON.stringify({affected_player_delta:true,base_stage_formula_locked:true}),JSON.stringify(config),JSON.stringify(inputReadiness),stagedRowsTotal,rowsPromoted,duplicateCount,certification,grade,JSON.stringify({offset_before:offset,offset_after:newOffset,players_total:allPlayers.length,chunk_size:chunkSize,chunk_player_ids:chunkPlayers.map(x=>Number(x.player_id)),baseline_game_date:affected.baseline_game_date,baseline_split_snapshot_date:affected.baseline_split_snapshot_date,latest_game_date:affected.latest_game_date,latest_split_snapshot_date:affected.latest_split_snapshot_date,snapshot_batch_id:snapshotBatchId,row_errors:rowErrors,duplicate_count:duplicateCount,no_full_rebuild:true,no_source_mutation:true,no_external_calls:true,no_scoring:true}),partialContinue?null:nowUtc(),partialContinue?null:nowUtc(),partialContinue?null:nowUtc(),"v0.5.2 true affected-player delta. Recalculates only pitchers touched by fresh logs/splits, then scoped snapshot/live upsert."]);
   await execSql(env.STATS_PITCHER_DB,`INSERT OR REPLACE INTO pitcher_metric_cursor (cursor_key,mode,status,batch_id,run_id,source_season,players_total,players_processed,last_player_id,last_game_date,last_split_snapshot_date,requests_done,no_external_calls,cursor_json,updated_at) VALUES (?,'delta_recalculate_affected_players',?,?,?,?,?,?,?,?,COALESCE((SELECT requests_done FROM pitcher_metric_cursor WHERE cursor_key=?),0)+1,1,?,CURRENT_TIMESTAMP)`,[cursorKey,status,batchId,runId,season,allPlayers.length,newOffset,chunkPlayers.length?Number(chunkPlayers[chunkPlayers.length-1].player_id):null,partialContinue?affected.baseline_game_date:affected.latest_game_date,partialContinue?affected.baseline_split_snapshot_date:affected.latest_split_snapshot_date,cursorKey,JSON.stringify({request_id:requestId,batch_id:batchId,run_id:runId,snapshot_batch_id:snapshotBatchId,baseline_game_date:affected.baseline_game_date,baseline_split_snapshot_date:affected.baseline_split_snapshot_date,latest_game_date:affected.latest_game_date,latest_split_snapshot_date:affected.latest_split_snapshot_date,affected_player_ids:affected.affected_player_ids,offset_before:offset,offset_after:newOffset,players_total:allPlayers.length})]);
   return {ok:rowErrors===0&&duplicateCount===0&&snapshotInsertErrors===0,data_ok:rowErrors===0&&duplicateCount===0&&snapshotInsertErrors===0,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,chain_id:input.chain_id||null,run_id:runId,batch_id:batchId,snapshot_batch_id:snapshotBatchId,mode:"delta_recalculate_affected_players",status,certification,certification_grade:grade,baseline_game_date:affected.baseline_game_date,baseline_split_snapshot_date:affected.baseline_split_snapshot_date,latest_game_date:affected.latest_game_date,latest_split_snapshot_date:affected.latest_split_snapshot_date,affected_player_count:allPlayers.length,chunk_size:chunkSize,offset_before:offset,offset_after:newOffset,players_processed_this_tick:chunkPlayers.length,players_remaining:Math.max(0,allPlayers.length-newOffset),rows_read:chunkPlayers.length,rows_staged:stagedRowsTotal,rows_written:insertResult.written + (snapshotRowsCount||0) + 2,rows_promoted:rowsPromoted,duplicate_count:duplicateCount,row_errors:rowErrors,snapshot_insert_errors:snapshotInsertErrors,external_calls_performed:0,continuation_required:partialContinue,orchestrator_should_self_continue:partialContinue,no_full_rebuild:true,no_external_mlb_calls:true,no_source_mutation:true,source_table_mutation_performed:false,scoring_performed:false,ranking_performed:false,final_board_write_performed:false,retained_stage_preserved:true,allowed_next_phase:partialContinue?"Continue same queued job until all affected pitchers are recalculated":"Pitcher Metrics affected-player delta current; existing snapshot parity gate can be used as final validation."};
 }
@@ -792,7 +796,7 @@ export default {async fetch(request, env, ctx){
       return jsonResponse(await runBaseRebuildStageOnly(input,env));
     }catch(err){
       const m=String(input.mode||"");
-      return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,status:m==="delta_recalculate_affected_players"?"DELTA_AFFECTED_RECALC_WORKER_EXCEPTION":(m==="snapshot_delta_gate"?"SNAPSHOT_DELTA_GATE_WORKER_EXCEPTION":(m==="snapshot_promote_retained_stage"?"SNAPSHOT_PROMOTE_WORKER_EXCEPTION":(m==="snapshot_prep_stage_only"?"SNAPSHOT_PREP_WORKER_EXCEPTION":"BASE_STAGE_WORKER_EXCEPTION"))),certification:m==="delta_recalculate_affected_players"?"PITCHER_METRICS_V0_5_0_AFFECTED_RECALC_EXCEPTION":(m==="snapshot_delta_gate"?"PITCHER_METRICS_V0_4_1_SNAPSHOT_DELTA_GATE_EXCEPTION":(m==="snapshot_promote_retained_stage"?"PITCHER_METRICS_V0_4_0_SNAPSHOT_PROMOTE_EXCEPTION":(m==="snapshot_prep_stage_only"?"PITCHER_METRICS_V0_3_4_SNAPSHOT_PREP_EXCEPTION":"PITCHER_METRICS_V0_3_3_BASE_STAGE_EXCEPTION"))),error:String(err&&err.message?err.message:err),stack:String(err&&err.stack?err.stack:"").slice(0,2000),rows_written:0,rows_promoted:0,external_calls_performed:0,timestamp_utc:nowUtc()},500);}
+      return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,job_key:input.job_key||JOB_KEY,request_id:input.request_id||null,status:m==="delta_recalculate_affected_players"?"DELTA_AFFECTED_RECALC_WORKER_EXCEPTION":(m==="snapshot_delta_gate"?"SNAPSHOT_DELTA_GATE_WORKER_EXCEPTION":(m==="snapshot_promote_retained_stage"?"SNAPSHOT_PROMOTE_WORKER_EXCEPTION":(m==="snapshot_prep_stage_only"?"SNAPSHOT_PREP_WORKER_EXCEPTION":"BASE_STAGE_WORKER_EXCEPTION"))),certification:m==="delta_recalculate_affected_players"?"PITCHER_METRICS_V0_5_2_AFFECTED_RECALC_EXCEPTION":(m==="snapshot_delta_gate"?"PITCHER_METRICS_V0_4_1_SNAPSHOT_DELTA_GATE_EXCEPTION":(m==="snapshot_promote_retained_stage"?"PITCHER_METRICS_V0_4_0_SNAPSHOT_PROMOTE_EXCEPTION":(m==="snapshot_prep_stage_only"?"PITCHER_METRICS_V0_3_4_SNAPSHOT_PREP_EXCEPTION":"PITCHER_METRICS_V0_3_3_BASE_STAGE_EXCEPTION"))),error:String(err&&err.message?err.message:err),stack:String(err&&err.stack?err.stack:"").slice(0,2000),rows_written:0,rows_promoted:0,external_calls_performed:0,timestamp_utc:nowUtc()},500);}
   }
   return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"NOT_FOUND",allowed_routes:["GET /","GET /health","POST /run","POST /diagnostic"],timestamp_utc:nowUtc()},404);
 }};
