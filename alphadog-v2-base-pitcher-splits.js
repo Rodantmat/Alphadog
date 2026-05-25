@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.8-running-rescue-sql-fix";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.9-covered-date-inference-fix";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
@@ -1125,7 +1125,36 @@ async function fetchLatestCompleteGameDate(env, startDate) {
   }
 }
 async function inferPitcherSplitsCoveredGameDate(env, liveChecks, baseBatch) {
-  const maxSnapshot = dateOnlyUtc(liveChecks.max_source_snapshot_date) || dateOnlyUtc(baseBatch && baseBatch.source_snapshot_date) || todayUtc();
+  // v0.5.9: Pitcher Splits is a snapshot-style table. The covered date must
+  // come from the splits cursor/live snapshot state first. Do not let
+  // pitcher_game_logs roll coverage backward when pitcher logs lag but the
+  // daily affected split refresh already promoted a newer final-date snapshot.
+  const candidates = [];
+  const cursor = await first(env.STATS_PITCHER_DB, `SELECT source_snapshot_date, status, cursor_json, updated_at
+    FROM pitcher_split_cursor
+    WHERE cursor_key='base_pitcher_splits_delta_update_cursor'
+    ORDER BY datetime(updated_at) DESC
+    LIMIT 1`);
+  if (cursor) {
+    candidates.push(dateOnlyUtc(cursor.source_snapshot_date));
+    if (cursor.cursor_json) {
+      try {
+        const cj = JSON.parse(cursor.cursor_json || '{}');
+        candidates.push(dateOnlyUtc(cj.covered_game_date));
+        candidates.push(dateOnlyUtc(cj.latest_complete_game_date));
+        if (cj.daily_affected_refresh) {
+          candidates.push(dateOnlyUtc(cj.daily_affected_refresh.covered_game_date));
+          candidates.push(dateOnlyUtc(cj.daily_affected_refresh.latest_complete_game_date));
+        }
+      } catch (_) {}
+    }
+  }
+  candidates.push(dateOnlyUtc(liveChecks && liveChecks.max_source_snapshot_date));
+  candidates.push(dateOnlyUtc(baseBatch && baseBatch.source_snapshot_date));
+  const direct = candidates.filter(Boolean).sort().pop();
+  if (direct) return direct;
+
+  const maxSnapshot = dateOnlyUtc(liveChecks && liveChecks.max_source_snapshot_date) || dateOnlyUtc(baseBatch && baseBatch.source_snapshot_date) || todayUtc();
   const row = await first(env.STATS_PITCHER_DB, `SELECT MAX(game_date) AS max_game_date
     FROM pitcher_game_logs
     WHERE game_date IS NOT NULL AND game_date <= ?`, maxSnapshot);
