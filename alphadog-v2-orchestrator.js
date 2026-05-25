@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.95-full-run-hot-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.96-scheduled-incremental-morning-full-run";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -302,6 +302,173 @@ function isIncrementalMorningFullRunJob(row) {
 const INCREMENTAL_MORNING_FULL_RUN_LOCK_KEY = "INCREMENTAL_MORNING_FULL_RUN";
 const INCREMENTAL_MORNING_FULL_RUN_STALE_MINUTES = 60;
 const INCREMENTAL_MORNING_FULL_RUN_MAX_RETRIES_PER_STAGE = 2;
+
+const INCREMENTAL_MORNING_FULL_RUN_SCHEDULE_WINDOW_MINUTES = 15;
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+function randomToken(len = 6) {
+  return Math.random().toString(36).slice(2, 2 + len);
+}
+
+function pacificNowParts(date = new Date()) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+  const parts = {};
+  for (const part of formatter.formatToParts(date)) {
+    if (part.type !== "literal") parts[part.type] = part.value;
+  }
+  let hour = Number(parts.hour || 0);
+  // Some runtimes can render midnight as 24:xx for hourCycle h24.
+  if (hour === 24) hour = 0;
+  const minute = Number(parts.minute || 0);
+  const second = Number(parts.second || 0);
+  const year = String(parts.year || "");
+  const month = String(parts.month || "");
+  const day = String(parts.day || "");
+  return {
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+    ymd_dash: `${year}-${month}-${day}`,
+    ymd_key: `${year}_${month}_${day}`,
+    local_time: `${pad2(hour)}:${pad2(minute)}:${pad2(second)}`
+  };
+}
+
+function isApprovedIncrementalMorningFullRunScheduleWindow(pt) {
+  return Number(pt.hour) === 1 && Number(pt.minute) >= 0 && Number(pt.minute) < INCREMENTAL_MORNING_FULL_RUN_SCHEDULE_WINDOW_MINUTES;
+}
+
+async function enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpression = "unknown") {
+  await ensureSchema(env);
+  const pt = pacificNowParts(new Date());
+  const scheduledDedupeKey = `incremental_morning_full_run_${pt.ymd_key}`;
+  const inWindow = isApprovedIncrementalMorningFullRunScheduleWindow(pt);
+
+  const basePayload = {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    worker_name: WORKER_NAME,
+    job_key: "incremental-morning-full-run",
+    mode: "scheduled_incremental_morning_full_run_enqueue_guard",
+    cron_expression: cronExpression,
+    pacific_date: pt.ymd_dash,
+    pacific_time: pt.local_time,
+    scheduled_dedupe_key: scheduledDedupeKey,
+    approved_window: "01:00-01:14 America/Los_Angeles",
+    in_window: inWindow,
+    no_board_refresh_included: true,
+    board_refresh_deferred: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_old_production_touch: true
+  };
+
+  if (!inWindow) {
+    return { ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_NOT_DUE" };
+  }
+
+  const existingRows = await all(env.CONTROL_DB,
+    `SELECT request_id, chain_id, status, created_at, started_at, finished_at, updated_at, error_code, error_message, substr(input_json,1,1200) AS input_preview
+     FROM control_job_queue
+     WHERE job_key='incremental-morning-full-run'
+       AND worker_name='alphadog-v2-orchestrator'
+       AND (request_id LIKE ? OR input_json LIKE ?)
+     ORDER BY datetime(created_at) DESC
+     LIMIT 10`,
+    `${scheduledDedupeKey}_%`, `%"scheduled_dedupe_key":"${scheduledDedupeKey}"%`
+  );
+
+  const active = existingRows.find(r => ["pending", "running", "partial_continue"].includes(String(r.status || "")) && !r.finished_at);
+  if (active) {
+    const payload = { ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_NOOP_ACTIVE_EXISTS", existing_request_id: active.request_id, existing_chain_id: active.chain_id, existing_status: active.status };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'scheduled_incremental_morning_full_run_noop_active_exists', 'Scheduled Incremental Morning Full Run did not enqueue because same Pacific-date parent is active', ?, CURRENT_TIMESTAMP)",
+      active.request_id, WORKER_NAME, "incremental-morning-full-run", JSON.stringify(payload)
+    );
+    return payload;
+  }
+
+  const completed = existingRows.find(r => String(r.status || "") === "completed");
+  if (completed) {
+    const payload = { ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_NOOP_ALREADY_COMPLETED", existing_request_id: completed.request_id, existing_chain_id: completed.chain_id, existing_status: completed.status };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'scheduled_incremental_morning_full_run_noop_already_completed', 'Scheduled Incremental Morning Full Run did not enqueue because same Pacific-date parent already completed', ?, CURRENT_TIMESTAMP)",
+      completed.request_id, WORKER_NAME, "incremental-morning-full-run", JSON.stringify(payload)
+    );
+    return payload;
+  }
+
+  const failed = existingRows.find(r => ["failed", "blocked", "error"].includes(String(r.status || "")) || r.error_code);
+  if (failed) {
+    const payload = { ...basePayload, ok: false, data_ok: false, status: "BLOCKED_SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_SAME_DATE_FAILED_REQUIRES_REVIEW", existing_request_id: failed.request_id, existing_chain_id: failed.chain_id, existing_status: failed.status, existing_error_code: failed.error_code || null, existing_error_message: failed.error_message || null };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'ERROR', 'scheduled_incremental_morning_full_run_blocked_failed_same_date', 'Scheduled Incremental Morning Full Run blocked because same Pacific-date parent failed/blocked and requires review', ?, CURRENT_TIMESTAMP)",
+      failed.request_id, WORKER_NAME, "incremental-morning-full-run", JSON.stringify(payload)
+    );
+    return payload;
+  }
+
+  const requestId = `${scheduledDedupeKey}_${Date.now().toString(36)}_${randomToken(6)}`;
+  const chainId = `chain_${scheduledDedupeKey}_${Date.now().toString(36)}`;
+  const childModes = {};
+  for (const stage of INCREMENTAL_MORNING_FULL_RUN_STAGES) childModes[stage.job_key] = stage.mode;
+  const input = {
+    source: "orchestrator_scheduled",
+    visible_button: "SCHEDULED > Incremental Morning Full Run",
+    mode: "incremental_morning_full_run",
+    scheduled: true,
+    scheduled_or_manual: "scheduled",
+    scheduled_dedupe_key: scheduledDedupeKey,
+    scheduled_pacific_date: pt.ymd_dash,
+    scheduled_pacific_time: pt.local_time,
+    cron_expression: cronExpression,
+    created_at: nowIso(),
+    approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key),
+    child_modes: childModes,
+    stop_on_first_failed_stage: true,
+    max_retries_per_child: INCREMENTAL_MORNING_FULL_RUN_MAX_RETRIES_PER_STAGE,
+    stale_threshold_minutes: INCREMENTAL_MORNING_FULL_RUN_STALE_MINUTES,
+    backend_chain_only: true,
+    no_browser_loop: true,
+    backend_scheduled_continuation: true,
+    no_board_refresh_included: true,
+    board_refresh_deferred: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_old_production_touch: true
+  };
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'incremental-morning-full-run', 'alphadog-v2-orchestrator', 'Delta', 'incremental_base', 'Scheduled Incremental Morning Full Run Backend Chain', 'pending', 8, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    requestId, chainId, JSON.stringify(input)
+  );
+
+  const payload = { ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_QUEUED", request_id: requestId, chain_id: chainId, queued_job_key: "incremental-morning-full-run", queued_worker_name: WORKER_NAME, approved_chain_order: input.approved_chain_order, backend_chain_only: true };
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'scheduled_incremental_morning_full_run_queued', 'Scheduled Incremental Morning Full Run parent backend chain job queued', ?, CURRENT_TIMESTAMP)",
+    requestId, WORKER_NAME, "incremental-morning-full-run", JSON.stringify(payload)
+  );
+  return payload;
+}
+
 const INCREMENTAL_MORNING_FULL_RUN_STAGES = [
   { stage_key: "hitter_game_logs_delta", job_key: "base-hitter-game-logs", worker_name: "alphadog-v2-base-hitter-game-logs", display_name: "Hitter Game Logs Delta", visible_button: "DELTA > Hitter Game Logs", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_game_logs_delta", job_key: "base-pitcher-game-logs", worker_name: "alphadog-v2-base-pitcher-game-logs", display_name: "Pitcher Game Logs Delta", visible_button: "DELTA > Pitcher Game Logs", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
@@ -4121,6 +4288,7 @@ export default {
     const cronExpression = event && event.cron ? String(event.cron) : "unknown";
     ctx.waitUntil((async () => {
       await enqueueStaticPlayersWeeklyIfDue(env, cronExpression);
+      await enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpression);
       await pump(env, `cron:${cronExpression}`, 10, 1, 65000, ctx, "https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev/scheduled", 0, 12);
     })());
   }

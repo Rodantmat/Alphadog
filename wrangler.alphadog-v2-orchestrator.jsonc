@@ -26,7 +26,7 @@
     "GITHUB_OWNER": "Rodantmat",
     "GITHUB_REPO": "Alphadog",
     "GITHUB_BRANCH": "main",
-    "GITHUB_PRIZEPICKS_PATH": "SET_THIS_TO_PRIZEPICKS_OUTPUT_PATH",
+    "GITHUB_PRIZEPICKS_PATH": "prizepicks_mlb_current.json",
     "MAX_TICK_MS": "20000",
     "MAX_API_CALLS_PER_TICK": "20",
     "MAX_ROWS_PER_TICK": "250",
@@ -102,6 +102,8 @@
   "triggers": {
     "crons": [
       "*/5 * * * *",
+      "0 8 * * *",
+      "0 9 * * *",
       "15 4 * * *",
       "45 8 * * *",
       "0 12 * * *",
