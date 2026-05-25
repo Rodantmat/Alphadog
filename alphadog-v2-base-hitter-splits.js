@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-splits";
-const VERSION = "alphadog-v2-base-hitter-splits-v0.4.3-pitcher-parity-delta-cursor-rescue";
+const VERSION = "alphadog-v2-base-hitter-splits-v0.4.4-incomplete-daily-refresh-resume";
 const JOB_KEY = "base-hitter-splits";
 
 const SOURCE_SEASON = 2026;
@@ -1370,6 +1370,65 @@ async function refreshDailyAffectedHitterSplits(env, baseBatch, input, liveCheck
   return { ok: true, data_ok: dataOk, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: remaining > 0 ? 'PARTIAL_CONTINUE_DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH' : 'COMPLETED_DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH', certification: remaining > 0 ? 'DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH_PARTIAL_CONTINUE' : 'DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH_CERTIFIED_PROMOTED_RETAINED', certification_grade: sourceErrors ? 'REVIEW' : (remaining > 0 ? 'PARTIAL' : 'DELTA_REFRESH_PASS'), source_snapshot_date_before: afterDate, latest_complete_game_date: throughDate, affected_player_count: affectedPlayers.length, cursor_offset_before: startOffset, cursor_offset_after: nextOffset, players_processed_this_tick: players.length, players_remaining: remaining, rows_read: externalCalls, rows_written: rowsStaged + rowsPromoted + 2, rows_staged: rowsStaged, rows_promoted: rowsPromoted, external_calls_performed: externalCalls, no_full_sweep: true, no_full_hitter_universe_refresh: true, continuation_required: remaining > 0, orchestrator_should_self_continue: remaining > 0, daily_affected_refresh: checks, timestamp_utc: nowUtc() };
 }
 
+
+function parseJsonObjectSafe(text) {
+  try {
+    const obj = JSON.parse(text || '{}');
+    return obj && typeof obj === 'object' ? obj : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+async function reopenIncompleteHitterDailyRefreshIfBadRescue(env, baseBatch, liveChecks, input) {
+  const mainCursor = await first(env.STATS_HITTER_DB, `SELECT * FROM hitter_split_cursor
+    WHERE cursor_key='base_hitter_splits_delta_update_cursor'
+      AND status='DELTA_HITTER_SPLITS_NOOP_CURRENT_SOURCE_SNAPSHOT'
+      AND mode='delta_noop_current_after_stale_duplicate_rescue'
+    ORDER BY datetime(updated_at) DESC LIMIT 1`);
+  if (!mainCursor) return null;
+  const cj = parseJsonObjectSafe(mainCursor.cursor_json);
+  const pendingTotal = asInt(cj.pending_players_total, 0);
+  const pendingProcessed = asInt(cj.pending_players_processed, 0);
+  const pendingOffset = asInt(cj.pending_cursor_offset, pendingProcessed);
+  const pendingThroughDate = dateOnlyUtc(cj.pending_latest_complete_game_date) || dateOnlyUtc(mainCursor.source_snapshot_date);
+  const currentCoveredDate = dateOnlyUtc(cj.current_covered_game_date) || dateOnlyUtc(liveChecks.max_source_snapshot_date) || dateOnlyUtc(mainCursor.source_snapshot_date);
+  if (!pendingThroughDate || !pendingTotal || pendingProcessed >= pendingTotal) return null;
+
+  const partialCert = await first(env.STATS_HITTER_DB, `SELECT checks_json, source_snapshot_date
+    FROM hitter_split_certifications
+    WHERE certification_status='DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH_PARTIAL_CONTINUE'
+      AND source_snapshot_date=?
+    ORDER BY datetime(created_at) DESC LIMIT 1`, pendingThroughDate);
+  const pcj = parseJsonObjectSafe(partialCert && partialCert.checks_json);
+  const sourceBefore = dateOnlyUtc(pcj.source_snapshot_date_before) || dateOnlyUtc(pcj.min_source_snapshot_date_after) || dateOnlyUtc(baseBatch.source_snapshot_date) || dateOnlyUtc(liveChecks.min_source_snapshot_date);
+  if (!sourceBefore || pendingThroughDate <= sourceBefore) return null;
+
+  const runId = input.run_id || rid('run_delta_hitter_splits_reopen_incomplete_daily_refresh');
+  const reopenChecks = {
+    locked_base_batch_id: baseBatch.batch_id,
+    reopened_incomplete_daily_refresh_after_bad_stale_rescue_v0_4_4: true,
+    bad_rescue_cursor_status: mainCursor.status,
+    bad_rescue_cursor_mode: mainCursor.mode,
+    source_snapshot_date_before: sourceBefore,
+    latest_complete_game_date: pendingThroughDate,
+    current_covered_game_date: currentCoveredDate,
+    pending_players_total: pendingTotal,
+    pending_players_processed: pendingProcessed,
+    resume_cursor_offset: pendingOffset,
+    no_full_sweep: true,
+    no_full_hitter_universe_refresh: true,
+    no_live_mutation: true,
+    no_mlb_calls_in_reopen_step: true
+  };
+
+  await run(env.STATS_HITTER_DB, `INSERT OR REPLACE INTO hitter_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
+    VALUES ('base_hitter_splits_daily_affected_refresh_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, baseBatch.batch_id, runId, 'delta_daily_affected_player_refresh', 'PARTIAL_CONTINUE_DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH', SOURCE_SEASON, pendingThroughDate, null, pendingOffset, pendingTotal, pendingProcessed, pendingProcessed, new Date(Date.now()+1000).toISOString(), null, safeJson(reopenChecks));
+  await run(env.STATS_HITTER_DB, `INSERT INTO hitter_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('hitter_splits_reopen_incomplete_daily_refresh_cert'), baseBatch.batch_id, runId, 'delta_daily_affected_player_refresh_reopen', 'DELTA_HITTER_SPLITS_INCOMPLETE_DAILY_REFRESH_REOPENED', 'DELTA_REOPEN_PASS', safeJson(reopenChecks), 0, 0, liveChecks.duplicate_live_keys, asInt(baseBatch.source_no_data_count,0), 0, pendingThroughDate);
+  return { latest_complete_game_date: pendingThroughDate, checks: reopenChecks };
+}
+
 async function runDeltaUpdate(env, input) {
   const schema = await ensureSchema(env);
   const baseBatch = await getLatestCompletedBaseBatch(env);
@@ -1377,12 +1436,18 @@ async function runDeltaUpdate(env, input) {
   const liveChecks = await hitterCurrentLiveIntegrity(env, baseBatch.batch_id);
   const expectedRows = asInt(baseBatch.rows_promoted, 0);
   const baseComplete = liveChecks.live_rows >= expectedRows && liveChecks.distinct_live_keys === liveChecks.live_rows && liveChecks.duplicate_live_keys === 0 && liveChecks.invalid_split_code === 0 && liveChecks.missing_raw_json === 0 && liveChecks.missing_source_snapshot_date === 0;
+  const reopenedIncompleteDailyRefresh = await reopenIncompleteHitterDailyRefreshIfBadRescue(env, baseBatch, liveChecks, input);
+  if (reopenedIncompleteDailyRefresh) return await refreshDailyAffectedHitterSplits(env, baseBatch, input, liveChecks, reopenedIncompleteDailyRefresh.latest_complete_game_date);
   const pendingDailyCursor = await first(env.STATS_HITTER_DB, "SELECT * FROM hitter_split_cursor WHERE cursor_key='base_hitter_splits_daily_affected_refresh_cursor' AND status='PARTIAL_CONTINUE_DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH' ORDER BY datetime(updated_at) DESC LIMIT 1");
   if (baseComplete && pendingDailyCursor) {
     let cj = {}; try { cj = JSON.parse(pendingDailyCursor.cursor_json || '{}'); } catch (_) { cj = {}; }
     const pendingThroughDate = dateOnlyUtc(cj.latest_complete_game_date) || dateOnlyUtc(cj.daily_affected_refresh && cj.daily_affected_refresh.latest_complete_game_date) || dateOnlyUtc(pendingDailyCursor.source_snapshot_date);
     const currentCoveredDate = dateOnlyUtc(liveChecks.max_source_snapshot_date) || dateOnlyUtc(baseBatch.source_snapshot_date);
-    if (pendingThroughDate && currentCoveredDate && currentCoveredDate >= pendingThroughDate && liveChecks.duplicate_live_keys === 0 && liveChecks.invalid_split_code === 0 && liveChecks.missing_raw_json === 0) {
+    const pendingTotal = asInt(pendingDailyCursor.players_total, 0);
+    const pendingProcessed = asInt(pendingDailyCursor.players_processed, 0);
+    const pendingOffset = asInt(pendingDailyCursor.current_player_offset, 0);
+    const pendingDailyRefreshComplete = pendingTotal > 0 && pendingProcessed >= pendingTotal && pendingOffset >= pendingTotal;
+    if (pendingDailyRefreshComplete && pendingThroughDate && currentCoveredDate && currentCoveredDate >= pendingThroughDate && liveChecks.duplicate_live_keys === 0 && liveChecks.invalid_split_code === 0 && liveChecks.missing_raw_json === 0) {
       const runId = input.run_id || rid('run_delta_hitter_splits_stale_duplicate_current_rescue');
       const rescueChecks = {
         locked_base_batch_id: baseBatch.batch_id,
