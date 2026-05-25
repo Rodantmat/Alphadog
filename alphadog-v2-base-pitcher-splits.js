@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.4-final-date-discovery-continuation-fix";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.5-cap-helper-hotfix";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
@@ -25,6 +25,7 @@ function asInt(v, fallback = 0) { const n = Number(v); return Number.isFinite(n)
 function safeJson(v) { try { return JSON.stringify(v ?? null); } catch (_) { return JSON.stringify({ stringify_error: true }); } }
 function oneLine(v, max = 900) { return String(v ?? "").replace(/\s+/g, " ").slice(0, max); }
 function capChunk(n) { return Math.max(1, Math.min(MAX_CHUNK_SIZE, asInt(n, DEFAULT_CHUNK_SIZE))); }
+function clampInt(v, min, max) { return Math.max(min, Math.min(max, asInt(v, min))); }
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -1165,7 +1166,7 @@ async function refreshDailyAffectedPitcherSplits(env, baseBatch, input, liveChec
   if (!affectedPlayers.length) {
     return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "DELTA_PITCHER_SPLITS_DAILY_REFRESH_BLOCKED_NO_AFFECTED_PLAYERS", certification: "DELTA_PITCHER_SPLITS_DAILY_REFRESH_BLOCKED_NO_AFFECTED_PLAYERS", certification_grade: "BLOCKED", covered_game_date_before: afterDate, latest_complete_game_date: throughDate, rows_read: 0, rows_written: 1, rows_staged: 0, rows_promoted: 0, external_calls_performed: 0, no_full_sweep: true, continuation_required: false, orchestrator_should_self_continue: false, note: "New finalized date exists, but pitcher_game_logs has no affected pitcher rows for that date. Run Pitcher Game Logs delta first, then Pitcher Splits delta." };
   }
-  const startOffset = cursor && cursor.batch_id === baseBatch.batch_id ? cap(cursor.current_player_offset, 0, affectedPlayers.length) : 0;
+  const startOffset = cursor && cursor.batch_id === baseBatch.batch_id ? clampInt(cursor.current_player_offset, 0, affectedPlayers.length) : 0;
   const chunkSize = capChunk((input.input_json && input.input_json.chunk_size) || DEFAULT_CHUNK_SIZE);
   const players = affectedPlayers.slice(startOffset, startOffset + chunkSize);
   let rowsStaged = 0, rowsPromoted = 0, externalCalls = 0, sourceErrors = 0, noData = 0;
