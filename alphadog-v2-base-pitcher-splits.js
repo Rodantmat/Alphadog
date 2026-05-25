@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.5-cap-helper-hotfix";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.6-final-date-discovery-cursor-fix";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
@@ -1071,16 +1071,18 @@ function scheduleDateHasUnfinishedDataGames(games) {
     const status = game && game.status ? game.status : {};
     const combinedStatusText = `${String(status.detailedState || "")} ${String(status.abstractGameState || "")} ${String(status.codedGameState || "")}`;
     if (isFinalMlbGame(game)) continue;
-    // Non-data rows like postponed/canceled do not block the date. Real scheduled,
-    // live, delayed, or suspended data games do block date coverage so late-final
-    // games are not skipped.
-    if (isNonCompletedMlbGameStatusText(combinedStatusText)) {
-      const s = combinedStatusText.toLowerCase();
-      if (s.includes("postponed") || s.includes("cancelled") || s.includes("canceled")) continue;
-    }
+    if (isNonDataScheduleGame(game)) continue;
     return true;
   }
   return false;
+}
+function isNonDataScheduleGame(game) {
+  const status = game && game.status ? game.status : {};
+  const text = `${String(status.detailedState || "")} ${String(status.abstractGameState || "")} ${String(status.codedGameState || "")}`.toLowerCase();
+  return text.includes("postponed") || text.includes("cancelled") || text.includes("canceled");
+}
+function scheduleDateOfGame(game, fallbackDate = null) {
+  return dateOnlyUtc(game && (game.officialDate || game.gameDate)) || dateOnlyUtc(fallbackDate);
 }
 async function fetchLatestCompleteGameDate(env, startDate) {
   const start = dateOnlyUtc(startDate) || todayUtc();
@@ -1093,15 +1095,28 @@ async function fetchLatestCompleteGameDate(env, startDate) {
     const body = JSON.parse(fetched.text || "{}");
     let latest = null;
     const dateAudits = [];
+    const seen = new Set();
     for (const d of (Array.isArray(body.dates) ? body.dates : [])) {
       const dateStr = dateOnlyUtc(d && d.date);
       const games = Array.isArray(d && d.games) ? d.games : [];
       if (!dateStr || !games.length) continue;
       const regularGames = games.filter(g => String(g && g.gameType || "") === "R");
-      const finalGames = regularGames.filter(isFinalMlbGame);
-      const unfinishedDataGameBlocksDate = scheduleDateHasUnfinishedDataGames(regularGames);
-      dateAudits.push({ date: dateStr, regular_games: regularGames.length, final_games: finalGames.length, unfinished_data_game_blocks_date: unfinishedDataGameBlocksDate });
-      if (finalGames.length && !unfinishedDataGameBlocksDate && (!latest || dateStr > latest)) latest = dateStr;
+      const finalGames = [];
+      let nonDataGames = 0;
+      let unfinishedDataGames = 0;
+      for (const game of regularGames) {
+        const pk = String(game && game.gamePk || "");
+        if (pk && seen.has(pk)) continue;
+        if (pk) seen.add(pk);
+        if (isFinalMlbGame(game)) finalGames.push(game);
+        else if (isNonDataScheduleGame(game)) nonDataGames++;
+        else unfinishedDataGames++;
+      }
+      dateAudits.push({ date: dateStr, regular_games: regularGames.length, final_games: finalGames.length, non_data_games: nonDataGames, unfinished_data_games: unfinishedDataGames, final_date_discovery_v0_5_6: true });
+      // Mirror the proven granular final-game workers: a date is actionable when
+      // it has completed regular-season games. Postponed/canceled rows are non-data
+      // rows, and incomplete games must not erase completed final-game evidence.
+      if (finalGames.length && (!latest || dateStr > latest)) latest = dateStr;
     }
     if (!latest) return { ok: false, endpoint, error: "NO_COMPLETE_FINAL_MLB_GAME_DATE_IN_RANGE", today_utc: today, date_audits: dateAudits.slice(-5) };
     return { ok: true, endpoint, latest_complete_game_date: latest, today_utc: today, date_audits: dateAudits.slice(-5) };
@@ -1116,13 +1131,118 @@ async function inferPitcherSplitsCoveredGameDate(env, liveChecks, baseBatch) {
     WHERE game_date IS NOT NULL AND game_date <= ?`, maxSnapshot);
   return dateOnlyUtc(row && row.max_game_date) || addDays(maxSnapshot, -1);
 }
+function mergeAffectedPitcherMaps(baseMap, player) {
+  const id = asInt(player && player.player_id, 0);
+  if (!id) return;
+  const existing = baseMap.get(id) || { player_id: id, player_name: null, first_game_date: null, last_game_date: null, game_pks: new Set(), source_paths: new Set() };
+  existing.player_name = existing.player_name || player.player_name || null;
+  const first = dateOnlyUtc(player.first_game_date);
+  const last = dateOnlyUtc(player.last_game_date);
+  if (first && (!existing.first_game_date || first < existing.first_game_date)) existing.first_game_date = first;
+  if (last && (!existing.last_game_date || last > existing.last_game_date)) existing.last_game_date = last;
+  if (player.game_pk) existing.game_pks.add(String(player.game_pk));
+  if (player.source_path) existing.source_paths.add(String(player.source_path));
+  baseMap.set(id, existing);
+}
+function collectPitchersFromBoxscorePayload(payload, game, gameDate) {
+  const out = [];
+  const teams = payload && payload.teams ? payload.teams : {};
+  for (const side of ["away", "home"]) {
+    const players = teams && teams[side] && teams[side].players ? teams[side].players : {};
+    for (const value of Object.values(players)) {
+      const person = value && value.person ? value.person : {};
+      const stats = value && value.stats && value.stats.pitching ? value.stats.pitching : null;
+      const playerId = asInt(person.id, 0);
+      if (!playerId || !stats) continue;
+      const gamesPitched = asInt(stats.gamesPitched, 0);
+      const gamesStarted = asInt(stats.gamesStarted, 0);
+      const innings = String(stats.inningsPitched || "");
+      const battersFaced = asInt(stats.battersFaced, 0);
+      const pitches = asInt(stats.pitchesThrown || stats.numberOfPitches || 0);
+      // Require source evidence of a pitching appearance. This keeps the affected
+      // refresh incremental and avoids pulling the full pitcher universe.
+      if (!gamesPitched && !gamesStarted && !innings && !battersFaced && !pitches) continue;
+      out.push({
+        player_id: playerId,
+        player_name: person.fullName || person.full_name || null,
+        first_game_date: gameDate,
+        last_game_date: gameDate,
+        game_pk: game && game.gamePk,
+        source_path: `schedule_boxscore.${side}.players.${playerId}.stats.pitching`
+      });
+    }
+  }
+  return out;
+}
+async function readAffectedPitcherSplitPlayersFromFinalBoxscores(env, afterDate, throughDate) {
+  const start = addDays(afterDate, 1);
+  const end = dateOnlyUtc(throughDate);
+  if (!start || !end || end < start) return [];
+  const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "");
+  const headers = { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-pitcher-splits") };
+  const scheduleEndpoint = `${base}/schedule?sportId=1&gameTypes=R&startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}`;
+  const fetched = await fetchTextWithTimeout(scheduleEndpoint, { method: "GET", headers }, FETCH_TIMEOUT_MS);
+  if (!fetched.ok || !fetched.resp || !fetched.resp.ok) return [];
+  let body;
+  try { body = JSON.parse(fetched.text || "{}"); } catch (_) { return []; }
+  const map = new Map();
+  const seenGames = new Set();
+  for (const d of (Array.isArray(body.dates) ? body.dates : [])) {
+    for (const game of (Array.isArray(d && d.games) ? d.games : [])) {
+      const gameDate = scheduleDateOfGame(game, d && d.date);
+      const pk = String(game && game.gamePk || "");
+      if (!pk || seenGames.has(pk)) continue;
+      if (String(game && game.gameType || "") !== "R") continue;
+      if (!gameDate || gameDate <= afterDate || gameDate > end) continue;
+      if (!isFinalMlbGame(game)) continue;
+      seenGames.add(pk);
+      const boxEndpoint = `${base}/game/${encodeURIComponent(pk)}/boxscore`;
+      const boxFetched = await fetchTextWithTimeout(boxEndpoint, { method: "GET", headers }, FETCH_TIMEOUT_MS);
+      if (!boxFetched.ok || !boxFetched.resp || !boxFetched.resp.ok) continue;
+      let boxPayload;
+      try { boxPayload = JSON.parse(boxFetched.text || "{}"); } catch (_) { continue; }
+      for (const p of collectPitchersFromBoxscorePayload(boxPayload, game, gameDate)) mergeAffectedPitcherMaps(map, p);
+    }
+  }
+  return Array.from(map.values()).map((p, idx) => ({
+    player_id: p.player_id,
+    player_name: p.player_name,
+    first_game_date: p.first_game_date,
+    last_game_date: p.last_game_date,
+    games: p.game_pks.size,
+    cursor_offset: idx,
+    source_path_count: p.source_paths.size,
+    affected_source: "mlb_schedule_boxscore_final_games_v0_5_6"
+  })).sort((a, b) => a.player_id - b.player_id).map((p, idx) => ({ ...p, cursor_offset: idx }));
+}
 async function readAffectedPitcherSplitPlayers(env, afterDate, throughDate) {
   const rows = await all(env.STATS_PITCHER_DB, `SELECT player_id, MIN(player_name) AS player_name, MIN(game_date) AS first_game_date, MAX(game_date) AS last_game_date, COUNT(DISTINCT game_pk) AS games
     FROM pitcher_game_logs
     WHERE game_date > ? AND game_date <= ? AND player_id IS NOT NULL
     GROUP BY player_id
     ORDER BY player_id`, afterDate, throughDate);
-  return rows.map((r, idx) => ({ player_id: asInt(r.player_id, 0), player_name: r.player_name || null, first_game_date: r.first_game_date, last_game_date: r.last_game_date, games: asInt(r.games, 0), cursor_offset: idx })).filter(p => p.player_id);
+  const map = new Map();
+  for (const r of rows) {
+    mergeAffectedPitcherMaps(map, { player_id: asInt(r.player_id, 0), player_name: r.player_name || null, first_game_date: r.first_game_date, last_game_date: r.last_game_date, game_pk: null, source_path: "STATS_PITCHER_DB.pitcher_game_logs" });
+    const id = asInt(r.player_id, 0);
+    const existing = map.get(id);
+    if (existing) existing.games_from_pitcher_game_logs = asInt(r.games, 0);
+  }
+  const maxDbDate = Array.from(map.values()).reduce((mx, p) => p.last_game_date && (!mx || p.last_game_date > mx) ? p.last_game_date : mx, null);
+  if (!maxDbDate || maxDbDate < throughDate) {
+    const fallbackAfter = maxDbDate && maxDbDate > afterDate ? maxDbDate : afterDate;
+    const boxscorePlayers = await readAffectedPitcherSplitPlayersFromFinalBoxscores(env, fallbackAfter, throughDate);
+    for (const p of boxscorePlayers) mergeAffectedPitcherMaps(map, p);
+  }
+  return Array.from(map.values()).filter(p => p.player_id).sort((a, b) => a.player_id - b.player_id).map((p, idx) => ({
+    player_id: p.player_id,
+    player_name: p.player_name || null,
+    first_game_date: p.first_game_date,
+    last_game_date: p.last_game_date,
+    games: p.game_pks.size || p.games_from_pitcher_game_logs || 0,
+    cursor_offset: idx,
+    affected_source: p.source_paths && p.source_paths.size ? Array.from(p.source_paths).slice(0, 3).join(",") : "STATS_PITCHER_DB.pitcher_game_logs"
+  }));
 }
 async function refreshOneAffectedPitcherSplitPlayer(env, player, baseBatch, runId, sourceSnapshotDate) {
   const endpoint = endpointFor(env, player.player_id, SOURCE_SEASON);
@@ -1188,6 +1308,11 @@ async function refreshDailyAffectedPitcherSplits(env, baseBatch, input, liveChec
     VALUES ('base_pitcher_splits_daily_affected_refresh_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, baseBatch.batch_id, runId, 'delta_daily_affected_pitcher_refresh', remaining > 0 ? 'PARTIAL_CONTINUE_DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH' : 'COMPLETED_DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH', SOURCE_SEASON, throughDate, players.length ? players[players.length - 1].player_id : null, nextOffset, affectedPlayers.length, nextOffset, nextOffset, remaining > 0 ? new Date(Date.now()+1000).toISOString() : null, sourceErrors ? 'SOURCE_ERRORS_IN_TICK' : null, safeJson(checks));
   await run(env.STATS_PITCHER_DB, `INSERT INTO pitcher_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('pitcher_splits_daily_affected_refresh_cert'), baseBatch.batch_id, runId, 'delta_daily_affected_pitcher_refresh', remaining > 0 ? 'DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH_PARTIAL_CONTINUE' : 'DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH_CERTIFIED_PROMOTED_RETAINED', sourceErrors ? 'REVIEW' : (remaining > 0 ? 'PARTIAL' : 'DELTA_REFRESH_PASS'), safeJson(checks), rowsStaged, rowsPromoted, liveAfter.duplicate_live_keys, noData, sourceErrors, throughDate);
+  if (remaining === 0) {
+    const mainCursorChecks = { ...checks, covered_game_date: throughDate, completion_cursor_write_v0_5_6: true, no_full_sweep: true, no_full_pitcher_universe_refresh: true };
+    await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
+      VALUES ('base_pitcher_splits_delta_update_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, baseBatch.batch_id, runId, 'delta_daily_affected_pitcher_refresh', 'COMPLETED_DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH', SOURCE_SEASON, throughDate, players.length ? players[players.length - 1].player_id : null, nextOffset, liveAfter.live_rows, liveAfter.live_rows, nextOffset, null, sourceErrors ? 'SOURCE_ERRORS_IN_TICK' : null, safeJson(mainCursorChecks));
+  }
   const dataOk = sourceErrors === 0 && liveAfter.duplicate_live_keys === 0 && liveAfter.invalid_split_code === 0 && liveAfter.missing_raw_json === 0;
   return { ok: true, data_ok: dataOk, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: remaining > 0 ? 'PARTIAL_CONTINUE_DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH' : 'COMPLETED_DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH', certification: remaining > 0 ? 'DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH_PARTIAL_CONTINUE' : 'DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH_CERTIFIED_PROMOTED_RETAINED', certification_grade: sourceErrors ? 'REVIEW' : (remaining > 0 ? 'PARTIAL' : 'DELTA_REFRESH_PASS'), covered_game_date_before: afterDate, latest_complete_game_date: throughDate, affected_player_count: affectedPlayers.length, cursor_offset_before: startOffset, cursor_offset_after: nextOffset, players_processed_this_tick: players.length, players_remaining: remaining, rows_read: externalCalls, rows_written: rowsStaged + rowsPromoted + 2, rows_staged: rowsStaged, rows_promoted: rowsPromoted, external_calls_performed: externalCalls, no_full_sweep: true, no_full_pitcher_universe_refresh: true, continuation_required: remaining > 0, orchestrator_should_self_continue: remaining > 0, daily_affected_refresh: checks, timestamp_utc: nowUtc() };
 }
