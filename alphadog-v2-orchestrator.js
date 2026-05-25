@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.88-hitter-splits-running-rescue-parity";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.89-hitter-splits-stale-lock-progress-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -98,13 +98,26 @@ async function logsPayload(env) {
 
 async function acquireLock(env, owner) {
   await ensureRows(env);
-  const lock = await first(env.CONTROL_DB, "SELECT lock_key, lock_flag, owner_request_id, owner_worker_name, acquired_at, expires_at, updated_at, CASE WHEN expires_at IS NOT NULL AND datetime(expires_at) > datetime('now') THEN 1 ELSE 0 END AS not_expired FROM control_locks WHERE lock_key='GLOBAL_ORCHESTRATOR'");
+  let lock = await first(env.CONTROL_DB, "SELECT lock_key, lock_flag, owner_request_id, owner_worker_name, acquired_at, expires_at, updated_at, CASE WHEN expires_at IS NOT NULL AND datetime(expires_at) > datetime('now') THEN 1 ELSE 0 END AS not_expired, CAST((julianday(CURRENT_TIMESTAMP)-julianday(COALESCE(acquired_at, updated_at, CURRENT_TIMESTAMP)))*86400 AS INTEGER) AS lock_age_seconds FROM control_locks WHERE lock_key='GLOBAL_ORCHESTRATOR'");
   if (lock && Number(lock.lock_flag) === 1 && Number(lock.not_expired) === 1) {
-    return { ok: false, reason: "lock_busy", lock };
+    const hitterRow = await first(env.CONTROL_DB, "SELECT request_id, status, updated_at, CAST((julianday(CURRENT_TIMESTAMP)-julianday(updated_at))*86400 AS INTEGER) AS row_idle_seconds FROM control_job_queue WHERE job_key='base-hitter-splits' AND worker_name='alphadog-v2-base-hitter-splits' AND status IN ('running','pending','partial_continue') AND finished_at IS NULL ORDER BY datetime(updated_at) ASC LIMIT 1");
+    const staleHitterContinuationLock = hitterRow && Number(lock.lock_age_seconds || 0) >= 90 && Number(hitterRow.row_idle_seconds || 0) >= 60;
+    if (staleHitterContinuationLock) {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'orchestrator', 'INFO', 'orchestrator_stale_hitter_splits_lock_released', 'Released stale GLOBAL_ORCHESTRATOR lock blocking Hitter Splits continuation', ?, CURRENT_TIMESTAMP)",
+        hitterRow.request_id, WORKER_NAME, JSON.stringify({ owner, stale_owner_request_id: lock.owner_request_id, lock_age_seconds: lock.lock_age_seconds, row_idle_seconds: hitterRow.row_idle_seconds, hitter_splits_stale_lock_progress_rescue_v0_2_89: true })
+      );
+      await run(env.CONTROL_DB,
+        "UPDATE control_locks SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE lock_key='GLOBAL_ORCHESTRATOR'"
+      );
+      lock = null;
+    } else {
+      return { ok: false, reason: "lock_busy", lock };
+    }
   }
 
   await run(env.CONTROL_DB,
-    "UPDATE control_locks SET lock_flag=1, owner_request_id=?, owner_worker_name=?, acquired_at=CURRENT_TIMESTAMP, expires_at=datetime('now','+5 minutes'), updated_at=CURRENT_TIMESTAMP WHERE lock_key='GLOBAL_ORCHESTRATOR'",
+    "UPDATE control_locks SET lock_flag=1, owner_request_id=?, owner_worker_name=?, acquired_at=CURRENT_TIMESTAMP, expires_at=datetime('now','+2 minutes'), updated_at=CURRENT_TIMESTAMP WHERE lock_key='GLOBAL_ORCHESTRATOR'",
     owner, WORKER_NAME
   );
 
@@ -1396,7 +1409,7 @@ async function processBaseHitterSplitsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_hitter_splits_v0_4_3_pitcher_parity_delta_dispatch: true,
+      base_hitter_splits_v0_4_6_pitcher_parity_chunk_progress_dispatch: true,
       delta_hitter_splits_noop_restore_scoped_repair_daily_affected_refresh_gate: isDeltaHitterSplits,
       certified_stage_promotion_v0_3_0: !isDeltaHitterSplits,
       locked_endpoint_sitcodes_vl_vr: true,
@@ -3127,7 +3140,7 @@ async function processOneUnlocked(env, trigger) {
     if (row) {
       await run(env.CONTROL_DB,
         "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'base_hitter_splits_running_partial_rescued_as_due', 'Recovered running Hitter Splits partial-continue row as due work for backend continuation', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, hitter_splits_running_rescue_parity_v0_2_88: true })
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, hitter_splits_running_rescue_parity_v0_2_88: true, hitter_splits_stale_lock_progress_rescue_v0_2_89: true })
       );
     }
   }

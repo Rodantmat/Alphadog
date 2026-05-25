@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-splits";
-const VERSION = "alphadog-v2-base-hitter-splits-v0.4.5-daily-refresh-reopen-loop-fix";
+const VERSION = "alphadog-v2-base-hitter-splits-v0.4.6-pitcher-parity-chunk-progress-fix";
 const JOB_KEY = "base-hitter-splits";
 
 const SOURCE_SEASON = 2026;
@@ -18,8 +18,8 @@ const CERTIFIED_STAGE_STATUS = "BASE_BACKFILL_STAGE_ONLY_COMPLETED_NO_PROMOTION"
 const CERTIFIED_STAGE_CERTIFICATION = "BASE_HITTER_SPLITS_BASE_BACKFILL_STAGE_ONLY_CERTIFIED_NO_PROMOTION";
 const DEFAULT_SAMPLE_SIZE = 3;
 const MAX_SAMPLE_SIZE = 5;
-const DEFAULT_STAGE_CHUNK_SIZE = 8;
-const MAX_STAGE_CHUNK_SIZE = 12;
+const DEFAULT_STAGE_CHUNK_SIZE = 20;
+const MAX_STAGE_CHUNK_SIZE = 20;
 const FETCH_TIMEOUT_MS = 7000;
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB"];
@@ -1339,7 +1339,11 @@ async function refreshDailyAffectedHitterSplits(env, baseBatch, input, liveCheck
   if (!affectedPlayers.length) {
     return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "DELTA_HITTER_SPLITS_DAILY_REFRESH_BLOCKED_NO_AFFECTED_PLAYERS", certification: "DELTA_HITTER_SPLITS_DAILY_REFRESH_BLOCKED_NO_AFFECTED_PLAYERS", certification_grade: "BLOCKED", source_snapshot_date_before: afterDate, latest_complete_game_date: throughDate, rows_read: 0, rows_written: 1, rows_staged: 0, rows_promoted: 0, external_calls_performed: 0, no_full_sweep: true, continuation_required: false, orchestrator_should_self_continue: false, note: "New finalized date exists, but hitter_game_logs has no affected hitter rows for that date. Run Hitter Game Logs delta first, then Hitter Splits delta." };
   }
-  const startOffset = cursor && cursor.batch_id === baseBatch.batch_id ? cap(cursor.current_player_offset, 0, affectedPlayers.length) : 0;
+  const startOffset = cursor && cursor.batch_id === baseBatch.batch_id ? cap(Math.max(
+    asInt(cursor.current_player_offset, 0),
+    asInt(cursor.players_processed, 0),
+    asInt(cursor.requests_done, 0)
+  ), 0, affectedPlayers.length) : 0;
   const chunkSize = cap((input.input_json && input.input_json.chunk_size) || DEFAULT_STAGE_CHUNK_SIZE, 1, MAX_STAGE_CHUNK_SIZE);
   const players = affectedPlayers.slice(startOffset, startOffset + chunkSize);
   let rowsStaged = 0, rowsPromoted = 0, externalCalls = 0, sourceErrors = 0, noData = 0;
