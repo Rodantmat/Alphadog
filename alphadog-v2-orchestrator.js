@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.79-pitcher-game-logs-stale-running-recovery";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.80-team-delta-mode-contract-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1952,6 +1952,16 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const rawRequestedMode = String(rowInput.mode || "base_backfill");
+  const normalizedWorkerMode = rawRequestedMode === "delta_retained_stage_restore_before_queue" ? "delta_update" : rawRequestedMode;
+  const normalizedInputJson = {
+    ...rowInput,
+    mode: normalizedWorkerMode,
+    raw_requested_mode: rawRequestedMode,
+    normalized_worker_mode: normalizedWorkerMode,
+    requested_preflight_behavior: rowInput.requested_preflight_behavior || (rawRequestedMode === "delta_retained_stage_restore_before_queue" ? "delta_retained_stage_restore_before_queue" : rowInput.requested_preflight_behavior),
+    team_delta_mode_normalization_v0_2_80: rawRequestedMode === "delta_retained_stage_restore_before_queue"
+  };
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -1959,7 +1969,7 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
     worker_name: row.worker_name,
     trigger,
     mode: "orchestrator_exact_base_team_game_logs_dispatch",
-    input_json: { ...rowInput, mode: rowInput.mode || "base_backfill" }
+    input_json: normalizedInputJson
   };
 
   const started = Date.now();
@@ -2018,9 +2028,14 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
       manual_wake_testing_only: true,
       no_browser_pump: true,
       no_generic_dispatch: true,
-      base_backfill_allowed: rowInput.mode === "base_backfill",
-      delta_update_allowed: rowInput.mode === "delta_update",
-      no_delta_update_execution: rowInput.mode !== "delta_update",
+      base_backfill_allowed: normalizedWorkerMode === "base_backfill",
+      delta_update_allowed: normalizedWorkerMode === "delta_update",
+      no_delta_update_execution: normalizedWorkerMode !== "delta_update",
+      raw_requested_mode: rawRequestedMode,
+      normalized_worker_mode: normalizedWorkerMode,
+      requested_preflight_behavior: normalizedInputJson.requested_preflight_behavior || null,
+      team_delta_mode_normalization_v0_2_80: rawRequestedMode === "delta_retained_stage_restore_before_queue",
+      legacy_preflight_mode_normalized: rawRequestedMode === "delta_retained_stage_restore_before_queue",
       no_hitter_mutation: true,
       no_pitcher_mutation: true,
       no_splits_mutation: true,
@@ -2051,7 +2066,7 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_team_game_logs_dispatch_completed', 'Orchestrator completed exact base-team-game-logs v0.3.1 dynamic base/delta dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, rows_promoted: output && output.rows_promoted ? output.rows_promoted : 0, external_calls: externalCalls, mode: rowInput.mode || "base_backfill", base_backfill: rowInput.mode === "base_backfill", delta_update: rowInput.mode === "delta_update", partial_continue: partialContinue })
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, rows_promoted: output && output.rows_promoted ? output.rows_promoted : 0, external_calls: externalCalls, raw_requested_mode: rawRequestedMode, normalized_worker_mode: normalizedWorkerMode, requested_preflight_behavior: normalizedInputJson.requested_preflight_behavior || null, team_delta_mode_normalization_v0_2_80: rawRequestedMode === "delta_retained_stage_restore_before_queue", mode: normalizedWorkerMode, base_backfill: normalizedWorkerMode === "base_backfill", delta_update: normalizedWorkerMode === "delta_update", partial_continue: partialContinue })
   );
 
   return cappedOutput;
