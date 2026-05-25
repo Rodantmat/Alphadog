@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.90-pitcher-metrics-affected-delta";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.91-pitcher-metrics-delta-route-hardening";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {

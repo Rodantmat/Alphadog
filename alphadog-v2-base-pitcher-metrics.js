@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-metrics";
-const VERSION = "alphadog-v2-base-pitcher-metrics-v0.5.0-affected-player-recalc-delta";
+const VERSION = "alphadog-v2-base-pitcher-metrics-v0.5.1-delta-route-hardening";
 const JOB_KEY = "base-pitcher-metrics";
 
 const PROFILE_ID = "pitcher_metrics_neutral_v0_3_0_base_stage";
@@ -781,8 +781,12 @@ export default {async fetch(request, env, ctx){
     const input=await readJsonSafe(request); const missingDb=REQUIRED_DB_BINDINGS.filter(name=>!env[name]);
     if(missingDb.length) return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"BLOCKED_MISSING_DB_BINDINGS",missing_db_bindings:missingDb,external_calls_performed:0,rows_written:0},500);
     try{
-      if(String(input.mode||"")==="delta_recalculate_affected_players") return jsonResponse(await runDeltaRecalculateAffectedPlayers(input,env));
-      if(String(input.mode||"")==="snapshot_delta_gate") return jsonResponse(await runSnapshotDeltaGate(input,env));
+      const requestedMode = String(input.mode || "");
+      const isDeltaPitcherMetricsButton = String(input.visible_button || "") === "DELTA > Pitcher Metrics" || String(input.request_id || "").startsWith("delta_pitcher_metrics_");
+      if (requestedMode === "delta_recalculate_affected_players" || (requestedMode === "snapshot_delta_gate" && isDeltaPitcherMetricsButton)) {
+        return jsonResponse(await runDeltaRecalculateAffectedPlayers({ ...input, mode: "delta_recalculate_affected_players", route_hardened_from_mode: requestedMode }, env));
+      }
+      if(requestedMode==="snapshot_delta_gate") return jsonResponse(await runSnapshotDeltaGate(input,env));
       if(String(input.mode||"")==="snapshot_promote_retained_stage") return jsonResponse(await runSnapshotPromoteRetainedStage(input,env));
       if(String(input.mode||"")==="snapshot_prep_stage_only") return jsonResponse(await runSnapshotPrepStageOnly(input,env));
       return jsonResponse(await runBaseRebuildStageOnly(input,env));
