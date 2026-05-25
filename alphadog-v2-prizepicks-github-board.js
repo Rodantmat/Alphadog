@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.4-stale-source-pickability-guard";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.5-source-refresh-dispatch";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
@@ -92,12 +92,12 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "READY",
     timestamp_utc: nowUtc(),
-    phase: "prizepicks_github_board_parse_stage_certify_promote_v0_1_3",
+    phase: "prizepicks_github_board_parse_stage_certify_promote_source_refresh_v0_1_5",
     notes: [
       "Reads the configured PrizePicks GitHub JSON source.",
       "Parses JSON, stages PrizePicks rows into MARKET_DB.prizepicks_board_stage, and writes a batch certification row.",
       "Promotes only certified staged rows into MARKET_DB.prizepicks_board_current and flips MARKET_DB.prizepicks_board_active_batches after inserts succeed.",
-      "No market_current_lines writes, no scoring, no ranking, no final board, no scheduling."
+      "No market_current_lines writes, no scoring, no ranking, no final board. If GitHub JSON is stale, dispatches the existing GitHub scraper workflow instead of promoting stale rows."
     ],
     binding_summary: {
       required_db_bindings_present: allTrue(db),
@@ -141,6 +141,86 @@ async function readConfigSystemSettings(env, keys) {
 function buildRawGithubUrl(owner, repo, branch, path) {
   const cleanPath = String(path || "").replace(/^\/+/, "").trim();
   return `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${cleanPath.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+function githubRepositoryDispatchUrl(owner, repo) {
+  return `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/dispatches`;
+}
+
+function safeGithubToken(env) {
+  const token = env && env.GITHUB_TOKEN ? String(env.GITHUB_TOKEN).trim() : "";
+  if (!token || token === "DISABLED" || token === "SET_ME" || token === "undefined" || token === "null") return "";
+  return token;
+}
+
+async function triggerPrizePicksSourceRefresh(env, source, input, reason) {
+  const token = safeGithubToken(env);
+  const dispatch = {
+    attempted: false,
+    ok: false,
+    provider: "github_repository_dispatch",
+    owner: source && source.owner ? source.owner : "Rodantmat",
+    repo: source && source.repo ? source.repo : "Alphadog",
+    branch: source && source.branch ? source.branch : "main",
+    event_type: "alphadog_prizepicks_board",
+    workflow_file: ".github/workflows/scrape.yml",
+    reason: String(reason || "source_stale_no_future_pickable_rows"),
+    request_id: input && input.request_id ? String(input.request_id) : null,
+    chain_id: input && input.chain_id ? String(input.chain_id) : null,
+    slate_date: input && input.slate_date ? String(input.slate_date).slice(0, 40) : currentPtDate(),
+    token_present: Boolean(token),
+    token_value_printed: false
+  };
+  if (!token) {
+    return { ...dispatch, blocked: true, error: "missing_GITHUB_TOKEN_secret_for_worker_repository_dispatch" };
+  }
+
+  const url = githubRepositoryDispatchUrl(dispatch.owner, dispatch.repo);
+  const body = {
+    event_type: dispatch.event_type,
+    client_payload: {
+      dispatch_id: dispatch.request_id || rid("pp_scrape_dispatch"),
+      request_id: dispatch.request_id || null,
+      chain_id: dispatch.chain_id || null,
+      slate_date: dispatch.slate_date,
+      source: "alphadog-v2-prizepicks-github-board",
+      source_worker_version: VERSION,
+      reason: dispatch.reason,
+      target_file: source && source.path ? source.path : "prizepicks_mlb_current.json"
+    }
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "accept": "application/vnd.github+json",
+        "authorization": `Bearer ${token}`,
+        "content-type": "application/json",
+        "user-agent": "AlphaDog-v2 PrizePicks Source Refresh Dispatcher",
+        "x-github-api-version": "2022-11-28"
+      },
+      body: JSON.stringify(body)
+    });
+    const text = await res.text();
+    return {
+      ...dispatch,
+      attempted: true,
+      ok: res.status === 204,
+      http_status: res.status,
+      response_preview: res.status === 204 ? "" : safeString(text, 700),
+      note: res.status === 204
+        ? "GitHub scrape workflow dispatch accepted. Run BOARD > PrizePicks again after the GitHub MLB Automatic Scraper workflow commits a fresh prizepicks_mlb_current.json."
+        : "GitHub repository_dispatch failed; inspect token permissions and workflow availability."
+    };
+  } catch (err) {
+    return {
+      ...dispatch,
+      attempted: true,
+      ok: false,
+      error: safeString(err && err.message ? err.message : err, 700)
+    };
+  }
 }
 
 async function githubSourceConfig(env) {
@@ -847,6 +927,10 @@ async function runBoardParseStageCertify(env, input = {}) {
   }
 
   const sourceStaleHandled = Boolean(promotion && promotion.source_stale_no_future_pickable);
+  let sourceRefreshDispatch = null;
+  if (sourceStaleHandled) {
+    sourceRefreshDispatch = await triggerPrizePicksSourceRefresh(env, source, input, SOURCE_STALE_CERT);
+  }
   const finalPassed = cert.passed && promotion.promoted;
   const finalHandled = finalPassed || sourceStaleHandled;
   const finalCertification = finalPassed ? PROMOTION_CERT_PASS : (sourceStaleHandled ? SOURCE_STALE_CERT : (cert.passed ? PROMOTION_CERT_FAIL : cert.certification_status));
@@ -910,6 +994,7 @@ async function runBoardParseStageCertify(env, input = {}) {
     batch: { batch_id: batchId, certification_status: finalCertification, certification_checks: cert.checks, failed_checks: cert.failed_checks },
     board_timing: boardTiming,
     promotion,
+    source_refresh_dispatch: sourceRefreshDispatch,
     writes: { raw_snapshot: rawWrite, batch_pending: batchPending, stage: stageWrite, batch_finalize: batchFinalize, promotion, source_health: healthWrite },
     lifecycle_locked: {
       fetch_parse_stage_certify_promote_complete: finalPassed,
