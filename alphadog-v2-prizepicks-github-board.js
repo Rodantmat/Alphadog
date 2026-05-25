@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.5-source-refresh-dispatch";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.6-github-sha-fetch-consumer-only";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
@@ -92,7 +92,7 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "READY",
     timestamp_utc: nowUtc(),
-    phase: "prizepicks_github_board_parse_stage_certify_promote_source_refresh_v0_1_5",
+    phase: "prizepicks_github_board_parse_stage_certify_promote_sha_fetch_v0_1_6",
     notes: [
       "Reads the configured PrizePicks GitHub JSON source.",
       "Parses JSON, stages PrizePicks rows into MARKET_DB.prizepicks_board_stage, and writes a batch certification row.",
@@ -141,6 +141,28 @@ async function readConfigSystemSettings(env, keys) {
 function buildRawGithubUrl(owner, repo, branch, path) {
   const cleanPath = String(path || "").replace(/^\/+/, "").trim();
   return `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${cleanPath.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+function buildGithubContentsApiUrl(owner, repo, branch, path) {
+  const cleanPath = String(path || "").replace(/^\/+/, "").trim();
+  return `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${cleanPath.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(branch)}`;
+}
+
+function buildRawGithubCommitUrl(owner, repo, commitish, path) {
+  const cleanPath = String(path || "").replace(/^\/+/, "").trim();
+  return `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(commitish)}/${cleanPath.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+function buildGithubBlobApiUrl(owner, repo, sha) {
+  return `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/blobs/${encodeURIComponent(sha)}`;
+}
+
+function decodeBase64Utf8(base64Text) {
+  const compact = String(base64Text || "").replace(/\s+/g, "");
+  const binary = atob(compact);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder("utf-8").decode(bytes);
 }
 
 function githubRepositoryDispatchUrl(owner, repo) {
@@ -236,6 +258,8 @@ async function githubSourceConfig(env) {
     branch,
     path,
     url: buildRawGithubUrl(owner, repo, branch, path),
+    raw_branch_url: buildRawGithubUrl(owner, repo, branch, path),
+    contents_api_url: buildGithubContentsApiUrl(owner, repo, branch, path),
     config_resolution: {
       source: dbSettings.GITHUB_PRIZEPICKS_PATH ? "CONFIG_DB.config_system_settings" : "worker_vars_fallback",
       config_db_read_error: dbSettings.__config_read_error || null,
@@ -835,6 +859,83 @@ async function promoteCertifiedBatch(env, batchId, slateDate, cert, stagedRows, 
   };
 }
 
+async function fetchGithubContentsMetadata(source, env) {
+  const headers = {
+    "accept": "application/vnd.github+json",
+    "user-agent": "AlphaDog-v2 PrizePicks GitHub Board Worker",
+    "x-github-api-version": "2022-11-28",
+    "cache-control": "no-cache"
+  };
+  if (env.GITHUB_TOKEN) headers.authorization = `Bearer ${env.GITHUB_TOKEN}`;
+  const res = await fetch(source.contents_api_url, { method: "GET", headers });
+  const text = await res.text();
+  let parsed = null;
+  try { parsed = JSON.parse(text); } catch (_) {}
+  const sha = parsed && parsed.sha ? String(parsed.sha) : null;
+  const size = parsed && typeof parsed.size === "number" ? parsed.size : null;
+  const htmlUrl = parsed && parsed.html_url ? String(parsed.html_url) : null;
+  const gitUrl = parsed && parsed.git_url ? String(parsed.git_url) : null;
+  return {
+    ok: Boolean(res.ok && sha),
+    http_status: res.status,
+    content_type: res.headers.get("content-type"),
+    sha,
+    size,
+    html_url: htmlUrl,
+    git_url: gitUrl,
+    response_preview: res.ok ? null : safeString(text, 700),
+    api_url: source.contents_api_url
+  };
+}
+
+async function fetchGithubJsonBySha(source, env) {
+  const meta = await fetchGithubContentsMetadata(source, env);
+  if (!meta.ok || !meta.sha) {
+    return {
+      ok: false,
+      metadata: meta,
+      url: source.contents_api_url,
+      http_status: meta.http_status,
+      content_type: meta.content_type,
+      text: meta.response_preview || "",
+      error: "GitHub Contents API did not return a usable blob sha for the configured PrizePicks JSON file."
+    };
+  }
+
+  const blobUrl = meta.git_url || buildGithubBlobApiUrl(source.owner, source.repo, meta.sha);
+  const headers = {
+    "accept": "application/vnd.github+json",
+    "user-agent": "AlphaDog-v2 PrizePicks GitHub Board Worker",
+    "x-github-api-version": "2022-11-28",
+    "cache-control": "no-cache, no-store, max-age=0",
+    "pragma": "no-cache"
+  };
+  if (env.GITHUB_TOKEN) headers.authorization = `Bearer ${env.GITHUB_TOKEN}`;
+  const res = await fetch(blobUrl, { method: "GET", headers });
+  const body = await res.text();
+  let parsed = null;
+  try { parsed = JSON.parse(body); } catch (_) {}
+  let text = "";
+  let decodeError = null;
+  if (res.ok && parsed && parsed.encoding === "base64" && typeof parsed.content === "string") {
+    try { text = decodeBase64Utf8(parsed.content); } catch (err) { decodeError = safeString(err && err.message ? err.message : err, 700); }
+  }
+  return {
+    ok: Boolean(res.ok && text && !decodeError),
+    metadata: meta,
+    url: blobUrl,
+    raw_branch_url: source.raw_branch_url || source.url,
+    fetch_mode: "github_contents_api_blob_sha_fetch",
+    http_status: res.status,
+    content_type: res.headers.get("content-type"),
+    blob_encoding: parsed && parsed.encoding ? String(parsed.encoding) : null,
+    blob_size: parsed && typeof parsed.size === "number" ? parsed.size : null,
+    text,
+    error: res.ok ? (decodeError || (!text ? "GitHub blob API did not return decodable base64 content." : null)) : `GitHub blob API fetch failed with HTTP ${res.status}`,
+    response_preview: res.ok ? null : safeString(body, 700)
+  };
+}
+
 async function runBoardParseStageCertify(env, input = {}) {
   const started = Date.now();
   const requestId = input.request_id || null;
@@ -846,29 +947,27 @@ async function runBoardParseStageCertify(env, input = {}) {
 
   const source = await githubSourceConfig(env);
   const fetchStarted = nowUtc();
-  let response;
+  let sourceFetch;
   let text = "";
   try {
-    const headers = { "user-agent": "AlphaDog-v2 PrizePicks GitHub Board Worker", "accept": "application/json,text/plain,*/*" };
-    if (env.GITHUB_TOKEN) headers.authorization = `Bearer ${env.GITHUB_TOKEN}`;
-    response = await fetch(source.url, { method: "GET", headers });
-    text = await response.text();
+    sourceFetch = await fetchGithubJsonBySha(source, env);
+    text = sourceFetch.text || "";
   } catch (err) {
     const error = safeString(err && err.message ? err.message : err);
-    const health = { version: VERSION, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution }, fetch_started_at: fetchStarted, checked_at: nowUtc(), reachable: false, http_status: null, json_parse_ok: false, error, no_market_current_lines_write: true, no_scoring: true };
+    const health = { version: VERSION, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, raw_branch_url: source.raw_branch_url, contents_api_url: source.contents_api_url, config_resolution: source.config_resolution }, fetch_started_at: fetchStarted, checked_at: nowUtc(), reachable: false, http_status: null, json_parse_ok: false, error, fetch_mode: "github_contents_api_blob_sha_fetch", no_market_current_lines_write: true, no_scoring: true };
     const write = await writeHealth(env, "error", 0, health, error);
     return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_UNREACHABLE", rows_read: 0, rows_staged: 0, rows_written: 1, external_calls_performed: 1, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
   }
 
-  const httpStatus = response ? response.status : null;
-  const contentType = response ? response.headers.get("content-type") : null;
+  const httpStatus = sourceFetch ? sourceFetch.http_status : null;
+  const contentType = sourceFetch ? sourceFetch.content_type : null;
   const sizeBytes = new TextEncoder().encode(text || "").length;
 
-  if (!response || !response.ok) {
-    const error = `GitHub raw fetch failed with HTTP ${httpStatus}`;
-    const health = { version: VERSION, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution }, fetch_started_at: fetchStarted, checked_at: nowUtc(), reachable: false, http_status: httpStatus, content_type: contentType, response_size_bytes: sizeBytes, json_parse_ok: false, error, response_preview: safeString(text, 500), no_market_current_lines_write: true, no_scoring: true };
+  if (!sourceFetch || !sourceFetch.ok) {
+    const error = sourceFetch && sourceFetch.error ? sourceFetch.error : `GitHub blob-sha source fetch failed with HTTP ${httpStatus}`;
+    const health = { version: VERSION, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, raw_branch_url: source.raw_branch_url, contents_api_url: source.contents_api_url, config_resolution: source.config_resolution }, github_file_metadata: sourceFetch ? sourceFetch.metadata : null, fetched_url: sourceFetch ? sourceFetch.url : null, fetch_mode: sourceFetch ? sourceFetch.fetch_mode : "github_contents_api_blob_sha_fetch", fetch_started_at: fetchStarted, checked_at: nowUtc(), reachable: false, http_status: httpStatus, content_type: contentType, response_size_bytes: sizeBytes, json_parse_ok: false, error, response_preview: safeString(text, 500), no_market_current_lines_write: true, no_scoring: true };
     const write = await writeHealth(env, "error", 0, health, error);
-    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_HTTP_ERROR", rows_read: 0, rows_staged: 0, rows_written: 1, external_calls_performed: 1, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_HTTP_ERROR", rows_read: 0, rows_staged: 0, rows_written: 1, external_calls_performed: 2, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
   }
 
   const pathLower = String(source.path || "").toLowerCase();
@@ -927,10 +1026,7 @@ async function runBoardParseStageCertify(env, input = {}) {
   }
 
   const sourceStaleHandled = Boolean(promotion && promotion.source_stale_no_future_pickable);
-  let sourceRefreshDispatch = null;
-  if (sourceStaleHandled) {
-    sourceRefreshDispatch = await triggerPrizePicksSourceRefresh(env, source, input, SOURCE_STALE_CERT);
-  }
+  const sourceRefreshDispatch = null;
   const finalPassed = cert.passed && promotion.promoted;
   const finalHandled = finalPassed || sourceStaleHandled;
   const finalCertification = finalPassed ? PROMOTION_CERT_PASS : (sourceStaleHandled ? SOURCE_STALE_CERT : (cert.passed ? PROMOTION_CERT_FAIL : cert.certification_status));
@@ -941,7 +1037,10 @@ async function runBoardParseStageCertify(env, input = {}) {
     request_id: requestId,
     chain_id: chainId,
     source_key: SOURCE_KEY,
-    source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution },
+    source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, raw_branch_url: source.raw_branch_url, contents_api_url: source.contents_api_url, config_resolution: source.config_resolution },
+    github_file_metadata: sourceFetch ? sourceFetch.metadata : null,
+    fetched_url: sourceFetch ? sourceFetch.url : null,
+    fetch_mode: sourceFetch ? sourceFetch.fetch_mode : "github_contents_api_blob_sha_fetch",
     fetch_started_at: fetchStarted,
     checked_at: nowUtc(),
     reachable: true,
@@ -987,7 +1086,7 @@ async function runBoardParseStageCertify(env, input = {}) {
     invalid_rows: cert.invalidRows,
     valid_rate: Number(cert.validRate.toFixed(4)),
     rows_written: 5 + stagedRows.length + (promotion.rows_promoted || 0),
-    external_calls_performed: 1,
+    external_calls_performed: 2,
     elapsed_ms: Date.now() - started,
     source_config_safe: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution },
     shape,
@@ -1009,7 +1108,7 @@ async function runBoardParseStageCertify(env, input = {}) {
       no_scheduling_added: true,
       manual_buttons: ["BOARD > PrizePicks", "ORCHESTRATOR > Wake"]
     },
-    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, final board, or scheduling in v0.1.3.",
+    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, final board, or producer dispatch in v0.1.6.",
     timestamp_utc: nowUtc()
   };
 }
