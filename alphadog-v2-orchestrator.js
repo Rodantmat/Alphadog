@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.94-incremental-morning-full-run";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.95-full-run-hot-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -520,7 +520,8 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     if (validation.wait) {
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_CHILD", certification: "INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
       await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+8 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_parent_deferred_while_child_active', 'Parent deferred briefly so the active child hot-continuation row can own the next backend tick', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: child.request_id, child_status: child.status, stage_key: stage.stage_key, parent_run_after_delay_seconds: 8, full_run_hot_continuation_v0_2_95: true }));
       return output;
     }
 
@@ -3363,6 +3364,35 @@ async function processOneUnlocked(env, trigger) {
     }
   }
 
+  // v0.2.95: Full Run child rows must be hot-continuation eligible without
+  // waiting for the 5-minute cron. If a child was left RUNNING after a bounded
+  // child tick, recover only same-chain child rows owned by the active Full Run
+  // parent, and only after a small freshness guard. This avoids duplicate active
+  // dispatch while preventing the parent from spinning on WAITING_ON_CHILD.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
+       FROM control_job_queue c
+       JOIN control_job_queue p ON p.request_id = c.parent_request_id
+       WHERE p.job_key='incremental-morning-full-run'
+         AND p.worker_name='alphadog-v2-orchestrator'
+         AND p.status IN ('pending','running','partial_continue')
+         AND p.finished_at IS NULL
+         AND c.parent_request_id IS NOT NULL
+         AND c.status='running'
+         AND c.finished_at IS NULL
+         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-5 seconds')
+       ORDER BY datetime(c.updated_at) ASC
+       LIMIT 1`
+    );
+    if (row) {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'incremental_morning_full_run_child_running_rescued_as_due', 'Recovered active Full Run child running row as due work for same-chain hot continuation', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, incremental_morning_full_run_child_hot_rescue_v0_2_95: true })
+      );
+    }
+  }
+
   if (!row) {
     row = await first(env.CONTROL_DB,
       `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
@@ -3918,6 +3948,9 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const sawHardStop = terminalStatuses.some(s => s === "blocked" || s === "error");
   const continuationAllowedByLastCycle = !sawLockBusy && !sawHardStop;
   const shouldSelfContinue = continuationAllowedByLastCycle && (dueIncrementalMorningFullRun > 0 || dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0) && depth < maxChains && !!ctx;
+  const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
+  const lastStatus = String((lastCycle && lastCycle.status) || "");
+  const hotContinuationDelayMs = shouldSelfContinue && lastStatus === "no_due_jobs" ? 6500 : 0;
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -3941,6 +3974,8 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       pump_depth: depth,
       max_pump_chains: maxChains,
       self_continue_scheduled: !!shouldSelfContinue,
+      self_continue_delay_ms: hotContinuationDelayMs,
+      full_run_hot_continuation_v0_2_95: true,
       self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
       self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
       continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
@@ -3974,6 +4009,8 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         max_cycles: hardCycles,
         max_jobs_per_cycle: jobsPerCycle,
         max_ms: deadlineMs,
+        self_continue_delay_ms: hotContinuationDelayMs,
+        full_run_hot_continuation_v0_2_95: true,
         continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
         self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
@@ -3986,6 +4023,9 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
     );
     ctx.waitUntil((async () => {
       try {
+        if (hotContinuationDelayMs > 0) {
+          await new Promise(resolve => setTimeout(resolve, hotContinuationDelayMs));
+        }
         await pump(env, nextSource, hardCycles, jobsPerCycle, deadlineMs, ctx, requestUrl, depth + 1, maxChains);
       } catch (err) {
         await run(env.CONTROL_DB,
@@ -4018,6 +4058,8 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
     due_base_starter_history_after_pump: dueBaseStarterHistory,
     due_base_bullpen_history_after_pump: dueBaseBullpenHistory,
     self_continue_scheduled: !!shouldSelfContinue,
+    self_continue_delay_ms: hotContinuationDelayMs,
+    full_run_hot_continuation_v0_2_95: true,
     pump_depth: depth,
     max_pump_chains: maxChains,
     cycles
