@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-parlay-sleeper-board";
-const VERSION = "alphadog-v2-parlay-sleeper-board-v0.4.1-promoted-batch-replace-cleanup";
+const VERSION = "alphadog-v2-parlay-sleeper-board-v0.4.2-promotion-parity-guard";
 const JOB_KEY = "parlay-sleeper-board";
 const SOURCE_KEY = "parlay_sleeper";
 const MAX_PREVIEW_CHARS = 900;
@@ -653,7 +653,6 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
   const promotableRows = (stageRows || []).filter(row =>
     row.parse_status === "parsed_stage_only_canonical_mapping_audited" &&
     row.source_key === SOURCE_KEY &&
-    row.is_pickable === 1 &&
     row.player_name &&
     row.source_stat_name &&
     row.canonical_prop_key &&
@@ -661,7 +660,11 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
     row.source_event_id
   );
   const slateDates = Array.from(new Set(promotableRows.map(row => row.slate_date).filter(Boolean))).sort();
+  const expectedCurrentRows = promotableRows.length;
+  const expectedActiveRows = slateDates.length;
 
+  // Replacement order is intentional: clear old live pointers first, then insert the new batch,
+  // then clean stage/history, then prove the live tables still contain the promoted batch.
   await run(env.MARKET_DB, "DELETE FROM sleeper_board_current WHERE source_key=?", SOURCE_KEY);
   await run(env.MARKET_DB, "DELETE FROM sleeper_board_active_batches WHERE source_key=?", SOURCE_KEY);
 
@@ -691,7 +694,7 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
 
   await run(env.MARKET_DB, `UPDATE sleeper_board_batches
     SET promoted_at=CURRENT_TIMESTAMP,
-        cleaned_at=CURRENT_TIMESTAMP,
+        cleaned_at=NULL,
         certification_status='PROMOTED_BOARD_INVENTORY_ONLY_NO_SCORING',
         certification_reason='Promoted valid source-proven Sleeper rows as board inventory only. Scoring/ranking/final-board logic remains disabled; rfi_nrfi rows are inventory-only and logic-blocked pending future design.',
         updated_at=CURRENT_TIMESTAMP
@@ -699,12 +702,67 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
 
   await run(env.MARKET_DB, "DELETE FROM sleeper_board_stage WHERE batch_id=? AND source_key=?", batchId, SOURCE_KEY);
   await run(env.MARKET_DB, "DELETE FROM sleeper_board_batches WHERE source_key=? AND batch_id<>?", SOURCE_KEY, batchId);
+  await run(env.MARKET_DB, "UPDATE sleeper_board_batches SET cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=? AND source_key=?", batchId, SOURCE_KEY);
+
+  const finalRows = await all(env.MARKET_DB, `
+    SELECT
+      (SELECT COUNT(*) FROM sleeper_board_stage WHERE source_key=?) AS stage_rows_for_source,
+      (SELECT COUNT(*) FROM sleeper_board_stage WHERE batch_id=? AND source_key=?) AS stage_rows_for_batch,
+      (SELECT COUNT(*) FROM sleeper_board_batches WHERE source_key=?) AS batch_rows_for_source,
+      (SELECT COUNT(*) FROM sleeper_board_current WHERE batch_id=? AND source_key=?) AS current_rows_for_batch,
+      (SELECT COUNT(*) FROM sleeper_board_active_batches WHERE source_key=? AND active_batch_id=?) AS active_batch_rows,
+      (SELECT COUNT(*) FROM sleeper_board_current WHERE source_key=? AND batch_id<>?) AS other_current_rows
+  `, SOURCE_KEY, batchId, SOURCE_KEY, SOURCE_KEY, batchId, SOURCE_KEY, SOURCE_KEY, batchId, SOURCE_KEY, batchId);
+  const parity = finalRows && finalRows[0] ? finalRows[0] : {};
+  const stageRowsForSource = Number(parity.stage_rows_for_source || 0);
+  const stageRowsForBatch = Number(parity.stage_rows_for_batch || 0);
+  const batchRowsForSource = Number(parity.batch_rows_for_source || 0);
+  const currentRowsForBatch = Number(parity.current_rows_for_batch || 0);
+  const activeBatchRows = Number(parity.active_batch_rows || 0);
+  const otherCurrentRows = Number(parity.other_current_rows || 0);
+  const parityOk = currentRowsForBatch === expectedCurrentRows && activeBatchRows === expectedActiveRows && stageRowsForBatch === 0 && stageRowsForSource === 0 && batchRowsForSource === 1 && otherCurrentRows === 0;
+
+  if (!parityOk) {
+    await run(env.MARKET_DB, `UPDATE sleeper_board_batches
+      SET certification_status='PARLAY_SLEEPER_PROMOTION_PARITY_FAILED',
+          certification_reason='Promotion parity failed: batch metadata cannot claim promoted unless current rows, active pointer, stage cleanup, and retained batch counts all match.',
+          certification_json=?,
+          updated_at=CURRENT_TIMESTAMP
+      WHERE batch_id=? AND source_key=?`, JSON.stringify({
+        expected_current_rows: expectedCurrentRows,
+        expected_active_batch_rows: expectedActiveRows,
+        final_parity: parity,
+        no_scoring: true,
+        no_ranking: true,
+        no_final_board: true,
+        no_prizepicks_mutation: true
+      }), batchId, SOURCE_KEY);
+
+    return {
+      ok: false,
+      promoted_rows: currentRowsForBatch,
+      expected_promoted_rows: expectedCurrentRows,
+      active_batch_rows: activeBatchRows,
+      expected_active_batch_rows: expectedActiveRows,
+      slate_dates: slateDates,
+      certification: "PARLAY_SLEEPER_PROMOTION_PARITY_FAILED",
+      reason: "Promotion parity failed after replacement cleanup; refusing to certify an empty or contaminated Sleeper board.",
+      final_parity: parity,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
+      no_prizepicks_mutation: true
+    };
+  }
 
   return {
     ok: true,
-    promoted_rows: promotableRows.length,
-    active_batch_rows: slateDates.length,
+    promoted_rows: currentRowsForBatch,
+    expected_promoted_rows: expectedCurrentRows,
+    active_batch_rows: activeBatchRows,
+    expected_active_batch_rows: expectedActiveRows,
     slate_dates: slateDates,
+    final_parity: parity,
     rfi_nrfi_inventory_rows: promotableRows.filter(row => row.canonical_prop_key === "rfi_nrfi").length,
     promotion_status: BOARD_INVENTORY_PROMOTION_STATUS,
     logic_status_for_rfi_nrfi: RFI_NRFI_LOGIC_STATUS,
@@ -906,16 +964,20 @@ async function safeProbe(env, input = {}) {
 
   const stagedOk = !!stageResult && !stageError;
 
+  const promotionAttempted = !!(stagedOk && stageResult && stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0);
+  const promotionOk = !!(promotionAttempted && stageResult.promotion && stageResult.promotion.ok);
+  const promotionFailed = !!(promotionAttempted && (!stageResult.promotion || !stageResult.promotion.ok));
+
   return {
-    ok: true,
-    data_ok: response.ok && !!parsed && !!shape && stagedOk,
+    ok: !promotionFailed,
+    data_ok: response.ok && !!parsed && !!shape && stagedOk && !promotionFailed,
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
     source_key: SOURCE_KEY,
-    status: stagedOk ? (stageResult.promotion && stageResult.promotion.ok ? "promoted_sleeper_board_inventory_only_no_scoring" : "stage_certify_alias_audit_completed_no_promotion") : (response.ok && parsed ? "source_probe_completed_shape_captured_stage_blocked" : "source_probe_completed_shape_unverified"),
-    certification: stagedOk ? (stageResult.promotion && stageResult.promotion.ok ? "PARLAY_SLEEPER_BOARD_INVENTORY_PROMOTED_NO_SCORING" : (stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0 ? "PARLAY_SLEEPER_STAGE_CERTIFIED_READY_NO_PROMOTION" : "PARLAY_SLEEPER_STAGE_ALIASES_WRITTEN_MAPPING_BLOCKED_NO_PROMOTION")) : (response.ok && parsed ? "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_CAPTURED_STAGE_BLOCKED" : "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_UNVERIFIED_NO_PROMOTION"),
-    block_downstream_reason: stagedOk ? (stageResult.promotion && stageResult.promotion.ok ? "scoring_ranking_final_board_blocked; board_inventory_promoted_only" : (stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0 ? "promotion_not_performed_despite_stage_ready" : "promotion_blocked_due_to_unmapped_or_unsupported_source_stat_types")) : (stageError || "source_response_not_verified_json_shape"),
+    status: promotionFailed ? "promotion_parity_failed_no_certification" : (stagedOk ? (stageResult.promotion && stageResult.promotion.ok ? "promoted_sleeper_board_inventory_only_no_scoring" : "stage_certify_alias_audit_completed_no_promotion") : (response.ok && parsed ? "source_probe_completed_shape_captured_stage_blocked" : "source_probe_completed_shape_unverified")),
+    certification: promotionFailed ? "PARLAY_SLEEPER_PROMOTION_PARITY_FAILED" : (stagedOk ? (stageResult.promotion && stageResult.promotion.ok ? "PARLAY_SLEEPER_BOARD_INVENTORY_PROMOTED_NO_SCORING" : (stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0 ? "PARLAY_SLEEPER_STAGE_CERTIFIED_READY_NO_PROMOTION" : "PARLAY_SLEEPER_STAGE_ALIASES_WRITTEN_MAPPING_BLOCKED_NO_PROMOTION")) : (response.ok && parsed ? "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_CAPTURED_STAGE_BLOCKED" : "PARLAY_SLEEPER_SOURCE_PROBE_SHAPE_UNVERIFIED_NO_PROMOTION")),
+    block_downstream_reason: promotionFailed ? ((stageResult.promotion && stageResult.promotion.reason) || "promotion_parity_failed") : (stagedOk ? (stageResult.promotion && stageResult.promotion.ok ? "scoring_ranking_final_board_blocked; board_inventory_promoted_only" : (stageResult.mapping_blocked_rows === 0 && stageResult.invalid_rows === 0 ? "promotion_not_performed_despite_stage_ready" : "promotion_blocked_due_to_unmapped_or_unsupported_source_stat_types")) : (stageError || "source_response_not_verified_json_shape")),
     readiness,
     source_config: safeSourceConfig(endpoint, auth),
     source_response: {

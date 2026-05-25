@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.97-prizepicks-dispatch-close-fix";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.98-sleeper-finalization-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -772,6 +772,7 @@ async function processStaticCertifierJob(env, row, runId, trigger) {
   } catch (err) {
     output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
   }
+  const partialContinue = false;
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
   const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
@@ -1467,6 +1468,7 @@ async function processParlaySleeperBoardJob(env, row, runId, trigger) {
     };
   }
 
+  const partialContinue = false;
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
   const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
@@ -1493,7 +1495,9 @@ async function processParlaySleeperBoardJob(env, row, runId, trigger) {
       no_scoring: true,
       no_ranking: true,
       no_final_board_write: true,
-      no_promotion: true
+      no_promotion: false,
+      board_inventory_only: true,
+      sleeper_finalization_fix_v0_2_98: true
     }
   };
 
@@ -1515,8 +1519,8 @@ async function processParlaySleeperBoardJob(env, row, runId, trigger) {
   }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'parlay_sleeper_board_probe_dispatch_completed', 'Orchestrator completed exact parlay-sleeper-board source-probe dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'parlay_sleeper_board_dispatch_completed', 'Orchestrator completed exact parlay-sleeper-board dispatch and finalized queue state', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, sleeper_finalization_fix_v0_2_98: true })
   );
 
   return cappedOutput;
