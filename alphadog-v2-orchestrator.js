@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.86-pitcher-splits-stale-duplicate-rescue-labels";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.87-hitter-splits-pitcher-parity-delta";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1396,7 +1396,7 @@ async function processBaseHitterSplitsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_hitter_splits_v0_4_2_daily_affected_refresh_dispatch: true,
+      base_hitter_splits_v0_4_3_pitcher_parity_delta_dispatch: true,
       delta_hitter_splits_noop_restore_scoped_repair_daily_affected_refresh_gate: isDeltaHitterSplits,
       certified_stage_promotion_v0_3_0: !isDeltaHitterSplits,
       locked_endpoint_sitcodes_vl_vr: true,
