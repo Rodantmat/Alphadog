@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-splits";
-const VERSION = "alphadog-v2-base-hitter-splits-v0.4.4-incomplete-daily-refresh-resume";
+const VERSION = "alphadog-v2-base-hitter-splits-v0.4.5-daily-refresh-reopen-loop-fix";
 const JOB_KEY = "base-hitter-splits";
 
 const SOURCE_SEASON = 2026;
@@ -61,7 +61,7 @@ function baseIdentity(env) {
     job_key: JOB_KEY,
     status: "DELTA_NOOP_RESTORE_GATE_READY",
     timestamp_utc: nowUtc(),
-    phase: "base_hitter_splits_v0_4_2_daily_affected_player_refresh",
+    phase: "base_hitter_splits_v0_4_5_daily_refresh_reopen_loop_fix",
     source_lock: {
       endpoint_pattern: SOURCE_ENDPOINT_PATTERN,
       source_key: SOURCE_KEY,
@@ -1395,6 +1395,17 @@ async function reopenIncompleteHitterDailyRefreshIfBadRescue(env, baseBatch, liv
   const currentCoveredDate = dateOnlyUtc(cj.current_covered_game_date) || dateOnlyUtc(liveChecks.max_source_snapshot_date) || dateOnlyUtc(mainCursor.source_snapshot_date);
   if (!pendingThroughDate || !pendingTotal || pendingProcessed >= pendingTotal) return null;
 
+  const activeDailyCursor = await first(env.STATS_HITTER_DB, `SELECT * FROM hitter_split_cursor
+    WHERE cursor_key='base_hitter_splits_daily_affected_refresh_cursor'
+      AND status='PARTIAL_CONTINUE_DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH'
+    ORDER BY datetime(updated_at) DESC LIMIT 1`);
+  if (activeDailyCursor) {
+    const activeThroughDate = dateOnlyUtc(activeDailyCursor.source_snapshot_date);
+    const activeOffset = asInt(activeDailyCursor.current_player_offset, 0);
+    const activeProcessed = asInt(activeDailyCursor.players_processed, 0);
+    if (activeThroughDate === pendingThroughDate && (activeOffset >= pendingOffset || activeProcessed >= pendingProcessed)) return null;
+  }
+
   const partialCert = await first(env.STATS_HITTER_DB, `SELECT checks_json, source_snapshot_date
     FROM hitter_split_certifications
     WHERE certification_status='DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH_PARTIAL_CONTINUE'
@@ -1407,7 +1418,7 @@ async function reopenIncompleteHitterDailyRefreshIfBadRescue(env, baseBatch, liv
   const runId = input.run_id || rid('run_delta_hitter_splits_reopen_incomplete_daily_refresh');
   const reopenChecks = {
     locked_base_batch_id: baseBatch.batch_id,
-    reopened_incomplete_daily_refresh_after_bad_stale_rescue_v0_4_4: true,
+    reopened_incomplete_daily_refresh_after_bad_stale_rescue_v0_4_5: true,
     bad_rescue_cursor_status: mainCursor.status,
     bad_rescue_cursor_mode: mainCursor.mode,
     source_snapshot_date_before: sourceBefore,
@@ -1452,7 +1463,7 @@ async function runDeltaUpdate(env, input) {
       const rescueChecks = {
         locked_base_batch_id: baseBatch.batch_id,
         stale_daily_cursor_detected: true,
-        stale_duplicate_current_cursor_rescue_v0_4_3: true,
+        stale_duplicate_current_cursor_rescue_v0_4_5: true,
         pending_cursor_status: pendingDailyCursor.status,
         pending_cursor_offset: asInt(pendingDailyCursor.current_player_offset, 0),
         pending_players_total: asInt(pendingDailyCursor.players_total, 0),
