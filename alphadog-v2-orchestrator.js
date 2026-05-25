@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.89-hitter-splits-stale-lock-progress-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.90-pitcher-metrics-affected-delta";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -98,26 +98,13 @@ async function logsPayload(env) {
 
 async function acquireLock(env, owner) {
   await ensureRows(env);
-  let lock = await first(env.CONTROL_DB, "SELECT lock_key, lock_flag, owner_request_id, owner_worker_name, acquired_at, expires_at, updated_at, CASE WHEN expires_at IS NOT NULL AND datetime(expires_at) > datetime('now') THEN 1 ELSE 0 END AS not_expired, CAST((julianday(CURRENT_TIMESTAMP)-julianday(COALESCE(acquired_at, updated_at, CURRENT_TIMESTAMP)))*86400 AS INTEGER) AS lock_age_seconds FROM control_locks WHERE lock_key='GLOBAL_ORCHESTRATOR'");
+  const lock = await first(env.CONTROL_DB, "SELECT lock_key, lock_flag, owner_request_id, owner_worker_name, acquired_at, expires_at, updated_at, CASE WHEN expires_at IS NOT NULL AND datetime(expires_at) > datetime('now') THEN 1 ELSE 0 END AS not_expired FROM control_locks WHERE lock_key='GLOBAL_ORCHESTRATOR'");
   if (lock && Number(lock.lock_flag) === 1 && Number(lock.not_expired) === 1) {
-    const hitterRow = await first(env.CONTROL_DB, "SELECT request_id, status, updated_at, CAST((julianday(CURRENT_TIMESTAMP)-julianday(updated_at))*86400 AS INTEGER) AS row_idle_seconds FROM control_job_queue WHERE job_key='base-hitter-splits' AND worker_name='alphadog-v2-base-hitter-splits' AND status IN ('running','pending','partial_continue') AND finished_at IS NULL ORDER BY datetime(updated_at) ASC LIMIT 1");
-    const staleHitterContinuationLock = hitterRow && Number(lock.lock_age_seconds || 0) >= 90 && Number(hitterRow.row_idle_seconds || 0) >= 60;
-    if (staleHitterContinuationLock) {
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'orchestrator', 'INFO', 'orchestrator_stale_hitter_splits_lock_released', 'Released stale GLOBAL_ORCHESTRATOR lock blocking Hitter Splits continuation', ?, CURRENT_TIMESTAMP)",
-        hitterRow.request_id, WORKER_NAME, JSON.stringify({ owner, stale_owner_request_id: lock.owner_request_id, lock_age_seconds: lock.lock_age_seconds, row_idle_seconds: hitterRow.row_idle_seconds, hitter_splits_stale_lock_progress_rescue_v0_2_89: true })
-      );
-      await run(env.CONTROL_DB,
-        "UPDATE control_locks SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE lock_key='GLOBAL_ORCHESTRATOR'"
-      );
-      lock = null;
-    } else {
-      return { ok: false, reason: "lock_busy", lock };
-    }
+    return { ok: false, reason: "lock_busy", lock };
   }
 
   await run(env.CONTROL_DB,
-    "UPDATE control_locks SET lock_flag=1, owner_request_id=?, owner_worker_name=?, acquired_at=CURRENT_TIMESTAMP, expires_at=datetime('now','+2 minutes'), updated_at=CURRENT_TIMESTAMP WHERE lock_key='GLOBAL_ORCHESTRATOR'",
+    "UPDATE control_locks SET lock_flag=1, owner_request_id=?, owner_worker_name=?, acquired_at=CURRENT_TIMESTAMP, expires_at=datetime('now','+5 minutes'), updated_at=CURRENT_TIMESTAMP WHERE lock_key='GLOBAL_ORCHESTRATOR'",
     owner, WORKER_NAME
   );
 
@@ -1409,7 +1396,7 @@ async function processBaseHitterSplitsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      base_hitter_splits_v0_4_6_pitcher_parity_chunk_progress_dispatch: true,
+      base_hitter_splits_v0_4_3_pitcher_parity_delta_dispatch: true,
       delta_hitter_splits_noop_restore_scoped_repair_daily_affected_refresh_gate: isDeltaHitterSplits,
       certified_stage_promotion_v0_3_0: !isDeltaHitterSplits,
       locked_endpoint_sitcodes_vl_vr: true,
@@ -1494,7 +1481,7 @@ async function processBaseHitterMetricsJob(env, row, runId, trigger) {
     mode: input.mode || "schema_formula_input_audit",
     trigger,
     orchestrator_version: SYSTEM_VERSION,
-    no_live_metric_promotion: true,
+    no_live_metric_promotion: String(input.mode || "") === "delta_recalculate_affected_players" ? false : true,
     no_source_table_mutation: true,
     no_external_mlb_calls: true,
     no_scoring: true,
@@ -1557,7 +1544,7 @@ async function processBaseHitterMetricsJob(env, row, runId, trigger) {
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_hitter_metrics_dispatch_completed', 'Orchestrator completed exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, no_promotion: true, no_external_mlb_calls: true, no_scoring: true, base_rebuild_stage_only: String((output && output.mode) || "") === "base_rebuild_stage_only", snapshot_prep_stage_only: String((output && output.mode) || "") === "snapshot_prep_stage_only", performance_tune: true,
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, no_promotion: String((output && output.mode) || "") !== "delta_recalculate_affected_players", affected_player_delta: String((output && output.mode) || "") === "delta_recalculate_affected_players", no_external_mlb_calls: true, no_scoring: true, base_rebuild_stage_only: String((output && output.mode) || "") === "base_rebuild_stage_only", snapshot_prep_stage_only: String((output && output.mode) || "") === "snapshot_prep_stage_only", performance_tune: true,
     snapshot_prep: String(input.mode || "") === "snapshot_prep_stage_only",
     snapshot_delta_gate: String(input.mode || "") === "snapshot_delta_gate" })
   );
@@ -1602,7 +1589,7 @@ async function processBasePitcherMetricsJob(env, row, runId, trigger) {
     mode: input.mode || "base_rebuild_stage_only",
     trigger,
     orchestrator_version: SYSTEM_VERSION,
-    no_live_metric_promotion: true,
+    no_live_metric_promotion: String(input.mode || "") === "delta_recalculate_affected_players" ? false : true,
     no_source_table_mutation: true,
     no_external_mlb_calls: true,
     no_scoring: true,
@@ -1662,8 +1649,8 @@ async function processBasePitcherMetricsJob(env, row, runId, trigger) {
   }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_metrics_dispatch_completed', 'Orchestrator completed exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, no_promotion: true, no_external_mlb_calls: true, no_scoring: true, base_rebuild_stage_only: String((output && output.mode) || "") === "base_rebuild_stage_only", snapshot_prep_stage_only: String((output && output.mode) || "") === "snapshot_prep_stage_only", partial_continue: partialContinue })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_pitcher_metrics_dispatch_completed', 'Orchestrator completed exact base-pitcher-metrics v0.5.0 affected-player delta or snapshot/full-stage dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, no_promotion: String((output && output.mode) || "") !== "delta_recalculate_affected_players", affected_player_delta: String((output && output.mode) || "") === "delta_recalculate_affected_players", no_external_mlb_calls: true, no_scoring: true, base_rebuild_stage_only: String((output && output.mode) || "") === "base_rebuild_stage_only", snapshot_prep_stage_only: String((output && output.mode) || "") === "snapshot_prep_stage_only", partial_continue: partialContinue })
   );
   return cappedOutput;
 }
@@ -3140,7 +3127,7 @@ async function processOneUnlocked(env, trigger) {
     if (row) {
       await run(env.CONTROL_DB,
         "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'base_hitter_splits_running_partial_rescued_as_due', 'Recovered running Hitter Splits partial-continue row as due work for backend continuation', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, hitter_splits_running_rescue_parity_v0_2_88: true, hitter_splits_stale_lock_progress_rescue_v0_2_89: true })
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, hitter_splits_running_rescue_parity_v0_2_88: true })
       );
     }
   }
