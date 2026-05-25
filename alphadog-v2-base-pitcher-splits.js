@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.6-final-date-discovery-cursor-fix";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.7-auto-continuation-contract-fix";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
@@ -1112,7 +1112,7 @@ async function fetchLatestCompleteGameDate(env, startDate) {
         else if (isNonDataScheduleGame(game)) nonDataGames++;
         else unfinishedDataGames++;
       }
-      dateAudits.push({ date: dateStr, regular_games: regularGames.length, final_games: finalGames.length, non_data_games: nonDataGames, unfinished_data_games: unfinishedDataGames, final_date_discovery_v0_5_6: true });
+      dateAudits.push({ date: dateStr, regular_games: regularGames.length, final_games: finalGames.length, non_data_games: nonDataGames, unfinished_data_games: unfinishedDataGames, final_date_discovery_v0_5_7: true });
       // Mirror the proven granular final-game workers: a date is actionable when
       // it has completed regular-season games. Postponed/canceled rows are non-data
       // rows, and incomplete games must not erase completed final-game evidence.
@@ -1212,7 +1212,7 @@ async function readAffectedPitcherSplitPlayersFromFinalBoxscores(env, afterDate,
     games: p.game_pks.size,
     cursor_offset: idx,
     source_path_count: p.source_paths.size,
-    affected_source: "mlb_schedule_boxscore_final_games_v0_5_6"
+    affected_source: "mlb_schedule_boxscore_final_games_v0_5_7"
   })).sort((a, b) => a.player_id - b.player_id).map((p, idx) => ({ ...p, cursor_offset: idx }));
 }
 async function readAffectedPitcherSplitPlayers(env, afterDate, throughDate) {
@@ -1309,7 +1309,7 @@ async function refreshDailyAffectedPitcherSplits(env, baseBatch, input, liveChec
   await run(env.STATS_PITCHER_DB, `INSERT INTO pitcher_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('pitcher_splits_daily_affected_refresh_cert'), baseBatch.batch_id, runId, 'delta_daily_affected_pitcher_refresh', remaining > 0 ? 'DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH_PARTIAL_CONTINUE' : 'DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH_CERTIFIED_PROMOTED_RETAINED', sourceErrors ? 'REVIEW' : (remaining > 0 ? 'PARTIAL' : 'DELTA_REFRESH_PASS'), safeJson(checks), rowsStaged, rowsPromoted, liveAfter.duplicate_live_keys, noData, sourceErrors, throughDate);
   if (remaining === 0) {
-    const mainCursorChecks = { ...checks, covered_game_date: throughDate, completion_cursor_write_v0_5_6: true, no_full_sweep: true, no_full_pitcher_universe_refresh: true };
+    const mainCursorChecks = { ...checks, covered_game_date: throughDate, completion_cursor_write_v0_5_7: true, no_full_sweep: true, no_full_pitcher_universe_refresh: true };
     await run(env.STATS_PITCHER_DB, `INSERT OR REPLACE INTO pitcher_split_cursor (cursor_key,batch_id,run_id,mode,status,source_season,source_snapshot_date,current_player_id,current_player_offset,players_total,players_processed,requests_done,next_run_after,last_error,cursor_json,updated_at)
       VALUES ('base_pitcher_splits_delta_update_cursor',?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, baseBatch.batch_id, runId, 'delta_daily_affected_pitcher_refresh', 'COMPLETED_DELTA_PITCHER_SPLITS_DAILY_AFFECTED_REFRESH', SOURCE_SEASON, throughDate, players.length ? players[players.length - 1].player_id : null, nextOffset, liveAfter.live_rows, liveAfter.live_rows, nextOffset, null, sourceErrors ? 'SOURCE_ERRORS_IN_TICK' : null, safeJson(mainCursorChecks));
   }
