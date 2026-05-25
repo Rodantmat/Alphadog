@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.84-pitcher-splits-running-rescue-sql-fix";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.85-lock-safe-pitcher-splits-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -3630,7 +3630,19 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const dueBasePitcherSplits = await countDueBasePitcherSplits(env);
   const dueBaseStarterHistory = await countDueBaseStarterHistory(env);
   const dueBaseBullpenHistory = await countDueBaseBullpenHistory(env);
-  const shouldSelfContinue = (dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0) && depth < maxChains && !!ctx;
+
+  // v0.2.85: Never self-schedule an immediate waitUntil continuation after a
+  // lock_busy/error/blocked cycle. The previous v0.2.83/v0.2.84 path could see
+  // an unfinished Pitcher Splits running row, count it as due, then recursively
+  // schedule more backend pumps even though GLOBAL_ORCHESTRATOR was still held.
+  // That created noisy hot-loop storms and left the real continuation waiting
+  // for lock expiry. Cron/manual wake can safely retry after the lock expires;
+  // normal partial_continue cycles still self-continue.
+  const terminalStatuses = cycles.map(c => String((c && c.status) || ""));
+  const sawLockBusy = terminalStatuses.includes("lock_busy");
+  const sawHardStop = terminalStatuses.some(s => s === "blocked" || s === "error");
+  const continuationAllowedByLastCycle = !sawLockBusy && !sawHardStop;
+  const shouldSelfContinue = continuationAllowedByLastCycle && (dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0) && depth < maxChains && !!ctx;
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -3651,6 +3663,9 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       pump_depth: depth,
       max_pump_chains: maxChains,
       self_continue_scheduled: !!shouldSelfContinue,
+      self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
+      self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
+      continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
       hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
       cron_is_rescue_only_for_base_hitter: true, cron_is_rescue_only_for_base_hitter_splits: true, base_hitter_splits_hot_continuation_v0_2_32: true, base_pitcher_splits_hot_continuation_v0_2_35: true,
       version: SYSTEM_VERSION
@@ -3678,6 +3693,9 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         max_cycles: hardCycles,
         max_jobs_per_cycle: jobsPerCycle,
         max_ms: deadlineMs,
+        continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
+        self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
+        self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
         version: SYSTEM_VERSION,
         hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
         no_browser_pump: true,
