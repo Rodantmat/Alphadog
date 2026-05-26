@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.102-delta-certifier-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.103-delta-certifier-full-calendar-seed";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1158,7 +1158,7 @@ async function processDeltaCertifierJob(env, row, runId, trigger) {
   const runStatus = ok ? "completed" : "failed";
   const errorCode = ok ? null : "delta_certifier_worker_failed";
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "delta certifier worker failed").slice(0, 900);
-  const cappedOutput = { ...output, orchestrator_dispatch: { version: SYSTEM_VERSION, processed_by: WORKER_NAME, exact_worker_only: true, trigger, http_status: httpStatus, elapsed_ms: Date.now() - started, game_calendar_coverage_audit_only: true, no_source_history_mutation: true, no_repair_jobs_created: true, no_scoring: true, no_ranking: true, no_final_board_write: true, no_old_production_touch: true } };
+  const cappedOutput = { ...output, orchestrator_dispatch: { version: SYSTEM_VERSION, processed_by: WORKER_NAME, exact_worker_only: true, trigger, http_status: httpStatus, elapsed_ms: Date.now() - started, game_calendar_worker_modes: true, game_calendar_full_seed_supported: true, game_calendar_coverage_audit_supported: true, no_source_history_mutation: true, no_repair_jobs_created: true, no_scoring: true, no_ranking: true, no_final_board_write: true, no_old_production_touch: true } };
 
   await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);

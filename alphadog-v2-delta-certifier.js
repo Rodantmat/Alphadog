@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.1.2-live-schema-column-guard";
+const VERSION = "alphadog-v2-delta-certifier-v0.1.3-full-calendar-seed";
 const JOB_KEY = "delta-certifier";
 
 function nowUtc() { return new Date().toISOString(); }
@@ -193,11 +193,12 @@ function classifyGame(game) {
   const detailed = String(status.detailedState || "");
   const abstractState = String(status.abstractGameState || "");
   const hay = `${code} ${detailed} ${abstractState}`.toLowerCase();
-  const isFinal = hay.includes("final") || hay.includes("game over") || code === "F";
   const isLive = abstractState.toLowerCase() === "live" || hay.includes("in progress") || hay.includes("manager challenge") || hay.includes("review");
-  const isPostponed = hay.includes("postponed");
+  const isPostponed = hay.includes("postponed") || code === "DR";
   const isSuspended = hay.includes("suspended");
   const isCancelled = hay.includes("cancelled") || hay.includes("canceled");
+  const isFinalRaw = hay.includes("final") || hay.includes("game over") || code === "F";
+  const isFinal = isFinalRaw && !isPostponed && !isSuspended && !isCancelled;
   const isPregame = abstractState.toLowerCase() === "preview" || hay.includes("scheduled") || hay.includes("pre-game") || hay.includes("warmup");
   return {
     status_code: code || null,
@@ -214,8 +215,8 @@ function classifyGame(game) {
   };
 }
 
-async function fetchSchedule(startDate, endDate) {
-  const endpoint = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&gameTypes=R&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&hydrate=team,venue,linescore,probablePitcher(note)`;
+async function fetchSchedule(startDate, endDate, gameTypes = "R", hydrate = "team,venue,linescore,probablePitcher(note)") {
+  const endpoint = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&gameTypes=${encodeURIComponent(gameTypes)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&hydrate=${encodeURIComponent(hydrate)}`;
   const resp = await fetch(endpoint, { headers: { "accept": "application/json" } });
   const text = await resp.text();
   let data = {};
@@ -224,8 +225,8 @@ async function fetchSchedule(startDate, endDate) {
   const games = [];
   for (const d of (data.dates || [])) for (const g of (d.games || [])) games.push(g);
   const statusSamples = [...new Set(games.map(g => `${g?.status?.statusCode || ""}|${g?.status?.abstractGameState || ""}|${g?.status?.detailedState || ""}`).filter(Boolean))].slice(0, 25);
-  const gameTypes = [...new Set(games.map(g => String(g.gameType || "")).filter(Boolean))].slice(0, 10);
-  return { endpoint, data, games, statusSamples, gameTypes };
+  const observedGameTypes = [...new Set(games.map(g => String(g.gameType || "")).filter(Boolean))].slice(0, 10);
+  return { endpoint, data, games, statusSamples, gameTypes: observedGameTypes };
 }
 
 async function upsertCalendar(env, games, endpoint) {
@@ -400,6 +401,132 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
   return { coverageRows, blockingGaps, gapsSample, gamesChecked: games.length };
 }
 
+
+function dateOnlyUtc(d) { return d.toISOString().slice(0, 10); }
+function parseDateSafe(value, fallback) {
+  const s = String(value || fallback || "").slice(0, 10);
+  const d = new Date(s + "T00:00:00Z");
+  return Number.isNaN(d.getTime()) ? new Date(String(fallback).slice(0, 10) + "T00:00:00Z") : d;
+}
+function addMonthsUtc(date, months) {
+  const d = new Date(date.getTime());
+  d.setUTCMonth(d.getUTCMonth() + months);
+  return d;
+}
+function buildMonthChunks(startDate, endDate) {
+  const start = parseDateSafe(startDate, "2026-03-01");
+  const end = parseDateSafe(endDate, "2026-11-30");
+  const chunks = [];
+  let cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+  if (cur < start) cur = start;
+  while (cur <= end) {
+    const monthEnd = new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth() + 1, 0));
+    const chunkEnd = monthEnd < end ? monthEnd : end;
+    chunks.push({ start: dateOnlyUtc(cur), end: dateOnlyUtc(chunkEnd) });
+    cur = new Date(Date.UTC(chunkEnd.getUTCFullYear(), chunkEnd.getUTCMonth(), chunkEnd.getUTCDate() + 1));
+  }
+  return chunks;
+}
+
+async function handleFullCalendarSeed(input, env) {
+  const startedAt = nowUtc();
+  const batchId = rid("game_calendar_full_seed_batch");
+  const requestId = input.request_id || null;
+  const nested = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
+  const season = Number(nested.season || input.season || 2026);
+  const startDate = String(nested.season_start_date || nested.start_date || input.start_date || `${season}-03-01`).slice(0, 10);
+  const endDate = String(nested.season_end_date || nested.end_date || input.end_date || `${season}-11-30`).slice(0, 10);
+  const gameTypes = String(nested.game_types || input.game_types || "R,P");
+  const hydrate = String(nested.hydrate || input.hydrate || "team,venue,probablePitcher(note)");
+
+  await ensureCoverageTables(env);
+  const chunks = buildMonthChunks(startDate, endDate);
+  let sourceGameCount = 0;
+  let sourceStatsAvailableCount = 0;
+  let calendarRowsUpserted = 0;
+  let externalCalls = 0;
+  const chunkReports = [];
+  const statusCounts = {};
+  const gameTypeCounts = {};
+
+  for (const chunk of chunks) {
+    const schedule = await fetchSchedule(chunk.start, chunk.end, gameTypes, hydrate);
+    externalCalls++;
+    const upserted = await upsertCalendar(env, schedule.games, schedule.endpoint);
+    sourceGameCount += schedule.games.length;
+    calendarRowsUpserted += upserted;
+    let chunkStatsAvailable = 0;
+    for (const g of schedule.games) {
+      const c = classifyGame(g);
+      if (c.is_available_for_stats === 1) chunkStatsAvailable++;
+      const sk = `${c.status_code || ""}|${c.abstract_game_state || ""}|${c.detailed_state || ""}`;
+      statusCounts[sk] = (statusCounts[sk] || 0) + 1;
+      const gt = String(g.gameType || "");
+      gameTypeCounts[gt] = (gameTypeCounts[gt] || 0) + 1;
+    }
+    sourceStatsAvailableCount += chunkStatsAvailable;
+    chunkReports.push({ start_date: chunk.start, end_date: chunk.end, endpoint: schedule.endpoint, source_game_count: schedule.games.length, stats_available_game_count: chunkStatsAvailable, rows_upserted: upserted, observed_status_codes_sample: schedule.statusSamples.slice(0, 12), observed_game_types_sample: schedule.gameTypes });
+  }
+
+  const seasonSummary = await all(env.TEAM_DB, `SELECT substr(official_date,1,7) AS month, game_type, status_code, detailed_state, COUNT(*) AS games, SUM(is_available_for_stats) AS stats_available_games FROM mlb_game_calendar WHERE official_date BETWEEN ? AND ? GROUP BY substr(official_date,1,7), game_type, status_code, detailed_state ORDER BY month, game_type, status_code`, startDate, endDate);
+  const totalStored = await first(env.TEAM_DB, `SELECT COUNT(*) AS rows, COUNT(DISTINCT game_pk) AS distinct_game_pks, MIN(official_date) AS first_official_date, MAX(official_date) AS last_official_date, SUM(is_available_for_stats) AS stats_available_games FROM mlb_game_calendar WHERE official_date BETWEEN ? AND ?`, startDate, endDate);
+  const badIdentity = await first(env.TEAM_DB, `SELECT COUNT(*) AS bad_rows FROM mlb_game_calendar WHERE official_date BETWEEN ? AND ? AND (game_pk IS NULL OR home_team_id IS NULL OR away_team_id IS NULL OR home_team_id = away_team_id OR raw_json IS NULL OR raw_json='')`, startDate, endDate);
+
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    request_id: requestId,
+    chain_id: input.chain_id || null,
+    batch_id: batchId,
+    mode: "game_calendar_full_seed",
+    status: "GAME_CALENDAR_FULL_SEED_COMPLETED",
+    certification: "GAME_CALENDAR_FULL_SEED_COMPLETED_NO_REPAIRS",
+    certification_grade: "CALENDAR_SEED_PASS_VALIDATE_WITH_LIVE_TOTALS",
+    season,
+    season_start_date: startDate,
+    season_end_date: endDate,
+    game_types: gameTypes,
+    chunk_count: chunks.length,
+    source_game_count: sourceGameCount,
+    source_stats_available_game_count: sourceStatsAvailableCount,
+    calendar_rows_upserted: calendarRowsUpserted,
+    stored_calendar_rows_in_range: Number(totalStored?.rows || 0),
+    stored_distinct_game_pks_in_range: Number(totalStored?.distinct_game_pks || 0),
+    first_official_date: totalStored?.first_official_date || null,
+    last_official_date: totalStored?.last_official_date || null,
+    stored_stats_available_games_in_range: Number(totalStored?.stats_available_games || 0),
+    bad_identity_rows_in_range: Number(badIdentity?.bad_rows || 0),
+    observed_status_counts: statusCounts,
+    observed_game_type_counts: gameTypeCounts,
+    chunk_reports: chunkReports,
+    month_status_summary: seasonSummary,
+    official_date_is_canonical_anchor: true,
+    preserve_out_of_window_rescheduled_rows: true,
+    upsert_by_game_pk_only: true,
+    no_hard_delete: true,
+    no_source_history_mutation: true,
+    no_repair_jobs_created: true,
+    no_coverage_rebuild_in_full_seed: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_board_mutation: true,
+    no_daily_context_mutation: true,
+    rows_read: sourceGameCount,
+    rows_written: calendarRowsUpserted,
+    external_calls_performed: externalCalls,
+    finished_at: nowUtc()
+  };
+
+  await run(env.TEAM_DB, `INSERT INTO mlb_game_coverage_batches (batch_id, run_id, request_id, worker_name, worker_version, mode, status, coverage_window_start, coverage_window_end, source_game_count, source_final_game_pk_count, coverage_rows_written, missing_game_layer_count, blocking_gap_count, certification_status, certification_grade, started_at, finished_at, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+    batchId, input.run_id || null, requestId, WORKER_NAME, VERSION, "game_calendar_full_seed", output.status, startDate, endDate, sourceGameCount, sourceStatsAvailableCount, output.certification, output.certification_grade, startedAt, JSON.stringify(output));
+
+  return output;
+}
+
 async function handleCoverageAudit(input, env) {
   const startedAt = nowUtc();
   const batchId = rid("game_coverage_batch");
@@ -491,6 +618,12 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const mode = String(input.mode || input?.input_json?.mode || url.searchParams.get("mode") || "");
+      if (mode === "game_calendar_full_seed") {
+        try { return jsonResponse(await handleFullCalendarSeed(input, env)); }
+        catch (err) {
+          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, mode, status: "GAME_CALENDAR_FULL_SEED_FAILED", certification: "GAME_CALENDAR_FULL_SEED_FAILED", certification_grade: "CALENDAR_SEED_FAIL", error: String(err && err.message ? err.message : err), no_source_history_mutation: true, no_repair_jobs_created: true, no_scoring: true, no_board_mutation: true, rows_read: 0, rows_written: 0, external_calls_performed: 0 }, 200);
+        }
+      }
       if (mode === "game_calendar_coverage_audit") {
         try { return jsonResponse(await handleCoverageAudit(input, env)); }
         catch (err) {
