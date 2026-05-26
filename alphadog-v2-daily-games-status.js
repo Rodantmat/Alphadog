@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-games-status";
-const VERSION = "alphadog-v2-daily-games-status-v0.1.6-sleeper-shell-unordered-cross-board-resolution";
+const VERSION = "alphadog-v2-daily-games-status-v0.1.7-sleeper-context-normalize-stale-anchor-guard";
 const JOB_KEY = "daily-games-status";
 const MLB_SCHEDULE_SOURCE = "official_mlb_statsapi_schedule";
 const MLB_SCHEDULE_ENDPOINT_PATH = "/api/v1/schedule?sportId=1&gameType=R&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD";
@@ -29,7 +29,14 @@ async function readJsonSafe(request) { try { return await request.json(); } catc
 async function all(db, sql, ...binds) { const s = db.prepare(sql); const r = binds.length ? await s.bind(...binds).all() : await s.all(); return r.results || []; }
 async function first(db, sql, ...binds) { const s = db.prepare(sql); return binds.length ? await s.bind(...binds).first() : await s.first(); }
 async function run(db, sql, ...binds) { const s = db.prepare(sql); return binds.length ? await s.bind(...binds).run() : await s.run(); }
-function normalize(v) { return String(v || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim(); }
+function normalize(v) {
+  return String(v || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+}
 function dateOnly(value) {
   if (!value) return null;
   const text = String(value);
@@ -691,27 +698,36 @@ function bestStartTimeMatch(games, startTime, maxMinutes = 15) {
   if (!sorted.length || sorted[0].delta > maxMinutes) return null;
   return { game: sorted[0].g, delta: sorted[0].delta };
 }
+function syntheticSleeperShellGame(row, ids, teamDir, reason = "no_official_schedule_match") {
+  const shell = row.sleeper_event_shell || {};
+  const homeRef = ids.homeId && teamDir ? teamDir.byMlbId.get(Number(ids.homeId)) : null;
+  const awayRef = ids.awayId && teamDir ? teamDir.byMlbId.get(Number(ids.awayId)) : null;
+  const start = shell.commence_time || row.start_time || null;
+  return {
+    gamePk: null,
+    gameDate: start,
+    officialDate: shell.game_date || dateOnly(start) || row.slate_date || null,
+    teams: {
+      away: { team: { id: Number(ids.awayId) || null, name: awayRef?.full_name || shell.away_team || teamAbbrFromId(teamDir, ids.awayId) || null } },
+      home: { team: { id: Number(ids.homeId) || null, name: homeRef?.full_name || shell.home_team || teamAbbrFromId(teamDir, ids.homeId) || null } }
+    },
+    status: { abstractGameState: "Preview", codedGameState: "S", detailedState: "Scheduled", statusCode: "S" },
+    __source_endpoint: "sleeper_raw_event_shell_board_context",
+    __source_fetched_at: nowUtc(),
+    __synthetic_board_context: true,
+    __synthetic_reason: reason,
+    __synthetic_game_key: `sleeper_shell_${normalize(row.source_event_id || shell.event_id || shell.canonical_event_id || row.board_row_id || row.source_line_id)}`
+  };
+}
+
 function matchGame(row, games, aliases, teamDir = null) {
   const sourceEvent = String(row.source_event_id || "").trim();
   const shell = row.sleeper_event_shell || null;
   if (shell) {
     const ids = sleeperShellTeamIds(shell, aliases);
     if (ids.homeId && ids.awayId) {
-      // Cross-board PrizePicks carries a stronger board-time anchor than Sleeper commence_time.
-      // Use it first when available, because Sleeper raw commence_time can be a source placeholder
-      // while the raw event shell still has the correct teams/game container.
-      if (row.cross_board_prizepicks_start_time) {
-        const crossDateGames = gamesForDate(games, row.cross_board_prizepicks_start_time || row.cross_board_prizepicks_slate_date);
-        const crossPair = gamesForUnorderedTeamPair(crossDateGames, ids.homeId, ids.awayId, teamDir);
-        const crossTimeHit = bestStartTimeMatch(crossPair, row.cross_board_prizepicks_start_time, 20);
-        if (crossTimeHit) {
-          return { game: crossTimeHit.game, method: "sleeper_raw_event_shell_cross_board_prizepicks_official_schedule", confidence: "HIGH" };
-        }
-        if (crossPair.length === 1) {
-          return { game: crossPair[0], method: "sleeper_raw_event_shell_cross_board_prizepicks_team_pair", confidence: "HIGH" };
-        }
-      }
-      const shellDateGames = gamesForDate(games, shell.game_date || row.slate_date || row.start_time);
+      const shellDate = dateOnly(shell.game_date || row.slate_date || row.start_time || shell.commence_time);
+      const shellDateGames = gamesForDate(games, shellDate || shell.game_date || row.slate_date || row.start_time);
       const shellPair = gamesForUnorderedTeamPair(shellDateGames, ids.homeId, ids.awayId, teamDir);
       if (shellPair.length === 1) {
         return { game: shellPair[0], method: "sleeper_raw_event_shell_unordered_team_pair_official_schedule", confidence: "HIGH" };
@@ -719,8 +735,34 @@ function matchGame(row, games, aliases, teamDir = null) {
       if (shellPair.length > 1) {
         const rawTimeHit = bestStartTimeMatch(shellPair, shell.commence_time || row.start_time, 90);
         if (rawTimeHit) return { game: rawTimeHit.game, method: rawTimeHit.delta <= 15 ? "sleeper_raw_event_shell_team_pair_exact_start_time" : "sleeper_raw_event_shell_team_pair_near_start_time", confidence: rawTimeHit.delta <= 15 ? "HIGH" : "MEDIUM" };
-        return { game: null, method: "ambiguous_raw_event_shell_team_pair_doubleheader", confidence: "LOW", ambiguous_count: shellPair.length };
       }
+
+      // Cross-board PrizePicks is a helper, not authority. Never let a stale PrizePicks anchor
+      // override the current Sleeper raw event shell date and turn a valid current Sleeper row into
+      // blocked_started. Use the cross-board official anchor only when its board/slate date is
+      // compatible with the Sleeper shell date.
+      if (row.cross_board_prizepicks_start_time) {
+        const crossDate = dateOnly(row.cross_board_prizepicks_slate_date || row.cross_board_prizepicks_start_time);
+        const crossCompatible = !shellDate || !crossDate || shellDate === crossDate;
+        if (crossCompatible) {
+          const crossDateGames = gamesForDate(games, row.cross_board_prizepicks_start_time || row.cross_board_prizepicks_slate_date);
+          const crossPair = gamesForUnorderedTeamPair(crossDateGames, ids.homeId, ids.awayId, teamDir);
+          const crossTimeHit = bestStartTimeMatch(crossPair, row.cross_board_prizepicks_start_time, 20);
+          if (crossTimeHit) {
+            return { game: crossTimeHit.game, method: "sleeper_raw_event_shell_cross_board_prizepicks_official_schedule", confidence: "HIGH" };
+          }
+          if (crossPair.length === 1) {
+            return { game: crossPair[0], method: "sleeper_raw_event_shell_cross_board_prizepicks_team_pair", confidence: "HIGH" };
+          }
+        } else {
+          row.enrichment_flags.push("cross_board_prizepicks_anchor_date_mismatch_ignored");
+        }
+      }
+
+      if (shellPair.length > 1) {
+        return { game: syntheticSleeperShellGame(row, ids, teamDir, "ambiguous_official_schedule_but_source_event_shell_complete"), method: "sleeper_raw_event_shell_context_unambiguous_board_event", confidence: "HIGH" };
+      }
+      return { game: syntheticSleeperShellGame(row, ids, teamDir, "official_schedule_missing_but_source_event_shell_complete"), method: "sleeper_raw_event_shell_context_no_official_schedule_match", confidence: "HIGH" };
     }
   }
 
@@ -774,7 +816,7 @@ function stageRow(batchId, row, match, nowMs, aliases, teamDir) {
   const g = match.game;
   const t = g ? scheduleTeamIds(g, teamDir) : {};
   const c = classifyGame(g, row, nowMs);
-  const gameKey = g ? `mlb_${g.gamePk}` : `unresolved_${normalize(row.board_source_key)}_${normalize(row.board_row_id || row.source_line_id || Math.random())}`;
+  const gameKey = g && g.gamePk ? `mlb_${g.gamePk}` : (g && g.__synthetic_game_key ? g.__synthetic_game_key : `unresolved_${normalize(row.board_source_key)}_${normalize(row.board_row_id || row.source_line_id || Math.random())}`);
   let safety = c.safety;
   let block = c.block;
   if (!g && match.method && match.method.includes("ambiguous")) { safety = "blocked_ambiguous_game_mapping"; block = "ambiguous_game_mapping"; }
@@ -809,7 +851,7 @@ function stageRow(batchId, row, match, nowMs, aliases, teamDir) {
     board_slate_date: row.slate_date || dateOnly(row.start_time),
     board_pickable_flag: row.pickable_flag,
     resolved_game_key: gameKey,
-    game_pk: g ? Number(g.gamePk) : null,
+    game_pk: g && g.gamePk ? Number(g.gamePk) : null,
     official_date: g ? (g.officialDate || dateOnly(g.gameDate) || g.__schedule_date) : null,
     official_start_time_utc: g ? g.gameDate : null,
     away_mlb_team_id: t.away || null,
@@ -914,7 +956,7 @@ async function runDailyGameStatus(env, input = {}) {
   const stageAfterClean = await first(env.DAILY_DB, "SELECT COUNT(*) AS c FROM daily_game_status_stage WHERE batch_id=?", batchId);
   const certification = boardRows.length > 0 && schedule.dates_fetched > 0 && Number(duplicateKeys?.c || 0) === 0 ? "DAILY_GAME_STATUS_CERTIFIED_CURRENT_REPLACED" : (boardRows.length === 0 ? "DAILY_GAME_STATUS_NO_ACTIVE_BOARD_ROWS" : "DAILY_GAME_STATUS_COMPLETED_WITH_SOURCE_WARNINGS");
   const grade = certification === "DAILY_GAME_STATUS_CERTIFIED_CURRENT_REPLACED" ? "PASS" : "REVIEW";
-  const certJson = { board_rows_read: boardRows.length, prizepicks_rows_read: pp.rows.length, sleeper_rows_read: sl.rows.length, board_relevant_dates: dates, mlb_schedule_fetches: schedule.fetches, mlb_schedule_errors: schedule.errors, duplicate_current_keys: Number(duplicateKeys?.c || 0), source_endpoint_template: MLB_SCHEDULE_ENDPOINT_PATH, exact_board_columns_used: { prizepicks: pp.columns, sleeper: sl.columns }, matching_methods: ["source_event_id_game_pk", "sleeper_raw_event_shell_unordered_team_pair_official_schedule", "sleeper_raw_event_shell_cross_board_prizepicks_official_schedule", "sleeper_raw_event_shell_cross_board_prizepicks_team_pair", "sleeper_raw_event_shell_team_pair_exact_start_time", "team_opponent_alias_pair", "team_pair_plus_start_time", "sleeper_source_event_two_team_cluster", "single_team_exact_start_time", "single_team_doubleheader_exact_start_time", "player_roster_team_unique_date", "player_roster_team_exact_start_time", "player_roster_team_unique_date_official_time_override", "start_time_only_low_confidence", "unresolved_board_game_mapping"], enrichment: enrichment, unsafe_rules: ["blocked_started", "blocked_final", "blocked_postponed", "blocked_suspended", "blocked_missing_game_time", "blocked_ambiguous_game_mapping", "blocked_board_time_past", "review_required"] };
+  const certJson = { board_rows_read: boardRows.length, prizepicks_rows_read: pp.rows.length, sleeper_rows_read: sl.rows.length, board_relevant_dates: dates, mlb_schedule_fetches: schedule.fetches, mlb_schedule_errors: schedule.errors, duplicate_current_keys: Number(duplicateKeys?.c || 0), source_endpoint_template: MLB_SCHEDULE_ENDPOINT_PATH, exact_board_columns_used: { prizepicks: pp.columns, sleeper: sl.columns }, matching_methods: ["source_event_id_game_pk", "sleeper_raw_event_shell_unordered_team_pair_official_schedule", "sleeper_raw_event_shell_context_no_official_schedule_match", "sleeper_raw_event_shell_context_unambiguous_board_event", "sleeper_raw_event_shell_cross_board_prizepicks_official_schedule", "sleeper_raw_event_shell_cross_board_prizepicks_team_pair", "sleeper_raw_event_shell_team_pair_exact_start_time", "team_opponent_alias_pair", "team_pair_plus_start_time", "sleeper_source_event_two_team_cluster", "single_team_exact_start_time", "single_team_doubleheader_exact_start_time", "player_roster_team_unique_date", "player_roster_team_exact_start_time", "player_roster_team_unique_date_official_time_override", "start_time_only_low_confidence", "unresolved_board_game_mapping"], enrichment: enrichment, unsafe_rules: ["blocked_started", "blocked_final", "blocked_postponed", "blocked_suspended", "blocked_missing_game_time", "blocked_ambiguous_game_mapping", "blocked_board_time_past", "review_required"] };
   await run(env.DAILY_DB, "INSERT INTO daily_game_status_certifications (certification_id, batch_id, certification_status, certification_grade, certification_reason, certification_json) VALUES (?, ?, ?, ?, ?, ?)", rid("dgs_cert"), batchId, certification, grade, "Board-focused game status refresh completed without board/scoring mutation", JSON.stringify(certJson));
   await run(env.DAILY_DB, "INSERT INTO daily_game_status_outcomes (outcome_id, batch_id, outcome_key, outcome_status, outcome_json) VALUES (?, ?, 'daily_game_status_summary', ?, ?)", rid("dgs_outcome"), batchId, certification, JSON.stringify(certJson));
   await run(env.DAILY_DB, "UPDATE daily_game_status_batches SET board_rows_read=?, board_relevant_dates=?, board_relevant_games=?, mlb_schedule_dates_fetched=?, mlb_schedule_games_seen=?, staged_rows=?, promoted_rows=?, unsafe_rows=?, warning_rows=?, certification_status=?, certification_grade=?, certification_reason=?, certification_json=?, certified_at=CURRENT_TIMESTAMP, promoted_at=CURRENT_TIMESTAMP, cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", boardRows.length, dates.length, new Set(schedule.games.map(g => g.gamePk)).size, schedule.dates_fetched, schedule.games_seen, staged, Number(currentCount?.c || 0), unsafe, warnings, certification, grade, "Certified current replacement lifecycle; no board/scoring/final writes", JSON.stringify(certJson), batchId);
