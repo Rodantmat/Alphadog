@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.98-sleeper-finalization-fix";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.99-board-full-run-chain";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -47,13 +47,14 @@ function base(env, extra = {}) {
       "Buttons enqueue/wake backend work only.",
       "Browser does not run long loops.",
       "Scheduled cron calls the same bounded tick path.",
-      "v0.2.60 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with stale running recovery, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.4.0 source probe/base stage/promote-clean/delta-update, exact active static workers, exact static-certifier read-only validation, exact static-full-run backend chain, and exact incremental-morning-full-run backend chain only.",
+      "v0.2.60 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with stale running recovery, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.4.0 source probe/base stage/promote-clean/delta-update, exact active static workers, exact static-certifier read-only validation, exact static-full-run backend chain, and exact incremental-morning-full-run backend chain only.",
       "No generic worker dispatch, no scoring, no ranking, no final board writes, no old production writes."
     ],
     bindings: {
       CONTROL_DB: !!env.CONTROL_DB,
       CONFIG_DB: !!env.CONFIG_DB,
       STATIC_CERTIFIER_WORKER: !!env.STATIC_CERTIFIER_WORKER,
+      PRIZEPICKS_GITHUB_BOARD_WORKER: !!env.PRIZEPICKS_GITHUB_BOARD_WORKER,
       PARLAY_SLEEPER_BOARD_WORKER: !!env.PARLAY_SLEEPER_BOARD_WORKER,
       BASE_HITTER_GAME_LOGS_WORKER: !!env.BASE_HITTER_GAME_LOGS_WORKER,
       BASE_HITTER_SPLITS_WORKER: !!env.BASE_HITTER_SPLITS_WORKER,
@@ -297,6 +298,187 @@ function isIncrementalMorningFullRunJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "incremental-morning-full-run" && worker === "alphadog-v2-orchestrator";
+}
+
+function isBoardFullRunJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "board-full-run" && worker === "alphadog-v2-orchestrator";
+}
+
+const BOARD_FULL_RUN_LOCK_KEY = "BOARD_FULL_RUN";
+const BOARD_FULL_RUN_STALE_MINUTES = 20;
+
+const BOARD_FULL_RUN_STAGES = [
+  { stage_key: "board_prizepicks_refresh", job_key: "prizepicks-github-board", worker_name: "alphadog-v2-prizepicks-github-board", display_name: "PrizePicks Board Refresh", visible_button: "BOARD > PrizePicks", mode: "board_full_run_prizepicks_refresh", worker_group: "Board", phase_key: "board", priority: 4 },
+  { stage_key: "board_sleeper_refresh", job_key: "parlay-sleeper-board", worker_name: "alphadog-v2-parlay-sleeper-board", display_name: "Sleeper Board Refresh", visible_button: "BOARD > Sleeper", mode: "board_full_run_sleeper_refresh", worker_group: "Board", phase_key: "board", priority: 4 }
+];
+
+function boardFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
+  return {
+    source: "board_full_run_parent",
+    mode: stage.mode,
+    visible_button: stage.visible_button,
+    chain_id: parentRow.chain_id,
+    parent_chain_id: parentRow.chain_id,
+    parent_request_id: parentRow.request_id,
+    stage_key: stage.stage_key,
+    stage_index: stepIndex,
+    stage_count: BOARD_FULL_RUN_STAGES.length,
+    retry_count: retryCount,
+    approved_chain_order: BOARD_FULL_RUN_STAGES.map(s => s.job_key),
+    stop_on_first_failed_stage: true,
+    backend_chain_only: true,
+    no_browser_loop: true,
+    backend_scheduled_continuation: true,
+    no_generic_dispatch: true,
+    no_delta_full_run: true,
+    no_incremental_morning_full_run: true,
+    no_static_work: true,
+    no_base_delta_workers: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_old_production_touch: true,
+    prizepicks_consumer_only: stage.job_key === "prizepicks-github-board",
+    sleeper_board_inventory_only: stage.job_key === "parlay-sleeper-board",
+    no_prizepicks_mutation: stage.job_key !== "prizepicks-github-board",
+    no_sleeper_mutation: stage.job_key !== "parlay-sleeper-board",
+    created_at: nowIso()
+  };
+}
+
+async function ensureBoardFullRunLock(env, parentRow) {
+  await run(env.CONTROL_DB, "INSERT OR IGNORE INTO control_locks (lock_key, lock_flag, updated_at) VALUES (?, 0, CURRENT_TIMESTAMP)", BOARD_FULL_RUN_LOCK_KEY);
+  const lock = await first(env.CONTROL_DB,
+    "SELECT lock_key, lock_flag, owner_request_id, owner_worker_name, acquired_at, expires_at, updated_at, CASE WHEN expires_at IS NOT NULL AND datetime(expires_at) > datetime('now') THEN 1 ELSE 0 END AS not_expired FROM control_locks WHERE lock_key=?",
+    BOARD_FULL_RUN_LOCK_KEY
+  );
+  const activeOther = await first(env.CONTROL_DB,
+    "SELECT request_id, chain_id, status, updated_at FROM control_job_queue WHERE job_key='board-full-run' AND request_id<>? AND status IN ('pending','running','partial_continue') AND finished_at IS NULL ORDER BY datetime(created_at) DESC LIMIT 1",
+    parentRow.request_id
+  );
+  if (lock && Number(lock.lock_flag) === 1 && lock.owner_request_id && lock.owner_request_id !== parentRow.request_id && Number(lock.not_expired) === 1) {
+    return { ok: false, reason: "board_full_run_lock_busy", lock, active_other_parent: activeOther || null };
+  }
+  if (lock && Number(lock.lock_flag) === 1 && lock.owner_request_id && lock.owner_request_id !== parentRow.request_id && activeOther) {
+    return { ok: false, reason: "board_full_run_active_parent_exists", lock, active_other_parent: activeOther };
+  }
+  await run(env.CONTROL_DB,
+    "UPDATE control_locks SET lock_flag=1, owner_request_id=?, owner_worker_name=?, acquired_at=COALESCE(acquired_at,CURRENT_TIMESTAMP), expires_at=datetime('now','+20 minutes'), updated_at=CURRENT_TIMESTAMP WHERE lock_key=?",
+    parentRow.request_id, WORKER_NAME, BOARD_FULL_RUN_LOCK_KEY
+  );
+  return { ok: true, recovered_stale_lock: !!(lock && Number(lock.lock_flag) === 1 && lock.owner_request_id !== parentRow.request_id) };
+}
+
+async function releaseBoardFullRunLock(env, parentRow) {
+  await run(env.CONTROL_DB,
+    "UPDATE control_locks SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE lock_key=? AND (owner_request_id=? OR owner_request_id IS NULL)",
+    BOARD_FULL_RUN_LOCK_KEY, parentRow.request_id
+  );
+}
+
+async function enqueueBoardFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0) {
+  const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
+  const input = boardFullRunChildInput(parentRow, stage, stepIndex, retryCount);
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input)
+  );
+  return { child_request_id: childRequestId, input };
+}
+
+function boardFullRunStageKeyFromChild(child) {
+  const input = parseJsonSafeText(child && child.input_json || "{}", {});
+  return String(input.stage_key || "");
+}
+
+function childPassedBoardFullRun(stage, child) {
+  if (!child) return { pass: false, wait: false, reason: "child_missing" };
+  const status = String(child.status || "");
+  if (["pending", "running", "partial_continue"].includes(status) && !child.finished_at) return { pass: false, wait: true, reason: "child_active", child_status: status };
+  if (status !== "completed") return { pass: false, transient: status === "failed" || status === "blocked", reason: "child_not_completed", child_status: status, child_error_code: child.error_code || null };
+  const output = parseJsonSafeText(child.output_json || "{}", {});
+  const cert = String(output.certification || "");
+  if (!output || output.ok !== true) return { pass: false, reason: "child_output_ok_not_true", output_ok: output && output.ok };
+  if (output.data_ok !== true) return { pass: false, reason: "child_data_ok_not_true", data_ok: output && output.data_ok };
+  if (stage.job_key === "prizepicks-github-board") {
+    if (cert !== "promoted_current_board") return { pass: false, reason: "prizepicks_not_promoted_current_board", certification: cert };
+    if (Number(output.rows_promoted || 0) <= 0) return { pass: false, reason: "prizepicks_rows_promoted_zero", rows_promoted: output.rows_promoted || 0 };
+    if (Number(output.future_pickable_rows || 0) <= 0) return { pass: false, reason: "prizepicks_future_pickable_zero", future_pickable_rows: output.future_pickable_rows || 0 };
+    if (output.no_scoring === false || output.no_ranking === false || output.no_final_board_write === false) return { pass: false, reason: "prizepicks_unsafe_downstream_flag_false" };
+  }
+  if (stage.job_key === "parlay-sleeper-board") {
+    if (cert !== "PARLAY_SLEEPER_BOARD_INVENTORY_PROMOTED_NO_SCORING") return { pass: false, reason: "sleeper_not_promoted_inventory_only", certification: cert };
+    const currentRows = Number(output.current_rows_written || output.promoted_rows_written || (output.stage_only_result && output.stage_only_result.current_rows_written) || 0);
+    const activeRows = Number(output.active_batch_rows_written || (output.stage_only_result && output.stage_only_result.active_batch_rows_written) || (output.stage_only_result && output.stage_only_result.promotion && output.stage_only_result.promotion.active_batch_rows) || 0);
+    if (currentRows <= 0) return { pass: false, reason: "sleeper_current_rows_zero", current_rows_written: currentRows };
+    if (activeRows !== 1) return { pass: false, reason: "sleeper_active_batch_not_one", active_batch_rows_written: activeRows };
+    if (output.no_scoring !== true || output.no_ranking !== true || output.no_final_board !== true) return { pass: false, reason: "sleeper_inventory_safety_flags_missing" };
+  }
+  return { pass: true, certification: cert, data_ok: output.data_ok, rows_read: output.rows_read || 0, rows_written: output.rows_written || 0, rows_promoted: output.rows_promoted || output.promoted_rows_written || 0, external_calls: output.external_calls_performed || output.external_calls || 0, output };
+}
+
+async function processBoardFullRunJob(env, row, runId, trigger) {
+  const started = Date.now();
+  const parentInput = parseJsonSafeText(row.input_json || "{}", {});
+  const lock = await ensureBoardFullRunLock(env, row);
+  if (!lock.ok) {
+    const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "PARTIAL_CONTINUE_BOARD_FULL_RUN_LOCK_BUSY", certification: "BOARD_FULL_RUN_LOCK_BUSY_WAIT", lock, continuation_required: true, orchestrator_should_self_continue: true };
+    await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'BOARD_FULL_RUN_LOCK_BUSY_WAIT', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+10 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+    return output;
+  }
+
+  const stageReports = [];
+  for (let i = 0; i < BOARD_FULL_RUN_STAGES.length; i++) {
+    const stage = BOARD_FULL_RUN_STAGES[i];
+    const attempts = await all(env.CONTROL_DB,
+      "SELECT request_id, status, error_code, error_message, output_json, input_json, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND job_key=? ORDER BY datetime(created_at) ASC",
+      row.request_id, row.chain_id, stage.job_key
+    );
+    const stageAttempts = attempts.filter(c => boardFullRunStageKeyFromChild(c) === stage.stage_key || attempts.length === 1);
+    const child = stageAttempts.length ? stageAttempts[stageAttempts.length - 1] : null;
+
+    if (!child) {
+      const enqueued = await enqueueBoardFullRunChild(env, row, stage, i, 0);
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "PARTIAL_CONTINUE_BOARD_FULL_RUN_CHILD_ENQUEUED", certification: "BOARD_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, enqueued_child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: [...stageReports, { stage_key: stage.stage_key, job_key: stage.job_key, child_request_id: enqueued.child_request_id, child_status: "pending", pass: null }], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true, board_full_run_only: true, no_delta_full_run: true, no_scoring: true, no_ranking: true, no_final_board: true };
+      await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'BOARD_FULL_RUN_CHILD_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'board_full_run_child_enqueued', 'Board Full Run enqueued next child stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: enqueued.child_request_id, stage_key: stage.stage_key, stage_index: i, mode: stage.mode }));
+      return output;
+    }
+
+    const validation = childPassedBoardFullRun(stage, child);
+    const childOutput = parseJsonSafeText(child.output_json || "{}", {});
+    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, rows_read: childOutput.rows_read || 0, rows_written: childOutput.rows_written || 0, rows_promoted: childOutput.rows_promoted || childOutput.promoted_rows_written || 0, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0, attempts: stageAttempts.length };
+
+    if (validation.wait) {
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "PARTIAL_CONTINUE_BOARD_FULL_RUN_WAITING_ON_CHILD", certification: "BOARD_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
+      await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'BOARD_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+6 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      return output;
+    }
+
+    if (!validation.pass) {
+      const finalStatus = "FAILED_BOARD_FULL_RUN_CHILD_FAILED";
+      const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: validation.reason, child_error_code: child.error_code || null, child_error_message: child.error_message || null, last_output_preview: JSON.stringify(childOutput).slice(0, 1200), stages: [...stageReports, report], board_full_run_certified: false, no_delta_full_run: true, no_scoring: true, no_ranking: true, no_final_board: true };
+      await releaseBoardFullRunLock(env, row);
+      await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "board full run child failed").slice(0, 900));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "board full run child failed").slice(0, 900), row.request_id);
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'ERROR', 'board_full_run_stopped', 'Board Full Run stopped on failed child stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+      return output;
+    }
+
+    stageReports.push(report);
+  }
+
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "COMPLETED_BOARD_FULL_RUN", certification: "BOARD_FULL_RUN_CERTIFIED_PRIZEPICKS_AND_SLEEPER_PASS", certification_grade: "FULL_RUN_PASS", board_full_run_certified: true, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: BOARD_FULL_RUN_STAGES.map(s => s.job_key), board_full_run_only: true, no_delta_full_run: true, no_incremental_morning_full_run: true, no_static_work: true, no_base_delta_workers: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+  await releaseBoardFullRunLock(env, row);
+  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'BOARD_FULL_RUN_CERTIFIED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'board_full_run_completed', 'Board Full Run certified PrizePicks then Sleeper board refresh stages', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+  return output;
 }
 
 const INCREMENTAL_MORNING_FULL_RUN_LOCK_KEY = "INCREMENTAL_MORNING_FULL_RUN";
@@ -3537,6 +3719,52 @@ async function processOneUnlocked(env, trigger) {
     }
   }
 
+  // v0.2.99: Board Full Run child rows are hot-continuation eligible.
+  // Recover only same-chain child rows owned by an active Board Full Run parent.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
+       FROM control_job_queue c
+       JOIN control_job_queue p ON p.request_id = c.parent_request_id
+       WHERE p.job_key='board-full-run'
+         AND p.worker_name='alphadog-v2-orchestrator'
+         AND p.status IN ('pending','running','partial_continue')
+         AND p.finished_at IS NULL
+         AND c.parent_request_id IS NOT NULL
+         AND c.status='running'
+         AND c.finished_at IS NULL
+         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-5 seconds')
+       ORDER BY datetime(c.updated_at) ASC
+       LIMIT 1`
+    );
+    if (row) {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'board_full_run_child_running_rescued_as_due', 'Recovered active Board Full Run child running row as due work for same-chain hot continuation', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, board_full_run_child_hot_rescue_v0_2_99: true })
+      );
+    }
+  }
+
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+       FROM control_job_queue
+       WHERE job_key='board-full-run'
+         AND worker_name='alphadog-v2-orchestrator'
+         AND status='running'
+         AND finished_at IS NULL
+         AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds')
+       ORDER BY datetime(updated_at) ASC
+       LIMIT 1`
+    );
+    if (row) {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'board_full_run_running_parent_rescued_as_due', 'Recovered running Board Full Run parent row as due work for backend continuation', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, board_full_run_parent_rescue_v0_2_99: true })
+      );
+    }
+  }
+
   // v0.2.95: Full Run child rows must be hot-continuation eligible without
   // waiting for the 5-minute cron. If a child was left RUNNING after a bounded
   // child tick, recover only same-chain child rows owned by the active Full Run
@@ -3843,6 +4071,15 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isBoardFullRunJob(row)) {
+    const output = await processBoardFullRunJob(env, row, runId, trigger);
+    const rawStatus = String((output && output.status) || "").toLowerCase();
+    const status = rawStatus.includes("partial_continue") || output && output.orchestrator_should_self_continue
+      ? "partial_continue_board_full_run_job"
+      : (output && output.ok ? "completed_one_board_full_run_job" : "failed_one_board_full_run_job");
+    return { status, request_id: row.request_id, run_id: runId, output };
+  }
+
   if (isIncrementalMorningFullRunJob(row)) {
     const output = await processIncrementalMorningFullRunJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
@@ -3871,16 +4108,16 @@ async function processOneUnlocked(env, trigger) {
       status: "unsupported_in_v0_2_16_safe_shell",
       job_key: row.job_key,
       worker_name: row.worker_name,
-      note: "v0.2.32 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter and Base Hitter Splits promotion/delta hot continuation use backend waitUntil, not browser pump; cron is rescue only. Base Pitcher supports locked base promotion and delta_update retained-stage continuation; base promotion makes no MLB calls, delta uses MLB StatsAPI only after base integrity gate."
+      note: "v0.2.32 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter and Base Hitter Splits promotion/delta hot continuation use backend waitUntil, not browser pump; cron is rescue only. Base Pitcher supports locked base promotion and delta_update retained-stage continuation; base promotion makes no MLB calls, delta uses MLB StatsAPI only after base integrity gate."
     };
 
     await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_31', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.32')",
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_31', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.32')",
       runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
     );
 
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_31', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.32' WHERE request_id=?",
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_31', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.32' WHERE request_id=?",
       JSON.stringify(output), row.request_id
     );
 
@@ -3942,14 +4179,14 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       const result = await processOneUnlocked(env, trigger);
       processed.push(result);
       if (result.status === "no_due_jobs") break;
-      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_hitter_metrics_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_base_starter_history_job" || result.status === "failed_one_base_bullpen_history_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_static_full_run_job" || result.status === "failed_one_incremental_morning_full_run_job") break;
+      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_hitter_metrics_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_base_starter_history_job" || result.status === "failed_one_base_bullpen_history_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_static_full_run_job" || result.status === "failed_one_incremental_morning_full_run_job" || result.status === "failed_one_board_full_run_job") break;
     }
 
     await releaseLock(env, owner, "IDLE");
 
-    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job").length;
-    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job").length;
-    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job").length;
+    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job").length;
+    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job").length;
+    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
 
     return base(env, {
@@ -4047,6 +4284,13 @@ async function countDueBaseBullpenHistory(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
+async function countDueBoardFullRun(env) {
+  const row = await first(env.CONTROL_DB,
+    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='board-full-run' AND worker_name='alphadog-v2-orchestrator' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL"
+  );
+  return Number(row && row.c ? row.c : 0);
+}
+
 async function countDueIncrementalMorningFullRun(env) {
   const row = await first(env.CONTROL_DB,
     "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='incremental-morning-full-run' AND worker_name='alphadog-v2-orchestrator' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL"
@@ -4098,6 +4342,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   }
 
   const dueIncrementalMorningFullRun = await countDueIncrementalMorningFullRun(env);
+  const dueBoardFullRun = await countDueBoardFullRun(env);
   const dueStaticPlayers = await countDueStaticPlayers(env);
   const dueBaseHitterGameLogs = await countDueBaseHitterGameLogs(env);
   const dueBaseHitterSplits = await countDueBaseHitterSplits(env);
@@ -4120,7 +4365,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const sawLockBusy = terminalStatuses.includes("lock_busy");
   const sawHardStop = terminalStatuses.some(s => s === "blocked" || s === "error");
   const continuationAllowedByLastCycle = !sawLockBusy && !sawHardStop;
-  const shouldSelfContinue = continuationAllowedByLastCycle && (dueIncrementalMorningFullRun > 0 || dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0) && depth < maxChains && !!ctx;
+  const shouldSelfContinue = continuationAllowedByLastCycle && (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0) && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
   const hotContinuationDelayMs = shouldSelfContinue && lastStatus === "no_due_jobs" ? 6500 : 0;
@@ -4134,6 +4379,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       elapsed_ms: Date.now() - started,
       cycle_count: cycles.length,
       due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
+      due_board_full_run_after_pump: dueBoardFullRun,
       due_static_players_after_pump: dueStaticPlayers,
       due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
       due_base_hitter_splits_after_pump: dueBaseHitterSplits,
@@ -4166,6 +4412,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         trigger,
         next_source: nextSource,
         due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
+      due_board_full_run_after_pump: dueBoardFullRun,
         due_static_players_after_pump: dueStaticPlayers,
         due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
         due_base_hitter_splits_after_pump: dueBaseHitterSplits,
@@ -4220,6 +4467,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
     hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
     cycle_count: cycles.length,
     due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
+      due_board_full_run_after_pump: dueBoardFullRun,
     due_static_players_after_pump: dueStaticPlayers,
     due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
     due_base_hitter_splits_after_pump: dueBaseHitterSplits,
