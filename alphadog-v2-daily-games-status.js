@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-games-status";
-const VERSION = "alphadog-v2-daily-games-status-v0.1.1-safety-confidence-alignment";
+const VERSION = "alphadog-v2-daily-games-status-v0.1.2-single-team-start-time-high-confidence";
 const JOB_KEY = "daily-games-status";
 const MLB_SCHEDULE_SOURCE = "official_mlb_statsapi_schedule";
 const MLB_SCHEDULE_ENDPOINT_PATH = "/api/v1/schedule?sportId=1&gameType=R&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD";
@@ -395,6 +395,27 @@ function matchGame(row, games, aliases) {
       return { game: null, method: "ambiguous_team_pair_doubleheader", confidence: "LOW", ambiguous_count: pairMatches.length };
     }
   }
+  if (teamId) {
+    const teamMatches = possible.filter(g => {
+      const t = scheduleTeamIds(g);
+      return t.away === teamId || t.home === teamId;
+    });
+    if (teamMatches.length === 1) {
+      const delta = row.start_time ? minutesAbs(row.start_time, teamMatches[0].gameDate) : null;
+      if (delta === null) return { game: teamMatches[0], method: "single_team_unique_date", confidence: "MEDIUM" };
+      if (delta <= 15) return { game: teamMatches[0], method: "single_team_exact_start_time", confidence: "HIGH" };
+      if (delta <= 90) return { game: teamMatches[0], method: "single_team_near_start_time", confidence: "MEDIUM" };
+      return { game: teamMatches[0], method: "single_team_time_mismatch_review", confidence: "LOW" };
+    }
+    if (teamMatches.length > 1 && row.start_time) {
+      const sorted = teamMatches.map(g => ({ g, delta: minutesAbs(row.start_time, g.gameDate) })).filter(x => x.delta !== null).sort((a, b) => a.delta - b.delta);
+      if (sorted.length && sorted[0].delta <= 15 && (sorted.length === 1 || sorted[1].delta > 15)) {
+        return { game: sorted[0].g, method: "single_team_doubleheader_exact_start_time", confidence: "HIGH" };
+      }
+      if (sorted.length && sorted[0].delta <= 90) return { game: sorted[0].g, method: "single_team_doubleheader_near_start_time", confidence: "MEDIUM" };
+      return { game: null, method: "ambiguous_single_team_doubleheader", confidence: "LOW", ambiguous_count: teamMatches.length };
+    }
+  }
   if (row.start_time) {
     const sorted = possible.map(g => ({ g, delta: minutesAbs(row.start_time, g.gameDate) })).filter(x => x.delta !== null).sort((a, b) => a.delta - b.delta);
     if (sorted.length && sorted[0].delta <= 10) return { game: sorted[0].g, method: "start_time_only_low_confidence", confidence: "LOW" };
@@ -530,7 +551,7 @@ async function runDailyGameStatus(env, input = {}) {
   const stageAfterClean = await first(env.DAILY_DB, "SELECT COUNT(*) AS c FROM daily_game_status_stage WHERE batch_id=?", batchId);
   const certification = boardRows.length > 0 && schedule.dates_fetched > 0 && Number(duplicateKeys?.c || 0) === 0 ? "DAILY_GAME_STATUS_CERTIFIED_CURRENT_REPLACED" : (boardRows.length === 0 ? "DAILY_GAME_STATUS_NO_ACTIVE_BOARD_ROWS" : "DAILY_GAME_STATUS_COMPLETED_WITH_SOURCE_WARNINGS");
   const grade = certification === "DAILY_GAME_STATUS_CERTIFIED_CURRENT_REPLACED" ? "PASS" : "REVIEW";
-  const certJson = { board_rows_read: boardRows.length, prizepicks_rows_read: pp.rows.length, sleeper_rows_read: sl.rows.length, board_relevant_dates: dates, mlb_schedule_fetches: schedule.fetches, mlb_schedule_errors: schedule.errors, duplicate_current_keys: Number(duplicateKeys?.c || 0), source_endpoint_template: MLB_SCHEDULE_ENDPOINT_PATH, exact_board_columns_used: { prizepicks: pp.columns, sleeper: sl.columns }, matching_methods: ["source_event_id_game_pk", "team_opponent_alias_pair", "team_pair_plus_start_time", "start_time_only_low_confidence", "unresolved_board_game_mapping"], unsafe_rules: ["blocked_started", "blocked_final", "blocked_postponed", "blocked_suspended", "blocked_missing_game_time", "blocked_ambiguous_game_mapping", "blocked_board_time_past", "review_required"] };
+  const certJson = { board_rows_read: boardRows.length, prizepicks_rows_read: pp.rows.length, sleeper_rows_read: sl.rows.length, board_relevant_dates: dates, mlb_schedule_fetches: schedule.fetches, mlb_schedule_errors: schedule.errors, duplicate_current_keys: Number(duplicateKeys?.c || 0), source_endpoint_template: MLB_SCHEDULE_ENDPOINT_PATH, exact_board_columns_used: { prizepicks: pp.columns, sleeper: sl.columns }, matching_methods: ["source_event_id_game_pk", "team_opponent_alias_pair", "team_pair_plus_start_time", "single_team_exact_start_time", "single_team_doubleheader_exact_start_time", "start_time_only_low_confidence", "unresolved_board_game_mapping"], unsafe_rules: ["blocked_started", "blocked_final", "blocked_postponed", "blocked_suspended", "blocked_missing_game_time", "blocked_ambiguous_game_mapping", "blocked_board_time_past", "review_required"] };
   await run(env.DAILY_DB, "INSERT INTO daily_game_status_certifications (certification_id, batch_id, certification_status, certification_grade, certification_reason, certification_json) VALUES (?, ?, ?, ?, ?, ?)", rid("dgs_cert"), batchId, certification, grade, "Board-focused game status refresh completed without board/scoring mutation", JSON.stringify(certJson));
   await run(env.DAILY_DB, "INSERT INTO daily_game_status_outcomes (outcome_id, batch_id, outcome_key, outcome_status, outcome_json) VALUES (?, ?, 'daily_game_status_summary', ?, ?)", rid("dgs_outcome"), batchId, certification, JSON.stringify(certJson));
   await run(env.DAILY_DB, "UPDATE daily_game_status_batches SET board_rows_read=?, board_relevant_dates=?, board_relevant_games=?, mlb_schedule_dates_fetched=?, mlb_schedule_games_seen=?, staged_rows=?, promoted_rows=?, unsafe_rows=?, warning_rows=?, certification_status=?, certification_grade=?, certification_reason=?, certification_json=?, certified_at=CURRENT_TIMESTAMP, promoted_at=CURRENT_TIMESTAMP, cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", boardRows.length, dates.length, new Set(schedule.games.map(g => g.gamePk)).size, schedule.dates_fetched, schedule.games_seen, staged, Number(currentCount?.c || 0), unsafe, warnings, certification, grade, "Certified current replacement lifecycle; no board/scoring/final writes", JSON.stringify(certJson), batchId);
@@ -563,7 +584,7 @@ async function runDailyGameStatus(env, input = {}) {
       endpoint_template: MLB_SCHEDULE_ENDPOINT_PATH,
       fetches: schedule.fetches,
       errors: schedule.errors,
-      confidence_policy: "HIGH only from unique source_event_id gamePk or team/opponent alias pair; uncertainty blocks safety"
+      confidence_policy: "HIGH from unique source_event_id gamePk, team/opponent alias pair, or board team plus exact official start time; uncertainty blocks safety"
     },
     elapsed_ms: Date.now() - started
   });
