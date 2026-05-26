@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.6.110-base-calendar-button -->
+<!-- alphadog-v2-control-room-v1.6.111-calendar-differential-button -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,7 +28,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.6.110-base-calendar-button</div>
+<div id="versionTag">alphadog-v2-control-room-v1.6.111-calendar-differential-button</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time.</div>
 <div class="status" id="status">READY</div>
@@ -94,6 +94,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </div></div>
 
 <div class="section"><h3>DELTA / REPAIR JOBS</h3><div class="grid">
+<button class="orch" type="button" onclick="runJobButton('DELTA > Calendar','orchestrator_enqueue_delta_calendar')">Calendar</button>
 <button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Game Logs','orchestrator_enqueue_delta_hitter_game_logs')">Hitter Game Logs</button>
 <button class="orch" type="button" onclick="runJobButton('DELTA > Hitter Metrics','orchestrator_enqueue_delta_hitter_metrics')">Hitter Metrics</button>
 <button class="orch" type="button" onclick="runJobButton('DELTA > Pitcher Metrics','orchestrator_enqueue_delta_pitcher_metrics')">Pitcher Metrics</button>
@@ -170,7 +171,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled",orchestrator_mode:"backend-scheduled-continuation",wake_binding_required:"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator",public_url_fallback_disabled:true,version:"alphadog-v2-control-room-v1.6.110-base-calendar-button",ui_sentinel:"LAYOUT_PARITY_CLEAN_BUTTONS_V1_6_78",button_layout:"five_columns_original_compact",html_source:"embedded_worker_html_and_static_html_identical",delta_pitcher_metrics_button:"present_in_working_escaped_embedded_html",deployed_file_truth:"alphadog-v2-control-room.js",working_html_string_mode:"escaped_one_line_string_restored",base_calendar_button:"present"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled",orchestrator_mode:"backend-scheduled-continuation",wake_binding_required:"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator",public_url_fallback_disabled:true,version:"alphadog-v2-control-room-v1.6.111-calendar-differential-button",ui_sentinel:"LAYOUT_PARITY_CLEAN_BUTTONS_V1_6_78",button_layout:"five_columns_original_compact",html_source:"embedded_worker_html_and_static_html_identical",delta_pitcher_metrics_button:"present_in_working_escaped_embedded_html",deployed_file_truth:"alphadog-v2-control-room.js",working_html_string_mode:"escaped_one_line_string_restored",base_calendar_button:"present", delta_calendar_button:"present"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){

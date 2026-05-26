@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.1.3-full-calendar-seed";
+const VERSION = "alphadog-v2-delta-certifier-v0.1.4-calendar-differential-checker";
 const JOB_KEY = "delta-certifier";
 
 function nowUtc() { return new Date().toISOString(); }
@@ -185,6 +185,61 @@ async function ensureCoverageTables(env) {
     UNIQUE(batch_id, game_pk, layer_key)
   )`);
   await run(env.TEAM_DB, `CREATE INDEX IF NOT EXISTS idx_mlb_game_coverage_gaps_batch ON mlb_game_coverage_gaps(batch_id)`);
+
+  await run(env.TEAM_DB, `CREATE TABLE IF NOT EXISTS mlb_game_calendar_stage (
+    snapshot_batch_id TEXT NOT NULL,
+    game_pk INTEGER NOT NULL,
+    season INTEGER NOT NULL,
+    game_type TEXT NOT NULL,
+    official_date TEXT NOT NULL,
+    game_time_utc TEXT,
+    status_code TEXT,
+    abstract_game_state TEXT,
+    detailed_state TEXT,
+    is_scheduled INTEGER DEFAULT 0,
+    is_pregame INTEGER DEFAULT 0,
+    is_live INTEGER DEFAULT 0,
+    is_final INTEGER DEFAULT 0,
+    is_postponed INTEGER DEFAULT 0,
+    is_suspended INTEGER DEFAULT 0,
+    is_cancelled INTEGER DEFAULT 0,
+    is_available_for_stats INTEGER DEFAULT 0,
+    home_team_id INTEGER,
+    away_team_id INTEGER,
+    home_team_name TEXT,
+    away_team_name TEXT,
+    venue_id INTEGER,
+    venue_name TEXT,
+    doubleheader TEXT,
+    game_number INTEGER,
+    series_game_number INTEGER,
+    source_key TEXT NOT NULL,
+    source_endpoint TEXT,
+    source_snapshot_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    raw_json TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (snapshot_batch_id, game_pk)
+  )`);
+  await run(env.TEAM_DB, `CREATE INDEX IF NOT EXISTS idx_mlb_game_calendar_stage_batch ON mlb_game_calendar_stage(snapshot_batch_id)`);
+  await run(env.TEAM_DB, `CREATE INDEX IF NOT EXISTS idx_mlb_game_calendar_stage_date ON mlb_game_calendar_stage(official_date)`);
+
+  await run(env.TEAM_DB, `CREATE TABLE IF NOT EXISTS mlb_game_calendar_diff_changes (
+    change_id TEXT PRIMARY KEY,
+    batch_id TEXT NOT NULL,
+    game_pk INTEGER NOT NULL,
+    official_date_old TEXT,
+    official_date_new TEXT,
+    change_type TEXT NOT NULL,
+    changed_fields_json TEXT,
+    old_values_json TEXT,
+    new_values_json TEXT,
+    applied_to_main INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(batch_id, game_pk)
+  )`);
+  await run(env.TEAM_DB, `CREATE INDEX IF NOT EXISTS idx_mlb_game_calendar_diff_batch ON mlb_game_calendar_diff_changes(batch_id)`);
 }
 
 function classifyGame(game) {
@@ -294,6 +349,153 @@ async function upsertCalendar(env, games, endpoint) {
   return upserted;
 }
 
+
+async function upsertCalendarStage(env, games, endpoint, batchId) {
+  let upserted = 0;
+  await run(env.TEAM_DB, `DELETE FROM mlb_game_calendar_stage WHERE snapshot_batch_id=?`, batchId);
+  for (const game of games) {
+    const c = classifyGame(game);
+    const gamePk = Number(game.gamePk);
+    if (!gamePk) continue;
+    const officialDate = String(game.officialDate || "");
+    const season = Number(String(officialDate || game.gameDate || "").slice(0, 4)) || 2026;
+    await run(env.TEAM_DB, `INSERT INTO mlb_game_calendar_stage (
+      snapshot_batch_id, game_pk, season, game_type, official_date, game_time_utc,
+      status_code, abstract_game_state, detailed_state,
+      is_scheduled, is_pregame, is_live, is_final, is_postponed, is_suspended, is_cancelled, is_available_for_stats,
+      home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name,
+      doubleheader, game_number, series_game_number, source_key, source_endpoint, source_snapshot_at, raw_json, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'mlb_statsapi_schedule_stage', ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ON CONFLICT(snapshot_batch_id, game_pk) DO UPDATE SET
+      season=excluded.season, game_type=excluded.game_type, official_date=excluded.official_date, game_time_utc=excluded.game_time_utc,
+      status_code=excluded.status_code, abstract_game_state=excluded.abstract_game_state, detailed_state=excluded.detailed_state,
+      is_scheduled=excluded.is_scheduled, is_pregame=excluded.is_pregame, is_live=excluded.is_live, is_final=excluded.is_final,
+      is_postponed=excluded.is_postponed, is_suspended=excluded.is_suspended, is_cancelled=excluded.is_cancelled, is_available_for_stats=excluded.is_available_for_stats,
+      home_team_id=excluded.home_team_id, away_team_id=excluded.away_team_id, home_team_name=excluded.home_team_name, away_team_name=excluded.away_team_name,
+      venue_id=excluded.venue_id, venue_name=excluded.venue_name, doubleheader=excluded.doubleheader, game_number=excluded.game_number,
+      series_game_number=excluded.series_game_number, source_endpoint=excluded.source_endpoint, source_snapshot_at=CURRENT_TIMESTAMP, raw_json=excluded.raw_json, updated_at=CURRENT_TIMESTAMP`,
+      batchId, gamePk, season, String(game.gameType || "R"), officialDate, String(game.gameDate || ""),
+      c.status_code, c.abstract_game_state, c.detailed_state,
+      c.is_scheduled, c.is_pregame, c.is_live, c.is_final, c.is_postponed, c.is_suspended, c.is_cancelled, c.is_available_for_stats,
+      Number(game?.teams?.home?.team?.id || 0) || null,
+      Number(game?.teams?.away?.team?.id || 0) || null,
+      String(game?.teams?.home?.team?.name || "") || null,
+      String(game?.teams?.away?.team?.name || "") || null,
+      Number(game?.venue?.id || 0) || null,
+      String(game?.venue?.name || "") || null,
+      game.doubleHeader == null ? null : String(game.doubleHeader),
+      game.gameNumber == null ? null : Number(game.gameNumber),
+      game.seriesGameNumber == null ? null : Number(game.seriesGameNumber),
+      endpoint,
+      JSON.stringify(game)
+    );
+    upserted++;
+  }
+  return upserted;
+}
+
+function changedFields(oldRow, newRow) {
+  const fields = ["season","game_type","official_date","game_time_utc","status_code","abstract_game_state","detailed_state","is_scheduled","is_pregame","is_live","is_final","is_postponed","is_suspended","is_cancelled","is_available_for_stats","home_team_id","away_team_id","home_team_name","away_team_name","venue_id","venue_name","doubleheader","game_number","series_game_number"];
+  const changed = [];
+  const oldValues = {};
+  const newValues = {};
+  for (const f of fields) {
+    const ov = oldRow ? oldRow[f] : null;
+    const nv = newRow ? newRow[f] : null;
+    if (String(ov ?? "") !== String(nv ?? "")) {
+      changed.push(f);
+      oldValues[f] = ov;
+      newValues[f] = nv;
+    }
+  }
+  return { changed, oldValues, newValues };
+}
+
+async function applyCalendarDifferential(env, batchId) {
+  await run(env.TEAM_DB, `DELETE FROM mlb_game_calendar_diff_changes WHERE batch_id=?`, batchId);
+  const staged = await all(env.TEAM_DB, `SELECT * FROM mlb_game_calendar_stage WHERE snapshot_batch_id=? ORDER BY official_date, game_pk`, batchId);
+  let inserted = 0;
+  let updated = 0;
+  let unchanged = 0;
+  let applied = 0;
+  const changeSamples = [];
+  for (const st of staged) {
+    const cur = await first(env.TEAM_DB, `SELECT * FROM mlb_game_calendar WHERE game_pk=?`, Number(st.game_pk));
+    const diff = changedFields(cur, st);
+    const changeType = cur ? (diff.changed.length ? "updated" : "unchanged") : "inserted";
+    if (changeType === "unchanged") { unchanged++; continue; }
+    if (changeType === "inserted") inserted++; else updated++;
+    const changeId = rid("calendar_diff");
+    await run(env.TEAM_DB, `INSERT INTO mlb_game_calendar_diff_changes (change_id, batch_id, game_pk, official_date_old, official_date_new, change_type, changed_fields_json, old_values_json, new_values_json, applied_to_main, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      changeId, batchId, Number(st.game_pk), cur?.official_date || null, st.official_date || null, changeType, JSON.stringify(diff.changed), JSON.stringify(diff.oldValues), JSON.stringify(diff.newValues));
+    await run(env.TEAM_DB, `INSERT INTO mlb_game_calendar (
+      game_pk, season, game_type, official_date, game_time_utc, game_time_pt,
+      status_code, abstract_game_state, detailed_state,
+      is_scheduled, is_pregame, is_live, is_final, is_postponed, is_suspended, is_cancelled, is_available_for_stats,
+      home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name,
+      doubleheader, game_number, series_game_number, source_key, source_endpoint, source_snapshot_at, raw_json, first_seen_at, last_seen_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'mlb_statsapi_schedule', ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ON CONFLICT(game_pk) DO UPDATE SET
+      season=excluded.season, game_type=excluded.game_type, official_date=excluded.official_date, game_time_utc=excluded.game_time_utc,
+      status_code=excluded.status_code, abstract_game_state=excluded.abstract_game_state, detailed_state=excluded.detailed_state,
+      is_scheduled=excluded.is_scheduled, is_pregame=excluded.is_pregame, is_live=excluded.is_live, is_final=excluded.is_final,
+      is_postponed=excluded.is_postponed, is_suspended=excluded.is_suspended, is_cancelled=excluded.is_cancelled, is_available_for_stats=excluded.is_available_for_stats,
+      home_team_id=excluded.home_team_id, away_team_id=excluded.away_team_id, home_team_name=excluded.home_team_name, away_team_name=excluded.away_team_name,
+      venue_id=excluded.venue_id, venue_name=excluded.venue_name, doubleheader=excluded.doubleheader, game_number=excluded.game_number,
+      series_game_number=excluded.series_game_number, source_endpoint=excluded.source_endpoint, source_snapshot_at=excluded.source_snapshot_at,
+      raw_json=excluded.raw_json, last_seen_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP`,
+      Number(st.game_pk), Number(st.season), String(st.game_type || "R"), String(st.official_date || ""), String(st.game_time_utc || ""),
+      st.status_code, st.abstract_game_state, st.detailed_state,
+      Number(st.is_scheduled || 0), Number(st.is_pregame || 0), Number(st.is_live || 0), Number(st.is_final || 0), Number(st.is_postponed || 0), Number(st.is_suspended || 0), Number(st.is_cancelled || 0), Number(st.is_available_for_stats || 0),
+      st.home_team_id == null ? null : Number(st.home_team_id), st.away_team_id == null ? null : Number(st.away_team_id), st.home_team_name || null, st.away_team_name || null,
+      st.venue_id == null ? null : Number(st.venue_id), st.venue_name || null, st.doubleheader || null, st.game_number == null ? null : Number(st.game_number), st.series_game_number == null ? null : Number(st.series_game_number),
+      st.source_endpoint || null, st.raw_json || null
+    );
+    await run(env.TEAM_DB, `UPDATE mlb_game_calendar_diff_changes SET applied_to_main=1, updated_at=CURRENT_TIMESTAMP WHERE change_id=?`, changeId);
+    applied++;
+    if (changeSamples.length < 20) changeSamples.push({ game_pk: st.game_pk, change_type: changeType, official_date_old: cur?.official_date || null, official_date_new: st.official_date || null, changed_fields: diff.changed });
+  }
+  return { staged_rows: staged.length, inserted, updated, unchanged, applied, change_samples: changeSamples };
+}
+
+async function latestMaxDate(db, table, column, where = "1=1") {
+  const meta = await tableColumns(db, table);
+  if (!meta.table_exists || !meta.columns.includes(column)) return { table_exists: meta.table_exists, column_exists: false, max_date: null, rows: 0 };
+  const row = await first(db, `SELECT COUNT(*) AS rows, MAX(${column}) AS max_date FROM ${table} WHERE ${where}`);
+  return { table_exists: true, column_exists: true, max_date: row?.max_date || null, rows: Number(row?.rows || 0) };
+}
+
+function passDateCoverage(officialDate, maxDate) {
+  if (!officialDate || !maxDate) return false;
+  return String(maxDate).slice(0, 10) >= String(officialDate).slice(0, 10);
+}
+
+async function snapshotLayerStatus(env, layerKey, officialDate) {
+  if (layerKey === "hitter_splits") {
+    const m = await latestMaxDate(env.STATS_HITTER_DB, "hitter_splits", "source_snapshot_date");
+    const pass = m.rows > 0 && passDateCoverage(officialDate, m.max_date);
+    return { layerKey, status: pass ? "complete" : "missing", grade: pass ? "PASS_SNAPSHOT_DATE_ANCHORED" : "MISSING_BLOCKER", blocking: pass ? 0 : 1, liveRows: m.rows, entityCount: 0, expectedRows: null, missingRows: pass ? 0 : null, reason: pass ? null : "MISSING_HITTER_SPLITS_SNAPSHOT_COVERAGE_FOR_GAME_DATE", details: { ...m, calendar_anchor_scope: "game_date_snapshot", match_level_game_pk_not_present_in_statsapi_statSplits_payload: true } };
+  }
+  if (layerKey === "pitcher_splits") {
+    const m = await latestMaxDate(env.STATS_PITCHER_DB, "pitcher_splits", "source_snapshot_date");
+    const pass = m.rows > 0 && passDateCoverage(officialDate, m.max_date);
+    return { layerKey, status: pass ? "complete" : "missing", grade: pass ? "PASS_SNAPSHOT_DATE_ANCHORED" : "MISSING_BLOCKER", blocking: pass ? 0 : 1, liveRows: m.rows, entityCount: 0, expectedRows: null, missingRows: pass ? 0 : null, reason: pass ? null : "MISSING_PITCHER_SPLITS_SNAPSHOT_COVERAGE_FOR_GAME_DATE", details: { ...m, calendar_anchor_scope: "game_date_snapshot", match_level_game_pk_not_present_in_statsapi_statSplits_payload: true } };
+  }
+  if (layerKey === "hitter_metrics") {
+    const m = await latestMaxDate(env.STATS_HITTER_DB, "hitter_metric_batches", "input_latest_game_date", "certification_grade IN ('DELTA_RECALC_PASS','DELTA_NOOP_PASS','BASE_STAGE_PASS_NO_PROMOTION')");
+    const rows = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS rows FROM hitter_metric_snapshots`);
+    const pass = Number(rows?.rows || 0) > 0 && passDateCoverage(officialDate, m.max_date);
+    return { layerKey, status: pass ? "complete" : "missing", grade: pass ? "PASS_METRIC_INPUT_DATE_ANCHORED" : "MISSING_BLOCKER", blocking: pass ? 0 : 1, liveRows: Number(rows?.rows || 0), entityCount: 0, expectedRows: null, missingRows: pass ? 0 : null, reason: pass ? null : "MISSING_HITTER_METRIC_COVERAGE_FOR_GAME_DATE", details: { ...m, snapshot_rows: Number(rows?.rows || 0), calendar_anchor_scope: "game_date_metric_input_latest_game_date", metrics_are_derived_from_game_logs_and_splits: true } };
+  }
+  if (layerKey === "pitcher_metrics") {
+    const m = await latestMaxDate(env.STATS_PITCHER_DB, "pitcher_metric_batches", "input_latest_game_date", "certification_grade IN ('DELTA_RECALC_PASS','DELTA_NOOP_PASS','BASE_STAGE_PASS_NO_PROMOTION')");
+    const rows = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS rows FROM pitcher_metric_snapshots`);
+    const pass = Number(rows?.rows || 0) > 0 && passDateCoverage(officialDate, m.max_date);
+    return { layerKey, status: pass ? "complete" : "missing", grade: pass ? "PASS_METRIC_INPUT_DATE_ANCHORED" : "MISSING_BLOCKER", blocking: pass ? 0 : 1, liveRows: Number(rows?.rows || 0), entityCount: 0, expectedRows: null, missingRows: pass ? 0 : null, reason: pass ? null : "MISSING_PITCHER_METRIC_COVERAGE_FOR_GAME_DATE", details: { ...m, snapshot_rows: Number(rows?.rows || 0), calendar_anchor_scope: "game_date_metric_input_latest_game_date", metrics_are_derived_from_game_logs_and_splits: true } };
+  }
+  return null;
+}
+
 async function tableColumns(db, table) {
   const tableRow = await first(db, "SELECT name FROM sqlite_master WHERE type='table' AND name=?", table);
   if (!tableRow) return { table_exists: false, columns: [] };
@@ -340,7 +542,7 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
     const gamePk = Number(g.game_pk);
     const layers = [];
     if (Number(g.is_available_for_stats || 0) !== 1) {
-      for (const layerKey of ["hitter_game_logs","pitcher_game_logs","team_game_logs","starter_history","bullpen_history"]) {
+      for (const layerKey of ["hitter_game_logs","pitcher_game_logs","team_game_logs","starter_history","bullpen_history","hitter_splits","pitcher_splits","hitter_metrics","pitcher_metrics"]) {
         layers.push({ layerKey, status: "scheduled_not_ready", grade: "WAITING_NOT_FINAL", blocking: 0, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: null, details: { is_available_for_stats: 0 } });
       }
     } else {
@@ -371,6 +573,10 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
       layers.push(bullpen.rows > 0
         ? { layerKey: "bullpen_history", status: "complete", grade: "PASS", blocking: 0, liveRows: bullpen.rows, entityCount: bullpen.entities, expectedRows: null, missingRows: 0, reason: null, details: bullpen }
         : { layerKey: "bullpen_history", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_BULLPEN_HISTORY_REPRESENTATION_FOR_FINAL_GAME_PK", details: bullpen });
+
+      for (const snapshotLayerKey of ["hitter_splits", "pitcher_splits", "hitter_metrics", "pitcher_metrics"]) {
+        layers.push(await snapshotLayerStatus(env, snapshotLayerKey, String(g.official_date)));
+      }
     }
 
     for (const l of layers) {
@@ -378,14 +584,14 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
         game_pk, season, official_date, layer_key, layer_family, coverage_scope, coverage_status, coverage_grade, blocking_for_full_run,
         expected_rows, live_rows, missing_rows, expected_entity_type, live_entity_count, represented_by_live, missing_reason,
         last_batch_id, last_request_id, last_worker_name, last_worker_version, last_checked_at, details_json, updated_at
-      ) VALUES (?, ?, ?, ?, 'source_history', 'game', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(game_pk, layer_key) DO UPDATE SET
         season=excluded.season, official_date=excluded.official_date, coverage_status=excluded.coverage_status, coverage_grade=excluded.coverage_grade,
         blocking_for_full_run=excluded.blocking_for_full_run, expected_rows=excluded.expected_rows, live_rows=excluded.live_rows, missing_rows=excluded.missing_rows,
         expected_entity_type=excluded.expected_entity_type, live_entity_count=excluded.live_entity_count, represented_by_live=excluded.represented_by_live,
         missing_reason=excluded.missing_reason, last_batch_id=excluded.last_batch_id, last_request_id=excluded.last_request_id,
         last_worker_name=excluded.last_worker_name, last_worker_version=excluded.last_worker_version, last_checked_at=CURRENT_TIMESTAMP, details_json=excluded.details_json, updated_at=CURRENT_TIMESTAMP`,
-        gamePk, Number(g.season), String(g.official_date), l.layerKey, l.status, l.grade, l.blocking, l.expectedRows, l.liveRows, l.missingRows,
+        gamePk, Number(g.season), String(g.official_date), l.layerKey, (String(l.layerKey).includes('splits') || String(l.layerKey).includes('metrics')) ? 'derived_snapshot' : 'source_history', (String(l.layerKey).includes('splits') || String(l.layerKey).includes('metrics')) ? 'game_date' : 'game', l.status, l.grade, l.blocking, l.expectedRows, l.liveRows, l.missingRows,
         l.layerKey, l.entityCount, l.liveRows > 0 ? 1 : 0, l.reason, batchId, requestId, WORKER_NAME, VERSION, JSON.stringify(l.details || {})
       );
       coverageRows++;
@@ -602,6 +808,128 @@ async function handleCoverageAudit(input, env) {
   return output;
 }
 
+
+async function handleCalendarDifferentialCheck(input, env) {
+  const startedAt = nowUtc();
+  const batchId = rid("game_calendar_differential_batch");
+  const requestId = input.request_id || null;
+  const nested = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
+  const season = Number(nested.season || input.season || 2026);
+  const startDate = String(nested.season_start_date || nested.start_date || input.start_date || `${season}-03-01`).slice(0, 10);
+  const endDate = String(nested.season_end_date || nested.end_date || input.end_date || `${season}-11-30`).slice(0, 10);
+  const gameTypes = String(nested.game_types || input.game_types || "R,P");
+  const hydrate = String(nested.hydrate || input.hydrate || "team,venue,probablePitcher(note)");
+
+  await ensureCoverageTables(env);
+  const chunks = buildMonthChunks(startDate, endDate);
+  let sourceGameCount = 0;
+  let sourceStatsAvailableCount = 0;
+  let stageRowsUpserted = 0;
+  let externalCalls = 0;
+  const chunkReports = [];
+  const statusCounts = {};
+  const gameTypeCounts = {};
+
+  for (const chunk of chunks) {
+    const schedule = await fetchSchedule(chunk.start, chunk.end, gameTypes, hydrate);
+    externalCalls++;
+    const staged = await upsertCalendarStage(env, schedule.games, schedule.endpoint, batchId);
+    sourceGameCount += schedule.games.length;
+    stageRowsUpserted += staged;
+    let chunkStatsAvailable = 0;
+    for (const g of schedule.games) {
+      const c = classifyGame(g);
+      if (c.is_available_for_stats === 1) chunkStatsAvailable++;
+      const sk = `${c.status_code || ""}|${c.abstract_game_state || ""}|${c.detailed_state || ""}`;
+      statusCounts[sk] = (statusCounts[sk] || 0) + 1;
+      const gt = String(g.gameType || "");
+      gameTypeCounts[gt] = (gameTypeCounts[gt] || 0) + 1;
+    }
+    sourceStatsAvailableCount += chunkStatsAvailable;
+    chunkReports.push({ start_date: chunk.start, end_date: chunk.end, endpoint: schedule.endpoint, source_game_count: schedule.games.length, stats_available_game_count: chunkStatsAvailable, stage_rows_upserted: staged, observed_status_codes_sample: schedule.statusSamples.slice(0, 12), observed_game_types_sample: schedule.gameTypes });
+  }
+
+  const diff = await applyCalendarDifferential(env, batchId);
+  const coverage = await rebuildCoverage(env, batchId, requestId, startDate, endDate);
+  const totalStored = await first(env.TEAM_DB, `SELECT COUNT(*) AS rows, COUNT(DISTINCT game_pk) AS distinct_game_pks, MIN(official_date) AS first_official_date, MAX(official_date) AS last_official_date, SUM(is_available_for_stats) AS stats_available_games FROM mlb_game_calendar WHERE official_date BETWEEN ? AND ?`, startDate, endDate);
+  const badIdentity = await first(env.TEAM_DB, `SELECT COUNT(*) AS bad_rows FROM mlb_game_calendar WHERE official_date BETWEEN ? AND ? AND (game_pk IS NULL OR home_team_id IS NULL OR away_team_id IS NULL OR home_team_id = away_team_id OR raw_json IS NULL OR raw_json='')`, startDate, endDate);
+  const layerSummary = await all(env.TEAM_DB, `SELECT layer_key, coverage_status, coverage_grade, blocking_for_full_run, COUNT(*) AS rows FROM mlb_game_data_coverage WHERE official_date BETWEEN ? AND ? GROUP BY layer_key, coverage_status, coverage_grade, blocking_for_full_run ORDER BY layer_key, coverage_status`, startDate, endDate);
+  const monthSummary = await all(env.TEAM_DB, `SELECT substr(official_date,1,7) AS month, game_type, COUNT(*) AS games, SUM(is_available_for_stats) AS stats_available_games FROM mlb_game_calendar WHERE official_date BETWEEN ? AND ? GROUP BY substr(official_date,1,7), game_type ORDER BY month, game_type`, startDate, endDate);
+
+  const status = coverage.blockingGaps > 0 ? "GAME_CALENDAR_DIFFERENTIAL_CHECK_COMPLETED_WITH_DATA_GAPS" : "GAME_CALENDAR_DIFFERENTIAL_CHECK_COMPLETED_CLEAN";
+  const certification = coverage.blockingGaps > 0 ? "GAME_CALENDAR_DIFFERENTIAL_CHECK_UPDATED_WITH_BLOCKERS" : "GAME_CALENDAR_DIFFERENTIAL_CHECK_UPDATED_NO_BLOCKERS";
+  const grade = coverage.blockingGaps > 0 ? "DIFF_PASS_WITH_DATA_BLOCKERS" : "DIFF_PASS_CLEAN";
+
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    request_id: requestId,
+    chain_id: input.chain_id || null,
+    batch_id: batchId,
+    mode: "game_calendar_differential_check_update",
+    status,
+    certification,
+    certification_grade: grade,
+    season,
+    season_start_date: startDate,
+    season_end_date: endDate,
+    game_types: gameTypes,
+    full_calendar_check_every_run: true,
+    no_rolling_window: true,
+    full_calendar_template_stage_table: "mlb_game_calendar_stage",
+    calendar_diff_change_table: "mlb_game_calendar_diff_changes",
+    source_game_count: sourceGameCount,
+    source_stats_available_game_count: sourceStatsAvailableCount,
+    stage_rows_upserted: stageRowsUpserted,
+    calendar_differential: diff,
+    stored_calendar_rows_in_range: Number(totalStored?.rows || 0),
+    stored_distinct_game_pks_in_range: Number(totalStored?.distinct_game_pks || 0),
+    first_official_date: totalStored?.first_official_date || null,
+    last_official_date: totalStored?.last_official_date || null,
+    stored_stats_available_games_in_range: Number(totalStored?.stats_available_games || 0),
+    bad_identity_rows_in_range: Number(badIdentity?.bad_rows || 0),
+    observed_status_counts: statusCounts,
+    observed_game_type_counts: gameTypeCounts,
+    month_summary: monthSummary,
+    chunk_reports: chunkReports,
+    coverage_checked: true,
+    coverage_rows_written: coverage.coverageRows,
+    layer_keys_checked: ["hitter_game_logs", "pitcher_game_logs", "team_game_logs", "starter_history", "bullpen_history", "hitter_splits", "pitcher_splits", "hitter_metrics", "pitcher_metrics"],
+    layer_coverage_summary: layerSummary,
+    missing_game_layer_count: coverage.blockingGaps,
+    blocking_gap_count: coverage.blockingGaps,
+    gaps_sample: coverage.gapsSample,
+    calendar_anchor_policy: {
+      official_date_is_canonical_anchor: true,
+      game_level_anchor_for_logs_team_starter_bullpen: true,
+      game_date_snapshot_anchor_for_splits: true,
+      game_date_metric_input_anchor_for_metrics: true,
+      game_pk_columns_are_not_faked_for_snapshot_tables: true
+    },
+    upsert_by_game_pk_only: true,
+    no_hard_delete: true,
+    no_source_history_mutation: true,
+    no_repair_jobs_created: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_board_mutation: true,
+    no_daily_context_mutation: true,
+    rows_read: sourceGameCount,
+    rows_written: stageRowsUpserted + diff.applied + coverage.coverageRows,
+    external_calls_performed: externalCalls,
+    finished_at: nowUtc()
+  };
+
+  await run(env.TEAM_DB, `INSERT INTO mlb_game_coverage_batches (batch_id, run_id, request_id, worker_name, worker_version, mode, status, coverage_window_start, coverage_window_end, source_game_count, source_final_game_pk_count, coverage_rows_written, missing_game_layer_count, blocking_gap_count, certification_status, certification_grade, started_at, finished_at, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+    batchId, input.run_id || null, requestId, WORKER_NAME, VERSION, "game_calendar_differential_check_update", status, startDate, endDate, sourceGameCount, sourceStatsAvailableCount, coverage.coverageRows, coverage.blockingGaps, coverage.blockingGaps, certification, grade, startedAt, JSON.stringify(output));
+
+  return output;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -622,6 +950,12 @@ export default {
         try { return jsonResponse(await handleFullCalendarSeed(input, env)); }
         catch (err) {
           return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, mode, status: "GAME_CALENDAR_FULL_SEED_FAILED", certification: "GAME_CALENDAR_FULL_SEED_FAILED", certification_grade: "CALENDAR_SEED_FAIL", error: String(err && err.message ? err.message : err), no_source_history_mutation: true, no_repair_jobs_created: true, no_scoring: true, no_board_mutation: true, rows_read: 0, rows_written: 0, external_calls_performed: 0 }, 200);
+        }
+      }
+      if (mode === "game_calendar_differential_check_update") {
+        try { return jsonResponse(await handleCalendarDifferentialCheck(input, env)); }
+        catch (err) {
+          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, mode, status: "GAME_CALENDAR_DIFFERENTIAL_CHECK_FAILED", certification: "GAME_CALENDAR_DIFFERENTIAL_CHECK_FAILED", certification_grade: "DIFF_FAIL", error: String(err && err.message ? err.message : err), no_source_history_mutation: true, no_repair_jobs_created: true, no_scoring: true, no_board_mutation: true, rows_read: 0, rows_written: 0, external_calls_performed: 0 }, 200);
         }
       }
       if (mode === "game_calendar_coverage_audit") {

@@ -734,3 +734,59 @@ VALUES ('bullpen_history_v0_2_0_base_backfill_stage_only', 'alphadog-v2-base-bul
 
 -- Bullpen History v0.2.1 duplicate-key guard after retained stage cleanup/repair.
 CREATE UNIQUE INDEX IF NOT EXISTS idx_bullpen_history_stage_batch_key_unique ON bullpen_history_stage(batch_id,bullpen_key);
+
+-- v0.1.4 Calendar differential checker/updater support.
+CREATE TABLE IF NOT EXISTS mlb_game_calendar_stage (
+  snapshot_batch_id TEXT NOT NULL,
+  game_pk INTEGER NOT NULL,
+  season INTEGER NOT NULL,
+  game_type TEXT NOT NULL,
+  official_date TEXT NOT NULL,
+  game_time_utc TEXT,
+  status_code TEXT,
+  abstract_game_state TEXT,
+  detailed_state TEXT,
+  is_scheduled INTEGER DEFAULT 0,
+  is_pregame INTEGER DEFAULT 0,
+  is_live INTEGER DEFAULT 0,
+  is_final INTEGER DEFAULT 0,
+  is_postponed INTEGER DEFAULT 0,
+  is_suspended INTEGER DEFAULT 0,
+  is_cancelled INTEGER DEFAULT 0,
+  is_available_for_stats INTEGER DEFAULT 0,
+  home_team_id INTEGER,
+  away_team_id INTEGER,
+  home_team_name TEXT,
+  away_team_name TEXT,
+  venue_id INTEGER,
+  venue_name TEXT,
+  doubleheader TEXT,
+  game_number INTEGER,
+  series_game_number INTEGER,
+  source_key TEXT NOT NULL,
+  source_endpoint TEXT,
+  source_snapshot_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  raw_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (snapshot_batch_id, game_pk)
+);
+CREATE INDEX IF NOT EXISTS idx_mlb_game_calendar_stage_batch ON mlb_game_calendar_stage(snapshot_batch_id);
+CREATE INDEX IF NOT EXISTS idx_mlb_game_calendar_stage_date ON mlb_game_calendar_stage(official_date);
+
+CREATE TABLE IF NOT EXISTS mlb_game_calendar_diff_changes (
+  change_id TEXT PRIMARY KEY,
+  batch_id TEXT NOT NULL,
+  game_pk INTEGER NOT NULL,
+  official_date_old TEXT,
+  official_date_new TEXT,
+  change_type TEXT NOT NULL,
+  changed_fields_json TEXT,
+  old_values_json TEXT,
+  new_values_json TEXT,
+  applied_to_main INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(batch_id, game_pk)
+);
+CREATE INDEX IF NOT EXISTS idx_mlb_game_calendar_diff_batch ON mlb_game_calendar_diff_changes(batch_id);
