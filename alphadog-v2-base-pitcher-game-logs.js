@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-game-logs";
-const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.4.3-scoped-repair-live-column-align-fix";
+const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.4.4-mining-only-no-tally-writes";
 const JOB_KEY = "base-pitcher-game-logs";
 const GROUP_TYPE = "pitching";
 const SOURCE_KEY = "mlb_statsapi_pitcher_game_logs_v0_2_0";
@@ -15,7 +15,7 @@ const DEFAULT_MAX_STAGE_ROWS_PER_TICK = 1000;
 const DEFAULT_MAX_PROMOTE_ROWS_PER_TICK = 500;
 const DEFAULT_DELTA_LOOKBACK_DAYS = 7;
 const BASE_LIVE_DATA_FEED_KEY = "mlb_statsapi_pitcher_game_logs_2026_base_v0_3_1_promoted";
-const DELTA_DATA_FEED_KEY = "mlb_statsapi_pitcher_game_logs_2026_delta_v0_4_3_scoped_repair";
+const DELTA_DATA_FEED_KEY = "mlb_statsapi_pitcher_game_logs_2026_delta_v0_4_4_mining_only_no_tally_writes";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_PITCHER_DB"];
 const EXPECTED_VARS = ["ACTIVE_SEASON", "MLB_API_BASE_URL", "MLB_API_USER_AGENT", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK"];
@@ -1472,8 +1472,11 @@ async function runDeltaUpdate(env, input) {
   const season = Number(input.source_season || input.season || env.ACTIVE_SEASON || DEFAULT_SEASON);
   const baseGate = await pitcherDeltaBaseGate(env);
   if (!baseGate.pass) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_INTEGRITY_FAIL_BEFORE_DELTA", certification: "DELTA_PITCHER_GAME_LOGS_BASE_INTEGRITY_FAIL", certification_grade: "DELTA_BLOCKED", mode: "delta_update", base_integrity_gate: baseGate, rows_read: 0, rows_written: 0, external_calls_performed: 0, schema_status: schema };
-  const goldGate = await runPitcherGameLogsGoldRepairGate(env, input, baseGate);
-  if (goldGate && goldGate.handled) return goldGate.output;
+  const repairAnchorGateEnabled = input.enable_repair_anchor_gate === true || input.mode === "delta_repair_anchor" || input.mode === "delta_retained_stage_repair";
+  if (repairAnchorGateEnabled) {
+    const goldGate = await runPitcherGameLogsGoldRepairGate(env, input, baseGate);
+    if (goldGate && goldGate.handled) return { ...goldGate.output, mining_only_no_tally_writes: true, tally_owner: "alphadog-v2-delta-certifier" };
+  }
 
   const retained = await latestRetainedPitcherDelta(env);
   let batch = await activePitcherDeltaBatch(env);
@@ -1488,10 +1491,13 @@ async function runDeltaUpdate(env, input) {
     if (retained) {
       const parity = await retainedDeltaParity(env, retained);
       const retainedMax = [parity.stage_max_game_date, parity.live_max_game_date].filter(Boolean).sort().pop();
-      if (parity.pass && retainedMax && schedule.latest_complete_game_date <= retainedMax) {
-        return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "NOOP_ALREADY_CURRENT_RETAINED_FULL_REFRESH_DELTA", certification: "DELTA_PITCHER_GAME_LOGS_REPEAT_FULL_REFRESH_BLOCKED", certification_grade: "NOOP_PASS", mode: "delta_update", preserved_batch_id: retained.batch_id, retained_stage_rows: parity.stage_rows, live_rows_for_delta_batch: parity.live_rows, retained_max_game_date: retainedMax, source_final_date_check: schedule, no_new_batch: true, no_stage_writes: true, no_promotion: true, no_cleanup: true, no_mining_calls: true, rows_read: 0, rows_written: 0, external_calls_performed: 1, continuation_required: false, orchestrator_should_self_continue: false };
+      const retainedWorkerVersion = String(retained.worker_version || "");
+      const retainedBuiltByThisMiningOnlyVersion = retainedWorkerVersion === VERSION;
+      if (parity.pass && retainedMax && schedule.latest_complete_game_date <= retainedMax && retainedBuiltByThisMiningOnlyVersion) {
+        return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "NOOP_ALREADY_CURRENT_RETAINED_FULL_REFRESH_DELTA", certification: "DELTA_PITCHER_GAME_LOGS_REPEAT_FULL_REFRESH_BLOCKED", certification_grade: "NOOP_PASS", mode: "delta_update", preserved_batch_id: retained.batch_id, retained_stage_rows: parity.stage_rows, live_rows_for_delta_batch: parity.live_rows, retained_max_game_date: retainedMax, retained_worker_version: retainedWorkerVersion, source_final_date_check: schedule, no_new_batch: true, no_stage_writes: true, no_promotion: true, no_cleanup: true, no_mining_calls: true, mining_only_no_tally_writes: true, tally_owner: "alphadog-v2-delta-certifier", rows_read: 0, rows_written: 0, external_calls_performed: 1, continuation_required: false, orchestrator_should_self_continue: false, note: "No-op allowed only after this mining-only worker version has already rebuilt/verified the retained delta window. Calendar/delta-certifier owns TEAM_DB coverage reconciliation." };
       }
-      if (retainedMax) start = addDays(retainedMax, 1);
+      if (retainedMax && retainedBuiltByThisMiningOnlyVersion) start = addDays(retainedMax, 1);
+      if (retainedMax && !retainedBuiltByThisMiningOnlyVersion) start = deltaFloor;
     }
     const requestedEnd = String(input.delta_end_date || schedule.latest_complete_game_date);
     windowInfo = { delta_start_date: start, delta_end_date: requestedEnd, delta_floor_date: deltaFloor, latest_complete_game_date: schedule.latest_complete_game_date, schedule_endpoint: schedule.endpoint, scoped_delta: true, no_full_universe_sweep: true, target_source: "MLB schedule completed games + game boxscore pitching stats" };
@@ -1545,7 +1551,7 @@ async function runDeltaUpdate(env, input) {
 function identity(env) {
   const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
   const vars = varPresence(env, EXPECTED_VARS);
-  return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_AND_HITTER_EQUIVALENT_SCOPED_DELTA_READY", timestamp_utc: nowIso(), source_endpoint_template: SOURCE_ENDPOINT_TEMPLATE, base_backfill_cutoff_date_reserved: DEFAULT_BASE_CUTOFF, delta_start_date_reserved: DEFAULT_DELTA_START, active_scope: "base_backfill locked plus hitter-equivalent pitcher delta: control-room retained restore/no-op and scoped boxscore-targeted delta; no hitter/market/scoring mutation", hard_blocks: ["delta requires completed promoted cleaned base", "retained delta stage is preserved after promotion", "normal daily delta scopes to completed-game boxscore pitchers, not full pitcher universe", "no hitter mutation", "no market mutation", "no scoring/ranking/final board"], binding_summary: { required_db_bindings_present: allTrue(db), expected_vars_present: allTrue(vars) }, bindings: db, vars };
+  return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_AND_HITTER_EQUIVALENT_SCOPED_DELTA_READY", timestamp_utc: nowIso(), source_endpoint_template: SOURCE_ENDPOINT_TEMPLATE, base_backfill_cutoff_date_reserved: DEFAULT_BASE_CUTOFF, delta_start_date_reserved: DEFAULT_DELTA_START, active_scope: "base_backfill locked plus pitcher delta mining only; no TEAM_DB tally writes; no hitter/market/scoring mutation", hard_blocks: ["delta requires completed promoted cleaned base", "retained delta stage is preserved after promotion", "normal daily delta scopes to completed-game boxscore pitchers, not full pitcher universe", "TEAM_DB coverage/tally reconciliation is owned by delta-certifier/calendar only", "no hitter mutation", "no market mutation", "no scoring/ranking/final board"], binding_summary: { required_db_bindings_present: allTrue(db), expected_vars_present: allTrue(vars) }, bindings: db, vars };
 }
 
 export default {
