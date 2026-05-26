@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-games-status";
-const VERSION = "alphadog-v2-daily-games-status-v0.1.0-board-focused-source-shape-and-current-status";
+const VERSION = "alphadog-v2-daily-games-status-v0.1.1-safety-confidence-alignment";
 const JOB_KEY = "daily-games-status";
 const MLB_SCHEDULE_SOURCE = "official_mlb_statsapi_schedule";
 const MLB_SCHEDULE_ENDPOINT_PATH = "/api/v1/schedule?sportId=1&gameType=R&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD";
@@ -412,6 +412,10 @@ function stageRow(batchId, row, match, nowMs) {
   if (!g && match.method && match.method.includes("ambiguous")) { safety = "blocked_ambiguous_game_mapping"; block = "ambiguous_game_mapping"; }
   else if (!g) { safety = "blocked_missing_game_time"; block = "official_game_not_resolved"; }
   const confidence = g && safety === "safe_pregame" && match.confidence === "HIGH" ? "HIGH" : (g ? match.confidence : "LOW");
+  if (safety === "safe_pregame" && confidence !== "HIGH") {
+    safety = "review_required";
+    block = confidence === "MEDIUM" ? "medium_confidence_game_mapping_review_required" : "low_confidence_game_mapping_blocked";
+  }
   return {
     stage_id: rid("dgs_stage"),
     current_key: `${row.board_source_key || row.source_key}:${row.board_row_id || row.source_line_id || rid("row")}`,
