@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.1.1-game-calendar-coverage-audit-dispatch-fix";
+const VERSION = "alphadog-v2-delta-certifier-v0.1.2-live-schema-column-guard";
 const JOB_KEY = "delta-certifier";
 
 function nowUtc() { return new Date().toISOString(); }
@@ -293,12 +293,39 @@ async function upsertCalendar(env, games, endpoint) {
   return upserted;
 }
 
+async function tableColumns(db, table) {
+  const tableRow = await first(db, "SELECT name FROM sqlite_master WHERE type='table' AND name=?", table);
+  if (!tableRow) return { table_exists: false, columns: [] };
+  const rows = await all(db, `PRAGMA table_info(${table})`);
+  return { table_exists: true, columns: rows.map(r => String(r.name || "")) };
+}
+
 async function countLive(env, dbKey, table, gamePk, distinctColumn = null) {
   const db = env[dbKey];
-  const tableRow = await first(db, "SELECT name FROM sqlite_master WHERE type='table' AND name=?", table);
-  if (!tableRow) return { rows: 0, entities: 0, table_exists: false };
-  const row = await first(db, `SELECT COUNT(*) AS rows${distinctColumn ? `, COUNT(DISTINCT ${distinctColumn}) AS entities` : `, 0 AS entities`} FROM ${table} WHERE game_pk=?`, gamePk);
-  return { rows: Number(row?.rows || 0), entities: Number(row?.entities || 0), table_exists: true };
+  const meta = await tableColumns(db, table);
+  if (!meta.table_exists) {
+    return { rows: 0, entities: 0, table_exists: false, distinct_column: distinctColumn, distinct_column_exists: false };
+  }
+
+  if (!meta.columns.includes("game_pk")) {
+    return { rows: 0, entities: 0, table_exists: true, game_pk_column_exists: false, distinct_column: distinctColumn, distinct_column_exists: false };
+  }
+
+  const hasDistinct = distinctColumn && meta.columns.includes(distinctColumn);
+  const row = await first(
+    db,
+    `SELECT COUNT(*) AS rows${hasDistinct ? `, COUNT(DISTINCT ${distinctColumn}) AS entities` : `, 0 AS entities`} FROM ${table} WHERE game_pk=?`,
+    gamePk
+  );
+
+  return {
+    rows: Number(row?.rows || 0),
+    entities: Number(row?.entities || 0),
+    table_exists: true,
+    game_pk_column_exists: true,
+    distinct_column: distinctColumn,
+    distinct_column_exists: Boolean(hasDistinct)
+  };
 }
 
 async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
@@ -339,7 +366,7 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
         ? { layerKey: "starter_history", status: "complete", grade: "PASS", blocking: 0, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: 0, reason: null, details: { ...starter, distinct_teams: starterTeam.entities } }
         : { layerKey: "starter_history", status: starter.rows > 0 ? "partial" : "missing", grade: starter.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: Math.max(0, 2 - starter.rows), reason: starter.rows > 0 ? "PARTIAL_STARTER_HISTORY_ROWS_FOR_FINAL_GAME_PK" : "MISSING_STARTER_HISTORY_ROWS_FOR_FINAL_GAME_PK", details: { ...starter, distinct_teams: starterTeam.entities } });
 
-      const bullpen = await countLive(env, "TEAM_DB", "bullpen_history", gamePk, "player_id");
+      const bullpen = await countLive(env, "TEAM_DB", "bullpen_history", gamePk, "pitcher_id");
       layers.push(bullpen.rows > 0
         ? { layerKey: "bullpen_history", status: "complete", grade: "PASS", blocking: 0, liveRows: bullpen.rows, entityCount: bullpen.entities, expectedRows: null, missingRows: 0, reason: null, details: bullpen }
         : { layerKey: "bullpen_history", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_BULLPEN_HISTORY_REPRESENTATION_FOR_FINAL_GAME_PK", details: bullpen });
@@ -414,6 +441,7 @@ async function handleCoverageAudit(input, env) {
     calendar_rows_upserted: calendarRowsUpserted,
     observed_status_codes_sample: schedule.statusSamples,
     observed_game_types_sample: schedule.gameTypes,
+    live_schema_column_guard_v0_1_2: true,
     source_shape_probe: {
       endpoint: schedule.endpoint,
       game_count: schedule.games.length,
