@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-game-logs";
-const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.4.4-mining-only-no-tally-writes";
+const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.4.5-delta-promotion-resume-mining-only";
 const JOB_KEY = "base-pitcher-game-logs";
 const GROUP_TYPE = "pitching";
 const SOURCE_KEY = "mlb_statsapi_pitcher_game_logs_v0_2_0";
@@ -15,7 +15,7 @@ const DEFAULT_MAX_STAGE_ROWS_PER_TICK = 1000;
 const DEFAULT_MAX_PROMOTE_ROWS_PER_TICK = 500;
 const DEFAULT_DELTA_LOOKBACK_DAYS = 7;
 const BASE_LIVE_DATA_FEED_KEY = "mlb_statsapi_pitcher_game_logs_2026_base_v0_3_1_promoted";
-const DELTA_DATA_FEED_KEY = "mlb_statsapi_pitcher_game_logs_2026_delta_v0_4_4_mining_only_no_tally_writes";
+const DELTA_DATA_FEED_KEY = "mlb_statsapi_pitcher_game_logs_2026_delta_v0_4_5_promotion_resume_mining_only";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_PITCHER_DB"];
 const EXPECTED_VARS = ["ACTIVE_SEASON", "MLB_API_BASE_URL", "MLB_API_USER_AGENT", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK"];
@@ -1195,6 +1195,26 @@ async function createPitcherDeltaBatch(env, input, targetAudit, windowInfo) {
   return await first(env.STATS_PITCHER_DB, "SELECT * FROM pitcher_game_log_batches WHERE batch_id=?", batchId);
 }
 async function activePitcherDeltaBatch(env) {
+  // v0.4.5: promotion-resume takes priority over any older cursor state.
+  // If stage already contains certified delta rows that were not promoted, rerun must finish
+  // the retained-stage promotion before creating/mining another batch. This keeps the worker
+  // mining-only and leaves TEAM_DB calendar/tally reconciliation to delta-certifier.
+  const pendingPromotion = await first(env.STATS_PITCHER_DB,
+    `SELECT b.*
+       FROM pitcher_game_log_batches b
+       WHERE b.mode='delta_update'
+         AND EXISTS (
+           SELECT 1
+           FROM pitcher_game_log_stage s
+           WHERE s.batch_id=b.batch_id
+             AND s.ingestion_mode='delta_update'
+             AND s.promoted_at IS NULL
+         )
+       ORDER BY datetime(b.updated_at) DESC, datetime(b.created_at) DESC
+       LIMIT 1`
+  );
+  if (pendingPromotion && pendingPromotion.batch_id) return pendingPromotion;
+
   const cursor = await first(env.STATS_PITCHER_DB, "SELECT batch_id FROM pitcher_game_log_cursors WHERE mode='delta_update' AND continuation_required=1 ORDER BY datetime(updated_at) DESC LIMIT 1");
   if (cursor && cursor.batch_id) return await first(env.STATS_PITCHER_DB, "SELECT * FROM pitcher_game_log_batches WHERE batch_id=?", cursor.batch_id);
   return await first(env.STATS_PITCHER_DB, "SELECT * FROM pitcher_game_log_batches WHERE mode='delta_update' AND status IN ('DELTA_RUNNING_SCOPED_TARGETS','DELTA_RUNNING','PARTIAL_CONTINUE_DELTA_PITCHER_GAME_LOGS','DELTA_STAGED_READY_FOR_CERTIFICATION','DELTA_PROMOTING') ORDER BY datetime(created_at) DESC LIMIT 1");
@@ -1214,6 +1234,74 @@ async function processPitcherDeltaPlayer(env, sample, season, batchId, runId, st
   }
   return { call, splits_count: splits.length, rows, filtered_outside_window_count: filtered };
 }
+async function maybeResumeDeltaPromotion(env, batch, baseGate) {
+  if (!batch || !batch.batch_id || String(batch.mode || "") !== "delta_update") return { handled: false };
+  const batchId = batch.batch_id;
+  const pending = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_log_stage WHERE batch_id=? AND ingestion_mode='delta_update' AND promoted_at IS NULL", batchId);
+  const pendingCount = Number(pending && pending.c || 0);
+  if (pendingCount <= 0) return { handled: false };
+
+  const cursor = await first(env.STATS_PITCHER_DB, "SELECT * FROM pitcher_game_log_cursors WHERE batch_id=? AND mode='delta_update'", batchId);
+  const outcomeCount = await first(env.STATS_PITCHER_DB, "SELECT COUNT(*) AS c FROM pitcher_game_log_player_outcomes WHERE batch_id=?", batchId);
+  const expected = Number(batch.expected_pitcher_universe_count || (cursor && cursor.expected_pitcher_universe_count) || 0);
+  const cursorOffset = Number(cursor && cursor.cursor_offset || 0);
+  const readyStatus = new Set([
+    "DELTA_STAGED_READY_FOR_CERTIFICATION",
+    "DELTA_PROMOTING",
+    "PARTIAL_CONTINUE_DELTA_PITCHER_GAME_LOGS",
+    "COMPLETED_PROMOTED_STAGE_RETAINED"
+  ]);
+  const readyByCursor = expected > 0 && cursorOffset >= expected;
+  const readyByOutcomes = expected > 0 && Number(outcomeCount && outcomeCount.c || 0) >= expected;
+  const readyByStageCertification = await first(env.STATS_PITCHER_DB,
+    `SELECT COUNT(*) AS c
+       FROM pitcher_game_log_stage
+       WHERE batch_id=?
+         AND ingestion_mode='delta_update'
+         AND promoted_at IS NULL
+         AND certification_status IN ('DELTA_STAGE_CERTIFIED_READY_FOR_PROMOTION','DELTA_PITCHER_GAME_LOGS_CERTIFIED_PROMOTED_STAGE_RETAINED')`,
+    batchId
+  );
+  const ready = readyByCursor || readyByOutcomes || readyStatus.has(String(batch.status || "")) || Number(readyByStageCertification && readyByStageCertification.c || 0) === pendingCount;
+  if (!ready) return { handled: false, pending_unpromoted_stage_rows: pendingCount, cursor_offset: cursorOffset, expected_pitcher_universe_count: expected };
+
+  const final = await finalizeDeltaStageAndPromote(env, batch);
+  return {
+    handled: true,
+    output: {
+      ok: final.pass,
+      data_ok: final.pass,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      status: final.status,
+      certification: final.certification,
+      certification_grade: final.certification_grade,
+      mode: "delta_update",
+      batch_id: batchId,
+      run_id: batch.run_id,
+      base_integrity_gate: baseGate,
+      promotion_resume_v0_4_5: true,
+      pending_unpromoted_stage_rows_before: pendingCount,
+      rows_promoted: final.rows_promoted,
+      live_rows_after: final.live_rows || final.rows_promoted || 0,
+      stage_rows: final.stage_rows,
+      remaining_unpromoted: final.remaining_unpromoted || 0,
+      retained_stage: true,
+      mining_only_no_tally_writes: true,
+      tally_owner: "alphadog-v2-delta-certifier",
+      no_team_db_tally_writes: true,
+      no_calendar_calls: true,
+      no_full_universe_sweep: true,
+      no_hitter_mutation: true,
+      no_market_mutation: true,
+      no_scoring: true,
+      continuation_required: !final.done,
+      orchestrator_should_self_continue: !final.done
+    }
+  };
+}
+
 async function finalizeDeltaStageAndPromote(env, batch) {
   const batchId = batch.batch_id;
   const expected = Number(batch.expected_pitcher_universe_count || 0);
@@ -1505,6 +1593,9 @@ async function runDeltaUpdate(env, input) {
     if (!targetAudit.ok) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "DELTA_TARGET_DISCOVERY_FAILED", certification: "DELTA_PITCHER_GAME_LOGS_TARGET_DISCOVERY_FAILED", certification_grade: "DELTA_BLOCKED", mode: "delta_update", target_discovery: targetAudit, source_final_date_check: schedule, rows_read: 0, rows_written: 0, external_calls_performed: 1 + Number(targetAudit.external_calls || 0), continuation_required: false };
     batch = await createPitcherDeltaBatch(env, input, targetAudit, windowInfo);
   } else {
+    const promotionResume = await maybeResumeDeltaPromotion(env, batch, baseGate);
+    if (promotionResume.handled) return promotionResume.output;
+
     const parsed = (() => { try { return JSON.parse(batch.universe_audit_json || "{}"); } catch (_) { return {}; } })();
     targetAudit = parsed.targetAudit || (parsed.universeAudit && parsed.universeAudit.target_pitchers ? parsed.universeAudit : null);
     windowInfo = parsed.windowInfo || { delta_start_date: batch.delta_start_date || DEFAULT_DELTA_START, delta_end_date: batch.delta_end_date || batch.delta_start_date || DEFAULT_DELTA_START, scoped_delta: true };
@@ -1551,7 +1642,7 @@ async function runDeltaUpdate(env, input) {
 function identity(env) {
   const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
   const vars = varPresence(env, EXPECTED_VARS);
-  return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_AND_HITTER_EQUIVALENT_SCOPED_DELTA_READY", timestamp_utc: nowIso(), source_endpoint_template: SOURCE_ENDPOINT_TEMPLATE, base_backfill_cutoff_date_reserved: DEFAULT_BASE_CUTOFF, delta_start_date_reserved: DEFAULT_DELTA_START, active_scope: "base_backfill locked plus pitcher delta mining only; no TEAM_DB tally writes; no hitter/market/scoring mutation", hard_blocks: ["delta requires completed promoted cleaned base", "retained delta stage is preserved after promotion", "normal daily delta scopes to completed-game boxscore pitchers, not full pitcher universe", "TEAM_DB coverage/tally reconciliation is owned by delta-certifier/calendar only", "no hitter mutation", "no market mutation", "no scoring/ranking/final board"], binding_summary: { required_db_bindings_present: allTrue(db), expected_vars_present: allTrue(vars) }, bindings: db, vars };
+  return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "BASE_AND_HITTER_EQUIVALENT_SCOPED_DELTA_READY", timestamp_utc: nowIso(), source_endpoint_template: SOURCE_ENDPOINT_TEMPLATE, base_backfill_cutoff_date_reserved: DEFAULT_BASE_CUTOFF, delta_start_date_reserved: DEFAULT_DELTA_START, active_scope: "base_backfill locked plus pitcher delta mining only with v0.4.5 retained-stage promotion resume; no TEAM_DB tally writes; no hitter/market/scoring mutation", hard_blocks: ["delta requires completed promoted cleaned base", "retained delta stage is preserved after promotion", "normal daily delta scopes to completed-game boxscore pitchers, not full pitcher universe", "TEAM_DB coverage/tally reconciliation is owned by delta-certifier/calendar only", "no hitter mutation", "no market mutation", "no scoring/ranking/final board"], binding_summary: { required_db_bindings_present: allTrue(db), expected_vars_present: allTrue(vars) }, bindings: db, vars };
 }
 
 export default {
