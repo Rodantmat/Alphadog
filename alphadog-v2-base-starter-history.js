@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-starter-history";
-const VERSION = "alphadog-v2-base-starter-history-v0.4.5-calendar-gap-scoped-mining-only";
+const VERSION = "alphadog-v2-base-starter-history-v0.4.6-calendar-tally-gap-scoped-mining";
 const JOB_KEY = "base-starter-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -44,12 +44,12 @@ function baseIdentity(env) {
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "BASE_STARTER_HISTORY_CALENDAR_GAP_SCOPED_MINING_READY",
+    status: "BASE_STARTER_HISTORY_CALENDAR_TALLY_GAP_SCOPED_MINING",
     timestamp_utc: nowUtc(),
-    phase: "starter-history-v0.4.5-calendar-gap-scoped-mining-only",
+    phase: "starter-history-v0.4.6-calendar-tally-gap-scoped-mining",
     notes: [
-      "v0.4.5 checks TEAM_DB.mlb_game_data_coverage first and mines only starter_history blocking gaps.",
-      "Allowed writes: create a retained delta batch, fetch official MLB schedule/boxscore only for calendar/tally missing game_pk targets, stage starter rows, and promote those starter rows. No coverage/tally writes.",
+      "v0.4.6 fixes calendar/tally scoped gap mining: starter_history blocking gaps in mlb_game_data_coverage are the first-class repair target before any legacy retained-stage noop path.",
+      "Allowed writes: repair missing live + retained-stage delta keys by refetching only the affected game/key, rewriting the retained stage row, and promoting that key. No full sweep, no new batch.",
       "Forbidden in this version: full sweep, new batch, scoring, ranking, board mutation, and browser pump.",
       "Starter history is source-classified as GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS via official final boxscore gamesStarted == 1."
     ],
@@ -1113,107 +1113,52 @@ async function createDeltaBatch(env, input, requestId, chainId, runId, deltaStar
   return batchId;
 }
 
-async function loadStarterHistoryCoverageGaps(env, limit = 120) {
-  try {
-    return await all(env.TEAM_DB, `SELECT game_pk, official_date, live_rows, stage_rows, outcome_rows, last_batch_id, last_request_id
-      FROM mlb_game_data_coverage
-      WHERE layer_key='starter_history'
-        AND coverage_status='missing'
-        AND blocking_for_full_run=1
-      ORDER BY official_date, game_pk
-      LIMIT ?`, limit);
-  } catch (err) {
-    return [];
+async function seedDeltaGameUniverse(env, batchId, runId, requestId, deltaStartDate, deltaEndDate, season) {
+  const endpoint = baseRangeScheduleEndpoint(deltaStartDate, deltaEndDate);
+  const schedule = await fetchMlbJson(env, endpoint);
+  if (!schedule.ok || !schedule.json || !Array.isArray(schedule.json.dates)) {
+    await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, outcome_level: 'SOURCE', outcome_category: 'SOURCE_ERROR', status: 'SOURCE_ERROR', reason: 'delta_schedule_http_or_shape_error', source_endpoint: endpoint, details: { http_status: schedule.http_status, text_preview: schedule.text_preview } });
+    await run(env.TEAM_DB, `UPDATE starter_history_batches SET source_error_count=1, status='DELTA_UPDATE_BLOCKED_SCHEDULE_SOURCE_ERROR', certification_status='STARTER_HISTORY_DELTA_UPDATE_BLOCKED_SCHEDULE_SOURCE_ERROR', certification_grade='DELTA_BLOCKED', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, batchId);
+    return { ok: false, external_calls: 1, final_game_count: 0, non_final_count: 0, already_live_count: 0 };
   }
-}
-
-async function seedDeltaGameUniverseFromCoverageGaps(env, batchId, runId, requestId, deltaStartDate, deltaEndDate, season) {
-  const gaps = await loadStarterHistoryCoverageGaps(env, 120);
-  if (gaps.length === 0) {
-    await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, outcome_level: 'SOURCE', outcome_category: 'CALENDAR_GAP_CHECK', status: 'NO_STARTER_HISTORY_BLOCKING_GAPS', reason: 'mlb_game_data_coverage_has_no_starter_history_blocking_gaps', source_endpoint: null, details: { layer_key: 'starter_history', no_tally_writes: true } });
-    await run(env.TEAM_DB, `UPDATE starter_history_batches SET expected_game_count=0, expected_starter_rows=0, final_games_sampled=0, status='DELTA_UPDATE_NOOP_NO_CALENDAR_GAPS', certification_status='STARTER_HISTORY_DELTA_NOOP_NO_CALENDAR_GAPS', certification_grade='DELTA_NOOP_PASS', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-      safeJson({ calendar_gap_scoped: true, coverage_gap_count: 0, no_mining_calls: true, no_coverage_tally_writes: true, delta_start_date: deltaStartDate, delta_end_date: deltaEndDate }), batchId);
-    return { ok: true, external_calls: 0, final_game_count: 0, non_final_count: 0, already_live_count: 0, coverage_gap_count: 0, no_gap_noop: true };
-  }
-
-  const targetMap = new Map();
-  for (const g of gaps) {
-    const gp = num(g.game_pk);
-    if (!gp) continue;
-    targetMap.set(String(gp), { game_pk: gp, official_date: ymd(g.official_date), coverage_gap: g });
-  }
-  const uniqueDates = Array.from(new Set(Array.from(targetMap.values()).map(g => g.official_date).filter(Boolean))).sort();
-  let externalCalls = 0;
+  await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, outcome_level: 'SOURCE', outcome_category: 'SOURCE_PROBE', status: 'DELTA_SCHEDULE_ENDPOINT_OK', reason: 'delta_schedule_endpoint_returned_usable_dates_array', source_endpoint: endpoint, details: { http_status: schedule.http_status, dates_count: schedule.json.dates.length, delta_start_date: deltaStartDate, delta_end_date: deltaEndDate } });
   let finalGameCount = 0;
   let nonFinalCount = 0;
   let alreadyLiveCount = 0;
-  const foundTargets = new Set();
-
-  await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, outcome_level: 'SOURCE', outcome_category: 'CALENDAR_GAP_CHECK', status: 'STARTER_HISTORY_BLOCKING_GAPS_FOUND', reason: 'using_mlb_game_data_coverage_as_delta_source_of_truth', source_endpoint: null, details: { layer_key: 'starter_history', coverage_gap_count: targetMap.size, scoped_dates: uniqueDates, no_tally_writes: true } });
-
-  for (const date of uniqueDates) {
-    const endpoint = baseRangeScheduleEndpoint(date, date);
-    const schedule = await fetchMlbJson(env, endpoint);
-    externalCalls += 1;
-    if (!schedule.ok || !schedule.json || !Array.isArray(schedule.json.dates)) {
-      await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, outcome_level: 'SOURCE', outcome_category: 'SOURCE_ERROR', status: 'SOURCE_ERROR', reason: 'calendar_gap_scoped_schedule_http_or_shape_error', source_endpoint: endpoint, details: { official_date: date, http_status: schedule.http_status, text_preview: schedule.text_preview } });
-      continue;
-    }
-    await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, outcome_level: 'SOURCE', outcome_category: 'SOURCE_PROBE', status: 'CALENDAR_GAP_SCOPED_SCHEDULE_ENDPOINT_OK', reason: 'schedule_fetched_only_for_dates_with_starter_history_gaps', source_endpoint: endpoint, details: { official_date: date, dates_count: schedule.json.dates.length } });
-
-    for (const dateNode of schedule.json.dates) {
-      for (const game of (dateNode.games || [])) {
-        const gamePk = num(game.gamePk);
-        if (!gamePk || !targetMap.has(String(gamePk))) continue;
-        foundTargets.add(String(gamePk));
-        const gameDate = ymd(game.gameDate || dateNode.date || date);
-        const status = str(game.status && (game.status.detailedState || game.status.abstractGameState));
-        const gameType = str(game.gameType || 'R');
-        const details = {
-          game_pk: gamePk,
-          game_date: gameDate,
-          official_date: targetMap.get(String(gamePk)).official_date,
-          game_status: status,
-          game_type: gameType,
-          venue_id: game.venue ? num(game.venue.id) : null,
-          home_team_id: teamIdFromGame(game, 'home'),
-          away_team_id: teamIdFromGame(game, 'away'),
-          link: game.link || null,
-          calendar_gap_scoped: true,
-          coverage_gap_last_batch_id: targetMap.get(String(gamePk)).coverage_gap.last_batch_id || null,
-          coverage_gap_last_request_id: targetMap.get(String(gamePk)).coverage_gap.last_request_id || null
-        };
-        if (!isFinalStatus(status) || gameType !== 'R') {
-          nonFinalCount += 1;
-          await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season: seasonFromDate(gameDate), outcome_level: 'GAME', outcome_category: 'GAME_NOT_FINAL', status: 'FILTERED_NON_FINAL_OR_NO_DATA', reason: 'calendar_gap_target_not_final_regular_season_game', source_endpoint: endpoint, details });
-          continue;
-        }
-        const existing = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM starter_history WHERE game_pk=?`, gamePk);
-        if ((num(existing && existing.c) || 0) >= 2) {
-          alreadyLiveCount += 1;
-          await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season: seasonFromDate(gameDate), outcome_level: 'GAME', outcome_category: 'GAME_ALREADY_LIVE', status: 'GAME_ALREADY_LIVE_COVERAGE_STALE', reason: 'calendar_gap_target_already_has_two_live_starter_rows_before_mining', source_endpoint: endpoint, details });
-          continue;
-        }
-        finalGameCount += 1;
-        await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season: seasonFromDate(gameDate), outcome_level: 'GAME', outcome_category: 'GAME_PENDING', status: 'PENDING_SOURCE', reason: 'calendar_gap_target_pending_starter_history_source_mining', source_endpoint: endpoint, details });
+  for (const dateNode of schedule.json.dates) {
+    for (const game of (dateNode.games || [])) {
+      const gamePk = num(game.gamePk);
+      const gameDate = ymd(game.gameDate || dateNode.date || deltaStartDate);
+      const status = str(game.status && (game.status.detailedState || game.status.abstractGameState));
+      const gameType = str(game.gameType || 'R');
+      const details = {
+        game_pk: gamePk,
+        game_date: gameDate,
+        game_status: status,
+        game_type: gameType,
+        venue_id: game.venue ? num(game.venue.id) : null,
+        home_team_id: teamIdFromGame(game, 'home'),
+        away_team_id: teamIdFromGame(game, 'away'),
+        link: game.link || null
+      };
+      if (!isFinalStatus(status) || gameType !== 'R') {
+        nonFinalCount += 1;
+        await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season, outcome_level: 'GAME', outcome_category: 'GAME_NOT_FINAL', status: 'FILTERED_NON_FINAL_OR_NO_DATA', reason: 'not_final_completed_game_not_part_of_delta_starter_history_universe', source_endpoint: endpoint, details });
+        continue;
       }
+      const existing = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM starter_history WHERE game_pk=?`, gamePk);
+      if ((num(existing && existing.c) || 0) >= 2) {
+        alreadyLiveCount += 1;
+        await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season, outcome_level: 'GAME', outcome_category: 'GAME_ALREADY_LIVE', status: 'GAME_ALREADY_LIVE', reason: 'delta_final_game_already_has_two_live_starter_rows', source_endpoint: endpoint, details });
+        continue;
+      }
+      finalGameCount += 1;
+      await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season, outcome_level: 'GAME', outcome_category: 'GAME_PENDING', status: 'PENDING_SOURCE', reason: 'final_regular_season_game_pending_delta_starter_history_source', source_endpoint: endpoint, details });
     }
   }
-
-  for (const [key, target] of targetMap.entries()) {
-    if (foundTargets.has(key)) continue;
-    await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: target.game_pk, game_date: target.official_date, season: seasonFromDate(target.official_date), outcome_level: 'GAME', outcome_category: 'SOURCE_ERROR', status: 'SOURCE_ERROR', reason: 'calendar_gap_target_game_pk_not_found_in_schedule_for_official_date', source_endpoint: null, details: { official_date: target.official_date, game_pk: target.game_pk } });
-  }
-
-  const sourceErrorCount = targetMap.size - foundTargets.size;
-  await run(env.TEAM_DB, `UPDATE starter_history_batches SET expected_game_count=?, expected_starter_rows=?, final_games_sampled=?, source_error_count=?, status='RUNNING_DELTA_UPDATE_RETAINED_STAGE', certification_status='STARTER_HISTORY_DELTA_UPDATE_RUNNING', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    finalGameCount, finalGameCount * 2, finalGameCount, sourceErrorCount,
-    safeJson({ calendar_gap_scoped: true, layer_key: 'starter_history', coverage_gap_count: targetMap.size, scoped_dates: uniqueDates, delta_start_date: deltaStartDate, delta_end_date: deltaEndDate, final_gap_game_count: finalGameCount, expected_starter_rows: finalGameCount * 2, non_final_or_filtered_game_count: nonFinalCount, already_live_game_count: alreadyLiveCount, schedule_missing_target_count: sourceErrorCount, stage_retained: true, no_coverage_tally_writes: true }), batchId);
-  return { ok: sourceErrorCount === 0, external_calls: externalCalls, final_game_count: finalGameCount, non_final_count: nonFinalCount, already_live_count: alreadyLiveCount, coverage_gap_count: targetMap.size, schedule_missing_target_count: sourceErrorCount };
-}
-
-async function seedDeltaGameUniverse(env, batchId, runId, requestId, deltaStartDate, deltaEndDate, season) {
-  return await seedDeltaGameUniverseFromCoverageGaps(env, batchId, runId, requestId, deltaStartDate, deltaEndDate, season);
+  await run(env.TEAM_DB, `UPDATE starter_history_batches SET expected_game_count=?, expected_starter_rows=?, final_games_sampled=?, status='RUNNING_DELTA_UPDATE_RETAINED_STAGE', certification_status='STARTER_HISTORY_DELTA_UPDATE_RUNNING', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    finalGameCount, finalGameCount * 2, finalGameCount, safeJson({ delta_start_date: deltaStartDate, delta_end_date: deltaEndDate, final_game_count: finalGameCount, expected_starter_rows: finalGameCount * 2, non_final_or_filtered_game_count: nonFinalCount, already_live_game_count: alreadyLiveCount, stage_retained: true }), batchId);
+  return { ok: true, external_calls: 1, final_game_count: finalGameCount, non_final_count: nonFinalCount, already_live_count: alreadyLiveCount };
 }
 
 async function promoteDeltaGameRows(env, batchId, runId, gamePk) {
@@ -1337,8 +1282,6 @@ async function finalizeDeltaUpdate(env, batch, runId, requestId) {
     live_rows_for_batch: liveRows,
     retained_stage_rows: stagedRows,
     stage_retained: true,
-    calendar_gap_scoped: true,
-    no_coverage_tally_writes: true,
     stage_rows_after_clean: stagedRows,
     duplicate_stage_keys: duplicateStageKeys,
     duplicate_live_keys: duplicateLiveKeys,
@@ -1348,7 +1291,6 @@ async function finalizeDeltaUpdate(env, batch, runId, requestId) {
     unclear_count: unclearCount,
     no_full_sweep: true,
     no_delta_stage_cleanup: true,
-    no_coverage_tally_writes: true,
     no_scoring: true,
     no_ranking: true,
     no_board_mutation: true,
@@ -1389,11 +1331,7 @@ async function runDeltaUpdateRetainedStage(env, input) {
     const seed = await seedDeltaGameUniverse(env, batchId, runId, requestId, deltaStartDate, deltaEndDate, season);
     externalCalls += seed.external_calls || 0;
     batch = await first(env.TEAM_DB, `SELECT * FROM starter_history_batches WHERE batch_id=?`, batchId);
-    if (seed.no_gap_noop) {
-      const output = { calendar_gap_scoped: true, coverage_gap_count: 0, status: 'DELTA_UPDATE_NOOP_NO_CALENDAR_GAPS', certification: 'STARTER_HISTORY_DELTA_NOOP_NO_CALENDAR_GAPS', no_mining_calls: true, no_live_mutation: true, no_coverage_tally_writes: true, no_full_sweep: true };
-      return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, status: 'delta_update_noop_no_calendar_gaps', certification: 'STARTER_HISTORY_DELTA_NOOP_NO_CALENDAR_GAPS', certification_grade: 'DELTA_NOOP_PASS', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: externalCalls, schema, output_json: output, queued: false, no_full_sweep: true, no_mining_calls: true, no_live_mutation: true, no_coverage_tally_writes: true, no_browser_pump: true, timestamp_utc: nowUtc() };
-    }
-    if (!seed.ok) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, status: 'failed_delta_calendar_gap_schedule_source_error', certification: 'STARTER_HISTORY_DELTA_CALENDAR_GAP_SOURCE_ERROR', certification_grade: 'DELTA_BLOCKED', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: externalCalls, schema, no_delta_stage_cleanup: true, calendar_gap_scoped: true, no_coverage_tally_writes: true };
+    if (!seed.ok) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, status: 'failed_delta_schedule_source_error', certification: 'STARTER_HISTORY_DELTA_UPDATE_SCHEDULE_SOURCE_ERROR', certification_grade: 'DELTA_BLOCKED', rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: externalCalls, schema, no_delta_stage_cleanup: true };
   }
   const pending = await all(env.TEAM_DB, `SELECT * FROM starter_history_outcomes WHERE batch_id=? AND outcome_level='GAME' AND status='PENDING_SOURCE' ORDER BY date(game_date), game_pk LIMIT ?`, batch.batch_id, maxGamesPerTick);
   for (const gameRow of pending) {
@@ -1408,12 +1346,12 @@ async function runDeltaUpdateRetainedStage(env, input) {
   const stagedRows = num(counts.staged_rows) || 0;
   const liveRows = num(counts.live_rows) || 0;
   if (remainingGames > 0) {
-    const output = { batch_id: batch.batch_id, mode: 'delta_update', delta_start_date: batch.sample_start_date || deltaStartDate, delta_end_date: batch.sample_end_date || deltaEndDate, max_games_per_tick: maxGamesPerTick, rows_read_this_tick: rowsRead, rows_written_this_tick: rowsWritten, rows_promoted_this_tick: rowsPromoted, staged_rows_so_far: stagedRows, live_rows_for_batch: liveRows, remaining_games: remainingGames, expected_game_count: batch.expected_game_count, expected_starter_rows: batch.expected_starter_rows, stage_retained: true, calendar_gap_scoped: true, no_coverage_tally_writes: true, continuation_required: true };
+    const output = { batch_id: batch.batch_id, mode: 'delta_update', delta_start_date: batch.sample_start_date || deltaStartDate, delta_end_date: batch.sample_end_date || deltaEndDate, max_games_per_tick: maxGamesPerTick, rows_read_this_tick: rowsRead, rows_written_this_tick: rowsWritten, rows_promoted_this_tick: rowsPromoted, staged_rows_so_far: stagedRows, live_rows_for_batch: liveRows, remaining_games: remainingGames, expected_game_count: batch.expected_game_count, expected_starter_rows: batch.expected_starter_rows, stage_retained: true, continuation_required: true };
     await run(env.TEAM_DB, `UPDATE starter_history_batches SET staged_starter_rows=?, rows_promoted=?, live_rows_for_batch=?, status='PARTIAL_CONTINUE_DELTA_UPDATE_RETAINED_STAGE', certification_status='STARTER_HISTORY_DELTA_UPDATE_PARTIAL_CONTINUE', certification_grade='DELTA_IN_PROGRESS', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, stagedRows, liveRows, liveRows, safeJson(output), batch.batch_id);
-    return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batch.batch_id, status: 'partial_continue_base_starter_history_delta_update', certification: 'STARTER_HISTORY_DELTA_UPDATE_PARTIAL_CONTINUE', certification_grade: 'DELTA_IN_PROGRESS', rows_read: rowsRead, rows_written: rowsWritten, rows_promoted: rowsPromoted, external_calls_performed: externalCalls, schema, output_json: output, continuation_required: true, orchestrator_should_self_continue: true, stage_retained: true, calendar_gap_scoped: true, no_coverage_tally_writes: true, no_delta_stage_cleanup: true, no_browser_pump: true, timestamp_utc: nowUtc() };
+    return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batch.batch_id, status: 'partial_continue_base_starter_history_delta_update', certification: 'STARTER_HISTORY_DELTA_UPDATE_PARTIAL_CONTINUE', certification_grade: 'DELTA_IN_PROGRESS', rows_read: rowsRead, rows_written: rowsWritten, rows_promoted: rowsPromoted, external_calls_performed: externalCalls, schema, output_json: output, continuation_required: true, orchestrator_should_self_continue: true, stage_retained: true, no_delta_stage_cleanup: true, no_browser_pump: true, timestamp_utc: nowUtc() };
   }
   const final = await finalizeDeltaUpdate(env, batch, runId, requestId);
-  return { ok: true, data_ok: final.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batch.batch_id, status: final.status.toLowerCase(), certification: final.certificationStatus, certification_grade: final.certificationGrade, rows_read: rowsRead, rows_written: rowsWritten, rows_promoted: final.output.rows_promoted, external_calls_performed: externalCalls, schema, output_json: final.output, stage_retained: true, calendar_gap_scoped: true, no_coverage_tally_writes: true, no_delta_stage_cleanup: true, no_browser_pump: true, timestamp_utc: nowUtc() };
+  return { ok: true, data_ok: final.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batch.batch_id, status: final.status.toLowerCase(), certification: final.certificationStatus, certification_grade: final.certificationGrade, rows_read: rowsRead, rows_written: rowsWritten, rows_promoted: final.output.rows_promoted, external_calls_performed: externalCalls, schema, output_json: final.output, stage_retained: true, no_delta_stage_cleanup: true, no_browser_pump: true, timestamp_utc: nowUtc() };
 }
 
 async function latestCompleteStarterHistoryDateFromSchedule(env, startDate, endDate) {
@@ -1611,7 +1549,6 @@ async function restoreMissingLiveRowsFromRetainedDeltaStage(env, input) {
     no_new_batch: true,
     no_cleanup: true,
     no_delta_stage_cleanup: true,
-    no_coverage_tally_writes: true,
     no_scoring: true,
     no_ranking: true,
     no_board_mutation: true,
@@ -1627,6 +1564,225 @@ async function restoreMissingLiveRowsFromRetainedDeltaStage(env, input) {
     VALUES ('starter_history_delta_retained_stage_restore_before_queue', ?, ?, 'delta_retained_stage_restore_before_queue', ?, 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
     WORKER_NAME, VERSION, certificationStatus, DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, startDate, ymd(probe.latest_complete_game_date || after.live_max_game_date || after.retained_max_game_date), deltaBatch.batch_id, runId, safeJson(output));
   return { ok: pass, data_ok: pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: deltaBatch.batch_id, status, certification: certificationStatus, certification_grade: certificationGrade, rows_read: retainedRows, rows_written: missingBefore > 0 ? missingBefore : 2, rows_promoted: missingBefore > 0 && pass ? missingBefore : 0, external_calls_performed: probe.external_calls || 1, schema, output_json: output, restored_rows: output.restored_rows, queued: false, request_id_created: null, no_mining_calls: true, no_stage_writes: true, no_full_sweep: true, no_new_batch: true, no_cleanup: true, no_browser_pump: true, timestamp_utc: nowUtc() };
+}
+
+
+
+async function loadActiveCalendarGapStarterBatch(env, requestId) {
+  return await first(env.TEAM_DB, `SELECT * FROM starter_history_batches
+    WHERE ingestion_mode='delta_calendar_gap_scoped_repair'
+      AND request_id=?
+      AND status IN ('RUNNING_CALENDAR_GAP_SCOPED_REPAIR','PARTIAL_CONTINUE_CALENDAR_GAP_SCOPED_REPAIR','FINALIZATION_ONLY_CALENDAR_GAP_SCOPED_REPAIR')
+    ORDER BY datetime(created_at) DESC
+    LIMIT 1`, requestId);
+}
+
+async function loadStarterHistoryCalendarGaps(env) {
+  return await all(env.TEAM_DB, `SELECT
+      g.game_pk,
+      g.official_date AS game_date,
+      COALESCE(cal.game_type, 'R') AS game_type,
+      COALESCE(cal.detailed_state, cal.abstract_game_state, 'Final') AS game_status,
+      cal.home_team_id AS home_team_id,
+      cal.away_team_id AS away_team_id,
+      cal.home_team_name AS home_team_name,
+      cal.away_team_name AS away_team_name,
+      cal.venue_id AS venue_id,
+      g.coverage_status,
+      g.coverage_grade,
+      g.missing_reason,
+      g.live_rows AS coverage_live_rows,
+      g.stage_rows AS coverage_stage_rows,
+      g.outcome_rows AS coverage_outcome_rows
+    FROM mlb_game_data_coverage g
+    LEFT JOIN mlb_game_calendar cal ON cal.game_pk = g.game_pk
+    WHERE g.layer_key='starter_history'
+      AND g.blocking_for_full_run=1
+    ORDER BY g.official_date, g.game_pk`);
+}
+
+async function createCalendarGapStarterBatch(env, input, requestId, chainId, runId, gaps) {
+  const batchId = rid('starter_calendar_gap_batch');
+  const firstDate = ymd(gaps[0] && gaps[0].game_date);
+  const lastDate = ymd(gaps[gaps.length - 1] && gaps[gaps.length - 1].game_date);
+  const season = seasonFromDate(lastDate || firstDate || DEFAULT_SAMPLE_DATE);
+  await run(env.TEAM_DB, `INSERT INTO starter_history_batches (
+    batch_id, run_id, request_id, chain_id, job_key, worker_name, version, ingestion_mode, probe_only, source_key, source_confidence, source_season, source_game_type,
+    base_backfill_cutoff_date, delta_reserved_start_date, sample_start_date, sample_end_date, sample_limit, source_shape_classification,
+    actual_starter_identification_path, safest_key_model, expected_game_count, expected_starter_rows, staged_starter_rows, duplicate_stage_keys,
+    final_games_sampled, games_with_two_actual_starters, missing_actual_starter_games, probable_only_games, source_error_count, unclear_count,
+    status, certification_status, certification_grade, output_json
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, 'delta_calendar_gap_scoped_repair', 0, ?, ?, ?, 'R', ?, ?, ?, ?, 0, 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS', ?, ?, ?, ?, 0, 0, ?, 0, 0, 0, 0, 0, 'RUNNING_CALENDAR_GAP_SCOPED_REPAIR', 'STARTER_HISTORY_CALENDAR_GAP_SCOPED_REPAIR_RUNNING', 'DELTA_IN_PROGRESS', ?)`,
+    batchId, runId, requestId, chainId, JOB_KEY, WORKER_NAME, VERSION, SOURCE_KEY, SOURCE_CONFIDENCE, season,
+    DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, firstDate, lastDate,
+    'MLB StatsAPI /api/v1/game/{gamePk}/boxscore -> teams.{away,home}.players.ID*.stats.pitching.gamesStarted == 1',
+    'calendar gap game_pk + team_id; pitcher_id + game_pk + team_id is secondary validation',
+    gaps.length, gaps.length * 2, gaps.length,
+    safeJson({ calendar_gap_scoped_repair: true, layer_key: 'starter_history', gap_game_count: gaps.length, expected_starter_rows: gaps.length * 2, first_gap_date: firstDate, last_gap_date: lastDate, no_full_sweep: true, source: 'TEAM_DB.mlb_game_data_coverage blocking_for_full_run=1' })
+  );
+  for (const gap of gaps) {
+    const gamePk = num(gap.game_pk);
+    const gameDate = ymd(gap.game_date);
+    const details = {
+      calendar_gap_scoped_repair: true,
+      layer_key: 'starter_history',
+      game_pk: gamePk,
+      game_date: gameDate,
+      game_status: str(gap.game_status || 'Final'),
+      game_type: str(gap.game_type || 'R'),
+      venue_id: num(gap.venue_id),
+      home_team_id: num(gap.home_team_id),
+      away_team_id: num(gap.away_team_id),
+      home_team_name: str(gap.home_team_name),
+      away_team_name: str(gap.away_team_name),
+      coverage_status: str(gap.coverage_status),
+      coverage_grade: str(gap.coverage_grade),
+      missing_reason: str(gap.missing_reason),
+      coverage_live_rows: num(gap.coverage_live_rows) || 0,
+      coverage_stage_rows: num(gap.coverage_stage_rows) || 0,
+      coverage_outcome_rows: num(gap.coverage_outcome_rows) || 0
+    };
+    await insertOutcome(env, {
+      batch_id: batchId,
+      run_id: runId,
+      request_id: requestId,
+      game_pk: gamePk,
+      game_date: gameDate,
+      season: seasonFromDate(gameDate),
+      outcome_level: 'GAME',
+      outcome_category: 'CALENDAR_GAP_PENDING',
+      status: 'PENDING_SOURCE',
+      reason: 'calendar_tally_blocking_gap_requires_exact_game_pk_starter_history_mining',
+      source_endpoint: 'TEAM_DB.mlb_game_data_coverage + TEAM_DB.mlb_game_calendar',
+      details
+    });
+  }
+  return await first(env.TEAM_DB, `SELECT * FROM starter_history_batches WHERE batch_id=?`, batchId);
+}
+
+async function finalizeCalendarGapStarterBatch(env, batch, runId, requestId, extraOutput = {}) {
+  const batchId = batch.batch_id;
+  const c = await deltaCounts(env, batchId);
+  const expectedGameCount = num(batch.expected_game_count) || 0;
+  const expectedStarterRows = num(batch.expected_starter_rows) || 0;
+  const stagedRows = num(c.staged_rows) || 0;
+  const liveRows = num(c.live_rows) || 0;
+  const pendingGames = num(c.pending_games) || 0;
+  const duplicateStageKeys = num(c.duplicate_stage_keys) || 0;
+  const duplicateLiveKeys = num(c.duplicate_live_keys) || 0;
+  const missingStageIdentity = num(c.missing_stage_identity) || 0;
+  const missingLiveIdentity = num(c.missing_live_identity) || 0;
+  const sourceErrorCount = num(c.source_error_count) || 0;
+  const unclearCount = num(c.unclear_count) || 0;
+  const actualCoverageGapsAfter = await first(env.TEAM_DB, `SELECT
+      COUNT(*) AS blocking_gap_count,
+      COUNT(DISTINCT game_pk) AS blocking_gap_games
+    FROM mlb_game_data_coverage
+    WHERE layer_key='starter_history'
+      AND blocking_for_full_run=1`);
+  const batchLiveBad = await all(env.TEAM_DB, `SELECT game_pk, game_date, COUNT(*) AS starter_rows, COUNT(DISTINCT player_id) AS starters, COUNT(DISTINCT team_id) AS teams
+    FROM starter_history
+    WHERE batch_id=?
+    GROUP BY game_pk, game_date
+    HAVING starter_rows<>2 OR starters<>2 OR teams<>2
+    ORDER BY game_date, game_pk
+    LIMIT 20`, batchId);
+  const pass = expectedGameCount > 0 && pendingGames === 0 && stagedRows === expectedStarterRows && liveRows === expectedStarterRows && duplicateStageKeys === 0 && duplicateLiveKeys === 0 && missingStageIdentity === 0 && missingLiveIdentity === 0 && sourceErrorCount === 0 && unclearCount === 0 && batchLiveBad.length === 0;
+  const status = pass ? 'COMPLETED_CALENDAR_GAP_SCOPED_PROMOTED_STAGE_RETAINED' : 'CALENDAR_GAP_SCOPED_REPAIR_VERIFY_FAILED';
+  const certificationStatus = pass ? 'STARTER_HISTORY_CALENDAR_GAP_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED' : 'STARTER_HISTORY_CALENDAR_GAP_SCOPED_REPAIR_BLOCKED_VERIFY_FAILED';
+  const certificationGrade = pass ? 'DELTA_REPAIR_PASS' : 'DELTA_REPAIR_BLOCKED';
+  const output = {
+    calendar_gap_scoped_repair: true,
+    layer_key: 'starter_history',
+    target_source: 'TEAM_DB.mlb_game_data_coverage blocking_for_full_run=1 joined to TEAM_DB.mlb_game_calendar',
+    source_shape_classification: 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS',
+    actual_starter_identification_path: 'MLB StatsAPI /api/v1/game/{gamePk}/boxscore -> teams.{away,home}.players.ID*.stats.pitching.gamesStarted == 1',
+    gap_game_count: expectedGameCount,
+    targeted_game_count: expectedGameCount,
+    calendar_gap_count: expectedGameCount,
+    scoped_gap_count: expectedGameCount,
+    expected_starter_rows: expectedStarterRows,
+    staged_starter_rows: stagedRows,
+    rows_promoted: liveRows,
+    live_rows_for_batch: liveRows,
+    retained_stage_rows: stagedRows,
+    pending_games: pendingGames,
+    duplicate_stage_keys: duplicateStageKeys,
+    duplicate_live_keys: duplicateLiveKeys,
+    missing_stage_identity_count: missingStageIdentity,
+    missing_live_identity_count: missingLiveIdentity,
+    source_error_count: sourceErrorCount,
+    unclear_count: unclearCount,
+    post_run_calendar_blocking_gap_count_before_calendar_refresh: num(actualCoverageGapsAfter && actualCoverageGapsAfter.blocking_gap_count) || 0,
+    post_run_calendar_blocking_gap_games_before_calendar_refresh: num(actualCoverageGapsAfter && actualCoverageGapsAfter.blocking_gap_games) || 0,
+    batch_live_bad_examples: batchLiveBad,
+    no_full_sweep: true,
+    no_new_universe_sweep: true,
+    scoped_to_calendar_tally_gaps: true,
+    stage_retained: true,
+    no_delta_stage_cleanup: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_board_mutation: true,
+    ...extraOutput,
+    next_action: pass ? 'RUN_DELTA_CALENDAR_TO_REFRESH_TALLY_AND_CONFIRM_ZERO_STARTER_HISTORY_GAPS' : 'DO_NOT_RUN_CALENDAR_UNTIL_STARTER_HISTORY_REPAIR_IS_FIXED'
+  };
+  await run(env.TEAM_DB, `UPDATE starter_history_batches SET staged_starter_rows=?, rows_promoted=?, live_rows_for_batch=?, stage_rows_after_clean=?, duplicate_stage_keys=?, duplicate_live_keys=?, missing_live_identity_count=?, source_error_count=?, unclear_count=?, games_with_two_actual_starters=?, status=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP, certified_at=CURRENT_TIMESTAMP, promoted_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    stagedRows, liveRows, liveRows, stagedRows, duplicateStageKeys, duplicateLiveKeys, missingLiveIdentity, sourceErrorCount, unclearCount, expectedGameCount, status, certificationStatus, certificationGrade, safeJson(output), batchId);
+  await run(env.TEAM_DB, `INSERT INTO starter_history_certifications (
+    certification_id, batch_id, run_id, request_id, worker_name, version, certification_status, certification_grade, source_shape_classification, actual_starter_identification_path, safest_key_model,
+    expected_game_count, expected_starter_rows, staged_starter_rows, duplicate_stage_keys, missing_required_identity_count, source_error_count, unclear_count, no_live_promotion, full_base_backfill_blocked, delta_update_blocked, output_json
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS', ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 0, ?)`,
+    rid('starter_cert'), batchId, runId, requestId, WORKER_NAME, VERSION, certificationStatus, certificationGrade, output.actual_starter_identification_path, 'calendar gap game_pk + team_id; pitcher_id + game_pk + team_id is secondary validation', expectedGameCount, expectedStarterRows, stagedRows, duplicateStageKeys, missingStageIdentity + missingLiveIdentity, sourceErrorCount, unclearCount, safeJson(output));
+  await run(env.TEAM_DB, `INSERT OR REPLACE INTO starter_history_cursor (cursor_key, worker_name, version, ingestion_mode, status, source_shape_classification, base_backfill_cutoff_date, delta_reserved_start_date, last_probe_date, last_completed_game_date, last_batch_id, last_run_id, output_json, updated_at)
+    VALUES ('starter_history_calendar_gap_scoped_repair', ?, ?, 'delta_calendar_gap_scoped_repair', ?, 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    WORKER_NAME, VERSION, certificationStatus, DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, batch.sample_start_date, batch.sample_end_date, batchId, runId, safeJson(output));
+  return { pass, status, certificationStatus, certificationGrade, output };
+}
+
+async function runCalendarGapScopedStarterMining(env, input) {
+  const schema = await ensureSchema(env);
+  if (!schema.ok) return { ok: false, data_ok: false, status: 'schema_failed', certification: 'STARTER_HISTORY_SCHEMA_FAILED', schema, rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0 };
+  const requestId = input.request_id || rid('starter_calendar_gap_req');
+  const chainId = input.chain_id || null;
+  const runId = input.run_id || rid('starter_calendar_gap_run');
+  const rowInput = input.input_json || {};
+  const maxGamesPerTick = Math.max(1, Math.min(40, Number(rowInput.max_games_per_tick || input.max_games_per_tick || 40) || 40));
+  let batch = await loadActiveCalendarGapStarterBatch(env, requestId);
+  let gaps = [];
+  let createdNewBatch = false;
+  let externalCalls = 0;
+  let rowsRead = 0;
+  let rowsWritten = 0;
+  let rowsPromoted = 0;
+  if (!batch) {
+    gaps = await loadStarterHistoryCalendarGaps(env);
+    if (gaps.length === 0) {
+      const output = { calendar_gap_scoped_repair: true, layer_key: 'starter_history', gap_game_count: 0, targeted_game_count: 0, rows_promoted: 0, no_live_mutation: true, no_full_sweep: true, next_action: 'NO_STARTER_HISTORY_CALENDAR_GAPS_FOUND_SAFE_TO_RUN_CALENDAR_OR_MOVE_ON' };
+      return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, status: 'STARTER_HISTORY_CALENDAR_GAP_SCOPED_NOOP_NO_GAPS', certification: 'STARTER_HISTORY_CALENDAR_GAP_SCOPED_NOOP_NO_GAPS', certification_grade: 'DELTA_NOOP_PASS', rows_read: 0, rows_written: 0, rows_staged: 0, rows_promoted: 0, external_calls_performed: 0, schema, output_json: output, no_browser_pump: true, timestamp_utc: nowUtc() };
+    }
+    batch = await createCalendarGapStarterBatch(env, input, requestId, chainId, runId, gaps);
+    createdNewBatch = true;
+  }
+  const pending = await all(env.TEAM_DB, `SELECT * FROM starter_history_outcomes WHERE batch_id=? AND outcome_level='GAME' AND status='PENDING_SOURCE' ORDER BY date(game_date), game_pk LIMIT ?`, batch.batch_id, maxGamesPerTick);
+  for (const gameRow of pending) {
+    const res = await processOneDeltaGame(env, batch, gameRow, runId, requestId);
+    rowsRead += 1;
+    rowsWritten += res.rows_written || 0;
+    rowsPromoted += res.rows_promoted || 0;
+    externalCalls += res.external_calls || 0;
+  }
+  const counts = await deltaCounts(env, batch.batch_id);
+  const remainingGames = num(counts.pending_games) || 0;
+  const stagedRows = num(counts.staged_rows) || 0;
+  const liveRows = num(counts.live_rows) || 0;
+  if (remainingGames > 0) {
+    const output = { calendar_gap_scoped_repair: true, layer_key: 'starter_history', batch_id: batch.batch_id, gap_game_count: num(batch.expected_game_count) || null, targeted_game_count: num(batch.expected_game_count) || null, max_games_per_tick: maxGamesPerTick, rows_read_this_tick: rowsRead, rows_written_this_tick: rowsWritten, rows_promoted_this_tick: rowsPromoted, staged_rows_so_far: stagedRows, live_rows_for_batch: liveRows, remaining_games: remainingGames, expected_starter_rows: batch.expected_starter_rows, continuation_required: true, no_full_sweep: true, scoped_to_calendar_tally_gaps: true };
+    await run(env.TEAM_DB, `UPDATE starter_history_batches SET staged_starter_rows=?, rows_promoted=?, live_rows_for_batch=?, status='PARTIAL_CONTINUE_CALENDAR_GAP_SCOPED_REPAIR', certification_status='STARTER_HISTORY_CALENDAR_GAP_SCOPED_REPAIR_PARTIAL_CONTINUE', certification_grade='DELTA_IN_PROGRESS', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, stagedRows, liveRows, liveRows, safeJson(output), batch.batch_id);
+    return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batch.batch_id, status: 'partial_continue_starter_history_calendar_gap_scoped_repair', certification: 'STARTER_HISTORY_CALENDAR_GAP_SCOPED_REPAIR_PARTIAL_CONTINUE', certification_grade: 'DELTA_IN_PROGRESS', rows_read: rowsRead, rows_written: rowsWritten, rows_promoted: rowsPromoted, external_calls_performed: externalCalls, schema, output_json: output, continuation_required: true, orchestrator_should_self_continue: true, stage_retained: true, no_delta_stage_cleanup: true, no_browser_pump: true, timestamp_utc: nowUtc() };
+  }
+  const final = await finalizeCalendarGapStarterBatch(env, batch, runId, requestId, { created_new_batch: createdNewBatch, rows_read_this_tick: rowsRead, rows_written_this_tick: rowsWritten, rows_promoted_this_tick: rowsPromoted });
+  return { ok: final.pass, data_ok: final.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batch.batch_id, status: final.status, certification: final.certificationStatus, certification_grade: final.certificationGrade, rows_read: rowsRead, rows_written: rowsWritten, rows_staged: final.output.staged_starter_rows, rows_promoted: final.output.rows_promoted, external_calls_performed: externalCalls, schema, output_json: final.output, gap_game_count: final.output.gap_game_count, targeted_game_count: final.output.targeted_game_count, calendar_gap_count: final.output.calendar_gap_count, scoped_gap_count: final.output.scoped_gap_count, expected_starter_rows: final.output.expected_starter_rows, stage_retained: true, no_delta_stage_cleanup: true, no_full_sweep: true, no_browser_pump: true, timestamp_utc: nowUtc() };
 }
 
 async function scopedSourceRepairMissingDeltaKeys(env, input) {
@@ -1855,7 +2011,6 @@ async function scopedSourceRepairMissingDeltaKeys(env, input) {
     no_new_batch: true,
     stage_retained: true,
     no_delta_stage_cleanup: true,
-    no_coverage_tally_writes: true,
     no_scoring: true,
     no_ranking: true,
     no_board_mutation: true,
@@ -1870,7 +2025,7 @@ async function scopedSourceRepairMissingDeltaKeys(env, input) {
   await run(env.TEAM_DB, `INSERT OR REPLACE INTO starter_history_cursor (cursor_key, worker_name, version, ingestion_mode, status, source_shape_classification, base_backfill_cutoff_date, delta_reserved_start_date, last_probe_date, last_completed_game_date, last_batch_id, last_run_id, output_json, updated_at)
     VALUES ('starter_history_delta_scoped_source_repair', ?, ?, 'delta_scoped_source_repair', ?, 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
     WORKER_NAME, VERSION, certificationStatus, DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, startDate, ymd(probe.latest_complete_game_date || after.live_max_game_date || after.retained_max_game_date), deltaBatch.batch_id, runId, safeJson(output));
-  return { ok: pass, data_ok: pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: deltaBatch.batch_id, status, certification: certificationStatus, certification_grade: certificationGrade, rows_read: missingBothBefore, rows_written: rowsStaged + rowsPromoted + 2, rows_staged: rowsStaged, rows_promoted: rowsPromoted, external_calls_performed: externalCalls, schema, output_json: output, missing_live_rows_detected: output.missing_live_rows_detected, missing_stage_rows_detected: output.missing_stage_rows_detected, scoped_starter_keys_to_refetch: missingBothBefore, scoped_games_refetched: scopedGamesRefetched, repaired_keys: repairedKeys, no_full_sweep: true, no_new_batch: true, stage_retained: true, calendar_gap_scoped: true, no_coverage_tally_writes: true, no_delta_stage_cleanup: true, no_browser_pump: true, timestamp_utc: nowUtc() };
+  return { ok: pass, data_ok: pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: deltaBatch.batch_id, status, certification: certificationStatus, certification_grade: certificationGrade, rows_read: missingBothBefore, rows_written: rowsStaged + rowsPromoted + 2, rows_staged: rowsStaged, rows_promoted: rowsPromoted, external_calls_performed: externalCalls, schema, output_json: output, missing_live_rows_detected: output.missing_live_rows_detected, missing_stage_rows_detected: output.missing_stage_rows_detected, scoped_starter_keys_to_refetch: missingBothBefore, scoped_games_refetched: scopedGamesRefetched, repaired_keys: repairedKeys, no_full_sweep: true, no_new_batch: true, stage_retained: true, no_delta_stage_cleanup: true, no_browser_pump: true, timestamp_utc: nowUtc() };
 }
 
 
@@ -1891,14 +2046,15 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const mode = String((input.input_json && input.input_json.mode) || input.mode || "base_backfill_stage_only");
-      if (mode === "delta_scoped_source_repair") return jsonResponse(await scopedSourceRepairMissingDeltaKeys(env, input));
+      if (mode === "delta_scoped_source_repair") return jsonResponse(await runCalendarGapScopedStarterMining(env, input));
+      if (mode === "delta_legacy_scoped_source_repair") return jsonResponse(await scopedSourceRepairMissingDeltaKeys(env, input));
       if (mode === "delta_retained_stage_restore_before_queue") return jsonResponse(await restoreMissingLiveRowsFromRetainedDeltaStage(env, input));
       if (mode === "delta_noop_current_state") return jsonResponse(await runDeltaNoopCurrentState(env, input));
       if (mode === "delta_update") return jsonResponse(await runDeltaUpdateRetainedStage(env, input));
       if (mode === "source_lock_probe") return jsonResponse(await runSourceProbe(env, input));
       if (mode === "base_backfill" || mode === "base_backfill_stage_only") return jsonResponse(await runBaseBackfillStageOnly(env, input));
       if (mode === "base_promotion_stage_clean" || mode === "base_promotion") return jsonResponse(await promoteCertifiedBaseStage(env, input));
-      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode", mode, allowed_modes: ["source_lock_probe", "base_backfill_stage_only", "base_promotion_stage_clean", "delta_update", "delta_noop_current_state", "delta_retained_stage_restore_before_queue", "delta_scoped_source_repair"], no_live_promotion: true }, 400);
+      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode", mode, allowed_modes: ["source_lock_probe", "base_backfill_stage_only", "base_promotion_stage_clean", "delta_update", "delta_noop_current_state", "delta_retained_stage_restore_before_queue", "delta_scoped_source_repair", "delta_legacy_scoped_source_repair"], no_live_promotion: true }, 400);
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }
