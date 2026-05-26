@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-games-status";
-const VERSION = "alphadog-v2-daily-games-status-v0.1.5-raw-event-shell-cross-board-resolution";
+const VERSION = "alphadog-v2-daily-games-status-v0.1.6-sleeper-shell-unordered-cross-board-resolution";
 const JOB_KEY = "daily-games-status";
 const MLB_SCHEDULE_SOURCE = "official_mlb_statsapi_schedule";
 const MLB_SCHEDULE_ENDPOINT_PATH = "/api/v1/schedule?sportId=1&gameType=R&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD";
@@ -437,26 +437,30 @@ function applySleeperRawEventShell(row, aliases, teamDir) {
   return true;
 }
 function applyCrossBoardPrizePicksTeam(row, ppPlayerTeamMap, aliases, teamDir) {
-  if (!row.sleeper_event_shell || row.team || !row.player_name) return false;
+  if (!row.sleeper_event_shell || !row.player_name) return false;
   const ids = sleeperShellTeamIds(row.sleeper_event_shell, aliases);
   if (!ids.homeId || !ids.awayId) return false;
+  const currentTeamId = aliasTeamId(aliases, row.team) || (row.enriched_mlb_team_id ? Number(row.enriched_mlb_team_id) : null);
   const candidates = (ppPlayerTeamMap.get(normalize(row.player_name)) || []).filter(c => Number(c.team_id) === Number(ids.homeId) || Number(c.team_id) === Number(ids.awayId));
   const uniqueTeamIds = unique(candidates.map(c => String(c.team_id)));
   if (uniqueTeamIds.length !== 1) return false;
   const teamId = Number(uniqueTeamIds[0]);
+  if (currentTeamId && Number(currentTeamId) !== Number(teamId)) {
+    row.enrichment_flags.push("cross_board_prizepicks_player_team_conflicts_existing_team");
+    return false;
+  }
   const sample = candidates[0];
-  row.team = teamAbbrFromId(teamDir, teamId);
-  row.enriched_mlb_team_id = teamId;
-  row.enriched_team_method = "cross_board_prizepicks_player_team_with_sleeper_event_shell";
+  if (!row.team) row.team = teamAbbrFromId(teamDir, teamId);
+  row.enriched_mlb_team_id = row.enriched_mlb_team_id || teamId;
+  row.enriched_team_method = row.enriched_team_method || "cross_board_prizepicks_player_team_with_sleeper_event_shell";
   const oppId = Number(teamId) === Number(ids.homeId) ? ids.awayId : ids.homeId;
-  row.opponent = teamAbbrFromId(teamDir, oppId);
-  row.enriched_opponent_mlb_team_id = Number(oppId);
-  row.enriched_opponent_method = "cross_board_prizepicks_player_team_with_sleeper_event_shell";
-  row.cross_board_prizepicks_start_time = sample.start_time || null;
-  row.cross_board_prizepicks_slate_date = sample.slate_date || dateOnly(sample.start_time) || null;
-  row.cross_board_prizepicks_source_event_id = sample.source_event_id || null;
-  row.enrichment_flags.push("team_filled_from_cross_board_prizepicks_player_team");
-  row.enrichment_flags.push("opponent_filled_from_cross_board_prizepicks_player_team");
+  if (!row.opponent) row.opponent = teamAbbrFromId(teamDir, oppId);
+  row.enriched_opponent_mlb_team_id = row.enriched_opponent_mlb_team_id || Number(oppId);
+  row.enriched_opponent_method = row.enriched_opponent_method || "cross_board_prizepicks_player_team_with_sleeper_event_shell";
+  row.cross_board_prizepicks_start_time = sample.start_time || row.cross_board_prizepicks_start_time || null;
+  row.cross_board_prizepicks_slate_date = sample.slate_date || dateOnly(sample.start_time) || row.cross_board_prizepicks_slate_date || null;
+  row.cross_board_prizepicks_source_event_id = sample.source_event_id || row.cross_board_prizepicks_source_event_id || null;
+  row.enrichment_flags.push("cross_board_prizepicks_player_game_anchor_available");
   return true;
 }
 
@@ -479,8 +483,7 @@ function enrichBoardRows(rows, playerTeamMap, aliases = new Map(), teamDir = nul
       }
     }
     if (String(r.board_source_key || r.source_key || "") === "parlay_sleeper") {
-      const beforeTeam = !!r.team;
-      if (!beforeTeam && applyCrossBoardPrizePicksTeam(r, ppPlayerTeamMap, aliases, teamDir)) crossBoardTeamFilled++;
+      if (applyCrossBoardPrizePicksTeam(r, ppPlayerTeamMap, aliases, teamDir)) crossBoardTeamFilled++;
       if (applySleeperRawEventShell(r, aliases, teamDir)) rawEventShellResolved++;
     }
   }
@@ -699,21 +702,24 @@ function matchGame(row, games, aliases, teamDir = null) {
       // while the raw event shell still has the correct teams/game container.
       if (row.cross_board_prizepicks_start_time) {
         const crossDateGames = gamesForDate(games, row.cross_board_prizepicks_start_time || row.cross_board_prizepicks_slate_date);
-        const crossPair = gamesForTeamPair(crossDateGames, ids.homeId, ids.awayId, teamDir);
+        const crossPair = gamesForUnorderedTeamPair(crossDateGames, ids.homeId, ids.awayId, teamDir);
         const crossTimeHit = bestStartTimeMatch(crossPair, row.cross_board_prizepicks_start_time, 20);
         if (crossTimeHit) {
           return { game: crossTimeHit.game, method: "sleeper_raw_event_shell_cross_board_prizepicks_official_schedule", confidence: "HIGH" };
         }
+        if (crossPair.length === 1) {
+          return { game: crossPair[0], method: "sleeper_raw_event_shell_cross_board_prizepicks_team_pair", confidence: "HIGH" };
+        }
       }
       const shellDateGames = gamesForDate(games, shell.game_date || row.slate_date || row.start_time);
-      const exactHomeAway = gamesForTeamPair(shellDateGames, ids.homeId, ids.awayId, teamDir);
-      if (exactHomeAway.length === 1) {
-        return { game: exactHomeAway[0], method: "sleeper_raw_event_shell_team_pair_official_schedule", confidence: "HIGH" };
+      const shellPair = gamesForUnorderedTeamPair(shellDateGames, ids.homeId, ids.awayId, teamDir);
+      if (shellPair.length === 1) {
+        return { game: shellPair[0], method: "sleeper_raw_event_shell_unordered_team_pair_official_schedule", confidence: "HIGH" };
       }
-      if (exactHomeAway.length > 1) {
-        const rawTimeHit = bestStartTimeMatch(exactHomeAway, shell.commence_time || row.start_time, 90);
+      if (shellPair.length > 1) {
+        const rawTimeHit = bestStartTimeMatch(shellPair, shell.commence_time || row.start_time, 90);
         if (rawTimeHit) return { game: rawTimeHit.game, method: rawTimeHit.delta <= 15 ? "sleeper_raw_event_shell_team_pair_exact_start_time" : "sleeper_raw_event_shell_team_pair_near_start_time", confidence: rawTimeHit.delta <= 15 ? "HIGH" : "MEDIUM" };
-        return { game: null, method: "ambiguous_raw_event_shell_team_pair_doubleheader", confidence: "LOW", ambiguous_count: exactHomeAway.length };
+        return { game: null, method: "ambiguous_raw_event_shell_team_pair_doubleheader", confidence: "LOW", ambiguous_count: shellPair.length };
       }
     }
   }
@@ -908,7 +914,7 @@ async function runDailyGameStatus(env, input = {}) {
   const stageAfterClean = await first(env.DAILY_DB, "SELECT COUNT(*) AS c FROM daily_game_status_stage WHERE batch_id=?", batchId);
   const certification = boardRows.length > 0 && schedule.dates_fetched > 0 && Number(duplicateKeys?.c || 0) === 0 ? "DAILY_GAME_STATUS_CERTIFIED_CURRENT_REPLACED" : (boardRows.length === 0 ? "DAILY_GAME_STATUS_NO_ACTIVE_BOARD_ROWS" : "DAILY_GAME_STATUS_COMPLETED_WITH_SOURCE_WARNINGS");
   const grade = certification === "DAILY_GAME_STATUS_CERTIFIED_CURRENT_REPLACED" ? "PASS" : "REVIEW";
-  const certJson = { board_rows_read: boardRows.length, prizepicks_rows_read: pp.rows.length, sleeper_rows_read: sl.rows.length, board_relevant_dates: dates, mlb_schedule_fetches: schedule.fetches, mlb_schedule_errors: schedule.errors, duplicate_current_keys: Number(duplicateKeys?.c || 0), source_endpoint_template: MLB_SCHEDULE_ENDPOINT_PATH, exact_board_columns_used: { prizepicks: pp.columns, sleeper: sl.columns }, matching_methods: ["source_event_id_game_pk", "sleeper_raw_event_shell_team_pair_official_schedule", "sleeper_raw_event_shell_cross_board_prizepicks_official_schedule", "sleeper_raw_event_shell_team_pair_exact_start_time", "team_opponent_alias_pair", "team_pair_plus_start_time", "sleeper_source_event_two_team_cluster", "single_team_exact_start_time", "single_team_doubleheader_exact_start_time", "player_roster_team_unique_date", "player_roster_team_exact_start_time", "player_roster_team_unique_date_official_time_override", "start_time_only_low_confidence", "unresolved_board_game_mapping"], enrichment: enrichment, unsafe_rules: ["blocked_started", "blocked_final", "blocked_postponed", "blocked_suspended", "blocked_missing_game_time", "blocked_ambiguous_game_mapping", "blocked_board_time_past", "review_required"] };
+  const certJson = { board_rows_read: boardRows.length, prizepicks_rows_read: pp.rows.length, sleeper_rows_read: sl.rows.length, board_relevant_dates: dates, mlb_schedule_fetches: schedule.fetches, mlb_schedule_errors: schedule.errors, duplicate_current_keys: Number(duplicateKeys?.c || 0), source_endpoint_template: MLB_SCHEDULE_ENDPOINT_PATH, exact_board_columns_used: { prizepicks: pp.columns, sleeper: sl.columns }, matching_methods: ["source_event_id_game_pk", "sleeper_raw_event_shell_unordered_team_pair_official_schedule", "sleeper_raw_event_shell_cross_board_prizepicks_official_schedule", "sleeper_raw_event_shell_cross_board_prizepicks_team_pair", "sleeper_raw_event_shell_team_pair_exact_start_time", "team_opponent_alias_pair", "team_pair_plus_start_time", "sleeper_source_event_two_team_cluster", "single_team_exact_start_time", "single_team_doubleheader_exact_start_time", "player_roster_team_unique_date", "player_roster_team_exact_start_time", "player_roster_team_unique_date_official_time_override", "start_time_only_low_confidence", "unresolved_board_game_mapping"], enrichment: enrichment, unsafe_rules: ["blocked_started", "blocked_final", "blocked_postponed", "blocked_suspended", "blocked_missing_game_time", "blocked_ambiguous_game_mapping", "blocked_board_time_past", "review_required"] };
   await run(env.DAILY_DB, "INSERT INTO daily_game_status_certifications (certification_id, batch_id, certification_status, certification_grade, certification_reason, certification_json) VALUES (?, ?, ?, ?, ?, ?)", rid("dgs_cert"), batchId, certification, grade, "Board-focused game status refresh completed without board/scoring mutation", JSON.stringify(certJson));
   await run(env.DAILY_DB, "INSERT INTO daily_game_status_outcomes (outcome_id, batch_id, outcome_key, outcome_status, outcome_json) VALUES (?, ?, 'daily_game_status_summary', ?, ?)", rid("dgs_outcome"), batchId, certification, JSON.stringify(certJson));
   await run(env.DAILY_DB, "UPDATE daily_game_status_batches SET board_rows_read=?, board_relevant_dates=?, board_relevant_games=?, mlb_schedule_dates_fetched=?, mlb_schedule_games_seen=?, staged_rows=?, promoted_rows=?, unsafe_rows=?, warning_rows=?, certification_status=?, certification_grade=?, certification_reason=?, certification_json=?, certified_at=CURRENT_TIMESTAMP, promoted_at=CURRENT_TIMESTAMP, cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", boardRows.length, dates.length, new Set(schedule.games.map(g => g.gamePk)).size, schedule.dates_fetched, schedule.games_seen, staged, Number(currentCount?.c || 0), unsafe, warnings, certification, grade, "Certified current replacement lifecycle; no board/scoring/final writes", JSON.stringify(certJson), batchId);
@@ -942,7 +948,7 @@ async function runDailyGameStatus(env, input = {}) {
       endpoint_template: MLB_SCHEDULE_ENDPOINT_PATH,
       fetches: schedule.fetches,
       errors: schedule.errors,
-      confidence_policy: "HIGH from unique source_event_id gamePk, Sleeper raw event shell home/away/date matched to official MLB schedule, Sleeper raw event shell plus cross-board PrizePicks official schedule match, team/opponent alias pair, board team plus exact official start time, or active REF player/team roster mapped to a unique MLB schedule game; player-team enrichment can remain incomplete without blocking a resolved official game"
+      confidence_policy: "HIGH from unique source_event_id gamePk, Sleeper raw event shell unordered team pair/date matched to official MLB schedule, Sleeper raw event shell plus cross-board PrizePicks official schedule match, team/opponent alias pair, board team plus exact official start time, or active REF player/team roster mapped to a unique MLB schedule game; player-team enrichment can remain incomplete without blocking a resolved official game"
     },
     elapsed_ms: Date.now() - started
   });
