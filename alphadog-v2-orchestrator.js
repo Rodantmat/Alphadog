@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.99-board-full-run-chain";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.100-db-scheduled-board-full-run";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -73,6 +73,12 @@ function base(env, extra = {}) {
 async function ensureRows(env) {
   await run(env.CONTROL_DB, "INSERT OR IGNORE INTO control_locks (lock_key, lock_flag, updated_at) VALUES ('GLOBAL_ORCHESTRATOR', 0, CURRENT_TIMESTAMP)");
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_system_state (state_key, lock_flag, status, updated_at) VALUES ('GLOBAL', COALESCE((SELECT lock_flag FROM control_system_state WHERE state_key='GLOBAL'),0), COALESCE((SELECT status FROM control_system_state WHERE state_key='GLOBAL'),'IDLE'), CURRENT_TIMESTAMP)");
+}
+
+async function ensureSchema(env) {
+  // Minimal compatibility shim for scheduled paths: core CONTROL_DB rows only.
+  // Do not create or mutate broad schema here.
+  await ensureRows(env);
 }
 
 async function statusPayload(env) {
@@ -486,6 +492,7 @@ const INCREMENTAL_MORNING_FULL_RUN_STALE_MINUTES = 60;
 const INCREMENTAL_MORNING_FULL_RUN_MAX_RETRIES_PER_STAGE = 2;
 
 const INCREMENTAL_MORNING_FULL_RUN_SCHEDULE_WINDOW_MINUTES = 15;
+const BOARD_FULL_RUN_SCHEDULE_WINDOW_MINUTES = 5;
 
 function pad2(n) {
   return String(n).padStart(2, "0");
@@ -649,6 +656,207 @@ async function enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpressio
     requestId, WORKER_NAME, "incremental-morning-full-run", JSON.stringify(payload)
   );
   return payload;
+}
+
+
+function parseScheduledLocalTimeHHMM(localTime) {
+  const m = /^([0-2]\d):([0-5]\d)$/.exec(String(localTime || "").trim());
+  if (!m) return null;
+  const hour = Number(m[1]);
+  const minute = Number(m[2]);
+  if (hour < 0 || hour > 23) return null;
+  return { hour, minute, hhmm: `${pad2(hour)}:${pad2(minute)}`, key: `${pad2(hour)}${pad2(minute)}` };
+}
+
+function minutesSinceMidnight(hour, minute) {
+  return Number(hour) * 60 + Number(minute);
+}
+
+function isPacificScheduleWindowDue(pt, parsedLocalTime, windowMinutes = BOARD_FULL_RUN_SCHEDULE_WINDOW_MINUTES) {
+  if (!parsedLocalTime) return false;
+  const nowMin = minutesSinceMidnight(pt.hour, pt.minute);
+  const targetMin = minutesSinceMidnight(parsedLocalTime.hour, parsedLocalTime.minute);
+  const diff = nowMin - targetMin;
+  return diff >= 0 && diff < Number(windowMinutes || 5);
+}
+
+async function ensureConfigScheduledJobsTable(env) {
+  await run(env.CONFIG_DB,
+    "CREATE TABLE IF NOT EXISTS config_scheduled_jobs (schedule_id TEXT PRIMARY KEY, job_key TEXT NOT NULL, job_name TEXT, enabled INTEGER NOT NULL DEFAULT 1, timezone TEXT NOT NULL, local_time TEXT NOT NULL, schedule_type TEXT NOT NULL, dedupe_scope TEXT NOT NULL, input_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, notes TEXT)"
+  );
+}
+
+async function enqueueScheduledBoardFullRunIfDue(env, cronExpression = "unknown") {
+  await ensureSchema(env);
+  await ensureConfigScheduledJobsTable(env);
+
+  const pt = pacificNowParts(new Date());
+  const scheduleRows = await all(env.CONFIG_DB,
+    `SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, dedupe_scope, input_json, notes
+     FROM config_scheduled_jobs
+     WHERE enabled=1
+       AND job_key='board-full-run'
+       AND schedule_type='daily'
+       AND timezone='America/Los_Angeles'
+     ORDER BY local_time`
+  );
+
+  const results = [];
+  for (const schedule of scheduleRows) {
+    const parsedTime = parseScheduledLocalTimeHHMM(schedule.local_time);
+    const basePayload = {
+      ok: true,
+      data_ok: true,
+      version: SYSTEM_VERSION,
+      worker_name: WORKER_NAME,
+      job_key: "board-full-run",
+      mode: "scheduled_board_full_run_enqueue_guard",
+      schedule_id: schedule.schedule_id,
+      cron_expression: cronExpression,
+      pacific_date: pt.ymd_dash,
+      pacific_time: pt.local_time,
+      configured_local_time: schedule.local_time,
+      timezone: schedule.timezone,
+      schedule_type: schedule.schedule_type,
+      dedupe_scope: schedule.dedupe_scope,
+      approved_window_minutes: BOARD_FULL_RUN_SCHEDULE_WINDOW_MINUTES,
+      board_full_run_only: true,
+      no_incremental_morning_full_run: true,
+      no_static_work: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
+      no_old_production_touch: true
+    };
+
+    if (!parsedTime) {
+      const payload = { ...basePayload, ok: false, data_ok: false, status: "BLOCKED_SCHEDULED_BOARD_FULL_RUN_BAD_LOCAL_TIME", reason: "local_time must be HH:MM" };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'board-full-run', 'ERROR', 'scheduled_board_full_run_bad_local_time', 'Scheduled Board Full Run row has invalid local_time', ?, CURRENT_TIMESTAMP)",
+        WORKER_NAME, JSON.stringify(payload)
+      );
+      results.push(payload);
+      continue;
+    }
+
+    const scheduledKey = `board_full_run_${pt.ymd_key}_${parsedTime.key}_PT`;
+    const inWindow = isPacificScheduleWindowDue(pt, parsedTime, BOARD_FULL_RUN_SCHEDULE_WINDOW_MINUTES);
+    if (!inWindow) {
+      results.push({ ...basePayload, status: "SCHEDULED_BOARD_FULL_RUN_NOT_DUE", scheduled_key: scheduledKey });
+      continue;
+    }
+
+    const existingRows = await all(env.CONTROL_DB,
+      `SELECT request_id, chain_id, status, created_at, started_at, finished_at, updated_at, error_code, error_message
+       FROM control_job_queue
+       WHERE job_key='board-full-run'
+         AND worker_name='alphadog-v2-orchestrator'
+         AND json_extract(input_json,'$.scheduled_key')=?
+       ORDER BY datetime(created_at) DESC
+       LIMIT 10`,
+      scheduledKey
+    );
+
+    const active = existingRows.find(r => ["pending", "running", "partial_continue"].includes(String(r.status || "")) && !r.finished_at);
+    if (active) {
+      const payload = { ...basePayload, status: "SCHEDULED_BOARD_FULL_RUN_NOOP_ACTIVE_EXISTS", scheduled_key: scheduledKey, existing_request_id: active.request_id, existing_chain_id: active.chain_id, existing_status: active.status };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'board-full-run', 'INFO', 'scheduled_board_full_run_noop_active_exists', 'Scheduled Board Full Run did not enqueue because same scheduled key is active', ?, CURRENT_TIMESTAMP)",
+        active.request_id, WORKER_NAME, JSON.stringify(payload)
+      );
+      results.push(payload);
+      continue;
+    }
+
+    const completed = existingRows.find(r => String(r.status || "") === "completed");
+    if (completed) {
+      const payload = { ...basePayload, status: "SCHEDULED_BOARD_FULL_RUN_NOOP_ALREADY_COMPLETED", scheduled_key: scheduledKey, existing_request_id: completed.request_id, existing_chain_id: completed.chain_id, existing_status: completed.status };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'board-full-run', 'INFO', 'scheduled_board_full_run_noop_already_completed', 'Scheduled Board Full Run did not enqueue because same scheduled key already completed', ?, CURRENT_TIMESTAMP)",
+        completed.request_id, WORKER_NAME, JSON.stringify(payload)
+      );
+      results.push(payload);
+      continue;
+    }
+
+    const failed = existingRows.find(r => ["failed", "blocked", "error"].includes(String(r.status || "")) || r.error_code);
+    if (failed) {
+      const payload = { ...basePayload, ok: false, data_ok: false, status: "BLOCKED_SCHEDULED_BOARD_FULL_RUN_SAME_KEY_FAILED_REQUIRES_REVIEW", scheduled_key: scheduledKey, existing_request_id: failed.request_id, existing_chain_id: failed.chain_id, existing_status: failed.status, existing_error_code: failed.error_code || null, existing_error_message: failed.error_message || null };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'board-full-run', 'ERROR', 'scheduled_board_full_run_blocked_failed_same_key', 'Scheduled Board Full Run blocked because same scheduled key failed/blocked and requires review', ?, CURRENT_TIMESTAMP)",
+        failed.request_id, WORKER_NAME, JSON.stringify(payload)
+      );
+      results.push(payload);
+      continue;
+    }
+
+    const configInput = parseJsonSafeText(schedule.input_json || "{}", {});
+    const requestId = `${scheduledKey}_${Date.now().toString(36)}_${randomToken(6)}`;
+    const chainId = `chain_${scheduledKey}_${Date.now().toString(36)}`;
+    const childModes = {};
+    for (const stage of BOARD_FULL_RUN_STAGES) childModes[stage.job_key] = stage.mode;
+
+    const input = {
+      ...configInput,
+      source: "config_scheduled_jobs",
+      visible_button: "SCHEDULED > Board Full Run",
+      mode: "board_full_run",
+      scheduled: true,
+      scheduled_or_manual: "scheduled",
+      schedule_id: schedule.schedule_id,
+      scheduled_key: scheduledKey,
+      scheduled_pacific_date: pt.ymd_dash,
+      pacific_date: pt.ymd_dash,
+      scheduled_pacific_time: pt.local_time,
+      local_time: parsedTime.hhmm,
+      timezone: "America/Los_Angeles",
+      cron_expression: cronExpression,
+      created_at: nowIso(),
+      approved_chain_order: BOARD_FULL_RUN_STAGES.map(s => s.job_key),
+      child_modes: childModes,
+      stop_on_first_failed_stage: true,
+      backend_chain_only: true,
+      no_browser_loop: true,
+      backend_scheduled_continuation: true,
+      no_generic_dispatch: true,
+      no_delta_full_run: true,
+      no_incremental_morning_full_run: true,
+      no_static_work: true,
+      no_base_delta_workers: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
+      no_old_production_touch: true
+    };
+
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'board-full-run', 'alphadog-v2-orchestrator', 'Board', 'board', 'Scheduled Board Full Run Backend Chain', 'pending', 9, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+      requestId, chainId, JSON.stringify(input)
+    );
+
+    const payload = { ...basePayload, status: "SCHEDULED_BOARD_FULL_RUN_QUEUED", scheduled_key: scheduledKey, request_id: requestId, chain_id: chainId, queued_job_key: "board-full-run", queued_worker_name: WORKER_NAME, approved_chain_order: input.approved_chain_order, backend_chain_only: true };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'board-full-run', 'INFO', 'scheduled_board_full_run_queued', 'Scheduled Board Full Run parent backend chain job queued from CONFIG_DB schedule', ?, CURRENT_TIMESTAMP)",
+      requestId, WORKER_NAME, JSON.stringify(payload)
+    );
+    results.push(payload);
+  }
+
+  return {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    worker_name: WORKER_NAME,
+    job_key: "board-full-run",
+    mode: "scheduled_board_full_run_config_scan",
+    cron_expression: cronExpression,
+    pacific_date: pt.ymd_dash,
+    pacific_time: pt.local_time,
+    schedules_read: scheduleRows.length,
+    queued_count: results.filter(r => r.status === "SCHEDULED_BOARD_FULL_RUN_QUEUED").length,
+    blocked_count: results.filter(r => r.ok === false || String(r.status || "").startsWith("BLOCKED_")).length,
+    results
+  };
 }
 
 const INCREMENTAL_MORNING_FULL_RUN_STAGES = [
@@ -4543,6 +4751,7 @@ export default {
     ctx.waitUntil((async () => {
       await enqueueStaticPlayersWeeklyIfDue(env, cronExpression);
       await enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpression);
+      await enqueueScheduledBoardFullRunIfDue(env, cronExpression);
       await pump(env, `cron:${cronExpression}`, 10, 1, 65000, ctx, "https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev/scheduled", 0, 12);
     })());
   }
