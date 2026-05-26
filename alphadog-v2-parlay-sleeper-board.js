@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-parlay-sleeper-board";
-const VERSION = "alphadog-v2-parlay-sleeper-board-v0.4.2-promotion-parity-guard";
+const VERSION = "alphadog-v2-parlay-sleeper-board-v0.4.3-single-replacement-board";
 const JOB_KEY = "parlay-sleeper-board";
 const SOURCE_KEY = "parlay_sleeper";
 const MAX_PREVIEW_CHARS = 900;
@@ -650,7 +650,7 @@ function rowPayloadForCurrent(row) {
 }
 
 async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
-  const promotableRows = (stageRows || []).filter(row =>
+  const certifiedRows = (stageRows || []).filter(row =>
     row.parse_status === "parsed_stage_only_canonical_mapping_audited" &&
     row.source_key === SOURCE_KEY &&
     row.player_name &&
@@ -659,12 +659,18 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
     row.line_value !== null && row.line_value !== undefined &&
     row.source_event_id
   );
-  const slateDates = Array.from(new Set(promotableRows.map(row => row.slate_date).filter(Boolean))).sort();
-  const expectedCurrentRows = promotableRows.length;
-  const expectedActiveRows = slateDates.length;
 
-  // Replacement order is intentional: clear old live pointers first, then insert the new batch,
-  // then clean stage/history, then prove the live tables still contain the promoted batch.
+  const pickableCertifiedRows = certifiedRows.filter(row => Number(row.is_pickable || 0) === 1);
+  const promotableRows = pickableCertifiedRows.length > 0 ? pickableCertifiedRows : certifiedRows;
+  const slateDates = Array.from(new Set(promotableRows.map(row => row.slate_date).filter(Boolean))).sort();
+  const activeSlateDate = slateDates[slateDates.length - 1] || null;
+  const expectedCurrentRows = promotableRows.length;
+  const expectedActiveRows = expectedCurrentRows > 0 ? 1 : 0;
+
+  // v0.4.3 single-board replacement rule:
+  // A certified Sleeper refresh replaces the entire parlay_sleeper board state.
+  // Do not keep an expired/no-pickable slate beside a fresh slate, and do not write
+  // one active pointer per slate. There is exactly one live board pointer per source.
   await run(env.MARKET_DB, "DELETE FROM sleeper_board_current WHERE source_key=?", SOURCE_KEY);
   await run(env.MARKET_DB, "DELETE FROM sleeper_board_active_batches WHERE source_key=?", SOURCE_KEY);
 
@@ -683,12 +689,11 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
       )));
   }
 
-  for (const slateDate of slateDates) {
-    const count = promotableRows.filter(row => row.slate_date === slateDate).length;
+  if (expectedCurrentRows > 0) {
     await run(env.MARKET_DB, `INSERT OR REPLACE INTO sleeper_board_active_batches (
       source_key, slate_date, active_batch_id, certification_status, row_count, valid_rows, activated_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-      SOURCE_KEY, slateDate, batchId, "PROMOTED_BOARD_INVENTORY_ONLY_NO_SCORING", count, count
+      SOURCE_KEY, activeSlateDate, batchId, "PROMOTED_BOARD_INVENTORY_ONLY_NO_SCORING", expectedCurrentRows, expectedCurrentRows
     );
   }
 
@@ -731,6 +736,9 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
       WHERE batch_id=? AND source_key=?`, JSON.stringify({
         expected_current_rows: expectedCurrentRows,
         expected_active_batch_rows: expectedActiveRows,
+        active_slate_date: activeSlateDate,
+        certified_rows_before_single_board_filter: certifiedRows.length,
+        pickable_certified_rows: pickableCertifiedRows.length,
         final_parity: parity,
         no_scoring: true,
         no_ranking: true,
@@ -746,7 +754,7 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
       expected_active_batch_rows: expectedActiveRows,
       slate_dates: slateDates,
       certification: "PARLAY_SLEEPER_PROMOTION_PARITY_FAILED",
-      reason: "Promotion parity failed after replacement cleanup; refusing to certify an empty or contaminated Sleeper board.",
+      reason: "Promotion parity failed after single-board replacement cleanup; refusing to certify an empty, duplicate-active, or contaminated Sleeper board.",
       final_parity: parity,
       no_scoring: true,
       no_ranking: true,
@@ -761,7 +769,10 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
     expected_promoted_rows: expectedCurrentRows,
     active_batch_rows: activeBatchRows,
     expected_active_batch_rows: expectedActiveRows,
+    active_slate_date: activeSlateDate,
     slate_dates: slateDates,
+    certified_rows_before_single_board_filter: certifiedRows.length,
+    pickable_certified_rows: pickableCertifiedRows.length,
     final_parity: parity,
     rfi_nrfi_inventory_rows: promotableRows.filter(row => row.canonical_prop_key === "rfi_nrfi").length,
     promotion_status: BOARD_INVENTORY_PROMOTION_STATUS,
