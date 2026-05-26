@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.104-delta-certifier-calendar-differential";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.105-delta-certifier-fast-finalize";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {

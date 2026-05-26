@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.1.4-calendar-differential-checker";
+const VERSION = "alphadog-v2-delta-certifier-v0.1.5-calendar-differential-fast-finalize";
 const JOB_KEY = "delta-certifier";
 
 function nowUtc() { return new Date().toISOString(); }
@@ -30,6 +30,23 @@ async function first(db, sql, ...binds) {
 async function run(db, sql, ...binds) {
   const stmt = db.prepare(sql);
   return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
+}
+
+async function batchPrepared(db, preparedStatements, chunkSize = 40) {
+  let executed = 0;
+  for (let i = 0; i < preparedStatements.length; i += chunkSize) {
+    const chunk = preparedStatements.slice(i, i + chunkSize);
+    if (chunk.length) {
+      await db.batch(chunk);
+      executed += chunk.length;
+    }
+  }
+  return executed;
+}
+
+function asInt(value, fallback = null) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
 }
 
 function bindingSummary(env) {
@@ -351,15 +368,10 @@ async function upsertCalendar(env, games, endpoint) {
 
 
 async function upsertCalendarStage(env, games, endpoint, batchId) {
-  let upserted = 0;
   await run(env.TEAM_DB, `DELETE FROM mlb_game_calendar_stage WHERE snapshot_batch_id=?`, batchId);
-  for (const game of games) {
-    const c = classifyGame(game);
-    const gamePk = Number(game.gamePk);
-    if (!gamePk) continue;
-    const officialDate = String(game.officialDate || "");
-    const season = Number(String(officialDate || game.gameDate || "").slice(0, 4)) || 2026;
-    await run(env.TEAM_DB, `INSERT INTO mlb_game_calendar_stage (
+  const statements = [];
+  let upserted = 0;
+  const sql = `INSERT INTO mlb_game_calendar_stage (
       snapshot_batch_id, game_pk, season, game_type, official_date, game_time_utc,
       status_code, abstract_game_state, detailed_state,
       is_scheduled, is_pregame, is_live, is_final, is_postponed, is_suspended, is_cancelled, is_available_for_stats,
@@ -373,7 +385,14 @@ async function upsertCalendarStage(env, games, endpoint, batchId) {
       is_postponed=excluded.is_postponed, is_suspended=excluded.is_suspended, is_cancelled=excluded.is_cancelled, is_available_for_stats=excluded.is_available_for_stats,
       home_team_id=excluded.home_team_id, away_team_id=excluded.away_team_id, home_team_name=excluded.home_team_name, away_team_name=excluded.away_team_name,
       venue_id=excluded.venue_id, venue_name=excluded.venue_name, doubleheader=excluded.doubleheader, game_number=excluded.game_number,
-      series_game_number=excluded.series_game_number, source_endpoint=excluded.source_endpoint, source_snapshot_at=CURRENT_TIMESTAMP, raw_json=excluded.raw_json, updated_at=CURRENT_TIMESTAMP`,
+      series_game_number=excluded.series_game_number, source_endpoint=excluded.source_endpoint, source_snapshot_at=CURRENT_TIMESTAMP, raw_json=excluded.raw_json, updated_at=CURRENT_TIMESTAMP`;
+  for (const game of games) {
+    const c = classifyGame(game);
+    const gamePk = Number(game.gamePk);
+    if (!gamePk) continue;
+    const officialDate = String(game.officialDate || "");
+    const season = Number(String(officialDate || game.gameDate || "").slice(0, 4)) || 2026;
+    statements.push(env.TEAM_DB.prepare(sql).bind(
       batchId, gamePk, season, String(game.gameType || "R"), officialDate, String(game.gameDate || ""),
       c.status_code, c.abstract_game_state, c.detailed_state,
       c.is_scheduled, c.is_pregame, c.is_live, c.is_final, c.is_postponed, c.is_suspended, c.is_cancelled, c.is_available_for_stats,
@@ -388,9 +407,13 @@ async function upsertCalendarStage(env, games, endpoint, batchId) {
       game.seriesGameNumber == null ? null : Number(game.seriesGameNumber),
       endpoint,
       JSON.stringify(game)
-    );
+    ));
     upserted++;
+    if (statements.length >= 40) {
+      await batchPrepared(env.TEAM_DB, statements.splice(0), 40);
+    }
   }
+  await batchPrepared(env.TEAM_DB, statements, 40);
   return upserted;
 }
 
@@ -414,21 +437,14 @@ function changedFields(oldRow, newRow) {
 async function applyCalendarDifferential(env, batchId) {
   await run(env.TEAM_DB, `DELETE FROM mlb_game_calendar_diff_changes WHERE batch_id=?`, batchId);
   const staged = await all(env.TEAM_DB, `SELECT * FROM mlb_game_calendar_stage WHERE snapshot_batch_id=? ORDER BY official_date, game_pk`, batchId);
+  const currentRows = await all(env.TEAM_DB, `SELECT * FROM mlb_game_calendar`);
+  const currentByGamePk = new Map(currentRows.map(r => [String(r.game_pk), r]));
   let inserted = 0;
   let updated = 0;
   let unchanged = 0;
   let applied = 0;
   const changeSamples = [];
-  for (const st of staged) {
-    const cur = await first(env.TEAM_DB, `SELECT * FROM mlb_game_calendar WHERE game_pk=?`, Number(st.game_pk));
-    const diff = changedFields(cur, st);
-    const changeType = cur ? (diff.changed.length ? "updated" : "unchanged") : "inserted";
-    if (changeType === "unchanged") { unchanged++; continue; }
-    if (changeType === "inserted") inserted++; else updated++;
-    const changeId = rid("calendar_diff");
-    await run(env.TEAM_DB, `INSERT INTO mlb_game_calendar_diff_changes (change_id, batch_id, game_pk, official_date_old, official_date_new, change_type, changed_fields_json, old_values_json, new_values_json, applied_to_main, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-      changeId, batchId, Number(st.game_pk), cur?.official_date || null, st.official_date || null, changeType, JSON.stringify(diff.changed), JSON.stringify(diff.oldValues), JSON.stringify(diff.newValues));
-    await run(env.TEAM_DB, `INSERT INTO mlb_game_calendar (
+  const upsertSql = `INSERT INTO mlb_game_calendar (
       game_pk, season, game_type, official_date, game_time_utc, game_time_pt,
       status_code, abstract_game_state, detailed_state,
       is_scheduled, is_pregame, is_live, is_final, is_postponed, is_suspended, is_cancelled, is_available_for_stats,
@@ -443,19 +459,38 @@ async function applyCalendarDifferential(env, batchId) {
       home_team_id=excluded.home_team_id, away_team_id=excluded.away_team_id, home_team_name=excluded.home_team_name, away_team_name=excluded.away_team_name,
       venue_id=excluded.venue_id, venue_name=excluded.venue_name, doubleheader=excluded.doubleheader, game_number=excluded.game_number,
       series_game_number=excluded.series_game_number, source_endpoint=excluded.source_endpoint, source_snapshot_at=excluded.source_snapshot_at,
-      raw_json=excluded.raw_json, last_seen_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP`,
+      raw_json=excluded.raw_json, last_seen_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP`;
+  const statements = [];
+  const markStatements = [];
+  for (const st of staged) {
+    const cur = currentByGamePk.get(String(st.game_pk)) || null;
+    const diff = changedFields(cur, st);
+    const changeType = cur ? (diff.changed.length ? "updated" : "unchanged") : "inserted";
+    if (changeType === "unchanged") { unchanged++; continue; }
+    if (changeType === "inserted") inserted++; else updated++;
+    const changeId = rid("calendar_diff");
+    statements.push(env.TEAM_DB.prepare(`INSERT INTO mlb_game_calendar_diff_changes (change_id, batch_id, game_pk, official_date_old, official_date_new, change_type, changed_fields_json, old_values_json, new_values_json, applied_to_main, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`).bind(
+      changeId, batchId, Number(st.game_pk), cur?.official_date || null, st.official_date || null, changeType, JSON.stringify(diff.changed), JSON.stringify(diff.oldValues), JSON.stringify(diff.newValues)
+    ));
+    statements.push(env.TEAM_DB.prepare(upsertSql).bind(
       Number(st.game_pk), Number(st.season), String(st.game_type || "R"), String(st.official_date || ""), String(st.game_time_utc || ""),
       st.status_code, st.abstract_game_state, st.detailed_state,
       Number(st.is_scheduled || 0), Number(st.is_pregame || 0), Number(st.is_live || 0), Number(st.is_final || 0), Number(st.is_postponed || 0), Number(st.is_suspended || 0), Number(st.is_cancelled || 0), Number(st.is_available_for_stats || 0),
       st.home_team_id == null ? null : Number(st.home_team_id), st.away_team_id == null ? null : Number(st.away_team_id), st.home_team_name || null, st.away_team_name || null,
       st.venue_id == null ? null : Number(st.venue_id), st.venue_name || null, st.doubleheader || null, st.game_number == null ? null : Number(st.game_number), st.series_game_number == null ? null : Number(st.series_game_number),
       st.source_endpoint || null, st.raw_json || null
-    );
-    await run(env.TEAM_DB, `UPDATE mlb_game_calendar_diff_changes SET applied_to_main=1, updated_at=CURRENT_TIMESTAMP WHERE change_id=?`, changeId);
+    ));
+    markStatements.push(env.TEAM_DB.prepare(`UPDATE mlb_game_calendar_diff_changes SET applied_to_main=1, updated_at=CURRENT_TIMESTAMP WHERE change_id=?`).bind(changeId));
     applied++;
     if (changeSamples.length < 20) changeSamples.push({ game_pk: st.game_pk, change_type: changeType, official_date_old: cur?.official_date || null, official_date_new: st.official_date || null, changed_fields: diff.changed });
+    if (statements.length >= 40) {
+      await batchPrepared(env.TEAM_DB, statements.splice(0), 40);
+      await batchPrepared(env.TEAM_DB, markStatements.splice(0), 40);
+    }
   }
-  return { staged_rows: staged.length, inserted, updated, unchanged, applied, change_samples: changeSamples };
+  await batchPrepared(env.TEAM_DB, statements, 40);
+  await batchPrepared(env.TEAM_DB, markStatements, 40);
+  return { staged_rows: staged.length, inserted, updated, unchanged, applied, change_samples: changeSamples, fast_map_diff_v0_1_5: true };
 }
 
 async function latestMaxDate(db, table, column, where = "1=1") {
@@ -470,30 +505,36 @@ function passDateCoverage(officialDate, maxDate) {
   return String(maxDate).slice(0, 10) >= String(officialDate).slice(0, 10);
 }
 
-async function snapshotLayerStatus(env, layerKey, officialDate) {
-  if (layerKey === "hitter_splits") {
-    const m = await latestMaxDate(env.STATS_HITTER_DB, "hitter_splits", "source_snapshot_date");
-    const pass = m.rows > 0 && passDateCoverage(officialDate, m.max_date);
-    return { layerKey, status: pass ? "complete" : "missing", grade: pass ? "PASS_SNAPSHOT_DATE_ANCHORED" : "MISSING_BLOCKER", blocking: pass ? 0 : 1, liveRows: m.rows, entityCount: 0, expectedRows: null, missingRows: pass ? 0 : null, reason: pass ? null : "MISSING_HITTER_SPLITS_SNAPSHOT_COVERAGE_FOR_GAME_DATE", details: { ...m, calendar_anchor_scope: "game_date_snapshot", match_level_game_pk_not_present_in_statsapi_statSplits_payload: true } };
-  }
-  if (layerKey === "pitcher_splits") {
-    const m = await latestMaxDate(env.STATS_PITCHER_DB, "pitcher_splits", "source_snapshot_date");
-    const pass = m.rows > 0 && passDateCoverage(officialDate, m.max_date);
-    return { layerKey, status: pass ? "complete" : "missing", grade: pass ? "PASS_SNAPSHOT_DATE_ANCHORED" : "MISSING_BLOCKER", blocking: pass ? 0 : 1, liveRows: m.rows, entityCount: 0, expectedRows: null, missingRows: pass ? 0 : null, reason: pass ? null : "MISSING_PITCHER_SPLITS_SNAPSHOT_COVERAGE_FOR_GAME_DATE", details: { ...m, calendar_anchor_scope: "game_date_snapshot", match_level_game_pk_not_present_in_statsapi_statSplits_payload: true } };
-  }
-  if (layerKey === "hitter_metrics") {
-    const m = await latestMaxDate(env.STATS_HITTER_DB, "hitter_metric_batches", "input_latest_game_date", "certification_grade IN ('DELTA_RECALC_PASS','DELTA_NOOP_PASS','BASE_STAGE_PASS_NO_PROMOTION')");
-    const rows = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS rows FROM hitter_metric_snapshots`);
-    const pass = Number(rows?.rows || 0) > 0 && passDateCoverage(officialDate, m.max_date);
-    return { layerKey, status: pass ? "complete" : "missing", grade: pass ? "PASS_METRIC_INPUT_DATE_ANCHORED" : "MISSING_BLOCKER", blocking: pass ? 0 : 1, liveRows: Number(rows?.rows || 0), entityCount: 0, expectedRows: null, missingRows: pass ? 0 : null, reason: pass ? null : "MISSING_HITTER_METRIC_COVERAGE_FOR_GAME_DATE", details: { ...m, snapshot_rows: Number(rows?.rows || 0), calendar_anchor_scope: "game_date_metric_input_latest_game_date", metrics_are_derived_from_game_logs_and_splits: true } };
-  }
-  if (layerKey === "pitcher_metrics") {
-    const m = await latestMaxDate(env.STATS_PITCHER_DB, "pitcher_metric_batches", "input_latest_game_date", "certification_grade IN ('DELTA_RECALC_PASS','DELTA_NOOP_PASS','BASE_STAGE_PASS_NO_PROMOTION')");
-    const rows = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS rows FROM pitcher_metric_snapshots`);
-    const pass = Number(rows?.rows || 0) > 0 && passDateCoverage(officialDate, m.max_date);
-    return { layerKey, status: pass ? "complete" : "missing", grade: pass ? "PASS_METRIC_INPUT_DATE_ANCHORED" : "MISSING_BLOCKER", blocking: pass ? 0 : 1, liveRows: Number(rows?.rows || 0), entityCount: 0, expectedRows: null, missingRows: pass ? 0 : null, reason: pass ? null : "MISSING_PITCHER_METRIC_COVERAGE_FOR_GAME_DATE", details: { ...m, snapshot_rows: Number(rows?.rows || 0), calendar_anchor_scope: "game_date_metric_input_latest_game_date", metrics_are_derived_from_game_logs_and_splits: true } };
-  }
-  return null;
+async function snapshotLayerTemplateStatuses(env) {
+  const hitterSplits = await latestMaxDate(env.STATS_HITTER_DB, "hitter_splits", "source_snapshot_date");
+  const pitcherSplits = await latestMaxDate(env.STATS_PITCHER_DB, "pitcher_splits", "source_snapshot_date");
+  const hitterMetrics = await latestMaxDate(env.STATS_HITTER_DB, "hitter_metric_batches", "input_latest_game_date", "certification_grade IN ('DELTA_RECALC_PASS','DELTA_NOOP_PASS','BASE_STAGE_PASS_NO_PROMOTION')");
+  const hitterMetricRows = await first(env.STATS_HITTER_DB, `SELECT COUNT(*) AS rows FROM hitter_metric_snapshots`);
+  const pitcherMetrics = await latestMaxDate(env.STATS_PITCHER_DB, "pitcher_metric_batches", "input_latest_game_date", "certification_grade IN ('DELTA_RECALC_PASS','DELTA_NOOP_PASS','BASE_STAGE_PASS_NO_PROMOTION')");
+  const pitcherMetricRows = await first(env.STATS_PITCHER_DB, `SELECT COUNT(*) AS rows FROM pitcher_metric_snapshots`);
+  return {
+    hitter_splits: { meta: hitterSplits, rows: hitterSplits.rows, maxDate: hitterSplits.max_date, reason: "MISSING_HITTER_SPLITS_SNAPSHOT_COVERAGE_FOR_GAME_DATE", passGrade: "PASS_SNAPSHOT_DATE_ANCHORED", anchor: "game_date_snapshot" },
+    pitcher_splits: { meta: pitcherSplits, rows: pitcherSplits.rows, maxDate: pitcherSplits.max_date, reason: "MISSING_PITCHER_SPLITS_SNAPSHOT_COVERAGE_FOR_GAME_DATE", passGrade: "PASS_SNAPSHOT_DATE_ANCHORED", anchor: "game_date_snapshot" },
+    hitter_metrics: { meta: { ...hitterMetrics, snapshot_rows: Number(hitterMetricRows?.rows || 0) }, rows: Number(hitterMetricRows?.rows || 0), maxDate: hitterMetrics.max_date, reason: "MISSING_HITTER_METRIC_COVERAGE_FOR_GAME_DATE", passGrade: "PASS_METRIC_INPUT_DATE_ANCHORED", anchor: "game_date_metric_input_latest_game_date" },
+    pitcher_metrics: { meta: { ...pitcherMetrics, snapshot_rows: Number(pitcherMetricRows?.rows || 0) }, rows: Number(pitcherMetricRows?.rows || 0), maxDate: pitcherMetrics.max_date, reason: "MISSING_PITCHER_METRIC_COVERAGE_FOR_GAME_DATE", passGrade: "PASS_METRIC_INPUT_DATE_ANCHORED", anchor: "game_date_metric_input_latest_game_date" }
+  };
+}
+
+function snapshotLayerFromTemplate(layerKey, officialDate, templates) {
+  const t = templates[layerKey];
+  const pass = t.rows > 0 && passDateCoverage(officialDate, t.maxDate);
+  return {
+    layerKey,
+    status: pass ? "complete" : "missing",
+    grade: pass ? t.passGrade : "MISSING_BLOCKER",
+    blocking: pass ? 0 : 1,
+    liveRows: t.rows,
+    entityCount: 0,
+    expectedRows: null,
+    missingRows: pass ? 0 : null,
+    reason: pass ? null : t.reason,
+    details: { ...t.meta, calendar_anchor_scope: t.anchor, snapshot_or_metric_date_anchor_v0_1_5: true, metrics_are_derived_from_game_logs_and_splits: layerKey.includes("metrics") || undefined }
+  };
 }
 
 async function tableColumns(db, table) {
@@ -503,32 +544,23 @@ async function tableColumns(db, table) {
   return { table_exists: true, columns: rows.map(r => String(r.name || "")) };
 }
 
-async function countLive(env, dbKey, table, gamePk, distinctColumn = null) {
+async function groupedGameCounts(env, dbKey, table, distinctColumn, startDate, endDate) {
   const db = env[dbKey];
   const meta = await tableColumns(db, table);
-  if (!meta.table_exists) {
-    return { rows: 0, entities: 0, table_exists: false, distinct_column: distinctColumn, distinct_column_exists: false };
-  }
-
-  if (!meta.columns.includes("game_pk")) {
-    return { rows: 0, entities: 0, table_exists: true, game_pk_column_exists: false, distinct_column: distinctColumn, distinct_column_exists: false };
-  }
-
+  const out = new Map();
+  if (!meta.table_exists || !meta.columns.includes("game_pk")) return { map: out, table_exists: meta.table_exists, game_pk_column_exists: meta.columns.includes("game_pk"), distinct_column: distinctColumn, distinct_column_exists: false };
   const hasDistinct = distinctColumn && meta.columns.includes(distinctColumn);
-  const row = await first(
-    db,
-    `SELECT COUNT(*) AS rows${hasDistinct ? `, COUNT(DISTINCT ${distinctColumn}) AS entities` : `, 0 AS entities`} FROM ${table} WHERE game_pk=?`,
-    gamePk
-  );
+  const hasGameDate = meta.columns.includes("game_date");
+  const where = hasGameDate ? `WHERE game_date BETWEEN ? AND ?` : `WHERE 1=1`;
+  const sql = `SELECT game_pk, COUNT(*) AS rows${hasDistinct ? `, COUNT(DISTINCT ${distinctColumn}) AS entities` : `, 0 AS entities`} FROM ${table} ${where} GROUP BY game_pk`;
+  const rows = hasGameDate ? await all(db, sql, startDate, endDate) : await all(db, sql);
+  for (const r of rows) out.set(String(r.game_pk), { rows: Number(r.rows || 0), entities: Number(r.entities || 0) });
+  return { map: out, table_exists: true, game_pk_column_exists: true, distinct_column: distinctColumn, distinct_column_exists: Boolean(hasDistinct) };
+}
 
-  return {
-    rows: Number(row?.rows || 0),
-    entities: Number(row?.entities || 0),
-    table_exists: true,
-    game_pk_column_exists: true,
-    distinct_column: distinctColumn,
-    distinct_column_exists: Boolean(hasDistinct)
-  };
+function countFromMap(meta, gamePk) {
+  const val = meta.map.get(String(gamePk)) || { rows: 0, entities: 0 };
+  return { rows: val.rows, entities: val.entities, table_exists: meta.table_exists, game_pk_column_exists: meta.game_pk_column_exists, distinct_column: meta.distinct_column, distinct_column_exists: meta.distinct_column_exists };
 }
 
 async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
@@ -538,49 +570,15 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
   const gapsSample = [];
   await run(env.TEAM_DB, `DELETE FROM mlb_game_coverage_gaps WHERE batch_id=?`, batchId);
 
-  for (const g of games) {
-    const gamePk = Number(g.game_pk);
-    const layers = [];
-    if (Number(g.is_available_for_stats || 0) !== 1) {
-      for (const layerKey of ["hitter_game_logs","pitcher_game_logs","team_game_logs","starter_history","bullpen_history","hitter_splits","pitcher_splits","hitter_metrics","pitcher_metrics"]) {
-        layers.push({ layerKey, status: "scheduled_not_ready", grade: "WAITING_NOT_FINAL", blocking: 0, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: null, details: { is_available_for_stats: 0 } });
-      }
-    } else {
-      const hitter = await countLive(env, "STATS_HITTER_DB", "hitter_game_logs", gamePk, "player_id");
-      layers.push(hitter.rows > 0
-        ? { layerKey: "hitter_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: hitter.rows, entityCount: hitter.entities, expectedRows: null, missingRows: 0, reason: null, details: hitter }
-        : { layerKey: "hitter_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_HITTER_GAME_LOG_ROWS_FOR_FINAL_GAME_PK", details: hitter });
+  const hitterCounts = await groupedGameCounts(env, "STATS_HITTER_DB", "hitter_game_logs", "player_id", startDate, endDate);
+  const pitcherCounts = await groupedGameCounts(env, "STATS_PITCHER_DB", "pitcher_game_logs", "player_id", startDate, endDate);
+  const teamCounts = await groupedGameCounts(env, "TEAM_DB", "team_game_logs", "team_id", startDate, endDate);
+  const starterPlayerCounts = await groupedGameCounts(env, "TEAM_DB", "starter_history", "player_id", startDate, endDate);
+  const starterTeamCounts = await groupedGameCounts(env, "TEAM_DB", "starter_history", "team_id", startDate, endDate);
+  const bullpenCounts = await groupedGameCounts(env, "TEAM_DB", "bullpen_history", "pitcher_id", startDate, endDate);
+  const snapshotTemplates = await snapshotLayerTemplateStatuses(env);
 
-      const pitcher = await countLive(env, "STATS_PITCHER_DB", "pitcher_game_logs", gamePk, "player_id");
-      layers.push(pitcher.rows > 0
-        ? { layerKey: "pitcher_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: pitcher.rows, entityCount: pitcher.entities, expectedRows: null, missingRows: 0, reason: null, details: pitcher }
-        : { layerKey: "pitcher_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_PITCHER_GAME_LOG_ROWS_FOR_FINAL_GAME_PK", details: pitcher });
-
-      const team = await countLive(env, "TEAM_DB", "team_game_logs", gamePk, "team_id");
-      const teamPass = team.rows === 2 && team.entities === 2;
-      layers.push(teamPass
-        ? { layerKey: "team_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: 0, reason: null, details: team }
-        : { layerKey: "team_game_logs", status: team.rows > 0 ? "partial" : "missing", grade: team.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: Math.max(0, 2 - team.rows), reason: team.rows > 0 ? "PARTIAL_TEAM_GAME_LOG_ROWS_FOR_FINAL_GAME_PK" : "MISSING_TEAM_GAME_LOG_ROWS_FOR_FINAL_GAME_PK", details: team });
-
-      const starter = await countLive(env, "TEAM_DB", "starter_history", gamePk, "player_id");
-      const starterTeam = await countLive(env, "TEAM_DB", "starter_history", gamePk, "team_id");
-      const starterPass = starter.rows >= 2 && starter.entities >= 2 && starterTeam.entities === 2;
-      layers.push(starterPass
-        ? { layerKey: "starter_history", status: "complete", grade: "PASS", blocking: 0, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: 0, reason: null, details: { ...starter, distinct_teams: starterTeam.entities } }
-        : { layerKey: "starter_history", status: starter.rows > 0 ? "partial" : "missing", grade: starter.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: Math.max(0, 2 - starter.rows), reason: starter.rows > 0 ? "PARTIAL_STARTER_HISTORY_ROWS_FOR_FINAL_GAME_PK" : "MISSING_STARTER_HISTORY_ROWS_FOR_FINAL_GAME_PK", details: { ...starter, distinct_teams: starterTeam.entities } });
-
-      const bullpen = await countLive(env, "TEAM_DB", "bullpen_history", gamePk, "pitcher_id");
-      layers.push(bullpen.rows > 0
-        ? { layerKey: "bullpen_history", status: "complete", grade: "PASS", blocking: 0, liveRows: bullpen.rows, entityCount: bullpen.entities, expectedRows: null, missingRows: 0, reason: null, details: bullpen }
-        : { layerKey: "bullpen_history", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_BULLPEN_HISTORY_REPRESENTATION_FOR_FINAL_GAME_PK", details: bullpen });
-
-      for (const snapshotLayerKey of ["hitter_splits", "pitcher_splits", "hitter_metrics", "pitcher_metrics"]) {
-        layers.push(await snapshotLayerStatus(env, snapshotLayerKey, String(g.official_date)));
-      }
-    }
-
-    for (const l of layers) {
-      await run(env.TEAM_DB, `INSERT INTO mlb_game_data_coverage (
+  const coverageSql = `INSERT INTO mlb_game_data_coverage (
         game_pk, season, official_date, layer_key, layer_family, coverage_scope, coverage_status, coverage_grade, blocking_for_full_run,
         expected_rows, live_rows, missing_rows, expected_entity_type, live_entity_count, represented_by_live, missing_reason,
         last_batch_id, last_request_id, last_worker_name, last_worker_version, last_checked_at, details_json, updated_at
@@ -590,23 +588,61 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
         blocking_for_full_run=excluded.blocking_for_full_run, expected_rows=excluded.expected_rows, live_rows=excluded.live_rows, missing_rows=excluded.missing_rows,
         expected_entity_type=excluded.expected_entity_type, live_entity_count=excluded.live_entity_count, represented_by_live=excluded.represented_by_live,
         missing_reason=excluded.missing_reason, last_batch_id=excluded.last_batch_id, last_request_id=excluded.last_request_id,
-        last_worker_name=excluded.last_worker_name, last_worker_version=excluded.last_worker_version, last_checked_at=CURRENT_TIMESTAMP, details_json=excluded.details_json, updated_at=CURRENT_TIMESTAMP`,
-        gamePk, Number(g.season), String(g.official_date), l.layerKey, (String(l.layerKey).includes('splits') || String(l.layerKey).includes('metrics')) ? 'derived_snapshot' : 'source_history', (String(l.layerKey).includes('splits') || String(l.layerKey).includes('metrics')) ? 'game_date' : 'game', l.status, l.grade, l.blocking, l.expectedRows, l.liveRows, l.missingRows,
-        l.layerKey, l.entityCount, l.liveRows > 0 ? 1 : 0, l.reason, batchId, requestId, WORKER_NAME, VERSION, JSON.stringify(l.details || {})
-      );
-      coverageRows++;
-      if (l.blocking === 1) {
-        blockingGaps++;
-        const gap = { game_pk: gamePk, official_date: g.official_date, layer_key: l.layerKey, missing_reason: l.reason, live_rows: l.liveRows, coverage_grade: l.grade };
-        if (gapsSample.length < 20) gapsSample.push(gap);
-        await run(env.TEAM_DB, `INSERT OR IGNORE INTO mlb_game_coverage_gaps (gap_id, batch_id, game_pk, season, official_date, layer_key, gap_status, missing_reason, expected_rows, live_rows, details_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-          rid("gap"), batchId, gamePk, Number(g.season), String(g.official_date), l.layerKey, l.status, l.reason, l.expectedRows, l.liveRows, JSON.stringify(gap));
-      }
+        last_worker_name=excluded.last_worker_name, last_worker_version=excluded.last_worker_version, last_checked_at=CURRENT_TIMESTAMP, details_json=excluded.details_json, updated_at=CURRENT_TIMESTAMP`;
+  const gapSql = `INSERT OR IGNORE INTO mlb_game_coverage_gaps (gap_id, batch_id, game_pk, season, official_date, layer_key, gap_status, missing_reason, expected_rows, live_rows, details_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`;
+  const coverageStatements = [];
+  const gapStatements = [];
+
+  function addLayer(g, l) {
+    const gamePk = Number(g.game_pk);
+    coverageStatements.push(env.TEAM_DB.prepare(coverageSql).bind(
+      gamePk, Number(g.season), String(g.official_date), l.layerKey,
+      (String(l.layerKey).includes('splits') || String(l.layerKey).includes('metrics')) ? 'derived_snapshot' : 'source_history',
+      (String(l.layerKey).includes('splits') || String(l.layerKey).includes('metrics')) ? 'game_date' : 'game',
+      l.status, l.grade, l.blocking, l.expectedRows, l.liveRows, l.missingRows,
+      l.layerKey, l.entityCount, l.liveRows > 0 ? 1 : 0, l.reason,
+      batchId, requestId, WORKER_NAME, VERSION, JSON.stringify(l.details || {})
+    ));
+    coverageRows++;
+    if (l.blocking === 1) {
+      blockingGaps++;
+      const gap = { game_pk: gamePk, official_date: g.official_date, layer_key: l.layerKey, missing_reason: l.reason, live_rows: l.liveRows, coverage_grade: l.grade };
+      if (gapsSample.length < 20) gapsSample.push(gap);
+      gapStatements.push(env.TEAM_DB.prepare(gapSql).bind(rid("gap"), batchId, gamePk, Number(g.season), String(g.official_date), l.layerKey, l.status, l.reason, l.expectedRows, l.liveRows, JSON.stringify(gap)));
     }
   }
-  return { coverageRows, blockingGaps, gapsSample, gamesChecked: games.length };
-}
 
+  for (const g of games) {
+    const gamePk = Number(g.game_pk);
+    if (Number(g.is_available_for_stats || 0) !== 1) {
+      for (const layerKey of ["hitter_game_logs","pitcher_game_logs","team_game_logs","starter_history","bullpen_history","hitter_splits","pitcher_splits","hitter_metrics","pitcher_metrics"]) {
+        addLayer(g, { layerKey, status: "scheduled_not_ready", grade: "WAITING_NOT_FINAL", blocking: 0, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: null, details: { is_available_for_stats: 0 } });
+      }
+    } else {
+      const hitter = countFromMap(hitterCounts, gamePk);
+      addLayer(g, hitter.rows > 0 ? { layerKey: "hitter_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: hitter.rows, entityCount: hitter.entities, expectedRows: null, missingRows: 0, reason: null, details: hitter } : { layerKey: "hitter_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_HITTER_GAME_LOG_ROWS_FOR_FINAL_GAME_PK", details: hitter });
+      const pitcher = countFromMap(pitcherCounts, gamePk);
+      addLayer(g, pitcher.rows > 0 ? { layerKey: "pitcher_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: pitcher.rows, entityCount: pitcher.entities, expectedRows: null, missingRows: 0, reason: null, details: pitcher } : { layerKey: "pitcher_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_PITCHER_GAME_LOG_ROWS_FOR_FINAL_GAME_PK", details: pitcher });
+      const team = countFromMap(teamCounts, gamePk);
+      const teamPass = team.rows === 2 && team.entities === 2;
+      addLayer(g, teamPass ? { layerKey: "team_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: 0, reason: null, details: team } : { layerKey: "team_game_logs", status: team.rows > 0 ? "partial" : "missing", grade: team.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: Math.max(0, 2 - team.rows), reason: team.rows > 0 ? "PARTIAL_TEAM_GAME_LOG_ROWS_FOR_FINAL_GAME_PK" : "MISSING_TEAM_GAME_LOG_ROWS_FOR_FINAL_GAME_PK", details: team });
+      const starter = countFromMap(starterPlayerCounts, gamePk);
+      const starterTeam = countFromMap(starterTeamCounts, gamePk);
+      const starterPass = starter.rows >= 2 && starter.entities >= 2 && starterTeam.entities === 2;
+      addLayer(g, starterPass ? { layerKey: "starter_history", status: "complete", grade: "PASS", blocking: 0, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: 0, reason: null, details: { ...starter, distinct_teams: starterTeam.entities } } : { layerKey: "starter_history", status: starter.rows > 0 ? "partial" : "missing", grade: starter.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: Math.max(0, 2 - starter.rows), reason: starter.rows > 0 ? "PARTIAL_STARTER_HISTORY_ROWS_FOR_FINAL_GAME_PK" : "MISSING_STARTER_HISTORY_ROWS_FOR_FINAL_GAME_PK", details: { ...starter, distinct_teams: starterTeam.entities } });
+      const bullpen = countFromMap(bullpenCounts, gamePk);
+      addLayer(g, bullpen.rows > 0 ? { layerKey: "bullpen_history", status: "complete", grade: "PASS", blocking: 0, liveRows: bullpen.rows, entityCount: bullpen.entities, expectedRows: null, missingRows: 0, reason: null, details: bullpen } : { layerKey: "bullpen_history", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_BULLPEN_HISTORY_REPRESENTATION_FOR_FINAL_GAME_PK", details: bullpen });
+      for (const snapshotLayerKey of ["hitter_splits", "pitcher_splits", "hitter_metrics", "pitcher_metrics"]) addLayer(g, snapshotLayerFromTemplate(snapshotLayerKey, String(g.official_date), snapshotTemplates));
+    }
+    if (coverageStatements.length >= 80) {
+      await batchPrepared(env.TEAM_DB, coverageStatements.splice(0), 40);
+      await batchPrepared(env.TEAM_DB, gapStatements.splice(0), 40);
+    }
+  }
+  await batchPrepared(env.TEAM_DB, coverageStatements, 40);
+  await batchPrepared(env.TEAM_DB, gapStatements, 40);
+  return { coverageRows, blockingGaps, gapsSample, gamesChecked: games.length, optimized_full_calendar_coverage_v0_1_5: true };
+}
 
 function dateOnlyUtc(d) { return d.toISOString().slice(0, 10); }
 function parseDateSafe(value, fallback) {
@@ -870,6 +906,7 @@ async function handleCalendarDifferentialCheck(input, env) {
     chain_id: input.chain_id || null,
     batch_id: batchId,
     mode: "game_calendar_differential_check_update",
+    optimized_fast_finalize_v0_1_5: true,
     status,
     certification,
     certification_grade: grade,
@@ -955,7 +992,7 @@ export default {
       if (mode === "game_calendar_differential_check_update") {
         try { return jsonResponse(await handleCalendarDifferentialCheck(input, env)); }
         catch (err) {
-          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, mode, status: "GAME_CALENDAR_DIFFERENTIAL_CHECK_FAILED", certification: "GAME_CALENDAR_DIFFERENTIAL_CHECK_FAILED", certification_grade: "DIFF_FAIL", error: String(err && err.message ? err.message : err), no_source_history_mutation: true, no_repair_jobs_created: true, no_scoring: true, no_board_mutation: true, rows_read: 0, rows_written: 0, external_calls_performed: 0 }, 200);
+          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, mode, status: "GAME_CALENDAR_DIFFERENTIAL_CHECK_FAILED_FAST_FINALIZE", certification: "GAME_CALENDAR_DIFFERENTIAL_CHECK_FAILED_FAST_FINALIZE", certification_grade: "DIFF_FAIL", error: String(err && err.message ? err.message : err), fast_finalize_guard_v0_1_5: true, no_source_history_mutation: true, no_repair_jobs_created: true, no_scoring: true, no_board_mutation: true, rows_read: 0, rows_written: 0, external_calls_performed: 0 }, 200);
         }
       }
       if (mode === "game_calendar_coverage_audit") {
