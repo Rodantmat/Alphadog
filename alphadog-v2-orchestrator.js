@@ -4903,3 +4903,34 @@ export default {
     })());
   }
 };
+
+
+function isDeltaCertifierJob(row) {
+  return row && row.worker_name === "alphadog-v2-delta-certifier";
+}
+
+async function processDeltaCertifierJob(row, env) {
+  const worker = env.DELTA_CERTIFIER_WORKER;
+  if (!worker) {
+    throw new Error("DELTA_CERTIFIER_WORKER binding missing");
+  }
+
+  const payload = {
+    mode: "game_calendar_coverage_audit",
+    request_id: row.request_id,
+    input_json: row.input_json || {}
+  };
+
+  const response = await worker.fetch(
+    "https://alphadog-v2-delta-certifier/run?mode=game_calendar_coverage_audit",
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+
+  return await response.json();
+}

@@ -1,5 +1,139 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-dummy-workers-v0.1";
+
+/*
+2026-05-26
+alphadog-v2-delta-certifier-v0.1.0-game-calendar-coverage-audit
+
+AUDIT ONLY:
+- no repairs
+- no source/history mutation
+- no scoring
+- no ranking
+- no board mutation
+*/
+
+const VERSION = "alphadog-v2-delta-certifier-v0.1.0-game-calendar-coverage-audit";
+
+async function ensureCoverageTables(env) {
+  const calendarSql = `
+  CREATE TABLE IF NOT EXISTS mlb_game_calendar (
+    game_pk INTEGER PRIMARY KEY,
+    season INTEGER,
+    game_type TEXT,
+    official_date TEXT,
+    game_time_utc TEXT,
+    status_code TEXT,
+    abstract_game_state TEXT,
+    detailed_state TEXT,
+    is_final INTEGER DEFAULT 0,
+    is_available_for_stats INTEGER DEFAULT 0,
+    home_team_id INTEGER,
+    away_team_id INTEGER,
+    venue_id INTEGER,
+    raw_json TEXT,
+    first_seen_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`;
+
+  const coverageSql = `
+  CREATE TABLE IF NOT EXISTS mlb_game_data_coverage (
+    game_pk INTEGER NOT NULL,
+    layer_key TEXT NOT NULL,
+    official_date TEXT,
+    coverage_status TEXT,
+    coverage_grade TEXT,
+    blocking_for_full_run INTEGER DEFAULT 1,
+    live_rows INTEGER DEFAULT 0,
+    stage_rows INTEGER DEFAULT 0,
+    outcome_rows INTEGER DEFAULT 0,
+    missing_reason TEXT,
+    details_json TEXT,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (game_pk, layer_key)
+  )`;
+
+  const batchSql = `
+  CREATE TABLE IF NOT EXISTS mlb_game_coverage_batches (
+    batch_id TEXT PRIMARY KEY,
+    request_id TEXT,
+    mode TEXT,
+    status TEXT,
+    source_game_count INTEGER DEFAULT 0,
+    source_final_game_pk_count INTEGER DEFAULT 0,
+    coverage_rows_written INTEGER DEFAULT 0,
+    blocking_gap_count INTEGER DEFAULT 0,
+    certification_status TEXT,
+    certification_grade TEXT,
+    output_json TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`;
+
+  const gapsSql = `
+  CREATE TABLE IF NOT EXISTS mlb_game_coverage_gaps (
+    gap_id TEXT PRIMARY KEY,
+    batch_id TEXT,
+    game_pk INTEGER,
+    official_date TEXT,
+    layer_key TEXT,
+    gap_status TEXT,
+    missing_reason TEXT,
+    details_json TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`;
+
+  await env.TEAM_DB.prepare(calendarSql).run();
+  await env.TEAM_DB.prepare(coverageSql).run();
+  await env.TEAM_DB.prepare(batchSql).run();
+  await env.TEAM_DB.prepare(gapsSql).run();
+}
+
+async function probeScheduleShape() {
+  const url = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&gameTypes=R&startDate=2026-05-23&endDate=2026-05-26";
+  const res = await fetch(url);
+  const data = await res.json();
+
+  const sample = (((data || {}).dates || [])[0] || {}).games || [];
+  const firstGame = sample[0] || {};
+
+  return {
+    endpoint: url,
+    ok: res.ok,
+    observed_fields: Object.keys(firstGame || {}),
+    observed_status_code: (((firstGame || {}).status || {}).statusCode) || null,
+    observed_game_count: sample.length
+  };
+}
+
+async function handleCoverageAudit(request, env) {
+  await ensureCoverageTables(env);
+
+  const probe = await probeScheduleShape();
+
+  
+if ((url.searchParams.get("mode") || "") === "game_calendar_coverage_audit") {
+  return handleCoverageAudit(request, env);
+}
+
+return jsonResponse({
+
+    ok: true,
+    data_ok: true,
+    worker_name: WORKER_NAME,
+    version: VERSION,
+    job_key: JOB_KEY,
+    mode: "game_calendar_coverage_audit",
+    status: "GAME_CALENDAR_COVERAGE_AUDIT_READY",
+    certification: "GAME_CALENDAR_COVERAGE_AUDIT_SOURCE_PROBE_OK",
+    certification_grade: "AUDIT_READY",
+    schedule_probe: probe,
+    no_source_history_mutation: true,
+    no_repairs: true,
+    no_scoring: true,
+    no_board_mutation: true
+  });
+}
+
 const JOB_KEY = "delta-certifier";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
