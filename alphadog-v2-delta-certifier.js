@@ -1,208 +1,450 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-
-/*
-2026-05-26
-alphadog-v2-delta-certifier-v0.1.0-game-calendar-coverage-audit
-
-AUDIT ONLY:
-- no repairs
-- no source/history mutation
-- no scoring
-- no ranking
-- no board mutation
-*/
-
-const VERSION = "alphadog-v2-delta-certifier-v0.1.0-game-calendar-coverage-audit";
-
-async function ensureCoverageTables(env) {
-  const calendarSql = `
-  CREATE TABLE IF NOT EXISTS mlb_game_calendar (
-    game_pk INTEGER PRIMARY KEY,
-    season INTEGER,
-    game_type TEXT,
-    official_date TEXT,
-    game_time_utc TEXT,
-    status_code TEXT,
-    abstract_game_state TEXT,
-    detailed_state TEXT,
-    is_final INTEGER DEFAULT 0,
-    is_available_for_stats INTEGER DEFAULT 0,
-    home_team_id INTEGER,
-    away_team_id INTEGER,
-    venue_id INTEGER,
-    raw_json TEXT,
-    first_seen_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    last_seen_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`;
-
-  const coverageSql = `
-  CREATE TABLE IF NOT EXISTS mlb_game_data_coverage (
-    game_pk INTEGER NOT NULL,
-    layer_key TEXT NOT NULL,
-    official_date TEXT,
-    coverage_status TEXT,
-    coverage_grade TEXT,
-    blocking_for_full_run INTEGER DEFAULT 1,
-    live_rows INTEGER DEFAULT 0,
-    stage_rows INTEGER DEFAULT 0,
-    outcome_rows INTEGER DEFAULT 0,
-    missing_reason TEXT,
-    details_json TEXT,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (game_pk, layer_key)
-  )`;
-
-  const batchSql = `
-  CREATE TABLE IF NOT EXISTS mlb_game_coverage_batches (
-    batch_id TEXT PRIMARY KEY,
-    request_id TEXT,
-    mode TEXT,
-    status TEXT,
-    source_game_count INTEGER DEFAULT 0,
-    source_final_game_pk_count INTEGER DEFAULT 0,
-    coverage_rows_written INTEGER DEFAULT 0,
-    blocking_gap_count INTEGER DEFAULT 0,
-    certification_status TEXT,
-    certification_grade TEXT,
-    output_json TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`;
-
-  const gapsSql = `
-  CREATE TABLE IF NOT EXISTS mlb_game_coverage_gaps (
-    gap_id TEXT PRIMARY KEY,
-    batch_id TEXT,
-    game_pk INTEGER,
-    official_date TEXT,
-    layer_key TEXT,
-    gap_status TEXT,
-    missing_reason TEXT,
-    details_json TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`;
-
-  await env.TEAM_DB.prepare(calendarSql).run();
-  await env.TEAM_DB.prepare(coverageSql).run();
-  await env.TEAM_DB.prepare(batchSql).run();
-  await env.TEAM_DB.prepare(gapsSql).run();
-}
-
-async function probeScheduleShape() {
-  const url = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&gameTypes=R&startDate=2026-05-23&endDate=2026-05-26";
-  const res = await fetch(url);
-  const data = await res.json();
-
-  const sample = (((data || {}).dates || [])[0] || {}).games || [];
-  const firstGame = sample[0] || {};
-
-  return {
-    endpoint: url,
-    ok: res.ok,
-    observed_fields: Object.keys(firstGame || {}),
-    observed_status_code: (((firstGame || {}).status || {}).statusCode) || null,
-    observed_game_count: sample.length
-  };
-}
-
-async function handleCoverageAudit(request, env) {
-  await ensureCoverageTables(env);
-
-  const probe = await probeScheduleShape();
-
-  
-if ((url.searchParams.get("mode") || "") === "game_calendar_coverage_audit") {
-  return handleCoverageAudit(request, env);
-}
-
-return jsonResponse({
-
-    ok: true,
-    data_ok: true,
-    worker_name: WORKER_NAME,
-    version: VERSION,
-    job_key: JOB_KEY,
-    mode: "game_calendar_coverage_audit",
-    status: "GAME_CALENDAR_COVERAGE_AUDIT_READY",
-    certification: "GAME_CALENDAR_COVERAGE_AUDIT_SOURCE_PROBE_OK",
-    certification_grade: "AUDIT_READY",
-    schedule_probe: probe,
-    no_source_history_mutation: true,
-    no_repairs: true,
-    no_scoring: true,
-    no_board_mutation: true
-  });
-}
-
+const VERSION = "alphadog-v2-delta-certifier-v0.1.1-game-calendar-coverage-audit-dispatch-fix";
 const JOB_KEY = "delta-certifier";
 
-const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
-const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
-const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "ODDS_API_BASE_URL", "PARLAY_API_BASE_URL", "MLB_API_BASE_URL", "PRIZEPICKS_SOURCE_MODE", "MAX_TICK_MS", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK", "LOCK_STALE_MINUTES", "WORKER_SAFE_MODE", "DEBUG_MODE", "MANUAL_SQL_ENABLED", "CONFIG_PHASE"];
-
-function nowUtc() {
-  return new Date().toISOString();
-}
+function nowUtc() { return new Date().toISOString(); }
+function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
     status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store"
-    }
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }
   });
 }
 
-function bindingPresence(env, names) {
-  const out = {};
-  for (const name of names) out[name] = Boolean(env && env[name]);
-  return out;
+async function readJsonSafe(request) {
+  try { return await request.json(); } catch { return {}; }
 }
 
-function varPresence(env, names) {
-  const out = {};
-  for (const name of names) out[name] = env && env[name] !== undefined && env[name] !== null && String(env[name]).length > 0;
-  return out;
+async function all(db, sql, ...binds) {
+  const stmt = db.prepare(sql);
+  const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
+  return res.results || [];
 }
 
-function allTrue(obj) {
-  return Object.values(obj).every(Boolean);
+async function first(db, sql, ...binds) {
+  const rows = await all(db, sql, ...binds);
+  return rows[0] || null;
+}
+
+async function run(db, sql, ...binds) {
+  const stmt = db.prepare(sql);
+  return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
+}
+
+function bindingSummary(env) {
+  return {
+    CONTROL_DB: !!env.CONTROL_DB,
+    TEAM_DB: !!env.TEAM_DB,
+    STATS_HITTER_DB: !!env.STATS_HITTER_DB,
+    STATS_PITCHER_DB: !!env.STATS_PITCHER_DB
+  };
 }
 
 function baseIdentity(env) {
-  const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-  const vars = varPresence(env, EXPECTED_VARS);
-  const secrets = varPresence(env, REQUIRED_SECRETS);
-
   return {
     ok: true,
     data_ok: true,
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "DUMMY_READY",
+    status: "DELTA_CERTIFIER_READY",
     timestamp_utc: nowUtc(),
-    phase: "alphadog-v2-config-bootstrap",
-    notes: [
-      "Dummy worker only.",
-      "No mining, scoring, external API calls, or production writes.",
-      "Use /health and /diagnostic to verify bindings/secrets/vars."
-    ],
-    binding_summary: {
-      required_db_bindings_present: allTrue(db),
-      expected_vars_present: allTrue(vars),
-      required_secrets_present: allTrue(secrets)
-    }
+    binding_summary: bindingSummary(env),
+    audit_only: true,
+    no_repairs: true,
+    no_source_history_mutation: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_board_mutation: true
   };
 }
 
-async function readJsonSafe(request) {
-  try {
-    return await request.json();
-  } catch {
-    return {};
+async function ensureCoverageTables(env) {
+  await run(env.TEAM_DB, `CREATE TABLE IF NOT EXISTS mlb_game_calendar (
+    game_pk INTEGER PRIMARY KEY,
+    season INTEGER NOT NULL,
+    game_type TEXT NOT NULL,
+    official_date TEXT NOT NULL,
+    game_time_utc TEXT,
+    game_time_pt TEXT,
+    status_code TEXT,
+    abstract_game_state TEXT,
+    detailed_state TEXT,
+    is_scheduled INTEGER DEFAULT 0,
+    is_pregame INTEGER DEFAULT 0,
+    is_live INTEGER DEFAULT 0,
+    is_final INTEGER DEFAULT 0,
+    is_postponed INTEGER DEFAULT 0,
+    is_suspended INTEGER DEFAULT 0,
+    is_cancelled INTEGER DEFAULT 0,
+    is_available_for_stats INTEGER DEFAULT 0,
+    home_team_id INTEGER,
+    away_team_id INTEGER,
+    home_team_name TEXT,
+    away_team_name TEXT,
+    venue_id INTEGER,
+    venue_name TEXT,
+    doubleheader TEXT,
+    game_number INTEGER,
+    series_game_number INTEGER,
+    source_key TEXT NOT NULL,
+    source_endpoint TEXT,
+    source_snapshot_at TEXT,
+    first_seen_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    last_status_change_at TEXT,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    raw_json TEXT
+  )`);
+  await run(env.TEAM_DB, `CREATE INDEX IF NOT EXISTS idx_mlb_game_calendar_official_date ON mlb_game_calendar(official_date)`);
+  await run(env.TEAM_DB, `CREATE INDEX IF NOT EXISTS idx_mlb_game_calendar_available_date ON mlb_game_calendar(is_available_for_stats, official_date)`);
+
+  await run(env.TEAM_DB, `CREATE TABLE IF NOT EXISTS mlb_game_data_coverage (
+    game_pk INTEGER NOT NULL,
+    season INTEGER NOT NULL,
+    official_date TEXT NOT NULL,
+    layer_key TEXT NOT NULL,
+    layer_family TEXT NOT NULL,
+    coverage_scope TEXT NOT NULL,
+    coverage_status TEXT NOT NULL,
+    coverage_grade TEXT NOT NULL,
+    blocking_for_full_run INTEGER DEFAULT 1,
+    expected_rows INTEGER,
+    live_rows INTEGER DEFAULT 0,
+    stage_rows INTEGER DEFAULT 0,
+    outcome_rows INTEGER DEFAULT 0,
+    missing_rows INTEGER,
+    expected_entity_type TEXT,
+    live_entity_count INTEGER DEFAULT 0,
+    stage_entity_count INTEGER DEFAULT 0,
+    exception_count INTEGER DEFAULT 0,
+    represented_by_live INTEGER DEFAULT 0,
+    represented_by_stage INTEGER DEFAULT 0,
+    represented_by_exception INTEGER DEFAULT 0,
+    missing_reason TEXT,
+    exception_reason TEXT,
+    last_batch_id TEXT,
+    last_run_id TEXT,
+    last_request_id TEXT,
+    last_worker_name TEXT,
+    last_worker_version TEXT,
+    last_checked_at TEXT,
+    last_completed_at TEXT,
+    source_endpoint TEXT,
+    details_json TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (game_pk, layer_key)
+  )`);
+  await run(env.TEAM_DB, `CREATE INDEX IF NOT EXISTS idx_mlb_game_data_coverage_layer_status ON mlb_game_data_coverage(layer_key, coverage_status)`);
+  await run(env.TEAM_DB, `CREATE INDEX IF NOT EXISTS idx_mlb_game_data_coverage_date_layer ON mlb_game_data_coverage(official_date, layer_key)`);
+  await run(env.TEAM_DB, `CREATE INDEX IF NOT EXISTS idx_mlb_game_data_coverage_blocking ON mlb_game_data_coverage(blocking_for_full_run, coverage_status)`);
+
+  await run(env.TEAM_DB, `CREATE TABLE IF NOT EXISTS mlb_game_coverage_batches (
+    batch_id TEXT PRIMARY KEY,
+    run_id TEXT,
+    request_id TEXT,
+    worker_name TEXT,
+    worker_version TEXT,
+    mode TEXT NOT NULL,
+    status TEXT NOT NULL,
+    coverage_window_start TEXT,
+    coverage_window_end TEXT,
+    source_game_count INTEGER DEFAULT 0,
+    source_final_game_pk_count INTEGER DEFAULT 0,
+    coverage_rows_written INTEGER DEFAULT 0,
+    missing_game_layer_count INTEGER DEFAULT 0,
+    blocking_gap_count INTEGER DEFAULT 0,
+    certification_status TEXT,
+    certification_grade TEXT,
+    started_at TEXT,
+    finished_at TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    output_json TEXT
+  )`);
+  await run(env.TEAM_DB, `CREATE INDEX IF NOT EXISTS idx_mlb_game_coverage_batches_updated ON mlb_game_coverage_batches(updated_at)`);
+
+  await run(env.TEAM_DB, `CREATE TABLE IF NOT EXISTS mlb_game_coverage_gaps (
+    gap_id TEXT PRIMARY KEY,
+    batch_id TEXT NOT NULL,
+    game_pk INTEGER NOT NULL,
+    season INTEGER,
+    official_date TEXT,
+    layer_key TEXT NOT NULL,
+    gap_status TEXT NOT NULL,
+    missing_reason TEXT,
+    expected_rows INTEGER,
+    live_rows INTEGER,
+    stage_rows INTEGER,
+    outcome_rows INTEGER,
+    details_json TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(batch_id, game_pk, layer_key)
+  )`);
+  await run(env.TEAM_DB, `CREATE INDEX IF NOT EXISTS idx_mlb_game_coverage_gaps_batch ON mlb_game_coverage_gaps(batch_id)`);
+}
+
+function classifyGame(game) {
+  const status = game.status || {};
+  const code = String(status.statusCode || "");
+  const detailed = String(status.detailedState || "");
+  const abstractState = String(status.abstractGameState || "");
+  const hay = `${code} ${detailed} ${abstractState}`.toLowerCase();
+  const isFinal = hay.includes("final") || hay.includes("game over") || code === "F";
+  const isLive = abstractState.toLowerCase() === "live" || hay.includes("in progress") || hay.includes("manager challenge") || hay.includes("review");
+  const isPostponed = hay.includes("postponed");
+  const isSuspended = hay.includes("suspended");
+  const isCancelled = hay.includes("cancelled") || hay.includes("canceled");
+  const isPregame = abstractState.toLowerCase() === "preview" || hay.includes("scheduled") || hay.includes("pre-game") || hay.includes("warmup");
+  return {
+    status_code: code || null,
+    abstract_game_state: abstractState || null,
+    detailed_state: detailed || null,
+    is_scheduled: isPregame ? 1 : 0,
+    is_pregame: isPregame ? 1 : 0,
+    is_live: isLive ? 1 : 0,
+    is_final: isFinal ? 1 : 0,
+    is_postponed: isPostponed ? 1 : 0,
+    is_suspended: isSuspended ? 1 : 0,
+    is_cancelled: isCancelled ? 1 : 0,
+    is_available_for_stats: (isFinal && !isPostponed && !isSuspended && !isCancelled) ? 1 : 0
+  };
+}
+
+async function fetchSchedule(startDate, endDate) {
+  const endpoint = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&gameTypes=R&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&hydrate=team,venue,linescore,probablePitcher(note)`;
+  const resp = await fetch(endpoint, { headers: { "accept": "application/json" } });
+  const text = await resp.text();
+  let data = {};
+  try { data = JSON.parse(text); } catch (_) { data = { parse_error: true, raw_preview: text.slice(0, 500) }; }
+  if (!resp.ok) throw new Error(`MLB schedule fetch failed ${resp.status}: ${text.slice(0, 400)}`);
+  const games = [];
+  for (const d of (data.dates || [])) for (const g of (d.games || [])) games.push(g);
+  const statusSamples = [...new Set(games.map(g => `${g?.status?.statusCode || ""}|${g?.status?.abstractGameState || ""}|${g?.status?.detailedState || ""}`).filter(Boolean))].slice(0, 25);
+  const gameTypes = [...new Set(games.map(g => String(g.gameType || "")).filter(Boolean))].slice(0, 10);
+  return { endpoint, data, games, statusSamples, gameTypes };
+}
+
+async function upsertCalendar(env, games, endpoint) {
+  let upserted = 0;
+  for (const game of games) {
+    const c = classifyGame(game);
+    const gamePk = Number(game.gamePk);
+    if (!gamePk) continue;
+    const officialDate = String(game.officialDate || "");
+    const season = Number(String(officialDate || game.gameDate || "").slice(0, 4)) || 2026;
+    await run(env.TEAM_DB, `INSERT INTO mlb_game_calendar (
+      game_pk, season, game_type, official_date, game_time_utc, game_time_pt,
+      status_code, abstract_game_state, detailed_state,
+      is_scheduled, is_pregame, is_live, is_final, is_postponed, is_suspended, is_cancelled, is_available_for_stats,
+      home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name,
+      doubleheader, game_number, series_game_number, source_key, source_endpoint, source_snapshot_at, raw_json, first_seen_at, last_seen_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'mlb_statsapi_schedule', ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ON CONFLICT(game_pk) DO UPDATE SET
+      season=excluded.season,
+      game_type=excluded.game_type,
+      official_date=excluded.official_date,
+      game_time_utc=excluded.game_time_utc,
+      status_code=excluded.status_code,
+      abstract_game_state=excluded.abstract_game_state,
+      detailed_state=excluded.detailed_state,
+      is_scheduled=excluded.is_scheduled,
+      is_pregame=excluded.is_pregame,
+      is_live=excluded.is_live,
+      is_final=excluded.is_final,
+      is_postponed=excluded.is_postponed,
+      is_suspended=excluded.is_suspended,
+      is_cancelled=excluded.is_cancelled,
+      is_available_for_stats=excluded.is_available_for_stats,
+      home_team_id=excluded.home_team_id,
+      away_team_id=excluded.away_team_id,
+      home_team_name=excluded.home_team_name,
+      away_team_name=excluded.away_team_name,
+      venue_id=excluded.venue_id,
+      venue_name=excluded.venue_name,
+      doubleheader=excluded.doubleheader,
+      game_number=excluded.game_number,
+      series_game_number=excluded.series_game_number,
+      source_endpoint=excluded.source_endpoint,
+      source_snapshot_at=excluded.source_snapshot_at,
+      raw_json=excluded.raw_json,
+      last_seen_at=CURRENT_TIMESTAMP,
+      updated_at=CURRENT_TIMESTAMP`,
+      gamePk, season, String(game.gameType || "R"), officialDate, String(game.gameDate || ""),
+      c.status_code, c.abstract_game_state, c.detailed_state,
+      c.is_scheduled, c.is_pregame, c.is_live, c.is_final, c.is_postponed, c.is_suspended, c.is_cancelled, c.is_available_for_stats,
+      Number(game?.teams?.home?.team?.id || 0) || null,
+      Number(game?.teams?.away?.team?.id || 0) || null,
+      String(game?.teams?.home?.team?.name || "") || null,
+      String(game?.teams?.away?.team?.name || "") || null,
+      Number(game?.venue?.id || 0) || null,
+      String(game?.venue?.name || "") || null,
+      game.doubleHeader == null ? null : String(game.doubleHeader),
+      game.gameNumber == null ? null : Number(game.gameNumber),
+      game.seriesGameNumber == null ? null : Number(game.seriesGameNumber),
+      endpoint,
+      JSON.stringify(game)
+    );
+    upserted++;
   }
+  return upserted;
+}
+
+async function countLive(env, dbKey, table, gamePk, distinctColumn = null) {
+  const db = env[dbKey];
+  const tableRow = await first(db, "SELECT name FROM sqlite_master WHERE type='table' AND name=?", table);
+  if (!tableRow) return { rows: 0, entities: 0, table_exists: false };
+  const row = await first(db, `SELECT COUNT(*) AS rows${distinctColumn ? `, COUNT(DISTINCT ${distinctColumn}) AS entities` : `, 0 AS entities`} FROM ${table} WHERE game_pk=?`, gamePk);
+  return { rows: Number(row?.rows || 0), entities: Number(row?.entities || 0), table_exists: true };
+}
+
+async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
+  const games = await all(env.TEAM_DB, `SELECT game_pk, season, official_date, is_available_for_stats FROM mlb_game_calendar WHERE official_date BETWEEN ? AND ? ORDER BY official_date, game_pk`, startDate, endDate);
+  let coverageRows = 0;
+  let blockingGaps = 0;
+  const gapsSample = [];
+  await run(env.TEAM_DB, `DELETE FROM mlb_game_coverage_gaps WHERE batch_id=?`, batchId);
+
+  for (const g of games) {
+    const gamePk = Number(g.game_pk);
+    const layers = [];
+    if (Number(g.is_available_for_stats || 0) !== 1) {
+      for (const layerKey of ["hitter_game_logs","pitcher_game_logs","team_game_logs","starter_history","bullpen_history"]) {
+        layers.push({ layerKey, status: "scheduled_not_ready", grade: "WAITING_NOT_FINAL", blocking: 0, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: null, details: { is_available_for_stats: 0 } });
+      }
+    } else {
+      const hitter = await countLive(env, "STATS_HITTER_DB", "hitter_game_logs", gamePk, "player_id");
+      layers.push(hitter.rows > 0
+        ? { layerKey: "hitter_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: hitter.rows, entityCount: hitter.entities, expectedRows: null, missingRows: 0, reason: null, details: hitter }
+        : { layerKey: "hitter_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_HITTER_GAME_LOG_ROWS_FOR_FINAL_GAME_PK", details: hitter });
+
+      const pitcher = await countLive(env, "STATS_PITCHER_DB", "pitcher_game_logs", gamePk, "player_id");
+      layers.push(pitcher.rows > 0
+        ? { layerKey: "pitcher_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: pitcher.rows, entityCount: pitcher.entities, expectedRows: null, missingRows: 0, reason: null, details: pitcher }
+        : { layerKey: "pitcher_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_PITCHER_GAME_LOG_ROWS_FOR_FINAL_GAME_PK", details: pitcher });
+
+      const team = await countLive(env, "TEAM_DB", "team_game_logs", gamePk, "team_id");
+      const teamPass = team.rows === 2 && team.entities === 2;
+      layers.push(teamPass
+        ? { layerKey: "team_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: 0, reason: null, details: team }
+        : { layerKey: "team_game_logs", status: team.rows > 0 ? "partial" : "missing", grade: team.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: Math.max(0, 2 - team.rows), reason: team.rows > 0 ? "PARTIAL_TEAM_GAME_LOG_ROWS_FOR_FINAL_GAME_PK" : "MISSING_TEAM_GAME_LOG_ROWS_FOR_FINAL_GAME_PK", details: team });
+
+      const starter = await countLive(env, "TEAM_DB", "starter_history", gamePk, "player_id");
+      const starterTeam = await countLive(env, "TEAM_DB", "starter_history", gamePk, "team_id");
+      const starterPass = starter.rows >= 2 && starter.entities >= 2 && starterTeam.entities === 2;
+      layers.push(starterPass
+        ? { layerKey: "starter_history", status: "complete", grade: "PASS", blocking: 0, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: 0, reason: null, details: { ...starter, distinct_teams: starterTeam.entities } }
+        : { layerKey: "starter_history", status: starter.rows > 0 ? "partial" : "missing", grade: starter.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: Math.max(0, 2 - starter.rows), reason: starter.rows > 0 ? "PARTIAL_STARTER_HISTORY_ROWS_FOR_FINAL_GAME_PK" : "MISSING_STARTER_HISTORY_ROWS_FOR_FINAL_GAME_PK", details: { ...starter, distinct_teams: starterTeam.entities } });
+
+      const bullpen = await countLive(env, "TEAM_DB", "bullpen_history", gamePk, "player_id");
+      layers.push(bullpen.rows > 0
+        ? { layerKey: "bullpen_history", status: "complete", grade: "PASS", blocking: 0, liveRows: bullpen.rows, entityCount: bullpen.entities, expectedRows: null, missingRows: 0, reason: null, details: bullpen }
+        : { layerKey: "bullpen_history", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_BULLPEN_HISTORY_REPRESENTATION_FOR_FINAL_GAME_PK", details: bullpen });
+    }
+
+    for (const l of layers) {
+      await run(env.TEAM_DB, `INSERT INTO mlb_game_data_coverage (
+        game_pk, season, official_date, layer_key, layer_family, coverage_scope, coverage_status, coverage_grade, blocking_for_full_run,
+        expected_rows, live_rows, missing_rows, expected_entity_type, live_entity_count, represented_by_live, missing_reason,
+        last_batch_id, last_request_id, last_worker_name, last_worker_version, last_checked_at, details_json, updated_at
+      ) VALUES (?, ?, ?, ?, 'source_history', 'game', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(game_pk, layer_key) DO UPDATE SET
+        season=excluded.season, official_date=excluded.official_date, coverage_status=excluded.coverage_status, coverage_grade=excluded.coverage_grade,
+        blocking_for_full_run=excluded.blocking_for_full_run, expected_rows=excluded.expected_rows, live_rows=excluded.live_rows, missing_rows=excluded.missing_rows,
+        expected_entity_type=excluded.expected_entity_type, live_entity_count=excluded.live_entity_count, represented_by_live=excluded.represented_by_live,
+        missing_reason=excluded.missing_reason, last_batch_id=excluded.last_batch_id, last_request_id=excluded.last_request_id,
+        last_worker_name=excluded.last_worker_name, last_worker_version=excluded.last_worker_version, last_checked_at=CURRENT_TIMESTAMP, details_json=excluded.details_json, updated_at=CURRENT_TIMESTAMP`,
+        gamePk, Number(g.season), String(g.official_date), l.layerKey, l.status, l.grade, l.blocking, l.expectedRows, l.liveRows, l.missingRows,
+        l.layerKey, l.entityCount, l.liveRows > 0 ? 1 : 0, l.reason, batchId, requestId, WORKER_NAME, VERSION, JSON.stringify(l.details || {})
+      );
+      coverageRows++;
+      if (l.blocking === 1) {
+        blockingGaps++;
+        const gap = { game_pk: gamePk, official_date: g.official_date, layer_key: l.layerKey, missing_reason: l.reason, live_rows: l.liveRows, coverage_grade: l.grade };
+        if (gapsSample.length < 20) gapsSample.push(gap);
+        await run(env.TEAM_DB, `INSERT OR IGNORE INTO mlb_game_coverage_gaps (gap_id, batch_id, game_pk, season, official_date, layer_key, gap_status, missing_reason, expected_rows, live_rows, details_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+          rid("gap"), batchId, gamePk, Number(g.season), String(g.official_date), l.layerKey, l.status, l.reason, l.expectedRows, l.liveRows, JSON.stringify(gap));
+      }
+    }
+  }
+  return { coverageRows, blockingGaps, gapsSample, gamesChecked: games.length };
+}
+
+async function handleCoverageAudit(input, env) {
+  const startedAt = nowUtc();
+  const batchId = rid("game_coverage_batch");
+  const requestId = input.request_id || null;
+  const nested = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
+  const startDate = nested.coverage_window_start || input.coverage_window_start || "2026-05-23";
+  const endDate = nested.coverage_window_end || input.coverage_window_end || "2026-05-26";
+
+  await ensureCoverageTables(env);
+  const schedule = await fetchSchedule(startDate, endDate);
+  const calendarRowsUpserted = await upsertCalendar(env, schedule.games, schedule.endpoint);
+  const sourceFinalGamePkCount = schedule.games.filter(g => classifyGame(g).is_available_for_stats === 1).length;
+  const coverage = await rebuildCoverage(env, batchId, requestId, startDate, endDate);
+
+  const status = coverage.blockingGaps > 0 ? "GAME_CALENDAR_COVERAGE_AUDIT_COMPLETED_WITH_GAPS" : "GAME_CALENDAR_COVERAGE_AUDIT_COMPLETED_CLEAN";
+  const certification = coverage.blockingGaps > 0 ? "GAME_CALENDAR_COVERAGE_AUDIT_GAPS_FOUND" : "GAME_CALENDAR_COVERAGE_AUDIT_NO_BLOCKING_GAPS";
+  const grade = coverage.blockingGaps > 0 ? "AUDIT_PASS_WITH_BLOCKERS" : "AUDIT_PASS_CLEAN";
+
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    request_id: requestId,
+    chain_id: input.chain_id || null,
+    batch_id: batchId,
+    mode: "game_calendar_coverage_audit",
+    status,
+    certification,
+    certification_grade: grade,
+    coverage_window_start: startDate,
+    coverage_window_end: endDate,
+    source_endpoint: schedule.endpoint,
+    schedule_fetch_ok: true,
+    source_game_count: schedule.games.length,
+    source_final_game_pk_count: sourceFinalGamePkCount,
+    stats_available_game_pk_count: sourceFinalGamePkCount,
+    calendar_rows_upserted: calendarRowsUpserted,
+    observed_status_codes_sample: schedule.statusSamples,
+    observed_game_types_sample: schedule.gameTypes,
+    source_shape_probe: {
+      endpoint: schedule.endpoint,
+      game_count: schedule.games.length,
+      sample_game_fields: Object.keys(schedule.games[0] || {}).slice(0, 50),
+      sample_status: schedule.games[0]?.status || null,
+      critical_fields_present_sample: !!(schedule.games[0]?.gamePk && schedule.games[0]?.officialDate && schedule.games[0]?.status && schedule.games[0]?.teams?.home?.team?.id && schedule.games[0]?.teams?.away?.team?.id)
+    },
+    coverage_checked: true,
+    coverage_rows_written: coverage.coverageRows,
+    layer_keys_checked: ["hitter_game_logs", "pitcher_game_logs", "team_game_logs", "starter_history", "bullpen_history"],
+    missing_game_layer_count: coverage.blockingGaps,
+    blocking_gap_count: coverage.blockingGaps,
+    gaps_sample: coverage.gapsSample,
+    known_false_pass_gap_detected: coverage.gapsSample.some(g => String(g.official_date) === "2026-05-25"),
+    no_source_history_mutation: true,
+    no_repair_jobs_created: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_board_mutation: true,
+    no_daily_context_mutation: true,
+    rows_read: schedule.games.length,
+    rows_written: calendarRowsUpserted + coverage.coverageRows,
+    external_calls_performed: 1,
+    finished_at: nowUtc()
+  };
+
+  await run(env.TEAM_DB, `INSERT INTO mlb_game_coverage_batches (batch_id, run_id, request_id, worker_name, worker_version, mode, status, coverage_window_start, coverage_window_end, source_game_count, source_final_game_pk_count, coverage_rows_written, missing_game_layer_count, blocking_gap_count, certification_status, certification_grade, started_at, finished_at, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+    batchId, input.run_id || null, requestId, WORKER_NAME, VERSION, "game_calendar_coverage_audit", status, startDate, endDate, schedule.games.length, sourceFinalGamePkCount, coverage.coverageRows, coverage.blockingGaps, coverage.blockingGaps, certification, grade, startedAt, JSON.stringify(output));
+
+  return output;
 }
 
 export default {
@@ -211,89 +453,25 @@ export default {
     const path = url.pathname.replace(/\/$/, "") || "/";
     const method = request.method.toUpperCase();
 
-    if (method === "GET" && path === "/") {
-      return jsonResponse(baseIdentity(env));
-    }
-
-    if (method === "GET" && path === "/health") {
-      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-      const vars = varPresence(env, EXPECTED_VARS);
-      const secrets = varPresence(env, REQUIRED_SECRETS);
-
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/health",
-        checks: {
-          db_bindings: db,
-          vars: vars,
-          secrets_present_only: secrets
-        },
-        safe_secret_note: "Secret values are intentionally never printed."
-      });
-    }
+    if (method === "GET" && (path === "/" || path === "/health")) return jsonResponse(baseIdentity(env));
 
     if (method === "POST" && path === "/diagnostic") {
       const input = await readJsonSafe(request);
-      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-      const vars = varPresence(env, EXPECTED_VARS);
-      const secrets = varPresence(env, REQUIRED_SECRETS);
-
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/diagnostic",
-        input_echo_safe: {
-          request_id: input.request_id || null,
-          chain_id: input.chain_id || null,
-          job_key: input.job_key || null,
-          mode: input.mode || null
-        },
-        diagnostics: {
-          db_bindings: db,
-          vars: vars,
-          secrets_present_only: secrets
-        },
-        writes_performed: 0,
-        external_calls_performed: 0
-      });
+      return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", input_echo_safe: { request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || null, mode: input.mode || null }, writes_performed: 0, external_calls_performed: 0 });
     }
 
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-
-      return jsonResponse({
-        ok: true,
-        data_ok: true,
-        version: VERSION,
-        worker_name: WORKER_NAME,
-        job_key: input.job_key || JOB_KEY,
-        request_id: input.request_id || null,
-        chain_id: input.chain_id || null,
-        status: "DUMMY_READY",
-        certification: "DUMMY_ONLY_NOT_REAL_DATA",
-        rows_read: 0,
-        rows_written: 0,
-        next_action: "ADD_BINDINGS_SECRETS_VARS_AND_VERIFY_HEALTH",
-        block_downstream_reason: null,
-        output_json: {
-          dummy: true,
-          slate_date: input.slate_date || null,
-          mode: input.mode || null,
-          received_input_json: input.input_json || null
-        },
-        timestamp_utc: nowUtc(),
-        writes_performed: 0,
-        external_calls_performed: 0
-      });
+      const mode = String(input.mode || input?.input_json?.mode || url.searchParams.get("mode") || "");
+      if (mode === "game_calendar_coverage_audit") {
+        try { return jsonResponse(await handleCoverageAudit(input, env)); }
+        catch (err) {
+          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, mode, status: "GAME_CALENDAR_COVERAGE_AUDIT_FAILED", certification: "GAME_CALENDAR_COVERAGE_AUDIT_FAILED", certification_grade: "AUDIT_FAIL", error: String(err && err.message ? err.message : err), no_source_history_mutation: true, no_repair_jobs_created: true, no_scoring: true, no_board_mutation: true, rows_read: 0, rows_written: 0, external_calls_performed: 0 }, 200);
+        }
+      }
+      return jsonResponse({ ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: input.job_key || JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "DUMMY_READY", certification: "DUMMY_ONLY_NOT_REAL_DATA", rows_read: 0, rows_written: 0, output_json: { dummy: true, mode }, timestamp_utc: nowUtc(), writes_performed: 0, external_calls_performed: 0 });
     }
 
-    return jsonResponse({
-      ok: false,
-      data_ok: false,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      status: "NOT_FOUND",
-      allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"],
-      timestamp_utc: nowUtc()
-    }, 404);
+    return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }
 };
