@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-games-status";
-const VERSION = "alphadog-v2-daily-games-status-v0.1.3-board-context-enrichment";
+const VERSION = "alphadog-v2-daily-games-status-v0.1.4-sleeper-event-team-pair-enrichment";
 const JOB_KEY = "daily-games-status";
 const MLB_SCHEDULE_SOURCE = "official_mlb_statsapi_schedule";
 const MLB_SCHEDULE_ENDPOINT_PATH = "/api/v1/schedule?sportId=1&gameType=R&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD";
@@ -345,8 +345,8 @@ async function readPlayerTeamMap(env, teamDir) {
   return out;
 }
 
-function enrichBoardRows(rows, playerTeamMap) {
-  let teamFilled = 0, ambiguous = 0;
+function enrichBoardRows(rows, playerTeamMap, aliases = new Map(), teamDir = null) {
+  let teamFilled = 0, ambiguous = 0, opponentFilled = 0, eventPairResolved = 0, eventPairAmbiguous = 0;
   for (const r of rows) {
     r.enrichment_flags = [];
     if (!r.team && r.player_name) {
@@ -363,7 +363,45 @@ function enrichBoardRows(rows, playerTeamMap) {
       }
     }
   }
-  return { teamFilled, ambiguous };
+
+  // Sleeper often has player/event but not team/opponent. After row-level player-team enrichment,
+  // use the source_event_id group itself as the game container. If exactly two MLB teams are
+  // represented inside one Sleeper event, fill the opponent on every row from the opposite team.
+  // This preserves every valid line variation and only enriches game context.
+  const events = new Map();
+  for (const r of rows) {
+    const src = String(r.board_source_key || r.source_key || "");
+    const eventId = String(r.source_event_id || "").trim();
+    if (!eventId || src !== "parlay_sleeper") continue;
+    const teamId = aliasTeamId(aliases, r.team) || (r.enriched_mlb_team_id ? Number(r.enriched_mlb_team_id) : null);
+    if (!teamId) continue;
+    if (!events.has(eventId)) events.set(eventId, { rows: [], teamIds: new Set() });
+    const ev = events.get(eventId);
+    ev.rows.push(r);
+    ev.teamIds.add(Number(teamId));
+  }
+  for (const [eventId, ev] of events.entries()) {
+    const teamIds = Array.from(ev.teamIds).filter(Boolean);
+    if (teamIds.length === 2) {
+      eventPairResolved++;
+      for (const r of ev.rows) {
+        const myId = aliasTeamId(aliases, r.team) || (r.enriched_mlb_team_id ? Number(r.enriched_mlb_team_id) : null);
+        const otherId = teamIds.find(id => Number(id) !== Number(myId));
+        const other = otherId && teamDir ? teamDir.byMlbId.get(Number(otherId)) : null;
+        if (!r.opponent && otherId) {
+          r.opponent = other?.abbreviation || other?.full_name || String(otherId);
+          r.enriched_opponent_mlb_team_id = Number(otherId);
+          r.enriched_opponent_method = "sleeper_source_event_two_team_cluster";
+          r.enrichment_flags.push("opponent_filled_from_sleeper_event_team_cluster");
+          opponentFilled++;
+        }
+      }
+    } else if (teamIds.length > 2) {
+      eventPairAmbiguous++;
+      for (const r of ev.rows) r.enrichment_flags.push("sleeper_event_team_cluster_ambiguous");
+    }
+  }
+  return { teamFilled, opponentFilled, eventPairResolved, eventPairAmbiguous, ambiguous };
 }
 
 async function readPrizePicksRows(env) {
@@ -663,7 +701,7 @@ async function runDailyGameStatus(env, input = {}) {
   const aliases = await readTeamAliases(env);
   const teamDir = await readTeamDirectory(env);
   const playerTeamMap = await readPlayerTeamMap(env, teamDir);
-  const enrichment = enrichBoardRows(boardRows, playerTeamMap);
+  const enrichment = enrichBoardRows(boardRows, playerTeamMap, aliases, teamDir);
   const dates = unique(boardRows.map(r => dateOnly(r.start_time) || dateOnly(r.slate_date))).sort();
   const schedule = dates.length ? await fetchMlbSchedule(env, dates) : { dates_fetched: 0, games_seen: 0, games: [], fetches: [], errors: [{ reason: "no_board_relevant_dates" }] };
   const nowMs = Date.now();
@@ -684,7 +722,7 @@ async function runDailyGameStatus(env, input = {}) {
   const stageAfterClean = await first(env.DAILY_DB, "SELECT COUNT(*) AS c FROM daily_game_status_stage WHERE batch_id=?", batchId);
   const certification = boardRows.length > 0 && schedule.dates_fetched > 0 && Number(duplicateKeys?.c || 0) === 0 ? "DAILY_GAME_STATUS_CERTIFIED_CURRENT_REPLACED" : (boardRows.length === 0 ? "DAILY_GAME_STATUS_NO_ACTIVE_BOARD_ROWS" : "DAILY_GAME_STATUS_COMPLETED_WITH_SOURCE_WARNINGS");
   const grade = certification === "DAILY_GAME_STATUS_CERTIFIED_CURRENT_REPLACED" ? "PASS" : "REVIEW";
-  const certJson = { board_rows_read: boardRows.length, prizepicks_rows_read: pp.rows.length, sleeper_rows_read: sl.rows.length, board_relevant_dates: dates, mlb_schedule_fetches: schedule.fetches, mlb_schedule_errors: schedule.errors, duplicate_current_keys: Number(duplicateKeys?.c || 0), source_endpoint_template: MLB_SCHEDULE_ENDPOINT_PATH, exact_board_columns_used: { prizepicks: pp.columns, sleeper: sl.columns }, matching_methods: ["source_event_id_game_pk", "team_opponent_alias_pair", "team_pair_plus_start_time", "single_team_exact_start_time", "single_team_doubleheader_exact_start_time", "player_roster_team_unique_date", "player_roster_team_exact_start_time", "player_roster_team_unique_date_official_time_override", "start_time_only_low_confidence", "unresolved_board_game_mapping"], enrichment: enrichment, unsafe_rules: ["blocked_started", "blocked_final", "blocked_postponed", "blocked_suspended", "blocked_missing_game_time", "blocked_ambiguous_game_mapping", "blocked_board_time_past", "review_required"] };
+  const certJson = { board_rows_read: boardRows.length, prizepicks_rows_read: pp.rows.length, sleeper_rows_read: sl.rows.length, board_relevant_dates: dates, mlb_schedule_fetches: schedule.fetches, mlb_schedule_errors: schedule.errors, duplicate_current_keys: Number(duplicateKeys?.c || 0), source_endpoint_template: MLB_SCHEDULE_ENDPOINT_PATH, exact_board_columns_used: { prizepicks: pp.columns, sleeper: sl.columns }, matching_methods: ["source_event_id_game_pk", "team_opponent_alias_pair", "team_pair_plus_start_time", "sleeper_source_event_two_team_cluster", "single_team_exact_start_time", "single_team_doubleheader_exact_start_time", "player_roster_team_unique_date", "player_roster_team_exact_start_time", "player_roster_team_unique_date_official_time_override", "start_time_only_low_confidence", "unresolved_board_game_mapping"], enrichment: enrichment, unsafe_rules: ["blocked_started", "blocked_final", "blocked_postponed", "blocked_suspended", "blocked_missing_game_time", "blocked_ambiguous_game_mapping", "blocked_board_time_past", "review_required"] };
   await run(env.DAILY_DB, "INSERT INTO daily_game_status_certifications (certification_id, batch_id, certification_status, certification_grade, certification_reason, certification_json) VALUES (?, ?, ?, ?, ?, ?)", rid("dgs_cert"), batchId, certification, grade, "Board-focused game status refresh completed without board/scoring mutation", JSON.stringify(certJson));
   await run(env.DAILY_DB, "INSERT INTO daily_game_status_outcomes (outcome_id, batch_id, outcome_key, outcome_status, outcome_json) VALUES (?, ?, 'daily_game_status_summary', ?, ?)", rid("dgs_outcome"), batchId, certification, JSON.stringify(certJson));
   await run(env.DAILY_DB, "UPDATE daily_game_status_batches SET board_rows_read=?, board_relevant_dates=?, board_relevant_games=?, mlb_schedule_dates_fetched=?, mlb_schedule_games_seen=?, staged_rows=?, promoted_rows=?, unsafe_rows=?, warning_rows=?, certification_status=?, certification_grade=?, certification_reason=?, certification_json=?, certified_at=CURRENT_TIMESTAMP, promoted_at=CURRENT_TIMESTAMP, cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", boardRows.length, dates.length, new Set(schedule.games.map(g => g.gamePk)).size, schedule.dates_fetched, schedule.games_seen, staged, Number(currentCount?.c || 0), unsafe, warnings, certification, grade, "Certified current replacement lifecycle; no board/scoring/final writes", JSON.stringify(certJson), batchId);
@@ -718,7 +756,7 @@ async function runDailyGameStatus(env, input = {}) {
       endpoint_template: MLB_SCHEDULE_ENDPOINT_PATH,
       fetches: schedule.fetches,
       errors: schedule.errors,
-      confidence_policy: "HIGH from unique source_event_id gamePk, team/opponent alias pair, board team plus exact official start time, or active REF player/team roster mapped to a unique MLB schedule game; uncertainty blocks safety"
+      confidence_policy: "HIGH from unique source_event_id gamePk, team/opponent alias pair, board team plus exact official start time, active REF player/team roster mapped to a unique MLB schedule game, or Sleeper event two-team cluster plus official schedule team pair/start time; uncertainty blocks safety"
     },
     elapsed_ms: Date.now() - started
   });
