@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.16-calendar-tally-scoped-gap-repair";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.17-calendar-tally-live-reconcile";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -1732,6 +1732,169 @@ async function deriveDeltaSourceCounters(env, batchId) {
   };
 }
 
+
+function chunkArray(items, size) {
+  const out = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+async function reconcileHitterGameLogCoverageFromLive(env, batchId, runId, opts = {}) {
+  if (!env.TEAM_DB || !env.STATS_HITTER_DB) {
+    return { ok: false, skipped: true, reason: "TEAM_OR_STATS_HITTER_DB_BINDING_MISSING", updated_rows: 0, resolved_gap_rows: 0 };
+  }
+  const requestId = asText(opts.request_id || opts.requestId, null);
+  const sourceTag = asText(opts.source || "hitter_game_logs_delta_finalization", "hitter_game_logs_delta_finalization");
+  const gapRows = await all(env.TEAM_DB, `SELECT
+      d.game_pk,
+      d.season,
+      d.official_date,
+      d.last_batch_id AS prior_coverage_batch_id,
+      d.missing_reason AS prior_missing_reason
+    FROM mlb_game_data_coverage d
+    JOIN mlb_game_calendar c ON c.game_pk=d.game_pk
+    WHERE d.layer_key='hitter_game_logs'
+      AND d.coverage_status='missing'
+      AND d.blocking_for_full_run=1
+      AND c.is_available_for_stats=1
+    ORDER BY d.official_date, d.game_pk
+    LIMIT 1000`);
+  const candidates = gapRows.map(r => ({
+    game_pk: asInt(r.game_pk, 0),
+    season: asInt(r.season, DEFAULT_SOURCE_SEASON),
+    official_date: asText(r.official_date, null),
+    prior_coverage_batch_id: asText(r.prior_coverage_batch_id, null),
+    prior_missing_reason: asText(r.prior_missing_reason, null)
+  })).filter(r => r.game_pk && r.official_date);
+  if (!candidates.length) {
+    return { ok: true, no_missing_hitter_game_log_coverage_rows: true, updated_rows: 0, resolved_gap_rows: 0 };
+  }
+
+  const liveByGame = new Map();
+  for (const chunk of chunkArray(candidates, 50)) {
+    const placeholders = chunk.map(() => "?").join(",");
+    const statsRows = await all(env.STATS_HITTER_DB, `SELECT
+        game_pk,
+        MIN(date(game_date)) AS game_date,
+        COUNT(*) AS live_rows,
+        COUNT(DISTINCT player_id) AS live_entity_count,
+        SUM(CASE WHEN player_id IS NULL OR game_pk IS NULL OR game_date IS NULL THEN 1 ELSE 0 END) AS missing_required_rows,
+        COUNT(*) - COUNT(DISTINCT player_id) AS duplicate_player_rows
+      FROM hitter_game_logs
+      WHERE game_pk IN (${placeholders})
+      GROUP BY game_pk`, ...chunk.map(r => r.game_pk));
+    for (const row of statsRows) {
+      liveByGame.set(asInt(row.game_pk, 0), {
+        game_date: asText(row.game_date, null),
+        live_rows: asInt(row.live_rows, 0),
+        live_entity_count: asInt(row.live_entity_count, 0),
+        missing_required_rows: asInt(row.missing_required_rows, 0),
+        duplicate_player_rows: asInt(row.duplicate_player_rows, 0)
+      });
+    }
+  }
+
+  const resolved = [];
+  const stillMissing = [];
+  for (const c of candidates) {
+    const live = liveByGame.get(c.game_pk);
+    if (live && live.live_rows > 0 && live.live_entity_count > 0 && live.missing_required_rows === 0 && live.duplicate_player_rows === 0) {
+      resolved.push({ ...c, ...live });
+    } else {
+      stillMissing.push({ ...c, live_rows: live ? live.live_rows : 0, live_entity_count: live ? live.live_entity_count : 0, missing_required_rows: live ? live.missing_required_rows : null, duplicate_player_rows: live ? live.duplicate_player_rows : null });
+    }
+  }
+
+  let updated = 0;
+  let resolvedGapRows = 0;
+  for (const r of resolved) {
+    const details = {
+      version: VERSION,
+      source: sourceTag,
+      reconciled_by_worker: WORKER_NAME,
+      worker_batch_id: batchId,
+      worker_run_id: runId,
+      worker_request_id: requestId,
+      prior_coverage_batch_id: r.prior_coverage_batch_id,
+      prior_missing_reason: r.prior_missing_reason,
+      game_pk: r.game_pk,
+      official_date: r.official_date,
+      stats_hitter_db_table: "hitter_game_logs",
+      live_rows: r.live_rows,
+      live_entity_count: r.live_entity_count,
+      distinct_column: "player_id",
+      missing_required_rows: r.missing_required_rows,
+      duplicate_player_rows: r.duplicate_player_rows,
+      game_date: r.game_date,
+      no_scoring: true,
+      no_ranking: true,
+      no_board_mutation: true
+    };
+    await run(env.TEAM_DB, `UPDATE mlb_game_data_coverage SET
+        coverage_status='complete',
+        coverage_grade='PASS',
+        blocking_for_full_run=0,
+        expected_rows=NULL,
+        live_rows=?,
+        stage_rows=0,
+        outcome_rows=0,
+        missing_rows=0,
+        expected_entity_type='player_id',
+        live_entity_count=?,
+        stage_entity_count=0,
+        exception_count=0,
+        represented_by_live=1,
+        represented_by_stage=0,
+        represented_by_exception=0,
+        missing_reason=NULL,
+        exception_reason=NULL,
+        last_batch_id=?,
+        last_run_id=?,
+        last_request_id=?,
+        last_worker_name=?,
+        last_worker_version=?,
+        last_checked_at=CURRENT_TIMESTAMP,
+        last_completed_at=CURRENT_TIMESTAMP,
+        source_endpoint=?,
+        details_json=?,
+        updated_at=CURRENT_TIMESTAMP
+      WHERE game_pk=? AND layer_key='hitter_game_logs'`,
+      r.live_rows,
+      r.live_entity_count,
+      batchId,
+      runId,
+      requestId,
+      WORKER_NAME,
+      VERSION,
+      LOCKED_SOURCE_ENDPOINT_PATTERN,
+      JSON.stringify(details),
+      r.game_pk);
+    updated += 1;
+    if (r.prior_coverage_batch_id) {
+      const del = await run(env.TEAM_DB, `DELETE FROM mlb_game_coverage_gaps
+        WHERE batch_id=?
+          AND game_pk=?
+          AND layer_key='hitter_game_logs'`, r.prior_coverage_batch_id, r.game_pk);
+      resolvedGapRows += asInt(del && del.meta && del.meta.changes, 0);
+    }
+  }
+
+  return {
+    ok: true,
+    version: VERSION,
+    source: sourceTag,
+    layer_key: "hitter_game_logs",
+    candidate_missing_rows: candidates.length,
+    updated_rows: updated,
+    resolved_gap_rows: resolvedGapRows,
+    still_missing_rows: stillMissing.length,
+    first_resolved_date: resolved.map(r => r.official_date).filter(Boolean).sort()[0] || null,
+    last_resolved_date: resolved.map(r => r.official_date).filter(Boolean).sort().pop() || null,
+    resolved_games_sample: resolved.slice(0, 20).map(r => ({ game_pk: r.game_pk, official_date: r.official_date, live_rows: r.live_rows, live_entity_count: r.live_entity_count })),
+    still_missing_sample: stillMissing.slice(0, 20)
+  };
+}
+
 async function finalizeDeltaIfReady(env, batchId, runId, windowInfo, playersTotal, baseGate, opts = {}) {
   const batch = await first(env.STATS_HITTER_DB, "SELECT * FROM hitter_game_log_batches WHERE batch_id=?", batchId);
   const status = String((batch && batch.status) || "");
@@ -1841,6 +2004,10 @@ async function finalizeDeltaIfReady(env, batchId, runId, windowInfo, playersTota
       updated_at=CURRENT_TIMESTAMP
       WHERE batch_id=?`, finalPass ? 1 : 0, retainedStageRows, liveRows, sourceTruth.source_request_count, sourceTruth.source_success_count, sourceTruth.source_no_data_count, sourceTruth.source_error_count, finalPass ? 1 : 0, finalPass ? 1 : 0, JSON.stringify(checks), batchId);
     await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_cursor SET status=?, next_run_after=NULL, updated_at=CURRENT_TIMESTAMP WHERE cursor_key=?", finalPass ? "COMPLETED_PROMOTED_STAGE_RETAINED" : "CERTIFICATION_FAILED", DELTA_CURSOR_KEY);
+    const calendarTallyReconcile = finalPass ? await reconcileHitterGameLogCoverageFromLive(env, batchId, runId, { ...opts, source: "delta_finalization_promoted_stage_retained" }) : { ok: false, skipped: true, reason: "delta_final_pass_false" };
+    checks.calendar_tally_reconcile = calendarTallyReconcile;
+    await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_certifications SET checks_json=? WHERE certification_id=?", JSON.stringify(checks), `cert_${batchId}`);
+    await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_batches SET certification_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", JSON.stringify(checks), batchId);
     return {
       pass: finalPass,
       done: true,
@@ -1849,6 +2016,7 @@ async function finalizeDeltaIfReady(env, batchId, runId, windowInfo, playersTota
       certification: finalPass ? "DELTA_HITTER_GAME_LOGS_CERTIFIED_PROMOTED_STAGE_RETAINED" : "DELTA_HITTER_GAME_LOGS_CERTIFICATION_FAILED",
       grade: finalPass ? "DELTA_PASS" : "DELTA_FAIL",
       checks,
+      calendar_tally_reconcile: calendarTallyReconcile,
       rows_promoted: liveRows,
       stage_rows_after_clean: retainedStageRows,
       stage_rows_retained: retainedStageRows
@@ -2365,7 +2533,7 @@ async function runCalendarTallyScopedHitterRepairIfNeeded(env, input, inputJson,
       scoped_games: scope.selected_games,
       total_gap_rows_before_repair: scope.total_gap_rows
     };
-    const cert = await finalizeDeltaIfReady(env, batchId, runId, windowInfo, 0, baseGate, inputJson);
+    const cert = await finalizeDeltaIfReady(env, batchId, runId, windowInfo, 0, baseGate, { ...inputJson, request_id: input.request_id || null, chain_id: input.chain_id || null });
     await releaseBatchLock(env, batchId, owner);
     return { ok: cert.pass, data_ok: cert.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: cert.done ? cert.status : "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: cert.certification, certification_grade: cert.grade, batch_id: batchId, run_id: runId, mode: "delta_update", base_integrity_gate: baseGate, repeat_full_delta_guard: retainedDeltaGuard, calendar_tally_scoped_gap_repair_v1_6_16: true, calendar_tally_scope: { ...scope, gaps: scope.gaps.slice(0, 20) }, repair, rows_read: asInt(repair.external_calls, 0), rows_written: asInt(repair.rows_staged, 0) + asInt(cert.rows_promoted, 0), rows_staged: asInt(repair.rows_staged, 0), rows_promoted: cert.rows_promoted || 0, stage_rows_after_clean: cert.stage_rows_after_clean, external_calls_performed: asInt(repair.external_calls, 0), continuation_required: !cert.done, orchestrator_should_self_continue: !cert.done, manual_wake_required: false, no_browser_pump: true, final_checks: cert.checks, timestamp_utc: nowUtc() };
   } catch (err) {
@@ -2395,7 +2563,7 @@ async function runRetainedDeltaNewFinalDateIncrement(env, retainedDeltaGuard, la
       repair_plan: "APPEND_NEW_FINAL_DATES_TO_RETAINED_DELTA",
       retained_previous_max_game_date: append.retained_max_game_date
     };
-    const cert = await finalizeDeltaIfReady(env, latest.batch_id, latest.run_id || rid("run_delta_retained_increment"), windowInfo, 0, baseGate, inputJson);
+    const cert = await finalizeDeltaIfReady(env, latest.batch_id, latest.run_id || rid("run_delta_retained_increment"), windowInfo, 0, baseGate, { ...inputJson, request_id: input.request_id || null, chain_id: input.chain_id || null });
     await releaseBatchLock(env, latest.batch_id, owner);
     return { ok: cert.pass, data_ok: cert.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: cert.done ? cert.status : "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: cert.certification, certification_grade: cert.grade, batch_id: latest.batch_id, mode: "delta_update", base_integrity_gate: baseGate, repeat_full_delta_guard: retainedDeltaGuard, true_increment_date_discovery: true, new_final_date_increment: append, rows_read: asInt(append.external_calls, 0), rows_written: asInt(append.rows_staged_this_repair, 0) + asInt(cert.rows_promoted, 0), rows_promoted: cert.rows_promoted || 0, stage_rows_after_clean: cert.stage_rows_after_clean, external_calls_performed: asInt(append.external_calls, 0), continuation_required: !cert.done, orchestrator_should_self_continue: !cert.done, manual_wake_required: false, no_browser_pump: true, final_checks: cert.checks, timestamp_utc: nowUtc() };
   } catch (err) {
@@ -2431,7 +2599,7 @@ async function runRetainedDeltaSurgicalRepairIfNeeded(env, retainedDeltaGuard, i
       surgical_gap_repair: true,
       repair_plan: retainedDeltaGuard.repair_plan
     };
-    const cert = await finalizeDeltaIfReady(env, latest.batch_id, latest.run_id || (batch && batch.run_id) || rid("run_delta_retained_repair"), windowInfo, 0, baseGate, inputJson);
+    const cert = await finalizeDeltaIfReady(env, latest.batch_id, latest.run_id || (batch && batch.run_id) || rid("run_delta_retained_repair"), windowInfo, 0, baseGate, { ...inputJson, request_id: input.request_id || null, chain_id: input.chain_id || null });
     await releaseBatchLock(env, latest.batch_id, owner);
     return { ok: cert.pass, data_ok: cert.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: cert.done ? cert.status : "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: cert.certification, certification_grade: cert.grade, batch_id: latest.batch_id, mode: "delta_update", base_integrity_gate: baseGate, repeat_full_delta_guard: retainedDeltaGuard, surgical_gap_repair: true, stage_repair: stageRepair, rows_read: stageRepair ? asInt(stageRepair.external_calls, 0) : 0, rows_written: (stageRepair ? asInt(stageRepair.rows_staged_this_repair, 0) : 0) + asInt(cert.rows_promoted, 0), rows_promoted: cert.rows_promoted || 0, stage_rows_after_clean: cert.stage_rows_after_clean, external_calls_performed: stageRepair ? asInt(stageRepair.external_calls, 0) : 0, continuation_required: !cert.done, orchestrator_should_self_continue: !cert.done, manual_wake_required: false, no_browser_pump: true, final_checks: cert.checks, timestamp_utc: nowUtc() };
   } catch (err) {
@@ -2713,7 +2881,7 @@ async function runDeltaUpdateTick(env, input, inputJson) {
           retained_status_closeout: true,
           repair_plan: "FINAL_RETAINED_STATUS_CLOSEOUT"
         };
-        const cert = await finalizeDeltaIfReady(env, latest.batch_id, latest.run_id || rid("run_delta_closeout"), windowInfo, 0, baseGate, inputJson);
+        const cert = await finalizeDeltaIfReady(env, latest.batch_id, latest.run_id || rid("run_delta_closeout"), windowInfo, 0, baseGate, { ...inputJson, request_id: input.request_id || null, chain_id: input.chain_id || null });
         await releaseBatchLock(env, latest.batch_id, owner);
         return { ok: cert.pass, data_ok: cert.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: cert.done ? cert.status : "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", finalization_status: cert.status, certification: cert.certification, certification_grade: cert.grade, batch_id: latest.batch_id, mode: "delta_update", base_integrity_gate: baseGate, closeout_candidate: closeoutCandidate, rows_read: 0, rows_written: cert.rows_promoted || 0, rows_promoted: cert.rows_promoted || 0, stage_rows_after_clean: cert.stage_rows_after_clean, external_calls_performed: 0, continuation_required: !cert.done, orchestrator_should_self_continue: !cert.done, manual_wake_required: false, no_browser_pump: true, final_checks: cert.checks, timestamp_utc: nowUtc() };
       } catch (err) {
@@ -2799,7 +2967,7 @@ async function runDeltaUpdateTick(env, input, inputJson) {
   let didFetchThisTick = false;
   try {
     if (DELTA_STATUSES.has(String(batch.status)) && String(batch.status).includes("READY") || ["DELTA_CERTIFIED_READY_TO_PROMOTE","DELTA_PROMOTING","DELTA_PROMOTED_READY_TO_CLEAN","DELTA_CLEANING","DELTA_PROMOTED_STAGE_READY_TO_RETAIN","COMPLETED_PROMOTED_STAGE_RETAINED"].includes(String(batch.status))) {
-      const cert = await finalizeDeltaIfReady(env, batchId, runId, windowInfo, players.length, baseGate, inputJson);
+      const cert = await finalizeDeltaIfReady(env, batchId, runId, windowInfo, players.length, baseGate, { ...inputJson, request_id: input.request_id || null, chain_id: input.chain_id || null });
       await releaseBatchLock(env, batchId, owner);
       return { ok: cert.pass, data_ok: cert.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: cert.done ? cert.status : "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", finalization_status: cert.status, certification: cert.certification, certification_grade: cert.grade, batch_id: batchId, run_id: runId, mode: "delta_update", base_integrity_gate: baseGate, delta_window: windowInfo, rows_read: 0, rows_written: cert.rows_promoted || 0, rows_promoted: cert.rows_promoted || 0, stage_rows_after_clean: cert.stage_rows_after_clean, external_calls_performed: 0, continuation_required: !cert.done, orchestrator_should_self_continue: !cert.done, manual_wake_required: false, no_browser_pump: true, final_checks: cert.checks, timestamp_utc: nowUtc() };
     }
@@ -2826,7 +2994,7 @@ async function runDeltaUpdateTick(env, input, inputJson) {
       await releaseBatchLock(env, batchId, owner);
       return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: "DELTA_HITTER_GAME_LOGS_PARTIAL_CONTINUE", batch_id: batchId, run_id: runId, mode: "delta_update", base_integrity_gate: baseGate, delta_window: windowInfo, rows_read: sourceRequestCount, rows_written: rowsStagedThisTick, rows_staged_total: totalStageRows, external_calls_performed: sourceRequestCount, current_player_offset: nextOffset, players_total: players.length, players_remaining: Math.max(0, players.length - nextOffset), continuation_required: true, orchestrator_should_self_continue: true, manual_wake_required: false, no_browser_pump: true, processed_players: processedPlayers.slice(0, 10), timestamp_utc: nowUtc() };
     }
-    const cert = await finalizeDeltaIfReady(env, batchId, runId, windowInfo, players.length, baseGate, inputJson);
+    const cert = await finalizeDeltaIfReady(env, batchId, runId, windowInfo, players.length, baseGate, { ...inputJson, request_id: input.request_id || null, chain_id: input.chain_id || null });
     await releaseBatchLock(env, batchId, owner);
     return { ok: cert.pass, data_ok: cert.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: cert.done ? cert.status : "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: cert.certification, certification_grade: cert.grade, batch_id: batchId, run_id: runId, mode: "delta_update", base_integrity_gate: baseGate, delta_window: windowInfo, rows_read: sourceRequestCount, rows_written: rowsStagedThisTick + (cert.rows_promoted || 0), rows_promoted: cert.rows_promoted || 0, stage_rows_after_clean: cert.stage_rows_after_clean, external_calls_performed: sourceRequestCount, continuation_required: !cert.done, orchestrator_should_self_continue: !cert.done, manual_wake_required: false, no_browser_pump: true, final_checks: cert.checks, timestamp_utc: nowUtc() };
   } catch (err) {
