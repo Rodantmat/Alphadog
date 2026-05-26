@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.100-db-scheduled-board-full-run";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.101-daily-game-status-dispatch";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -64,7 +64,8 @@ function base(env, extra = {}) {
       BASE_TEAM_GAME_LOGS_WORKER: !!env.BASE_TEAM_GAME_LOGS_WORKER,
       BASE_STARTER_HISTORY_WORKER: !!env.BASE_STARTER_HISTORY_WORKER,
       BASE_BULLPEN_HISTORY_WORKER: !!env.BASE_BULLPEN_HISTORY_WORKER,
-      BASE_PITCHER_SPLITS_WORKER: !!env.BASE_PITCHER_SPLITS_WORKER
+      BASE_PITCHER_SPLITS_WORKER: !!env.BASE_PITCHER_SPLITS_WORKER,
+      DAILY_GAMES_STATUS_WORKER: !!env.DAILY_GAMES_STATUS_WORKER
     },
     ...extra
   };
@@ -256,6 +257,12 @@ function isBasePitcherSplitsJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "base-pitcher-splits" && worker === "alphadog-v2-base-pitcher-splits";
+}
+
+function isDailyGamesStatusJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "daily-games-status" && worker === "alphadog-v2-daily-games-status";
 }
 
 function isStaticTeamsJob(row) {
@@ -3655,6 +3662,135 @@ async function processStaticPlayersJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
+
+async function processDailyGamesStatusJob(env, row, runId, trigger) {
+  if (!env.DAILY_GAMES_STATUS_WORKER || typeof env.DAILY_GAMES_STATUS_WORKER.fetch !== "function") {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      status: "blocked_missing_service_binding",
+      certification: "DAILY_GAME_STATUS_SERVICE_BINDING_MISSING",
+      trigger,
+      note: "Exact dispatch is enabled only through DAILY_GAMES_STATUS_WORKER service binding. Do not generic-dispatch this worker."
+    };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_daily_games_status_service_binding', 'DAILY_GAMES_STATUS_WORKER service binding is missing')",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
+    );
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_daily_games_status_service_binding', error_message='DAILY_GAMES_STATUS_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id
+    );
+    return output;
+  }
+
+  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const input = {
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    trigger,
+    mode: "orchestrator_exact_daily_game_status_dispatch",
+    input_json: rowInput,
+    exact_worker_only: true,
+    board_focused_only: true,
+    no_board_mutation: true,
+    no_player_resolver: true,
+    no_lineups: true,
+    no_starters: true,
+    no_weather: true,
+    no_bullpen: true,
+    no_market_odds: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true
+  };
+
+  const started = Date.now();
+  let output;
+  let httpStatus = null;
+  try {
+    const resp = await env.DAILY_GAMES_STATUS_WORKER.fetch("https://internal.alphadog-v2-daily-games-status/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input)
+    });
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); }
+    catch (_) {
+      output = {
+        ok: false,
+        data_ok: false,
+        version: SYSTEM_VERSION,
+        processed_by: WORKER_NAME,
+        worker_name: row.worker_name,
+        job_key: row.job_key,
+        status: "worker_non_json_response",
+        http_status: httpStatus,
+        response_preview: String(text || "").slice(0, 900)
+      };
+    }
+  } catch (err) {
+    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+  }
+
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const rowsRead = Number(output && (output.rows_read || output.board_rows_read) ? (output.rows_read || output.board_rows_read) : 0);
+  const rowsWritten = Number(output && (output.rows_written || output.current_rows_promoted) ? (output.rows_written || output.current_rows_promoted) : 0);
+  const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
+  const certification = String((output && output.certification) || (ok ? "daily_game_status_completed" : "daily_game_status_failed")).slice(0, 120);
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "daily_games_status_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Daily Game Status worker failed").slice(0, 900);
+  const cappedOutput = {
+    ...output,
+    orchestrator_dispatch: {
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      exact_worker_only: true,
+      trigger,
+      http_status: httpStatus,
+      elapsed_ms: Date.now() - started,
+      no_board_mutation: true,
+      no_player_resolver: true,
+      no_lineups: true,
+      no_starters: true,
+      no_weather: true,
+      no_bullpen: true,
+      no_market_odds: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board_write: true,
+      no_old_production_touch: true
+    }
+  };
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
+  );
+
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+  );
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_game_status_dispatch_completed', 'Orchestrator completed exact Daily Game Status dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, dispatch: cappedOutput.orchestrator_dispatch })
+  );
+
+  return cappedOutput;
+}
+
 async function processSafeTestJob(env, row, runId, trigger) {
   const output = {
     ok: true,
@@ -4062,6 +4198,17 @@ async function processOneUnlocked(env, trigger) {
     const output = await processParlaySleeperBoardJob(env, row, runId, trigger);
     return {
       status: output && output.ok ? "completed_one_parlay_sleeper_board_job" : "failed_one_parlay_sleeper_board_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
+
+  if (isDailyGamesStatusJob(row)) {
+    const output = await processDailyGamesStatusJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_daily_game_status_job" : "failed_one_daily_game_status_job",
       request_id: row.request_id,
       run_id: runId,
       output
