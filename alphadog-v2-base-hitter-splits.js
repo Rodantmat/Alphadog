@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-splits";
-const VERSION = "alphadog-v2-base-hitter-splits-v0.4.6-pitcher-parity-chunk-progress-fix";
+const VERSION = "alphadog-v2-base-hitter-splits-v0.4.7-calendar-tally-gap-scoped-refresh";
 const JOB_KEY = "base-hitter-splits";
 
 const SOURCE_SEASON = 2026;
@@ -61,7 +61,7 @@ function baseIdentity(env) {
     job_key: JOB_KEY,
     status: "DELTA_NOOP_RESTORE_GATE_READY",
     timestamp_utc: nowUtc(),
-    phase: "base_hitter_splits_v0_4_5_daily_refresh_reopen_loop_fix",
+    phase: "base_hitter_splits_v0_4_7_calendar_tally_gap_scoped_refresh",
     source_lock: {
       endpoint_pattern: SOURCE_ENDPOINT_PATTERN,
       source_key: SOURCE_KEY,
@@ -79,6 +79,7 @@ function baseIdentity(env) {
       no_new_mlb_calls_for_noop_gate: true,
       no_full_universe_remine_for_repair: true,
       daily_affected_player_refresh_enabled: true,
+      calendar_tally_gap_scoped_refresh_enabled: true,
       no_hitter_game_log_mutation: true,
       no_pitcher_mutation: true,
       no_market_mutation: true,
@@ -1292,7 +1293,54 @@ async function readAffectedHitterSplitPlayers(env, afterDate, throughDate) {
     WHERE game_date > ? AND game_date <= ? AND player_id IS NOT NULL
     GROUP BY player_id
     ORDER BY player_id`, afterDate, throughDate);
-  return rows.map((r, idx) => ({ player_id: asInt(r.player_id, 0), player_name: null, first_game_date: r.first_game_date, last_game_date: r.last_game_date, games: asInt(r.games, 0), cursor_offset: idx })).filter(p => p.player_id);
+  return rows.map((r, idx) => ({ player_id: asInt(r.player_id, 0), player_name: null, first_game_date: r.first_game_date, last_game_date: r.last_game_date, games: asInt(r.games, 0), cursor_offset: idx, affected_source: "STATS_HITTER_DB.hitter_game_logs_date_window" })).filter(p => p.player_id);
+}
+
+async function readAffectedHitterSplitPlayersForGamePks(env, gamePks) {
+  const ids = Array.from(new Set((Array.isArray(gamePks) ? gamePks : []).map(x => asInt(x, 0)).filter(Boolean))).slice(0, 100);
+  if (!ids.length) return [];
+  const placeholders = ids.map(() => '?').join(',');
+  const rows = await all(env.STATS_HITTER_DB, `SELECT player_id, MIN(game_date) AS first_game_date, MAX(game_date) AS last_game_date, COUNT(DISTINCT game_pk) AS games
+    FROM hitter_game_logs
+    WHERE game_pk IN (${placeholders}) AND player_id IS NOT NULL
+    GROUP BY player_id
+    ORDER BY player_id`, ...ids);
+  return rows.map((r, idx) => ({ player_id: asInt(r.player_id, 0), player_name: null, first_game_date: r.first_game_date, last_game_date: r.last_game_date, games: asInt(r.games, 0), cursor_offset: idx, affected_source: "STATS_HITTER_DB.hitter_game_logs_calendar_gap_game_pks" })).filter(p => p.player_id);
+}
+
+async function readHitterSplitsCalendarGaps(env) {
+  if (!env.TEAM_DB) return { ok: false, reason: "TEAM_DB_BINDING_MISSING", gap_game_count: 0, game_pks: [] };
+  try {
+    const summary = await first(env.TEAM_DB, `SELECT
+        COUNT(DISTINCT game_pk) AS gap_game_count,
+        MIN(official_date) AS first_gap_date,
+        MAX(official_date) AS last_gap_date,
+        SUM(CASE WHEN live_rows > 0 THEN 1 ELSE 0 END) AS rows_with_live_rows,
+        SUM(CASE WHEN live_rows = 0 OR live_rows IS NULL THEN 1 ELSE 0 END) AS rows_with_zero_live_rows
+      FROM mlb_game_data_coverage
+      WHERE layer_key='hitter_splits'
+        AND blocking_for_full_run=1`);
+    const gapCount = asInt(summary && summary.gap_game_count, 0);
+    if (!gapCount) return { ok: true, gap_game_count: 0, game_pks: [], first_gap_date: null, last_gap_date: null };
+    const games = await all(env.TEAM_DB, `SELECT game_pk, official_date, coverage_status, coverage_grade, missing_reason, live_rows
+      FROM mlb_game_data_coverage
+      WHERE layer_key='hitter_splits'
+        AND blocking_for_full_run=1
+      ORDER BY official_date, game_pk
+      LIMIT 100`);
+    return {
+      ok: true,
+      gap_game_count: gapCount,
+      first_gap_date: summary && summary.first_gap_date,
+      last_gap_date: summary && summary.last_gap_date,
+      rows_with_live_rows: asInt(summary && summary.rows_with_live_rows, 0),
+      rows_with_zero_live_rows: asInt(summary && summary.rows_with_zero_live_rows, 0),
+      game_pks: games.map(g => asInt(g.game_pk, 0)).filter(Boolean),
+      games
+    };
+  } catch (err) {
+    return { ok: false, reason: String(err && err.message ? err.message : err), gap_game_count: 0, game_pks: [] };
+  }
 }
 async function refreshOneAffectedHitterSplitPlayer(env, player, baseBatch, runId, sourceSnapshotDate) {
   const endpoint = endpointFor(env, player.player_id, SOURCE_SEASON);
@@ -1314,7 +1362,9 @@ async function refreshOneAffectedHitterSplitPlayer(env, player, baseBatch, runId
     row.certification_status = "DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH_CERTIFIED_PROMOTED_RETAINED";
     row.certification_grade = "DELTA_REFRESH_PASS";
     row.source_confidence = "SOURCE_LOCKED_STATSAPI_STATSPLITS_HITTING_SITCODES_VL_VR_DAILY_AFFECTED_REFRESH";
-    row.row_status = "delta_daily_affected_player_refresh_retained";
+    row.certified_at = nowUtc();
+    row.promoted_at = nowUtc();
+    row.row_status = "delta_daily_affected_player_refresh_retained_promoted";
     await insertStageRow(env, row);
     rowsStaged++;
     const livePayload = hitterLivePayloadFromRow(row);
@@ -1335,7 +1385,10 @@ async function refreshDailyAffectedHitterSplits(env, baseBatch, input, liveCheck
   const afterDate = dateOnlyUtc(cursorJson.source_snapshot_date_before) || dateOnlyUtc(liveChecks.max_source_snapshot_date) || dateOnlyUtc(baseBatch.source_snapshot_date);
   const throughDate = dateOnlyUtc(cursorJson.latest_complete_game_date) || dateOnlyUtc(latestCompleteDate);
   if (!afterDate || !throughDate || throughDate <= afterDate) return null;
-  const affectedPlayers = await readAffectedHitterSplitPlayers(env, afterDate, throughDate);
+  const calendarGapGamePks = input && input.input_json && Array.isArray(input.input_json.calendar_gap_game_pks) ? input.input_json.calendar_gap_game_pks : null;
+  const affectedPlayers = calendarGapGamePks && calendarGapGamePks.length
+    ? await readAffectedHitterSplitPlayersForGamePks(env, calendarGapGamePks)
+    : await readAffectedHitterSplitPlayers(env, afterDate, throughDate);
   if (!affectedPlayers.length) {
     return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "DELTA_HITTER_SPLITS_DAILY_REFRESH_BLOCKED_NO_AFFECTED_PLAYERS", certification: "DELTA_HITTER_SPLITS_DAILY_REFRESH_BLOCKED_NO_AFFECTED_PLAYERS", certification_grade: "BLOCKED", source_snapshot_date_before: afterDate, latest_complete_game_date: throughDate, rows_read: 0, rows_written: 1, rows_staged: 0, rows_promoted: 0, external_calls_performed: 0, no_full_sweep: true, continuation_required: false, orchestrator_should_self_continue: false, note: "New finalized date exists, but hitter_game_logs has no affected hitter rows for that date. Run Hitter Game Logs delta first, then Hitter Splits delta." };
   }
@@ -1382,6 +1435,76 @@ function parseJsonObjectSafe(text) {
   } catch (_) {
     return {};
   }
+}
+
+async function runCalendarGapScopedHitterSplitsRefresh(env, baseBatch, input, liveChecks, calendarGaps) {
+  const targetDate = dateOnlyUtc(calendarGaps && calendarGaps.last_gap_date);
+  const coveredDate = dateOnlyUtc(liveChecks.max_source_snapshot_date) || dateOnlyUtc(baseBatch.source_snapshot_date);
+  if (!calendarGaps || !calendarGaps.ok || !calendarGaps.gap_game_count || !targetDate) return null;
+  if (coveredDate && coveredDate >= targetDate) return null;
+
+  const patchedInput = {
+    ...input,
+    input_json: {
+      ...(input && input.input_json && typeof input.input_json === 'object' ? input.input_json : {}),
+      calendar_gap_scoped_repair: true,
+      calendar_gap_game_pks: calendarGaps.game_pks || [],
+      calendar_gap_count: calendarGaps.gap_game_count,
+      calendar_gap_first_date: calendarGaps.first_gap_date,
+      calendar_gap_last_date: calendarGaps.last_gap_date
+    }
+  };
+  const result = await refreshDailyAffectedHitterSplits(env, baseBatch, patchedInput, liveChecks, targetDate);
+  if (!result) return null;
+
+  const terminal = result.continuation_required ? false : true;
+  const calendarChecks = {
+    calendar_gap_scoped_repair: true,
+    layer_key: 'hitter_splits',
+    target_source: 'TEAM_DB.mlb_game_data_coverage blocking_for_full_run=1 joined to STATS_HITTER_DB.hitter_game_logs by gap game_pk',
+    source_shape_classification: 'SEASON_TO_DATE_AGGREGATE_SNAPSHOT_BY_AFFECTED_HITTERS',
+    gap_game_count: calendarGaps.gap_game_count,
+    targeted_game_count: calendarGaps.gap_game_count,
+    calendar_gap_count: calendarGaps.gap_game_count,
+    scoped_gap_count: calendarGaps.gap_game_count,
+    calendar_gap_first_date: calendarGaps.first_gap_date,
+    calendar_gap_last_date: calendarGaps.last_gap_date,
+    source_snapshot_date_before: coveredDate,
+    target_source_snapshot_date: targetDate,
+    affected_player_count: result.affected_player_count || 0,
+    players_processed_this_tick: result.players_processed_this_tick || 0,
+    players_remaining: result.players_remaining || 0,
+    rows_read: result.rows_read || 0,
+    rows_staged: result.rows_staged || 0,
+    rows_promoted: result.rows_promoted || 0,
+    external_calls_performed: result.external_calls_performed || 0,
+    no_full_sweep: true,
+    no_full_hitter_universe_refresh: true,
+    no_hitter_game_log_mutation: true,
+    no_pitcher_mutation: true,
+    no_team_mutation: true,
+    no_scoring: true,
+    daily_affected_refresh: result.daily_affected_refresh || null
+  };
+
+  if (terminal && result.ok && result.data_ok) {
+    await run(env.STATS_HITTER_DB, `INSERT INTO hitter_split_certifications (certification_id,batch_id,run_id,mode,certification_status,certification_grade,checks_json,rows_staged,rows_promoted,duplicate_count,no_data_count,error_count,source_snapshot_date)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, rid('hitter_splits_calendar_gap_cert'), baseBatch.batch_id, result.daily_affected_refresh && result.daily_affected_refresh.run_id ? result.daily_affected_refresh.run_id : (input.run_id || rid('run_hitter_splits_calendar_gap_cert')), 'delta_calendar_gap_scoped_repair', 'HITTER_SPLITS_CALENDAR_GAP_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED', 'DELTA_REPAIR_PASS', safeJson(calendarChecks), result.rows_staged || 0, result.rows_promoted || 0, result.daily_affected_refresh ? asInt(result.daily_affected_refresh.duplicate_live_keys, 0) : 0, result.daily_affected_refresh ? asInt(result.daily_affected_refresh.no_data_this_tick, 0) : 0, result.daily_affected_refresh ? asInt(result.daily_affected_refresh.source_errors_this_tick, 0) : 0, targetDate);
+  }
+
+  return {
+    ...result,
+    status: result.continuation_required ? 'PARTIAL_CONTINUE_HITTER_SPLITS_CALENDAR_GAP_SCOPED_REFRESH' : 'COMPLETED_HITTER_SPLITS_CALENDAR_GAP_SCOPED_PROMOTED_STAGE_RETAINED',
+    certification: result.continuation_required ? 'HITTER_SPLITS_CALENDAR_GAP_SCOPED_REPAIR_PARTIAL_CONTINUE' : 'HITTER_SPLITS_CALENDAR_GAP_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED',
+    certification_grade: result.continuation_required ? 'PARTIAL' : result.certification_grade,
+    calendar_gap_scoped_repair: calendarChecks,
+    gap_game_count: calendarGaps.gap_game_count,
+    targeted_game_count: calendarGaps.gap_game_count,
+    calendar_gap_count: calendarGaps.gap_game_count,
+    scoped_gap_count: calendarGaps.gap_game_count,
+    source_snapshot_date_before: coveredDate,
+    latest_complete_game_date: targetDate
+  };
 }
 
 async function reopenIncompleteHitterDailyRefreshIfBadRescue(env, baseBatch, liveChecks, input) {
@@ -1451,6 +1574,11 @@ async function runDeltaUpdate(env, input) {
   const liveChecks = await hitterCurrentLiveIntegrity(env, baseBatch.batch_id);
   const expectedRows = asInt(baseBatch.rows_promoted, 0);
   const baseComplete = liveChecks.live_rows >= expectedRows && liveChecks.distinct_live_keys === liveChecks.live_rows && liveChecks.duplicate_live_keys === 0 && liveChecks.invalid_split_code === 0 && liveChecks.missing_raw_json === 0 && liveChecks.missing_source_snapshot_date === 0;
+  const calendarGaps = await readHitterSplitsCalendarGaps(env);
+  if (baseComplete && calendarGaps && calendarGaps.ok && calendarGaps.gap_game_count > 0) {
+    const calendarGapResult = await runCalendarGapScopedHitterSplitsRefresh(env, baseBatch, input, liveChecks, calendarGaps);
+    if (calendarGapResult) return calendarGapResult;
+  }
   const reopenedIncompleteDailyRefresh = await reopenIncompleteHitterDailyRefreshIfBadRescue(env, baseBatch, liveChecks, input);
   if (reopenedIncompleteDailyRefresh) return await refreshDailyAffectedHitterSplits(env, baseBatch, input, liveChecks, reopenedIncompleteDailyRefresh.latest_complete_game_date);
   const pendingDailyCursor = await first(env.STATS_HITTER_DB, "SELECT * FROM hitter_split_cursor WHERE cursor_key='base_hitter_splits_daily_affected_refresh_cursor' AND status='PARTIAL_CONTINUE_DELTA_HITTER_SPLITS_DAILY_AFFECTED_REFRESH' ORDER BY datetime(updated_at) DESC LIMIT 1");
