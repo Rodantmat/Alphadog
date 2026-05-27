@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.1.7-live-source-overrides-calendar-wait";
+const VERSION = "alphadog-v2-delta-certifier-v0.1.8-bullpen-live-reconcile-after-coverage";
 const JOB_KEY = "delta-certifier";
 
 const ACTIVE_COVERAGE_LAYER_KEYS = [
@@ -685,10 +685,10 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
 
     if (!evaluateLiveLayers) {
       for (const layerKey of activeLayers) {
-        addLayer(g, { layerKey, status: "scheduled_not_ready", grade: "WAITING_NOT_FINAL", blocking: 0, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: null, details: { is_available_for_stats: 0, live_source_rows_for_game: 0, live_source_override_v0_1_7: false } });
+        addLayer(g, { layerKey, status: "scheduled_not_ready", grade: "WAITING_NOT_FINAL", blocking: 0, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: null, details: { is_available_for_stats: 0, live_source_rows_for_game: 0, live_source_override_v0_1_8: false } });
       }
     } else {
-      const overrideDetails = { calendar_is_available_for_stats: Number(g.is_available_for_stats || 0), live_source_rows_for_game: liveSourceRowsForGame, live_source_override_v0_1_7: !calendarStatsReady && liveSourceRowsForGame > 0 };
+      const overrideDetails = { calendar_is_available_for_stats: Number(g.is_available_for_stats || 0), live_source_rows_for_game: liveSourceRowsForGame, live_source_override_v0_1_8: !calendarStatsReady && liveSourceRowsForGame > 0 };
       addLayer(g, hitter.rows > 0 ? { layerKey: "hitter_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: hitter.rows, entityCount: hitter.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...hitter, ...overrideDetails } } : { layerKey: "hitter_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_HITTER_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...hitter, ...overrideDetails } });
       addLayer(g, pitcher.rows > 0 ? { layerKey: "pitcher_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: pitcher.rows, entityCount: pitcher.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...pitcher, ...overrideDetails } } : { layerKey: "pitcher_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_PITCHER_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...pitcher, ...overrideDetails } });
       const teamPass = team.rows === 2 && team.entities === 2;
@@ -705,6 +705,70 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
   }
   await batchPrepared(env.TEAM_DB, coverageStatements, 40);
   await batchPrepared(env.TEAM_DB, gapStatements, 40);
+
+  // v0.1.8 hard reconcile: if bullpen live rows already exist for a game, coverage must not remain missing.
+  // This protects the full-run gate from partial-success cases where live promotion succeeds before a later metadata/cursor write fails.
+  const bullpenReconcile = { checked_rows: 0, updated_rows: 0, sample: [] };
+  const bullpenMismatchRows = await all(env.TEAM_DB, `
+    SELECT
+      cov.game_pk,
+      cov.season,
+      cov.official_date,
+      cov.coverage_status,
+      cov.coverage_grade,
+      cov.live_rows AS coverage_live_rows,
+      cov.blocking_for_full_run AS coverage_blocking_for_full_run,
+      COUNT(DISTINCT bh.bullpen_key) AS actual_live_rows,
+      COUNT(DISTINCT bh.pitcher_id) AS actual_entity_count
+    FROM mlb_game_data_coverage cov
+    LEFT JOIN bullpen_history bh
+      ON bh.game_pk = cov.game_pk
+     AND bh.season = cov.season
+    WHERE cov.official_date BETWEEN ? AND ?
+      AND cov.layer_key = 'bullpen_history'
+    GROUP BY
+      cov.game_pk,
+      cov.season,
+      cov.official_date,
+      cov.coverage_status,
+      cov.coverage_grade,
+      cov.live_rows,
+      cov.blocking_for_full_run
+    HAVING actual_live_rows > 0
+       AND (cov.coverage_status <> 'complete' OR cov.coverage_grade <> 'PASS' OR COALESCE(cov.live_rows,0) <> actual_live_rows OR COALESCE(cov.blocking_for_full_run,0) <> 0)
+    ORDER BY cov.official_date, cov.game_pk
+  `, startDate, endDate);
+  bullpenReconcile.checked_rows = bullpenMismatchRows.length;
+  for (const r of bullpenMismatchRows) {
+    const actualRows = Number(r.actual_live_rows || 0);
+    const actualEntities = Number(r.actual_entity_count || 0);
+    await run(env.TEAM_DB, `
+      UPDATE mlb_game_data_coverage
+      SET coverage_status='complete',
+          coverage_grade='PASS',
+          blocking_for_full_run=0,
+          expected_rows=NULL,
+          live_rows=?,
+          live_entity_count=?,
+          missing_rows=0,
+          represented_by_live=1,
+          missing_reason=NULL,
+          last_batch_id=?,
+          last_request_id=?,
+          last_worker_name=?,
+          last_worker_version=?,
+          last_checked_at=CURRENT_TIMESTAMP,
+          last_completed_at=CURRENT_TIMESTAMP,
+          details_json=?,
+          updated_at=CURRENT_TIMESTAMP
+      WHERE game_pk=?
+        AND season=?
+        AND layer_key='bullpen_history'
+    `, actualRows, actualEntities, batchId, requestId, WORKER_NAME, VERSION, JSON.stringify({ bullpen_live_reconcile_after_coverage_v0_1_8: true, previous_coverage_status: r.coverage_status, previous_coverage_grade: r.coverage_grade, previous_coverage_live_rows: Number(r.coverage_live_rows || 0), previous_blocking_for_full_run: Number(r.coverage_blocking_for_full_run || 0), actual_live_rows: actualRows, actual_entity_count: actualEntities }), Number(r.game_pk), Number(r.season));
+    await run(env.TEAM_DB, `DELETE FROM mlb_game_coverage_gaps WHERE batch_id=? AND game_pk=? AND layer_key='bullpen_history'`, batchId, Number(r.game_pk));
+    bullpenReconcile.updated_rows++;
+    if (bullpenReconcile.sample.length < 10) bullpenReconcile.sample.push({ game_pk: Number(r.game_pk), official_date: String(r.official_date), previous_status: r.coverage_status, previous_live_rows: Number(r.coverage_live_rows || 0), actual_live_rows: actualRows });
+  }
 
   const expectedCoverageRows = games.length * activeLayers.length;
   const actualCoverage = await first(env.TEAM_DB, `SELECT COUNT(*) AS rows FROM mlb_game_data_coverage WHERE game_pk IN (SELECT game_pk FROM mlb_game_calendar WHERE official_date BETWEEN ? AND ?) AND layer_key IN (${layerListSql})`, startDate, endDate);
@@ -747,7 +811,11 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
     coverage_ownership_clean: coverageOwnershipClean,
     scoped_delete_then_rebuild_current_window_v0_1_6: true,
     optimized_full_calendar_coverage_v0_1_6: true,
-    live_source_override_calendar_wait_v0_1_7: true
+    live_source_override_calendar_wait_v0_1_8: true,
+    bullpen_live_reconcile_after_coverage_v0_1_8: true,
+    bullpen_live_reconcile_checked_rows: bullpenReconcile.checked_rows,
+    bullpen_live_reconcile_updated_rows: bullpenReconcile.updated_rows,
+    bullpen_live_reconcile_sample: bullpenReconcile.sample
   };
 }
 
