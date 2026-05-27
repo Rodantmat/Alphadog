@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.4-final-db-truth-composite-row-id";
+const VERSION = "alphadog-v2-score-prep-v0.2.5-fast-final-db-truth";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_SLEEPER = "sleeper";
@@ -756,9 +756,12 @@ function summarizeSleeperEvents(rows) {
   return Array.from(m.values()).map(s => ({ ...s, matchup_statuses: Array.from(s.matchup_statuses).join(",") })).sort((a, b) => b.rows - a.rows);
 }
 
-async function writePreparedRows(env, batchId, rows, bySource, startedAt, input) {
+async function writePreparedRows(env, batchId, rows, bySource, startedAt, input, timing = {}) {
+  const writeStart = Date.now();
   await ensureScoreTables(env);
+  const deleteStart = Date.now();
   await env.SCORE_DB.prepare("DELETE FROM score_board_prepared_current").run();
+  timing.delete_ms = Date.now() - deleteStart;
 
   const insertSql = `INSERT OR REPLACE INTO score_board_prepared_current (
     prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
@@ -769,6 +772,7 @@ async function writePreparedRows(env, batchId, rows, bySource, startedAt, input)
     source_pickable, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
+  const insertStart = Date.now();
   for (let i = 0; i < rows.length; i += INSERT_CHUNK_SIZE) {
     const chunk = rows.slice(i, i + INSERT_CHUNK_SIZE);
     const statements = chunk.map(r => env.SCORE_DB.prepare(insertSql).bind(
@@ -808,11 +812,101 @@ async function writePreparedRows(env, batchId, rows, bySource, startedAt, input)
     ));
     await env.SCORE_DB.batch(statements);
   }
+  timing.insert_ms = Date.now() - insertStart;
 
-  const finalRows = await allRows(env.SCORE_DB, "SELECT * FROM score_board_prepared_current WHERE prep_batch_id = ?", [batchId]);
-  const totals = computeTotals(finalRows);
-  const finalBySource = summarizeBySource(finalRows);
-  const finalSleeperEvents = summarizeSleeperEvents(finalRows);
+  // v0.2.5 performance fix: v0.2.4 proved the final DB-truth contract but
+  // made a full SELECT * after insert. Pulling 8k rows plus raw JSON payloads
+  // caused multi-minute runs. Keep DB-truth, but verify with aggregate SQL only.
+  const verifyStart = Date.now();
+  const totalRow = await firstRow(env.SCORE_DB, `
+SELECT
+  COUNT(*) AS prepared_rows,
+  SUM(CASE WHEN source_key = 'prizepicks' THEN 1 ELSE 0 END) AS prizepicks_rows,
+  SUM(CASE WHEN source_key = 'sleeper' THEN 1 ELSE 0 END) AS sleeper_rows,
+  SUM(CASE WHEN pickable_safe = 1 THEN 1 ELSE 0 END) AS pickable_safe_rows,
+  SUM(CASE WHEN pickable_safe = 0 THEN 1 ELSE 0 END) AS blocked_rows,
+  SUM(CASE WHEN player_match_status = 'unresolved' THEN 1 ELSE 0 END) AS unresolved_player_rows,
+  SUM(CASE WHEN matchup_status = 'calendar_unresolved' THEN 1 ELSE 0 END) AS matchup_unresolved_rows,
+  SUM(CASE WHEN block_reason LIKE '%started_or_expired_by_official_time%' THEN 1 ELSE 0 END) AS started_rows,
+  SUM(CASE WHEN block_reason LIKE '%source_unpickable_flag%' THEN 1 ELSE 0 END) AS source_unpickable_rows,
+  SUM(CASE WHEN block_reason LIKE '%player_team_conflict%' THEN 1 ELSE 0 END) AS player_team_conflict_rows
+FROM score_board_prepared_current
+WHERE prep_batch_id = ?`, [batchId]);
+
+  const totals = {
+    rows_read: Number(totalRow.prepared_rows || 0),
+    rows_written: Number(totalRow.prepared_rows || 0) + 1,
+    prepared_rows: Number(totalRow.prepared_rows || 0),
+    prizepicks_rows: Number(totalRow.prizepicks_rows || 0),
+    sleeper_rows: Number(totalRow.sleeper_rows || 0),
+    pickable_safe_rows: Number(totalRow.pickable_safe_rows || 0),
+    blocked_rows: Number(totalRow.blocked_rows || 0),
+    started_rows: Number(totalRow.started_rows || 0),
+    source_unpickable_rows: Number(totalRow.source_unpickable_rows || 0),
+    unresolved_player_rows: Number(totalRow.unresolved_player_rows || 0),
+    matchup_unresolved_rows: Number(totalRow.matchup_unresolved_rows || 0),
+    player_team_conflict_rows: Number(totalRow.player_team_conflict_rows || 0)
+  };
+
+  const finalBySource = await allRows(env.SCORE_DB, `
+SELECT
+  source_key,
+  COUNT(*) AS rows,
+  SUM(CASE WHEN pickable_safe = 1 THEN 1 ELSE 0 END) AS pickable_safe_rows,
+  SUM(CASE WHEN pickable_safe = 0 THEN 1 ELSE 0 END) AS blocked_rows,
+  SUM(CASE WHEN block_reason LIKE '%started_or_expired_by_official_time%' THEN 1 ELSE 0 END) AS started_rows,
+  SUM(CASE WHEN player_match_status = 'unresolved' THEN 1 ELSE 0 END) AS player_unresolved_rows,
+  SUM(CASE WHEN player_match_status = 'ambiguous' THEN 1 ELSE 0 END) AS player_ambiguous_rows,
+  SUM(CASE WHEN matchup_status = 'calendar_unresolved' THEN 1 ELSE 0 END) AS matchup_unresolved_rows,
+  SUM(CASE WHEN matchup_status = 'calendar_ambiguous' THEN 1 ELSE 0 END) AS matchup_ambiguous_rows,
+  SUM(CASE WHEN block_reason LIKE '%player_team_conflict%' THEN 1 ELSE 0 END) AS player_team_conflict_rows
+FROM score_board_prepared_current
+WHERE prep_batch_id = ?
+GROUP BY source_key
+ORDER BY source_key`, [batchId]).then(rows => rows.map(r => ({
+    source_key: r.source_key,
+    rows: Number(r.rows || 0),
+    pickable_safe_rows: Number(r.pickable_safe_rows || 0),
+    blocked_rows: Number(r.blocked_rows || 0),
+    started_rows: Number(r.started_rows || 0),
+    player_unresolved_rows: Number(r.player_unresolved_rows || 0),
+    player_ambiguous_rows: Number(r.player_ambiguous_rows || 0),
+    matchup_unresolved_rows: Number(r.matchup_unresolved_rows || 0),
+    matchup_ambiguous_rows: Number(r.matchup_ambiguous_rows || 0),
+    player_team_conflict_rows: Number(r.player_team_conflict_rows || 0)
+  })));
+
+  const finalSleeperEvents = await allRows(env.SCORE_DB, `
+SELECT
+  source_event_id,
+  MIN(team_full_name) AS sample_team_full_name,
+  MIN(opponent_full_name) AS sample_opponent_full_name,
+  COUNT(*) AS rows,
+  MIN(official_game_pk) AS official_game_pk,
+  MIN(official_game_time_utc) AS official_game_time_utc,
+  GROUP_CONCAT(DISTINCT matchup_status) AS matchup_statuses,
+  SUM(CASE WHEN pickable_safe = 1 THEN 1 ELSE 0 END) AS pickable_safe_rows,
+  SUM(CASE WHEN pickable_safe = 0 THEN 1 ELSE 0 END) AS blocked_rows,
+  SUM(CASE WHEN player_match_status = 'unresolved' THEN 1 ELSE 0 END) AS player_unresolved_rows
+FROM score_board_prepared_current
+WHERE prep_batch_id = ? AND source_key = 'sleeper'
+GROUP BY source_event_id
+ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
+    source_event_id: r.source_event_id,
+    sample_team_full_name: r.sample_team_full_name,
+    sample_opponent_full_name: r.sample_opponent_full_name,
+    rows: Number(r.rows || 0),
+    official_game_pk: r.official_game_pk ? Number(r.official_game_pk) : null,
+    official_game_time_utc: r.official_game_time_utc || null,
+    matchup_statuses: r.matchup_statuses || null,
+    pickable_safe_rows: Number(r.pickable_safe_rows || 0),
+    blocked_rows: Number(r.blocked_rows || 0),
+    player_unresolved_rows: Number(r.player_unresolved_rows || 0)
+  })));
+
+  timing.verify_ms = Date.now() - verifyStart;
+
+  const finishAt = nowIso();
   await env.SCORE_DB.prepare(`INSERT OR REPLACE INTO score_board_prep_batches (
     batch_id, worker_name, worker_version, mode, status, certification_status, certification_grade,
     prizepicks_rows, sleeper_rows, prepared_rows, pickable_safe_rows, blocked_rows,
@@ -835,17 +929,17 @@ async function writePreparedRows(env, batchId, rows, bySource, startedAt, input)
       totals.unresolved_player_rows,
       totals.matchup_unresolved_rows,
       totals.started_rows,
-      JSON.stringify({ request_id: input.request_id || null, chain_id: input.chain_id || null, by_source: finalBySource, attempted_rows: rows.length, inserted_current_rows: finalRows.length }),
-      JSON.stringify({ ...totals, sleeper_events: finalSleeperEvents, final_db_truth: true, attempted_rows: rows.length, inserted_current_rows: finalRows.length }),
+      JSON.stringify({ request_id: input.request_id || null, chain_id: input.chain_id || null, by_source: finalBySource, attempted_rows: rows.length, inserted_current_rows: totals.prepared_rows, timing_ms: timing }),
+      JSON.stringify({ ...totals, sleeper_events: finalSleeperEvents, final_db_truth: true, attempted_rows: rows.length, inserted_current_rows: totals.prepared_rows, timing_ms: timing }),
       startedAt,
-      nowIso(),
-      nowIso()
+      finishAt,
+      finishAt
     )
     .run();
 
-  return { totals, bySource: finalBySource, sleeperEvents: finalSleeperEvents, finalRows };
+  timing.write_total_ms = Date.now() - writeStart;
+  return { totals, bySource: finalBySource, sleeperEvents: finalSleeperEvents, insertedCurrentRows: totals.prepared_rows };
 }
-
 function computeTotals(rows) {
   let prizepicks_rows = 0, sleeper_rows = 0, pickable_safe_rows = 0, blocked_rows = 0, unresolved_player_rows = 0, matchup_unresolved_rows = 0, started_rows = 0, source_unpickable_rows = 0, player_team_conflict_rows = 0;
   for (const r of rows) {
@@ -876,7 +970,9 @@ function computeTotals(rows) {
 }
 
 async function runBoardPrep(env, input) {
+  const wallStart = Date.now();
   const startedAt = nowIso();
+  const timing = {};
   const requestId = input.request_id || `score_prep_${Date.now()}`;
   const batchId = `score_board_prep_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -885,25 +981,38 @@ async function runBoardPrep(env, input) {
     if (!bindings[required]) throw new Error(`missing_required_binding_${required}`);
   }
 
+  const loadStart = Date.now();
   const [{ prizepicksRows, sleeperRows }, ref] = await Promise.all([
     loadMarketRows(env),
     loadReference(env)
   ]);
   const dates = collectCalendarDates(prizepicksRows, sleeperRows);
   const calendar = await loadCalendar(env, dates);
+  timing.load_ms = Date.now() - loadStart;
   const now = new Date();
 
+  const resolveStart = Date.now();
   const prepared = [
     ...preparePrizePicksRows(prizepicksRows, ref, calendar, batchId, now),
     ...prepareSleeperRows(sleeperRows, ref, calendar, batchId, now)
   ];
+  timing.resolve_ms = Date.now() - resolveStart;
   const initialBySource = summarizeBySource(prepared);
-  const writeResult = await writePreparedRows(env, batchId, prepared, initialBySource, startedAt, input);
+  const writeResult = await writePreparedRows(env, batchId, prepared, initialBySource, startedAt, input, timing);
   const totals = writeResult.totals;
   const bySource = writeResult.bySource;
-  const finalPrepared = writeResult.finalRows;
 
-  const blockedSamples = finalPrepared.filter(r => r.pickable_safe === 0).slice(0, 20).map(r => ({
+  const sampleStart = Date.now();
+  const blockedSampleRows = await allRows(env.SCORE_DB, `
+SELECT source_key, player_name, team, opponent, canonical_prop_key, line_value, official_game_pk,
+       official_game_time_utc, matchup_status, player_match_status, pickable_safe, block_reason
+FROM score_board_prepared_current
+WHERE prep_batch_id = ? AND pickable_safe = 0
+ORDER BY source_key, source_event_id, player_name, canonical_prop_key
+LIMIT 20`, [batchId]);
+  timing.sample_ms = Date.now() - sampleStart;
+
+  const blockedSamples = blockedSampleRows.map(r => ({
     source_key: r.source_key,
     player_name: r.player_name,
     team: r.team,
@@ -933,7 +1042,7 @@ async function runBoardPrep(env, input) {
     certification_grade: totals.blocked_rows > 0 ? "PREP_PASS_WITH_BLOCK_FLAGS" : "PREP_PASS",
     ...totals,
     attempted_rows: prepared.length,
-    inserted_current_rows: finalPrepared.length,
+    inserted_current_rows: writeResult.insertedCurrentRows,
     final_db_truth: true,
     by_source: bySource,
     sleeper_event_resolution: writeResult.sleeperEvents,
@@ -947,8 +1056,9 @@ async function runBoardPrep(env, input) {
     no_scoring: true,
     no_ranking: true,
     no_final_board: true,
+    timing_ms: { ...timing, total_ms: Date.now() - wallStart },
     timestamp_utc: nowIso(),
-    elapsed_ms: Date.now() - new Date(startedAt).getTime()
+    elapsed_ms: Date.now() - wallStart
   };
 }
 
