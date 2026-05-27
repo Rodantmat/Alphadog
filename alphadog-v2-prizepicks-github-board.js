@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.7-stale-source-refresh-dispatch";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.8-multi-surface-freshness-select";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
@@ -11,7 +11,7 @@ const SOURCE_STALE_CERT = "PRIZEPICKS_SOURCE_STALE_NO_FUTURE_PICKABLE_ROWS";
 const MAX_RAW_JSON_CHARS = 180000;
 const MAX_HEALTH_JSON_CHARS = 7000;
 const MAX_OUTPUT_PREVIEW_CHARS = 900;
-const STAGE_INSERT_CHUNK_SIZE = 20;
+const STAGE_INSERT_CHUNK_SIZE = 50;
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "MARKET_DB"];
 const REQUIRED_CONFIG_VALUES = ["GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH"];
@@ -92,12 +92,12 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "READY",
     timestamp_utc: nowUtc(),
-    phase: "prizepicks_github_board_parse_stage_certify_promote_sha_fetch_dispatch_v0_1_7",
+    phase: "prizepicks_github_board_multi_surface_freshness_select_v0_1_8",
     notes: [
       "Reads the configured PrizePicks GitHub JSON source.",
       "Parses JSON, stages PrizePicks rows into MARKET_DB.prizepicks_board_stage, and writes a batch certification row.",
       "Promotes only certified staged rows into MARKET_DB.prizepicks_board_current and flips MARKET_DB.prizepicks_board_active_batches after inserts succeed.",
-      "No market_current_lines writes, no scoring, no ranking, no final board. If GitHub JSON is stale, dispatch the existing GitHub scraper workflow and require a later fresh consumer run before Board Full Run can pass."
+      "No market_current_lines writes, no scoring, no ranking, no final board. Fetches multiple GitHub surfaces, selects the freshest valid PrizePicks JSON candidate, and only treats the source as stale when every usable candidate has no future pickable rows. If all consumed candidates are stale, dispatch the existing GitHub scraper workflow and require a later fresh consumer run before Board Full Run can pass."
     ],
     binding_summary: {
       required_db_bindings_present: allTrue(db),
@@ -860,80 +860,363 @@ async function promoteCertifiedBatch(env, batchId, slateDate, cert, stagedRows, 
   };
 }
 
-async function fetchGithubContentsMetadata(source, env) {
+function githubHeaders(env, accept = "application/vnd.github+json") {
   const headers = {
-    "accept": "application/vnd.github+json",
-    "user-agent": "AlphaDog-v2 PrizePicks GitHub Board Worker",
-    "x-github-api-version": "2022-11-28",
-    "cache-control": "no-cache"
-  };
-  if (env.GITHUB_TOKEN) headers.authorization = `Bearer ${env.GITHUB_TOKEN}`;
-  const res = await fetch(source.contents_api_url, { method: "GET", headers });
-  const text = await res.text();
-  let parsed = null;
-  try { parsed = JSON.parse(text); } catch (_) {}
-  const sha = parsed && parsed.sha ? String(parsed.sha) : null;
-  const size = parsed && typeof parsed.size === "number" ? parsed.size : null;
-  const htmlUrl = parsed && parsed.html_url ? String(parsed.html_url) : null;
-  const gitUrl = parsed && parsed.git_url ? String(parsed.git_url) : null;
-  return {
-    ok: Boolean(res.ok && sha),
-    http_status: res.status,
-    content_type: res.headers.get("content-type"),
-    sha,
-    size,
-    html_url: htmlUrl,
-    git_url: gitUrl,
-    response_preview: res.ok ? null : safeString(text, 700),
-    api_url: source.contents_api_url
-  };
-}
-
-async function fetchGithubJsonBySha(source, env) {
-  const meta = await fetchGithubContentsMetadata(source, env);
-  if (!meta.ok || !meta.sha) {
-    return {
-      ok: false,
-      metadata: meta,
-      url: source.contents_api_url,
-      http_status: meta.http_status,
-      content_type: meta.content_type,
-      text: meta.response_preview || "",
-      error: "GitHub Contents API did not return a usable blob sha for the configured PrizePicks JSON file."
-    };
-  }
-
-  const blobUrl = meta.git_url || buildGithubBlobApiUrl(source.owner, source.repo, meta.sha);
-  const headers = {
-    "accept": "application/vnd.github+json",
+    "accept": accept,
     "user-agent": "AlphaDog-v2 PrizePicks GitHub Board Worker",
     "x-github-api-version": "2022-11-28",
     "cache-control": "no-cache, no-store, max-age=0",
     "pragma": "no-cache"
   };
-  if (env.GITHUB_TOKEN) headers.authorization = `Bearer ${env.GITHUB_TOKEN}`;
-  const res = await fetch(blobUrl, { method: "GET", headers });
-  const body = await res.text();
+  if (env && env.GITHUB_TOKEN) headers.authorization = `Bearer ${env.GITHUB_TOKEN}`;
+  return headers;
+}
+
+function withCacheBust(url, label) {
+  const text = String(url || "");
+  if (!text) return text;
+  const joiner = text.includes("?") ? "&" : "?";
+  return `${text}${joiner}alphadog_cache_bust=${encodeURIComponent(`${Date.now()}_${label || "fresh"}`)}`;
+}
+
+function buildGithubRefApiUrl(owner, repo, branch) {
+  return `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/ref/heads/${encodeURIComponent(branch)}`;
+}
+
+function buildGithubContentsApiUrlForRef(owner, repo, ref, path) {
+  const cleanPath = String(path || "").replace(/^\/+/, "").trim();
+  return `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${cleanPath.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(ref)}`;
+}
+
+async function fetchGithubRefHead(source, env) {
+  const url = buildGithubRefApiUrl(source.owner, source.repo, source.branch);
+  try {
+    const res = await fetch(withCacheBust(url, "ref_head"), { method: "GET", headers: githubHeaders(env) });
+    const text = await res.text();
+    let parsed = null;
+    try { parsed = JSON.parse(text); } catch (_) {}
+    const sha = parsed && parsed.object && parsed.object.sha ? String(parsed.object.sha) : null;
+    return {
+      ok: Boolean(res.ok && sha),
+      http_status: res.status,
+      content_type: res.headers.get("content-type"),
+      branch: source.branch,
+      commit_sha: sha,
+      api_url: url,
+      response_preview: res.ok ? null : safeString(text, 700)
+    };
+  } catch (err) {
+    return { ok: false, http_status: null, content_type: null, branch: source.branch, commit_sha: null, api_url: url, error: safeString(err && err.message ? err.message : err, 700) };
+  }
+}
+
+async function fetchGithubContentsMetadata(source, env, refOverride = null, label = "branch") {
+  const ref = refOverride || source.branch;
+  const apiUrl = buildGithubContentsApiUrlForRef(source.owner, source.repo, ref, source.path);
+  try {
+    const res = await fetch(withCacheBust(apiUrl, `contents_${label}`), { method: "GET", headers: githubHeaders(env) });
+    const text = await res.text();
+    let parsed = null;
+    try { parsed = JSON.parse(text); } catch (_) {}
+    const sha = parsed && parsed.sha ? String(parsed.sha) : null;
+    const size = parsed && typeof parsed.size === "number" ? parsed.size : null;
+    const htmlUrl = parsed && parsed.html_url ? String(parsed.html_url) : null;
+    const gitUrl = parsed && parsed.git_url ? String(parsed.git_url) : null;
+    const downloadUrl = parsed && parsed.download_url ? String(parsed.download_url) : null;
+    return {
+      ok: Boolean(res.ok && sha),
+      http_status: res.status,
+      content_type: res.headers.get("content-type"),
+      ref,
+      label,
+      sha,
+      size,
+      html_url: htmlUrl,
+      git_url: gitUrl,
+      download_url: downloadUrl,
+      response_preview: res.ok ? null : safeString(text, 700),
+      api_url: apiUrl
+    };
+  } catch (err) {
+    return { ok: false, http_status: null, content_type: null, ref, label, sha: null, size: null, api_url: apiUrl, error: safeString(err && err.message ? err.message : err, 700) };
+  }
+}
+
+function summarizeCandidateJsonText(text) {
+  const sizeBytes = new TextEncoder().encode(String(text || "")).length;
   let parsed = null;
-  try { parsed = JSON.parse(body); } catch (_) {}
-  let text = "";
-  let decodeError = null;
-  if (res.ok && parsed && parsed.encoding === "base64" && typeof parsed.content === "string") {
-    try { text = decodeBase64Utf8(parsed.content); } catch (err) { decodeError = safeString(err && err.message ? err.message : err, 700); }
+  try { parsed = JSON.parse(text); } catch (err) {
+    return { json_parse_ok: false, size_bytes: sizeBytes, error: safeString(err && err.message ? err.message : err, 500), row_count: 0, future_pickable_rows: 0 };
+  }
+  const detected = detectArray(parsed);
+  const rows = detected.rows || [];
+  const nowMs = Date.now();
+  let future = 0;
+  let expired = 0;
+  let missing = 0;
+  let invalid = 0;
+  let minStart = null;
+  let maxStart = null;
+  let minStartUtc = null;
+  let maxStartUtc = null;
+  const statuses = new Map();
+  const games = new Set();
+  for (const row of rows) {
+    const attrs = row && row.attributes && typeof row.attributes === "object" ? row.attributes : row || {};
+    const rawStatus = attrs.status === undefined || attrs.status === null ? "unknown" : String(attrs.status);
+    statuses.set(rawStatus, (statuses.get(rawStatus) || 0) + 1);
+    const gameId = attrs.game_id || getDeepValue(row, ["relationships.game.data.id"]);
+    if (gameId !== undefined && gameId !== null && String(gameId)) games.add(String(gameId));
+    const start = attrs.start_time || attrs.startTime || attrs.start || null;
+    if (!start) { missing++; continue; }
+    const ms = Date.parse(String(start));
+    if (!Number.isFinite(ms)) { invalid++; continue; }
+    const iso = new Date(ms).toISOString();
+    if (minStart === null || String(start) < minStart) minStart = String(start);
+    if (maxStart === null || String(start) > maxStart) maxStart = String(start);
+    if (minStartUtc === null || iso < minStartUtc) minStartUtc = iso;
+    if (maxStartUtc === null || iso > maxStartUtc) maxStartUtc = iso;
+    const normalizedStatus = rawStatus.toLowerCase().trim();
+    const blockedByStatus = ["final", "complete", "completed", "canceled", "cancelled", "postponed", "suspended", "closed", "settled", "removed"].includes(normalizedStatus);
+    if (!blockedByStatus && ms > nowMs) future++;
+    else expired++;
   }
   return {
-    ok: Boolean(res.ok && text && !decodeError),
-    metadata: meta,
-    url: blobUrl,
+    json_parse_ok: true,
+    size_bytes: sizeBytes,
+    detected_rows_key: detected.key,
+    row_count: rows.length,
+    future_pickable_rows: future,
+    expired_or_started_rows: expired,
+    missing_start_time_rows: missing,
+    invalid_start_time_rows: invalid,
+    min_start_time: minStart,
+    max_start_time: maxStart,
+    min_start_time_utc: minStartUtc,
+    max_start_time_utc: maxStartUtc,
+    distinct_games: games.size,
+    status_distribution: Array.from(statuses.entries()).map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count).slice(0, 12)
+  };
+}
+
+async function fetchTextCandidate(url, env, label, headers = null, metadata = null) {
+  const started = Date.now();
+  try {
+    const res = await fetch(withCacheBust(url, label), { method: "GET", headers: headers || githubHeaders(env, "application/vnd.github.raw+json, application/json, text/plain, */*") });
+    const text = await res.text();
+    const summary = summarizeCandidateJsonText(text);
+    return {
+      ok: Boolean(res.ok && summary.json_parse_ok && summary.row_count > 0),
+      label,
+      url,
+      http_status: res.status,
+      content_type: res.headers.get("content-type"),
+      elapsed_ms: Date.now() - started,
+      metadata,
+      text,
+      summary,
+      error: res.ok ? (summary.json_parse_ok ? null : summary.error) : `HTTP ${res.status}`,
+      response_preview: res.ok ? null : safeString(text, 700)
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      label,
+      url,
+      http_status: null,
+      content_type: null,
+      elapsed_ms: Date.now() - started,
+      metadata,
+      text: "",
+      summary: { json_parse_ok: false, row_count: 0, future_pickable_rows: 0, error: safeString(err && err.message ? err.message : err, 700) },
+      error: safeString(err && err.message ? err.message : err, 700)
+    };
+  }
+}
+
+async function fetchBlobCandidate(blobUrl, source, env, label, metadata = null) {
+  const started = Date.now();
+  try {
+    const res = await fetch(withCacheBust(blobUrl, label), { method: "GET", headers: githubHeaders(env) });
+    const body = await res.text();
+    let parsed = null;
+    try { parsed = JSON.parse(body); } catch (_) {}
+    let text = "";
+    let decodeError = null;
+    if (res.ok && parsed && parsed.encoding === "base64" && typeof parsed.content === "string") {
+      try { text = decodeBase64Utf8(parsed.content); } catch (err) { decodeError = safeString(err && err.message ? err.message : err, 700); }
+    }
+    const summary = text ? summarizeCandidateJsonText(text) : { json_parse_ok: false, row_count: 0, future_pickable_rows: 0, error: decodeError || "GitHub blob API did not return decodable base64 content." };
+    return {
+      ok: Boolean(res.ok && text && !decodeError && summary.json_parse_ok && summary.row_count > 0),
+      label,
+      url: blobUrl,
+      raw_branch_url: source.raw_branch_url || source.url,
+      fetch_mode: "github_blob_api_base64",
+      http_status: res.status,
+      content_type: res.headers.get("content-type"),
+      elapsed_ms: Date.now() - started,
+      metadata,
+      blob_encoding: parsed && parsed.encoding ? String(parsed.encoding) : null,
+      blob_size: parsed && typeof parsed.size === "number" ? parsed.size : null,
+      text,
+      summary,
+      error: res.ok ? (decodeError || (summary.json_parse_ok ? null : summary.error)) : `GitHub blob API fetch failed with HTTP ${res.status}`,
+      response_preview: res.ok ? null : safeString(body, 700)
+    };
+  } catch (err) {
+    return { ok: false, label, url: blobUrl, fetch_mode: "github_blob_api_base64", http_status: null, content_type: null, elapsed_ms: Date.now() - started, metadata, text: "", summary: { json_parse_ok: false, row_count: 0, future_pickable_rows: 0 }, error: safeString(err && err.message ? err.message : err, 700) };
+  }
+}
+
+function candidatePublicSummary(candidate) {
+  const summary = candidate && candidate.summary ? candidate.summary : {};
+  const metadata = candidate && candidate.metadata ? candidate.metadata : null;
+  return {
+    label: candidate ? candidate.label : null,
+    ok: Boolean(candidate && candidate.ok),
+    http_status: candidate ? candidate.http_status : null,
+    content_type: candidate ? candidate.content_type : null,
+    metadata_sha: metadata && metadata.sha ? metadata.sha : null,
+    metadata_size: metadata && metadata.size !== undefined ? metadata.size : null,
+    metadata_ref: metadata && metadata.ref ? metadata.ref : null,
+    blob_size: candidate && candidate.blob_size !== undefined ? candidate.blob_size : null,
+    response_size_bytes: summary.size_bytes || 0,
+    row_count: summary.row_count || 0,
+    future_pickable_rows: summary.future_pickable_rows || 0,
+    expired_or_started_rows: summary.expired_or_started_rows || 0,
+    min_start_time: summary.min_start_time || null,
+    max_start_time: summary.max_start_time || null,
+    min_start_time_utc: summary.min_start_time_utc || null,
+    max_start_time_utc: summary.max_start_time_utc || null,
+    distinct_games: summary.distinct_games || 0,
+    error: candidate && candidate.error ? safeString(candidate.error, 500) : null
+  };
+}
+
+function chooseBestGithubCandidate(candidates) {
+  const usable = candidates.filter(c => c && c.ok && c.summary && c.summary.row_count > 0);
+  if (!usable.length) return null;
+  usable.sort((a, b) => {
+    const af = a.summary.future_pickable_rows || 0;
+    const bf = b.summary.future_pickable_rows || 0;
+    if (bf !== af) return bf - af;
+    const ar = a.summary.row_count || 0;
+    const br = b.summary.row_count || 0;
+    if (br !== ar) return br - ar;
+    const as = a.summary.size_bytes || 0;
+    const bs = b.summary.size_bytes || 0;
+    if (bs !== as) return bs - as;
+    return String(a.label || "").localeCompare(String(b.label || ""));
+  });
+  return usable[0];
+}
+
+async function fetchGithubJsonBySha(source, env) {
+  const externalCalls = { count: 0 };
+  const candidates = [];
+  const metadataList = [];
+
+  const branchMeta = await fetchGithubContentsMetadata(source, env, source.branch, "branch_contents");
+  externalCalls.count++;
+  metadataList.push(branchMeta);
+
+  const head = await fetchGithubRefHead(source, env);
+  externalCalls.count++;
+  let commitMeta = null;
+  if (head && head.ok && head.commit_sha) {
+    commitMeta = await fetchGithubContentsMetadata(source, env, head.commit_sha, "head_commit_contents");
+    externalCalls.count++;
+    metadataList.push(commitMeta);
+  }
+
+  const addMetaCandidates = async (meta, labelPrefix) => {
+    if (!meta || !meta.ok) return;
+    if (meta.download_url) {
+      const c = await fetchTextCandidate(meta.download_url, env, `${labelPrefix}_download_url`, githubHeaders(env, "application/vnd.github.raw+json, application/json, text/plain, */*"), meta);
+      externalCalls.count++;
+      candidates.push(c);
+    }
+    if (meta.git_url || meta.sha) {
+      const blobUrl = meta.git_url || buildGithubBlobApiUrl(source.owner, source.repo, meta.sha);
+      const c = await fetchBlobCandidate(blobUrl, source, env, `${labelPrefix}_blob_api`, meta);
+      externalCalls.count++;
+      candidates.push(c);
+    }
+  };
+
+  await addMetaCandidates(branchMeta, "branch_contents");
+  if (commitMeta && (!branchMeta || commitMeta.sha !== branchMeta.sha || commitMeta.size !== branchMeta.size)) {
+    await addMetaCandidates(commitMeta, "head_commit_contents");
+  } else if (commitMeta && branchMeta && commitMeta.sha === branchMeta.sha && commitMeta.size === branchMeta.size) {
+    metadataList.push({ ...commitMeta, duplicate_of_branch_metadata: true });
+  }
+
+  const rawBranch = await fetchTextCandidate(source.raw_branch_url || source.url, env, "raw_branch_cache_bust", githubHeaders(env, "application/json, text/plain, */*"), { ref: source.branch, api_url: source.raw_branch_url || source.url });
+  externalCalls.count++;
+  candidates.push(rawBranch);
+
+  if (head && head.ok && head.commit_sha) {
+    const rawCommitUrl = buildRawGithubCommitUrl(source.owner, source.repo, head.commit_sha, source.path);
+    const rawCommit = await fetchTextCandidate(rawCommitUrl, env, "raw_head_commit_cache_bust", githubHeaders(env, "application/json, text/plain, */*"), { ref: head.commit_sha, commit_sha: head.commit_sha, api_url: rawCommitUrl });
+    externalCalls.count++;
+    candidates.push(rawCommit);
+  }
+
+  const selected = chooseBestGithubCandidate(candidates);
+  const publicCandidates = candidates.map(candidatePublicSummary);
+  const metadataSummary = metadataList.map(m => ({
+    ok: Boolean(m && m.ok),
+    label: m && m.label ? m.label : null,
+    ref: m && m.ref ? m.ref : null,
+    http_status: m ? m.http_status : null,
+    sha: m && m.sha ? m.sha : null,
+    size: m && m.size !== undefined ? m.size : null,
+    download_url_present: Boolean(m && m.download_url),
+    git_url_present: Boolean(m && m.git_url),
+    api_url: m && m.api_url ? m.api_url : null,
+    duplicate_of_branch_metadata: Boolean(m && m.duplicate_of_branch_metadata),
+    error: m && m.error ? safeString(m.error, 500) : null,
+    response_preview: m && m.response_preview ? safeString(m.response_preview, 500) : null
+  }));
+
+  if (!selected) {
+    return {
+      ok: false,
+      metadata: branchMeta,
+      metadata_all: metadataSummary,
+      head_ref: head,
+      candidates: publicCandidates,
+      selected_candidate: null,
+      external_calls_performed: externalCalls.count,
+      url: source.contents_api_url,
+      http_status: branchMeta ? branchMeta.http_status : null,
+      content_type: branchMeta ? branchMeta.content_type : null,
+      text: "",
+      error: "No GitHub surface returned usable PrizePicks JSON rows. See source_fetch_candidates for per-surface failure details.",
+      fetch_mode: "github_multi_surface_freshness_select"
+    };
+  }
+
+  return {
+    ok: true,
+    metadata: selected.metadata || branchMeta,
+    metadata_all: metadataSummary,
+    head_ref: head,
+    candidates: publicCandidates,
+    selected_candidate: candidatePublicSummary(selected),
+    selected_label: selected.label,
+    url: selected.url,
     raw_branch_url: source.raw_branch_url || source.url,
-    fetch_mode: "github_contents_api_blob_sha_fetch",
-    http_status: res.status,
-    content_type: res.headers.get("content-type"),
-    blob_encoding: parsed && parsed.encoding ? String(parsed.encoding) : null,
-    blob_size: parsed && typeof parsed.size === "number" ? parsed.size : null,
-    text,
-    error: res.ok ? (decodeError || (!text ? "GitHub blob API did not return decodable base64 content." : null)) : `GitHub blob API fetch failed with HTTP ${res.status}`,
-    response_preview: res.ok ? null : safeString(body, 700)
+    fetch_mode: "github_multi_surface_freshness_select",
+    http_status: selected.http_status,
+    content_type: selected.content_type,
+    blob_encoding: selected.blob_encoding || null,
+    blob_size: selected.blob_size || null,
+    text: selected.text,
+    error: null,
+    response_preview: null,
+    external_calls_performed: externalCalls.count
   };
 }
 
@@ -955,7 +1238,7 @@ async function runBoardParseStageCertify(env, input = {}) {
     text = sourceFetch.text || "";
   } catch (err) {
     const error = safeString(err && err.message ? err.message : err);
-    const health = { version: VERSION, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, raw_branch_url: source.raw_branch_url, contents_api_url: source.contents_api_url, config_resolution: source.config_resolution }, fetch_started_at: fetchStarted, checked_at: nowUtc(), reachable: false, http_status: null, json_parse_ok: false, error, fetch_mode: "github_contents_api_blob_sha_fetch", no_market_current_lines_write: true, no_scoring: true };
+    const health = { version: VERSION, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, raw_branch_url: source.raw_branch_url, contents_api_url: source.contents_api_url, config_resolution: source.config_resolution }, fetch_started_at: fetchStarted, checked_at: nowUtc(), reachable: false, http_status: null, json_parse_ok: false, error, fetch_mode: "github_multi_surface_freshness_select", no_market_current_lines_write: true, no_scoring: true };
     const write = await writeHealth(env, "error", 0, health, error);
     return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_UNREACHABLE", rows_read: 0, rows_staged: 0, rows_written: 1, external_calls_performed: 1, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
   }
@@ -966,9 +1249,9 @@ async function runBoardParseStageCertify(env, input = {}) {
 
   if (!sourceFetch || !sourceFetch.ok) {
     const error = sourceFetch && sourceFetch.error ? sourceFetch.error : `GitHub blob-sha source fetch failed with HTTP ${httpStatus}`;
-    const health = { version: VERSION, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, raw_branch_url: source.raw_branch_url, contents_api_url: source.contents_api_url, config_resolution: source.config_resolution }, github_file_metadata: sourceFetch ? sourceFetch.metadata : null, fetched_url: sourceFetch ? sourceFetch.url : null, fetch_mode: sourceFetch ? sourceFetch.fetch_mode : "github_contents_api_blob_sha_fetch", fetch_started_at: fetchStarted, checked_at: nowUtc(), reachable: false, http_status: httpStatus, content_type: contentType, response_size_bytes: sizeBytes, json_parse_ok: false, error, response_preview: safeString(text, 500), no_market_current_lines_write: true, no_scoring: true };
+    const health = { version: VERSION, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, raw_branch_url: source.raw_branch_url, contents_api_url: source.contents_api_url, config_resolution: source.config_resolution }, github_file_metadata: sourceFetch ? sourceFetch.metadata : null, github_file_metadata_all: sourceFetch ? sourceFetch.metadata_all : null, github_head_ref: sourceFetch ? sourceFetch.head_ref : null, fetched_url: sourceFetch ? sourceFetch.url : null, fetch_mode: sourceFetch ? sourceFetch.fetch_mode : "github_multi_surface_freshness_select", selected_source_candidate: sourceFetch ? sourceFetch.selected_candidate : null, source_fetch_candidates: sourceFetch ? sourceFetch.candidates : [], fetch_started_at: fetchStarted, checked_at: nowUtc(), reachable: false, http_status: httpStatus, content_type: contentType, response_size_bytes: sizeBytes, json_parse_ok: false, error, response_preview: safeString(text, 500), no_market_current_lines_write: true, no_scoring: true };
     const write = await writeHealth(env, "error", 0, health, error);
-    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_HTTP_ERROR", rows_read: 0, rows_staged: 0, rows_written: 1, external_calls_performed: 2 + (sourceRefreshDispatch && sourceRefreshDispatch.attempted ? 1 : 0), elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_HTTP_ERROR", rows_read: 0, rows_staged: 0, rows_written: 1, external_calls_performed: sourceFetch && sourceFetch.external_calls_performed ? sourceFetch.external_calls_performed : 0, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
   }
 
   const pathLower = String(source.path || "").toLowerCase();
@@ -1048,8 +1331,12 @@ async function runBoardParseStageCertify(env, input = {}) {
     source_key: SOURCE_KEY,
     source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, raw_branch_url: source.raw_branch_url, contents_api_url: source.contents_api_url, config_resolution: source.config_resolution },
     github_file_metadata: sourceFetch ? sourceFetch.metadata : null,
+    github_file_metadata_all: sourceFetch ? sourceFetch.metadata_all : null,
+    github_head_ref: sourceFetch ? sourceFetch.head_ref : null,
     fetched_url: sourceFetch ? sourceFetch.url : null,
-    fetch_mode: sourceFetch ? sourceFetch.fetch_mode : "github_contents_api_blob_sha_fetch",
+    fetch_mode: sourceFetch ? sourceFetch.fetch_mode : "github_multi_surface_freshness_select",
+    selected_source_candidate: sourceFetch ? sourceFetch.selected_candidate : null,
+    source_fetch_candidates: sourceFetch ? sourceFetch.candidates : [],
     fetch_started_at: fetchStarted,
     checked_at: nowUtc(),
     reachable: true,
@@ -1059,6 +1346,10 @@ async function runBoardParseStageCertify(env, input = {}) {
     json_parse_ok: true,
     slate_date: slateDate,
     shape,
+    selected_source_candidate: sourceFetch ? sourceFetch.selected_candidate : null,
+    source_fetch_candidates: sourceFetch ? sourceFetch.candidates : [],
+    github_file_metadata_all: sourceFetch ? sourceFetch.metadata_all : null,
+    github_head_ref: sourceFetch ? sourceFetch.head_ref : null,
     batch: { batch_id: batchId, certification_status: finalCertification, certification_reason: finalReason, valid_rate: cert.validRate },
     board_timing: boardTiming,
     promotion,
@@ -1096,10 +1387,14 @@ async function runBoardParseStageCertify(env, input = {}) {
     invalid_rows: cert.invalidRows,
     valid_rate: Number(cert.validRate.toFixed(4)),
     rows_written: 5 + stagedRows.length + (promotion.rows_promoted || 0),
-    external_calls_performed: 2,
+    external_calls_performed: sourceFetch && sourceFetch.external_calls_performed ? sourceFetch.external_calls_performed : 0,
     elapsed_ms: Date.now() - started,
-    source_config_safe: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution },
+    source_config_safe: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, config_resolution: source.config_resolution, selected_source_candidate: sourceFetch ? sourceFetch.selected_candidate : null },
     shape,
+    selected_source_candidate: sourceFetch ? sourceFetch.selected_candidate : null,
+    source_fetch_candidates: sourceFetch ? sourceFetch.candidates : [],
+    github_file_metadata_all: sourceFetch ? sourceFetch.metadata_all : null,
+    github_head_ref: sourceFetch ? sourceFetch.head_ref : null,
     batch: { batch_id: batchId, certification_status: finalCertification, certification_checks: cert.checks, failed_checks: cert.failed_checks },
     board_timing: boardTiming,
     promotion,
@@ -1118,7 +1413,7 @@ async function runBoardParseStageCertify(env, input = {}) {
       github_source_refresh_dispatch_enabled: true,
       manual_buttons: ["BOARD > PrizePicks", "ORCHESTRATOR > Wake"]
     },
-    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, or final board. v0.1.7 dispatches the GitHub producer workflow when the consumed JSON is stale.",
+    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, or final board. v0.1.8 compares GitHub metadata/download/raw/blob surfaces and selects the freshest valid JSON before any stale-clear decision.",
     timestamp_utc: nowUtc()
   };
 }
