@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.2-schema-exec-fix-sleeper-calendar-pair-resolver";
+const VERSION = "alphadog-v2-score-prep-v0.2.3-sleeper-suffix-flex-player-resolver";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_SLEEPER = "sleeper";
@@ -50,6 +50,13 @@ function normalizeName(v) {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
+}
+
+function normalizeNameWithoutSuffix(v) {
+  const suffixTokens = new Set(["jr", "sr", "ii", "iii", "iv", "v"]);
+  const parts = normalizeName(v).split(" ").filter(Boolean);
+  while (parts.length > 1 && suffixTokens.has(parts[parts.length - 1])) parts.pop();
+  return parts.join(" ");
 }
 
 function normalizeTeam(v) {
@@ -246,12 +253,18 @@ async function loadReference(env) {
 
   const playerById = new Map();
   const aliasMap = new Map();
-  function addAlias(alias, playerId) {
-    const key = normalizeName(alias);
+  const suffixAliasMap = new Map();
+  function addToMap(map, key, playerId) {
     const pid = Number(playerId);
     if (!key || !pid) return;
-    if (!aliasMap.has(key)) aliasMap.set(key, new Set());
-    aliasMap.get(key).add(pid);
+    if (!map.has(key)) map.set(key, new Set());
+    map.get(key).add(pid);
+  }
+  function addAlias(alias, playerId) {
+    const key = normalizeName(alias);
+    const suffixKey = normalizeNameWithoutSuffix(alias);
+    addToMap(aliasMap, key, playerId);
+    addToMap(suffixAliasMap, suffixKey, playerId);
   }
 
   for (const p of players) {
@@ -279,7 +292,7 @@ async function loadReference(env) {
     addAlias(a.alias_normalized, a.player_id);
   }
 
-  return { teams, players, aliases, teamByMlbId, teamByAbbr, teamByFull, playerById, aliasMap };
+  return { teams, players, aliases, teamByMlbId, teamByAbbr, teamByFull, playerById, aliasMap, suffixAliasMap };
 }
 
 async function loadCalendar(env, dateSet) {
@@ -361,25 +374,64 @@ function resolveCalendarByAbbrPair(calendar, ref, officialDate, teamAbbr, oppAbb
   return resolveCalendarByTeamNames(calendar, officialDate, team.full_name, opp.full_name, sourceStartTime);
 }
 
+function gameTeamFilter(ref, candidates, game) {
+  if (!game || !candidates.length) return { filtered: candidates, allowed_team_ids: [] };
+  const homeTeam = ref.teamByFull.get(normalizeTeam(game.home_team_name));
+  const awayTeam = ref.teamByFull.get(normalizeTeam(game.away_team_name));
+  const allowed = new Set([homeTeam && homeTeam.mlb_team_id, awayTeam && awayTeam.mlb_team_id].filter(Boolean).map(Number));
+  if (!allowed.size) return { filtered: candidates, allowed_team_ids: [] };
+  const filtered = candidates.filter(p => allowed.has(Number(p.current_mlb_team_id)));
+  return { filtered, allowed_team_ids: Array.from(allowed) };
+}
+
 function resolvePlayer(ref, playerName, game) {
   const key = normalizeName(playerName);
-  const ids = Array.from(ref.aliasMap.get(key) || []);
-  if (ids.length === 0) {
-    return { status: "unresolved", confidence: "no_alias_match", player: null, candidate_count: 0 };
+  const exactIds = Array.from(ref.aliasMap.get(key) || []);
+
+  if (exactIds.length > 0) {
+    let candidates = exactIds.map(id => ref.playerById.get(id)).filter(Boolean);
+    const originalCount = candidates.length;
+    const filteredResult = gameTeamFilter(ref, candidates, game);
+    if (game && filteredResult.filtered.length > 0) candidates = filteredResult.filtered;
+
+    if (candidates.length === 1) {
+      return { status: "matched", confidence: "exact_name", player: candidates[0], candidate_count: exactIds.length };
+    }
+    return { status: "ambiguous", confidence: "ambiguous_exact_name", player: null, candidate_count: originalCount || exactIds.length };
   }
 
-  let candidates = ids.map(id => ref.playerById.get(id)).filter(Boolean);
-  if (game && candidates.length > 1) {
-    const homeTeam = ref.teamByFull.get(normalizeTeam(game.home_team_name));
-    const awayTeam = ref.teamByFull.get(normalizeTeam(game.away_team_name));
-    const allowed = new Set([homeTeam && homeTeam.mlb_team_id, awayTeam && awayTeam.mlb_team_id].filter(Boolean));
-    const filtered = candidates.filter(p => allowed.has(Number(p.current_mlb_team_id)));
-    if (filtered.length === 1) candidates = filtered;
-    else if (filtered.length > 1) candidates = filtered;
+  // Sleeper often omits legal display suffixes while REF/MLB keeps them:
+  // Bobby Witt -> Bobby Witt Jr.; Jazz Chisholm -> Jazz Chisholm Jr.;
+  // Michael Harris -> Michael Harris II; Fernando Tatis -> Fernando Tatis Jr.
+  // This fallback is intentionally conservative: it only accepts one active
+  // candidate, and with an official game it must belong to one of the two teams.
+  const suffixKey = normalizeNameWithoutSuffix(playerName);
+  const suffixIds = Array.from(ref.suffixAliasMap.get(suffixKey) || []);
+  if (suffixIds.length > 0) {
+    const suffixCandidates = suffixIds.map(id => ref.playerById.get(id)).filter(Boolean);
+    const filteredResult = gameTeamFilter(ref, suffixCandidates, game);
+    const candidates = game ? filteredResult.filtered : suffixCandidates;
+
+    if (candidates.length === 1) {
+      return {
+        status: "matched",
+        confidence: game ? "suffix_flex_game_team" : "suffix_flex_unique",
+        player: candidates[0],
+        candidate_count: suffixIds.length
+      };
+    }
+    if (candidates.length > 1) {
+      return { status: "ambiguous", confidence: "ambiguous_suffix_flex", player: null, candidate_count: candidates.length };
+    }
+    return {
+      status: "unresolved",
+      confidence: game ? "suffix_flex_no_game_team_match" : "suffix_flex_no_unique_match",
+      player: null,
+      candidate_count: suffixIds.length
+    };
   }
 
-  if (candidates.length === 1) return { status: "matched", confidence: "exact_name", player: candidates[0], candidate_count: ids.length };
-  return { status: "ambiguous", confidence: "ambiguous_exact_name", player: null, candidate_count: ids.length };
+  return { status: "unresolved", confidence: "no_alias_match", player: null, candidate_count: 0 };
 }
 
 function teamSideForPlayer(ref, player, game) {
