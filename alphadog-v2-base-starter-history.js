@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-starter-history";
-const VERSION = "alphadog-v2-base-starter-history-v0.4.6-calendar-tally-gap-scoped-mining";
+const VERSION = "alphadog-v2-base-starter-history-v0.4.7-live-source-gap-scheduled-wait-override";
 const JOB_KEY = "base-starter-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -46,9 +46,9 @@ function baseIdentity(env) {
     job_key: JOB_KEY,
     status: "BASE_STARTER_HISTORY_CALENDAR_TALLY_GAP_SCOPED_MINING",
     timestamp_utc: nowUtc(),
-    phase: "starter-history-v0.4.6-calendar-tally-gap-scoped-mining",
+    phase: "starter-history-v0.4.7-live-source-gap-scheduled-wait-override",
     notes: [
-      "v0.4.6 fixes calendar/tally scoped gap mining: starter_history blocking gaps in mlb_game_data_coverage are the first-class repair target before any legacy retained-stage noop path.",
+      "v0.4.7 fixes calendar/tally scoped gap mining: starter_history blocking gaps in mlb_game_data_coverage are the first-class repair target before any legacy retained-stage noop path.",
       "Allowed writes: repair missing live + retained-stage delta keys by refetching only the affected game/key, rewriting the retained stage row, and promoting that key. No full sweep, no new batch.",
       "Forbidden in this version: full sweep, new batch, scoring, ranking, board mutation, and browser pump.",
       "Starter history is source-classified as GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS via official final boxscore gamesStarted == 1."
@@ -1597,7 +1597,19 @@ async function loadStarterHistoryCalendarGaps(env) {
     FROM mlb_game_data_coverage g
     LEFT JOIN mlb_game_calendar cal ON cal.game_pk = g.game_pk
     WHERE g.layer_key='starter_history'
-      AND g.blocking_for_full_run=1
+      AND (
+        g.blocking_for_full_run=1
+        OR (
+          g.coverage_status='scheduled_not_ready'
+          AND EXISTS (
+            SELECT 1
+            FROM team_game_logs tgl
+            WHERE tgl.game_pk = g.game_pk
+              AND tgl.season = g.season
+            LIMIT 1
+          )
+        )
+      )
     ORDER BY g.official_date, g.game_pk`);
 }
 
@@ -1618,7 +1630,7 @@ async function createCalendarGapStarterBatch(env, input, requestId, chainId, run
     'MLB StatsAPI /api/v1/game/{gamePk}/boxscore -> teams.{away,home}.players.ID*.stats.pitching.gamesStarted == 1',
     'calendar gap game_pk + team_id; pitcher_id + game_pk + team_id is secondary validation',
     gaps.length, gaps.length * 2, gaps.length,
-    safeJson({ calendar_gap_scoped_repair: true, layer_key: 'starter_history', gap_game_count: gaps.length, expected_starter_rows: gaps.length * 2, first_gap_date: firstDate, last_gap_date: lastDate, no_full_sweep: true, source: 'TEAM_DB.mlb_game_data_coverage blocking_for_full_run=1' })
+    safeJson({ calendar_gap_scoped_repair: true, layer_key: 'starter_history', gap_game_count: gaps.length, expected_starter_rows: gaps.length * 2, first_gap_date: firstDate, last_gap_date: lastDate, no_full_sweep: true, source: 'TEAM_DB.mlb_game_data_coverage blocking_for_full_run=1 OR scheduled_not_ready with live team_game_logs evidence' })
   );
   for (const gap of gaps) {
     const gamePk = num(gap.game_pk);
@@ -1694,7 +1706,7 @@ async function finalizeCalendarGapStarterBatch(env, batch, runId, requestId, ext
   const output = {
     calendar_gap_scoped_repair: true,
     layer_key: 'starter_history',
-    target_source: 'TEAM_DB.mlb_game_data_coverage blocking_for_full_run=1 joined to TEAM_DB.mlb_game_calendar',
+    target_source: 'TEAM_DB.mlb_game_data_coverage blocking_for_full_run=1 OR scheduled_not_ready with live team_game_logs evidence joined to TEAM_DB.mlb_game_calendar',
     source_shape_classification: 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS',
     actual_starter_identification_path: 'MLB StatsAPI /api/v1/game/{gamePk}/boxscore -> teams.{away,home}.players.ID*.stats.pitching.gamesStarted == 1',
     gap_game_count: expectedGameCount,

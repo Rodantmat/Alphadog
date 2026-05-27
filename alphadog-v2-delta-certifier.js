@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.1.6-coverage-ownership-clean";
+const VERSION = "alphadog-v2-delta-certifier-v0.1.7-live-source-overrides-calendar-wait";
 const JOB_KEY = "delta-certifier";
 
 const ACTIVE_COVERAGE_LAYER_KEYS = [
@@ -673,24 +673,29 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
 
   for (const g of games) {
     const gamePk = Number(g.game_pk);
-    if (Number(g.is_available_for_stats || 0) !== 1) {
+    const calendarStatsReady = Number(g.is_available_for_stats || 0) === 1;
+    const hitter = countFromMap(hitterCounts, gamePk);
+    const pitcher = countFromMap(pitcherCounts, gamePk);
+    const team = countFromMap(teamCounts, gamePk);
+    const starter = countFromMap(starterPlayerCounts, gamePk);
+    const starterTeam = countFromMap(starterTeamCounts, gamePk);
+    const bullpen = countFromMap(bullpenCounts, gamePk);
+    const liveSourceRowsForGame = hitter.rows + pitcher.rows + team.rows + starter.rows + bullpen.rows;
+    const evaluateLiveLayers = calendarStatsReady || liveSourceRowsForGame > 0;
+
+    if (!evaluateLiveLayers) {
       for (const layerKey of activeLayers) {
-        addLayer(g, { layerKey, status: "scheduled_not_ready", grade: "WAITING_NOT_FINAL", blocking: 0, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: null, details: { is_available_for_stats: 0 } });
+        addLayer(g, { layerKey, status: "scheduled_not_ready", grade: "WAITING_NOT_FINAL", blocking: 0, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: null, details: { is_available_for_stats: 0, live_source_rows_for_game: 0, live_source_override_v0_1_7: false } });
       }
     } else {
-      const hitter = countFromMap(hitterCounts, gamePk);
-      addLayer(g, hitter.rows > 0 ? { layerKey: "hitter_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: hitter.rows, entityCount: hitter.entities, expectedRows: null, missingRows: 0, reason: null, details: hitter } : { layerKey: "hitter_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_HITTER_GAME_LOG_ROWS_FOR_FINAL_GAME_PK", details: hitter });
-      const pitcher = countFromMap(pitcherCounts, gamePk);
-      addLayer(g, pitcher.rows > 0 ? { layerKey: "pitcher_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: pitcher.rows, entityCount: pitcher.entities, expectedRows: null, missingRows: 0, reason: null, details: pitcher } : { layerKey: "pitcher_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_PITCHER_GAME_LOG_ROWS_FOR_FINAL_GAME_PK", details: pitcher });
-      const team = countFromMap(teamCounts, gamePk);
+      const overrideDetails = { calendar_is_available_for_stats: Number(g.is_available_for_stats || 0), live_source_rows_for_game: liveSourceRowsForGame, live_source_override_v0_1_7: !calendarStatsReady && liveSourceRowsForGame > 0 };
+      addLayer(g, hitter.rows > 0 ? { layerKey: "hitter_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: hitter.rows, entityCount: hitter.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...hitter, ...overrideDetails } } : { layerKey: "hitter_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_HITTER_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...hitter, ...overrideDetails } });
+      addLayer(g, pitcher.rows > 0 ? { layerKey: "pitcher_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: pitcher.rows, entityCount: pitcher.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...pitcher, ...overrideDetails } } : { layerKey: "pitcher_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_PITCHER_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...pitcher, ...overrideDetails } });
       const teamPass = team.rows === 2 && team.entities === 2;
-      addLayer(g, teamPass ? { layerKey: "team_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: 0, reason: null, details: team } : { layerKey: "team_game_logs", status: team.rows > 0 ? "partial" : "missing", grade: team.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: Math.max(0, 2 - team.rows), reason: team.rows > 0 ? "PARTIAL_TEAM_GAME_LOG_ROWS_FOR_FINAL_GAME_PK" : "MISSING_TEAM_GAME_LOG_ROWS_FOR_FINAL_GAME_PK", details: team });
-      const starter = countFromMap(starterPlayerCounts, gamePk);
-      const starterTeam = countFromMap(starterTeamCounts, gamePk);
+      addLayer(g, teamPass ? { layerKey: "team_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: 0, reason: null, details: { ...team, ...overrideDetails } } : { layerKey: "team_game_logs", status: team.rows > 0 ? "partial" : "missing", grade: team.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: Math.max(0, 2 - team.rows), reason: team.rows > 0 ? "PARTIAL_TEAM_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK" : "MISSING_TEAM_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...team, ...overrideDetails } });
       const starterPass = starter.rows >= 2 && starter.entities >= 2 && starterTeam.entities === 2;
-      addLayer(g, starterPass ? { layerKey: "starter_history", status: "complete", grade: "PASS", blocking: 0, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: 0, reason: null, details: { ...starter, distinct_teams: starterTeam.entities } } : { layerKey: "starter_history", status: starter.rows > 0 ? "partial" : "missing", grade: starter.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: Math.max(0, 2 - starter.rows), reason: starter.rows > 0 ? "PARTIAL_STARTER_HISTORY_ROWS_FOR_FINAL_GAME_PK" : "MISSING_STARTER_HISTORY_ROWS_FOR_FINAL_GAME_PK", details: { ...starter, distinct_teams: starterTeam.entities } });
-      const bullpen = countFromMap(bullpenCounts, gamePk);
-      addLayer(g, bullpen.rows > 0 ? { layerKey: "bullpen_history", status: "complete", grade: "PASS", blocking: 0, liveRows: bullpen.rows, entityCount: bullpen.entities, expectedRows: null, missingRows: 0, reason: null, details: bullpen } : { layerKey: "bullpen_history", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_BULLPEN_HISTORY_REPRESENTATION_FOR_FINAL_GAME_PK", details: bullpen });
+      addLayer(g, starterPass ? { layerKey: "starter_history", status: "complete", grade: "PASS", blocking: 0, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: 0, reason: null, details: { ...starter, distinct_teams: starterTeam.entities, ...overrideDetails } } : { layerKey: "starter_history", status: starter.rows > 0 ? "partial" : "missing", grade: starter.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: Math.max(0, 2 - starter.rows), reason: starter.rows > 0 ? "PARTIAL_STARTER_HISTORY_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK" : "MISSING_STARTER_HISTORY_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...starter, distinct_teams: starterTeam.entities, ...overrideDetails } });
+      addLayer(g, bullpen.rows > 0 ? { layerKey: "bullpen_history", status: "complete", grade: "PASS", blocking: 0, liveRows: bullpen.rows, entityCount: bullpen.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...bullpen, ...overrideDetails } } : { layerKey: "bullpen_history", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_BULLPEN_HISTORY_REPRESENTATION_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...bullpen, ...overrideDetails } });
       for (const snapshotLayerKey of ["hitter_splits", "pitcher_splits", "hitter_metrics", "pitcher_metrics"]) addLayer(g, snapshotLayerFromTemplate(snapshotLayerKey, String(g.official_date), snapshotTemplates));
     }
     if (coverageStatements.length >= 80) {
@@ -741,7 +746,8 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
     coverage_rows_with_null_status_grade: coverageRowsWithNullStatusGrade,
     coverage_ownership_clean: coverageOwnershipClean,
     scoped_delete_then_rebuild_current_window_v0_1_6: true,
-    optimized_full_calendar_coverage_v0_1_6: true
+    optimized_full_calendar_coverage_v0_1_6: true,
+    live_source_override_calendar_wait_v0_1_7: true
   };
 }
 

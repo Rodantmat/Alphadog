@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-team-game-logs";
-const VERSION = "alphadog-v2-base-team-game-logs-v0.3.4-calendar-gap-scoped-mining-only";
+const VERSION = "alphadog-v2-base-team-game-logs-v0.3.5-calendar-gap-partial-aware-noop-guard";
 const JOB_KEY = "base-team-game-logs";
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
 const SOURCE_KEY = "mlb_statsapi_schedule_boxscore_team_totals_probe_v0_1_0";
@@ -511,7 +511,7 @@ async function getCalendarTeamGameLogsGapPlan(env) {
     SELECT game_pk, official_date
     FROM mlb_game_data_coverage
     WHERE layer_key = 'team_game_logs'
-      AND coverage_status = 'missing'
+      AND coverage_status IN ('missing','partial')
       AND blocking_for_full_run = 1
     ORDER BY official_date, game_pk
     LIMIT 500
@@ -1108,7 +1108,7 @@ async function runDeltaUpdate(env, input) {
   const effectiveStart = hasCalendarGaps ? calendarGapPlan.min_official_date : (retainedMaxDate ? addDaysYmd(retainedMaxDate, 1) : deltaFloor);
   const effectiveEnd = hasCalendarGaps ? calendarGapPlan.max_official_date : sourceWindow.latest_complete_game_date;
   if (!effectiveStart || effectiveStart > effectiveEnd) {
-    return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, status:"DELTA_TEAM_GAME_LOGS_NOOP_CURRENT_SOURCE_SNAPSHOT", certification:"DELTA_TEAM_GAME_LOGS_NOOP_LIVE_SOURCE_SNAPSHOT_CURRENT", certification_grade:"DELTA_NOOP_PASS", rows_read:retainedTruth?.stage_rows || 0, rows_written:2, rows_promoted:0, external_calls_performed:1, queued:false, no_full_sweep:true, no_mining_calls:true, no_live_mutation:true, retained_max_game_date:retainedMaxDate, latest_complete_game_date:sourceWindow.latest_complete_game_date, source_final_date_check:sourceWindow, coverage_gap_plan:calendarGapPlan };
+    return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, status:"DELTA_TEAM_GAME_LOGS_NOOP_CURRENT_SOURCE_SNAPSHOT", certification:"DELTA_TEAM_GAME_LOGS_NOOP_LIVE_SOURCE_SNAPSHOT_CURRENT", certification_grade:"DELTA_NOOP_PASS", rows_read:retainedTruth?.stage_rows || 0, rows_written:2, rows_promoted:0, external_calls_performed:1, queued:false, no_full_sweep:true, no_mining_calls:true, no_live_mutation:true, retained_max_game_date:retainedMaxDate, latest_complete_game_date:sourceWindow.latest_complete_game_date, source_final_date_check:sourceWindow, coverage_gap_plan:calendarGapPlan, calendar_gap_partial_aware_v0_3_5:true };
   }
 
   const deltaStart = effectiveStart;
