@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.110-score-prep-enrichment-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.111-board-full-run-score-prep-required";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -330,7 +330,8 @@ const BOARD_FULL_RUN_STALE_MINUTES = 20;
 
 const BOARD_FULL_RUN_STAGES = [
   { stage_key: "board_prizepicks_refresh", job_key: "prizepicks-github-board", worker_name: "alphadog-v2-prizepicks-github-board", display_name: "PrizePicks Board Refresh", visible_button: "BOARD > PrizePicks", mode: "board_full_run_prizepicks_refresh", worker_group: "Board", phase_key: "board", priority: 4 },
-  { stage_key: "board_sleeper_refresh", job_key: "parlay-sleeper-board", worker_name: "alphadog-v2-parlay-sleeper-board", display_name: "Sleeper Board Refresh", visible_button: "BOARD > Sleeper", mode: "board_full_run_sleeper_refresh", worker_group: "Board", phase_key: "board", priority: 4 }
+  { stage_key: "board_sleeper_refresh", job_key: "parlay-sleeper-board", worker_name: "alphadog-v2-parlay-sleeper-board", display_name: "Sleeper Board Refresh", visible_button: "BOARD > Sleeper", mode: "board_full_run_sleeper_refresh", worker_group: "Board", phase_key: "board", priority: 4 },
+  { stage_key: "score_prep_enrichment", job_key: "score-prep", worker_name: "alphadog-v2-score-prep", display_name: "Score Prep Board Enrichment", visible_button: "SCORE PREP > Board Enrichment", mode: "board_full_run_score_prep_enrichment", worker_group: "Score", phase_key: "score_prep", priority: 5 }
 ];
 
 function boardFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
@@ -361,8 +362,13 @@ function boardFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
     no_old_production_touch: true,
     prizepicks_consumer_only: stage.job_key === "prizepicks-github-board",
     sleeper_board_inventory_only: stage.job_key === "parlay-sleeper-board",
+    score_prep_required: stage.job_key === "score-prep",
+    score_prep_after_board_refresh: stage.job_key === "score-prep",
+    writes_score_prepared_board_only: stage.job_key === "score-prep",
     no_prizepicks_mutation: stage.job_key !== "prizepicks-github-board",
     no_sleeper_mutation: stage.job_key !== "parlay-sleeper-board",
+    no_market_board_mutation: stage.job_key === "score-prep",
+    no_raw_board_delete: stage.job_key === "score-prep",
     created_at: nowIso()
   };
 }
@@ -458,6 +464,16 @@ function childPassedBoardFullRun(stage, child) {
     if (activeRows !== 1) return { pass: false, reason: "sleeper_active_batch_not_one", active_batch_rows_written: activeRows };
     if (output.no_scoring !== true || output.no_ranking !== true || output.no_final_board !== true) return { pass: false, reason: "sleeper_inventory_safety_flags_missing" };
   }
+  if (stage.job_key === "score-prep") {
+    if (cert !== "SCORE_BOARD_PREP_ENRICHMENT_COMPLETED_PRESERVED_RAW_BOARDS") return { pass: false, reason: "score_prep_not_certified", certification: cert };
+    if (output.final_db_truth !== true) return { pass: false, reason: "score_prep_final_db_truth_missing", final_db_truth: output.final_db_truth };
+    if (Number(output.prepared_rows || 0) <= 0) return { pass: false, reason: "score_prep_prepared_rows_zero", prepared_rows: output.prepared_rows || 0 };
+    if (Number(output.inserted_current_rows || output.prepared_rows || 0) !== Number(output.prepared_rows || 0)) return { pass: false, reason: "score_prep_inserted_current_rows_mismatch", prepared_rows: output.prepared_rows || 0, inserted_current_rows: output.inserted_current_rows || 0 };
+    if (Number(output.prizepicks_rows || 0) <= 0) return { pass: false, reason: "score_prep_prizepicks_rows_zero", prizepicks_rows: output.prizepicks_rows || 0 };
+    if (Number(output.sleeper_rows || 0) <= 0) return { pass: false, reason: "score_prep_sleeper_rows_zero", sleeper_rows: output.sleeper_rows || 0 };
+    if (Number(output.pickable_safe_rows || 0) <= 0) return { pass: false, reason: "score_prep_pickable_safe_rows_zero", pickable_safe_rows: output.pickable_safe_rows || 0 };
+    if (output.no_market_board_mutation !== true || output.no_raw_board_delete !== true || output.no_scoring !== true || output.no_ranking !== true || output.no_final_board !== true) return { pass: false, reason: "score_prep_safety_flags_missing" };
+  }
   return { pass: true, certification: cert, data_ok: output.data_ok, rows_read: output.rows_read || 0, rows_written: output.rows_written || 0, rows_promoted: output.rows_promoted || output.promoted_rows_written || 0, external_calls: output.external_calls_performed || output.external_calls || 0, output };
 }
 
@@ -493,7 +509,7 @@ async function processBoardFullRunJob(env, row, runId, trigger) {
 
     const validation = childPassedBoardFullRun(stage, child);
     const childOutput = parseJsonSafeText(child.output_json || "{}", {});
-    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, prizepicks_stale_cleared: validation.prizepicks_stale_cleared === true, source_refresh_dispatch_ok: validation.source_refresh_dispatch_ok === true, source_refresh_dispatch_error: validation.source_refresh_dispatch_error || null, rows_read: childOutput.rows_read || 0, rows_written: childOutput.rows_written || 0, rows_promoted: childOutput.rows_promoted || childOutput.promoted_rows_written || 0, future_pickable_rows: childOutput.future_pickable_rows || 0, expired_or_started_rows: childOutput.expired_or_started_rows || 0, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0, attempts: stageAttempts.length };
+    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, prizepicks_stale_cleared: validation.prizepicks_stale_cleared === true, source_refresh_dispatch_ok: validation.source_refresh_dispatch_ok === true, source_refresh_dispatch_error: validation.source_refresh_dispatch_error || null, rows_read: childOutput.rows_read || 0, rows_written: childOutput.rows_written || 0, rows_promoted: childOutput.rows_promoted || childOutput.promoted_rows_written || 0, future_pickable_rows: childOutput.future_pickable_rows || 0, expired_or_started_rows: childOutput.expired_or_started_rows || 0, prepared_rows: childOutput.prepared_rows || 0, pickable_safe_rows: childOutput.pickable_safe_rows || 0, blocked_rows: childOutput.blocked_rows || 0, matchup_unresolved_rows: childOutput.matchup_unresolved_rows || 0, unresolved_player_rows: childOutput.unresolved_player_rows || 0, final_db_truth: childOutput.final_db_truth === true, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0, attempts: stageAttempts.length };
 
     if (validation.wait) {
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "PARTIAL_CONTINUE_BOARD_FULL_RUN_WAITING_ON_CHILD", certification: "BOARD_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
@@ -517,13 +533,13 @@ async function processBoardFullRunJob(env, row, runId, trigger) {
 
   const prizepicksStaleCleared = stageReports.some(r => r.prizepicks_stale_cleared === true || r.child_certification === "PRIZEPICKS_SOURCE_STALE_NO_FUTURE_PICKABLE_ROWS");
   const finalCertification = prizepicksStaleCleared
-    ? "BOARD_FULL_RUN_CERTIFIED_PRIZEPICKS_AND_SLEEPER_PASS"
-    : "BOARD_FULL_RUN_CERTIFIED_PRIZEPICKS_AND_SLEEPER_PASS";
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "COMPLETED_BOARD_FULL_RUN", certification: finalCertification, certification_grade: "FULL_RUN_PASS", board_full_run_certified: true, prizepicks_stale_cleared: prizepicksStaleCleared, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: BOARD_FULL_RUN_STAGES.map(s => s.job_key), board_full_run_only: true, no_delta_full_run: true, no_incremental_morning_full_run: true, no_static_work: true, no_base_delta_workers: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+    ? "BOARD_FULL_RUN_CERTIFIED_PRIZEPICKS_SLEEPER_AND_SCORE_PREP_PASS"
+    : "BOARD_FULL_RUN_CERTIFIED_PRIZEPICKS_SLEEPER_AND_SCORE_PREP_PASS";
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "COMPLETED_BOARD_FULL_RUN", certification: finalCertification, certification_grade: "FULL_RUN_PASS", board_full_run_certified: true, board_prep_required: true, board_prep_completed: stageReports.some(r => r.job_key === "score-prep" && r.pass === true), prizepicks_stale_cleared: prizepicksStaleCleared, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: BOARD_FULL_RUN_STAGES.map(s => s.job_key), board_full_run_only: true, no_delta_full_run: true, no_incremental_morning_full_run: true, no_static_work: true, no_base_delta_workers: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
   await releaseBoardFullRunLock(env, row);
   await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalCertification, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'board_full_run_completed', 'Board Full Run certified fresh PrizePicks and Sleeper board refresh stages', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'board_full_run_completed', 'Board Full Run certified fresh PrizePicks, Sleeper, and required Score Prep enrichment stages', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
   return output;
 }
 
