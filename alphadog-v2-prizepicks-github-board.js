@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.6-github-sha-fetch-consumer-only";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.7-stale-source-refresh-dispatch";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
@@ -92,12 +92,12 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "READY",
     timestamp_utc: nowUtc(),
-    phase: "prizepicks_github_board_parse_stage_certify_promote_sha_fetch_v0_1_6",
+    phase: "prizepicks_github_board_parse_stage_certify_promote_sha_fetch_dispatch_v0_1_7",
     notes: [
       "Reads the configured PrizePicks GitHub JSON source.",
       "Parses JSON, stages PrizePicks rows into MARKET_DB.prizepicks_board_stage, and writes a batch certification row.",
       "Promotes only certified staged rows into MARKET_DB.prizepicks_board_current and flips MARKET_DB.prizepicks_board_active_batches after inserts succeed.",
-      "No market_current_lines writes, no scoring, no ranking, no final board. If GitHub JSON is stale, dispatches the existing GitHub scraper workflow instead of promoting stale rows."
+      "No market_current_lines writes, no scoring, no ranking, no final board. If GitHub JSON is stale, dispatch the existing GitHub scraper workflow and require a later fresh consumer run before Board Full Run can pass."
     ],
     binding_summary: {
       required_db_bindings_present: allTrue(db),
@@ -645,7 +645,8 @@ function buildCertification(shape, stagedRows, sourceSizeBytes, sourcePath) {
     no_market_current_lines_write: true,
     promotes_prizepicks_board_current_only: passed,
     no_scoring: true,
-    manual_refresh_only: true
+    manual_refresh_only: false,
+    source_refresh_dispatch_enabled: true
   };
 }
 
@@ -967,7 +968,7 @@ async function runBoardParseStageCertify(env, input = {}) {
     const error = sourceFetch && sourceFetch.error ? sourceFetch.error : `GitHub blob-sha source fetch failed with HTTP ${httpStatus}`;
     const health = { version: VERSION, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, source_config: { owner: source.owner, repo: source.repo, branch: source.branch, path: source.path, raw_branch_url: source.raw_branch_url, contents_api_url: source.contents_api_url, config_resolution: source.config_resolution }, github_file_metadata: sourceFetch ? sourceFetch.metadata : null, fetched_url: sourceFetch ? sourceFetch.url : null, fetch_mode: sourceFetch ? sourceFetch.fetch_mode : "github_contents_api_blob_sha_fetch", fetch_started_at: fetchStarted, checked_at: nowUtc(), reachable: false, http_status: httpStatus, content_type: contentType, response_size_bytes: sizeBytes, json_parse_ok: false, error, response_preview: safeString(text, 500), no_market_current_lines_write: true, no_scoring: true };
     const write = await writeHealth(env, "error", 0, health, error);
-    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_HTTP_ERROR", rows_read: 0, rows_staged: 0, rows_written: 1, external_calls_performed: 2, elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, source_key: SOURCE_KEY, status: "error", certification: "SOURCE_HTTP_ERROR", rows_read: 0, rows_staged: 0, rows_written: 1, external_calls_performed: 2 + (sourceRefreshDispatch && sourceRefreshDispatch.attempted ? 1 : 0), elapsed_ms: Date.now() - started, health, write, timestamp_utc: nowUtc() };
   }
 
   const pathLower = String(source.path || "").toLowerCase();
@@ -1026,7 +1027,15 @@ async function runBoardParseStageCertify(env, input = {}) {
   }
 
   const sourceStaleHandled = Boolean(promotion && promotion.source_stale_no_future_pickable);
-  const sourceRefreshDispatch = null;
+  let sourceRefreshDispatch = null;
+  if (sourceStaleHandled) {
+    sourceRefreshDispatch = await triggerPrizePicksSourceRefresh(
+      env,
+      source,
+      { ...input, request_id: requestId, chain_id: chainId, slate_date: slateDate },
+      SOURCE_STALE_CERT
+    );
+  }
   const finalPassed = cert.passed && promotion.promoted;
   const finalHandled = finalPassed || sourceStaleHandled;
   const finalCertification = finalPassed ? PROMOTION_CERT_PASS : (sourceStaleHandled ? SOURCE_STALE_CERT : (cert.passed ? PROMOTION_CERT_FAIL : cert.certification_status));
@@ -1058,7 +1067,8 @@ async function runBoardParseStageCertify(env, input = {}) {
     no_scoring: true,
     no_ranking: true,
     no_final_board_write: true,
-    manual_refresh_only: true
+    manual_refresh_only: false,
+    source_refresh_dispatch_enabled: true
   };
   const healthWrite = await writeHealth(env, healthStatus, cert.mlbRows || shape.detected_row_count, health, finalPassed ? null : finalReason);
 
@@ -1105,10 +1115,10 @@ async function runBoardParseStageCertify(env, input = {}) {
       no_scoring: true,
       no_ranking: true,
       no_final_board_write: true,
-      no_scheduling_added: true,
+      github_source_refresh_dispatch_enabled: true,
       manual_buttons: ["BOARD > PrizePicks", "ORCHESTRATOR > Wake"]
     },
-    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, final board, or producer dispatch in v0.1.6.",
+    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, or final board. v0.1.7 dispatches the GitHub producer workflow when the consumed JSON is stale.",
     timestamp_utc: nowUtc()
   };
 }
