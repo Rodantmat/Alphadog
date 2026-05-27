@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.3-sleeper-suffix-flex-player-resolver";
+const VERSION = "alphadog-v2-score-prep-v0.2.4-final-db-truth-composite-row-id";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_SLEEPER = "sleeper";
@@ -40,6 +40,39 @@ function safeJsonParse(v, fallback = null) {
   } catch {
     return fallback;
   }
+}
+
+function stableKeyComponent(v) {
+  const s = safeStr(v);
+  if (!s) return "na";
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._:-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 96) || "na";
+}
+
+function stableLineComponent(v) {
+  if (v === undefined || v === null || v === "") return "na";
+  const n = Number(v);
+  if (Number.isFinite(n)) return String(n).replace(/\./g, "p");
+  return stableKeyComponent(v);
+}
+
+function makePreparedRowId({ sourceKey, sourceRowId, sourceEventId, playerName, propKey, lineValue, sourcePropName }) {
+  // v0.2.4: source_line_id/current_row_id can collide across source universes or market variants.
+  // Use a stable composite identity so valid Sleeper/PrizePicks line variants are preserved,
+  // and final DB counts match certification counts instead of being distorted by INSERT OR REPLACE.
+  return [
+    stableKeyComponent(sourceKey),
+    stableKeyComponent(sourceEventId),
+    stableKeyComponent(sourceRowId),
+    stableKeyComponent(playerName),
+    stableKeyComponent(propKey || sourcePropName),
+    stableLineComponent(lineValue)
+  ].join("|");
 }
 
 function normalizeName(v) {
@@ -481,7 +514,7 @@ function preparedRowBase({ batchId, sourceKey, sourceRowId, sourceEventId, proje
   const matchupStatus = calendarResolution.status;
 
   return {
-    prepared_row_id: `${sourceKey}|${sourceRowId}`,
+    prepared_row_id: makePreparedRowId({ sourceKey, sourceRowId, sourceEventId, playerName, propKey, lineValue, sourcePropName }),
     prep_batch_id: batchId,
     source_key: sourceKey,
     source_row_id: sourceRowId,
@@ -776,7 +809,10 @@ async function writePreparedRows(env, batchId, rows, bySource, startedAt, input)
     await env.SCORE_DB.batch(statements);
   }
 
-  const totals = computeTotals(rows);
+  const finalRows = await allRows(env.SCORE_DB, "SELECT * FROM score_board_prepared_current WHERE prep_batch_id = ?", [batchId]);
+  const totals = computeTotals(finalRows);
+  const finalBySource = summarizeBySource(finalRows);
+  const finalSleeperEvents = summarizeSleeperEvents(finalRows);
   await env.SCORE_DB.prepare(`INSERT OR REPLACE INTO score_board_prep_batches (
     batch_id, worker_name, worker_version, mode, status, certification_status, certification_grade,
     prizepicks_rows, sleeper_rows, prepared_rows, pickable_safe_rows, blocked_rows,
@@ -799,13 +835,15 @@ async function writePreparedRows(env, batchId, rows, bySource, startedAt, input)
       totals.unresolved_player_rows,
       totals.matchup_unresolved_rows,
       totals.started_rows,
-      JSON.stringify({ request_id: input.request_id || null, chain_id: input.chain_id || null, by_source: bySource }),
-      JSON.stringify({ ...totals, sleeper_events: summarizeSleeperEvents(rows) }),
+      JSON.stringify({ request_id: input.request_id || null, chain_id: input.chain_id || null, by_source: finalBySource, attempted_rows: rows.length, inserted_current_rows: finalRows.length }),
+      JSON.stringify({ ...totals, sleeper_events: finalSleeperEvents, final_db_truth: true, attempted_rows: rows.length, inserted_current_rows: finalRows.length }),
       startedAt,
       nowIso(),
       nowIso()
     )
     .run();
+
+  return { totals, bySource: finalBySource, sleeperEvents: finalSleeperEvents, finalRows };
 }
 
 function computeTotals(rows) {
@@ -859,12 +897,13 @@ async function runBoardPrep(env, input) {
     ...preparePrizePicksRows(prizepicksRows, ref, calendar, batchId, now),
     ...prepareSleeperRows(sleeperRows, ref, calendar, batchId, now)
   ];
-  const bySource = summarizeBySource(prepared);
-  const totals = computeTotals(prepared);
+  const initialBySource = summarizeBySource(prepared);
+  const writeResult = await writePreparedRows(env, batchId, prepared, initialBySource, startedAt, input);
+  const totals = writeResult.totals;
+  const bySource = writeResult.bySource;
+  const finalPrepared = writeResult.finalRows;
 
-  await writePreparedRows(env, batchId, prepared, bySource, startedAt, input);
-
-  const blockedSamples = prepared.filter(r => r.pickable_safe === 0).slice(0, 20).map(r => ({
+  const blockedSamples = finalPrepared.filter(r => r.pickable_safe === 0).slice(0, 20).map(r => ({
     source_key: r.source_key,
     player_name: r.player_name,
     team: r.team,
@@ -893,8 +932,11 @@ async function runBoardPrep(env, input) {
     certification: "SCORE_BOARD_PREP_ENRICHMENT_COMPLETED_PRESERVED_RAW_BOARDS",
     certification_grade: totals.blocked_rows > 0 ? "PREP_PASS_WITH_BLOCK_FLAGS" : "PREP_PASS",
     ...totals,
+    attempted_rows: prepared.length,
+    inserted_current_rows: finalPrepared.length,
+    final_db_truth: true,
     by_source: bySource,
-    sleeper_event_resolution: summarizeSleeperEvents(prepared),
+    sleeper_event_resolution: writeResult.sleeperEvents,
     blocked_samples: blockedSamples,
     calendar_rows_loaded: calendar.rows.length,
     ref_alias_rows_loaded: ref.aliases.length,
