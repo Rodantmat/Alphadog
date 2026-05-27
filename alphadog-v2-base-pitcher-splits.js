@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.10-stale-duplicate-current-cursor-rescue";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.11-calendar-tally-gap-scoped-refresh";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
@@ -55,7 +55,7 @@ function baseIdentity(env) {
     job_key: JOB_KEY,
     status: "BASE_PROMOTION_READY",
     timestamp_utc: nowUtc(),
-    phase: "base_pitcher_splits_v0_5_3_daily_affected_pitcher_refresh",
+    phase: "base_pitcher_splits_v0_5_11_calendar_tally_gap_scoped_refresh",
     source_lock: {
       endpoint_pattern: SOURCE_ENDPOINT_PATTERN,
       source_key: SOURCE_KEY,
@@ -1125,10 +1125,13 @@ async function fetchLatestCompleteGameDate(env, startDate) {
   }
 }
 async function inferPitcherSplitsCoveredGameDate(env, liveChecks, baseBatch) {
-  // v0.5.9: Pitcher Splits is a snapshot-style table. The covered date must
-  // come from the splits cursor/live snapshot state first. Do not let
-  // pitcher_game_logs roll coverage backward when pitcher logs lag but the
-  // daily affected split refresh already promoted a newer final-date snapshot.
+  // v0.5.11: Pitcher Splits is snapshot-style, but coverage must be anchored
+  // to the actual finalized pitcher_game_logs population. A tiny subset of rows
+  // at the newest source_snapshot_date is not enough to advance coverage if the
+  // pitchers who appeared on that finalized game date still have stale/missing
+  // split snapshots. This mirrors the Hitter Splits v0.4.7 calendar-tally gap
+  // repair rule: derive the covered game date from real per-game player coverage,
+  // not from MAX(source_snapshot_date) alone.
   const candidates = [];
   const cursor = await first(env.STATS_PITCHER_DB, `SELECT source_snapshot_date, status, cursor_json, updated_at
     FROM pitcher_split_cursor
@@ -1151,14 +1154,52 @@ async function inferPitcherSplitsCoveredGameDate(env, liveChecks, baseBatch) {
   }
   candidates.push(dateOnlyUtc(liveChecks && liveChecks.max_source_snapshot_date));
   candidates.push(dateOnlyUtc(baseBatch && baseBatch.source_snapshot_date));
-  const direct = candidates.filter(Boolean).sort().pop();
-  if (direct) return direct;
+  const ceiling = candidates.filter(Boolean).sort().pop() || todayUtc();
 
-  const maxSnapshot = dateOnlyUtc(liveChecks && liveChecks.max_source_snapshot_date) || dateOnlyUtc(baseBatch && baseBatch.source_snapshot_date) || todayUtc();
-  const row = await first(env.STATS_PITCHER_DB, `SELECT MAX(game_date) AS max_game_date
+  // Find the latest pitcher_game_logs date whose actual distinct pitchers all have
+  // a live pitcher_splits row with source_snapshot_date >= that game date. This
+  // catches the false-pass case where only a few pitchers were refreshed to a new
+  // snapshot date while most pitchers from the finalized slate remained stale.
+  const covered = await first(env.STATS_PITCHER_DB, `
+    WITH affected AS (
+      SELECT DISTINCT game_date, player_id
+      FROM pitcher_game_logs
+      WHERE game_date IS NOT NULL
+        AND game_date <= ?
+        AND player_id IS NOT NULL
+    ),
+    per_date AS (
+      SELECT
+        a.game_date,
+        COUNT(*) AS affected_pitchers,
+        SUM(CASE WHEN EXISTS (
+          SELECT 1
+          FROM pitcher_splits ps
+          WHERE ps.season = ?
+            AND ps.player_id = a.player_id
+            AND ps.source_snapshot_date >= a.game_date
+        ) THEN 1 ELSE 0 END) AS covered_pitchers
+      FROM affected a
+      GROUP BY a.game_date
+    )
+    SELECT MAX(game_date) AS covered_game_date
+    FROM per_date
+    WHERE affected_pitchers > 0
+      AND affected_pitchers = covered_pitchers`, ceiling, SOURCE_SEASON);
+  const coveredDate = dateOnlyUtc(covered && covered.covered_game_date);
+  if (coveredDate) return coveredDate;
+
+  // If no fully-covered pitcher-game-log date is found, do not let a partial
+  // source_snapshot_date claim completion. Fall back one day before the first
+  // logged game date so the delta path can mine the first real gap.
+  const firstLog = await first(env.STATS_PITCHER_DB, `SELECT MIN(game_date) AS first_game_date
     FROM pitcher_game_logs
-    WHERE game_date IS NOT NULL AND game_date <= ?`, maxSnapshot);
-  return dateOnlyUtc(row && row.max_game_date) || addDays(maxSnapshot, -1);
+    WHERE game_date IS NOT NULL
+      AND game_date <= ?`, ceiling);
+  const firstDate = dateOnlyUtc(firstLog && firstLog.first_game_date);
+  if (firstDate) return addDays(firstDate, -1);
+
+  return dateOnlyUtc(baseBatch && baseBatch.source_snapshot_date) || dateOnlyUtc(liveChecks && liveChecks.max_source_snapshot_date) || todayUtc();
 }
 function mergeAffectedPitcherMaps(baseMap, player) {
   const id = asInt(player && player.player_id, 0);
