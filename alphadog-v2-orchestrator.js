@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.109-board-full-run-prizepicks-fresh-required";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.110-score-prep-enrichment-dispatch";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -317,6 +317,12 @@ function isBoardFullRunJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "board-full-run" && worker === "alphadog-v2-orchestrator";
+}
+
+function isScorePrepJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "score-prep" && worker === "alphadog-v2-score-prep";
 }
 
 const BOARD_FULL_RUN_LOCK_KEY = "BOARD_FULL_RUN";
@@ -3818,6 +3824,118 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
+async function processScorePrepJob(env, row, runId, trigger) {
+  if (!env.SCORE_PREP_WORKER || typeof env.SCORE_PREP_WORKER.fetch !== "function") {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      status: "blocked_missing_service_binding",
+      certification: "SCORE_PREP_SERVICE_BINDING_MISSING",
+      trigger,
+      note: "Exact dispatch is enabled only through SCORE_PREP_WORKER service binding. Deploy orchestrator with services config."
+    };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_score_prep_service_binding', 'SCORE_PREP_WORKER service binding is missing')",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
+    );
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_score_prep_service_binding', error_message='SCORE_PREP_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id
+    );
+    return output;
+  }
+
+  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const input = {
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    trigger,
+    mode: "board_prep_enrichment",
+    input_json: rowInput,
+    exact_worker_only: true,
+    reads_market_boards: true,
+    reads_team_calendar: true,
+    reads_ref_identity: true,
+    writes_score_prepared_board_only: true,
+    no_market_board_mutation: true,
+    no_raw_board_delete: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    preserve_all_source_rows: true
+  };
+
+  const started = Date.now();
+  let output;
+  let httpStatus = null;
+  try {
+    const resp = await env.SCORE_PREP_WORKER.fetch("https://internal.alphadog-v2-score-prep/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input)
+    });
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); }
+    catch (_) {
+      output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
+    }
+  } catch (err) {
+    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+  }
+
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
+  const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
+  const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
+  const certification = String((output && output.certification) || (ok ? "score_prep_completed" : "score_prep_failed")).slice(0, 120);
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "score_prep_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Score Prep worker failed").slice(0, 900);
+  const cappedOutput = {
+    ...output,
+    orchestrator_dispatch: {
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      exact_worker_only: true,
+      trigger,
+      http_status: httpStatus,
+      elapsed_ms: Date.now() - started,
+      no_market_board_mutation: true,
+      no_raw_board_delete: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board_write: true,
+      no_old_production_touch: true
+    }
+  };
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
+  );
+
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+  );
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'score_prep_dispatch_completed', 'Orchestrator completed exact Score Prep dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, dispatch: cappedOutput.orchestrator_dispatch })
+  );
+
+  return cappedOutput;
+}
+
 async function processSafeTestJob(env, row, runId, trigger) {
   const output = {
     ok: true,
@@ -4460,6 +4578,16 @@ async function processOneUnlocked(env, trigger) {
       ? "partial_continue_board_full_run_job"
       : (output && output.ok ? "completed_one_board_full_run_job" : "failed_one_board_full_run_job");
     return { status, request_id: row.request_id, run_id: runId, output };
+  }
+
+  if (isScorePrepJob(row)) {
+    const output = await processScorePrepJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_score_prep_job" : "failed_one_score_prep_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
   }
 
   if (isIncrementalMorningFullRunJob(row)) {
