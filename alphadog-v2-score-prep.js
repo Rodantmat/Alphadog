@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.1-sleeper-calendar-pair-resolver";
+const VERSION = "alphadog-v2-score-prep-v0.2.2-schema-exec-fix-sleeper-calendar-pair-resolver";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_SLEEPER = "sleeper";
@@ -135,7 +135,9 @@ async function firstRow(db, sql, binds = []) {
 }
 
 async function ensureScoreTables(env) {
-  await env.SCORE_DB.exec(`
+  // v0.2.2: Use separate D1 prepare().run() statements instead of one multi-statement exec().
+  // The v0.2.1 worker failed before prep because D1 received an incomplete CREATE TABLE statement.
+  await env.SCORE_DB.prepare(`
 CREATE TABLE IF NOT EXISTS score_board_prep_batches (
   batch_id TEXT PRIMARY KEY,
   worker_name TEXT,
@@ -157,7 +159,9 @@ CREATE TABLE IF NOT EXISTS score_board_prep_batches (
   started_at TEXT DEFAULT CURRENT_TIMESTAMP,
   finished_at TEXT,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-);
+)`).run();
+
+  await env.SCORE_DB.prepare(`
 CREATE TABLE IF NOT EXISTS score_board_prepared_current (
   prepared_row_id TEXT PRIMARY KEY,
   prep_batch_id TEXT NOT NULL,
@@ -194,11 +198,11 @@ CREATE TABLE IF NOT EXISTS score_board_prepared_current (
   row_payload_json TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_source ON score_board_prepared_current(source_key, pickable_safe);
-CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_game ON score_board_prepared_current(official_date, official_game_pk);
-CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_player_prop ON score_board_prepared_current(resolved_mlb_player_id, canonical_prop_key);
-`);
+)`).run();
+
+  await env.SCORE_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_source ON score_board_prepared_current(source_key, pickable_safe)`).run();
+  await env.SCORE_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_game ON score_board_prepared_current(official_date, official_game_pk)`).run();
+  await env.SCORE_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_player_prop ON score_board_prepared_current(resolved_mlb_player_id, canonical_prop_key)`).run();
 }
 
 async function loadReference(env) {
