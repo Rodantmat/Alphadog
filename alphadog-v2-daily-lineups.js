@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-lineups";
-const VERSION = "alphadog-v2-daily-lineups-v0.1.0-source-probe";
+const VERSION = "alphadog-v2-daily-lineups-v0.1.1-source-discovery-retry";
 const JOB_KEY = "daily-lineups";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -7,6 +7,8 @@ const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_
 const DEFAULT_MLB_BASE_URL = "https://statsapi.mlb.com";
 const MAX_GAMES = 5;
 const FETCH_TIMEOUT_MS = 12000;
+const MAX_ENDPOINT_RETRIES = 2;
+const MLB_STARTING_LINEUPS_URL = "https://www.mlb.com/starting-lineups";
 
 function nowUtc() {
   return new Date().toISOString();
@@ -227,6 +229,96 @@ async function fetchJsonWithTimeout(url, userAgent) {
   }
 }
 
+
+async function fetchTextWithTimeout(url, userAgent) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("timeout"), FETCH_TIMEOUT_MS);
+  const started = Date.now();
+  try {
+    const headers = {};
+    if (userAgent) headers["user-agent"] = userAgent;
+    const resp = await fetch(url, { headers, signal: controller.signal });
+    const text = await resp.text();
+    return { ok: resp.ok, http_status: resp.status, elapsed_ms: Date.now() - started, text, response_bytes: text.length };
+  } catch (err) {
+    return { ok: false, http_status: null, elapsed_ms: Date.now() - started, error: String(err && err.message ? err.message : err), text: "", response_bytes: 0 };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchJsonWithRetry(url, userAgent, attempts = MAX_ENDPOINT_RETRIES) {
+  const tries = [];
+  let last = null;
+  for (let i = 0; i < Math.max(1, attempts); i += 1) {
+    const res = await fetchJsonWithTimeout(url, userAgent);
+    tries.push({ attempt: i + 1, http_status: res.http_status, ok: res.ok, elapsed_ms: res.elapsed_ms, response_bytes: res.response_bytes || 0, error: res.error || null });
+    last = res;
+    if (res.ok) break;
+    // 404 is source-state evidence, not a transient transport failure. Do not spin more calls.
+    if (res.http_status === 404) break;
+  }
+  return { ...last, attempts: tries, attempt_count: tries.length };
+}
+
+function minMaxOfficialDates(calendarRows) {
+  const dates = (calendarRows || []).map((r) => r.official_date).filter(Boolean).sort();
+  if (!dates.length) return { start: null, end: null };
+  return { start: dates[0], end: dates[dates.length - 1] };
+}
+
+function collectScheduleGamePks(scheduleJson) {
+  const out = new Set();
+  const dates = scheduleJson && Array.isArray(scheduleJson.dates) ? scheduleJson.dates : [];
+  for (const d of dates) {
+    const games = Array.isArray(d.games) ? d.games : [];
+    for (const g of games) {
+      const pk = intOrNull(g.gamePk);
+      if (pk) out.add(pk);
+    }
+  }
+  return out;
+}
+
+function analyzeStartingLineupsPage(text, calendarRows, preparedPlayers) {
+  const hay = String(text || "").toLowerCase();
+  const hasNextData = hay.includes('id="__next_data__') || hay.includes("id='__next_data__") || hay.includes("__next_data__");
+  const hasJsonScript = hasNextData || hay.includes("application/json") || hay.includes("lineups");
+  const dateHits = new Set();
+  for (const row of calendarRows || []) {
+    if (row.official_date && hay.includes(String(row.official_date).toLowerCase())) dateHits.add(row.official_date);
+  }
+  const teamNameHits = [];
+  for (const row of calendarRows || []) {
+    for (const value of [row.home_team_name, row.away_team_name]) {
+      if (value && hay.includes(String(value).toLowerCase())) teamNameHits.push(value);
+    }
+  }
+  const abbrHits = [];
+  for (const row of preparedPlayers || []) {
+    for (const value of [row.team, row.opponent]) {
+      const v = normalizeTeamKey(value);
+      if (v && hay.includes(v.toLowerCase())) abbrHits.push(v);
+    }
+  }
+  const playerNameHits = [];
+  for (const row of preparedPlayers || []) {
+    if (row.player_name && hay.includes(String(row.player_name).toLowerCase())) playerNameHits.push(row.player_name);
+    if (playerNameHits.length >= 30) break;
+  }
+  return {
+    has_next_data_marker: hasNextData,
+    has_json_or_lineup_marker: hasJsonScript,
+    target_date_hits: [...new Set(dateHits)],
+    target_team_name_hit_count: [...new Set(teamNameHits)].length,
+    target_team_name_hits_sample: [...new Set(teamNameHits)].slice(0, 20),
+    target_team_abbr_hit_count: [...new Set(abbrHits)].length,
+    target_team_abbr_hits_sample: [...new Set(abbrHits)].slice(0, 20),
+    target_player_name_hit_count: [...new Set(playerNameHits)].length,
+    target_player_name_hits_sample: [...new Set(playerNameHits)].slice(0, 20)
+  };
+}
+
 function validateSide(sideName, node) {
   const warnings = [];
   const blockers = [];
@@ -342,15 +434,27 @@ function summarizePreparedPlayers(preparedPlayers, calendar, teamMap, homeValida
   return { checked, inLineup, notInLineup, unknown, matchMissing, warnings, blockers };
 }
 
-function certificationFrom(games, sourceFailures) {
+function certificationFrom(games, sourceFailures, discovery) {
   const blockerCount = games.reduce((sum, g) => sum + g.blockers.length, 0) + sourceFailures;
   const warningCount = games.reduce((sum, g) => sum + g.warnings.length, 0);
   const mappingFailure = games.some((g) => g.home_mapping_valid === false || g.away_mapping_valid === false);
   const malformed = games.some((g) => g.boxscore_ok && g.blockers.some((b) => String(b).includes("malformed") || String(b).includes("missing") || String(b).includes("not_array")));
+  const boxscore404Count = games.filter((g) => g.boxscore_http_status === 404).length;
+  const feedLive404Count = games.filter((g) => g.feed_live_http_status === 404).length;
+  const scheduleChecked = discovery && discovery.official_schedule_checked;
+  const scheduleAnchorHits = discovery ? Number(discovery.official_schedule_anchor_hit_count || 0) : 0;
+  const pageChecked = discovery && discovery.mlb_starting_lineups_page_checked;
+  const pageHasTargets = discovery && (Number(discovery.mlb_starting_lineups_target_team_name_hit_count || 0) > 0 || Number(discovery.mlb_starting_lineups_target_player_name_hit_count || 0) > 0);
 
+  if (scheduleChecked && scheduleAnchorHits === 0) return { status: "BLOCKED_OFFICIAL_SCHEDULE_ANCHOR_MISMATCH", grade: "BLOCKED", blockerCount: blockerCount + 1, warningCount };
+  if (mappingFailure && games.some((g) => g.boxscore_ok || g.feed_live_ok)) return { status: "BLOCKED_MAPPING_FAILURE", grade: "BLOCKED", blockerCount, warningCount };
+  if (malformed) return { status: "BLOCKED_MALFORMED_SOURCE", grade: "BLOCKED", blockerCount, warningCount };
+  if (boxscore404Count === games.length && feedLive404Count === games.length && pageChecked && pageHasTargets) {
+    return { status: "PASS_SOURCE_DISCOVERY_WITH_GAME_ENDPOINTS_UNINITIALIZED", grade: "DISCOVERY_PASS_WITH_BLOCKED_GAME_ENDPOINTS", blockerCount, warningCount: warningCount + games.length };
+  }
+  if (boxscore404Count === games.length && feedLive404Count === games.length) return { status: "BLOCKED_GAME_ENDPOINTS_UNINITIALIZED", grade: "BLOCKED", blockerCount, warningCount };
   if (sourceFailures > 0) return { status: "BLOCKED_SOURCE_FAILURE", grade: "BLOCKED", blockerCount, warningCount };
-  if (mappingFailure) return { status: "BLOCKED_MAPPING_FAILURE", grade: "BLOCKED", blockerCount, warningCount };
-  if (malformed || blockerCount > 0) return { status: "BLOCKED_MALFORMED_SOURCE", grade: "BLOCKED", blockerCount, warningCount };
+  if (blockerCount > 0) return { status: "BLOCKED_SOURCE_DISCOVERY", grade: "BLOCKED", blockerCount, warningCount };
   if (warningCount > 0) return { status: "PASS_WITH_WARNINGS", grade: "A_MINUS", blockerCount, warningCount };
   return { status: "PASS", grade: "A", blockerCount, warningCount };
 }
@@ -358,7 +462,7 @@ function certificationFrom(games, sourceFailures) {
 async function runSourceProbe(env, input) {
   const startedAt = nowUtc();
   const sourceBase = String(env.MLB_API_BASE_URL || DEFAULT_MLB_BASE_URL).replace(/\/$/, "");
-  const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.1";
+  const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.1.1";
   const probeFeedLive = input.probe_feed_live === true;
 
   const anchors = await getPreparedGameAnchors(env);
@@ -370,12 +474,60 @@ async function runSourceProbe(env, input) {
   ]);
 
   const calendarByGame = new Map(calendarRows.map((r) => [intOrNull(r.game_pk), r]));
+
+  const { start: scheduleStart, end: scheduleEnd } = minMaxOfficialDates(calendarRows);
+  let officialScheduleDiscovery = {
+    official_schedule_checked: false,
+    official_schedule_http_status: null,
+    official_schedule_anchor_hit_count: 0,
+    official_schedule_anchor_missing_count: gamePks.length,
+    official_schedule_anchor_missing_game_pks: gamePks
+  };
+  if (scheduleStart && scheduleEnd) {
+    const scheduleUrl = `${sourceBase}/api/v1/schedule?sportId=1&gameType=R&startDate=${encodeURIComponent(scheduleStart)}&endDate=${encodeURIComponent(scheduleEnd)}&hydrate=probablePitcher(note,person)`;
+    const scheduleRes = await fetchJsonWithRetry(scheduleUrl, userAgent, 1);
+    const schedulePks = collectScheduleGamePks(scheduleRes.json);
+    const hits = gamePks.filter((pk) => schedulePks.has(pk));
+    const misses = gamePks.filter((pk) => !schedulePks.has(pk));
+    officialScheduleDiscovery = {
+      official_schedule_checked: true,
+      official_schedule_url: scheduleUrl,
+      official_schedule_http_status: scheduleRes.http_status,
+      official_schedule_ok: !!scheduleRes.ok,
+      official_schedule_game_count: schedulePks.size,
+      official_schedule_anchor_hit_count: hits.length,
+      official_schedule_anchor_hit_game_pks: hits,
+      official_schedule_anchor_missing_count: misses.length,
+      official_schedule_anchor_missing_game_pks: misses
+    };
+  }
+
   const preparedByGame = new Map();
   for (const row of preparedPlayers) {
     const pk = intOrNull(row.official_game_pk);
     if (!preparedByGame.has(pk)) preparedByGame.set(pk, []);
     preparedByGame.get(pk).push(row);
   }
+
+  const startingPageFetch = await fetchTextWithTimeout(MLB_STARTING_LINEUPS_URL, userAgent);
+  const startingPageAnalysis = analyzeStartingLineupsPage(startingPageFetch.text, calendarRows, preparedPlayers);
+  const discovery = {
+    ...officialScheduleDiscovery,
+    mlb_starting_lineups_page_checked: true,
+    mlb_starting_lineups_url: MLB_STARTING_LINEUPS_URL,
+    mlb_starting_lineups_http_status: startingPageFetch.http_status,
+    mlb_starting_lineups_ok: !!startingPageFetch.ok,
+    mlb_starting_lineups_response_bytes: startingPageFetch.response_bytes || 0,
+    mlb_starting_lineups_has_embedded_json_marker: startingPageAnalysis.has_next_data_marker,
+    mlb_starting_lineups_has_json_or_lineup_marker: startingPageAnalysis.has_json_or_lineup_marker,
+    mlb_starting_lineups_target_date_hits: startingPageAnalysis.target_date_hits,
+    mlb_starting_lineups_target_team_name_hit_count: startingPageAnalysis.target_team_name_hit_count,
+    mlb_starting_lineups_target_team_name_hits_sample: startingPageAnalysis.target_team_name_hits_sample,
+    mlb_starting_lineups_target_team_abbr_hit_count: startingPageAnalysis.target_team_abbr_hit_count,
+    mlb_starting_lineups_target_team_abbr_hits_sample: startingPageAnalysis.target_team_abbr_hits_sample,
+    mlb_starting_lineups_target_player_name_hit_count: startingPageAnalysis.target_player_name_hit_count,
+    mlb_starting_lineups_target_player_name_hits_sample: startingPageAnalysis.target_player_name_hits_sample
+  };
 
   const games = [];
   let boxscoreCalls = 0;
@@ -391,31 +543,35 @@ async function runSourceProbe(env, input) {
     const feedLiveUrl = `${sourceBase}/api/v1.1/game/${gamePk}/feed/live`;
 
     boxscoreCalls += 1;
-    const box = await fetchJsonWithTimeout(boxscoreUrl, userAgent);
+    const box = await fetchJsonWithRetry(boxscoreUrl, userAgent, MAX_ENDPOINT_RETRIES);
     let boxscoreOk = !!(box.ok && box.json);
     let boxscoreTeams = boxscoreOk && box.json && box.json.teams ? box.json.teams : null;
     if (!boxscoreOk) {
-      sourceFailures += 1;
-      blockers.push(`boxscore_fetch_failed_http_${box.http_status || "none"}`);
+      if (box.http_status === 404) warnings.push("boxscore_game_endpoint_not_initialized_http_404");
+      else {
+        sourceFailures += 1;
+        blockers.push(`boxscore_fetch_failed_http_${box.http_status || "none"}`);
+      }
     }
     if (boxscoreOk && !boxscoreTeams) blockers.push("boxscore_root_teams_missing");
 
-    const homeValidation = validateSide("home", boxscoreTeams && boxscoreTeams.home);
-    const awayValidation = validateSide("away", boxscoreTeams && boxscoreTeams.away);
-    warnings.push(...homeValidation.warnings, ...awayValidation.warnings);
-    blockers.push(...homeValidation.blockers, ...awayValidation.blockers);
-
     let feedLiveOk = null;
     let feedLiveTimestamp = null;
+    let live = null;
+    let liveTeams = null;
     if (probeFeedLive || !boxscoreOk) {
       feedLiveCalls += 1;
-      const live = await fetchJsonWithTimeout(feedLiveUrl, userAgent);
+      live = await fetchJsonWithRetry(feedLiveUrl, userAgent, MAX_ENDPOINT_RETRIES);
       feedLiveOk = !!(live.ok && live.json && live.json.gamePk === gamePk && live.json.liveData && live.json.liveData.boxscore);
-      if (!feedLiveOk) warnings.push(`feed_live_probe_failed_http_${live.http_status || "none"}`);
+      if (!feedLiveOk) {
+        if (live.http_status === 404) warnings.push("feed_live_game_endpoint_not_initialized_http_404");
+        else warnings.push(`feed_live_probe_failed_http_${live.http_status || "none"}`);
+      }
       feedLiveTimestamp = live.json && live.json.metaData ? live.json.metaData.timeStamp || null : null;
+      liveTeams = feedLiveOk && live.json.liveData.boxscore ? live.json.liveData.boxscore.teams || null : null;
       if (feedLiveOk && boxscoreOk) {
-        const liveHome = live.json.liveData.boxscore.teams && live.json.liveData.boxscore.teams.home ? live.json.liveData.boxscore.teams.home.battingOrder || [] : [];
-        const liveAway = live.json.liveData.boxscore.teams && live.json.liveData.boxscore.teams.away ? live.json.liveData.boxscore.teams.away.battingOrder || [] : [];
+        const liveHome = liveTeams && liveTeams.home ? liveTeams.home.battingOrder || [] : [];
+        const liveAway = liveTeams && liveTeams.away ? liveTeams.away.battingOrder || [] : [];
         const boxHome = boxscoreTeams && boxscoreTeams.home ? boxscoreTeams.home.battingOrder || [] : [];
         const boxAway = boxscoreTeams && boxscoreTeams.away ? boxscoreTeams.away.battingOrder || [] : [];
         if (JSON.stringify(liveHome) !== JSON.stringify(boxHome)) warnings.push("feed_live_home_batting_order_differs_from_boxscore");
@@ -423,7 +579,20 @@ async function runSourceProbe(env, input) {
       }
     }
 
-    const preparedSummary = summarizePreparedPlayers(gamePreparedPlayers, calendar, teamMap, homeValidation, awayValidation, boxscoreTeams);
+    const activeTeams = boxscoreTeams || liveTeams;
+    let homeValidation;
+    let awayValidation;
+    if (activeTeams) {
+      homeValidation = validateSide("home", activeTeams && activeTeams.home);
+      awayValidation = validateSide("away", activeTeams && activeTeams.away);
+      warnings.push(...homeValidation.warnings, ...awayValidation.warnings);
+      blockers.push(...homeValidation.blockers, ...awayValidation.blockers);
+    } else {
+      homeValidation = { batting_order_count: 0, batting_order_sample: [], lineup_status: "game_endpoint_not_initialized", mapping_valid: null, mapped_players_sample: [], warnings: [], blockers: [] };
+      awayValidation = { batting_order_count: 0, batting_order_sample: [], lineup_status: "game_endpoint_not_initialized", mapping_valid: null, mapped_players_sample: [], warnings: [], blockers: [] };
+    }
+
+    const preparedSummary = summarizePreparedPlayers(gamePreparedPlayers, calendar, teamMap, homeValidation, awayValidation, activeTeams);
     warnings.push(...preparedSummary.warnings);
     blockers.push(...preparedSummary.blockers);
 
@@ -440,7 +609,11 @@ async function runSourceProbe(env, input) {
       boxscore_elapsed_ms: box.elapsed_ms,
       boxscore_response_bytes: box.response_bytes || 0,
       feed_live_ok: feedLiveOk,
+      feed_live_http_status: live ? live.http_status : null,
       feed_live_source_timestamp: feedLiveTimestamp,
+      boxscore_attempts: box.attempts || [],
+      feed_live_attempts: live && live.attempts ? live.attempts : [],
+      game_endpoint_availability_status: activeTeams ? "game_endpoint_available" : ((box.http_status === 404 && live && live.http_status === 404) ? "game_endpoints_uninitialized_or_stale_anchor" : "game_endpoints_unavailable"),
       fetched_at_utc: nowUtc(),
       home_batting_order_count: homeValidation.batting_order_count,
       away_batting_order_count: awayValidation.batting_order_count,
@@ -462,7 +635,7 @@ async function runSourceProbe(env, input) {
     });
   }
 
-  const cert = certificationFrom(games, sourceFailures);
+  const cert = certificationFrom(games, sourceFailures, discovery);
   const ok = cert.status === "PASS" || cert.status === "PASS_WITH_WARNINGS";
   const preparedRowsRead = anchors.reduce((sum, r) => sum + Number(r.prepared_rows || 0), 0);
   const preparedPlayersChecked = games.reduce((sum, g) => sum + Number(g.prepared_players_checked || 0), 0);
@@ -488,8 +661,20 @@ async function runSourceProbe(env, input) {
     prepared_players_checked: preparedPlayersChecked,
     boxscore_calls: boxscoreCalls,
     feed_live_calls: feedLiveCalls,
-    external_calls_performed: boxscoreCalls + feedLiveCalls,
+    external_calls_performed: boxscoreCalls + feedLiveCalls + 2,
     source_failures: sourceFailures,
+    boxscore_404_count: games.filter((g) => g.boxscore_http_status === 404).length,
+    feed_live_404_count: games.filter((g) => g.feed_live_http_status === 404).length,
+    mlb_starting_lineups_page_checked: discovery.mlb_starting_lineups_page_checked,
+    mlb_starting_lineups_http_status: discovery.mlb_starting_lineups_http_status,
+    mlb_starting_lineups_response_bytes: discovery.mlb_starting_lineups_response_bytes,
+    mlb_starting_lineups_has_embedded_json_marker: discovery.mlb_starting_lineups_has_embedded_json_marker,
+    mlb_starting_lineups_target_team_name_hit_count: discovery.mlb_starting_lineups_target_team_name_hit_count,
+    mlb_starting_lineups_target_player_name_hit_count: discovery.mlb_starting_lineups_target_player_name_hit_count,
+    official_schedule_checked: discovery.official_schedule_checked,
+    official_schedule_http_status: discovery.official_schedule_http_status,
+    official_schedule_anchor_hit_count: discovery.official_schedule_anchor_hit_count,
+    official_schedule_anchor_missing_count: discovery.official_schedule_anchor_missing_count,
     warning_count: cert.warningCount,
     blocker_count: cert.blockerCount,
     rows_read: preparedRowsRead + calendarRows.length,
@@ -499,6 +684,8 @@ async function runSourceProbe(env, input) {
       source_probe_only: true,
       primary_endpoint: "/api/v1/game/{gamePk}/boxscore",
       fallback_endpoint: "/api/v1.1/game/{gamePk}/feed/live",
+      source_discovery_ladder: ["official_schedule_anchor_check", "mlb_starting_lineups_page_probe", "game_boxscore_probe", "feed_live_probe"],
+      discovery,
       production_lineup_writes_enabled: false,
       no_prepared_board_mutation: true,
       no_scoring: true,
