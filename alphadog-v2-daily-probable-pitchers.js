@@ -1,9 +1,9 @@
 const WORKER_NAME = "alphadog-v2-daily-probable-pitchers";
-const VERSION = "alphadog-v2-daily-probable-pitchers-v0.1.1-d1-ref-hand-variable-cap-fix";
+const VERSION = "alphadog-v2-daily-probable-pitchers-v0.1.2-batched-people-hand-fill";
 const JOB_KEY = "daily-probable-pitchers";
 const SOURCE_KEY = "official_mlb_statsapi_schedule_probable_pitcher";
 const MAX_PREPARED_ROWS = 5000;
-const MAX_PEOPLE_FALLBACK_CALLS = 20;
+const MAX_PEOPLE_FALLBACK_CALLS = 250;
 const MAX_LIVE_FEED_CALLS = 20;
 
 function nowUtc() { return new Date().toISOString(); }
@@ -377,17 +377,51 @@ async function loadRefPlayerHands(env, playerIds) {
 async function fetchPeopleHands(env, missingIds, counters) {
   const map = new Map();
   const ids = [...new Set(missingIds.filter(Boolean).map(Number))].slice(0, MAX_PEOPLE_FALLBACK_CALLS);
-  for (const id of ids) {
-    const url = `${sourceBase(env)}/people/${encodeURIComponent(String(id))}`;
+  if (!ids.length) return map;
+
+  // Use the StatsAPI batch people endpoint. v0.1.1 used one request per player
+  // and capped at 20, which left many prepared-board starters with missing hands
+  // when REF_DB had null throw_side/throws. Batch lookup keeps calls low while
+  // still filling every relevant starter we are allowed to inspect.
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50);
+    const url = `${sourceBase(env)}/people?personIds=${encodeURIComponent(chunk.join(","))}`;
     counters.external_calls++;
     const res = await fetchJson(url, env);
     if (!res.ok) continue;
-    const person = res.json?.people?.[0] || null;
-    const hand = extractPitchHand(person);
-    const name = person?.fullName || null;
-    if (hand || name) map.set(id, { hand, name });
+    for (const person of res.json?.people || []) {
+      const id = Number(person?.id);
+      if (!id) continue;
+      const hand = extractPitchHand(person);
+      const name = person?.fullName || null;
+      if (hand || name) map.set(id, { hand, name });
+    }
   }
   return map;
+}
+
+function collectStarterIdsForHandFill(relevantGames, actualMap, refHands) {
+  const byId = new Map();
+  for (const g of relevantGames) {
+    const gamePk = Number(g.gamePk);
+    for (const side of ["away", "home"]) {
+      const probable = g?.teams?.[side]?.probablePitcher || null;
+      const probableId = probable?.id ? Number(probable.id) : null;
+      if (probableId) byId.set(probableId, { id: probableId, sourceHand: extractPitchHand(probable) });
+      const actual = actualMap.get(`${gamePk}:${side}`) || null;
+      const actualId = actual?.id ? Number(actual.id) : null;
+      if (actualId) byId.set(actualId, { id: actualId, sourceHand: actual.hand || byId.get(actualId)?.sourceHand || null });
+    }
+  }
+
+  const missing = [];
+  for (const item of byId.values()) {
+    if (!item.id) continue;
+    if (item.sourceHand) continue;
+    if (refHands.get(item.id)?.hand) continue;
+    missing.push(item.id);
+  }
+  return missing;
 }
 
 async function fetchActualStarterMap(env, games, counters) {
@@ -653,10 +687,14 @@ async function runDailyStarters(request, env) {
       }
     }
 
-    const refHands = await loadRefPlayerHands(env, probableIds);
-    const missingHandIds = probableIds.filter(id => !extractPitchHand(relevantGames.find(g => g?.teams?.away?.probablePitcher?.id === id || g?.teams?.home?.probablePitcher?.id === id)?.teams?.away?.probablePitcher) && !(refHands.get(id)?.hand));
-    const peopleHands = await fetchPeopleHands(env, missingHandIds, counters);
     const actualMap = await fetchActualStarterMap(env, relevantGames, counters);
+    const allStarterIds = [...probableIds];
+    for (const actual of actualMap.values()) {
+      if (actual?.id) allStarterIds.push(Number(actual.id));
+    }
+    const refHands = await loadRefPlayerHands(env, allStarterIds);
+    const missingHandIds = collectStarterIdsForHandFill(relevantGames, actualMap, refHands);
+    const peopleHands = await fetchPeopleHands(env, missingHandIds, counters);
 
     const previousRows = await all(env.DAILY_DB, "SELECT current_key, starter_player_id, starter_name, first_seen_at, changed_at FROM daily_starters_current");
     const previousMap = new Map(previousRows.map(r => [r.current_key, r]));
