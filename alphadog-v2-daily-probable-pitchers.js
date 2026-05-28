@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-probable-pitchers";
-const VERSION = "alphadog-v2-daily-probable-pitchers-v0.1.2-batched-people-hand-fill";
+const VERSION = "alphadog-v2-daily-probable-pitchers-v0.1.3-today-tomorrow-retention";
 const JOB_KEY = "daily-probable-pitchers";
 const SOURCE_KEY = "official_mlb_statsapi_schedule_probable_pitcher";
 const MAX_PREPARED_ROWS = 5000;
@@ -449,15 +449,61 @@ async function fetchActualStarterMap(env, games, counters) {
   return out;
 }
 
-function buildWindow(dateSet) {
-  const fallbackToday = todayPt();
-  const dates = [...dateSet];
-  if (!dates.length) {
-    dates.push(fallbackToday, addDays(fallbackToday, 1));
+function retentionWindow() {
+  const today = todayPt();
+  const tomorrow = addDays(today, 1);
+  return { start: today, end: tomorrow, dates: [today, tomorrow], keepDates: new Set([today, tomorrow]) };
+}
+
+function buildWindow(_dateSet) {
+  // Daily Starters is volatile daily context. It must only fetch/keep PT today + tomorrow.
+  // Calendar/Game Status remains owned by the calendar/tally layer; this worker does not
+  // need yesterday/+2 retention.
+  const retention = retentionWindow();
+  return { start: retention.start, end: retention.end, dates: retention.dates };
+}
+
+function filterPreparedRowsForRetention(rows, retention) {
+  return (rows || []).filter(r => retention.keepDates.has(dateOnly(r.official_date || r.official_game_time_utc)));
+}
+
+async function pruneDateScopedDailyStarterTables(env, retention) {
+  // Tables with direct date columns can be pruned before the new run writes fresh rows.
+  await run(env.DAILY_DB, `DELETE FROM daily_starters_current WHERE official_date NOT IN (?, ?)`, retention.start, retention.end);
+  await run(env.DAILY_DB, `DELETE FROM daily_starters_stage WHERE official_date NOT IN (?, ?)`, retention.start, retention.end);
+  await run(env.DAILY_DB, `DELETE FROM daily_probable_pitchers WHERE slate_date NOT IN (?, ?)`, retention.start, retention.end);
+}
+
+async function pruneGameScopedDailyStarterTables(env, keepGamePks, batchId, retention) {
+  const ids = [...new Set((keepGamePks || []).filter(Boolean).map(Number))];
+  if (ids.length) {
+    for (let i = 0; i < ids.length; i += 80) {
+      const chunk = ids.slice(i, i + 80);
+      // Use NOT IN once with the complete keep list when possible. With MLB today+tomorrow
+      // this is normally <= 60 game_pks and below D1 variable limits.
+      if (i === 0) {
+        await run(env.DAILY_DB, `DELETE FROM daily_starters_snapshots WHERE game_pk IS NULL OR game_pk NOT IN (${placeholders(ids.length)})`, ...ids);
+        await run(env.DAILY_DB, `DELETE FROM daily_starters_issues WHERE game_pk IS NULL OR game_pk NOT IN (${placeholders(ids.length)})`, ...ids);
+      }
+    }
+  } else {
+    await run(env.DAILY_DB, `DELETE FROM daily_starters_snapshots`);
+    await run(env.DAILY_DB, `DELETE FROM daily_starters_issues`);
   }
-  dates.push(addDays(fallbackToday, -1), fallbackToday, addDays(fallbackToday, 1), addDays(fallbackToday, 2));
-  const clean = [...new Set(dates.filter(Boolean))].sort();
-  return { start: clean[0], end: clean[clean.length - 1], dates: clean };
+
+  // Keep only today's/tomorrow's Daily Starters batches plus the active/current batch.
+  // Old failed/null-window batches from earlier attempts are intentionally removed.
+  await run(env.DAILY_DB, `DELETE FROM daily_starters_batches
+    WHERE batch_id <> ?
+      AND (
+        window_start IS NULL
+        OR window_end IS NULL
+        OR window_start < ?
+        OR window_start > ?
+        OR window_end < ?
+        OR window_end > ?
+      )`,
+    batchId, retention.start, retention.end, retention.start, retention.end);
 }
 
 function rowFromTeamSide({ game, calendar, side, previous, preparedTeamCount, actual, refHand, peopleHand, sourceEndpoint, snapshotAt }) {
@@ -642,7 +688,11 @@ async function runDailyStarters(request, env) {
 
   let output = null;
   try {
-    const preparedRows = await loadPreparedRows(env);
+    const retention = retentionWindow();
+    await pruneDateScopedDailyStarterTables(env, retention);
+
+    const rawPreparedRows = await loadPreparedRows(env);
+    const preparedRows = filterPreparedRowsForRetention(rawPreparedRows, retention);
     const teamAliasMap = await loadTeamAliasMap(env);
     const prep = preparedMaps(preparedRows, teamAliasMap);
     const window = buildWindow(prep.dateSet);
@@ -727,6 +777,7 @@ async function runDailyStarters(request, env) {
     await run(env.DAILY_DB, "DELETE FROM daily_starters_stage WHERE batch_id = ?", batchId);
     await writeStarterRows(env, batchId, rows, previousMap, counters);
     await updateLegacyProbable(env, batchId, rows, counters);
+    await pruneGameScopedDailyStarterTables(env, rows.map(r => r.game_pk), batchId, retention);
 
     const warningRows = rows.filter(r => r.change_detected || r.scratch_flag || r.opener_flag || r.bulk_pitcher_flag || r.hand_missing_flag || r.starter_status === "probable").length;
     const blockingRows = rows.filter(r => r.prepared_board_relevant && r.tbd_flag).length;
@@ -752,8 +803,10 @@ async function runDailyStarters(request, env) {
       run_id: runId,
       window_start: window.start,
       window_end: window.end,
+      retention_policy: "retain_only_pt_today_and_tomorrow",
       source_endpoint: endpoint,
       prepared_rows_read: preparedRows.length,
+      raw_prepared_rows_seen_before_retention_filter: rawPreparedRows.length,
       prepared_games_checked: prep.gameSet.size,
       calendar_games_checked: calendarMap.size,
       schedule_games_seen: games.length,
@@ -852,7 +905,8 @@ function health(env) {
       secondary: "MLB StatsAPI live feed only for Live/Final actual_started verification",
       no_paid_sources: true,
       no_html_scraping: true,
-      no_confirmed_status_in_v0_1: true
+      no_confirmed_status_in_v0_1: true,
+      retention_policy: "current/snapshot/issue/legacy starter data retained only for PT today and tomorrow"
     }
   };
 }
