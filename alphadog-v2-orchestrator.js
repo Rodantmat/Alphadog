@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.115-config-scheduled-incremental-full-run";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.116-delta-certifier-calendar-tally-restored";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -47,7 +47,7 @@ function base(env, extra = {}) {
       "Buttons enqueue/wake backend work only.",
       "Browser does not run long loops.",
       "Scheduled cron calls the same bounded tick path.",
-      "v0.2.60 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with stale running recovery, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.4.0 source probe/base stage/promote-clean/delta-update, exact active static workers, exact static-certifier read-only validation, exact static-full-run backend chain, and exact incremental-morning-full-run backend chain only.",
+      "v0.2.60 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with stale running recovery, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.4.0 source probe/base stage/promote-clean/delta-update, exact active static workers, exact static-certifier read-only validation, exact static-full-run backend chain, exact delta-certifier calendar/tally dispatch, and exact incremental-morning-full-run backend chain with pre/post calendar-tally gates only.",
       "No generic worker dispatch, no scoring, no ranking, no final board writes, no old production writes."
     ],
     bindings: {
@@ -67,7 +67,8 @@ function base(env, extra = {}) {
       BASE_PITCHER_SPLITS_WORKER: !!env.BASE_PITCHER_SPLITS_WORKER,
       DAILY_GAMES_STATUS_WORKER: !!env.DAILY_GAMES_STATUS_WORKER,
       DAILY_PROBABLE_PITCHERS_WORKER: !!env.DAILY_PROBABLE_PITCHERS_WORKER,
-      DAILY_LINEUPS_WORKER: !!env.DAILY_LINEUPS_WORKER
+      DAILY_LINEUPS_WORKER: !!env.DAILY_LINEUPS_WORKER,
+      DELTA_CERTIFIER_WORKER: !!env.DELTA_CERTIFIER_WORKER
     },
     ...extra
   };
@@ -319,6 +320,12 @@ function isStaticCertifierJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "static-certifier" && worker === "alphadog-v2-static-certifier";
+}
+
+function isDeltaCertifierJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "delta-certifier" && worker === "alphadog-v2-delta-certifier";
 }
 
 function isStaticFullRunJob(row) {
@@ -994,6 +1001,7 @@ async function enqueueScheduledBoardFullRunIfDue(env, cronExpression = "unknown"
 }
 
 const INCREMENTAL_MORNING_FULL_RUN_STAGES = [
+  { stage_key: "calendar_tally_precheck", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Precheck", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "precheck", allow_blocking_gaps: true },
   { stage_key: "hitter_game_logs_delta", job_key: "base-hitter-game-logs", worker_name: "alphadog-v2-base-hitter-game-logs", display_name: "Hitter Game Logs Delta", visible_button: "DELTA > Hitter Game Logs", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_game_logs_delta", job_key: "base-pitcher-game-logs", worker_name: "alphadog-v2-base-pitcher-game-logs", display_name: "Pitcher Game Logs Delta", visible_button: "DELTA > Pitcher Game Logs", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "team_game_logs_delta", job_key: "base-team-game-logs", worker_name: "alphadog-v2-base-team-game-logs", display_name: "Team Game Logs Delta", visible_button: "DELTA > Team Game Logs", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
@@ -1002,7 +1010,8 @@ const INCREMENTAL_MORNING_FULL_RUN_STAGES = [
   { stage_key: "hitter_splits_delta", job_key: "base-hitter-splits", worker_name: "alphadog-v2-base-hitter-splits", display_name: "Hitter Splits Delta", visible_button: "DELTA > Hitter Splits", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_splits_delta", job_key: "base-pitcher-splits", worker_name: "alphadog-v2-base-pitcher-splits", display_name: "Pitcher Splits Delta", visible_button: "DELTA > Pitcher Splits", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "hitter_metrics_affected_delta", job_key: "base-hitter-metrics", worker_name: "alphadog-v2-base-hitter-metrics", display_name: "Hitter Metrics Affected Delta", visible_button: "DELTA > Hitter Metrics", mode: "delta_recalculate_affected_players", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
-  { stage_key: "pitcher_metrics_affected_delta", job_key: "base-pitcher-metrics", worker_name: "alphadog-v2-base-pitcher-metrics", display_name: "Pitcher Metrics Affected Delta", visible_button: "DELTA > Pitcher Metrics", mode: "delta_recalculate_affected_players", worker_group: "Delta", phase_key: "incremental_base", priority: 4 }
+  { stage_key: "pitcher_metrics_affected_delta", job_key: "base-pitcher-metrics", worker_name: "alphadog-v2-base-pitcher-metrics", display_name: "Pitcher Metrics Affected Delta", visible_button: "DELTA > Pitcher Metrics", mode: "delta_recalculate_affected_players", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  { stage_key: "calendar_tally_final_check", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Final Check", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "final_check", require_zero_blocking_gaps: true }
 ];
 
 const STATIC_FULL_RUN_STAGES = [
@@ -1090,6 +1099,16 @@ function childPassedIncrementalMorningFullRun(stage, child) {
   const status = String(output.status || "");
   const hay = `${cert} ${status}`.toLowerCase();
   if (!cert || hay.includes("dummy") || hay.includes("unsupported")) return { pass: false, reason: "missing_dummy_or_unsupported_certification", certification: cert, status };
+  if (stage.job_key === "delta-certifier") {
+    if (String(output.mode || "") !== "game_calendar_differential_check_update") return { pass: false, reason: "calendar_tally_wrong_mode", output_mode: output.mode };
+    if (Number(output.coverage_rows_written || 0) <= 0) return { pass: false, reason: "calendar_tally_no_coverage_rows_written", coverage_rows_written: output.coverage_rows_written };
+    const blockingGapCount = Number(output.blocking_gap_count || 0);
+    const missingGameLayerCount = Number(output.missing_game_layer_count || 0);
+    if (stage.require_zero_blocking_gaps && (blockingGapCount > 0 || missingGameLayerCount > 0 || hay.includes("with_blockers"))) {
+      return { pass: false, reason: "final_calendar_tally_has_blocking_gaps", blocking_gap_count: blockingGapCount, missing_game_layer_count: missingGameLayerCount, certification: cert, status };
+    }
+    return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.source_game_count || 0, rows_written: output.coverage_rows_written || 0, blocking_gap_count: blockingGapCount, missing_game_layer_count: missingGameLayerCount, output };
+  }
   if (stage.mode === "delta_update" && hay.includes("base_backfill")) return { pass: false, reason: "base_backfill_certification_returned_during_delta_stage", certification: cert, status };
   if (stage.mode === "delta_recalculate_affected_players" && String(output.mode || "") !== "delta_recalculate_affected_players") return { pass: false, reason: "metrics_stage_wrong_mode", output_mode: output.mode };
   if (Number(output.duplicate_count || output.duplicate_live_keys || 0) > 0) return { pass: false, reason: "duplicate_count_positive", duplicate_count: output.duplicate_count || output.duplicate_live_keys };
@@ -1106,6 +1125,9 @@ function incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryC
     mode: stage.mode,
     parent_full_run: true,
     full_run_stage_key: stage.stage_key,
+    calendar_tally_stage: stage.calendar_tally_stage || null,
+    require_zero_blocking_gaps: stage.require_zero_blocking_gaps === true,
+    allow_blocking_gaps: stage.allow_blocking_gaps === true,
     visible_button: stage.visible_button,
     chain_id: parentRow.chain_id,
     parent_chain_id: parentRow.chain_id,
@@ -1124,6 +1146,8 @@ function incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryC
     no_ranking: true,
     no_final_board: true,
     no_old_production_touch: true,
+    calendar_tally_precheck_first: INCREMENTAL_MORNING_FULL_RUN_STAGES[0] && INCREMENTAL_MORNING_FULL_RUN_STAGES[0].stage_key === "calendar_tally_precheck",
+    calendar_tally_final_check_last: INCREMENTAL_MORNING_FULL_RUN_STAGES[INCREMENTAL_MORNING_FULL_RUN_STAGES.length - 1] && INCREMENTAL_MORNING_FULL_RUN_STAGES[INCREMENTAL_MORNING_FULL_RUN_STAGES.length - 1].stage_key === "calendar_tally_final_check",
     created_at: nowIso()
   };
 }
@@ -1236,290 +1260,11 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     stageReports.push(report);
   }
 
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_ALL_INCREMENTAL_BASE_DELTAS_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_AND_ALL_BASE_DELTAS_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_final_check_last: true, final_calendar_tally_blocking_gap_count: 0, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
   await releaseIncrementalMorningFullRunLock(env, row);
-  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'INCREMENTAL_MORNING_FULL_RUN_CERTIFIED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
   await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_completed', 'Incremental Morning Full Run certified all incremental base/delta stages', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
-  return output;
-}
-
-async function processStaticCertifierJob(env, row, runId, trigger) {
-  if (!env.STATIC_CERTIFIER_WORKER || typeof env.STATIC_CERTIFIER_WORKER.fetch !== "function") {
-    const output = {
-      ok: false,
-      data_ok: false,
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      worker_name: row.worker_name,
-      job_key: row.job_key,
-      status: "blocked_missing_service_binding",
-      certification: "STATIC_CERTIFIER_SERVICE_BINDING_MISSING",
-      trigger,
-      note: "Exact dispatch is enabled only through STATIC_CERTIFIER_WORKER service binding. Deploy orchestrator with the services wrangler config."
-    };
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_static_certifier_service_binding', 'STATIC_CERTIFIER_WORKER service binding is missing')",
-      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
-    );
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_static_certifier_service_binding', error_message='STATIC_CERTIFIER_WORKER service binding is missing' WHERE request_id=?",
-      JSON.stringify(output), row.request_id
-    );
-    return output;
-  }
-
-  const input = {
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    job_key: row.job_key,
-    worker_name: row.worker_name,
-    trigger,
-    mode: "orchestrator_exact_static_certifier_read_only_dispatch",
-    input_json: parseJsonSafeText(row.input_json || "{}", {})
-  };
-  const started = Date.now();
-  let output;
-  let httpStatus = null;
-  try {
-    const resp = await env.STATIC_CERTIFIER_WORKER.fetch("https://internal.alphadog-v2-static-certifier/run", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(input)
-    });
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); }
-    catch (_) {
-      output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
-    }
-  } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
-  }
-  const partialContinue = false;
-  const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
-  const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
-  const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
-  const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
-  const certification = String((output && output.certification) || (ok ? "static_certifier_completed" : "static_certifier_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "static_certifier_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "static certifier worker failed").slice(0, 900);
-  const cappedOutput = {
-    ...output,
-    orchestrator_dispatch: {
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      exact_worker_only: true,
-      trigger,
-      http_status: httpStatus,
-      elapsed_ms: Date.now() - started,
-      static_certifier_read_only: true,
-      no_reruns: true,
-      no_source_fetches: true,
-      no_promotion: true,
-      no_cleanup: true,
-      no_prizepicks_board_mutation: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board_write: true,
-      no_old_production_touch: true
-    }
-  };
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
-    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
-  );
-  if (partialContinue) {
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
-      JSON.stringify(cappedOutput), row.request_id
-    );
-  } else {
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-    );
-  }
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'static_certifier_dispatch_completed', 'Orchestrator completed exact static-certifier read-only dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, certification, data_ok: dataOk, rows_read: rowsRead, rows_written: rowsWritten })
-  );
-  return cappedOutput;
-}
-
-async function processStaticFullRunJob(env, row, runId, trigger) {
-  const started = Date.now();
-  const parentInput = parseJsonSafeText(row.input_json || "{}", {});
-  const approvedStages = STATIC_FULL_RUN_STAGES;
-  const childRows = await all(env.CONTROL_DB,
-    "SELECT request_id, parent_request_id, chain_id, job_key, worker_name, status, output_json, error_code, error_message, created_at, updated_at FROM control_job_queue WHERE parent_request_id=? ORDER BY datetime(created_at) ASC",
-    row.request_id
-  );
-  const childByJob = new Map(childRows.map(c => [String(c.job_key), c]));
-  const stageReports = [];
-
-  for (let i = 0; i < approvedStages.length; i++) {
-    const stage = approvedStages[i];
-    const child = childByJob.get(stage.job_key);
-    if (!child) {
-      const childRequestId = rid(String(stage.job_key).replace(/-/g, "_"));
-      const input = staticFullRunChildInput(row, stage, i);
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'Static', 'static', ?, 'pending', 5, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-        childRequestId, row.chain_id, row.request_id, stage.job_key, stage.worker_name, stage.display_name, JSON.stringify(input)
-      );
-      const output = {
-        ok: true,
-        data_ok: true,
-        version: SYSTEM_VERSION,
-        worker_name: WORKER_NAME,
-        job_key: row.job_key,
-        request_id: row.request_id,
-        chain_id: row.chain_id,
-        status: "partial_continue",
-        current_stage: stage.job_key,
-        enqueued_child_request_id: childRequestId,
-        full_run_certified: false,
-        stages: [...stageReports, { job_key: stage.job_key, child_request_id: childRequestId, child_status: "pending", data_ok: null, certification: null, pass: null }],
-        deferred_workers_skipped: ["static-rosters", "static-player-aliases"],
-        note: "Static Full Run parent enqueued next active static stage. Backend wake/cron continues; browser may close."
-      };
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'static_full_run_child_enqueued', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
-        runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
-      );
-      await run(env.CONTROL_DB,
-        "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
-        JSON.stringify(output), row.request_id
-      );
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'static-full-run', 'INFO', 'static_full_run_stage_enqueued', 'Static Full Run parent enqueued next active static stage', ?, CURRENT_TIMESTAMP)",
-        row.request_id, runId, WORKER_NAME, JSON.stringify({ parent_request_id: row.request_id, child_request_id: childRequestId, stage: stage.job_key, stage_index: i, deferred_workers_skipped: ["static-rosters", "static-player-aliases"] })
-      );
-      return output;
-    }
-
-    if (String(child.status || "") === "pending" || String(child.status || "") === "running") {
-      const output = {
-        ok: true,
-        data_ok: true,
-        version: SYSTEM_VERSION,
-        worker_name: WORKER_NAME,
-        job_key: row.job_key,
-        request_id: row.request_id,
-        chain_id: row.chain_id,
-        status: "partial_continue",
-        current_stage: stage.job_key,
-        waiting_on_child_request_id: child.request_id,
-        waiting_on_child_status: child.status,
-        full_run_certified: false,
-        stages: [...stageReports, { job_key: stage.job_key, child_request_id: child.request_id, child_status: child.status, data_ok: null, certification: null, pass: null }],
-        note: "Static Full Run parent is waiting on current child stage. Backend wake/cron continues; browser may close."
-      };
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'static_full_run_waiting_on_child', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
-        runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
-      );
-      await run(env.CONTROL_DB,
-        "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
-        JSON.stringify(output), row.request_id
-      );
-      return output;
-    }
-
-    const validation = childPassedStaticFullRun(stage, child);
-    const childOutput = parseJsonSafeText(child.output_json || "{}", {});
-    const report = {
-      job_key: stage.job_key,
-      child_request_id: child.request_id,
-      child_status: child.status,
-      child_certification: childOutput.certification || null,
-      child_data_ok: childOutput.data_ok === true,
-      pass: validation.pass,
-      reason: validation.reason || null,
-      rows_read: childOutput.rows_read || 0,
-      rows_written: childOutput.rows_written || 0
-    };
-    stageReports.push(report);
-
-    if (!validation.pass) {
-      const output = {
-        ok: false,
-        data_ok: false,
-        version: SYSTEM_VERSION,
-        worker_name: WORKER_NAME,
-        job_key: row.job_key,
-        request_id: row.request_id,
-        chain_id: row.chain_id,
-        status: "failed_static_full_run_stage",
-        failed_stage: stage.job_key,
-        failed_child_request_id: child.request_id,
-        failed_reason: validation.reason,
-        stages: stageReports,
-        final_certifier_result: stage.job_key === "static-certifier" ? childOutput : null,
-        full_run_certified: false,
-        deferred_workers_skipped: ["static-rosters", "static-player-aliases"]
-      };
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, 'STATIC_FULL_RUN_FAILED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, 'static_full_run_stage_failed', ?)",
-        runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), String(validation.reason || "static full run stage failed").slice(0, 900)
-      );
-      await run(env.CONTROL_DB,
-        "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='static_full_run_stage_failed', error_message=? WHERE request_id=?",
-        JSON.stringify(output), String(validation.reason || "static full run stage failed").slice(0, 900), row.request_id
-      );
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'static-full-run', 'ERROR', 'static_full_run_failed', 'Static Full Run stopped after failed child stage validation', ?, CURRENT_TIMESTAMP)",
-        row.request_id, runId, WORKER_NAME, JSON.stringify(output)
-      );
-      return output;
-    }
-  }
-
-  const finalCertifierRow = childByJob.get("static-certifier");
-  const finalCertifierOutput = parseJsonSafeText(finalCertifierRow && finalCertifierRow.output_json || "{}", {});
-  const output = {
-    ok: true,
-    data_ok: true,
-    version: SYSTEM_VERSION,
-    worker_name: WORKER_NAME,
-    job_key: row.job_key,
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    status: "completed_static_full_run_certified",
-    certification: "STATIC_FULL_RUN_CERTIFIED_ALL_ACTIVE_STATIC_WORKERS_RERAN_AND_FINAL_CERTIFIER_PASSED",
-    full_run_certified: true,
-    stages: stageReports,
-    final_certifier_result: {
-      child_request_id: finalCertifierRow ? finalCertifierRow.request_id : null,
-      certification: finalCertifierOutput.certification || null,
-      data_ok: finalCertifierOutput.data_ok === true,
-      full_static_certified: finalCertifierOutput.full_static_certified === true
-    },
-    deferred_workers_skipped: ["static-rosters", "static-player-aliases"],
-    no_browser_pump: true,
-    no_control_room_server_side_fetch_to_orchestrator: true,
-    no_generic_dispatch: true,
-    no_prizepicks_board_mutation: true,
-    no_scoring: true,
-    no_final_board_writes: true,
-    elapsed_ms: Date.now() - started
-  };
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'STATIC_FULL_RUN_CERTIFIED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
-    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
-  );
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
-    JSON.stringify(output), row.request_id
-  );
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'static-full-run', 'INFO', 'static_full_run_certified', 'Static Full Run completed all active static stages and final certifier passed', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, JSON.stringify({ request_id: row.request_id, chain_id: row.chain_id, full_run_certified: true, stages: stageReports })
-  );
   return output;
 }
 
@@ -5089,6 +4834,16 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isDeltaCertifierJob(row)) {
+    const output = await processDeltaCertifierJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_delta_certifier_job" : "failed_one_delta_certifier_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isStaticCertifierJob(row)) {
     const output = await processStaticCertifierJob(env, row, runId, trigger);
     return {
@@ -5146,16 +4901,16 @@ async function processOneUnlocked(env, trigger) {
       status: "unsupported_in_v0_2_16_safe_shell",
       job_key: row.job_key,
       worker_name: row.worker_name,
-      note: "v0.2.32 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter and Base Hitter Splits promotion/delta hot continuation use backend waitUntil, not browser pump; cron is rescue only. Base Pitcher supports locked base promotion and delta_update retained-stage continuation; base promotion makes no MLB calls, delta uses MLB StatsAPI only after base integrity gate."
+      note: "v0.2.32 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, exact delta-certifier calendar/tally, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter and Base Hitter Splits promotion/delta hot continuation use backend waitUntil, not browser pump; cron is rescue only. Base Pitcher supports locked base promotion and delta_update retained-stage continuation; base promotion makes no MLB calls, delta uses MLB StatsAPI only after base integrity gate."
     };
 
     await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_31', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.32')",
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_31', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, exact delta-certifier calendar/tally, and exact static-full-run jobs are enabled in orchestrator v0.2.32')",
       runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
     );
 
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_31', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.32' WHERE request_id=?",
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_31', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, exact delta-certifier calendar/tally, and exact static-full-run jobs are enabled in orchestrator v0.2.32' WHERE request_id=?",
       JSON.stringify(output), row.request_id
     );
 
