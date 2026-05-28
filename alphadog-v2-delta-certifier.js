@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.1.8-bullpen-live-reconcile-after-coverage";
+const VERSION = "alphadog-v2-delta-certifier-v0.1.9-current-day-nonfinal-nonblocking";
 const JOB_KEY = "delta-certifier";
 
 const ACTIVE_COVERAGE_LAYER_KEYS = [
@@ -553,6 +553,70 @@ function snapshotLayerFromTemplate(layerKey, officialDate, templates) {
   };
 }
 
+function dateOnlyForTimeZone(date = new Date(), timeZone = "America/Los_Angeles") {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date).reduce((acc, part) => {
+    if (part.type !== "literal") acc[part.type] = part.value;
+    return acc;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function calendarGameIsFinalOrStatsReady(g) {
+  return Number(g.is_available_for_stats || 0) === 1 || Number(g.is_final || 0) === 1;
+}
+
+function shouldWaitForNonFinalCalendarGame(g, currentOfficialDate) {
+  const officialDate = String(g.official_date || "").slice(0, 10);
+  if (!officialDate || officialDate < String(currentOfficialDate || "")) return false;
+  if (calendarGameIsFinalOrStatsReady(g)) return false;
+  if (Number(g.is_postponed || 0) === 1 || Number(g.is_suspended || 0) === 1 || Number(g.is_cancelled || 0) === 1) return true;
+  const abstractState = String(g.abstract_game_state || "").toLowerCase();
+  const detailedState = String(g.detailed_state || "").toLowerCase();
+  const statusCode = String(g.status_code || "").toUpperCase();
+  const scheduledOrLiveNotFinal =
+    Number(g.is_scheduled || 0) === 1 ||
+    Number(g.is_pregame || 0) === 1 ||
+    Number(g.is_live || 0) === 1 ||
+    abstractState === "preview" ||
+    abstractState === "live" ||
+    detailedState.includes("scheduled") ||
+    detailedState.includes("pre-game") ||
+    detailedState.includes("warmup") ||
+    statusCode === "S" ||
+    statusCode === "P" ||
+    statusCode === "I";
+  return scheduledOrLiveNotFinal;
+}
+
+function scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, extraDetails = {}) {
+  return {
+    layerKey,
+    status: "scheduled_not_ready",
+    grade: "WAITING_NOT_FINAL",
+    blocking: 0,
+    liveRows: 0,
+    entityCount: 0,
+    expectedRows: null,
+    missingRows: null,
+    reason: null,
+    details: {
+      calendar_is_available_for_stats: Number(g.is_available_for_stats || 0),
+      calendar_is_final: Number(g.is_final || 0),
+      calendar_status_code: g.status_code || null,
+      calendar_abstract_game_state: g.abstract_game_state || null,
+      calendar_detailed_state: g.detailed_state || null,
+      live_source_rows_for_game: Number(liveSourceRowsForGame || 0),
+      current_day_nonfinal_nonblocking_v0_1_9: true,
+      ...extraDetails
+    }
+  };
+}
+
 async function tableColumns(db, table) {
   const tableRow = await first(db, "SELECT name FROM sqlite_master WHERE type='table' AND name=?", table);
   if (!tableRow) return { table_exists: false, columns: [] };
@@ -581,7 +645,25 @@ function countFromMap(meta, gamePk) {
 
 async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
   const activeLayers = activeCoverageLayerKeys();
-  const games = await all(env.TEAM_DB, `SELECT game_pk, season, official_date, is_available_for_stats FROM mlb_game_calendar WHERE official_date BETWEEN ? AND ? ORDER BY official_date, game_pk`, startDate, endDate);
+  const currentOfficialDate = dateOnlyForTimeZone(new Date(), "America/Los_Angeles");
+  const games = await all(env.TEAM_DB, `SELECT
+      game_pk,
+      season,
+      official_date,
+      status_code,
+      abstract_game_state,
+      detailed_state,
+      is_scheduled,
+      is_pregame,
+      is_live,
+      is_final,
+      is_postponed,
+      is_suspended,
+      is_cancelled,
+      is_available_for_stats
+    FROM mlb_game_calendar
+    WHERE official_date BETWEEN ? AND ?
+    ORDER BY official_date, game_pk`, startDate, endDate);
   let coverageRows = 0;
   let blockingGaps = 0;
   const gapsSample = [];
@@ -681,14 +763,15 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
     const starterTeam = countFromMap(starterTeamCounts, gamePk);
     const bullpen = countFromMap(bullpenCounts, gamePk);
     const liveSourceRowsForGame = hitter.rows + pitcher.rows + team.rows + starter.rows + bullpen.rows;
-    const evaluateLiveLayers = calendarStatsReady || liveSourceRowsForGame > 0;
+    const waitForNonFinalCalendarGame = shouldWaitForNonFinalCalendarGame(g, currentOfficialDate);
+    const evaluateLiveLayers = calendarStatsReady || Number(g.is_final || 0) === 1;
 
-    if (!evaluateLiveLayers) {
+    if (waitForNonFinalCalendarGame || !evaluateLiveLayers) {
       for (const layerKey of activeLayers) {
-        addLayer(g, { layerKey, status: "scheduled_not_ready", grade: "WAITING_NOT_FINAL", blocking: 0, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: null, details: { is_available_for_stats: 0, live_source_rows_for_game: 0, live_source_override_v0_1_8: false } });
+        addLayer(g, scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, { live_source_override_v0_1_8: false }));
       }
     } else {
-      const overrideDetails = { calendar_is_available_for_stats: Number(g.is_available_for_stats || 0), live_source_rows_for_game: liveSourceRowsForGame, live_source_override_v0_1_8: !calendarStatsReady && liveSourceRowsForGame > 0 };
+      const overrideDetails = { calendar_is_available_for_stats: Number(g.is_available_for_stats || 0), calendar_is_final: Number(g.is_final || 0), live_source_rows_for_game: liveSourceRowsForGame, live_source_override_v0_1_8: !calendarStatsReady && Number(g.is_final || 0) === 1 && liveSourceRowsForGame > 0, current_day_nonfinal_nonblocking_v0_1_9: false };
       addLayer(g, hitter.rows > 0 ? { layerKey: "hitter_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: hitter.rows, entityCount: hitter.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...hitter, ...overrideDetails } } : { layerKey: "hitter_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_HITTER_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...hitter, ...overrideDetails } });
       addLayer(g, pitcher.rows > 0 ? { layerKey: "pitcher_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: pitcher.rows, entityCount: pitcher.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...pitcher, ...overrideDetails } } : { layerKey: "pitcher_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_PITCHER_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...pitcher, ...overrideDetails } });
       const teamPass = team.rows === 2 && team.entities === 2;
@@ -812,6 +895,8 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
     scoped_delete_then_rebuild_current_window_v0_1_6: true,
     optimized_full_calendar_coverage_v0_1_6: true,
     live_source_override_calendar_wait_v0_1_8: true,
+    current_day_nonfinal_nonblocking_v0_1_9: true,
+    current_official_date_pt: currentOfficialDate,
     bullpen_live_reconcile_after_coverage_v0_1_8: true,
     bullpen_live_reconcile_checked_rows: bullpenReconcile.checked_rows,
     bullpen_live_reconcile_updated_rows: bullpenReconcile.updated_rows,
