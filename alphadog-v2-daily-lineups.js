@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-lineups";
-const VERSION = "alphadog-v2-daily-lineups-v0.1.5-lineup-write-ready-dry-run";
+const VERSION = "alphadog-v2-daily-lineups-v0.1.6-write-framework-locked-off";
 const JOB_KEY = "daily-lineups";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -10,6 +10,8 @@ const MAX_CALENDAR_PROBE_GAMES = 6;
 const FETCH_TIMEOUT_MS = 12000;
 const MAX_ENDPOINT_RETRIES = 2;
 const MLB_STARTING_LINEUPS_URL = "https://www.mlb.com/starting-lineups";
+const PRODUCTION_LINEUP_WRITES_ENABLED = false;
+const DERIVED_BACKUP_WRITE_ENABLED = false;
 
 function normalizeMlbOrigin(raw) {
   const fallback = DEFAULT_MLB_BASE_URL;
@@ -587,7 +589,7 @@ function buildLineupWritePreviewRows(gamePk, calendar, side, validation) {
   for (const player of mapped) {
     rows.push({
       dry_run_only: true,
-      target_table: "daily_lineups_current_future_locked",
+      target_table: "daily_lineups_current",
       game_pk: intOrNull(gamePk),
       official_date: calendar.official_date || null,
       game_time_utc: calendar.game_time_utc || null,
@@ -602,7 +604,8 @@ function buildLineupWritePreviewRows(gamePk, calendar, side, validation) {
       active_position: player.position || null,
       lineup_status: "posted_lineup",
       source_endpoint: "/api/v1/game/{gamePk}/boxscore",
-      write_gate: "locked_preview_only"
+      write_gate: "locked_preview_only",
+      write_enabled: PRODUCTION_LINEUP_WRITES_ENABLED
     });
   }
   return rows;
@@ -613,7 +616,7 @@ function buildAvailabilityWritePreviewRows(gamePk, calendar, preparedSummary) {
   for (const player of (preparedSummary && preparedSummary.samples ? preparedSummary.samples : [])) {
     rows.push({
       dry_run_only: true,
-      target_table: "daily_player_availability_current_future_locked",
+      target_table: "daily_player_availability_current",
       game_pk: intOrNull(gamePk),
       official_date: calendar.official_date || null,
       game_time_utc: calendar.game_time_utc || null,
@@ -629,7 +632,8 @@ function buildAvailabilityWritePreviewRows(gamePk, calendar, preparedSummary) {
       prepared_rows: Number(player.prepared_rows || 0),
       sources: player.sources || null,
       prop_keys: player.prop_keys || null,
-      write_gate: "locked_preview_only"
+      write_gate: "locked_preview_only",
+      write_enabled: DERIVED_BACKUP_WRITE_ENABLED
     });
   }
   return rows;
@@ -659,12 +663,83 @@ function futureWriteUnlockRequirements() {
     "Every mapped player has person.id matching the battingOrder integer.",
     "Dry-run lineup_write_preview_sample shows correct slot, side, team, player_id, and player_name.",
     "No production writes, score writes, board mutation, ranking, or final-board writes occur during the probe.",
-    "User explicitly approves enabling the production write mode after review."
+    "production_lineup_writes_enabled is changed only after user approval and a posted-lineup probe pass.",
+    "derived_backup_write_enabled is changed only after user approval and repeated pre-lineup roster validation passes."
   ];
 }
 
-function certificationFrom(games, sourceFailures, discovery) {
-  const blockerCount = games.reduce((sum, g) => sum + g.blockers.length, 0) + sourceFailures;
+function futureTableContracts() {
+  return {
+    daily_lineups_current: {
+      status: "future_contract_placeholder_no_writes",
+      minimum_fields: ["game_pk", "official_date", "game_time_utc", "team_side", "team_id", "player_id", "player_name", "lineup_slot", "lineup_status", "source_endpoint", "fetched_at_utc"]
+    },
+    daily_player_availability_current: {
+      status: "future_contract_placeholder_no_writes",
+      minimum_fields: ["game_pk", "official_date", "game_time_utc", "player_id", "player_name", "team", "side", "availability_status", "roster_status_code", "confidence_label", "fetched_at_utc"]
+    },
+    daily_lineups_batches: {
+      status: "future_contract_placeholder_no_writes",
+      minimum_fields: ["batch_id", "source_mode", "certification_status", "games_checked", "players_checked", "rows_written", "created_at"]
+    }
+  };
+}
+
+function writeFrameworkContract() {
+  return {
+    framework_status: "wired_locked_off",
+    production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED,
+    derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
+    writes_performed_required_value: 0,
+    confirmed_lineup_write_rule: "only from battingOrder arrays with length >= 9 and verified players.ID{playerId}.person.id mappings",
+    pre_lineup_availability_rule: "only active roster validation from players map; never implies confirmed starting lineup",
+    hard_block_rules: [
+      "block if production lineup writes are enabled while any target side has battingOrder length 0",
+      "block if production lineup writes are enabled while any target side has battingOrder length 1-8",
+      "block if production lineup writes are enabled and the boxscore players map is missing or has fewer than 15 players for a target side",
+      "block if derived backup writes are enabled and the boxscore players map is missing or has fewer than 15 players for a target side",
+      "block if any battingOrder ID fails players.ID{playerId}.person.id mapping"
+    ],
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_prepared_board_mutation: true
+  };
+}
+
+function evaluateWriteFrameworkSafety(games) {
+  const hardBlocks = [];
+  const checks = [];
+  for (const g of games || []) {
+    for (const side of ["home", "away"]) {
+      const orderCount = Number(g[`${side}_batting_order_count`] || 0);
+      const playerMapCount = Number(g[`${side}_player_map_count`] || 0);
+      checks.push({
+        game_pk: g.game_pk,
+        side,
+        batting_order_count: orderCount,
+        player_map_count: playerMapCount,
+        production_lineup_write_safe: !PRODUCTION_LINEUP_WRITES_ENABLED,
+        derived_backup_write_safe: !DERIVED_BACKUP_WRITE_ENABLED || playerMapCount >= 15
+      });
+      if (PRODUCTION_LINEUP_WRITES_ENABLED && orderCount === 0) hardBlocks.push(`production_lineup_write_enabled_but_${g.game_pk}_${side}_batting_order_empty`);
+      if (PRODUCTION_LINEUP_WRITES_ENABLED && orderCount > 0 && orderCount < 9) hardBlocks.push(`production_lineup_write_enabled_but_${g.game_pk}_${side}_batting_order_partial_${orderCount}`);
+      if (PRODUCTION_LINEUP_WRITES_ENABLED && playerMapCount < 15) hardBlocks.push(`production_lineup_write_enabled_but_${g.game_pk}_${side}_player_map_underpopulated_${playerMapCount}`);
+      if (DERIVED_BACKUP_WRITE_ENABLED && playerMapCount < 15) hardBlocks.push(`derived_backup_write_enabled_but_${g.game_pk}_${side}_player_map_underpopulated_${playerMapCount}`);
+    }
+  }
+  return {
+    write_framework_locked_off: !PRODUCTION_LINEUP_WRITES_ENABLED && !DERIVED_BACKUP_WRITE_ENABLED,
+    production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED,
+    derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
+    hard_blocks: hardBlocks,
+    checks: checks.slice(0, 20)
+  };
+}
+
+
+function certificationFrom(games, sourceFailures, discovery, writeHardBlocks = []) {
+  const blockerCount = games.reduce((sum, g) => sum + g.blockers.length, 0) + sourceFailures + writeHardBlocks.length;
   const warningCount = games.reduce((sum, g) => sum + g.warnings.length, 0);
   const mappingFailure = games.some((g) => (g.home_mapping_valid === false && g.home_batting_order_count > 0) || (g.away_mapping_valid === false && g.away_batting_order_count > 0));
   const malformed = games.some((g) => (g.boxscore_ok || g.feed_live_ok) && g.blockers.some((b) => String(b).includes("malformed") || String(b).includes("missing") || String(b).includes("not_array")));
@@ -675,6 +750,7 @@ function certificationFrom(games, sourceFailures, discovery) {
   const lineupPreviewRows = games.reduce((sum, g) => sum + Number(g.lineup_write_preview_row_count || 0), 0);
   const preparedStale = discovery && discovery.prepared_board_stale_warning;
 
+  if (writeHardBlocks.length > 0) return { status: "BLOCKED_WRITE_FRAMEWORK_GUARDRAIL", grade: "BLOCKED", blockerCount, warningCount };
   if (mappingFailure && anyEndpointAvailable) return { status: "BLOCKED_MAPPING_FAILURE", grade: "BLOCKED", blockerCount, warningCount };
   if (malformed) return { status: "BLOCKED_MALFORMED_SOURCE", grade: "BLOCKED", blockerCount, warningCount };
   if (sourceFailures > 0 && !anyEndpointAvailable) return { status: "BLOCKED_SOURCE_FAILURE", grade: "BLOCKED", blockerCount, warningCount };
@@ -684,7 +760,7 @@ function certificationFrom(games, sourceFailures, discovery) {
   const rosterValidated = games.reduce((sum, g) => sum + Number(g.prepared_players_roster_validated || 0), 0);
   if (anyEndpointAvailable && anyPostedLineup && lineupPreviewRows > 0) return { status: "PASS_LINEUP_PARSER_READY_WRITE_LOCKED", grade: "DISCOVERY_PASS_LINEUP_WRITE_PREVIEW_READY", blockerCount, warningCount };
   if (anyEndpointAvailable && allLineupsNotPosted && preparedStale) return { status: "PASS_CALENDAR_SOURCE_PROBE_WITH_PREPARED_BOARD_STALE", grade: "DISCOVERY_PASS_LINEUPS_NOT_POSTED", blockerCount, warningCount: warningCount + 1 };
-  if (anyEndpointAvailable && allLineupsNotPosted && preparedChecked > 0 && rosterValidated > 0) return { status: "PASS_SOURCE_REACHABLE_DERIVED_BACKUP_READY", grade: "DISCOVERY_PASS_PRE_LINEUP_ROSTER_VALIDATED", blockerCount, warningCount };
+  if (anyEndpointAvailable && allLineupsNotPosted && preparedChecked > 0 && rosterValidated > 0) return { status: "PASS_WRITE_FRAMEWORK_LOCKED_OFF", grade: "WRITE_FRAMEWORK_LOCKED_OFF_PRE_LINEUP_ROSTER_VALIDATED", blockerCount, warningCount };
   if (anyEndpointAvailable && allLineupsNotPosted) return { status: "PASS_SOURCE_REACHABLE_LINEUPS_NOT_POSTED", grade: "DISCOVERY_PASS_LINEUPS_NOT_POSTED", blockerCount, warningCount };
   if (warningCount > 0 || preparedStale) return { status: "PASS_WITH_WARNINGS", grade: "A_MINUS", blockerCount, warningCount: warningCount + (preparedStale ? 1 : 0) };
   return { status: "PASS", grade: "A", blockerCount, warningCount };
@@ -694,7 +770,7 @@ async function runSourceProbe(env, input) {
   const startedAt = nowUtc();
   const rawSourceBase = String(env.MLB_API_BASE_URL || DEFAULT_MLB_BASE_URL).replace(/\/$/, "");
   const sourceBase = normalizeMlbOrigin(rawSourceBase);
-  const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.1.5";
+  const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.1.6";
   const probeFeedLive = input.probe_feed_live !== false;
   const todayUtc = nowUtc().slice(0, 10);
 
@@ -884,7 +960,8 @@ async function runSourceProbe(env, input) {
     });
   }
 
-  const cert = certificationFrom(games, sourceFailures, discovery);
+  const writeSafety = evaluateWriteFrameworkSafety(games);
+  const cert = certificationFrom(games, sourceFailures, discovery, writeSafety.hard_blocks);
   const ok = cert.status.startsWith("PASS");
   const preparedRowsRead = anchors.reduce((sum, r) => sum + Number(r.prepared_rows || 0), 0);
   const preparedPlayersChecked = games.reduce((sum, g) => sum + Number(g.prepared_players_checked || 0), 0);
@@ -921,6 +998,13 @@ async function runSourceProbe(env, input) {
     prepared_players_roster_validated: games.reduce((sum, g) => sum + Number(g.prepared_players_roster_validated || 0), 0),
     prepared_player_status_sample: games.flatMap((g) => g.prepared_player_status_sample || []).slice(0, 30),
     derived_backup_status: games.some((g) => Number(g.prepared_players_roster_validated || 0) > 0) ? "PRE_LINEUP_ROSTER_VALIDATED_SOURCE_PROBE_ONLY" : null,
+    production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED,
+    derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
+    write_framework_locked_off: writeSafety.write_framework_locked_off,
+    write_framework_contract: writeFrameworkContract(),
+    future_table_contracts: futureTableContracts(),
+    write_safety_hard_blocks: writeSafety.hard_blocks,
+    write_safety_checks: writeSafety.checks,
     lineup_write_ready_games: lineupWriteReadyGames,
     lineup_write_preview_only: true,
     lineup_write_preview_row_count: lineupWritePreviewRows,
@@ -959,8 +1043,13 @@ async function runSourceProbe(env, input) {
       mlb_api_origin_used: sourceBase,
       prepared_board_stale_warning: preparedBoardStale,
       derived_backup_status: games.some((g) => Number(g.prepared_players_roster_validated || 0) > 0) ? "PRE_LINEUP_ROSTER_VALIDATED_SOURCE_PROBE_ONLY" : null,
-      derived_backup_write_enabled: false,
-      production_lineup_writes_enabled: false,
+      production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED,
+      derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
+      write_framework_locked_off: writeSafety.write_framework_locked_off,
+      write_framework_contract: writeFrameworkContract(),
+      future_table_contracts: futureTableContracts(),
+      write_safety_hard_blocks: writeSafety.hard_blocks,
+      write_safety_checks: writeSafety.checks,
       lineup_write_preview_only: true,
       lineup_write_ready_games: lineupWriteReadyGames,
       lineup_write_preview_row_count: lineupWritePreviewRows,
@@ -974,12 +1063,11 @@ async function runSourceProbe(env, input) {
       fallback_endpoint: "/api/v1.1/game/{gamePk}/feed/live",
       source_discovery_ladder: ["prepared_board_anchor_check", "calendar_only_source_probe", "official_schedule_anchor_check", "mlb_starting_lineups_page_probe", "game_boxscore_probe", "feed_live_probe"],
       discovery,
-      production_lineup_writes_enabled: false,
       no_prepared_board_mutation: true,
       no_scoring: true,
       no_ranking: true,
       no_final_board: true,
-      unlock_note: "Production daily_lineups_current writes remain blocked until source_probe passes repeatedly and user explicitly approves write phase."
+      unlock_note: "Production daily_lineups_current and daily_player_availability_current writes remain blocked until source_probe passes repeatedly and user explicitly approves write phase."
     },
     games
   };
