@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-player-availability";
-const VERSION = "alphadog-v2-daily-player-availability-v0.1.2-injured-list-status-guard";
+const VERSION = "alphadog-v2-daily-player-availability-v0.1.3-today-tomorrow-retention-prune";
 const JOB_KEY = "daily-player-availability";
 const SOURCE_KEY = "official_mlb_statsapi_roster_transactions_v1";
 const MAX_PREPARED_PLAYERS = 500;
@@ -53,6 +53,8 @@ function baseIdentity(env) {
       sidecar_tables_only: true,
       legacy_stub_untouched: true,
       prepared_board_relevance_only: true,
+      retention_today_tomorrow_only: true,
+      current_table_latest_run_only: true,
       anchors_to_mlb_game_calendar_game_pk: true,
       no_score_db_mutation: true,
       no_calendar_rebuild: true,
@@ -109,6 +111,11 @@ function todayPt() {
   const m = {};
   for (const p of parts) m[p.type] = p.value;
   return `${m.year}-${m.month}-${m.day}`;
+}
+function retentionWindowPt() {
+  const today = todayPt();
+  const tomorrow = addDays(today, 1);
+  return { start: today, end: tomorrow, dates: [today, tomorrow] };
 }
 function intOrNull(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
 function normTeam(value) { return String(value || "").trim().toUpperCase(); }
@@ -275,10 +282,35 @@ async function ensureSchema(env) {
   await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_snap_batch ON daily_player_availability_snapshots_v1 (batch_id)`);
   await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_issues_batch ON daily_player_availability_issues_v1 (batch_id)`);
   await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_issues_severity ON daily_player_availability_issues_v1 (issue_severity)`);
+  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_current_batch ON daily_player_availability_current_v1 (batch_id)`);
+  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_snap_date ON daily_player_availability_snapshots_v1 (official_date)`);
+  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_issues_date ON daily_player_availability_issues_v1 (official_date)`);
   await run(env.DAILY_DB, `INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, notes) VALUES ('schema_daily_player_availability_v1_sidecar', ?, 'Additive Daily Player Availability v1 sidecar tables; legacy daily_player_availability stub untouched')`, VERSION);
+  await run(env.DAILY_DB, `INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, notes) VALUES ('schema_daily_player_availability_v1_today_tomorrow_retention', ?, 'Daily Player Availability v1 retention: keep current rows for latest run only and retain snapshots/issues only for today and tomorrow official dates')`, VERSION);
 }
 
-async function getPreparedPlayers(env) {
+async function pruneAvailabilityRetention(env, retention, latestBatchId = null) {
+  const out = [];
+  async function del(table, sql, ...binds) {
+    const r = await run(env.DAILY_DB, sql, ...binds);
+    out.push({ table, changes: r?.meta?.changes ?? null });
+  }
+  await del("daily_player_availability_current_v1_old_dates", `DELETE FROM daily_player_availability_current_v1 WHERE official_date NOT IN (?, ?)`, retention.start, retention.end);
+  await del("daily_player_availability_snapshots_v1_old_dates", `DELETE FROM daily_player_availability_snapshots_v1 WHERE official_date NOT IN (?, ?)`, retention.start, retention.end);
+  await del("daily_player_availability_issues_v1_old_dates", `DELETE FROM daily_player_availability_issues_v1 WHERE official_date NOT IN (?, ?)`, retention.start, retention.end);
+  if (latestBatchId) {
+    await del("daily_player_availability_current_v1_previous_batches", `DELETE FROM daily_player_availability_current_v1 WHERE batch_id IS NULL OR batch_id <> ?`, latestBatchId);
+  }
+  await del("daily_player_availability_batches_v1_orphaned", `DELETE FROM daily_player_availability_batches_v1
+    WHERE batch_id NOT IN (
+      SELECT batch_id FROM daily_player_availability_current_v1 WHERE batch_id IS NOT NULL
+      UNION SELECT batch_id FROM daily_player_availability_snapshots_v1 WHERE batch_id IS NOT NULL
+      UNION SELECT batch_id FROM daily_player_availability_issues_v1 WHERE batch_id IS NOT NULL
+    )`);
+  return out;
+}
+
+async function getPreparedPlayers(env, retention) {
   return await all(env.SCORE_DB, `
     SELECT
       official_game_pk,
@@ -299,10 +331,11 @@ async function getPreparedPlayers(env) {
       AND official_game_pk IS NOT NULL
       AND official_game_time_utc IS NOT NULL
       AND resolved_mlb_player_id IS NOT NULL
+      AND official_date IN (?, ?)
     GROUP BY official_game_pk, official_date, official_game_time_utc, team, opponent, resolved_player_id, resolved_mlb_player_id
     ORDER BY official_game_time_utc, official_game_pk, team, player_name
     LIMIT ${MAX_PREPARED_PLAYERS}
-  `);
+  `, retention.start, retention.end);
 }
 async function getCalendar(env, gamePks) {
   if (!gamePks.length) return [];
@@ -602,9 +635,11 @@ async function runAvailability(env, input) {
   const requestId = input.request_id || batchId;
   const runId = input.run_id || null;
   await ensureSchema(env);
+  const retention = retentionWindowPt();
+  const preRetentionPrune = await pruneAvailabilityRetention(env, retention, null);
   await run(env.DAILY_DB, `INSERT INTO daily_player_availability_batches_v1 (batch_id, request_id, run_id, job_key, worker_name, worker_version, mode, status, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?)`, batchId, requestId, runId, input.job_key || JOB_KEY, WORKER_NAME, VERSION, input.mode || "daily_player_availability_refresh_window", startedAt);
 
-  const prepared = await getPreparedPlayers(env);
+  const prepared = await getPreparedPlayers(env, retention);
   const gamePks = [...new Set(prepared.map((r) => intOrNull(r.official_game_pk)).filter((v) => v !== null))];
   const teamAbbrs = [...new Set(prepared.flatMap((r) => [normTeam(r.team), normTeam(r.opponent)]).filter(Boolean))];
   const playerIds = [...new Set(prepared.map((r) => intOrNull(r.resolved_mlb_player_id)).filter((v) => v !== null))];
@@ -654,6 +689,7 @@ async function runAvailability(env, input) {
     });
   }
   const written = await writeResults(env, batchId, results);
+  const postRetentionPrune = await pruneAvailabilityRetention(env, retention, batchId);
   const blockerCount = results.reduce((n, r) => n + r.classification.issues.filter((i) => i.issue_severity === "blocker").length, 0);
   const warningCount = results.reduce((n, r) => n + r.classification.issues.filter((i) => i.issue_severity === "warning").length, 0);
   const hardSourceFailures = sources.sourceFailures.filter((f) => f.hard).length;
@@ -697,6 +733,11 @@ async function runAvailability(env, input) {
     ...counts,
     window_start: windowStart,
     window_end: windowEnd,
+    retention_policy: "today_tomorrow_official_dates_only_current_latest_batch",
+    retention_date_start: retention.start,
+    retention_date_end: retention.end,
+    retention_pre_prune: preRetentionPrune,
+    retention_post_prune: postRetentionPrune,
     source_failures_detail: sources.sourceFailures.slice(0, 25),
     no_score_db_mutation: true,
     no_calendar_rebuild: true,
