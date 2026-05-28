@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-lineups";
-const VERSION = "alphadog-v2-daily-lineups-v0.1.7-live-gated-lineup-writes";
+const VERSION = "alphadog-v2-daily-lineups-v0.1.8-today-tomorrow-retention-prune";
 const JOB_KEY = "daily-lineups";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -14,6 +14,8 @@ const PRODUCTION_LINEUP_WRITES_ENABLED = true;
 const DERIVED_BACKUP_WRITE_ENABLED = false;
 const LIVE_GATED_LINEUP_WRITES_ENABLED = true;
 const LINEUP_BATCH_PREFIX = "daily_lineups_batch";
+const RETENTION_TIMEZONE = "America/Los_Angeles";
+const RETENTION_WINDOW_LABEL = "today_and_tomorrow";
 
 function normalizeMlbOrigin(raw) {
   const fallback = DEFAULT_MLB_BASE_URL;
@@ -76,6 +78,53 @@ async function execRun(db, sql, ...binds) {
 function compactId(prefix) {
   const rand = Math.random().toString(36).slice(2, 8);
   return `${prefix}_${Date.now().toString(36)}_${rand}`;
+}
+
+
+function formatDateInTimeZone(date, timeZone = RETENTION_TIMEZONE) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const map = {};
+  for (const part of parts) map[part.type] = part.value;
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
+function retentionDatesToKeep(now = new Date()) {
+  const today = formatDateInTimeZone(now, RETENTION_TIMEZONE);
+  const tomorrow = formatDateInTimeZone(new Date(now.getTime() + 24 * 60 * 60 * 1000), RETENTION_TIMEZONE);
+  return [today, tomorrow];
+}
+
+function d1Changes(result) {
+  return Number(result && result.meta && result.meta.changes ? result.meta.changes : 0);
+}
+
+async function pruneDailyLineupRetention(env) {
+  const keepDates = retentionDatesToKeep();
+  const currentPrune = await execRun(env.DAILY_DB, `
+    DELETE FROM daily_lineups_current
+    WHERE official_date IS NULL
+       OR official_date NOT IN (?, ?)
+  `, keepDates[0], keepDates[1]);
+  const batchPrune = await execRun(env.DAILY_DB, `
+    DELETE FROM daily_lineups_batches
+    WHERE created_at IS NULL
+       OR substr(created_at, 1, 10) NOT IN (?, ?)
+  `, keepDates[0], keepDates[1]);
+  return {
+    retention_prune_enabled: true,
+    retention_window: RETENTION_WINDOW_LABEL,
+    retention_timezone: RETENTION_TIMEZONE,
+    retention_dates_kept: keepDates,
+    retention_tables_pruned: ["daily_lineups_current", "daily_lineups_batches"],
+    batch_retention_basis: "daily_lineups_batches.created_at_date",
+    lineup_rows_pruned: d1Changes(currentPrune),
+    batch_rows_pruned: d1Changes(batchPrune)
+  };
 }
 
 async function ensureDailyLineupTables(env) {
@@ -204,6 +253,7 @@ function collectLineupWriteRows(games, batchId, fetchedAtUtc) {
 
 async function writeConfirmedLineupsIfGateOpen(env, summary, cert, writeSafety) {
   const schemaReady = await ensureDailyLineupTables(env);
+  const retentionPrune = await pruneDailyLineupRetention(env);
   const gateStatus = writeGateStatusFrom(summary.games, writeSafety.hard_blocks);
   const fetchedAt = nowUtc();
   const batchId = compactId(LINEUP_BATCH_PREFIX);
@@ -215,6 +265,7 @@ async function writeConfirmedLineupsIfGateOpen(env, summary, cert, writeSafety) 
       batch_id: null,
       write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
       write_gate_status: gateStatus,
+      ...retentionPrune,
       lineup_rows_ready_to_write: rows.length,
       rows_written: 0,
       writes_performed: 0,
@@ -228,6 +279,7 @@ async function writeConfirmedLineupsIfGateOpen(env, summary, cert, writeSafety) 
       batch_id: null,
       write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
       write_gate_status: "blocked_by_live_gate",
+      ...retentionPrune,
       lineup_rows_ready_to_write: rows.length,
       rows_written: 0,
       writes_performed: 0,
@@ -272,6 +324,7 @@ async function writeConfirmedLineupsIfGateOpen(env, summary, cert, writeSafety) 
     batch_id: batchId,
     write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
     write_gate_status: gateStatus,
+    ...retentionPrune,
     lineup_rows_ready_to_write: rows.length,
     rows_written: rows.length,
     writes_performed: rows.length,
@@ -313,7 +366,10 @@ function baseIdentity(env) {
       no_ranking: true,
       no_final_board: true,
       no_daily_starters_duplication: true,
-      no_daily_game_status_duplication: true
+      no_daily_game_status_duplication: true,
+      retention_prune_enabled: true,
+      retention_window: RETENTION_WINDOW_LABEL,
+      retention_scope: ["DAILY_DB.daily_lineups_current", "DAILY_DB.daily_lineups_batches"]
     }
   };
 }
@@ -995,7 +1051,7 @@ async function runSourceProbe(env, input) {
   const startedAt = nowUtc();
   const rawSourceBase = String(env.MLB_API_BASE_URL || DEFAULT_MLB_BASE_URL).replace(/\/$/, "");
   const sourceBase = normalizeMlbOrigin(rawSourceBase);
-  const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.1.7";
+  const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.1.8";
   const probeFeedLive = input.probe_feed_live !== false;
   const todayUtc = nowUtc().slice(0, 10);
 
@@ -1213,6 +1269,11 @@ async function runSourceProbe(env, input) {
       batch_id: null,
       write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
       write_gate_status: "write_exception",
+      retention_prune_enabled: true,
+      retention_window: RETENTION_WINDOW_LABEL,
+      retention_dates_kept: retentionDatesToKeep(),
+      lineup_rows_pruned: 0,
+      batch_rows_pruned: 0,
       lineup_rows_ready_to_write: 0,
       rows_written: 0,
       writes_performed: 0,
@@ -1267,6 +1328,14 @@ async function runSourceProbe(env, input) {
     write_framework_live_gated: writeSafety.write_framework_live_gated,
     write_gate_status: writeResult.write_gate_status,
     schema_bootstrap_performed: writeResult.schema_bootstrap_performed,
+    retention_prune_enabled: writeResult.retention_prune_enabled,
+    retention_window: writeResult.retention_window,
+    retention_timezone: writeResult.retention_timezone,
+    retention_dates_kept: writeResult.retention_dates_kept,
+    retention_tables_pruned: writeResult.retention_tables_pruned,
+    batch_retention_basis: writeResult.batch_retention_basis,
+    lineup_rows_pruned: writeResult.lineup_rows_pruned,
+    batch_rows_pruned: writeResult.batch_rows_pruned,
     live_lineup_batch_id: writeResult.batch_id,
     write_framework_contract: writeFrameworkContract(),
     future_table_contracts: futureTableContracts(),
@@ -1319,6 +1388,14 @@ async function runSourceProbe(env, input) {
       write_framework_live_gated: writeSafety.write_framework_live_gated,
       write_gate_status: writeResult.write_gate_status,
       schema_bootstrap_performed: writeResult.schema_bootstrap_performed,
+      retention_prune_enabled: writeResult.retention_prune_enabled,
+      retention_window: writeResult.retention_window,
+      retention_timezone: writeResult.retention_timezone,
+      retention_dates_kept: writeResult.retention_dates_kept,
+      retention_tables_pruned: writeResult.retention_tables_pruned,
+      batch_retention_basis: writeResult.batch_retention_basis,
+      lineup_rows_pruned: writeResult.lineup_rows_pruned,
+      batch_rows_pruned: writeResult.batch_rows_pruned,
       live_lineup_batch_id: writeResult.batch_id,
       write_framework_contract: writeFrameworkContract(),
       future_table_contracts: futureTableContracts(),
