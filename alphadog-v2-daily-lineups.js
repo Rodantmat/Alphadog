@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-lineups";
-const VERSION = "alphadog-v2-daily-lineups-v0.1.6-write-framework-locked-off";
+const VERSION = "alphadog-v2-daily-lineups-v0.1.7-live-gated-lineup-writes";
 const JOB_KEY = "daily-lineups";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -10,8 +10,10 @@ const MAX_CALENDAR_PROBE_GAMES = 6;
 const FETCH_TIMEOUT_MS = 12000;
 const MAX_ENDPOINT_RETRIES = 2;
 const MLB_STARTING_LINEUPS_URL = "https://www.mlb.com/starting-lineups";
-const PRODUCTION_LINEUP_WRITES_ENABLED = false;
+const PRODUCTION_LINEUP_WRITES_ENABLED = true;
 const DERIVED_BACKUP_WRITE_ENABLED = false;
+const LIVE_GATED_LINEUP_WRITES_ENABLED = true;
+const LINEUP_BATCH_PREFIX = "daily_lineups_batch";
 
 function normalizeMlbOrigin(raw) {
   const fallback = DEFAULT_MLB_BASE_URL;
@@ -66,6 +68,217 @@ async function all(db, sql, ...binds) {
   return res.results || [];
 }
 
+async function execRun(db, sql, ...binds) {
+  const stmt = db.prepare(sql);
+  return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
+}
+
+function compactId(prefix) {
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `${prefix}_${Date.now().toString(36)}_${rand}`;
+}
+
+async function ensureDailyLineupTables(env) {
+  const db = env.DAILY_DB;
+  await execRun(db, `
+    CREATE TABLE IF NOT EXISTS daily_lineups_batches (
+      batch_id TEXT PRIMARY KEY,
+      job_key TEXT,
+      worker_name TEXT,
+      worker_version TEXT,
+      mode TEXT,
+      source_probe_lane TEXT,
+      certification_status TEXT,
+      certification_grade TEXT,
+      write_gate_status TEXT,
+      production_lineup_writes_enabled INTEGER DEFAULT 0,
+      derived_backup_write_enabled INTEGER DEFAULT 0,
+      games_checked INTEGER DEFAULT 0,
+      lineup_write_ready_games INTEGER DEFAULT 0,
+      rows_written INTEGER DEFAULT 0,
+      writes_performed INTEGER DEFAULT 0,
+      started_at TEXT,
+      completed_at TEXT,
+      output_json TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await execRun(db, `
+    CREATE TABLE IF NOT EXISTS daily_lineups_current (
+      lineup_row_id TEXT PRIMARY KEY,
+      batch_id TEXT,
+      game_pk INTEGER NOT NULL,
+      official_date TEXT,
+      game_time_utc TEXT,
+      team_side TEXT NOT NULL,
+      team_id INTEGER,
+      team_name TEXT,
+      player_id INTEGER NOT NULL,
+      player_name TEXT,
+      lineup_slot INTEGER NOT NULL,
+      batting_order_code TEXT,
+      bat_side TEXT,
+      active_position TEXT,
+      lineup_status TEXT,
+      confidence_label TEXT,
+      source_endpoint TEXT,
+      source_mode TEXT,
+      fetched_at_utc TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await execRun(db, `
+    CREATE TABLE IF NOT EXISTS daily_player_availability_current (
+      availability_row_id TEXT PRIMARY KEY,
+      batch_id TEXT,
+      game_pk INTEGER NOT NULL,
+      official_date TEXT,
+      game_time_utc TEXT,
+      player_id INTEGER NOT NULL,
+      player_name TEXT,
+      team TEXT,
+      side TEXT,
+      availability_status TEXT,
+      roster_status_code TEXT,
+      roster_status_description TEXT,
+      source_status TEXT,
+      confidence_label TEXT,
+      prepared_rows INTEGER DEFAULT 0,
+      sources TEXT,
+      prop_keys TEXT,
+      fetched_at_utc TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await execRun(db, `CREATE INDEX IF NOT EXISTS idx_daily_lineups_current_game ON daily_lineups_current(game_pk, team_side, lineup_slot)`);
+  await execRun(db, `CREATE INDEX IF NOT EXISTS idx_daily_lineups_current_player ON daily_lineups_current(player_id, game_pk)`);
+  await execRun(db, `CREATE INDEX IF NOT EXISTS idx_daily_lineups_batches_created ON daily_lineups_batches(created_at)`);
+  await execRun(db, `CREATE INDEX IF NOT EXISTS idx_daily_availability_current_game ON daily_player_availability_current(game_pk, side, player_id)`);
+  return true;
+}
+
+function writeGateStatusFrom(games, writeHardBlocks) {
+  if ((writeHardBlocks || []).length > 0) return "blocked_by_live_gate";
+  const readyGames = (games || []).filter((g) => g.lineup_write_ready).length;
+  if (readyGames > 0) return "live_gate_open_posted_lineup_ready";
+  return "live_gate_closed_waiting_for_posted_batting_order";
+}
+
+function collectLineupWriteRows(games, batchId, fetchedAtUtc) {
+  const rows = [];
+  for (const game of games || []) {
+    for (const row of (game.lineup_write_preview_sample || [])) {
+      if (row.lineup_status !== "posted_lineup") continue;
+      const gamePk = intOrNull(row.game_pk);
+      const slot = intOrNull(row.lineup_slot);
+      const playerId = intOrNull(row.player_id);
+      if (!gamePk || !slot || !playerId) continue;
+      rows.push({
+        lineup_row_id: `${gamePk}_${row.team_side}_${slot}`,
+        batch_id: batchId,
+        game_pk: gamePk,
+        official_date: row.official_date || game.official_date || null,
+        game_time_utc: row.game_time_utc || game.game_time_utc || null,
+        team_side: row.team_side,
+        team_id: intOrNull(row.team_id),
+        team_name: row.team_name || null,
+        player_id: playerId,
+        player_name: row.player_name || null,
+        lineup_slot: slot,
+        batting_order_code: row.batting_order_code || null,
+        bat_side: row.bat_side || null,
+        active_position: row.active_position || null,
+        lineup_status: "posted_lineup",
+        confidence_label: "OFFICIAL_BATTING_ORDER_POSTED",
+        source_endpoint: row.source_endpoint || "/api/v1/game/{gamePk}/boxscore",
+        source_mode: "boxscore_batting_order",
+        fetched_at_utc: fetchedAtUtc
+      });
+    }
+  }
+  return rows;
+}
+
+async function writeConfirmedLineupsIfGateOpen(env, summary, cert, writeSafety) {
+  const schemaReady = await ensureDailyLineupTables(env);
+  const gateStatus = writeGateStatusFrom(summary.games, writeSafety.hard_blocks);
+  const fetchedAt = nowUtc();
+  const batchId = compactId(LINEUP_BATCH_PREFIX);
+  const rows = collectLineupWriteRows(summary.games, batchId, fetchedAt);
+
+  if (!PRODUCTION_LINEUP_WRITES_ENABLED || !LIVE_GATED_LINEUP_WRITES_ENABLED || gateStatus !== "live_gate_open_posted_lineup_ready" || rows.length === 0) {
+    return {
+      schema_bootstrap_performed: schemaReady,
+      batch_id: null,
+      write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
+      write_gate_status: gateStatus,
+      lineup_rows_ready_to_write: rows.length,
+      rows_written: 0,
+      writes_performed: 0,
+      write_error: null
+    };
+  }
+
+  if ((writeSafety.hard_blocks || []).length > 0 || cert.blockerCount > 0) {
+    return {
+      schema_bootstrap_performed: schemaReady,
+      batch_id: null,
+      write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
+      write_gate_status: "blocked_by_live_gate",
+      lineup_rows_ready_to_write: rows.length,
+      rows_written: 0,
+      writes_performed: 0,
+      write_error: "blocked_by_live_gate"
+    };
+  }
+
+  await execRun(env.DAILY_DB, `
+    INSERT OR REPLACE INTO daily_lineups_batches (
+      batch_id, job_key, worker_name, worker_version, mode, source_probe_lane,
+      certification_status, certification_grade, write_gate_status,
+      production_lineup_writes_enabled, derived_backup_write_enabled,
+      games_checked, lineup_write_ready_games, rows_written, writes_performed,
+      started_at, completed_at, output_json, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+  `,
+    batchId, JOB_KEY, WORKER_NAME, VERSION, "live_gated_lineup_write", summary.source_probe_lane || null,
+    "PASS_LIVE_GATED_LINEUPS_WRITTEN", "LIVE_GATED_CONFIRMED_LINEUP_WRITES", gateStatus,
+    PRODUCTION_LINEUP_WRITES_ENABLED ? 1 : 0, DERIVED_BACKUP_WRITE_ENABLED ? 1 : 0,
+    Number(summary.games_checked || 0), Number(summary.lineup_write_ready_games || 0), rows.length, rows.length,
+    summary.started_at || null, fetchedAt, JSON.stringify({ request_id: summary.request_id || null, rows_written: rows.length })
+  );
+
+  for (const row of rows) {
+    await execRun(env.DAILY_DB, `
+      INSERT OR REPLACE INTO daily_lineups_current (
+        lineup_row_id, batch_id, game_pk, official_date, game_time_utc, team_side,
+        team_id, team_name, player_id, player_name, lineup_slot, batting_order_code,
+        bat_side, active_position, lineup_status, confidence_label, source_endpoint,
+        source_mode, fetched_at_utc, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `,
+      row.lineup_row_id, row.batch_id, row.game_pk, row.official_date, row.game_time_utc,
+      row.team_side, row.team_id, row.team_name, row.player_id, row.player_name,
+      row.lineup_slot, row.batting_order_code, row.bat_side, row.active_position,
+      row.lineup_status, row.confidence_label, row.source_endpoint, row.source_mode, row.fetched_at_utc
+    );
+  }
+
+  return {
+    schema_bootstrap_performed: schemaReady,
+    batch_id: batchId,
+    write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
+    write_gate_status: gateStatus,
+    lineup_rows_ready_to_write: rows.length,
+    rows_written: rows.length,
+    writes_performed: rows.length,
+    write_error: null
+  };
+}
+
 async function readJsonSafe(request) {
   try {
     return await request.json();
@@ -93,7 +306,8 @@ function baseIdentity(env) {
     },
     guardrails: {
       source_probe_only: true,
-      no_daily_lineups_current_writes: true,
+      live_gated_daily_lineups_current_writes: LIVE_GATED_LINEUP_WRITES_ENABLED,
+      no_daily_lineups_current_writes_before_posted_batting_order: true,
       no_prepared_board_mutation: true,
       no_scoring: true,
       no_ranking: true,
@@ -588,7 +802,8 @@ function buildLineupWritePreviewRows(gamePk, calendar, side, validation) {
   const mapped = Array.isArray(validation && validation.mapped_players) ? validation.mapped_players : [];
   for (const player of mapped) {
     rows.push({
-      dry_run_only: true,
+      dry_run_only: !PRODUCTION_LINEUP_WRITES_ENABLED,
+      live_gated_write_candidate: PRODUCTION_LINEUP_WRITES_ENABLED,
       target_table: "daily_lineups_current",
       game_pk: intOrNull(gamePk),
       official_date: calendar.official_date || null,
@@ -604,7 +819,7 @@ function buildLineupWritePreviewRows(gamePk, calendar, side, validation) {
       active_position: player.position || null,
       lineup_status: "posted_lineup",
       source_endpoint: "/api/v1/game/{gamePk}/boxscore",
-      write_gate: "locked_preview_only",
+      write_gate: PRODUCTION_LINEUP_WRITES_ENABLED ? "live_gated_posted_batting_order_only" : "locked_preview_only",
       write_enabled: PRODUCTION_LINEUP_WRITES_ENABLED
     });
   }
@@ -615,7 +830,8 @@ function buildAvailabilityWritePreviewRows(gamePk, calendar, preparedSummary) {
   const rows = [];
   for (const player of (preparedSummary && preparedSummary.samples ? preparedSummary.samples : [])) {
     rows.push({
-      dry_run_only: true,
+      dry_run_only: !DERIVED_BACKUP_WRITE_ENABLED,
+      live_gated_write_candidate: DERIVED_BACKUP_WRITE_ENABLED,
       target_table: "daily_player_availability_current",
       game_pk: intOrNull(gamePk),
       official_date: calendar.official_date || null,
@@ -632,7 +848,7 @@ function buildAvailabilityWritePreviewRows(gamePk, calendar, preparedSummary) {
       prepared_rows: Number(player.prepared_rows || 0),
       sources: player.sources || null,
       prop_keys: player.prop_keys || null,
-      write_gate: "locked_preview_only",
+      write_gate: DERIVED_BACKUP_WRITE_ENABLED ? "derived_backup_live_gate" : "locked_preview_only",
       write_enabled: DERIVED_BACKUP_WRITE_ENABLED
     });
   }
@@ -641,7 +857,7 @@ function buildAvailabilityWritePreviewRows(gamePk, calendar, preparedSummary) {
 
 function lineupParserContract() {
   return {
-    parser_status: "wired_dry_run_only",
+    parser_status: "wired_live_gated_write_ready",
     boxscore_lineup_path_home: "teams.home.battingOrder",
     boxscore_lineup_path_away: "teams.away.battingOrder",
     player_map_path_home: "teams.home.players.ID{playerId}",
@@ -652,7 +868,7 @@ function lineupParserContract() {
     not_posted_gate: "battingOrder.length === 0",
     partial_lineup_gate: "battingOrder.length between 1 and 8",
     position_rule: "position fields are informational only before battingOrder posts",
-    production_write_gate: "locked_until_user_explicitly_approves_after_real_posted_lineup_probe"
+    production_write_gate: "live_gated_enabled_only_when_battingOrder_length_at_least_9_and_mapping_valid"
   };
 }
 
@@ -663,7 +879,7 @@ function futureWriteUnlockRequirements() {
     "Every mapped player has person.id matching the battingOrder integer.",
     "Dry-run lineup_write_preview_sample shows correct slot, side, team, player_id, and player_name.",
     "No production writes, score writes, board mutation, ranking, or final-board writes occur during the probe.",
-    "production_lineup_writes_enabled is changed only after user approval and a posted-lineup probe pass.",
+    "production_lineup_writes_enabled is true, but live gate writes only posted battingOrder sides with complete ID mapping.",
     "derived_backup_write_enabled is changed only after user approval and repeated pre-lineup roster validation passes."
   ];
 }
@@ -671,15 +887,15 @@ function futureWriteUnlockRequirements() {
 function futureTableContracts() {
   return {
     daily_lineups_current: {
-      status: "future_contract_placeholder_no_writes",
+      status: "live_gated_write_table_bootstrapped_by_worker",
       minimum_fields: ["game_pk", "official_date", "game_time_utc", "team_side", "team_id", "player_id", "player_name", "lineup_slot", "lineup_status", "source_endpoint", "fetched_at_utc"]
     },
     daily_player_availability_current: {
-      status: "future_contract_placeholder_no_writes",
+      status: "table_bootstrapped_by_worker_but_derived_writes_locked_off",
       minimum_fields: ["game_pk", "official_date", "game_time_utc", "player_id", "player_name", "team", "side", "availability_status", "roster_status_code", "confidence_label", "fetched_at_utc"]
     },
     daily_lineups_batches: {
-      status: "future_contract_placeholder_no_writes",
+      status: "live_gated_write_batch_table_bootstrapped_by_worker",
       minimum_fields: ["batch_id", "source_mode", "certification_status", "games_checked", "players_checked", "rows_written", "created_at"]
     }
   };
@@ -687,10 +903,11 @@ function futureTableContracts() {
 
 function writeFrameworkContract() {
   return {
-    framework_status: "wired_locked_off",
+    framework_status: LIVE_GATED_LINEUP_WRITES_ENABLED ? "live_gated_lineup_writes_enabled" : "wired_locked_off",
     production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED,
     derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
-    writes_performed_required_value: 0,
+    write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
+    writes_performed_rule: "0 until posted battingOrder gate opens; then equals confirmed lineup rows written",
     confirmed_lineup_write_rule: "only from battingOrder arrays with length >= 9 and verified players.ID{playerId}.person.id mappings",
     pre_lineup_availability_rule: "only active roster validation from players map; never implies confirmed starting lineup",
     hard_block_rules: [
@@ -714,24 +931,30 @@ function evaluateWriteFrameworkSafety(games) {
     for (const side of ["home", "away"]) {
       const orderCount = Number(g[`${side}_batting_order_count`] || 0);
       const playerMapCount = Number(g[`${side}_player_map_count`] || 0);
+      const mappingValid = g[`${side}_mapping_valid`] === true;
+      const sideWriteReady = orderCount >= 9 && mappingValid && playerMapCount >= 15;
       checks.push({
         game_pk: g.game_pk,
         side,
         batting_order_count: orderCount,
         player_map_count: playerMapCount,
-        production_lineup_write_safe: !PRODUCTION_LINEUP_WRITES_ENABLED,
+        mapping_valid: mappingValid,
+        live_gate_status: sideWriteReady ? "open_for_confirmed_lineup_side" : "closed_waiting_for_posted_batting_order",
+        production_lineup_write_safe: !PRODUCTION_LINEUP_WRITES_ENABLED || LIVE_GATED_LINEUP_WRITES_ENABLED,
         derived_backup_write_safe: !DERIVED_BACKUP_WRITE_ENABLED || playerMapCount >= 15
       });
-      if (PRODUCTION_LINEUP_WRITES_ENABLED && orderCount === 0) hardBlocks.push(`production_lineup_write_enabled_but_${g.game_pk}_${side}_batting_order_empty`);
       if (PRODUCTION_LINEUP_WRITES_ENABLED && orderCount > 0 && orderCount < 9) hardBlocks.push(`production_lineup_write_enabled_but_${g.game_pk}_${side}_batting_order_partial_${orderCount}`);
-      if (PRODUCTION_LINEUP_WRITES_ENABLED && playerMapCount < 15) hardBlocks.push(`production_lineup_write_enabled_but_${g.game_pk}_${side}_player_map_underpopulated_${playerMapCount}`);
+      if (PRODUCTION_LINEUP_WRITES_ENABLED && orderCount >= 9 && !mappingValid) hardBlocks.push(`production_lineup_write_enabled_but_${g.game_pk}_${side}_mapping_invalid`);
+      if (PRODUCTION_LINEUP_WRITES_ENABLED && orderCount >= 9 && playerMapCount < 15) hardBlocks.push(`production_lineup_write_enabled_but_${g.game_pk}_${side}_player_map_underpopulated_${playerMapCount}`);
       if (DERIVED_BACKUP_WRITE_ENABLED && playerMapCount < 15) hardBlocks.push(`derived_backup_write_enabled_but_${g.game_pk}_${side}_player_map_underpopulated_${playerMapCount}`);
     }
   }
   return {
     write_framework_locked_off: !PRODUCTION_LINEUP_WRITES_ENABLED && !DERIVED_BACKUP_WRITE_ENABLED,
+    write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
     production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED,
     derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
+    write_gate_status: writeGateStatusFrom(games, hardBlocks),
     hard_blocks: hardBlocks,
     checks: checks.slice(0, 20)
   };
@@ -758,8 +981,10 @@ function certificationFrom(games, sourceFailures, discovery, writeHardBlocks = [
   if (blockerCount > 0) return { status: "BLOCKED_SOURCE_DISCOVERY", grade: "BLOCKED", blockerCount, warningCount };
   const preparedChecked = games.reduce((sum, g) => sum + Number(g.prepared_players_checked || 0), 0);
   const rosterValidated = games.reduce((sum, g) => sum + Number(g.prepared_players_roster_validated || 0), 0);
+  if (anyEndpointAvailable && anyPostedLineup && lineupPreviewRows > 0 && LIVE_GATED_LINEUP_WRITES_ENABLED && PRODUCTION_LINEUP_WRITES_ENABLED) return { status: "PASS_LIVE_GATED_LINEUP_WRITE_READY", grade: "LIVE_GATED_CONFIRMED_LINEUP_READY", blockerCount, warningCount };
   if (anyEndpointAvailable && anyPostedLineup && lineupPreviewRows > 0) return { status: "PASS_LINEUP_PARSER_READY_WRITE_LOCKED", grade: "DISCOVERY_PASS_LINEUP_WRITE_PREVIEW_READY", blockerCount, warningCount };
   if (anyEndpointAvailable && allLineupsNotPosted && preparedStale) return { status: "PASS_CALENDAR_SOURCE_PROBE_WITH_PREPARED_BOARD_STALE", grade: "DISCOVERY_PASS_LINEUPS_NOT_POSTED", blockerCount, warningCount: warningCount + 1 };
+  if (anyEndpointAvailable && allLineupsNotPosted && preparedChecked > 0 && rosterValidated > 0 && LIVE_GATED_LINEUP_WRITES_ENABLED && PRODUCTION_LINEUP_WRITES_ENABLED) return { status: "PASS_LIVE_GATED_WAITING_FOR_POSTED_LINEUP", grade: "LIVE_GATED_PRE_LINEUP_ROSTER_VALIDATED", blockerCount, warningCount };
   if (anyEndpointAvailable && allLineupsNotPosted && preparedChecked > 0 && rosterValidated > 0) return { status: "PASS_WRITE_FRAMEWORK_LOCKED_OFF", grade: "WRITE_FRAMEWORK_LOCKED_OFF_PRE_LINEUP_ROSTER_VALIDATED", blockerCount, warningCount };
   if (anyEndpointAvailable && allLineupsNotPosted) return { status: "PASS_SOURCE_REACHABLE_LINEUPS_NOT_POSTED", grade: "DISCOVERY_PASS_LINEUPS_NOT_POSTED", blockerCount, warningCount };
   if (warningCount > 0 || preparedStale) return { status: "PASS_WITH_WARNINGS", grade: "A_MINUS", blockerCount, warningCount: warningCount + (preparedStale ? 1 : 0) };
@@ -770,7 +995,7 @@ async function runSourceProbe(env, input) {
   const startedAt = nowUtc();
   const rawSourceBase = String(env.MLB_API_BASE_URL || DEFAULT_MLB_BASE_URL).replace(/\/$/, "");
   const sourceBase = normalizeMlbOrigin(rawSourceBase);
-  const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.1.6";
+  const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.1.7";
   const probeFeedLive = input.probe_feed_live !== false;
   const todayUtc = nowUtc().slice(0, 10);
 
@@ -971,17 +1196,55 @@ async function runSourceProbe(env, input) {
   const availabilityWritePreviewRows = games.reduce((sum, g) => sum + Number(g.availability_write_preview_row_count || 0), 0);
   const lineupWriteReadyGames = games.filter((g) => g.lineup_write_ready).length;
 
+  const preWriteSummary = {
+    games,
+    games_checked: games.length,
+    lineup_write_ready_games: lineupWriteReadyGames,
+    source_probe_lane: sourceLane,
+    request_id: input.request_id || null,
+    started_at: startedAt
+  };
+  let writeResult;
+  try {
+    writeResult = await writeConfirmedLineupsIfGateOpen(env, preWriteSummary, cert, writeSafety);
+  } catch (err) {
+    writeResult = {
+      schema_bootstrap_performed: false,
+      batch_id: null,
+      write_framework_live_gated: LIVE_GATED_LINEUP_WRITES_ENABLED,
+      write_gate_status: "write_exception",
+      lineup_rows_ready_to_write: 0,
+      rows_written: 0,
+      writes_performed: 0,
+      write_error: err && err.stack ? String(err.stack).slice(0, 1800) : String(err)
+    };
+  }
+
+  let finalCertStatus = cert.status;
+  let finalCertGrade = cert.grade;
+  let finalOk = ok && !writeResult.write_error;
+  if (writeResult.write_error) {
+    finalCertStatus = "BLOCKED_DAILY_LINEUPS_WRITE_EXCEPTION";
+    finalCertGrade = "BLOCKED";
+  } else if (writeResult.rows_written > 0) {
+    finalCertStatus = "PASS_LIVE_GATED_LINEUPS_WRITTEN";
+    finalCertGrade = "LIVE_GATED_CONFIRMED_LINEUP_WRITES";
+  } else if (LIVE_GATED_LINEUP_WRITES_ENABLED && PRODUCTION_LINEUP_WRITES_ENABLED && lineupWriteReadyGames === 0 && ok) {
+    finalCertStatus = "PASS_LIVE_GATED_WAITING_FOR_POSTED_LINEUP";
+    finalCertGrade = "LIVE_GATED_PRE_LINEUP_ROSTER_VALIDATED";
+  }
+
   return {
-    ok,
-    data_ok: ok,
+    ok: finalOk,
+    data_ok: finalOk,
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
     mode: "source_probe",
-    status: ok ? "COMPLETED_SOURCE_PROBE" : "BLOCKED_SOURCE_PROBE",
-    certification: cert.status,
-    certification_status: cert.status,
-    certification_grade: cert.grade,
+    status: finalOk ? "COMPLETED_SOURCE_PROBE" : "BLOCKED_SOURCE_PROBE",
+    certification: finalCertStatus,
+    certification_status: finalCertStatus,
+    certification_grade: finalCertGrade,
     request_id: input.request_id || null,
     chain_id: input.chain_id || null,
     started_at: startedAt,
@@ -1001,10 +1264,16 @@ async function runSourceProbe(env, input) {
     production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED,
     derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
     write_framework_locked_off: writeSafety.write_framework_locked_off,
+    write_framework_live_gated: writeSafety.write_framework_live_gated,
+    write_gate_status: writeResult.write_gate_status,
+    schema_bootstrap_performed: writeResult.schema_bootstrap_performed,
+    live_lineup_batch_id: writeResult.batch_id,
     write_framework_contract: writeFrameworkContract(),
     future_table_contracts: futureTableContracts(),
     write_safety_hard_blocks: writeSafety.hard_blocks,
     write_safety_checks: writeSafety.checks,
+    lineup_rows_ready_to_write: writeResult.lineup_rows_ready_to_write,
+    write_error: writeResult.write_error,
     lineup_write_ready_games: lineupWriteReadyGames,
     lineup_write_preview_only: true,
     lineup_write_preview_row_count: lineupWritePreviewRows,
@@ -1034,10 +1303,11 @@ async function runSourceProbe(env, input) {
     warning_count: cert.warningCount,
     blocker_count: cert.blockerCount,
     rows_read: preparedRowsRead + sourceRows.length,
-    rows_written: 0,
-    writes_performed: 0,
+    rows_written: writeResult.rows_written,
+    writes_performed: writeResult.writes_performed,
     output_json: {
       source_probe_only: true,
+      live_gated_lineup_writes_possible: LIVE_GATED_LINEUP_WRITES_ENABLED,
       source_probe_lane: sourceLane,
       mlb_api_base_url_raw: rawSourceBase,
       mlb_api_origin_used: sourceBase,
@@ -1046,10 +1316,16 @@ async function runSourceProbe(env, input) {
       production_lineup_writes_enabled: PRODUCTION_LINEUP_WRITES_ENABLED,
       derived_backup_write_enabled: DERIVED_BACKUP_WRITE_ENABLED,
       write_framework_locked_off: writeSafety.write_framework_locked_off,
+      write_framework_live_gated: writeSafety.write_framework_live_gated,
+      write_gate_status: writeResult.write_gate_status,
+      schema_bootstrap_performed: writeResult.schema_bootstrap_performed,
+      live_lineup_batch_id: writeResult.batch_id,
       write_framework_contract: writeFrameworkContract(),
       future_table_contracts: futureTableContracts(),
       write_safety_hard_blocks: writeSafety.hard_blocks,
       write_safety_checks: writeSafety.checks,
+      lineup_rows_ready_to_write: writeResult.lineup_rows_ready_to_write,
+      write_error: writeResult.write_error,
       lineup_write_preview_only: true,
       lineup_write_ready_games: lineupWriteReadyGames,
       lineup_write_preview_row_count: lineupWritePreviewRows,
@@ -1067,7 +1343,7 @@ async function runSourceProbe(env, input) {
       no_scoring: true,
       no_ranking: true,
       no_final_board: true,
-      unlock_note: "Production daily_lineups_current and daily_player_availability_current writes remain blocked until source_probe passes repeatedly and user explicitly approves write phase."
+      unlock_note: "daily_lineups_current is live-gated: writes occur only when official battingOrder is posted and ID mapping passes; daily_player_availability_current derived writes remain locked off."
     },
     games
   };
