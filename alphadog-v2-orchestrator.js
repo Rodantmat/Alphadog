@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.116-delta-certifier-calendar-tally-restored";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.117-delta-certifier-dispatch-finalize";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -4178,6 +4178,180 @@ async function processScorePrepJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
+
+async function processDeltaCertifierJob(env, row, runId, trigger) {
+  if (!env.DELTA_CERTIFIER_WORKER || typeof env.DELTA_CERTIFIER_WORKER.fetch !== "function") {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      request_id: row.request_id,
+      chain_id: row.chain_id,
+      status: "blocked_missing_service_binding",
+      certification: "DELTA_CERTIFIER_SERVICE_BINDING_MISSING",
+      certification_grade: "BLOCKED",
+      trigger,
+      note: "Exact delta-certifier dispatch requires DELTA_CERTIFIER_WORKER service binding. Deploy orchestrator with the services wrangler config."
+    };
+
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_delta_certifier_service_binding', 'DELTA_CERTIFIER_WORKER service binding is missing')",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
+    );
+
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_delta_certifier_service_binding', error_message='DELTA_CERTIFIER_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id
+    );
+
+    return output;
+  }
+
+  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "game_calendar_differential_check_update");
+  const normalizedInputJson = {
+    ...rowInput,
+    mode: requestedMode,
+    exact_delta_certifier_dispatch_v0_2_117: true,
+    no_browser_loop: true,
+    backend_scheduled_continuation: true
+  };
+  const input = {
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    run_id: runId,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    trigger,
+    mode: requestedMode,
+    input_json: normalizedInputJson,
+    exact_worker_only: true,
+    calendar_tally_stage: normalizedInputJson.calendar_tally_stage || null,
+    parent_full_run: normalizedInputJson.parent_full_run === true,
+    parent_request_id: normalizedInputJson.parent_request_id || null,
+    parent_chain_id: normalizedInputJson.parent_chain_id || row.chain_id || null,
+    full_run_stage_key: normalizedInputJson.full_run_stage_key || null,
+    require_zero_blocking_gaps: normalizedInputJson.require_zero_blocking_gaps === true,
+    allow_blocking_gaps: normalizedInputJson.allow_blocking_gaps === true,
+    no_source_history_mutation: true,
+    no_repair_jobs_created: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_board_mutation: true,
+    no_daily_context_mutation: true
+  };
+
+  const started = Date.now();
+  let output;
+  let httpStatus = null;
+
+  try {
+    const resp = await env.DELTA_CERTIFIER_WORKER.fetch("https://internal.alphadog-v2-delta-certifier/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input)
+    });
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); }
+    catch (_) {
+      output = {
+        ok: false,
+        data_ok: false,
+        version: SYSTEM_VERSION,
+        processed_by: WORKER_NAME,
+        worker_name: row.worker_name,
+        job_key: row.job_key,
+        request_id: row.request_id,
+        chain_id: row.chain_id,
+        mode: requestedMode,
+        status: "worker_non_json_response",
+        certification: "DELTA_CERTIFIER_NON_JSON_RESPONSE",
+        certification_grade: "FAILED",
+        http_status: httpStatus,
+        response_preview: String(text || "").slice(0, 900)
+      };
+    }
+  } catch (err) {
+    output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      request_id: row.request_id,
+      chain_id: row.chain_id,
+      mode: requestedMode,
+      status: "worker_dispatch_exception",
+      certification: "DELTA_CERTIFIER_DISPATCH_EXCEPTION",
+      certification_grade: "FAILED",
+      error: String(err && err.message ? err.message : err)
+    };
+  }
+
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const rowsRead = Number(output && (output.rows_read ?? output.source_game_count) ? (output.rows_read ?? output.source_game_count) : 0);
+  const rowsWritten = Number(output && (output.rows_written ?? output.coverage_rows_written) ? (output.rows_written ?? output.coverage_rows_written) : 0);
+  const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
+  const certification = String((output && (output.certification || output.certification_status)) || (ok ? "delta_certifier_completed" : "delta_certifier_failed")).slice(0, 120);
+  const queueStatus = ok && dataOk ? "completed" : "failed";
+  const runStatus = ok && dataOk ? "completed" : "failed";
+  const errorCode = ok && dataOk ? null : "delta_certifier_worker_failed";
+  const errorMessage = ok && dataOk ? null : String((output && (output.error || output.status || output.certification)) || "Delta Certifier worker failed").slice(0, 900);
+  const cappedOutput = {
+    ...output,
+    orchestrator_dispatch: {
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      exact_worker_only: true,
+      trigger,
+      http_status: httpStatus,
+      elapsed_ms: Date.now() - started,
+      delta_certifier_dispatch_v0_2_117: true,
+      mode: requestedMode,
+      calendar_tally_stage: normalizedInputJson.calendar_tally_stage || null,
+      parent_full_run: normalizedInputJson.parent_full_run === true,
+      require_zero_blocking_gaps: normalizedInputJson.require_zero_blocking_gaps === true,
+      allow_blocking_gaps: normalizedInputJson.allow_blocking_gaps === true,
+      finalizes_queue_on_exception: true,
+      backend_self_continuation_ready: true,
+      manual_wake_testing_only: true,
+      no_browser_pump: true,
+      no_generic_dispatch: true,
+      no_source_history_mutation: true,
+      no_repair_jobs_created: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board_write: true,
+      no_board_mutation: true,
+      no_daily_context_mutation: true
+    }
+  };
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
+  );
+
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+  );
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'delta_certifier_dispatch_completed', 'Orchestrator completed exact delta-certifier calendar/tally dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok && dataOk ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, mode: requestedMode, calendar_tally_stage: normalizedInputJson.calendar_tally_stage || null, queue_status: queueStatus, dispatch: cappedOutput.orchestrator_dispatch })
+  );
+
+  return cappedOutput;
+}
+
 async function processSafeTestJob(env, row, runId, trigger) {
   const output = {
     ok: true,
@@ -4837,7 +5011,7 @@ async function processOneUnlocked(env, trigger) {
   if (isDeltaCertifierJob(row)) {
     const output = await processDeltaCertifierJob(env, row, runId, trigger);
     return {
-      status: output && output.ok ? "completed_one_delta_certifier_job" : "failed_one_delta_certifier_job",
+      status: output && output.ok && output.data_ok ? "completed_one_delta_certifier_job" : "failed_one_delta_certifier_job",
       request_id: row.request_id,
       run_id: runId,
       output
@@ -4972,14 +5146,14 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       const result = await processOneUnlocked(env, trigger);
       processed.push(result);
       if (result.status === "no_due_jobs") break;
-      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_hitter_metrics_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_base_starter_history_job" || result.status === "failed_one_base_bullpen_history_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_static_full_run_job" || result.status === "failed_one_incremental_morning_full_run_job" || result.status === "failed_one_board_full_run_job") break;
+      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_hitter_metrics_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_base_starter_history_job" || result.status === "failed_one_base_bullpen_history_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_delta_certifier_job" || result.status === "failed_one_static_full_run_job" || result.status === "failed_one_incremental_morning_full_run_job" || result.status === "failed_one_board_full_run_job") break;
     }
 
     await releaseLock(env, owner, "IDLE");
 
-    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job").length;
+    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_delta_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job").length;
     const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job").length;
-    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job").length;
+    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_delta_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
 
     return base(env, {
