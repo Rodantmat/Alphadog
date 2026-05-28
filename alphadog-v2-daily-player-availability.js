@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-player-availability";
-const VERSION = "alphadog-v2-daily-player-availability-v0.1.0-official-roster-sidecar";
+const VERSION = "alphadog-v2-daily-player-availability-v0.1.1-roster-path-fix";
 const JOB_KEY = "daily-player-availability";
 const SOURCE_KEY = "official_mlb_statsapi_roster_transactions_v1";
 const MAX_PREPARED_PLAYERS = 500;
@@ -377,9 +377,9 @@ async function fetchSources(env, teamIds, playerIds, startDate, endDate) {
   const endpointLog = [];
   let externalCalls = 0;
   for (const teamId of teamIds) {
-    const active = await fetchJson(`${base}/teams/${teamId}/roster?rosterType=active`, env, false); externalCalls++; endpointLog.push({ teamId, endpoint: "active", ok: active.ok, status: active.status });
-    const forty = await fetchJson(`${base}/teams/${teamId}/roster?rosterType=40Man`, env, true); externalCalls++; endpointLog.push({ teamId, endpoint: "40Man", ok: forty.ok, status: forty.status });
-    const il = await fetchJson(`${base}/teams/${teamId}/roster?rosterType=injuredList`, env, true); externalCalls++; endpointLog.push({ teamId, endpoint: "injuredList", ok: il.ok, status: il.status });
+    const active = await fetchJson(`${base}/teams/${teamId}/roster/active`, env, false); externalCalls++; endpointLog.push({ teamId, endpoint: "active", ok: active.ok, status: active.status });
+    const forty = await fetchJson(`${base}/teams/${teamId}/roster/40Man`, env, true); externalCalls++; endpointLog.push({ teamId, endpoint: "40Man", ok: forty.ok, status: forty.status });
+    const il = await fetchJson(`${base}/teams/${teamId}/roster/injuredList`, env, true); externalCalls++; endpointLog.push({ teamId, endpoint: "injuredList", ok: il.ok, status: il.status });
     const tx = await fetchJson(`${base}/transactions?teamId=${encodeURIComponent(String(teamId))}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`, env, true); externalCalls++; endpointLog.push({ teamId, endpoint: "transactions", ok: tx.ok, status: tx.status });
     if (!active.ok) sourceFailures.push({ teamId, endpoint: "active", hard: true, status: active.status, error: active.error || active.text_preview || null });
     if (!forty.ok) sourceFailures.push({ teamId, endpoint: "40Man", hard: false, status: forty.status, error: forty.error || forty.text_preview || null });
