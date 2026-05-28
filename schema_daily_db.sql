@@ -254,3 +254,137 @@ CREATE INDEX IF NOT EXISTS idx_daily_game_status_current_board ON daily_game_sta
 CREATE INDEX IF NOT EXISTS idx_daily_game_status_stage_batch ON daily_game_status_stage(batch_id);
 
 INSERT OR REPLACE INTO daily_schema_migrations VALUES ('schema_daily_game_status_v0_1_0', 'alphadog-v2-daily-games-status-v0.1.0-board-focused-source-shape-and-current-status', CURRENT_TIMESTAMP, 'Additive board-focused Daily Game Status lifecycle tables');
+
+-- Daily Context Phase 4: Weather / Roof / Park Conditions v0.1.0
+-- Worker: alphadog-v2-daily-weather-v0.1.0-source-probe-and-schema
+-- Scope: game-level weather, roof, venue, and park-condition context anchored to TEAM_DB.mlb_game_calendar.game_pk.
+-- Lifecycle: current/snapshots/issues are volatile today/tomorrow context only; batch rows may persist for audit.
+-- Guardrails: no scoring, no ranking, no final board, no board mutation, no calendar rebuild.
+CREATE TABLE IF NOT EXISTS daily_game_weather_batches (
+  batch_id TEXT PRIMARY KEY,
+  request_id TEXT,
+  run_id TEXT,
+  worker_name TEXT,
+  worker_version TEXT,
+  job_key TEXT,
+  mode TEXT,
+  status TEXT,
+  window_start TEXT,
+  window_end TEXT,
+  calendar_games_checked INTEGER DEFAULT 0,
+  prepared_games_checked INTEGER DEFAULT 0,
+  prepared_rows_read INTEGER DEFAULT 0,
+  weather_rows_written INTEGER DEFAULT 0,
+  snapshot_rows_written INTEGER DEFAULT 0,
+  indoor_games INTEGER DEFAULT 0,
+  outdoor_games INTEGER DEFAULT 0,
+  retractable_roof_games INTEGER DEFAULT 0,
+  weather_source_failures INTEGER DEFAULT 0,
+  roof_unknown_count INTEGER DEFAULT 0,
+  weather_unknown_count INTEGER DEFAULT 0,
+  blocker_count INTEGER DEFAULT 0,
+  warning_count INTEGER DEFAULT 0,
+  external_calls INTEGER DEFAULT 0,
+  certification_status TEXT,
+  certification_grade TEXT,
+  certification_reason TEXT,
+  output_json TEXT,
+  started_at TEXT,
+  completed_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS daily_game_weather_current (
+  weather_key TEXT PRIMARY KEY,
+  batch_id TEXT,
+  game_pk INTEGER,
+  official_date TEXT,
+  game_time_utc TEXT,
+  venue_id INTEGER,
+  venue_name TEXT,
+  home_team_id INTEGER,
+  away_team_id INTEGER,
+  prepared_board_relevant INTEGER DEFAULT 0,
+  prepared_board_pickable_rows INTEGER DEFAULT 0,
+  weather_status TEXT,
+  weather_confidence TEXT,
+  source_key TEXT,
+  source_endpoint TEXT,
+  source_snapshot_at TEXT,
+  forecast_time_utc TEXT,
+  forecast_offset_minutes INTEGER,
+  temperature_f REAL,
+  feels_like_f REAL,
+  humidity_pct REAL,
+  pressure_mb REAL,
+  wind_speed_mph REAL,
+  wind_gust_mph REAL,
+  wind_direction_degrees REAL,
+  wind_direction_cardinal TEXT,
+  wind_context TEXT,
+  precipitation_probability_pct REAL,
+  precipitation_type TEXT,
+  rain_risk_flag INTEGER DEFAULT 0,
+  delay_risk_flag INTEGER DEFAULT 0,
+  roof_type TEXT,
+  roof_status TEXT,
+  roof_confidence TEXT,
+  indoor_flag INTEGER DEFAULT 0,
+  retractable_roof_flag INTEGER DEFAULT 0,
+  weather_applicable_flag INTEGER DEFAULT 1,
+  park_weather_notes TEXT,
+  first_seen_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  last_seen_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  changed_at TEXT,
+  raw_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_game_weather_current_game ON daily_game_weather_current(game_pk);
+CREATE INDEX IF NOT EXISTS idx_daily_game_weather_current_date ON daily_game_weather_current(official_date);
+CREATE INDEX IF NOT EXISTS idx_daily_game_weather_current_status ON daily_game_weather_current(weather_status, roof_status);
+
+CREATE TABLE IF NOT EXISTS daily_game_weather_snapshots (
+  snapshot_id TEXT PRIMARY KEY,
+  batch_id TEXT,
+  game_pk INTEGER,
+  official_date TEXT,
+  venue_id INTEGER,
+  source_key TEXT,
+  source_snapshot_at TEXT,
+  forecast_time_utc TEXT,
+  temperature_f REAL,
+  wind_speed_mph REAL,
+  wind_direction_degrees REAL,
+  precipitation_probability_pct REAL,
+  roof_status TEXT,
+  weather_status TEXT,
+  raw_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_daily_game_weather_snap_batch ON daily_game_weather_snapshots(batch_id);
+CREATE INDEX IF NOT EXISTS idx_daily_game_weather_snap_date ON daily_game_weather_snapshots(official_date);
+
+CREATE TABLE IF NOT EXISTS daily_game_weather_issues (
+  issue_id TEXT PRIMARY KEY,
+  batch_id TEXT,
+  game_pk INTEGER,
+  official_date TEXT,
+  venue_id INTEGER,
+  issue_status TEXT,
+  issue_type TEXT,
+  severity TEXT,
+  reason TEXT,
+  details_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_daily_game_weather_issues_batch ON daily_game_weather_issues(batch_id);
+CREATE INDEX IF NOT EXISTS idx_daily_game_weather_issues_date ON daily_game_weather_issues(official_date);
+
+INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, applied_at, notes)
+VALUES ('daily_game_weather_v0_1_0', 'alphadog-v2-daily-weather-v0.1.0-source-probe-and-schema', CURRENT_TIMESTAMP, 'Daily Context Phase 4 weather/roof/park-condition v2 tables');
