@@ -388,3 +388,170 @@ CREATE INDEX IF NOT EXISTS idx_daily_game_weather_issues_date ON daily_game_weat
 
 INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, applied_at, notes)
 VALUES ('daily_game_weather_v0_1_0', 'alphadog-v2-daily-weather-v0.1.0-source-probe-and-schema', CURRENT_TIMESTAMP, 'Daily Context Phase 4 weather/roof/park-condition v2 tables');
+
+-- Daily Bullpen Availability / Daily Context Phase 5.
+-- Worker: alphadog-v2-daily-bullpen-availability-v0.1.0-internal-bullpen-history-context
+-- Scope: DAILY_DB sidecar context only. Reads TEAM_DB.bullpen_history, TEAM_DB.mlb_game_calendar, SCORE_DB.score_board_prepared_current.
+-- No board mutation, no scoring, no ranking, no final board, no external source truth.
+CREATE TABLE IF NOT EXISTS daily_bullpen_availability_batches (
+  batch_id TEXT PRIMARY KEY,
+  request_id TEXT,
+  run_id TEXT,
+  worker_name TEXT,
+  worker_version TEXT,
+  job_key TEXT,
+  mode TEXT,
+  status TEXT,
+  window_start TEXT,
+  window_end TEXT,
+  calendar_games_checked INTEGER DEFAULT 0,
+  prepared_games_checked INTEGER DEFAULT 0,
+  prepared_rows_read INTEGER DEFAULT 0,
+  teams_checked INTEGER DEFAULT 0,
+  team_rows_written INTEGER DEFAULT 0,
+  pitcher_rows_written INTEGER DEFAULT 0,
+  snapshot_rows_written INTEGER DEFAULT 0,
+  source_failures INTEGER DEFAULT 0,
+  blocker_count INTEGER DEFAULT 0,
+  warning_count INTEGER DEFAULT 0,
+  high_risk_team_count INTEGER DEFAULT 0,
+  unknown_team_count INTEGER DEFAULT 0,
+  certification_status TEXT,
+  certification_grade TEXT,
+  certification_reason TEXT,
+  output_json TEXT,
+  started_at TEXT,
+  completed_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS daily_bullpen_availability_current (
+  bullpen_availability_key TEXT PRIMARY KEY,
+  batch_id TEXT,
+  official_date TEXT,
+  game_pk INTEGER,
+  game_time_utc TEXT,
+  team_id INTEGER,
+  team_name TEXT,
+  opponent_team_id INTEGER,
+  opponent_team_name TEXT,
+  is_home INTEGER,
+  prepared_board_relevant INTEGER DEFAULT 0,
+  prepared_board_pickable_rows INTEGER DEFAULT 0,
+  bullpen_status TEXT,
+  bullpen_confidence TEXT,
+  availability_grade TEXT,
+  recent_games_window_start TEXT,
+  recent_games_window_end TEXT,
+  games_checked INTEGER DEFAULT 0,
+  games_played_last_1_day INTEGER DEFAULT 0,
+  games_played_last_2_days INTEGER DEFAULT 0,
+  games_played_last_3_days INTEGER DEFAULT 0,
+  bullpen_pitchers_used_last_1_day INTEGER DEFAULT 0,
+  bullpen_pitchers_used_last_2_days INTEGER DEFAULT 0,
+  bullpen_pitchers_used_last_3_days INTEGER DEFAULT 0,
+  bullpen_pitches_last_1_day INTEGER DEFAULT 0,
+  bullpen_pitches_last_2_days INTEGER DEFAULT 0,
+  bullpen_pitches_last_3_days INTEGER DEFAULT 0,
+  bullpen_outs_last_1_day INTEGER DEFAULT 0,
+  bullpen_outs_last_2_days INTEGER DEFAULT 0,
+  bullpen_outs_last_3_days INTEGER DEFAULT 0,
+  high_usage_reliever_count INTEGER DEFAULT 0,
+  back_to_back_reliever_count INTEGER DEFAULT 0,
+  likely_unavailable_reliever_count INTEGER DEFAULT 0,
+  rested_reliever_count INTEGER DEFAULT 0,
+  unknown_reliever_count INTEGER DEFAULT 0,
+  closer_recent_usage_flag INTEGER DEFAULT 0,
+  setup_recent_usage_flag INTEGER DEFAULT 0,
+  doubleheader_recent_flag INTEGER DEFAULT 0,
+  extra_innings_recent_flag INTEGER DEFAULT 0,
+  bullpen_fatigue_score INTEGER DEFAULT 0,
+  bullpen_risk_level TEXT,
+  source_key TEXT,
+  source_endpoint TEXT,
+  source_snapshot_at TEXT,
+  first_seen_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  last_seen_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  changed_at TEXT,
+  details_json TEXT,
+  raw_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_bullpen_current_game_team ON daily_bullpen_availability_current(official_date, game_pk, team_id);
+CREATE INDEX IF NOT EXISTS idx_daily_bullpen_current_status ON daily_bullpen_availability_current(bullpen_status, bullpen_risk_level);
+CREATE INDEX IF NOT EXISTS idx_daily_bullpen_current_date ON daily_bullpen_availability_current(official_date);
+
+CREATE TABLE IF NOT EXISTS daily_bullpen_pitcher_availability_current (
+  pitcher_availability_key TEXT PRIMARY KEY,
+  batch_id TEXT,
+  official_date TEXT,
+  team_id INTEGER,
+  pitcher_id INTEGER,
+  pitcher_name TEXT,
+  pitcher_hand TEXT,
+  role_hint TEXT,
+  active_roster_flag INTEGER,
+  availability_status TEXT,
+  availability_confidence TEXT,
+  pitches_last_1_day INTEGER DEFAULT 0,
+  pitches_last_2_days INTEGER DEFAULT 0,
+  pitches_last_3_days INTEGER DEFAULT 0,
+  outs_last_1_day INTEGER DEFAULT 0,
+  outs_last_2_days INTEGER DEFAULT 0,
+  outs_last_3_days INTEGER DEFAULT 0,
+  appearances_last_1_day INTEGER DEFAULT 0,
+  appearances_last_2_days INTEGER DEFAULT 0,
+  appearances_last_3_days INTEGER DEFAULT 0,
+  back_to_back_flag INTEGER DEFAULT 0,
+  high_pitch_recent_flag INTEGER DEFAULT 0,
+  likely_unavailable_flag INTEGER DEFAULT 0,
+  notes TEXT,
+  source_snapshot_at TEXT,
+  details_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_bullpen_pitcher_current_team_pitcher ON daily_bullpen_pitcher_availability_current(official_date, team_id, pitcher_id);
+CREATE INDEX IF NOT EXISTS idx_daily_bullpen_pitcher_current_status ON daily_bullpen_pitcher_availability_current(availability_status);
+
+CREATE TABLE IF NOT EXISTS daily_bullpen_availability_snapshots (
+  snapshot_id TEXT PRIMARY KEY,
+  batch_id TEXT,
+  official_date TEXT,
+  game_pk INTEGER,
+  team_id INTEGER,
+  bullpen_status TEXT,
+  availability_grade TEXT,
+  bullpen_fatigue_score INTEGER,
+  bullpen_risk_level TEXT,
+  source_snapshot_at TEXT,
+  details_json TEXT,
+  raw_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_daily_bullpen_snap_batch ON daily_bullpen_availability_snapshots(batch_id);
+CREATE INDEX IF NOT EXISTS idx_daily_bullpen_snap_date ON daily_bullpen_availability_snapshots(official_date);
+
+CREATE TABLE IF NOT EXISTS daily_bullpen_availability_issues (
+  issue_id TEXT PRIMARY KEY,
+  batch_id TEXT,
+  official_date TEXT,
+  game_pk INTEGER,
+  team_id INTEGER,
+  pitcher_id INTEGER,
+  issue_status TEXT,
+  issue_type TEXT,
+  severity TEXT,
+  reason TEXT,
+  details_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_daily_bullpen_issues_batch ON daily_bullpen_availability_issues(batch_id);
+CREATE INDEX IF NOT EXISTS idx_daily_bullpen_issues_date ON daily_bullpen_availability_issues(official_date);
+
+INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, applied_at, notes)
+VALUES ('daily_bullpen_availability_v0_1_0', 'alphadog-v2-daily-bullpen-availability-v0.1.0-internal-bullpen-history-context', CURRENT_TIMESTAMP, 'Daily Context Phase 5 bullpen availability internal-source tables');
+
