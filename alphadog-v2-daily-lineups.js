@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-lineups";
-const VERSION = "alphadog-v2-daily-lineups-v0.1.2-calendar-source-sample-probe";
+const VERSION = "alphadog-v2-daily-lineups-v0.1.3-mlb-url-origin-normalizer";
 const JOB_KEY = "daily-lineups";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -10,6 +10,23 @@ const MAX_CALENDAR_PROBE_GAMES = 6;
 const FETCH_TIMEOUT_MS = 12000;
 const MAX_ENDPOINT_RETRIES = 2;
 const MLB_STARTING_LINEUPS_URL = "https://www.mlb.com/starting-lineups";
+
+function normalizeMlbOrigin(raw) {
+  const fallback = DEFAULT_MLB_BASE_URL;
+  try {
+    const input = String(raw || fallback).trim().replace(/\/+$/, "");
+    const parsed = new URL(input);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return fallback;
+  }
+}
+
+function buildMlbUrl(origin, path) {
+  const cleanOrigin = normalizeMlbOrigin(origin);
+  const cleanPath = String(path || "").startsWith("/") ? String(path || "") : `/${path}`;
+  return `${cleanOrigin}${cleanPath}`;
+}
 
 function nowUtc() {
   return new Date().toISOString();
@@ -225,7 +242,7 @@ async function discoverOfficialSchedule(env, sourceBase, userAgent, rows, label)
     [`${label}_official_schedule_anchor_missing_game_pks`]: gamePks
   };
   if (!start || !end || !gamePks.length) return base;
-  const scheduleUrl = `${sourceBase}/api/v1/schedule?sportId=1&gameType=R&startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}&hydrate=probablePitcher(note,person),team,linescore`;
+  const scheduleUrl = buildMlbUrl(sourceBase, `/api/v1/schedule?sportId=1&gameType=R&startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}&hydrate=probablePitcher(note,person),team,linescore`);
   const scheduleRes = await fetchJsonWithRetry(scheduleUrl, userAgent, 1);
   const schedulePks = collectScheduleGamePks(scheduleRes.json);
   const hits = gamePks.filter((pk) => schedulePks.has(pk));
@@ -546,8 +563,9 @@ function certificationFrom(games, sourceFailures, discovery) {
 
 async function runSourceProbe(env, input) {
   const startedAt = nowUtc();
-  const sourceBase = String(env.MLB_API_BASE_URL || DEFAULT_MLB_BASE_URL).replace(/\/$/, "");
-  const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.1.2";
+  const rawSourceBase = String(env.MLB_API_BASE_URL || DEFAULT_MLB_BASE_URL).replace(/\/$/, "");
+  const sourceBase = normalizeMlbOrigin(rawSourceBase);
+  const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.1.3";
   const probeFeedLive = input.probe_feed_live !== false;
   const todayUtc = nowUtc().slice(0, 10);
 
@@ -614,8 +632,8 @@ async function runSourceProbe(env, input) {
     const blockers = [];
     if (preparedBoardStale && sourceLane === "calendar_only_source_probe") warnings.push("prepared_board_stale_calendar_only_probe_used");
 
-    const boxscoreUrl = `${sourceBase}/api/v1/game/${gamePk}/boxscore`;
-    const feedLiveUrl = `${sourceBase}/api/v1.1/game/${gamePk}/feed/live`;
+    const boxscoreUrl = buildMlbUrl(sourceBase, `/api/v1/game/${gamePk}/boxscore`);
+    const feedLiveUrl = buildMlbUrl(sourceBase, `/api/v1.1/game/${gamePk}/feed/live`);
 
     boxscoreCalls += 1;
     const box = await fetchJsonWithRetry(boxscoreUrl, userAgent, MAX_ENDPOINT_RETRIES);
@@ -739,6 +757,8 @@ async function runSourceProbe(env, input) {
     started_at: startedAt,
     completed_at: nowUtc(),
     source_probe_lane: sourceLane,
+    mlb_api_base_url_raw: rawSourceBase,
+    mlb_api_origin_used: sourceBase,
     prepared_board_stale_warning: preparedBoardStale,
     games_checked: games.length,
     calendar_probe_games_checked: calendarProbeRows.length,
@@ -770,6 +790,8 @@ async function runSourceProbe(env, input) {
     output_json: {
       source_probe_only: true,
       source_probe_lane: sourceLane,
+      mlb_api_base_url_raw: rawSourceBase,
+      mlb_api_origin_used: sourceBase,
       prepared_board_stale_warning: preparedBoardStale,
       primary_endpoint: "/api/v1/game/{gamePk}/boxscore",
       fallback_endpoint: "/api/v1.1/game/{gamePk}/feed/live",
