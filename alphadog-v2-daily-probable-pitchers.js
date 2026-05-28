@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-probable-pitchers";
-const VERSION = "alphadog-v2-daily-probable-pitchers-v0.1.0-daily-starters-source-grounded";
+const VERSION = "alphadog-v2-daily-probable-pitchers-v0.1.1-d1-ref-hand-variable-cap-fix";
 const JOB_KEY = "daily-probable-pitchers";
 const SOURCE_KEY = "official_mlb_statsapi_schedule_probable_pitcher";
 const MAX_PREPARED_ROWS = 5000;
@@ -359,8 +359,11 @@ async function loadRefPlayerHands(env, playerIds) {
   const ids = [...new Set(playerIds.filter(Boolean).map(Number))];
   const map = new Map();
   if (!ids.length) return map;
-  for (let i = 0; i < ids.length; i += 80) {
-    const chunk = ids.slice(i, i + 80);
+  for (let i = 0; i < ids.length; i += 40) {
+    const chunk = ids.slice(i, i + 40);
+    // D1 has a low bind-variable ceiling. This query binds the chunk twice
+    // (player_id IN (...) OR mlb_player_id IN (...)), so keep chunks at 40
+    // to stay safely below the observed limit.
     const rows = await all(env.REF_DB, `SELECT player_id, mlb_player_id, player_name, full_name, throws, throw_side FROM ref_players WHERE player_id IN (${placeholders(chunk.length)}) OR mlb_player_id IN (${placeholders(chunk.length)})`, ...chunk, ...chunk);
     for (const r of rows) {
       const hand = r.throw_side || r.throws || null;
