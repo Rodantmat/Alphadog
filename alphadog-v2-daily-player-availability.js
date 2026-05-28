@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-player-availability";
-const VERSION = "alphadog-v2-daily-player-availability-v0.1.1-roster-path-fix";
+const VERSION = "alphadog-v2-daily-player-availability-v0.1.2-injured-list-status-guard";
 const JOB_KEY = "daily-player-availability";
 const SOURCE_KEY = "official_mlb_statsapi_roster_transactions_v1";
 const MAX_PREPARED_PLAYERS = 500;
@@ -335,10 +335,24 @@ async function getStaticPlayers(env, ids) {
   }
   return out;
 }
-function rosterMap(resp) {
+function rosterStatusCode(row) { return String(row?.status?.code || "").trim().toUpperCase(); }
+function rosterStatusDesc(row) { return String(row?.status?.description || "").trim().toLowerCase(); }
+function isActiveRosterRow(row) {
+  const code = rosterStatusCode(row);
+  const desc = rosterStatusDesc(row);
+  return code === "A" || desc === "active";
+}
+function isInjuredListRosterRow(row) {
+  const code = rosterStatusCode(row);
+  const desc = rosterStatusDesc(row);
+  return code.startsWith("I") || /\binjured\b|\bil\b|\bday il\b/.test(desc);
+}
+function rosterMap(resp, expectedKind = "any") {
   const m = new Map();
   const rows = resp && resp.ok && resp.json && Array.isArray(resp.json.roster) ? resp.json.roster : [];
   for (const row of rows) {
+    if (expectedKind === "active" && !isActiveRosterRow(row)) continue;
+    if (expectedKind === "injuredList" && !isInjuredListRosterRow(row)) continue;
     const id = intOrNull(row?.person?.id);
     if (id !== null) m.set(id, row);
   }
@@ -385,9 +399,9 @@ async function fetchSources(env, teamIds, playerIds, startDate, endDate) {
     if (!forty.ok) sourceFailures.push({ teamId, endpoint: "40Man", hard: false, status: forty.status, error: forty.error || forty.text_preview || null });
     if (!il.ok) sourceFailures.push({ teamId, endpoint: "injuredList", hard: false, status: il.status, error: il.error || il.text_preview || null });
     if (!tx.ok) sourceFailures.push({ teamId, endpoint: "transactions", hard: false, status: tx.status, error: tx.error || tx.text_preview || null });
-    activeByTeam.set(teamId, rosterMap(active));
-    fortyByTeam.set(teamId, rosterMap(forty));
-    ilByTeam.set(teamId, rosterMap(il));
+    activeByTeam.set(teamId, rosterMap(active, "active"));
+    fortyByTeam.set(teamId, rosterMap(forty, "40Man"));
+    ilByTeam.set(teamId, rosterMap(il, "injuredList"));
     txByTeam.set(teamId, txMap(tx));
   }
   const peopleResponses = [];
