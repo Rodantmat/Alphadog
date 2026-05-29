@@ -1,15 +1,15 @@
 const WORKER_NAME = "alphadog-v2-market-normalizer";
-const VERSION = "alphadog-v2-market-normalizer-v0.1.2-score-prep-identity-join";
+const VERSION = "alphadog-v2-market-normalizer-v0.1.4-sportsbook-reference-only";
 const JOB_KEY = "market-normalizer";
 const PHASE_KEY = "market_context_source_probe";
 const ODDS_API_SOURCE_KEY = "odds_api";
-const PARLAY_INVENTORY_SOURCE_KEY = "parlay_sleeper";
+const SPORTSBOOK_REFERENCE_SOURCE_SCOPE = "odds_api_strong_sportsbooks_only";
 const MAX_PREPARED_ROWS = 9000;
 const TEAM_MATCH_TOLERANCE_MINUTES = 25;
 
 const REQUIRED_DB_BINDINGS = ["MARKET_DB", "SCORE_DB", "TEAM_DB", "REF_DB", "CONTROL_DB"];
 const OPTIONAL_DB_BINDINGS = ["CONFIG_DB"];
-const EXPECTED_SECRETS = ["ODDS_API_KEY", "PARLAY_API_KEY"];
+const EXPECTED_SECRETS = ["ODDS_API_KEY"];
 
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
@@ -104,7 +104,7 @@ function baseIdentity(env, extra = {}) {
     status: "READY",
     timestamp_utc: nowUtc(),
     mode: "market_source_probe",
-    slot_note: "Existing market-normalizer worker slot is used as the v0.1 Market Context Source Probe shell to avoid global manifest/deploy-script churn.",
+    slot_note: "Existing market-normalizer worker slot is used as the v0.1 Market Context Source Probe shell to avoid global manifest/deploy-script churn. v0.1.4 is sportsbook-reference-only and does not read Sleeper or PrizePicks board inventory as market context.",
     binding_summary: {
       required_db_bindings_present: allTrue(db),
       optional_db_bindings: optionalDb,
@@ -452,7 +452,9 @@ async function fetchOddsApiGameOdds(env) {
   const base = String(env.ODDS_API_BASE_URL || "https://api.the-odds-api.com/v4").replace(/\/+$/, "");
   const url = new URL(`${base}/sports/baseball_mlb/odds`);
   url.searchParams.set("apiKey", String(env.ODDS_API_KEY));
-  url.searchParams.set("regions", "us");
+  const bookmakerList = String(env.ODDS_API_BOOKMAKERS || "draftkings,fanduel,betmgm,caesars,espnbet,fanatics,bet365").replace(/\s+/g, "");
+  if (bookmakerList) url.searchParams.set("bookmakers", bookmakerList);
+  else url.searchParams.set("regions", String(env.ODDS_API_REGIONS || "us"));
   url.searchParams.set("markets", "h2h,spreads,totals");
   url.searchParams.set("oddsFormat", "american");
   url.searchParams.set("dateFormat", "iso");
@@ -463,7 +465,7 @@ async function fetchOddsApiGameOdds(env) {
     let parsed = null;
     try { parsed = JSON.parse(text); } catch (err) { return { ok: false, external_calls: 1, http_status: resp.status, parse_error: safeText(err.message), response_preview: safeText(text, 700), events: [], error: "odds_api_json_parse_failed", started_at: started, finished_at: nowUtc() }; }
     if (!resp.ok) return { ok: false, external_calls: 1, http_status: resp.status, events: [], error: "odds_api_http_error", response_preview: safeText(text, 900), started_at: started, finished_at: nowUtc() };
-    return { ok: true, external_calls: 1, http_status: resp.status, events: Array.isArray(parsed) ? parsed : [], started_at: started, finished_at: nowUtc() };
+    return { ok: true, external_calls: 1, http_status: resp.status, events: Array.isArray(parsed) ? parsed : [], bookmaker_targets: bookmakerList, endpoint_scope: "strong_sportsbook_reference_game_odds", started_at: started, finished_at: nowUtc() };
   } catch (err) {
     return { ok: false, external_calls: 1, events: [], error: "odds_api_fetch_exception", message: safeText(err && err.message ? err.message : err), started_at: started, finished_at: nowUtc() };
   }
@@ -511,169 +513,21 @@ async function writeOddsApiEvidence(env, batchId, slateWindowKey, oddsEvents, ma
   return { eventRows, mappedEvents, gameOddsRows, mappedGameSet };
 }
 
-async function loadParlayInventory(env, today, tomorrow) {
-  try {
-    return await all(env.MARKET_DB, `SELECT current_row_id, batch_id, source_key, slate_date, source_event_id, source_line_id, source_player_id, player_name, team, opponent, league, sport, source_stat_name, canonical_prop_key, line_value, side, price, decimal_price, is_pickable, start_time, raw_line_json, row_payload_json FROM sleeper_board_current WHERE slate_date IN (?, ?) ORDER BY start_time, player_name, canonical_prop_key LIMIT 10000`, today, tomorrow);
-  } catch (err) {
-    return { __error: safeText(err && err.message ? err.message : err, 700) };
-  }
-}
-
-function lineKeyValue(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "";
-  return String(Math.round(n * 1000) / 1000);
-}
-function isPreparedSafe(p) {
-  return p && Number(p.pickable_safe) === 1 && p.matchup_status === "calendar_matched" && p.player_match_status === "matched" && p.official_game_pk !== null && p.official_game_pk !== undefined && p.official_game_time_utc;
-}
-function addToIndex(map, key, row) {
-  if (!key) return;
-  if (!map.has(key)) map.set(key, []);
-  map.get(key).push(row);
-}
-function choosePreparedCandidate(candidates) {
-  if (!Array.isArray(candidates) || !candidates.length) return { row: null, ambiguous: false };
-  const safe = candidates.filter(isPreparedSafe);
-  if (safe.length === 1) return { row: safe[0], ambiguous: false };
-  if (candidates.length === 1) return { row: candidates[0], ambiguous: false };
-  const matched = candidates.filter(x => x.matchup_status === "calendar_matched" && x.player_match_status === "matched");
-  if (matched.length === 1) return { row: matched[0], ambiguous: false };
-  return { row: null, ambiguous: true, count: candidates.length, safe_count: safe.length, matched_count: matched.length };
-}
-
-function buildPreparedIndexes(preparedRows) {
-  const bySourceRow = new Map();
-  const bySourceEventPlayerPropLine = new Map();
-  const safeByIdentityPropLine = new Map();
-  for (const p of preparedRows) {
-    const sourceKey = String(p.source_key || "");
-    const name = normalizeName(p.player_name || p.player_name_normalized);
-    const prop = normalizeProp(p.canonical_prop_key);
-    const line = lineKeyValue(p.line_value);
-    const event = String(p.source_event_id || "");
-    const game = String(p.official_game_pk || "");
-    const player = String(p.resolved_mlb_player_id || "");
-    if (sourceKey === "sleeper") {
-      addToIndex(bySourceRow, p.source_row_id ? String(p.source_row_id) : "", p);
-      addToIndex(bySourceEventPlayerPropLine, `${event}|${name}|${prop}|${line}`, p);
-      addToIndex(bySourceEventPlayerPropLine, `${event}|${name}|${prop}|`, p);
-    }
-    if (isPreparedSafe(p)) {
-      addToIndex(safeByIdentityPropLine, `${game}|${player}|${prop}|${line}`, p);
-      addToIndex(safeByIdentityPropLine, `${game}|${player}|${prop}|`, p);
-    }
-  }
-  return { bySourceRow, bySourceEventPlayerPropLine, safeByIdentityPropLine };
-}
-
-async function writeParlayInventoryEvidence(env, batchId, slateWindowKey, today, tomorrow, safePreparedRows, allSleeperPreparedRows) {
-  const inv = await loadParlayInventory(env, today, tomorrow);
-  if (inv && inv.__error) {
-    await writeIssue(env, batchId, slateWindowKey, null, "WARNING", "PARLAY_INVENTORY_READ_FAILED", null, null, PARLAY_INVENTORY_SOURCE_KEY, "Could not read sleeper_board_current as Parlay inventory source", inv);
-    return { rowsSeen: 0, mappedSafeRows: 0, mappedBlockedRows: 0, noPreparedMatchRows: 0, ambiguousRows: 0, coveredSafePreparedSet: new Set(), readError: inv.__error };
-  }
-  const preparedIndex = buildPreparedIndexes([...safePreparedRows, ...allSleeperPreparedRows]);
-  const coveredSafePreparedSet = new Set();
-  let mappedSafeRows = 0;
-  let mappedBlockedRows = 0;
-  let noPreparedMatchRows = 0;
-  let ambiguousRows = 0;
-  let exactSourceRowMatches = 0;
-  let compositeMatches = 0;
-  let safeCoverageLinks = 0;
-
-  for (const row of inv) {
-    const prop = normalizeProp(row.canonical_prop_key || row.source_stat_name);
-    const name = normalizeName(row.player_name);
-    const line = lineKeyValue(row.line_value);
-    const event = String(row.source_event_id || "");
-    const exactCandidates = [
-      ...(preparedIndex.bySourceRow.get(String(row.source_line_id || "")) || []),
-      ...(preparedIndex.bySourceRow.get(String(row.current_row_id || "")) || [])
-    ];
-    let chosen = choosePreparedCandidate(exactCandidates);
-    let matchPath = chosen.row ? "prepared_source_row_exact" : "none";
-    if (chosen.ambiguous) {
-      ambiguousRows += 1;
-      matchPath = "prepared_source_row_ambiguous";
-    }
-    if (!chosen.row && !chosen.ambiguous) {
-      const compositeCandidates = preparedIndex.bySourceEventPlayerPropLine.get(`${event}|${name}|${prop}|${line}`) || [];
-      chosen = choosePreparedCandidate(compositeCandidates);
-      if (chosen.row) matchPath = "prepared_event_player_prop_line_composite";
-      else if (chosen.ambiguous) { ambiguousRows += 1; matchPath = "prepared_event_player_prop_line_ambiguous"; }
-    }
-    if (!chosen.row && !chosen.ambiguous) {
-      const compositeCandidatesNoLine = preparedIndex.bySourceEventPlayerPropLine.get(`${event}|${name}|${prop}|`) || [];
-      chosen = choosePreparedCandidate(compositeCandidatesNoLine);
-      if (chosen.row) matchPath = "prepared_event_player_prop_composite_no_line";
-      else if (chosen.ambiguous) { ambiguousRows += 1; matchPath = "prepared_event_player_prop_ambiguous_no_line"; }
-    }
-
-    const prepared = chosen.row || null;
-    if (prepared && matchPath === "prepared_source_row_exact") exactSourceRowMatches += 1;
-    if (prepared && matchPath.startsWith("prepared_event_player_prop")) compositeMatches += 1;
-
-    const preparedSafe = prepared && isPreparedSafe(prepared);
-    if (preparedSafe) mappedSafeRows += 1;
-    else if (prepared) mappedBlockedRows += 1;
-    else if (!chosen.ambiguous) noPreparedMatchRows += 1;
-
-    const officialDate = prepared ? prepared.official_date : (row.slate_date || null);
-    const gamePk = prepared && prepared.official_game_pk !== null && prepared.official_game_pk !== undefined ? Number(prepared.official_game_pk) : null;
-    const resolvedMlbPlayerId = prepared && prepared.resolved_mlb_player_id !== null && prepared.resolved_mlb_player_id !== undefined ? Number(prepared.resolved_mlb_player_id) : null;
-    const safeMatches = (gamePk && resolvedMlbPlayerId && prop) ? (preparedIndex.safeByIdentityPropLine.get(`${gamePk}|${resolvedMlbPlayerId}|${prop}|${line}`) || []) : [];
-    const safeMatchesNoLine = (!safeMatches.length && gamePk && resolvedMlbPlayerId && prop) ? (preparedIndex.safeByIdentityPropLine.get(`${gamePk}|${resolvedMlbPlayerId}|${prop}|`) || []) : [];
-    const contextSafeMatches = safeMatches.length ? safeMatches : safeMatchesNoLine;
-    for (const sp of contextSafeMatches) {
-      coveredSafePreparedSet.add(String(sp.prepared_row_id));
-      safeCoverageLinks += 1;
-    }
-
-    let mappingStatus = "parlay_prop_no_prepared_match";
-    let coverageStatus = "PARLAY_PROP_NO_PREPARED_MATCH";
-    if (chosen.ambiguous && !prepared) {
-      mappingStatus = "parlay_prop_ambiguous_prepared_match";
-      coverageStatus = "PARLAY_PROP_AMBIGUOUS_PREPARED_MATCH";
-    } else if (preparedSafe) {
-      mappingStatus = "mapped_to_prepared_safe_row";
-      coverageStatus = "PARLAY_PROP_MATCHED_PREPARED_SAFE_ROW";
-    } else if (prepared) {
-      mappingStatus = "mapped_to_prepared_blocked_row";
-      coverageStatus = "PARLAY_PROP_MATCHED_PREPARED_BLOCKED_ROW";
-    }
-
-    await run(env.MARKET_DB, `INSERT INTO market_context_probe_player_props (probe_row_id, batch_id, slate_window_key, official_date, prepared_row_id, source_key, source_event_id, source_line_id, game_pk, resolved_mlb_player_id, source_player_name, canonical_prop_key, source_market_key, line_value, price_american, price_decimal, outcome_side, mapping_status, coverage_status, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-      rid("mcp_prop"), batchId, slateWindowKey, officialDate, prepared ? prepared.prepared_row_id : null, PARLAY_INVENTORY_SOURCE_KEY, row.source_event_id || null, row.source_line_id || row.current_row_id || null, gamePk, resolvedMlbPlayerId, row.player_name || null, row.canonical_prop_key || null, row.source_stat_name || null, Number.isFinite(Number(row.line_value)) ? Number(row.line_value) : null, Number.isFinite(Number(row.price)) ? Number(row.price) : null, Number.isFinite(Number(row.decimal_price)) ? Number(row.decimal_price) : null, row.side || null, mappingStatus, coverageStatus, safeJson({ ...row, market_context_mapping_audit: { match_path: matchPath, prepared_pickable_safe: prepared ? Number(prepared.pickable_safe) : null, prepared_matchup_status: prepared ? prepared.matchup_status : null, prepared_player_match_status: prepared ? prepared.player_match_status : null, prepared_block_reason: prepared ? prepared.block_reason : null, same_identity_safe_prepared_rows_covered: contextSafeMatches.length } }, 6500));
-  }
-  return { rowsSeen: inv.length, mappedSafeRows, mappedBlockedRows, noPreparedMatchRows, ambiguousRows, exactSourceRowMatches, compositeMatches, safeCoverageLinks, coveredSafePreparedSet };
-}
-
-function coverageGrade(pct) {
-  if (pct <= 0) return "NONE";
-  if (pct < 35) return "THIN";
-  if (pct < 75) return "PARTIAL";
-  return "STRONG";
-}
-
-async function writeCoverage(env, batchId, slateWindowKey, preparedRows, oddsMappedGameSet, parlayPreparedSet) {
-  let full = 0, partial = 0, missing = 0;
+async function writeCoverage(env, batchId, slateWindowKey, preparedRows, oddsMappedGameSet) {
+  let present = 0, missing = 0;
   for (const p of preparedRows) {
     const hasGame = oddsMappedGameSet.has(String(p.official_game_pk));
-    const hasProp = parlayPreparedSet.has(String(p.prepared_row_id));
-    const gameStatus = hasGame ? "GAME_MARKET_CONTEXT_PRESENT" : "MARKET_CONTEXT_MISSING";
-    const propStatus = hasProp ? "PLAYER_PROP_MARKET_PRESENT" : "PLAYER_PROP_NOT_AVAILABLE";
-    let status = "MARKET_CONTEXT_MISSING";
-    let grade = "NONE";
-    if (hasGame && hasProp) { status = "FULL_MARKET_CONTEXT"; grade = "STRONG"; full += 1; }
-    else if (hasGame || hasProp) { status = "PARTIAL_MARKET_CONTEXT"; grade = hasGame ? "GAME_ONLY" : "PROP_ONLY"; partial += 1; }
-    else { missing += 1; }
+    const gameStatus = hasGame ? "SPORTSBOOK_GAME_MARKET_CONTEXT_PRESENT" : "MARKET_CONTEXT_MISSING";
+    const propStatus = "PLAYER_PROP_REFERENCE_NOT_PROBED_V014";
+    const status = hasGame ? "PARTIAL_MARKET_CONTEXT" : "MARKET_CONTEXT_MISSING";
+    const grade = hasGame ? "GAME_ONLY_SPORTSBOOK_REFERENCE" : "NONE";
+    if (hasGame) present += 1; else missing += 1;
     await run(env.MARKET_DB, `INSERT INTO market_context_probe_coverage (coverage_row_id, batch_id, slate_window_key, official_date, prepared_row_id, source_key, game_pk, resolved_mlb_player_id, canonical_prop_key, board_line_value, game_market_status, player_prop_market_status, market_context_status, coverage_grade, details_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-      rid("mcp_cov"), batchId, slateWindowKey, p.official_date, p.prepared_row_id, p.source_key, Number(p.official_game_pk), Number(p.resolved_mlb_player_id), p.canonical_prop_key, Number.isFinite(Number(p.line_value)) ? Number(p.line_value) : null, gameStatus, propStatus, status, grade, safeJson({ odds_api_game_context: hasGame, parlay_inventory_prop_context: hasProp, no_scoring: true }, 2000));
+      rid("mcp_cov"), batchId, slateWindowKey, p.official_date, p.prepared_row_id, p.source_key, Number(p.official_game_pk), Number(p.resolved_mlb_player_id), p.canonical_prop_key, Number.isFinite(Number(p.line_value)) ? Number(p.line_value) : null, gameStatus, propStatus, status, grade, safeJson({ odds_api_sportsbook_game_context: hasGame, board_sources_used_as_market_reference: false, sleeper_used: false, prizepicks_used: false, player_prop_reference_probe: "not_in_v0_1_4", no_scoring: true }, 2200));
   }
-  return { full, partial, missing, rows: preparedRows.length };
+  return { game_context_present: present, missing, rows: preparedRows.length };
 }
+
 
 async function runMarketSourceProbe(env, input = {}) {
   const startedMs = Date.now();
@@ -697,7 +551,6 @@ async function runMarketSourceProbe(env, input = {}) {
   await ensureSchema(env);
   const prune = await pruneProbeWindow(env, today, tomorrow, slateWindowKey);
   const preparedRows = await loadPreparedRows(env, today, tomorrow);
-  const allSleeperPreparedRows = await loadPreparedRowsAllForSource(env, today, tomorrow, "sleeper");
   const gamePks = [...new Set(preparedRows.map(r => Number(r.official_game_pk)).filter(Number.isFinite))];
   const playerIds = [...new Set(preparedRows.map(r => Number(r.resolved_mlb_player_id)).filter(Number.isFinite))];
   const propKeys = [...new Set(preparedRows.map(r => String(r.canonical_prop_key || "")).filter(Boolean))];
@@ -735,17 +588,21 @@ async function runMarketSourceProbe(env, input = {}) {
     await writeIssue(env, batchId, slateWindowKey, today, "WARNING", "PARTIAL_ODDS_API_GAME_EVENT_MAPPING", null, null, ODDS_API_SOURCE_KEY, "Not every prepared game had mapped Odds API event context", { prepared_games_checked: gamePks.length, odds_api_events_mapped: oddsWrite.mappedEvents });
   }
 
-  const parlay = await writeParlayInventoryEvidence(env, batchId, slateWindowKey, today, tomorrow, preparedRows, allSleeperPreparedRows);
-  if (parlay.readError) warningCount += 1;
-  const parlayPct = preparedRows.length ? (parlay.coveredSafePreparedSet.size / preparedRows.length) * 100 : 0;
-  const parlayGrade = parlay.readError ? "SCHEMA_FAIL" : coverageGrade(parlayPct);
-  if (["NONE", "THIN"].includes(parlayGrade)) warningCount += 1;
-  const coverage = await writeCoverage(env, batchId, slateWindowKey, preparedRows, oddsWrite.mappedGameSet, parlay.coveredSafePreparedSet);
+  const boardSourceProbe = {
+    sleeper_used: false,
+    prizepicks_used: false,
+    parlay_api_called: false,
+    parlay_inventory_rows_seen: 0,
+    parlay_props_mapped_to_prepared: 0,
+    parlay_coverage_grade: "NOT_PROBED_BOARD_SOURCE_EXCLUDED",
+    reason: "v0.1.4 is sportsbook-reference-only. Sleeper and PrizePicks are user board/source inventory and are not valid external reference books for Market Context."
+  };
+  const coverage = await writeCoverage(env, batchId, slateWindowKey, preparedRows, oddsWrite.mappedGameSet);
 
   const certificationGrade = blockerCount > 0 ? "BLOCKED" : (warningCount > 0 ? "PASS_WITH_WARNINGS" : "PASS");
   const certification = blockerCount > 0 ? "MARKET_CONTEXT_SOURCE_PROBE_BLOCKED_STRUCTURAL" : "MARKET_CONTEXT_SOURCE_PROBE_EVIDENCE_WRITTEN";
   const status = blockerCount > 0 ? "completed_blocked_structural" : "completed_probe_evidence_written";
-  const rowsWritten = 1 + oddsWrite.eventRows + oddsWrite.gameOddsRows + parlay.rowsSeen + coverage.rows + warningCount + blockerCount;
+  const rowsWritten = 1 + oddsWrite.eventRows + oddsWrite.gameOddsRows + coverage.rows + warningCount + blockerCount;
   const output = {
     retention,
     prune,
@@ -754,15 +611,15 @@ async function runMarketSourceProbe(env, input = {}) {
     prepared_players_checked: playerIds.length,
     prepared_prop_keys_checked: propKeys.length,
     calendar_games_loaded: calendarRows.length,
-    odds_api: { config_present: sourceHas(env, "ODDS_API_KEY"), fetch_ok: odds.ok, http_status: odds.http_status || null, events_seen: oddsWrite.eventRows, events_mapped: oddsWrite.mappedEvents, game_odds_rows_written: oddsWrite.gameOddsRows, endpoint_mode: "baseball_mlb_odds_h2h_spreads_totals" },
-    parlay_inventory: { source: "MARKET_DB.sleeper_board_current", coverage_test_only: true, direct_parlay_api_called: false, rows_seen: parlay.rowsSeen, source_rows_mapped_to_prepared_safe: parlay.mappedSafeRows, source_rows_mapped_to_prepared_blocked: parlay.mappedBlockedRows, source_rows_no_prepared_match: parlay.noPreparedMatchRows, source_rows_ambiguous: parlay.ambiguousRows, exact_source_row_matches: parlay.exactSourceRowMatches, composite_matches: parlay.compositeMatches, safe_prepared_rows_covered: parlay.coveredSafePreparedSet.size, safe_coverage_links: parlay.safeCoverageLinks, all_sleeper_prepared_rows_loaded: allSleeperPreparedRows.length, coverage_pct: Number(parlayPct.toFixed(2)), grade: parlayGrade, note: "v0.1.2 reuses Score Prep identity instead of remapping raw Sleeper rows from scratch; sportsbook-grade prop source is not locked." },
+    odds_api: { config_present: sourceHas(env, "ODDS_API_KEY"), fetch_ok: odds.ok, http_status: odds.http_status || null, events_seen: oddsWrite.eventRows, events_mapped: oddsWrite.mappedEvents, game_odds_rows_written: oddsWrite.gameOddsRows, endpoint_mode: "baseball_mlb_odds_h2h_spreads_totals", bookmaker_targets: odds.bookmaker_targets || null, source_scope: "strong_sportsbook_reference_only" },
+    board_sources: { sleeper_used: false, prizepicks_used: false, parlay_api_called: false, purpose: "excluded_from_market_context_reference", reason: "Market Context now uses strong sportsbook reference books from Odds API only; board sources are not reference books." },
     coverage,
     boundaries: { market_current_lines_writes: 0, score_board_prepared_current_mutation: false, scoring: false, ranking: false, final_board: false, matrix_builder: false },
-    odds_api_player_props_next: parlayGrade === "STRONG" ? "COMPARE_ODDS_API_PLAYER_PROPS_BEFORE_LOCKING_SOURCE" : "AFTER_PARLAY_MAPPING_AUDIT_DECIDE_WHETHER_TO_PROBE_ODDS_API_EVENT_LEVEL_PLAYER_PROPS"
+    odds_api_player_props_next: "PROBE_ODDS_API_EVENT_LEVEL_PLAYER_PROPS_FROM_STRONG_SPORTSBOOKS_ONLY"
   };
 
   await run(env.MARKET_DB, `INSERT INTO market_context_probe_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, slate_window_key, window_start_date, window_end_date, status, prepared_rows_read, prepared_games_checked, prepared_players_checked, prepared_prop_keys_checked, odds_api_config_present, odds_api_events_seen, odds_api_events_mapped, odds_api_game_odds_rows, parlay_inventory_rows_seen, parlay_props_mapped_to_prepared, parlay_coverage_grade, warning_count, blocker_count, certification_status, certification_grade, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-    batchId, requestId, runId, WORKER_NAME, VERSION, "market_source_probe", slateWindowKey, today, tomorrow, status, preparedRows.length, gamePks.length, playerIds.length, propKeys.length, sourceHas(env, "ODDS_API_KEY") ? 1 : 0, oddsWrite.eventRows, oddsWrite.mappedEvents, oddsWrite.gameOddsRows, parlay.rowsSeen, parlay.coveredSafePreparedSet.size, parlayGrade, warningCount, blockerCount, certification, certificationGrade, safeJson(output, 9000));
+    batchId, requestId, runId, WORKER_NAME, VERSION, "market_source_probe", slateWindowKey, today, tomorrow, status, preparedRows.length, gamePks.length, playerIds.length, propKeys.length, sourceHas(env, "ODDS_API_KEY") ? 1 : 0, oddsWrite.eventRows, oddsWrite.mappedEvents, oddsWrite.gameOddsRows, 0, 0, "NOT_PROBED_BOARD_SOURCE_EXCLUDED", warningCount, blockerCount, certification, certificationGrade, safeJson(output, 9000));
 
   return {
     ok: true,
@@ -785,13 +642,13 @@ async function runMarketSourceProbe(env, input = {}) {
     odds_api_events_seen: oddsWrite.eventRows,
     odds_api_events_mapped: oddsWrite.mappedEvents,
     odds_api_game_odds_rows: oddsWrite.gameOddsRows,
-    parlay_inventory_rows_seen: parlay.rowsSeen,
-    parlay_props_mapped_to_prepared: parlay.coveredSafePreparedSet.size,
-    parlay_source_rows_mapped_to_prepared_safe: parlay.mappedSafeRows,
-    parlay_source_rows_mapped_to_prepared_blocked: parlay.mappedBlockedRows,
-    parlay_source_rows_no_prepared_match: parlay.noPreparedMatchRows,
-    parlay_source_rows_ambiguous: parlay.ambiguousRows,
-    parlay_coverage_grade: parlayGrade,
+    parlay_inventory_rows_seen: 0,
+    parlay_props_mapped_to_prepared: 0,
+    parlay_source_rows_mapped_to_prepared_safe: 0,
+    parlay_source_rows_mapped_to_prepared_blocked: 0,
+    parlay_source_rows_no_prepared_match: 0,
+    parlay_source_rows_ambiguous: 0,
+    parlay_coverage_grade: "NOT_PROBED_BOARD_SOURCE_EXCLUDED",
     warning_count: warningCount,
     blocker_count: blockerCount,
     retention,
