@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-schedule";
-const VERSION = "alphadog-v2-daily-schedule-v0.1.2-actual-utc-offset-timezone-risk";
+const VERSION = "alphadog-v2-daily-schedule-v0.1.3-volatile-window-replacement-cleanup";
 const JOB_KEY = "daily-team-schedule-spot";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB", "REF_DB"];
@@ -163,6 +163,7 @@ function baseIdentity(env) {
       anchors_to_mlb_game_calendar_game_pk: true,
       prepared_board_relevance_only: true,
       current_snapshot_issue_retention_today_tomorrow_only: true,
+    current_snapshot_issue_run_replacement_cleanup: true,
       batches_retained_for_audit: true,
       no_calendar_rebuild: true,
       no_daily_game_status_duplication: true,
@@ -306,8 +307,11 @@ async function ensureSchema(env) {
   await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_daily_team_schedule_spot_issues_date ON daily_team_schedule_spot_issues(official_date)`);
 }
 async function applyRetention(env, window) {
+  // Volatile context tables are run-replacement tables, not forever history.
+  // Each refresh clears prior current/snapshot/issue rows for the active PT today+tomorrow window
+  // and also removes any rows outside that window. Batch rows remain retained for small audit metadata.
   for (const table of ["daily_team_schedule_spot_current", "daily_team_schedule_spot_snapshots", "daily_team_schedule_spot_issues"]) {
-    await run(env.DAILY_DB, `DELETE FROM ${table} WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, window.start, window.end);
+    await run(env.DAILY_DB, `DELETE FROM ${table} WHERE official_date IS NULL OR official_date IN (?, ?) OR official_date NOT IN (?, ?)`, window.start, window.end, window.start, window.end);
   }
 }
 async function loadSources(env, window) {
@@ -657,6 +661,7 @@ async function refreshWindow(env, input) {
     unknown_team_count: unknown,
     external_calls: 0,
     current_snapshot_issue_retention_today_tomorrow_only: true,
+    current_snapshot_issue_run_replacement_cleanup: true,
     batches_retained_for_audit: true,
     no_score_db_mutation: true,
     no_board_mutation: true,
@@ -665,7 +670,7 @@ async function refreshWindow(env, input) {
     no_final_board: true,
     notes: [
       "Calendar is_live flag is intentionally not used for schedule/live interpretation.",
-      "Today/tomorrow volatile rows are retained only for current, snapshots, and issues tables.",
+      "Today/tomorrow volatile rows are run-replaced for current, snapshots, and issues tables; batches remain audit metadata.",
       "Travel context is derived only from internal REF_DB.ref_stadiums latitude/longitude/timezone.",
       "Timezone transition risk is based on actual UTC offset difference, not IANA timezone-name difference."
     ],
