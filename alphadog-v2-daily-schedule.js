@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-schedule";
-const VERSION = "alphadog-v2-daily-schedule-v0.1.1-worker-owned-schema-retention-fix";
+const VERSION = "alphadog-v2-daily-schedule-v0.1.2-actual-utc-offset-timezone-risk";
 const JOB_KEY = "daily-team-schedule-spot";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB", "REF_DB"];
@@ -72,6 +72,39 @@ function localHour(iso, timezone) {
     return Number.isFinite(h) ? h : null;
   } catch (_) { return null; }
 }
+
+function timeZoneOffsetMinutes(iso, timezone) {
+  if (!iso || !timezone) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).formatToParts(d);
+    const m = {};
+    for (const p of parts) m[p.type] = p.value;
+    const y = Number(m.year);
+    const mo = Number(m.month);
+    const day = Number(m.day);
+    let h = Number(m.hour);
+    const mi = Number(m.minute || 0);
+    const se = Number(m.second || 0);
+    if (![y, mo, day, h, mi, se].every(Number.isFinite)) return null;
+    if (h === 24) h = 0;
+    const localAsUtc = Date.UTC(y, mo - 1, day, h, mi, se);
+    return Math.round((localAsUtc - d.getTime()) / 60000);
+  } catch (_) {
+    return null;
+  }
+}
+
 function hoursBetween(a, b) {
   const da = new Date(a || "");
   const db = new Date(b || "");
@@ -414,7 +447,10 @@ function deriveSpot({ game, teamId, side, preparedRows, maps, sources, batchId, 
   const venueChanged = priorGame && String(priorGame.venue_id) !== String(game.venue_id);
   const travelMiles = venueChanged ? haversineMiles(priorStadium, currentStadium) : (priorGame ? 0 : null);
   const bucket = distanceBucket(travelMiles);
-  const timezoneTransition = priorStadium && currentStadium && String(priorStadium.timezone || "") !== String(currentStadium.timezone || "") ? 1 : 0;
+  const timezoneNameChanged = priorStadium && currentStadium && String(priorStadium.timezone || "") !== String(currentStadium.timezone || "") ? 1 : 0;
+  const priorTimezoneOffsetMinutes = priorGame && priorStadium ? timeZoneOffsetMinutes(priorGame.game_time_utc, priorStadium.timezone) : null;
+  const currentTimezoneOffsetMinutes = currentStadium ? timeZoneOffsetMinutes(game.game_time_utc, currentStadium.timezone) : null;
+  const timezoneTransition = priorTimezoneOffsetMinutes !== null && currentTimezoneOffsetMinutes !== null && priorTimezoneOffsetMinutes !== currentTimezoneOffsetMinutes ? 1 : 0;
   const priorHour = priorGame && priorStadium ? localHour(priorGame.game_time_utc, priorStadium.timezone) : null;
   const currentHour = currentStadium ? localHour(game.game_time_utc, currentStadium.timezone) : null;
   const gapHours = priorGame ? hoursBetween(priorGame.game_time_utc, game.game_time_utc) : null;
@@ -449,7 +485,7 @@ function deriveSpot({ game, teamId, side, preparedRows, maps, sources, batchId, 
   if (doubleheaderToday) warn("doubleheader_today", "warning", "Team has more than one calendar game today or doubleheader tag is non-N.");
   if (doubleheaderRecent) warn("doubleheader_recent", "warning", "Team has recent doubleheader context in lookback.");
   if (venueChanged) warn("travel_required", "warning", "Prior completed game venue differs from current game venue.", { travel_distance_miles: travelMiles, travel_distance_bucket: bucket });
-  if (timezoneTransition) warn("timezone_transition", "warning", "Prior completed game venue timezone differs from current venue timezone.");
+  if (timezoneTransition) warn("timezone_transition", "warning", "Prior completed game venue UTC offset differs from current venue UTC offset.", { prior_timezone_offset_minutes: priorTimezoneOffsetMinutes, current_timezone_offset_minutes: currentTimezoneOffsetMinutes });
   if (earlyAfterNight) warn("early_after_night", "warning", "Current early local game follows prior local night game within 24 hours.");
   const details = {
     prior_game_pk: lastLog ? toInt(lastLog.game_pk) : null,
@@ -459,6 +495,10 @@ function deriveSpot({ game, teamId, side, preparedRows, maps, sources, batchId, 
     prior_is_home: priorIsHome,
     prior_local_hour: priorHour,
     current_local_hour: currentHour,
+    timezone_name_changed_flag: timezoneNameChanged,
+    timezone_name_changed_audit_only: true,
+    prior_timezone_offset_minutes: priorTimezoneOffsetMinutes,
+    current_timezone_offset_minutes: currentTimezoneOffsetMinutes,
     gap_hours_since_prior_game: gapHours,
     next_game_pk: nextGame ? toInt(nextGame.game_pk) : null,
     next_game_date: nextGame ? nextGame.official_date : null,
@@ -626,7 +666,8 @@ async function refreshWindow(env, input) {
     notes: [
       "Calendar is_live flag is intentionally not used for schedule/live interpretation.",
       "Today/tomorrow volatile rows are retained only for current, snapshots, and issues tables.",
-      "Travel context is derived only from internal REF_DB.ref_stadiums latitude/longitude/timezone."
+      "Travel context is derived only from internal REF_DB.ref_stadiums latitude/longitude/timezone.",
+      "Timezone transition risk is based on actual UTC offset difference, not IANA timezone-name difference."
     ],
     timestamp_utc: nowUtc()
   };
