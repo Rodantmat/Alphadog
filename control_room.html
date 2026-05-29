@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AlphaDog V2 Control Room</title>
-<!-- alphadog-v2-control-room-v1.6.131-daily-umpire-context-existing-slot-button -->
+<!-- alphadog-v2-control-room-v1.6.133-daily-context-certifier-source-truth -->
 <style>
 :root{--bg:#0b0f14;--line:#30363d;--green:#00ff88;--white:#fff;--muted:#aaa;--debug:#8957e5;--check:#238636;--audit:#0f766e;--sql:#d29922;--clean:#da3633;--orch:#0969da}
 *{box-sizing:border-box}
@@ -28,7 +28,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 </head>
 <body>
 <h2>ALPHADOG CONTROL ROOM</h2>
-<div id="versionTag">alphadog-v2-control-room-v1.6.131-daily-umpire-context-existing-slot-button</div>
+<div id="versionTag">alphadog-v2-control-room-v1.6.133-daily-context-certifier-source-truth</div>
 <div class="small">PT Now: <span id="ptNowLabel"></span></div>
 <div class="small">Slate: AUTO by game date/time.</div>
 <div class="status" id="status">READY</div>
@@ -76,6 +76,7 @@ textarea#sqlInput, textarea{user-select:text;-webkit-user-select:text;pointer-ev
 <button class="orch" type="button" onclick="runJobButton('DAILY JOBS > Bullpen','orchestrator_enqueue_daily_bullpen_availability')">Bullpen</button>
 <button class="orch" type="button" onclick="runJobButton('DAILY JOBS > Team Spot','orchestrator_enqueue_daily_team_schedule_spot')">Team Spot</button>
 <button class="orch" type="button" onclick="runJobButton('DAILY JOBS > Umpire','orchestrator_enqueue_daily_umpire_context')">Umpire</button>
+<button class="audit" type="button" onclick="runJobButton('DAILY JOBS > Context Cert','orchestrator_enqueue_daily_context_certifier')">Context Cert</button>
 </div></div>
 
 <div class="section"><h3>STATIC</h3><div class="grid">
@@ -179,7 +180,7 @@ function loading(l,e){
   setOutput(l,"Loading..."+(e?String.fromCharCode(10)+e:""));
 }
 function debugConfig(){
-  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled",orchestrator_mode:"backend-scheduled-continuation",wake_binding_required:"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator",public_url_fallback_disabled:true,version:"alphadog-v2-control-room-v1.6.131-daily-umpire-context-existing-slot-button",ui_sentinel:"LAYOUT_PARITY_CLEAN_BUTTONS_V1_6_78",button_layout:"five_columns_original_compact",html_source:"embedded_worker_html_and_static_html_identical",delta_pitcher_metrics_button:"present_in_working_escaped_embedded_html",deployed_file_truth:"alphadog-v2-control-room.js",working_html_string_mode:"escaped_one_line_string_restored",base_calendar_button:"present", delta_calendar_button:"present", daily_lineups_button:"present_source_probe_only", daily_player_availability_button:"present_sidecar_only", daily_weather_roof_button:"present_phase_4_unified_context", daily_bullpen_availability_button:"present_phase_5_internal_context", daily_team_schedule_spot_button:"present_phase_6_team_schedule_spot_context", daily_umpire_context_button:"present_phase_7_existing_daily_usage_pulse_slot_no_global_deploy_files", schema_creation:"worker_owned_on_first_run_not_manual_sql"});
+  setOutput("DEBUG > Config",{base:BASE,auto_slate:autoSlateContext(),access_mode:"single-user-admin-token-disabled",orchestrator_mode:"backend-scheduled-continuation",wake_binding_required:"ORCHESTRATOR_WORKER -> alphadog-v2-orchestrator",public_url_fallback_disabled:true,version:"alphadog-v2-control-room-v1.6.133-daily-context-certifier-source-truth",ui_sentinel:"LAYOUT_PARITY_CLEAN_BUTTONS_V1_6_78",button_layout:"five_columns_original_compact",html_source:"embedded_worker_html_and_static_html_identical",delta_pitcher_metrics_button:"present_in_working_escaped_embedded_html",deployed_file_truth:"alphadog-v2-control-room.js",working_html_string_mode:"escaped_one_line_string_restored",base_calendar_button:"present", delta_calendar_button:"present", daily_lineups_button:"present_source_probe_only", daily_player_availability_button:"present_sidecar_only", daily_weather_roof_button:"present_phase_4_unified_context", daily_bullpen_availability_button:"present_phase_5_internal_context", daily_team_schedule_spot_button:"present_phase_6_team_schedule_spot_context", daily_umpire_context_button:"present_phase_7_existing_daily_usage_pulse_slot_no_global_deploy_files", daily_context_certifier_button:"present_readiness_enrichment_only_existing_daily_certifier_slot", schema_creation:"worker_owned_on_first_run_not_manual_sql"});
 }
 function reloadPage(){window.location.reload(true)}
 async function rawRequest(l,u,p){
