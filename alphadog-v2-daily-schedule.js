@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-schedule";
-const VERSION = "alphadog-v2-daily-schedule-v0.1.3-volatile-window-replacement-cleanup";
+const VERSION = "alphadog-v2-daily-schedule-v0.1.4-prewrite-replace-postwrite-retention-fix";
 const JOB_KEY = "daily-team-schedule-spot";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB", "REF_DB"];
@@ -164,6 +164,7 @@ function baseIdentity(env) {
       prepared_board_relevance_only: true,
       current_snapshot_issue_retention_today_tomorrow_only: true,
     current_snapshot_issue_run_replacement_cleanup: true,
+    prewrite_window_replacement_postwrite_retention_fix_v0_1_4: true,
       batches_retained_for_audit: true,
       no_calendar_rebuild: true,
       no_daily_game_status_duplication: true,
@@ -592,7 +593,7 @@ async function refreshWindow(env, input) {
   const window = retentionWindowPt();
   const batchId = rid("daily_team_schedule_spot_batch");
   const runId = input.run_id || rid("run");
-  await applyRetention(env, window);
+  await clearVolatileWindowBeforeWrite(env, window);
   await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_team_schedule_spot_batches (batch_id,request_id,run_id,worker_name,worker_version,job_key,mode,status,window_start,window_end,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, batchId, input.request_id || null, runId, WORKER_NAME, VERSION, JOB_KEY, input.mode || "daily_team_schedule_spot_refresh_window", "running", window.start, window.end, started);
   const sources = await loadSources(env, window);
   const maps = buildReferenceMaps(sources);
@@ -625,7 +626,7 @@ async function refreshWindow(env, input) {
     await writeSnapshot(env, row, batchId);
   }
   for (const x of allIssues) await writeIssue(env, x.issue, batchId, x.row);
-  await applyRetention(env, window);
+  await applyPostWriteRetention(env, window);
   const blockerCount = allIssues.filter(x => x.issue.severity === "blocker").length;
   const warningCount = allIssues.filter(x => x.issue.severity !== "blocker").length;
   const highRisk = rowsToWrite.filter(r => r.schedule_risk_level === "high").length;
@@ -662,6 +663,7 @@ async function refreshWindow(env, input) {
     external_calls: 0,
     current_snapshot_issue_retention_today_tomorrow_only: true,
     current_snapshot_issue_run_replacement_cleanup: true,
+    prewrite_window_replacement_postwrite_retention_fix_v0_1_4: true,
     batches_retained_for_audit: true,
     no_score_db_mutation: true,
     no_board_mutation: true,
@@ -670,7 +672,7 @@ async function refreshWindow(env, input) {
     no_final_board: true,
     notes: [
       "Calendar is_live flag is intentionally not used for schedule/live interpretation.",
-      "Today/tomorrow volatile rows are run-replaced for current, snapshots, and issues tables; batches remain audit metadata.",
+      "Today/tomorrow volatile rows are cleared before write, then post-write retention only prunes rows outside today/tomorrow; batches remain audit metadata.",
       "Travel context is derived only from internal REF_DB.ref_stadiums latitude/longitude/timezone.",
       "Timezone transition risk is based on actual UTC offset difference, not IANA timezone-name difference."
     ],
