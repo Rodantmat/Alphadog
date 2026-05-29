@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.8-multi-surface-freshness-select";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.9-stale-dispatch-preserve-current";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
@@ -758,7 +758,7 @@ async function clearActivePrizePicksBoardForStaleSource(env, batchId, slateDate,
     source_key: SOURCE_KEY,
     slate_date: slateDate,
     certification: SOURCE_STALE_CERT,
-    reason: "Fetched PrizePicks source has no future pickable MLB rows. Active PrizePicks board cleared instead of promoting stale rows.",
+    reason: "Fetched PrizePicks source has no future pickable MLB rows. Active PrizePicks board preserved the current board while requesting a fresh GitHub source refresh; stale fetched rows were not promoted.",
     board_timing: timing,
     no_market_current_lines_write: true,
     no_scoring: true,
@@ -767,24 +767,22 @@ async function clearActivePrizePicksBoardForStaleSource(env, batchId, slateDate,
   }, 6000);
 
   await env.MARKET_DB.batch([
-    env.MARKET_DB.prepare("DELETE FROM prizepicks_board_current WHERE source_key=?").bind(SOURCE_KEY),
-    env.MARKET_DB.prepare("DELETE FROM prizepicks_board_active_batches WHERE source_key=?").bind(SOURCE_KEY),
     env.MARKET_DB.prepare("DELETE FROM prizepicks_board_stage WHERE source_key=?").bind(SOURCE_KEY),
-    env.MARKET_DB.prepare("UPDATE prizepicks_board_batches SET certification_status=?, certification_reason=?, certification_json=?, cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?").bind(SOURCE_STALE_CERT, "Fetched PrizePicks source has no future pickable MLB rows; active current board cleared and stale rows not promoted.", certificationJson, batchId)
+    env.MARKET_DB.prepare("UPDATE prizepicks_board_batches SET certification_status=?, certification_reason=?, certification_json=?, cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?").bind(SOURCE_STALE_CERT, "Fetched PrizePicks source has no future pickable MLB rows; current board preserved and stale fetched rows not promoted.", certificationJson, batchId)
   ]);
 
   return {
     promoted: false,
     source_stale_no_future_pickable: true,
     certification_status: SOURCE_STALE_CERT,
-    reason: "Fetched PrizePicks source has no future pickable MLB rows; active current board cleared and stale rows not promoted.",
+    reason: "Fetched PrizePicks source has no future pickable MLB rows; current board preserved and stale fetched rows not promoted.",
     batch_id: batchId,
     slate_date: slateDate,
     rows_promoted: 0,
     board_timing: timing,
-    active_board_cleared: true,
-    current_cleanup: { table: "prizepicks_board_current", source_key: SOURCE_KEY, cleared_all_for_source: true },
-    active_pointer_cleanup: { table: "prizepicks_board_active_batches", source_key: SOURCE_KEY, cleared_all_for_source: true },
+    active_board_preserved: true,
+    current_preservation: { table: "prizepicks_board_current", source_key: SOURCE_KEY, preserved_existing_current_rows: true },
+    active_pointer_preservation: { table: "prizepicks_board_active_batches", source_key: SOURCE_KEY, preserved_existing_active_pointer: true },
     stage_cleanup: { table: "prizepicks_board_stage", source_key: SOURCE_KEY, cleaned: true },
     no_market_current_lines_write: true,
     no_scoring: true,
@@ -1403,6 +1401,7 @@ async function runBoardParseStageCertify(env, input = {}) {
     lifecycle_locked: {
       fetch_parse_stage_certify_promote_complete: finalPassed,
       source_stale_no_future_pickable_handled: sourceStaleHandled,
+      source_stale_current_preserved: sourceStaleHandled,
       active_pointer_table: "prizepicks_board_active_batches",
       current_board_table: "prizepicks_board_current",
       stage_cleaned_after_success: Boolean(promotion.stage_cleanup && promotion.stage_cleanup.cleaned),
