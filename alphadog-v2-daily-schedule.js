@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-schedule";
-const VERSION = "alphadog-v2-daily-schedule-v0.1.4-prewrite-replace-postwrite-retention-fix";
+const VERSION = "alphadog-v2-daily-schedule-v0.1.6-self-verifying-retention-final";
 const JOB_KEY = "daily-team-schedule-spot";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB", "REF_DB"];
@@ -164,7 +164,7 @@ function baseIdentity(env) {
       prepared_board_relevance_only: true,
       current_snapshot_issue_retention_today_tomorrow_only: true,
     current_snapshot_issue_run_replacement_cleanup: true,
-    prewrite_window_replacement_postwrite_retention_fix_v0_1_4: true,
+    prewrite_window_replacement_postwrite_retention_fix_v0_1_6: true,
       batches_retained_for_audit: true,
       no_calendar_rebuild: true,
       no_daily_game_status_duplication: true,
@@ -587,6 +587,46 @@ async function writeIssue(env, issue, batchId, row) {
   await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_team_schedule_spot_issues (issue_id,batch_id,official_date,game_pk,team_id,issue_status,issue_type,severity,reason,details_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
     rid("schedule_spot_issue"), batchId, row ? row.official_date : null, row ? row.game_pk : null, row ? row.team_id : null, issue.status || "open", issue.type, issue.severity, issue.reason, safeJson(issue.details || {}));
 }
+
+async function clearVolatileWindowBeforeWrite(env, window) {
+  const dates = (window && window.dates) || [];
+  if (!dates.length) return;
+  const placeholders = dates.map(() => "?").join(",");
+  await run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_current WHERE official_date IN (${placeholders})`, ...dates);
+  await run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_snapshots WHERE official_date IN (${placeholders})`, ...dates);
+  await run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_issues WHERE official_date IN (${placeholders})`, ...dates);
+}
+async function applyPostWriteRetention(env, window) {
+  const dates = (window && window.dates) || [];
+  if (!dates.length) return;
+  const placeholders = dates.map(() => "?").join(",");
+  await run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_current WHERE official_date IS NULL OR official_date NOT IN (${placeholders})`, ...dates);
+  await run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_snapshots WHERE official_date IS NULL OR official_date NOT IN (${placeholders})`, ...dates);
+  await run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_issues WHERE official_date IS NULL OR official_date NOT IN (${placeholders})`, ...dates);
+}
+
+async function verifyVolatileWindowAfterWrite(env, window, batchId) {
+  const dates = (window && window.dates) || [];
+  if (!dates.length) {
+    return { current_rows: 0, snapshot_rows: 0, issue_rows: 0, outside_current_rows: 0, outside_snapshot_rows: 0, outside_issue_rows: 0 };
+  }
+  const placeholders = dates.map(() => "?").join(",");
+  const current = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_current WHERE official_date IN (${placeholders})`, ...dates);
+  const snapshots = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_snapshots WHERE batch_id = ?`, batchId);
+  const issues = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_issues WHERE official_date IN (${placeholders})`, ...dates);
+  const outsideCurrent = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_current WHERE official_date IS NULL OR official_date NOT IN (${placeholders})`, ...dates);
+  const outsideSnapshots = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_snapshots WHERE official_date IS NULL OR official_date NOT IN (${placeholders})`, ...dates);
+  const outsideIssues = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_issues WHERE official_date IS NULL OR official_date NOT IN (${placeholders})`, ...dates);
+  return {
+    current_rows: Number(current && current.rows) || 0,
+    snapshot_rows: Number(snapshots && snapshots.rows) || 0,
+    issue_rows: Number(issues && issues.rows) || 0,
+    outside_current_rows: Number(outsideCurrent && outsideCurrent.rows) || 0,
+    outside_snapshot_rows: Number(outsideSnapshots && outsideSnapshots.rows) || 0,
+    outside_issue_rows: Number(outsideIssues && outsideIssues.rows) || 0
+  };
+}
+
 async function refreshWindow(env, input) {
   await ensureSchema(env);
   const started = nowUtc();
@@ -627,13 +667,25 @@ async function refreshWindow(env, input) {
   }
   for (const x of allIssues) await writeIssue(env, x.issue, batchId, x.row);
   await applyPostWriteRetention(env, window);
+  const verification = await verifyVolatileWindowAfterWrite(env, window, batchId);
   const blockerCount = allIssues.filter(x => x.issue.severity === "blocker").length;
   const warningCount = allIssues.filter(x => x.issue.severity !== "blocker").length;
   const highRisk = rowsToWrite.filter(r => r.schedule_risk_level === "high").length;
   const unknown = rowsToWrite.filter(r => String(r.schedule_spot_confidence || "").startsWith("LOW_")).length;
-  const dataOk = blockerCount === 0;
-  const certification = noPickableSlate ? "DAILY_TEAM_SCHEDULE_SPOT_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (dataOk ? (warningCount ? "DAILY_TEAM_SCHEDULE_SPOT_CERTIFIED_WITH_WARNINGS" : "DAILY_TEAM_SCHEDULE_SPOT_CERTIFIED_READY") : "DAILY_TEAM_SCHEDULE_SPOT_FAILED_BLOCKERS_OR_COVERAGE");
-  const grade = noPickableSlate ? "NO_PICKABLE_SLATE" : (dataOk ? (warningCount ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL");
+  const expectedCurrentRows = rowsToWrite.length;
+  const expectedSnapshotRows = rowsToWrite.length;
+  const expectedIssueRows = allIssues.length;
+  const retentionVerificationPassed = verification.current_rows === expectedCurrentRows
+    && verification.snapshot_rows === expectedSnapshotRows
+    && verification.issue_rows === expectedIssueRows
+    && verification.outside_current_rows === 0
+    && verification.outside_snapshot_rows === 0
+    && verification.outside_issue_rows === 0;
+  const dataOk = blockerCount === 0 && retentionVerificationPassed;
+  const certification = !retentionVerificationPassed
+    ? "DAILY_TEAM_SCHEDULE_SPOT_FAILED_RETENTION_VERIFICATION"
+    : (noPickableSlate ? "DAILY_TEAM_SCHEDULE_SPOT_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (dataOk ? (warningCount ? "DAILY_TEAM_SCHEDULE_SPOT_CERTIFIED_WITH_WARNINGS" : "DAILY_TEAM_SCHEDULE_SPOT_CERTIFIED_READY") : "DAILY_TEAM_SCHEDULE_SPOT_FAILED_BLOCKERS_OR_COVERAGE"));
+  const grade = !retentionVerificationPassed ? "FAIL_RETENTION_VERIFICATION" : (noPickableSlate ? "NO_PICKABLE_SLATE" : (dataOk ? (warningCount ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL"));
   const output = {
     ok: true,
     data_ok: dataOk,
@@ -644,7 +696,7 @@ async function refreshWindow(env, input) {
     run_id: runId,
     batch_id: batchId,
     mode: input.mode || "daily_team_schedule_spot_refresh_window",
-    status: dataOk ? "completed" : "completed_with_blockers",
+    status: dataOk ? "completed" : (!retentionVerificationPassed ? "failed_retention_verification" : "completed_with_blockers"),
     certification,
     certification_grade: grade,
     window_start: window.start,
@@ -661,9 +713,14 @@ async function refreshWindow(env, input) {
     high_risk_team_count: highRisk,
     unknown_team_count: unknown,
     external_calls: 0,
+    db_write_verification: verification,
+    expected_current_rows: expectedCurrentRows,
+    expected_snapshot_rows: expectedSnapshotRows,
+    expected_issue_rows: expectedIssueRows,
+    retention_verification_passed: retentionVerificationPassed,
     current_snapshot_issue_retention_today_tomorrow_only: true,
     current_snapshot_issue_run_replacement_cleanup: true,
-    prewrite_window_replacement_postwrite_retention_fix_v0_1_4: true,
+    prewrite_window_replacement_postwrite_retention_fix_v0_1_6: true,
     batches_retained_for_audit: true,
     no_score_db_mutation: true,
     no_board_mutation: true,
@@ -679,7 +736,7 @@ async function refreshWindow(env, input) {
     timestamp_utc: nowUtc()
   };
   await run(env.DAILY_DB, `UPDATE daily_team_schedule_spot_batches SET status=?, calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, teams_checked=?, team_rows_written=?, snapshot_rows_written=?, source_failures=0, blocker_count=?, warning_count=?, high_risk_team_count=?, unknown_team_count=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    output.status, calendarGamesChecked, preparedGamesChecked, preparedRowsRead, rowsToWrite.length, rowsToWrite.length, rowsToWrite.length, blockerCount, warningCount, highRisk, unknown, certification, grade, dataOk ? "No blockers" : "One or more blockers", safeJson(output), batchId);
+    output.status, calendarGamesChecked, preparedGamesChecked, preparedRowsRead, rowsToWrite.length, rowsToWrite.length, rowsToWrite.length, blockerCount, warningCount, highRisk, unknown, certification, grade, retentionVerificationPassed ? (dataOk ? "No blockers" : "One or more blockers") : "Post-write retention verification failed", safeJson(output), batchId);
   return output;
 }
 export default {
