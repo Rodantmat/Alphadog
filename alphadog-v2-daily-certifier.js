@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-certifier";
-const VERSION = "alphadog-v2-daily-certifier-v0.1.2-fast-aggregate-terminal-batch";
+const VERSION = "alphadog-v2-daily-certifier-v0.1.3-started-not-applicable-fix";
 const JOB_KEY = "daily-certifier";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -281,7 +281,9 @@ async function runCertifier(env, input) {
     if (!p.official_game_pk) hard.push({ layer: "prepared_board", type: "missing_game_pk", reason: "Prepared row lacks official_game_pk" });
     if (!p.official_game_time_utc) hard.push({ layer: "prepared_board", type: "missing_game_time", reason: "Prepared row lacks official_game_time_utc" });
     if (!playerId) hard.push({ layer: "prepared_board", type: "missing_player_id", reason: "Prepared row lacks resolved_mlb_player_id" });
-    if (game && (Number(game.is_live) === 1 || Number(game.is_final) === 1 || Number(game.is_cancelled) === 1 || Number(game.is_postponed) === 1)) hard.push({ layer: "calendar", type: "started_or_not_pickable", reason: "Calendar says game is live/final/postponed/cancelled; row is not currently pickable" });
+    const gameStartedOrExpired = Boolean(game && (Number(game.is_live) === 1 || Number(game.is_final) === 1 || Number(game.is_cancelled) === 1 || Number(game.is_postponed) === 1));
+    const notApplicableReasons = [];
+    if (gameStartedOrExpired) notApplicableReasons.push({ layer: "calendar", type: "started_or_expired", reason: "Calendar says game is live/final/postponed/cancelled; daily context is not applicable for pickability after start" });
 
     const starterStatus = stRows.length ? "available" : "missing";
     if (stRows.length) availableContext++; else gaps.push({ layer: "starters", type: "missing_starter_context", reason: "No starter rows found for game in today/tomorrow current table" });
@@ -331,18 +333,21 @@ async function runCertifier(env, input) {
 
     let contextStatus = "ready";
     let contextGrade = "READY_FULL_CONTEXT";
-    if (hard.length) { contextStatus = "blocked"; contextGrade = isUnavailableAvailability(av) ? "BLOCKED_PLAYER_UNAVAILABLE" : "BLOCKED_HARD_INTEGRITY"; counts.blocked++; }
+    if (gameStartedOrExpired) { contextStatus = "not_applicable"; contextGrade = "NOT_APPLICABLE_STARTED_OR_EXPIRED"; counts.not_applicable++; }
+    else if (hard.length) { contextStatus = "blocked"; contextGrade = isUnavailableAvailability(av) ? "BLOCKED_PLAYER_UNAVAILABLE" : "BLOCKED_HARD_INTEGRITY"; counts.blocked++; }
     else if (gaps.length) { contextStatus = "partial_enrichment"; contextGrade = "READY_PARTIAL_ENRICHMENT"; counts.ready_partial++; }
     else if (warnings.length) { contextStatus = "ready_with_warnings"; contextGrade = "READY_WITH_WARNINGS"; counts.ready_warnings++; }
     else { counts.ready_full++; }
 
-    counts.hard += hard.length; counts.warning += warnings.length; counts.gap += gaps.length; counts.rows++;
-    for (const h of hard) addIssueAggregate(issueMap, batchId, p, teamId, h, "hard_blocker", "hard_blocker");
+    const effectiveHard = gameStartedOrExpired ? [] : hard;
+    counts.hard += effectiveHard.length; counts.warning += warnings.length; counts.gap += gaps.length; counts.rows++;
+    for (const h of effectiveHard) addIssueAggregate(issueMap, batchId, p, teamId, h, "hard_blocker", "hard_blocker");
+    for (const n of notApplicableReasons) addIssueAggregate(issueMap, batchId, p, teamId, n, "not_applicable", "not_applicable");
     for (const wng of warnings) addIssueAggregate(issueMap, batchId, p, teamId, wng, "warning", "warning");
     for (const gap of gaps) addIssueAggregate(issueMap, batchId, p, teamId, gap, "enrichment_gap", "gap");
 
     const readinessKey = `ctx_${p.prepared_row_id}`;
-    currentStatements.push(env.DAILY_DB.prepare(insertCurrentSql).bind(readinessKey, batchId, p.official_date, p.official_game_pk, p.official_game_time_utc, p.prepared_row_id, p.source_key, p.source_row_id, p.projection_id, playerId, p.player_name, teamId, opponentTeamId, p.canonical_prop_key, 1, p.pickable_safe, contextStatus, contextGrade, hard.length, warnings.length, gaps.length, availableContext, 7, starterStatus, lineupStatus, availabilityStatus, weatherStatus, bullpenStatus, scheduleStatus, umpireStatus, safeJson(hard), safeJson(warnings), safeJson(gaps), safeJson({ team_abbreviation: p.team, opponent: p.opponent, game_calendar: game ? { home_team_id: game.home_team_id, away_team_id: game.away_team_id, detailed_state: game.detailed_state } : null, sidecar_batch_ids: { starters: stRows[0]?.batch_id || null, lineups: lineup?.batch_id || null, player_availability: av?.batch_id || null, weather: w?.batch_id || null, bullpen: bp?.batch_id || null, schedule_spot: ss?.batch_id || null, umpire: u?.batch_id || null } })));
+    currentStatements.push(env.DAILY_DB.prepare(insertCurrentSql).bind(readinessKey, batchId, p.official_date, p.official_game_pk, p.official_game_time_utc, p.prepared_row_id, p.source_key, p.source_row_id, p.projection_id, playerId, p.player_name, teamId, opponentTeamId, p.canonical_prop_key, 1, p.pickable_safe, contextStatus, contextGrade, effectiveHard.length, warnings.length, gaps.length, availableContext, 7, starterStatus, lineupStatus, availabilityStatus, weatherStatus, bullpenStatus, scheduleStatus, umpireStatus, safeJson(effectiveHard), safeJson(warnings), safeJson(gaps), safeJson({ team_abbreviation: p.team, opponent: p.opponent, game_calendar: game ? { home_team_id: game.home_team_id, away_team_id: game.away_team_id, detailed_state: game.detailed_state } : null, sidecar_batch_ids: { starters: stRows[0]?.batch_id || null, lineups: lineup?.batch_id || null, player_availability: av?.batch_id || null, weather: w?.batch_id || null, bullpen: bp?.batch_id || null, schedule_spot: ss?.batch_id || null, umpire: u?.batch_id || null } })));
   }
 
   await batchRun(env.DAILY_DB, currentStatements, 80);
@@ -354,9 +359,9 @@ async function runCertifier(env, input) {
   }
   await batchRun(env.DAILY_DB, issueStatements, 80);
 
-  const output = { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, run_id: input.run_id || null, batch_id: batchId, status: "completed", certification: "DAILY_CONTEXT_READINESS_CERTIFIED_ENRICHMENT_LEDGER_WRITTEN", certification_grade: counts.hard ? "PASS_WITH_HARD_BLOCKERS" : (counts.warning || counts.gap ? "PASS_WITH_WARNINGS" : "PASS"), window_start: today, window_end: tomorrow, prepared_rows_read: prepared.length, prepared_games_checked: gamePks.length, current_rows_written: counts.rows, issue_rows_written: counts.issues, hard_blocker_count: counts.hard, warning_count: counts.warning, enrichment_gap_count: counts.gap, ready_full_context_count: counts.ready_full, ready_with_warnings_count: counts.ready_warnings, ready_partial_enrichment_count: counts.ready_partial, waiting_late_context_count: counts.waiting, blocked_count: counts.blocked, not_applicable_count: counts.not_applicable, external_calls: 0, external_calls_performed: 0, rows_read: prepared.length, rows_written: counts.rows, sidecar_latest_batches: batches, retention_policy: "current_and_issues_rebuilt_for_today_tomorrow_only_batches_retained_for_audit", issue_write_policy: "aggregated_by_game_player_team_layer_type_to_avoid_timeout", guardrails: baseIdentity(env).guardrails, completed_at: nowUtc() };
+  const output = { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, run_id: input.run_id || null, batch_id: batchId, status: "completed", certification: "DAILY_CONTEXT_READINESS_CERTIFIED_ENRICHMENT_LEDGER_WRITTEN", certification_grade: counts.hard ? "PASS_WITH_HARD_BLOCKERS" : (counts.not_applicable ? "PASS_WITH_NOT_APPLICABLE" : (counts.warning || counts.gap ? "PASS_WITH_WARNINGS" : "PASS")), window_start: today, window_end: tomorrow, prepared_rows_read: prepared.length, prepared_games_checked: gamePks.length, current_rows_written: counts.rows, issue_rows_written: counts.issues, hard_blocker_count: counts.hard, warning_count: counts.warning, enrichment_gap_count: counts.gap, ready_full_context_count: counts.ready_full, ready_with_warnings_count: counts.ready_warnings, ready_partial_enrichment_count: counts.ready_partial, waiting_late_context_count: counts.waiting, blocked_count: counts.blocked, not_applicable_count: counts.not_applicable, external_calls: 0, external_calls_performed: 0, rows_read: prepared.length, rows_written: counts.rows, sidecar_latest_batches: batches, retention_policy: "current_and_issues_rebuilt_for_today_tomorrow_only_batches_retained_for_audit", issue_write_policy: "aggregated_by_game_player_team_layer_type_to_avoid_timeout", guardrails: baseIdentity(env).guardrails, completed_at: nowUtc() };
 
-  await run(env.DAILY_DB, `UPDATE daily_context_readiness_batches SET status='completed', prepared_rows_read=?, prepared_games_checked=?, current_rows_written=?, issue_rows_written=?, hard_blocker_count=?, warning_count=?, enrichment_gap_count=?, ready_full_context_count=?, ready_with_warnings_count=?, ready_partial_enrichment_count=?, waiting_late_context_count=?, blocked_count=?, not_applicable_count=?, retention_violations=0, schema_failures=0, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, prepared.length, gamePks.length, counts.rows, counts.issues, counts.hard, counts.warning, counts.gap, counts.ready_full, counts.ready_warnings, counts.ready_partial, counts.waiting, counts.blocked, counts.not_applicable, output.certification, output.certification_grade, "Daily context readiness/enrichment ledger written; missing late context is warning/gap unless true integrity or availability blocker", safeJson(output), output.completed_at, batchId);
+  await run(env.DAILY_DB, `UPDATE daily_context_readiness_batches SET status='completed', prepared_rows_read=?, prepared_games_checked=?, current_rows_written=?, issue_rows_written=?, hard_blocker_count=?, warning_count=?, enrichment_gap_count=?, ready_full_context_count=?, ready_with_warnings_count=?, ready_partial_enrichment_count=?, waiting_late_context_count=?, blocked_count=?, not_applicable_count=?, retention_violations=0, schema_failures=0, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, prepared.length, gamePks.length, counts.rows, counts.issues, counts.hard, counts.warning, counts.gap, counts.ready_full, counts.ready_warnings, counts.ready_partial, counts.waiting, counts.blocked, counts.not_applicable, output.certification, output.certification_grade, "Daily context readiness/enrichment ledger written; started/expired games are not_applicable, missing late context is warning/gap unless true integrity or availability blocker", safeJson(output), output.completed_at, batchId);
   return output;
 }
 
