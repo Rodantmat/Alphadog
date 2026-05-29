@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.128-daily-context-full-run-repatch-current-repo";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.129-daily-context-full-run-child-dedupe-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -4567,7 +4567,7 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
   }
 
   const childRows = await all(env.CONTROL_DB,
-    "SELECT request_id, status, error_code, error_message, output_json, input_json, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE parent_request_id=? AND chain_id=? ORDER BY datetime(created_at) ASC",
+    "SELECT request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, error_code, error_message, output_json, input_json, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE parent_request_id=? AND chain_id=? ORDER BY datetime(created_at) ASC",
     row.request_id, row.chain_id
   );
   const stageReports = [];
