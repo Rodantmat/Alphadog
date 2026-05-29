@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.123-daily-context-certifier-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.124-daily-context-certifier-real-dispatch";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
