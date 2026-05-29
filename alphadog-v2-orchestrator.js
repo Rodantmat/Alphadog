@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.121-daily-team-schedule-spot-dispatch-lock";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.122-daily-umpire-context-existing-slot-dispatch";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -306,6 +306,12 @@ function isDailyBullpenAvailabilityJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "daily-bullpen-availability" && worker === "alphadog-v2-daily-bullpen-availability";
+}
+
+function isDailyUmpireContextJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "daily-umpire-context" && worker === "alphadog-v2-daily-usage-pulse";
 }
 
 function isStaticTeamsJob(row) {
@@ -4236,6 +4242,159 @@ async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
+async function processDailyUmpireContextJob(env, row, runId, trigger) {
+  if (!env.DAILY_USAGE_PULSE_WORKER || typeof env.DAILY_USAGE_PULSE_WORKER.fetch !== "function") {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      status: "blocked_missing_service_binding",
+      certification: "DAILY_UMPIRE_SERVICE_BINDING_MISSING",
+      trigger,
+      note: "Exact dispatch uses the existing DAILY_USAGE_PULSE_WORKER dummy slot to avoid worker_manifest/global deploy changes. Do not generic-dispatch this worker."
+    };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_daily_umpire_context_existing_usage_pulse_service_binding', 'DAILY_USAGE_PULSE_WORKER service binding is missing')",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
+    );
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_daily_umpire_context_existing_usage_pulse_service_binding', error_message='DAILY_USAGE_PULSE_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id
+    );
+    return output;
+  }
+
+  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const input = {
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    trigger,
+    mode: "daily_umpire_context_refresh_window",
+    input_json: rowInput,
+    exact_worker_only: true,
+    prepared_board_relevance_only: true,
+    anchors_to_mlb_game_calendar_game_pk: true,
+    writes_daily_umpire_context_only: true,
+    game_level_one_row_per_game_pk: true,
+    volatile_current_snapshot_issue_retention_today_tomorrow_only: true,
+    batches_retained_for_audit: true,
+    missing_assignment_warning_only_v0_1: true,
+    official_mlb_source_probe_only: true,
+    no_secondary_scrapers: true,
+    no_paid_sources: true,
+    no_umpire_tendencies_without_verified_history: true,
+    no_calendar_rebuild: true,
+    no_daily_game_status_duplication: true,
+    no_daily_starters_duplication: true,
+    no_daily_lineups_duplication: true,
+    no_daily_player_availability_duplication: true,
+    no_daily_weather_duplication: true,
+    no_daily_bullpen_duplication: true,
+    no_daily_team_schedule_spot_duplication: true,
+    no_board_mutation: true,
+    no_market_odds: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_old_production_touch: true
+  };
+
+  const started = Date.now();
+  let output;
+  let httpStatus = null;
+  try {
+    const resp = await env.DAILY_USAGE_PULSE_WORKER.fetch("https://internal.alphadog-v2-daily-usage-pulse/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input)
+    });
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); }
+    catch (_) {
+      output = {
+        ok: false,
+        data_ok: false,
+        version: SYSTEM_VERSION,
+        processed_by: WORKER_NAME,
+        worker_name: row.worker_name,
+        job_key: row.job_key,
+        status: "worker_non_json_response",
+        http_status: httpStatus,
+        response_preview: String(text || "").slice(0, 900)
+      };
+    }
+  } catch (err) {
+    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+  }
+
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const rowsRead = Number(output && (output.prepared_rows_read || output.games_checked) ? (output.prepared_rows_read || output.games_checked) : 0);
+  const rowsWritten = Number(output && (output.game_rows_written || output.rows_written) ? (output.game_rows_written || output.rows_written) : 0);
+  const externalCalls = Number(output && (output.external_calls || output.external_calls_performed) ? (output.external_calls || output.external_calls_performed) : 0);
+  const certification = String((output && output.certification) || (ok ? "daily_umpire_completed" : "daily_umpire_failed")).slice(0, 120);
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "daily_umpire_context_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Daily Umpire Context worker failed").slice(0, 900);
+  const cappedOutput = {
+    ...output,
+    orchestrator_dispatch: {
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      exact_worker_only: true,
+      trigger,
+      http_status: httpStatus,
+      elapsed_ms: Date.now() - started,
+      official_mlb_source_probe_only: true,
+      missing_assignment_warning_only_v0_1: true,
+      game_level_one_row_per_game_pk: true,
+      volatile_current_snapshot_issue_retention_today_tomorrow_only: true,
+      no_secondary_scrapers: true,
+      no_paid_sources: true,
+      no_umpire_tendencies_without_verified_history: true,
+      no_calendar_rebuild: true,
+      no_daily_game_status_duplication: true,
+      no_daily_starters_duplication: true,
+      no_daily_lineups_duplication: true,
+      no_daily_player_availability_duplication: true,
+      no_daily_weather_duplication: true,
+      no_daily_bullpen_duplication: true,
+      no_daily_team_schedule_spot_duplication: true,
+      no_board_mutation: true,
+      no_market_odds: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board_write: true,
+      no_old_production_touch: true
+    }
+  };
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
+  );
+
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+  );
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_umpire_context_dispatch_completed', 'Orchestrator completed exact Daily Umpire Context dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, dispatch: cappedOutput.orchestrator_dispatch })
+  );
+
+  return cappedOutput;
+}
+
+
 async function processDailyLineupsJob(env, row, runId, trigger) {
   if (!env.DAILY_LINEUPS_WORKER || typeof env.DAILY_LINEUPS_WORKER.fetch !== "function") {
     const output = {
@@ -5249,6 +5408,16 @@ async function processOneUnlocked(env, trigger) {
     const output = await processDailyBullpenAvailabilityJob(env, row, runId, trigger);
     return {
       status: output && output.ok ? "completed_one_daily_bullpen_availability_job" : "failed_one_daily_bullpen_availability_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
+  if (isDailyUmpireContextJob(row)) {
+    const output = await processDailyUmpireContextJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_daily_umpire_context_job" : "failed_one_daily_umpire_context_job",
       request_id: row.request_id,
       run_id: runId,
       output
