@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.5-fast-final-db-truth";
+const VERSION = "alphadog-v2-score-prep-v0.2.6-team-aware-identity-safe-team-aliases";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_SLEEPER = "sleeper";
@@ -94,6 +94,39 @@ function normalizeNameWithoutSuffix(v) {
 
 function normalizeTeam(v) {
   return normalizeName(v);
+}
+
+function teamNameAliasesForReference(rec) {
+  // v0.2.6: Keep team aliases narrow and explicit. This is not fuzzy matching.
+  // It fixes official/source naming drift such as MLB calendar "Athletics" vs
+  // source payload "Oakland Athletics" without creating unsafe broad matches.
+  const aliases = new Set();
+  const add = (v) => {
+    const n = normalizeTeam(v);
+    if (n) aliases.add(n);
+  };
+
+  for (const v of [
+    rec.full_name,
+    rec.nickname,
+    rec.short_name,
+    rec.location_name,
+    rec.team_code,
+    rec.file_code,
+    rec.abbreviation
+  ]) add(v);
+
+  const full = normalizeTeam(rec.full_name);
+  const nick = normalizeTeam(rec.nickname);
+  const shortName = normalizeTeam(rec.short_name);
+  const abbr = safeStr(rec.abbreviation).toUpperCase();
+
+  if (abbr === "ATH" || full === "athletics" || full === "oakland athletics" || nick === "athletics" || shortName === "athletics") {
+    add("Athletics");
+    add("Oakland Athletics");
+  }
+
+  return Array.from(aliases);
 }
 
 function dateOnlyFromAnyTime(v) {
@@ -270,9 +303,8 @@ async function loadReference(env) {
     };
     if (rec.mlb_team_id) teamByMlbId.set(rec.mlb_team_id, rec);
     if (rec.abbreviation) teamByAbbr.set(rec.abbreviation.toUpperCase(), rec);
-    for (const key of [rec.full_name, rec.nickname, rec.short_name, rec.location_name, rec.team_code, rec.file_code, rec.abbreviation]) {
-      const n = normalizeTeam(key);
-      if (n) teamByFull.set(n, rec);
+    for (const n of teamNameAliasesForReference(rec)) {
+      teamByFull.set(n, rec);
     }
   }
 
@@ -422,15 +454,40 @@ function resolvePlayer(ref, playerName, game) {
   const exactIds = Array.from(ref.aliasMap.get(key) || []);
 
   if (exactIds.length > 0) {
-    let candidates = exactIds.map(id => ref.playerById.get(id)).filter(Boolean);
-    const originalCount = candidates.length;
-    const filteredResult = gameTeamFilter(ref, candidates, game);
-    if (game && filteredResult.filtered.length > 0) candidates = filteredResult.filtered;
+    const exactCandidates = exactIds.map(id => ref.playerById.get(id)).filter(Boolean);
+    const filteredResult = gameTeamFilter(ref, exactCandidates, game);
+    const candidates = game && filteredResult.filtered.length > 0 ? filteredResult.filtered : exactCandidates;
+
+    if (game && filteredResult.allowed_team_ids.length && filteredResult.filtered.length === 0) {
+      // v0.2.6: exact name alone is not enough to make a row mineable.
+      // Return the unique candidate, if it exists, so the downstream side check can
+      // hard-block as player_team_conflict with useful evidence instead of pretending
+      // the row is unresolved. Do not make it pickable.
+      if (exactCandidates.length === 1) {
+        return {
+          status: "matched",
+          confidence: "exact_name_wrong_game_team_blocked",
+          player: exactCandidates[0],
+          candidate_count: exactIds.length
+        };
+      }
+      return {
+        status: "ambiguous",
+        confidence: "ambiguous_exact_name_no_game_team_match",
+        player: null,
+        candidate_count: exactCandidates.length || exactIds.length
+      };
+    }
 
     if (candidates.length === 1) {
-      return { status: "matched", confidence: "exact_name", player: candidates[0], candidate_count: exactIds.length };
+      return {
+        status: "matched",
+        confidence: game && filteredResult.filtered.length === 1 ? "exact_name_game_team" : "exact_name",
+        player: candidates[0],
+        candidate_count: exactIds.length
+      };
     }
-    return { status: "ambiguous", confidence: "ambiguous_exact_name", player: null, candidate_count: originalCount || exactIds.length };
+    return { status: "ambiguous", confidence: "ambiguous_exact_name", player: null, candidate_count: exactCandidates.length || exactIds.length };
   }
 
   // Sleeper often omits legal display suffixes while REF/MLB keeps them:
