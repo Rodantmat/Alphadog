@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.134-daily-context-availability-batch-write-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.135-daily-context-one-hop-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -6416,6 +6416,13 @@ async function countDueIncrementalMorningFullRun(env) {
 }
 
 
+async function countDueDailyContextFullRun(env) {
+  const row = await first(env.CONTROL_DB,
+    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='daily-context-full-run' AND worker_name='alphadog-v2-orchestrator' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL"
+  );
+  return Number(row && row.c ? row.c : 0);
+}
+
 async function recoverStaleDailyContextCertifierJobs(env, trigger) {
   const staleRows = await all(env.CONTROL_DB,
     "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, started_at, updated_at, substr(output_json,1,900) AS output_preview FROM control_job_queue WHERE job_key='daily-certifier' AND worker_name='alphadog-v2-daily-certifier' AND status='running' AND finished_at IS NULL AND datetime(updated_at) <= datetime('now','-2 minutes') ORDER BY datetime(updated_at) ASC LIMIT 3"
@@ -6476,12 +6483,22 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
     const noDue = status === "no_due_jobs" || processed.some(x => x && x.status === "no_due_jobs");
     const blocked = status === "blocked" || status === "error" || processed.some(x => x && String(x.status || "").startsWith("failed_"));
     const lockBusy = status === "lock_busy";
+    const dailyContextChildEnqueued = processed.some(x => {
+      const out = x && x.output ? x.output : null;
+      return !!(out && out.mode === "daily_context_full_run" && out.status === "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED");
+    });
 
-    if (noDue || blocked || lockBusy) break;
+    // v0.2.135: Daily Context Full Run children are volatile sidecar refreshes.
+    // Do not drain the next child inside the same bounded pump request after the
+    // parent enqueues a child. One-hop continuation lets each child run in a fresh
+    // backend continuation/request, preventing mid-child orphan batches with no
+    // terminal control_job_runs row.
+    if (noDue || blocked || lockBusy || dailyContextChildEnqueued) break;
   }
 
   const dueIncrementalMorningFullRun = await countDueIncrementalMorningFullRun(env);
   const dueBoardFullRun = await countDueBoardFullRun(env);
+  const dueDailyContextFullRun = await countDueDailyContextFullRun(env);
   const dueStaticPlayers = await countDueStaticPlayers(env);
   const dueBaseHitterGameLogs = await countDueBaseHitterGameLogs(env);
   const dueBaseHitterSplits = await countDueBaseHitterSplits(env);
@@ -6504,7 +6521,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const sawLockBusy = terminalStatuses.includes("lock_busy");
   const sawHardStop = terminalStatuses.some(s => s === "blocked" || s === "error");
   const continuationAllowedByLastCycle = !sawLockBusy && !sawHardStop;
-  const shouldSelfContinue = continuationAllowedByLastCycle && (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0) && depth < maxChains && !!ctx;
+  const shouldSelfContinue = continuationAllowedByLastCycle && (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyContextFullRun > 0 || dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0) && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
   const hotContinuationDelayMs = shouldSelfContinue && lastStatus === "no_due_jobs" ? 6500 : 0;
@@ -6519,6 +6536,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       cycle_count: cycles.length,
       due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
       due_board_full_run_after_pump: dueBoardFullRun,
+      due_daily_context_full_run_after_pump: dueDailyContextFullRun,
       due_static_players_after_pump: dueStaticPlayers,
       due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
       due_base_hitter_splits_after_pump: dueBaseHitterSplits,
@@ -6534,6 +6552,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       self_continue_scheduled: !!shouldSelfContinue,
       self_continue_delay_ms: hotContinuationDelayMs,
       full_run_hot_continuation_v0_2_95: true,
+      daily_context_one_hop_continuation_v0_2_135: true,
       self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
       self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
       continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
@@ -6552,6 +6571,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         next_source: nextSource,
         due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
       due_board_full_run_after_pump: dueBoardFullRun,
+        due_daily_context_full_run_after_pump: dueDailyContextFullRun,
         due_static_players_after_pump: dueStaticPlayers,
         due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
         due_base_hitter_splits_after_pump: dueBaseHitterSplits,
@@ -6570,6 +6590,8 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         max_ms: deadlineMs,
         self_continue_delay_ms: hotContinuationDelayMs,
         full_run_hot_continuation_v0_2_95: true,
+        daily_context_one_hop_continuation_v0_2_135: true,
+      daily_context_one_hop_continuation_v0_2_135: true,
         continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
         self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
@@ -6607,6 +6629,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
     cycle_count: cycles.length,
     due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
       due_board_full_run_after_pump: dueBoardFullRun,
+    due_daily_context_full_run_after_pump: dueDailyContextFullRun,
     due_static_players_after_pump: dueStaticPlayers,
     due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
     due_base_hitter_splits_after_pump: dueBaseHitterSplits,
