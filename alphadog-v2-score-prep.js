@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.6-team-aware-identity-safe-team-aliases";
+const VERSION = "alphadog-v2-score-prep-v0.2.7-calendar-alias-and-game-team-player-resolver";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_SLEEPER = "sleeper";
@@ -360,7 +360,7 @@ async function loadReference(env) {
   return { teams, players, aliases, teamByMlbId, teamByAbbr, teamByFull, playerById, aliasMap, suffixAliasMap };
 }
 
-async function loadCalendar(env, dateSet) {
+async function loadCalendar(env, dateSet, ref) {
   const dates = Array.from(dateSet).filter(Boolean).sort();
   if (!dates.length) dates.push(new Date().toISOString().slice(0, 10));
   const minDate = dateAddDays(dates[0], -1);
@@ -375,7 +375,31 @@ ORDER BY official_date, game_time_utc, game_pk`, [minDate, maxDate]);
   const pairMap = new Map();
   function add(key, rec) {
     if (!pairMap.has(key)) pairMap.set(key, []);
-    pairMap.get(key).push(rec);
+    const list = pairMap.get(key);
+    if (!list.some(x => Number(x.game_pk) === Number(rec.game_pk))) list.push(rec);
+  }
+
+  function aliasesForCalendarTeamName(name) {
+    const aliases = new Set();
+    const raw = normalizeTeam(name);
+    if (raw) aliases.add(raw);
+
+    // v0.2.7: Calendar/source team names drift. Example: MLB calendar now uses
+    // "Athletics" while Parlay/Sleeper can still emit "Oakland Athletics".
+    // Use the REF team alias library to generate exact alias keys for the same
+    // MLB team. This is deterministic alias expansion, not fuzzy matching.
+    const team = ref && ref.teamByFull ? ref.teamByFull.get(raw) : null;
+    if (team) {
+      for (const a of teamNameAliasesForReference(team)) aliases.add(a);
+    }
+
+    // Conservative hard aliases for known MLB naming drift that may not be
+    // represented in older REF team rows.
+    if (raw === "athletics" || raw === "oakland athletics") {
+      aliases.add("athletics");
+      aliases.add("oakland athletics");
+    }
+    return Array.from(aliases).filter(Boolean);
   }
 
   for (const r of rows) {
@@ -394,8 +418,15 @@ ORDER BY official_date, game_time_utc, game_pk`, [minDate, maxDate]);
       is_live: Number(r.is_live || 0),
       is_pregame: Number(r.is_pregame || 0)
     };
-    add(`${rec.official_date}|${rec.home_norm}|${rec.away_norm}`, { ...rec, orientation: "exact" });
-    add(`${rec.official_date}|${rec.away_norm}|${rec.home_norm}`, { ...rec, orientation: "reversed" });
+
+    const homeAliases = aliasesForCalendarTeamName(rec.home_team_name);
+    const awayAliases = aliasesForCalendarTeamName(rec.away_team_name);
+    for (const h of homeAliases) {
+      for (const a of awayAliases) {
+        add(`${rec.official_date}|${h}|${a}`, { ...rec, orientation: "exact" });
+        add(`${rec.official_date}|${a}|${h}`, { ...rec, orientation: "reversed" });
+      }
+    }
   }
 
   return { rows, pairMap };
@@ -459,6 +490,26 @@ function resolvePlayer(ref, playerName, game) {
     const candidates = game && filteredResult.filtered.length > 0 ? filteredResult.filtered : exactCandidates;
 
     if (game && filteredResult.allowed_team_ids.length && filteredResult.filtered.length === 0) {
+      // v0.2.7: Exact-name matching can hit the wrong same-name player first
+      // (for example a pitcher named Luis Garcia when the board row is a hitter
+      // on one of the game's teams). Before hard-blocking, retry the suffix-flex
+      // alias family under the official game-team filter. This preserves safety:
+      // only one game-team candidate is accepted.
+      const suffixKeyForWrongExact = normalizeNameWithoutSuffix(playerName);
+      const suffixIdsForWrongExact = Array.from(ref.suffixAliasMap.get(suffixKeyForWrongExact) || []);
+      if (suffixIdsForWrongExact.length > 0) {
+        const suffixCandidatesForWrongExact = suffixIdsForWrongExact.map(id => ref.playerById.get(id)).filter(Boolean);
+        const suffixFilteredForWrongExact = gameTeamFilter(ref, suffixCandidatesForWrongExact, game).filtered;
+        if (suffixFilteredForWrongExact.length === 1) {
+          return {
+            status: "matched",
+            confidence: "suffix_flex_game_team_over_wrong_exact",
+            player: suffixFilteredForWrongExact[0],
+            candidate_count: suffixIdsForWrongExact.length
+          };
+        }
+      }
+
       // v0.2.6: exact name alone is not enough to make a row mineable.
       // Return the unique candidate, if it exists, so the downstream side check can
       // hard-block as player_team_conflict with useful evidence instead of pretending
@@ -1044,7 +1095,7 @@ async function runBoardPrep(env, input) {
     loadReference(env)
   ]);
   const dates = collectCalendarDates(prizepicksRows, sleeperRows);
-  const calendar = await loadCalendar(env, dates);
+  const calendar = await loadCalendar(env, dates, ref);
   timing.load_ms = Date.now() - loadStart;
   const now = new Date();
 
