@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.135-daily-context-one-hop-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.136-daily-context-team-spot-hard-boundary";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -4679,6 +4679,19 @@ const DAILY_CONTEXT_FULL_RUN_STAGES = [
   { stage_key: "daily_context_certifier", job_key: "daily-certifier", worker_name: "alphadog-v2-daily-certifier", display_name: "Daily Context Readiness Certifier", visible_button: "DAILY JOBS > Context Cert", mode: "daily_context_full_run_certifier", worker_group: "Daily", phase_key: "daily", priority: 5 }
 ];
 
+function dailyContextFullRunStageBoundary(stage) {
+  const stageKey = String(stage && stage.stage_key || "");
+  if (stageKey === "daily_team_schedule_spot") {
+    return {
+      hard_boundary: true,
+      child_delay_seconds: 15,
+      parent_delay_seconds: 45,
+      reason: "team_spot_service_binding_must_run_in_fresh_backend_tick_after_heavy_daily_context_prefix"
+    };
+  }
+  return { hard_boundary: false, child_delay_seconds: 0, parent_delay_seconds: 0, reason: null };
+}
+
 function dailyContextFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
   return {
     source: "daily_context_full_run_parent",
@@ -4747,7 +4760,16 @@ async function enqueueDailyContextFullRunChild(env, parentRow, stage, stepIndex,
     "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
     childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input)
   );
-  return { child_request_id: childRequestId, input };
+
+  const boundary = dailyContextFullRunStageBoundary(stage);
+  if (boundary.hard_boundary && Number(boundary.child_delay_seconds || 0) > 0) {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET run_after=datetime('now', ?), updated_at=CURRENT_TIMESTAMP WHERE request_id=?",
+      `+${Number(boundary.child_delay_seconds)} seconds`, childRequestId
+    );
+  }
+
+  return { child_request_id: childRequestId, input, boundary };
 }
 
 function dailyContextFullRunChildPassed(stage, child) {
@@ -4801,10 +4823,15 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
 
     if (!child) {
       const enqueued = await enqueueDailyContextFullRunChild(env, row, stage, i, 0);
-      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification: "DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, lock_held: true, approved_chain_order: DAILY_CONTEXT_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports };
+      const boundary = enqueued.boundary || dailyContextFullRunStageBoundary(stage);
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification: "DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: !boundary.hard_boundary, hard_request_boundary_before_child_dispatch: !!boundary.hard_boundary, child_run_after_delay_seconds: Number(boundary.child_delay_seconds || 0), parent_run_after_delay_seconds: Number(boundary.parent_delay_seconds || 0), boundary_reason: boundary.reason || null, lock_held: true, approved_chain_order: DAILY_CONTEXT_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports };
       await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'daily_context_full_run_child_enqueued', 'Daily Context Full Run enqueued next child stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: enqueued.child_request_id, stage_key: stage.stage_key, stage_index: i, mode: stage.mode }));
+      if (boundary.hard_boundary && Number(boundary.parent_delay_seconds || 0) > 0) {
+        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now', ?), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", `+${Number(boundary.parent_delay_seconds)} seconds`, JSON.stringify(output), row.request_id);
+      } else {
+        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      }
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'daily_context_full_run_child_enqueued', 'Daily Context Full Run enqueued next child stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: enqueued.child_request_id, stage_key: stage.stage_key, stage_index: i, mode: stage.mode, hard_request_boundary_before_child_dispatch: !!boundary.hard_boundary, child_run_after_delay_seconds: Number(boundary.child_delay_seconds || 0), parent_run_after_delay_seconds: Number(boundary.parent_delay_seconds || 0), boundary_reason: boundary.reason || null }));
       return output;
     }
 
@@ -4834,6 +4861,24 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
               WHERE batch_id IN (SELECT batch_id FROM daily_player_availability_batches_v1 WHERE request_id=?)`, child.request_id);
             await run(env.DAILY_DB, `DELETE FROM daily_player_availability_issues_v1
               WHERE batch_id IN (SELECT batch_id FROM daily_player_availability_batches_v1 WHERE request_id=?)`, child.request_id);
+          } catch (_) {}
+        }
+        if (stage.job_key === "daily-team-schedule-spot") {
+          try {
+            await run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_current
+              WHERE batch_id IN (SELECT batch_id FROM daily_team_schedule_spot_batches WHERE request_id=?)`, child.request_id);
+            await run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_snapshots
+              WHERE batch_id IN (SELECT batch_id FROM daily_team_schedule_spot_batches WHERE request_id=?)`, child.request_id);
+            await run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_issues
+              WHERE batch_id IN (SELECT batch_id FROM daily_team_schedule_spot_batches WHERE request_id=?)`, child.request_id);
+            await run(env.DAILY_DB, `UPDATE daily_team_schedule_spot_batches
+              SET status='failed',
+                  certification_status='DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN',
+                  certification_grade='FAILED_ORPHAN_BATCH',
+                  certification_reason='Daily Context Full Run stale-child guard failed the running Team Spot batch after no terminal control_job_runs row was produced. Partial current/snapshot/issue rows for this request were deleted by the parent guard.',
+                  completed_at=CURRENT_TIMESTAMP,
+                  updated_at=CURRENT_TIMESTAMP
+              WHERE request_id=? AND status='running'`, child.request_id);
           } catch (_) {}
         }
         await releaseDailyContextFullRunLock(env, row);
@@ -6418,7 +6463,7 @@ async function countDueIncrementalMorningFullRun(env) {
 
 async function countDueDailyContextFullRun(env) {
   const row = await first(env.CONTROL_DB,
-    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='daily-context-full-run' AND worker_name='alphadog-v2-orchestrator' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL"
+    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='daily-context-full-run' AND worker_name='alphadog-v2-orchestrator' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)"
   );
   return Number(row && row.c ? row.c : 0);
 }
@@ -6552,7 +6597,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       self_continue_scheduled: !!shouldSelfContinue,
       self_continue_delay_ms: hotContinuationDelayMs,
       full_run_hot_continuation_v0_2_95: true,
-      daily_context_one_hop_continuation_v0_2_135: true,
+      daily_context_team_spot_hard_boundary_v0_2_136: true,
       self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
       self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
       continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
@@ -6590,8 +6635,8 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         max_ms: deadlineMs,
         self_continue_delay_ms: hotContinuationDelayMs,
         full_run_hot_continuation_v0_2_95: true,
-        daily_context_one_hop_continuation_v0_2_135: true,
-      daily_context_one_hop_continuation_v0_2_135: true,
+        daily_context_team_spot_hard_boundary_v0_2_136: true,
+      daily_context_team_spot_hard_boundary_v0_2_136: true,
         continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
         self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
