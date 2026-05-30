@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.2.1-calendar-touch-and-gap-resolution";
+const VERSION = "alphadog-v2-delta-certifier-v0.2.2-current-day-partial-nonblocking";
 const JOB_KEY = "delta-certifier";
 
 const ACTIVE_COVERAGE_LAYER_KEYS = [
@@ -661,6 +661,19 @@ function scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, extraDetails
   };
 }
 
+function snapshotLayerFromTemplateOrWaiting(layerKey, officialDate, templates, shouldWait, g, liveSourceRowsForGame, extraDetails = {}) {
+  const strictLayer = snapshotLayerFromTemplate(layerKey, officialDate, templates);
+  if (!shouldWait || strictLayer.blocking === 0) return strictLayer;
+  return scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, {
+    ...extraDetails,
+    current_day_snapshot_metric_wait_nonblocking_v0_2_2: true,
+    blocked_strict_grade_suppressed: strictLayer.grade,
+    blocked_strict_reason_suppressed: strictLayer.reason,
+    blocked_strict_live_rows_observed: Number(strictLayer.liveRows || 0),
+    calendar_anchor_scope: strictLayer.details?.calendar_anchor_scope || null
+  });
+}
+
 async function tableColumns(db, table) {
   const tableRow = await first(db, "SELECT name FROM sqlite_master WHERE type='table' AND name=?", table);
   if (!tableRow) return { table_exists: false, columns: [] };
@@ -709,15 +722,15 @@ async function resolveStaleCoverageGaps(env, batchId, requestId, startDate, endD
      AND c.layer_key = g.layer_key
     WHERE g.official_date BETWEEN ? AND ?
       AND g.gap_status IN ('missing','blocking','open','unresolved')
-      AND c.coverage_status = 'complete'
+      AND c.coverage_status IN ('complete','scheduled_not_ready')
       AND COALESCE(c.blocking_for_full_run,0) = 0
-      AND COALESCE(c.missing_rows,0) = 0
+      AND (c.coverage_status = 'scheduled_not_ready' OR COALESCE(c.missing_rows,0) = 0)
   `, startDate, endDate);
   const statements = [];
   const resolvedAt = nowUtc();
   for (const r of rowsToResolve) {
     const details = {
-      stale_gap_resolved_by_current_coverage_v0_2_1: true,
+      stale_gap_resolved_by_current_nonblocking_coverage_v0_2_2: true,
       resolver_batch_id: batchId,
       resolver_request_id: requestId || null,
       resolved_at: resolvedAt,
@@ -746,7 +759,7 @@ async function resolveStaleCoverageGaps(env, batchId, requestId, startDate, endD
   await batchPrepared(env.TEAM_DB, statements, 40);
   const after = await first(env.TEAM_DB, `SELECT COUNT(*) AS rows FROM mlb_game_coverage_gaps WHERE official_date BETWEEN ? AND ? AND gap_status IN ('missing','blocking','open','unresolved')`, startDate, endDate);
   return {
-    stale_gap_resolution_v0_2_1: true,
+    stale_gap_resolution_v0_2_2: true,
     open_gap_rows_before_resolution: Number(before?.rows || 0),
     stale_gap_rows_resolved: rowsToResolve.length,
     open_gap_rows_after_resolution: Number(after?.rows || 0),
@@ -876,16 +889,16 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
     const liveSourceRowsForGame = hitter.rows + pitcher.rows + team.rows + starter.rows + bullpen.rows;
     const statEvidenceRowsForGame = hitter.rows + pitcher.rows;
     const downstreamEvidenceRowsForGame = team.rows + starter.rows + bullpen.rows;
-    const statEvidenceFinalityGate = statEvidenceRowsForGame > 0 || downstreamEvidenceRowsForGame > 0;
     const rawWaitForNonFinalCalendarGame = shouldWaitForNonFinalCalendarGame(g, currentOfficialDate);
-    const waitForNonFinalCalendarGame = rawWaitForNonFinalCalendarGame && !statEvidenceFinalityGate;
-    const evaluateLiveLayers = calendarStatsReady || Number(g.is_final || 0) === 1 || statEvidenceFinalityGate;
+    const currentOrFutureNonFinal = rawWaitForNonFinalCalendarGame;
+    const statEvidenceFinalityGate = !currentOrFutureNonFinal && (statEvidenceRowsForGame > 0 || downstreamEvidenceRowsForGame > 0);
+    const evaluateLiveLayers = calendarStatsReady || Number(g.is_final || 0) === 1 || statEvidenceFinalityGate || currentOrFutureNonFinal;
 
-    if (waitForNonFinalCalendarGame || !evaluateLiveLayers) {
+    if (!evaluateLiveLayers) {
       for (const layerKey of activeLayers) {
         addLayer(g, scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, {
           live_source_override_v0_1_8: false,
-          stat_evidence_finality_gate_v0_2_0: true,
+          stat_evidence_finality_gate_v0_2_2: false,
           stat_evidence_rows_for_game: statEvidenceRowsForGame,
           downstream_evidence_rows_for_game: downstreamEvidenceRowsForGame,
           raw_wait_for_nonfinal_calendar_game: rawWaitForNonFinalCalendarGame,
@@ -902,19 +915,23 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
         live_source_rows_for_game: liveSourceRowsForGame,
         stat_evidence_rows_for_game: statEvidenceRowsForGame,
         downstream_evidence_rows_for_game: downstreamEvidenceRowsForGame,
-        stat_evidence_finality_gate_v0_2_0: true,
-        stale_calendar_wait_suppressed_by_stat_evidence_v0_2_0: rawWaitForNonFinalCalendarGame && statEvidenceFinalityGate,
+        stat_evidence_finality_gate_v0_2_2: statEvidenceFinalityGate,
+        downstream_evidence_does_not_force_current_day_player_log_blockers_v0_2_2: currentOrFutureNonFinal,
+        stale_calendar_wait_suppressed_by_stat_evidence_v0_2_2: !currentOrFutureNonFinal && statEvidenceFinalityGate,
         live_source_override_v0_1_8: !calendarStatsReady && Number(g.is_final || 0) === 1 && liveSourceRowsForGame > 0,
-        current_day_nonfinal_nonblocking_v0_1_9: false
+        current_day_nonfinal_nonblocking_v0_2_2: currentOrFutureNonFinal
       };
-      addLayer(g, hitter.rows > 0 ? { layerKey: "hitter_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: hitter.rows, entityCount: hitter.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...hitter, ...overrideDetails } } : { layerKey: "hitter_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_HITTER_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...hitter, ...overrideDetails } });
-      addLayer(g, pitcher.rows > 0 ? { layerKey: "pitcher_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: pitcher.rows, entityCount: pitcher.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...pitcher, ...overrideDetails } } : { layerKey: "pitcher_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_PITCHER_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...pitcher, ...overrideDetails } });
+      const waitLayer = (layerKey, observedRows, extra = {}) => scheduledNotReadyLayer(layerKey, g, observedRows, { ...overrideDetails, ...extra });
+      addLayer(g, hitter.rows > 0 ? { layerKey: "hitter_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: hitter.rows, entityCount: hitter.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...hitter, ...overrideDetails } } : (currentOrFutureNonFinal ? waitLayer("hitter_game_logs", 0, { waiting_for_player_game_log_source_rows_v0_2_2: true }) : { layerKey: "hitter_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_HITTER_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...hitter, ...overrideDetails } }));
+      addLayer(g, pitcher.rows > 0 ? { layerKey: "pitcher_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: pitcher.rows, entityCount: pitcher.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...pitcher, ...overrideDetails } } : (currentOrFutureNonFinal ? waitLayer("pitcher_game_logs", 0, { waiting_for_player_game_log_source_rows_v0_2_2: true }) : { layerKey: "pitcher_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_PITCHER_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...pitcher, ...overrideDetails } }));
       const teamPass = team.rows === 2 && team.entities === 2;
-      addLayer(g, teamPass ? { layerKey: "team_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: 0, reason: null, details: { ...team, ...overrideDetails } } : { layerKey: "team_game_logs", status: team.rows > 0 ? "partial" : "missing", grade: team.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: Math.max(0, 2 - team.rows), reason: team.rows > 0 ? "PARTIAL_TEAM_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK" : "MISSING_TEAM_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...team, ...overrideDetails } });
+      addLayer(g, teamPass ? { layerKey: "team_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: 0, reason: null, details: { ...team, ...overrideDetails } } : (currentOrFutureNonFinal ? waitLayer("team_game_logs", team.rows, { waiting_for_team_game_log_rows_v0_2_2: true, observed_team_rows: team.rows, observed_team_entities: team.entities }) : { layerKey: "team_game_logs", status: team.rows > 0 ? "partial" : "missing", grade: team.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: team.rows, entityCount: team.entities, expectedRows: 2, missingRows: Math.max(0, 2 - team.rows), reason: team.rows > 0 ? "PARTIAL_TEAM_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK" : "MISSING_TEAM_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...team, ...overrideDetails } }));
       const starterPass = starter.rows >= 2 && starter.entities >= 2 && starterTeam.entities === 2;
-      addLayer(g, starterPass ? { layerKey: "starter_history", status: "complete", grade: "PASS", blocking: 0, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: 0, reason: null, details: { ...starter, distinct_teams: starterTeam.entities, ...overrideDetails } } : { layerKey: "starter_history", status: starter.rows > 0 ? "partial" : "missing", grade: starter.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: Math.max(0, 2 - starter.rows), reason: starter.rows > 0 ? "PARTIAL_STARTER_HISTORY_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK" : "MISSING_STARTER_HISTORY_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...starter, distinct_teams: starterTeam.entities, ...overrideDetails } });
-      addLayer(g, bullpen.rows > 0 ? { layerKey: "bullpen_history", status: "complete", grade: "PASS", blocking: 0, liveRows: bullpen.rows, entityCount: bullpen.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...bullpen, ...overrideDetails } } : { layerKey: "bullpen_history", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_BULLPEN_HISTORY_REPRESENTATION_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...bullpen, ...overrideDetails } });
-      for (const snapshotLayerKey of ["hitter_splits", "pitcher_splits", "hitter_metrics", "pitcher_metrics"]) addLayer(g, snapshotLayerFromTemplate(snapshotLayerKey, String(g.official_date), snapshotTemplates));
+      addLayer(g, starterPass ? { layerKey: "starter_history", status: "complete", grade: "PASS", blocking: 0, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: 0, reason: null, details: { ...starter, distinct_teams: starterTeam.entities, ...overrideDetails } } : (currentOrFutureNonFinal ? waitLayer("starter_history", starter.rows, { waiting_for_starter_history_rows_v0_2_2: true, observed_starter_rows: starter.rows, observed_starter_entities: starter.entities, observed_starter_team_entities: starterTeam.entities }) : { layerKey: "starter_history", status: starter.rows > 0 ? "partial" : "missing", grade: starter.rows > 0 ? "PARTIAL_BLOCKER" : "MISSING_BLOCKER", blocking: 1, liveRows: starter.rows, entityCount: starter.entities, expectedRows: 2, missingRows: Math.max(0, 2 - starter.rows), reason: starter.rows > 0 ? "PARTIAL_STARTER_HISTORY_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK" : "MISSING_STARTER_HISTORY_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...starter, distinct_teams: starterTeam.entities, ...overrideDetails } }));
+      addLayer(g, bullpen.rows > 0 ? { layerKey: "bullpen_history", status: "complete", grade: "PASS", blocking: 0, liveRows: bullpen.rows, entityCount: bullpen.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...bullpen, ...overrideDetails } } : (currentOrFutureNonFinal ? waitLayer("bullpen_history", 0, { waiting_for_bullpen_history_rows_v0_2_2: true }) : { layerKey: "bullpen_history", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_BULLPEN_HISTORY_REPRESENTATION_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...bullpen, ...overrideDetails } }));
+      for (const snapshotLayerKey of ["hitter_splits", "pitcher_splits", "hitter_metrics", "pitcher_metrics"]) {
+        addLayer(g, snapshotLayerFromTemplateOrWaiting(snapshotLayerKey, String(g.official_date), snapshotTemplates, currentOrFutureNonFinal, g, liveSourceRowsForGame, overrideDetails));
+      }
     }
     if (coverageStatements.length >= 80) {
       await batchPrepared(env.TEAM_DB, coverageStatements.splice(0), 40);
@@ -1033,14 +1050,15 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
     optimized_full_calendar_coverage_v0_1_6: true,
     live_source_override_calendar_wait_v0_1_8: true,
     current_day_nonfinal_nonblocking_v0_1_9: true,
-    stat_evidence_finality_gate_v0_2_0: true,
+    stat_evidence_finality_gate_v0_2_2: true,
     stale_calendar_nonfinal_wait_suppressed_when_stat_evidence_exists: true,
+    current_day_downstream_evidence_no_longer_forces_player_log_blockers_v0_2_2: true,
     current_official_date_pt: currentOfficialDate,
     bullpen_live_reconcile_after_coverage_v0_1_8: true,
     bullpen_live_reconcile_checked_rows: bullpenReconcile.checked_rows,
     bullpen_live_reconcile_updated_rows: bullpenReconcile.updated_rows,
     bullpen_live_reconcile_sample: bullpenReconcile.sample,
-    stale_gap_resolution_v0_2_1: staleGapResolution.stale_gap_resolution_v0_2_1,
+    stale_gap_resolution_v0_2_2: staleGapResolution.stale_gap_resolution_v0_2_2,
     open_gap_rows_before_resolution: staleGapResolution.open_gap_rows_before_resolution,
     stale_gap_rows_resolved: staleGapResolution.stale_gap_rows_resolved,
     open_gap_rows_after_resolution: staleGapResolution.open_gap_rows_after_resolution,
@@ -1235,7 +1253,7 @@ async function handleCoverageAudit(input, env) {
     coverage_rows_with_null_checked_at: coverage.coverage_rows_with_null_checked_at,
     coverage_rows_with_null_status_grade: coverage.coverage_rows_with_null_status_grade,
     coverage_ownership_clean: coverage.coverage_ownership_clean,
-    stale_gap_resolution_v0_2_1: coverage.stale_gap_resolution_v0_2_1,
+    stale_gap_resolution_v0_2_2: coverage.stale_gap_resolution_v0_2_2,
     open_gap_rows_before_resolution: coverage.open_gap_rows_before_resolution,
     stale_gap_rows_resolved: coverage.stale_gap_rows_resolved,
     open_gap_rows_after_resolution: coverage.open_gap_rows_after_resolution,
@@ -1366,7 +1384,7 @@ async function handleCalendarDifferentialCheck(input, env) {
     coverage_rows_with_null_checked_at: coverage.coverage_rows_with_null_checked_at,
     coverage_rows_with_null_status_grade: coverage.coverage_rows_with_null_status_grade,
     coverage_ownership_clean: coverage.coverage_ownership_clean,
-    stale_gap_resolution_v0_2_1: coverage.stale_gap_resolution_v0_2_1,
+    stale_gap_resolution_v0_2_2: coverage.stale_gap_resolution_v0_2_2,
     open_gap_rows_before_resolution: coverage.open_gap_rows_before_resolution,
     stale_gap_rows_resolved: coverage.stale_gap_rows_resolved,
     open_gap_rows_after_resolution: coverage.open_gap_rows_after_resolution,
