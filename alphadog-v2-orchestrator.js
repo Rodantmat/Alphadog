@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.138-final-tally-team-gap-repair-loop";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.139-post-delta-clean-terminal-finalize";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -959,11 +959,95 @@ function isIncrementalFullRunTransientFailure(child, output) {
   return /429|500|503|timeout|timed out|temporar|retry_later|rate limit|cloudflare|fetch|network|econn|worker_dispatch_exception|service_binding_fetch_failed|lock_busy/.test(text);
 }
 
+
+function isCleanCalendarTallyOutput(output) {
+  if (!output || output.ok !== true || output.data_ok !== true) return false;
+  const cert = String(output.certification || output.certification_status || "");
+  const status = String(output.status || "");
+  const grade = String(output.certification_grade || "");
+  const blockingGapCount = Number(output.blocking_gap_count || 0);
+  const missingGameLayerCount = Number(output.missing_game_layer_count || 0);
+  const openGapCount = Number(output.open_gap_count || output.open_blocking_gap_count || output.remaining_gap_count || 0);
+  const hay = `${cert} ${status} ${grade}`.toLowerCase();
+  return (
+    (grade === "DIFF_PASS_CLEAN" ||
+      cert === "GAME_CALENDAR_DIFFERENTIAL_CHECK_UPDATED_NO_BLOCKERS" ||
+      status === "GAME_CALENDAR_DIFFERENTIAL_CHECK_COMPLETED_CLEAN") &&
+    blockingGapCount === 0 &&
+    missingGameLayerCount === 0 &&
+    openGapCount === 0 &&
+    !hay.includes("with_blockers") &&
+    !hay.includes("data_blockers")
+  );
+}
+
+function isPostDeltaCleanTerminalStage(stage, output) {
+  return !!(stage && stage.stage_key === "calendar_tally_post_delta_check" && isCleanCalendarTallyOutput(output));
+}
+
+function incrementalMorningFullRunTerminalOutput(row, runId, parentInput, stageReports, started, terminalReason) {
+  return {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    worker_name: WORKER_NAME,
+    job_key: row.job_key,
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    mode: "incremental_morning_full_run",
+    status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN",
+    certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_AND_ALL_BASE_DELTAS_PASS",
+    certification_grade: "FULL_RUN_PASS",
+    full_run_certified: true,
+    terminal_reason: terminalReason || "all_required_stages_completed",
+    post_delta_clean_terminal_finalize_v0_2_139: terminalReason === "post_delta_tally_clean_no_repair_needed",
+    calendar_tally_precheck_first: true,
+    calendar_tally_post_delta_check_before_team_gap_repair: true,
+    post_final_gap_repair_skipped_when_post_delta_clean: terminalReason === "post_delta_tally_clean_no_repair_needed",
+    final_tally_team_gap_repair_loop: terminalReason !== "post_delta_tally_clean_no_repair_needed",
+    calendar_tally_final_check_last: terminalReason !== "post_delta_tally_clean_no_repair_needed",
+    final_calendar_tally_blocking_gap_count: 0,
+    completed_stage_count: stageReports.length,
+    total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length,
+    skipped_stage_count: Math.max(0, INCREMENTAL_MORNING_FULL_RUN_STAGES.length - stageReports.length),
+    stages: stageReports,
+    approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key),
+    approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key),
+    no_board_refresh_included: true,
+    board_refresh_deferred: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_old_production_touch: true
+  };
+}
+
+async function completeIncrementalMorningFullRun(env, row, runId, parentInput, stageReports, started, terminalReason) {
+  const output = incrementalMorningFullRunTerminalOutput(row, runId, parentInput, stageReports, started, terminalReason);
+  await releaseIncrementalMorningFullRunLock(env, row);
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'INCREMENTAL_MORNING_FULL_RUN_CERTIFIED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
+  );
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+    JSON.stringify(output), row.request_id
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_completed', 'Incremental Morning Full Run certified all required incremental base/delta stages', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output)
+  );
+  return output;
+}
+
 function childPassedIncrementalMorningFullRun(stage, child) {
   if (!child) return { pass: false, reason: "child_missing" };
   const childStatus = String(child.status || "");
   const output = parseJsonSafeText(child.output_json || "{}", {});
   if (childStatus === "pending" || childStatus === "running" || childStatus === "partial_continue") {
+    if (stage && stage.post_final_team_gap_repair === true && Number(child.is_stale_5min || 0) === 1) {
+      return { pass: false, wait: false, reason: "post_final_gap_repair_child_stale_unfinished", child_status: childStatus, updated_at: child.updated_at };
+    }
     if (Number(child.is_stale || 0) === 1) {
       return { pass: false, wait: false, reason: "child_stale_unfinished", child_status: childStatus, updated_at: child.updated_at };
     }
@@ -1083,7 +1167,7 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
   }
 
   const childRows = await all(env.CONTROL_DB,
-    "SELECT request_id, parent_request_id, chain_id, job_key, worker_name, status, input_json, output_json, error_code, error_message, created_at, started_at, finished_at, updated_at, CASE WHEN status IN ('pending','running','partial_continue') AND finished_at IS NULL AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-60 minutes') THEN 1 ELSE 0 END AS is_stale FROM control_job_queue WHERE parent_request_id=? ORDER BY datetime(created_at) ASC",
+    "SELECT request_id, parent_request_id, chain_id, job_key, worker_name, status, input_json, output_json, error_code, error_message, created_at, started_at, finished_at, updated_at, CASE WHEN status IN ('pending','running','partial_continue') AND finished_at IS NULL AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-60 minutes') THEN 1 ELSE 0 END AS is_stale, CASE WHEN status IN ('pending','running','partial_continue') AND finished_at IS NULL AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-5 minutes') THEN 1 ELSE 0 END AS is_stale_5min FROM control_job_queue WHERE parent_request_id=? ORDER BY datetime(created_at) ASC",
     row.request_id
   );
   const stageReports = [];
@@ -1124,7 +1208,7 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
         await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
         return output;
       }
-      const finalStatus = validation.reason === "child_stale_unfinished" ? "BLOCKED_INCREMENTAL_MORNING_FULL_RUN_CHILD_BLOCKED" : "FAILED_INCREMENTAL_MORNING_FULL_RUN_CHILD_FAILED";
+      const finalStatus = String(validation.reason || "").includes("stale_unfinished") ? "BLOCKED_INCREMENTAL_MORNING_FULL_RUN_CHILD_BLOCKED" : "FAILED_INCREMENTAL_MORNING_FULL_RUN_CHILD_FAILED";
       const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: finalStatus, certification: finalStatus, certification_grade: finalStatus.startsWith("BLOCKED") ? "BLOCKED" : "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: validation.reason, child_error_code: child.error_code || null, child_error_message: child.error_message || null, last_output_preview: JSON.stringify(childOutput).slice(0, 1200), stages: [...stageReports, report], retry_exhausted: !!validation.transient, full_run_certified: false };
       await releaseIncrementalMorningFullRunLock(env, row);
       await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus.startsWith("BLOCKED") ? "blocked" : "failed", finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "incremental full run child failed").slice(0, 900));
@@ -1134,14 +1218,13 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     }
 
     stageReports.push(report);
+
+    if (isPostDeltaCleanTerminalStage(stage, childOutput)) {
+      return await completeIncrementalMorningFullRun(env, row, runId, parentInput, stageReports, started, "post_delta_tally_clean_no_repair_needed");
+    }
   }
 
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_AND_ALL_BASE_DELTAS_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_post_delta_check_before_team_gap_repair: true, final_tally_team_gap_repair_loop: true, calendar_tally_final_check_last: true, final_calendar_tally_blocking_gap_count: 0, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
-  await releaseIncrementalMorningFullRunLock(env, row);
-  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'INCREMENTAL_MORNING_FULL_RUN_CERTIFIED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_completed', 'Incremental Morning Full Run certified all incremental base/delta stages', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
-  return output;
+  return await completeIncrementalMorningFullRun(env, row, runId, parentInput, stageReports, started, "all_required_stages_completed");
 }
 
 
