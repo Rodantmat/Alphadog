@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-bullpen-history";
-const VERSION = "alphadog-v2-base-bullpen-history-v0.4.7-calendar-gap-cursor-placeholder-fix";
+const VERSION = "alphadog-v2-base-bullpen-history-v0.4.8-post-final-open-gap-repair";
 const JOB_KEY = "base-bullpen-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -34,6 +34,7 @@ async function readJsonSafe(request) { try { return await request.json(); } catc
 async function run(db, sql, ...binds) { const stmt = db.prepare(sql); return binds.length ? stmt.bind(...binds).run() : stmt.run(); }
 async function all(db, sql, ...binds) { const stmt = db.prepare(sql); const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all(); return res.results || []; }
 async function first(db, sql, ...binds) { const rows = await all(db, sql, ...binds); return rows[0] || null; }
+async function safeAll(db, sql, ...binds) { try { return { ok: true, rows: await all(db, sql, ...binds) }; } catch (err) { return { ok: false, rows: [], error: String(err && err.message ? err.message : err) }; } }
 
 function baseIdentity(env) {
   const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
@@ -47,10 +48,9 @@ function baseIdentity(env) {
     job_key: JOB_KEY,
     status: "BULLPEN_HISTORY_SCHEMA_SOURCE_LOCK_PROBE_READY",
     timestamp_utc: nowUtc(),
-    phase: "bullpen-history-v0.4.7-calendar-gap-cursor-placeholder-fix",
+    phase: "bullpen-history-v0.4.0-delta-update-retained-repair",
     notes: [
-      "v0.4.7 fixes the calendar-gap repair cursor INSERT placeholder mismatch that failed after live promotion with D1_ERROR: 14 values for 15 columns.",
-      "v0.4.6 fixed bullpen_history by making TEAM_DB.mlb_game_data_coverage blocking gaps the first-class delta repair target before legacy cursor/no-op logic.",
+      "v0.4.0 supports source-lock probe, base_backfill_stage_only, base_promote_clean, and delta_update with no-op, retained-stage restore, and scoped source repair readiness.",
       "Allowed writes: TEAM_DB bullpen_history live promotion from certified stage, batch/certification metadata, and stage cleanup after live verification.",
       "Forbidden in this version: Daily Bullpen Availability, scoring, ranking, final board, PrizePicks/Sleeper mutation, and browser pump. Delta update is allowed only for completed final regular-season games after the certified base cutoff.",
       "Classification target is GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS if official completed MLB boxscore exposes relief pitchers through gamesStarted == 0. Daily Bullpen Availability remains a later derived worker."
@@ -1364,154 +1364,25 @@ async function scopedSourceRepairFromDeltaOutcomes(env, requestId, runId, limit=
   if (repaired) await promoteDeltaStageRowsForBatch(env, rows[0].batch_id);
   return { ok:true, data_ok:true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, run_id: runId, mode:'delta_update', status:'DELTA_BULLPEN_HISTORY_SCOPED_REPAIR_COMPLETED', certification:'DELTA_BULLPEN_HISTORY_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED', certification_grade:'DELTA_REPAIR_PASS', missing_live_rows_detected: rows.length, missing_stage_rows_detected: rows.length, scoped_team_game_keys_to_refetch: rows.length, rows_promoted: repaired, external_calls_performed: externalCalls, no_full_sweep:true, no_new_batch:true, stage_retained:true, no_daily_bullpen_availability:true, no_scoring:true };
 }
-
-async function loadBullpenHistoryCalendarGaps(env) {
-  return await all(env.TEAM_DB, `SELECT
-      g.game_pk,
-      g.official_date AS game_date,
-      COALESCE(cal.game_type, 'R') AS game_type,
-      COALESCE(cal.detailed_state, cal.abstract_game_state, 'Final') AS game_status,
-      cal.home_team_id AS home_team_id,
-      cal.away_team_id AS away_team_id,
-      cal.home_team_name AS home_team_name,
-      cal.away_team_name AS away_team_name,
-      cal.venue_id AS venue_id,
-      g.coverage_status,
-      g.coverage_grade,
-      g.missing_reason,
-      g.live_rows AS coverage_live_rows,
-      g.stage_rows AS coverage_stage_rows,
-      g.outcome_rows AS coverage_outcome_rows
-    FROM mlb_game_data_coverage g
-    LEFT JOIN mlb_game_calendar cal ON cal.game_pk = g.game_pk
-    WHERE g.layer_key='bullpen_history'
-      AND (
-        g.blocking_for_full_run=1
-        OR (
-          g.coverage_status='scheduled_not_ready'
-          AND EXISTS (
-            SELECT 1
-            FROM team_game_logs tgl
-            WHERE tgl.game_pk = g.game_pk
-              AND tgl.season = g.season
-            LIMIT 1
-          )
-        )
-      )
-    ORDER BY g.official_date, g.game_pk`);
-}
-
-async function runCalendarGapScopedBullpenMining(env, input = {}) {
-  const schemaActions = await ensureSchema(env);
-  const requestId = input.request_id || rid('bullpen_calendar_gap_req');
-  const chainId = input.chain_id || null;
-  const runId = input.run_id || rid('bullpen_calendar_gap_run');
-  const rowInput = input.input_json || {};
-  const maxGamesPerTick = Math.max(1, Math.min(50, Number(rowInput.max_games_per_tick || input.max_games_per_tick || 50) || 50));
-  const gaps = await loadBullpenHistoryCalendarGaps(env);
-  if (!gaps.length) {
-    const output = {
-      calendar_gap_scoped_repair: true,
-      layer_key: 'bullpen_history',
-      gap_game_count: 0,
-      targeted_game_count: 0,
-      rows_promoted: 0,
-      no_live_mutation: true,
-      no_full_sweep: true,
-      next_action: 'NO_BULLPEN_HISTORY_CALENDAR_GAPS_FOUND_SAFE_TO_MOVE_ON'
-    };
-    return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, mode: 'delta_update', status: 'BULLPEN_HISTORY_CALENDAR_GAP_SCOPED_NOOP_NO_GAPS', certification: 'BULLPEN_HISTORY_CALENDAR_GAP_SCOPED_NOOP_NO_GAPS', certification_grade: 'DELTA_NOOP_PASS', rows_read: 0, rows_written: 0, rows_staged: 0, rows_promoted: 0, external_calls_performed: 0, output_json: output, no_browser_pump: true, timestamp_utc: nowUtc() };
-  }
-
-  const targetGaps = gaps.slice(0, maxGamesPerTick);
-  const batchId = input.batch_id || rid('bullpen_calendar_gap_batch');
-  const firstDate = ymd(targetGaps[0] && targetGaps[0].game_date);
-  const lastDate = ymd(targetGaps[targetGaps.length - 1] && targetGaps[targetGaps.length - 1].game_date);
-  const season = seasonFromDate(lastDate || firstDate || DEFAULT_SAMPLE_DATE);
-
-  await run(env.TEAM_DB, `INSERT OR REPLACE INTO bullpen_history_batches (
-      batch_id,run_id,request_id,chain_id,job_key,worker_name,version,ingestion_mode,probe_only,stage_only,source_key,source_confidence,source_season,source_game_type,
-      base_backfill_cutoff_date,delta_reserved_start_date,schedule_start_date,schedule_end_date,total_game_count,processed_game_count,remaining_game_count,
-      status,certification_status,certification_grade,output_json,created_at,updated_at
-    ) VALUES (?,?,?,?,?,?,?,'delta_calendar_gap_scoped_repair',0,0,?,?,?,?,?,?,?,?,?,0,?,'RUNNING_CALENDAR_GAP_SCOPED_REPAIR','BULLPEN_HISTORY_CALENDAR_GAP_SCOPED_REPAIR_RUNNING','DELTA_IN_PROGRESS',?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
-    batchId, runId, requestId, chainId, JOB_KEY, WORKER_NAME, VERSION, SOURCE_KEY, SOURCE_CONFIDENCE, season, 'R', DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, firstDate, lastDate, targetGaps.length, targetGaps.length,
-    safeJson({ calendar_gap_scoped_repair: true, layer_key: 'bullpen_history', gap_game_count: gaps.length, targeted_game_count: targetGaps.length, first_gap_date: firstDate, last_gap_date: lastDate, no_full_sweep: true, source: 'TEAM_DB.mlb_game_data_coverage blocking_for_full_run=1 OR scheduled_not_ready with live team_game_logs evidence' })
-  );
-
-  let rowsRead = 0, rowsWritten = 0, externalCalls = 0;
-  let zeroTeams = 0, gamesStartedZeroRows = 0, gamesStartedMissingRows = 0, openerBulkEdgeCases = 0;
-  for (const gap of targetGaps) {
-    const gamePk = num(gap.game_pk);
-    const gameDate = ymd(gap.game_date);
-    const endpoint = `/api/v1/game/${gamePk}/boxscore`;
-    await insertOutcome(env, {
-      batch_id: batchId,
-      run_id: runId,
-      request_id: requestId,
-      game_pk: gamePk,
-      game_date: gameDate,
-      season: seasonFromDate(gameDate),
-      outcome_level: 'GAME',
-      outcome_category: 'CALENDAR_GAP_TARGETED',
-      status: 'TARGETED_SOURCE',
-      reason: 'calendar_tally_blocking_gap_requires_exact_game_pk_bullpen_history_mining',
-      source_endpoint: 'TEAM_DB.mlb_game_data_coverage + TEAM_DB.mlb_game_calendar',
-      details: { calendar_gap_scoped_repair: true, layer_key: 'bullpen_history', game_pk: gamePk, game_date: gameDate, coverage_status: str(gap.coverage_status), coverage_grade: str(gap.coverage_grade), missing_reason: str(gap.missing_reason), coverage_live_rows: num(gap.coverage_live_rows) || 0 }
-    });
-    const game = {
-      gamePk,
-      officialDate: gameDate,
-      gameDate,
-      gameType: str(gap.game_type || 'R'),
-      status: { detailedState: str(gap.game_status || 'Final'), abstractGameState: 'Final' },
-      teams: {
-        home: { team: { id: num(gap.home_team_id), name: str(gap.home_team_name) } },
-        away: { team: { id: num(gap.away_team_id), name: str(gap.away_team_name) } }
-      },
-      venue: { id: num(gap.venue_id) }
-    };
-    const r = await processDeltaGameToStage(env, { game, batchId, runId, requestId, endpoint, season: seasonFromDate(gameDate) });
-    rowsRead += 1;
-    rowsWritten += Number(r.stagedRows || 0);
-    externalCalls += Number(r.externalCalls || 0);
-    zeroTeams += Number(r.zeroBullpenTeams || 0);
-    gamesStartedZeroRows += Number(r.gamesStartedZeroRows || 0);
-    gamesStartedMissingRows += Number(r.gamesStartedMissingRows || 0);
-    openerBulkEdgeCases += Number(r.openerBulkEdgeCases || 0);
-  }
-
-  await promoteDeltaStageRowsForBatch(env, batchId);
-  const summary = await summarizeBatch(env, batchId);
-  const liveRowsForBatchRow = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM bullpen_history WHERE batch_id=?`, batchId);
-  const liveRowsForBatch = Number(liveRowsForBatchRow && liveRowsForBatchRow.c || 0);
-  const duplicateLiveKeys = await liveDuplicateCountForBatch(env, batchId);
-  const ph = targetGaps.map(() => '?').join(',');
-  const ids = targetGaps.map(g => num(g.game_pk));
-  const liveGamesForTargetsRow = await first(env.TEAM_DB, `SELECT COUNT(DISTINCT l.game_pk) AS games, COUNT(*) AS rows FROM bullpen_history l WHERE l.game_pk IN (${ph})`, ...ids);
-  const targetedGamesWithLive = Number(liveGamesForTargetsRow && liveGamesForTargetsRow.games || 0);
-  const targetedLiveRows = Number(liveGamesForTargetsRow && liveGamesForTargetsRow.rows || 0);
-  const badTargetRows = await all(env.TEAM_DB, `SELECT game_pk, game_date, COUNT(*) AS live_rows,
-      SUM(CASE WHEN team_id IS NULL OR team_id='' THEN 1 ELSE 0 END) AS missing_team_id_rows,
-      SUM(CASE WHEN pitcher_id IS NULL THEN 1 ELSE 0 END) AS missing_pitcher_id_rows
-    FROM bullpen_history
-    WHERE game_pk IN (${ph})
-    GROUP BY game_pk, game_date
-    HAVING live_rows <= 0 OR missing_team_id_rows <> 0 OR missing_pitcher_id_rows <> 0
-    ORDER BY game_date, game_pk
-    LIMIT 20`, ...ids);
-  const actualCoverageGapsAfter = await first(env.TEAM_DB, `SELECT COUNT(*) AS blocking_gap_count, COUNT(DISTINCT game_pk) AS blocking_gap_games FROM mlb_game_data_coverage WHERE layer_key='bullpen_history' AND blocking_for_full_run=1`);
-  const expectedGameCount = targetGaps.length;
-  const missing = summary.missing || {};
-  const pass = expectedGameCount > 0 && targetedGamesWithLive === expectedGameCount && targetedLiveRows > 0 && liveRowsForBatch > 0 && summary.duplicate_stage_keys === 0 && duplicateLiveKeys === 0 && summary.source_error_count === 0 && summary.unclear_count === 0 && Number(missing.missing_game_pk || 0) === 0 && Number(missing.missing_game_date || 0) === 0 && Number(missing.missing_team_id || 0) === 0 && Number(missing.missing_pitcher_id || 0) === 0 && badTargetRows.length === 0;
-  const status = pass ? 'COMPLETED_CALENDAR_GAP_SCOPED_PROMOTED_STAGE_RETAINED' : 'CALENDAR_GAP_SCOPED_REPAIR_VERIFY_FAILED';
-  const certificationStatus = pass ? 'BULLPEN_HISTORY_CALENDAR_GAP_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED' : 'BULLPEN_HISTORY_CALENDAR_GAP_SCOPED_REPAIR_BLOCKED_VERIFY_FAILED';
-  const certificationGrade = pass ? 'DELTA_REPAIR_PASS' : 'DELTA_REPAIR_FAIL';
-  const output = { calendar_gap_scoped_repair: true, layer_key: 'bullpen_history', target_source: 'TEAM_DB.mlb_game_data_coverage blocking_for_full_run=1 OR scheduled_not_ready with live team_game_logs evidence joined to TEAM_DB.mlb_game_calendar', source_shape_classification: 'GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS', variable_bullpen_row_model: true, gap_game_count: gaps.length, targeted_game_count: expectedGameCount, calendar_gap_count: gaps.length, scoped_gap_count: expectedGameCount, schedule_start_date: firstDate, schedule_end_date: lastDate, rows_read: rowsRead, rows_written: rowsWritten + expectedGameCount, rows_staged: summary.staged_bullpen_rows, rows_promoted: liveRowsForBatch, live_rows_for_batch: liveRowsForBatch, targeted_games_with_live_rows: targetedGamesWithLive, targeted_live_rows: targetedLiveRows, duplicate_stage_keys: summary.duplicate_stage_keys, duplicate_live_keys: duplicateLiveKeys, source_error_count: summary.source_error_count, unclear_count: summary.unclear_count, teams_with_zero_bullpen_rows: summary.teams_with_zero_bullpen_rows, zero_bullpen_teams_seen: zeroTeams, games_started_zero_reliever_rows: gamesStartedZeroRows, games_started_missing_rows: gamesStartedMissingRows, opener_bulk_edge_case_count: openerBulkEdgeCases, missing, bad_target_rows: badTargetRows, post_run_calendar_blocking_gap_count_before_calendar_refresh: Number(actualCoverageGapsAfter && actualCoverageGapsAfter.blocking_gap_count || 0), post_run_calendar_blocking_gap_games_before_calendar_refresh: Number(actualCoverageGapsAfter && actualCoverageGapsAfter.blocking_gap_games || 0), no_full_sweep: true, scoped_to_calendar_tally_gaps: true, stage_retained: true, no_daily_bullpen_availability: true, no_scoring: true, no_ranking: true, no_final_board: true, pass, next_action: pass ? 'RUN_DELTA_CALENDAR_TO_REFRESH_TALLY_AND_CONFIRM_ZERO_BULLPEN_HISTORY_GAPS' : 'DO_NOT_RUN_CALENDAR_UNTIL_BULLPEN_HISTORY_REPAIR_IS_FIXED' };
-
-  await run(env.TEAM_DB, `UPDATE bullpen_history_batches SET expected_game_count=?, expected_bullpen_rows=?, staged_bullpen_rows=?, duplicate_stage_keys=?, final_games_sampled=?, teams_with_zero_bullpen_rows=?, games_started_zero_reliever_rows=?, games_started_missing_rows=?, opener_bulk_edge_case_count=?, source_error_count=?, unclear_count=?, status=?, certification_status=?, certification_grade=?, output_json=?, processed_game_count=?, remaining_game_count=0, rows_promoted=?, stage_only=0, certified_at=CURRENT_TIMESTAMP, promoted_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, expectedGameCount, summary.staged_bullpen_rows, summary.staged_bullpen_rows, summary.duplicate_stage_keys, expectedGameCount, summary.teams_with_zero_bullpen_rows, gamesStartedZeroRows, gamesStartedMissingRows, openerBulkEdgeCases, summary.source_error_count, summary.unclear_count, status, certificationStatus, certificationGrade, safeJson(output), expectedGameCount, liveRowsForBatch, batchId);
-  await run(env.TEAM_DB, `INSERT OR REPLACE INTO bullpen_history_cursor (cursor_key,ingestion_mode,source_key,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,last_sample_date,last_game_pk,last_batch_id,last_request_id,status,cursor_json,created_at,updated_at) VALUES ('bullpen_history_calendar_gap_scoped_repair','delta_calendar_gap_scoped_repair',?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, SOURCE_KEY, season, 'R', DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, lastDate, targetGaps.length ? num(targetGaps[targetGaps.length-1].game_pk) : null, batchId, requestId, certificationStatus, safeJson(output));
-
-  return { ok: pass, data_ok: pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, mode: 'delta_update', status, certification: certificationStatus, certification_grade: certificationGrade, rows_read: rowsRead, rows_written: output.rows_written, rows_staged: summary.staged_bullpen_rows, rows_promoted: liveRowsForBatch, external_calls_performed: externalCalls, gap_game_count: output.gap_game_count, targeted_game_count: output.targeted_game_count, calendar_gap_count: output.calendar_gap_count, scoped_gap_count: output.scoped_gap_count, live_rows_for_batch: liveRowsForBatch, targeted_games_with_live_rows: targetedGamesWithLive, stage_retained: true, no_delta_stage_cleanup: true, no_full_sweep: true, no_browser_pump: true, output_json: output, timestamp_utc: nowUtc() };
+async function getBullpenHistoryOpenGapPlan(env) {
+  const out = { ok:false, source:'TEAM_DB.mlb_game_data_coverage + TEAM_DB.mlb_game_coverage_gaps', gaps_available:false, missing_game_pks:[], min_official_date:null, max_official_date:null, error:null, open_gap_ledger_override_v0_4_8:true };
+  const seen = new Set();
+  const addGap = (row) => {
+    const pk = num(row && row.game_pk);
+    if (!pk || seen.has(String(pk))) return;
+    seen.add(String(pk));
+    const d = ymd((row && (row.official_date || row.game_date)) || '');
+    out.missing_game_pks.push(pk);
+    if (d && (!out.min_official_date || d < out.min_official_date)) out.min_official_date = d;
+    if (d && (!out.max_official_date || d > out.max_official_date)) out.max_official_date = d;
+  };
+  const coverage = await safeAll(env.TEAM_DB, `SELECT game_pk, official_date FROM mlb_game_data_coverage WHERE layer_key='bullpen_history' AND (blocking_for_full_run=1 OR coverage_status IN ('missing','partial')) ORDER BY official_date, game_pk LIMIT 500`);
+  if (coverage.ok) for (const row of coverage.rows || []) addGap(row); else out.error = coverage.error;
+  const gaps = await safeAll(env.TEAM_DB, `SELECT game_pk, official_date FROM mlb_game_coverage_gaps WHERE layer_key='bullpen_history' AND gap_status IN ('missing','blocking','open','unresolved') ORDER BY official_date, game_pk LIMIT 500`);
+  if (gaps.ok) for (const row of gaps.rows || []) addGap(row); else if (!out.error) out.error = gaps.error;
+  out.ok = coverage.ok || gaps.ok;
+  out.gaps_available = out.missing_game_pks.length > 0;
+  return out;
 }
 
 async function runDeltaUpdate(env, input={}) {
@@ -1520,18 +1391,19 @@ async function runDeltaUpdate(env, input={}) {
   const chainId = input.chain_id || rid('bullpen_delta_chain');
   const runId = input.run_id || rid('bullpen_delta_run');
   if (!(await verifiedBaseComplete(env))) return { ok:false, data_ok:false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id:requestId, chain_id:chainId, run_id:runId, mode:'delta_update', status:'BLOCKED_BASE_NOT_PROMOTED_CLEANED', certification:'DELTA_BULLPEN_HISTORY_BLOCKED_BASE_NOT_READY', certification_grade:'BLOCKED', no_mining_calls:true, external_calls_performed:0 };
-  const calendarGaps = await loadBullpenHistoryCalendarGaps(env);
-  if (calendarGaps.length > 0) return await runCalendarGapScopedBullpenMining(env, input);
   const retained = await restoreMissingLiveFromRetainedDeltaStage(env, requestId, runId, Number(input.restore_limit || 200));
   if (retained) return retained;
   const scoped = await scopedSourceRepairFromDeltaOutcomes(env, requestId, runId, Number(input.repair_limit || 3));
   if (scoped) return scoped;
+  const gapPlan = await getBullpenHistoryOpenGapPlan(env);
+  const gapPkSet = new Set((gapPlan.missing_game_pks || []).map(v => String(v)));
+  const hasCalendarGaps = gapPlan.ok && gapPkSet.size > 0;
   const maxLive = await liveMaxGameDate(env) || DEFAULT_BASE_CUTOFF_DATE;
-  let startDate = input.start_date || input.schedule_start_date || addDaysYmd(maxLive, 1);
+  let startDate = hasCalendarGaps ? gapPlan.min_official_date : (input.start_date || input.schedule_start_date || addDaysYmd(maxLive, 1));
   if (compareYmd(startDate, DEFAULT_DELTA_RESERVED_START_DATE) < 0) startDate = DEFAULT_DELTA_RESERVED_START_DATE;
-  let endDate = input.end_date || input.schedule_end_date || todayYmdUtc();
+  let endDate = hasCalendarGaps ? gapPlan.max_official_date : (input.end_date || input.schedule_end_date || todayYmdUtc());
   if (compareYmd(startDate, endDate) > 0) {
-    const output = { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, run_id:runId, mode:'delta_update', status:'DELTA_BULLPEN_HISTORY_NOOP_CURRENT', certification:'DELTA_BULLPEN_HISTORY_NOOP_LIVE_CURRENT', certification_grade:'DELTA_NOOP_PASS', source_shape_classification:'GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS', max_live_game_date:maxLive, schedule_start_date:startDate, schedule_end_date:endDate, no_new_batch:true, no_mining_calls:true, external_calls_performed:0, no_daily_bullpen_availability:true, no_scoring:true };
+    const output = { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, run_id:runId, mode:'delta_update', status:'DELTA_BULLPEN_HISTORY_NOOP_CURRENT', certification:'DELTA_BULLPEN_HISTORY_NOOP_LIVE_CURRENT', certification_grade:'DELTA_NOOP_PASS', source_shape_classification:'GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS', max_live_game_date:maxLive, schedule_start_date:startDate, schedule_end_date:endDate, no_new_batch:true, no_mining_calls:true, gap_plan:gapPlan, external_calls_performed:0, no_daily_bullpen_availability:true, no_scoring:true };
     await run(env.TEAM_DB, `INSERT OR REPLACE INTO bullpen_history_cursor (cursor_key,ingestion_mode,source_key,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,last_sample_date,last_game_pk,last_batch_id,last_request_id,status,cursor_json,created_at,updated_at) VALUES ('bullpen_history_delta_update_cursor','delta_update',?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, SOURCE_KEY, seasonFromDate(endDate), 'R', DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, maxLive, null, null, requestId, output.status, safeJson(output));
     return output;
   }
@@ -1543,14 +1415,14 @@ async function runDeltaUpdate(env, input={}) {
   if (openBatch && openBatch.batch_id) {
     startDate = openBatch.schedule_start_date || startDate;
     endDate = openBatch.schedule_end_date || endDate;
-    candidates = finalGamesAll;
+    candidates = hasCalendarGaps ? finalGamesAll.filter(g => gapPkSet.has(String(g.gamePk))) : finalGamesAll;
   } else {
     const liveGamesRows = await all(env.TEAM_DB, `SELECT DISTINCT game_pk FROM bullpen_history WHERE game_date>=? AND game_date<=?`, startDate, endDate);
     const liveGames = new Set(liveGamesRows.map(r=>Number(r.game_pk)).filter(Number.isFinite));
-    candidates = finalGamesAll.filter(g => !liveGames.has(Number(g.gamePk)));
+    candidates = hasCalendarGaps ? finalGamesAll.filter(g => gapPkSet.has(String(g.gamePk))) : finalGamesAll.filter(g => !liveGames.has(Number(g.gamePk)));
   }
   if (!candidates.length) {
-    const output = { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, run_id:runId, mode:'delta_update', status:'DELTA_BULLPEN_HISTORY_NOOP_CURRENT', certification:'DELTA_BULLPEN_HISTORY_NOOP_LIVE_CURRENT', certification_grade:'DELTA_NOOP_PASS', source_shape_classification:'GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS', schedule_start_date:startDate, schedule_end_date:endDate, final_games_seen:finalGamesAll.length, candidate_new_games:0, no_new_batch:true, no_mining_calls:true, external_calls_performed:1, no_daily_bullpen_availability:true, no_scoring:true };
+    const output = { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, run_id:runId, mode:'delta_update', status:'DELTA_BULLPEN_HISTORY_NOOP_CURRENT', certification:'DELTA_BULLPEN_HISTORY_NOOP_LIVE_CURRENT', certification_grade:'DELTA_NOOP_PASS', source_shape_classification:'GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS', schedule_start_date:startDate, schedule_end_date:endDate, final_games_seen:finalGamesAll.length, candidate_new_games:0, no_new_batch:true, no_mining_calls:true, gap_plan:gapPlan, external_calls_performed:1, no_daily_bullpen_availability:true, no_scoring:true };
     await run(env.TEAM_DB, `INSERT OR REPLACE INTO bullpen_history_cursor (cursor_key,ingestion_mode,source_key,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,last_sample_date,last_game_pk,last_batch_id,last_request_id,status,cursor_json,created_at,updated_at) VALUES ('bullpen_history_delta_update_cursor','delta_update',?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, SOURCE_KEY, seasonFromDate(endDate), 'R', DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, maxLive, null, null, requestId, output.status, safeJson(output));
     return output;
   }
@@ -1580,7 +1452,7 @@ async function runDeltaUpdate(env, input={}) {
   const status = complete ? (pass ? 'COMPLETED_PROMOTED_STAGE_RETAINED' : 'DELTA_UPDATE_REVIEW_REQUIRED') : 'PARTIAL_CONTINUE';
   const cert = complete ? (pass ? 'DELTA_BULLPEN_HISTORY_CERTIFIED_PROMOTED_STAGE_RETAINED' : 'DELTA_BULLPEN_HISTORY_REVIEW_REQUIRED') : 'DELTA_BULLPEN_HISTORY_DELTA_UPDATE_PARTIAL_CONTINUE';
   const grade = complete ? (pass ? 'DELTA_PASS' : 'DELTA_REVIEW') : 'DELTA_PARTIAL';
-  const output = { ok: pass || !complete, data_ok: pass || !complete, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, run_id:runId, batch_id:batchId, mode:'delta_update', status, certification:cert, certification_grade:grade, source_shape_classification:'GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS', schedule_start_date:startDate, schedule_end_date:endDate, total_game_count:candidates.length, processed_game_count:processedCount, remaining_game_count:remainingCount, expected_bullpen_rows:summary.staged_bullpen_rows, staged_bullpen_rows:summary.staged_bullpen_rows, live_rows_for_batch:liveRows, rows_promoted:liveRows, duplicate_stage_keys:summary.duplicate_stage_keys, duplicate_live_keys:duplicateLiveKeys, source_error_count:summary.source_error_count, unclear_count:summary.unclear_count, teams_with_zero_bullpen_rows:summary.teams_with_zero_bullpen_rows, rows_read:todo.length, rows_written:stagedRows, external_calls_performed:externalCalls, stage_retained:true, no_full_sweep:true, continuation_required:!complete, orchestrator_should_self_continue:!complete, no_daily_bullpen_availability:true, no_scoring:true, no_ranking:true, no_final_board:true };
+  const output = { ok: pass || !complete, data_ok: pass || !complete, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, chain_id:chainId, run_id:runId, batch_id:batchId, mode:'delta_update', status, certification:cert, certification_grade:grade, source_shape_classification:'GAME_LOG_STYLE_BULLPEN_APPEARANCE_ROWS', schedule_start_date:startDate, schedule_end_date:endDate, total_game_count:candidates.length, calendar_gap_scoped_mining:hasCalendarGaps, calendar_gap_count:gapPkSet.size, processed_game_count:processedCount, remaining_game_count:remainingCount, expected_bullpen_rows:summary.staged_bullpen_rows, staged_bullpen_rows:summary.staged_bullpen_rows, live_rows_for_batch:liveRows, rows_promoted:liveRows, duplicate_stage_keys:summary.duplicate_stage_keys, duplicate_live_keys:duplicateLiveKeys, source_error_count:summary.source_error_count, unclear_count:summary.unclear_count, teams_with_zero_bullpen_rows:summary.teams_with_zero_bullpen_rows, rows_read:todo.length, rows_written:stagedRows, external_calls_performed:externalCalls, stage_retained:true, no_full_sweep:true, continuation_required:!complete, orchestrator_should_self_continue:!complete, no_daily_bullpen_availability:true, no_scoring:true, no_ranking:true, no_final_board:true };
   await run(env.TEAM_DB, `UPDATE bullpen_history_batches SET expected_game_count=?, expected_bullpen_rows=?, staged_bullpen_rows=?, duplicate_stage_keys=?, teams_with_zero_bullpen_rows=?, games_started_zero_reliever_rows=games_started_zero_reliever_rows+?, games_started_missing_rows=games_started_missing_rows+?, opener_bulk_edge_case_count=opener_bulk_edge_case_count+?, source_error_count=?, unclear_count=?, status=?, certification_status=?, certification_grade=?, output_json=?, processed_game_count=?, remaining_game_count=?, rows_promoted=?, partial_continue_count=partial_continue_count+?, certified_at=CASE WHEN ?=1 THEN CURRENT_TIMESTAMP ELSE certified_at END, promoted_at=CASE WHEN ?=1 THEN COALESCE(promoted_at,CURRENT_TIMESTAMP) ELSE promoted_at END, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, candidates.length, summary.staged_bullpen_rows, summary.staged_bullpen_rows, summary.duplicate_stage_keys, summary.teams_with_zero_bullpen_rows, gsZero, gsMissing, opener, summary.source_error_count, summary.unclear_count, status, cert, grade, safeJson(output), processedCount, remainingCount, liveRows, complete ? 0 : 1, complete ? 1 : 0, complete ? 1 : 0, batchId);
   await run(env.TEAM_DB, `INSERT OR REPLACE INTO bullpen_history_cursor (cursor_key,ingestion_mode,source_key,source_season,source_game_type,base_backfill_cutoff_date,delta_reserved_start_date,last_sample_date,last_game_pk,last_batch_id,last_request_id,status,cursor_json,created_at,updated_at) VALUES ('bullpen_history_delta_update_cursor','delta_update',?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, SOURCE_KEY, seasonFromDate(endDate), 'R', DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, endDate, candidates.length ? num(candidates[candidates.length-1].gamePk) : null, batchId, requestId, status, safeJson(output));
   return output;

@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.137-daily-context-all-heavy-hard-boundary";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.138-final-tally-team-gap-repair-loop";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -47,7 +47,7 @@ function base(env, extra = {}) {
       "Buttons enqueue/wake backend work only.",
       "Browser does not run long loops.",
       "Scheduled cron calls the same bounded tick path.",
-      "v0.2.60 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with stale running recovery, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.4.0 source probe/base stage/promote-clean/delta-update, exact active static workers, exact static-certifier read-only validation, exact static-full-run backend chain, exact delta-certifier calendar/tally dispatch, and exact incremental-morning-full-run backend chain with pre/post calendar-tally gates only.",
+      "v0.2.60 processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill with stale running recovery, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with stale running recovery, exact base-team-game-logs, exact base-starter-history, exact base-bullpen-history v0.4.0 source probe/base stage/promote-clean/delta-update, exact active static workers, exact static-certifier read-only validation, exact static-full-run backend chain, and exact incremental-morning-full-run backend chain only.",
       "No generic worker dispatch, no scoring, no ranking, no final board writes, no old production writes."
     ],
     bindings: {
@@ -66,15 +66,7 @@ function base(env, extra = {}) {
       BASE_BULLPEN_HISTORY_WORKER: !!env.BASE_BULLPEN_HISTORY_WORKER,
       BASE_PITCHER_SPLITS_WORKER: !!env.BASE_PITCHER_SPLITS_WORKER,
       DAILY_GAMES_STATUS_WORKER: !!env.DAILY_GAMES_STATUS_WORKER,
-      DAILY_SCHEDULE_WORKER: !!env.DAILY_SCHEDULE_WORKER,
-      DAILY_PROBABLE_PITCHERS_WORKER: !!env.DAILY_PROBABLE_PITCHERS_WORKER,
-      DAILY_LINEUPS_WORKER: !!env.DAILY_LINEUPS_WORKER,
-      DAILY_PLAYER_AVAILABILITY_WORKER: !!env.DAILY_PLAYER_AVAILABILITY_WORKER,
-      DAILY_WEATHER_WORKER: !!env.DAILY_WEATHER_WORKER,
-      DAILY_BULLPEN_AVAILABILITY_WORKER: !!env.DAILY_BULLPEN_AVAILABILITY_WORKER,
-      DELTA_CERTIFIER_WORKER: !!env.DELTA_CERTIFIER_WORKER,
-      MARKET_SOURCE_HEALTH_WORKER: !!env.MARKET_SOURCE_HEALTH_WORKER,
-      MARKET_NORMALIZER_WORKER: !!env.MARKET_NORMALIZER_WORKER
+      DELTA_CERTIFIER_WORKER: !!env.DELTA_CERTIFIER_WORKER
     },
     ...extra
   };
@@ -202,12 +194,6 @@ function isMarketSourceHealthJob(row) {
   return job === "market-source-health" && worker === "alphadog-v2-market-source-health";
 }
 
-function isMarketContextSourceProbeJob(row) {
-  const job = String(row.job_key || "");
-  const worker = String(row.worker_name || "");
-  return job === "market-normalizer" && worker === "alphadog-v2-market-normalizer";
-}
-
 function isPrizePicksGithubBoardJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
@@ -280,60 +266,6 @@ function isDailyGamesStatusJob(row) {
   return job === "daily-games-status" && worker === "alphadog-v2-daily-games-status";
 }
 
-function isDailyTeamScheduleSpotJob(row) {
-  const job = String(row.job_key || "");
-  const worker = String(row.worker_name || "");
-  return job === "daily-team-schedule-spot" && worker === "alphadog-v2-daily-schedule";
-}
-
-function isDailyProbablePitchersJob(row) {
-  const job = String(row.job_key || "");
-  const worker = String(row.worker_name || "");
-  return job === "daily-probable-pitchers" && worker === "alphadog-v2-daily-probable-pitchers";
-}
-
-function isDailyLineupsJob(row) {
-  const job = String(row.job_key || "");
-  const worker = String(row.worker_name || "");
-  return job === "daily-lineups" && worker === "alphadog-v2-daily-lineups";
-}
-
-function isDailyPlayerAvailabilityJob(row) {
-  const job = String(row.job_key || "");
-  const worker = String(row.worker_name || "");
-  return job === "daily-player-availability" && worker === "alphadog-v2-daily-player-availability";
-}
-
-function isDailyWeatherJob(row) {
-  const job = String(row.job_key || "");
-  const worker = String(row.worker_name || "");
-  return job === "daily-weather" && worker === "alphadog-v2-daily-weather";
-}
-
-function isDailyBullpenAvailabilityJob(row) {
-  const job = String(row.job_key || "");
-  const worker = String(row.worker_name || "");
-  return job === "daily-bullpen-availability" && worker === "alphadog-v2-daily-bullpen-availability";
-}
-
-function isDailyUmpireContextJob(row) {
-  const job = String(row.job_key || "");
-  const worker = String(row.worker_name || "");
-  return job === "daily-umpire-context" && worker === "alphadog-v2-daily-usage-pulse";
-}
-
-function isDailyContextCertifierJob(row) {
-  const job = String(row.job_key || "");
-  const worker = String(row.worker_name || "");
-  return job === "daily-certifier" && worker === "alphadog-v2-daily-certifier";
-}
-
-function isDailyContextFullRunJob(row) {
-  const job = String(row.job_key || "");
-  const worker = String(row.worker_name || "");
-  return job === "daily-context-full-run" && worker === "alphadog-v2-orchestrator";
-}
-
 function isStaticTeamsJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
@@ -394,19 +326,12 @@ function isBoardFullRunJob(row) {
   return job === "board-full-run" && worker === "alphadog-v2-orchestrator";
 }
 
-function isScorePrepJob(row) {
-  const job = String(row.job_key || "");
-  const worker = String(row.worker_name || "");
-  return job === "score-prep" && worker === "alphadog-v2-score-prep";
-}
-
 const BOARD_FULL_RUN_LOCK_KEY = "BOARD_FULL_RUN";
 const BOARD_FULL_RUN_STALE_MINUTES = 20;
 
 const BOARD_FULL_RUN_STAGES = [
   { stage_key: "board_prizepicks_refresh", job_key: "prizepicks-github-board", worker_name: "alphadog-v2-prizepicks-github-board", display_name: "PrizePicks Board Refresh", visible_button: "BOARD > PrizePicks", mode: "board_full_run_prizepicks_refresh", worker_group: "Board", phase_key: "board", priority: 4 },
-  { stage_key: "board_sleeper_refresh", job_key: "parlay-sleeper-board", worker_name: "alphadog-v2-parlay-sleeper-board", display_name: "Sleeper Board Refresh", visible_button: "BOARD > Sleeper", mode: "board_full_run_sleeper_refresh", worker_group: "Board", phase_key: "board", priority: 4 },
-  { stage_key: "score_prep_enrichment", job_key: "score-prep", worker_name: "alphadog-v2-score-prep", display_name: "Score Prep Board Enrichment", visible_button: "SCORE PREP > Board Enrichment", mode: "board_full_run_score_prep_enrichment", worker_group: "Score", phase_key: "score_prep", priority: 5 }
+  { stage_key: "board_sleeper_refresh", job_key: "parlay-sleeper-board", worker_name: "alphadog-v2-parlay-sleeper-board", display_name: "Sleeper Board Refresh", visible_button: "BOARD > Sleeper", mode: "board_full_run_sleeper_refresh", worker_group: "Board", phase_key: "board", priority: 4 }
 ];
 
 function boardFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
@@ -437,13 +362,8 @@ function boardFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
     no_old_production_touch: true,
     prizepicks_consumer_only: stage.job_key === "prizepicks-github-board",
     sleeper_board_inventory_only: stage.job_key === "parlay-sleeper-board",
-    score_prep_required: stage.job_key === "score-prep",
-    score_prep_after_board_refresh: stage.job_key === "score-prep",
-    writes_score_prepared_board_only: stage.job_key === "score-prep",
     no_prizepicks_mutation: stage.job_key !== "prizepicks-github-board",
     no_sleeper_mutation: stage.job_key !== "parlay-sleeper-board",
-    no_market_board_mutation: stage.job_key === "score-prep",
-    no_raw_board_delete: stage.job_key === "score-prep",
     created_at: nowIso()
   };
 }
@@ -497,133 +417,17 @@ function childPassedBoardFullRun(stage, child) {
   if (!child) return { pass: false, wait: false, reason: "child_missing" };
   const status = String(child.status || "");
   if (["pending", "running", "partial_continue"].includes(status) && !child.finished_at) return { pass: false, wait: true, reason: "child_active", child_status: status };
+  if (status !== "completed") return { pass: false, transient: status === "failed" || status === "blocked", reason: "child_not_completed", child_status: status, child_error_code: child.error_code || null };
   const output = parseJsonSafeText(child.output_json || "{}", {});
   const cert = String(output.certification || "");
-
-  // PrizePicks is important, but it must never be allowed to prevent the rest of the
-  // Board Full Run from refreshing Sleeper and rebuilding Score Prep from the current raw boards.
-  // If the GitHub source is stale/no-future, the PrizePicks worker preserves current inventory.
-  // Treat that as a nonfatal source warning and let Score Prep decide final downstream safety.
-  if (stage.job_key === "prizepicks-github-board") {
-    if (["failed", "blocked"].includes(status)) {
-      return {
-        pass: true,
-        wait: false,
-        certification: cert || String(child.error_code || "prizepicks_child_failed_nonfatal"),
-        reason: String(child.error_message || child.error_code || "prizepicks_child_failed_nonfatal_continue_to_sleeper_and_score_prep").slice(0, 900),
-        prizepicks_nonfatal_warning: true,
-        prizepicks_stage_nonfatal: true,
-        child_status: status,
-        child_error_code: child.error_code || null,
-        child_error_message: child.error_message || null,
-        data_ok: output && output.data_ok,
-        rows_read: output.rows_read || 0,
-        rows_written: output.rows_written || 0,
-        rows_promoted: output.rows_promoted || output.promoted_rows_written || 0,
-        future_pickable_rows: output.future_pickable_rows || 0,
-        expired_or_started_rows: output.expired_or_started_rows || 0,
-        external_calls: output.external_calls_performed || output.external_calls || 0,
-        output
-      };
-    }
-    if (status !== "completed") return { pass: false, transient: status === "failed" || status === "blocked", reason: "child_not_completed", child_status: status, child_error_code: child.error_code || null };
-    if (!output || output.ok !== true) {
-      return {
-        pass: true,
-        wait: false,
-        certification: cert || "prizepicks_output_not_ok_nonfatal",
-        reason: "prizepicks_output_ok_not_true_nonfatal_continue_to_sleeper_and_score_prep",
-        prizepicks_nonfatal_warning: true,
-        prizepicks_stage_nonfatal: true,
-        output_ok: output && output.ok,
-        data_ok: output && output.data_ok,
-        output
-      };
-    }
-    if (output.data_ok !== true) {
-      return {
-        pass: true,
-        wait: false,
-        certification: cert || "prizepicks_data_not_ok_nonfatal",
-        reason: "prizepicks_data_ok_not_true_nonfatal_continue_to_sleeper_and_score_prep",
-        prizepicks_nonfatal_warning: true,
-        prizepicks_stage_nonfatal: true,
-        data_ok: output && output.data_ok,
-        output
-      };
-    }
-    if (cert === "PRIZEPICKS_SOURCE_STALE_NO_FUTURE_PICKABLE_ROWS") {
-      const dispatch = output.source_refresh_dispatch || null;
-      return {
-        pass: true,
-        wait: false,
-        certification: cert,
-        reason: dispatch && dispatch.ok === true
-          ? "prizepicks_source_stale_refresh_dispatched_nonfatal_continue_to_sleeper_and_score_prep"
-          : "prizepicks_source_stale_preserved_current_nonfatal_continue_to_sleeper_and_score_prep",
-        prizepicks_stale_cleared: true,
-        prizepicks_nonfatal_warning: true,
-        prizepicks_stage_nonfatal: true,
-        source_refresh_dispatch: dispatch,
-        source_refresh_dispatch_ok: dispatch && dispatch.ok === true,
-        source_refresh_dispatch_error: dispatch && dispatch.error ? dispatch.error : null,
-        data_ok: output.data_ok,
-        rows_read: output.rows_read || 0,
-        rows_written: output.rows_written || 0,
-        rows_promoted: output.rows_promoted || output.promoted_rows_written || 0,
-        future_pickable_rows: output.future_pickable_rows || 0,
-        expired_or_started_rows: output.expired_or_started_rows || 0,
-        external_calls: output.external_calls_performed || output.external_calls || 0,
-        output
-      };
-    }
-    if (cert !== "promoted_current_board") {
-      return {
-        pass: true,
-        wait: false,
-        certification: cert,
-        reason: "prizepicks_unexpected_certification_nonfatal_continue_to_sleeper_and_score_prep",
-        prizepicks_nonfatal_warning: true,
-        prizepicks_stage_nonfatal: true,
-        rows_read: output.rows_read || 0,
-        rows_written: output.rows_written || 0,
-        rows_promoted: output.rows_promoted || output.promoted_rows_written || 0,
-        future_pickable_rows: output.future_pickable_rows || 0,
-        expired_or_started_rows: output.expired_or_started_rows || 0,
-        external_calls: output.external_calls_performed || output.external_calls || 0,
-        output
-      };
-    }
-    if (Number(output.rows_promoted || 0) <= 0) {
-      return {
-        pass: true,
-        wait: false,
-        certification: cert,
-        reason: "prizepicks_rows_promoted_zero_nonfatal_continue_to_sleeper_and_score_prep",
-        prizepicks_nonfatal_warning: true,
-        prizepicks_stage_nonfatal: true,
-        rows_promoted: output.rows_promoted || 0,
-        output
-      };
-    }
-    if (Number(output.future_pickable_rows || 0) <= 0) {
-      return {
-        pass: true,
-        wait: false,
-        certification: cert,
-        reason: "prizepicks_future_pickable_zero_nonfatal_continue_to_sleeper_and_score_prep",
-        prizepicks_nonfatal_warning: true,
-        prizepicks_stage_nonfatal: true,
-        future_pickable_rows: output.future_pickable_rows || 0,
-        output
-      };
-    }
-    if (output.no_scoring === false || output.no_ranking === false || output.no_final_board_write === false) return { pass: false, reason: "prizepicks_unsafe_downstream_flag_false" };
-  }
-
-  if (status !== "completed") return { pass: false, transient: status === "failed" || status === "blocked", reason: "child_not_completed", child_status: status, child_error_code: child.error_code || null };
   if (!output || output.ok !== true) return { pass: false, reason: "child_output_ok_not_true", output_ok: output && output.ok };
   if (output.data_ok !== true) return { pass: false, reason: "child_data_ok_not_true", data_ok: output && output.data_ok };
+  if (stage.job_key === "prizepicks-github-board") {
+    if (cert !== "promoted_current_board") return { pass: false, reason: "prizepicks_not_promoted_current_board", certification: cert };
+    if (Number(output.rows_promoted || 0) <= 0) return { pass: false, reason: "prizepicks_rows_promoted_zero", rows_promoted: output.rows_promoted || 0 };
+    if (Number(output.future_pickable_rows || 0) <= 0) return { pass: false, reason: "prizepicks_future_pickable_zero", future_pickable_rows: output.future_pickable_rows || 0 };
+    if (output.no_scoring === false || output.no_ranking === false || output.no_final_board_write === false) return { pass: false, reason: "prizepicks_unsafe_downstream_flag_false" };
+  }
   if (stage.job_key === "parlay-sleeper-board") {
     if (cert !== "PARLAY_SLEEPER_BOARD_INVENTORY_PROMOTED_NO_SCORING") return { pass: false, reason: "sleeper_not_promoted_inventory_only", certification: cert };
     const currentRows = Number(output.current_rows_written || output.promoted_rows_written || (output.stage_only_result && output.stage_only_result.current_rows_written) || 0);
@@ -631,16 +435,6 @@ function childPassedBoardFullRun(stage, child) {
     if (currentRows <= 0) return { pass: false, reason: "sleeper_current_rows_zero", current_rows_written: currentRows };
     if (activeRows !== 1) return { pass: false, reason: "sleeper_active_batch_not_one", active_batch_rows_written: activeRows };
     if (output.no_scoring !== true || output.no_ranking !== true || output.no_final_board !== true) return { pass: false, reason: "sleeper_inventory_safety_flags_missing" };
-  }
-  if (stage.job_key === "score-prep") {
-    if (cert !== "SCORE_BOARD_PREP_ENRICHMENT_COMPLETED_PRESERVED_RAW_BOARDS") return { pass: false, reason: "score_prep_not_certified", certification: cert };
-    if (output.final_db_truth !== true) return { pass: false, reason: "score_prep_final_db_truth_missing", final_db_truth: output.final_db_truth };
-    if (Number(output.prepared_rows || 0) <= 0) return { pass: false, reason: "score_prep_prepared_rows_zero", prepared_rows: output.prepared_rows || 0 };
-    if (Number(output.inserted_current_rows || output.prepared_rows || 0) !== Number(output.prepared_rows || 0)) return { pass: false, reason: "score_prep_inserted_current_rows_mismatch", prepared_rows: output.prepared_rows || 0, inserted_current_rows: output.inserted_current_rows || 0 };
-    if (Number(output.prizepicks_rows || 0) <= 0) return { pass: false, reason: "score_prep_prizepicks_rows_zero", prizepicks_rows: output.prizepicks_rows || 0 };
-    if (Number(output.sleeper_rows || 0) <= 0) return { pass: false, reason: "score_prep_sleeper_rows_zero", sleeper_rows: output.sleeper_rows || 0 };
-    if (Number(output.pickable_safe_rows || 0) <= 0) return { pass: false, reason: "score_prep_pickable_safe_rows_zero", pickable_safe_rows: output.pickable_safe_rows || 0 };
-    if (output.no_market_board_mutation !== true || output.no_raw_board_delete !== true || output.no_scoring !== true || output.no_ranking !== true || output.no_final_board !== true) return { pass: false, reason: "score_prep_safety_flags_missing" };
   }
   return { pass: true, certification: cert, data_ok: output.data_ok, rows_read: output.rows_read || 0, rows_written: output.rows_written || 0, rows_promoted: output.rows_promoted || output.promoted_rows_written || 0, external_calls: output.external_calls_performed || output.external_calls || 0, output };
 }
@@ -677,7 +471,7 @@ async function processBoardFullRunJob(env, row, runId, trigger) {
 
     const validation = childPassedBoardFullRun(stage, child);
     const childOutput = parseJsonSafeText(child.output_json || "{}", {});
-    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, prizepicks_stale_cleared: validation.prizepicks_stale_cleared === true, prizepicks_nonfatal_warning: validation.prizepicks_nonfatal_warning === true, prizepicks_stage_nonfatal: validation.prizepicks_stage_nonfatal === true, source_refresh_dispatch_ok: validation.source_refresh_dispatch_ok === true, source_refresh_dispatch_error: validation.source_refresh_dispatch_error || null, rows_read: childOutput.rows_read || 0, rows_written: childOutput.rows_written || 0, rows_promoted: childOutput.rows_promoted || childOutput.promoted_rows_written || 0, future_pickable_rows: childOutput.future_pickable_rows || 0, expired_or_started_rows: childOutput.expired_or_started_rows || 0, prepared_rows: childOutput.prepared_rows || 0, pickable_safe_rows: childOutput.pickable_safe_rows || 0, blocked_rows: childOutput.blocked_rows || 0, matchup_unresolved_rows: childOutput.matchup_unresolved_rows || 0, unresolved_player_rows: childOutput.unresolved_player_rows || 0, final_db_truth: childOutput.final_db_truth === true, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0, attempts: stageAttempts.length };
+    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, rows_read: childOutput.rows_read || 0, rows_written: childOutput.rows_written || 0, rows_promoted: childOutput.rows_promoted || childOutput.promoted_rows_written || 0, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0, attempts: stageAttempts.length };
 
     if (validation.wait) {
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "PARTIAL_CONTINUE_BOARD_FULL_RUN_WAITING_ON_CHILD", certification: "BOARD_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
@@ -699,14 +493,11 @@ async function processBoardFullRunJob(env, row, runId, trigger) {
     stageReports.push(report);
   }
 
-  const prizepicksStaleCleared = stageReports.some(r => r.prizepicks_stale_cleared === true || r.child_certification === "PRIZEPICKS_SOURCE_STALE_NO_FUTURE_PICKABLE_ROWS");
-  const prizepicksNonfatalWarningCount = stageReports.filter(r => r.prizepicks_nonfatal_warning === true || r.prizepicks_stage_nonfatal === true).length;
-  const finalCertification = "BOARD_FULL_RUN_CERTIFIED_PRIZEPICKS_SLEEPER_AND_SCORE_PREP_PASS";
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "COMPLETED_BOARD_FULL_RUN", certification: finalCertification, certification_grade: "FULL_RUN_PASS", board_full_run_certified: true, board_prep_required: true, board_prep_completed: stageReports.some(r => r.job_key === "score-prep" && r.pass === true), prizepicks_stale_cleared: prizepicksStaleCleared, prizepicks_nonfatal_warning_count: prizepicksNonfatalWarningCount, prizepicks_nonfatal_continue_policy: true, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: BOARD_FULL_RUN_STAGES.map(s => s.job_key), board_full_run_only: true, no_delta_full_run: true, no_incremental_morning_full_run: true, no_static_work: true, no_base_delta_workers: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "COMPLETED_BOARD_FULL_RUN", certification: "BOARD_FULL_RUN_CERTIFIED_PRIZEPICKS_AND_SLEEPER_PASS", certification_grade: "FULL_RUN_PASS", board_full_run_certified: true, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: BOARD_FULL_RUN_STAGES.map(s => s.job_key), board_full_run_only: true, no_delta_full_run: true, no_incremental_morning_full_run: true, no_static_work: true, no_base_delta_workers: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
   await releaseBoardFullRunLock(env, row);
-  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalCertification, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'BOARD_FULL_RUN_CERTIFIED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'board_full_run_completed', 'Board Full Run certified PrizePicks/Sleeper refresh plus required Score Prep; PrizePicks source warnings are nonfatal after preserve-current policy', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'board_full_run_completed', 'Board Full Run certified PrizePicks then Sleeper board refresh stages', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
   return output;
 }
 
@@ -762,183 +553,125 @@ function pacificNowParts(date = new Date()) {
 }
 
 function isApprovedIncrementalMorningFullRunScheduleWindow(pt) {
-  // Legacy helper retained for compatibility only. The active daily Full Run schedule is now
-  // CONFIG_DB.config_scheduled_jobs driven, not hardcoded to 1:00 AM Pacific.
-  return Number(pt.hour) === 5 && Number(pt.minute) >= 0 && Number(pt.minute) < INCREMENTAL_MORNING_FULL_RUN_SCHEDULE_WINDOW_MINUTES;
+  return Number(pt.hour) === 1 && Number(pt.minute) >= 0 && Number(pt.minute) < INCREMENTAL_MORNING_FULL_RUN_SCHEDULE_WINDOW_MINUTES;
 }
 
 async function enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpression = "unknown") {
   await ensureSchema(env);
-  await ensureConfigScheduledJobsTable(env);
-
   const pt = pacificNowParts(new Date());
-  const scheduleRows = await all(env.CONFIG_DB,
-    `SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, dedupe_scope, input_json, notes
-     FROM config_scheduled_jobs
-     WHERE enabled=1
-       AND job_key='incremental-morning-full-run'
-       AND schedule_type='daily'
-       AND timezone='America/Los_Angeles'
-     ORDER BY local_time, schedule_id`
-  );
+  const scheduledDedupeKey = `incremental_morning_full_run_${pt.ymd_key}`;
+  const inWindow = isApprovedIncrementalMorningFullRunScheduleWindow(pt);
 
-  const results = [];
-  for (const schedule of scheduleRows) {
-    const parsedTime = parseScheduledLocalTimeHHMM(schedule.local_time);
-    const basePayload = {
-      ok: true,
-      data_ok: true,
-      version: SYSTEM_VERSION,
-      worker_name: WORKER_NAME,
-      job_key: "incremental-morning-full-run",
-      mode: "scheduled_incremental_morning_full_run_config_scan",
-      cron_expression: cronExpression,
-      schedule_id: schedule.schedule_id,
-      schedule_local_time: schedule.local_time,
-      schedule_type: schedule.schedule_type,
-      schedule_timezone: schedule.timezone,
-      pacific_date: pt.ymd_dash,
-      pacific_time: pt.local_time,
-      approved_window_minutes: INCREMENTAL_MORNING_FULL_RUN_SCHEDULE_WINDOW_MINUTES,
-      no_board_refresh_included: true,
-      board_refresh_deferred: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board: true,
-      no_old_production_touch: true
-    };
-
-    if (!parsedTime) {
-      const payload = { ...basePayload, ok: false, data_ok: false, status: "BLOCKED_SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_BAD_LOCAL_TIME", reason: "local_time must be HH:MM" };
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'incremental-morning-full-run', 'ERROR', 'scheduled_incremental_morning_full_run_bad_local_time', 'Scheduled Incremental Morning Full Run row has invalid local_time', ?, CURRENT_TIMESTAMP)",
-        WORKER_NAME, JSON.stringify(payload)
-      );
-      results.push(payload);
-      continue;
-    }
-
-    const scheduledKey = `incremental_morning_full_run_${pt.ymd_key}_${parsedTime.key}_PT`;
-    const inWindow = isPacificScheduleWindowDue(pt, parsedTime, INCREMENTAL_MORNING_FULL_RUN_SCHEDULE_WINDOW_MINUTES);
-    if (!inWindow) {
-      results.push({ ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_NOT_DUE", scheduled_key: scheduledKey });
-      continue;
-    }
-
-    const existingRows = await all(env.CONTROL_DB,
-      `SELECT request_id, chain_id, status, created_at, started_at, finished_at, updated_at, error_code, error_message
-       FROM control_job_queue
-       WHERE job_key='incremental-morning-full-run'
-         AND worker_name='alphadog-v2-orchestrator'
-         AND json_extract(input_json,'$.scheduled_key')=?
-       ORDER BY datetime(created_at) DESC
-       LIMIT 10`,
-      scheduledKey
-    );
-
-    const active = existingRows.find(r => ["pending", "running", "partial_continue"].includes(String(r.status || "")) && !r.finished_at);
-    if (active) {
-      const payload = { ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_NOOP_ACTIVE_EXISTS", scheduled_key: scheduledKey, existing_request_id: active.request_id, existing_chain_id: active.chain_id, existing_status: active.status };
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'incremental-morning-full-run', 'INFO', 'scheduled_incremental_morning_full_run_noop_active_exists', 'Scheduled Incremental Morning Full Run did not enqueue because same scheduled key is active', ?, CURRENT_TIMESTAMP)",
-        active.request_id, WORKER_NAME, JSON.stringify(payload)
-      );
-      results.push(payload);
-      continue;
-    }
-
-    const completed = existingRows.find(r => String(r.status || "") === "completed");
-    if (completed) {
-      const payload = { ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_NOOP_ALREADY_COMPLETED", scheduled_key: scheduledKey, existing_request_id: completed.request_id, existing_chain_id: completed.chain_id, existing_status: completed.status };
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'incremental-morning-full-run', 'INFO', 'scheduled_incremental_morning_full_run_noop_already_completed', 'Scheduled Incremental Morning Full Run did not enqueue because same scheduled key already completed', ?, CURRENT_TIMESTAMP)",
-        completed.request_id, WORKER_NAME, JSON.stringify(payload)
-      );
-      results.push(payload);
-      continue;
-    }
-
-    const failed = existingRows.find(r => ["failed", "blocked", "error"].includes(String(r.status || "")) || r.error_code);
-    if (failed) {
-      const payload = { ...basePayload, ok: false, data_ok: false, status: "BLOCKED_SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_SAME_KEY_FAILED_REQUIRES_REVIEW", scheduled_key: scheduledKey, existing_request_id: failed.request_id, existing_chain_id: failed.chain_id, existing_status: failed.status, existing_error_code: failed.error_code || null, existing_error_message: failed.error_message || null };
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'incremental-morning-full-run', 'ERROR', 'scheduled_incremental_morning_full_run_blocked_failed_same_key', 'Scheduled Incremental Morning Full Run blocked because same scheduled key failed/blocked and requires review', ?, CURRENT_TIMESTAMP)",
-        failed.request_id, WORKER_NAME, JSON.stringify(payload)
-      );
-      results.push(payload);
-      continue;
-    }
-
-    const configInput = parseJsonSafeText(schedule.input_json || "{}", {});
-    const requestId = `${scheduledKey}_${Date.now().toString(36)}_${randomToken(6)}`;
-    const chainId = `chain_${scheduledKey}_${Date.now().toString(36)}`;
-    const childModes = {};
-    for (const stage of INCREMENTAL_MORNING_FULL_RUN_STAGES) childModes[stage.job_key] = stage.mode;
-
-    const input = {
-      ...configInput,
-      source: "config_scheduled_jobs",
-      visible_button: "SCHEDULED > Incremental Morning Full Run",
-      mode: "incremental_morning_full_run",
-      scheduled: true,
-      scheduled_or_manual: "scheduled",
-      schedule_id: schedule.schedule_id,
-      scheduled_key: scheduledKey,
-      scheduled_dedupe_key: scheduledKey,
-      scheduled_pacific_date: pt.ymd_dash,
-      pacific_date: pt.ymd_dash,
-      scheduled_pacific_time: pt.local_time,
-      local_time: parsedTime.hhmm,
-      timezone: "America/Los_Angeles",
-      cron_expression: cronExpression,
-      created_at: nowIso(),
-      calendar_tally_precheck_first: true,
-      calendar_tally_final_check_last: true,
-      approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key),
-      child_modes: childModes,
-      stop_on_first_failed_stage: true,
-      max_retries_per_child: INCREMENTAL_MORNING_FULL_RUN_MAX_RETRIES_PER_STAGE,
-      stale_threshold_minutes: INCREMENTAL_MORNING_FULL_RUN_STALE_MINUTES,
-      backend_chain_only: true,
-      no_browser_loop: true,
-      backend_scheduled_continuation: true,
-      no_board_refresh_included: true,
-      board_refresh_deferred: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board: true,
-      no_old_production_touch: true
-    };
-
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'incremental-morning-full-run', 'alphadog-v2-orchestrator', 'Delta', 'incremental_base', 'Scheduled Incremental Morning Full Run Backend Chain', 'pending', 8, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-      requestId, chainId, JSON.stringify(input)
-    );
-
-    const payload = { ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_QUEUED", scheduled_key: scheduledKey, request_id: requestId, chain_id: chainId, queued_job_key: "incremental-morning-full-run", queued_worker_name: WORKER_NAME, approved_chain_order: input.approved_chain_order, backend_chain_only: true };
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'incremental-morning-full-run', 'INFO', 'scheduled_incremental_morning_full_run_queued', 'Scheduled Incremental Morning Full Run parent backend chain job queued from CONFIG_DB schedule', ?, CURRENT_TIMESTAMP)",
-      requestId, WORKER_NAME, JSON.stringify(payload)
-    );
-    results.push(payload);
-  }
-
-  return {
+  const basePayload = {
     ok: true,
     data_ok: true,
     version: SYSTEM_VERSION,
     worker_name: WORKER_NAME,
     job_key: "incremental-morning-full-run",
-    mode: "scheduled_incremental_morning_full_run_config_scan",
+    mode: "scheduled_incremental_morning_full_run_enqueue_guard",
     cron_expression: cronExpression,
     pacific_date: pt.ymd_dash,
     pacific_time: pt.local_time,
-    schedules_read: scheduleRows.length,
-    queued_count: results.filter(r => r.status === "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_QUEUED").length,
-    blocked_count: results.filter(r => r.ok === false || String(r.status || "").startsWith("BLOCKED_")).length,
-    results
+    scheduled_dedupe_key: scheduledDedupeKey,
+    approved_window: "01:00-01:14 America/Los_Angeles",
+    in_window: inWindow,
+    no_board_refresh_included: true,
+    board_refresh_deferred: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_old_production_touch: true
   };
+
+  if (!inWindow) {
+    return { ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_NOT_DUE" };
+  }
+
+  const existingRows = await all(env.CONTROL_DB,
+    `SELECT request_id, chain_id, status, created_at, started_at, finished_at, updated_at, error_code, error_message, substr(input_json,1,1200) AS input_preview
+     FROM control_job_queue
+     WHERE job_key='incremental-morning-full-run'
+       AND worker_name='alphadog-v2-orchestrator'
+       AND (request_id LIKE ? OR input_json LIKE ?)
+     ORDER BY datetime(created_at) DESC
+     LIMIT 10`,
+    `${scheduledDedupeKey}_%`, `%"scheduled_dedupe_key":"${scheduledDedupeKey}"%`
+  );
+
+  const active = existingRows.find(r => ["pending", "running", "partial_continue"].includes(String(r.status || "")) && !r.finished_at);
+  if (active) {
+    const payload = { ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_NOOP_ACTIVE_EXISTS", existing_request_id: active.request_id, existing_chain_id: active.chain_id, existing_status: active.status };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'scheduled_incremental_morning_full_run_noop_active_exists', 'Scheduled Incremental Morning Full Run did not enqueue because same Pacific-date parent is active', ?, CURRENT_TIMESTAMP)",
+      active.request_id, WORKER_NAME, "incremental-morning-full-run", JSON.stringify(payload)
+    );
+    return payload;
+  }
+
+  const completed = existingRows.find(r => String(r.status || "") === "completed");
+  if (completed) {
+    const payload = { ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_NOOP_ALREADY_COMPLETED", existing_request_id: completed.request_id, existing_chain_id: completed.chain_id, existing_status: completed.status };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'scheduled_incremental_morning_full_run_noop_already_completed', 'Scheduled Incremental Morning Full Run did not enqueue because same Pacific-date parent already completed', ?, CURRENT_TIMESTAMP)",
+      completed.request_id, WORKER_NAME, "incremental-morning-full-run", JSON.stringify(payload)
+    );
+    return payload;
+  }
+
+  const failed = existingRows.find(r => ["failed", "blocked", "error"].includes(String(r.status || "")) || r.error_code);
+  if (failed) {
+    const payload = { ...basePayload, ok: false, data_ok: false, status: "BLOCKED_SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_SAME_DATE_FAILED_REQUIRES_REVIEW", existing_request_id: failed.request_id, existing_chain_id: failed.chain_id, existing_status: failed.status, existing_error_code: failed.error_code || null, existing_error_message: failed.error_message || null };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'ERROR', 'scheduled_incremental_morning_full_run_blocked_failed_same_date', 'Scheduled Incremental Morning Full Run blocked because same Pacific-date parent failed/blocked and requires review', ?, CURRENT_TIMESTAMP)",
+      failed.request_id, WORKER_NAME, "incremental-morning-full-run", JSON.stringify(payload)
+    );
+    return payload;
+  }
+
+  const requestId = `${scheduledDedupeKey}_${Date.now().toString(36)}_${randomToken(6)}`;
+  const chainId = `chain_${scheduledDedupeKey}_${Date.now().toString(36)}`;
+  const childModes = {};
+  for (const stage of INCREMENTAL_MORNING_FULL_RUN_STAGES) childModes[stage.job_key] = stage.mode;
+  const input = {
+    source: "orchestrator_scheduled",
+    visible_button: "SCHEDULED > Incremental Morning Full Run",
+    mode: "incremental_morning_full_run",
+    scheduled: true,
+    scheduled_or_manual: "scheduled",
+    scheduled_dedupe_key: scheduledDedupeKey,
+    scheduled_pacific_date: pt.ymd_dash,
+    scheduled_pacific_time: pt.local_time,
+    cron_expression: cronExpression,
+    created_at: nowIso(),
+    approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key),
+    child_modes: childModes,
+    stop_on_first_failed_stage: true,
+    max_retries_per_child: INCREMENTAL_MORNING_FULL_RUN_MAX_RETRIES_PER_STAGE,
+    stale_threshold_minutes: INCREMENTAL_MORNING_FULL_RUN_STALE_MINUTES,
+    backend_chain_only: true,
+    no_browser_loop: true,
+    backend_scheduled_continuation: true,
+    no_board_refresh_included: true,
+    board_refresh_deferred: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_old_production_touch: true
+  };
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'incremental-morning-full-run', 'alphadog-v2-orchestrator', 'Delta', 'incremental_base', 'Scheduled Incremental Morning Full Run Backend Chain', 'pending', 8, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    requestId, chainId, JSON.stringify(input)
+  );
+
+  const payload = { ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_QUEUED", request_id: requestId, chain_id: chainId, queued_job_key: "incremental-morning-full-run", queued_worker_name: WORKER_NAME, approved_chain_order: input.approved_chain_order, backend_chain_only: true };
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'scheduled_incremental_morning_full_run_queued', 'Scheduled Incremental Morning Full Run parent backend chain job queued', ?, CURRENT_TIMESTAMP)",
+    requestId, WORKER_NAME, "incremental-morning-full-run", JSON.stringify(payload)
+  );
+  return payload;
 }
+
 
 function parseScheduledLocalTimeHHMM(localTime) {
   const m = /^([0-2]\d):([0-5]\d)$/.exec(String(localTime || "").trim());
@@ -1145,12 +878,16 @@ const INCREMENTAL_MORNING_FULL_RUN_STAGES = [
   { stage_key: "hitter_game_logs_delta", job_key: "base-hitter-game-logs", worker_name: "alphadog-v2-base-hitter-game-logs", display_name: "Hitter Game Logs Delta", visible_button: "DELTA > Hitter Game Logs", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_game_logs_delta", job_key: "base-pitcher-game-logs", worker_name: "alphadog-v2-base-pitcher-game-logs", display_name: "Pitcher Game Logs Delta", visible_button: "DELTA > Pitcher Game Logs", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "team_game_logs_delta", job_key: "base-team-game-logs", worker_name: "alphadog-v2-base-team-game-logs", display_name: "Team Game Logs Delta", visible_button: "DELTA > Team Game Logs", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
-  { stage_key: "starter_history_delta", job_key: "base-starter-history", worker_name: "alphadog-v2-base-starter-history", display_name: "Starter History Delta", visible_button: "BASE > Starter History", mode: "delta_scoped_source_repair", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  { stage_key: "starter_history_delta", job_key: "base-starter-history", worker_name: "alphadog-v2-base-starter-history", display_name: "Starter History Delta", visible_button: "BASE > Starter History", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "bullpen_history_delta", job_key: "base-bullpen-history", worker_name: "alphadog-v2-base-bullpen-history", display_name: "Bullpen History Delta", visible_button: "BASE > Bullpen History", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "hitter_splits_delta", job_key: "base-hitter-splits", worker_name: "alphadog-v2-base-hitter-splits", display_name: "Hitter Splits Delta", visible_button: "DELTA > Hitter Splits", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_splits_delta", job_key: "base-pitcher-splits", worker_name: "alphadog-v2-base-pitcher-splits", display_name: "Pitcher Splits Delta", visible_button: "DELTA > Pitcher Splits", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "hitter_metrics_affected_delta", job_key: "base-hitter-metrics", worker_name: "alphadog-v2-base-hitter-metrics", display_name: "Hitter Metrics Affected Delta", visible_button: "DELTA > Hitter Metrics", mode: "delta_recalculate_affected_players", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_metrics_affected_delta", job_key: "base-pitcher-metrics", worker_name: "alphadog-v2-base-pitcher-metrics", display_name: "Pitcher Metrics Affected Delta", visible_button: "DELTA > Pitcher Metrics", mode: "delta_recalculate_affected_players", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  { stage_key: "calendar_tally_post_delta_check", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Post-Delta Check", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "post_delta_check", allow_blocking_gaps: true, post_delta_gap_discovery: true },
+  { stage_key: "post_final_team_game_logs_gap_repair", job_key: "base-team-game-logs", worker_name: "alphadog-v2-base-team-game-logs", display_name: "Post-Final Team Game Logs Gap Repair", visible_button: "DELTA > Team Game Logs", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, post_final_team_gap_repair: true },
+  { stage_key: "post_final_starter_history_gap_repair", job_key: "base-starter-history", worker_name: "alphadog-v2-base-starter-history", display_name: "Post-Final Starter History Gap Repair", visible_button: "BASE > Starter History", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, post_final_team_gap_repair: true },
+  { stage_key: "post_final_bullpen_history_gap_repair", job_key: "base-bullpen-history", worker_name: "alphadog-v2-base-bullpen-history", display_name: "Post-Final Bullpen History Gap Repair", visible_button: "BASE > Bullpen History", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, post_final_team_gap_repair: true },
   { stage_key: "calendar_tally_final_check", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Final Check", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "final_check", require_zero_blocking_gaps: true }
 ];
 
@@ -1241,13 +978,12 @@ function childPassedIncrementalMorningFullRun(stage, child) {
   if (!cert || hay.includes("dummy") || hay.includes("unsupported")) return { pass: false, reason: "missing_dummy_or_unsupported_certification", certification: cert, status };
   if (stage.job_key === "delta-certifier") {
     if (String(output.mode || "") !== "game_calendar_differential_check_update") return { pass: false, reason: "calendar_tally_wrong_mode", output_mode: output.mode };
-    if (Number(output.coverage_rows_written || 0) <= 0) return { pass: false, reason: "calendar_tally_no_coverage_rows_written", coverage_rows_written: output.coverage_rows_written };
     const blockingGapCount = Number(output.blocking_gap_count || 0);
     const missingGameLayerCount = Number(output.missing_game_layer_count || 0);
     if (stage.require_zero_blocking_gaps && (blockingGapCount > 0 || missingGameLayerCount > 0 || hay.includes("with_blockers"))) {
       return { pass: false, reason: "final_calendar_tally_has_blocking_gaps", blocking_gap_count: blockingGapCount, missing_game_layer_count: missingGameLayerCount, certification: cert, status };
     }
-    return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.source_game_count || 0, rows_written: output.coverage_rows_written || 0, blocking_gap_count: blockingGapCount, missing_game_layer_count: missingGameLayerCount, output };
+    return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.source_game_count || output.rows_read || 0, rows_written: output.coverage_rows_written || output.rows_written || 0, blocking_gap_count: blockingGapCount, missing_game_layer_count: missingGameLayerCount, output };
   }
   if (stage.mode === "delta_update" && hay.includes("base_backfill")) return { pass: false, reason: "base_backfill_certification_returned_during_delta_stage", certification: cert, status };
   if (stage.mode === "delta_recalculate_affected_players" && String(output.mode || "") !== "delta_recalculate_affected_players") return { pass: false, reason: "metrics_stage_wrong_mode", output_mode: output.mode };
@@ -1268,6 +1004,8 @@ function incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryC
     calendar_tally_stage: stage.calendar_tally_stage || null,
     require_zero_blocking_gaps: stage.require_zero_blocking_gaps === true,
     allow_blocking_gaps: stage.allow_blocking_gaps === true,
+    force_calendar_gap_repair: stage.post_final_team_gap_repair === true,
+    final_tally_team_gap_repair_loop: stage.post_final_team_gap_repair === true,
     visible_button: stage.visible_button,
     chain_id: parentRow.chain_id,
     parent_chain_id: parentRow.chain_id,
@@ -1286,8 +1024,6 @@ function incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryC
     no_ranking: true,
     no_final_board: true,
     no_old_production_touch: true,
-    calendar_tally_precheck_first: INCREMENTAL_MORNING_FULL_RUN_STAGES[0] && INCREMENTAL_MORNING_FULL_RUN_STAGES[0].stage_key === "calendar_tally_precheck",
-    calendar_tally_final_check_last: INCREMENTAL_MORNING_FULL_RUN_STAGES[INCREMENTAL_MORNING_FULL_RUN_STAGES.length - 1] && INCREMENTAL_MORNING_FULL_RUN_STAGES[INCREMENTAL_MORNING_FULL_RUN_STAGES.length - 1].stage_key === "calendar_tally_final_check",
     created_at: nowIso()
   };
 }
@@ -1400,11 +1136,331 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     stageReports.push(report);
   }
 
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_AND_ALL_BASE_DELTAS_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_final_check_last: true, final_calendar_tally_blocking_gap_count: 0, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_AND_ALL_BASE_DELTAS_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_post_delta_check_before_team_gap_repair: true, final_tally_team_gap_repair_loop: true, calendar_tally_final_check_last: true, final_calendar_tally_blocking_gap_count: 0, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
   await releaseIncrementalMorningFullRunLock(env, row);
-  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'INCREMENTAL_MORNING_FULL_RUN_CERTIFIED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
   await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_completed', 'Incremental Morning Full Run certified all incremental base/delta stages', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+  return output;
+}
+
+
+async function processDeltaCertifierJob(env, row, runId, trigger) {
+  if (!env.DELTA_CERTIFIER_WORKER || typeof env.DELTA_CERTIFIER_WORKER.fetch !== "function") {
+    const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "blocked_missing_service_binding", certification: "DELTA_CERTIFIER_SERVICE_BINDING_MISSING", trigger, note: "Exact dispatch requires DELTA_CERTIFIER_WORKER service binding." };
+    await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_delta_certifier_service_binding', 'DELTA_CERTIFIER_WORKER service binding is missing')", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output));
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_delta_certifier_service_binding', error_message='DELTA_CERTIFIER_WORKER service binding is missing' WHERE request_id=?", JSON.stringify(output), row.request_id);
+    return output;
+  }
+
+  const inputJson = parseJsonSafeText(row.input_json || "{}", {});
+  const input = { request_id: row.request_id, chain_id: row.chain_id, job_key: row.job_key, worker_name: row.worker_name, run_id: runId, trigger, mode: inputJson.mode || "game_calendar_coverage_audit", input_json: inputJson };
+  const started = Date.now();
+  let output;
+  let httpStatus = null;
+  try {
+    const resp = await env.DELTA_CERTIFIER_WORKER.fetch("https://internal.alphadog-v2-delta-certifier/run", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); }
+    catch (_) { output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) }; }
+  } catch (err) {
+    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+  }
+
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
+  const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
+  const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
+  const certification = String((output && output.certification) || (ok ? "delta_certifier_completed" : "delta_certifier_failed")).slice(0, 120);
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "delta_certifier_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "delta certifier worker failed").slice(0, 900);
+  const cappedOutput = { ...output, orchestrator_dispatch: { version: SYSTEM_VERSION, processed_by: WORKER_NAME, exact_worker_only: true, trigger, http_status: httpStatus, elapsed_ms: Date.now() - started, game_calendar_worker_modes: true, game_calendar_full_seed_supported: true, game_calendar_coverage_audit_supported: true, game_calendar_differential_check_update_supported: true, no_source_history_mutation: true, no_repair_jobs_created: true, no_scoring: true, no_ranking: true, no_final_board_write: true, no_old_production_touch: true } };
+
+  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
+  return cappedOutput;
+}
+
+async function processStaticCertifierJob(env, row, runId, trigger) {
+  if (!env.STATIC_CERTIFIER_WORKER || typeof env.STATIC_CERTIFIER_WORKER.fetch !== "function") {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      status: "blocked_missing_service_binding",
+      certification: "STATIC_CERTIFIER_SERVICE_BINDING_MISSING",
+      trigger,
+      note: "Exact dispatch is enabled only through STATIC_CERTIFIER_WORKER service binding. Deploy orchestrator with the services wrangler config."
+    };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_static_certifier_service_binding', 'STATIC_CERTIFIER_WORKER service binding is missing')",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
+    );
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_static_certifier_service_binding', error_message='STATIC_CERTIFIER_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id
+    );
+    return output;
+  }
+
+  const input = {
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    trigger,
+    mode: "orchestrator_exact_static_certifier_read_only_dispatch",
+    input_json: parseJsonSafeText(row.input_json || "{}", {})
+  };
+  const started = Date.now();
+  let output;
+  let httpStatus = null;
+  try {
+    const resp = await env.STATIC_CERTIFIER_WORKER.fetch("https://internal.alphadog-v2-static-certifier/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input)
+    });
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); }
+    catch (_) {
+      output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
+    }
+  } catch (err) {
+    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+  }
+  const partialContinue = false;
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
+  const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
+  const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
+  const certification = String((output && output.certification) || (ok ? "static_certifier_completed" : "static_certifier_failed")).slice(0, 120);
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "static_certifier_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "static certifier worker failed").slice(0, 900);
+  const cappedOutput = {
+    ...output,
+    orchestrator_dispatch: {
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      exact_worker_only: true,
+      trigger,
+      http_status: httpStatus,
+      elapsed_ms: Date.now() - started,
+      static_certifier_read_only: true,
+      no_reruns: true,
+      no_source_fetches: true,
+      no_promotion: true,
+      no_cleanup: true,
+      no_prizepicks_board_mutation: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board_write: true,
+      no_old_production_touch: true
+    }
+  };
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
+  );
+  if (partialContinue) {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'static_certifier_dispatch_completed', 'Orchestrator completed exact static-certifier read-only dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, certification, data_ok: dataOk, rows_read: rowsRead, rows_written: rowsWritten })
+  );
+  return cappedOutput;
+}
+
+async function processStaticFullRunJob(env, row, runId, trigger) {
+  const started = Date.now();
+  const parentInput = parseJsonSafeText(row.input_json || "{}", {});
+  const approvedStages = STATIC_FULL_RUN_STAGES;
+  const childRows = await all(env.CONTROL_DB,
+    "SELECT request_id, parent_request_id, chain_id, job_key, worker_name, status, output_json, error_code, error_message, created_at, updated_at FROM control_job_queue WHERE parent_request_id=? ORDER BY datetime(created_at) ASC",
+    row.request_id
+  );
+  const childByJob = new Map(childRows.map(c => [String(c.job_key), c]));
+  const stageReports = [];
+
+  for (let i = 0; i < approvedStages.length; i++) {
+    const stage = approvedStages[i];
+    const child = childByJob.get(stage.job_key);
+    if (!child) {
+      const childRequestId = rid(String(stage.job_key).replace(/-/g, "_"));
+      const input = staticFullRunChildInput(row, stage, i);
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'Static', 'static', ?, 'pending', 5, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+        childRequestId, row.chain_id, row.request_id, stage.job_key, stage.worker_name, stage.display_name, JSON.stringify(input)
+      );
+      const output = {
+        ok: true,
+        data_ok: true,
+        version: SYSTEM_VERSION,
+        worker_name: WORKER_NAME,
+        job_key: row.job_key,
+        request_id: row.request_id,
+        chain_id: row.chain_id,
+        status: "partial_continue",
+        current_stage: stage.job_key,
+        enqueued_child_request_id: childRequestId,
+        full_run_certified: false,
+        stages: [...stageReports, { job_key: stage.job_key, child_request_id: childRequestId, child_status: "pending", data_ok: null, certification: null, pass: null }],
+        deferred_workers_skipped: ["static-rosters", "static-player-aliases"],
+        note: "Static Full Run parent enqueued next active static stage. Backend wake/cron continues; browser may close."
+      };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'static_full_run_child_enqueued', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
+        runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
+      );
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+        JSON.stringify(output), row.request_id
+      );
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'static-full-run', 'INFO', 'static_full_run_stage_enqueued', 'Static Full Run parent enqueued next active static stage', ?, CURRENT_TIMESTAMP)",
+        row.request_id, runId, WORKER_NAME, JSON.stringify({ parent_request_id: row.request_id, child_request_id: childRequestId, stage: stage.job_key, stage_index: i, deferred_workers_skipped: ["static-rosters", "static-player-aliases"] })
+      );
+      return output;
+    }
+
+    if (String(child.status || "") === "pending" || String(child.status || "") === "running") {
+      const output = {
+        ok: true,
+        data_ok: true,
+        version: SYSTEM_VERSION,
+        worker_name: WORKER_NAME,
+        job_key: row.job_key,
+        request_id: row.request_id,
+        chain_id: row.chain_id,
+        status: "partial_continue",
+        current_stage: stage.job_key,
+        waiting_on_child_request_id: child.request_id,
+        waiting_on_child_status: child.status,
+        full_run_certified: false,
+        stages: [...stageReports, { job_key: stage.job_key, child_request_id: child.request_id, child_status: child.status, data_ok: null, certification: null, pass: null }],
+        note: "Static Full Run parent is waiting on current child stage. Backend wake/cron continues; browser may close."
+      };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'static_full_run_waiting_on_child', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
+        runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
+      );
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+        JSON.stringify(output), row.request_id
+      );
+      return output;
+    }
+
+    const validation = childPassedStaticFullRun(stage, child);
+    const childOutput = parseJsonSafeText(child.output_json || "{}", {});
+    const report = {
+      job_key: stage.job_key,
+      child_request_id: child.request_id,
+      child_status: child.status,
+      child_certification: childOutput.certification || null,
+      child_data_ok: childOutput.data_ok === true,
+      pass: validation.pass,
+      reason: validation.reason || null,
+      rows_read: childOutput.rows_read || 0,
+      rows_written: childOutput.rows_written || 0
+    };
+    stageReports.push(report);
+
+    if (!validation.pass) {
+      const output = {
+        ok: false,
+        data_ok: false,
+        version: SYSTEM_VERSION,
+        worker_name: WORKER_NAME,
+        job_key: row.job_key,
+        request_id: row.request_id,
+        chain_id: row.chain_id,
+        status: "failed_static_full_run_stage",
+        failed_stage: stage.job_key,
+        failed_child_request_id: child.request_id,
+        failed_reason: validation.reason,
+        stages: stageReports,
+        final_certifier_result: stage.job_key === "static-certifier" ? childOutput : null,
+        full_run_certified: false,
+        deferred_workers_skipped: ["static-rosters", "static-player-aliases"]
+      };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, 'STATIC_FULL_RUN_FAILED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, 'static_full_run_stage_failed', ?)",
+        runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), String(validation.reason || "static full run stage failed").slice(0, 900)
+      );
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='static_full_run_stage_failed', error_message=? WHERE request_id=?",
+        JSON.stringify(output), String(validation.reason || "static full run stage failed").slice(0, 900), row.request_id
+      );
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'static-full-run', 'ERROR', 'static_full_run_failed', 'Static Full Run stopped after failed child stage validation', ?, CURRENT_TIMESTAMP)",
+        row.request_id, runId, WORKER_NAME, JSON.stringify(output)
+      );
+      return output;
+    }
+  }
+
+  const finalCertifierRow = childByJob.get("static-certifier");
+  const finalCertifierOutput = parseJsonSafeText(finalCertifierRow && finalCertifierRow.output_json || "{}", {});
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    worker_name: WORKER_NAME,
+    job_key: row.job_key,
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    status: "completed_static_full_run_certified",
+    certification: "STATIC_FULL_RUN_CERTIFIED_ALL_ACTIVE_STATIC_WORKERS_RERAN_AND_FINAL_CERTIFIER_PASSED",
+    full_run_certified: true,
+    stages: stageReports,
+    final_certifier_result: {
+      child_request_id: finalCertifierRow ? finalCertifierRow.request_id : null,
+      certification: finalCertifierOutput.certification || null,
+      data_ok: finalCertifierOutput.data_ok === true,
+      full_static_certified: finalCertifierOutput.full_static_certified === true
+    },
+    deferred_workers_skipped: ["static-rosters", "static-player-aliases"],
+    no_browser_pump: true,
+    no_control_room_server_side_fetch_to_orchestrator: true,
+    no_generic_dispatch: true,
+    no_prizepicks_board_mutation: true,
+    no_scoring: true,
+    no_final_board_writes: true,
+    elapsed_ms: Date.now() - started
+  };
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'STATIC_FULL_RUN_CERTIFIED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
+  );
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+    JSON.stringify(output), row.request_id
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'static-full-run', 'INFO', 'static_full_run_certified', 'Static Full Run completed all active static stages and final certifier passed', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, JSON.stringify({ request_id: row.request_id, chain_id: row.chain_id, full_run_certified: true, stages: stageReports })
+  );
   return output;
 }
 
@@ -1506,7 +1562,6 @@ async function processStaticPropTaxonomyJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       no_prizepicks_board_mutation: true,
       no_scoring: true,
       no_ranking: true,
@@ -1538,68 +1593,6 @@ async function processStaticPropTaxonomyJob(env, row, runId, trigger) {
     row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, partial_continue: partialContinue })
   );
 
-  return cappedOutput;
-}
-
-
-async function processMarketContextSourceProbeJob(env, row, runId, trigger) {
-  if (!env.MARKET_NORMALIZER_WORKER || typeof env.MARKET_NORMALIZER_WORKER.fetch !== "function") {
-    const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_service_binding", certification:"MARKET_TEAMS_GAME_ODDS_SERVICE_BINDING_MISSING", trigger, note:"Exact dispatch requires MARKET_NORMALIZER_WORKER service binding. Do not generic-dispatch this worker." };
-    await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_market_normalizer_service_binding', 'MARKET_NORMALIZER_WORKER service binding is missing')", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output));
-    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_market_normalizer_service_binding', error_message='MARKET_NORMALIZER_WORKER service binding is missing' WHERE request_id=?", JSON.stringify(output), row.request_id);
-    return output;
-  }
-  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  const input = {
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    run_id: runId,
-    job_key: row.job_key,
-    worker_name: row.worker_name,
-    trigger,
-    mode: "market_teams_game_odds",
-    input_json: rowInput,
-    exact_worker_only: true,
-    teams_game_odds_real_worker_shape: true,
-    today_tomorrow_retention_only: true,
-    evidence_tables_only: true,
-    odds_api_game_odds_lane: true,
-    odds_api_sport_key: "baseball_mlb",
-    odds_api_markets: ["h2h", "spreads", "totals"],
-    odds_api_event_level_game_team_markets: ["team_totals", "alternate_spreads", "alternate_totals"],
-    no_player_props_in_this_worker: true,
-    parlay_player_prop_coverage_test_only: false,
-    no_market_current_lines_writes: true,
-    no_score_db_mutation: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    no_matrix_builder: true,
-    no_old_production_touch: true
-  };
-  const started = Date.now();
-  let output;
-  let httpStatus = null;
-  try {
-    const resp = await env.MARKET_NORMALIZER_WORKER.fetch("https://internal.alphadog-v2-market-normalizer/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) });
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
-  } catch (err) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) }; }
-  const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
-  const rowsRead = Number(output && (output.rows_read || output.prepared_rows_read) ? (output.rows_read || output.prepared_rows_read) : 0);
-  const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
-  const externalCalls = Number(output && (output.external_calls_performed || output.external_calls) ? (output.external_calls_performed || output.external_calls) : 0);
-  const certification = String((output && (output.certification || output.certification_status)) || (ok ? "market_teams_game_odds_completed" : "market_teams_game_odds_failed")).slice(0,120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "market_teams_game_odds_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "External Teams/Game Odds worker failed").slice(0,900);
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, teams_game_odds_real_worker_shape:true, today_tomorrow_retention_only:true, no_market_current_lines_writes:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_final_board_write:true, no_matrix_builder:true, no_old_production_touch:true } };
-  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
-  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'market_teams_game_odds_dispatch_completed', 'Orchestrator completed exact External Teams/Game Odds dispatch', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, dispatch: cappedOutput.orchestrator_dispatch }));
   return cappedOutput;
 }
 
@@ -1828,7 +1821,6 @@ async function processPrizePicksGithubBoardJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       no_generic_dispatch: true,
       prizepicks_dispatch_queue_close_fix_v0_2_97: true,
       no_scoring: true,
@@ -1962,7 +1954,6 @@ async function processParlaySleeperBoardJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       source_probe_only: true,
       no_generic_dispatch: true,
       no_prizepicks_mutation: true,
@@ -2100,7 +2091,6 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       base_backfill_self_continuation_v0_2_0: true,
       lock_busy_backoff_v0_2_3: true,
       direct_waituntil_continuation_v0_2_4: true,
@@ -2246,7 +2236,6 @@ async function processBaseHitterSplitsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       base_hitter_splits_v0_4_3_pitcher_parity_delta_dispatch: true,
       delta_hitter_splits_noop_restore_scoped_repair_daily_affected_refresh_gate: isDeltaHitterSplits,
       certified_stage_promotion_v0_3_0: !isDeltaHitterSplits,
@@ -2582,7 +2571,6 @@ async function processBasePitcherSplitsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       base_pitcher_splits_exact_dispatch: true,
       base_pitcher_splits_v0_5_10_stale_duplicate_rescue_dispatch: rowInput.mode === "delta_update_noop_restore_scoped_repair_gate",
       base_pitcher_splits_v0_5_1_delta_noop_restore_scoped_repair_gate_dispatch: rowInput.mode === "delta_update_noop_restore_scoped_repair_gate",
@@ -2726,7 +2714,6 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       base_pitcher_game_logs_scoped_delta_v0_4_1: true,
       base_or_delta_continuation: true,
       retained_stage_restore_before_queue_control_room: true,
@@ -2879,7 +2866,6 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       base_team_game_logs_base_backfill_or_delta_v0_3_1: true,
       hot_continuation_ready: true,
       backend_self_continuation_ready: true,
@@ -3154,7 +3140,6 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       base_starter_history_v0_4_4_scoped_repair_order_fix: starterMode === "delta_scoped_source_repair",
       base_starter_history_v0_4_2_retained_stage_restore_before_queue: starterMode === "delta_retained_stage_restore_before_queue",
       base_starter_history_v0_4_1_delta_noop_current_state: starterMode === "delta_noop_current_state",
@@ -3316,7 +3301,6 @@ async function processStaticTeamsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       no_prizepicks_board_mutation: true,
       no_opponent_backfill: true,
       no_scoring: true
@@ -3447,7 +3431,6 @@ async function processStaticStadiumsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       no_team_db_writes: true,
       no_prizepicks_board_mutation: true,
       no_opponent_backfill: true,
@@ -3579,7 +3562,6 @@ async function processStaticParkFactorsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       writes_only_ref_park_factors: true,
       no_team_db_writes: true,
       no_prizepicks_board_mutation: true,
@@ -3713,7 +3695,6 @@ async function processStaticPlayersJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       partial_continue: partialContinue,
       writes_only_ref_players_aliases_rosters: true,
       no_team_db_writes: true,
@@ -3749,1375 +3730,6 @@ async function processStaticPlayersJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
-
-
-async function processDailyProbablePitchersJob(env, row, runId, trigger) {
-  if (!env.DAILY_PROBABLE_PITCHERS_WORKER || typeof env.DAILY_PROBABLE_PITCHERS_WORKER.fetch !== "function") {
-    const output = {
-      ok: false,
-      data_ok: false,
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      worker_name: row.worker_name,
-      job_key: row.job_key,
-      status: "blocked_missing_service_binding",
-      certification: "DAILY_STARTERS_SERVICE_BINDING_MISSING",
-      trigger,
-      note: "Exact dispatch is enabled only through DAILY_PROBABLE_PITCHERS_WORKER service binding. Do not generic-dispatch this worker."
-    };
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_daily_probable_pitchers_service_binding', 'DAILY_PROBABLE_PITCHERS_WORKER service binding is missing')",
-      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
-    );
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_daily_probable_pitchers_service_binding', error_message='DAILY_PROBABLE_PITCHERS_WORKER service binding is missing' WHERE request_id=?",
-      JSON.stringify(output), row.request_id
-    );
-    return output;
-  }
-
-  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  const input = {
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    job_key: row.job_key,
-    worker_name: row.worker_name,
-    trigger,
-    mode: "orchestrator_exact_daily_starters_dispatch",
-    input_json: rowInput,
-    exact_worker_only: true,
-    prepared_board_relevance_only: true,
-    anchors_to_mlb_game_calendar_game_pk: true,
-    writes_daily_starters_context_only: true,
-    no_calendar_rebuild: true,
-    no_board_mutation: true,
-    no_lineups: true,
-    no_weather: true,
-    no_bullpen: true,
-    no_market_odds: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true
-  };
-
-  const started = Date.now();
-  let output;
-  let httpStatus = null;
-  try {
-    const resp = await env.DAILY_PROBABLE_PITCHERS_WORKER.fetch("https://internal.alphadog-v2-daily-probable-pitchers/run", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(input)
-    });
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); }
-    catch (_) {
-      output = {
-        ok: false,
-        data_ok: false,
-        version: SYSTEM_VERSION,
-        processed_by: WORKER_NAME,
-        worker_name: row.worker_name,
-        job_key: row.job_key,
-        status: "worker_non_json_response",
-        http_status: httpStatus,
-        response_preview: String(text || "").slice(0, 900)
-      };
-    }
-  } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
-  }
-
-  const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
-  const rowsRead = Number(output && (output.prepared_rows_read || output.teams_checked) ? (output.prepared_rows_read || output.teams_checked) : 0);
-  const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
-  const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
-  const certification = String((output && output.certification) || (ok ? "daily_starters_completed" : "daily_starters_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "daily_starters_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Daily Starters worker failed").slice(0, 900);
-  const cappedOutput = {
-    ...output,
-    orchestrator_dispatch: {
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      exact_worker_only: true,
-      trigger,
-      http_status: httpStatus,
-      elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
-      no_calendar_rebuild: true,
-      no_board_mutation: true,
-      no_lineups: true,
-      no_weather: true,
-      no_bullpen: true,
-      no_market_odds: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board_write: true,
-      no_old_production_touch: true
-    }
-  };
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
-    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
-  );
-
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_starters_dispatch_completed', 'Orchestrator completed exact Daily Starters dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, dispatch: cappedOutput.orchestrator_dispatch })
-  );
-
-  return cappedOutput;
-}
-
-
-function timeoutPromise(ms, payload) {
-  return new Promise((resolve) => setTimeout(() => resolve(payload), ms));
-}
-
-async function serviceFetchJsonWithTimeout(binding, url, input, timeoutMs, timeoutOutput) {
-  const fetchPromise = (async () => {
-    const resp = await binding.fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(input)
-    });
-    const httpStatus = resp.status;
-    const text = await resp.text();
-    let output;
-    try { output = JSON.parse(text); }
-    catch (_) {
-      output = {
-        ok: false,
-        data_ok: false,
-        version: SYSTEM_VERSION,
-        processed_by: WORKER_NAME,
-        status: "worker_non_json_response",
-        http_status: httpStatus,
-        response_preview: String(text || "").slice(0, 900)
-      };
-    }
-    return { timed_out: false, http_status: httpStatus, output };
-  })();
-  return await Promise.race([
-    fetchPromise,
-    timeoutPromise(timeoutMs, { timed_out: true, http_status: null, output: timeoutOutput })
-  ]);
-}
-
-async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
-  if (!env.DAILY_PLAYER_AVAILABILITY_WORKER || typeof env.DAILY_PLAYER_AVAILABILITY_WORKER.fetch !== "function") {
-    const output = {
-      ok: false,
-      data_ok: false,
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      worker_name: row.worker_name,
-      job_key: row.job_key,
-      status: "blocked_missing_service_binding",
-      certification: "DAILY_PLAYER_AVAILABILITY_SERVICE_BINDING_MISSING",
-      trigger,
-      note: "Exact dispatch is enabled only through DAILY_PLAYER_AVAILABILITY_WORKER service binding. Do not generic-dispatch this worker."
-    };
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_daily_player_availability_service_binding', 'DAILY_PLAYER_AVAILABILITY_WORKER service binding is missing')",
-      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
-    );
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_daily_player_availability_service_binding', error_message='DAILY_PLAYER_AVAILABILITY_WORKER service binding is missing' WHERE request_id=?",
-      JSON.stringify(output), row.request_id
-    );
-    return output;
-  }
-
-  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  const input = {
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    job_key: row.job_key,
-    worker_name: row.worker_name,
-    trigger,
-    mode: "daily_player_availability_refresh_window",
-    input_json: rowInput,
-    exact_worker_only: true,
-    prepared_board_relevance_only: true,
-    anchors_to_mlb_game_calendar_game_pk: true,
-    writes_daily_player_availability_sidecar_only: true,
-    sidecar_tables_only: true,
-    legacy_daily_player_availability_stub_untouched: true,
-    no_calendar_rebuild: true,
-    no_daily_game_status_duplication: true,
-    no_daily_starters_duplication: true,
-    no_daily_lineups: true,
-    no_board_mutation: true,
-    no_weather: true,
-    no_bullpen: true,
-    no_market_odds: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    no_old_production_touch: true
-  };
-
-  const started = Date.now();
-  let output;
-  let httpStatus = null;
-  try {
-    const timeoutMs = 110000;
-    const timeoutOutput = {
-      ok: false,
-      data_ok: false,
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      worker_name: row.worker_name,
-      job_key: row.job_key,
-      status: "worker_dispatch_timeout",
-      certification: "DAILY_PLAYER_AVAILABILITY_DISPATCH_TIMEOUT_TERMINAL_FAIL",
-      timeout_ms: timeoutMs,
-      note: "Daily Player Availability did not return within the bounded service-binding timeout; orchestrator is terminal-failing the child instead of leaving it running forever."
-    };
-    const result = await serviceFetchJsonWithTimeout(env.DAILY_PLAYER_AVAILABILITY_WORKER, "https://internal.alphadog-v2-daily-player-availability/run", input, timeoutMs, timeoutOutput);
-    httpStatus = result.http_status;
-    output = { ...result.output, dispatch_timed_out: result.timed_out === true };
-    if (result.timed_out) {
-      try {
-        await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1
-          SET status='failed',
-              certification_status='DAILY_PLAYER_AVAILABILITY_DISPATCH_TIMEOUT_TERMINAL_FAIL',
-              certification_grade='FAIL',
-              certification_reason='Orchestrator timed out waiting for Daily Player Availability service-binding response and terminal-failed the orphan running batch.',
-              completed_at=CURRENT_TIMESTAMP,
-              updated_at=CURRENT_TIMESTAMP
-          WHERE request_id=? AND status='running'`, row.request_id);
-      } catch (_) {}
-    }
-  } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
-  }
-
-  const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
-  const rowsRead = Number(output && (output.prepared_rows_read || output.prepared_players_checked) ? (output.prepared_rows_read || output.prepared_players_checked) : 0);
-  const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
-  const externalCalls = Number(output && (output.external_calls_performed || output.external_calls) ? (output.external_calls_performed || output.external_calls) : 0);
-  const certification = String((output && output.certification) || (ok ? "daily_player_availability_completed" : "daily_player_availability_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "daily_player_availability_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Daily Player Availability worker failed").slice(0, 900);
-  const cappedOutput = {
-    ...output,
-    orchestrator_dispatch: {
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      exact_worker_only: true,
-      trigger,
-      http_status: httpStatus,
-      elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
-      sidecar_tables_only: true,
-      no_calendar_rebuild: true,
-      no_daily_game_status_duplication: true,
-      no_daily_starters_duplication: true,
-      no_daily_lineups: true,
-      no_board_mutation: true,
-      no_weather: true,
-      no_bullpen: true,
-      no_market_odds: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board_write: true,
-      no_old_production_touch: true
-    }
-  };
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
-    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
-  );
-
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_player_availability_dispatch_completed', 'Orchestrator completed exact Daily Player Availability dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, dispatch: cappedOutput.orchestrator_dispatch })
-  );
-
-  return cappedOutput;
-}
-
-async function processDailyWeatherJob(env, row, runId, trigger) {
-  if (!env.DAILY_WEATHER_WORKER || typeof env.DAILY_WEATHER_WORKER.fetch !== "function") {
-    const output = {
-      ok: false,
-      data_ok: false,
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      worker_name: row.worker_name,
-      job_key: row.job_key,
-      status: "blocked_missing_service_binding",
-      certification: "DAILY_WEATHER_SERVICE_BINDING_MISSING",
-      trigger,
-      note: "Exact dispatch is enabled only through DAILY_WEATHER_WORKER service binding. Do not generic-dispatch this worker."
-    };
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_daily_weather_service_binding', 'DAILY_WEATHER_WORKER service binding is missing')",
-      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
-    );
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_daily_weather_service_binding', error_message='DAILY_WEATHER_WORKER service binding is missing' WHERE request_id=?",
-      JSON.stringify(output), row.request_id
-    );
-    return output;
-  }
-
-  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  const input = {
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    job_key: row.job_key,
-    worker_name: row.worker_name,
-    trigger,
-    mode: "daily_weather_refresh_window",
-    input_json: rowInput,
-    exact_worker_only: true,
-    prepared_board_relevance_only: true,
-    anchors_to_mlb_game_calendar_game_pk: true,
-    writes_daily_weather_roof_context_only: true,
-    unified_weather_roof_context: true,
-    volatile_current_retention_today_tomorrow_only: true,
-    static_reference_data_read_only: true,
-    legacy_daily_weather_stub_untouched: true,
-    legacy_daily_roof_status_stub_untouched: true,
-    no_calendar_rebuild: true,
-    no_daily_game_status_duplication: true,
-    no_daily_starters_duplication: true,
-    no_daily_lineups: true,
-    no_daily_player_availability_duplication: true,
-    no_board_mutation: true,
-    no_bullpen: true,
-    no_market_odds: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    no_old_production_touch: true
-  };
-
-  const started = Date.now();
-  let output;
-  let httpStatus = null;
-  try {
-    const resp = await env.DAILY_WEATHER_WORKER.fetch("https://internal.alphadog-v2-daily-weather/run", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(input)
-    });
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); }
-    catch (_) {
-      output = {
-        ok: false,
-        data_ok: false,
-        version: SYSTEM_VERSION,
-        processed_by: WORKER_NAME,
-        worker_name: row.worker_name,
-        job_key: row.job_key,
-        status: "worker_non_json_response",
-        http_status: httpStatus,
-        response_preview: String(text || "").slice(0, 900)
-      };
-    }
-  } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
-  }
-
-  const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
-  const rowsRead = Number(output && (output.prepared_rows_read || output.prepared_games_checked) ? (output.prepared_rows_read || output.prepared_games_checked) : 0);
-  const rowsWritten = Number(output && output.weather_rows_written ? output.weather_rows_written : (output && output.rows_written ? output.rows_written : 0));
-  const externalCalls = Number(output && (output.external_calls || output.external_calls_performed) ? (output.external_calls || output.external_calls_performed) : 0);
-  const certification = String((output && output.certification) || (ok ? "daily_weather_completed" : "daily_weather_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "daily_weather_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Daily Weather worker failed").slice(0, 900);
-  const cappedOutput = {
-    ...output,
-    orchestrator_dispatch: {
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      exact_worker_only: true,
-      trigger,
-      http_status: httpStatus,
-      elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
-      unified_weather_roof_context: true,
-      volatile_current_retention_today_tomorrow_only: true,
-      static_reference_data_read_only: true,
-      no_calendar_rebuild: true,
-      no_daily_game_status_duplication: true,
-      no_daily_starters_duplication: true,
-      no_daily_lineups: true,
-      no_daily_player_availability_duplication: true,
-      no_board_mutation: true,
-      no_bullpen: true,
-      no_market_odds: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board_write: true,
-      no_old_production_touch: true
-    }
-  };
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
-    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
-  );
-
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_weather_dispatch_completed', 'Orchestrator completed exact Daily Weather/Roof dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, dispatch: cappedOutput.orchestrator_dispatch })
-  );
-
-  return cappedOutput;
-}
-
-
-async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
-  if (!env.DAILY_SCHEDULE_WORKER || typeof env.DAILY_SCHEDULE_WORKER.fetch !== "function") {
-    const output = {
-      ok: false,
-      data_ok: false,
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      worker_name: row.worker_name,
-      job_key: row.job_key,
-      status: "blocked_missing_service_binding",
-      certification: "DAILY_TEAM_SCHEDULE_SPOT_SERVICE_BINDING_MISSING",
-      trigger,
-      note: "Exact dispatch is enabled only through DAILY_SCHEDULE_WORKER service binding. Do not generic-dispatch this worker."
-    };
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_daily_team_schedule_spot_service_binding', 'DAILY_SCHEDULE_WORKER service binding is missing')",
-      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
-    );
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_daily_team_schedule_spot_service_binding', error_message='DAILY_SCHEDULE_WORKER service binding is missing' WHERE request_id=?",
-      JSON.stringify(output), row.request_id
-    );
-    return output;
-  }
-
-  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  const input = {
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    job_key: row.job_key,
-    worker_name: row.worker_name,
-    trigger,
-    mode: "daily_team_schedule_spot_refresh_window",
-    input_json: rowInput,
-    exact_worker_only: true,
-    prepared_board_relevance_only: true,
-    anchors_to_mlb_game_calendar_game_pk: true,
-    writes_daily_team_schedule_spot_context_only: true,
-    volatile_current_snapshot_issue_retention_today_tomorrow_only: true,
-    batches_retained_for_audit: true,
-    no_external_sources: true,
-    no_calendar_rebuild: true,
-    no_daily_game_status_duplication: true,
-    no_daily_starters_duplication: true,
-    no_daily_lineups_duplication: true,
-    no_daily_player_availability_duplication: true,
-    no_daily_weather_duplication: true,
-    no_daily_bullpen_duplication: true,
-    no_board_mutation: true,
-    no_market_odds: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    no_old_production_touch: true
-  };
-
-  const started = Date.now();
-  let output;
-  let httpStatus = null;
-  try {
-    const resp = await env.DAILY_SCHEDULE_WORKER.fetch("https://internal.alphadog-v2-daily-schedule/run", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(input)
-    });
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); }
-    catch (_) {
-      output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
-    }
-  } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
-  }
-
-  const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
-  const rowsRead = Number(output && (output.prepared_rows_read || output.teams_checked) ? (output.prepared_rows_read || output.teams_checked) : 0);
-  const rowsWritten = Number(output && (output.team_rows_written || output.rows_written) ? (output.team_rows_written || output.rows_written) : 0);
-  const externalCalls = Number(output && (output.external_calls || output.external_calls_performed) ? (output.external_calls || output.external_calls_performed) : 0);
-  const certification = String((output && output.certification) || (ok ? "daily_team_schedule_spot_completed" : "daily_team_schedule_spot_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "daily_team_schedule_spot_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Daily Team Schedule Spot worker failed").slice(0, 900);
-  const cappedOutput = {
-    ...output,
-    orchestrator_dispatch: {
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      exact_worker_only: true,
-      trigger,
-      http_status: httpStatus,
-      elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
-      volatile_current_snapshot_issue_retention_today_tomorrow_only: true,
-      no_external_sources: true,
-      no_calendar_rebuild: true,
-      no_daily_game_status_duplication: true,
-      no_daily_starters_duplication: true,
-      no_daily_lineups_duplication: true,
-      no_daily_player_availability_duplication: true,
-      no_daily_weather_duplication: true,
-      no_daily_bullpen_duplication: true,
-      no_board_mutation: true,
-      no_market_odds: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board_write: true,
-      no_old_production_touch: true
-    }
-  };
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
-    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
-  );
-
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_team_schedule_spot_dispatch_completed', 'Orchestrator completed exact Daily Team Schedule Spot dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, dispatch: cappedOutput.orchestrator_dispatch })
-  );
-
-  return cappedOutput;
-}
-
-async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
-  if (!env.DAILY_BULLPEN_AVAILABILITY_WORKER || typeof env.DAILY_BULLPEN_AVAILABILITY_WORKER.fetch !== "function") {
-    const output = {
-      ok: false,
-      data_ok: false,
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      worker_name: row.worker_name,
-      job_key: row.job_key,
-      status: "blocked_missing_service_binding",
-      certification: "DAILY_BULLPEN_SERVICE_BINDING_MISSING",
-      trigger,
-      note: "Exact dispatch is enabled only through DAILY_BULLPEN_AVAILABILITY_WORKER service binding. Do not generic-dispatch this worker."
-    };
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_daily_bullpen_availability_service_binding', 'DAILY_BULLPEN_AVAILABILITY_WORKER service binding is missing')",
-      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
-    );
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_daily_bullpen_availability_service_binding', error_message='DAILY_BULLPEN_AVAILABILITY_WORKER service binding is missing' WHERE request_id=?",
-      JSON.stringify(output), row.request_id
-    );
-    return output;
-  }
-
-  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  const input = {
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    job_key: row.job_key,
-    worker_name: row.worker_name,
-    trigger,
-    mode: "daily_bullpen_availability_refresh_window",
-    input_json: rowInput,
-    exact_worker_only: true,
-    internal_source_only_v0_1: true,
-    primary_source_table: "TEAM_DB.bullpen_history",
-    prepared_board_relevance_only: true,
-    anchors_to_mlb_game_calendar_game_pk: true,
-    writes_daily_bullpen_context_only: true,
-    volatile_current_retention_today_tomorrow_only: true,
-    no_external_sources: true,
-    no_calendar_rebuild: true,
-    no_daily_game_status_duplication: true,
-    no_daily_starters_duplication: true,
-    no_daily_lineups_duplication: true,
-    no_daily_player_availability_dependency: true,
-    no_board_mutation: true,
-    no_weather: true,
-    no_market_odds: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    no_old_production_touch: true
-  };
-
-  const started = Date.now();
-  let output;
-  let httpStatus = null;
-  try {
-    const resp = await env.DAILY_BULLPEN_AVAILABILITY_WORKER.fetch("https://internal.alphadog-v2-daily-bullpen-availability/run", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(input)
-    });
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); }
-    catch (_) {
-      output = {
-        ok: false,
-        data_ok: false,
-        version: SYSTEM_VERSION,
-        processed_by: WORKER_NAME,
-        worker_name: row.worker_name,
-        job_key: row.job_key,
-        status: "worker_non_json_response",
-        http_status: httpStatus,
-        response_preview: String(text || "").slice(0, 900)
-      };
-    }
-  } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
-  }
-
-  const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
-  const rowsRead = Number(output && (output.prepared_rows_read || output.teams_checked) ? (output.prepared_rows_read || output.teams_checked) : 0);
-  const rowsWritten = Number(output && (output.team_rows_written || output.rows_written) ? (output.team_rows_written || output.rows_written) : 0);
-  const externalCalls = Number(output && (output.external_calls || output.external_calls_performed) ? (output.external_calls || output.external_calls_performed) : 0);
-  const certification = String((output && output.certification) || (ok ? "daily_bullpen_completed" : "daily_bullpen_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "daily_bullpen_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Daily Bullpen Availability worker failed").slice(0, 900);
-  const cappedOutput = {
-    ...output,
-    orchestrator_dispatch: {
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      exact_worker_only: true,
-      trigger,
-      http_status: httpStatus,
-      elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
-      internal_source_only_v0_1: true,
-      primary_source_table: "TEAM_DB.bullpen_history",
-      volatile_current_retention_today_tomorrow_only: true,
-      no_external_sources: true,
-      no_calendar_rebuild: true,
-      no_daily_game_status_duplication: true,
-      no_daily_starters_duplication: true,
-      no_daily_lineups_duplication: true,
-      no_daily_player_availability_dependency: true,
-      no_board_mutation: true,
-      no_weather: true,
-      no_market_odds: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board_write: true,
-      no_old_production_touch: true
-    }
-  };
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
-    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
-  );
-
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_bullpen_dispatch_completed', 'Orchestrator completed exact Daily Bullpen Availability dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, dispatch: cappedOutput.orchestrator_dispatch })
-  );
-
-  return cappedOutput;
-}
-
-async function processDailyUmpireContextJob(env, row, runId, trigger) {
-  if (!env.DAILY_USAGE_PULSE_WORKER || typeof env.DAILY_USAGE_PULSE_WORKER.fetch !== "function") {
-    const output = {
-      ok: false,
-      data_ok: false,
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      worker_name: row.worker_name,
-      job_key: row.job_key,
-      status: "blocked_missing_service_binding",
-      certification: "DAILY_UMPIRE_SERVICE_BINDING_MISSING",
-      trigger,
-      note: "Exact dispatch uses the existing DAILY_USAGE_PULSE_WORKER dummy slot to avoid worker_manifest/global deploy changes. Do not generic-dispatch this worker."
-    };
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_daily_umpire_context_existing_usage_pulse_service_binding', 'DAILY_USAGE_PULSE_WORKER service binding is missing')",
-      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
-    );
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_daily_umpire_context_existing_usage_pulse_service_binding', error_message='DAILY_USAGE_PULSE_WORKER service binding is missing' WHERE request_id=?",
-      JSON.stringify(output), row.request_id
-    );
-    return output;
-  }
-
-  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  const input = {
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    job_key: row.job_key,
-    worker_name: row.worker_name,
-    trigger,
-    mode: "daily_umpire_context_refresh_window",
-    input_json: rowInput,
-    exact_worker_only: true,
-    prepared_board_relevance_only: true,
-    anchors_to_mlb_game_calendar_game_pk: true,
-    writes_daily_umpire_context_only: true,
-    game_level_one_row_per_game_pk: true,
-    volatile_current_snapshot_issue_retention_today_tomorrow_only: true,
-    batches_retained_for_audit: true,
-    missing_assignment_warning_only_v0_1: true,
-    official_mlb_source_probe_only: true,
-    no_secondary_scrapers: true,
-    no_paid_sources: true,
-    no_umpire_tendencies_without_verified_history: true,
-    no_calendar_rebuild: true,
-    no_daily_game_status_duplication: true,
-    no_daily_starters_duplication: true,
-    no_daily_lineups_duplication: true,
-    no_daily_player_availability_duplication: true,
-    no_daily_weather_duplication: true,
-    no_daily_bullpen_duplication: true,
-    no_daily_team_schedule_spot_duplication: true,
-    no_board_mutation: true,
-    no_market_odds: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    no_old_production_touch: true
-  };
-
-  const started = Date.now();
-  let output;
-  let httpStatus = null;
-  try {
-    const resp = await env.DAILY_USAGE_PULSE_WORKER.fetch("https://internal.alphadog-v2-daily-usage-pulse/run", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(input)
-    });
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); }
-    catch (_) {
-      output = {
-        ok: false,
-        data_ok: false,
-        version: SYSTEM_VERSION,
-        processed_by: WORKER_NAME,
-        worker_name: row.worker_name,
-        job_key: row.job_key,
-        status: "worker_non_json_response",
-        http_status: httpStatus,
-        response_preview: String(text || "").slice(0, 900)
-      };
-    }
-  } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
-  }
-
-  const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
-  const rowsRead = Number(output && (output.prepared_rows_read || output.games_checked) ? (output.prepared_rows_read || output.games_checked) : 0);
-  const rowsWritten = Number(output && (output.game_rows_written || output.rows_written) ? (output.game_rows_written || output.rows_written) : 0);
-  const externalCalls = Number(output && (output.external_calls || output.external_calls_performed) ? (output.external_calls || output.external_calls_performed) : 0);
-  const certification = String((output && output.certification) || (ok ? "daily_umpire_completed" : "daily_umpire_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "daily_umpire_context_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Daily Umpire Context worker failed").slice(0, 900);
-  const cappedOutput = {
-    ...output,
-    orchestrator_dispatch: {
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      exact_worker_only: true,
-      trigger,
-      http_status: httpStatus,
-      elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
-      official_mlb_source_probe_only: true,
-      missing_assignment_warning_only_v0_1: true,
-      game_level_one_row_per_game_pk: true,
-      volatile_current_snapshot_issue_retention_today_tomorrow_only: true,
-      no_secondary_scrapers: true,
-      no_paid_sources: true,
-      no_umpire_tendencies_without_verified_history: true,
-      no_calendar_rebuild: true,
-      no_daily_game_status_duplication: true,
-      no_daily_starters_duplication: true,
-      no_daily_lineups_duplication: true,
-      no_daily_player_availability_duplication: true,
-      no_daily_weather_duplication: true,
-      no_daily_bullpen_duplication: true,
-      no_daily_team_schedule_spot_duplication: true,
-      no_board_mutation: true,
-      no_market_odds: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board_write: true,
-      no_old_production_touch: true
-    }
-  };
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
-    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
-  );
-
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_umpire_context_dispatch_completed', 'Orchestrator completed exact Daily Umpire Context dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, dispatch: cappedOutput.orchestrator_dispatch })
-  );
-
-  return cappedOutput;
-}
-
-
-async function processDailyContextCertifierJob(env, row, runId, trigger) {
-  if (!env.DAILY_CERTIFIER_WORKER || typeof env.DAILY_CERTIFIER_WORKER.fetch !== "function") {
-    const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_service_binding", certification:"DAILY_CONTEXT_CERTIFIER_SERVICE_BINDING_MISSING", trigger, note:"Exact dispatch requires DAILY_CERTIFIER_WORKER service binding. Do not generic-dispatch this worker." };
-    await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_daily_context_certifier_service_binding', 'DAILY_CERTIFIER_WORKER service binding is missing')", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output));
-    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_daily_context_certifier_service_binding', error_message='DAILY_CERTIFIER_WORKER service binding is missing' WHERE request_id=?", JSON.stringify(output), row.request_id);
-    return output;
-  }
-  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  const input = { request_id: row.request_id, chain_id: row.chain_id, job_key: row.job_key, worker_name: row.worker_name, trigger, mode:"daily_context_readiness_refresh_window", input_json: rowInput, exact_worker_only:true, readiness_enrichment_only:true, not_strict_all_context_enforcement:true, prepared_board_relevance_only:true, reads_locked_daily_context_sidecars_only:true, volatile_current_issue_retention_today_tomorrow_only:true, batches_retained_for_audit:true, no_external_calls:true, no_sidecar_repair:true, no_calendar_rebuild:true, no_daily_game_status_duplication:true, no_board_mutation:true, no_market_odds:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true, no_old_production_touch:true };
-  const started = Date.now();
-  let output;
-  let httpStatus = null;
-  try {
-    const resp = await env.DAILY_CERTIFIER_WORKER.fetch("https://internal.alphadog-v2-daily-certifier/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) });
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
-  } catch (err) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) }; }
-  const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
-  const rowsRead = Number(output && output.prepared_rows_read ? output.prepared_rows_read : 0);
-  const rowsWritten = Number(output && (output.current_rows_written || output.rows_written) ? (output.current_rows_written || output.rows_written) : 0);
-  const externalCalls = Number(output && (output.external_calls || output.external_calls_performed) ? (output.external_calls || output.external_calls_performed) : 0);
-  const certification = String((output && output.certification) || (ok ? "daily_context_certifier_completed" : "daily_context_certifier_failed")).slice(0,120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "daily_context_certifier_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Daily Context Certifier worker failed").slice(0,900);
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, readiness_enrichment_only:true, not_strict_all_context_enforcement:true, volatile_current_issue_retention_today_tomorrow_only:true, no_external_calls:true, no_sidecar_repair:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board_write:true, no_old_production_touch:true } };
-  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
-  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_context_certifier_dispatch_completed', 'Orchestrator completed exact Daily Context Readiness dispatch', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, dispatch: cappedOutput.orchestrator_dispatch }));
-  return cappedOutput;
-}
-
-
-const DAILY_CONTEXT_FULL_RUN_LOCK_KEY = "DAILY_CONTEXT_FULL_RUN";
-const DAILY_CONTEXT_FULL_RUN_STALE_MINUTES = 20;
-
-const DAILY_CONTEXT_FULL_RUN_STAGES = [
-  { stage_key: "daily_starters", job_key: "daily-probable-pitchers", worker_name: "alphadog-v2-daily-probable-pitchers", display_name: "Daily Starters", visible_button: "DAILY JOBS > Starters", mode: "daily_context_full_run_starters", worker_group: "Daily", phase_key: "daily", priority: 5 },
-  { stage_key: "daily_lineups", job_key: "daily-lineups", worker_name: "alphadog-v2-daily-lineups", display_name: "Daily Lineups", visible_button: "DAILY JOBS > Lineups", mode: "daily_context_full_run_lineups", worker_group: "Daily", phase_key: "daily", priority: 5 },
-  { stage_key: "daily_player_availability", job_key: "daily-player-availability", worker_name: "alphadog-v2-daily-player-availability", display_name: "Daily Player Availability", visible_button: "DAILY JOBS > Availability", mode: "daily_context_full_run_player_availability", worker_group: "Daily", phase_key: "daily", priority: 5 },
-  { stage_key: "daily_weather_roof", job_key: "daily-weather", worker_name: "alphadog-v2-daily-weather", display_name: "Daily Weather / Roof", visible_button: "DAILY JOBS > Weather / Roof", mode: "daily_context_full_run_weather_roof", worker_group: "Daily", phase_key: "daily", priority: 5 },
-  { stage_key: "daily_bullpen_availability", job_key: "daily-bullpen-availability", worker_name: "alphadog-v2-daily-bullpen-availability", display_name: "Daily Bullpen Availability", visible_button: "DAILY JOBS > Bullpen", mode: "daily_context_full_run_bullpen", worker_group: "Daily", phase_key: "daily", priority: 5 },
-  { stage_key: "daily_team_schedule_spot", job_key: "daily-team-schedule-spot", worker_name: "alphadog-v2-daily-schedule", display_name: "Daily Team Schedule Spot", visible_button: "DAILY JOBS > Team Spot", mode: "daily_context_full_run_team_schedule_spot", worker_group: "Daily", phase_key: "daily", priority: 5 },
-  { stage_key: "daily_umpire_context", job_key: "daily-umpire-context", worker_name: "alphadog-v2-daily-usage-pulse", display_name: "Daily Umpire Context", visible_button: "DAILY JOBS > Umpire", mode: "daily_context_full_run_umpire", worker_group: "Daily", phase_key: "daily", priority: 5 },
-  { stage_key: "daily_context_certifier", job_key: "daily-certifier", worker_name: "alphadog-v2-daily-certifier", display_name: "Daily Context Readiness Certifier", visible_button: "DAILY JOBS > Context Cert", mode: "daily_context_full_run_certifier", worker_group: "Daily", phase_key: "daily", priority: 5 }
-];
-
-function dailyContextFullRunStageBoundary(stage) {
-  const stageKey = String(stage && stage.stage_key || "");
-  const jobKey = String(stage && stage.job_key || "");
-
-  // v0.2.137: every Daily Context child is run behind a hard request boundary.
-  // The prior one-hop hot loop could enqueue a child, immediately dispatch that
-  // child inside the same bounded continuation chain, let the child write DAILY_DB
-  // rows, and still lose the terminal control_job_runs row. That produced the
-  // exact orphan/stuck states seen on Player Availability, Bullpen, and Team Spot.
-  const hardBoundaryStages = new Set([
-    "daily_starters",
-    "daily_lineups",
-    "daily_player_availability",
-    "daily_weather_roof",
-    "daily_bullpen_availability",
-    "daily_team_schedule_spot",
-    "daily_umpire_context",
-    "daily_context_certifier"
-  ]);
-
-  if (hardBoundaryStages.has(stageKey)) {
-    const heavier = new Set([
-      "daily_player_availability",
-      "daily_weather_roof",
-      "daily_bullpen_availability",
-      "daily_team_schedule_spot",
-      "daily_umpire_context",
-      "daily_context_certifier"
-    ]).has(stageKey);
-    return {
-      hard_boundary: true,
-      child_delay_seconds: heavier ? 3 : 2,
-      parent_delay_seconds: heavier ? 35 : 20,
-      reason: `daily_context_hard_request_boundary_for_${stageKey || jobKey || "unknown_stage"}`
-    };
-  }
-
-  return { hard_boundary: false, child_delay_seconds: 0, parent_delay_seconds: 0, reason: null };
-}
-
-function dailyContextFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
-  return {
-    source: "daily_context_full_run_parent",
-    parent_request_id: parentRow.request_id,
-    chain_id: parentRow.chain_id,
-    stage_key: stage.stage_key,
-    stage_index: stepIndex,
-    retry_count: retryCount,
-    visible_button: stage.visible_button,
-    mode: stage.mode,
-    daily_context_full_run_child: true,
-    exact_worker_only: true,
-    prepared_board_relevance_only: true,
-    today_tomorrow_retention_only: true,
-    volatile_current_issue_retention_today_tomorrow_only: true,
-    batches_retained_for_audit: true,
-    reads_locked_daily_context_sidecars_only: stage.job_key === "daily-certifier",
-    refreshes_one_daily_sidecar_only: stage.job_key !== "daily-certifier",
-    no_calendar_rebuild: true,
-    no_daily_game_status_duplication: true,
-    no_board_mutation: true,
-    no_market_odds: true,
-    no_score_db_mutation: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    no_old_production_touch: true,
-    created_at: nowIso()
-  };
-}
-
-async function ensureDailyContextFullRunLock(env, parentRow) {
-  await run(env.CONTROL_DB, "INSERT OR IGNORE INTO control_locks (lock_key, lock_flag, updated_at) VALUES (?, 0, CURRENT_TIMESTAMP)", DAILY_CONTEXT_FULL_RUN_LOCK_KEY);
-  const lock = await first(env.CONTROL_DB,
-    "SELECT lock_key, lock_flag, owner_request_id, owner_worker_name, acquired_at, expires_at, updated_at, CASE WHEN expires_at IS NOT NULL AND datetime(expires_at) > datetime('now') THEN 1 ELSE 0 END AS not_expired FROM control_locks WHERE lock_key=?",
-    DAILY_CONTEXT_FULL_RUN_LOCK_KEY
-  );
-  const activeOther = await first(env.CONTROL_DB,
-    "SELECT request_id, chain_id, status, updated_at FROM control_job_queue WHERE job_key='daily-context-full-run' AND request_id<>? AND status IN ('pending','running','partial_continue') AND finished_at IS NULL ORDER BY datetime(created_at) DESC LIMIT 1",
-    parentRow.request_id
-  );
-  if (lock && Number(lock.lock_flag) === 1 && lock.owner_request_id && lock.owner_request_id !== parentRow.request_id && Number(lock.not_expired) === 1) {
-    return { ok: false, reason: "daily_context_full_run_lock_busy", lock, active_other_parent: activeOther || null };
-  }
-  if (lock && Number(lock.lock_flag) === 1 && lock.owner_request_id && lock.owner_request_id !== parentRow.request_id && activeOther) {
-    return { ok: false, reason: "daily_context_full_run_active_parent_exists", lock, active_other_parent: activeOther };
-  }
-  await run(env.CONTROL_DB,
-    "UPDATE control_locks SET lock_flag=1, owner_request_id=?, owner_worker_name=?, acquired_at=COALESCE(acquired_at,CURRENT_TIMESTAMP), expires_at=datetime('now','+20 minutes'), updated_at=CURRENT_TIMESTAMP WHERE lock_key=?",
-    parentRow.request_id, WORKER_NAME, DAILY_CONTEXT_FULL_RUN_LOCK_KEY
-  );
-  return { ok: true, recovered_stale_lock: !!(lock && Number(lock.lock_flag) === 1 && lock.owner_request_id !== parentRow.request_id) };
-}
-
-async function releaseDailyContextFullRunLock(env, parentRow) {
-  await run(env.CONTROL_DB,
-    "UPDATE control_locks SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE lock_key=? AND (owner_request_id=? OR owner_request_id IS NULL)",
-    DAILY_CONTEXT_FULL_RUN_LOCK_KEY, parentRow.request_id
-  );
-}
-
-async function enqueueDailyContextFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0) {
-  const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
-  const input = dailyContextFullRunChildInput(parentRow, stage, stepIndex, retryCount);
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-    childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input)
-  );
-
-  const boundary = dailyContextFullRunStageBoundary(stage);
-  if (boundary.hard_boundary && Number(boundary.child_delay_seconds || 0) > 0) {
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET run_after=datetime('now', ?), updated_at=CURRENT_TIMESTAMP WHERE request_id=?",
-      `+${Number(boundary.child_delay_seconds)} seconds`, childRequestId
-    );
-  }
-
-  return { child_request_id: childRequestId, input, boundary };
-}
-
-function dailyContextFullRunChildPassed(stage, child) {
-  if (!child) return { pass: false, wait: false, reason: "child_missing" };
-  const childStatus = String(child.status || "");
-  if (["pending", "running", "partial_continue"].includes(childStatus) && !child.finished_at) {
-    return { pass: false, wait: true, reason: "child_active", child_status: childStatus };
-  }
-  if (childStatus !== "completed") return { pass: false, reason: "child_not_completed", child_status: childStatus, child_error_code: child.error_code || null, child_error_message: child.error_message || null };
-  const output = parseJsonSafeText(child.output_json || "{}", {});
-  if (!output || output.ok !== true) return { pass: false, reason: "child_output_ok_not_true", output_ok: output && output.ok };
-  if (output.data_ok !== true) return { pass: false, reason: "child_data_ok_not_true", data_ok: output && output.data_ok };
-  const cert = String(output.certification || output.certification_status || "");
-  const status = String(output.status || "");
-  const hay = `${cert} ${status}`.toLowerCase();
-  if (!cert || hay.includes("dummy") || hay.includes("unsupported") || hay.includes("missing_service_binding")) {
-    return { pass: false, reason: "missing_dummy_or_unsupported_certification", certification: cert, status };
-  }
-  if (stage.job_key === "daily-certifier") {
-    if (String(output.certification || "") !== "DAILY_CONTEXT_READINESS_CERTIFIED_ENRICHMENT_LEDGER_WRITTEN") {
-      return { pass: false, reason: "daily_context_certifier_wrong_certification", certification: output.certification || null };
-    }
-    if (Number(output.current_rows_written || 0) <= 0) {
-      return { pass: false, reason: "daily_context_certifier_no_current_rows_written", current_rows_written: output.current_rows_written || 0 };
-    }
-  }
-  return { pass: true, certification: cert, status, output };
-}
-
-
-async function cleanupDailyContextFullRunOrphanChild(env, stage, childRequestId) {
-  const jobKey = String(stage && stage.job_key || "");
-  const cleaned = { job_key: jobKey, child_request_id: childRequestId, sidecar_rows_deleted: {}, batch_marked_failed: false, errors: [] };
-  if (!env.DAILY_DB || !childRequestId) return cleaned;
-
-  async function safe(label, fn) {
-    try {
-      const res = await fn();
-      const meta = res && res.meta ? res.meta : res;
-      cleaned.sidecar_rows_deleted[label] = Number((meta && (meta.changes || meta.rows_written)) || 0);
-    } catch (err) {
-      cleaned.errors.push({ label, error: String(err && err.message ? err.message : err).slice(0, 500) });
-    }
-  }
-
-  async function markBatch(tableName, status, grade, reason) {
-    try {
-      await run(env.DAILY_DB, `UPDATE ${tableName}
-        SET status='failed',
-            certification_status=?,
-            certification_grade=?,
-            certification_reason=?,
-            completed_at=CURRENT_TIMESTAMP,
-            updated_at=CURRENT_TIMESTAMP
-        WHERE request_id=? AND status='running'`, status, grade, reason, childRequestId);
-      cleaned.batch_marked_failed = true;
-    } catch (err) {
-      cleaned.errors.push({ label: `${tableName}_mark_failed`, error: String(err && err.message ? err.message : err).slice(0, 500) });
-    }
-  }
-
-  if (jobKey === "daily-player-availability") {
-    const batchSql = "SELECT batch_id FROM daily_player_availability_batches_v1 WHERE request_id=?";
-    await safe("daily_player_availability_current_v1", () => run(env.DAILY_DB, `DELETE FROM daily_player_availability_current_v1 WHERE batch_id IN (${batchSql})`, childRequestId));
-    await safe("daily_player_availability_snapshots_v1", () => run(env.DAILY_DB, `DELETE FROM daily_player_availability_snapshots_v1 WHERE batch_id IN (${batchSql})`, childRequestId));
-    await safe("daily_player_availability_issues_v1", () => run(env.DAILY_DB, `DELETE FROM daily_player_availability_issues_v1 WHERE batch_id IN (${batchSql})`, childRequestId));
-    await markBatch("daily_player_availability_batches_v1", "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN", "FAILED_ORPHAN_BATCH", "Daily Context Full Run stale-child guard failed the running Player Availability batch after no terminal control_job_runs row was produced. Partial current/snapshot/issue rows for this request were deleted by the parent guard.");
-  } else if (jobKey === "daily-weather") {
-    const batchSql = "SELECT batch_id FROM daily_game_weather_batches WHERE request_id=?";
-    await safe("daily_game_weather_current", () => run(env.DAILY_DB, `DELETE FROM daily_game_weather_current WHERE batch_id IN (${batchSql})`, childRequestId));
-    await safe("daily_game_weather_snapshots", () => run(env.DAILY_DB, `DELETE FROM daily_game_weather_snapshots WHERE batch_id IN (${batchSql})`, childRequestId));
-    await safe("daily_game_weather_issues", () => run(env.DAILY_DB, `DELETE FROM daily_game_weather_issues WHERE batch_id IN (${batchSql})`, childRequestId));
-    await markBatch("daily_game_weather_batches", "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN", "FAILED_ORPHAN_BATCH", "Daily Context Full Run stale-child guard failed the running Weather/Roof batch after no terminal control_job_runs row was produced. Partial current/snapshot/issue rows for this request were deleted by the parent guard.");
-  } else if (jobKey === "daily-bullpen-availability") {
-    const batchSql = "SELECT batch_id FROM daily_bullpen_availability_batches WHERE request_id=?";
-    await safe("daily_bullpen_availability_current", () => run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_current WHERE batch_id IN (${batchSql})`, childRequestId));
-    await safe("daily_bullpen_pitcher_availability_current", () => run(env.DAILY_DB, `DELETE FROM daily_bullpen_pitcher_availability_current WHERE batch_id IN (${batchSql})`, childRequestId));
-    await safe("daily_bullpen_availability_snapshots", () => run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_snapshots WHERE batch_id IN (${batchSql})`, childRequestId));
-    await safe("daily_bullpen_availability_issues", () => run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_issues WHERE batch_id IN (${batchSql})`, childRequestId));
-    await markBatch("daily_bullpen_availability_batches", "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN", "FAILED_ORPHAN_BATCH", "Daily Context Full Run stale-child guard failed the running Bullpen Availability batch after no terminal control_job_runs row was produced. Partial current/pitcher/snapshot/issue rows for this request were deleted by the parent guard.");
-  } else if (jobKey === "daily-team-schedule-spot") {
-    const batchSql = "SELECT batch_id FROM daily_team_schedule_spot_batches WHERE request_id=?";
-    await safe("daily_team_schedule_spot_current", () => run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_current WHERE batch_id IN (${batchSql})`, childRequestId));
-    await safe("daily_team_schedule_spot_snapshots", () => run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_snapshots WHERE batch_id IN (${batchSql})`, childRequestId));
-    await safe("daily_team_schedule_spot_issues", () => run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_issues WHERE batch_id IN (${batchSql})`, childRequestId));
-    await markBatch("daily_team_schedule_spot_batches", "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN", "FAILED_ORPHAN_BATCH", "Daily Context Full Run stale-child guard failed the running Team Spot batch after no terminal control_job_runs row was produced. Partial current/snapshot/issue rows for this request were deleted by the parent guard.");
-  } else if (jobKey === "daily-umpire-context") {
-    const batchSql = "SELECT batch_id FROM daily_umpire_context_batches WHERE request_id=?";
-    await safe("daily_umpire_context_current", () => run(env.DAILY_DB, `DELETE FROM daily_umpire_context_current WHERE batch_id IN (${batchSql})`, childRequestId));
-    await safe("daily_umpire_context_snapshots", () => run(env.DAILY_DB, `DELETE FROM daily_umpire_context_snapshots WHERE batch_id IN (${batchSql})`, childRequestId));
-    await safe("daily_umpire_context_issues", () => run(env.DAILY_DB, `DELETE FROM daily_umpire_context_issues WHERE batch_id IN (${batchSql})`, childRequestId));
-    await markBatch("daily_umpire_context_batches", "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN", "FAILED_ORPHAN_BATCH", "Daily Context Full Run stale-child guard failed the running Umpire Context batch after no terminal control_job_runs row was produced. Partial current/snapshot/issue rows for this request were deleted by the parent guard.");
-  } else if (jobKey === "daily-certifier") {
-    const batchSql = "SELECT batch_id FROM daily_context_readiness_batches WHERE request_id=?";
-    await safe("daily_context_readiness_current", () => run(env.DAILY_DB, `DELETE FROM daily_context_readiness_current WHERE batch_id IN (${batchSql})`, childRequestId));
-    await safe("daily_context_readiness_issues", () => run(env.DAILY_DB, `DELETE FROM daily_context_readiness_issues WHERE batch_id IN (${batchSql})`, childRequestId));
-    await markBatch("daily_context_readiness_batches", "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN", "FAILED_ORPHAN_BATCH", "Daily Context Full Run stale-child guard failed the running Context Certifier batch after no terminal control_job_runs row was produced. Partial current/issue rows for this request were deleted by the parent guard.");
-  }
-
-  return cleaned;
-}
-
-async function processDailyContextFullRunJob(env, row, runId, trigger) {
-  const started = Date.now();
-  const parentInput = parseJsonSafeText(row.input_json || "{}", {});
-  const lock = await ensureDailyContextFullRunLock(env, row);
-  if (!lock.ok) {
-    const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_LOCK_BUSY", certification: "DAILY_CONTEXT_FULL_RUN_LOCK_BUSY_WAIT", lock, continuation_required: true, orchestrator_should_self_continue: true };
-    await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_LOCK_BUSY_WAIT', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+10 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-    return output;
-  }
-
-  const childRows = await all(env.CONTROL_DB,
-    "SELECT request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, error_code, error_message, output_json, input_json, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE parent_request_id=? AND chain_id=? ORDER BY datetime(created_at) ASC",
-    row.request_id, row.chain_id
-  );
-  const stageReports = [];
-
-  for (let i = 0; i < DAILY_CONTEXT_FULL_RUN_STAGES.length; i++) {
-    const stage = DAILY_CONTEXT_FULL_RUN_STAGES[i];
-    const stageChildren = childRows.filter(c => c.job_key === stage.job_key && c.worker_name === stage.worker_name);
-    const child = stageChildren[stageChildren.length - 1] || null;
-
-    if (!child) {
-      const enqueued = await enqueueDailyContextFullRunChild(env, row, stage, i, 0);
-      const boundary = enqueued.boundary || dailyContextFullRunStageBoundary(stage);
-      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification: "DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: !boundary.hard_boundary, hard_request_boundary_before_child_dispatch: !!boundary.hard_boundary, child_run_after_delay_seconds: Number(boundary.child_delay_seconds || 0), parent_run_after_delay_seconds: Number(boundary.parent_delay_seconds || 0), boundary_reason: boundary.reason || null, lock_held: true, approved_chain_order: DAILY_CONTEXT_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports };
-      await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-      if (boundary.hard_boundary && Number(boundary.parent_delay_seconds || 0) > 0) {
-        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now', ?), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", `+${Number(boundary.parent_delay_seconds)} seconds`, JSON.stringify(output), row.request_id);
-      } else {
-        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-      }
-      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'daily_context_full_run_child_enqueued', 'Daily Context Full Run enqueued next child stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: enqueued.child_request_id, stage_key: stage.stage_key, stage_index: i, mode: stage.mode, hard_request_boundary_before_child_dispatch: !!boundary.hard_boundary, child_run_after_delay_seconds: Number(boundary.child_delay_seconds || 0), parent_run_after_delay_seconds: Number(boundary.parent_delay_seconds || 0), boundary_reason: boundary.reason || null }));
-      return output;
-    }
-
-    const validation = dailyContextFullRunChildPassed(stage, child);
-    const childOutput = parseJsonSafeText(child.output_json || "{}", {});
-    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || childOutput.certification_status || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, rows_read: childOutput.prepared_rows_read || childOutput.rows_read || childOutput.rows_read_total || 0, rows_written: childOutput.current_rows_written || childOutput.rows_written || childOutput.rows_promoted || childOutput.weather_rows_written || childOutput.team_rows_written || childOutput.game_rows_written || 0, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0 };
-
-    if (validation.wait) {
-      const terminalRun = await first(env.CONTROL_DB, "SELECT COUNT(*) AS rows FROM control_job_runs WHERE request_id=? AND status IN ('completed','failed','blocked')", child.request_id);
-      const staleChild = await first(env.CONTROL_DB, "SELECT CASE WHEN datetime(COALESCE(started_at, created_at)) <= datetime('now','-2 minutes') THEN 1 ELSE 0 END AS stale FROM control_job_queue WHERE request_id=?", child.request_id);
-      if (Number(staleChild && staleChild.stale) === 1 && Number(terminalRun && terminalRun.rows) === 0) {
-        const finalStatus = "FAILED_DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN";
-        const staleOutput = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: "child_running_too_long_without_terminal_control_job_runs_row", child_status: child.status, child_started_at: child.started_at || null, child_updated_at: child.updated_at || null, stale_child_guard_minutes: 2, stages: [...stageReports, report], daily_context_full_run_certified: false, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true };
-        const orphanCleanup = await cleanupDailyContextFullRunOrphanChild(env, stage, child.request_id);
-        staleOutput.orphan_cleanup = orphanCleanup;
-        await releaseDailyContextFullRunLock(env, row);
-        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id IN (?, ?)", JSON.stringify(staleOutput), finalStatus.toLowerCase(), "Daily Context Full Run child was running too long without a terminal control_job_runs row.", row.request_id, child.request_id);
-        await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(staleOutput), finalStatus.toLowerCase(), "Daily Context Full Run stale child guard failed an orphan running child.");
-        await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'ERROR', 'daily_context_full_run_stale_child_failed', 'Daily Context Full Run stale-child guard terminal-failed orphan running child', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(staleOutput));
-        return staleOutput;
-      }
-      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification: "DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true, stale_child_guard_minutes: 2 };
-      await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+8 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-      return output;
-    }
-
-    if (!validation.pass) {
-      const finalStatus = "FAILED_DAILY_CONTEXT_FULL_RUN_CHILD_FAILED";
-      const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: validation.reason, child_error_code: child.error_code || null, child_error_message: child.error_message || null, last_output_preview: JSON.stringify(childOutput).slice(0, 1200), stages: [...stageReports, report], daily_context_full_run_certified: false, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true };
-      await releaseDailyContextFullRunLock(env, row);
-      await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "daily context full run child failed").slice(0, 900));
-      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "daily context full run child failed").slice(0, 900), row.request_id);
-      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'ERROR', 'daily_context_full_run_stopped', 'Daily Context Full Run stopped on failed child stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
-      return output;
-    }
-
-    stageReports.push(report);
-  }
-
-  const finalCertification = "DAILY_CONTEXT_FULL_RUN_CERTIFIED_ALL_CONTEXT_STAGES_PASS";
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "COMPLETED_DAILY_CONTEXT_FULL_RUN", certification: finalCertification, certification_grade: "FULL_RUN_PASS", daily_context_full_run_certified: true, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: DAILY_CONTEXT_FULL_RUN_STAGES.map(s => s.job_key), includes_daily_starters: true, includes_daily_lineups: true, includes_daily_player_availability: true, includes_daily_weather_roof: true, includes_daily_bullpen_availability: true, includes_daily_team_schedule_spot: true, includes_daily_umpire_context: true, includes_daily_context_certifier: true, no_daily_game_status_duplication: true, no_board_full_run: true, no_incremental_morning_full_run: true, no_static_work: true, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
-  await releaseDailyContextFullRunLock(env, row);
-  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalCertification, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'daily_context_full_run_completed', 'Daily Context Full Run certified all daily sidecar stages plus context certifier', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
-  return output;
-}
-
-async function processDailyLineupsJob(env, row, runId, trigger) {
-  if (!env.DAILY_LINEUPS_WORKER || typeof env.DAILY_LINEUPS_WORKER.fetch !== "function") {
-    const output = {
-      ok: false,
-      data_ok: false,
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      worker_name: row.worker_name,
-      job_key: row.job_key,
-      status: "blocked_missing_service_binding",
-      certification: "DAILY_LINEUPS_SERVICE_BINDING_MISSING",
-      trigger,
-      note: "Exact dispatch is enabled only through DAILY_LINEUPS_WORKER service binding. Do not generic-dispatch this worker."
-    };
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_daily_lineups_service_binding', 'DAILY_LINEUPS_WORKER service binding is missing')",
-      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
-    );
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_daily_lineups_service_binding', error_message='DAILY_LINEUPS_WORKER service binding is missing' WHERE request_id=?",
-      JSON.stringify(output), row.request_id
-    );
-    return output;
-  }
-
-  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  const input = {
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    job_key: row.job_key,
-    worker_name: row.worker_name,
-    trigger,
-    mode: "source_probe",
-    input_json: rowInput,
-    exact_worker_only: true,
-    source_probe_only: true,
-    prepared_board_relevance_only: true,
-    anchors_to_mlb_game_calendar_game_pk: true,
-    primary_endpoint: "/api/v1/game/{gamePk}/boxscore",
-    fallback_endpoint: "/api/v1.1/game/{gamePk}/feed/live",
-    no_calendar_rebuild: true,
-    no_daily_game_status_duplication: true,
-    no_daily_starters_duplication: true,
-    no_production_lineup_writes: true,
-    no_board_mutation: true,
-    no_weather: true,
-    no_bullpen: true,
-    no_market_odds: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    no_old_production_touch: true,
-    probe_feed_live: rowInput.probe_feed_live === true
-  };
-
-  const started = Date.now();
-  let output;
-  let httpStatus = null;
-  try {
-    const resp = await env.DAILY_LINEUPS_WORKER.fetch("https://internal.alphadog-v2-daily-lineups/run", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(input)
-    });
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); }
-    catch (_) {
-      output = {
-        ok: false,
-        data_ok: false,
-        version: SYSTEM_VERSION,
-        processed_by: WORKER_NAME,
-        worker_name: row.worker_name,
-        job_key: row.job_key,
-        status: "worker_non_json_response",
-        http_status: httpStatus,
-        response_preview: String(text || "").slice(0, 900)
-      };
-    }
-  } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
-  }
-
-  const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
-  const rowsRead = Number(output && (output.rows_read || output.prepared_rows_read) ? (output.rows_read || output.prepared_rows_read) : 0);
-  const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
-  const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
-  const certification = String((output && output.certification) || (ok ? "daily_lineups_source_probe_completed" : "daily_lineups_source_probe_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "daily_lineups_source_probe_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Daily Lineups source probe failed").slice(0, 900);
-  const cappedOutput = {
-    ...output,
-    orchestrator_dispatch: {
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      exact_worker_only: true,
-      trigger,
-      http_status: httpStatus,
-      elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
-      source_probe_only: true,
-      no_calendar_rebuild: true,
-      no_daily_game_status_duplication: true,
-      no_daily_starters_duplication: true,
-      no_production_lineup_writes: true,
-      no_board_mutation: true,
-      no_weather: true,
-      no_bullpen: true,
-      no_market_odds: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board_write: true,
-      no_old_production_touch: true
-    }
-  };
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
-    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
-  );
-
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_lineups_source_probe_dispatch_completed', 'Orchestrator completed exact Daily Lineups source-probe dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, dispatch: cappedOutput.orchestrator_dispatch })
-  );
-
-  return cappedOutput;
-}
 
 async function processDailyGamesStatusJob(env, row, runId, trigger) {
   if (!env.DAILY_GAMES_STATUS_WORKER || typeof env.DAILY_GAMES_STATUS_WORKER.fetch !== "function") {
@@ -5215,7 +3827,6 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
       no_board_mutation: true,
       no_player_resolver: true,
       no_lineups: true,
@@ -5243,294 +3854,6 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_game_status_dispatch_completed', 'Orchestrator completed exact Daily Game Status dispatch', ?, CURRENT_TIMESTAMP)",
     row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, dispatch: cappedOutput.orchestrator_dispatch })
-  );
-
-  return cappedOutput;
-}
-
-async function processScorePrepJob(env, row, runId, trigger) {
-  if (!env.SCORE_PREP_WORKER || typeof env.SCORE_PREP_WORKER.fetch !== "function") {
-    const output = {
-      ok: false,
-      data_ok: false,
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      worker_name: row.worker_name,
-      job_key: row.job_key,
-      status: "blocked_missing_service_binding",
-      certification: "SCORE_PREP_SERVICE_BINDING_MISSING",
-      trigger,
-      note: "Exact dispatch is enabled only through SCORE_PREP_WORKER service binding. Deploy orchestrator with services config."
-    };
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_score_prep_service_binding', 'SCORE_PREP_WORKER service binding is missing')",
-      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
-    );
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_score_prep_service_binding', error_message='SCORE_PREP_WORKER service binding is missing' WHERE request_id=?",
-      JSON.stringify(output), row.request_id
-    );
-    return output;
-  }
-
-  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  const input = {
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    job_key: row.job_key,
-    worker_name: row.worker_name,
-    trigger,
-    mode: "board_prep_enrichment",
-    input_json: rowInput,
-    exact_worker_only: true,
-    reads_market_boards: true,
-    reads_team_calendar: true,
-    reads_ref_identity: true,
-    writes_score_prepared_board_only: true,
-    no_market_board_mutation: true,
-    no_raw_board_delete: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    preserve_all_source_rows: true
-  };
-
-  const started = Date.now();
-  let output;
-  let httpStatus = null;
-  try {
-    const resp = await env.SCORE_PREP_WORKER.fetch("https://internal.alphadog-v2-score-prep/run", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(input)
-    });
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); }
-    catch (_) {
-      output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
-    }
-  } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
-  }
-
-  const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
-  const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
-  const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
-  const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
-  const certification = String((output && output.certification) || (ok ? "score_prep_completed" : "score_prep_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "score_prep_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Score Prep worker failed").slice(0, 900);
-  const cappedOutput = {
-    ...output,
-    orchestrator_dispatch: {
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      exact_worker_only: true,
-      trigger,
-      http_status: httpStatus,
-      elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
-      no_market_board_mutation: true,
-      no_raw_board_delete: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board_write: true,
-      no_old_production_touch: true
-    }
-  };
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
-    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
-  );
-
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'score_prep_dispatch_completed', 'Orchestrator completed exact Score Prep dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, dispatch: cappedOutput.orchestrator_dispatch })
-  );
-
-  return cappedOutput;
-}
-
-
-async function processDeltaCertifierJob(env, row, runId, trigger) {
-  if (!env.DELTA_CERTIFIER_WORKER || typeof env.DELTA_CERTIFIER_WORKER.fetch !== "function") {
-    const output = {
-      ok: false,
-      data_ok: false,
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      worker_name: row.worker_name,
-      job_key: row.job_key,
-      request_id: row.request_id,
-      chain_id: row.chain_id,
-      status: "blocked_missing_service_binding",
-      certification: "DELTA_CERTIFIER_SERVICE_BINDING_MISSING",
-      certification_grade: "BLOCKED",
-      trigger,
-      note: "Exact delta-certifier dispatch requires DELTA_CERTIFIER_WORKER service binding. Deploy orchestrator with the services wrangler config."
-    };
-
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_delta_certifier_service_binding', 'DELTA_CERTIFIER_WORKER service binding is missing')",
-      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
-    );
-
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_delta_certifier_service_binding', error_message='DELTA_CERTIFIER_WORKER service binding is missing' WHERE request_id=?",
-      JSON.stringify(output), row.request_id
-    );
-
-    return output;
-  }
-
-  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  const requestedMode = String(rowInput.mode || "game_calendar_differential_check_update");
-  const normalizedInputJson = {
-    ...rowInput,
-    mode: requestedMode,
-    exact_delta_certifier_dispatch_v0_2_117: true,
-    no_browser_loop: true,
-    backend_scheduled_continuation: true
-  };
-  const input = {
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    run_id: runId,
-    job_key: row.job_key,
-    worker_name: row.worker_name,
-    trigger,
-    mode: requestedMode,
-    input_json: normalizedInputJson,
-    exact_worker_only: true,
-    calendar_tally_stage: normalizedInputJson.calendar_tally_stage || null,
-    parent_full_run: normalizedInputJson.parent_full_run === true,
-    parent_request_id: normalizedInputJson.parent_request_id || null,
-    parent_chain_id: normalizedInputJson.parent_chain_id || row.chain_id || null,
-    full_run_stage_key: normalizedInputJson.full_run_stage_key || null,
-    require_zero_blocking_gaps: normalizedInputJson.require_zero_blocking_gaps === true,
-    allow_blocking_gaps: normalizedInputJson.allow_blocking_gaps === true,
-    no_source_history_mutation: true,
-    no_repair_jobs_created: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    no_board_mutation: true,
-    no_daily_context_mutation: true
-  };
-
-  const started = Date.now();
-  let output;
-  let httpStatus = null;
-
-  try {
-    const resp = await env.DELTA_CERTIFIER_WORKER.fetch("https://internal.alphadog-v2-delta-certifier/run", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(input)
-    });
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); }
-    catch (_) {
-      output = {
-        ok: false,
-        data_ok: false,
-        version: SYSTEM_VERSION,
-        processed_by: WORKER_NAME,
-        worker_name: row.worker_name,
-        job_key: row.job_key,
-        request_id: row.request_id,
-        chain_id: row.chain_id,
-        mode: requestedMode,
-        status: "worker_non_json_response",
-        certification: "DELTA_CERTIFIER_NON_JSON_RESPONSE",
-        certification_grade: "FAILED",
-        http_status: httpStatus,
-        response_preview: String(text || "").slice(0, 900)
-      };
-    }
-  } catch (err) {
-    output = {
-      ok: false,
-      data_ok: false,
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      worker_name: row.worker_name,
-      job_key: row.job_key,
-      request_id: row.request_id,
-      chain_id: row.chain_id,
-      mode: requestedMode,
-      status: "worker_dispatch_exception",
-      certification: "DELTA_CERTIFIER_DISPATCH_EXCEPTION",
-      certification_grade: "FAILED",
-      error: String(err && err.message ? err.message : err)
-    };
-  }
-
-  const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
-  const rowsRead = Number(output && (output.rows_read ?? output.source_game_count) ? (output.rows_read ?? output.source_game_count) : 0);
-  const rowsWritten = Number(output && (output.rows_written ?? output.coverage_rows_written) ? (output.rows_written ?? output.coverage_rows_written) : 0);
-  const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
-  const certification = String((output && (output.certification || output.certification_status)) || (ok ? "delta_certifier_completed" : "delta_certifier_failed")).slice(0, 120);
-  const queueStatus = ok && dataOk ? "completed" : "failed";
-  const runStatus = ok && dataOk ? "completed" : "failed";
-  const errorCode = ok && dataOk ? null : "delta_certifier_worker_failed";
-  const errorMessage = ok && dataOk ? null : String((output && (output.error || output.status || output.certification)) || "Delta Certifier worker failed").slice(0, 900);
-  const cappedOutput = {
-    ...output,
-    orchestrator_dispatch: {
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      exact_worker_only: true,
-      trigger,
-      http_status: httpStatus,
-      elapsed_ms: Date.now() - started,
-      bounded_service_binding_timeout_ms: 110000,
-      delta_certifier_dispatch_v0_2_117: true,
-      mode: requestedMode,
-      calendar_tally_stage: normalizedInputJson.calendar_tally_stage || null,
-      parent_full_run: normalizedInputJson.parent_full_run === true,
-      require_zero_blocking_gaps: normalizedInputJson.require_zero_blocking_gaps === true,
-      allow_blocking_gaps: normalizedInputJson.allow_blocking_gaps === true,
-      finalizes_queue_on_exception: true,
-      backend_self_continuation_ready: true,
-      manual_wake_testing_only: true,
-      no_browser_pump: true,
-      no_generic_dispatch: true,
-      no_source_history_mutation: true,
-      no_repair_jobs_created: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board_write: true,
-      no_board_mutation: true,
-      no_daily_context_mutation: true
-    }
-  };
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
-    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
-  );
-
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'delta_certifier_dispatch_completed', 'Orchestrator completed exact delta-certifier calendar/tally dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok && dataOk ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, mode: requestedMode, calendar_tally_stage: normalizedInputJson.calendar_tally_stage || null, queue_status: queueStatus, dispatch: cappedOutput.orchestrator_dispatch })
   );
 
   return cappedOutput;
@@ -5919,16 +4242,6 @@ async function processOneUnlocked(env, trigger) {
     row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ trigger, row })
   );
 
-  if (isMarketContextSourceProbeJob(row)) {
-    const output = await processMarketContextSourceProbeJob(env, row, runId, trigger);
-    return {
-      status: output && output.ok ? "completed_one_market_teams_game_odds_job" : "failed_one_market_teams_game_odds_job",
-      request_id: row.request_id,
-      run_id: runId,
-      output
-    };
-  }
-
   if (isMarketSourceHealthJob(row)) {
     const output = await processMarketSourceHealthJob(env, row, runId, trigger);
     return {
@@ -5959,90 +4272,6 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
-
-  if (isDailyProbablePitchersJob(row)) {
-    const output = await processDailyProbablePitchersJob(env, row, runId, trigger);
-    return {
-      status: output && output.ok ? "completed_one_daily_starters_job" : "failed_one_daily_starters_job",
-      request_id: row.request_id,
-      run_id: runId,
-      output
-    };
-  }
-
-
-  if (isDailyPlayerAvailabilityJob(row)) {
-    const output = await processDailyPlayerAvailabilityJob(env, row, runId, trigger);
-    return {
-      status: output && output.ok ? "completed_one_daily_player_availability_job" : "failed_one_daily_player_availability_job",
-      request_id: row.request_id,
-      run_id: runId,
-      output
-    };
-  }
-
-
-  if (isDailyWeatherJob(row)) {
-    const output = await processDailyWeatherJob(env, row, runId, trigger);
-    return {
-      status: output && output.ok ? "completed_one_daily_weather_job" : "failed_one_daily_weather_job",
-      request_id: row.request_id,
-      run_id: runId,
-      output
-    };
-  }
-
-
-
-  if (isDailyTeamScheduleSpotJob(row)) {
-    const output = await processDailyTeamScheduleSpotJob(env, row, runId, trigger);
-    return {
-      status: output && output.ok ? "completed_one_daily_team_schedule_spot_job" : "failed_one_daily_team_schedule_spot_job",
-      request_id: row.request_id,
-      run_id: runId,
-      output
-    };
-  }
-
-  if (isDailyBullpenAvailabilityJob(row)) {
-    const output = await processDailyBullpenAvailabilityJob(env, row, runId, trigger);
-    return {
-      status: output && output.ok ? "completed_one_daily_bullpen_availability_job" : "failed_one_daily_bullpen_availability_job",
-      request_id: row.request_id,
-      run_id: runId,
-      output
-    };
-  }
-
-  if (isDailyUmpireContextJob(row)) {
-    const output = await processDailyUmpireContextJob(env, row, runId, trigger);
-    return {
-      status: output && output.ok ? "completed_one_daily_umpire_context_job" : "failed_one_daily_umpire_context_job",
-      request_id: row.request_id,
-      run_id: runId,
-      output
-    };
-  }
-
-  if (isDailyContextCertifierJob(row)) {
-    const output = await processDailyContextCertifierJob(env, row, runId, trigger);
-    return {
-      status: output && output.ok ? "completed_one_daily_context_certifier_job" : "failed_one_daily_context_certifier_job",
-      request_id: row.request_id,
-      run_id: runId,
-      output
-    };
-  }
-
-  if (isDailyLineupsJob(row)) {
-    const output = await processDailyLineupsJob(env, row, runId, trigger);
-    return {
-      status: output && output.ok ? "completed_one_daily_lineups_source_probe_job" : "failed_one_daily_lineups_source_probe_job",
-      request_id: row.request_id,
-      run_id: runId,
-      output
-    };
-  }
 
   if (isDailyGamesStatusJob(row)) {
     const output = await processDailyGamesStatusJob(env, row, runId, trigger);
@@ -6258,12 +4487,13 @@ async function processOneUnlocked(env, trigger) {
   if (isDeltaCertifierJob(row)) {
     const output = await processDeltaCertifierJob(env, row, runId, trigger);
     return {
-      status: output && output.ok && output.data_ok ? "completed_one_delta_certifier_job" : "failed_one_delta_certifier_job",
+      status: output && output.ok ? "completed_one_delta_certifier_job" : "failed_one_delta_certifier_job",
       request_id: row.request_id,
       run_id: runId,
       output
     };
   }
+
 
   if (isStaticCertifierJob(row)) {
     const output = await processStaticCertifierJob(env, row, runId, trigger);
@@ -6282,25 +4512,6 @@ async function processOneUnlocked(env, trigger) {
       ? "partial_continue_board_full_run_job"
       : (output && output.ok ? "completed_one_board_full_run_job" : "failed_one_board_full_run_job");
     return { status, request_id: row.request_id, run_id: runId, output };
-  }
-
-  if (isDailyContextFullRunJob(row)) {
-    const output = await processDailyContextFullRunJob(env, row, runId, trigger);
-    const rawStatus = String((output && output.status) || "").toLowerCase();
-    const status = rawStatus.includes("partial_continue") || output && output.orchestrator_should_self_continue
-      ? "partial_continue_daily_context_full_run_job"
-      : (output && output.ok ? "completed_one_daily_context_full_run_job" : "failed_one_daily_context_full_run_job");
-    return { status, request_id: row.request_id, run_id: runId, output };
-  }
-
-  if (isScorePrepJob(row)) {
-    const output = await processScorePrepJob(env, row, runId, trigger);
-    return {
-      status: output && output.ok ? "completed_one_score_prep_job" : "failed_one_score_prep_job",
-      request_id: row.request_id,
-      run_id: runId,
-      output
-    };
   }
 
   if (isIncrementalMorningFullRunJob(row)) {
@@ -6331,16 +4542,16 @@ async function processOneUnlocked(env, trigger) {
       status: "unsupported_in_v0_2_16_safe_shell",
       job_key: row.job_key,
       worker_name: row.worker_name,
-      note: "v0.2.32 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, exact delta-certifier calendar/tally, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter and Base Hitter Splits promotion/delta hot continuation use backend waitUntil, not browser pump; cron is rescue only. Base Pitcher supports locked base promotion and delta_update retained-stage continuation; base promotion makes no MLB calls, delta uses MLB StatsAPI only after base integrity gate."
+      note: "v0.2.32 only processes safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs. Generic dispatch remains blocked. Base Hitter and Base Hitter Splits promotion/delta hot continuation use backend waitUntil, not browser pump; cron is rescue only. Base Pitcher supports locked base promotion and delta_update retained-stage continuation; base promotion makes no MLB calls, delta uses MLB StatsAPI only after base integrity gate."
     };
 
     await run(env.CONTROL_DB,
-      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_31', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, exact delta-certifier calendar/tally, and exact static-full-run jobs are enabled in orchestrator v0.2.32')",
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_31', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.32')",
       runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
     );
 
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_31', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, exact delta-certifier calendar/tally, and exact static-full-run jobs are enabled in orchestrator v0.2.32' WHERE request_id=?",
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_31', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, and exact static-full-run jobs are enabled in orchestrator v0.2.32' WHERE request_id=?",
       JSON.stringify(output), row.request_id
     );
 
@@ -6396,25 +4607,20 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       processed.push({ status: "stale_base_bullpen_history_recovered", recovered_count: baseBullpenStaleRecovery.recovered });
     }
 
-    const dailyContextCertifierStaleRecovery = await recoverStaleDailyContextCertifierJobs(env, trigger);
-    if (dailyContextCertifierStaleRecovery.recovered > 0) {
-      processed.push({ status: "stale_daily_context_certifier_recovered", recovered_count: dailyContextCertifierStaleRecovery.recovered });
-    }
-
     const limit = Math.max(1, Math.min(Number(maxJobs || 3), 10));
 
     for (let i = 0; i < limit; i++) {
       const result = await processOneUnlocked(env, trigger);
       processed.push(result);
       if (result.status === "no_due_jobs") break;
-      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_teams_game_odds_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_hitter_metrics_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_base_starter_history_job" || result.status === "failed_one_base_bullpen_history_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_delta_certifier_job" || result.status === "failed_one_static_full_run_job" || result.status === "failed_one_incremental_morning_full_run_job" || result.status === "failed_one_board_full_run_job" || result.status === "failed_one_daily_weather_job" || result.status === "failed_one_daily_bullpen_availability_job" || result.status === "failed_one_daily_team_schedule_spot_job" || result.status === "failed_one_daily_starters_job" || result.status === "failed_one_daily_player_availability_job" || result.status === "failed_one_daily_lineups_source_probe_job" || result.status === "failed_one_daily_game_status_job" || result.status === "failed_one_daily_context_certifier_job" || result.status === "failed_one_daily_context_full_run_job") break;
+      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_hitter_metrics_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_base_starter_history_job" || result.status === "failed_one_base_bullpen_history_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_delta_certifier_job" || result.status === "failed_one_static_full_run_job" || result.status === "failed_one_incremental_morning_full_run_job" || result.status === "failed_one_board_full_run_job") break;
     }
 
     await releaseLock(env, owner, "IDLE");
 
-    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_delta_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job" || x.status === "completed_one_daily_weather_job" || x.status === "completed_one_daily_bullpen_availability_job" || x.status === "completed_one_daily_team_schedule_spot_job" || x.status === "completed_one_daily_starters_job" || x.status === "completed_one_daily_player_availability_job" || x.status === "completed_one_daily_lineups_source_probe_job" || x.status === "completed_one_daily_game_status_job" || x.status === "completed_one_daily_context_certifier_job" || x.status === "completed_one_daily_context_full_run_job").length;
-    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job" || x.status === "partial_continue_daily_context_full_run_job").length;
-    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_teams_game_odds_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_delta_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job" || x.status === "failed_one_daily_weather_job" || x.status === "failed_one_daily_bullpen_availability_job" || x.status === "failed_one_daily_team_schedule_spot_job" || x.status === "failed_one_daily_starters_job" || x.status === "failed_one_daily_player_availability_job" || x.status === "failed_one_daily_lineups_source_probe_job" || x.status === "failed_one_daily_game_status_job" || x.status === "failed_one_daily_context_certifier_job" || x.status === "failed_one_daily_context_full_run_job").length;
+    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job").length;
+    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job").length;
+    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_delta_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
 
     return base(env, {
@@ -6526,35 +4732,6 @@ async function countDueIncrementalMorningFullRun(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
-
-async function countDueDailyContextFullRun(env) {
-  const row = await first(env.CONTROL_DB,
-    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='daily-context-full-run' AND worker_name='alphadog-v2-orchestrator' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)"
-  );
-  return Number(row && row.c ? row.c : 0);
-}
-
-async function recoverStaleDailyContextCertifierJobs(env, trigger) {
-  const staleRows = await all(env.CONTROL_DB,
-    "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, started_at, updated_at, substr(output_json,1,900) AS output_preview FROM control_job_queue WHERE job_key='daily-certifier' AND worker_name='alphadog-v2-daily-certifier' AND status='running' AND finished_at IS NULL AND datetime(updated_at) <= datetime('now','-2 minutes') ORDER BY datetime(updated_at) ASC LIMIT 3"
-  );
-
-  let recovered = 0;
-  for (const row of staleRows) {
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND job_key='daily-certifier' AND worker_name='alphadog-v2-daily-certifier' AND status='running' AND finished_at IS NULL",
-      row.request_id
-    );
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'daily-certifier', 'WARN', 'daily_context_certifier_stale_running_auto_recovered', 'Recovered stale running daily-certifier queue row back to pending for fast aggregate rerun', ?, CURRENT_TIMESTAMP)",
-      row.request_id, WORKER_NAME, JSON.stringify({ trigger, recovered_from_status: row.status, started_at: row.started_at, updated_at: row.updated_at, tick_count: row.tick_count, version: SYSTEM_VERSION, reason: 'previous worker wrote partial readiness rows but did not return terminal status' })
-    );
-    recovered += 1;
-  }
-
-  return { recovered, rows: staleRows };
-}
-
 async function countDueStaticPlayers(env) {
   // Static Players is intentionally chunked. For this specific job, any pending/running
   // row without a finished_at must be treated as continuation-eligible, even if run_after
@@ -6594,22 +4771,12 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
     const noDue = status === "no_due_jobs" || processed.some(x => x && x.status === "no_due_jobs");
     const blocked = status === "blocked" || status === "error" || processed.some(x => x && String(x.status || "").startsWith("failed_"));
     const lockBusy = status === "lock_busy";
-    const dailyContextChildEnqueued = processed.some(x => {
-      const out = x && x.output ? x.output : null;
-      return !!(out && out.mode === "daily_context_full_run" && out.status === "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED");
-    });
 
-    // v0.2.135: Daily Context Full Run children are volatile sidecar refreshes.
-    // Do not drain the next child inside the same bounded pump request after the
-    // parent enqueues a child. One-hop continuation lets each child run in a fresh
-    // backend continuation/request, preventing mid-child orphan batches with no
-    // terminal control_job_runs row.
-    if (noDue || blocked || lockBusy || dailyContextChildEnqueued) break;
+    if (noDue || blocked || lockBusy) break;
   }
 
   const dueIncrementalMorningFullRun = await countDueIncrementalMorningFullRun(env);
   const dueBoardFullRun = await countDueBoardFullRun(env);
-  const dueDailyContextFullRun = await countDueDailyContextFullRun(env);
   const dueStaticPlayers = await countDueStaticPlayers(env);
   const dueBaseHitterGameLogs = await countDueBaseHitterGameLogs(env);
   const dueBaseHitterSplits = await countDueBaseHitterSplits(env);
@@ -6632,18 +4799,10 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const sawLockBusy = terminalStatuses.includes("lock_busy");
   const sawHardStop = terminalStatuses.some(s => s === "blocked" || s === "error");
   const continuationAllowedByLastCycle = !sawLockBusy && !sawHardStop;
-  const hardBoundaryDailyContextOutputs = cycles.flatMap(c => Array.isArray(c && c.processed) ? c.processed : [])
-    .map(x => x && x.output ? x.output : null)
-    .filter(out => !!(out && out.mode === "daily_context_full_run" && out.status === "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED" && out.hard_request_boundary_before_child_dispatch === true));
-  const dailyContextHardBoundaryDelayMs = hardBoundaryDailyContextOutputs.length
-    ? Math.max(...hardBoundaryDailyContextOutputs.map(out => Math.max(0, Number(out.parent_run_after_delay_seconds || 0) * 1000 + 1500)))
-    : 0;
-  const dailyContextHardBoundaryContinuationDue = dailyContextHardBoundaryDelayMs > 0;
-  const anyDueWork = dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyContextFullRun > 0 || dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0;
-  const shouldSelfContinue = continuationAllowedByLastCycle && (anyDueWork || dailyContextHardBoundaryContinuationDue) && depth < maxChains && !!ctx;
+  const shouldSelfContinue = continuationAllowedByLastCycle && (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0) && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
-  const hotContinuationDelayMs = dailyContextHardBoundaryContinuationDue ? dailyContextHardBoundaryDelayMs : (shouldSelfContinue && lastStatus === "no_due_jobs" ? 6500 : 0);
+  const hotContinuationDelayMs = shouldSelfContinue && lastStatus === "no_due_jobs" ? 6500 : 0;
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -6655,7 +4814,6 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       cycle_count: cycles.length,
       due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
       due_board_full_run_after_pump: dueBoardFullRun,
-      due_daily_context_full_run_after_pump: dueDailyContextFullRun,
       due_static_players_after_pump: dueStaticPlayers,
       due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
       due_base_hitter_splits_after_pump: dueBaseHitterSplits,
@@ -6670,10 +4828,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       max_pump_chains: maxChains,
       self_continue_scheduled: !!shouldSelfContinue,
       self_continue_delay_ms: hotContinuationDelayMs,
-      daily_context_hard_boundary_continuation_due: !!dailyContextHardBoundaryContinuationDue,
-      daily_context_hard_boundary_delay_ms: dailyContextHardBoundaryDelayMs,
       full_run_hot_continuation_v0_2_95: true,
-      daily_context_all_heavy_hard_boundary_v0_2_137: true,
       self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
       self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
       continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
@@ -6692,7 +4847,6 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         next_source: nextSource,
         due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
       due_board_full_run_after_pump: dueBoardFullRun,
-        due_daily_context_full_run_after_pump: dueDailyContextFullRun,
         due_static_players_after_pump: dueStaticPlayers,
         due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
         due_base_hitter_splits_after_pump: dueBaseHitterSplits,
@@ -6710,11 +4864,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         max_jobs_per_cycle: jobsPerCycle,
         max_ms: deadlineMs,
         self_continue_delay_ms: hotContinuationDelayMs,
-        daily_context_hard_boundary_continuation_due: !!dailyContextHardBoundaryContinuationDue,
-        daily_context_hard_boundary_delay_ms: dailyContextHardBoundaryDelayMs,
         full_run_hot_continuation_v0_2_95: true,
-        daily_context_all_heavy_hard_boundary_v0_2_137: true,
-      daily_context_all_heavy_hard_boundary_v0_2_137: true,
         continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
         self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
@@ -6752,7 +4902,6 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
     cycle_count: cycles.length,
     due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
       due_board_full_run_after_pump: dueBoardFullRun,
-    due_daily_context_full_run_after_pump: dueDailyContextFullRun,
     due_static_players_after_pump: dueStaticPlayers,
     due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
     due_base_hitter_splits_after_pump: dueBaseHitterSplits,
