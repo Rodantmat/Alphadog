@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.136-daily-context-team-spot-hard-boundary";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.137-daily-context-all-heavy-hard-boundary";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -4681,14 +4681,41 @@ const DAILY_CONTEXT_FULL_RUN_STAGES = [
 
 function dailyContextFullRunStageBoundary(stage) {
   const stageKey = String(stage && stage.stage_key || "");
-  if (stageKey === "daily_team_schedule_spot") {
+  const jobKey = String(stage && stage.job_key || "");
+
+  // v0.2.137: every Daily Context child is run behind a hard request boundary.
+  // The prior one-hop hot loop could enqueue a child, immediately dispatch that
+  // child inside the same bounded continuation chain, let the child write DAILY_DB
+  // rows, and still lose the terminal control_job_runs row. That produced the
+  // exact orphan/stuck states seen on Player Availability, Bullpen, and Team Spot.
+  const hardBoundaryStages = new Set([
+    "daily_starters",
+    "daily_lineups",
+    "daily_player_availability",
+    "daily_weather_roof",
+    "daily_bullpen_availability",
+    "daily_team_schedule_spot",
+    "daily_umpire_context",
+    "daily_context_certifier"
+  ]);
+
+  if (hardBoundaryStages.has(stageKey)) {
+    const heavier = new Set([
+      "daily_player_availability",
+      "daily_weather_roof",
+      "daily_bullpen_availability",
+      "daily_team_schedule_spot",
+      "daily_umpire_context",
+      "daily_context_certifier"
+    ]).has(stageKey);
     return {
       hard_boundary: true,
-      child_delay_seconds: 15,
-      parent_delay_seconds: 45,
-      reason: "team_spot_service_binding_must_run_in_fresh_backend_tick_after_heavy_daily_context_prefix"
+      child_delay_seconds: heavier ? 3 : 2,
+      parent_delay_seconds: heavier ? 35 : 20,
+      reason: `daily_context_hard_request_boundary_for_${stageKey || jobKey || "unknown_stage"}`
     };
   }
+
   return { hard_boundary: false, child_delay_seconds: 0, parent_delay_seconds: 0, reason: null };
 }
 
@@ -4799,6 +4826,79 @@ function dailyContextFullRunChildPassed(stage, child) {
   return { pass: true, certification: cert, status, output };
 }
 
+
+async function cleanupDailyContextFullRunOrphanChild(env, stage, childRequestId) {
+  const jobKey = String(stage && stage.job_key || "");
+  const cleaned = { job_key: jobKey, child_request_id: childRequestId, sidecar_rows_deleted: {}, batch_marked_failed: false, errors: [] };
+  if (!env.DAILY_DB || !childRequestId) return cleaned;
+
+  async function safe(label, fn) {
+    try {
+      const res = await fn();
+      const meta = res && res.meta ? res.meta : res;
+      cleaned.sidecar_rows_deleted[label] = Number((meta && (meta.changes || meta.rows_written)) || 0);
+    } catch (err) {
+      cleaned.errors.push({ label, error: String(err && err.message ? err.message : err).slice(0, 500) });
+    }
+  }
+
+  async function markBatch(tableName, status, grade, reason) {
+    try {
+      await run(env.DAILY_DB, `UPDATE ${tableName}
+        SET status='failed',
+            certification_status=?,
+            certification_grade=?,
+            certification_reason=?,
+            completed_at=CURRENT_TIMESTAMP,
+            updated_at=CURRENT_TIMESTAMP
+        WHERE request_id=? AND status='running'`, status, grade, reason, childRequestId);
+      cleaned.batch_marked_failed = true;
+    } catch (err) {
+      cleaned.errors.push({ label: `${tableName}_mark_failed`, error: String(err && err.message ? err.message : err).slice(0, 500) });
+    }
+  }
+
+  if (jobKey === "daily-player-availability") {
+    const batchSql = "SELECT batch_id FROM daily_player_availability_batches_v1 WHERE request_id=?";
+    await safe("daily_player_availability_current_v1", () => run(env.DAILY_DB, `DELETE FROM daily_player_availability_current_v1 WHERE batch_id IN (${batchSql})`, childRequestId));
+    await safe("daily_player_availability_snapshots_v1", () => run(env.DAILY_DB, `DELETE FROM daily_player_availability_snapshots_v1 WHERE batch_id IN (${batchSql})`, childRequestId));
+    await safe("daily_player_availability_issues_v1", () => run(env.DAILY_DB, `DELETE FROM daily_player_availability_issues_v1 WHERE batch_id IN (${batchSql})`, childRequestId));
+    await markBatch("daily_player_availability_batches_v1", "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN", "FAILED_ORPHAN_BATCH", "Daily Context Full Run stale-child guard failed the running Player Availability batch after no terminal control_job_runs row was produced. Partial current/snapshot/issue rows for this request were deleted by the parent guard.");
+  } else if (jobKey === "daily-weather") {
+    const batchSql = "SELECT batch_id FROM daily_game_weather_batches WHERE request_id=?";
+    await safe("daily_game_weather_current", () => run(env.DAILY_DB, `DELETE FROM daily_game_weather_current WHERE batch_id IN (${batchSql})`, childRequestId));
+    await safe("daily_game_weather_snapshots", () => run(env.DAILY_DB, `DELETE FROM daily_game_weather_snapshots WHERE batch_id IN (${batchSql})`, childRequestId));
+    await safe("daily_game_weather_issues", () => run(env.DAILY_DB, `DELETE FROM daily_game_weather_issues WHERE batch_id IN (${batchSql})`, childRequestId));
+    await markBatch("daily_game_weather_batches", "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN", "FAILED_ORPHAN_BATCH", "Daily Context Full Run stale-child guard failed the running Weather/Roof batch after no terminal control_job_runs row was produced. Partial current/snapshot/issue rows for this request were deleted by the parent guard.");
+  } else if (jobKey === "daily-bullpen-availability") {
+    const batchSql = "SELECT batch_id FROM daily_bullpen_availability_batches WHERE request_id=?";
+    await safe("daily_bullpen_availability_current", () => run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_current WHERE batch_id IN (${batchSql})`, childRequestId));
+    await safe("daily_bullpen_pitcher_availability_current", () => run(env.DAILY_DB, `DELETE FROM daily_bullpen_pitcher_availability_current WHERE batch_id IN (${batchSql})`, childRequestId));
+    await safe("daily_bullpen_availability_snapshots", () => run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_snapshots WHERE batch_id IN (${batchSql})`, childRequestId));
+    await safe("daily_bullpen_availability_issues", () => run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_issues WHERE batch_id IN (${batchSql})`, childRequestId));
+    await markBatch("daily_bullpen_availability_batches", "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN", "FAILED_ORPHAN_BATCH", "Daily Context Full Run stale-child guard failed the running Bullpen Availability batch after no terminal control_job_runs row was produced. Partial current/pitcher/snapshot/issue rows for this request were deleted by the parent guard.");
+  } else if (jobKey === "daily-team-schedule-spot") {
+    const batchSql = "SELECT batch_id FROM daily_team_schedule_spot_batches WHERE request_id=?";
+    await safe("daily_team_schedule_spot_current", () => run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_current WHERE batch_id IN (${batchSql})`, childRequestId));
+    await safe("daily_team_schedule_spot_snapshots", () => run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_snapshots WHERE batch_id IN (${batchSql})`, childRequestId));
+    await safe("daily_team_schedule_spot_issues", () => run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_issues WHERE batch_id IN (${batchSql})`, childRequestId));
+    await markBatch("daily_team_schedule_spot_batches", "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN", "FAILED_ORPHAN_BATCH", "Daily Context Full Run stale-child guard failed the running Team Spot batch after no terminal control_job_runs row was produced. Partial current/snapshot/issue rows for this request were deleted by the parent guard.");
+  } else if (jobKey === "daily-umpire-context") {
+    const batchSql = "SELECT batch_id FROM daily_umpire_context_batches WHERE request_id=?";
+    await safe("daily_umpire_context_current", () => run(env.DAILY_DB, `DELETE FROM daily_umpire_context_current WHERE batch_id IN (${batchSql})`, childRequestId));
+    await safe("daily_umpire_context_snapshots", () => run(env.DAILY_DB, `DELETE FROM daily_umpire_context_snapshots WHERE batch_id IN (${batchSql})`, childRequestId));
+    await safe("daily_umpire_context_issues", () => run(env.DAILY_DB, `DELETE FROM daily_umpire_context_issues WHERE batch_id IN (${batchSql})`, childRequestId));
+    await markBatch("daily_umpire_context_batches", "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN", "FAILED_ORPHAN_BATCH", "Daily Context Full Run stale-child guard failed the running Umpire Context batch after no terminal control_job_runs row was produced. Partial current/snapshot/issue rows for this request were deleted by the parent guard.");
+  } else if (jobKey === "daily-certifier") {
+    const batchSql = "SELECT batch_id FROM daily_context_readiness_batches WHERE request_id=?";
+    await safe("daily_context_readiness_current", () => run(env.DAILY_DB, `DELETE FROM daily_context_readiness_current WHERE batch_id IN (${batchSql})`, childRequestId));
+    await safe("daily_context_readiness_issues", () => run(env.DAILY_DB, `DELETE FROM daily_context_readiness_issues WHERE batch_id IN (${batchSql})`, childRequestId));
+    await markBatch("daily_context_readiness_batches", "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN", "FAILED_ORPHAN_BATCH", "Daily Context Full Run stale-child guard failed the running Context Certifier batch after no terminal control_job_runs row was produced. Partial current/issue rows for this request were deleted by the parent guard.");
+  }
+
+  return cleaned;
+}
+
 async function processDailyContextFullRunJob(env, row, runId, trigger) {
   const started = Date.now();
   const parentInput = parseJsonSafeText(row.input_json || "{}", {});
@@ -4845,42 +4945,8 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
       if (Number(staleChild && staleChild.stale) === 1 && Number(terminalRun && terminalRun.rows) === 0) {
         const finalStatus = "FAILED_DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN";
         const staleOutput = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: "child_running_too_long_without_terminal_control_job_runs_row", child_status: child.status, child_started_at: child.started_at || null, child_updated_at: child.updated_at || null, stale_child_guard_minutes: 2, stages: [...stageReports, report], daily_context_full_run_certified: false, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true };
-        if (stage.job_key === "daily-player-availability") {
-          try {
-            await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1
-              SET status='failed',
-                  certification_status='DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN',
-                  certification_grade='FAIL',
-                  certification_reason='Daily Context Full Run stale-child guard failed the running availability batch after no terminal control_job_runs row was produced. Partial current/snapshot/issue rows for this request are deleted by the parent guard.',
-                  completed_at=CURRENT_TIMESTAMP,
-                  updated_at=CURRENT_TIMESTAMP
-              WHERE request_id=? AND status='running'`, child.request_id);
-            await run(env.DAILY_DB, `DELETE FROM daily_player_availability_current_v1
-              WHERE batch_id IN (SELECT batch_id FROM daily_player_availability_batches_v1 WHERE request_id=?)`, child.request_id);
-            await run(env.DAILY_DB, `DELETE FROM daily_player_availability_snapshots_v1
-              WHERE batch_id IN (SELECT batch_id FROM daily_player_availability_batches_v1 WHERE request_id=?)`, child.request_id);
-            await run(env.DAILY_DB, `DELETE FROM daily_player_availability_issues_v1
-              WHERE batch_id IN (SELECT batch_id FROM daily_player_availability_batches_v1 WHERE request_id=?)`, child.request_id);
-          } catch (_) {}
-        }
-        if (stage.job_key === "daily-team-schedule-spot") {
-          try {
-            await run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_current
-              WHERE batch_id IN (SELECT batch_id FROM daily_team_schedule_spot_batches WHERE request_id=?)`, child.request_id);
-            await run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_snapshots
-              WHERE batch_id IN (SELECT batch_id FROM daily_team_schedule_spot_batches WHERE request_id=?)`, child.request_id);
-            await run(env.DAILY_DB, `DELETE FROM daily_team_schedule_spot_issues
-              WHERE batch_id IN (SELECT batch_id FROM daily_team_schedule_spot_batches WHERE request_id=?)`, child.request_id);
-            await run(env.DAILY_DB, `UPDATE daily_team_schedule_spot_batches
-              SET status='failed',
-                  certification_status='DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN',
-                  certification_grade='FAILED_ORPHAN_BATCH',
-                  certification_reason='Daily Context Full Run stale-child guard failed the running Team Spot batch after no terminal control_job_runs row was produced. Partial current/snapshot/issue rows for this request were deleted by the parent guard.',
-                  completed_at=CURRENT_TIMESTAMP,
-                  updated_at=CURRENT_TIMESTAMP
-              WHERE request_id=? AND status='running'`, child.request_id);
-          } catch (_) {}
-        }
+        const orphanCleanup = await cleanupDailyContextFullRunOrphanChild(env, stage, child.request_id);
+        staleOutput.orphan_cleanup = orphanCleanup;
         await releaseDailyContextFullRunLock(env, row);
         await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id IN (?, ?)", JSON.stringify(staleOutput), finalStatus.toLowerCase(), "Daily Context Full Run child was running too long without a terminal control_job_runs row.", row.request_id, child.request_id);
         await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(staleOutput), finalStatus.toLowerCase(), "Daily Context Full Run stale child guard failed an orphan running child.");
@@ -6566,10 +6632,18 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const sawLockBusy = terminalStatuses.includes("lock_busy");
   const sawHardStop = terminalStatuses.some(s => s === "blocked" || s === "error");
   const continuationAllowedByLastCycle = !sawLockBusy && !sawHardStop;
-  const shouldSelfContinue = continuationAllowedByLastCycle && (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyContextFullRun > 0 || dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0) && depth < maxChains && !!ctx;
+  const hardBoundaryDailyContextOutputs = cycles.flatMap(c => Array.isArray(c && c.processed) ? c.processed : [])
+    .map(x => x && x.output ? x.output : null)
+    .filter(out => !!(out && out.mode === "daily_context_full_run" && out.status === "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED" && out.hard_request_boundary_before_child_dispatch === true));
+  const dailyContextHardBoundaryDelayMs = hardBoundaryDailyContextOutputs.length
+    ? Math.max(...hardBoundaryDailyContextOutputs.map(out => Math.max(0, Number(out.parent_run_after_delay_seconds || 0) * 1000 + 1500)))
+    : 0;
+  const dailyContextHardBoundaryContinuationDue = dailyContextHardBoundaryDelayMs > 0;
+  const anyDueWork = dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyContextFullRun > 0 || dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0;
+  const shouldSelfContinue = continuationAllowedByLastCycle && (anyDueWork || dailyContextHardBoundaryContinuationDue) && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
-  const hotContinuationDelayMs = shouldSelfContinue && lastStatus === "no_due_jobs" ? 6500 : 0;
+  const hotContinuationDelayMs = dailyContextHardBoundaryContinuationDue ? dailyContextHardBoundaryDelayMs : (shouldSelfContinue && lastStatus === "no_due_jobs" ? 6500 : 0);
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -6596,8 +6670,10 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       max_pump_chains: maxChains,
       self_continue_scheduled: !!shouldSelfContinue,
       self_continue_delay_ms: hotContinuationDelayMs,
+      daily_context_hard_boundary_continuation_due: !!dailyContextHardBoundaryContinuationDue,
+      daily_context_hard_boundary_delay_ms: dailyContextHardBoundaryDelayMs,
       full_run_hot_continuation_v0_2_95: true,
-      daily_context_team_spot_hard_boundary_v0_2_136: true,
+      daily_context_all_heavy_hard_boundary_v0_2_137: true,
       self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
       self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
       continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
@@ -6634,9 +6710,11 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         max_jobs_per_cycle: jobsPerCycle,
         max_ms: deadlineMs,
         self_continue_delay_ms: hotContinuationDelayMs,
+        daily_context_hard_boundary_continuation_due: !!dailyContextHardBoundaryContinuationDue,
+        daily_context_hard_boundary_delay_ms: dailyContextHardBoundaryDelayMs,
         full_run_hot_continuation_v0_2_95: true,
-        daily_context_team_spot_hard_boundary_v0_2_136: true,
-      daily_context_team_spot_hard_boundary_v0_2_136: true,
+        daily_context_all_heavy_hard_boundary_v0_2_137: true,
+      daily_context_all_heavy_hard_boundary_v0_2_137: true,
         continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
         self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
