@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-player-availability";
-const VERSION = "alphadog-v2-daily-player-availability-v0.1.6-batched-writes-schema-safe-cleanup";
+const VERSION = "alphadog-v2-daily-player-availability-v0.1.7-forty-man-active-source-gap-fallback";
 const JOB_KEY = "daily-player-availability";
 const SOURCE_KEY = "official_mlb_statsapi_roster_transactions_v1";
 const MAX_PREPARED_PLAYERS = 500;
@@ -492,6 +492,21 @@ async function fetchSources(env, teamIds, playerIds, startDate, endDate) {
   return { activeByTeam, fortyByTeam, ilByTeam, txByTeam, people: peopleMap(peopleResponses), sourceFailures, endpointLog, externalCalls, fetch_concurrency: FETCH_CONCURRENCY, fetch_timeout_ms: FETCH_TIMEOUT_MS };
 }
 
+function isFortyManActiveFallback(forty, people, expectedTeamMlbId) {
+  if (!forty) return false;
+  const fortyTeam = intOrNull(forty.parentTeamId);
+  const fortyStatusCode = rosterStatusCode(forty);
+  const fortyStatusDesc = rosterStatusDesc(forty);
+  const fortyActive = fortyStatusCode === "A" || fortyStatusDesc === "active";
+  if (!fortyActive || fortyTeam !== expectedTeamMlbId) return false;
+
+  const peopleTeam = intOrNull(people?.currentTeam?.id);
+  if (peopleTeam && peopleTeam !== expectedTeamMlbId) return false;
+  if (people && people.active === false) return false;
+
+  return true;
+}
+
 function classify(row, context) {
   const playerId = intOrNull(row.resolved_mlb_player_id);
   const teamMlbId = context.teamMlbId;
@@ -527,12 +542,36 @@ function classify(row, context) {
     team_mismatch_flag = 1;
     issues.push({ issue_type: "team_mismatch", issue_severity: "blocker", reason });
   } else if (context.activeSourceFailed) {
-    availability_status = "source_missing";
-    roster_status = "unknown";
-    availability_confidence = "BLOCKED_SOURCE_MISSING";
-    reason = "Official active roster source failed for expected team.";
-    source_missing_flag = 1;
-    issues.push({ issue_type: "active_roster_source_failed", issue_severity: "blocker", reason });
+    const fortyManActiveFallback = isFortyManActiveFallback(forty, people, teamMlbId);
+    if (fortyManActiveFallback) {
+      availability_status = "active_available";
+      roster_status = "forty_man_active_fallback";
+      availability_confidence = "WARNING_FORTY_MAN_ACTIVE_FALLBACK";
+      reason = "Official active roster source failed, but official 40-man roster status is Active for the expected team and People endpoint is not contradictory.";
+      issues.push({
+        issue_type: "active_roster_gap_forty_man_active_confirmed",
+        issue_severity: "warning",
+        reason,
+        details: {
+          active_roster_source_failed: true,
+          forty_man_active: true,
+          forty_man_parent_team_id: intOrNull(forty?.parentTeamId),
+          people_active: people ? people.active === true : null,
+          people_current_team_id: peopleTeam
+        }
+      });
+      if (latestTx && (latestTxClass.warning || latestTxClass.hard_block)) {
+        transaction_warning_flag = 1;
+        issues.push({ issue_type: "recent_transaction_active", issue_severity: "warning", reason: "Recent transaction exists but 40-man active fallback confirms player on expected team.", details: compactTx(latestTx) });
+      }
+    } else {
+      availability_status = "source_missing";
+      roster_status = "unknown";
+      availability_confidence = "BLOCKED_SOURCE_MISSING";
+      reason = "Official active roster source failed for expected team and no safe 40-man active fallback confirmed availability.";
+      source_missing_flag = 1;
+      issues.push({ issue_type: "active_roster_source_failed", issue_severity: "blocker", reason });
+    }
   } else if (peopleTeam && peopleTeam !== teamMlbId && !activeFlag) {
     availability_status = "team_mismatch";
     roster_status = "unknown";
@@ -747,7 +786,8 @@ async function runAvailability(env, input) {
   const postRetentionPrune = await pruneAvailabilityRetention(env, retention, batchId);
   const blockerCount = results.reduce((n, r) => n + r.classification.issues.filter((i) => i.issue_severity === "blocker").length, 0);
   const warningCount = results.reduce((n, r) => n + r.classification.issues.filter((i) => i.issue_severity === "warning").length, 0);
-  const hardSourceFailures = sources.sourceFailures.filter((f) => f.hard).length;
+  const rawHardSourceFailures = sources.sourceFailures.filter((f) => f.hard).length;
+  const unresolvedHardSourceFailures = results.reduce((n, r) => n + r.classification.issues.filter((i) => i.issue_type === "active_roster_source_failed" && i.issue_severity === "blocker").length, 0);
   const sourceFailures = sources.sourceFailures.length;
   const counts = {
     prepared_games_checked: gamePks.length,
@@ -763,13 +803,13 @@ async function runAvailability(env, input) {
     snapshot_rows_written: written.snapshot_rows_written,
     issues_written: written.issues_written,
     source_failures: sourceFailures,
-    hard_source_failures: hardSourceFailures,
+    hard_source_failures: unresolvedHardSourceFailures,
     blocker_count: blockerCount,
     warning_count: warningCount,
     external_calls: sources.externalCalls
   };
   const coverageOk = results.length > 0 && written.rows_written === results.length && written.snapshot_rows_written === results.length;
-  const dataOk = coverageOk && hardSourceFailures === 0;
+  const dataOk = coverageOk && unresolvedHardSourceFailures === 0;
   const certification = dataOk ? (blockerCount ? "DAILY_PLAYER_AVAILABILITY_CERTIFIED_WITH_PLAYER_BLOCKERS" : "DAILY_PLAYER_AVAILABILITY_CERTIFIED_READY") : "DAILY_PLAYER_AVAILABILITY_FAILED_SOURCE_OR_COVERAGE";
   const grade = dataOk ? (blockerCount || warningCount ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL";
   const status = dataOk ? "completed" : "failed_source_or_coverage";
@@ -794,6 +834,8 @@ async function runAvailability(env, input) {
     retention_pre_prune: preRetentionPrune,
     retention_post_prune: postRetentionPrune,
     source_failures_detail: sources.sourceFailures.slice(0, 25),
+    raw_hard_source_failures: rawHardSourceFailures,
+    unresolved_hard_source_failures: unresolvedHardSourceFailures,
     fetch_concurrency: sources.fetch_concurrency || FETCH_CONCURRENCY,
     fetch_timeout_ms: sources.fetch_timeout_ms || FETCH_TIMEOUT_MS,
     write_batch_row_limit: written.write_batch_row_limit || WRITE_BATCH_ROW_LIMIT,
