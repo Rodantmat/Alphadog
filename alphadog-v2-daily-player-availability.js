@@ -1,10 +1,11 @@
 const WORKER_NAME = "alphadog-v2-daily-player-availability";
-const VERSION = "alphadog-v2-daily-player-availability-v0.1.3-today-tomorrow-retention-prune";
+const VERSION = "alphadog-v2-daily-player-availability-v0.1.4-bounded-fetch-terminal-fail";
 const JOB_KEY = "daily-player-availability";
 const SOURCE_KEY = "official_mlb_statsapi_roster_transactions_v1";
 const MAX_PREPARED_PLAYERS = 500;
 const PEOPLE_BATCH_SIZE = 50;
-const FETCH_TIMEOUT_MS = 12000;
+const FETCH_TIMEOUT_MS = 7000;
+const FETCH_CONCURRENCY = 8;
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "MLB_API_BASE_URL"];
@@ -95,6 +96,20 @@ async function fetchJson(url, env, optional = false) {
     clearTimeout(timer);
   }
 }
+async function mapLimit(items, limit, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  const workerCount = Math.max(1, Math.min(Number(limit) || 1, items.length || 1));
+  async function worker() {
+    while (next < items.length) {
+      const idx = next++;
+      out[idx] = await fn(items[idx], idx);
+    }
+  }
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return out;
+}
+
 function dateOnly(value) {
   const m = String(value || "").match(/^(\d{4}-\d{2}-\d{2})/);
   if (m) return m[1];
@@ -423,11 +438,24 @@ async function fetchSources(env, teamIds, playerIds, startDate, endDate) {
   const txByTeam = new Map();
   const endpointLog = [];
   let externalCalls = 0;
-  for (const teamId of teamIds) {
-    const active = await fetchJson(`${base}/teams/${teamId}/roster/active`, env, false); externalCalls++; endpointLog.push({ teamId, endpoint: "active", ok: active.ok, status: active.status });
-    const forty = await fetchJson(`${base}/teams/${teamId}/roster/40Man`, env, true); externalCalls++; endpointLog.push({ teamId, endpoint: "40Man", ok: forty.ok, status: forty.status });
-    const il = await fetchJson(`${base}/teams/${teamId}/roster/injuredList`, env, true); externalCalls++; endpointLog.push({ teamId, endpoint: "injuredList", ok: il.ok, status: il.status });
-    const tx = await fetchJson(`${base}/transactions?teamId=${encodeURIComponent(String(teamId))}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`, env, true); externalCalls++; endpointLog.push({ teamId, endpoint: "transactions", ok: tx.ok, status: tx.status });
+
+  const teamResults = await mapLimit(teamIds, FETCH_CONCURRENCY, async (teamId) => {
+    const [active, forty, il, tx] = await Promise.all([
+      fetchJson(`${base}/teams/${teamId}/roster/active`, env, false),
+      fetchJson(`${base}/teams/${teamId}/roster/40Man`, env, true),
+      fetchJson(`${base}/teams/${teamId}/roster/injuredList`, env, true),
+      fetchJson(`${base}/transactions?teamId=${encodeURIComponent(String(teamId))}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`, env, true)
+    ]);
+    return { teamId, active, forty, il, tx };
+  });
+
+  for (const item of teamResults) {
+    const { teamId, active, forty, il, tx } = item;
+    externalCalls += 4;
+    endpointLog.push({ teamId, endpoint: "active", ok: active.ok, status: active.status, elapsed_ms: active.elapsed_ms });
+    endpointLog.push({ teamId, endpoint: "40Man", ok: forty.ok, status: forty.status, elapsed_ms: forty.elapsed_ms });
+    endpointLog.push({ teamId, endpoint: "injuredList", ok: il.ok, status: il.status, elapsed_ms: il.elapsed_ms });
+    endpointLog.push({ teamId, endpoint: "transactions", ok: tx.ok, status: tx.status, elapsed_ms: tx.elapsed_ms });
     if (!active.ok) sourceFailures.push({ teamId, endpoint: "active", hard: true, status: active.status, error: active.error || active.text_preview || null });
     if (!forty.ok) sourceFailures.push({ teamId, endpoint: "40Man", hard: false, status: forty.status, error: forty.error || forty.text_preview || null });
     if (!il.ok) sourceFailures.push({ teamId, endpoint: "injuredList", hard: false, status: il.status, error: il.error || il.text_preview || null });
@@ -437,14 +465,20 @@ async function fetchSources(env, teamIds, playerIds, startDate, endDate) {
     ilByTeam.set(teamId, rosterMap(il, "injuredList"));
     txByTeam.set(teamId, txMap(tx));
   }
-  const peopleResponses = [];
-  for (let i = 0; i < playerIds.length; i += PEOPLE_BATCH_SIZE) {
-    const ids = playerIds.slice(i, i + PEOPLE_BATCH_SIZE);
-    const resp = await fetchJson(`${base}/people?personIds=${encodeURIComponent(ids.join(","))}`, env, true); externalCalls++; endpointLog.push({ endpoint: "people", ids: ids.length, ok: resp.ok, status: resp.status });
+
+  const peopleBatches = [];
+  for (let i = 0; i < playerIds.length; i += PEOPLE_BATCH_SIZE) peopleBatches.push(playerIds.slice(i, i + PEOPLE_BATCH_SIZE));
+  const peopleResponses = await mapLimit(peopleBatches, FETCH_CONCURRENCY, async (ids) => {
+    return await fetchJson(`${base}/people?personIds=${encodeURIComponent(ids.join(","))}`, env, true);
+  });
+  for (let i = 0; i < peopleResponses.length; i++) {
+    const resp = peopleResponses[i];
+    const ids = peopleBatches[i] || [];
+    externalCalls++;
+    endpointLog.push({ endpoint: "people", ids: ids.length, ok: resp.ok, status: resp.status, elapsed_ms: resp.elapsed_ms });
     if (!resp.ok) sourceFailures.push({ endpoint: "people", hard: false, status: resp.status, error: resp.error || resp.text_preview || null });
-    peopleResponses.push(resp);
   }
-  return { activeByTeam, fortyByTeam, ilByTeam, txByTeam, people: peopleMap(peopleResponses), sourceFailures, endpointLog, externalCalls };
+  return { activeByTeam, fortyByTeam, ilByTeam, txByTeam, people: peopleMap(peopleResponses), sourceFailures, endpointLog, externalCalls, fetch_concurrency: FETCH_CONCURRENCY, fetch_timeout_ms: FETCH_TIMEOUT_MS };
 }
 function classify(row, context) {
   const playerId = intOrNull(row.resolved_mlb_player_id);
@@ -739,6 +773,8 @@ async function runAvailability(env, input) {
     retention_pre_prune: preRetentionPrune,
     retention_post_prune: postRetentionPrune,
     source_failures_detail: sources.sourceFailures.slice(0, 25),
+    fetch_concurrency: sources.fetch_concurrency || FETCH_CONCURRENCY,
+    fetch_timeout_ms: sources.fetch_timeout_ms || FETCH_TIMEOUT_MS,
     no_score_db_mutation: true,
     no_calendar_rebuild: true,
     no_lineups: true,
@@ -773,7 +809,23 @@ export default {
       try {
         return jsonResponse(await runAvailability(env, input));
       } catch (err) {
-        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_PLAYER_AVAILABILITY_EXCEPTION", error: String(err && err.stack ? err.stack : err), timestamp_utc: nowUtc(), no_score_db_mutation: true }, 500);
+        const message = String(err && err.stack ? err.stack : err);
+        try {
+          await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1
+            SET status='failed',
+                certification_status='DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINAL_CLEANUP',
+                certification_grade='FAIL',
+                certification_reason=?,
+                output_json=?,
+                completed_at=CURRENT_TIMESTAMP,
+                updated_at=CURRENT_TIMESTAMP
+            WHERE request_id=? AND status='running'`,
+            message.slice(0, 900),
+            safeJson({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINAL_CLEANUP", error: message, timestamp_utc: nowUtc() }, 12000),
+            input.request_id || null
+          );
+        } catch (_) {}
+        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINAL_CLEANUP", error: message, timestamp_utc: nowUtc(), no_score_db_mutation: true }, 500);
       }
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);

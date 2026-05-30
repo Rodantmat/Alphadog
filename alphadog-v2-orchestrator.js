@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.132-board-full-run-prizepicks-nonfatal-continue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.133-daily-context-stale-child-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1506,6 +1506,7 @@ async function processStaticPropTaxonomyJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       no_prizepicks_board_mutation: true,
       no_scoring: true,
       no_ranking: true,
@@ -1827,6 +1828,7 @@ async function processPrizePicksGithubBoardJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       no_generic_dispatch: true,
       prizepicks_dispatch_queue_close_fix_v0_2_97: true,
       no_scoring: true,
@@ -1960,6 +1962,7 @@ async function processParlaySleeperBoardJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       source_probe_only: true,
       no_generic_dispatch: true,
       no_prizepicks_mutation: true,
@@ -2097,6 +2100,7 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       base_backfill_self_continuation_v0_2_0: true,
       lock_busy_backoff_v0_2_3: true,
       direct_waituntil_continuation_v0_2_4: true,
@@ -2242,6 +2246,7 @@ async function processBaseHitterSplitsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       base_hitter_splits_v0_4_3_pitcher_parity_delta_dispatch: true,
       delta_hitter_splits_noop_restore_scoped_repair_daily_affected_refresh_gate: isDeltaHitterSplits,
       certified_stage_promotion_v0_3_0: !isDeltaHitterSplits,
@@ -2577,6 +2582,7 @@ async function processBasePitcherSplitsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       base_pitcher_splits_exact_dispatch: true,
       base_pitcher_splits_v0_5_10_stale_duplicate_rescue_dispatch: rowInput.mode === "delta_update_noop_restore_scoped_repair_gate",
       base_pitcher_splits_v0_5_1_delta_noop_restore_scoped_repair_gate_dispatch: rowInput.mode === "delta_update_noop_restore_scoped_repair_gate",
@@ -2720,6 +2726,7 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       base_pitcher_game_logs_scoped_delta_v0_4_1: true,
       base_or_delta_continuation: true,
       retained_stage_restore_before_queue_control_room: true,
@@ -2872,6 +2879,7 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       base_team_game_logs_base_backfill_or_delta_v0_3_1: true,
       hot_continuation_ready: true,
       backend_self_continuation_ready: true,
@@ -3146,6 +3154,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       base_starter_history_v0_4_4_scoped_repair_order_fix: starterMode === "delta_scoped_source_repair",
       base_starter_history_v0_4_2_retained_stage_restore_before_queue: starterMode === "delta_retained_stage_restore_before_queue",
       base_starter_history_v0_4_1_delta_noop_current_state: starterMode === "delta_noop_current_state",
@@ -3307,6 +3316,7 @@ async function processStaticTeamsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       no_prizepicks_board_mutation: true,
       no_opponent_backfill: true,
       no_scoring: true
@@ -3437,6 +3447,7 @@ async function processStaticStadiumsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       no_team_db_writes: true,
       no_prizepicks_board_mutation: true,
       no_opponent_backfill: true,
@@ -3568,6 +3579,7 @@ async function processStaticParkFactorsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       writes_only_ref_park_factors: true,
       no_team_db_writes: true,
       no_prizepicks_board_mutation: true,
@@ -3701,6 +3713,7 @@ async function processStaticPlayersJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       partial_continue: partialContinue,
       writes_only_ref_players_aliases_rosters: true,
       no_team_db_writes: true,
@@ -3835,6 +3848,7 @@ async function processDailyProbablePitchersJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       no_calendar_rebuild: true,
       no_board_mutation: true,
       no_lineups: true,
@@ -3866,6 +3880,40 @@ async function processDailyProbablePitchersJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
+
+function timeoutPromise(ms, payload) {
+  return new Promise((resolve) => setTimeout(() => resolve(payload), ms));
+}
+
+async function serviceFetchJsonWithTimeout(binding, url, input, timeoutMs, timeoutOutput) {
+  const fetchPromise = (async () => {
+    const resp = await binding.fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input)
+    });
+    const httpStatus = resp.status;
+    const text = await resp.text();
+    let output;
+    try { output = JSON.parse(text); }
+    catch (_) {
+      output = {
+        ok: false,
+        data_ok: false,
+        version: SYSTEM_VERSION,
+        processed_by: WORKER_NAME,
+        status: "worker_non_json_response",
+        http_status: httpStatus,
+        response_preview: String(text || "").slice(0, 900)
+      };
+    }
+    return { timed_out: false, http_status: httpStatus, output };
+  })();
+  return await Promise.race([
+    fetchPromise,
+    timeoutPromise(timeoutMs, { timed_out: true, http_status: null, output: timeoutOutput })
+  ]);
+}
 
 async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
   if (!env.DAILY_PLAYER_AVAILABILITY_WORKER || typeof env.DAILY_PLAYER_AVAILABILITY_WORKER.fetch !== "function") {
@@ -3925,26 +3973,33 @@ async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
   let output;
   let httpStatus = null;
   try {
-    const resp = await env.DAILY_PLAYER_AVAILABILITY_WORKER.fetch("https://internal.alphadog-v2-daily-player-availability/run", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(input)
-    });
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); }
-    catch (_) {
-      output = {
-        ok: false,
-        data_ok: false,
-        version: SYSTEM_VERSION,
-        processed_by: WORKER_NAME,
-        worker_name: row.worker_name,
-        job_key: row.job_key,
-        status: "worker_non_json_response",
-        http_status: httpStatus,
-        response_preview: String(text || "").slice(0, 900)
-      };
+    const timeoutMs = 110000;
+    const timeoutOutput = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      status: "worker_dispatch_timeout",
+      certification: "DAILY_PLAYER_AVAILABILITY_DISPATCH_TIMEOUT_TERMINAL_FAIL",
+      timeout_ms: timeoutMs,
+      note: "Daily Player Availability did not return within the bounded service-binding timeout; orchestrator is terminal-failing the child instead of leaving it running forever."
+    };
+    const result = await serviceFetchJsonWithTimeout(env.DAILY_PLAYER_AVAILABILITY_WORKER, "https://internal.alphadog-v2-daily-player-availability/run", input, timeoutMs, timeoutOutput);
+    httpStatus = result.http_status;
+    output = { ...result.output, dispatch_timed_out: result.timed_out === true };
+    if (result.timed_out) {
+      try {
+        await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1
+          SET status='failed',
+              certification_status='DAILY_PLAYER_AVAILABILITY_DISPATCH_TIMEOUT_TERMINAL_FAIL',
+              certification_grade='FAIL',
+              certification_reason='Orchestrator timed out waiting for Daily Player Availability service-binding response and terminal-failed the orphan running batch.',
+              completed_at=CURRENT_TIMESTAMP,
+              updated_at=CURRENT_TIMESTAMP
+          WHERE request_id=? AND status='running'`, row.request_id);
+      } catch (_) {}
     }
   } catch (err) {
     output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
@@ -3969,6 +4024,7 @@ async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       sidecar_tables_only: true,
       no_calendar_rebuild: true,
       no_daily_game_status_duplication: true,
@@ -4108,6 +4164,7 @@ async function processDailyWeatherJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       unified_weather_roof_context: true,
       volatile_current_retention_today_tomorrow_only: true,
       static_reference_data_read_only: true,
@@ -4239,6 +4296,7 @@ async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       volatile_current_snapshot_issue_retention_today_tomorrow_only: true,
       no_external_sources: true,
       no_calendar_rebuild: true,
@@ -4379,6 +4437,7 @@ async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       internal_source_only_v0_1: true,
       primary_source_table: "TEAM_DB.bullpen_history",
       volatile_current_retention_today_tomorrow_only: true,
@@ -4526,6 +4585,7 @@ async function processDailyUmpireContextJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       official_mlb_source_probe_only: true,
       missing_assignment_warning_only_v0_1: true,
       game_level_one_row_per_game_pk: true,
@@ -4753,7 +4813,30 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
     const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || childOutput.certification_status || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, rows_read: childOutput.prepared_rows_read || childOutput.rows_read || childOutput.rows_read_total || 0, rows_written: childOutput.current_rows_written || childOutput.rows_written || childOutput.rows_promoted || childOutput.weather_rows_written || childOutput.team_rows_written || childOutput.game_rows_written || 0, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0 };
 
     if (validation.wait) {
-      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification: "DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
+      const terminalRun = await first(env.CONTROL_DB, "SELECT COUNT(*) AS rows FROM control_job_runs WHERE request_id=? AND status IN ('completed','failed','blocked')", child.request_id);
+      const staleChild = await first(env.CONTROL_DB, "SELECT CASE WHEN datetime(COALESCE(started_at, created_at)) <= datetime('now','-10 minutes') THEN 1 ELSE 0 END AS stale FROM control_job_queue WHERE request_id=?", child.request_id);
+      if (Number(staleChild && staleChild.stale) === 1 && Number(terminalRun && terminalRun.rows) === 0) {
+        const finalStatus = "FAILED_DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN";
+        const staleOutput = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: "child_running_too_long_without_terminal_control_job_runs_row", child_status: child.status, child_started_at: child.started_at || null, child_updated_at: child.updated_at || null, stale_child_guard_minutes: 10, stages: [...stageReports, report], daily_context_full_run_certified: false, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true };
+        if (stage.job_key === "daily-player-availability") {
+          try {
+            await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1
+              SET status='failed',
+                  certification_status='DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN',
+                  certification_grade='FAIL',
+                  certification_reason='Daily Context Full Run stale-child guard failed the running availability batch after no terminal control_job_runs row was produced.',
+                  completed_at=CURRENT_TIMESTAMP,
+                  updated_at=CURRENT_TIMESTAMP
+              WHERE request_id=? AND status='running'`, child.request_id);
+          } catch (_) {}
+        }
+        await releaseDailyContextFullRunLock(env, row);
+        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id IN (?, ?)", JSON.stringify(staleOutput), finalStatus.toLowerCase(), "Daily Context Full Run child was running too long without a terminal control_job_runs row.", row.request_id, child.request_id);
+        await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(staleOutput), finalStatus.toLowerCase(), "Daily Context Full Run stale child guard failed an orphan running child.");
+        await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'ERROR', 'daily_context_full_run_stale_child_failed', 'Daily Context Full Run stale-child guard terminal-failed orphan running child', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(staleOutput));
+        return staleOutput;
+      }
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification: "DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true, stale_child_guard_minutes: 10 };
       await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
       await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+8 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
       return output;
@@ -4884,6 +4967,7 @@ async function processDailyLineupsJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       source_probe_only: true,
       no_calendar_rebuild: true,
       no_daily_game_status_duplication: true,
@@ -5014,6 +5098,7 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       no_board_mutation: true,
       no_player_resolver: true,
       no_lineups: true,
@@ -5131,6 +5216,7 @@ async function processScorePrepJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       no_market_board_mutation: true,
       no_raw_board_delete: true,
       no_scoring: true,
@@ -5293,6 +5379,7 @@ async function processDeltaCertifierJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      bounded_service_binding_timeout_ms: 110000,
       delta_certifier_dispatch_v0_2_117: true,
       mode: requestedMode,
       calendar_tally_stage: normalizedInputJson.calendar_tally_stage || null,
