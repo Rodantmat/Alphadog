@@ -1,12 +1,12 @@
 const WORKER_NAME = "alphadog-v2-daily-player-availability";
-const VERSION = "alphadog-v2-daily-player-availability-v0.1.5-batched-writes-terminal-finalize";
+const VERSION = "alphadog-v2-daily-player-availability-v0.1.6-batched-writes-schema-safe-cleanup";
 const JOB_KEY = "daily-player-availability";
 const SOURCE_KEY = "official_mlb_statsapi_roster_transactions_v1";
 const MAX_PREPARED_PLAYERS = 500;
 const PEOPLE_BATCH_SIZE = 50;
 const FETCH_TIMEOUT_MS = 7000;
 const FETCH_CONCURRENCY = 8;
-const WRITE_BATCH_ROW_LIMIT = 40;
+const WRITE_BATCH_ROW_LIMIT = 20;
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "MLB_API_BASE_URL"];
@@ -110,7 +110,17 @@ async function mapLimit(items, limit, fn) {
   await Promise.all(Array.from({ length: workerCount }, () => worker()));
   return out;
 }
-
+async function cleanupBatchRows(env, batchId) {
+  if (!batchId) return { current_deleted: null, snapshots_deleted: null, issues_deleted: null };
+  const current = await run(env.DAILY_DB, `DELETE FROM daily_player_availability_current_v1 WHERE batch_id=?`, batchId);
+  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_player_availability_snapshots_v1 WHERE batch_id=?`, batchId);
+  const issues = await run(env.DAILY_DB, `DELETE FROM daily_player_availability_issues_v1 WHERE batch_id=?`, batchId);
+  return {
+    current_deleted: current?.meta?.changes ?? null,
+    snapshots_deleted: snapshots?.meta?.changes ?? null,
+    issues_deleted: issues?.meta?.changes ?? null
+  };
+}
 function dateOnly(value) {
   const m = String(value || "").match(/^(\d{4}-\d{2}-\d{2})/);
   if (m) return m[1];
@@ -462,7 +472,7 @@ async function fetchSources(env, teamIds, playerIds, startDate, endDate) {
     if (!il.ok) sourceFailures.push({ teamId, endpoint: "injuredList", hard: false, status: il.status, error: il.error || il.text_preview || null });
     if (!tx.ok) sourceFailures.push({ teamId, endpoint: "transactions", hard: false, status: tx.status, error: tx.error || tx.text_preview || null });
     activeByTeam.set(teamId, rosterMap(active, "active"));
-    fortyByTeam.set(teamId, rosterMap(forty, "40Man"));
+    fortyByTeam.set(teamId, rosterMap(forty, "any"));
     ilByTeam.set(teamId, rosterMap(il, "injuredList"));
     txByTeam.set(teamId, txMap(tx));
   }
@@ -481,6 +491,7 @@ async function fetchSources(env, teamIds, playerIds, startDate, endDate) {
   }
   return { activeByTeam, fortyByTeam, ilByTeam, txByTeam, people: peopleMap(peopleResponses), sourceFailures, endpointLog, externalCalls, fetch_concurrency: FETCH_CONCURRENCY, fetch_timeout_ms: FETCH_TIMEOUT_MS };
 }
+
 function classify(row, context) {
   const playerId = intOrNull(row.resolved_mlb_player_id);
   const teamMlbId = context.teamMlbId;
@@ -604,7 +615,6 @@ async function writeResults(env, batchId, rows) {
   let current = 0;
   let snapshots = 0;
   let issues = 0;
-
   const currentSql = `INSERT INTO daily_player_availability_current_v1 (
       availability_key, batch_id, source_key, source_snapshot_at, official_date, game_pk, game_time_utc,
       player_id, mlb_player_id, player_name, team_abbreviation, team_id, team_mlb_id, opponent_abbreviation, opponent_mlb_id,
@@ -644,13 +654,9 @@ async function writeResults(env, batchId, rows) {
   const snapshotSql = `INSERT INTO daily_player_availability_snapshots_v1 (snapshot_id, batch_id, availability_key, official_date, game_pk, mlb_player_id, team_mlb_id, availability_status, roster_status, availability_confidence, source_key, source_snapshot_at, source_payload_snippets) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   const issueSql = `INSERT INTO daily_player_availability_issues_v1 (issue_id, batch_id, official_date, game_pk, mlb_player_id, team_mlb_id, issue_type, issue_severity, reason, details_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-  for (let start = 0; start < rows.length; start += WRITE_BATCH_ROW_LIMIT) {
-    const chunk = rows.slice(start, start + WRITE_BATCH_ROW_LIMIT);
+  for (let offset = 0; offset < rows.length; offset += WRITE_BATCH_ROW_LIMIT) {
     const statements = [];
-    let chunkCurrent = 0;
-    let chunkSnapshots = 0;
-    let chunkIssues = 0;
-
+    const chunk = rows.slice(offset, offset + WRITE_BATCH_ROW_LIMIT);
     for (const item of chunk) {
       const r = item.row;
       const c = item.classification;
@@ -661,35 +667,23 @@ async function writeResults(env, batchId, rows) {
         c.flags.active_roster_flag, c.flags.injured_list_flag, c.flags.forty_man_flag, c.flags.transaction_warning_flag, c.flags.transaction_block_flag, c.flags.team_mismatch_flag, c.flags.source_missing_flag,
         Number(r.prepared_board_pickable_rows || 0), safeJson(item.source_endpoints, 3000), c.latestTx ? `${c.latestTx.typeCode || ""} ${c.latestTx.typeDesc || ""}: ${c.latestTx.description || ""}`.slice(0, 900) : null, c.latestTx ? (c.latestTx.date || c.latestTx.effectiveDate || null) : null, c.reason, safeJson(c.evaluation, 9000)
       ));
-      chunkCurrent++;
-
+      current++;
       statements.push(env.DAILY_DB.prepare(snapshotSql).bind(
         rid("dpav1_snapshot"), batchId, item.availability_key, r.official_date, r.official_game_pk, intOrNull(r.resolved_mlb_player_id), item.team_mlb_id, c.availability_status, c.roster_status, c.availability_confidence, SOURCE_KEY, item.source_snapshot_at, safeJson(c.evaluation.source_snippets, 7000)
       ));
-      chunkSnapshots++;
-
+      snapshots++;
       for (const issue of c.issues) {
         statements.push(env.DAILY_DB.prepare(issueSql).bind(
           rid("dpav1_issue"), batchId, r.official_date, r.official_game_pk, intOrNull(r.resolved_mlb_player_id), item.team_mlb_id, issue.issue_type, issue.issue_severity, issue.reason || c.reason, safeJson(issue.details || c.evaluation, 5000)
         ));
-        chunkIssues++;
+        issues++;
       }
     }
-
     if (statements.length) await env.DAILY_DB.batch(statements);
-    current += chunkCurrent;
-    snapshots += chunkSnapshots;
-    issues += chunkIssues;
-
-    await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1
-      SET rows_written=?, snapshot_rows_written=?, issue_rows_written=?, updated_at=CURRENT_TIMESTAMP
-      WHERE batch_id=? AND status='running'`,
-      current, snapshots, issues, batchId
-    );
   }
-
   return { rows_written: current, snapshot_rows_written: snapshots, issues_written: issues, write_batch_row_limit: WRITE_BATCH_ROW_LIMIT };
 }
+
 async function runAvailability(env, input) {
   const startedAt = nowUtc();
   const batchId = rid("daily_player_availability_batch");
@@ -838,7 +832,14 @@ export default {
         return jsonResponse(await runAvailability(env, input));
       } catch (err) {
         const message = String(err && err.stack ? err.stack : err);
+        let cleanup = null;
         try {
+          const runningRows = await all(env.DAILY_DB, `SELECT batch_id FROM daily_player_availability_batches_v1 WHERE request_id=? AND status='running'`, input.request_id || null);
+          for (const row of runningRows) {
+            const oneCleanup = await cleanupBatchRows(env, row.batch_id);
+            cleanup = cleanup || [];
+            cleanup.push({ batch_id: row.batch_id, ...oneCleanup });
+          }
           await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1
             SET status='failed',
                 certification_status='DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINAL_CLEANUP',
@@ -849,11 +850,11 @@ export default {
                 updated_at=CURRENT_TIMESTAMP
             WHERE request_id=? AND status='running'`,
             message.slice(0, 900),
-            safeJson({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINAL_CLEANUP", error: message, timestamp_utc: nowUtc() }, 12000),
+            safeJson({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINAL_CLEANUP", error: message, cleanup, timestamp_utc: nowUtc() }, 12000),
             input.request_id || null
           );
         } catch (_) {}
-        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINAL_CLEANUP", error: message, timestamp_utc: nowUtc(), no_score_db_mutation: true }, 500);
+        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINAL_CLEANUP", error: message, cleanup, timestamp_utc: nowUtc(), no_score_db_mutation: true }, 500);
       }
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
