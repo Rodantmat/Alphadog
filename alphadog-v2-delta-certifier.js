@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.1.9-current-day-nonfinal-nonblocking";
+const VERSION = "alphadog-v2-delta-certifier-v0.2.0-stat-evidence-finality-gate";
 const JOB_KEY = "delta-certifier";
 
 const ACTIVE_COVERAGE_LAYER_KEYS = [
@@ -599,7 +599,7 @@ function scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, extraDetails
     status: "scheduled_not_ready",
     grade: "WAITING_NOT_FINAL",
     blocking: 0,
-    liveRows: 0,
+    liveRows: Number(liveSourceRowsForGame || 0),
     entityCount: 0,
     expectedRows: null,
     missingRows: null,
@@ -763,15 +763,39 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
     const starterTeam = countFromMap(starterTeamCounts, gamePk);
     const bullpen = countFromMap(bullpenCounts, gamePk);
     const liveSourceRowsForGame = hitter.rows + pitcher.rows + team.rows + starter.rows + bullpen.rows;
-    const waitForNonFinalCalendarGame = shouldWaitForNonFinalCalendarGame(g, currentOfficialDate);
-    const evaluateLiveLayers = calendarStatsReady || Number(g.is_final || 0) === 1;
+    const statEvidenceRowsForGame = hitter.rows + pitcher.rows;
+    const downstreamEvidenceRowsForGame = team.rows + starter.rows + bullpen.rows;
+    const statEvidenceFinalityGate = statEvidenceRowsForGame > 0 || downstreamEvidenceRowsForGame > 0;
+    const rawWaitForNonFinalCalendarGame = shouldWaitForNonFinalCalendarGame(g, currentOfficialDate);
+    const waitForNonFinalCalendarGame = rawWaitForNonFinalCalendarGame && !statEvidenceFinalityGate;
+    const evaluateLiveLayers = calendarStatsReady || Number(g.is_final || 0) === 1 || statEvidenceFinalityGate;
 
     if (waitForNonFinalCalendarGame || !evaluateLiveLayers) {
       for (const layerKey of activeLayers) {
-        addLayer(g, scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, { live_source_override_v0_1_8: false }));
+        addLayer(g, scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, {
+          live_source_override_v0_1_8: false,
+          stat_evidence_finality_gate_v0_2_0: true,
+          stat_evidence_rows_for_game: statEvidenceRowsForGame,
+          downstream_evidence_rows_for_game: downstreamEvidenceRowsForGame,
+          raw_wait_for_nonfinal_calendar_game: rawWaitForNonFinalCalendarGame,
+          wait_suppressed_by_stat_evidence: false
+        }));
       }
     } else {
-      const overrideDetails = { calendar_is_available_for_stats: Number(g.is_available_for_stats || 0), calendar_is_final: Number(g.is_final || 0), live_source_rows_for_game: liveSourceRowsForGame, live_source_override_v0_1_8: !calendarStatsReady && Number(g.is_final || 0) === 1 && liveSourceRowsForGame > 0, current_day_nonfinal_nonblocking_v0_1_9: false };
+      const overrideDetails = {
+        calendar_is_available_for_stats: Number(g.is_available_for_stats || 0),
+        calendar_is_final: Number(g.is_final || 0),
+        calendar_status_code: g.status_code || null,
+        calendar_abstract_game_state: g.abstract_game_state || null,
+        calendar_detailed_state: g.detailed_state || null,
+        live_source_rows_for_game: liveSourceRowsForGame,
+        stat_evidence_rows_for_game: statEvidenceRowsForGame,
+        downstream_evidence_rows_for_game: downstreamEvidenceRowsForGame,
+        stat_evidence_finality_gate_v0_2_0: true,
+        stale_calendar_wait_suppressed_by_stat_evidence_v0_2_0: rawWaitForNonFinalCalendarGame && statEvidenceFinalityGate,
+        live_source_override_v0_1_8: !calendarStatsReady && Number(g.is_final || 0) === 1 && liveSourceRowsForGame > 0,
+        current_day_nonfinal_nonblocking_v0_1_9: false
+      };
       addLayer(g, hitter.rows > 0 ? { layerKey: "hitter_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: hitter.rows, entityCount: hitter.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...hitter, ...overrideDetails } } : { layerKey: "hitter_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_HITTER_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...hitter, ...overrideDetails } });
       addLayer(g, pitcher.rows > 0 ? { layerKey: "pitcher_game_logs", status: "complete", grade: "PASS", blocking: 0, liveRows: pitcher.rows, entityCount: pitcher.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...pitcher, ...overrideDetails } } : { layerKey: "pitcher_game_logs", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_PITCHER_GAME_LOG_ROWS_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...pitcher, ...overrideDetails } });
       const teamPass = team.rows === 2 && team.entities === 2;
@@ -896,6 +920,8 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
     optimized_full_calendar_coverage_v0_1_6: true,
     live_source_override_calendar_wait_v0_1_8: true,
     current_day_nonfinal_nonblocking_v0_1_9: true,
+    stat_evidence_finality_gate_v0_2_0: true,
+    stale_calendar_nonfinal_wait_suppressed_when_stat_evidence_exists: true,
     current_official_date_pt: currentOfficialDate,
     bullpen_live_reconcile_after_coverage_v0_1_8: true,
     bullpen_live_reconcile_checked_rows: bullpenReconcile.checked_rows,
