@@ -1,11 +1,12 @@
 const WORKER_NAME = "alphadog-v2-daily-player-availability";
-const VERSION = "alphadog-v2-daily-player-availability-v0.1.4-bounded-fetch-terminal-fail";
+const VERSION = "alphadog-v2-daily-player-availability-v0.1.5-batched-writes-terminal-finalize";
 const JOB_KEY = "daily-player-availability";
 const SOURCE_KEY = "official_mlb_statsapi_roster_transactions_v1";
 const MAX_PREPARED_PLAYERS = 500;
 const PEOPLE_BATCH_SIZE = 50;
 const FETCH_TIMEOUT_MS = 7000;
 const FETCH_CONCURRENCY = 8;
+const WRITE_BATCH_ROW_LIMIT = 40;
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "MLB_API_BASE_URL"];
@@ -603,10 +604,8 @@ async function writeResults(env, batchId, rows) {
   let current = 0;
   let snapshots = 0;
   let issues = 0;
-  for (const item of rows) {
-    const r = item.row;
-    const c = item.classification;
-    await run(env.DAILY_DB, `INSERT INTO daily_player_availability_current_v1 (
+
+  const currentSql = `INSERT INTO daily_player_availability_current_v1 (
       availability_key, batch_id, source_key, source_snapshot_at, official_date, game_pk, game_time_utc,
       player_id, mlb_player_id, player_name, team_abbreviation, team_id, team_mlb_id, opponent_abbreviation, opponent_mlb_id,
       availability_status, roster_status, availability_confidence,
@@ -641,27 +640,55 @@ async function writeResults(env, batchId, rows) {
       transaction_date=excluded.transaction_date,
       reason=excluded.reason,
       evaluation_json=excluded.evaluation_json,
-      updated_at=CURRENT_TIMESTAMP`,
-      item.availability_key, batchId, SOURCE_KEY, item.source_snapshot_at, r.official_date, r.official_game_pk, r.official_game_time_utc,
-      intOrNull(r.resolved_player_id), intOrNull(r.resolved_mlb_player_id), r.player_name || null, normTeam(r.team), item.team_id || null, item.team_mlb_id, normTeam(r.opponent), item.opponent_mlb_id,
-      c.availability_status, c.roster_status, c.availability_confidence,
-      c.flags.active_roster_flag, c.flags.injured_list_flag, c.flags.forty_man_flag, c.flags.transaction_warning_flag, c.flags.transaction_block_flag, c.flags.team_mismatch_flag, c.flags.source_missing_flag,
-      Number(r.prepared_board_pickable_rows || 0), safeJson(item.source_endpoints, 3000), c.latestTx ? `${c.latestTx.typeCode || ""} ${c.latestTx.typeDesc || ""}: ${c.latestTx.description || ""}`.slice(0, 900) : null, c.latestTx ? (c.latestTx.date || c.latestTx.effectiveDate || null) : null, c.reason, safeJson(c.evaluation, 9000)
-    );
-    current++;
-    const snapshotId = rid("dpav1_snapshot");
-    await run(env.DAILY_DB, `INSERT INTO daily_player_availability_snapshots_v1 (snapshot_id, batch_id, availability_key, official_date, game_pk, mlb_player_id, team_mlb_id, availability_status, roster_status, availability_confidence, source_key, source_snapshot_at, source_payload_snippets) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      snapshotId, batchId, item.availability_key, r.official_date, r.official_game_pk, intOrNull(r.resolved_mlb_player_id), item.team_mlb_id, c.availability_status, c.roster_status, c.availability_confidence, SOURCE_KEY, item.source_snapshot_at, safeJson(c.evaluation.source_snippets, 7000)
-    );
-    snapshots++;
-    for (const issue of c.issues) {
-      await run(env.DAILY_DB, `INSERT INTO daily_player_availability_issues_v1 (issue_id, batch_id, official_date, game_pk, mlb_player_id, team_mlb_id, issue_type, issue_severity, reason, details_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        rid("dpav1_issue"), batchId, r.official_date, r.official_game_pk, intOrNull(r.resolved_mlb_player_id), item.team_mlb_id, issue.issue_type, issue.issue_severity, issue.reason || c.reason, safeJson(issue.details || c.evaluation, 5000)
-      );
-      issues++;
+      updated_at=CURRENT_TIMESTAMP`;
+  const snapshotSql = `INSERT INTO daily_player_availability_snapshots_v1 (snapshot_id, batch_id, availability_key, official_date, game_pk, mlb_player_id, team_mlb_id, availability_status, roster_status, availability_confidence, source_key, source_snapshot_at, source_payload_snippets) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  const issueSql = `INSERT INTO daily_player_availability_issues_v1 (issue_id, batch_id, official_date, game_pk, mlb_player_id, team_mlb_id, issue_type, issue_severity, reason, details_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+  for (let start = 0; start < rows.length; start += WRITE_BATCH_ROW_LIMIT) {
+    const chunk = rows.slice(start, start + WRITE_BATCH_ROW_LIMIT);
+    const statements = [];
+    let chunkCurrent = 0;
+    let chunkSnapshots = 0;
+    let chunkIssues = 0;
+
+    for (const item of chunk) {
+      const r = item.row;
+      const c = item.classification;
+      statements.push(env.DAILY_DB.prepare(currentSql).bind(
+        item.availability_key, batchId, SOURCE_KEY, item.source_snapshot_at, r.official_date, r.official_game_pk, r.official_game_time_utc,
+        intOrNull(r.resolved_player_id), intOrNull(r.resolved_mlb_player_id), r.player_name || null, normTeam(r.team), item.team_id || null, item.team_mlb_id, normTeam(r.opponent), item.opponent_mlb_id,
+        c.availability_status, c.roster_status, c.availability_confidence,
+        c.flags.active_roster_flag, c.flags.injured_list_flag, c.flags.forty_man_flag, c.flags.transaction_warning_flag, c.flags.transaction_block_flag, c.flags.team_mismatch_flag, c.flags.source_missing_flag,
+        Number(r.prepared_board_pickable_rows || 0), safeJson(item.source_endpoints, 3000), c.latestTx ? `${c.latestTx.typeCode || ""} ${c.latestTx.typeDesc || ""}: ${c.latestTx.description || ""}`.slice(0, 900) : null, c.latestTx ? (c.latestTx.date || c.latestTx.effectiveDate || null) : null, c.reason, safeJson(c.evaluation, 9000)
+      ));
+      chunkCurrent++;
+
+      statements.push(env.DAILY_DB.prepare(snapshotSql).bind(
+        rid("dpav1_snapshot"), batchId, item.availability_key, r.official_date, r.official_game_pk, intOrNull(r.resolved_mlb_player_id), item.team_mlb_id, c.availability_status, c.roster_status, c.availability_confidence, SOURCE_KEY, item.source_snapshot_at, safeJson(c.evaluation.source_snippets, 7000)
+      ));
+      chunkSnapshots++;
+
+      for (const issue of c.issues) {
+        statements.push(env.DAILY_DB.prepare(issueSql).bind(
+          rid("dpav1_issue"), batchId, r.official_date, r.official_game_pk, intOrNull(r.resolved_mlb_player_id), item.team_mlb_id, issue.issue_type, issue.issue_severity, issue.reason || c.reason, safeJson(issue.details || c.evaluation, 5000)
+        ));
+        chunkIssues++;
+      }
     }
+
+    if (statements.length) await env.DAILY_DB.batch(statements);
+    current += chunkCurrent;
+    snapshots += chunkSnapshots;
+    issues += chunkIssues;
+
+    await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1
+      SET rows_written=?, snapshot_rows_written=?, issue_rows_written=?, updated_at=CURRENT_TIMESTAMP
+      WHERE batch_id=? AND status='running'`,
+      current, snapshots, issues, batchId
+    );
   }
-  return { rows_written: current, snapshot_rows_written: snapshots, issues_written: issues };
+
+  return { rows_written: current, snapshot_rows_written: snapshots, issues_written: issues, write_batch_row_limit: WRITE_BATCH_ROW_LIMIT };
 }
 async function runAvailability(env, input) {
   const startedAt = nowUtc();
@@ -775,6 +802,7 @@ async function runAvailability(env, input) {
     source_failures_detail: sources.sourceFailures.slice(0, 25),
     fetch_concurrency: sources.fetch_concurrency || FETCH_CONCURRENCY,
     fetch_timeout_ms: sources.fetch_timeout_ms || FETCH_TIMEOUT_MS,
+    write_batch_row_limit: written.write_batch_row_limit || WRITE_BATCH_ROW_LIMIT,
     no_score_db_mutation: true,
     no_calendar_rebuild: true,
     no_lineups: true,

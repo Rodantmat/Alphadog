@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.133-daily-context-stale-child-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.134-daily-context-availability-batch-write-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -4814,20 +4814,26 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
 
     if (validation.wait) {
       const terminalRun = await first(env.CONTROL_DB, "SELECT COUNT(*) AS rows FROM control_job_runs WHERE request_id=? AND status IN ('completed','failed','blocked')", child.request_id);
-      const staleChild = await first(env.CONTROL_DB, "SELECT CASE WHEN datetime(COALESCE(started_at, created_at)) <= datetime('now','-10 minutes') THEN 1 ELSE 0 END AS stale FROM control_job_queue WHERE request_id=?", child.request_id);
+      const staleChild = await first(env.CONTROL_DB, "SELECT CASE WHEN datetime(COALESCE(started_at, created_at)) <= datetime('now','-2 minutes') THEN 1 ELSE 0 END AS stale FROM control_job_queue WHERE request_id=?", child.request_id);
       if (Number(staleChild && staleChild.stale) === 1 && Number(terminalRun && terminalRun.rows) === 0) {
         const finalStatus = "FAILED_DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN";
-        const staleOutput = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: "child_running_too_long_without_terminal_control_job_runs_row", child_status: child.status, child_started_at: child.started_at || null, child_updated_at: child.updated_at || null, stale_child_guard_minutes: 10, stages: [...stageReports, report], daily_context_full_run_certified: false, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true };
+        const staleOutput = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: "child_running_too_long_without_terminal_control_job_runs_row", child_status: child.status, child_started_at: child.started_at || null, child_updated_at: child.updated_at || null, stale_child_guard_minutes: 2, stages: [...stageReports, report], daily_context_full_run_certified: false, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true };
         if (stage.job_key === "daily-player-availability") {
           try {
             await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1
               SET status='failed',
                   certification_status='DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN',
                   certification_grade='FAIL',
-                  certification_reason='Daily Context Full Run stale-child guard failed the running availability batch after no terminal control_job_runs row was produced.',
+                  certification_reason='Daily Context Full Run stale-child guard failed the running availability batch after no terminal control_job_runs row was produced. Partial current/snapshot/issue rows for this request are deleted by the parent guard.',
                   completed_at=CURRENT_TIMESTAMP,
                   updated_at=CURRENT_TIMESTAMP
               WHERE request_id=? AND status='running'`, child.request_id);
+            await run(env.DAILY_DB, `DELETE FROM daily_player_availability_current_v1
+              WHERE batch_id IN (SELECT batch_id FROM daily_player_availability_batches_v1 WHERE request_id=?)`, child.request_id);
+            await run(env.DAILY_DB, `DELETE FROM daily_player_availability_snapshots_v1
+              WHERE batch_id IN (SELECT batch_id FROM daily_player_availability_batches_v1 WHERE request_id=?)`, child.request_id);
+            await run(env.DAILY_DB, `DELETE FROM daily_player_availability_issues_v1
+              WHERE batch_id IN (SELECT batch_id FROM daily_player_availability_batches_v1 WHERE request_id=?)`, child.request_id);
           } catch (_) {}
         }
         await releaseDailyContextFullRunLock(env, row);
@@ -4836,7 +4842,7 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
         await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'ERROR', 'daily_context_full_run_stale_child_failed', 'Daily Context Full Run stale-child guard terminal-failed orphan running child', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(staleOutput));
         return staleOutput;
       }
-      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification: "DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true, stale_child_guard_minutes: 10 };
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification: "DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true, stale_child_guard_minutes: 2 };
       await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
       await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+8 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
       return output;
