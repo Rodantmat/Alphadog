@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.7-calendar-alias-and-game-team-player-resolver";
+const VERSION = "alphadog-v2-score-prep-v0.2.8-classified-block-reasons-and-source-mismatch";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_SLEEPER = "sleeper";
@@ -94,6 +94,32 @@ function normalizeNameWithoutSuffix(v) {
 
 function normalizeTeam(v) {
   return normalizeName(v);
+}
+
+function isComboMarketRow({ playerName, propKey, payloadJson, rawJson }) {
+  const player = safeStr(playerName);
+  const prop = safeStr(propKey);
+  const payload = safeJsonParse(payloadJson, {});
+  const raw = safeJsonParse(rawJson, {});
+  const eventType = normalizeName(payload.event_type || raw.event_type);
+  return eventType === "combo" || player.includes(" + ") || prop === "1st_inning_runs_allowed";
+}
+
+function classifyCalendarNoMatch(calendar, officialDate, rawHome, rawAway) {
+  const date = safeStr(officialDate);
+  const home = normalizeTeam(rawHome);
+  const away = normalizeTeam(rawAway);
+  if (!calendar || !calendar.teamDateMap || !date || !home || !away) return "no_calendar_match";
+
+  const dates = [dateAddDays(date, -1), date, dateAddDays(date, 1), dateAddDays(date, 2)];
+  let homeSeen = false;
+  let awaySeen = false;
+  for (const d of dates) {
+    if ((calendar.teamDateMap.get(`${d}|${home}`) || []).length) homeSeen = true;
+    if ((calendar.teamDateMap.get(`${d}|${away}`) || []).length) awaySeen = true;
+  }
+  if (homeSeen && awaySeen) return "source_event_calendar_mismatch";
+  return "no_calendar_match";
 }
 
 function teamNameAliasesForReference(rec) {
@@ -279,8 +305,9 @@ CREATE TABLE IF NOT EXISTS score_board_prepared_current (
 }
 
 async function loadReference(env) {
-  const [teams, players, rosters, aliases] = await Promise.all([
+  const [teams, teamAliases, players, rosters, aliases] = await Promise.all([
     allRows(env.REF_DB, "SELECT team_id, mlb_team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code, active FROM ref_teams WHERE active=1"),
+    allRows(env.REF_DB, "SELECT alias_value, alias_normalized, team_id, mlb_team_id, alias_type, confidence, active FROM ref_team_aliases WHERE active=1"),
     allRows(env.REF_DB, "SELECT player_id, mlb_player_id, full_name, player_name, current_team_id, current_mlb_team_id, primary_position, active FROM ref_players WHERE active=1"),
     allRows(env.REF_DB, "SELECT player_id, mlb_team_id, team_id, player_name, position_abbreviation, roster_status, role, active, updated_at FROM ref_rosters WHERE active=1"),
     allRows(env.REF_DB, "SELECT alias_name, alias_normalized, player_id, confidence, alias_type, team_id, mlb_team_id, active FROM ref_player_aliases WHERE active=1")
@@ -306,6 +333,16 @@ async function loadReference(env) {
     for (const n of teamNameAliasesForReference(rec)) {
       teamByFull.set(n, rec);
     }
+  }
+
+  for (const a of teamAliases) {
+    const mlbId = Number(a.mlb_team_id || 0);
+    const rec = teamByMlbId.get(mlbId);
+    if (!rec) continue;
+    const aliasValue = normalizeTeam(a.alias_value);
+    const aliasNormalized = normalizeTeam(a.alias_normalized);
+    if (aliasValue) teamByFull.set(aliasValue, rec);
+    if (aliasNormalized) teamByFull.set(aliasNormalized, rec);
   }
 
   const rosterByPlayerId = new Map();
@@ -357,7 +394,7 @@ async function loadReference(env) {
     addAlias(a.alias_normalized, a.player_id);
   }
 
-  return { teams, players, aliases, teamByMlbId, teamByAbbr, teamByFull, playerById, aliasMap, suffixAliasMap };
+  return { teams, teamAliases, players, aliases, teamByMlbId, teamByAbbr, teamByFull, playerById, aliasMap, suffixAliasMap };
 }
 
 async function loadCalendar(env, dateSet, ref) {
@@ -373,6 +410,13 @@ WHERE official_date >= ? AND official_date <= ?
 ORDER BY official_date, game_time_utc, game_pk`, [minDate, maxDate]);
 
   const pairMap = new Map();
+  const teamDateMap = new Map();
+  function addTeamDate(key, rec) {
+    if (!teamDateMap.has(key)) teamDateMap.set(key, []);
+    const list = teamDateMap.get(key);
+    if (!list.some(x => Number(x.game_pk) === Number(rec.game_pk))) list.push(rec);
+  }
+
   function add(key, rec) {
     if (!pairMap.has(key)) pairMap.set(key, []);
     const list = pairMap.get(key);
@@ -421,6 +465,8 @@ ORDER BY official_date, game_time_utc, game_pk`, [minDate, maxDate]);
 
     const homeAliases = aliasesForCalendarTeamName(rec.home_team_name);
     const awayAliases = aliasesForCalendarTeamName(rec.away_team_name);
+    for (const h of homeAliases) addTeamDate(`${rec.official_date}|${h}`, rec);
+    for (const a of awayAliases) addTeamDate(`${rec.official_date}|${a}`, rec);
     for (const h of homeAliases) {
       for (const a of awayAliases) {
         add(`${rec.official_date}|${h}|${a}`, { ...rec, orientation: "exact" });
@@ -429,7 +475,7 @@ ORDER BY official_date, game_time_utc, game_pk`, [minDate, maxDate]);
     }
   }
 
-  return { rows, pairMap };
+  return { rows, pairMap, teamDateMap };
 }
 
 function resolveCalendarByTeamNames(calendar, officialDate, rawHome, rawAway, sourceStartTime) {
@@ -440,7 +486,9 @@ function resolveCalendarByTeamNames(calendar, officialDate, rawHome, rawAway, so
     return { status: "calendar_unresolved", confidence: "missing_team_pair_or_date", game: null };
   }
   const candidates = calendar.pairMap.get(`${date}|${home}|${away}`) || [];
-  if (candidates.length === 0) return { status: "calendar_unresolved", confidence: "no_calendar_match", game: null };
+  if (candidates.length === 0) {
+    return { status: "calendar_unresolved", confidence: classifyCalendarNoMatch(calendar, date, rawHome, rawAway), game: null };
+  }
   if (candidates.length === 1) return { status: "calendar_matched", confidence: "official_calendar_team_pair", game: candidates[0] };
 
   const sourceTime = toUtcComparable(sourceStartTime);
@@ -602,10 +650,27 @@ function startedByOfficialTime(game, now = new Date()) {
 function buildBlockReasons({ sourcePickable, sourceKey, calendarResolution, playerResolution, side, game, now }) {
   const reasons = [];
   if (sourceKey === SOURCE_PRIZEPICKS && Number(sourcePickable || 0) !== 1) reasons.push("source_unpickable_flag");
-  if (calendarResolution.status === "calendar_unresolved") reasons.push("calendar_match_unresolved");
-  if (calendarResolution.status === "calendar_ambiguous") reasons.push("calendar_match_ambiguous");
-  if (playerResolution.status === "unresolved") reasons.push("player_unresolved");
-  if (playerResolution.status === "ambiguous") reasons.push("player_ambiguous");
+
+  if (calendarResolution && calendarResolution.block_reason) {
+    reasons.push(calendarResolution.block_reason);
+  } else if (calendarResolution.status === "calendar_unresolved") {
+    reasons.push(calendarResolution.confidence === "source_event_calendar_mismatch" ? "source_event_calendar_mismatch" : "calendar_match_unresolved");
+  } else if (calendarResolution.status === "calendar_ambiguous") {
+    reasons.push("calendar_match_ambiguous");
+  } else if (calendarResolution.status === "unsupported") {
+    reasons.push(calendarResolution.confidence || "calendar_unsupported");
+  }
+
+  if (playerResolution && playerResolution.block_reason) {
+    reasons.push(playerResolution.block_reason);
+  } else if (playerResolution.status === "unresolved") {
+    reasons.push((playerResolution.candidate_count || 0) === 0 ? "player_ref_missing" : "player_unresolved");
+  } else if (playerResolution.status === "ambiguous") {
+    reasons.push("player_ambiguous");
+  } else if (playerResolution.status === "unsupported") {
+    reasons.push(playerResolution.confidence || "player_unsupported");
+  }
+
   if (side.conflict) reasons.push("player_team_conflict");
   if (game && startedByOfficialTime(game, now)) reasons.push("started_or_expired_by_official_time");
   return Array.from(new Set(reasons));
@@ -686,13 +751,19 @@ function preparePrizePicksRows(rows, ref, calendar, batchId, now) {
   for (const r of rows) {
     const sourceRowId = sourceKeyForRow(SOURCE_PRIZEPICKS, r);
     const playerName = safeStr(r.player_name);
+    const propKey = propKeyPrizePicks(r.stat_type);
+    const comboMarket = isComboMarketRow({ playerName, propKey, payloadJson: r.row_payload_json, rawJson: r.raw_projection_json });
     const officialDate = dateOnlyFromAnyTime(r.start_time);
     const teamAbbr = safeStr(r.team);
     const opponentAbbr = safeStr(r.opponent || r.description);
-    const cal = resolveCalendarByAbbrPair(calendar, ref, officialDate, teamAbbr, opponentAbbr, r.start_time);
+    const cal = comboMarket
+      ? { status: "unsupported", confidence: "combo_market_unsupported", block_reason: "combo_market_unsupported", game: null }
+      : resolveCalendarByAbbrPair(calendar, ref, officialDate, teamAbbr, opponentAbbr, r.start_time);
     const playerId = Number(r.player_id || 0);
     let playerRes;
-    if (playerId) {
+    if (comboMarket) {
+      playerRes = { status: "unsupported", confidence: "combo_market_unsupported", block_reason: "combo_market_unsupported", player: null, candidate_count: 0 };
+    } else if (playerId) {
       const p = ref.playerById.get(playerId) || null;
       playerRes = p ? { status: "source_player_id_present", confidence: "source_player_id", player: p, candidate_count: 1 } : resolvePlayer(ref, playerName, cal.game);
     } else {
@@ -716,7 +787,7 @@ function preparePrizePicksRows(rows, ref, calendar, batchId, now) {
       sourceEventId: safeStr(r.game_id),
       projectionId: safeStr(r.projection_id),
       playerName,
-      propKey: propKeyPrizePicks(r.stat_type),
+      propKey,
       sourcePropName: safeStr(r.stat_type),
       lineValue: r.line_score,
       sourceStartTime: safeStr(r.start_time),
