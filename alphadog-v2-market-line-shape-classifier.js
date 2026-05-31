@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-line-shape-classifier";
-const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.0-hitter-prop-line-context";
+const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.1-parlay-player-team-resolver";
 const JOB_KEY = "market-line-shape-classifier";
 const MODE = "market_hitter_prop_line_context";
 const PARLAY_SOURCE_KEY = "parlay_api_sleeper_hitter_props";
@@ -181,7 +181,7 @@ async function configuredParlayEndpoint(env, input = {}) {
 function safeHost(urlText) { try { return new URL(urlText).host; } catch (_) { return "invalid_url"; } }
 function safeEndpoint(urlText) { try { const u = new URL(urlText); return `${u.origin}${u.pathname}`; } catch (_) { return String(urlText || "").split("?")[0]; } }
 function authHeaders(env) {
-  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-market-hitter-prop-context/0.2" });
+  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-market-hitter-prop-context/0.2.1" });
   const headerName = String(env.PARLAY_API_AUTH_HEADER_NAME || "X-API-Key").trim();
   const prefix = String(env.PARLAY_API_AUTH_HEADER_PREFIX || "").trim();
   if (sourceHas(env, "PARLAY_API_KEY") && headerName) headers.set(headerName, prefix ? `${prefix} ${env.PARLAY_API_KEY}` : String(env.PARLAY_API_KEY));
@@ -228,7 +228,7 @@ function normalizeParlayRow(row) {
   const marketKey = normalizedMarket(marketRaw);
   const canonical = HITTER_MARKET_KEY_TO_PROP[marketKey] || HITTER_MARKET_KEY_TO_PROP[normalizeText(marketRaw).replace(/ /g, "_")] || null;
   if (!canonical || !HITTER_PROP_KEYS.includes(canonical)) return null;
-  const playerName = getDeep(row, ["player_name", "playerName", "name", "participant.name", "selection_name", "description.player_name", "athlete.name", "competitor.name"]);
+  const playerName = getDeep(row, ["player", "player_name", "playerName", "participant.name", "selection_name", "description.player", "description.player_name", "athlete.name", "competitor.name"]);
   const lineValue = numberOrNull(getDeep(row, ["line_value", "line", "points", "point", "handicap", "line_score", "value"]));
   const eventId = getDeep(row, ["event_id", "eventId", "source_event_id", "game_id", "gameId", "match_id", "fixture_id"]);
   const lineId = getDeep(row, ["line_id", "lineId", "source_line_id", "id", "selection_id", "outcome_id"]);
@@ -268,33 +268,166 @@ function lineEqual(a, b) {
   if (na === null || nb === null) return false;
   return Math.abs(na - nb) < 0.001;
 }
+function mapPush(map, key, row) {
+  if (!key || key.includes("undefined")) return;
+  if (!map.has(key)) map.set(key, []);
+  map.get(key).push(row);
+}
+function lineKey(value) {
+  const n = numberOrNull(value);
+  return n === null ? "" : String(Number(n.toFixed(3)));
+}
+function teamPairKey(a, b) {
+  const aa = normalizeText(a).toUpperCase();
+  const bb = normalizeText(b).toUpperCase();
+  if (!aa || !bb) return "";
+  return [aa, bb].sort().join("|");
+}
+function dedupeRows(rows) {
+  const seen = new Set();
+  const out = [];
+  for (const row of rows || []) {
+    const id = String(row.prepared_row_id || `${row.official_game_pk}|${row.source_key}|${row.player_name}|${row.canonical_prop_key}|${row.line_value}`);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(row);
+  }
+  return out;
+}
+function choosePreparedCandidate(rows, sourceRow, statusBase) {
+  const allRows = dedupeRows(rows);
+  if (!allRows.length) return { status: "no_prepared_match", row: null, rows: [], candidates: 0, choice_reason: "no_candidates" };
+  let candidates = allRows;
+  const sourceBook = normalizeText(sourceRow.bookmaker);
+  const bookMatched = candidates.filter(r => normalizeText(r.source_key) === sourceBook);
+  if (bookMatched.length) candidates = bookMatched;
+  const line = numberOrNull(sourceRow.line_value);
+  if (line !== null) {
+    const lineMatched = candidates.filter(r => lineEqual(r.line_value, line));
+    if (lineMatched.length) candidates = lineMatched;
+  }
+  if (candidates.length === 1) {
+    return { status: statusBase, row: candidates[0], rows: allRows, candidates: allRows.length, choice_reason: bookMatched.length ? "preferred_source_book" : "unique_candidate" };
+  }
+  const uniqueGamePlayerPropLine = new Map();
+  for (const r of candidates) uniqueGamePlayerPropLine.set(`${r.official_game_pk}|${r.resolved_mlb_player_id}|${r.canonical_prop_key}|${lineKey(r.line_value)}`, r);
+  if (uniqueGamePlayerPropLine.size === 1) {
+    const first = [...uniqueGamePlayerPropLine.values()][0];
+    return { status: `${statusBase}_multiple_board_rows`, row: first, rows: allRows, candidates: allRows.length, choice_reason: "same_game_player_prop_line_multiple_board_sources" };
+  }
+  return { status: `ambiguous_${statusBase}`, row: null, rows: allRows, candidates: allRows.length, choice_reason: "multiple_distinct_candidates" };
+}
 function buildPreparedIndex(rows) {
-  const exact = new Map();
-  const playerProp = new Map();
+  const maps = {
+    teamPairNamePropLine: new Map(), teamPairNameProp: new Map(),
+    teamPairPlayerIdPropLine: new Map(), teamPairPlayerIdProp: new Map(),
+    namePropLine: new Map(), nameProp: new Map(),
+    playerIdPropLine: new Map(), playerIdProp: new Map()
+  };
   for (const row of rows) {
     const name = normalizeText(row.player_name_normalized || row.player_name);
     const prop = String(row.canonical_prop_key || "");
-    const line = numberOrNull(row.line_value);
-    const key = `${name}|${prop}|${line === null ? "" : line}`;
-    if (!exact.has(key)) exact.set(key, []);
-    exact.get(key).push(row);
-    const pkey = `${name}|${prop}`;
-    if (!playerProp.has(pkey)) playerProp.set(pkey, []);
-    playerProp.get(pkey).push(row);
+    const line = lineKey(row.line_value);
+    const pair = teamPairKey(row.team, row.opponent);
+    const pid = String(row.resolved_mlb_player_id || row.resolved_player_id || "");
+    row.__norm_name = name;
+    row.__team_pair_key = pair;
+    row.__line_key = line;
+    row.__player_id_key = pid;
+    mapPush(maps.namePropLine, `${name}|${prop}|${line}`, row);
+    mapPush(maps.nameProp, `${name}|${prop}`, row);
+    if (pid) {
+      mapPush(maps.playerIdPropLine, `${pid}|${prop}|${line}`, row);
+      mapPush(maps.playerIdProp, `${pid}|${prop}`, row);
+    }
+    if (pair) {
+      mapPush(maps.teamPairNamePropLine, `${pair}|${name}|${prop}|${line}`, row);
+      mapPush(maps.teamPairNameProp, `${pair}|${name}|${prop}`, row);
+      if (pid) {
+        mapPush(maps.teamPairPlayerIdPropLine, `${pair}|${pid}|${prop}|${line}`, row);
+        mapPush(maps.teamPairPlayerIdProp, `${pair}|${pid}|${prop}`, row);
+      }
+    }
   }
-  return { exact, playerProp };
+  return maps;
+}
+async function loadTeamAliasMap(env) {
+  const out = new Map();
+  try {
+    const teams = await all(env.REF_DB, "SELECT team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code FROM ref_teams WHERE active = 1");
+    for (const t of teams) {
+      const values = [t.team_id, t.abbreviation, t.full_name, t.nickname, t.location_name, t.short_name, t.team_code, t.file_code];
+      for (const v of values) if (v !== undefined && v !== null && String(v).trim()) out.set(normalizeText(v), String(t.abbreviation || t.team_id || "").toUpperCase());
+    }
+  } catch (_) {}
+  try {
+    const aliases = await all(env.REF_DB, "SELECT a.team_id, t.abbreviation, a.alias_value, a.alias_normalized FROM ref_team_aliases a LEFT JOIN ref_teams t ON t.team_id = a.team_id WHERE a.active = 1");
+    for (const a of aliases) {
+      const id = String(a.abbreviation || a.team_id || "").toUpperCase();
+      if (!id) continue;
+      if (a.alias_normalized) out.set(normalizeText(a.alias_normalized), id);
+      if (a.alias_value) out.set(normalizeText(a.alias_value), id);
+    }
+  } catch (_) {}
+  return out;
+}
+async function loadPlayerAliasMap(env) {
+  const out = new Map();
+  try {
+    const cols = (await all(env.REF_DB, "PRAGMA table_info(ref_player_aliases)")).map(r => String(r.name || ""));
+    if (!cols.includes("player_id")) return out;
+    const aliasCol = cols.includes("alias_normalized") ? "alias_normalized" : (cols.includes("alias_name") ? "alias_name" : null);
+    if (!aliasCol) return out;
+    const aliases = await all(env.REF_DB, `SELECT player_id, ${aliasCol} AS alias_value FROM ref_player_aliases WHERE ${aliasCol} IS NOT NULL LIMIT 20000`);
+    for (const a of aliases) {
+      const key = normalizeText(a.alias_value);
+      const pid = numberOrNull(a.player_id);
+      if (!key || pid === null) continue;
+      if (!out.has(key)) out.set(key, new Set());
+      out.get(key).add(Number(pid));
+    }
+  } catch (_) {}
+  return out;
+}
+function enrichParlayRows(rows, teamAliases, playerAliases) {
+  const out = [];
+  for (const row of rows || []) {
+    const homeId = teamAliases.get(normalizeText(row.home_team)) || null;
+    const awayId = teamAliases.get(normalizeText(row.away_team)) || null;
+    const aliasPlayers = playerAliases.get(row.player_name_normalized) || new Set();
+    out.push({
+      ...row,
+      home_team_id: homeId,
+      away_team_id: awayId,
+      source_team_pair_key: teamPairKey(homeId, awayId),
+      alias_player_ids: [...aliasPlayers]
+    });
+  }
+  return out;
 }
 function bestPreparedMatch(sourceRow, index) {
   const name = sourceRow.player_name_normalized;
-  if (!name || !sourceRow.canonical_prop_key) return { status: "unmatched_missing_player_or_prop", row: null, candidates: 0 };
-  const line = numberOrNull(sourceRow.line_value);
-  const exactRows = index.exact.get(`${name}|${sourceRow.canonical_prop_key}|${line === null ? "" : line}`) || [];
-  if (exactRows.length === 1) return { status: "matched_prepared_player_prop_line", row: exactRows[0], candidates: 1 };
-  if (exactRows.length > 1) return { status: "ambiguous_prepared_player_prop_line", row: null, candidates: exactRows.length };
-  const fallbackRows = index.playerProp.get(`${name}|${sourceRow.canonical_prop_key}`) || [];
-  if (fallbackRows.length === 1) return { status: "matched_prepared_player_prop_line_fallback", row: fallbackRows[0], candidates: 1 };
-  if (fallbackRows.length > 1) return { status: "ambiguous_prepared_player_prop", row: null, candidates: fallbackRows.length };
-  return { status: "no_prepared_match", row: null, candidates: 0 };
+  const prop = sourceRow.canonical_prop_key;
+  if (!name || !prop) return { status: "unmatched_missing_player_or_prop", row: null, rows: [], candidates: 0, choice_reason: "missing_player_or_prop" };
+  const line = lineKey(sourceRow.line_value);
+  const pair = sourceRow.source_team_pair_key || "";
+  const playerIds = (sourceRow.alias_player_ids || []).map(x => String(x)).filter(Boolean);
+  const attempts = [];
+  if (pair) {
+    for (const pid of playerIds) attempts.push([index.teamPairPlayerIdPropLine, `${pair}|${pid}|${prop}|${line}`, "matched_prepared_team_pair_player_alias_prop_line"]);
+    attempts.push([index.teamPairNamePropLine, `${pair}|${name}|${prop}|${line}`, "matched_prepared_team_pair_player_prop_line"]);
+    for (const pid of playerIds) attempts.push([index.teamPairPlayerIdProp, `${pair}|${pid}|${prop}`, "matched_prepared_team_pair_player_alias_prop"]);
+    attempts.push([index.teamPairNameProp, `${pair}|${name}|${prop}`, "matched_prepared_team_pair_player_prop"]);
+  }
+  for (const pid of playerIds) attempts.push([index.playerIdPropLine, `${pid}|${prop}|${line}`, "matched_prepared_player_alias_prop_line"]);
+  attempts.push([index.namePropLine, `${name}|${prop}|${line}`, "matched_prepared_player_prop_line"]);
+  for (const pid of playerIds) attempts.push([index.playerIdProp, `${pid}|${prop}`, "matched_prepared_player_alias_prop"]);
+  attempts.push([index.nameProp, `${name}|${prop}`, "matched_prepared_player_prop"]);
+  for (const [map, key, status] of attempts) {
+    const rows = map.get(key) || [];
+    if (rows.length) return choosePreparedCandidate(rows, sourceRow, status);
+  }
+  return { status: pair ? "no_prepared_match_after_team_pair_player_prop_resolver" : "no_prepared_match_no_resolved_team_pair", row: null, rows: [], candidates: 0, choice_reason: pair ? "team_pair_resolved_but_no_player_prop_match" : "raw_team_pair_unresolved_or_absent" };
 }
 async function pruneHitterRows(env, today, tomorrow, slateWindowKey) {
   const deleted = {};
@@ -308,7 +441,7 @@ async function pruneHitterRows(env, today, tomorrow, slateWindowKey) {
   await run(env.MARKET_DB, "DELETE FROM market_context_probe_issues WHERE issue_type LIKE 'HITTER_PROP_%' AND slate_window_key = ?", slateWindowKey);
   deleted.market_context_probe_issues = "deleted_only_hitter_prop_issues";
   await run(env.MARKET_DB, "DELETE FROM market_context_probe_batches WHERE mode = ? AND (slate_window_key <> ? OR window_start_date NOT IN (?, ?) OR window_end_date NOT IN (?, ?))", MODE, slateWindowKey, today, tomorrow, today, tomorrow);
-  await run(env.MARKET_DB, "DELETE FROM market_context_probe_batches WHERE mode = ? AND slate_window_key = ?", `%"mode":"${MODE}"%`, slateWindowKey);
+  await run(env.MARKET_DB, "DELETE FROM market_context_probe_batches WHERE mode = ? AND slate_window_key = ?", MODE, slateWindowKey);
   deleted.market_context_probe_batches = "deleted_hitter_prop_batches_outside_or_current_today_tomorrow_window";
   return deleted;
 }
@@ -346,6 +479,9 @@ async function runHitterContext(env, input = {}) {
 
   const parlay = await fetchParlayHitterProps(env, input);
   const externalCalls = parlay.external_calls || 0;
+  const teamAliases = await loadTeamAliasMap(env);
+  const playerAliases = await loadPlayerAliasMap(env);
+  const enrichedParlayRows = enrichParlayRows(parlay.normalized || [], teamAliases, playerAliases);
   if (!parlay.ok) {
     if (parlay.missing_key || parlay.missing_config) blockerCount += 1; else warningCount += 1;
     await writeIssue(env, issues, batchId, slateWindowKey, today, parlay.missing_key || parlay.missing_config ? "BLOCKER" : "WARNING", parlay.missing_key ? "HITTER_PROP_PARLAY_API_KEY_MISSING" : (parlay.missing_config ? "HITTER_PROP_PARLAY_API_CONFIG_MISSING" : "HITTER_PROP_PARLAY_API_FETCH_FAILED"), null, null, PARLAY_SOURCE_KEY, "Parlay API hitter prop fetch did not return usable data", { parlay_status: parlay });
@@ -358,13 +494,13 @@ async function runHitterContext(env, input = {}) {
   let noMatch = 0;
   let ambiguous = 0;
   let sourceRowsWithOverUnder = 0;
-  for (const sourceRow of (parlay.normalized || [])) {
+  for (const sourceRow of enrichedParlayRows) {
     const match = bestPreparedMatch(sourceRow, index);
     const matchedRow = match.row;
     if (match.status.startsWith("matched")) matched += 1;
     else if (match.status.startsWith("ambiguous")) ambiguous += 1;
     else noMatch += 1;
-    if (matchedRow) matchedPrepared.set(matchedRow.prepared_row_id, true);
+    for (const r of (match.rows || (matchedRow ? [matchedRow] : []))) matchedPrepared.set(r.prepared_row_id, true);
     const sides = [];
     if (sourceRow.over_price !== null) sides.push({ side: "over", price: sourceRow.over_price });
     if (sourceRow.under_price !== null) sides.push({ side: "under", price: sourceRow.under_price });
@@ -372,7 +508,7 @@ async function runHitterContext(env, input = {}) {
     if (sides.length) sourceRowsWithOverUnder += 1;
     if (!sides.length) sides.push({ side: "line_present_price_missing", price: null });
     for (const s of sides) {
-      propRows.push([rid("mcp_hitter_prop"), batchId, slateWindowKey, matchedRow ? matchedRow.official_date : today, matchedRow ? matchedRow.prepared_row_id : null, PARLAY_SOURCE_KEY, sourceRow.source_event_id, sourceRow.source_line_id, matchedRow ? Number(matchedRow.official_game_pk) : null, matchedRow ? Number(matchedRow.resolved_mlb_player_id) : null, sourceRow.player_name, sourceRow.canonical_prop_key, sourceRow.market_key, sourceRow.line_value, s.price, americanToDecimal(s.price), s.side, match.status, matchedRow ? "parlay_hitter_prop_line_matched_to_prepared" : "parlay_hitter_prop_line_not_matched_to_prepared", compactRawJson({ mode: MODE, parlay: { ...sourceRow, raw: undefined }, prepared_match: matchedRow ? { prepared_row_id: matchedRow.prepared_row_id, source_key: matchedRow.source_key, player_name: matchedRow.player_name, canonical_prop_key: matchedRow.canonical_prop_key, line_value: matchedRow.line_value, game_pk: matchedRow.official_game_pk, official_game_time_utc: matchedRow.official_game_time_utc } : null, raw_source_row: sourceRow.raw })]);
+      propRows.push([rid("mcp_hitter_prop"), batchId, slateWindowKey, matchedRow ? matchedRow.official_date : today, matchedRow ? matchedRow.prepared_row_id : null, PARLAY_SOURCE_KEY, sourceRow.source_event_id, sourceRow.source_line_id, matchedRow ? Number(matchedRow.official_game_pk) : null, matchedRow ? Number(matchedRow.resolved_mlb_player_id) : null, sourceRow.player_name, sourceRow.canonical_prop_key, sourceRow.market_key, sourceRow.line_value, s.price, americanToDecimal(s.price), s.side, match.status, matchedRow ? "parlay_hitter_prop_line_matched_to_prepared" : "parlay_hitter_prop_line_not_matched_to_prepared", compactRawJson({ mode: MODE, parlay: { ...sourceRow, raw: undefined }, resolver: { raw_home_team: sourceRow.home_team, raw_away_team: sourceRow.away_team, home_team_id: sourceRow.home_team_id, away_team_id: sourceRow.away_team_id, source_team_pair_key: sourceRow.source_team_pair_key, alias_player_ids: sourceRow.alias_player_ids || [], candidates: match.candidates || 0, choice_reason: match.choice_reason || null, matched_prepared_row_count: (match.rows || []).length }, prepared_match: matchedRow ? { prepared_row_id: matchedRow.prepared_row_id, source_key: matchedRow.source_key, player_name: matchedRow.player_name, canonical_prop_key: matchedRow.canonical_prop_key, line_value: matchedRow.line_value, game_pk: matchedRow.official_game_pk, official_game_time_utc: matchedRow.official_game_time_utc, team: matchedRow.team, opponent: matchedRow.opponent } : null, raw_source_row: sourceRow.raw })]);
     }
   }
 
@@ -382,7 +518,7 @@ async function runHitterContext(env, input = {}) {
   }
   if (parlay.ok && matched === 0 && (parlay.normalized || []).length > 0) {
     warningCount += 1;
-    await writeIssue(env, issues, batchId, slateWindowKey, today, "WARNING", "HITTER_PROP_PARLAY_API_NO_PREPARED_MATCHES", null, null, PARLAY_SOURCE_KEY, "Parlay API hitter prop rows normalized but did not match prepared-safe board rows", { normalized_hitter_rows: parlay.normalized_hitter_rows, prepared_rows: preparedRows.length });
+    await writeIssue(env, issues, batchId, slateWindowKey, today, "WARNING", "HITTER_PROP_PARLAY_API_NO_PREPARED_MATCHES", null, null, PARLAY_SOURCE_KEY, "Parlay API hitter prop rows normalized but did not match prepared-safe board rows", { normalized_hitter_rows: parlay.normalized_hitter_rows, prepared_rows: preparedRows.length, stored_player_name_fix_active: true, team_aliases_loaded: teamAliases.size, player_aliases_loaded: playerAliases.size, enriched_rows: enrichedParlayRows.length });
   }
 
   const coverageRows = [];
@@ -395,7 +531,7 @@ async function runHitterContext(env, input = {}) {
   await batchRun(env.MARKET_DB, `INSERT INTO market_context_probe_coverage (coverage_row_id, batch_id, slate_window_key, official_date, prepared_row_id, source_key, game_pk, resolved_mlb_player_id, canonical_prop_key, board_line_value, game_market_status, player_prop_market_status, market_context_status, coverage_grade, details_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, coverageRows, 75);
   await batchRun(env.MARKET_DB, `INSERT INTO market_context_probe_issues (issue_id, batch_id, slate_window_key, official_date, severity, issue_type, game_pk, prepared_row_id, source_key, reason, details_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, issues, 75);
 
-  const coverageGrade = blockerCount ? "BLOCKED" : (matched > 0 ? (matched < preparedRows.length ? "PARTIAL_PARLAY_MATCH" : "FULL_PARLAY_MATCH") : "NO_PARLAY_MATCH");
+  const coverageGrade = blockerCount ? "BLOCKED" : (matched > 0 ? (matched < preparedRows.length ? "PARTIAL_PARLAY_MATCH" : "FULL_PARLAY_MATCH") : ((parlay.normalized || []).length > 0 ? "PARLAY_NORMALIZED_RESOLVER_UNMATCHED" : "PARLAY_NO_SUPPORTED_HITTER_MARKETS"));
   const certification = blockerCount ? "MARKET_HITTER_PROP_CONTEXT_BLOCKED" : "MARKET_HITTER_PROP_CONTEXT_EVIDENCE_WRITTEN";
   const certificationGrade = blockerCount ? "BLOCKED" : (warningCount ? "PASS_WITH_WARNINGS" : "PASS");
   const status = blockerCount ? "completed_hitter_prop_context_blocked" : "completed_hitter_prop_context_evidence_written";
@@ -410,7 +546,7 @@ async function runHitterContext(env, input = {}) {
     prepared_games_checked: gamePks.length,
     prepared_players_checked: playerIds.length,
     prepared_prop_keys_checked: propKeys.length,
-    parlay_api: { config_present: !!(parlay.endpoint && parlay.endpoint.ok), key_present: sourceHas(env, "PARLAY_API_KEY"), fetch_ok: !!parlay.ok, http_status: parlay.http_status || null, endpoint_preview: parlay.endpoint && parlay.endpoint.endpoint_preview || null, detected_rows_path: parlay.detected_rows_path || null, rows_seen: parlay.rows_seen || 0, normalized_hitter_rows: parlay.normalized_hitter_rows || 0, rows_with_price_context: sourceRowsWithOverUnder, matched_to_prepared: matched, no_prepared_match: noMatch, ambiguous_prepared_match: ambiguous },
+    parlay_api: { config_present: !!(parlay.endpoint && parlay.endpoint.ok), key_present: sourceHas(env, "PARLAY_API_KEY"), fetch_ok: !!parlay.ok, http_status: parlay.http_status || null, endpoint_preview: parlay.endpoint && parlay.endpoint.endpoint_preview || null, detected_rows_path: parlay.detected_rows_path || null, rows_seen: parlay.rows_seen || 0, normalized_hitter_rows: parlay.normalized_hitter_rows || 0, enriched_hitter_rows: enrichedParlayRows.length, rows_with_price_context: sourceRowsWithOverUnder, matched_to_prepared: matched, no_prepared_match: noMatch, ambiguous_prepared_match: ambiguous, resolver_audit: { team_aliases_loaded: teamAliases.size, player_aliases_loaded: playerAliases.size, raw_player_column_persisted: true, raw_commence_time_not_trusted_as_primary_match_key: true, team_pair_calendar_prepared_resolver_enabled: true } },
     rows_written_detail: { player_prop_rows: propRows.length, coverage_rows: coverageRows.length, issue_rows: issues.length, batch_rows: 1 },
     coverage_grade: coverageGrade,
     warning_count: warningCount,
