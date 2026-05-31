@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.140-board-full-run-score-prep-hard-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.141-daily-context-request-boundary-stuck-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -4748,9 +4748,81 @@ async function ensureDailyContextFullRunLock(env, parentRow) {
 
 async function releaseDailyContextFullRunLock(env, parentRow) {
   await run(env.CONTROL_DB,
-    "UPDATE control_locks SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE lock_key=? AND (owner_request_id=? OR owner_request_id IS NULL)",
+    "UPDATE control_locks SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, acquired_at=NULL, expires_at=NULL, lock_json=NULL, updated_at=CURRENT_TIMESTAMP WHERE lock_key=? AND (owner_request_id=? OR owner_request_id IS NULL)",
     DAILY_CONTEXT_FULL_RUN_LOCK_KEY, parentRow.request_id
   );
+}
+
+async function cleanupDailyContextOrphanChildSidecars(env, stage, child, cleanupCode) {
+  const requestId = child && child.request_id ? child.request_id : null;
+  if (!requestId || !stage) return { cleaned: false, reason: "missing_child_or_stage" };
+  const note = String(cleanupCode || "daily_context_orphan_child_cleanup").slice(0, 120);
+  const result = { cleaned: true, stage_key: stage.stage_key, request_id: requestId, sidecar_scope: "none" };
+
+  if (stage.job_key === "daily-bullpen-availability") {
+    result.sidecar_scope = "daily_bullpen_availability";
+    await run(env.DAILY_DB, "DELETE FROM daily_bullpen_availability_current WHERE batch_id IN (SELECT batch_id FROM daily_bullpen_availability_batches WHERE request_id=? AND status='running')", requestId);
+    await run(env.DAILY_DB, "DELETE FROM daily_bullpen_pitcher_availability_current WHERE batch_id IN (SELECT batch_id FROM daily_bullpen_availability_batches WHERE request_id=? AND status='running')", requestId);
+    await run(env.DAILY_DB, "DELETE FROM daily_bullpen_availability_snapshots WHERE batch_id IN (SELECT batch_id FROM daily_bullpen_availability_batches WHERE request_id=? AND status='running')", requestId);
+    await run(env.DAILY_DB, "DELETE FROM daily_bullpen_availability_issues WHERE batch_id IN (SELECT batch_id FROM daily_bullpen_availability_batches WHERE request_id=? AND status='running')", requestId);
+    await run(env.DAILY_DB, "UPDATE daily_bullpen_availability_batches SET status='failed', certification_status=?, certification_grade='FAILED_ORPHAN_BATCH', certification_reason='Daily Context Full Run guard failed orphan Bullpen child and removed running-batch sidecar rows.', completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'", note, requestId);
+    return result;
+  }
+
+  if (stage.job_key === "daily-team-schedule-spot") {
+    result.sidecar_scope = "daily_team_schedule_spot";
+    await run(env.DAILY_DB, "DELETE FROM daily_team_schedule_spot_current WHERE batch_id IN (SELECT batch_id FROM daily_team_schedule_spot_batches WHERE request_id=? AND status='running')", requestId);
+    await run(env.DAILY_DB, "DELETE FROM daily_team_schedule_spot_snapshots WHERE batch_id IN (SELECT batch_id FROM daily_team_schedule_spot_batches WHERE request_id=? AND status='running')", requestId);
+    await run(env.DAILY_DB, "DELETE FROM daily_team_schedule_spot_issues WHERE batch_id IN (SELECT batch_id FROM daily_team_schedule_spot_batches WHERE request_id=? AND status='running')", requestId);
+    await run(env.DAILY_DB, "UPDATE daily_team_schedule_spot_batches SET status='failed', certification_status=?, certification_grade='FAILED_ORPHAN_BATCH', certification_reason='Daily Context Full Run guard failed orphan Team Spot child and removed running-batch sidecar rows.', completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'", note, requestId);
+    return result;
+  }
+
+  return result;
+}
+
+async function failDailyContextStaleChild(env, parentRow, stage, child, stageReports, report, parentInput, runId, started, reason) {
+  const finalStatus = "FAILED_DAILY_CONTEXT_FULL_RUN_STALE_CHILD_NO_TERMINAL_RUN";
+  const errorCode = "failed_daily_context_full_run_stale_child_no_terminal_run";
+  const message = String(reason || "Daily Context Full Run child was running too long without a terminal control_job_runs row.").slice(0, 900);
+  const cleanup = await cleanupDailyContextOrphanChildSidecars(env, stage, child, "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_CLEANED");
+  const childCleanupRunId = rid("run");
+  const output = {
+    ok: false,
+    data_ok: false,
+    version: SYSTEM_VERSION,
+    worker_name: WORKER_NAME,
+    job_key: parentRow.job_key,
+    request_id: parentRow.request_id,
+    chain_id: parentRow.chain_id,
+    mode: "daily_context_full_run",
+    status: finalStatus,
+    certification: finalStatus,
+    certification_grade: "FAILED",
+    failed_stage_key: stage.stage_key,
+    failed_request_id: child.request_id,
+    failed_reason: "stale_child_no_terminal_control_job_runs_row",
+    child_status: child.status,
+    child_started_at: child.started_at || null,
+    child_updated_at: child.updated_at || null,
+    stale_child_guard_seconds: 90,
+    cleanup,
+    stages: [...stageReports, { ...report, pass: false, wait: false, reason: "stale_child_no_terminal_control_job_runs_row" }],
+    daily_context_full_run_certified: false,
+    no_board_mutation: true,
+    no_score_db_mutation: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true
+  };
+
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=? AND status IN ('pending','running','queued','partial_continue')", JSON.stringify(output), errorCode, message, child.request_id);
+  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, ?, ?)", childCleanupRunId, child.request_id, child.chain_id, child.job_key, child.worker_name, finalStatus, child.input_json || "{}", JSON.stringify(output), errorCode, message);
+  await releaseDailyContextFullRunLock(env, parentRow);
+  await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, parentRow.request_id, parentRow.chain_id, parentRow.job_key, parentRow.worker_name, finalStatus, stageReports.length + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), errorCode, message);
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", JSON.stringify(output), errorCode, message, parentRow.request_id);
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'ERROR', 'daily_context_full_run_stale_child_cleaned', 'Daily Context Full Run failed stale child and cleaned scoped orphan sidecars', ?, CURRENT_TIMESTAMP)", parentRow.request_id, runId, WORKER_NAME, parentRow.job_key, JSON.stringify(output));
+  return output;
 }
 
 async function enqueueDailyContextFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0) {
@@ -4826,6 +4898,13 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
     const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || childOutput.certification_status || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, rows_read: childOutput.prepared_rows_read || childOutput.rows_read || childOutput.rows_read_total || 0, rows_written: childOutput.current_rows_written || childOutput.rows_written || childOutput.rows_promoted || childOutput.weather_rows_written || childOutput.team_rows_written || childOutput.game_rows_written || 0, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0 };
 
     if (validation.wait) {
+      const staleChild = await first(env.CONTROL_DB,
+        "SELECT request_id FROM control_job_queue WHERE request_id=? AND status IN ('running','pending','queued','partial_continue') AND finished_at IS NULL AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-90 seconds') LIMIT 1",
+        child.request_id
+      );
+      if (staleChild) {
+        return await failDailyContextStaleChild(env, row, stage, child, stageReports, report, parentInput, runId, started, "Daily Context Full Run child was running too long without a terminal control_job_runs row.");
+      }
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification: "DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
       await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
       await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+8 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
@@ -6276,6 +6355,7 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       const result = await processOneUnlocked(env, trigger);
       processed.push(result);
       if (result.status === "no_due_jobs") break;
+      if (result.status === "partial_continue_daily_context_full_run_job") break;
       if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_teams_game_odds_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_hitter_metrics_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_base_starter_history_job" || result.status === "failed_one_base_bullpen_history_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_delta_certifier_job" || result.status === "failed_one_static_full_run_job" || result.status === "failed_one_incremental_morning_full_run_job" || result.status === "failed_one_board_full_run_job" || result.status === "failed_one_daily_weather_job" || result.status === "failed_one_daily_bullpen_availability_job" || result.status === "failed_one_daily_team_schedule_spot_job" || result.status === "failed_one_daily_starters_job" || result.status === "failed_one_daily_player_availability_job" || result.status === "failed_one_daily_lineups_source_probe_job" || result.status === "failed_one_daily_game_status_job" || result.status === "failed_one_daily_context_certifier_job" || result.status === "failed_one_daily_context_full_run_job") break;
     }
 
