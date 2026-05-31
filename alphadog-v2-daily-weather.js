@@ -1,10 +1,10 @@
 const WORKER_NAME = "alphadog-v2-daily-weather";
-const VERSION = "alphadog-v2-daily-weather-v0.1.0-source-probe-and-schema";
+const VERSION = "alphadog-v2-daily-weather-v0.1.1-bounded-parallel-current-replace";
 const JOB_KEY = "daily-weather";
 const MLB_SOURCE_KEY = "official_mlb_statsapi_live_feed_weather";
 const OPEN_METEO_SOURCE_KEY = "open_meteo_no_key_forecast";
 const OPENWEATHER_SOURCE_KEY = "openweather_onecall_forecast";
-const FETCH_TIMEOUT_MS = 12000;
+const FETCH_TIMEOUT_MS = 6000;
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "MLB_API_BASE_URL", "OPEN_METEO_BASE_URL"];
@@ -28,6 +28,18 @@ async function all(db, sql, ...binds) { const s = db.prepare(sql); const r = bin
 async function first(db, sql, ...binds) { const s = db.prepare(sql); return binds.length ? await s.bind(...binds).first() : await s.first(); }
 async function run(db, sql, ...binds) { const s = db.prepare(sql); return binds.length ? await s.bind(...binds).run() : await s.run(); }
 function placeholders(n) { return Array.from({ length: n }, () => "?").join(","); }
+async function mapWithConcurrency(items, limit, mapper) {
+  const out = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(Math.max(1, limit), items.length || 1) }, async () => {
+    while (next < items.length) {
+      const idx = next++;
+      out[idx] = await mapper(items[idx], idx);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
 function safeJson(value, max = 14000) {
   if (value === undefined || value === null) return null;
   let text;
@@ -300,6 +312,15 @@ async function pruneRetention(env, retention, batchId) {
     retention_date_start: retention.start,
     retention_date_end: retention.end,
     protected_batch_id: batchId || null
+  };
+}
+async function replaceOperationalCurrentForWindow(env, retention) {
+  const current = await run(env.DAILY_DB, `DELETE FROM daily_game_weather_current WHERE official_date IN (?, ?)`, retention.start, retention.end);
+  return {
+    current_deleted: current && current.meta ? current.meta.changes : null,
+    retention_date_start: retention.start,
+    retention_date_end: retention.end,
+    policy: "latest_successful_batch_replaces_operational_weather_current_for_today_tomorrow"
   };
 }
 async function getPreparedGames(env, retention) {
@@ -576,11 +597,12 @@ async function runWeather(env, input) {
   const parkFactors = await getParkFactors(env, venueIds);
   const parkByVenue = new Map();
   for (const pf of parkFactors) if (!parkByVenue.has(intOrNull(pf.mlb_venue_id))) parkByVenue.set(intOrNull(pf.mlb_venue_id), pf);
+  await run(env.DAILY_DB, `UPDATE daily_game_weather_batches SET calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, calendars.length, prepared.length, prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0), batchId);
+  const operationalCurrentReplace = await replaceOperationalCurrentForWindow(env, retention);
   const sourceSnapshotAt = nowUtc();
-  const records = [];
   let externalCalls = 0;
   let sourceFailures = 0;
-  for (const p of prepared) {
+  const records = await mapWithConcurrency(prepared, 4, async (p) => {
     const gamePk = intOrNull(p.official_game_pk);
     const cal = calendarByGame.get(gamePk) || {};
     const venueId = intOrNull(cal.venue_id);
@@ -605,7 +627,7 @@ async function runWeather(env, input) {
     if (external.ok) sourceParts.push(external.source_key);
     const sourceKey = sourceParts.length ? sourceParts.join("+") : "source_missing";
     const sourceEndpoint = [mlbFetch && mlbFetch.url, external && external.url].filter(Boolean).join(" | ") || null;
-    records.push({
+    return {
       game_pk: gamePk,
       official_date: p.official_date || cal.official_date,
       game_time_utc: p.official_game_time_utc || cal.game_time_utc,
@@ -653,8 +675,8 @@ async function runWeather(env, input) {
         merged_weather: merged,
         classification: classified
       }
-    });
-  }
+    };
+  });
   let currentWritten = 0;
   let snapshotWritten = 0;
   let issuesWritten = 0;
@@ -710,6 +732,7 @@ async function runWeather(env, input) {
     current_games: records.map(r => ({ game_pk: r.game_pk, official_date: r.official_date, venue_name: r.venue_name, roof_status: r.roof_status, weather_status: r.weather_status, weather_confidence: r.weather_confidence, source_key: r.source_key, temp_f: r.temperature_f, wind_mph: r.wind_speed_mph, precip_pct: r.precipitation_probability_pct, issues: r.issues.length })),
     retention_policy: "current_snapshots_issues_today_tomorrow_only_batches_retained_for_audit",
     retention_pre_prune: preRetentionPrune,
+    operational_current_replace: operationalCurrentReplace,
     retention_post_prune: postRetentionPrune,
     sidecar_tables: ["daily_game_weather_current", "daily_game_weather_snapshots", "daily_game_weather_batches", "daily_game_weather_issues"],
     legacy_tables_untouched: ["daily_weather", "daily_roof_status"],

@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.146-daily-context-true-hot-drain";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.147-daily-context-weather-cleanup";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -4778,6 +4778,15 @@ async function cleanupDailyContextOrphanChildSidecars(env, stage, child, cleanup
     await run(env.DAILY_DB, "DELETE FROM daily_team_schedule_spot_snapshots WHERE batch_id IN (SELECT batch_id FROM daily_team_schedule_spot_batches WHERE request_id=? AND status='running')", requestId);
     await run(env.DAILY_DB, "DELETE FROM daily_team_schedule_spot_issues WHERE batch_id IN (SELECT batch_id FROM daily_team_schedule_spot_batches WHERE request_id=? AND status='running')", requestId);
     await run(env.DAILY_DB, "UPDATE daily_team_schedule_spot_batches SET status='failed', certification_status=?, certification_grade='FAILED_ORPHAN_BATCH', certification_reason='Daily Context Full Run guard failed orphan Team Spot child and removed running-batch sidecar rows.', completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'", note, requestId);
+    return result;
+  }
+
+  if (stage.job_key === "daily-weather") {
+    result.sidecar_scope = "daily_game_weather";
+    await run(env.DAILY_DB, "DELETE FROM daily_game_weather_current WHERE batch_id IN (SELECT batch_id FROM daily_game_weather_batches WHERE request_id=? AND status='running')", requestId);
+    await run(env.DAILY_DB, "DELETE FROM daily_game_weather_snapshots WHERE batch_id IN (SELECT batch_id FROM daily_game_weather_batches WHERE request_id=? AND status='running')", requestId);
+    await run(env.DAILY_DB, "DELETE FROM daily_game_weather_issues WHERE batch_id IN (SELECT batch_id FROM daily_game_weather_batches WHERE request_id=? AND status='running')", requestId);
+    await run(env.DAILY_DB, "UPDATE daily_game_weather_batches SET status='failed', certification_status=?, certification_grade='FAILED_ORPHAN_BATCH', certification_reason='Daily Context Full Run guard failed orphan Weather child and removed running-batch sidecar rows.', completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'", note, requestId);
     return result;
   }
 

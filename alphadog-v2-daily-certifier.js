@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-certifier";
-const VERSION = "alphadog-v2-daily-certifier-v0.1.3-started-not-applicable-fix";
+const VERSION = "alphadog-v2-daily-certifier-v0.1.4-time-bound-not-applicable";
 const JOB_KEY = "daily-certifier";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -84,6 +84,18 @@ function isUnavailableAvailability(a) {
   if (!a) return false;
   const s = String(a.availability_status || a.roster_status || "").toLowerCase();
   return a.transaction_block_flag === 1 || a.injured_list_flag === 1 || s.includes("optioned") || s.includes("inactive") || s.includes("injured") || s.includes("blocked") || s.includes("unavailable") || s.includes("not_active");
+}
+function gameHasReachedStart(game, preparedGameTimeUtc) {
+  const rawTime = preparedGameTimeUtc || (game && game.game_time_utc) || null;
+  const startMs = rawTime ? new Date(rawTime).getTime() : NaN;
+  if (!Number.isFinite(startMs)) return false;
+  return Date.now() >= (startMs - 15 * 60 * 1000);
+}
+function isGameStartedExpiredOrUnavailable(game, preparedGameTimeUtc) {
+  if (!game) return false;
+  if (Number(game.is_cancelled) === 1 || Number(game.is_postponed) === 1 || Number(game.is_final) === 1) return true;
+  if ((Number(game.is_live) === 1 || String(game.detailed_state || "").toLowerCase().includes("in progress")) && gameHasReachedStart(game, preparedGameTimeUtc)) return true;
+  return false;
 }
 function addIssueAggregate(issueMap, batchId, p, teamId, issue, cls, sev) {
   const key = [p.official_date, p.official_game_pk, teamId || "", p.resolved_mlb_player_id || "", issue.layer || "unknown", cls, sev, issue.type || "unknown"].join("|");
@@ -281,9 +293,9 @@ async function runCertifier(env, input) {
     if (!p.official_game_pk) hard.push({ layer: "prepared_board", type: "missing_game_pk", reason: "Prepared row lacks official_game_pk" });
     if (!p.official_game_time_utc) hard.push({ layer: "prepared_board", type: "missing_game_time", reason: "Prepared row lacks official_game_time_utc" });
     if (!playerId) hard.push({ layer: "prepared_board", type: "missing_player_id", reason: "Prepared row lacks resolved_mlb_player_id" });
-    const gameStartedOrExpired = Boolean(game && (Number(game.is_live) === 1 || Number(game.is_final) === 1 || Number(game.is_cancelled) === 1 || Number(game.is_postponed) === 1));
+    const gameStartedOrExpired = isGameStartedExpiredOrUnavailable(game, p.official_game_time_utc);
     const notApplicableReasons = [];
-    if (gameStartedOrExpired) notApplicableReasons.push({ layer: "calendar", type: "started_or_expired", reason: "Calendar says game is live/final/postponed/cancelled; daily context is not applicable for pickability after start" });
+    if (gameStartedOrExpired) notApplicableReasons.push({ layer: "calendar", type: "started_or_expired", reason: "Calendar/time guard says game is live/final/postponed/cancelled or within 15 minutes of official start; daily context is not applicable for pickability after start" });
 
     const starterStatus = stRows.length ? "available" : "missing";
     if (stRows.length) availableContext++; else gaps.push({ layer: "starters", type: "missing_starter_context", reason: "No starter rows found for game in today/tomorrow current table" });
@@ -347,7 +359,7 @@ async function runCertifier(env, input) {
     for (const gap of gaps) addIssueAggregate(issueMap, batchId, p, teamId, gap, "enrichment_gap", "gap");
 
     const readinessKey = `ctx_${p.prepared_row_id}`;
-    currentStatements.push(env.DAILY_DB.prepare(insertCurrentSql).bind(readinessKey, batchId, p.official_date, p.official_game_pk, p.official_game_time_utc, p.prepared_row_id, p.source_key, p.source_row_id, p.projection_id, playerId, p.player_name, teamId, opponentTeamId, p.canonical_prop_key, 1, p.pickable_safe, contextStatus, contextGrade, effectiveHard.length, warnings.length, gaps.length, availableContext, 7, starterStatus, lineupStatus, availabilityStatus, weatherStatus, bullpenStatus, scheduleStatus, umpireStatus, safeJson(effectiveHard), safeJson(warnings), safeJson(gaps), safeJson({ team_abbreviation: p.team, opponent: p.opponent, game_calendar: game ? { home_team_id: game.home_team_id, away_team_id: game.away_team_id, detailed_state: game.detailed_state } : null, sidecar_batch_ids: { starters: stRows[0]?.batch_id || null, lineups: lineup?.batch_id || null, player_availability: av?.batch_id || null, weather: w?.batch_id || null, bullpen: bp?.batch_id || null, schedule_spot: ss?.batch_id || null, umpire: u?.batch_id || null } })));
+    currentStatements.push(env.DAILY_DB.prepare(insertCurrentSql).bind(readinessKey, batchId, p.official_date, p.official_game_pk, p.official_game_time_utc, p.prepared_row_id, p.source_key, p.source_row_id, p.projection_id, playerId, p.player_name, teamId, opponentTeamId, p.canonical_prop_key, 1, p.pickable_safe, contextStatus, contextGrade, effectiveHard.length, warnings.length, gaps.length, availableContext, 7, starterStatus, lineupStatus, availabilityStatus, weatherStatus, bullpenStatus, scheduleStatus, umpireStatus, safeJson(effectiveHard), safeJson(warnings), safeJson(gaps), safeJson({ team_abbreviation: p.team, opponent: p.opponent, game_calendar: game ? { home_team_id: game.home_team_id, away_team_id: game.away_team_id, detailed_state: game.detailed_state, is_live: game.is_live, is_final: game.is_final, is_postponed: game.is_postponed, is_cancelled: game.is_cancelled, time_guard_reached_start: gameHasReachedStart(game, p.official_game_time_utc) } : null, sidecar_batch_ids: { starters: stRows[0]?.batch_id || null, lineups: lineup?.batch_id || null, player_availability: av?.batch_id || null, weather: w?.batch_id || null, bullpen: bp?.batch_id || null, schedule_spot: ss?.batch_id || null, umpire: u?.batch_id || null } })));
   }
 
   await batchRun(env.DAILY_DB, currentStatements, 80);

@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-bullpen-availability";
-const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.0-internal-bullpen-history-context";
+const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.1-current-replace-retention";
 const JOB_KEY = "daily-bullpen-availability";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -268,6 +268,17 @@ async function pruneRetention(env, retention) {
     retention_date_end: retention.end
   };
 }
+async function replaceOperationalCurrentForWindow(env, retention) {
+  const current = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_current WHERE official_date IN (?, ?)`, retention.start, retention.end);
+  const pitcher = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_pitcher_availability_current WHERE official_date IN (?, ?)`, retention.start, retention.end);
+  return {
+    current_deleted: current && current.meta ? current.meta.changes : null,
+    pitcher_current_deleted: pitcher && pitcher.meta ? pitcher.meta.changes : null,
+    retention_date_start: retention.start,
+    retention_date_end: retention.end,
+    policy: "latest_successful_batch_replaces_operational_bullpen_current_for_today_tomorrow"
+  };
+}
 async function getPreparedTeamRows(env, retention) {
   return all(env.SCORE_DB, `SELECT
       official_game_pk,
@@ -470,6 +481,7 @@ async function runBullpen(env, input) {
   const retention = retentionWindowPt();
   await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_bullpen_availability_batches (batch_id, request_id, run_id, worker_name, worker_version, job_key, mode, status, window_start, window_end, started_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "daily_bullpen_availability_refresh_window", retention.start, retention.end, sourceSnapshotAt);
   const prePrune = await pruneRetention(env, retention);
+  const operationalCurrentReplace = await replaceOperationalCurrentForWindow(env, retention);
   const prepared = await getPreparedTeamRows(env, retention);
   const gamePks = [...new Set(prepared.map(r => Number(r.official_game_pk)).filter(Boolean))];
   const calendars = await getCalendar(env, gamePks);
@@ -533,6 +545,7 @@ async function runBullpen(env, input) {
     team_summaries: summaries,
     retention_policy: "current_pitcher_snapshots_issues_today_tomorrow_only_batches_retained_for_audit",
     retention_pre_prune: prePrune,
+    operational_current_replace: operationalCurrentReplace,
     retention_post_prune: postPrune,
     sidecar_tables: ["daily_bullpen_availability_current", "daily_bullpen_pitcher_availability_current", "daily_bullpen_availability_snapshots", "daily_bullpen_availability_batches", "daily_bullpen_availability_issues"],
     source_tables_read_only: ["TEAM_DB.bullpen_history", "TEAM_DB.mlb_game_calendar", "SCORE_DB.score_board_prepared_current"],
