@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.142-daily-context-nonfatal-enrichment-blockers";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.144-daily-context-running-parent-child-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -4680,6 +4680,9 @@ async function processDailyContextCertifierJob(env, row, runId, trigger) {
 
 const DAILY_CONTEXT_FULL_RUN_LOCK_KEY = "DAILY_CONTEXT_FULL_RUN";
 const DAILY_CONTEXT_FULL_RUN_STALE_MINUTES = 20;
+const DAILY_CONTEXT_FULL_RUN_CHILD_RUN_AFTER_SECONDS = 6;
+const DAILY_CONTEXT_FULL_RUN_PARENT_RECHECK_SECONDS = 12;
+const DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS = 120;
 
 const DAILY_CONTEXT_FULL_RUN_STAGES = [
   { stage_key: "daily_starters", job_key: "daily-probable-pitchers", worker_name: "alphadog-v2-daily-probable-pitchers", display_name: "Daily Starters", visible_button: "DAILY JOBS > Starters", mode: "daily_context_full_run_starters", worker_group: "Daily", phase_key: "daily", priority: 5 },
@@ -4805,7 +4808,7 @@ async function failDailyContextStaleChild(env, parentRow, stage, child, stageRep
     child_status: child.status,
     child_started_at: child.started_at || null,
     child_updated_at: child.updated_at || null,
-    stale_child_guard_seconds: 90,
+    stale_child_guard_seconds: DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS,
     cleanup,
     stages: [...stageReports, { ...report, pass: false, wait: false, reason: "stale_child_no_terminal_control_job_runs_row" }],
     daily_context_full_run_certified: false,
@@ -4829,7 +4832,7 @@ async function enqueueDailyContextFullRunChild(env, parentRow, stage, stepIndex,
   const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
   const input = dailyContextFullRunChildInput(parentRow, stage, stepIndex, retryCount);
   await run(env.CONTROL_DB,
-    "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, datetime('now','+6 seconds'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
     childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input)
   );
   return { child_request_id: childRequestId, input };
@@ -4933,9 +4936,9 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
 
     if (!child) {
       const enqueued = await enqueueDailyContextFullRunChild(env, row, stage, i, 0);
-      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification: "DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, lock_held: true, approved_chain_order: DAILY_CONTEXT_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports };
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification: "DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, hard_child_request_boundary: true, child_run_after_delay_seconds: DAILY_CONTEXT_FULL_RUN_CHILD_RUN_AFTER_SECONDS, parent_recheck_delay_seconds: DAILY_CONTEXT_FULL_RUN_PARENT_RECHECK_SECONDS, lock_held: true, approved_chain_order: DAILY_CONTEXT_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports };
       await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+12 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
       await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'daily_context_full_run_child_enqueued', 'Daily Context Full Run enqueued next child stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: enqueued.child_request_id, stage_key: stage.stage_key, stage_index: i, mode: stage.mode }));
       return output;
     }
@@ -4946,7 +4949,7 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
 
     if (validation.wait) {
       const staleChild = await first(env.CONTROL_DB,
-        "SELECT request_id FROM control_job_queue WHERE request_id=? AND status IN ('running','pending','queued','partial_continue') AND finished_at IS NULL AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-90 seconds') LIMIT 1",
+        "SELECT request_id FROM control_job_queue WHERE request_id=? AND status IN ('running','pending','queued','partial_continue') AND finished_at IS NULL AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-120 seconds') LIMIT 1",
         child.request_id
       );
       if (staleChild) {
@@ -5896,6 +5899,59 @@ async function processOneUnlocked(env, trigger) {
       await run(env.CONTROL_DB,
         "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'incremental_morning_full_run_running_parent_rescued_as_due', 'Recovered running Incremental Morning Full Run parent row as due work for backend continuation', ?, CURRENT_TIMESTAMP)",
         row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, incremental_morning_full_run_rescue_v0_2_94: true })
+      );
+    }
+  }
+
+
+  // v0.2.144: Daily Context Full Run must use the same hot-continuation rescue
+  // pattern as Board Full Run and Incremental Morning Full Run. A bounded tick can
+  // be interrupted after a Daily Context parent or child queue row is marked
+  // running but before the parent writes its next terminal partial/completed/failed
+  // state. Without this scoped rescue, the queue can show no due work while the
+  // Daily Context lock remains held. This rescue is scoped only to Daily Context
+  // Full Run parent/child rows and does not affect Board Full Run, Incremental
+  // Morning Full Run, static, market, score prep, or individual daily workers.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
+       FROM control_job_queue c
+       JOIN control_job_queue p ON p.request_id = c.parent_request_id
+       WHERE p.job_key='daily-context-full-run'
+         AND p.worker_name='alphadog-v2-orchestrator'
+         AND p.status IN ('pending','running','partial_continue')
+         AND p.finished_at IS NULL
+         AND c.parent_request_id IS NOT NULL
+         AND c.status='running'
+         AND c.finished_at IS NULL
+         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-5 seconds')
+       ORDER BY datetime(c.updated_at) ASC
+       LIMIT 1`
+    );
+    if (row) {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'daily_context_full_run_child_running_rescued_as_due', 'Recovered active Daily Context Full Run child running row as due work for same-chain hot continuation', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, daily_context_child_hot_rescue_v0_2_144: true })
+      );
+    }
+  }
+
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+       FROM control_job_queue
+       WHERE job_key='daily-context-full-run'
+         AND worker_name='alphadog-v2-orchestrator'
+         AND status='running'
+         AND finished_at IS NULL
+         AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds')
+       ORDER BY datetime(updated_at) ASC
+       LIMIT 1`
+    );
+    if (row) {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'daily_context_full_run_running_parent_rescued_as_due', 'Recovered running Daily Context Full Run parent row as due work for backend continuation', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, daily_context_parent_hot_rescue_v0_2_144: true })
       );
     }
   }
