@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.145-daily-context-hot-continuation-restore";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.146-daily-context-true-hot-drain";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -4680,8 +4680,8 @@ async function processDailyContextCertifierJob(env, row, runId, trigger) {
 
 const DAILY_CONTEXT_FULL_RUN_LOCK_KEY = "DAILY_CONTEXT_FULL_RUN";
 const DAILY_CONTEXT_FULL_RUN_STALE_MINUTES = 20;
-const DAILY_CONTEXT_FULL_RUN_CHILD_RUN_AFTER_SECONDS = 6;
-const DAILY_CONTEXT_FULL_RUN_PARENT_RECHECK_SECONDS = 12;
+const DAILY_CONTEXT_FULL_RUN_CHILD_RUN_AFTER_SECONDS = 1;
+const DAILY_CONTEXT_FULL_RUN_PARENT_RECHECK_SECONDS = 3;
 const DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS = 120;
 
 const DAILY_CONTEXT_FULL_RUN_STAGES = [
@@ -4829,10 +4829,28 @@ async function failDailyContextStaleChild(env, parentRow, stage, child, stageRep
 }
 
 async function enqueueDailyContextFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0) {
+  // v0.2.146: Daily Context Full Run must be stage-key deterministic.
+  // If the parent is re-entered by a hot pump, manual wake, or cron rescue after
+  // the child was already inserted, reuse the existing child instead of creating
+  // a duplicate row for the same stage.
+  const existing = await first(env.CONTROL_DB,
+    `SELECT request_id, input_json
+     FROM control_job_queue
+     WHERE parent_request_id=?
+       AND chain_id=?
+       AND json_extract(input_json, '$.stage_key')=?
+     ORDER BY datetime(created_at) ASC
+     LIMIT 1`,
+    parentRow.request_id, parentRow.chain_id, stage.stage_key
+  );
+  if (existing) {
+    return { child_request_id: existing.request_id, input: parseJsonSafeText(existing.input_json || "{}", {}) };
+  }
+
   const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
   const input = dailyContextFullRunChildInput(parentRow, stage, stepIndex, retryCount);
   await run(env.CONTROL_DB,
-    "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, datetime('now','+6 seconds'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, datetime('now','+1 seconds'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
     childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input)
   );
   return { child_request_id: childRequestId, input };
@@ -4931,14 +4949,20 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
 
   for (let i = 0; i < DAILY_CONTEXT_FULL_RUN_STAGES.length; i++) {
     const stage = DAILY_CONTEXT_FULL_RUN_STAGES[i];
-    const stageChildren = childRows.filter(c => c.job_key === stage.job_key && c.worker_name === stage.worker_name);
+    const stageChildren = childRows.filter(c => {
+      const childInput = parseJsonSafeText(c.input_json || "{}", {});
+      const childStageKey = String(childInput.stage_key || "");
+      return childStageKey
+        ? childStageKey === stage.stage_key
+        : (c.job_key === stage.job_key && c.worker_name === stage.worker_name);
+    });
     const child = stageChildren[stageChildren.length - 1] || null;
 
     if (!child) {
       const enqueued = await enqueueDailyContextFullRunChild(env, row, stage, i, 0);
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification: "DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, hard_child_request_boundary: true, child_run_after_delay_seconds: DAILY_CONTEXT_FULL_RUN_CHILD_RUN_AFTER_SECONDS, parent_recheck_delay_seconds: DAILY_CONTEXT_FULL_RUN_PARENT_RECHECK_SECONDS, lock_held: true, approved_chain_order: DAILY_CONTEXT_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports };
       await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_CHILD_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+12 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
       await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'daily_context_full_run_child_enqueued', 'Daily Context Full Run enqueued next child stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: enqueued.child_request_id, stage_key: stage.stage_key, stage_index: i, mode: stage.mode }));
       return output;
     }
@@ -4957,7 +4981,7 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
       }
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification: "DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
       await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+8 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
       return output;
     }
 
@@ -5754,9 +5778,44 @@ async function enqueueStaticPlayersWeeklyIfDue(env, cronExpression) {
 }
 
 async function processOneUnlocked(env, trigger) {
+  // v0.2.146: Hot-drain Daily Context Full Run before generic queue work.
+  // This copies the Board/Incremental intent but fixes the Daily-specific pacing
+  // failure where due same-chain children waited for cron while unrelated or
+  // older rows could be selected first.
   let row = await first(env.CONTROL_DB,
-    "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json FROM control_job_queue WHERE status='pending' AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP) ORDER BY priority ASC, datetime(created_at) ASC LIMIT 1"
+    `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
+     FROM control_job_queue p
+     JOIN control_job_queue c ON c.parent_request_id = p.request_id AND c.chain_id = p.chain_id
+     WHERE p.job_key='daily-context-full-run'
+       AND p.worker_name='alphadog-v2-orchestrator'
+       AND p.status IN ('pending','running','partial_continue')
+       AND p.finished_at IS NULL
+       AND c.status IN ('pending','partial_continue')
+       AND c.finished_at IS NULL
+       AND datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+     ORDER BY datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) ASC, datetime(c.created_at) ASC
+     LIMIT 1`
   );
+
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+       FROM control_job_queue
+       WHERE job_key='daily-context-full-run'
+         AND worker_name='alphadog-v2-orchestrator'
+         AND status IN ('pending','partial_continue')
+         AND finished_at IS NULL
+         AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+       ORDER BY datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) ASC, datetime(created_at) ASC
+       LIMIT 1`
+    );
+  }
+
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json FROM control_job_queue WHERE status='pending' AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP) ORDER BY priority ASC, datetime(created_at) ASC LIMIT 1"
+    );
+  }
 
   // v0.2.88: Hitter Splits daily affected refresh uses the same safe running-row
   // continuation rescue as Pitcher Splits. If a backend hot loop is interrupted
@@ -6460,7 +6519,8 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       const result = await processOneUnlocked(env, trigger);
       processed.push(result);
       if (result.status === "no_due_jobs") break;
-      if (result.status === "partial_continue_daily_context_full_run_job") break;
+      // v0.2.146: Do not break after Daily Context parent enqueues a child.
+      // The next loop must hot-drain the due same-chain child or parent recheck.
       if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_teams_game_odds_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_hitter_metrics_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_base_starter_history_job" || result.status === "failed_one_base_bullpen_history_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_delta_certifier_job" || result.status === "failed_one_static_full_run_job" || result.status === "failed_one_incremental_morning_full_run_job" || result.status === "failed_one_board_full_run_job" || result.status === "failed_one_daily_weather_job" || result.status === "failed_one_daily_bullpen_availability_job" || result.status === "failed_one_daily_team_schedule_spot_job" || result.status === "failed_one_daily_starters_job" || result.status === "failed_one_daily_player_availability_job" || result.status === "failed_one_daily_lineups_source_probe_job" || result.status === "failed_one_daily_game_status_job" || result.status === "failed_one_daily_context_certifier_job" || result.status === "failed_one_daily_context_full_run_job") break;
     }
 
@@ -6580,6 +6640,31 @@ async function countDueIncrementalMorningFullRun(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
+async function countDueDailyContextFullRun(env) {
+  // Count the active Daily Context chain parent and its unfinished children.
+  // This is intentionally not limited to run_after due rows: if the parent just
+  // inserted a child with a 1-second guard, waitUntil must keep the backend alive
+  // instead of letting cron become the normal stage driver.
+  const row = await first(env.CONTROL_DB,
+    `SELECT COUNT(*) AS c
+     FROM control_job_queue
+     WHERE finished_at IS NULL
+       AND status IN ('pending','running','partial_continue')
+       AND (
+         (job_key='daily-context-full-run' AND worker_name='alphadog-v2-orchestrator')
+         OR parent_request_id IN (
+           SELECT request_id
+           FROM control_job_queue
+           WHERE job_key='daily-context-full-run'
+             AND worker_name='alphadog-v2-orchestrator'
+             AND finished_at IS NULL
+             AND status IN ('pending','running','partial_continue')
+         )
+       )`
+  );
+  return Number(row && row.c ? row.c : 0);
+}
+
 
 async function recoverStaleDailyContextCertifierJobs(env, trigger) {
   const staleRows = await all(env.CONTROL_DB,
@@ -6647,6 +6732,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
 
   const dueIncrementalMorningFullRun = await countDueIncrementalMorningFullRun(env);
   const dueBoardFullRun = await countDueBoardFullRun(env);
+  const dueDailyContextFullRun = await countDueDailyContextFullRun(env);
   const dueStaticPlayers = await countDueStaticPlayers(env);
   const dueBaseHitterGameLogs = await countDueBaseHitterGameLogs(env);
   const dueBaseHitterSplits = await countDueBaseHitterSplits(env);
@@ -6684,6 +6770,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       cycle_count: cycles.length,
       due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
       due_board_full_run_after_pump: dueBoardFullRun,
+      due_daily_context_full_run_after_pump: dueDailyContextFullRun,
       due_static_players_after_pump: dueStaticPlayers,
       due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
       due_base_hitter_splits_after_pump: dueBaseHitterSplits,
@@ -6717,6 +6804,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         next_source: nextSource,
         due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
       due_board_full_run_after_pump: dueBoardFullRun,
+        due_daily_context_full_run_after_pump: dueDailyContextFullRun,
         due_static_players_after_pump: dueStaticPlayers,
         due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
         due_base_hitter_splits_after_pump: dueBaseHitterSplits,
@@ -6772,6 +6860,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
     cycle_count: cycles.length,
     due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
       due_board_full_run_after_pump: dueBoardFullRun,
+    due_daily_context_full_run_after_pump: dueDailyContextFullRun,
     due_static_players_after_pump: dueStaticPlayers,
     due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
     due_base_hitter_splits_after_pump: dueBaseHitterSplits,
