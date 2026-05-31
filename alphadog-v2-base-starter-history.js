@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-starter-history";
-const VERSION = "alphadog-v2-base-starter-history-v0.4.8-post-final-open-gap-repair";
+const VERSION = "alphadog-v2-base-starter-history-v0.4.9-full-run-coverage-gap-repair";
 const JOB_KEY = "base-starter-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -21,6 +21,7 @@ function safeJson(value) { try { return JSON.stringify(value == null ? null : va
 function str(value) { return value == null ? null : String(value); }
 function num(value) { const n = Number(value); return Number.isFinite(n) ? n : null; }
 function ymd(value) { return String(value || "").slice(0, 10); }
+function officialGameDate(game, fallback) { return ymd((game && (game.officialDate || game.official_date || game.gameDate)) || fallback); }
 function seasonFromDate(value) { return Number(String(value || DEFAULT_SAMPLE_DATE).slice(0, 4)) || 2026; }
 
 function jsonResponse(body, status = 200) {
@@ -46,9 +47,9 @@ function baseIdentity(env) {
     job_key: JOB_KEY,
     status: "BASE_STARTER_HISTORY_SCOPED_REPAIR_ORDER_FIXED",
     timestamp_utc: nowUtc(),
-    phase: "starter-history-v0.4.4-scoped-repair-order-fix",
+    phase: "starter-history-v0.4.9-full-run-coverage-gap-repair",
     notes: [
-      "v0.4.4 fixes scoped repair ordering: retained-stage restore is checked before scoped source repair, matching final game-log worker logic.",
+      "v0.4.9 fixes Delta Full Run starter-history behavior: normal delta_update mines finalized games first, then coverage-gap scoped repair targets only open starter_history coverage blockers.",
       "Allowed writes: repair missing live + retained-stage delta keys by refetching only the affected game/key, rewriting the retained stage row, and promoting that key. No full sweep, no new batch.",
       "Forbidden in this version: full sweep, new batch, scoring, ranking, board mutation, and browser pump.",
       "Starter history is source-classified as GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS via official final boxscore gamesStarted == 1."
@@ -492,7 +493,7 @@ async function runSourceProbe(env, input) {
 
   for (const game of finalGames) {
     const gamePk = num(game.gamePk);
-    const gameDate = ymd(game.gameDate || sampleDate);
+    const gameDate = officialGameDate(game, sampleDate);
     const gameStatus = str(game.status && (game.status.detailedState || game.status.abstractGameState));
     const gameType = str(game.gameType || "R");
     const venueId = game.venue ? num(game.venue.id) : null;
@@ -730,7 +731,7 @@ async function seedBaseGameUniverse(env, batchId, runId, requestId, baseStartDat
       const gamePk = num(game.gamePk);
       if (!gamePk || seen.has(gamePk)) continue;
       seen.add(gamePk);
-      const gameDate = ymd(game.gameDate || dateNode.date || cutoffDate);
+      const gameDate = officialGameDate(game, dateNode.date || cutoffDate);
       const gameStatus = str(game.status && (game.status.detailedState || game.status.abstractGameState));
       const gameType = str(game.gameType || "R");
       const venueId = game.venue ? num(game.venue.id) : null;
@@ -1128,7 +1129,7 @@ async function seedDeltaGameUniverse(env, batchId, runId, requestId, deltaStartD
   for (const dateNode of schedule.json.dates) {
     for (const game of (dateNode.games || [])) {
       const gamePk = num(game.gamePk);
-      const gameDate = ymd(game.gameDate || dateNode.date || deltaStartDate);
+      const gameDate = officialGameDate(game, dateNode.date || deltaStartDate);
       const status = str(game.status && (game.status.detailedState || game.status.abstractGameState));
       const gameType = str(game.gameType || 'R');
       const details = {
@@ -1367,7 +1368,7 @@ async function latestCompleteStarterHistoryDateFromSchedule(env, startDate, endD
     for (const game of (dateNode.games || [])) {
       const gameType = str(game.gameType || 'R');
       const status = str(game.status && (game.status.detailedState || game.status.abstractGameState));
-      const gameDate = ymd(game.gameDate || dateNode.date || startDate);
+      const gameDate = officialGameDate(game, dateNode.date || startDate);
       if (gameType === 'R' && isFinalStatus(status)) {
         finalCount += 1;
         if (!latest || gameDate > latest) latest = gameDate;
@@ -1810,6 +1811,206 @@ async function scopedSourceRepairMissingDeltaKeys(env, input) {
 }
 
 
+
+async function runCoverageGapScopedRepair(env, input) {
+  const schema = await ensureSchema(env);
+  if (!schema.ok) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: 'schema_failed', certification: 'STARTER_HISTORY_SCHEMA_FAILED', schema, rows_read: 0, rows_written: 0, rows_promoted: 0, external_calls_performed: 0 };
+  const requestId = input.request_id || rid('starter_coverage_gap_req');
+  const chainId = input.chain_id || null;
+  const runId = input.run_id || rid('starter_coverage_gap_run');
+  const rowInput = input.input_json || {};
+  const startDate = ymd(rowInput.coverage_window_start || rowInput.delta_start_date || rowInput.delta_reserved_start_date || input.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE);
+  const endDate = ymd(rowInput.coverage_window_end || rowInput.delta_end_date || input.delta_end_date || new Date().toISOString().slice(0, 10));
+  const targetLimit = Math.max(1, Math.min(24, Number(rowInput.coverage_gap_repair_limit || input.coverage_gap_repair_limit || 18) || 18));
+  const batchId = rid('starter_coverage_gap_batch');
+  const season = seasonFromDate(endDate);
+
+  await run(env.TEAM_DB, `INSERT INTO starter_history_batches (
+    batch_id, run_id, request_id, chain_id, job_key, worker_name, version, ingestion_mode, probe_only, source_key, source_confidence, source_season, source_game_type,
+    base_backfill_cutoff_date, delta_reserved_start_date, sample_start_date, sample_end_date, sample_limit, source_shape_classification,
+    actual_starter_identification_path, safest_key_model, status, certification_status, certification_grade, output_json
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, 'delta_coverage_gap_scoped_repair', 0, ?, ?, ?, 'R', ?, ?, ?, ?, ?, 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS', ?, ?, 'RUNNING_COVERAGE_GAP_SCOPED_REPAIR', 'STARTER_HISTORY_COVERAGE_GAP_SCOPED_REPAIR_RUNNING', 'DELTA_REPAIR_IN_PROGRESS', ?)`,
+    batchId, runId, requestId, chainId, JOB_KEY, WORKER_NAME, VERSION, SOURCE_KEY, SOURCE_CONFIDENCE, season,
+    DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, startDate, endDate, targetLimit,
+    'MLB StatsAPI /api/v1/game/{gamePk}/boxscore -> teams.{away,home}.players.ID*.stats.pitching.gamesStarted == 1',
+    'coverage blocker scoped by official_date + game_pk + team_id; no full sweep',
+    safeJson({ created_for: 'delta_coverage_gap_scoped_repair', coverage_window_start: startDate, coverage_window_end: endDate, stage_retained: true, no_delta_stage_cleanup: true })
+  );
+
+  const targets = await all(env.TEAM_DB, `SELECT
+      c.official_date,
+      c.game_pk,
+      c.season,
+      c.coverage_status,
+      c.coverage_grade,
+      c.missing_rows,
+      c.missing_reason,
+      cal.game_type,
+      cal.status_code,
+      cal.abstract_game_state,
+      cal.detailed_state,
+      cal.is_final,
+      cal.is_available_for_stats,
+      cal.home_team_id,
+      cal.away_team_id,
+      cal.home_team_name,
+      cal.away_team_name,
+      cal.venue_id
+    FROM mlb_game_data_coverage c
+    LEFT JOIN mlb_game_calendar cal ON cal.game_pk = c.game_pk AND cal.official_date = c.official_date
+    WHERE c.layer_key = 'starter_history'
+      AND c.blocking_for_full_run = 1
+      AND c.official_date BETWEEN ? AND ?
+    ORDER BY c.official_date, c.game_pk
+    LIMIT ?`, startDate, endDate, targetLimit);
+
+  let externalCalls = 0;
+  let rowsStaged = 0;
+  let rowsPromoted = 0;
+  let gamesRepaired = 0;
+  let openNotMinedGames = 0;
+  let sourceErrorCount = 0;
+  let unclearCount = 0;
+  const repairedGames = [];
+  const openGames = [];
+  const failedGames = [];
+
+  for (const target of targets) {
+    const gamePk = num(target.game_pk);
+    const gameDate = ymd(target.official_date);
+    const gameType = str(target.game_type || 'R');
+    const gameStatus = str(target.detailed_state || target.abstract_game_state || 'unknown');
+    const venueId = num(target.venue_id);
+    const boxEndpoint = `/api/v1/game/${gamePk}/boxscore`;
+    const box = await fetchMlbJson(env, boxEndpoint);
+    externalCalls += 1;
+
+    if (!box.ok) {
+      sourceErrorCount += 1;
+      failedGames.push({ game_pk: gamePk, official_date: gameDate, reason: 'boxscore_http_error_coverage_gap_repair', http_status: box.http_status });
+      await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season: seasonFromDate(gameDate), outcome_level: 'GAME', outcome_category: 'COVERAGE_GAP_REPAIR_SOURCE_ERROR', status: 'SOURCE_ERROR', reason: 'boxscore_http_error_coverage_gap_repair', source_endpoint: box.endpoint, details: { target, http_status: box.http_status, text_preview: box.text_preview } });
+      continue;
+    }
+
+    const stagedForGame = [];
+    let gameUnclear = false;
+    for (const side of ['away', 'home']) {
+      const otherSide = side === 'away' ? 'home' : 'away';
+      const teamId = str(target[`${side}_team_id`] || null);
+      const opponentTeamId = str(target[`${otherSide}_team_id`] || null);
+      const teamName = str(target[`${side}_team_name`] || null);
+      const opponentTeamName = str(target[`${otherSide}_team_name`] || null);
+      const teamNode = teamBox(box.json, side);
+      const starter = findStarterFromBoxTeam(teamNode);
+      const playerId = playerIdFromStarter(starter);
+      if (!starter || !playerId || starter.source_type !== 'official_final_boxscore_games_started' || !teamId || !opponentTeamId) {
+        gameUnclear = true;
+        break;
+      }
+      const line = extractPitchingLine(starter.player_node);
+      const starterKey = `${gamePk}_${teamId}`;
+      stagedForGame.push({
+        batch_id: batchId, run_id: runId, request_id: requestId, starter_key: starterKey, game_pk: gamePk, game_date: gameDate, season: seasonFromDate(gameDate), game_type: gameType, game_status: gameStatus,
+        team_id: teamId, team_name: teamName, opponent_team_id: opponentTeamId, opponent_team_name: opponentTeamName, is_home: side === 'home', venue_id: venueId,
+        starter_player_id: playerId, starter_name: playerNameFromStarter(starter), throws: throwsFromStarter(starter), starter_source_path: starter.source_path.replace('{side}', side), starter_source_type: starter.source_type,
+        source_endpoint: box.endpoint, raw_json: { side, game_context: target, starter_player_node: starter.player_node, pitching_line: line, delta_coverage_gap_scoped_repair: true, stage_retained: true }, ...line
+      });
+    }
+
+    if (gameUnclear || stagedForGame.length !== 2) {
+      openNotMinedGames += 1;
+      openGames.push({ game_pk: gamePk, official_date: gameDate, reason: 'official_boxscore_starters_not_ready_or_not_confirmed' });
+      await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season: seasonFromDate(gameDate), outcome_level: 'GAME', outcome_category: 'COVERAGE_GAP_REPAIR_OPEN_NOT_MINED', status: 'OPEN_NOT_MINED_RETAINED_FOR_FUTURE_REPAIR', reason: 'official_boxscore_starters_not_ready_or_not_confirmed', source_endpoint: box.endpoint, details: { target, no_fake_completion: true, future_remining_open: true } });
+      continue;
+    }
+
+    for (const stageRow of stagedForGame) {
+      await run(env.TEAM_DB, `DELETE FROM starter_history_stage WHERE batch_id=? AND starter_key=?`, batchId, stageRow.starter_key);
+      await insertStage(env, stageRow);
+      await run(env.TEAM_DB, `UPDATE starter_history_stage SET ingestion_mode='delta_coverage_gap_scoped_repair', certification_status='STARTER_HISTORY_COVERAGE_GAP_SCOPED_REPAIR_STAGED', certification_grade='DELTA_REPAIR_IN_PROGRESS', updated_at=CURRENT_TIMESTAMP WHERE batch_id=? AND starter_key=?`, batchId, stageRow.starter_key);
+      await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season: seasonFromDate(gameDate), team_id: stageRow.team_id, opponent_team_id: stageRow.opponent_team_id, starter_player_id: stageRow.starter_player_id, outcome_level: 'STARTER', outcome_category: 'COVERAGE_GAP_REPAIR_PROMOTED_ROWS', status: 'STAGED_DELTA_RETAINED', reason: 'coverage_gap_refetched_official_boxscore_gamesStarted_identified_actual_starter', source_endpoint: box.endpoint, details: { side: stageRow.is_home ? 'home' : 'away', starter_key: stageRow.starter_key, stage_retained: true } });
+      rowsStaged += 1;
+    }
+    await promoteDeltaGameRows(env, batchId, runId, gamePk);
+    await run(env.TEAM_DB, `UPDATE starter_history SET ingestion_mode='delta_coverage_gap_scoped_repair_promoted', certification_status='STARTER_HISTORY_COVERAGE_GAP_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED', certification_grade='DELTA_REPAIR_PASS', updated_at=CURRENT_TIMESTAMP WHERE batch_id=? AND game_pk=?`, batchId, gamePk);
+    rowsPromoted += 2;
+    gamesRepaired += 1;
+    repairedGames.push({ game_pk: gamePk, official_date: gameDate, starter_rows: 2 });
+    await insertOutcome(env, { batch_id: batchId, run_id: runId, request_id: requestId, game_pk: gamePk, game_date: gameDate, season: seasonFromDate(gameDate), outcome_level: 'GAME', outcome_category: 'COVERAGE_GAP_REPAIR_GAME_PROMOTED', status: 'GAME_STAGED_PROMOTED_DELTA_RETAINED', reason: 'coverage_gap_game_two_actual_starters_staged_promoted_and_delta_stage_retained', source_endpoint: box.endpoint, details: { target, official_starter_count: 2, rows_staged: 2, rows_promoted: 2, stage_retained: true } });
+  }
+
+  const counts = await first(env.TEAM_DB, `SELECT
+    (SELECT COUNT(*) FROM starter_history_stage WHERE batch_id=?) AS staged_rows,
+    (SELECT COUNT(*) FROM starter_history WHERE batch_id=?) AS live_rows,
+    (SELECT COUNT(*) FROM (SELECT starter_key, COUNT(*) c FROM starter_history_stage WHERE batch_id=? GROUP BY starter_key HAVING c>1)) AS duplicate_stage_keys,
+    (SELECT COUNT(*) FROM (SELECT starter_key, COUNT(*) c FROM starter_history WHERE batch_id=? GROUP BY starter_key HAVING c>1)) AS duplicate_live_keys,
+    (SELECT COUNT(*) FROM starter_history_stage WHERE batch_id=? AND (game_pk IS NULL OR game_date IS NULL OR team_id IS NULL OR opponent_team_id IS NULL OR starter_player_id IS NULL OR raw_json IS NULL OR starter_source_type IS NULL OR starter_source_path IS NULL)) AS missing_stage_identity_count,
+    (SELECT COUNT(*) FROM starter_history WHERE batch_id=? AND (game_pk IS NULL OR game_date IS NULL OR team_id IS NULL OR opponent_team_id IS NULL OR starter_player_id IS NULL OR raw_json IS NULL OR starter_source_type IS NULL OR starter_source_path IS NULL)) AS missing_live_identity_count
+  `, batchId, batchId, batchId, batchId, batchId, batchId);
+  const duplicateStageKeys = num(counts && counts.duplicate_stage_keys) || 0;
+  const duplicateLiveKeys = num(counts && counts.duplicate_live_keys) || 0;
+  const missingStageIdentity = num(counts && counts.missing_stage_identity_count) || 0;
+  const missingLiveIdentity = num(counts && counts.missing_live_identity_count) || 0;
+  const verifyPass = sourceErrorCount === 0 && duplicateStageKeys === 0 && duplicateLiveKeys === 0 && missingStageIdentity === 0 && missingLiveIdentity === 0;
+  const certificationStatus = verifyPass
+    ? (openNotMinedGames > 0 ? 'STARTER_HISTORY_COVERAGE_GAP_SCOPED_REPAIR_COMPLETED_OPEN_GAPS_RETAINED' : 'STARTER_HISTORY_COVERAGE_GAP_SCOPED_REPAIR_CERTIFIED_PROMOTED_RETAINED')
+    : 'STARTER_HISTORY_COVERAGE_GAP_SCOPED_REPAIR_BLOCKED_VERIFY_FAILED';
+  const certificationGrade = verifyPass
+    ? (openNotMinedGames > 0 ? 'DELTA_REPAIR_PASS_WITH_OPEN_GAPS' : 'DELTA_REPAIR_PASS')
+    : 'DELTA_REPAIR_BLOCKED';
+  const status = verifyPass
+    ? (openNotMinedGames > 0 ? 'COVERAGE_GAP_SCOPED_REPAIR_COMPLETED_OPEN_GAPS_RETAINED' : 'COVERAGE_GAP_SCOPED_REPAIR_COMPLETED')
+    : 'COVERAGE_GAP_SCOPED_REPAIR_VERIFY_FAILED';
+  const output = {
+    source_shape_classification: 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS',
+    actual_starter_identification_path: 'MLB StatsAPI /api/v1/game/{gamePk}/boxscore -> teams.{away,home}.players.ID*.stats.pitching.gamesStarted == 1',
+    coverage_gap_scoped_repair: true,
+    coverage_window_start: startDate,
+    coverage_window_end: endDate,
+    target_games_read: targets.length,
+    games_repaired: gamesRepaired,
+    open_not_mined_games: openNotMinedGames,
+    repaired_games: repairedGames,
+    open_games: openGames,
+    failed_games: failedGames,
+    expected_game_count: gamesRepaired,
+    expected_starter_rows: gamesRepaired * 2,
+    staged_starter_rows: num(counts && counts.staged_rows) || 0,
+    rows_promoted: num(counts && counts.live_rows) || 0,
+    duplicate_stage_keys: duplicateStageKeys,
+    duplicate_live_keys: duplicateLiveKeys,
+    missing_stage_identity_count: missingStageIdentity,
+    missing_live_identity_count: missingLiveIdentity,
+    source_error_count: sourceErrorCount,
+    unclear_count: unclearCount,
+    future_remining_open: openNotMinedGames > 0,
+    no_fake_completion: true,
+    no_full_sweep: true,
+    scoped_to_coverage_blockers: true,
+    no_new_universe_sweep: true,
+    stage_retained: true,
+    no_delta_stage_cleanup: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_board_mutation: true,
+    next_action: openNotMinedGames > 0 ? 'RERUN_DELTA_CERTIFIER_AND_KEEP_UNREADY_GAPS_OPEN_FOR_FUTURE_REMINING' : 'RERUN_DELTA_CERTIFIER_TO_REFRESH_COVERAGE_TALLY'
+  };
+
+  await run(env.TEAM_DB, `UPDATE starter_history_batches SET expected_game_count=?, expected_starter_rows=?, staged_starter_rows=?, rows_promoted=?, final_games_sampled=?, games_with_two_actual_starters=?, missing_actual_starter_games=?, source_error_count=?, unclear_count=?, status=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP, certified_at=CURRENT_TIMESTAMP, promoted_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    gamesRepaired, gamesRepaired * 2, output.staged_starter_rows, output.rows_promoted, gamesRepaired, gamesRepaired, openNotMinedGames, sourceErrorCount, unclearCount, status, certificationStatus, certificationGrade, safeJson(output), batchId);
+  await run(env.TEAM_DB, `INSERT INTO starter_history_certifications (
+    certification_id, batch_id, run_id, request_id, worker_name, version, certification_status, certification_grade, source_shape_classification, actual_starter_identification_path, safest_key_model,
+    expected_game_count, expected_starter_rows, staged_starter_rows, duplicate_stage_keys, missing_required_identity_count, source_error_count, unclear_count, no_live_promotion, full_base_backfill_blocked, delta_update_blocked, output_json
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS', ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 0, ?)`,
+    rid('starter_cert'), batchId, runId, requestId, WORKER_NAME, VERSION, certificationStatus, certificationGrade,
+    output.actual_starter_identification_path, 'coverage blocker game_pk + team_id; officialDate anchored', gamesRepaired, gamesRepaired * 2, output.staged_starter_rows, duplicateStageKeys, missingStageIdentity + missingLiveIdentity, sourceErrorCount, unclearCount, safeJson(output));
+  await run(env.TEAM_DB, `INSERT OR REPLACE INTO starter_history_cursor (cursor_key, worker_name, version, ingestion_mode, status, source_shape_classification, base_backfill_cutoff_date, delta_reserved_start_date, last_probe_date, last_completed_game_date, last_batch_id, last_run_id, output_json, updated_at)
+    VALUES ('starter_history_coverage_gap_scoped_repair', ?, ?, 'delta_coverage_gap_scoped_repair', ?, 'GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    WORKER_NAME, VERSION, certificationStatus, DEFAULT_BASE_CUTOFF_DATE, DEFAULT_DELTA_RESERVED_START_DATE, startDate, endDate, batchId, runId, safeJson(output));
+
+  return { ok: verifyPass, data_ok: verifyPass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, chain_id: chainId, run_id: runId, batch_id: batchId, status, certification: certificationStatus, certification_grade: certificationGrade, rows_read: targets.length, rows_written: rowsStaged + rowsPromoted + 2, rows_staged: rowsStaged, rows_promoted: rowsPromoted, external_calls_performed: externalCalls, schema, output_json: output, games_repaired: gamesRepaired, open_not_mined_games: openNotMinedGames, future_remining_open: openNotMinedGames > 0, no_fake_completion: true, no_full_sweep: true, no_new_universe_sweep: true, stage_retained: true, no_delta_stage_cleanup: true, no_browser_pump: true, timestamp_utc: nowUtc() };
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -1827,6 +2028,7 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const mode = String((input.input_json && input.input_json.mode) || input.mode || "base_backfill_stage_only");
+      if (mode === "delta_coverage_gap_scoped_repair") return jsonResponse(await runCoverageGapScopedRepair(env, input));
       if (mode === "delta_scoped_source_repair") return jsonResponse(await scopedSourceRepairMissingDeltaKeys(env, input));
       if (mode === "delta_retained_stage_restore_before_queue") return jsonResponse(await restoreMissingLiveRowsFromRetainedDeltaStage(env, input));
       if (mode === "delta_noop_current_state") return jsonResponse(await runDeltaNoopCurrentState(env, input));
@@ -1834,7 +2036,7 @@ export default {
       if (mode === "source_lock_probe") return jsonResponse(await runSourceProbe(env, input));
       if (mode === "base_backfill" || mode === "base_backfill_stage_only") return jsonResponse(await runBaseBackfillStageOnly(env, input));
       if (mode === "base_promotion_stage_clean" || mode === "base_promotion") return jsonResponse(await promoteCertifiedBaseStage(env, input));
-      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode", mode, allowed_modes: ["source_lock_probe", "base_backfill_stage_only", "base_promotion_stage_clean", "delta_update", "delta_noop_current_state", "delta_retained_stage_restore_before_queue", "delta_scoped_source_repair"], no_live_promotion: true }, 400);
+      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode", mode, allowed_modes: ["source_lock_probe", "base_backfill_stage_only", "base_promotion_stage_clean", "delta_update", "delta_noop_current_state", "delta_retained_stage_restore_before_queue", "delta_scoped_source_repair", "delta_coverage_gap_scoped_repair"], no_live_promotion: true }, 400);
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }
