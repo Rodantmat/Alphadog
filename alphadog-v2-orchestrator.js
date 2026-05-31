@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.141-daily-context-request-boundary-stuck-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.142-daily-context-nonfatal-enrichment-blockers";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -4835,6 +4835,49 @@ async function enqueueDailyContextFullRunChild(env, parentRow, stage, stepIndex,
   return { child_request_id: childRequestId, input };
 }
 
+function dailyContextFullRunChildHasFatalCertification(stage, output) {
+  const cert = String(output.certification || output.certification_status || "");
+  const status = String(output.status || "");
+  const grade = String(output.certification_grade || output.grade || "");
+  const hay = `${cert} ${status} ${grade}`.toLowerCase();
+  if (!cert || hay.includes("dummy") || hay.includes("unsupported") || hay.includes("missing_service_binding")) return true;
+  if (hay.includes("exception") || hay.includes("worker_failed") || hay.includes("failed_source") || hay.includes("failed_source_or_coverage")) return true;
+  if (hay.includes("_failed") || hay.startsWith("failed") || hay.includes(" fail")) return true;
+  return false;
+}
+
+function dailyContextFullRunChildNonfatalCompleted(stage, output) {
+  if (!stage || !output || output.ok !== true) return false;
+  if (stage.job_key === "daily-certifier") return false;
+  if (dailyContextFullRunChildHasFatalCertification(stage, output)) return false;
+
+  const cert = String(output.certification || output.certification_status || "");
+  const status = String(output.status || "");
+  const grade = String(output.certification_grade || output.grade || "");
+  const hay = `${cert} ${status} ${grade}`.toLowerCase();
+
+  const hasCompletionSignal =
+    hay.includes("certified") ||
+    hay.includes("completed") ||
+    hay.includes("pass") ||
+    hay.includes("warn") ||
+    hay.includes("blocker") ||
+    hay.includes("gated") ||
+    hay.includes("waiting_for_posted_lineup");
+
+  const hasWorkEvidence =
+    Number(output.prepared_rows_read || 0) > 0 ||
+    Number(output.rows_read || 0) > 0 ||
+    Number(output.rows_written || 0) > 0 ||
+    Number(output.current_rows_written || 0) > 0 ||
+    Number(output.snapshot_rows_written || 0) > 0 ||
+    Number(output.weather_rows_written || 0) > 0 ||
+    Number(output.team_rows_written || 0) > 0 ||
+    Number(output.game_rows_written || 0) > 0;
+
+  return hasCompletionSignal && hasWorkEvidence;
+}
+
 function dailyContextFullRunChildPassed(stage, child) {
   if (!child) return { pass: false, wait: false, reason: "child_missing" };
   const childStatus = String(child.status || "");
@@ -4844,12 +4887,16 @@ function dailyContextFullRunChildPassed(stage, child) {
   if (childStatus !== "completed") return { pass: false, reason: "child_not_completed", child_status: childStatus, child_error_code: child.error_code || null, child_error_message: child.error_message || null };
   const output = parseJsonSafeText(child.output_json || "{}", {});
   if (!output || output.ok !== true) return { pass: false, reason: "child_output_ok_not_true", output_ok: output && output.ok };
-  if (output.data_ok !== true) return { pass: false, reason: "child_data_ok_not_true", data_ok: output && output.data_ok };
   const cert = String(output.certification || output.certification_status || "");
   const status = String(output.status || "");
-  const hay = `${cert} ${status}`.toLowerCase();
-  if (!cert || hay.includes("dummy") || hay.includes("unsupported") || hay.includes("missing_service_binding")) {
-    return { pass: false, reason: "missing_dummy_or_unsupported_certification", certification: cert, status };
+  if (dailyContextFullRunChildHasFatalCertification(stage, output)) {
+    return { pass: false, reason: "missing_dummy_unsupported_or_failed_certification", certification: cert, status };
+  }
+  if (output.data_ok !== true) {
+    if (dailyContextFullRunChildNonfatalCompleted(stage, output)) {
+      return { pass: true, nonfatal: true, reason: "daily_context_enrichment_nonfatal_child_data_ok_false", data_ok: output.data_ok, certification: cert, status, output };
+    }
+    return { pass: false, reason: "child_data_ok_not_true", data_ok: output && output.data_ok };
   }
   if (stage.job_key === "daily-certifier") {
     if (String(output.certification || "") !== "DAILY_CONTEXT_READINESS_CERTIFIED_ENRICHMENT_LEDGER_WRITTEN") {
@@ -4895,7 +4942,7 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
 
     const validation = dailyContextFullRunChildPassed(stage, child);
     const childOutput = parseJsonSafeText(child.output_json || "{}", {});
-    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || childOutput.certification_status || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, rows_read: childOutput.prepared_rows_read || childOutput.rows_read || childOutput.rows_read_total || 0, rows_written: childOutput.current_rows_written || childOutput.rows_written || childOutput.rows_promoted || childOutput.weather_rows_written || childOutput.team_rows_written || childOutput.game_rows_written || 0, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0 };
+    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || childOutput.certification_status || null, child_certification_grade: childOutput.certification_grade || null, child_data_ok: childOutput.data_ok === true, child_nonfatal_warning: validation.nonfatal === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, rows_read: childOutput.prepared_rows_read || childOutput.rows_read || childOutput.rows_read_total || 0, rows_written: childOutput.current_rows_written || childOutput.rows_written || childOutput.rows_promoted || childOutput.weather_rows_written || childOutput.team_rows_written || childOutput.game_rows_written || 0, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0 };
 
     if (validation.wait) {
       const staleChild = await first(env.CONTROL_DB,
@@ -4924,8 +4971,10 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
     stageReports.push(report);
   }
 
-  const finalCertification = "DAILY_CONTEXT_FULL_RUN_CERTIFIED_ALL_CONTEXT_STAGES_PASS";
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "COMPLETED_DAILY_CONTEXT_FULL_RUN", certification: finalCertification, certification_grade: "FULL_RUN_PASS", daily_context_full_run_certified: true, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: DAILY_CONTEXT_FULL_RUN_STAGES.map(s => s.job_key), includes_daily_starters: true, includes_daily_lineups: true, includes_daily_player_availability: true, includes_daily_weather_roof: true, includes_daily_bullpen_availability: true, includes_daily_team_schedule_spot: true, includes_daily_umpire_context: true, includes_daily_context_certifier: true, no_daily_game_status_duplication: true, no_board_full_run: true, no_incremental_morning_full_run: true, no_static_work: true, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+  const nonfatalStageCount = stageReports.filter(r => r.child_nonfatal_warning === true || r.child_data_ok !== true).length;
+  const finalCertification = nonfatalStageCount > 0 ? "DAILY_CONTEXT_FULL_RUN_CERTIFIED_WITH_NONFATAL_ENRICHMENT_WARNINGS" : "DAILY_CONTEXT_FULL_RUN_CERTIFIED_ALL_CONTEXT_STAGES_PASS";
+  const finalGrade = nonfatalStageCount > 0 ? "FULL_RUN_PASS_WITH_WARNINGS" : "FULL_RUN_PASS";
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "COMPLETED_DAILY_CONTEXT_FULL_RUN", certification: finalCertification, certification_grade: finalGrade, daily_context_full_run_certified: true, daily_context_nonfatal_enrichment_warning_count: nonfatalStageCount, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: DAILY_CONTEXT_FULL_RUN_STAGES.map(s => s.job_key), includes_daily_starters: true, includes_daily_lineups: true, includes_daily_player_availability: true, includes_daily_weather_roof: true, includes_daily_bullpen_availability: true, includes_daily_team_schedule_spot: true, includes_daily_umpire_context: true, includes_daily_context_certifier: true, no_daily_game_status_duplication: true, no_board_full_run: true, no_incremental_morning_full_run: true, no_static_work: true, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
   await releaseDailyContextFullRunLock(env, row);
   await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalCertification, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
