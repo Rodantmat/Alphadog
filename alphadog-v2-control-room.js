@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.144-market-hitter-prop-button";
+const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.145-market-hitter-dispatch-allow";
 function nowIso() { return new Date().toISOString(); }
 
 const DB_BINDINGS = [
