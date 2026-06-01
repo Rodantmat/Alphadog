@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-line-shape-classifier";
-const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.2-parlay-full-book-discovery-safe-team-match";
+const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.3-parlay-split-book-probes-hitter-only";
 const JOB_KEY = "market-line-shape-classifier";
 const MODE = "market_hitter_prop_line_context";
 const PARLAY_SOURCE_KEY = "parlay_api_hitter_props";
@@ -8,9 +8,25 @@ const MAX_PREPARED_ROWS = 9000;
 const MAX_PARLAY_ROWS = 20000;
 const DEFAULT_PARLAY_API_BASE_URL = "https://parlay-api.com/v1";
 const DEFAULT_PARLAY_PROPS_ENDPOINT = "/sports/baseball_mlb/props";
+const DEFAULT_PARLAY_ODDS_ENDPOINT = "/sports/baseball_mlb/odds";
 const PARLAY_MARKETS = ["player_hits", "player_rbis", "player_runs", "player_singles", "player_doubles", "player_triples", "player_home_runs", "player_total_bases", "player_hits_runs_rbis", "player_stolen_bases", "player_walks", "player_bat_walks", "player_hitter_strikeouts", "player_bat_strike_outs"];
+const PARLAY_ODDS_MARKETS = ["player_hits", "player_rbis", "player_runs", "player_singles", "player_doubles", "player_triples", "player_home_runs", "player_total_bases", "player_hits_runs_rbis", "player_stolen_bases", "player_walks", "player_hitter_strikeouts", "batter_home_runs", "batter_hits", "batter_total_bases", "batter_rbis", "batter_runs", "batter_hits_runs_rbis", "batter_stolen_bases"];
 const PARLAY_PAGE_LIMIT = 10000;
-const PARLAY_MAX_PAGES = 6;
+const PARLAY_MAX_PAGES = 4;
+const PARLAY_MAX_DISCOVERY_PROBES = 14;
+const PARLAY_OWNED_BOOKS_EXCLUDED_FROM_DECISION = ["prizepicks", "sleeper"];
+const PARLAY_PICKEM_BOOKS_QUARANTINE = ["underdog", "betr", "pick6", "parlayplay", "dabble"];
+const PARLAY_PRIMARY_BOOK_GROUPS = [
+  { probe_id: "props_core_us_books", endpoint_kind: "props", bookmakers: ["draftkings", "fanduel", "fanatics", "betmgm", "caesars", "espnbet", "betrivers", "pointsbet", "hardrockbet", "fliff"] },
+  { probe_id: "props_secondary_and_international_books", endpoint_kind: "props", bookmakers: ["bet365", "bovada", "pinnacle", "williamhill_us", "betus", "lowvig"] },
+  { probe_id: "props_exchange_books", endpoint_kind: "props", bookmakers: ["novig", "prophetx", "kalshi"] },
+  { probe_id: "props_pickem_quarantine_books", endpoint_kind: "props", bookmakers: PARLAY_PICKEM_BOOKS_QUARANTINE }
+];
+const PARLAY_CORE_FALLBACK_BOOKS = ["draftkings", "fanduel", "fanatics", "betmgm", "caesars", "espnbet", "betrivers", "bet365", "bovada", "novig", "prophetx"];
+const PARLAY_ODDS_ENDPOINT_BOOK_GROUPS = [
+  { probe_id: "odds_core_us_books", endpoint_kind: "odds", bookmakers: ["draftkings", "fanduel", "fanatics", "betmgm", "caesars", "espnbet", "betrivers"] },
+  { probe_id: "odds_exchange_secondary_books", endpoint_kind: "odds", bookmakers: ["bet365", "bovada", "novig", "prophetx", "pinnacle"] }
+];
 
 const REQUIRED_DB_BINDINGS = ["MARKET_DB", "SCORE_DB", "TEAM_DB", "REF_DB", "CONTROL_DB"];
 const OPTIONAL_DB_BINDINGS = ["CONFIG_DB"];
@@ -139,7 +155,7 @@ function baseIdentity(env, extra = {}) {
     },
     bindings: { required, optional },
     secrets_present_only: { PARLAY_API_KEY: sourceHas(env, "PARLAY_API_KEY") },
-    boundaries: { hitter_player_props_only: true, no_pitcher_props: true, no_teams_game_odds: true, no_market_current_lines: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_matrix: true, no_final_board: true },
+    boundaries: { hitter_player_props_only: true, pitcher_props_deferred_to_separate_worker_for_safety: true, no_pitcher_props: true, no_teams_game_odds: true, no_market_current_lines: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_matrix: true, no_final_board: true },
     timestamp_utc: nowUtc(),
     ...extra
   };
@@ -228,7 +244,7 @@ function sourceKeyForParlay(row) {
 function safeHost(urlText) { try { return new URL(urlText).host; } catch (_) { return "invalid_url"; } }
 function safeEndpoint(urlText) { try { const u = new URL(urlText); return `${u.origin}${u.pathname}`; } catch (_) { return String(urlText || "").split("?")[0]; } }
 function authHeaders(env) {
-  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-market-hitter-prop-context/0.2.2" });
+  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-market-hitter-prop-context/0.2.3" });
   const headerName = String(env.PARLAY_API_AUTH_HEADER_NAME || "X-API-Key").trim();
   const prefix = String(env.PARLAY_API_AUTH_HEADER_PREFIX || "").trim();
   if (sourceHas(env, "PARLAY_API_KEY") && headerName) headers.set(headerName, prefix ? `${prefix} ${env.PARLAY_API_KEY}` : String(env.PARLAY_API_KEY));
@@ -289,18 +305,110 @@ function normalizeParlayRow(row) {
   const directPrice = numberOrNull(getDeep(row, ["price", "american_price", "americanPrice", "odds", "price_american"]));
   return { raw: row, market_key: marketKey || String(marketRaw || ""), canonical_prop_key: canonical, player_name: playerName ? String(playerName) : null, player_name_normalized: normalizeText(playerName), line_value: lineValue, source_event_id: eventId ? String(eventId) : null, source_line_id: lineId ? String(lineId) : null, commence_time: commenceTime ? String(commenceTime) : null, home_team: homeTeam ? String(homeTeam) : null, away_team: awayTeam ? String(awayTeam) : null, bookmaker: bookmaker ? String(bookmaker) : "sleeper", over_price: overPrice, under_price: underPrice, side, price_american: directPrice };
 }
-async function fetchParlayHitterProps(env, input = {}) {
-  const endpoint = await configuredParlayEndpoint(env, input);
-  if (!endpoint.ok) return { ok: false, external_calls: 0, missing_config: true, rows: [], normalized: [], endpoint };
-  if (!sourceHas(env, "PARLAY_API_KEY")) return { ok: false, external_calls: 0, missing_key: true, rows: [], normalized: [], endpoint };
-  const allRows = [];
-  const allCandidates = [];
+function cloneUrlWithParams(baseUrl, params = {}) {
+  const u = new URL(baseUrl);
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null || v === "") continue;
+    u.searchParams.set(k, Array.isArray(v) ? v.join(",") : String(v));
+  }
+  return u.toString();
+}
+function parlayBaseUrlFromEndpoint(endpoint) {
+  if (endpoint && endpoint.url) return endpoint.url;
+  return `${DEFAULT_PARLAY_API_BASE_URL}${DEFAULT_PARLAY_PROPS_ENDPOINT}`;
+}
+function parlayOddsUrlFromPropsUrl(propsUrl, input = {}) {
+  const u = new URL(propsUrl);
+  const explicit = input.parlay_odds_endpoint || input.odds_endpoint || null;
+  if (explicit) {
+    const raw = /^https?:\/\//i.test(String(explicit)) ? String(explicit) : `${u.origin}${String(explicit).startsWith("/") ? explicit : "/" + explicit}`;
+    return raw;
+  }
+  u.pathname = DEFAULT_PARLAY_ODDS_ENDPOINT;
+  return u.toString();
+}
+function buildProbePlan(endpoint, input = {}) {
+  const propsBase = parlayBaseUrlFromEndpoint(endpoint);
+  const oddsBase = parlayOddsUrlFromPropsUrl(propsBase, input);
+  const probes = [];
+  const includeBroad = String(input.include_broad_probe || input.parlay_include_broad_probe || "false").toLowerCase() === "true";
+  if (includeBroad) {
+    probes.push({ probe_id: "props_broad_all_books_audit_only", endpoint_kind: "props", bookmakers: [], url: cloneUrlWithParams(propsBase, { markets: PARLAY_MARKETS.join(","), limit: PARLAY_PAGE_LIMIT, dfsOdds: "effective" }) });
+  }
+  for (const g of PARLAY_PRIMARY_BOOK_GROUPS) probes.push({ ...g, url: cloneUrlWithParams(propsBase, { bookmakers: g.bookmakers, markets: PARLAY_MARKETS.join(","), limit: PARLAY_PAGE_LIMIT, dfsOdds: "effective" }) });
+  const includeOddsEndpoint = String(input.include_odds_endpoint_probe ?? input.parlay_include_odds_endpoint_probe ?? "true").toLowerCase() !== "false";
+  if (includeOddsEndpoint) {
+    for (const g of PARLAY_ODDS_ENDPOINT_BOOK_GROUPS) probes.push({ ...g, url: cloneUrlWithParams(oddsBase, { regions: "us,us2", bookmakers: g.bookmakers, markets: PARLAY_ODDS_MARKETS.join(","), oddsFormat: "american", limit: PARLAY_PAGE_LIMIT }) });
+  }
+  return probes.slice(0, PARLAY_MAX_DISCOVERY_PROBES);
+}
+function bookmakerQuality(book) {
+  const b = normalizeText(book).replace(/ /g, "_");
+  if (PARLAY_OWNED_BOOKS_EXCLUDED_FROM_DECISION.includes(b)) return "owned_board_excluded_from_vendor_decision";
+  if (PARLAY_PICKEM_BOOKS_QUARANTINE.includes(b)) return "dfs_pickem_quarantine_not_primary_book_comparison";
+  if (["bet365", "bovada"].includes(b)) return "requires_shape_validation";
+  if (["novig", "prophetx", "kalshi", "pinnacle"].includes(b)) return "exchange_or_sharp_reference";
+  return "primary_comparison_book";
+}
+function flattenOddsEndpointRows(json, probe = {}) {
+  const roots = [];
+  if (Array.isArray(json)) roots.push(...json);
+  if (json && typeof json === "object") {
+    for (const key of ["data", "events", "results"]) {
+      if (Array.isArray(json[key])) roots.push(...json[key]);
+    }
+  }
+  const rows = [];
+  for (const event of roots) {
+    if (!event || typeof event !== "object" || Array.isArray(event)) continue;
+    const bookmakers = Array.isArray(event.bookmakers) ? event.bookmakers : [];
+    for (const book of bookmakers) {
+      const markets = Array.isArray(book.markets) ? book.markets : [];
+      for (const market of markets) {
+        const marketKey = market.key || market.market_key || market.market || market.name;
+        const outcomes = Array.isArray(market.outcomes) ? market.outcomes : [];
+        for (const outcome of outcomes) {
+          const outcomeName = outcome.name || outcome.label || outcome.selection || outcome.side;
+          const outcomeNorm = normalizeText(outcomeName);
+          const directSide = outcomeNorm.includes("under") ? "under" : (outcomeNorm.includes("over") ? "over" : (outcomeNorm || null));
+          const player = outcome.description || outcome.player || outcome.participant || outcome.participant_name || outcome.player_name || (directSide ? null : outcomeName);
+          rows.push({
+            __probe_id: probe.probe_id || "odds_endpoint_probe",
+            __endpoint_kind: "odds",
+            bookmaker: book.key || book.bookmaker || book.title || book.name,
+            bookmaker_title: book.title || book.name || book.key,
+            player,
+            market_key: marketKey,
+            market: marketKey,
+            line: outcome.point ?? outcome.line ?? outcome.line_value ?? market.point ?? null,
+            side: directSide,
+            price: outcome.price ?? outcome.american_price ?? outcome.odds ?? null,
+            event_id: event.id || event.event_id || event.canonical_event_id,
+            canonical_event_id: event.canonical_event_id || event.id || event.event_id,
+            commence_time: event.commence_time || event.start_time || event.game_time,
+            home_team: event.home_team || event.homeTeam,
+            away_team: event.away_team || event.awayTeam,
+            last_update: book.last_update || market.last_update || outcome.last_update,
+            source_shape: "parlay_odds_endpoint_nested_event_market_outcome",
+            raw_odds_event_id: event.id || null,
+            raw_market_key: marketKey,
+            raw_outcome: outcome
+          });
+        }
+      }
+    }
+  }
+  return rows;
+}
+async function fetchOneParlayProbe(env, probe) {
+  const rows = [];
+  const candidates = [];
   const pages = [];
-  let nextUrl = endpoint.url;
   let ok = true;
   let httpStatus = null;
   let nonJson = false;
   let responsePreview = null;
+  let nextUrl = probe.url;
   try {
     for (let page = 0; page < PARLAY_MAX_PAGES && nextUrl; page++) {
       const resp = await fetch(nextUrl, { method: "GET", headers: authHeaders(env) });
@@ -309,31 +417,94 @@ async function fetchParlayHitterProps(env, input = {}) {
       let json = null;
       try { json = JSON.parse(text); } catch (_) { ok = false; nonJson = true; responsePreview = safeText(text); break; }
       if (!resp.ok) ok = false;
-      const extracted = extractRawRows(json);
-      allRows.push(...extracted.rows);
-      allCandidates.push(...(extracted.candidates || []).map(c => ({ ...c, page })));
-      pages.push({ page, http_status: resp.status, rows_seen: extracted.rows.length, detected_rows_path: extracted.path, has_more_header: resp.headers.get("x-result-has-more") || resp.headers.get("x-has-more") || null, next_offset_header: resp.headers.get("x-next-offset") || null });
+      let extractedRows = [];
+      let detectedPath = null;
+      if (probe.endpoint_kind === "odds") {
+        extractedRows = flattenOddsEndpointRows(json, probe);
+        detectedPath = "events[].bookmakers[].markets[].outcomes[]";
+      } else {
+        const extracted = extractRawRows(json);
+        extractedRows = extracted.rows || [];
+        detectedPath = extracted.path;
+        candidates.push(...(extracted.candidates || []).map(c => ({ ...c, page, probe_id: probe.probe_id })));
+      }
+      for (const r of extractedRows) rows.push({ ...r, __probe_id: probe.probe_id, __endpoint_kind: probe.endpoint_kind });
+      pages.push({ probe_id: probe.probe_id, endpoint_kind: probe.endpoint_kind, page, http_status: resp.status, rows_seen: extractedRows.length, detected_rows_path: detectedPath, endpoint_preview: safeEndpoint(nextUrl), bookmakers: probe.bookmakers || [] });
+      if (probe.endpoint_kind === "odds") break;
       nextUrl = nextParlayPageUrl(nextUrl, page, resp.headers, json);
-      if (allRows.length >= MAX_PARLAY_ROWS) break;
+      if (rows.length >= MAX_PARLAY_ROWS) break;
     }
-    const unique = [];
-    const seen = new Set();
-    for (const row of allRows.slice(0, MAX_PARLAY_ROWS)) {
+    return { ok, http_status: httpStatus, non_json: nonJson, response_preview: responsePreview, rows, candidates, pages };
+  } catch (err) {
+    return { ok: false, error: safeText(err && err.message ? err.message : err), rows, candidates, pages };
+  }
+}
+async function fetchParlayHitterProps(env, input = {}) {
+  const endpoint = await configuredParlayEndpoint(env, input);
+  if (!endpoint.ok) return { ok: false, external_calls: 0, missing_config: true, rows: [], normalized: [], endpoint };
+  if (!sourceHas(env, "PARLAY_API_KEY")) return { ok: false, external_calls: 0, missing_key: true, rows: [], normalized: [], endpoint };
+  const probes = buildProbePlan(endpoint, input);
+  const probeResults = [];
+  const allRows = [];
+  let ok = true;
+  let httpStatus = null;
+  let responsePreview = null;
+  for (const probe of probes) {
+    const result = await fetchOneParlayProbe(env, probe);
+    probeResults.push(result);
+    if (!result.ok) ok = false;
+    httpStatus = result.http_status || httpStatus;
+    responsePreview = result.response_preview || responsePreview;
+    allRows.push(...(result.rows || []));
+  }
+  const unique = [];
+  const seen = new Set();
+  for (const row of allRows.slice(0, MAX_PARLAY_ROWS * 2)) {
+    const key = safeJson({ probe_kind: row.__endpoint_kind, id: getDeep(row, ["id", "line_id", "lineId", "selection_id", "raw_odds_event_id"]), event_id: getDeep(row, ["event_id", "eventId", "canonical_event_id"]), player: getDeep(row, ["player", "player_name", "playerName", "description"]), market: getDeep(row, ["market_key", "marketKey", "market"]), line: getDeep(row, ["line", "line_value", "point", "points"]), side: getDeep(row, ["side", "name", "outcome"]), price: getDeep(row, ["price", "american_price", "over_price", "under_price"]), bookmaker: getDeep(row, ["bookmaker", "bookmaker_key", "sportsbook", "book"]) }, 1000);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(row);
+    if (unique.length >= MAX_PARLAY_ROWS) break;
+  }
+  let normalized = unique.map(normalizeParlayRow).filter(Boolean);
+  const bookCounts = {};
+  for (const r of normalized) {
+    const k = normalizeText(r.bookmaker).replace(/ /g, "_") || "unknown";
+    bookCounts[k] = (bookCounts[k] || 0) + 1;
+  }
+  const missingCoreBooks = PARLAY_CORE_FALLBACK_BOOKS.filter(b => !bookCounts[b]);
+  const fallbackResults = [];
+  const propsBase = parlayBaseUrlFromEndpoint(endpoint);
+  for (const book of missingCoreBooks.slice(0, Math.max(0, PARLAY_MAX_DISCOVERY_PROBES - probes.length))) {
+    const probe = { probe_id: `props_single_book_fallback_${book}`, endpoint_kind: "props", bookmakers: [book], url: cloneUrlWithParams(propsBase, { bookmakers: book, markets: PARLAY_MARKETS.join(","), limit: PARLAY_PAGE_LIMIT, dfsOdds: "effective" }) };
+    const result = await fetchOneParlayProbe(env, probe);
+    fallbackResults.push(result);
+    if (!result.ok) ok = false;
+    for (const row of result.rows || []) {
       const key = safeJson({ id: getDeep(row, ["id", "line_id", "lineId", "selection_id"]), event_id: getDeep(row, ["event_id", "eventId", "canonical_event_id"]), player: getDeep(row, ["player", "player_name", "playerName"]), market: getDeep(row, ["market_key", "marketKey", "market"]), line: getDeep(row, ["line", "line_value", "point", "points"]), over: firstPrice(row, "over"), under: firstPrice(row, "under"), bookmaker: getDeep(row, ["bookmaker", "bookmaker_key", "sportsbook", "book"]) }, 1000);
       if (seen.has(key)) continue;
       seen.add(key);
       unique.push(row);
     }
-    const normalized = unique.map(normalizeParlayRow).filter(Boolean);
-    const bookCounts = {};
+  }
+  if (fallbackResults.length) {
+    normalized = unique.slice(0, MAX_PARLAY_ROWS).map(normalizeParlayRow).filter(Boolean);
+    for (const k of Object.keys(bookCounts)) delete bookCounts[k];
     for (const r of normalized) {
       const k = normalizeText(r.bookmaker).replace(/ /g, "_") || "unknown";
       bookCounts[k] = (bookCounts[k] || 0) + 1;
     }
-    return { ok, external_calls: pages.length, http_status: httpStatus, non_json: nonJson, response_preview: responsePreview, endpoint, pagination: { pages, max_pages: PARLAY_MAX_PAGES, deduped_rows: unique.length, book_counts: bookCounts }, detected_rows_path: pages[0] && pages[0].detected_rows_path || null, detected_array_candidates: allCandidates.slice(0, 12), rows_seen: unique.length, normalized_hitter_rows: normalized.length, rows: unique, normalized };
-  } catch (err) {
-    return { ok: false, external_calls: Math.max(1, pages.length), error: safeText(err && err.message ? err.message : err), rows: [], normalized: [], endpoint, pagination: { pages } };
   }
+  const bookQualityCounts = {};
+  for (const [book, count] of Object.entries(bookCounts)) {
+    const q = bookmakerQuality(book);
+    bookQualityCounts[q] = (bookQualityCounts[q] || 0) + count;
+  }
+  const allProbeResults = [...probeResults, ...fallbackResults];
+  const pages = allProbeResults.flatMap(r => r.pages || []);
+  const allCandidates = allProbeResults.flatMap(r => r.candidates || []);
+  const primaryBookRows = normalized.filter(r => bookmakerQuality(r.bookmaker) === "primary_comparison_book" || bookmakerQuality(r.bookmaker) === "exchange_or_sharp_reference" || bookmakerQuality(r.bookmaker) === "requires_shape_validation").length;
+  return { ok, external_calls: allProbeResults.length, http_status: httpStatus, response_preview: responsePreview, endpoint, probe_strategy: { split_book_probe_active: true, broad_probe_default_enabled: false, props_endpoint_used: true, odds_endpoint_probe_used: probes.some(p => p.endpoint_kind === "odds"), per_book_fallback_used: fallbackResults.length > 0, pitcher_props_deferred: true, owned_books_excluded_from_decision: PARLAY_OWNED_BOOKS_EXCLUDED_FROM_DECISION, pickem_books_quarantine: PARLAY_PICKEM_BOOKS_QUARANTINE }, pagination: { pages, max_pages: PARLAY_MAX_PAGES, deduped_rows: unique.length, book_counts: bookCounts, book_quality_counts: bookQualityCounts, missing_core_books_after_split_and_fallback: PARLAY_CORE_FALLBACK_BOOKS.filter(b => !bookCounts[b]) }, detected_rows_path: pages[0] && pages[0].detected_rows_path || null, detected_array_candidates: allCandidates.slice(0, 12), rows_seen: unique.length, normalized_hitter_rows: normalized.length, normalized_primary_non_owned_rows: primaryBookRows, rows: unique.slice(0, MAX_PARLAY_ROWS), normalized };
 }
 async function loadPreparedHitterRows(env, today, tomorrow) {
   const ph = HITTER_PROP_KEYS.map(() => "?").join(",");
@@ -626,13 +797,13 @@ async function runHitterContext(env, input = {}) {
     prune,
     selected_worker_slot: WORKER_NAME,
     mode: MODE,
-    read_scope: "SCORE_DB.score_board_prepared_current prepared-safe hitter rows + ParlayAPI full-book hitter props",
+    read_scope: "SCORE_DB.score_board_prepared_current prepared-safe hitter rows + ParlayAPI split book hitter prop probes",
     write_scope: "MARKET_DB evidence tables only: market_context_probe_player_props, market_context_probe_coverage, market_context_probe_issues, market_context_probe_batches",
     prepared_rows_read: preparedRows.length,
     prepared_games_checked: gamePks.length,
     prepared_players_checked: playerIds.length,
     prepared_prop_keys_checked: propKeys.length,
-    parlay_api: { config_present: !!(parlay.endpoint && parlay.endpoint.ok), key_present: sourceHas(env, "PARLAY_API_KEY"), fetch_ok: !!parlay.ok, http_status: parlay.http_status || null, endpoint_preview: parlay.endpoint && parlay.endpoint.endpoint_preview || null, request_strategy: parlay.endpoint && parlay.endpoint.request_strategy || null, legacy_sleeper_endpoint_ignored: parlay.endpoint && parlay.endpoint.legacy_sleeper_endpoint_ignored || false, detected_rows_path: parlay.detected_rows_path || null, rows_seen: parlay.rows_seen || 0, normalized_hitter_rows: parlay.normalized_hitter_rows || 0, pagination: parlay.pagination || null, enriched_hitter_rows: enrichedParlayRows.length, rows_with_price_context: sourceRowsWithOverUnder, matched_to_prepared: matched, no_prepared_match: noMatch, ambiguous_prepared_match: ambiguous, resolver_audit: { team_aliases_loaded: teamAliases.size, player_aliases_loaded: playerAliases.size, raw_player_column_persisted: true, raw_commence_time_not_trusted_as_primary_match_key: true, team_pair_calendar_prepared_resolver_enabled: true, global_name_fallback_blocked_when_source_team_pair_resolved: true } },
+    parlay_api: { config_present: !!(parlay.endpoint && parlay.endpoint.ok), key_present: sourceHas(env, "PARLAY_API_KEY"), fetch_ok: !!parlay.ok, http_status: parlay.http_status || null, endpoint_preview: parlay.endpoint && parlay.endpoint.endpoint_preview || null, request_strategy: parlay.endpoint && parlay.endpoint.request_strategy || null, legacy_sleeper_endpoint_ignored: parlay.endpoint && parlay.endpoint.legacy_sleeper_endpoint_ignored || false, detected_rows_path: parlay.detected_rows_path || null, rows_seen: parlay.rows_seen || 0, normalized_hitter_rows: parlay.normalized_hitter_rows || 0, pagination: parlay.pagination || null, probe_strategy: parlay.probe_strategy || null, normalized_primary_non_owned_rows: parlay.normalized_primary_non_owned_rows || 0, enriched_hitter_rows: enrichedParlayRows.length, rows_with_price_context: sourceRowsWithOverUnder, matched_to_prepared: matched, no_prepared_match: noMatch, ambiguous_prepared_match: ambiguous, resolver_audit: { team_aliases_loaded: teamAliases.size, player_aliases_loaded: playerAliases.size, raw_player_column_persisted: true, raw_commence_time_not_trusted_as_primary_match_key: true, team_pair_calendar_prepared_resolver_enabled: true, global_name_fallback_blocked_when_source_team_pair_resolved: true } },
     rows_written_detail: { player_prop_rows: propRows.length, coverage_rows: coverageRows.length, issue_rows: issues.length, batch_rows: 1 },
     coverage_grade: coverageGrade,
     warning_count: warningCount,
@@ -641,7 +812,7 @@ async function runHitterContext(env, input = {}) {
   };
   await run(env.MARKET_DB, `INSERT INTO market_context_probe_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, slate_window_key, window_start_date, window_end_date, status, prepared_rows_read, prepared_games_checked, prepared_players_checked, prepared_prop_keys_checked, odds_api_config_present, odds_api_events_seen, odds_api_events_mapped, odds_api_game_odds_rows, parlay_inventory_rows_seen, parlay_props_mapped_to_prepared, parlay_coverage_grade, warning_count, blocker_count, certification_status, certification_grade, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, runId, WORKER_NAME, VERSION, MODE, slateWindowKey, today, tomorrow, status, preparedRows.length, gamePks.length, playerIds.length, propKeys.length, sourceHas(env, "ODDS_API_KEY") ? 1 : 0, 0, 0, 0, parlay.rows_seen || 0, matched, coverageGrade, warningCount, blockerCount, certification, certificationGrade, safeJson(output, 9000));
   const rowsWritten = propRows.length + coverageRows.length + issues.length + 1;
-  return { ok: true, data_ok: blockerCount === 0, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, run_id: runId, batch_id: batchId, mode: MODE, status, certification, certification_grade: certificationGrade, rows_read: preparedRows.length, rows_written: rowsWritten, external_calls_performed: externalCalls, prepared_rows_read: preparedRows.length, prepared_games_checked: gamePks.length, prepared_players_checked: playerIds.length, prepared_prop_keys_checked: propKeys.length, parlay_inventory_rows_seen: parlay.rows_seen || 0, parlay_props_mapped_to_prepared: matched, parlay_coverage_grade: coverageGrade, warning_count: warningCount, blocker_count: blockerCount, retention, output_json: output, no_teams_game_odds: true, no_pitcher_props: true, no_market_current_lines_writes: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_matrix_builder: true, no_final_board: true, elapsed_ms: Date.now() - startedMs, timestamp_utc: nowUtc() };
+  return { ok: true, data_ok: blockerCount === 0, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, run_id: runId, batch_id: batchId, mode: MODE, status, certification, certification_grade: certificationGrade, rows_read: preparedRows.length, rows_written: rowsWritten, external_calls_performed: externalCalls, prepared_rows_read: preparedRows.length, prepared_games_checked: gamePks.length, prepared_players_checked: playerIds.length, prepared_prop_keys_checked: propKeys.length, parlay_inventory_rows_seen: parlay.rows_seen || 0, parlay_props_mapped_to_prepared: matched, parlay_coverage_grade: coverageGrade, warning_count: warningCount, blocker_count: blockerCount, retention, output_json: output, no_teams_game_odds: true, pitcher_props_deferred_to_separate_worker_for_safety: true, no_pitcher_props: true, no_market_current_lines_writes: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_matrix_builder: true, no_final_board: true, elapsed_ms: Date.now() - startedMs, timestamp_utc: nowUtc() };
 }
 
 export default {
