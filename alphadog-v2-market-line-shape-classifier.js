@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-line-shape-classifier";
-const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.9-bovada-pitcher-title-player-parser";
+const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.10-bovada-total-strikeouts-title-parser";
 const JOB_KEY = "market-line-shape-classifier";
 const MODE_HITTER = "market_hitter_prop_line_context";
 const MODE_PITCHER = "market_pitcher_prop_line_context";
@@ -361,7 +361,7 @@ function cleanPlayerCandidate(value) {
   if (raw.includes(" @ ")) return null;
   const norm = normalizeText(raw);
   if (!norm || ["odd", "even", "over", "under", "yes", "no"].includes(norm)) return null;
-  if (/^(hits?|rbis?|runs?|singles?|doubles?|triples?|home\s*runs?|stolen\s*bases?|walks?|total\s*bases?|strikeouts?|pitcher\s*strikeouts?|(?:total\s+)?pitching\s*outs?|(?:total\s+)?pitcher\s*outs?|outs\s*recorded|hits\s*allowed|walks\s*allowed|earned\s*runs(?:\s*allowed)?|runs\s*allowed)$/i.test(raw)) return null;
+  if (/^(hits?|rbis?|runs?|singles?|doubles?|triples?|home\s*runs?|stolen\s*bases?|walks?|total\s*bases?|(?:total\s+)?strikeouts?|(?:total\s+)?pitcher\s*strikeouts?|(?:total\s+)?pitching\s*outs?|(?:total\s+)?pitcher\s*outs?|outs\s*recorded|hits\s*allowed|walks\s*allowed|earned\s*runs(?:\s*allowed)?|runs\s*allowed)$/i.test(raw)) return null;
   if (/^to\s+record\s+\d+\+/i.test(raw)) return null;
   if (/^[+-]?\d+(?:\.\d+)?$/.test(raw)) return null;
   return raw.replace(/\s+\([A-Z]{2,4}\)$/, "").trim();
@@ -370,8 +370,8 @@ function extractPlayerFromMarketLabel(value) {
   const text = String(value || "").trim();
   if (!text) return null;
   const patterns = [
-    /^(?:total\s+hits\s*,?\s+runs\s+(?:and\s+)?rbis?|hits\s+runs\s+(?:and\s+)?rbis?|total\s+bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|hitter\s+walks?|pitcher\s+strikeouts?|strikeouts?|(?:total\s+)?pitching\s+outs?|(?:total\s+)?pitcher\s+outs?|outs\s+recorded|hits\s+allowed|walks\s+allowed|earned\s+runs(?:\s+allowed)?|runs\s+allowed)\s+-\s+(.+?)(?:\s+\([A-Z]{2,4}\))?$/i,
-    /^(.+?)\s+-\s+(?:total\s+hits\s*,?\s+runs\s+(?:and\s+)?rbis?|hits\s+runs\s+(?:and\s+)?rbis?|total\s+bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|pitcher\s+strikeouts?|strikeouts?|(?:total\s+)?pitching\s+outs?|(?:total\s+)?pitcher\s+outs?|outs\s+recorded|hits\s+allowed|walks\s+allowed|earned\s+runs(?:\s+allowed)?|runs\s+allowed)$/i
+    /^(?:total\s+hits\s*,?\s+runs\s+(?:and\s+)?rbis?|hits\s+runs\s+(?:and\s+)?rbis?|total\s+bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|hitter\s+walks?|(?:total\s+)?(?:pitcher\s+)?strikeouts?|(?:total\s+)?pitching\s+outs?|(?:total\s+)?pitcher\s+outs?|outs\s+recorded|hits\s+allowed|walks\s+allowed|earned\s+runs(?:\s+allowed)?|runs\s+allowed)\s+-\s+(.+?)(?:\s+\([A-Z]{2,4}\))?$/i,
+    /^(.+?)\s+-\s+(?:total\s+hits\s*,?\s+runs\s+(?:and\s+)?rbis?|hits\s+runs\s+(?:and\s+)?rbis?|total\s+bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|(?:total\s+)?(?:pitcher\s+)?strikeouts?|(?:total\s+)?pitching\s+outs?|(?:total\s+)?pitcher\s+outs?|outs\s+recorded|hits\s+allowed|walks\s+allowed|earned\s+runs(?:\s+allowed)?|runs\s+allowed)$/i
   ];
   for (const re of patterns) {
     const m = text.match(re);
@@ -381,12 +381,12 @@ function extractPlayerFromMarketLabel(value) {
 }
 function propFromThresholdText(value) {
   const propText = normalizeText(value).replace(/ /g, "_");
-  const propMap = { hit: "hits", hits: "hits", total_base: "total_bases", total_bases: "total_bases", rbi: "rbis", rbis: "rbis", run: "runs", runs: "runs", single: "singles", singles: "singles", double: "doubles", doubles: "doubles", triple: "triples", triples: "triples", home_run: "home_runs", home_runs: "home_runs", stolen_base: "stolen_bases", stolen_bases: "stolen_bases", walk: "walks", walks: "walks", hitter_walk: "walks", hitter_walks: "walks", strikeout: "pitcher_strikeouts", strikeouts: "pitcher_strikeouts", pitcher_strikeout: "pitcher_strikeouts", pitcher_strikeouts: "pitcher_strikeouts", pitching_out: "pitcher_outs", pitching_outs: "pitcher_outs", pitcher_out: "pitcher_outs", pitcher_outs: "pitcher_outs", out: "pitcher_outs", outs: "pitcher_outs", hits_allowed: "hits_allowed", hit_allowed: "hits_allowed", walks_allowed: "walks_allowed", walk_allowed: "walks_allowed", earned_runs: "earned_runs", earned_runs_allowed: "earned_runs", runs_allowed: "runs_allowed", run_allowed: "runs_allowed" };
+  const propMap = { hit: "hits", hits: "hits", total_base: "total_bases", total_bases: "total_bases", rbi: "rbis", rbis: "rbis", run: "runs", runs: "runs", single: "singles", singles: "singles", double: "doubles", doubles: "doubles", triple: "triples", triples: "triples", home_run: "home_runs", home_runs: "home_runs", stolen_base: "stolen_bases", stolen_bases: "stolen_bases", walk: "walks", walks: "walks", hitter_walk: "walks", hitter_walks: "walks", total_strikeouts: "pitcher_strikeouts", strikeout: "pitcher_strikeouts", strikeouts: "pitcher_strikeouts", pitcher_strikeout: "pitcher_strikeouts", pitcher_strikeouts: "pitcher_strikeouts", pitching_out: "pitcher_outs", pitching_outs: "pitcher_outs", pitcher_out: "pitcher_outs", pitcher_outs: "pitcher_outs", out: "pitcher_outs", outs: "pitcher_outs", hits_allowed: "hits_allowed", hit_allowed: "hits_allowed", walks_allowed: "walks_allowed", walk_allowed: "walks_allowed", earned_runs: "earned_runs", earned_runs_allowed: "earned_runs", runs_allowed: "runs_allowed", run_allowed: "runs_allowed" };
   return propMap[propText] || null;
 }
 function parsePlusThreshold(value) {
   const text = String(value || "");
-  const m = text.match(/(?:to\s+record\s+)?(\d+)\s*\+\s*(hits?|total\s+bases|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|hitter\s+walks?|pitcher\s+strikeouts?|strikeouts?|(?:total\s+)?pitching\s+outs?|(?:total\s+)?pitcher\s+outs?|outs?|hits\s+allowed|walks\s+allowed|earned\s+runs(?:\s+allowed)?|runs\s+allowed)/i);
+  const m = text.match(/(?:to\s+record\s+)?(\d+)\s*\+\s*(hits?|total\s+bases|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|hitter\s+walks?|(?:total\s+)?(?:pitcher\s+)?strikeouts?|(?:total\s+)?pitching\s+outs?|(?:total\s+)?pitcher\s+outs?|outs?|hits\s+allowed|walks\s+allowed|earned\s+runs(?:\s+allowed)?|runs\s+allowed)/i);
   if (!m) return null;
   const threshold = Number(m[1]);
   if (!Number.isFinite(threshold) || threshold <= 0) return null;
@@ -435,7 +435,7 @@ function canonicalFromMarket(marketRaw, marketKey, config = modeConfig()) {
   const rawNorm = normalizeText(marketRaw);
   const rawKey = rawNorm.replace(/ /g, "_");
   if (config.prop_family === "pitcher") {
-    if (/^(?:pitcher\s+)?strikeouts?$/.test(rawNorm) || rawKey === "player_strikeouts") return { canonical: "pitcher_strikeouts", market_key: "player_pitcher_strikeouts", reason: "pitcher_strikeouts_alias" };
+    if (/^(?:total\s+)?(?:pitcher\s+)?strikeouts?$/.test(rawNorm) || rawKey === "player_strikeouts") return { canonical: "pitcher_strikeouts", market_key: "player_pitcher_strikeouts", reason: "pitcher_strikeouts_alias" };
     if (/^(?:(?:total\s+)?pitching\s+outs?|(?:total\s+)?pitcher\s+outs?|outs\s+recorded|outs)$/.test(rawNorm)) return { canonical: "pitcher_outs", market_key: "player_pitcher_outs", reason: "pitcher_outs_alias" };
     if (/^hits?\s+allowed$/.test(rawNorm)) return { canonical: "hits_allowed", market_key: "player_hits_allowed", reason: "hits_allowed_alias" };
     if (/^walks?\s+allowed$/.test(rawNorm)) return { canonical: "walks_allowed", market_key: "player_walks_allowed", reason: "walks_allowed_alias" };
