@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.149-oddsapi-hitter-prop-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.148-market-pitcher-prop-dispatch";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1638,6 +1638,10 @@ async function processMarketContextSourceProbeJob(env, row, runId, trigger) {
     return output;
   }
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -1699,6 +1703,10 @@ async function processMarketHitterPropContextJob(env, row, runId, trigger) {
     return output;
   }
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -1706,15 +1714,16 @@ async function processMarketHitterPropContextJob(env, row, runId, trigger) {
     job_key: row.job_key,
     worker_name: row.worker_name,
     trigger,
-    mode: "market_hitter_prop_line_context",
+    mode: selectedMode,
     input_json: rowInput,
     exact_worker_only: true,
     selected_worker_slot: "alphadog-v2-market-line-shape-classifier",
     parlay_api_first_test: true,
-    hitter_player_props_only: true,
+    player_props_mode_specific_only: true,
+    prop_family: propFamily,
     no_teams_game_odds: true,
-    no_pitcher_props: true,
-    no_internal_hitter_factors: true,
+    opposite_prop_family_not_in_this_run: true,
+    no_internal_player_factors: true,
     today_tomorrow_retention_only: true,
     evidence_tables_only: true,
     no_market_current_lines_writes: true,
@@ -1742,15 +1751,15 @@ async function processMarketHitterPropContextJob(env, row, runId, trigger) {
   const rowsRead = Number(output && (output.rows_read || output.prepared_rows_read) ? (output.rows_read || output.prepared_rows_read) : 0);
   const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
   const externalCalls = Number(output && (output.external_calls_performed || output.external_calls) ? (output.external_calls_performed || output.external_calls) : 0);
-  const certification = String((output && (output.certification || output.certification_status)) || (ok ? "market_hitter_prop_context_completed" : "market_hitter_prop_context_failed")).slice(0,120);
+  const certification = String((output && (output.certification || output.certification_status)) || (ok ? `market_${propFamily}_prop_context_completed` : `market_${propFamily}_prop_context_failed`)).slice(0,120);
   const queueStatus = ok ? "completed" : "failed";
   const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "market_hitter_prop_context_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Market Hitter Prop Context worker failed").slice(0,900);
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, selected_worker_slot:"alphadog-v2-market-line-shape-classifier", hitter_player_props_only:true, no_teams_game_odds:true, no_pitcher_props:true, today_tomorrow_retention_only:true, no_market_current_lines_writes:true, no_prepared_board_mutation:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_final_board_write:true, no_matrix_builder:true, no_old_production_touch:true } };
+  const errorCode = ok ? null : `market_${propFamily}_prop_context_worker_failed`;
+  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || `Market ${propFamily} Prop Context worker failed`).slice(0,900);
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, selected_worker_slot:"alphadog-v2-market-line-shape-classifier", player_props_mode_specific_only:true, prop_family:propFamily, no_teams_game_odds:true, opposite_prop_family_not_in_this_run:true, today_tomorrow_retention_only:true, no_market_current_lines_writes:true, no_prepared_board_mutation:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_final_board_write:true, no_matrix_builder:true, no_old_production_touch:true } };
   await run(env.CONTROL_DB, "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'market_hitter_prop_context_dispatch_completed', 'Orchestrator completed exact Market Hitter Prop Context dispatch', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, dispatch: cappedOutput.orchestrator_dispatch }));
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'market_player_prop_context_dispatch_completed', 'Orchestrator completed exact Market Player Prop Context dispatch', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, dispatch: cappedOutput.orchestrator_dispatch }));
   return cappedOutput;
 }
 
@@ -1763,6 +1772,10 @@ async function processOddsApiHitterPropContextJob(env, row, runId, trigger) {
     return output;
   }
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -2399,6 +2412,10 @@ async function processBaseHitterSplitsJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -2747,6 +2764,10 @@ async function processBasePitcherSplitsJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -3980,6 +4001,10 @@ async function processDailyProbablePitchersJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -4109,6 +4134,10 @@ async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -4245,6 +4274,10 @@ async function processDailyWeatherJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -4387,6 +4420,10 @@ async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -4517,6 +4554,10 @@ async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -4658,6 +4699,10 @@ async function processDailyUmpireContextJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -5187,6 +5232,10 @@ async function processDailyLineupsJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -5324,6 +5373,10 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -5452,6 +5505,10 @@ async function processScorePrepJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const requestedMode = String(rowInput.mode || "market_hitter_prop_line_context");
+  const isPitcherMode = requestedMode === "market_pitcher_prop_line_context" || requestedMode === "pitcher_props" || requestedMode === "market_pitcher_props";
+  const propFamily = isPitcherMode ? "pitcher" : "hitter";
+  const selectedMode = isPitcherMode ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -6198,7 +6255,7 @@ async function processOneUnlocked(env, trigger) {
   if (isMarketHitterPropContextJob(row)) {
     const output = await processMarketHitterPropContextJob(env, row, runId, trigger);
     return {
-      status: output && output.ok ? "completed_one_market_hitter_prop_context_job" : "failed_one_market_hitter_prop_context_job",
+      status: output && output.ok ? (output.prop_family === "pitcher" || (output.output_json && output.output_json.parlay_api && output.output_json.mode === "market_pitcher_prop_line_context") ? "completed_one_market_pitcher_prop_context_job" : "completed_one_market_hitter_prop_context_job") : (output && (output.prop_family === "pitcher" || (output.output_json && output.output_json.mode === "market_pitcher_prop_line_context")) ? "failed_one_market_pitcher_prop_context_job" : "failed_one_market_hitter_prop_context_job"),
       request_id: row.request_id,
       run_id: runId,
       output
@@ -6696,7 +6753,7 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       if (result.status === "no_due_jobs") break;
       // v0.2.146: Do not break after Daily Context parent enqueues a child.
       // The next loop must hot-drain the due same-chain child or parent recheck.
-      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_teams_game_odds_job" || result.status === "failed_one_market_hitter_prop_context_job" || result.status === "failed_one_oddsapi_hitter_prop_context_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_hitter_metrics_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_base_starter_history_job" || result.status === "failed_one_base_bullpen_history_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_delta_certifier_job" || result.status === "failed_one_static_full_run_job" || result.status === "failed_one_incremental_morning_full_run_job" || result.status === "failed_one_board_full_run_job" || result.status === "failed_one_daily_weather_job" || result.status === "failed_one_daily_bullpen_availability_job" || result.status === "failed_one_daily_team_schedule_spot_job" || result.status === "failed_one_daily_starters_job" || result.status === "failed_one_daily_player_availability_job" || result.status === "failed_one_daily_lineups_source_probe_job" || result.status === "failed_one_daily_game_status_job" || result.status === "failed_one_daily_context_certifier_job" || result.status === "failed_one_daily_context_full_run_job") break;
+      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_teams_game_odds_job" || result.status === "failed_one_market_hitter_prop_context_job" || result.status === "failed_one_market_pitcher_prop_context_job" || result.status === "failed_one_oddsapi_hitter_prop_context_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_hitter_metrics_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_base_starter_history_job" || result.status === "failed_one_base_bullpen_history_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_delta_certifier_job" || result.status === "failed_one_static_full_run_job" || result.status === "failed_one_incremental_morning_full_run_job" || result.status === "failed_one_board_full_run_job" || result.status === "failed_one_daily_weather_job" || result.status === "failed_one_daily_bullpen_availability_job" || result.status === "failed_one_daily_team_schedule_spot_job" || result.status === "failed_one_daily_starters_job" || result.status === "failed_one_daily_player_availability_job" || result.status === "failed_one_daily_lineups_source_probe_job" || result.status === "failed_one_daily_game_status_job" || result.status === "failed_one_daily_context_certifier_job" || result.status === "failed_one_daily_context_full_run_job") break;
     }
 
     await releaseLock(env, owner, "IDLE");
