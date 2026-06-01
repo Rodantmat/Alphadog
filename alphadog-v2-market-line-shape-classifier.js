@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-line-shape-classifier";
-const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.5-parlay-threshold-title-template-anchor-fix";
+const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.6-parlay-prop-unit-anchor-no-line-ambiguity-fix";
 const JOB_KEY = "market-line-shape-classifier";
 const MODE = "market_hitter_prop_line_context";
 const PARLAY_SOURCE_KEY = "parlay_api_hitter_props";
@@ -727,9 +727,13 @@ function choosePreparedCandidate(rows, sourceRow, statusBase) {
   const bookMatched = candidates.filter(r => normalizeText(r.source_key) === sourceBook);
   if (bookMatched.length) candidates = bookMatched;
   const line = numberOrNull(sourceRow.line_value);
+  let exactLineMatched = false;
   if (line !== null) {
     const lineMatched = candidates.filter(r => lineEqual(r.line_value, line));
-    if (lineMatched.length) candidates = lineMatched;
+    if (lineMatched.length) {
+      candidates = lineMatched;
+      exactLineMatched = true;
+    }
   }
   if (candidates.length === 1) {
     return { status: statusBase, row: candidates[0], rows: allRows, candidates: allRows.length, choice_reason: bookMatched.length ? "preferred_source_book" : "unique_candidate" };
@@ -739,6 +743,27 @@ function choosePreparedCandidate(rows, sourceRow, statusBase) {
   if (uniqueGamePlayerPropLine.size === 1) {
     const first = [...uniqueGamePlayerPropLine.values()][0];
     return { status: `${statusBase}_multiple_board_rows`, row: first, rows: allRows, candidates: allRows.length, choice_reason: "same_game_player_prop_line_multiple_board_sources" };
+  }
+
+  // Important: market comparison coverage is anchored to player + game + prop.
+  // Board variants such as 0.5 / 1.5 / 2.5 are the same comparison unit for coverage,
+  // even when the vendor line is a threshold style like FanDuel "To Record 2+ Hits".
+  // Do not mark those as ambiguous just because the board has several line variants.
+  const uniqueGamePlayerProp = new Map();
+  for (const r of candidates) uniqueGamePlayerProp.set(`${r.official_game_pk}|${r.resolved_mlb_player_id}|${r.canonical_prop_key}`, r);
+  if (uniqueGamePlayerProp.size === 1) {
+    let selected = [...uniqueGamePlayerProp.values()][0];
+    if (line !== null) {
+      const sorted = [...candidates].sort((a, b) => Math.abs(Number(a.line_value || 0) - line) - Math.abs(Number(b.line_value || 0) - line));
+      if (sorted.length) selected = sorted[0];
+    }
+    return {
+      status: exactLineMatched ? `${statusBase}_multiple_board_rows` : `${statusBase}_prop_unit_multiple_board_lines`,
+      row: selected,
+      rows: allRows,
+      candidates: allRows.length,
+      choice_reason: exactLineMatched ? "same_game_player_prop_line_multiple_board_sources" : "same_game_player_prop_multiple_board_lines_source_line_preserved"
+    };
   }
   return { status: `ambiguous_${statusBase}`, row: null, rows: allRows, candidates: allRows.length, choice_reason: "multiple_distinct_candidates" };
 }
@@ -1017,7 +1042,7 @@ async function runHitterContext(env, input = {}) {
     prepared_games_checked: gamePks.length,
     prepared_players_checked: playerIds.length,
     prepared_prop_keys_checked: propKeys.length,
-    parlay_api: { config_present: !!(parlay.endpoint && parlay.endpoint.ok), key_present: sourceHas(env, "PARLAY_API_KEY"), fetch_ok: !!parlay.ok, http_status: parlay.http_status || null, endpoint_preview: parlay.endpoint && parlay.endpoint.endpoint_preview || null, request_strategy: parlay.endpoint && parlay.endpoint.request_strategy || null, legacy_sleeper_endpoint_ignored: parlay.endpoint && parlay.endpoint.legacy_sleeper_endpoint_ignored || false, detected_rows_path: parlay.detected_rows_path || null, rows_seen: parlay.rows_seen || 0, normalized_hitter_rows: parlay.normalized_hitter_rows || 0, pagination: parlay.pagination || null, probe_strategy: parlay.probe_strategy || null, normalized_primary_non_owned_rows: parlay.normalized_primary_non_owned_rows || 0, enriched_hitter_rows: enrichedParlayRows.length, rows_with_price_context: sourceRowsWithOverUnder, matched_to_prepared: matched, no_prepared_match: noMatch, ambiguous_prepared_match: ambiguous, prepared_unique_hitter_units: preparedUniqueHitterUnits.size, unique_coverage_summary: uniqueCoverageSummary, matched_rows_by_source_key: matchedBySourceKey, unique_matched_units_by_source_key: uniqueMatchedBySourceKeyCounts, book_counts_normalized: bookCountsNormalized, book_quality_row_counts: bookQualityRowCounts, normalization_status_counts: normalizationStatusCounts, threshold_rows_normalized: enrichedParlayRows.filter(r => r.threshold_line_value !== null && r.threshold_line_value !== undefined).length, title_player_rows_normalized: enrichedParlayRows.filter(r => String(r.player_name_resolution_reason || "").includes("market_title_player_parser")).length, template_rows_recovered: enrichedParlayRows.filter(r => (r.normalization_issues || []).includes("template_player_label_recovered")).length, template_quarantined_rows: normalizationStatusCounts.quarantined_template_player_label || 0, event_level_quarantined_rows: normalizationStatusCounts.quarantined_event_level_market || 0, owned_excluded_rows: bookQualityRowCounts.owned_board_excluded_from_vendor_decision || 0, pickem_comparison_rows: bookQualityRowCounts.pickem_comparison || 0, primary_comparison_rows: bookQualityRowCounts.primary_comparison_book || 0, exchange_reference_rows: bookQualityRowCounts.exchange_or_sharp_reference || 0, requires_shape_validation_rows: bookQualityRowCounts.requires_shape_validation || 0, total_non_owned_usable_coverage_pct: uniqueCoverageSummary.total_non_owned_pct, resolver_audit: { team_aliases_loaded: teamAliases.size, player_aliases_loaded: playerAliases.size, raw_player_column_persisted: true, raw_commence_time_not_trusted_as_primary_match_key: true, team_pair_calendar_prepared_resolver_enabled: true, global_name_fallback_blocked_when_source_team_pair_resolved: true } },
+    parlay_api: { config_present: !!(parlay.endpoint && parlay.endpoint.ok), key_present: sourceHas(env, "PARLAY_API_KEY"), fetch_ok: !!parlay.ok, http_status: parlay.http_status || null, endpoint_preview: parlay.endpoint && parlay.endpoint.endpoint_preview || null, request_strategy: parlay.endpoint && parlay.endpoint.request_strategy || null, legacy_sleeper_endpoint_ignored: parlay.endpoint && parlay.endpoint.legacy_sleeper_endpoint_ignored || false, detected_rows_path: parlay.detected_rows_path || null, rows_seen: parlay.rows_seen || 0, normalized_hitter_rows: parlay.normalized_hitter_rows || 0, pagination: parlay.pagination || null, probe_strategy: parlay.probe_strategy || null, normalized_primary_non_owned_rows: parlay.normalized_primary_non_owned_rows || 0, enriched_hitter_rows: enrichedParlayRows.length, rows_with_price_context: sourceRowsWithOverUnder, matched_to_prepared: matched, no_prepared_match: noMatch, ambiguous_prepared_match: ambiguous, prepared_unique_hitter_units: preparedUniqueHitterUnits.size, unique_coverage_summary: uniqueCoverageSummary, matched_rows_by_source_key: matchedBySourceKey, unique_matched_units_by_source_key: uniqueMatchedBySourceKeyCounts, book_counts_normalized: bookCountsNormalized, book_quality_row_counts: bookQualityRowCounts, normalization_status_counts: normalizationStatusCounts, threshold_rows_normalized: enrichedParlayRows.filter(r => r.threshold_line_value !== null && r.threshold_line_value !== undefined).length, title_player_rows_normalized: enrichedParlayRows.filter(r => String(r.player_name_resolution_reason || "").includes("market_title_player_parser")).length, template_rows_recovered: enrichedParlayRows.filter(r => (r.normalization_issues || []).includes("template_player_label_recovered")).length, template_quarantined_rows: normalizationStatusCounts.quarantined_template_player_label || 0, event_level_quarantined_rows: normalizationStatusCounts.quarantined_event_level_market || 0, prop_unit_multi_line_anchor_rows: propRows.filter(r => String(r[17] || "").includes("prop_unit_multiple_board_lines")).length, owned_excluded_rows: bookQualityRowCounts.owned_board_excluded_from_vendor_decision || 0, pickem_comparison_rows: bookQualityRowCounts.pickem_comparison || 0, primary_comparison_rows: bookQualityRowCounts.primary_comparison_book || 0, exchange_reference_rows: bookQualityRowCounts.exchange_or_sharp_reference || 0, requires_shape_validation_rows: bookQualityRowCounts.requires_shape_validation || 0, total_non_owned_usable_coverage_pct: uniqueCoverageSummary.total_non_owned_pct, resolver_audit: { team_aliases_loaded: teamAliases.size, player_aliases_loaded: playerAliases.size, raw_player_column_persisted: true, raw_commence_time_not_trusted_as_primary_match_key: true, team_pair_calendar_prepared_resolver_enabled: true, global_name_fallback_blocked_when_source_team_pair_resolved: true } },
     rows_written_detail: { player_prop_rows: propRows.length, coverage_rows: coverageRows.length, issue_rows: issues.length, batch_rows: 1 },
     coverage_grade: coverageGrade,
     warning_count: warningCount,
