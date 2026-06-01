@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-line-shape-classifier";
-const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.4-parlay-normalized-book-parser-hitter-only";
+const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.5-parlay-threshold-title-template-anchor-fix";
 const JOB_KEY = "market-line-shape-classifier";
 const MODE = "market_hitter_prop_line_context";
 const PARLAY_SOURCE_KEY = "parlay_api_hitter_props";
@@ -245,7 +245,7 @@ function sourceKeyForParlay(row) {
 function safeHost(urlText) { try { return new URL(urlText).host; } catch (_) { return "invalid_url"; } }
 function safeEndpoint(urlText) { try { const u = new URL(urlText); return `${u.origin}${u.pathname}`; } catch (_) { return String(urlText || "").split("?")[0]; } }
 function authHeaders(env) {
-  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-market-hitter-prop-context/0.2.4" });
+  const headers = new Headers({ "accept": "application/json", "user-agent": "AlphaDog-v2-market-hitter-prop-context/0.2.5" });
   const headerName = String(env.PARLAY_API_AUTH_HEADER_NAME || "X-API-Key").trim();
   const prefix = String(env.PARLAY_API_AUTH_HEADER_PREFIX || "").trim();
   if (sourceHas(env, "PARLAY_API_KEY") && headerName) headers.set(headerName, prefix ? `${prefix} ${env.PARLAY_API_KEY}` : String(env.PARLAY_API_KEY));
@@ -286,24 +286,82 @@ function firstPrice(obj, side) {
     : ["under_price", "underPrice", "prices.under", "price_under", "outcomes.under.price", "under.price", "under.american", "under_price_american"];
   return numberOrNull(getDeep(obj, keys));
 }
+function cleanPlayerCandidate(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  if (raw.includes("{optionTypeAbbr}") || raw.includes("{value}")) return null;
+  if (raw.includes(" @ ")) return null;
+  const norm = normalizeText(raw);
+  if (!norm || ["odd", "even", "over", "under", "yes", "no"].includes(norm)) return null;
+  if (/^(hits?|rbis?|runs?|singles?|doubles?|triples?|home\s*runs?|stolen\s*bases?|walks?|total\s*bases?)$/i.test(raw)) return null;
+  if (/^to\s+record\s+\d+\+/i.test(raw)) return null;
+  if (/^[+-]?\d+(?:\.\d+)?$/.test(raw)) return null;
+  return raw.replace(/\s+\([A-Z]{2,4}\)$/, "").trim();
+}
 function extractPlayerFromMarketLabel(value) {
   const text = String(value || "").trim();
   if (!text) return null;
-  const totalBases = text.match(/^total\s+bases\s+-\s+(.+?)(?:\s+\([A-Z]{2,4}\))?$/i);
-  if (totalBases) return totalBases[1].trim();
-  const generic = text.match(/^(?:hits|rbis|runs|singles|doubles|triples|home\s+runs|stolen\s+bases|walks)\s+-\s+(.+?)(?:\s+\([A-Z]{2,4}\))?$/i);
-  if (generic) return generic[1].trim();
+  const patterns = [
+    /^(?:total\s+bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|hitter\s+walks?)\s+-\s+(.+?)(?:\s+\([A-Z]{2,4}\))?$/i,
+    /^(.+?)\s+-\s+(?:total\s+bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?)$/i
+  ];
+  for (const re of patterns) {
+    const m = text.match(re);
+    if (m) return cleanPlayerCandidate(m[1]);
+  }
   return null;
+}
+function propFromThresholdText(value) {
+  const propText = normalizeText(value).replace(/ /g, "_");
+  const propMap = { hit: "hits", hits: "hits", total_base: "total_bases", total_bases: "total_bases", rbi: "rbis", rbis: "rbis", run: "runs", runs: "runs", single: "singles", singles: "singles", double: "doubles", doubles: "doubles", triple: "triples", triples: "triples", home_run: "home_runs", home_runs: "home_runs", stolen_base: "stolen_bases", stolen_bases: "stolen_bases", walk: "walks", walks: "walks", hitter_walk: "walks", hitter_walks: "walks" };
+  return propMap[propText] || null;
 }
 function parsePlusThreshold(value) {
   const text = String(value || "");
-  const m = text.match(/(?:to\s+record\s+)?(\d+)\s*\+\s*(hits?|total\s+bases|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?)/i);
+  const m = text.match(/(?:to\s+record\s+)?(\d+)\s*\+\s*(hits?|total\s+bases|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|hitter\s+walks?)/i);
   if (!m) return null;
   const threshold = Number(m[1]);
   if (!Number.isFinite(threshold) || threshold <= 0) return null;
-  const propText = normalizeText(m[2]).replace(/ /g, "_");
-  const propMap = { hit: "hits", hits: "hits", total_bases: "total_bases", rbi: "rbis", rbis: "rbis", run: "runs", runs: "runs", single: "singles", singles: "singles", double: "doubles", doubles: "doubles", triple: "triples", triples: "triples", home_run: "home_runs", home_runs: "home_runs", stolen_base: "stolen_bases", stolen_bases: "stolen_bases", walk: "walks", walks: "walks" };
-  return { threshold, canonical_prop_key: propMap[propText] || null, normalized_line_value: threshold - 0.5 };
+  const canonical_prop_key = propFromThresholdText(m[2]);
+  return { threshold, canonical_prop_key, normalized_line_value: Number((threshold - 0.5).toFixed(3)), source_text: text };
+}
+function likelyHumanName(value) {
+  const text = cleanPlayerCandidate(value);
+  if (!text) return null;
+  const norm = normalizeText(text);
+  if (!norm || norm.split(" ").length > 5) return null;
+  if (/\b(team|game|market|player|option|record|total|bases|runs|hits|rbi|stolen|walks)\b/i.test(norm) && norm.split(" ").length <= 2) return null;
+  return text;
+}
+function collectDeepPlayerCandidates(obj, out = [], path = "", depth = 0) {
+  if (!obj || typeof obj !== "object" || depth > 5 || out.length > 80) return out;
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < Math.min(obj.length, 20); i++) collectDeepPlayerCandidates(obj[i], out, `${path}[${i}]`, depth + 1);
+    return out;
+  }
+  for (const [k, v] of Object.entries(obj)) {
+    const key = normalizeText(k);
+    if (v !== null && v !== undefined && typeof v !== "object") {
+      const text = String(v);
+      const candidate = likelyHumanName(text);
+      const keyLooksPlayer = /(^|_)(player|participant|athlete|competitor|selection|outcome|option|description|display|name|label)(_|$)/i.test(key.replace(/ /g, "_"));
+      if (candidate && keyLooksPlayer) out.push({ value: candidate, path: `${path}.${k}`.replace(/^\./, ""), score: key.includes("player") || key.includes("athlete") ? 4 : key.includes("participant") || key.includes("competitor") ? 3 : key.includes("selection") || key.includes("outcome") || key.includes("option") ? 2 : 1 });
+    } else if (v && typeof v === "object") collectDeepPlayerCandidates(v, out, `${path}.${k}`.replace(/^\./, ""), depth + 1);
+  }
+  return out;
+}
+function extractPlayerNameDeep(row, currentPlayerName, marketRaw) {
+  const cleanedCurrent = cleanPlayerCandidate(currentPlayerName);
+  if (cleanedCurrent) return { player_name: cleanedCurrent, reason: "direct_player_field" };
+  const fromMarket = extractPlayerFromMarketLabel(marketRaw);
+  if (fromMarket) return { player_name: fromMarket, reason: "market_title_player_parser" };
+  const candidates = collectDeepPlayerCandidates(row).sort((a, b) => b.score - a.score || a.value.length - b.value.length);
+  for (const c of candidates) {
+    const norm = normalizeText(c.value);
+    if (!norm || norm === normalizeText(marketRaw)) continue;
+    return { player_name: c.value, reason: `deep_raw_player_candidate:${c.path}` };
+  }
+  return { player_name: currentPlayerName ? String(currentPlayerName) : null, reason: "no_usable_player_candidate_found" };
 }
 function canonicalFromMarket(marketRaw, marketKey) {
   const rawNorm = normalizeText(marketRaw);
@@ -320,23 +378,31 @@ function canonicalFromMarket(marketRaw, marketKey) {
 }
 function normalizeParlayRow(row) {
   if (!row || typeof row !== "object" || Array.isArray(row)) return null;
-  const marketRaw = getDeep(row, ["market_key", "marketKey", "market", "market_name", "marketName", "source_market", "source_market_key", "stat", "stat_type", "statType", "prop", "prop_type", "type", "name"]);
-  let marketKey = normalizedMarket(marketRaw);
-  let plus = parsePlusThreshold(marketRaw);
-  let canonicalInfo = plus && plus.canonical_prop_key ? { canonical: plus.canonical_prop_key, market_key: `player_${plus.canonical_prop_key}`, reason: "plus_threshold_market_parser" } : canonicalFromMarket(marketRaw, marketKey);
+  const marketKeyRaw = getDeep(row, ["market_key", "marketKey", "source_market_key", "stat", "stat_type", "statType", "prop", "prop_type", "type"]);
+  const marketTitleRaw = getDeep(row, ["market", "market_name", "marketName", "source_market", "name", "title", "description.market", "description.market_name"]);
+  const marketRawForThreshold = marketTitleRaw || marketKeyRaw;
+  let marketKey = normalizedMarket(marketKeyRaw || marketTitleRaw);
+  const plus = parsePlusThreshold(marketRawForThreshold) || parsePlusThreshold(marketKeyRaw);
+  let canonicalInfo = plus && plus.canonical_prop_key
+    ? { canonical: plus.canonical_prop_key, market_key: `player_${plus.canonical_prop_key}`, reason: "plus_threshold_market_parser" }
+    : canonicalFromMarket(marketTitleRaw || marketKeyRaw, marketKey);
   let canonical = canonicalInfo.canonical;
   if (!canonical || !HITTER_PROP_KEYS.includes(canonical)) return null;
   marketKey = canonicalInfo.market_key || marketKey;
-  let playerName = getDeep(row, ["player", "player_name", "playerName", "participant.name", "selection_name", "description.player", "description.player_name", "athlete.name", "competitor.name"]);
-  const extractedMarketPlayer = extractPlayerFromMarketLabel(marketRaw);
-  const playerNorm = normalizeText(playerName);
-  const marketNorm = normalizeText(marketRaw);
-  const eventLevelPlayer = !playerNorm || playerNorm === "odd" || playerNorm === "even" || String(playerName || "").includes(" @ ");
-  if (eventLevelPlayer && extractedMarketPlayer) playerName = extractedMarketPlayer;
+  const directPlayerName = getDeep(row, ["player", "player_name", "playerName", "participant.name", "selection_name", "selection.name", "outcome.name", "description.player", "description.player_name", "athlete.name", "competitor.name"]);
+  const playerExtract = extractPlayerNameDeep(row, directPlayerName, marketTitleRaw || marketKeyRaw);
+  let playerName = playerExtract.player_name;
+  const marketNorm = normalizeText(marketTitleRaw || marketKeyRaw);
+  const playerNormNow = normalizeText(playerName);
+  if ((!playerNormNow || playerNormNow === "odd" || playerNormNow === "even" || String(playerName || "").includes(" @ ")) && extractPlayerFromMarketLabel(marketTitleRaw || marketKeyRaw)) {
+    playerName = extractPlayerFromMarketLabel(marketTitleRaw || marketKeyRaw);
+  }
   let lineValue = numberOrNull(getDeep(row, ["line_value", "line", "points", "point", "handicap", "line_score", "value"]));
   let side = normalizeText(getDeep(row, ["side", "outcome", "label", "name"])) || null;
+  let thresholdLineValue = null;
   if (plus && plus.normalized_line_value !== null) {
-    lineValue = plus.normalized_line_value;
+    thresholdLineValue = plus.normalized_line_value;
+    lineValue = thresholdLineValue;
     side = "over";
   }
   const eventId = getDeep(row, ["event_id", "eventId", "source_event_id", "game_id", "gameId", "match_id", "fixture_id"]);
@@ -348,9 +414,12 @@ function normalizeParlayRow(row) {
   const bookmakerKey = normalizeText(bookmaker).replace(/ /g, "_") || "sleeper";
   let normalizationStatus = "usable_player_prop_line";
   const issues = [];
-  if (String(playerName || "").includes("{optionTypeAbbr}") || String(getDeep(row, ["player", "player_name", "playerName"]) || "").includes("{optionTypeAbbr}")) {
+  const directHadTemplate = String(directPlayerName || "").includes("{optionTypeAbbr}") || String(getDeep(row, ["player", "player_name", "playerName"]) || "").includes("{optionTypeAbbr}");
+  if (directHadTemplate && playerExtract.reason === "no_usable_player_candidate_found") {
     normalizationStatus = "quarantined_template_player_label";
-    issues.push("template_player_label");
+    issues.push("template_player_label_unresolved");
+  } else if (directHadTemplate) {
+    issues.push("template_player_label_recovered");
   }
   if (marketNorm.includes("odd even") || ["odd", "even"].includes(normalizeText(playerName))) {
     normalizationStatus = "quarantined_event_level_market";
@@ -363,7 +432,34 @@ function normalizeParlayRow(row) {
   const overPrice = firstPrice(row, "over");
   const underPrice = firstPrice(row, "under");
   const directPrice = numberOrNull(getDeep(row, ["price", "american_price", "americanPrice", "odds", "price_american"]));
-  return { raw: row, market_key: marketKey || String(marketRaw || ""), canonical_prop_key: canonical, player_name: playerName ? String(playerName) : null, player_name_normalized: normalizeText(playerName), line_value: lineValue, threshold_value: plus ? plus.threshold : null, source_event_id: eventId ? String(eventId) : null, source_line_id: lineId ? String(lineId) : null, commence_time: commenceTime ? String(commenceTime) : null, home_team: homeTeam ? String(homeTeam) : null, away_team: awayTeam ? String(awayTeam) : null, bookmaker: bookmaker ? String(bookmaker) : "sleeper", bookmaker_key: bookmakerKey, book_quality: bookmakerQuality(bookmakerKey), normalization_status: normalizationStatus, normalization_issues: issues, normalization_reason: canonicalInfo.reason, over_price: overPrice, under_price: underPrice, side, price_american: directPrice };
+  return {
+    raw: row,
+    market_key: marketKey || String(marketKeyRaw || marketTitleRaw || ""),
+    canonical_prop_key: canonical,
+    player_name: playerName ? String(playerName) : null,
+    player_name_normalized: normalizeText(playerName),
+    line_value: lineValue,
+    threshold_value: plus ? plus.threshold : null,
+    normalized_threshold: plus ? plus.threshold : null,
+    threshold_line_value: thresholdLineValue,
+    source_event_id: eventId ? String(eventId) : null,
+    source_line_id: lineId ? String(lineId) : null,
+    commence_time: commenceTime ? String(commenceTime) : null,
+    home_team: homeTeam ? String(homeTeam) : null,
+    away_team: awayTeam ? String(awayTeam) : null,
+    bookmaker: bookmaker ? String(bookmaker) : "sleeper",
+    bookmaker_key: bookmakerKey,
+    book_quality: bookmakerQuality(bookmakerKey),
+    normalization_status: normalizationStatus,
+    normalization_issues: issues,
+    normalization_reason: canonicalInfo.reason,
+    player_name_resolution_reason: playerExtract.reason,
+    threshold_source_text: plus ? plus.source_text : null,
+    over_price: overPrice,
+    under_price: underPrice,
+    side,
+    price_american: directPrice
+  };
 }
 function cloneUrlWithParams(baseUrl, params = {}) {
   const u = new URL(baseUrl);
@@ -866,7 +962,7 @@ async function runHitterContext(env, input = {}) {
     if (sides.length) sourceRowsWithOverUnder += 1;
     if (!sides.length) sides.push({ side: "line_present_price_missing", price: null });
     for (const s of sides) {
-      propRows.push([rid("mcp_hitter_prop"), batchId, slateWindowKey, matchedRow ? matchedRow.official_date : today, matchedRow ? matchedRow.prepared_row_id : null, sourceKeyForParlay(sourceRow), sourceRow.source_event_id, sourceRow.source_line_id, matchedRow ? Number(matchedRow.official_game_pk) : null, matchedRow ? Number(matchedRow.resolved_mlb_player_id) : null, sourceRow.player_name, sourceRow.canonical_prop_key, sourceRow.market_key, sourceRow.line_value, s.price, americanToDecimal(s.price), s.side, match.status, matchedRow ? "parlay_hitter_prop_line_matched_to_prepared" : "parlay_hitter_prop_line_not_matched_to_prepared", compactRawJson({ mode: MODE, parlay: { ...sourceRow, raw: undefined }, normalized_context: { bookmaker_key: sourceRow.bookmaker_key, book_quality: sourceRow.book_quality, normalization_status: sourceRow.normalization_status, normalization_issues: sourceRow.normalization_issues || [], threshold_value: sourceRow.threshold_value || null, normalization_reason: sourceRow.normalization_reason || null }, resolver: { raw_home_team: sourceRow.home_team, raw_away_team: sourceRow.away_team, home_team_id: sourceRow.home_team_id, away_team_id: sourceRow.away_team_id, source_team_pair_key: sourceRow.source_team_pair_key, alias_player_ids: sourceRow.alias_player_ids || [], candidates: match.candidates || 0, choice_reason: match.choice_reason || null, matched_prepared_row_count: (match.rows || []).length, required_team_pair_match_when_pair_resolved: true }, prepared_match: matchedRow ? { prepared_row_id: matchedRow.prepared_row_id, source_key: matchedRow.source_key, player_name: matchedRow.player_name, canonical_prop_key: matchedRow.canonical_prop_key, line_value: matchedRow.line_value, game_pk: matchedRow.official_game_pk, official_game_time_utc: matchedRow.official_game_time_utc, team: matchedRow.team, opponent: matchedRow.opponent } : null, raw_source_row: sourceRow.raw })]);
+      propRows.push([rid("mcp_hitter_prop"), batchId, slateWindowKey, matchedRow ? matchedRow.official_date : today, matchedRow ? matchedRow.prepared_row_id : null, sourceKeyForParlay(sourceRow), sourceRow.source_event_id, sourceRow.source_line_id, matchedRow ? Number(matchedRow.official_game_pk) : null, matchedRow ? Number(matchedRow.resolved_mlb_player_id) : null, sourceRow.player_name, sourceRow.canonical_prop_key, sourceRow.market_key, sourceRow.line_value, s.price, americanToDecimal(s.price), s.side, match.status, matchedRow ? "parlay_hitter_prop_line_matched_to_prepared" : "parlay_hitter_prop_line_not_matched_to_prepared", compactRawJson({ mode: MODE, parlay: { ...sourceRow, raw: undefined }, normalized_context: { bookmaker_key: sourceRow.bookmaker_key, book_quality: sourceRow.book_quality, normalization_status: sourceRow.normalization_status, normalization_issues: sourceRow.normalization_issues || [], threshold_value: sourceRow.threshold_value || null, normalized_threshold: sourceRow.normalized_threshold || null, threshold_line_value: sourceRow.threshold_line_value || null, threshold_source_text: sourceRow.threshold_source_text || null, player_name_resolution_reason: sourceRow.player_name_resolution_reason || null, normalization_reason: sourceRow.normalization_reason || null }, resolver: { raw_home_team: sourceRow.home_team, raw_away_team: sourceRow.away_team, home_team_id: sourceRow.home_team_id, away_team_id: sourceRow.away_team_id, source_team_pair_key: sourceRow.source_team_pair_key, alias_player_ids: sourceRow.alias_player_ids || [], candidates: match.candidates || 0, choice_reason: match.choice_reason || null, matched_prepared_row_count: (match.rows || []).length, required_team_pair_match_when_pair_resolved: true }, prepared_match: matchedRow ? { prepared_row_id: matchedRow.prepared_row_id, source_key: matchedRow.source_key, player_name: matchedRow.player_name, resolved_player_id: matchedRow.resolved_player_id, resolved_mlb_player_id: matchedRow.resolved_mlb_player_id, canonical_prop_key: matchedRow.canonical_prop_key, line_value: matchedRow.line_value, game_pk: matchedRow.official_game_pk, official_game_pk: matchedRow.official_game_pk, official_game_time_utc: matchedRow.official_game_time_utc, team: matchedRow.team, opponent: matchedRow.opponent } : null, raw_source_row: sourceRow.raw })]);
     }
   }
 
@@ -921,7 +1017,7 @@ async function runHitterContext(env, input = {}) {
     prepared_games_checked: gamePks.length,
     prepared_players_checked: playerIds.length,
     prepared_prop_keys_checked: propKeys.length,
-    parlay_api: { config_present: !!(parlay.endpoint && parlay.endpoint.ok), key_present: sourceHas(env, "PARLAY_API_KEY"), fetch_ok: !!parlay.ok, http_status: parlay.http_status || null, endpoint_preview: parlay.endpoint && parlay.endpoint.endpoint_preview || null, request_strategy: parlay.endpoint && parlay.endpoint.request_strategy || null, legacy_sleeper_endpoint_ignored: parlay.endpoint && parlay.endpoint.legacy_sleeper_endpoint_ignored || false, detected_rows_path: parlay.detected_rows_path || null, rows_seen: parlay.rows_seen || 0, normalized_hitter_rows: parlay.normalized_hitter_rows || 0, pagination: parlay.pagination || null, probe_strategy: parlay.probe_strategy || null, normalized_primary_non_owned_rows: parlay.normalized_primary_non_owned_rows || 0, enriched_hitter_rows: enrichedParlayRows.length, rows_with_price_context: sourceRowsWithOverUnder, matched_to_prepared: matched, no_prepared_match: noMatch, ambiguous_prepared_match: ambiguous, prepared_unique_hitter_units: preparedUniqueHitterUnits.size, unique_coverage_summary: uniqueCoverageSummary, matched_rows_by_source_key: matchedBySourceKey, unique_matched_units_by_source_key: uniqueMatchedBySourceKeyCounts, book_counts_normalized: bookCountsNormalized, book_quality_row_counts: bookQualityRowCounts, normalization_status_counts: normalizationStatusCounts, template_quarantined_rows: normalizationStatusCounts.quarantined_template_player_label || 0, event_level_quarantined_rows: normalizationStatusCounts.quarantined_event_level_market || 0, owned_excluded_rows: bookQualityRowCounts.owned_board_excluded_from_vendor_decision || 0, pickem_comparison_rows: bookQualityRowCounts.pickem_comparison || 0, primary_comparison_rows: bookQualityRowCounts.primary_comparison_book || 0, exchange_reference_rows: bookQualityRowCounts.exchange_or_sharp_reference || 0, requires_shape_validation_rows: bookQualityRowCounts.requires_shape_validation || 0, total_non_owned_usable_coverage_pct: uniqueCoverageSummary.total_non_owned_pct, resolver_audit: { team_aliases_loaded: teamAliases.size, player_aliases_loaded: playerAliases.size, raw_player_column_persisted: true, raw_commence_time_not_trusted_as_primary_match_key: true, team_pair_calendar_prepared_resolver_enabled: true, global_name_fallback_blocked_when_source_team_pair_resolved: true } },
+    parlay_api: { config_present: !!(parlay.endpoint && parlay.endpoint.ok), key_present: sourceHas(env, "PARLAY_API_KEY"), fetch_ok: !!parlay.ok, http_status: parlay.http_status || null, endpoint_preview: parlay.endpoint && parlay.endpoint.endpoint_preview || null, request_strategy: parlay.endpoint && parlay.endpoint.request_strategy || null, legacy_sleeper_endpoint_ignored: parlay.endpoint && parlay.endpoint.legacy_sleeper_endpoint_ignored || false, detected_rows_path: parlay.detected_rows_path || null, rows_seen: parlay.rows_seen || 0, normalized_hitter_rows: parlay.normalized_hitter_rows || 0, pagination: parlay.pagination || null, probe_strategy: parlay.probe_strategy || null, normalized_primary_non_owned_rows: parlay.normalized_primary_non_owned_rows || 0, enriched_hitter_rows: enrichedParlayRows.length, rows_with_price_context: sourceRowsWithOverUnder, matched_to_prepared: matched, no_prepared_match: noMatch, ambiguous_prepared_match: ambiguous, prepared_unique_hitter_units: preparedUniqueHitterUnits.size, unique_coverage_summary: uniqueCoverageSummary, matched_rows_by_source_key: matchedBySourceKey, unique_matched_units_by_source_key: uniqueMatchedBySourceKeyCounts, book_counts_normalized: bookCountsNormalized, book_quality_row_counts: bookQualityRowCounts, normalization_status_counts: normalizationStatusCounts, threshold_rows_normalized: enrichedParlayRows.filter(r => r.threshold_line_value !== null && r.threshold_line_value !== undefined).length, title_player_rows_normalized: enrichedParlayRows.filter(r => String(r.player_name_resolution_reason || "").includes("market_title_player_parser")).length, template_rows_recovered: enrichedParlayRows.filter(r => (r.normalization_issues || []).includes("template_player_label_recovered")).length, template_quarantined_rows: normalizationStatusCounts.quarantined_template_player_label || 0, event_level_quarantined_rows: normalizationStatusCounts.quarantined_event_level_market || 0, owned_excluded_rows: bookQualityRowCounts.owned_board_excluded_from_vendor_decision || 0, pickem_comparison_rows: bookQualityRowCounts.pickem_comparison || 0, primary_comparison_rows: bookQualityRowCounts.primary_comparison_book || 0, exchange_reference_rows: bookQualityRowCounts.exchange_or_sharp_reference || 0, requires_shape_validation_rows: bookQualityRowCounts.requires_shape_validation || 0, total_non_owned_usable_coverage_pct: uniqueCoverageSummary.total_non_owned_pct, resolver_audit: { team_aliases_loaded: teamAliases.size, player_aliases_loaded: playerAliases.size, raw_player_column_persisted: true, raw_commence_time_not_trusted_as_primary_match_key: true, team_pair_calendar_prepared_resolver_enabled: true, global_name_fallback_blocked_when_source_team_pair_resolved: true } },
     rows_written_detail: { player_prop_rows: propRows.length, coverage_rows: coverageRows.length, issue_rows: issues.length, batch_rows: 1 },
     coverage_grade: coverageGrade,
     warning_count: warningCount,
