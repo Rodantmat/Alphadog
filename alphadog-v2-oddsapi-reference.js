@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-oddsapi-reference";
-const VERSION = "alphadog-v2-oddsapi-reference-v0.1.0-hitter-player-props-event-odds";
+const VERSION = "alphadog-v2-oddsapi-reference-v0.1.1-batch-writes-memory-coverage";
 const JOB_KEY = "oddsapi-reference";
 const MODE = "market_hitter_prop_line_context_oddsapi";
 const SOURCE_KEY_PREFIX = "odds_api";
@@ -51,6 +51,7 @@ async function all(db, sql, ...binds) { const stmt = db.prepare(sql); const res 
 async function first(db, sql, ...binds) { const rows = await all(db, sql, ...binds); return rows[0] || null; }
 async function run(db, sql, ...binds) { const stmt = db.prepare(sql); return binds.length ? await stmt.bind(...binds).run() : await stmt.run(); }
 async function batchRun(db, sql, bindRows, chunkSize = 75) { let batches = 0, statements = 0; for (let i = 0; i < bindRows.length; i += chunkSize) { const c = bindRows.slice(i, i + chunkSize); await db.batch(c.map(b => db.prepare(sql).bind(...b))); batches++; statements += c.length; } return { batches, statements }; }
+function matchedCoverageKey(sourceKey, gamePk, playerId, propKey) { return `${sourceKey}|${String(gamePk)}|${String(playerId)}|${String(propKey)}`; }
 function ptDate(offsetDays = 0) { const fmt = new Intl.DateTimeFormat("en-CA", { timeZone:"America/Los_Angeles", year:"numeric", month:"2-digit", day:"2-digit" }); return fmt.format(new Date(Date.now() + offsetDays * 86400000)); }
 function normalizeText(v) { return String(v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").trim(); }
 function numberOrNull(v) { if (v === undefined || v === null || v === "") return null; const n = Number(v); return Number.isFinite(n) ? n : null; }
@@ -228,6 +229,8 @@ async function runWorker(env, input) {
   }
 
   let eventsSeen = 0, eventsMapped = 0, eventCalls = 0, rowsWritten = 0, matchedRows = 0, unmatchedRows = 0;
+  const propRows = [];
+  const matchedCoverageSet = new Set();
   const bookStats = {};
   const eventSummaries = [];
   let eventsFetch = { ok:false, skipped:true };
@@ -277,24 +280,34 @@ async function runWorker(env, input) {
             const mappingStatus = matched ? "matched_prepared_team_pair_player_alias_prop" : "no_prepared_match_after_required_team_pair_resolver";
             const coverageStatus = matched ? "oddsapi_hitter_prop_line_matched_to_prepared" : "oddsapi_hitter_prop_line_not_matched_to_prepared";
             const raw = { mode:MODE, odds_api:{ event_id:item.ev.id, bookmaker_key:book.key, bookmaker_title:book.title, market_key:market.key, market_last_update:market.last_update || null, outcome:out }, resolver:{ game_pk:item.match.game.game_pk, match_status:item.match.status, match_confidence:item.match.confidence, player_name_normalized:normPlayer, prepared_candidates:preparedCandidates.length, mapping_status:mappingStatus }, prepared_match: matched ? { prepared_row_id:matched.prepared_row_id, resolved_mlb_player_id:matched.resolved_mlb_player_id, board_line_value:matched.line_value, source_key:matched.source_key } : null };
-            await run(env.MARKET_DB, `INSERT INTO market_context_probe_player_props (probe_row_id, batch_id, slate_window_key, official_date, prepared_row_id, source_key, source_event_id, source_line_id, game_pk, resolved_mlb_player_id, source_player_name, canonical_prop_key, source_market_key, line_value, price_american, price_decimal, outcome_side, mapping_status, coverage_status, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, rid("mcp_prop"), batchId, slateWindowKey, item.match.game.official_date, matched ? matched.prepared_row_id : null, sourceKey, item.ev.id || null, `${item.ev.id || "event"}|${book.key || "book"}|${market.key}|${playerName}|${side}|${lineValue}`, item.match.game.game_pk, matched ? Number(matched.resolved_mlb_player_id) : null, playerName, canonical, market.key, lineValue, numberOrNull(out.price), americanToDecimal(out.price), side, mappingStatus, coverageStatus, safeJson(raw, 6500));
+            propRows.push([rid("mcp_prop"), batchId, slateWindowKey, item.match.game.official_date, matched ? matched.prepared_row_id : null, sourceKey, item.ev.id || null, `${item.ev.id || "event"}|${book.key || "book"}|${market.key}|${playerName}|${side}|${lineValue}`, item.match.game.game_pk, matched ? Number(matched.resolved_mlb_player_id) : null, playerName, canonical, market.key, lineValue, numberOrNull(out.price), americanToDecimal(out.price), side, mappingStatus, coverageStatus, safeJson(raw, 6500)]);
             rowsWritten++;
             bookStats[sourceKey].rows++;
             bookStats[sourceKey].markets.add(canonical);
             bookStats[sourceKey].players.add(normPlayer);
-            if (matched) { matchedRows++; bookStats[sourceKey].matched++; } else { unmatchedRows++; bookStats[sourceKey].unmatched++; }
+            if (matched) {
+              matchedRows++;
+              bookStats[sourceKey].matched++;
+              matchedCoverageSet.add(matchedCoverageKey(sourceKey, item.match.game.game_pk, matched.resolved_mlb_player_id, canonical));
+            } else {
+              unmatchedRows++;
+              bookStats[sourceKey].unmatched++;
+            }
           }
         }
       }
     }
   }
 
+  if (propRows.length) {
+    await batchRun(env.MARKET_DB, `INSERT INTO market_context_probe_player_props (probe_row_id, batch_id, slate_window_key, official_date, prepared_row_id, source_key, source_event_id, source_line_id, game_pk, resolved_mlb_player_id, source_player_name, canonical_prop_key, source_market_key, line_value, price_american, price_decimal, outcome_side, mapping_status, coverage_status, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, propRows, 50);
+  }
+
   const sourceKeys = Object.keys(bookStats);
   const coverageRows = [];
   for (const p of preparedRows) {
     for (const sourceKey of sourceKeys) {
-      const countRow = await first(env.MARKET_DB, "SELECT COUNT(*) AS c FROM market_context_probe_player_props WHERE batch_id=? AND source_key=? AND game_pk=? AND resolved_mlb_player_id=? AND canonical_prop_key=?", batchId, sourceKey, p.official_game_pk, p.resolved_mlb_player_id, p.canonical_prop_key);
-      const has = Number(countRow && countRow.c || 0) > 0;
+      const has = matchedCoverageSet.has(matchedCoverageKey(sourceKey, p.official_game_pk, p.resolved_mlb_player_id, p.canonical_prop_key));
       coverageRows.push([rid("mcp_cov"), batchId, slateWindowKey, p.official_date, p.prepared_row_id, sourceKey, p.official_game_pk, p.resolved_mlb_player_id, p.canonical_prop_key, numberOrNull(p.line_value), "prepared_game_checked", has ? "oddsapi_book_market_player_found" : "oddsapi_book_market_player_missing", has ? "covered" : "missing", has ? "COVERED" : "MISSING", safeJson({ bookmaker:bookStats[sourceKey], source_scope:"oddsapi_event_player_props", board_source:p.source_key }, 2200)]);
     }
   }
@@ -310,7 +323,7 @@ async function runWorker(env, input) {
   const status = blockerCount ? "BLOCKED_WITH_ISSUES" : "COMPLETED_ODDSAPI_HITTER_PROP_CONTEXT";
   const certification = blockerCount ? "ODDSAPI_HITTER_PROP_CONTEXT_BLOCKED" : "ODDSAPI_HITTER_PROP_CONTEXT_CERTIFIED_EVIDENCE_ONLY";
   const grade = blockerCount ? "BLOCKED" : (matchedRows > 0 ? "PASS_WITH_WARNINGS" : "NO_MATCHED_MARKET_ROWS");
-  const output = { ok:blockerCount === 0, data_ok:blockerCount === 0, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, mode:MODE, request_id:requestId, run_id:runId, batch_id:batchId, status, certification, certification_status:certification, certification_grade:grade, rows_read:preparedRows.length, rows_written:rowsWritten + coverageRows.length, prepared_rows_read:preparedRows.length, prepared_games_checked:indexes.byGame.size, prepared_players_checked:playerIds.length, prepared_prop_keys_checked:new Set(preparedRows.map(r => r.canonical_prop_key)).size, odds_api_config_present:sourceHas(env, "ODDS_API_KEY") ? 1 : 0, odds_api_events_seen:eventsSeen, odds_api_events_mapped:eventsMapped, odds_api_event_calls: eventCalls, oddsapi_hitter_prop_rows_written:rowsWritten, oddsapi_hitter_prop_rows_matched:matchedRows, oddsapi_hitter_prop_rows_unmatched:unmatchedRows, coverage_rows_written:coverageRows.length, strong_book_coverage_against_prepared_board:{ denominator_prepared_pickable_hitter_rows:boardBaseRows, strong_books_raw_rows:strongBooks.rows, strong_books_matched_rows:strongBooks.matched, strong_books_raw_percent:strongRawPct, strong_books_matched_percent:strongMatchedPct }, book_summary:bookSummary, warning_count:warningCount, blocker_count:blockerCount, external_calls_performed:eventCalls, output_json:{ source_scope:"odds_api_event_level_mlb_hitter_props", official_docs_shape:"player props accessed one event at a time through /events/{eventId}/odds", selected_dummy_slot:"alphadog-v2-oddsapi-reference", slate_window:{ today, tomorrow, slateWindowKey }, event_fetch:{ ok:eventsFetch.ok || false, http_status:eventsFetch.http_status || null }, event_summaries:eventSummaries.slice(0, 24), markets_requested:ODDS_MLB_MARKETS, source_boundaries:baseIdentity(env).boundaries }, timestamp_utc:nowUtc() };
+  const output = { ok:blockerCount === 0, data_ok:blockerCount === 0, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, mode:MODE, request_id:requestId, run_id:runId, batch_id:batchId, status, certification, certification_status:certification, certification_grade:grade, rows_read:preparedRows.length, rows_written:rowsWritten + coverageRows.length, prepared_rows_read:preparedRows.length, prepared_games_checked:indexes.byGame.size, prepared_players_checked:playerIds.length, prepared_prop_keys_checked:new Set(preparedRows.map(r => r.canonical_prop_key)).size, odds_api_config_present:sourceHas(env, "ODDS_API_KEY") ? 1 : 0, odds_api_events_seen:eventsSeen, odds_api_events_mapped:eventsMapped, odds_api_event_calls: eventCalls, oddsapi_hitter_prop_rows_written:rowsWritten, oddsapi_hitter_prop_rows_matched:matchedRows, oddsapi_hitter_prop_rows_unmatched:unmatchedRows, coverage_rows_written:coverageRows.length, strong_book_coverage_against_prepared_board:{ denominator_prepared_pickable_hitter_rows:boardBaseRows, strong_books_raw_rows:strongBooks.rows, strong_books_matched_rows:strongBooks.matched, strong_books_raw_percent:strongRawPct, strong_books_matched_percent:strongMatchedPct }, book_summary:bookSummary, warning_count:warningCount, blocker_count:blockerCount, external_calls_performed:eventCalls, d1_request_reduction:"v0.1.1 batches prop inserts and builds coverage from in-memory matchedCoverageSet; no per-prepared-row COUNT probes", output_json:{ source_scope:"odds_api_event_level_mlb_hitter_props", official_docs_shape:"player props accessed one event at a time through /events/{eventId}/odds", selected_dummy_slot:"alphadog-v2-oddsapi-reference", slate_window:{ today, tomorrow, slateWindowKey }, event_fetch:{ ok:eventsFetch.ok || false, http_status:eventsFetch.http_status || null }, event_summaries:eventSummaries.slice(0, 24), markets_requested:ODDS_MLB_MARKETS, source_boundaries:baseIdentity(env).boundaries }, timestamp_utc:nowUtc() };
   await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_context_probe_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, slate_window_key, window_start_date, window_end_date, status, prepared_rows_read, prepared_games_checked, prepared_players_checked, prepared_prop_keys_checked, odds_api_config_present, odds_api_events_seen, odds_api_events_mapped, odds_api_game_odds_rows, parlay_inventory_rows_seen, parlay_props_mapped_to_prepared, parlay_coverage_grade, warning_count, blocker_count, certification_status, certification_grade, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, runId, WORKER_NAME, VERSION, MODE, slateWindowKey, today, tomorrow, status, preparedRows.length, indexes.byGame.size, playerIds.length, new Set(preparedRows.map(r => r.canonical_prop_key)).size, sourceHas(env, "ODDS_API_KEY") ? 1 : 0, eventsSeen, eventsMapped, rowsWritten, matchedRows, "ODDSAPI_HITTER_EVIDENCE_ONLY", warningCount, blockerCount, certification, grade, safeJson(output, 9000));
   return output;
 }
