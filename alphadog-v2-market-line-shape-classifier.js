@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-line-shape-classifier";
-const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.6-parlay-prop-unit-anchor-no-line-ambiguity-fix";
+const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.7-parlay-external-valid-unanchored-bucket";
 const JOB_KEY = "market-line-shape-classifier";
 const MODE = "market_hitter_prop_line_context";
 const PARLAY_SOURCE_KEY = "parlay_api_hitter_props";
@@ -302,8 +302,8 @@ function extractPlayerFromMarketLabel(value) {
   const text = String(value || "").trim();
   if (!text) return null;
   const patterns = [
-    /^(?:total\s+bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|hitter\s+walks?)\s+-\s+(.+?)(?:\s+\([A-Z]{2,4}\))?$/i,
-    /^(.+?)\s+-\s+(?:total\s+bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?)$/i
+    /^(?:total\s+hits\s*,?\s+runs\s+(?:and\s+)?rbis?|hits\s+runs\s+(?:and\s+)?rbis?|total\s+bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|hitter\s+walks?)\s+-\s+(.+?)(?:\s+\([A-Z]{2,4}\))?$/i,
+    /^(.+?)\s+-\s+(?:total\s+hits\s*,?\s+runs\s+(?:and\s+)?rbis?|hits\s+runs\s+(?:and\s+)?rbis?|total\s+bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?)$/i
   ];
   for (const re of patterns) {
     const m = text.match(re);
@@ -368,7 +368,7 @@ function canonicalFromMarket(marketRaw, marketKey) {
   const rawKey = rawNorm.replace(/ /g, "_");
   if (rawNorm === "home runs" || rawNorm === "home run" || rawKey === "batter_home_runs") return { canonical: "home_runs", market_key: "player_home_runs", reason: "raw_market_home_runs_override" };
   if (rawNorm === "bases" || rawNorm === "total bases" || rawKey === "batter_total_bases") return { canonical: "total_bases", market_key: "player_total_bases", reason: "raw_market_total_bases_override" };
-  if (rawNorm === "hits runs rbis" || rawNorm === "hits runs and rbis" || rawNorm === "hits runs rbis ou" || rawNorm === "hits runs rbis o u") return { canonical: "hits_runs_rbis", market_key: "player_hits_runs_rbis", reason: "raw_market_hrr_override" };
+  if (rawNorm === "hits runs rbis" || rawNorm === "hits runs and rbis" || rawNorm === "hits runs rbis ou" || rawNorm === "hits runs rbis o u" || rawNorm.startsWith("total hits runs and rbis")) return { canonical: "hits_runs_rbis", market_key: "player_hits_runs_rbis", reason: "raw_market_hrr_override" };
   if (rawKey === "batter_hits") return { canonical: "hits", market_key: "player_hits", reason: "batter_hits_alias" };
   if (rawKey === "batter_rbis") return { canonical: "rbis", market_key: "player_rbis", reason: "batter_rbis_alias" };
   if (rawKey === "batter_runs") return { canonical: "runs", market_key: "player_runs", reason: "batter_runs_alias" };
@@ -855,6 +855,12 @@ function enrichParlayRows(rows, teamAliases, playerAliases) {
   }
   return out;
 }
+function sourceRowHasExternallyValidPlayer(sourceRow) {
+  if (!sourceRow || sourceRow.normalization_status !== "usable_player_prop_line") return false;
+  const hasAlias = Array.isArray(sourceRow.alias_player_ids) && sourceRow.alias_player_ids.length > 0;
+  if (hasAlias) return true;
+  return !!likelyHumanName(sourceRow.player_name);
+}
 function bestPreparedMatch(sourceRow, index) {
   if (sourceRow && sourceRow.normalization_status && sourceRow.normalization_status !== "usable_player_prop_line") {
     return { status: sourceRow.normalization_status, row: null, rows: [], candidates: 0, choice_reason: "normalization_quarantine_before_prepared_match" };
@@ -874,6 +880,9 @@ function bestPreparedMatch(sourceRow, index) {
     for (const [map, key, status] of attempts) {
       const rows = map.get(key) || [];
       if (rows.length) return choosePreparedCandidate(rows, sourceRow, status);
+    }
+    if (sourceRowHasExternallyValidPlayer(sourceRow)) {
+      return { status: "external_valid_player_resolved_not_on_prepared_board", row: null, rows: [], candidates: 0, choice_reason: "source_team_pair_and_player_resolved_but_prop_not_present_on_prepared_board" };
     }
     return { status: "no_prepared_match_after_required_team_pair_resolver", row: null, rows: [], candidates: 0, choice_reason: "source_team_pair_resolved_so_global_name_fallback_blocked_to_prevent_wrong_game_match" };
   }
@@ -956,6 +965,12 @@ async function runHitterContext(env, input = {}) {
   let noMatch = 0;
   let ambiguous = 0;
   let sourceRowsWithOverUnder = 0;
+  const resolverStatusRows = [];
+  const sourceRowStatusCounts = {};
+  const sourceKeyStatusCounts = {};
+  let externalValidUnanchoredRows = 0;
+  let quarantinedRows = 0;
+  let trueHardUnmatchedRows = 0;
   const preparedUniqueHitterUnits = new Set(preparedRows.map(preparedUnitKey).filter(Boolean));
   const coveredUnits = { primary_comparison_book: new Set(), pickem_comparison: new Set(), exchange_or_sharp_reference: new Set(), requires_shape_validation: new Set(), total_non_owned: new Set(), owned_board_excluded_from_vendor_decision: new Set(), dfs_pickem_quarantine_not_primary_book_comparison: new Set() };
   const matchedBySourceKey = {};
@@ -966,8 +981,18 @@ async function runHitterContext(env, input = {}) {
     if (match.status.startsWith("matched")) matched += 1;
     else if (match.status.startsWith("ambiguous")) ambiguous += 1;
     else noMatch += 1;
-    for (const r of (match.rows || (matchedRow ? [matchedRow] : []))) matchedPrepared.set(r.prepared_row_id, true);
     const sourceKey = sourceKeyForParlay(sourceRow);
+    const normalizedStatus = sourceRow.normalization_status || "unknown";
+    const statusBucket = match.status.startsWith("matched") ? "board_matched" : (match.status === "external_valid_player_resolved_not_on_prepared_board" ? "external_valid_unanchored" : (match.status.startsWith("quarantined") || normalizedStatus.startsWith("quarantined") ? "quarantined" : "true_hard_unmatched"));
+    if (statusBucket === "external_valid_unanchored") externalValidUnanchoredRows += 1;
+    else if (statusBucket === "quarantined") quarantinedRows += 1;
+    else if (statusBucket === "true_hard_unmatched") trueHardUnmatchedRows += 1;
+    sourceRowStatusCounts[statusBucket] = (sourceRowStatusCounts[statusBucket] || 0) + 1;
+    if (!sourceKeyStatusCounts[sourceKey]) sourceKeyStatusCounts[sourceKey] = { rows: 0, board_matched_rows: 0, external_valid_unanchored_rows: 0, quarantined_rows: 0, true_hard_unmatched_rows: 0 };
+    sourceKeyStatusCounts[sourceKey].rows += 1;
+    sourceKeyStatusCounts[sourceKey][`${statusBucket}_rows`] += 1;
+    resolverStatusRows.push({ source_key: sourceKey, mapping_status: match.status, coverage_bucket: statusBucket, normalization_status: normalizedStatus });
+    for (const r of (match.rows || (matchedRow ? [matchedRow] : []))) matchedPrepared.set(r.prepared_row_id, true);
     if (matchedRow) {
       matchedBySourceKey[sourceKey] = (matchedBySourceKey[sourceKey] || 0) + 1;
       const unit = preparedUnitKey(matchedRow);
@@ -987,7 +1012,7 @@ async function runHitterContext(env, input = {}) {
     if (sides.length) sourceRowsWithOverUnder += 1;
     if (!sides.length) sides.push({ side: "line_present_price_missing", price: null });
     for (const s of sides) {
-      propRows.push([rid("mcp_hitter_prop"), batchId, slateWindowKey, matchedRow ? matchedRow.official_date : today, matchedRow ? matchedRow.prepared_row_id : null, sourceKeyForParlay(sourceRow), sourceRow.source_event_id, sourceRow.source_line_id, matchedRow ? Number(matchedRow.official_game_pk) : null, matchedRow ? Number(matchedRow.resolved_mlb_player_id) : null, sourceRow.player_name, sourceRow.canonical_prop_key, sourceRow.market_key, sourceRow.line_value, s.price, americanToDecimal(s.price), s.side, match.status, matchedRow ? "parlay_hitter_prop_line_matched_to_prepared" : "parlay_hitter_prop_line_not_matched_to_prepared", compactRawJson({ mode: MODE, parlay: { ...sourceRow, raw: undefined }, normalized_context: { bookmaker_key: sourceRow.bookmaker_key, book_quality: sourceRow.book_quality, normalization_status: sourceRow.normalization_status, normalization_issues: sourceRow.normalization_issues || [], threshold_value: sourceRow.threshold_value || null, normalized_threshold: sourceRow.normalized_threshold || null, threshold_line_value: sourceRow.threshold_line_value || null, threshold_source_text: sourceRow.threshold_source_text || null, player_name_resolution_reason: sourceRow.player_name_resolution_reason || null, normalization_reason: sourceRow.normalization_reason || null }, resolver: { raw_home_team: sourceRow.home_team, raw_away_team: sourceRow.away_team, home_team_id: sourceRow.home_team_id, away_team_id: sourceRow.away_team_id, source_team_pair_key: sourceRow.source_team_pair_key, alias_player_ids: sourceRow.alias_player_ids || [], candidates: match.candidates || 0, choice_reason: match.choice_reason || null, matched_prepared_row_count: (match.rows || []).length, required_team_pair_match_when_pair_resolved: true }, prepared_match: matchedRow ? { prepared_row_id: matchedRow.prepared_row_id, source_key: matchedRow.source_key, player_name: matchedRow.player_name, resolved_player_id: matchedRow.resolved_player_id, resolved_mlb_player_id: matchedRow.resolved_mlb_player_id, canonical_prop_key: matchedRow.canonical_prop_key, line_value: matchedRow.line_value, game_pk: matchedRow.official_game_pk, official_game_pk: matchedRow.official_game_pk, official_game_time_utc: matchedRow.official_game_time_utc, team: matchedRow.team, opponent: matchedRow.opponent } : null, raw_source_row: sourceRow.raw })]);
+      propRows.push([rid("mcp_hitter_prop"), batchId, slateWindowKey, matchedRow ? matchedRow.official_date : today, matchedRow ? matchedRow.prepared_row_id : null, sourceKeyForParlay(sourceRow), sourceRow.source_event_id, sourceRow.source_line_id, matchedRow ? Number(matchedRow.official_game_pk) : null, matchedRow ? Number(matchedRow.resolved_mlb_player_id) : null, sourceRow.player_name, sourceRow.canonical_prop_key, sourceRow.market_key, sourceRow.line_value, s.price, americanToDecimal(s.price), s.side, match.status, matchedRow ? "parlay_hitter_prop_line_matched_to_prepared" : (match.status === "external_valid_player_resolved_not_on_prepared_board" ? "parlay_valid_external_player_not_on_prepared_board" : "parlay_hitter_prop_line_not_matched_to_prepared"), compactRawJson({ mode: MODE, parlay: { ...sourceRow, raw: undefined }, normalized_context: { bookmaker_key: sourceRow.bookmaker_key, book_quality: sourceRow.book_quality, normalization_status: sourceRow.normalization_status, normalization_issues: sourceRow.normalization_issues || [], threshold_value: sourceRow.threshold_value || null, normalized_threshold: sourceRow.normalized_threshold || null, threshold_line_value: sourceRow.threshold_line_value || null, threshold_source_text: sourceRow.threshold_source_text || null, player_name_resolution_reason: sourceRow.player_name_resolution_reason || null, normalization_reason: sourceRow.normalization_reason || null }, resolver: { raw_home_team: sourceRow.home_team, raw_away_team: sourceRow.away_team, home_team_id: sourceRow.home_team_id, away_team_id: sourceRow.away_team_id, source_team_pair_key: sourceRow.source_team_pair_key, alias_player_ids: sourceRow.alias_player_ids || [], candidates: match.candidates || 0, choice_reason: match.choice_reason || null, matched_prepared_row_count: (match.rows || []).length, required_team_pair_match_when_pair_resolved: true }, prepared_match: matchedRow ? { prepared_row_id: matchedRow.prepared_row_id, source_key: matchedRow.source_key, player_name: matchedRow.player_name, resolved_player_id: matchedRow.resolved_player_id, resolved_mlb_player_id: matchedRow.resolved_mlb_player_id, canonical_prop_key: matchedRow.canonical_prop_key, line_value: matchedRow.line_value, game_pk: matchedRow.official_game_pk, official_game_pk: matchedRow.official_game_pk, official_game_time_utc: matchedRow.official_game_time_utc, team: matchedRow.team, opponent: matchedRow.opponent } : null, raw_source_row: sourceRow.raw })]);
     }
   }
 
@@ -1027,6 +1052,24 @@ async function runHitterContext(env, input = {}) {
     requires_shape_validation_pct: pct(coveredUnits.requires_shape_validation.size, preparedUniqueHitterUnits.size),
     total_non_owned_pct: pct(coveredUnits.total_non_owned.size, preparedUniqueHitterUnits.size)
   };
+  const validNonOwnedProviderRows = enrichedParlayRows.filter(r => {
+    const q = r.book_quality || bookmakerQuality(r.bookmaker);
+    const ns = r.normalization_status || "";
+    return q !== "owned_board_excluded_from_vendor_decision" && !ns.startsWith("quarantined");
+  }).length;
+  const validNonOwnedProviderRowsAccounted = (sourceRowStatusCounts.board_matched || 0) + externalValidUnanchoredRows;
+  const externalResolverSummary = {
+    source_row_status_counts: sourceRowStatusCounts,
+    source_key_status_counts: sourceKeyStatusCounts,
+    valid_non_owned_provider_rows_excluding_quarantined: validNonOwnedProviderRows,
+    valid_non_owned_provider_rows_accounted_by_board_or_external_valid: validNonOwnedProviderRowsAccounted,
+    external_valid_unanchored_rows: externalValidUnanchoredRows,
+    quarantined_rows: quarantinedRows,
+    true_hard_unmatched_rows: trueHardUnmatchedRows,
+    true_hard_unmatched_rate_excluding_quarantined: pct(trueHardUnmatchedRows, validNonOwnedProviderRows),
+    coverage_plus_external_valid_pct_excluding_quarantined: pct(validNonOwnedProviderRowsAccounted, validNonOwnedProviderRows),
+    note: "external_valid_player_resolved_not_on_prepared_board means the vendor row parsed to a real player/team/prop but no current prepared board leg exists; this is evidence-only and is not scoring, ranking, or eliminating legs."
+  };
   const coverageGrade = blockerCount ? "BLOCKED" : (coveredUnits.total_non_owned.size > 0 ? "NORMALIZED_PARLAY_CONTEXT_PARTIAL_MATCH" : (matched > 0 ? "OWNED_OR_QUARANTINED_MATCH_ONLY" : ((parlay.normalized || []).length > 0 ? "PARLAY_NORMALIZED_RESOLVER_UNMATCHED" : "PARLAY_NO_SUPPORTED_HITTER_MARKETS")));
   const certification = blockerCount ? "MARKET_HITTER_PROP_CONTEXT_BLOCKED" : "MARKET_HITTER_PROP_CONTEXT_EVIDENCE_WRITTEN";
   const certificationGrade = blockerCount ? "BLOCKED" : (warningCount ? "PASS_WITH_WARNINGS" : "PASS");
@@ -1042,7 +1085,7 @@ async function runHitterContext(env, input = {}) {
     prepared_games_checked: gamePks.length,
     prepared_players_checked: playerIds.length,
     prepared_prop_keys_checked: propKeys.length,
-    parlay_api: { config_present: !!(parlay.endpoint && parlay.endpoint.ok), key_present: sourceHas(env, "PARLAY_API_KEY"), fetch_ok: !!parlay.ok, http_status: parlay.http_status || null, endpoint_preview: parlay.endpoint && parlay.endpoint.endpoint_preview || null, request_strategy: parlay.endpoint && parlay.endpoint.request_strategy || null, legacy_sleeper_endpoint_ignored: parlay.endpoint && parlay.endpoint.legacy_sleeper_endpoint_ignored || false, detected_rows_path: parlay.detected_rows_path || null, rows_seen: parlay.rows_seen || 0, normalized_hitter_rows: parlay.normalized_hitter_rows || 0, pagination: parlay.pagination || null, probe_strategy: parlay.probe_strategy || null, normalized_primary_non_owned_rows: parlay.normalized_primary_non_owned_rows || 0, enriched_hitter_rows: enrichedParlayRows.length, rows_with_price_context: sourceRowsWithOverUnder, matched_to_prepared: matched, no_prepared_match: noMatch, ambiguous_prepared_match: ambiguous, prepared_unique_hitter_units: preparedUniqueHitterUnits.size, unique_coverage_summary: uniqueCoverageSummary, matched_rows_by_source_key: matchedBySourceKey, unique_matched_units_by_source_key: uniqueMatchedBySourceKeyCounts, book_counts_normalized: bookCountsNormalized, book_quality_row_counts: bookQualityRowCounts, normalization_status_counts: normalizationStatusCounts, threshold_rows_normalized: enrichedParlayRows.filter(r => r.threshold_line_value !== null && r.threshold_line_value !== undefined).length, title_player_rows_normalized: enrichedParlayRows.filter(r => String(r.player_name_resolution_reason || "").includes("market_title_player_parser")).length, template_rows_recovered: enrichedParlayRows.filter(r => (r.normalization_issues || []).includes("template_player_label_recovered")).length, template_quarantined_rows: normalizationStatusCounts.quarantined_template_player_label || 0, event_level_quarantined_rows: normalizationStatusCounts.quarantined_event_level_market || 0, prop_unit_multi_line_anchor_rows: propRows.filter(r => String(r[17] || "").includes("prop_unit_multiple_board_lines")).length, owned_excluded_rows: bookQualityRowCounts.owned_board_excluded_from_vendor_decision || 0, pickem_comparison_rows: bookQualityRowCounts.pickem_comparison || 0, primary_comparison_rows: bookQualityRowCounts.primary_comparison_book || 0, exchange_reference_rows: bookQualityRowCounts.exchange_or_sharp_reference || 0, requires_shape_validation_rows: bookQualityRowCounts.requires_shape_validation || 0, total_non_owned_usable_coverage_pct: uniqueCoverageSummary.total_non_owned_pct, resolver_audit: { team_aliases_loaded: teamAliases.size, player_aliases_loaded: playerAliases.size, raw_player_column_persisted: true, raw_commence_time_not_trusted_as_primary_match_key: true, team_pair_calendar_prepared_resolver_enabled: true, global_name_fallback_blocked_when_source_team_pair_resolved: true } },
+    parlay_api: { config_present: !!(parlay.endpoint && parlay.endpoint.ok), key_present: sourceHas(env, "PARLAY_API_KEY"), fetch_ok: !!parlay.ok, http_status: parlay.http_status || null, endpoint_preview: parlay.endpoint && parlay.endpoint.endpoint_preview || null, request_strategy: parlay.endpoint && parlay.endpoint.request_strategy || null, legacy_sleeper_endpoint_ignored: parlay.endpoint && parlay.endpoint.legacy_sleeper_endpoint_ignored || false, detected_rows_path: parlay.detected_rows_path || null, rows_seen: parlay.rows_seen || 0, normalized_hitter_rows: parlay.normalized_hitter_rows || 0, pagination: parlay.pagination || null, probe_strategy: parlay.probe_strategy || null, normalized_primary_non_owned_rows: parlay.normalized_primary_non_owned_rows || 0, enriched_hitter_rows: enrichedParlayRows.length, rows_with_price_context: sourceRowsWithOverUnder, matched_to_prepared: matched, no_prepared_match: noMatch, ambiguous_prepared_match: ambiguous, prepared_unique_hitter_units: preparedUniqueHitterUnits.size, unique_coverage_summary: uniqueCoverageSummary, matched_rows_by_source_key: matchedBySourceKey, unique_matched_units_by_source_key: uniqueMatchedBySourceKeyCounts, book_counts_normalized: bookCountsNormalized, book_quality_row_counts: bookQualityRowCounts, normalization_status_counts: normalizationStatusCounts, threshold_rows_normalized: enrichedParlayRows.filter(r => r.threshold_line_value !== null && r.threshold_line_value !== undefined).length, title_player_rows_normalized: enrichedParlayRows.filter(r => String(r.player_name_resolution_reason || "").includes("market_title_player_parser")).length, template_rows_recovered: enrichedParlayRows.filter(r => (r.normalization_issues || []).includes("template_player_label_recovered")).length, template_quarantined_rows: normalizationStatusCounts.quarantined_template_player_label || 0, event_level_quarantined_rows: normalizationStatusCounts.quarantined_event_level_market || 0, prop_unit_multi_line_anchor_rows: propRows.filter(r => String(r[17] || "").includes("prop_unit_multiple_board_lines")).length, owned_excluded_rows: bookQualityRowCounts.owned_board_excluded_from_vendor_decision || 0, pickem_comparison_rows: bookQualityRowCounts.pickem_comparison || 0, primary_comparison_rows: bookQualityRowCounts.primary_comparison_book || 0, exchange_reference_rows: bookQualityRowCounts.exchange_or_sharp_reference || 0, requires_shape_validation_rows: bookQualityRowCounts.requires_shape_validation || 0, total_non_owned_usable_coverage_pct: uniqueCoverageSummary.total_non_owned_pct, external_resolver_summary: externalResolverSummary, board_matched_source_rows: sourceRowStatusCounts.board_matched || 0, external_valid_unanchored_rows: externalValidUnanchoredRows, quarantined_rows: quarantinedRows, true_hard_unmatched_rows: trueHardUnmatchedRows, true_hard_unmatched_rate_excluding_quarantined: externalResolverSummary.true_hard_unmatched_rate_excluding_quarantined, coverage_plus_external_valid_pct_excluding_quarantined: externalResolverSummary.coverage_plus_external_valid_pct_excluding_quarantined, resolver_audit: { team_aliases_loaded: teamAliases.size, player_aliases_loaded: playerAliases.size, raw_player_column_persisted: true, raw_commence_time_not_trusted_as_primary_match_key: true, team_pair_calendar_prepared_resolver_enabled: true, global_name_fallback_blocked_when_source_team_pair_resolved: true } },
     rows_written_detail: { player_prop_rows: propRows.length, coverage_rows: coverageRows.length, issue_rows: issues.length, batch_rows: 1 },
     coverage_grade: coverageGrade,
     warning_count: warningCount,
@@ -1051,7 +1094,7 @@ async function runHitterContext(env, input = {}) {
   };
   await run(env.MARKET_DB, `INSERT INTO market_context_probe_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, slate_window_key, window_start_date, window_end_date, status, prepared_rows_read, prepared_games_checked, prepared_players_checked, prepared_prop_keys_checked, odds_api_config_present, odds_api_events_seen, odds_api_events_mapped, odds_api_game_odds_rows, parlay_inventory_rows_seen, parlay_props_mapped_to_prepared, parlay_coverage_grade, warning_count, blocker_count, certification_status, certification_grade, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, runId, WORKER_NAME, VERSION, MODE, slateWindowKey, today, tomorrow, status, preparedRows.length, gamePks.length, playerIds.length, propKeys.length, sourceHas(env, "ODDS_API_KEY") ? 1 : 0, 0, 0, 0, parlay.rows_seen || 0, matched, coverageGrade, warningCount, blockerCount, certification, certificationGrade, safeJson(output, 9000));
   const rowsWritten = propRows.length + coverageRows.length + issues.length + 1;
-  return { ok: true, data_ok: blockerCount === 0, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, run_id: runId, batch_id: batchId, mode: MODE, status, certification, certification_grade: certificationGrade, rows_read: preparedRows.length, rows_written: rowsWritten, external_calls_performed: externalCalls, prepared_rows_read: preparedRows.length, prepared_games_checked: gamePks.length, prepared_players_checked: playerIds.length, prepared_prop_keys_checked: propKeys.length, parlay_inventory_rows_seen: parlay.rows_seen || 0, parlay_props_mapped_to_prepared: matched, parlay_unique_hitter_units_covered_non_owned: uniqueCoverageSummary.total_non_owned_units, parlay_unique_hitter_units_coverage_pct: uniqueCoverageSummary.total_non_owned_pct, parlay_coverage_grade: coverageGrade, warning_count: warningCount, blocker_count: blockerCount, retention, output_json: output, no_teams_game_odds: true, pitcher_props_deferred_to_separate_worker_for_safety: true, no_pitcher_props: true, no_market_current_lines_writes: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_matrix_builder: true, no_final_board: true, elapsed_ms: Date.now() - startedMs, timestamp_utc: nowUtc() };
+  return { ok: true, data_ok: blockerCount === 0, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, run_id: runId, batch_id: batchId, mode: MODE, status, certification, certification_grade: certificationGrade, rows_read: preparedRows.length, rows_written: rowsWritten, external_calls_performed: externalCalls, prepared_rows_read: preparedRows.length, prepared_games_checked: gamePks.length, prepared_players_checked: playerIds.length, prepared_prop_keys_checked: propKeys.length, parlay_inventory_rows_seen: parlay.rows_seen || 0, parlay_props_mapped_to_prepared: matched, parlay_unique_hitter_units_covered_non_owned: uniqueCoverageSummary.total_non_owned_units, parlay_unique_hitter_units_coverage_pct: uniqueCoverageSummary.total_non_owned_pct, board_matched_source_rows: sourceRowStatusCounts.board_matched || 0, external_valid_unanchored_rows: externalValidUnanchoredRows, quarantined_rows: quarantinedRows, true_hard_unmatched_rows: trueHardUnmatchedRows, true_hard_unmatched_rate_excluding_quarantined: externalResolverSummary.true_hard_unmatched_rate_excluding_quarantined, coverage_plus_external_valid_pct_excluding_quarantined: externalResolverSummary.coverage_plus_external_valid_pct_excluding_quarantined, parlay_coverage_grade: coverageGrade, warning_count: warningCount, blocker_count: blockerCount, retention, output_json: output, no_teams_game_odds: true, pitcher_props_deferred_to_separate_worker_for_safety: true, no_pitcher_props: true, no_market_current_lines_writes: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_matrix_builder: true, no_final_board: true, elapsed_ms: Date.now() - startedMs, timestamp_utc: nowUtc() };
 }
 
 export default {
