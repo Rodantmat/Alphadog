@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.1-snapshot-metrics-source-fix";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.1-prop-factor-snapshot-metrics-fix";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.2-pitcher-readiness-availability-fix";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.2-pitcher-readiness-availability-fix";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -419,6 +419,29 @@ function gradeFromCounts(blockers, warnings, missing) {
   return "READY";
 }
 function packetStatusFromGrade(grade) { return grade === "BLOCKED" ? "blocked" : (grade === "READY" ? "packet_ready" : "packet_partial"); }
+function isPositiveDailyStatus(value) {
+  const v = String(value || "").toLowerCase();
+  return v === "available" || v === "active_available" || v === "confirmed" || v === "probable" || v === "normal" || v === "ready" || v === "ready_with_warnings" || v === "ready_partial_enrichment";
+}
+function buildPitcherAvailabilityFromReadiness(readiness) {
+  if (!readiness) return null;
+  const playerOk = isPositiveDailyStatus(readiness.player_availability_status);
+  const starterOk = isPositiveDailyStatus(readiness.starter_context_status);
+  if (!playerOk && !starterOk) return null;
+  return {
+    pitcher_availability_key: readiness.readiness_key,
+    source_table: "daily_context_readiness_current",
+    source_mode: "starter_pitcher_readiness_fallback",
+    availability_status: readiness.player_availability_status || (starterOk ? "active_available" : null),
+    availability_confidence: readiness.context_grade || readiness.context_status || null,
+    starter_context_status: readiness.starter_context_status || null,
+    bullpen_context_status: readiness.bullpen_context_status || null,
+    hard_blocker_count: readiness.hard_blocker_count || 0,
+    warning_count: readiness.warning_count || 0,
+    enrichment_gap_count: readiness.enrichment_gap_count || 0,
+    note: "Resolved from daily readiness because bullpen pitcher availability table is reliever-oriented and does not include most starters."
+  };
+}
 
 function buildPacket(family, row, classification, ctx) {
   const game = ctx.games.get(key(row.official_game_pk)) || null;
@@ -446,7 +469,9 @@ function buildPacket(family, row, classification, ctx) {
   const opponentBullpen = ctx.bullpen.get(key(row.official_game_pk, opponentTeamId)) || null;
   const ownStarter = ctx.starters.get(key(row.official_game_pk, teamId)) || null;
   const oppStarter = ctx.starters.get(key(row.official_game_pk, opponentTeamId)) || null;
-  const pitcherAvailability = family === "pitcher" ? (ctx.pitcherBullpen.get(key(row.official_date, teamId, playerId)) || null) : null;
+  const bullpenPitcherAvailability = family === "pitcher" ? (ctx.pitcherBullpen.get(key(row.official_date, teamId, playerId)) || null) : null;
+  const readinessPitcherAvailability = family === "pitcher" ? buildPitcherAvailabilityFromReadiness(readiness) : null;
+  const pitcherAvailability = family === "pitcher" ? (bullpenPitcherAvailability || readinessPitcherAvailability) : null;
   const market = buildMarketSummary(ctx, row);
   const snapshots = family === "pitcher" ? (ctx.pitcherSnapshots.get(key(playerId)) || []) : (ctx.hitterSnapshots.get(key(playerId)) || []);
   const splits = family === "pitcher" ? (ctx.pitcherSplits.get(key(playerId)) || []) : (ctx.hitterSplits.get(key(playerId)) || []);
@@ -512,6 +537,8 @@ function buildPacket(family, row, classification, ctx) {
       team_bullpen: teamBullpen,
       opponent_bullpen: opponentBullpen,
       pitcher_availability: pitcherAvailability,
+      bullpen_pitcher_availability: bullpenPitcherAvailability,
+      readiness_pitcher_availability: readinessPitcherAvailability,
       team_schedule: teamSchedule,
       opponent_schedule: opponentSchedule,
       umpire
