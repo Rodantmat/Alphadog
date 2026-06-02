@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.0-internal-packets";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.0-prop-factor-miner-packets";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.1-snapshot-metrics-source-fix";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.1-prop-factor-snapshot-metrics-fix";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -299,6 +299,98 @@ async function loadContext(env, dates) {
   return ctx;
 }
 
+
+function parseJsonMaybe(value, fallback = null) {
+  if (!value) return fallback;
+  if (typeof value === "object") return value;
+  try { return JSON.parse(value); } catch (_) { return fallback; }
+}
+function latestSnapshotByWindow(snapshots) {
+  const out = {};
+  for (const r of snapshots || []) {
+    const w = String(r.metric_window || "unknown");
+    const prev = out[w];
+    if (!prev || String(r.updated_at || "") >= String(prev.updated_at || "")) out[w] = r;
+  }
+  return out;
+}
+function pickSeasonSnapshot(snapshots) {
+  const byWindow = latestSnapshotByWindow(snapshots || []);
+  return byWindow.season_to_date || Object.values(byWindow).sort((a,b)=>String(b.updated_at||"").localeCompare(String(a.updated_at||"")))[0] || null;
+}
+function buildMetricSummaryFromSnapshots(family, snapshots) {
+  const base = pickSeasonSnapshot(snapshots || []);
+  if (!base) return null;
+  const windows = latestSnapshotByWindow(snapshots || []);
+  if (family === "pitcher") {
+    return {
+      derived_from: "pitcher_metric_snapshots",
+      player_id: base.player_id,
+      season: base.season,
+      metric_window: base.metric_window,
+      sample_size_label: base.sample_size_label,
+      games_count: base.games_count,
+      appearances_count: base.appearances_count,
+      starts_count: base.starts_count,
+      innings_pitched_sum: base.innings_pitched_sum,
+      outs_recorded_sum: base.outs_recorded_sum,
+      batters_faced_sum: base.batters_faced_sum,
+      pitches_sum: base.pitches_sum,
+      strikes_sum: base.strikes_sum,
+      hits_allowed_sum: base.hits_allowed_sum,
+      runs_allowed_sum: base.runs_allowed_sum,
+      earned_runs_sum: base.earned_runs_sum,
+      walks_allowed_sum: base.walks_allowed_sum,
+      strikeouts_sum: base.strikeouts_sum,
+      home_runs_allowed_sum: base.home_runs_allowed_sum,
+      era_calculated: base.era_calculated,
+      whip_calculated: base.whip_calculated,
+      k_rate_calculated: base.k_rate_calculated,
+      bb_rate_calculated: base.bb_rate_calculated,
+      hr_rate_calculated: base.hr_rate_calculated,
+      k_minus_bb_rate_calculated: base.k_minus_bb_rate_calculated,
+      pitches_per_out_calculated: base.pitches_per_out_calculated,
+      strikes_per_pitch_calculated: base.strikes_per_pitch_calculated,
+      innings_per_appearance_calculated: base.innings_per_appearance_calculated,
+      windows_available: Object.keys(windows),
+      latest_updated_at: base.updated_at,
+      certification_grade: base.certification_grade
+    };
+  }
+  return {
+    derived_from: "hitter_metric_snapshots",
+    player_id: base.player_id,
+    season: base.season,
+    metric_window: base.metric_window,
+    sample_size_label: base.sample_size_label,
+    games_count: base.games_count,
+    pa_sum: base.pa_sum,
+    ab_sum: base.ab_sum,
+    hits_sum: base.hits_sum,
+    singles_sum: base.singles_sum,
+    doubles_sum: base.doubles_sum,
+    home_runs_sum: base.home_runs_sum,
+    walks_sum: base.walks_sum,
+    strikeouts_sum: base.strikeouts_sum,
+    runs_sum: base.runs_sum,
+    rbi_sum: base.rbi_sum,
+    stolen_bases_sum: base.stolen_bases_sum,
+    total_bases_derived_sum: base.total_bases_derived_sum,
+    batting_average: base.batting_average,
+    slugging_percentage: base.slugging_percentage,
+    strikeout_rate: base.strikeout_rate,
+    walk_rate: base.walk_rate,
+    hr_rate: base.hr_rate,
+    tb_per_pa: base.tb_per_pa,
+    h_per_ab: base.h_per_ab,
+    metrics_json: parseJsonMaybe(base.metrics_json, null),
+    review_flags_json: parseJsonMaybe(base.review_flags_json, null),
+    windows_available: Object.keys(windows),
+    latest_updated_at: base.updated_at,
+    certification_grade: base.certification_grade
+  };
+}
+
 function buildMarketSummary(ctx, row) {
   const cov = ctx.marketCoverage.get(key(row.prepared_row_id)) || [];
   const propEvidence = ctx.playerProps.get(key(row.prepared_row_id)) || [];
@@ -356,15 +448,18 @@ function buildPacket(family, row, classification, ctx) {
   const oppStarter = ctx.starters.get(key(row.official_game_pk, opponentTeamId)) || null;
   const pitcherAvailability = family === "pitcher" ? (ctx.pitcherBullpen.get(key(row.official_date, teamId, playerId)) || null) : null;
   const market = buildMarketSummary(ctx, row);
-  const baseMetric = family === "pitcher" ? (ctx.pitcherMetrics.get(key(playerId)) || null) : (ctx.hitterMetrics.get(key(playerId)) || null);
   const snapshots = family === "pitcher" ? (ctx.pitcherSnapshots.get(key(playerId)) || []) : (ctx.hitterSnapshots.get(key(playerId)) || []);
   const splits = family === "pitcher" ? (ctx.pitcherSplits.get(key(playerId)) || []) : (ctx.hitterSplits.get(key(playerId)) || []);
+  const legacyMetric = family === "pitcher" ? (ctx.pitcherMetrics.get(key(playerId)) || null) : (ctx.hitterMetrics.get(key(playerId)) || null);
+  const snapshotMetric = buildMetricSummaryFromSnapshots(family, snapshots);
+  const baseMetric = legacyMetric || snapshotMetric;
+  const baseMetricSource = legacyMetric ? (family === "pitcher" ? "pitcher_metrics" : "hitter_metrics") : (snapshotMetric ? (family === "pitcher" ? "pitcher_metric_snapshots" : "hitter_metric_snapshots") : "missing");
 
   const warnings = [];
   const missing = [];
   if (!readiness) missing.push("daily_context_readiness_missing_for_current_prepared_row");
   else if (Number(readiness.hard_blocker_count || 0) > 0) warnings.push("daily_readiness_contains_hard_blocker_flag");
-  if (!baseMetric) missing.push(family === "pitcher" ? "pitcher_metrics_missing" : "hitter_metrics_missing");
+  if (!baseMetric) missing.push(family === "pitcher" ? "pitcher_base_metric_summary_missing" : "hitter_base_metric_summary_missing");
   if (!snapshots.length) missing.push(family === "pitcher" ? "pitcher_metric_snapshots_missing" : "hitter_metric_snapshots_missing");
   if (!splits.length) missing.push(family === "pitcher" ? "pitcher_splits_missing" : "hitter_splits_missing");
   if (market.status === "market_context_missing") warnings.push("market_context_missing");
@@ -379,7 +474,7 @@ function buildPacket(family, row, classification, ctx) {
   const readinessStatus = readiness ? readiness.context_status : "missing";
   const marketStatus = market.status;
   const dailyStatus = readiness ? readiness.context_grade : "missing_current_readiness";
-  const baseMetricStatus = baseMetric ? "present" : "missing";
+  const baseMetricStatus = baseMetric ? `present_from_${baseMetricSource}` : "missing";
   const grade = gradeFromCounts(0, warnings.length, missing.length);
   const payload = {
     logical_worker_name: LOGICAL_WORKER_NAME,
@@ -406,7 +501,7 @@ function buildPacket(family, row, classification, ctx) {
       opponent_team_id: opponentTeamId,
       is_home: isHome
     },
-    base_metrics: { season_summary: baseMetric, snapshots, splits },
+    base_metrics: { season_summary: baseMetric, season_summary_source: baseMetricSource, legacy_summary_table_row: legacyMetric, snapshots, splits },
     daily_context: {
       readiness,
       lineup,
@@ -483,7 +578,7 @@ async function runFactorMining(request, env) {
   const batchId = rid(`prop_factor_${family}_batch`);
   const runId = input.run_id || rid("run");
   await run(env.SCORE_DB, `INSERT OR REPLACE INTO prop_factor_batches (batch_id,request_id,run_id,worker_name,worker_version,deployed_worker_slot,deployed_slot_version,mode,factor_family,status,window_start,window_end,source_tables_checked_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
-    batchId, input.request_id || null, runId, LOGICAL_WORKER_NAME, SYSTEM_VERSION, WORKER_NAME, DEPLOYED_SLOT_VERSION, mode, family, "running", dates[0], dates[1], JSON.stringify({ score_db:["score_board_prepared_current"], market_db:["market_context_probe_coverage","market_context_probe_player_props","market_context_probe_game_market_summary"], daily_db:["daily_context_readiness_current","daily_lineups_current","daily_starters_current","daily_player_availability_current_v1","daily_game_weather_current","daily_bullpen_availability_current","daily_bullpen_pitcher_availability_current","daily_team_schedule_spot_current","daily_umpire_context_current"], stats_hitter_db:["hitter_metrics","hitter_metric_snapshots","hitter_splits"], stats_pitcher_db:["pitcher_metrics","pitcher_metric_snapshots","pitcher_splits"], team_db:["mlb_game_calendar","mlb_game_data_coverage"] })
+    batchId, input.request_id || null, runId, LOGICAL_WORKER_NAME, SYSTEM_VERSION, WORKER_NAME, DEPLOYED_SLOT_VERSION, mode, family, "running", dates[0], dates[1], JSON.stringify({ score_db:["score_board_prepared_current"], market_db:["market_context_probe_coverage","market_context_probe_player_props","market_context_probe_game_market_summary"], daily_db:["daily_context_readiness_current","daily_lineups_current","daily_starters_current","daily_player_availability_current_v1","daily_game_weather_current","daily_bullpen_availability_current","daily_bullpen_pitcher_availability_current","daily_team_schedule_spot_current","daily_umpire_context_current"], stats_hitter_db:["hitter_metric_snapshots(primary)","hitter_metrics(legacy_optional_empty_ok)","hitter_splits"], stats_pitcher_db:["pitcher_metric_snapshots(primary)","pitcher_metrics(legacy_optional_empty_ok)","pitcher_splits"], team_db:["mlb_game_calendar","mlb_game_data_coverage"] })
   );
 
   const prepared = await getPreparedRows(env, dates);
@@ -524,7 +619,7 @@ async function runFactorMining(request, env) {
   const status = blockedRows > 0 || warningRows > 0 ? "completed_with_warnings" : "completed";
   const certification = blockedRows > 0 || warningRows > 0 ? "PROP_FACTOR_PACKETS_CERTIFIED_WITH_WARNINGS" : "PROP_FACTOR_PACKETS_CERTIFIED";
   const grade = blockedRows > 0 ? "PASS_WITH_BLOCKED_ROWS" : (warningRows > 0 ? "PASS_WITH_WARNINGS" : "PASS");
-  const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode, factor_family:family, status, certification, certification_grade:grade, batch_id:batchId, run_id:runId, window_dates:dates, prepared_rows_read:prepared.length, eligible_rows:eligibleRows, packets_written:packets.length, blocked_rows:blockedRows, warning_rows:warningRows, issue_rows:issues.length, missing_factor_rows:missingRows, retention_policy:"today_tomorrow_only_packets_issues_coverage_and_batches", daily_readiness_dates_available:ctx.readinessDatesAvailable, daily_readiness_missing_for_current_window:ctx.readinessDatesAvailable.length === 0, external_calls:0, no_scoring:true, no_ranking:true, no_final_board:true, no_matrix_builder:true };
+  const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode, factor_family:family, status, certification, certification_grade:grade, batch_id:batchId, run_id:runId, window_dates:dates, prepared_rows_read:prepared.length, eligible_rows:eligibleRows, packets_written:packets.length, blocked_rows:blockedRows, warning_rows:warningRows, issue_rows:issues.length, missing_factor_rows:missingRows, retention_policy:"today_tomorrow_only_packets_issues_coverage_and_batches", daily_readiness_dates_available:ctx.readinessDatesAvailable, daily_readiness_missing_for_current_window:ctx.readinessDatesAvailable.length === 0, base_metrics_primary_source: family === "pitcher" ? "pitcher_metric_snapshots" : "hitter_metric_snapshots", legacy_metric_tables_optional: true, legacy_empty_tables_are_not_blocking: true, external_calls:0, no_scoring:true, no_ranking:true, no_final_board:true, no_matrix_builder:true };
   await run(env.SCORE_DB, `UPDATE prop_factor_batches SET status=?, prepared_rows_read=?, eligible_rows=?, packets_written=?, blocked_rows=?, warning_rows=?, issue_rows=?, missing_factor_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
     status, prepared.length, eligibleRows, packets.length, blockedRows, warningRows, issues.length, missingRows, certification, grade, JSON.stringify(output), batchId);
   return jsonResponse(output);
