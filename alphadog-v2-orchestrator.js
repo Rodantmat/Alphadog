@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.149-prop-factor-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.150-prop-matrix-builder-dispatch";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -421,6 +421,12 @@ function isPropFactorMinerJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "prop-factor-miner" && worker === "alphadog-v2-phase2b-recent-form";
+}
+
+function isPropMatrixBuilderJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "prop-matrix-builder" && worker === "alphadog-v2-phase2b-certifier";
 }
 
 const BOARD_FULL_RUN_LOCK_KEY = "BOARD_FULL_RUN";
@@ -5617,6 +5623,149 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
+async function processPropMatrixBuilderJob(env, row, runId, trigger) {
+  if (!env.PHASE2B_CERTIFIER_WORKER || typeof env.PHASE2B_CERTIFIER_WORKER.fetch !== "function") {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      logical_worker_name: "alphadog-v2-prop-matrix-builder",
+      job_key: row.job_key,
+      status: "blocked_missing_service_binding",
+      certification: "PROP_MATRIX_BUILDER_SERVICE_BINDING_MISSING",
+      trigger,
+      note: "Exact dispatch requires PHASE2B_CERTIFIER_WORKER service binding. The existing Phase2B Certifier dummy slot is used as the Prop Matrix Builder to avoid new worker manifest/global deploy changes."
+    };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_prop_matrix_builder_service_binding', 'PHASE2B_CERTIFIER_WORKER service binding is missing')",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
+    );
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_prop_matrix_builder_service_binding', error_message='PHASE2B_CERTIFIER_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id
+    );
+    return output;
+  }
+
+  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const input = {
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    run_id: runId,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    logical_worker_name: "alphadog-v2-prop-matrix-builder",
+    deployed_worker_slot: "alphadog-v2-phase2b-certifier",
+    trigger,
+    mode: "prop_matrix_build",
+    input_json: rowInput,
+    exact_worker_only: true,
+    internal_only: true,
+    no_external_api_calls: true,
+    no_mlb_api_calls: true,
+    no_odds_api_calls: true,
+    no_parlay_api_calls: true,
+    no_gemini_calls: true,
+    reads_prepared_board: true,
+    reads_prop_factor_packets: true,
+    reads_market_context_evidence: true,
+    reads_daily_context_readiness: true,
+    writes_score_db_matrix_only: true,
+    one_row_per_safe_prepared_row: true,
+    preserve_blocked_and_deferred_rows: true,
+    retention_policy: "today_tomorrow_only",
+    no_score_probability: true,
+    no_confidence_score: true,
+    no_edge: true,
+    no_value_rating: true,
+    no_qualified_flag: true,
+    no_rank: true,
+    no_pick_recommendation: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_old_production_touch: true
+  };
+
+  const started = Date.now();
+  let output;
+  let httpStatus = null;
+  try {
+    const resp = await env.PHASE2B_CERTIFIER_WORKER.fetch("https://internal.alphadog-v2-phase2b-certifier/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input)
+    });
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); }
+    catch (_) {
+      output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
+    }
+  } catch (err) {
+    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+  }
+
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const rowsRead = Number(output && output.prepared_rows_read ? output.prepared_rows_read : 0);
+  const rowsWritten = Number(output && output.matrix_rows_written ? output.matrix_rows_written : 0);
+  const externalCalls = Number(output && (output.external_calls || output.external_calls_performed) ? (output.external_calls || output.external_calls_performed) : 0);
+  const certification = String((output && output.certification) || (ok ? "prop_matrix_builder_completed" : "prop_matrix_builder_failed")).slice(0, 120);
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "prop_matrix_builder_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Prop Matrix Builder worker failed").slice(0, 900);
+  const cappedOutput = {
+    ...output,
+    orchestrator_dispatch: {
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      exact_worker_only: true,
+      logical_worker_name: "alphadog-v2-prop-matrix-builder",
+      deployed_worker_slot: "alphadog-v2-phase2b-certifier",
+      trigger,
+      http_status: httpStatus,
+      elapsed_ms: Date.now() - started,
+      retention_policy: "today_tomorrow_only",
+      internal_only: true,
+      no_external_api_calls: true,
+      no_mlb_api_calls: true,
+      one_row_per_safe_prepared_row: true,
+      no_score_probability: true,
+      no_confidence_score: true,
+      no_edge: true,
+      no_value_rating: true,
+      no_qualified_flag: true,
+      no_rank: true,
+      no_pick_recommendation: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board_write: true,
+      no_old_production_touch: true
+    }
+  };
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
+  );
+
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+  );
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'prop_matrix_builder_dispatch_completed', 'Orchestrator completed exact Prop Matrix Builder dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, matrix_rows_written: rowsWritten, dispatch: cappedOutput.orchestrator_dispatch })
+  );
+
+  return cappedOutput;
+}
+
 async function processScorePrepJob(env, row, runId, trigger) {
   if (!env.SCORE_PREP_WORKER || typeof env.SCORE_PREP_WORKER.fetch !== "function") {
     const output = {
@@ -6779,6 +6928,16 @@ async function processOneUnlocked(env, trigger) {
     const output = await processPropFactorMinerJob(env, row, runId, trigger);
     return {
       status: output && output.ok ? "completed_one_prop_factor_miner_job" : "failed_one_prop_factor_miner_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
+  if (isPropMatrixBuilderJob(row)) {
+    const output = await processPropMatrixBuilderJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_prop_matrix_builder_job" : "failed_one_prop_matrix_builder_job",
       request_id: row.request_id,
       run_id: runId,
       output
