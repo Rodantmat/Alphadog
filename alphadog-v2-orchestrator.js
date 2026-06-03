@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.151-gap-ledger-full-run-contract";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.153-scoring-engine-framework-dispatch-lock";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -77,7 +77,8 @@ function base(env, extra = {}) {
       MARKET_NORMALIZER_WORKER: !!env.MARKET_NORMALIZER_WORKER,
       MARKET_LINE_SHAPE_CLASSIFIER_WORKER: !!env.MARKET_LINE_SHAPE_CLASSIFIER_WORKER,
       ODDSAPI_REFERENCE_WORKER: !!env.ODDSAPI_REFERENCE_WORKER,
-      PHASE2B_RECENT_FORM_WORKER: !!env.PHASE2B_RECENT_FORM_WORKER
+      PHASE2B_RECENT_FORM_WORKER: !!env.PHASE2B_RECENT_FORM_WORKER,
+      SCORE_AUDIT_WORKER: !!env.SCORE_AUDIT_WORKER
     },
     ...extra
   };
@@ -427,6 +428,12 @@ function isPropMatrixBuilderJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "prop-matrix-builder" && worker === "alphadog-v2-phase2b-certifier";
+}
+
+function isScoringEngineJob(row) {
+  const job = String(row && row.job_key || "");
+  const worker = String(row && row.worker_name || "");
+  return job === "scoring-engine" && worker === "alphadog-v2-score-audit";
 }
 
 const BOARD_FULL_RUN_LOCK_KEY = "BOARD_FULL_RUN";
@@ -5784,6 +5791,144 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
+
+async function processScoringEngineJob(env, row, runId, trigger) {
+  if (!env.SCORE_AUDIT_WORKER || typeof env.SCORE_AUDIT_WORKER.fetch !== "function") {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      logical_worker_name: "alphadog-v2-scoring-engine",
+      job_key: row.job_key,
+      status: "blocked_missing_service_binding",
+      certification: "SCORING_ENGINE_SERVICE_BINDING_MISSING",
+      certification_grade: "BLOCKED",
+      trigger,
+      note: "Exact dispatch requires SCORE_AUDIT_WORKER service binding. Existing score-audit slot is used for Scoring Engine Framework/Profile Gate; no worker_manifest/global deploy change required."
+    };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_scoring_engine_service_binding', 'SCORE_AUDIT_WORKER service binding is missing')",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
+    );
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_scoring_engine_service_binding', error_message='SCORE_AUDIT_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id
+    );
+    return output;
+  }
+
+  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const input = {
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    run_id: runId,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    logical_worker_name: "alphadog-v2-scoring-engine",
+    deployed_worker_slot: "alphadog-v2-score-audit",
+    trigger,
+    mode: "scoring_engine_framework_profile_gate",
+    input_json: rowInput,
+    exact_worker_only: true,
+    framework_only: true,
+    thresholds_locked: false,
+    archive_score_threshold_locked: 70,
+    final_qualification_threshold_locked: false,
+    no_true_hit_probability_claims: true,
+    side_aware_required: true,
+    source_line_type_aware_required: true,
+    variation_aware_required: true,
+    one_score_row_per_matrix_row: true,
+    no_variation_collapse: true,
+    regular_lines_two_sided: true,
+    goblin_demon_more_only: true,
+    goblin_demon_under_blocker: "GOBLIN_DEMON_UNDER_NOT_SELECTABLE",
+    dedupe_deferred_to_ranking_final_board: true,
+    writes_score_db_scoring_engine_only: true,
+    writes_archive_db_snapshot_table_schema_only: true,
+    no_candidate_board_write: true,
+    no_old_prop_scores_write: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_old_production_touch: true
+  };
+
+  const started = Date.now();
+  let output;
+  let httpStatus = null;
+  try {
+    const resp = await env.SCORE_AUDIT_WORKER.fetch("https://internal.alphadog-v2-score-audit/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input)
+    });
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); }
+    catch (_) {
+      output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
+    }
+  } catch (err) {
+    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+  }
+
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const rowsRead = Number(output && output.matrix_rows_read ? output.matrix_rows_read : 0);
+  const rowsWritten = Number(output && output.score_rows_written ? output.score_rows_written : 0);
+  const archiveRowsWritten = Number(output && output.archive_rows_written ? output.archive_rows_written : 0);
+  const certification = String((output && output.certification) || (ok ? "scoring_engine_framework_completed" : "scoring_engine_framework_failed")).slice(0, 120);
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "scoring_engine_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
+  const cappedOutput = {
+    ...output,
+    deployed_slot_version: "alphadog-v2-score-audit-v0.1.1-scoring-engine-framework-profile-gate",
+    orchestrator_dispatch: {
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      exact_worker_only: true,
+      logical_worker_name: "alphadog-v2-scoring-engine",
+      deployed_worker_slot: "alphadog-v2-score-audit",
+      trigger,
+      http_status: httpStatus,
+      elapsed_ms: Date.now() - started,
+      framework_only: true,
+      thresholds_locked: false,
+      archive_score_threshold_locked: 70,
+      no_true_hit_probability_claims: true,
+      side_aware_required: true,
+      source_line_type_aware_required: true,
+      variation_aware_required: true,
+      no_variation_collapse: true,
+      no_candidate_board_write: true,
+      no_ranking: true,
+      no_final_board_write: true,
+      no_old_production_touch: true
+    }
+  };
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
+  );
+
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+  );
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'scoring_engine_dispatch_completed', 'Orchestrator completed exact Scoring Engine Framework/Profile Gate dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, matrix_rows_read: rowsRead, score_rows_written: rowsWritten, archive_rows_written: archiveRowsWritten, dispatch: cappedOutput.orchestrator_dispatch })
+  );
+
+  return cappedOutput;
+}
+
 async function processScorePrepJob(env, row, runId, trigger) {
   if (!env.SCORE_PREP_WORKER || typeof env.SCORE_PREP_WORKER.fetch !== "function") {
     const output = {
@@ -6956,6 +7101,16 @@ async function processOneUnlocked(env, trigger) {
     const output = await processPropMatrixBuilderJob(env, row, runId, trigger);
     return {
       status: output && output.ok ? "completed_one_prop_matrix_builder_job" : "failed_one_prop_matrix_builder_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
+  if (isScoringEngineJob(row)) {
+    const output = await processScoringEngineJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_scoring_engine_job" : "failed_one_scoring_engine_job",
       request_id: row.request_id,
       run_id: runId,
       output
