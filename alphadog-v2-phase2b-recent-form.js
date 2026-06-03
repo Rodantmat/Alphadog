@@ -1,10 +1,13 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.2-pitcher-readiness-availability-fix";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.2-pitcher-readiness-availability-fix";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.3-hitter-chunked-memory-fix";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.3-hitter-chunked-memory-fix";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
+
+const HITTER_PACKET_FLUSH_SIZE = 100;
+const PITCHER_PACKET_FLUSH_SIZE = 250;
 
 const HITTER_PROPS = new Set([
   "hits", "total_bases", "runs", "rbis", "singles", "doubles", "home_runs", "walks",
@@ -229,6 +232,21 @@ async function retentionCleanup(env, dates, family) {
   await run(env.SCORE_DB, "DELETE FROM prop_factor_coverage_current WHERE factor_family=? AND official_date IN (?, ?)", family, today, tomorrow);
 }
 
+async function markStaleRunningBatches(env, dates, family, reason = "STALE_RUNNING_BATCH_MARKED_FAILED_BEFORE_NEW_RUN") {
+  const [today, tomorrow] = dates;
+  await run(env.SCORE_DB, `UPDATE prop_factor_batches
+    SET status='failed_stale_interrupted',
+        certification_status=?,
+        certification_grade='FAIL_STALE_INTERRUPTED',
+        output_json=json_object('ok',0,'data_ok',0,'version',?,'status','failed_stale_interrupted','reason',?,'factor_family',factor_family,'batch_id',batch_id),
+        updated_at=CURRENT_TIMESTAMP
+    WHERE factor_family=?
+      AND status='running'
+      AND window_start IN (?, ?)
+      AND window_end IN (?, ?)`,
+    reason, SYSTEM_VERSION, reason, family, today, tomorrow, today, tomorrow);
+}
+
 async function getPreparedRows(env, dates) {
   return all(env.SCORE_DB, `SELECT prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
       player_name, resolved_player_id, resolved_mlb_player_id, player_match_status, team, opponent,
@@ -408,8 +426,8 @@ function buildMarketSummary(ctx, row) {
     statuses,
     coverage_grades: [...new Set(cov.map(r => r.coverage_grade).filter(Boolean))],
     source_keys: [...new Set([...cov.map(r => r.source_key), ...propEvidence.map(r => r.source_key), ...gameMarket.map(r => r.source_key)].filter(Boolean))],
-    player_prop_evidence: propEvidence.slice(0, 20),
-    game_market_summary: gameMarket.slice(0, 6)
+    player_prop_evidence: propEvidence.slice(0, 8),
+    game_market_summary: gameMarket.slice(0, 3)
   };
 }
 function gradeFromCounts(blockers, warnings, missing) {
@@ -574,22 +592,37 @@ function buildPacket(family, row, classification, ctx) {
   };
 }
 
-async function insertRows(env, family, batchId, packets, issues, coverageRows) {
+async function insertPacketAndIssueRows(env, family, batchId, packets, issues) {
   const packetTable = family === "pitcher" ? "prop_factor_pitcher_packets" : "prop_factor_hitter_packets";
   const packetStmts = packets.map(p => env.SCORE_DB.prepare(`INSERT OR REPLACE INTO ${packetTable} (
     packet_id,batch_id,prepared_row_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,team_id,opponent_team_id,is_home,canonical_prop_key,normalized_factor_lane,board_line_value,factor_status,factor_grade,readiness_status,market_context_status,daily_context_status,base_metric_status,missing_factor_count,warning_count,blocker_count,factor_payload_json,details_json,created_at,updated_at)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(
     p.packet_id, batchId, p.row.prepared_row_id, p.source_line_id, p.row.source_key, p.row.official_game_pk, p.row.official_date, p.row.official_game_time_utc, p.row.resolved_mlb_player_id || p.row.resolved_player_id, p.row.player_name, String(p.team_id || ""), String(p.opponent_team_id || ""), p.is_home, p.row.canonical_prop_key, p.classification.normalized_lane, p.row.line_value, p.factor_status, p.factor_grade, p.readiness_status, p.market_context_status, p.daily_context_status, p.base_metric_status, p.missing_factor_count, p.warning_count, p.blocker_count, JSON.stringify(p.payload), JSON.stringify({ source_prop_name: p.row.source_prop_name, warnings: p.warnings, missing: p.missing })
   ));
-  await batch(env.SCORE_DB, packetStmts, 40);
+  await batch(env.SCORE_DB, packetStmts, 25);
   const issueStmts = issues.map(i => env.SCORE_DB.prepare(`INSERT OR REPLACE INTO prop_factor_issues (issue_id,batch_id,factor_family,packet_id,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,severity,issue_type,reason,details_json,official_date,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
     i.issue_id, batchId, i.factor_family, i.packet_id || null, i.prepared_row_id || null, i.game_pk || null, i.mlb_player_id || null, i.canonical_prop_key || null, i.severity, i.issue_type, i.reason, JSON.stringify(i.details || {}), i.official_date || null
   ));
-  await batch(env.SCORE_DB, issueStmts, 40);
+  await batch(env.SCORE_DB, issueStmts, 25);
+}
+
+async function insertCoverageRows(env, batchId, coverageRows) {
   const covStmts = coverageRows.map(c => env.SCORE_DB.prepare(`INSERT OR REPLACE INTO prop_factor_coverage_current (coverage_key,factor_family,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,normalized_factor_lane,factor_status,factor_grade,packet_id,latest_batch_id,latest_checked_at,blocking_for_matrix,missing_reason,details_json,official_date,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(
     c.coverage_key, c.factor_family, c.prepared_row_id, c.game_pk, c.mlb_player_id, c.canonical_prop_key, c.normalized_factor_lane, c.factor_status, c.factor_grade, c.packet_id || null, batchId, nowIso(), c.blocking_for_matrix ? 1 : 0, c.missing_reason || null, JSON.stringify(c.details || {}), c.official_date
   ));
-  await batch(env.SCORE_DB, covStmts, 40);
+  await batch(env.SCORE_DB, covStmts, 25);
+}
+
+async function insertRows(env, family, batchId, packets, issues, coverageRows) {
+  await insertPacketAndIssueRows(env, family, batchId, packets, issues);
+  await insertCoverageRows(env, batchId, coverageRows);
+}
+
+async function flushFactorChunks(env, family, batchId, packetChunk, issueChunk) {
+  if (!packetChunk.length && !issueChunk.length) return;
+  await insertPacketAndIssueRows(env, family, batchId, packetChunk, issueChunk);
+  packetChunk.length = 0;
+  issueChunk.length = 0;
 }
 
 async function runFactorMining(request, env) {
@@ -601,6 +634,7 @@ async function runFactorMining(request, env) {
   if (!allTrue(dbPresence)) return jsonResponse({ ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, status:"blocked_missing_db_binding", missing_bindings:Object.entries(dbPresence).filter(([,v])=>!v).map(([k])=>k) }, 500);
 
   await ensureSchema(env);
+  await markStaleRunningBatches(env, dates, family);
   await retentionCleanup(env, dates, family);
   const batchId = rid(`prop_factor_${family}_batch`);
   const runId = input.run_id || rid("run");
@@ -608,48 +642,83 @@ async function runFactorMining(request, env) {
     batchId, input.request_id || null, runId, LOGICAL_WORKER_NAME, SYSTEM_VERSION, WORKER_NAME, DEPLOYED_SLOT_VERSION, mode, family, "running", dates[0], dates[1], JSON.stringify({ score_db:["score_board_prepared_current"], market_db:["market_context_probe_coverage","market_context_probe_player_props","market_context_probe_game_market_summary"], daily_db:["daily_context_readiness_current","daily_lineups_current","daily_starters_current","daily_player_availability_current_v1","daily_game_weather_current","daily_bullpen_availability_current","daily_bullpen_pitcher_availability_current","daily_team_schedule_spot_current","daily_umpire_context_current"], stats_hitter_db:["hitter_metric_snapshots(primary)","hitter_metrics(legacy_optional_empty_ok)","hitter_splits"], stats_pitcher_db:["pitcher_metric_snapshots(primary)","pitcher_metrics(legacy_optional_empty_ok)","pitcher_splits"], team_db:["mlb_game_calendar","mlb_game_data_coverage"] })
   );
 
-  const prepared = await getPreparedRows(env, dates);
-  const ctx = await loadContext(env, dates);
-  const packets = [];
-  const issues = [];
-  const coverageRows = [];
-  let eligibleRows = 0;
-  let blockedRows = 0;
+  try {
+    const prepared = await getPreparedRows(env, dates);
+    const ctx = await loadContext(env, dates);
+    const coverageRows = [];
+    const packetChunk = [];
+    const issueChunk = [];
+    const flushSize = family === "hitter" ? HITTER_PACKET_FLUSH_SIZE : PITCHER_PACKET_FLUSH_SIZE;
+    let eligibleRows = 0;
+    let blockedRows = 0;
+    let packetsWritten = 0;
+    let issueRows = 0;
+    let warningRows = 0;
+    let missingRows = 0;
+    let lastGamePk = null;
+    let gamesProcessed = 0;
 
-  for (const row of prepared) {
-    const classification = classifyProp(row.canonical_prop_key, row.source_prop_name);
-    const playerId = row.resolved_mlb_player_id || row.resolved_player_id;
-    const rowFamily = classification.family;
-    const shouldConsider = rowFamily === family || (family === "pitcher" && rowFamily === "deferred");
-    if (!shouldConsider) continue;
-    if (!classification.supported) {
-      blockedRows++;
-      const issue = { issue_id: rid("pfi"), factor_family: family, prepared_row_id: row.prepared_row_id, game_pk: row.official_game_pk, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, severity: "blocker", issue_type: "unsupported_or_deferred_prop", reason: classification.reason || "UNSUPPORTED_PROP_KEY", official_date: row.official_date, details: { source_prop_name: row.source_prop_name, source_key: row.source_key, mode, classification } };
-      issues.push(issue);
-      coverageRows.push({ coverage_key: key(family, row.prepared_row_id), factor_family: family, prepared_row_id: row.prepared_row_id, game_pk: row.official_game_pk, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, normalized_factor_lane: classification.normalized_lane, factor_status: "blocked", factor_grade: "BLOCKED", packet_id: null, blocking_for_matrix: 1, missing_reason: issue.reason, details: issue.details, official_date: row.official_date });
-      continue;
+    for (const row of prepared) {
+      const classification = classifyProp(row.canonical_prop_key, row.source_prop_name);
+      const playerId = row.resolved_mlb_player_id || row.resolved_player_id;
+      const rowFamily = classification.family;
+      const shouldConsider = rowFamily === family || (family === "pitcher" && rowFamily === "deferred");
+      if (!shouldConsider) continue;
+
+      if (lastGamePk !== row.official_game_pk) {
+        if (lastGamePk !== null) gamesProcessed++;
+        lastGamePk = row.official_game_pk;
+        if (family === "hitter") await flushFactorChunks(env, family, batchId, packetChunk, issueChunk);
+      }
+
+      if (!classification.supported) {
+        blockedRows++;
+        const issue = { issue_id: rid("pfi"), factor_family: family, prepared_row_id: row.prepared_row_id, game_pk: row.official_game_pk, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, severity: "blocker", issue_type: "unsupported_or_deferred_prop", reason: classification.reason || "UNSUPPORTED_PROP_KEY", official_date: row.official_date, details: { source_prop_name: row.source_prop_name, source_key: row.source_key, mode, classification } };
+        issueChunk.push(issue);
+        issueRows++;
+        coverageRows.push({ coverage_key: key(family, row.prepared_row_id), factor_family: family, prepared_row_id: row.prepared_row_id, game_pk: row.official_game_pk, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, normalized_factor_lane: classification.normalized_lane, factor_status: "blocked", factor_grade: "BLOCKED", packet_id: null, blocking_for_matrix: 1, missing_reason: issue.reason, details: issue.details, official_date: row.official_date });
+        if (issueChunk.length >= flushSize) await flushFactorChunks(env, family, batchId, packetChunk, issueChunk);
+        continue;
+      }
+
+      eligibleRows++;
+      const packet = buildPacket(family, row, classification, ctx);
+      packet.row = row;
+      packet.classification = classification;
+      packetChunk.push(packet);
+      packetsWritten++;
+      if (packet.warning_count > 0 || packet.missing_factor_count > 0) warningRows++;
+      if (packet.missing_factor_count > 0) missingRows++;
+      const issueDetailsBase = { prepared_row_id: row.prepared_row_id, source_key: row.source_key, source_prop_name: row.source_prop_name, mode, packet_id: packet.packet_id };
+      for (const w of packet.warnings) { issueChunk.push({ issue_id: rid("pfi"), factor_family: family, packet_id: packet.packet_id, prepared_row_id: row.prepared_row_id, game_pk: row.official_game_pk, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, severity: "warning", issue_type: "factor_warning", reason: w, official_date: row.official_date, details: issueDetailsBase }); issueRows++; }
+      for (const m of packet.missing) { issueChunk.push({ issue_id: rid("pfi"), factor_family: family, packet_id: packet.packet_id, prepared_row_id: row.prepared_row_id, game_pk: row.official_game_pk, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, severity: "warning", issue_type: "missing_factor", reason: m, official_date: row.official_date, details: issueDetailsBase }); issueRows++; }
+      coverageRows.push({ coverage_key: key(family, row.prepared_row_id), factor_family: family, prepared_row_id: row.prepared_row_id, game_pk: row.official_game_pk, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, normalized_factor_lane: classification.normalized_lane, factor_status: packet.factor_status, factor_grade: packet.factor_grade, packet_id: packet.packet_id, blocking_for_matrix: 0, missing_reason: packet.missing.length ? packet.missing.join(",") : null, details: { warnings: packet.warnings, missing: packet.missing, readiness_status: packet.readiness_status, market_context_status: packet.market_context_status, daily_context_status: packet.daily_context_status }, official_date: row.official_date });
+
+      if (packetChunk.length >= flushSize || issueChunk.length >= flushSize) {
+        await flushFactorChunks(env, family, batchId, packetChunk, issueChunk);
+      }
     }
-    eligibleRows++;
-    const packet = buildPacket(family, row, classification, ctx);
-    packet.row = row;
-    packet.classification = classification;
-    packets.push(packet);
-    const issueDetailsBase = { prepared_row_id: row.prepared_row_id, source_key: row.source_key, source_prop_name: row.source_prop_name, mode, packet_id: packet.packet_id };
-    for (const w of packet.warnings) issues.push({ issue_id: rid("pfi"), factor_family: family, packet_id: packet.packet_id, prepared_row_id: row.prepared_row_id, game_pk: row.official_game_pk, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, severity: "warning", issue_type: "factor_warning", reason: w, official_date: row.official_date, details: issueDetailsBase });
-    for (const m of packet.missing) issues.push({ issue_id: rid("pfi"), factor_family: family, packet_id: packet.packet_id, prepared_row_id: row.prepared_row_id, game_pk: row.official_game_pk, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, severity: "warning", issue_type: "missing_factor", reason: m, official_date: row.official_date, details: issueDetailsBase });
-    coverageRows.push({ coverage_key: key(family, row.prepared_row_id), factor_family: family, prepared_row_id: row.prepared_row_id, game_pk: row.official_game_pk, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, normalized_factor_lane: classification.normalized_lane, factor_status: packet.factor_status, factor_grade: packet.factor_grade, packet_id: packet.packet_id, blocking_for_matrix: 0, missing_reason: packet.missing.length ? packet.missing.join(",") : null, details: { warnings: packet.warnings, missing: packet.missing, readiness_status: packet.readiness_status, market_context_status: packet.market_context_status, daily_context_status: packet.daily_context_status }, official_date: row.official_date });
-  }
+    if (lastGamePk !== null) gamesProcessed++;
+    await flushFactorChunks(env, family, batchId, packetChunk, issueChunk);
+    await insertCoverageRows(env, batchId, coverageRows);
 
-  await insertRows(env, family, batchId, packets, issues, coverageRows);
-  const warningRows = packets.filter(p => p.warning_count > 0 || p.missing_factor_count > 0).length;
-  const missingRows = packets.filter(p => p.missing_factor_count > 0).length;
-  const status = blockedRows > 0 || warningRows > 0 ? "completed_with_warnings" : "completed";
-  const certification = blockedRows > 0 || warningRows > 0 ? "PROP_FACTOR_PACKETS_CERTIFIED_WITH_WARNINGS" : "PROP_FACTOR_PACKETS_CERTIFIED";
-  const grade = blockedRows > 0 ? "PASS_WITH_BLOCKED_ROWS" : (warningRows > 0 ? "PASS_WITH_WARNINGS" : "PASS");
-  const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode, factor_family:family, status, certification, certification_grade:grade, batch_id:batchId, run_id:runId, window_dates:dates, prepared_rows_read:prepared.length, eligible_rows:eligibleRows, packets_written:packets.length, blocked_rows:blockedRows, warning_rows:warningRows, issue_rows:issues.length, missing_factor_rows:missingRows, retention_policy:"today_tomorrow_only_packets_issues_coverage_and_batches", daily_readiness_dates_available:ctx.readinessDatesAvailable, daily_readiness_missing_for_current_window:ctx.readinessDatesAvailable.length === 0, base_metrics_primary_source: family === "pitcher" ? "pitcher_metric_snapshots" : "hitter_metric_snapshots", legacy_metric_tables_optional: true, legacy_empty_tables_are_not_blocking: true, external_calls:0, no_scoring:true, no_ranking:true, no_final_board:true, no_matrix_builder:true };
-  await run(env.SCORE_DB, `UPDATE prop_factor_batches SET status=?, prepared_rows_read=?, eligible_rows=?, packets_written=?, blocked_rows=?, warning_rows=?, issue_rows=?, missing_factor_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    status, prepared.length, eligibleRows, packets.length, blockedRows, warningRows, issues.length, missingRows, certification, grade, JSON.stringify(output), batchId);
-  return jsonResponse(output);
+    const status = blockedRows > 0 || warningRows > 0 ? "completed_with_warnings" : "completed";
+    const certification = blockedRows > 0 || warningRows > 0 ? "PROP_FACTOR_PACKETS_CERTIFIED_WITH_WARNINGS" : "PROP_FACTOR_PACKETS_CERTIFIED";
+    const grade = blockedRows > 0 ? "PASS_WITH_BLOCKED_ROWS" : (warningRows > 0 ? "PASS_WITH_WARNINGS" : "PASS");
+    const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode, factor_family:family, status, certification, certification_grade:grade, batch_id:batchId, run_id:runId, window_dates:dates, prepared_rows_read:prepared.length, eligible_rows:eligibleRows, packets_written:packetsWritten, blocked_rows:blockedRows, warning_rows:warningRows, issue_rows:issueRows, missing_factor_rows:missingRows, games_processed:gamesProcessed, chunked_memory_mode: family === "hitter", packet_flush_size:flushSize, coverage_rows_written:coverageRows.length, stale_running_batches_marked_before_run:true, coverage_current_written_after_final_packet_flush:true, retention_policy:"today_tomorrow_only_packets_issues_coverage_and_batches", daily_readiness_dates_available:ctx.readinessDatesAvailable, daily_readiness_missing_for_current_window:ctx.readinessDatesAvailable.length === 0, base_metrics_primary_source: family === "pitcher" ? "pitcher_metric_snapshots" : "hitter_metric_snapshots", legacy_metric_tables_optional: true, legacy_empty_tables_are_not_blocking: true, external_calls:0, no_scoring:true, no_ranking:true, no_final_board:true, no_matrix_builder:true };
+    await run(env.SCORE_DB, `UPDATE prop_factor_batches SET status=?, prepared_rows_read=?, eligible_rows=?, packets_written=?, blocked_rows=?, warning_rows=?, issue_rows=?, missing_factor_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+      status, prepared.length, eligibleRows, packetsWritten, blockedRows, warningRows, issueRows, missingRows, certification, grade, JSON.stringify(output), batchId);
+    return jsonResponse(output);
+  } catch (err) {
+    const error = String(err && err.stack ? err.stack : err);
+    const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode, factor_family:family, status:"prop_factor_miner_failed", certification:"PROP_FACTOR_PACKETS_FAILED", certification_grade:"FAIL", batch_id:batchId, run_id:runId, error, partial_batch_cleaned:true, no_scoring:true, no_ranking:true, no_final_board:true, no_matrix_builder:true };
+    const packetTable = family === "pitcher" ? "prop_factor_pitcher_packets" : "prop_factor_hitter_packets";
+    await run(env.SCORE_DB, `DELETE FROM ${packetTable} WHERE batch_id=?`, batchId);
+    await run(env.SCORE_DB, `DELETE FROM prop_factor_issues WHERE batch_id=?`, batchId);
+    await run(env.SCORE_DB, `DELETE FROM prop_factor_coverage_current WHERE latest_batch_id=?`, batchId);
+    await run(env.SCORE_DB, `UPDATE prop_factor_batches SET status='failed', certification_status='PROP_FACTOR_PACKETS_FAILED', certification_grade='FAIL', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, JSON.stringify(output), batchId);
+    return jsonResponse(output, 500);
+  }
 }
 
 function identity(env) {
