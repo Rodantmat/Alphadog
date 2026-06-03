@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-certifier";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-matrix-builder";
 const JOB_KEY = "prop-matrix-builder";
-const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.4-side-variation-preservation";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.3-prop-matrix-side-variation-preservation";
+const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.5-side-context-payload-lock";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.4-prop-matrix-side-context-payload-lock";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -581,6 +581,14 @@ async function runMatrixBuilder(request, env) {
       addIssue(issues, batchId, matrixId, row, "blocker", "unsupported_prop", classification.reason || "UNSUPPORTED_PROP_KEY_PENDING_FACTOR_DESIGN", { classification });
     }
 
+    if (sideVariation.side_availability_status === "side_availability_unclear" && matrixStatus !== "matrix_deferred") {
+      blocking = 1;
+      blockerCount++;
+      matrixStatus = "matrix_blocked";
+      matrixGrade = "BLOCKED_UNSAFE";
+      addIssue(issues, batchId, matrixId, row, "blocker", "side_availability_unclear", sideVariation.side_eligibility_reason || "SIDE_AVAILABILITY_NOT_ENOUGH_METADATA", { side_variation: sideVariation });
+    }
+
     if (!factorCov) {
       blocking = 1;
       blockerCount++;
@@ -677,7 +685,76 @@ async function runMatrixBuilder(request, env) {
     const opponentTeamId = packet && packet.opponent_team_id ? packet.opponent_team_id : (readiness && readiness.opponent_team_id ? readiness.opponent_team_id : row.opponent || null);
     const isHome = packet && packet.is_home !== null && packet.is_home !== undefined ? packet.is_home : null;
     matrixRows.push({
-      matrix_id: matrixId, batch_id: batchId, prepared_row_id: row.prepared_row_id, source_line_id: sourceLineId, source_key: row.source_key, game_pk: row.official_game_pk, official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, mlb_player_id: playerId, player_name: row.player_name, team_id: teamId, opponent_team_id: opponentTeamId, is_home: isHome, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value, prop_side: null, factor_family: factorCov ? factorCov.factor_family : classification.family, factor_packet_id: factorCov && factorCov.packet_id ? factorCov.packet_id : null, factor_status: factorCov ? factorCov.factor_status : "factor_coverage_missing", market_game_context_status: market.game_status, market_prop_context_status: market.prop_status, daily_readiness_status: readiness ? readiness.context_status : "daily_readiness_missing", matrix_status: matrixStatus, matrix_grade: matrixGrade, blocking_for_scoring: blocking, warning_count: warningCount + (packet ? Number(packet.warning_count || 0) : 0), blocker_count: blockerCount, missing_component_count: missingComponentCount, matrix_payload: { prepared: { prepared_row_id: row.prepared_row_id, prep_batch_id: row.prep_batch_id, source_key: row.source_key, player_name: row.player_name, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value, official_game_pk: row.official_game_pk, official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, source_line_id: sourceLineId, variation_key: sideVariation.variation_key, odds_type: sideVariation.odds_type, source_line_type: sideVariation.source_line_type, projection_type: sideVariation.projection_type, payout_variant: sideVariation.payout_variant, is_goblin: sideVariation.is_goblin, is_demon: sideVariation.is_demon, is_standard: sideVariation.is_standard, over_price: sideVariation.over_price, under_price: sideVariation.under_price, source_prices: sideVariation.source_prices, side_availability_status: sideVariation.side_availability_status, side_eligibility_status: sideVariation.side_eligibility_status, side_eligibility_reason: sideVariation.side_eligibility_reason, side_mode: sideVariation.side_mode, available_sides: sideVariation.available_sides, selected_side: null }, side_variation: sideVariation, factor_packet: packetDetails, market: details.market_context, daily_readiness: details.daily_readiness }, details });
+      matrix_id: matrixId, batch_id: batchId, prepared_row_id: row.prepared_row_id, source_line_id: sourceLineId, source_key: row.source_key, game_pk: row.official_game_pk, official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, mlb_player_id: playerId, player_name: row.player_name, team_id: teamId, opponent_team_id: opponentTeamId, is_home: isHome, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value, prop_side: null, factor_family: factorCov ? factorCov.factor_family : classification.family, factor_packet_id: factorCov && factorCov.packet_id ? factorCov.packet_id : null, factor_status: factorCov ? factorCov.factor_status : "factor_coverage_missing", market_game_context_status: market.game_status, market_prop_context_status: market.prop_status, daily_readiness_status: readiness ? readiness.context_status : "daily_readiness_missing", matrix_status: matrixStatus, matrix_grade: matrixGrade, blocking_for_scoring: blocking, warning_count: warningCount + (packet ? Number(packet.warning_count || 0) : 0), blocker_count: blockerCount, missing_component_count: missingComponentCount, matrix_payload: {
+        prepared: {
+          prepared_row_id: row.prepared_row_id,
+          prep_batch_id: row.prep_batch_id,
+          source_key: row.source_key,
+          player_name: row.player_name,
+          mlb_player_id: playerId,
+          canonical_prop_key: row.canonical_prop_key,
+          board_line_value: row.line_value,
+          line_value: row.line_value,
+          official_game_pk: row.official_game_pk,
+          official_date: row.official_date,
+          official_game_time_utc: row.official_game_time_utc,
+          source_line_id: sourceLineId,
+          variation_key: sideVariation.variation_key,
+          odds_type: sideVariation.odds_type,
+          source_line_type: sideVariation.source_line_type,
+          projection_type: sideVariation.projection_type,
+          payout_variant: sideVariation.payout_variant,
+          is_goblin: sideVariation.is_goblin,
+          is_demon: sideVariation.is_demon,
+          is_standard: sideVariation.is_standard,
+          over_price: sideVariation.over_price,
+          under_price: sideVariation.under_price,
+          source_prices: sideVariation.source_prices
+        },
+        side_context: {
+          side_mode: sideVariation.side_mode,
+          available_sides: sideVariation.available_sides,
+          side_availability_status: sideVariation.side_availability_status,
+          side_eligibility_status: sideVariation.side_eligibility_status,
+          side_eligibility_reason: sideVariation.side_eligibility_reason,
+          scoring_side_rule: sideVariation.scoring_side_rule,
+          goblin_demon_under_blocker: (sideVariation.is_goblin || sideVariation.is_demon) ? "GOBLIN_DEMON_UNDER_NOT_SELECTABLE" : null,
+          selected_side: null,
+          more_score_0_100: null,
+          less_score_0_100: null
+        },
+        variation_context: {
+          variation_key: sideVariation.variation_key,
+          source_line_id: sourceLineId,
+          prepared_row_id: row.prepared_row_id,
+          source_key: row.source_key,
+          game_pk: row.official_game_pk,
+          mlb_player_id: playerId,
+          canonical_prop_key: row.canonical_prop_key,
+          line_value: row.line_value,
+          board_line_value: row.line_value,
+          odds_type: sideVariation.odds_type,
+          source_line_type: sideVariation.source_line_type,
+          projection_type: sideVariation.projection_type,
+          payout_variant: sideVariation.payout_variant,
+          source_key_normalized: sideVariation.source_key_normalized,
+          no_collapse_identity_rule: "score_every_valid_matrix_eligible_line_variation_independently"
+        },
+        scoring_placeholders: {
+          selected_side: null,
+          more_score_0_100: null,
+          less_score_0_100: null,
+          score_0_100: null,
+          scoring_status: "not_scored_matrix_handoff_only",
+          side_eligibility_status: sideVariation.side_eligibility_status,
+          side_eligibility_reason: sideVariation.side_eligibility_reason,
+          variation_key: sideVariation.variation_key
+        },
+        side_variation: sideVariation,
+        factor_packet: packetDetails,
+        market: details.market_context,
+        daily_readiness: details.daily_readiness
+      }, details });
     coverageRows.push({ coverage_key: key("matrix", row.prepared_row_id), prepared_row_id: row.prepared_row_id, matrix_id: matrixId, matrix_status: matrixStatus, matrix_grade: matrixGrade, blocking_for_scoring: blocking, latest_batch_id: batchId, latest_checked_at: nowIso(), missing_reason: blockerCount ? issues.slice(rowIssuesBefore).filter(i => i.severity === "blocker").map(i => i.reason).join(",") : null, details: { warning_count: warningCount, blocker_count: blockerCount, missing_component_count: missingComponentCount }, official_date: row.official_date });
     }
 
@@ -696,7 +773,7 @@ async function runMatrixBuilder(request, env) {
   const status = noSilentDropOk ? "completed_with_certified_matrix_rows" : "failed_no_silent_drop_violation";
   const certification = noSilentDropOk ? "PROP_MATRIX_CERTIFIED_ONE_ROW_PER_SAFE_PREPARED_ROW" : "PROP_MATRIX_FAILED_ROW_PRESERVATION";
   const grade = !noSilentDropOk ? "FAILED_ROW_PRESERVATION" : (blockerRows > 0 ? "PASS_WITH_BLOCKED_OR_DEFERRED_ROWS" : (warningRows > 0 ? "PASS_WITH_WARNINGS" : "PASS"));
-  const output = { ok:noSilentDropOk, data_ok:noSilentDropOk, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode:"prop_matrix_build", status, certification, certification_grade:grade, batch_id:batchId, run_id:runId, window_dates:dates, prepared_rows_read:prepared.length, eligible_rows:prepared.length, matrix_rows_written:matrixRowsWritten, matrix_ready_rows:statusCounts.matrix_ready || 0, matrix_ready_with_warnings_rows:statusCounts.matrix_ready_with_warnings || 0, matrix_partial_context_rows:statusCounts.matrix_partial_context || 0, matrix_blocked_rows:statusCounts.matrix_blocked || 0, matrix_deferred_rows:statusCounts.matrix_deferred || 0, matrix_source_missing_rows:statusCounts.matrix_source_missing || 0, issue_rows:totalIssueRows, warning_rows:warningRows, blocker_rows:blockerRows, missing_component_rows:missingComponentRows, no_silent_drops:noSilentDropOk, one_matrix_row_per_safe_prepared_row:noSilentDropOk, prerequisite_freshness:globalCtx.freshness, chunked_memory_mode:true, chunk_size:chunkSize, processed_chunks:processedChunks, retention_policy:"today_tomorrow_only_latest_matrix_current_issues_coverage_and_batch", internal_only:true, external_calls:0, no_external_api_calls:true, no_mlb_api_calls:true, no_odds_api_calls:true, no_parlay_api_calls:true, no_gemini_calls:true, no_probability:true, no_edge:true, no_value_rating:true, no_qualified_flag:true, no_rank:true, no_pick_recommendation:true, no_scoring:true, no_ranking:true, no_final_board:true, side_variation_preservation:true, matrix_payload_preserves_line_type_and_side_context:true };
+  const output = { ok:noSilentDropOk, data_ok:noSilentDropOk, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode:"prop_matrix_build", status, certification, certification_grade:grade, batch_id:batchId, run_id:runId, window_dates:dates, prepared_rows_read:prepared.length, eligible_rows:prepared.length, matrix_rows_written:matrixRowsWritten, matrix_ready_rows:statusCounts.matrix_ready || 0, matrix_ready_with_warnings_rows:statusCounts.matrix_ready_with_warnings || 0, matrix_partial_context_rows:statusCounts.matrix_partial_context || 0, matrix_blocked_rows:statusCounts.matrix_blocked || 0, matrix_deferred_rows:statusCounts.matrix_deferred || 0, matrix_source_missing_rows:statusCounts.matrix_source_missing || 0, issue_rows:totalIssueRows, warning_rows:warningRows, blocker_rows:blockerRows, missing_component_rows:missingComponentRows, no_silent_drops:noSilentDropOk, one_matrix_row_per_safe_prepared_row:noSilentDropOk, prerequisite_freshness:globalCtx.freshness, chunked_memory_mode:true, chunk_size:chunkSize, processed_chunks:processedChunks, retention_policy:"today_tomorrow_only_latest_matrix_current_issues_coverage_and_batch", internal_only:true, external_calls:0, no_external_api_calls:true, no_mlb_api_calls:true, no_odds_api_calls:true, no_parlay_api_calls:true, no_gemini_calls:true, no_probability:true, no_edge:true, no_value_rating:true, no_qualified_flag:true, no_rank:true, no_pick_recommendation:true, no_scoring:true, no_ranking:true, no_final_board:true, side_variation_preservation:true, matrix_payload_preserves_line_type_and_side_context:true, side_context_payload_path:"matrix_payload_json.side_context", variation_context_payload_path:"matrix_payload_json.variation_context", scoring_placeholders_payload_path:"matrix_payload_json.scoring_placeholders" };
   await run(env.SCORE_DB, `UPDATE prop_matrix_batches SET status=?, prepared_rows_read=?, eligible_rows=?, matrix_rows_written=?, matrix_ready_rows=?, matrix_ready_with_warnings_rows=?, matrix_partial_context_rows=?, matrix_blocked_rows=?, matrix_deferred_rows=?, issue_rows=?, warning_rows=?, blocker_rows=?, missing_component_rows=?, prerequisite_freshness_json=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
     status, prepared.length, prepared.length, matrixRowsWritten, output.matrix_ready_rows, output.matrix_ready_with_warnings_rows, output.matrix_partial_context_rows, output.matrix_blocked_rows, output.matrix_deferred_rows, totalIssueRows, warningRows, blockerRows, missingComponentRows, JSON.stringify(globalCtx.freshness), certification, grade, JSON.stringify(output), batchId);
   return jsonResponse(output);
