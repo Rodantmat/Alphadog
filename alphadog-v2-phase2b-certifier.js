@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-certifier";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-matrix-builder";
 const JOB_KEY = "prop-matrix-builder";
-const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.2-chunked-memory-fix";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.1-prop-matrix-chunked-memory-fix";
+const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.3-d1-variable-safe-chunks";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.2-prop-matrix-d1-variable-safe-chunks";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -282,7 +282,20 @@ function uniqueNonEmpty(values) { return [...new Set(values.filter(v => v !== nu
 async function allByIn(db, prefix, values, suffix = "", extraBinds = []) {
   const clean = uniqueNonEmpty(values);
   if (!clean.length) return [];
-  return all(db, `${prefix} (${placeholders(clean)}) ${suffix}`, ...clean, ...extraBinds);
+
+  // Cloudflare D1 has a practical bound on SQL bind variables. The Matrix Builder
+  // can process thousands of prepared rows, so every IN-list lookup must be
+  // internally micro-chunked even when the outer matrix loop is already chunked.
+  // Keep this deliberately low to leave room for suffix binds such as date windows.
+  const maxVarsPerQuery = 80;
+  const maxValuesPerQuery = Math.max(1, maxVarsPerQuery - extraBinds.length);
+  const out = [];
+  for (let i = 0; i < clean.length; i += maxValuesPerQuery) {
+    const part = clean.slice(i, i + maxValuesPerQuery);
+    const rows = await all(db, `${prefix} (${placeholders(part)}) ${suffix}`, ...part, ...extraBinds);
+    out.push(...rows);
+  }
+  return out;
 }
 async function loadGlobalPrerequisites(env, dates, preparedRows) {
   const [today, tomorrow] = dates;
@@ -422,7 +435,8 @@ async function runMatrixBuilder(request, env) {
 
   const prepared = await getPreparedRows(env, dates);
   const globalCtx = await loadGlobalPrerequisites(env, dates, prepared);
-  const chunkSize = Number(input.chunk_size || 200);
+  const requestedChunkSize = Number(input.chunk_size || 75);
+  const chunkSize = Math.max(25, Math.min(75, Number.isFinite(requestedChunkSize) ? requestedChunkSize : 75));
   const statusCounts = {};
   let matrixRowsWritten = 0;
   let totalIssueRows = 0;
