@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.2.2-simulation-shadow-chunked-d1-memory-fix";
+const VERSION = "alphadog-v2-scoring-engine-v0.2.3-db-config-score-confidence-precap-side";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -363,6 +363,32 @@ async function ensureSimulationSchema(env) {
     )
   `);
 
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_simulation_batches', 'formula_metadata_json', 'formula_metadata_json TEXT');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_simulation_batches', 'profile_config_snapshot_json', 'profile_config_snapshot_json TEXT');
+
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_simulation_shadow', 'confidence_0_100', 'confidence_0_100 REAL');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_simulation_shadow', 'confidence_status', 'confidence_status TEXT');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_simulation_shadow', 'live_playable', 'live_playable INTEGER DEFAULT 0');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_simulation_shadow', 'model_deferred', 'model_deferred INTEGER DEFAULT 0');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_simulation_shadow', 'model_deferred_reason', 'model_deferred_reason TEXT');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_simulation_shadow', 'score_sort_0_100', 'score_sort_0_100 REAL');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_simulation_shadow', 'score_integer_0_100', 'score_integer_0_100 REAL');
+
+  await run(env.SCORE_DB, `
+    CREATE TABLE IF NOT EXISTS scoring_engine_simulation_profile_configs (
+      profile_key TEXT PRIMARY KEY,
+      profile_version TEXT NOT NULL,
+      profile_status TEXT NOT NULL,
+      config_json TEXT NOT NULL,
+      formula_metadata_json TEXT NOT NULL,
+      thresholds_locked INTEGER DEFAULT 0,
+      scoring_enabled INTEGER DEFAULT 0,
+      true_probability_enabled INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   await run(env.SCORE_DB, `
     CREATE TABLE IF NOT EXISTS scoring_engine_simulation_issues (
       issue_id TEXT PRIMARY KEY,
@@ -393,63 +419,210 @@ async function writeSimIssue(env, batchId, profileKey, key, severity, count, pay
   `, simIssueId(batchId, profileKey, key), batchId, profileKey, key, severity, Number(count || 0), JSON.stringify(payload || {}));
 }
 
-function profileConstants(profileKey) {
-  if (profileKey === "HYBRID_CONTROL") {
-    return {
-      profileKey,
-      version: "0.2.0-control",
-      capMarketMissing: 60,
-      capWarning9: 68,
-      capMarketNotFound: 68,
-      capWarning68: 70,
-      capPacketPartial: 72,
-      capPartialEnrichment: 72,
-      capWarning35: 76,
-      capSingleSource: 76,
-      capNoTrueMarket: 70,
-      capReadyWarnings: 78,
-      capHighVolUnvalidated: 78,
-      penMarketMissing: 18,
-      penWarning9: 12,
-      penMarketNotFound: 10,
-      penPacketPartial: 6,
-      penPartialEnrichment: 6,
-      penWarning68: 4,
-      penSleeperNullOdds: 3,
-      penHighVolNoMarket: 3,
-      cleanBonus: 3,
-      cappedBonus: 3
-    };
+function sqlStringLiteral(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+function finiteNumber(value, fallback) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function sqlCaseFromMap(expression, map, fallback) {
+  const entries = Object.entries(map || {}).filter(([k]) => k !== "default");
+  const elseValue = finiteNumber((map || {}).default, fallback);
+  const parts = [`CASE COALESCE(${expression}, '__null__')`];
+  for (const [key, value] of entries) {
+    parts.push(`WHEN ${sqlStringLiteral(key)} THEN ${finiteNumber(value, elseValue)}`);
   }
+  parts.push(`ELSE ${elseValue} END`);
+  return parts.join(" ");
+}
+
+function simulationFormulaMetadata() {
   return {
-    profileKey: "STRICT_B",
-    version: "0.2.0-strict-b",
-    capMarketMissing: 55,
-    capWarning9: 55,
-    capMarketNotFound: 60,
-    capWarning68: 65,
-    capPacketPartial: 65,
-    capPartialEnrichment: 65,
-    capWarning35: 74,
-    capSingleSource: 70,
-    capNoTrueMarket: 70,
-    capReadyWarnings: 78,
-    capHighVolUnvalidated: 78,
-    penMarketMissing: 25,
-    penWarning9: 20,
-    penMarketNotFound: 15,
-    penPacketPartial: 10,
-    penPartialEnrichment: 10,
-    penWarning68: 5,
-    penSleeperNullOdds: 5,
-    penHighVolNoMarket: 5,
-    cleanBonus: 3,
-    cappedBonus: 0
+    formula_key: "SCORING_SIMULATION_V0_2_3_DB_CONFIG_SCORE_CONFIDENCE_PRECAP_SIDE",
+    worker_version: VERSION,
+    simulation_only: true,
+    active_values_source: "SCORE_DB.scoring_engine_simulation_profile_configs.config_json",
+    all_calibration_variables_db_stored: true,
+    thresholds_locked: false,
+    scoring_enabled: false,
+    true_probability_enabled: false,
+    no_true_hit_probability_claims: true,
+    no_final_board: true,
+    no_ranking: true,
+    execution_order: [
+      "inventory_defer_gate",
+      "raw_more_raw_less_generation_from_db_config",
+      "goblin_demon_more_only_sanitization",
+      "pre_cap_side_selection_raw_delta",
+      "selected_side_score_penalties_from_db_config",
+      "score_cap_and_score_integer",
+      "confidence_penalties_and_caps_from_db_config",
+      "score_sort_micro_adjustment_for_sort_only",
+      "archive_and_live_playable_gates",
+      "zero_fail_invariants"
+    ]
+  };
+}
+
+const DEFAULT_SIM_CONFIGS = {
+  HYBRID_CONTROL: {
+    profile_version: "0.2.3-control-db-config",
+    config: {
+      min_live_score: 70,
+      min_live_confidence: 55,
+      archive_score_threshold: 70,
+      grade_archive_min: 70,
+      grade_qualified_min: 76,
+      grade_strong_min: 82,
+      grade_elite_min: 88,
+      raw_side_delta_threshold: 0.50,
+      base_raw_packet_ready: 82,
+      base_raw_packet_partial: 76,
+      raw_less_delta_from_more: 1,
+      max_score_cap: 100,
+      base_confidence: 100,
+      score_sort_micro_scale: 0.0001,
+      clean_bonus_score: 0,
+      market_raw_adjustments: { market_prop_context_present: 4, market_prop_context_not_found: -4, market_prop_context_missing: -6, default: -2 },
+      daily_raw_adjustments: { ready_with_warnings: 0, partial_enrichment: -5, default: 1 },
+      source_raw_adjustments: { sleeper: -1, default: 0 },
+      odds_raw_adjustments: { goblin: -4, demon: -4, default: 0 },
+      prop_raw_adjustments: { pitcher_strikeouts: 3, hits: 2, total_bases: -2, hits_runs_rbis: -2, home_runs: -4, stolen_bases: -4, earned_runs_allowed: -3, hits_allowed: -3, pitcher_outs: -1, pitching_outs: -1, default: 0 },
+      score_penalty_market_not_found: 4,
+      score_penalty_market_missing: 6,
+      score_penalty_complete_market_blindness: 10,
+      score_penalty_packet_partial: 3,
+      score_penalty_partial_enrichment: 4,
+      confidence_cap_market_not_found: 65,
+      confidence_cap_market_missing: 54,
+      confidence_cap_complete_market_blindness: 45,
+      confidence_cap_warning_9_plus: 50,
+      confidence_penalty_packet_partial: 10,
+      confidence_penalty_partial_enrichment: 15,
+      confidence_penalty_sleeper_null_odds: 5,
+      confidence_penalty_warning_6_8: 8,
+      confidence_penalty_warning_3_5: 4,
+      confidence_penalty_warning_9_plus: 20,
+      model_deferred_rules: { sleeper_rfi_nrfi: "model_deferred_rfi_nrfi", prizepicks_triples: "model_deferred_low_event_prop" }
+    }
+  },
+  STRICT_B: {
+    profile_version: "0.2.3-strict-b-db-config",
+    config: {
+      min_live_score: 70,
+      min_live_confidence: 55,
+      archive_score_threshold: 70,
+      grade_archive_min: 70,
+      grade_qualified_min: 76,
+      grade_strong_min: 82,
+      grade_elite_min: 88,
+      raw_side_delta_threshold: 0.50,
+      base_raw_packet_ready: 82,
+      base_raw_packet_partial: 76,
+      raw_less_delta_from_more: 1,
+      max_score_cap: 100,
+      base_confidence: 100,
+      score_sort_micro_scale: 0.0001,
+      clean_bonus_score: 0,
+      market_raw_adjustments: { market_prop_context_present: 4, market_prop_context_not_found: -4, market_prop_context_missing: -6, default: -2 },
+      daily_raw_adjustments: { ready_with_warnings: 0, partial_enrichment: -5, default: 1 },
+      source_raw_adjustments: { sleeper: -1, default: 0 },
+      odds_raw_adjustments: { goblin: -4, demon: -4, default: 0 },
+      prop_raw_adjustments: { pitcher_strikeouts: 3, hits: 2, total_bases: -2, hits_runs_rbis: -2, home_runs: -4, stolen_bases: -4, earned_runs_allowed: -3, hits_allowed: -3, pitcher_outs: -1, pitching_outs: -1, default: 0 },
+      score_penalty_market_not_found: 8,
+      score_penalty_market_missing: 10,
+      score_penalty_complete_market_blindness: 14,
+      score_penalty_packet_partial: 6,
+      score_penalty_partial_enrichment: 8,
+      confidence_cap_market_not_found: 60,
+      confidence_cap_market_missing: 50,
+      confidence_cap_complete_market_blindness: 40,
+      confidence_cap_warning_9_plus: 45,
+      confidence_penalty_packet_partial: 15,
+      confidence_penalty_partial_enrichment: 20,
+      confidence_penalty_sleeper_null_odds: 5,
+      confidence_penalty_warning_6_8: 10,
+      confidence_penalty_warning_3_5: 5,
+      confidence_penalty_warning_9_plus: 25,
+      model_deferred_rules: { sleeper_rfi_nrfi: "model_deferred_rfi_nrfi", prizepicks_triples: "model_deferred_low_event_prop" }
+    }
+  }
+};
+
+async function ensureSimulationProfileConfigs(env) {
+  const metadata = simulationFormulaMetadata();
+  for (const [profileKey, spec] of Object.entries(DEFAULT_SIM_CONFIGS)) {
+    await run(env.SCORE_DB, `
+      INSERT OR IGNORE INTO scoring_engine_simulation_profile_configs (
+        profile_key, profile_version, profile_status, config_json, formula_metadata_json,
+        thresholds_locked, scoring_enabled, true_probability_enabled, created_at, updated_at
+      ) VALUES (?, ?, 'active_simulation_only', ?, ?, 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `, profileKey, spec.profile_version, JSON.stringify(spec.config), JSON.stringify(metadata));
+  }
+}
+
+async function profileConstants(env, profileKey) {
+  await ensureSimulationProfileConfigs(env);
+  const row = await first(env.SCORE_DB, `
+    SELECT profile_key, profile_version, config_json, formula_metadata_json, thresholds_locked, scoring_enabled, true_probability_enabled
+    FROM scoring_engine_simulation_profile_configs
+    WHERE profile_key=? AND profile_status='active_simulation_only'
+    LIMIT 1
+  `, profileKey);
+  if (!row) throw new Error(`missing_active_simulation_profile_config:${profileKey}`);
+  const cfg = JSON.parse(row.config_json || "{}");
+  const metadata = JSON.parse(row.formula_metadata_json || "{}");
+  return {
+    profileKey,
+    version: String(row.profile_version || cfg.profile_version || "0.2.3-db-config"),
+    config: cfg,
+    formulaMetadata: metadata,
+    thresholds_locked: Number(row.thresholds_locked || 0),
+    scoring_enabled: Number(row.scoring_enabled || 0),
+    true_probability_enabled: Number(row.true_probability_enabled || 0),
+    rawSideDeltaThreshold: finiteNumber(cfg.raw_side_delta_threshold, 0.5),
+    rawLessDeltaFromMore: finiteNumber(cfg.raw_less_delta_from_more, 1),
+    baseRawPacketReady: finiteNumber(cfg.base_raw_packet_ready, 82),
+    baseRawPacketPartial: finiteNumber(cfg.base_raw_packet_partial, 76),
+    maxScoreCap: finiteNumber(cfg.max_score_cap, 100),
+    baseConfidence: finiteNumber(cfg.base_confidence, 100),
+    archiveScoreThreshold: finiteNumber(cfg.archive_score_threshold, 70),
+    minLiveScore: finiteNumber(cfg.min_live_score, 70),
+    minLiveConfidence: finiteNumber(cfg.min_live_confidence, 55),
+    gradeArchiveMin: finiteNumber(cfg.grade_archive_min, 70),
+    gradeQualifiedMin: finiteNumber(cfg.grade_qualified_min, 76),
+    gradeStrongMin: finiteNumber(cfg.grade_strong_min, 82),
+    gradeEliteMin: finiteNumber(cfg.grade_elite_min, 88),
+    microScale: finiteNumber(cfg.score_sort_micro_scale, 0.0001),
+    cleanBonusScore: finiteNumber(cfg.clean_bonus_score, 0),
+    marketRawCase: sqlCaseFromMap("m.market_prop_context_status", cfg.market_raw_adjustments, -2),
+    dailyRawCase: sqlCaseFromMap("m.daily_readiness_status", cfg.daily_raw_adjustments, 0),
+    sourceRawCase: sqlCaseFromMap("m.source_key", cfg.source_raw_adjustments, 0),
+    oddsRawCase: sqlCaseFromMap("json_extract(m.matrix_payload_json, '$.prepared.odds_type')", cfg.odds_raw_adjustments, 0),
+    propRawCase: sqlCaseFromMap("m.canonical_prop_key", cfg.prop_raw_adjustments, 0),
+    scorePenaltyMarketNotFound: finiteNumber(cfg.score_penalty_market_not_found, 4),
+    scorePenaltyMarketMissing: finiteNumber(cfg.score_penalty_market_missing, 6),
+    scorePenaltyCompleteMarketBlindness: finiteNumber(cfg.score_penalty_complete_market_blindness, 10),
+    scorePenaltyPacketPartial: finiteNumber(cfg.score_penalty_packet_partial, 3),
+    scorePenaltyPartialEnrichment: finiteNumber(cfg.score_penalty_partial_enrichment, 4),
+    confidenceCapMarketNotFound: finiteNumber(cfg.confidence_cap_market_not_found, 65),
+    confidenceCapMarketMissing: finiteNumber(cfg.confidence_cap_market_missing, 54),
+    confidenceCapCompleteMarketBlindness: finiteNumber(cfg.confidence_cap_complete_market_blindness, 45),
+    confidenceCapWarning9Plus: finiteNumber(cfg.confidence_cap_warning_9_plus, 50),
+    confidencePenaltyPacketPartial: finiteNumber(cfg.confidence_penalty_packet_partial, 10),
+    confidencePenaltyPartialEnrichment: finiteNumber(cfg.confidence_penalty_partial_enrichment, 15),
+    confidencePenaltySleeperNullOdds: finiteNumber(cfg.confidence_penalty_sleeper_null_odds, 5),
+    confidencePenaltyWarning68: finiteNumber(cfg.confidence_penalty_warning_6_8, 8),
+    confidencePenaltyWarning35: finiteNumber(cfg.confidence_penalty_warning_3_5, 4),
+    confidencePenaltyWarning9Plus: finiteNumber(cfg.confidence_penalty_warning_9_plus, 20)
   };
 }
 
 async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatrixId, chunkSize) {
-  const p = profileConstants(profileKey);
+  const p = await profileConstants(env, profileKey);
   await run(env.SCORE_DB, `
     INSERT INTO scoring_engine_simulation_shadow (
       simulation_row_id, simulation_batch_id, profile_key, profile_version,
@@ -460,6 +633,8 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
       missing_component_count, structural_cap, penalty_total, bonus_total, raw_more_score, raw_less_score,
       more_score_0_100, less_score_0_100, score_0_100, selected_side, score_status, score_grade,
       archive_eligible, invariant_violation_count, calculation_json, matrix_payload_json_snapshot, details_json_snapshot,
+      confidence_0_100, confidence_status, live_playable, model_deferred, model_deferred_reason,
+      score_sort_0_100, score_integer_0_100,
       created_at, updated_at
     )
     WITH base AS (
@@ -472,72 +647,139 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
         json_extract(m.matrix_payload_json, '$.side_context.side_mode') AS v_side_mode,
         json_extract(m.matrix_payload_json, '$.side_context.available_sides') AS v_available_sides_json,
         CASE
-          WHEN COALESCE(m.blocking_for_scoring,0) = 1 OR m.matrix_status = 'matrix_deferred' OR m.factor_status = 'blocked' THEN 1
+          WHEN m.source_key = 'sleeper' AND m.canonical_prop_key = 'rfi_nrfi' THEN 1
+          WHEN m.source_key = 'prizepicks' AND m.canonical_prop_key = 'triples' THEN 1
+          ELSE 0
+        END AS model_deferred_calc,
+        CASE
+          WHEN m.source_key = 'sleeper' AND m.canonical_prop_key = 'rfi_nrfi' THEN 'model_deferred_rfi_nrfi'
+          WHEN m.source_key = 'prizepicks' AND m.canonical_prop_key = 'triples' THEN 'model_deferred_low_event_prop'
+          ELSE NULL
+        END AS model_deferred_reason_calc,
+        CASE
+          WHEN NOT (m.source_key = 'sleeper' AND m.canonical_prop_key = 'rfi_nrfi')
+           AND NOT (m.source_key = 'prizepicks' AND m.canonical_prop_key = 'triples')
+           AND (COALESCE(m.blocking_for_scoring,0) = 1 OR m.matrix_status = 'matrix_deferred' OR m.factor_status = 'blocked') THEN 1
           ELSE 0
         END AS hard_blocked,
         CASE
-          WHEN m.canonical_prop_key IN ('total_bases','hits_runs_rbis','home_runs','stolen_bases') THEN 1
+          WHEN m.market_prop_context_status IN ('market_prop_context_missing','market_prop_context_not_found')
+           AND COALESCE(m.market_game_context_status,'') IN ('','market_game_context_missing','market_game_context_not_found','market_game_context_absent') THEN 1
           ELSE 0
-        END AS high_vol_prop,
-        CASE
-          WHEN m.factor_status = 'packet_ready' THEN 82 ELSE 76 END
-          + CASE WHEN m.market_prop_context_status = 'market_prop_context_present' THEN 4 WHEN m.market_prop_context_status = 'market_prop_context_not_found' THEN -4 WHEN m.market_prop_context_status = 'market_prop_context_missing' THEN -6 ELSE -2 END
-          + CASE WHEN m.daily_readiness_status = 'partial_enrichment' THEN -5 WHEN m.daily_readiness_status = 'ready_with_warnings' THEN 0 ELSE 1 END
-          + CASE WHEN m.source_key = 'sleeper' THEN -1 ELSE 0 END
-          + CASE
-              WHEN m.canonical_prop_key = 'pitcher_strikeouts' THEN 3
-              WHEN m.canonical_prop_key = 'hits' THEN 2
-              WHEN m.canonical_prop_key IN ('total_bases','hits_runs_rbis') THEN -2
-              WHEN m.canonical_prop_key IN ('home_runs','stolen_bases') THEN -4
-              WHEN m.canonical_prop_key IN ('earned_runs_allowed','hits_allowed') THEN -3
-              WHEN m.canonical_prop_key IN ('pitcher_outs','pitching_outs') THEN -1
-              ELSE 0
-            END
-          + CASE WHEN json_extract(m.matrix_payload_json, '$.prepared.odds_type') IN ('goblin','demon') THEN -4 ELSE 0 END AS raw_more_pre,
-        MIN(
-          100,
-          CASE WHEN COALESCE(m.blocking_for_scoring,0) = 1 OR m.matrix_status = 'matrix_deferred' OR m.factor_status = 'blocked' THEN 0 ELSE 100 END,
-          CASE WHEN m.market_prop_context_status = 'market_prop_context_missing' THEN ${p.capMarketMissing} ELSE 100 END,
-          CASE WHEN COALESCE(m.warning_count,0) >= 9 THEN ${p.capWarning9} ELSE 100 END,
-          CASE WHEN m.market_prop_context_status = 'market_prop_context_not_found' THEN ${p.capMarketNotFound} ELSE 100 END,
-          CASE WHEN COALESCE(m.warning_count,0) BETWEEN 6 AND 8 THEN ${p.capWarning68} ELSE 100 END,
-          CASE WHEN m.factor_status = 'packet_partial' THEN ${p.capPacketPartial} ELSE 100 END,
-          CASE WHEN m.daily_readiness_status = 'partial_enrichment' THEN ${p.capPartialEnrichment} ELSE 100 END,
-          CASE WHEN COALESCE(m.warning_count,0) BETWEEN 3 AND 5 THEN ${p.capWarning35} ELSE 100 END,
-          CASE WHEN m.daily_readiness_status = 'ready_with_warnings' THEN ${p.capReadyWarnings} ELSE 100 END,
-          CASE WHEN m.canonical_prop_key IN ('total_bases','hits_runs_rbis','home_runs','stolen_bases') AND m.market_prop_context_status <> 'market_prop_context_present' THEN ${p.capHighVolUnvalidated} ELSE 100 END
-        ) AS structural_cap_calc,
-        (
-          CASE WHEN m.market_prop_context_status = 'market_prop_context_missing' THEN ${p.penMarketMissing} ELSE 0 END +
-          CASE WHEN COALESCE(m.warning_count,0) >= 9 THEN ${p.penWarning9} ELSE 0 END +
-          CASE WHEN m.market_prop_context_status = 'market_prop_context_not_found' THEN ${p.penMarketNotFound} ELSE 0 END +
-          CASE WHEN m.factor_status = 'packet_partial' THEN ${p.penPacketPartial} ELSE 0 END +
-          CASE WHEN m.daily_readiness_status = 'partial_enrichment' THEN ${p.penPartialEnrichment} ELSE 0 END +
-          CASE WHEN COALESCE(m.warning_count,0) BETWEEN 6 AND 8 THEN ${p.penWarning68} ELSE 0 END +
-          CASE WHEN m.source_key = 'sleeper' AND json_extract(m.matrix_payload_json, '$.prepared.odds_type') IS NULL THEN ${p.penSleeperNullOdds} ELSE 0 END +
-          CASE WHEN m.canonical_prop_key IN ('total_bases','hits_runs_rbis','home_runs','stolen_bases') AND m.market_prop_context_status <> 'market_prop_context_present' THEN ${p.penHighVolNoMarket} ELSE 0 END
-        ) AS penalty_total_calc
+        END AS complete_market_blind_calc,
+        CASE WHEN m.factor_status = 'packet_ready' THEN ${p.baseRawPacketReady} ELSE ${p.baseRawPacketPartial} END
+          + ${p.marketRawCase}
+          + ${p.dailyRawCase}
+          + ${p.sourceRawCase}
+          + ${p.propRawCase}
+          + ${p.oddsRawCase} AS raw_more_pre
       FROM prop_matrix_current m
       WHERE (? IS NULL OR m.matrix_id > ?)
       ORDER BY m.matrix_id
       LIMIT ?
-    ), scored AS (
+    ), rawed AS (
       SELECT
         base.*,
         MAX(0, MIN(100, raw_more_pre)) AS raw_more_score_calc,
-        CASE WHEN v_side_mode = 'two_sided' THEN MAX(0, MIN(100, raw_more_pre - 1)) ELSE NULL END AS raw_less_score_calc,
-        CASE
-          WHEN hard_blocked = 1 THEN 0
-          WHEN structural_cap_calc < 100 OR penalty_total_calc > 0 THEN ${p.cappedBonus}
-          WHEN market_prop_context_status = 'market_prop_context_present' AND COALESCE(warning_count,0) = 0 AND factor_status = 'packet_ready' AND daily_readiness_status <> 'partial_enrichment' THEN ${p.cleanBonus}
-          ELSE 0
-        END AS bonus_calc
+        CASE WHEN v_side_mode = 'two_sided' THEN MAX(0, MIN(100, raw_more_pre - ${p.rawLessDeltaFromMore})) ELSE NULL END AS raw_less_score_calc
       FROM base
+    ), side_selected AS (
+      SELECT
+        rawed.*,
+        CASE
+          WHEN hard_blocked = 1 OR model_deferred_calc = 1 THEN NULL
+          WHEN v_side_mode = 'more_only' THEN 'more'
+          WHEN v_side_mode = 'two_sided' AND raw_more_score_calc IS NOT NULL AND raw_less_score_calc IS NOT NULL AND (raw_more_score_calc - raw_less_score_calc) >= ${p.rawSideDeltaThreshold} THEN 'more'
+          WHEN v_side_mode = 'two_sided' AND raw_more_score_calc IS NOT NULL AND raw_less_score_calc IS NOT NULL AND (raw_less_score_calc - raw_more_score_calc) >= ${p.rawSideDeltaThreshold} THEN 'less'
+          WHEN v_side_mode = 'two_sided' AND raw_more_score_calc IS NOT NULL AND raw_less_score_calc IS NOT NULL AND ABS(raw_more_score_calc - raw_less_score_calc) < ${p.rawSideDeltaThreshold} AND raw_more_score_calc > raw_less_score_calc THEN 'more'
+          WHEN v_side_mode = 'two_sided' AND raw_more_score_calc IS NOT NULL AND raw_less_score_calc IS NOT NULL AND ABS(raw_more_score_calc - raw_less_score_calc) < ${p.rawSideDeltaThreshold} AND raw_less_score_calc > raw_more_score_calc THEN 'less'
+          ELSE NULL
+        END AS selected_side_calc
+      FROM rawed
+    ), penalties AS (
+      SELECT
+        side_selected.*,
+        (
+          CASE WHEN complete_market_blind_calc = 1 THEN ${p.scorePenaltyCompleteMarketBlindness} ELSE 0 END +
+          CASE WHEN complete_market_blind_calc = 0 AND market_prop_context_status = 'market_prop_context_missing' THEN ${p.scorePenaltyMarketMissing} ELSE 0 END +
+          CASE WHEN complete_market_blind_calc = 0 AND market_prop_context_status = 'market_prop_context_not_found' THEN ${p.scorePenaltyMarketNotFound} ELSE 0 END +
+          CASE WHEN factor_status = 'packet_partial' THEN ${p.scorePenaltyPacketPartial} ELSE 0 END +
+          CASE WHEN daily_readiness_status = 'partial_enrichment' THEN ${p.scorePenaltyPartialEnrichment} ELSE 0 END
+        ) AS penalty_total_calc,
+        CASE
+          WHEN hard_blocked = 1 OR model_deferred_calc = 1 THEN 0
+          WHEN market_prop_context_status = 'market_prop_context_present' AND COALESCE(warning_count,0) = 0 AND factor_status = 'packet_ready' AND daily_readiness_status <> 'partial_enrichment' THEN ${p.cleanBonusScore}
+          ELSE 0
+        END AS bonus_calc,
+        (
+          CASE WHEN factor_status = 'packet_partial' THEN ${p.confidencePenaltyPacketPartial} ELSE 0 END +
+          CASE WHEN daily_readiness_status = 'partial_enrichment' THEN ${p.confidencePenaltyPartialEnrichment} ELSE 0 END +
+          CASE WHEN source_key = 'sleeper' AND v_odds_type IS NULL THEN ${p.confidencePenaltySleeperNullOdds} ELSE 0 END +
+          CASE WHEN COALESCE(warning_count,0) >= 9 THEN ${p.confidencePenaltyWarning9Plus} ELSE 0 END +
+          CASE WHEN COALESCE(warning_count,0) BETWEEN 6 AND 8 THEN ${p.confidencePenaltyWarning68} ELSE 0 END +
+          CASE WHEN COALESCE(warning_count,0) BETWEEN 3 AND 5 THEN ${p.confidencePenaltyWarning35} ELSE 0 END
+        ) AS confidence_penalty_total_calc,
+        MIN(
+          100,
+          CASE WHEN complete_market_blind_calc = 1 THEN ${p.confidenceCapCompleteMarketBlindness} ELSE 100 END,
+          CASE WHEN complete_market_blind_calc = 0 AND market_prop_context_status = 'market_prop_context_missing' THEN ${p.confidenceCapMarketMissing} ELSE 100 END,
+          CASE WHEN complete_market_blind_calc = 0 AND market_prop_context_status = 'market_prop_context_not_found' THEN ${p.confidenceCapMarketNotFound} ELSE 100 END,
+          CASE WHEN COALESCE(warning_count,0) >= 9 THEN ${p.confidenceCapWarning9Plus} ELSE 100 END
+        ) AS confidence_cap_calc
+      FROM side_selected
+    ), scored AS (
+      SELECT
+        penalties.*,
+        ${p.maxScoreCap} AS structural_cap_calc,
+        CASE
+          WHEN hard_blocked = 1 OR model_deferred_calc = 1 OR selected_side_calc IS NULL THEN NULL
+          WHEN selected_side_calc = 'more' THEN MIN(${p.maxScoreCap}, MAX(0, MIN(100, raw_more_score_calc - penalty_total_calc + bonus_calc)))
+          WHEN selected_side_calc = 'less' THEN MIN(${p.maxScoreCap}, MAX(0, MIN(100, raw_less_score_calc - penalty_total_calc + bonus_calc)))
+          ELSE NULL
+        END AS score_integer_calc,
+        CASE
+          WHEN hard_blocked = 1 OR model_deferred_calc = 1 OR selected_side_calc IS NULL THEN NULL
+          ELSE MIN(confidence_cap_calc, MAX(0, MIN(100, ${p.baseConfidence} - confidence_penalty_total_calc)))
+        END AS confidence_calc,
+        (((COALESCE(mlb_player_id,0) * 31 + COALESCE(game_pk,0) * 17 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 13) % 999) - 499) * ${p.microScale} / 999.0 AS sort_micro_adjustment_calc
+      FROM penalties
     ), final AS (
       SELECT
         scored.*,
-        CASE WHEN hard_blocked = 1 THEN NULL ELSE MIN(structural_cap_calc, MAX(0, MIN(100, raw_more_score_calc - penalty_total_calc)) + bonus_calc) END AS more_final,
-        CASE WHEN hard_blocked = 1 OR v_side_mode <> 'two_sided' THEN NULL ELSE MIN(structural_cap_calc, MAX(0, MIN(100, raw_less_score_calc - penalty_total_calc)) + bonus_calc) END AS less_final
+        CASE WHEN selected_side_calc = 'more' THEN score_integer_calc ELSE NULL END AS more_final,
+        CASE WHEN v_side_mode = 'more_only' THEN NULL WHEN selected_side_calc = 'less' THEN score_integer_calc WHEN selected_side_calc = 'more' THEN MIN(${p.maxScoreCap}, MAX(0, MIN(100, raw_less_score_calc - penalty_total_calc + bonus_calc))) ELSE NULL END AS less_final,
+        CASE WHEN score_integer_calc IS NULL THEN NULL ELSE score_integer_calc + sort_micro_adjustment_calc END AS score_sort_calc,
+        CASE
+          WHEN model_deferred_calc = 1 THEN 'model_deferred'
+          WHEN hard_blocked = 1 THEN 'simulation_hard_blocked'
+          WHEN selected_side_calc IS NULL THEN 'simulation_side_tie_unresolved'
+          ELSE 'simulated_profile_locked'
+        END AS score_status_calc,
+        CASE
+          WHEN model_deferred_calc = 1 THEN 'BIN_MODEL_DEFERRED'
+          WHEN hard_blocked = 1 THEN 'BIN_HARD_BLOCK'
+          WHEN score_integer_calc IS NULL THEN 'BIN_0_NULL'
+          WHEN score_integer_calc >= ${p.gradeEliteMin} THEN 'BIN_ELITE'
+          WHEN score_integer_calc >= ${p.gradeStrongMin} THEN 'BIN_STRONG'
+          WHEN score_integer_calc >= ${p.gradeQualifiedMin} THEN 'BIN_QUALIFIED'
+          WHEN score_integer_calc >= ${p.gradeArchiveMin} THEN 'BIN_ARCHIVE'
+          ELSE 'BIN_REJECT'
+        END AS score_grade_calc,
+        CASE
+          WHEN confidence_calc IS NULL THEN NULL
+          WHEN confidence_calc >= ${p.minLiveConfidence} THEN 'confidence_live_eligible'
+          ELSE 'confidence_archive_only'
+        END AS confidence_status_calc,
+        CASE
+          WHEN model_deferred_calc = 0 AND hard_blocked = 0 AND selected_side_calc IS NOT NULL
+           AND score_integer_calc >= ${p.minLiveScore}
+           AND confidence_calc >= ${p.minLiveConfidence}
+          THEN 1 ELSE 0
+        END AS live_playable_calc,
+        CASE
+          WHEN model_deferred_calc = 0 AND hard_blocked = 0 AND selected_side_calc IS NOT NULL AND score_integer_calc >= ${p.archiveScoreThreshold}
+          THEN 1 ELSE 0
+        END AS archive_eligible_calc
       FROM scored
     )
     SELECT
@@ -554,57 +796,41 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
       structural_cap_calc, penalty_total_calc, bonus_calc, raw_more_score_calc, raw_less_score_calc,
       more_final,
       CASE WHEN v_side_mode = 'more_only' THEN NULL ELSE less_final END,
-      CASE
-        WHEN hard_blocked = 1 THEN NULL
-        WHEN v_side_mode = 'more_only' THEN more_final
-        WHEN v_side_mode = 'two_sided' AND more_final IS NOT NULL AND less_final IS NOT NULL AND more_final <> less_final THEN CASE WHEN more_final > less_final THEN more_final ELSE less_final END
-        ELSE NULL
-      END AS score_0_100,
-      CASE
-        WHEN hard_blocked = 1 THEN NULL
-        WHEN v_side_mode = 'more_only' AND more_final IS NOT NULL THEN 'more'
-        WHEN v_side_mode = 'two_sided' AND more_final IS NOT NULL AND less_final IS NOT NULL AND more_final > less_final THEN 'more'
-        WHEN v_side_mode = 'two_sided' AND more_final IS NOT NULL AND less_final IS NOT NULL AND less_final > more_final THEN 'less'
-        ELSE NULL
-      END AS selected_side,
-      CASE
-        WHEN hard_blocked = 1 THEN 'simulation_blocked_by_matrix'
-        WHEN v_side_mode = 'more_only' AND more_final IS NOT NULL THEN 'simulated_profile_locked'
-        WHEN v_side_mode = 'two_sided' AND more_final IS NOT NULL AND less_final IS NOT NULL AND more_final <> less_final THEN 'simulated_profile_locked'
-        ELSE 'simulation_side_unresolved'
-      END AS score_status,
-      CASE
-        WHEN hard_blocked = 1 THEN 'BIN_0_BLOCKED'
-        WHEN (CASE WHEN v_side_mode = 'more_only' THEN more_final WHEN more_final IS NOT NULL AND less_final IS NOT NULL AND more_final <> less_final THEN CASE WHEN more_final > less_final THEN more_final ELSE less_final END ELSE NULL END) >= 88 THEN 'BIN_ELITE'
-        WHEN (CASE WHEN v_side_mode = 'more_only' THEN more_final WHEN more_final IS NOT NULL AND less_final IS NOT NULL AND more_final <> less_final THEN CASE WHEN more_final > less_final THEN more_final ELSE less_final END ELSE NULL END) >= 82 THEN 'BIN_STRONG'
-        WHEN (CASE WHEN v_side_mode = 'more_only' THEN more_final WHEN more_final IS NOT NULL AND less_final IS NOT NULL AND more_final <> less_final THEN CASE WHEN more_final > less_final THEN more_final ELSE less_final END ELSE NULL END) >= 76 THEN 'BIN_QUALIFIED'
-        WHEN (CASE WHEN v_side_mode = 'more_only' THEN more_final WHEN more_final IS NOT NULL AND less_final IS NOT NULL AND more_final <> less_final THEN CASE WHEN more_final > less_final THEN more_final ELSE less_final END ELSE NULL END) >= 70 THEN 'BIN_ARCHIVE'
-        WHEN (CASE WHEN v_side_mode = 'more_only' THEN more_final WHEN more_final IS NOT NULL AND less_final IS NOT NULL AND more_final <> less_final THEN CASE WHEN more_final > less_final THEN more_final ELSE less_final END ELSE NULL END) IS NULL THEN 'BIN_0_NULL'
-        ELSE 'BIN_REJECT'
-      END AS score_grade,
-      CASE
-        WHEN hard_blocked = 0
-          AND (CASE WHEN v_side_mode = 'more_only' THEN more_final WHEN more_final IS NOT NULL AND less_final IS NOT NULL AND more_final <> less_final THEN CASE WHEN more_final > less_final THEN more_final ELSE less_final END ELSE NULL END) >= 70
-          AND (CASE WHEN v_side_mode = 'more_only' AND more_final IS NOT NULL THEN 'simulated_profile_locked' WHEN v_side_mode = 'two_sided' AND more_final IS NOT NULL AND less_final IS NOT NULL AND more_final <> less_final THEN 'simulated_profile_locked' ELSE 'simulation_side_unresolved' END) = 'simulated_profile_locked'
-        THEN 1 ELSE 0 END AS archive_eligible,
+      score_integer_calc AS score_0_100,
+      selected_side_calc AS selected_side,
+      score_status_calc,
+      score_grade_calc,
+      archive_eligible_calc,
       0 AS invariant_violation_count,
       json_object(
         'worker_version', ?,
         'simulation_only', 1,
         'profile_key', ?,
         'profile_version', ?,
-        'formula_order', 'hard_block_gate -> side_validation -> raw_score -> penalties -> structural_cap -> bonus -> structural_cap -> selected_side -> archive_flag',
-        'strict_archive_threshold', 70,
-        'final_thresholds_locked', 0,
+        'active_values_source', 'SCORE_DB.scoring_engine_simulation_profile_configs.config_json',
+        'all_calibration_variables_db_stored', 1,
+        'formula_order', 'inventory_defer_gate -> db_config_raw_side_scores -> pre_cap_side_selection -> score_penalties -> score_cap -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
+        'raw_side_delta_threshold', ${p.rawSideDeltaThreshold},
+        'min_live_score', ${p.minLiveScore},
+        'min_live_confidence', ${p.minLiveConfidence},
+        'archive_score_threshold', ${p.archiveScoreThreshold},
+        'thresholds_locked', 0,
         'scoring_enabled', 0,
         'true_probability_enabled', 0,
         'no_true_hit_probability_claims', 1,
-        'bonus_rule', 'zero_bonus_for_any_capped_or_penalized_row; clean_rows_only_may_receive_configured_bonus',
+        'score_sort_policy', 'score_sort_0_100_only; never used for archive/live/bins',
         'goblin_demon_less_score_policy', 'NULL_NOT_ZERO',
         'dedupe_deferred_to_ranking_final_board', 1
       ) AS calculation_json,
       matrix_payload_json,
       details_json,
+      confidence_calc,
+      confidence_status_calc,
+      live_playable_calc,
+      model_deferred_calc,
+      model_deferred_reason_calc,
+      score_sort_calc,
+      score_integer_calc,
       CURRENT_TIMESTAMP,
       CURRENT_TIMESTAMP
     FROM final
@@ -639,25 +865,31 @@ async function summarizeSimulationProfile(env, batchId, profileKey) {
   const row = await first(env.SCORE_DB, `
     SELECT
       COUNT(*) AS simulation_rows,
-      SUM(CASE WHEN score_status = 'simulation_blocked_by_matrix' THEN 1 ELSE 0 END) AS blocked_rows,
+      SUM(CASE WHEN score_status = 'simulation_hard_blocked' THEN 1 ELSE 0 END) AS hard_blocked_rows,
+      SUM(CASE WHEN score_status = 'model_deferred' THEN 1 ELSE 0 END) AS model_deferred_rows,
+      SUM(CASE WHEN score_status = 'simulation_side_tie_unresolved' THEN 1 ELSE 0 END) AS side_unresolved_rows,
       SUM(CASE WHEN score_grade = 'BIN_REJECT' THEN 1 ELSE 0 END) AS reject_rows,
       SUM(CASE WHEN score_grade = 'BIN_ARCHIVE' THEN 1 ELSE 0 END) AS archive_rows,
       SUM(CASE WHEN score_grade = 'BIN_QUALIFIED' THEN 1 ELSE 0 END) AS qualified_rows,
       SUM(CASE WHEN score_grade = 'BIN_STRONG' THEN 1 ELSE 0 END) AS strong_rows,
       SUM(CASE WHEN score_grade = 'BIN_ELITE' THEN 1 ELSE 0 END) AS elite_rows,
+      SUM(CASE WHEN score_0_100 >= 70 THEN 1 ELSE 0 END) AS rows_70_plus,
       SUM(CASE WHEN score_0_100 >= 76 THEN 1 ELSE 0 END) AS rows_76_plus,
       SUM(CASE WHEN score_0_100 >= 82 THEN 1 ELSE 0 END) AS rows_82_plus,
       SUM(CASE WHEN score_0_100 >= 88 THEN 1 ELSE 0 END) AS rows_88_plus,
       SUM(CASE WHEN selected_side IS NOT NULL AND score_0_100 IS NULL THEN 1 ELSE 0 END) AS selected_side_without_score,
       SUM(CASE WHEN side_mode = 'more_only' AND less_score_0_100 IS NOT NULL THEN 1 ELSE 0 END) AS more_only_less_score_not_null,
       SUM(CASE WHEN source_key = 'prizepicks' AND odds_type IN ('goblin','demon') AND selected_side = 'less' THEN 1 ELSE 0 END) AS goblin_demon_less_selected,
-      SUM(CASE WHEN score_status = 'simulation_blocked_by_matrix' AND (score_0_100 IS NOT NULL OR archive_eligible = 1 OR selected_side IS NOT NULL) THEN 1 ELSE 0 END) AS blocked_row_score_leak,
-      SUM(CASE WHEN market_prop_context_status = 'market_prop_context_missing' AND score_0_100 >= 70 THEN 1 ELSE 0 END) AS market_missing_70_plus,
-      SUM(CASE WHEN market_prop_context_status = 'market_prop_context_not_found' AND score_0_100 >= 76 THEN 1 ELSE 0 END) AS market_not_found_76_plus,
-      SUM(CASE WHEN warning_count >= 9 AND score_0_100 >= 70 THEN 1 ELSE 0 END) AS warning9_70_plus,
-      SUM(CASE WHEN factor_status = 'packet_partial' AND score_0_100 >= 82 THEN 1 ELSE 0 END) AS packet_partial_82_plus,
-      SUM(CASE WHEN daily_readiness_status = 'partial_enrichment' AND score_0_100 >= 82 THEN 1 ELSE 0 END) AS partial_enrichment_82_plus,
-      SUM(CASE WHEN archive_eligible = 1 AND score_status <> 'simulated_profile_locked' THEN 1 ELSE 0 END) AS archive_without_locked_status
+      SUM(CASE WHEN score_status IN ('simulation_hard_blocked','model_deferred') AND (score_0_100 IS NOT NULL OR archive_eligible = 1 OR live_playable = 1 OR selected_side IS NOT NULL) THEN 1 ELSE 0 END) AS blocked_or_deferred_score_leak,
+      SUM(CASE WHEN live_playable = 1 AND confidence_0_100 < 55 THEN 1 ELSE 0 END) AS live_playable_confidence_under_55,
+      SUM(CASE WHEN live_playable = 1 AND score_0_100 < 70 THEN 1 ELSE 0 END) AS live_playable_score_under_70,
+      SUM(CASE WHEN live_playable = 1 AND selected_side IS NULL THEN 1 ELSE 0 END) AS live_playable_null_side,
+      SUM(CASE WHEN side_mode = 'two_sided' AND raw_more_score IS NOT NULL AND raw_less_score IS NOT NULL AND ABS(raw_more_score - raw_less_score) >= 0.50 AND selected_side IS NULL AND model_deferred = 0 THEN 1 ELSE 0 END) AS raw_delta_selectable_but_null_side,
+      SUM(CASE WHEN side_mode = 'two_sided' AND raw_more_score IS NOT NULL AND raw_less_score IS NOT NULL AND ABS(raw_more_score - raw_less_score) < 0.50 AND selected_side IS NULL AND model_deferred = 0 THEN 1 ELSE 0 END) AS true_micro_tie_null_side,
+      SUM(CASE WHEN source_key = 'sleeper' AND canonical_prop_key = 'rfi_nrfi' AND score_status <> 'model_deferred' THEN 1 ELSE 0 END) AS sleeper_rfi_not_deferred,
+      SUM(CASE WHEN source_key = 'prizepicks' AND canonical_prop_key = 'triples' AND score_status <> 'model_deferred' THEN 1 ELSE 0 END) AS prizepicks_triples_not_deferred,
+      SUM(CASE WHEN score_sort_0_100 IS NOT NULL AND ABS(score_sort_0_100 - score_integer_0_100) >= 0.0001 THEN 1 ELSE 0 END) AS score_sort_micro_out_of_bounds,
+      SUM(CASE WHEN score_sort_0_100 IS NOT NULL AND CAST(score_sort_0_100 AS INTEGER) <> CAST(score_integer_0_100 AS INTEGER) THEN 1 ELSE 0 END) AS score_sort_integer_boundary_cross
     FROM scoring_engine_simulation_shadow
     WHERE simulation_batch_id=? AND profile_key=?
   `, batchId, profileKey);
@@ -668,21 +900,20 @@ async function summarizeSimulationProfile(env, batchId, profileKey) {
 
 async function recordSimulationInvariants(env, batchId, profileKey, summary) {
   const checks = [
-    ["BLOCKED_ROW_SCORE_LEAK", summary.blocked_row_score_leak, "BLOCKER", "Blocked matrix rows must not receive score, selected_side, or archive_eligible."],
+    ["BLOCKED_OR_DEFERRED_SCORE_LEAK", summary.blocked_or_deferred_score_leak, "BLOCKER", "Hard-blocked or model-deferred rows must not receive score, selected_side, archive_eligible, or live_playable."],
     ["SELECTED_SIDE_WITHOUT_SCORE", summary.selected_side_without_score, "BLOCKER", "No selected_side may exist without score_0_100."],
     ["MORE_ONLY_LESS_SCORE_NOT_NULL", summary.more_only_less_score_not_null, "BLOCKER", "More-only Goblin/Demon rows must keep less_score_0_100 NULL."],
     ["GOBLIN_DEMON_LESS_SELECTED", summary.goblin_demon_less_selected, "BLOCKER", "Goblin/Demon cannot select Less/Under."],
-    ["MARKET_MISSING_70_PLUS", summary.market_missing_70_plus, "BLOCKER", "market_prop_context_missing rows cannot reach archive threshold."],
-    ["MARKET_NOT_FOUND_76_PLUS", summary.market_not_found_76_plus, "BLOCKER", "market_prop_context_not_found rows cannot reach playable threshold."],
-    ["WARNING9_70_PLUS", summary.warning9_70_plus, "BLOCKER", "warning_count >= 9 rows cannot reach archive threshold under Strict-B."],
-    ["PACKET_PARTIAL_82_PLUS", summary.packet_partial_82_plus, "BLOCKER", "packet_partial rows cannot reach 82+."],
-    ["PARTIAL_ENRICHMENT_82_PLUS", summary.partial_enrichment_82_plus, "BLOCKER", "partial_enrichment rows cannot reach 82+."],
-    ["ARCHIVE_WITHOUT_LOCKED_STATUS", summary.archive_without_locked_status, "BLOCKER", "archive_eligible requires simulated_profile_locked."],
-    ["ELITE_ROWS_UNDER_PARTIAL_DATA", summary.rows_88_plus, "BLOCKER", "Current partial data state should produce zero 88+ rows."],
-    ["ROWS_76_PLUS_ABOVE_CEILING", summary.rows_76_plus > 300 ? summary.rows_76_plus : 0, "BLOCKER", "76+ rows above 300 indicates score inflation."],
-    ["ROWS_76_PLUS_BELOW_FLOOR", summary.rows_76_plus < 50 ? summary.rows_76_plus : 0, "WARNING", "76+ rows below 50 indicates possible board-emptying over-strictness."],
-    ["ROWS_82_PLUS_ABOVE_CEILING", summary.rows_82_plus > 75 ? summary.rows_82_plus : 0, "BLOCKER", "82+ rows above 75 indicates score inflation."],
-    ["BLOCKED_ROW_COUNT_NOT_26", summary.blocked_rows !== 26 ? summary.blocked_rows : 0, "BLOCKER", "Expected exactly 26 hard blocked rows from current matrix snapshot."]
+    ["LIVE_PLAYABLE_CONFIDENCE_UNDER_55", summary.live_playable_confidence_under_55, "BLOCKER", "No live_playable row can have confidence_0_100 below 55."],
+    ["LIVE_PLAYABLE_SCORE_UNDER_70", summary.live_playable_score_under_70, "BLOCKER", "No live_playable row can have score_0_100 below 70."],
+    ["LIVE_PLAYABLE_NULL_SIDE", summary.live_playable_null_side, "BLOCKER", "No live_playable row can have selected_side NULL."],
+    ["RAW_DELTA_SELECTABLE_BUT_NULL_SIDE", summary.raw_delta_selectable_but_null_side, "BLOCKER", "Two-sided rows with raw side delta >= 0.50 must select a side before cap/compression."],
+    ["SLEEPER_RFI_NOT_DEFERRED", summary.sleeper_rfi_not_deferred, "BLOCKER", "Sleeper rfi_nrfi inventory must route to model_deferred."],
+    ["PRIZEPICKS_TRIPLES_NOT_DEFERRED", summary.prizepicks_triples_not_deferred, "BLOCKER", "PrizePicks triples inventory must route to model_deferred_low_event_prop."],
+    ["SCORE_SORT_MICRO_OUT_OF_BOUNDS", summary.score_sort_micro_out_of_bounds, "BLOCKER", "score_sort_0_100 micro adjustment must stay below 0.0001 from score_integer_0_100."],
+    ["SCORE_SORT_INTEGER_BOUNDARY_CROSS", summary.score_sort_integer_boundary_cross, "BLOCKER", "score_sort_0_100 must never cross an integer boundary."],
+    ["MODEL_DEFERRED_COUNT_NOT_26", summary.model_deferred_rows !== 26 ? summary.model_deferred_rows : 0, "BLOCKER", "Expected exactly 26 model_deferred rows per profile from current matrix snapshot."],
+    ["TRUE_MICRO_TIE_REVIEW", summary.true_micro_tie_null_side, "WARNING", "True raw side ties should be very rare and require deterministic tie-breaker review if present."]
   ];
   for (const [key, count, severity, note] of checks) {
     await writeSimIssue(env, batchId, profileKey, key, Number(count || 0) > 0 ? severity : "INFO", Number(count || 0), { note });
@@ -703,6 +934,7 @@ async function runScoringSimulation(env, input) {
   }
 
   await ensureSimulationSchema(env);
+  await ensureSimulationProfileConfigs(env);
   const requestId = input.request_id || `scoring_simulation_${Date.now().toString(36)}`;
   const chainId = input.chain_id || null;
   const batchId = `scoring_simulation_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -713,9 +945,10 @@ async function runScoringSimulation(env, input) {
   await run(env.SCORE_DB, `
     INSERT INTO scoring_engine_simulation_batches (
       simulation_batch_id, worker_version, job_key, status, certification, certification_grade,
-      matrix_rows_read, simulation_rows_written, thresholds_locked, scoring_enabled, true_probability_enabled, started_at
-    ) VALUES (?, ?, 'scoring-engine-simulation', 'running', 'SCORING_SIMULATION_STARTED', 'RUNNING', ?, 0, 0, 0, 0, CURRENT_TIMESTAMP)
-  `, batchId, VERSION, matrixRows);
+      matrix_rows_read, simulation_rows_written, thresholds_locked, scoring_enabled, true_probability_enabled,
+      formula_metadata_json, profile_config_snapshot_json, started_at
+    ) VALUES (?, ?, 'scoring-engine-simulation', 'running', 'SCORING_SIMULATION_STARTED', 'RUNNING', ?, 0, 0, 0, 0, ?, ?, CURRENT_TIMESTAMP)
+  `, batchId, VERSION, matrixRows, JSON.stringify(simulationFormulaMetadata()), JSON.stringify(DEFAULT_SIM_CONFIGS));
 
   await run(env.SCORE_DB, `DELETE FROM scoring_engine_simulation_shadow`);
   await run(env.SCORE_DB, `DELETE FROM scoring_engine_simulation_issues`);
@@ -753,8 +986,8 @@ async function runScoringSimulation(env, input) {
   const simulationRowsWritten = strictRows + hybridRows;
 
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_STRICT_B_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_STRICT_B_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_STRICT_B_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_2_3_DB_CONFIG_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_2_3_DB_CONFIG_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_2_3_DB_CONFIG_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
   const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
 
@@ -787,10 +1020,12 @@ async function runScoringSimulation(env, input) {
     thresholds_locked: false,
     scoring_enabled: false,
     true_probability_enabled: false,
-    selected_side_policy: "NULL until score exists; Goblin/Demon selected_side more only after valid score; Less remains NULL for more_only rows.",
+    selected_side_policy: "Two-sided selected_side is chosen from raw pre-cap side scores using DB-configured raw_side_delta_threshold; Goblin/Demon are more_only and Less remains NULL.",
     notes: [
       "Simulation writes only to SCORE_DB.scoring_engine_simulation_shadow and related simulation audit tables.",
-      "v0.2.1 chunks shadow inserts to avoid D1 SQLITE_NOMEM on full-board INSERT SELECT.",
+      "v0.2.3 keeps chunked D1 inserts and moves tunable scoring variables into SCORE_DB.scoring_engine_simulation_profile_configs.",
+      "score_0_100 and confidence_0_100 are separated; live_playable requires score/confidence gates and never uses score_sort_0_100.",
+      "score_sort_0_100 is deterministic sort-only micro-adjustment and never controls archive/live/bin thresholds.",
       "Strict-B is the primary safety profile; Hybrid-Control is comparison only and is not production-approved.",
       "No true hit probability, ranking, final board, candidate board, or archive snapshot is produced."
     ],
