@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.155-scoring-simulation-dispatch-lock";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.156-scoring-simulation-d1-memory-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -5907,7 +5907,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
-    deployed_slot_version: isSimulationJob ? "alphadog-v2-score-audit-v0.2.0-scoring-simulation-shadow-strict-b" : "alphadog-v2-score-audit-v0.2.0-scoring-simulation-shadow-strict-b",
+    deployed_slot_version: isSimulationJob ? "alphadog-v2-score-audit-v0.2.2-scoring-simulation-shadow-chunked-d1-memory-fix" : "alphadog-v2-score-audit-v0.2.2-scoring-simulation-shadow-chunked-d1-memory-fix",
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,

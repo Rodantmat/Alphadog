@@ -1,9 +1,9 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.2.0-simulation-shadow-strict-b";
+const VERSION = "alphadog-v2-scoring-engine-v0.2.2-simulation-shadow-chunked-d1-memory-fix";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
-const PROFILE_VERSION = "0.2.0";
+const PROFILE_VERSION = "0.2.1";
 const ARCHIVE_SCORE_THRESHOLD = 70;
 
 function nowUtc() {
@@ -36,6 +36,12 @@ async function run(db, sql, ...binds) {
 async function first(db, sql, ...binds) {
   const stmt = db.prepare(sql);
   return binds.length ? stmt.bind(...binds).first() : stmt.first();
+}
+
+async function all(db, sql, ...binds) {
+  const stmt = db.prepare(sql);
+  const res = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
+  return res && res.results ? res.results : [];
 }
 
 async function tableColumns(db, tableName) {
@@ -442,7 +448,7 @@ function profileConstants(profileKey) {
   };
 }
 
-async function insertSimulationProfile(env, batchId, profileKey) {
+async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatrixId, chunkSize) {
   const p = profileConstants(profileKey);
   await run(env.SCORE_DB, `
     INSERT INTO scoring_engine_simulation_shadow (
@@ -512,6 +518,9 @@ async function insertSimulationProfile(env, batchId, profileKey) {
           CASE WHEN m.canonical_prop_key IN ('total_bases','hits_runs_rbis','home_runs','stolen_bases') AND m.market_prop_context_status <> 'market_prop_context_present' THEN ${p.penHighVolNoMarket} ELSE 0 END
         ) AS penalty_total_calc
       FROM prop_matrix_current m
+      WHERE (? IS NULL OR m.matrix_id > ?)
+      ORDER BY m.matrix_id
+      LIMIT ?
     ), scored AS (
       SELECT
         base.*,
@@ -599,10 +608,31 @@ async function insertSimulationProfile(env, batchId, profileKey) {
       CURRENT_TIMESTAMP,
       CURRENT_TIMESTAMP
     FROM final
-  `, profileKey, batchId, profileKey, p.version, VERSION, profileKey, p.version);
+  `, cursorMatrixId, cursorMatrixId, chunkSize, profileKey, batchId, profileKey, p.version, VERSION, profileKey, p.version);
+}
 
+async function insertSimulationProfile(env, batchId, profileKey) {
+  const chunkSize = 200;
+  let cursorMatrixId = null;
+  let insertedRows = 0;
+  let processedChunks = 0;
+  while (true) {
+    const chunkRows = await all(
+      env.SCORE_DB,
+      `SELECT matrix_id FROM prop_matrix_current WHERE (? IS NULL OR matrix_id > ?) ORDER BY matrix_id LIMIT ?`,
+      cursorMatrixId,
+      cursorMatrixId,
+      chunkSize
+    );
+    if (!chunkRows.length) break;
+    await insertSimulationProfileChunk(env, batchId, profileKey, cursorMatrixId, chunkSize);
+    insertedRows += chunkRows.length;
+    processedChunks += 1;
+    cursorMatrixId = chunkRows[chunkRows.length - 1].matrix_id;
+    if (processedChunks > 1000) throw new Error('scoring_simulation_chunk_guard_exceeded');
+  }
   const countRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_simulation_shadow WHERE simulation_batch_id=? AND profile_key=?`, batchId, profileKey);
-  return Number(countRow && countRow.rows ? countRow.rows : 0);
+  return Number(countRow && countRow.rows ? countRow.rows : insertedRows);
 }
 
 async function summarizeSimulationProfile(env, batchId, profileKey) {
@@ -738,6 +768,8 @@ async function runScoringSimulation(env, input) {
     simulation_only: true,
     profile_under_review: "STRICT_B",
     comparison_profile: "HYBRID_CONTROL",
+    chunked_d1_memory_mode: true,
+    simulation_chunk_size: 200,
     matrix_rows_read: matrixRows,
     simulation_rows_written: simulationRowsWritten,
     strict_b_rows_written: strictRows,
@@ -758,6 +790,7 @@ async function runScoringSimulation(env, input) {
     selected_side_policy: "NULL until score exists; Goblin/Demon selected_side more only after valid score; Less remains NULL for more_only rows.",
     notes: [
       "Simulation writes only to SCORE_DB.scoring_engine_simulation_shadow and related simulation audit tables.",
+      "v0.2.1 chunks shadow inserts to avoid D1 SQLITE_NOMEM on full-board INSERT SELECT.",
       "Strict-B is the primary safety profile; Hybrid-Control is comparison only and is not production-approved.",
       "No true hit probability, ranking, final board, candidate board, or archive snapshot is produced."
     ],
