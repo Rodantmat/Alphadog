@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-certifier";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-matrix-builder";
 const JOB_KEY = "prop-matrix-builder";
-const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.3-d1-variable-safe-chunks";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.2-prop-matrix-d1-variable-safe-chunks";
+const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.4-side-variation-preservation";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.3-prop-matrix-side-variation-preservation";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -136,6 +136,98 @@ function cleanGameMarket(row) {
     implied_runs_method: row.implied_runs_method,
     parse_status: row.parse_status,
     warning_flags: row.warning_flags
+  };
+}
+
+function normalizeSourceKeyForSideRules(sourceKey, payload) {
+  const payloadSource = String(payload && payload.source_key ? payload.source_key : "").toLowerCase();
+  const rowSource = String(sourceKey || "").toLowerCase();
+  if (rowSource === "sleeper" || payloadSource.includes("sleeper")) return "sleeper";
+  if (rowSource === "prizepicks" || payloadSource.includes("prizepicks")) return "prizepicks";
+  return rowSource || payloadSource || "unknown";
+}
+function numOrNull(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function buildSideVariationContext(row) {
+  const payload = safeJsonParse(row.row_payload_json, {}) || {};
+  const sourceKey = normalizeSourceKeyForSideRules(row.source_key, payload);
+  const oddsType = payload.odds_type || null;
+  const sourceLineType = payload.source_line_type || payload.projection_type || null;
+  const payoutVariant = payload.payout_variant || oddsType || null;
+  const isGoblin = Number(payload.is_goblin || 0) === 1 || String(oddsType || "").toLowerCase() === "goblin" || String(payoutVariant || "").toLowerCase() === "goblin";
+  const isDemon = Number(payload.is_demon || 0) === 1 || String(oddsType || "").toLowerCase() === "demon" || String(payoutVariant || "").toLowerCase() === "demon";
+  const isStandard = Number(payload.is_standard || 0) === 1 || String(oddsType || "").toLowerCase() === "standard" || String(payoutVariant || "").toLowerCase() === "standard";
+  const overPrice = numOrNull(payload.over_price !== undefined ? payload.over_price : payload.source_prices && payload.source_prices.over_price);
+  const underPrice = numOrNull(payload.under_price !== undefined ? payload.under_price : payload.source_prices && payload.source_prices.under_price);
+  const projectionId = payload.projection_id || row.projection_id || null;
+  const sourceLineId = row.source_row_id || projectionId || row.source_event_id || null;
+  const lineValue = numOrNull(row.line_value);
+  const variationKey = key("variation", row.source_key, sourceLineId, row.official_game_pk, row.resolved_mlb_player_id || row.resolved_player_id, row.canonical_prop_key, lineValue === null ? "" : lineValue, oddsType || payoutVariant || sourceLineType || "standard_or_source", row.prepared_row_id);
+
+  let sideMode = "source_side_availability_unclear";
+  let sideAvailabilityStatus = "side_availability_unclear";
+  let sideEligibilityReason = "SIDE_AVAILABILITY_NOT_ENOUGH_METADATA";
+  let availableSides = [];
+
+  if (sourceKey === "prizepicks") {
+    if (isGoblin || isDemon) {
+      sideMode = "more_only";
+      availableSides = ["more"];
+      sideAvailabilityStatus = "side_ready_more_only";
+      sideEligibilityReason = "PRIZEPICKS_GOBLIN_DEMON_MORE_ONLY";
+    } else if (isStandard || String(oddsType || "").toLowerCase() === "standard") {
+      sideMode = "two_sided";
+      availableSides = ["more", "less"];
+      sideAvailabilityStatus = "side_ready_two_sided";
+      sideEligibilityReason = "PRIZEPICKS_STANDARD_TWO_SIDED";
+    }
+  } else if (sourceKey === "sleeper") {
+    if (overPrice !== null && underPrice !== null) {
+      sideMode = "two_sided";
+      availableSides = ["more", "less"];
+      sideAvailabilityStatus = "side_ready_two_sided";
+      sideEligibilityReason = "SLEEPER_OVER_UNDER_PRICES_PRESENT";
+    } else if (overPrice !== null) {
+      sideMode = "more_only";
+      availableSides = ["more"];
+      sideAvailabilityStatus = "side_ready_more_only";
+      sideEligibilityReason = "SLEEPER_OVER_PRICE_ONLY";
+    } else if (underPrice !== null) {
+      sideMode = "less_only";
+      availableSides = ["less"];
+      sideAvailabilityStatus = "side_ready_less_only";
+      sideEligibilityReason = "SLEEPER_UNDER_PRICE_ONLY";
+    }
+  }
+
+  return {
+    variation_key: variationKey,
+    source_line_id: sourceLineId,
+    source_key_normalized: sourceKey,
+    source_line_type: sourceLineType,
+    projection_type: payload.projection_type || null,
+    odds_type: oddsType,
+    payout_variant: payoutVariant,
+    is_goblin: isGoblin ? 1 : 0,
+    is_demon: isDemon ? 1 : 0,
+    is_standard: isStandard ? 1 : 0,
+    line_value: lineValue,
+    board_line_value: lineValue,
+    over_price: overPrice,
+    under_price: underPrice,
+    source_prices: payload.source_prices || { over_price: overPrice, under_price: underPrice },
+    side_mode: sideMode,
+    available_sides: availableSides,
+    side_availability_status: sideAvailabilityStatus,
+    side_eligibility_status: sideAvailabilityStatus,
+    side_eligibility_reason: sideEligibilityReason,
+    scoring_side_rule: isGoblin || isDemon ? "goblin_demon_more_only_no_less_under" : (sideMode === "two_sided" ? "evaluate_more_and_less_select_stronger_later" : "block_or_defer_in_scoring_if_unclear"),
+    selected_side: null,
+    more_score_0_100: null,
+    less_score_0_100: null
   };
 }
 
@@ -465,6 +557,7 @@ async function runMatrixBuilder(request, env) {
     const propEvidence = compactMarketPropRows(ctx.playerProps.get(key(row.prepared_row_id)) || []);
     const gameMarket = cleanGameMarket(ctx.gameMarket.get(key(row.official_game_pk)));
     const game = ctx.calendar.get(key(row.official_game_pk));
+    const sideVariation = buildSideVariationContext(row);
     const rowIssuesBefore = issues.length;
 
     let matrixStatus = "matrix_ready";
@@ -572,18 +665,19 @@ async function runMatrixBuilder(request, env) {
     const packetDetails = packet ? { packet_id: packet.packet_id, batch_id: packet.batch_id, factor_status: packet.factor_status, factor_grade: packet.factor_grade, readiness_status: packet.readiness_status, market_context_status: packet.market_context_status, daily_context_status: packet.daily_context_status, base_metric_status: packet.base_metric_status, warning_count: packet.warning_count, blocker_count: packet.blocker_count, missing_factor_count: packet.missing_factor_count, factor_payload: safeJsonParse(packet.factor_payload_json, {}) } : null;
     const details = {
       classification,
+      side_variation: sideVariation,
       factor_coverage: factorCov ? { factor_family: factorCov.factor_family, factor_status: factorCov.factor_status, factor_grade: factorCov.factor_grade, blocking_for_matrix: factorCov.blocking_for_matrix, missing_reason: factorCov.missing_reason, latest_batch_id: factorCov.latest_batch_id } : null,
       daily_readiness: readiness ? { batch_id: readiness.batch_id, context_status: readiness.context_status, context_grade: readiness.context_grade, hard_blocker_count: readiness.hard_blocker_count, warning_count: readiness.warning_count, enrichment_gap_count: readiness.enrichment_gap_count, starter_context_status: readiness.starter_context_status, lineup_context_status: readiness.lineup_context_status, player_availability_status: readiness.player_availability_status, weather_context_status: readiness.weather_context_status, bullpen_context_status: readiness.bullpen_context_status, schedule_spot_context_status: readiness.schedule_spot_context_status, umpire_context_status: readiness.umpire_context_status } : null,
       market_context: { coverage_summary: { game_status: market.game_status, prop_status: market.prop_status, context_status: market.context_status, coverage_grade: market.coverage_grade, coverage_rows: market.rows.length }, player_prop_evidence: propEvidence, game_market: gameMarket },
       calendar: game ? { game_pk: game.game_pk, status_code: game.status_code, abstract_game_state: game.abstract_game_state, detailed_state: game.detailed_state, is_pregame: game.is_pregame, is_live: game.is_live, is_final: game.is_final } : null,
       row_issue_count: issues.length - rowIssuesBefore
     };
-    const sourceLineId = packet && packet.source_line_id ? packet.source_line_id : (row.source_row_id || row.projection_id || row.source_event_id || null);
+    const sourceLineId = packet && packet.source_line_id ? packet.source_line_id : sideVariation.source_line_id;
     const teamId = packet && packet.team_id ? packet.team_id : (readiness && readiness.team_id ? readiness.team_id : row.team || null);
     const opponentTeamId = packet && packet.opponent_team_id ? packet.opponent_team_id : (readiness && readiness.opponent_team_id ? readiness.opponent_team_id : row.opponent || null);
     const isHome = packet && packet.is_home !== null && packet.is_home !== undefined ? packet.is_home : null;
     matrixRows.push({
-      matrix_id: matrixId, batch_id: batchId, prepared_row_id: row.prepared_row_id, source_line_id: sourceLineId, source_key: row.source_key, game_pk: row.official_game_pk, official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, mlb_player_id: playerId, player_name: row.player_name, team_id: teamId, opponent_team_id: opponentTeamId, is_home: isHome, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value, prop_side: null, factor_family: factorCov ? factorCov.factor_family : classification.family, factor_packet_id: factorCov && factorCov.packet_id ? factorCov.packet_id : null, factor_status: factorCov ? factorCov.factor_status : "factor_coverage_missing", market_game_context_status: market.game_status, market_prop_context_status: market.prop_status, daily_readiness_status: readiness ? readiness.context_status : "daily_readiness_missing", matrix_status: matrixStatus, matrix_grade: matrixGrade, blocking_for_scoring: blocking, warning_count: warningCount + (packet ? Number(packet.warning_count || 0) : 0), blocker_count: blockerCount, missing_component_count: missingComponentCount, matrix_payload: { prepared: { prepared_row_id: row.prepared_row_id, prep_batch_id: row.prep_batch_id, source_key: row.source_key, player_name: row.player_name, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value, official_game_pk: row.official_game_pk, official_date: row.official_date, official_game_time_utc: row.official_game_time_utc }, factor_packet: packetDetails, market: details.market_context, daily_readiness: details.daily_readiness }, details });
+      matrix_id: matrixId, batch_id: batchId, prepared_row_id: row.prepared_row_id, source_line_id: sourceLineId, source_key: row.source_key, game_pk: row.official_game_pk, official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, mlb_player_id: playerId, player_name: row.player_name, team_id: teamId, opponent_team_id: opponentTeamId, is_home: isHome, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value, prop_side: null, factor_family: factorCov ? factorCov.factor_family : classification.family, factor_packet_id: factorCov && factorCov.packet_id ? factorCov.packet_id : null, factor_status: factorCov ? factorCov.factor_status : "factor_coverage_missing", market_game_context_status: market.game_status, market_prop_context_status: market.prop_status, daily_readiness_status: readiness ? readiness.context_status : "daily_readiness_missing", matrix_status: matrixStatus, matrix_grade: matrixGrade, blocking_for_scoring: blocking, warning_count: warningCount + (packet ? Number(packet.warning_count || 0) : 0), blocker_count: blockerCount, missing_component_count: missingComponentCount, matrix_payload: { prepared: { prepared_row_id: row.prepared_row_id, prep_batch_id: row.prep_batch_id, source_key: row.source_key, player_name: row.player_name, mlb_player_id: playerId, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value, official_game_pk: row.official_game_pk, official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, source_line_id: sourceLineId, variation_key: sideVariation.variation_key, odds_type: sideVariation.odds_type, source_line_type: sideVariation.source_line_type, projection_type: sideVariation.projection_type, payout_variant: sideVariation.payout_variant, is_goblin: sideVariation.is_goblin, is_demon: sideVariation.is_demon, is_standard: sideVariation.is_standard, over_price: sideVariation.over_price, under_price: sideVariation.under_price, source_prices: sideVariation.source_prices, side_availability_status: sideVariation.side_availability_status, side_eligibility_status: sideVariation.side_eligibility_status, side_eligibility_reason: sideVariation.side_eligibility_reason, side_mode: sideVariation.side_mode, available_sides: sideVariation.available_sides, selected_side: null }, side_variation: sideVariation, factor_packet: packetDetails, market: details.market_context, daily_readiness: details.daily_readiness }, details });
     coverageRows.push({ coverage_key: key("matrix", row.prepared_row_id), prepared_row_id: row.prepared_row_id, matrix_id: matrixId, matrix_status: matrixStatus, matrix_grade: matrixGrade, blocking_for_scoring: blocking, latest_batch_id: batchId, latest_checked_at: nowIso(), missing_reason: blockerCount ? issues.slice(rowIssuesBefore).filter(i => i.severity === "blocker").map(i => i.reason).join(",") : null, details: { warning_count: warningCount, blocker_count: blockerCount, missing_component_count: missingComponentCount }, official_date: row.official_date });
     }
 
@@ -602,14 +696,14 @@ async function runMatrixBuilder(request, env) {
   const status = noSilentDropOk ? "completed_with_certified_matrix_rows" : "failed_no_silent_drop_violation";
   const certification = noSilentDropOk ? "PROP_MATRIX_CERTIFIED_ONE_ROW_PER_SAFE_PREPARED_ROW" : "PROP_MATRIX_FAILED_ROW_PRESERVATION";
   const grade = !noSilentDropOk ? "FAILED_ROW_PRESERVATION" : (blockerRows > 0 ? "PASS_WITH_BLOCKED_OR_DEFERRED_ROWS" : (warningRows > 0 ? "PASS_WITH_WARNINGS" : "PASS"));
-  const output = { ok:noSilentDropOk, data_ok:noSilentDropOk, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode:"prop_matrix_build", status, certification, certification_grade:grade, batch_id:batchId, run_id:runId, window_dates:dates, prepared_rows_read:prepared.length, eligible_rows:prepared.length, matrix_rows_written:matrixRowsWritten, matrix_ready_rows:statusCounts.matrix_ready || 0, matrix_ready_with_warnings_rows:statusCounts.matrix_ready_with_warnings || 0, matrix_partial_context_rows:statusCounts.matrix_partial_context || 0, matrix_blocked_rows:statusCounts.matrix_blocked || 0, matrix_deferred_rows:statusCounts.matrix_deferred || 0, matrix_source_missing_rows:statusCounts.matrix_source_missing || 0, issue_rows:totalIssueRows, warning_rows:warningRows, blocker_rows:blockerRows, missing_component_rows:missingComponentRows, no_silent_drops:noSilentDropOk, one_matrix_row_per_safe_prepared_row:noSilentDropOk, prerequisite_freshness:globalCtx.freshness, chunked_memory_mode:true, chunk_size:chunkSize, processed_chunks:processedChunks, retention_policy:"today_tomorrow_only_latest_matrix_current_issues_coverage_and_batch", internal_only:true, external_calls:0, no_external_api_calls:true, no_mlb_api_calls:true, no_odds_api_calls:true, no_parlay_api_calls:true, no_gemini_calls:true, no_probability:true, no_edge:true, no_value_rating:true, no_qualified_flag:true, no_rank:true, no_pick_recommendation:true, no_scoring:true, no_ranking:true, no_final_board:true };
+  const output = { ok:noSilentDropOk, data_ok:noSilentDropOk, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode:"prop_matrix_build", status, certification, certification_grade:grade, batch_id:batchId, run_id:runId, window_dates:dates, prepared_rows_read:prepared.length, eligible_rows:prepared.length, matrix_rows_written:matrixRowsWritten, matrix_ready_rows:statusCounts.matrix_ready || 0, matrix_ready_with_warnings_rows:statusCounts.matrix_ready_with_warnings || 0, matrix_partial_context_rows:statusCounts.matrix_partial_context || 0, matrix_blocked_rows:statusCounts.matrix_blocked || 0, matrix_deferred_rows:statusCounts.matrix_deferred || 0, matrix_source_missing_rows:statusCounts.matrix_source_missing || 0, issue_rows:totalIssueRows, warning_rows:warningRows, blocker_rows:blockerRows, missing_component_rows:missingComponentRows, no_silent_drops:noSilentDropOk, one_matrix_row_per_safe_prepared_row:noSilentDropOk, prerequisite_freshness:globalCtx.freshness, chunked_memory_mode:true, chunk_size:chunkSize, processed_chunks:processedChunks, retention_policy:"today_tomorrow_only_latest_matrix_current_issues_coverage_and_batch", internal_only:true, external_calls:0, no_external_api_calls:true, no_mlb_api_calls:true, no_odds_api_calls:true, no_parlay_api_calls:true, no_gemini_calls:true, no_probability:true, no_edge:true, no_value_rating:true, no_qualified_flag:true, no_rank:true, no_pick_recommendation:true, no_scoring:true, no_ranking:true, no_final_board:true, side_variation_preservation:true, matrix_payload_preserves_line_type_and_side_context:true };
   await run(env.SCORE_DB, `UPDATE prop_matrix_batches SET status=?, prepared_rows_read=?, eligible_rows=?, matrix_rows_written=?, matrix_ready_rows=?, matrix_ready_with_warnings_rows=?, matrix_partial_context_rows=?, matrix_blocked_rows=?, matrix_deferred_rows=?, issue_rows=?, warning_rows=?, blocker_rows=?, missing_component_rows=?, prerequisite_freshness_json=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
     status, prepared.length, prepared.length, matrixRowsWritten, output.matrix_ready_rows, output.matrix_ready_with_warnings_rows, output.matrix_partial_context_rows, output.matrix_blocked_rows, output.matrix_deferred_rows, totalIssueRows, warningRows, blockerRows, missingComponentRows, JSON.stringify(globalCtx.freshness), certification, grade, JSON.stringify(output), batchId);
   return jsonResponse(output);
 }
 function identity(env) {
   const db = reqDb(env);
-  return { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, status:"ready", internal_only:true, no_external_calls:true, no_scoring:true, no_ranking:true, no_final_board:true, schema_owner:"SCORE_DB.prop_matrix_*", retention_policy:"today_tomorrow_only", required_db_bindings_present:allTrue(db), db_bindings:db };
+  return { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, status:"ready", internal_only:true, no_external_calls:true, no_scoring:true, no_ranking:true, no_final_board:true, side_variation_preservation:true, schema_owner:"SCORE_DB.prop_matrix_*", retention_policy:"today_tomorrow_only", required_db_bindings_present:allTrue(db), db_bindings:db };
 }
 export default {
   async fetch(request, env, ctx) {
