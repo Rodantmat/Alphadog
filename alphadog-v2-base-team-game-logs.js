@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-team-game-logs";
-const VERSION = "alphadog-v2-base-team-game-logs-v0.3.6-open-gap-ledger-override";
+const VERSION = "alphadog-v2-base-team-game-logs-v0.3.7-gap-ledger-full-run-contract";
 const JOB_KEY = "base-team-game-logs";
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
 const SOURCE_KEY = "mlb_statsapi_schedule_boxscore_team_totals_probe_v0_1_0";
@@ -1349,7 +1349,7 @@ export default {
       const inputJson = input.input_json || input || {};
       const mode = String(inputJson.mode || input.mode || "source_shape_probe");
       if (mode === "base_backfill") return jsonResponse(await runBaseBackfill(env, input));
-      if (mode === "delta_update") return jsonResponse(await runDeltaUpdate(env, input));
+      if (mode === "mine_certifier_gaps" || mode === "delta_update") return jsonResponse(await runDeltaUpdate(env, input));
       return jsonResponse(await runProbe(env, input));
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);

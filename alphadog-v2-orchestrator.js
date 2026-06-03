@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.150-prop-matrix-builder-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.151-gap-ledger-full-run-contract";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -972,8 +972,8 @@ async function enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpressio
     }
 
     const configInput = parseJsonSafeText(schedule.input_json || "{}", {});
-    const requestId = `${scheduledKey}_${Date.now().toString(36)}_${randomToken(6)}`;
-    const chainId = `chain_${scheduledKey}_${Date.now().toString(36)}`;
+    const requestId = scheduledKey;
+    const chainId = `chain_${scheduledKey}`;
     const childModes = {};
     for (const stage of INCREMENTAL_MORNING_FULL_RUN_STAGES) childModes[stage.job_key] = stage.mode;
 
@@ -1012,10 +1012,21 @@ async function enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpressio
       no_old_production_touch: true
     };
 
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'incremental-morning-full-run', 'alphadog-v2-orchestrator', 'Delta', 'incremental_base', 'Scheduled Incremental Morning Full Run Backend Chain', 'pending', 8, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    const insertScheduled = await run(env.CONTROL_DB,
+      "INSERT OR IGNORE INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'incremental-morning-full-run', 'alphadog-v2-orchestrator', 'Delta', 'incremental_base', 'Scheduled Incremental Morning Full Run Backend Chain', 'pending', 8, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
       requestId, chainId, JSON.stringify(input)
     );
+    const insertedScheduledRows = Number(insertScheduled && insertScheduled.meta && insertScheduled.meta.changes || 0);
+    if (insertedScheduledRows === 0) {
+      const existingDeterministic = await first(env.CONTROL_DB, "SELECT request_id, chain_id, status, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE request_id=? LIMIT 1", requestId);
+      const payload = { ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_NOOP_DETERMINISTIC_KEY_EXISTS", scheduled_key: scheduledKey, request_id: requestId, existing_request_id: existingDeterministic && existingDeterministic.request_id, existing_chain_id: existingDeterministic && existingDeterministic.chain_id, existing_status: existingDeterministic && existingDeterministic.status, deterministic_request_id_guard_v0_2_151: true };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'incremental-morning-full-run', 'INFO', 'scheduled_incremental_morning_full_run_noop_deterministic_key_exists', 'Scheduled Incremental Morning Full Run did not enqueue because deterministic request id already exists', ?, CURRENT_TIMESTAMP)",
+        requestId, WORKER_NAME, JSON.stringify(payload)
+      );
+      results.push(payload);
+      continue;
+    }
 
     const payload = { ...basePayload, status: "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_QUEUED", scheduled_key: scheduledKey, request_id: requestId, chain_id: chainId, queued_job_key: "incremental-morning-full-run", queued_worker_name: WORKER_NAME, approved_chain_order: input.approved_chain_order, backend_chain_only: true };
     await run(env.CONTROL_DB,
@@ -1244,15 +1255,15 @@ async function enqueueScheduledBoardFullRunIfDue(env, cronExpression = "unknown"
 
 const INCREMENTAL_MORNING_FULL_RUN_STAGES = [
   { stage_key: "calendar_tally_precheck", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Precheck", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "precheck", allow_blocking_gaps: true },
-  { stage_key: "hitter_game_logs_delta", job_key: "base-hitter-game-logs", worker_name: "alphadog-v2-base-hitter-game-logs", display_name: "Hitter Game Logs Delta", visible_button: "DELTA > Hitter Game Logs", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
-  { stage_key: "pitcher_game_logs_delta", job_key: "base-pitcher-game-logs", worker_name: "alphadog-v2-base-pitcher-game-logs", display_name: "Pitcher Game Logs Delta", visible_button: "DELTA > Pitcher Game Logs", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
-  { stage_key: "team_game_logs_delta", job_key: "base-team-game-logs", worker_name: "alphadog-v2-base-team-game-logs", display_name: "Team Game Logs Delta", visible_button: "DELTA > Team Game Logs", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
-  { stage_key: "starter_history_delta", job_key: "base-starter-history", worker_name: "alphadog-v2-base-starter-history", display_name: "Starter History Delta", visible_button: "BASE > Starter History", mode: "delta_scoped_source_repair", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
-  { stage_key: "bullpen_history_delta", job_key: "base-bullpen-history", worker_name: "alphadog-v2-base-bullpen-history", display_name: "Bullpen History Delta", visible_button: "BASE > Bullpen History", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
-  { stage_key: "hitter_splits_delta", job_key: "base-hitter-splits", worker_name: "alphadog-v2-base-hitter-splits", display_name: "Hitter Splits Delta", visible_button: "DELTA > Hitter Splits", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
-  { stage_key: "pitcher_splits_delta", job_key: "base-pitcher-splits", worker_name: "alphadog-v2-base-pitcher-splits", display_name: "Pitcher Splits Delta", visible_button: "DELTA > Pitcher Splits", mode: "delta_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
-  { stage_key: "hitter_metrics_affected_delta", job_key: "base-hitter-metrics", worker_name: "alphadog-v2-base-hitter-metrics", display_name: "Hitter Metrics Affected Delta", visible_button: "DELTA > Hitter Metrics", mode: "delta_recalculate_affected_players", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
-  { stage_key: "pitcher_metrics_affected_delta", job_key: "base-pitcher-metrics", worker_name: "alphadog-v2-base-pitcher-metrics", display_name: "Pitcher Metrics Affected Delta", visible_button: "DELTA > Pitcher Metrics", mode: "delta_recalculate_affected_players", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  { stage_key: "hitter_game_logs_delta", job_key: "base-hitter-game-logs", worker_name: "alphadog-v2-base-hitter-game-logs", display_name: "Hitter Game Logs Delta", visible_button: "DELTA > Hitter Game Logs", mode: "delta_update", layer_key: "hitter_game_logs", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  { stage_key: "pitcher_game_logs_delta", job_key: "base-pitcher-game-logs", worker_name: "alphadog-v2-base-pitcher-game-logs", display_name: "Pitcher Game Logs Delta", visible_button: "DELTA > Pitcher Game Logs", mode: "delta_update", layer_key: "pitcher_game_logs", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  { stage_key: "team_game_logs_delta", job_key: "base-team-game-logs", worker_name: "alphadog-v2-base-team-game-logs", display_name: "Team Game Logs Delta", visible_button: "DELTA > Team Game Logs", mode: "delta_update", layer_key: "team_game_logs", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  { stage_key: "starter_history_delta", job_key: "base-starter-history", worker_name: "alphadog-v2-base-starter-history", display_name: "Starter History Delta", visible_button: "BASE > Starter History", mode: "delta_coverage_gap_scoped_repair", layer_key: "starter_history", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  { stage_key: "bullpen_history_delta", job_key: "base-bullpen-history", worker_name: "alphadog-v2-base-bullpen-history", display_name: "Bullpen History Delta", visible_button: "BASE > Bullpen History", mode: "delta_update", layer_key: "bullpen_history", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  { stage_key: "hitter_splits_delta", job_key: "base-hitter-splits", worker_name: "alphadog-v2-base-hitter-splits", display_name: "Hitter Splits Delta", visible_button: "DELTA > Hitter Splits", mode: "delta_update", layer_key: "hitter_splits", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  { stage_key: "pitcher_splits_delta", job_key: "base-pitcher-splits", worker_name: "alphadog-v2-base-pitcher-splits", display_name: "Pitcher Splits Delta", visible_button: "DELTA > Pitcher Splits", mode: "delta_update", layer_key: "pitcher_splits", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  { stage_key: "hitter_metrics_affected_delta", job_key: "base-hitter-metrics", worker_name: "alphadog-v2-base-hitter-metrics", display_name: "Hitter Metrics Affected Delta", visible_button: "DELTA > Hitter Metrics", mode: "delta_recalculate_affected_players", layer_key: "hitter_metrics", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  { stage_key: "pitcher_metrics_affected_delta", job_key: "base-pitcher-metrics", worker_name: "alphadog-v2-base-pitcher-metrics", display_name: "Pitcher Metrics Affected Delta", visible_button: "DELTA > Pitcher Metrics", mode: "delta_recalculate_affected_players", layer_key: "pitcher_metrics", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "calendar_tally_final_check", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Final Check", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "final_check", require_zero_blocking_gaps: true }
 ];
 
@@ -1365,6 +1376,11 @@ function incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryC
   return {
     source: "incremental_morning_full_run_parent",
     mode: stage.mode,
+    full_run_gap_contract: true,
+    gap_contract_version: "v0.2.151",
+    gap_source: "TEAM_DB.mlb_game_coverage_gaps",
+    coverage_source: "TEAM_DB.mlb_game_data_coverage",
+    layer_key: stage.layer_key || null,
     parent_full_run: true,
     full_run_stage_key: stage.stage_key,
     calendar_tally_stage: stage.calendar_tally_stage || null,
@@ -3396,6 +3412,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      base_starter_history_v0_4_9_coverage_gap_scoped_repair: starterMode === "delta_coverage_gap_scoped_repair",
       base_starter_history_v0_4_4_scoped_repair_order_fix: starterMode === "delta_scoped_source_repair",
       base_starter_history_v0_4_2_retained_stage_restore_before_queue: starterMode === "delta_retained_stage_restore_before_queue",
       base_starter_history_v0_4_1_delta_noop_current_state: starterMode === "delta_noop_current_state",
@@ -3415,12 +3432,13 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
       source_probe_only: starterMode === "source_lock_probe",
       stage_only_base_backfill_allowed: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill",
       base_promotion_stage_clean_allowed: starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion",
+      delta_coverage_gap_scoped_repair_allowed: starterMode === "delta_coverage_gap_scoped_repair",
       delta_scoped_source_repair_allowed: starterMode === "delta_scoped_source_repair",
       delta_retained_stage_restore_before_queue_allowed: starterMode === "delta_retained_stage_restore_before_queue",
       delta_noop_current_state_allowed: starterMode === "delta_noop_current_state",
       delta_update_retained_stage_allowed: starterMode === "delta_update",
       delta_update_allowed: starterMode === "delta_update",
-      no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion" || starterMode === "delta_update" || starterMode === "delta_scoped_source_repair"),
+      no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion" || starterMode === "delta_update" || starterMode === "delta_scoped_source_repair" || starterMode === "delta_coverage_gap_scoped_repair"),
       no_delta_update_execution: starterMode !== "delta_update",
       no_hitter_mutation: true,
       no_pitcher_mutation: true,
@@ -3453,7 +3471,7 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'base_starter_history_dispatch_completed', 'Orchestrator completed exact base-starter-history exact dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, raw_requested_mode: rawRequestedMode, normalized_worker_mode: starterMode, requested_preflight_behavior: rowInput.requested_preflight_behavior || null, legacy_preflight_mode_normalized: legacyPreflightModeNormalized, mode: starterMode, source_probe_only: starterMode === "source_lock_probe", stage_only_base_backfill: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill", delta_update: starterMode === "delta_update", delta_update_allowed: starterMode === "delta_update", no_delta_update_execution: starterMode !== "delta_update", no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion" || starterMode === "delta_update" || starterMode === "delta_scoped_source_repair"), partial_continue: partialContinue })
+    row.request_id, runId, WORKER_NAME, row.job_key, ok || partialContinue ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, run_status: runStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, raw_requested_mode: rawRequestedMode, normalized_worker_mode: starterMode, requested_preflight_behavior: rowInput.requested_preflight_behavior || null, legacy_preflight_mode_normalized: legacyPreflightModeNormalized, mode: starterMode, source_probe_only: starterMode === "source_lock_probe", stage_only_base_backfill: starterMode === "base_backfill_stage_only" || starterMode === "base_backfill", delta_update: starterMode === "delta_update", delta_update_allowed: starterMode === "delta_update", no_delta_update_execution: starterMode !== "delta_update", no_live_promotion: !(starterMode === "base_promotion_stage_clean" || starterMode === "base_promotion" || starterMode === "delta_update" || starterMode === "delta_scoped_source_repair" || starterMode === "delta_coverage_gap_scoped_repair"), partial_continue: partialContinue })
   );
 
   return cappedOutput;

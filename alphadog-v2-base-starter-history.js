@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-starter-history";
-const VERSION = "alphadog-v2-base-starter-history-v0.4.9-full-run-coverage-gap-repair";
+const VERSION = "alphadog-v2-base-starter-history-v0.5.0-gap-ledger-full-run-contract";
 const JOB_KEY = "base-starter-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -49,7 +49,7 @@ function baseIdentity(env) {
     timestamp_utc: nowUtc(),
     phase: "starter-history-v0.4.9-full-run-coverage-gap-repair",
     notes: [
-      "v0.4.9 fixes Delta Full Run starter-history behavior: normal delta_update mines finalized games first, then coverage-gap scoped repair targets only open starter_history coverage blockers.",
+      "v0.5.0 locks Delta Full Run starter-history to the certifier gap ledger: the full-run parent calls delta_coverage_gap_scoped_repair and the worker mines only starter_history gaps from TEAM_DB coverage/gap tables.",
       "Allowed writes: repair missing live + retained-stage delta keys by refetching only the affected game/key, rewriting the retained stage row, and promoting that key. No full sweep, no new batch.",
       "Forbidden in this version: full sweep, new batch, scoring, ranking, board mutation, and browser pump.",
       "Starter history is source-classified as GAME_LOG_STYLE_ACTUAL_START_EVENT_ROWS via official final boxscore gamesStarted == 1."
@@ -2028,7 +2028,7 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const mode = String((input.input_json && input.input_json.mode) || input.mode || "base_backfill_stage_only");
-      if (mode === "delta_coverage_gap_scoped_repair") return jsonResponse(await runCoverageGapScopedRepair(env, input));
+      if (mode === "mine_certifier_gaps" || mode === "delta_coverage_gap_scoped_repair") return jsonResponse(await runCoverageGapScopedRepair(env, input));
       if (mode === "delta_scoped_source_repair") return jsonResponse(await scopedSourceRepairMissingDeltaKeys(env, input));
       if (mode === "delta_retained_stage_restore_before_queue") return jsonResponse(await restoreMissingLiveRowsFromRetainedDeltaStage(env, input));
       if (mode === "delta_noop_current_state") return jsonResponse(await runDeltaNoopCurrentState(env, input));
@@ -2036,7 +2036,7 @@ export default {
       if (mode === "source_lock_probe") return jsonResponse(await runSourceProbe(env, input));
       if (mode === "base_backfill" || mode === "base_backfill_stage_only") return jsonResponse(await runBaseBackfillStageOnly(env, input));
       if (mode === "base_promotion_stage_clean" || mode === "base_promotion") return jsonResponse(await promoteCertifiedBaseStage(env, input));
-      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode", mode, allowed_modes: ["source_lock_probe", "base_backfill_stage_only", "base_promotion_stage_clean", "delta_update", "delta_noop_current_state", "delta_retained_stage_restore_before_queue", "delta_scoped_source_repair", "delta_coverage_gap_scoped_repair"], no_live_promotion: true }, 400);
+      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode", mode, allowed_modes: ["source_lock_probe", "base_backfill_stage_only", "base_promotion_stage_clean", "delta_update", "delta_noop_current_state", "delta_retained_stage_restore_before_queue", "delta_scoped_source_repair", "delta_coverage_gap_scoped_repair", "mine_certifier_gaps"], no_live_promotion: true }, 400);
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }

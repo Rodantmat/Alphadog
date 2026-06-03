@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-bullpen-history";
-const VERSION = "alphadog-v2-base-bullpen-history-v0.4.8-post-final-open-gap-repair";
+const VERSION = "alphadog-v2-base-bullpen-history-v0.4.9-gap-ledger-full-run-contract";
 const JOB_KEY = "base-bullpen-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -1481,7 +1481,7 @@ export default {
       if (mode === "source_lock_probe") return jsonResponse(await runSourceProbe(env, input));
       if (mode === "base_backfill_stage_only" || mode === "base_backfill") return jsonResponse(await runBaseBackfillStageOnly(env, input));
       if (mode === "base_promote_clean" || mode === "base_backfill_promote_clean") return jsonResponse(await runBasePromoteClean(env, input));
-      if (mode === "delta_update") return jsonResponse(await runDeltaUpdate(env, input));
+      if (mode === "mine_certifier_gaps" || mode === "delta_update") return jsonResponse(await runDeltaUpdate(env, input));
       return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "unsupported_mode_v0_4_0", mode, allowed_modes: ["source_lock_probe","base_backfill_stage_only","base_promote_clean","delta_update"], blocked_reason: "v0.4.0 forbids Daily Bullpen Availability, scoring, ranking, and final board.", no_daily_bullpen_availability: true }, 400);
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
