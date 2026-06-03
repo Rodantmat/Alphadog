@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.154-scoring-simulation-dispatch-lock";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.155-scoring-simulation-dispatch-lock";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
