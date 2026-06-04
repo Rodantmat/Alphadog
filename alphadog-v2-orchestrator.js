@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.162-delta-full-run-worker-budget-and-run-finalize";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.163-delta-full-run-layer-gap-shortcut";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1274,76 +1274,6 @@ const INCREMENTAL_MORNING_FULL_RUN_STAGES = [
   { stage_key: "calendar_tally_final_check", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Final Check", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "final_check", require_zero_blocking_gaps: true }
 ];
 
-
-function incrementalFullRunWorkerRuntimeBudget(stage) {
-  const key = String(stage && stage.stage_key || "");
-  const common = {
-    full_run_worker_budget_v0_2_162: true,
-    max_tick_runtime_ms: 12000,
-    fetch_timeout_ms: 3500,
-    max_requests_per_tick: 1,
-    max_api_calls_per_tick: 1,
-    max_external_calls_per_tick: 1,
-    max_players_per_tick: 1,
-    chunk_size_players: 1,
-    max_games_per_tick: 1,
-    chunk_size_games: 1,
-    promote_rows_per_tick: 25,
-    clean_rows_per_tick: 250,
-    no_browser_loop: true,
-    backend_scheduled_continuation: true
-  };
-  if (key.includes("metrics")) {
-    return {
-      ...common,
-      max_tick_runtime_ms: 10000,
-      max_players_per_tick: 10,
-      chunk_size_players: 10,
-      max_requests_per_tick: 0,
-      max_api_calls_per_tick: 0,
-      max_external_calls_per_tick: 0,
-      no_external_mlb_calls_for_metrics: true
-    };
-  }
-  if (key.includes("splits")) {
-    return {
-      ...common,
-      max_tick_runtime_ms: 12000,
-      max_players_per_tick: 5,
-      chunk_size_players: 5,
-      max_requests_per_tick: 5,
-      max_api_calls_per_tick: 5,
-      max_external_calls_per_tick: 5
-    };
-  }
-  if (key.includes("calendar_tally")) {
-    return {
-      ...common,
-      max_tick_runtime_ms: 15000,
-      max_requests_per_tick: 0,
-      max_api_calls_per_tick: 0,
-      max_external_calls_per_tick: 0
-    };
-  }
-  return common;
-}
-
-async function closeOpenDispatchStartedRunsForRequest(env, requestId, reason, details = {}) {
-  if (!requestId) return { closed: 0 };
-  const rows = await all(env.CONTROL_DB,
-    "SELECT run_id FROM control_job_runs WHERE request_id=? AND status='running' AND finished_at IS NULL AND certification_status='ORCHESTRATOR_DISPATCH_STARTED' ORDER BY datetime(started_at) ASC",
-    requestId
-  );
-  for (const r of rows) {
-    const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:WORKER_NAME, status:"ORCHESTRATOR_DISPATCH_STARTED_RUN_CLOSED", certification:"ORCHESTRATOR_DISPATCH_STARTED_RUN_CLOSED", reason, request_id:requestId, previous_run_id:r.run_id, ...details };
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_runs SET status='failed', data_ok=0, certification_status='ORCHESTRATOR_DISPATCH_STARTED_RUN_CLOSED', finished_at=CURRENT_TIMESTAMP, elapsed_ms=COALESCE(elapsed_ms,0), output_json=?, error_code=?, error_message=? WHERE run_id=? AND status='running' AND finished_at IS NULL",
-      JSON.stringify(output), String(reason || 'dispatch_started_run_closed').slice(0,120), String(reason || 'Dispatch-start run was closed by orchestrator recovery/finalization guard.').slice(0,900), r.run_id
-    );
-  }
-  return { closed: rows.length };
-}
-
 const STATIC_FULL_RUN_STAGES = [
   { job_key: "static-teams", worker_name: "alphadog-v2-static-teams", display_name: "Static Teams", visible_button: "STATIC > Teams" },
   { job_key: "static-stadiums", worker_name: "alphadog-v2-static-stadiums", display_name: "Static Stadiums", visible_button: "STATIC > Stadiums" },
@@ -1483,7 +1413,6 @@ function incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryC
     no_old_production_touch: true,
     calendar_tally_precheck_first: INCREMENTAL_MORNING_FULL_RUN_STAGES[0] && INCREMENTAL_MORNING_FULL_RUN_STAGES[0].stage_key === "calendar_tally_precheck",
     calendar_tally_final_check_last: INCREMENTAL_MORNING_FULL_RUN_STAGES[INCREMENTAL_MORNING_FULL_RUN_STAGES.length - 1] && INCREMENTAL_MORNING_FULL_RUN_STAGES[INCREMENTAL_MORNING_FULL_RUN_STAGES.length - 1].stage_key === "calendar_tally_final_check",
-    ...incrementalFullRunWorkerRuntimeBudget(stage),
     created_at: nowIso()
   };
 }
@@ -1526,6 +1455,73 @@ async function enqueueIncrementalMorningFullRunChild(env, parentRow, stage, step
     childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input)
   );
   return { child_request_id: childRequestId, input };
+}
+
+async function getIncrementalFullRunLayerBlockingGapCount(env, layerKey) {
+  if (!env.TEAM_DB || !layerKey) return { ok: false, layer_key: layerKey || null, reason: "missing_team_db_or_layer_key", blocking_gap_count: null };
+  try {
+    const row = await first(env.TEAM_DB,
+      "SELECT COUNT(*) AS c FROM mlb_game_data_coverage WHERE layer_key=? AND blocking_for_full_run=1",
+      layerKey
+    );
+    return { ok: true, layer_key: layerKey, blocking_gap_count: Number(row && row.c ? row.c : 0) };
+  } catch (err) {
+    return { ok: false, layer_key: layerKey, reason: String(err && err.message ? err.message : err).slice(0, 900), blocking_gap_count: null };
+  }
+}
+
+async function completeIncrementalFullRunNoGapLayerChild(env, parentRow, stage, stepIndex, runId, trigger, gapProof) {
+  const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
+  const input = incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, 0);
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    worker_name: stage.worker_name,
+    job_key: stage.job_key,
+    request_id: childRequestId,
+    chain_id: parentRow.chain_id,
+    parent_request_id: parentRow.request_id,
+    mode: stage.mode,
+    status: "DELTA_FULL_RUN_LAYER_NO_BLOCKING_GAPS_NOOP",
+    certification: "DELTA_FULL_RUN_LAYER_NO_BLOCKING_GAPS_NOOP",
+    certification_grade: "NOOP_PASS",
+    full_run_gap_contract: true,
+    full_run_stage_key: stage.stage_key,
+    layer_key: stage.layer_key || null,
+    calendar_tally_owned_gap_decision: true,
+    no_blocking_gaps_for_layer: true,
+    blocking_gap_count: 0,
+    rows_read: 0,
+    rows_written: 0,
+    rows_promoted: 0,
+    external_calls_performed: 0,
+    continuation_required: false,
+    orchestrator_should_self_continue: false,
+    no_worker_service_call_needed: true,
+    no_board_refresh: true,
+    no_market_context: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    gap_proof: gapProof,
+    trigger,
+    timestamp_utc: nowIso()
+  };
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, output_json, run_after, created_at, started_at, finished_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?, 0, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input), JSON.stringify(output)
+  );
+  await run(env.CONTROL_DB,
+    "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'DELTA_FULL_RUN_LAYER_NO_BLOCKING_GAPS_NOOP', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+    `${runId}_${stage.stage_key}_noop`, childRequestId, parentRow.chain_id, stage.job_key, stage.worker_name, JSON.stringify(input), JSON.stringify(output)
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_layer_no_gap_noop_completed', 'Delta Full Run completed layer stage as no-op because Calendar/Tally has zero blocking gaps for that layer', ?, CURRENT_TIMESTAMP)",
+    childRequestId, runId, WORKER_NAME, stage.job_key, JSON.stringify({ parent_request_id: parentRow.request_id, child_request_id: childRequestId, stage_key: stage.stage_key, layer_key: stage.layer_key || null, gap_proof: gapProof, no_worker_service_call_needed: true, version: SYSTEM_VERSION })
+  );
+  return { child_request_id: childRequestId, input, output, completed_noop: true };
 }
 
 
@@ -1599,7 +1595,16 @@ async function reconcileIncrementalCalendarTallyChildFromBatches(env, parentRow,
   );
   const reconcileRunId = existingRun && existingRun.run_id ? existingRun.run_id : rid("run");
 
-  if (!existingRun) {
+  if (existingRun) {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_runs SET status='completed', data_ok=1, certification_status=?, rows_read=?, rows_written=?, external_calls=0, finished_at=CURRENT_TIMESTAMP, elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END, output_json=?, error_code=NULL, error_message=NULL WHERE run_id=?",
+      String(output.certification || output.certification_status || "GAME_CALENDAR_DIFFERENTIAL_CHECK_UPDATED_NO_BLOCKERS").slice(0, 120),
+      Number(output.source_game_count || output.rows_read || 0),
+      Number(output.coverage_rows_written || output.rows_written || 1),
+      JSON.stringify(output),
+      reconcileRunId
+    );
+  } else {
     await run(env.CONTROL_DB,
       "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, ?, 0, COALESCE(?, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, 0, ?, ?, NULL, NULL)",
       reconcileRunId,
@@ -1615,8 +1620,6 @@ async function reconcileIncrementalCalendarTallyChildFromBatches(env, parentRow,
       JSON.stringify(output)
     );
   }
-
-  await closeOpenDispatchStartedRunsForRequest(env, child.request_id, 'calendar_tally_batch_proof_auto_finalized_child', { stage_key: stage.stage_key, batch_id: batch.batch_id, certification_grade: output.certification_grade });
 
   await run(env.CONTROL_DB,
     "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue') AND finished_at IS NULL",
@@ -1672,14 +1675,27 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
       child = await reconcileIncrementalCalendarTallyChildFromBatches(env, row, stage, child);
     }
     if (!child) {
-      const enqueued = await enqueueIncrementalMorningFullRunChild(env, row, stage, i, 0);
-      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_CHILD_ENQUEUED", certification: "INCREMENTAL_MORNING_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, enqueued_child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: [...stageReports, { stage_key: stage.stage_key, job_key: stage.job_key, child_request_id: enqueued.child_request_id, child_status: "pending", pass: null }], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true, no_browser_loop: true, no_scoring: true, no_ranking: true, no_final_board: true };
+      let enqueued = null;
+      let childStatusForReport = "pending";
+      let childPassForReport = null;
+      let childNoopProof = null;
+      if (stage.layer_key) {
+        const gapProof = await getIncrementalFullRunLayerBlockingGapCount(env, stage.layer_key);
+        if (gapProof.ok && Number(gapProof.blocking_gap_count || 0) === 0) {
+          enqueued = await completeIncrementalFullRunNoGapLayerChild(env, row, stage, i, runId, trigger, gapProof);
+          childStatusForReport = "completed";
+          childPassForReport = true;
+          childNoopProof = gapProof;
+        }
+      }
+      if (!enqueued) enqueued = await enqueueIncrementalMorningFullRunChild(env, row, stage, i, 0);
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: childStatusForReport === "completed" ? "PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_LAYER_NOOP_COMPLETED" : "PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_CHILD_ENQUEUED", certification: childStatusForReport === "completed" ? "INCREMENTAL_MORNING_FULL_RUN_LAYER_NOOP_COMPLETED" : "INCREMENTAL_MORNING_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, enqueued_child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length + (childStatusForReport === "completed" ? 1 : 0), total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: [...stageReports, { stage_key: stage.stage_key, job_key: stage.job_key, child_request_id: enqueued.child_request_id, child_status: childStatusForReport, pass: childPassForReport, no_gap_noop: childStatusForReport === "completed", gap_proof: childNoopProof }], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true, no_browser_loop: true, no_scoring: true, no_ranking: true, no_final_board: true };
       await run(env.CONTROL_DB,
-        "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'INCREMENTAL_MORNING_FULL_RUN_CHILD_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
-        runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
+        "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
+        runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.certification, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
       );
       await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_child_enqueued', 'Incremental Morning Full Run enqueued next child stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: enqueued.child_request_id, stage_key: stage.stage_key, stage_index: i, mode: stage.mode }));
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_child_enqueued', 'Incremental Morning Full Run enqueued or no-op completed next child stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: enqueued.child_request_id, stage_key: stage.stage_key, stage_index: i, mode: stage.mode, no_gap_noop_completed: childStatusForReport === "completed", gap_proof: childNoopProof }));
       return output;
     }
 
@@ -6535,7 +6551,6 @@ async function recoverStaleBaseHitterGameLogsJobs(env, trigger) {
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND job_key='base-hitter-game-logs' AND worker_name='alphadog-v2-base-hitter-game-logs' AND status='running' AND finished_at IS NULL",
       row.request_id
     );
-    await closeOpenDispatchStartedRunsForRequest(env, row.request_id, 'base_hitter_game_logs_stale_running_auto_recovered', { job_key: row.job_key, previous_status: row.status, previous_updated_at: row.updated_at });
     await run(env.CONTROL_DB,
       "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'base-hitter-game-logs', 'WARN', 'base_hitter_game_logs_stale_running_auto_recovered', 'Recovered stale running base-hitter-game-logs queue row back to pending for cursor-safe continuation', ?, CURRENT_TIMESTAMP)",
       row.request_id, WORKER_NAME, JSON.stringify({ trigger, recovered_from_status: row.status, started_at: row.started_at, updated_at: row.updated_at, tick_count: row.tick_count, stale_threshold_minutes: 2, no_new_batch: true, resume_from_worker_cursor: true, output_preview: row.output_preview || null, version: SYSTEM_VERSION })
@@ -6563,7 +6578,6 @@ async function recoverStaleBasePitcherGameLogsJobs(env, trigger) {
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND job_key='base-pitcher-game-logs' AND worker_name='alphadog-v2-base-pitcher-game-logs' AND status='running' AND finished_at IS NULL",
       row.request_id
     );
-    await closeOpenDispatchStartedRunsForRequest(env, row.request_id, 'base_pitcher_game_logs_stale_running_auto_recovered', { job_key: row.job_key, previous_status: row.status, previous_updated_at: row.updated_at });
     await run(env.CONTROL_DB,
       "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'base-pitcher-game-logs', 'WARN', 'base_pitcher_game_logs_stale_running_auto_recovered', 'Recovered stale running base-pitcher-game-logs queue row back to pending for scoped delta continuation', ?, CURRENT_TIMESTAMP)",
       row.request_id, WORKER_NAME, JSON.stringify({ trigger, recovered_from_status: row.status, started_at: row.started_at, updated_at: row.updated_at, tick_count: row.tick_count, stale_threshold_minutes: 2, no_new_batch: true, resume_from_worker_cursor: true, scoped_delta_targets_only: true, no_normal_full_universe_sweep: true, output_preview: row.output_preview || null, version: SYSTEM_VERSION })
@@ -6590,7 +6604,6 @@ async function recoverStaleBaseStarterHistoryJobs(env, trigger) {
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND job_key='base-starter-history' AND worker_name='alphadog-v2-base-starter-history' AND status='running' AND finished_at IS NULL",
       row.request_id
     );
-    await closeOpenDispatchStartedRunsForRequest(env, row.request_id, 'base_starter_history_stale_running_auto_recovered', { job_key: row.job_key, previous_status: row.status, previous_updated_at: row.updated_at });
     await run(env.CONTROL_DB,
       "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'base-starter-history', 'WARN', 'base_starter_history_stale_running_auto_recovered', 'Recovered stale running base-starter-history queue row back to pending for cursor-safe stage-only continuation', ?, CURRENT_TIMESTAMP)",
       row.request_id, WORKER_NAME, JSON.stringify({ trigger, recovered_from_status: row.status, started_at: row.started_at, updated_at: row.updated_at, tick_count: row.tick_count, stale_threshold_minutes: 2, no_new_batch: true, resume_from_stage_outcomes: true, no_live_promotion: true, output_preview: row.output_preview || null, version: SYSTEM_VERSION })
@@ -6612,7 +6625,6 @@ async function recoverStaleBaseBullpenHistoryJobs(env, trigger) {
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND job_key='base-bullpen-history' AND worker_name='alphadog-v2-base-bullpen-history' AND status='running' AND finished_at IS NULL",
       row.request_id
     );
-    await closeOpenDispatchStartedRunsForRequest(env, row.request_id, 'base_bullpen_history_stale_running_auto_recovered', { job_key: row.job_key, previous_status: row.status, previous_updated_at: row.updated_at });
     await run(env.CONTROL_DB,
       "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'base-bullpen-history', 'WARN', 'base_bullpen_history_stale_running_auto_recovered', 'Recovered stale running base-bullpen-history probe queue row back to pending for safe backend continuation', ?, CURRENT_TIMESTAMP)",
       row.request_id, WORKER_NAME, JSON.stringify({ trigger, recovered_from_status: row.status, started_at: row.started_at, updated_at: row.updated_at, tick_count: row.tick_count, stale_threshold_minutes: 2, no_new_batch_required_for_probe: true, no_live_promotion: true, output_preview: row.output_preview || null, version: SYSTEM_VERSION })
