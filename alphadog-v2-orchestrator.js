@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.166-full-run-child-finalization-reconcile";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.167-universal-child-lifecycle-reconcile";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1311,15 +1311,123 @@ function isCompletedOutput(output) {
   ));
 }
 
+
+function isIncrementalFullRunChildOutputTerminal(output) {
+  if (!output || output.ok !== true) return false;
+  const rawStatus = String(output.status || "").toLowerCase();
+  const cert = String(output.certification || output.certification_status || "").toLowerCase();
+  if (isPartialContinueOutput(output)) return false;
+  return !!(
+    output.data_ok === true ||
+    rawStatus.startsWith("completed") ||
+    rawStatus.includes("completed") ||
+    rawStatus.includes("certified") ||
+    rawStatus.startsWith("noop_") ||
+    cert.includes("certified") ||
+    cert.includes("noop_pass") ||
+    cert.includes("repeat_full_refresh_blocked") ||
+    cert.includes("retained_noop")
+  );
+}
+
+function isIncrementalFullRunChildOutputPartial(output) {
+  if (!output || output.ok !== true) return false;
+  return isPartialContinueOutput(output);
+}
+
+async function getLatestChildWorkerRunOutput(env, requestId) {
+  const row = await first(env.CONTROL_DB,
+    `SELECT run_id, status, data_ok, certification_status, output_json, started_at, finished_at, updated_at
+     FROM control_job_runs
+     WHERE request_id=?
+       AND output_json IS NOT NULL
+       AND certification_status <> 'ORCHESTRATOR_DISPATCH_STARTED'
+     ORDER BY datetime(COALESCE(finished_at, started_at)) DESC, rowid DESC
+     LIMIT 1`,
+    requestId
+  );
+  if (!row) return null;
+  return { ...row, output: parseJsonSafeText(row.output_json || "{}", {}) };
+}
+
+async function closeStaleDispatchStartedRuns(env, requestId, certificationStatus, outputJson, trigger) {
+  await run(env.CONTROL_DB,
+    `UPDATE control_job_runs
+     SET status=?,
+         data_ok=?,
+         certification_status=?,
+         finished_at=CURRENT_TIMESTAMP,
+         elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE elapsed_ms END,
+         output_json=COALESCE(output_json, ?),
+         error_code=NULL,
+         error_message=NULL
+     WHERE request_id=?
+       AND status='running'
+       AND certification_status='ORCHESTRATOR_DISPATCH_STARTED'
+       AND datetime(started_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds')`,
+    certificationStatus === 'completed' ? 'completed' : 'partial_continue',
+    certificationStatus === 'completed' ? 1 : 1,
+    certificationStatus === 'completed' ? 'DISPATCH_RUN_RECONCILED_CHILD_COMPLETED' : 'DISPATCH_RUN_RECONCILED_CHILD_PARTIAL_CONTINUE',
+    outputJson || '{}',
+    requestId
+  );
+}
+
+async function reconcileIncrementalFullRunChildLifecycle(env, child, trigger) {
+  if (!child || !child.request_id) return { changed: false, child };
+  const childStatus = String(child.status || "");
+  const staleEnough = Number(child.is_stale || 0) === 1 || (child.updated_at && true);
+  let output = parseJsonSafeText(child.output_json || "{}", {});
+  let source = child.output_json ? "queue_output_json" : null;
+  const latestRun = await getLatestChildWorkerRunOutput(env, child.request_id);
+  if ((!output || Object.keys(output).length === 0 || output.ok !== true) && latestRun && latestRun.output) {
+    output = latestRun.output;
+    source = "latest_control_job_runs_output_json";
+  }
+  if (!output || output.ok !== true) return { changed: false, child };
+
+  const outputJson = JSON.stringify(output);
+  if (childStatus === "running" || childStatus === "pending" || childStatus === "partial_continue") {
+    if (isIncrementalFullRunChildOutputTerminal(output)) {
+      await closeStaleDispatchStartedRuns(env, child.request_id, 'completed', outputJson, trigger);
+      await run(env.CONTROL_DB,
+        `UPDATE control_job_queue
+         SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP,
+             output_json=?, error_code=NULL, error_message=NULL
+         WHERE request_id=? AND status IN ('pending','running','partial_continue')`,
+        outputJson, child.request_id
+      );
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'incremental_full_run_child_terminal_output_reconciled', 'Reconciled active Incremental Full Run child to completed from trusted worker output', ?, CURRENT_TIMESTAMP)",
+        child.request_id, WORKER_NAME, child.job_key, JSON.stringify({ trigger, request_id: child.request_id, job_key: child.job_key, previous_status: child.status, source, output_status: output.status || null, certification: output.certification || output.certification_status || null, version: SYSTEM_VERSION, universal_all_base_factor_stages: true })
+      );
+      return { changed: true, child: { ...child, status: 'completed', finished_at: nowIso(), updated_at: nowIso(), output_json: outputJson, error_code: null, error_message: null } };
+    }
+    if (isIncrementalFullRunChildOutputPartial(output)) {
+      await closeStaleDispatchStartedRuns(env, child.request_id, 'partial_continue', outputJson, trigger);
+      await run(env.CONTROL_DB,
+        `UPDATE control_job_queue
+         SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP,
+             output_json=?, error_code=NULL, error_message=NULL
+         WHERE request_id=? AND status IN ('running','partial_continue') AND finished_at IS NULL`,
+        outputJson, child.request_id
+      );
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'incremental_full_run_child_partial_output_requeued', 'Reconciled active Incremental Full Run child partial output back to pending for continuation', ?, CURRENT_TIMESTAMP)",
+        child.request_id, WORKER_NAME, child.job_key, JSON.stringify({ trigger, request_id: child.request_id, job_key: child.job_key, previous_status: child.status, source, output_status: output.status || null, certification: output.certification || output.certification_status || null, version: SYSTEM_VERSION, universal_all_base_factor_stages: true })
+      );
+      return { changed: true, child: { ...child, status: 'pending', updated_at: nowIso(), output_json: outputJson, error_code: null, error_message: null } };
+    }
+  }
+  return { changed: false, child };
+}
+
 async function reconcileRunningDeltaFullRunChildrenFromOutput(env, trigger) {
-  // v0.2.166 root fix: service-binding workers can commit CONTROL_DB output_json
-  // after a chunk but leave the queue row in running when the HTTP response is
-  // interrupted. Do not blindly redispatch those rows and do not manually fail
-  // them. Promote the queue state from the worker-owned output_json so the same
-  // child/factor resumes or completes exactly once. This is scoped to Delta Full
-  // Run children only and covers all factor stages, not only hitter/pitcher logs.
+  // v0.2.167: universal lifecycle reconcile for every Incremental Morning Full Run child.
+  // It handles queue output_json and latest finished control_job_runs output, not only one worker family.
   const rows = await all(env.CONTROL_DB,
-    `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.output_json, c.updated_at
+    `SELECT c.request_id, c.parent_request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.output_json, c.updated_at,
+            CASE WHEN c.status IN ('pending','running','partial_continue') AND c.finished_at IS NULL AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds') THEN 1 ELSE 0 END AS is_stale
      FROM control_job_queue c
      JOIN control_job_queue p ON p.request_id = c.parent_request_id AND p.chain_id = c.chain_id
      WHERE p.job_key='incremental-morning-full-run'
@@ -1327,41 +1435,19 @@ async function reconcileRunningDeltaFullRunChildrenFromOutput(env, trigger) {
        AND p.status IN ('pending','running','partial_continue')
        AND p.finished_at IS NULL
        AND c.parent_request_id IS NOT NULL
-       AND c.status='running'
+       AND c.status IN ('pending','running','partial_continue')
        AND c.finished_at IS NULL
-       AND c.output_json IS NOT NULL
      ORDER BY datetime(c.updated_at) ASC
-     LIMIT 20`
+     LIMIT 50`
   );
-
   let reconciled_pending = 0;
   let reconciled_completed = 0;
   let ignored = 0;
   for (const row of rows) {
-    const output = parseJsonSafeText(row.output_json || "{}", {});
-    if (isPartialContinueOutput(output)) {
-      await run(env.CONTROL_DB,
-        "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND status='running' AND finished_at IS NULL",
-        row.request_id
-      );
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'delta_full_run_child_partial_output_reconciled', 'Reconciled running Delta Full Run child from worker output_json PARTIAL_CONTINUE back to pending without duplicate manual cleanup', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ trigger, request_id: row.request_id, job_key: row.job_key, worker_name: row.worker_name, previous_status: row.status, output_status: output.status || null, certification: output.certification || null, tick_count: row.tick_count, version: SYSTEM_VERSION, applies_to_all_factor_stages: true })
-      );
-      reconciled_pending += 1;
-    } else if (isCompletedOutput(output)) {
-      await run(env.CONTROL_DB,
-        "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND status='running' AND finished_at IS NULL",
-        row.request_id
-      );
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'delta_full_run_child_completed_output_reconciled', 'Reconciled running Delta Full Run child from worker output_json COMPLETED to completed without redispatch', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ trigger, request_id: row.request_id, job_key: row.job_key, worker_name: row.worker_name, previous_status: row.status, output_status: output.status || null, certification: output.certification || null, tick_count: row.tick_count, version: SYSTEM_VERSION, applies_to_all_factor_stages: true })
-      );
-      reconciled_completed += 1;
-    } else {
-      ignored += 1;
-    }
+    const result = await reconcileIncrementalFullRunChildLifecycle(env, row, trigger);
+    if (result.changed && result.child && result.child.status === 'completed') reconciled_completed += 1;
+    else if (result.changed) reconciled_pending += 1;
+    else ignored += 1;
   }
   return { reconciled_pending, reconciled_completed, ignored, scanned: rows.length };
 }
@@ -1774,6 +1860,8 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     let child = attempts.length ? attempts[attempts.length - 1] : null;
     if (child) {
       child = await reconcileIncrementalCalendarTallyChildFromBatches(env, row, stage, child);
+      const lifecycleReconcile = await reconcileIncrementalFullRunChildLifecycle(env, child, trigger);
+      child = lifecycleReconcile.child || child;
     }
     if (!child) {
       let enqueued = null;
