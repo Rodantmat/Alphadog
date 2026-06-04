@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.160-delta-full-run-stale-child-retry-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.161-delta-certifier-fast-gap-contract";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
