@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.167-universal-child-lifecycle-reconcile";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.168-child-lifecycle-schema-safe";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1336,8 +1336,10 @@ function isIncrementalFullRunChildOutputPartial(output) {
 }
 
 async function getLatestChildWorkerRunOutput(env, requestId) {
+  // v0.2.168: control_job_runs does NOT have updated_at in the deployed schema.
+  // Never reference unverified run-table columns from universal child lifecycle code.
   const row = await first(env.CONTROL_DB,
-    `SELECT run_id, status, data_ok, certification_status, output_json, started_at, finished_at, updated_at
+    `SELECT run_id, status, data_ok, certification_status, output_json, started_at, finished_at
      FROM control_job_runs
      WHERE request_id=?
        AND output_json IS NOT NULL
@@ -1350,23 +1352,25 @@ async function getLatestChildWorkerRunOutput(env, requestId) {
   return { ...row, output: parseJsonSafeText(row.output_json || "{}", {}) };
 }
 
-async function closeStaleDispatchStartedRuns(env, requestId, certificationStatus, outputJson, trigger) {
+async function closeDispatchStartedRunsForChild(env, requestId, certificationStatus, outputJson, trigger) {
+  // v0.2.168: once the worker produced trusted output in queue output_json
+  // or in a later control_job_runs row, close every dispatch-start placeholder
+  // for that request immediately. Leaving these rows running created false
+  // stuck evidence and repeated stale recovery loops.
   await run(env.CONTROL_DB,
     `UPDATE control_job_runs
      SET status=?,
-         data_ok=?,
+         data_ok=1,
          certification_status=?,
-         finished_at=CURRENT_TIMESTAMP,
+         finished_at=COALESCE(finished_at, CURRENT_TIMESTAMP),
          elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE elapsed_ms END,
          output_json=COALESCE(output_json, ?),
          error_code=NULL,
          error_message=NULL
      WHERE request_id=?
        AND status='running'
-       AND certification_status='ORCHESTRATOR_DISPATCH_STARTED'
-       AND datetime(started_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds')`,
+       AND certification_status='ORCHESTRATOR_DISPATCH_STARTED'`,
     certificationStatus === 'completed' ? 'completed' : 'partial_continue',
-    certificationStatus === 'completed' ? 1 : 1,
     certificationStatus === 'completed' ? 'DISPATCH_RUN_RECONCILED_CHILD_COMPLETED' : 'DISPATCH_RUN_RECONCILED_CHILD_PARTIAL_CONTINUE',
     outputJson || '{}',
     requestId
@@ -1389,7 +1393,7 @@ async function reconcileIncrementalFullRunChildLifecycle(env, child, trigger) {
   const outputJson = JSON.stringify(output);
   if (childStatus === "running" || childStatus === "pending" || childStatus === "partial_continue") {
     if (isIncrementalFullRunChildOutputTerminal(output)) {
-      await closeStaleDispatchStartedRuns(env, child.request_id, 'completed', outputJson, trigger);
+      await closeDispatchStartedRunsForChild(env, child.request_id, 'completed', outputJson, trigger);
       await run(env.CONTROL_DB,
         `UPDATE control_job_queue
          SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP,
@@ -1399,12 +1403,12 @@ async function reconcileIncrementalFullRunChildLifecycle(env, child, trigger) {
       );
       await run(env.CONTROL_DB,
         "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'incremental_full_run_child_terminal_output_reconciled', 'Reconciled active Incremental Full Run child to completed from trusted worker output', ?, CURRENT_TIMESTAMP)",
-        child.request_id, WORKER_NAME, child.job_key, JSON.stringify({ trigger, request_id: child.request_id, job_key: child.job_key, previous_status: child.status, source, output_status: output.status || null, certification: output.certification || output.certification_status || null, version: SYSTEM_VERSION, universal_all_base_factor_stages: true })
+        child.request_id, WORKER_NAME, child.job_key, JSON.stringify({ trigger, request_id: child.request_id, job_key: child.job_key, previous_status: child.status, source, output_status: output.status || null, certification: output.certification || output.certification_status || null, version: SYSTEM_VERSION, universal_all_base_factor_stages: true, schema_safe_no_control_job_runs_updated_at: true })
       );
       return { changed: true, child: { ...child, status: 'completed', finished_at: nowIso(), updated_at: nowIso(), output_json: outputJson, error_code: null, error_message: null } };
     }
     if (isIncrementalFullRunChildOutputPartial(output)) {
-      await closeStaleDispatchStartedRuns(env, child.request_id, 'partial_continue', outputJson, trigger);
+      await closeDispatchStartedRunsForChild(env, child.request_id, 'partial_continue', outputJson, trigger);
       await run(env.CONTROL_DB,
         `UPDATE control_job_queue
          SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP,
@@ -1414,7 +1418,7 @@ async function reconcileIncrementalFullRunChildLifecycle(env, child, trigger) {
       );
       await run(env.CONTROL_DB,
         "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'incremental_full_run_child_partial_output_requeued', 'Reconciled active Incremental Full Run child partial output back to pending for continuation', ?, CURRENT_TIMESTAMP)",
-        child.request_id, WORKER_NAME, child.job_key, JSON.stringify({ trigger, request_id: child.request_id, job_key: child.job_key, previous_status: child.status, source, output_status: output.status || null, certification: output.certification || output.certification_status || null, version: SYSTEM_VERSION, universal_all_base_factor_stages: true })
+        child.request_id, WORKER_NAME, child.job_key, JSON.stringify({ trigger, request_id: child.request_id, job_key: child.job_key, previous_status: child.status, source, output_status: output.status || null, certification: output.certification || output.certification_status || null, version: SYSTEM_VERSION, universal_all_base_factor_stages: true, schema_safe_no_control_job_runs_updated_at: true })
       );
       return { changed: true, child: { ...child, status: 'pending', updated_at: nowIso(), output_json: outputJson, error_code: null, error_message: null } };
     }
