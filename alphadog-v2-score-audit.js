@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.2.3-db-config-score-confidence-precap-side";
+const VERSION = "alphadog-v2-scoring-engine-v0.2.4-db-config-score-sort-boundary-fix";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -441,7 +441,7 @@ function sqlCaseFromMap(expression, map, fallback) {
 
 function simulationFormulaMetadata() {
   return {
-    formula_key: "SCORING_SIMULATION_V0_2_3_DB_CONFIG_SCORE_CONFIDENCE_PRECAP_SIDE",
+    formula_key: "SCORING_SIMULATION_V0_2_4_DB_CONFIG_SCORE_SORT_BOUNDARY_FIX",
     worker_version: VERSION,
     simulation_only: true,
     active_values_source: "SCORE_DB.scoring_engine_simulation_profile_configs.config_json",
@@ -469,7 +469,7 @@ function simulationFormulaMetadata() {
 
 const DEFAULT_SIM_CONFIGS = {
   HYBRID_CONTROL: {
-    profile_version: "0.2.3-control-db-config",
+    profile_version: "0.2.4-control-db-config",
     config: {
       min_live_score: 70,
       min_live_confidence: 55,
@@ -510,7 +510,7 @@ const DEFAULT_SIM_CONFIGS = {
     }
   },
   STRICT_B: {
-    profile_version: "0.2.3-strict-b-db-config",
+    profile_version: "0.2.4-strict-b-db-config",
     config: {
       min_live_score: 70,
       min_live_confidence: 55,
@@ -577,7 +577,7 @@ async function profileConstants(env, profileKey) {
   const metadata = JSON.parse(row.formula_metadata_json || "{}");
   return {
     profileKey,
-    version: String(row.profile_version || cfg.profile_version || "0.2.3-db-config"),
+    version: String(row.profile_version || cfg.profile_version || "0.2.4-db-config"),
     config: cfg,
     formulaMetadata: metadata,
     thresholds_locked: Number(row.thresholds_locked || 0),
@@ -741,7 +741,7 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
           WHEN hard_blocked = 1 OR model_deferred_calc = 1 OR selected_side_calc IS NULL THEN NULL
           ELSE MIN(confidence_cap_calc, MAX(0, MIN(100, ${p.baseConfidence} - confidence_penalty_total_calc)))
         END AS confidence_calc,
-        (((COALESCE(mlb_player_id,0) * 31 + COALESCE(game_pk,0) * 17 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 13) % 999) - 499) * ${p.microScale} / 999.0 AS sort_micro_adjustment_calc
+        ((COALESCE(mlb_player_id,0) * 31 + COALESCE(game_pk,0) * 17 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 13) % 999) * ${p.microScale} / 999.0 AS sort_micro_adjustment_calc
       FROM penalties
     ), final AS (
       SELECT
@@ -818,7 +818,7 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
         'scoring_enabled', 0,
         'true_probability_enabled', 0,
         'no_true_hit_probability_claims', 1,
-        'score_sort_policy', 'score_sort_0_100_only; never used for archive/live/bins',
+        'score_sort_policy', 'score_sort_0_100_only; positive_micro_lt_0_0001; never used for archive/live/bins',
         'goblin_demon_less_score_policy', 'NULL_NOT_ZERO',
         'dedupe_deferred_to_ranking_final_board', 1
       ) AS calculation_json,
@@ -986,8 +986,8 @@ async function runScoringSimulation(env, input) {
   const simulationRowsWritten = strictRows + hybridRows;
 
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_V0_2_3_DB_CONFIG_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_2_3_DB_CONFIG_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_2_3_DB_CONFIG_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_2_4_DB_CONFIG_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_2_4_DB_CONFIG_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_2_4_DB_CONFIG_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
   const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
 
@@ -1023,7 +1023,7 @@ async function runScoringSimulation(env, input) {
     selected_side_policy: "Two-sided selected_side is chosen from raw pre-cap side scores using DB-configured raw_side_delta_threshold; Goblin/Demon are more_only and Less remains NULL.",
     notes: [
       "Simulation writes only to SCORE_DB.scoring_engine_simulation_shadow and related simulation audit tables.",
-      "v0.2.3 keeps chunked D1 inserts and moves tunable scoring variables into SCORE_DB.scoring_engine_simulation_profile_configs.",
+      "v0.2.4 keeps chunked D1 inserts, DB-stored tunable variables, pre-cap side selection, and fixes score_sort_0_100 so its deterministic micro adjustment never crosses the integer boundary.",
       "score_0_100 and confidence_0_100 are separated; live_playable requires score/confidence gates and never uses score_sort_0_100.",
       "score_sort_0_100 is deterministic sort-only micro-adjustment and never controls archive/live/bin thresholds.",
       "Strict-B is the primary safety profile; Hybrid-Control is comparison only and is not production-approved.",
