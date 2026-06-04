@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.159-scheduled-child-finalize-reconcile";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.159-delta-full-run-auto-finalize";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1457,6 +1457,120 @@ async function enqueueIncrementalMorningFullRunChild(env, parentRow, stage, step
   return { child_request_id: childRequestId, input };
 }
 
+
+async function reconcileIncrementalCalendarTallyChildFromBatches(env, parentRow, stage, child) {
+  if (!child || stage.job_key !== "delta-certifier") return child;
+  const childStatus = String(child.status || "");
+  if (!["pending", "running", "partial_continue"].includes(childStatus)) return child;
+  if (child.finished_at) return child;
+
+  const batch = await first(env.TEAM_DB,
+    `SELECT batch_id, request_id, worker_name, worker_version, mode, status, certification_status, certification_grade,
+            missing_game_layer_count, blocking_gap_count, coverage_window_start, coverage_window_end,
+            created_at, updated_at, output_json
+     FROM mlb_game_coverage_batches
+     WHERE request_id=?
+       AND mode='game_calendar_differential_check_update'
+     ORDER BY datetime(created_at) DESC
+     LIMIT 1`,
+    child.request_id
+  );
+
+  if (!batch) return child;
+  const batchStatus = String(batch.status || "");
+  const batchGrade = String(batch.certification_grade || "");
+  const batchCert = String(batch.certification_status || "");
+  const completed = batchStatus.includes("COMPLETED") || batchCert.includes("UPDATED") || batchGrade.startsWith("DIFF_PASS");
+  if (!completed) return child;
+
+  const parsedOutput = parseJsonSafeText(batch.output_json || "{}", {});
+  const output = {
+    ...parsedOutput,
+    ok: parsedOutput.ok !== false,
+    data_ok: parsedOutput.data_ok !== false,
+    version: parsedOutput.version || batch.worker_version || "alphadog-v2-delta-certifier",
+    worker_name: parsedOutput.worker_name || batch.worker_name || child.worker_name,
+    job_key: parsedOutput.job_key || child.job_key,
+    request_id: parsedOutput.request_id || child.request_id,
+    chain_id: parsedOutput.chain_id || child.chain_id,
+    batch_id: parsedOutput.batch_id || batch.batch_id,
+    mode: parsedOutput.mode || batch.mode || "game_calendar_differential_check_update",
+    status: parsedOutput.status || batch.status,
+    certification: parsedOutput.certification || batch.certification_status,
+    certification_status: parsedOutput.certification_status || batch.certification_status,
+    certification_grade: parsedOutput.certification_grade || batch.certification_grade,
+    missing_game_layer_count: Number(parsedOutput.missing_game_layer_count ?? batch.missing_game_layer_count ?? 0),
+    blocking_gap_count: Number(parsedOutput.blocking_gap_count ?? batch.blocking_gap_count ?? 0),
+    coverage_rows_written: Number(parsedOutput.coverage_rows_written ?? parsedOutput.rows_written ?? 1),
+    rows_written: Number(parsedOutput.rows_written ?? parsedOutput.coverage_rows_written ?? 1),
+    source_game_count: Number(parsedOutput.source_game_count ?? parsedOutput.rows_read ?? 0),
+    orchestrator_auto_finalize: {
+      version: SYSTEM_VERSION,
+      reason: "calendar_tally_batch_completed_but_queue_child_left_running",
+      parent_request_id: parentRow.request_id,
+      parent_chain_id: parentRow.chain_id,
+      stage_key: stage.stage_key,
+      previous_child_status: childStatus,
+      trusted_batch_id: batch.batch_id,
+      trusted_batch_status: batch.status,
+      trusted_certification_grade: batch.certification_grade,
+      no_manual_reconcile_button_required: true,
+      no_board_refresh: true,
+      no_market_context: true,
+      no_scoring: true,
+      no_final_board: true
+    }
+  };
+
+  const existingRun = await first(env.CONTROL_DB,
+    "SELECT run_id FROM control_job_runs WHERE request_id=? ORDER BY datetime(started_at) DESC LIMIT 1",
+    child.request_id
+  );
+  const reconcileRunId = existingRun && existingRun.run_id ? existingRun.run_id : rid("run");
+
+  if (!existingRun) {
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, ?, 0, COALESCE(?, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, 0, ?, ?, NULL, NULL)",
+      reconcileRunId,
+      child.request_id,
+      child.chain_id,
+      child.job_key,
+      child.worker_name,
+      String(output.certification || output.certification_status || "GAME_CALENDAR_DIFFERENTIAL_CHECK_UPDATED_NO_BLOCKERS").slice(0, 120),
+      Number(output.source_game_count || output.rows_read || 0),
+      Number(output.coverage_rows_written || output.rows_written || 1),
+      child.started_at || batch.created_at || null,
+      child.input_json || "{}",
+      JSON.stringify(output)
+    );
+  }
+
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue') AND finished_at IS NULL",
+    JSON.stringify(output), child.request_id
+  );
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'incremental_calendar_tally_child_auto_finalized_from_batch', 'Delta Full Run auto-finalized Calendar/Tally child from trusted mlb_game_coverage_batches proof', ?, CURRENT_TIMESTAMP)",
+    child.request_id,
+    reconcileRunId,
+    WORKER_NAME,
+    child.job_key,
+    JSON.stringify({ parent_request_id: parentRow.request_id, chain_id: child.chain_id, stage_key: stage.stage_key, previous_child_status: childStatus, batch_id: batch.batch_id, certification_grade: output.certification_grade, version: SYSTEM_VERSION, no_manual_reconcile: true })
+  );
+
+  return {
+    ...child,
+    status: "completed",
+    finished_at: nowIso(),
+    updated_at: nowIso(),
+    output_json: JSON.stringify(output),
+    error_code: null,
+    error_message: null,
+    auto_finalized_from_calendar_tally_batch: true
+  };
+}
+
 async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
   const started = Date.now();
   const parentInput = parseJsonSafeText(row.input_json || "{}", {});
@@ -1480,7 +1594,10 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
   for (let i = 0; i < INCREMENTAL_MORNING_FULL_RUN_STAGES.length; i++) {
     const stage = INCREMENTAL_MORNING_FULL_RUN_STAGES[i];
     const attempts = childRows.filter(c => incrementalFullRunStageKeyFromChild(c) === stage.stage_key || (!incrementalFullRunStageKeyFromChild(c) && c.job_key === stage.job_key));
-    const child = attempts.length ? attempts[attempts.length - 1] : null;
+    let child = attempts.length ? attempts[attempts.length - 1] : null;
+    if (child) {
+      child = await reconcileIncrementalCalendarTallyChildFromBatches(env, row, stage, child);
+    }
     if (!child) {
       const enqueued = await enqueueIncrementalMorningFullRunChild(env, row, stage, i, 0);
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_CHILD_ENQUEUED", certification: "INCREMENTAL_MORNING_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, enqueued_child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: [...stageReports, { stage_key: stage.stage_key, job_key: stage.job_key, child_request_id: enqueued.child_request_id, child_status: "pending", pass: null }], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true, no_browser_loop: true, no_scoring: true, no_ranking: true, no_final_board: true };
@@ -2170,15 +2287,11 @@ async function processParlaySleeperBoardJob(env, row, runId, trigger) {
   let httpStatus = null;
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort("parlay_sleeper_orchestrator_timeout_80s"), 80000);
     const resp = await env.PARLAY_SLEEPER_BOARD_WORKER.fetch("https://internal.alphadog-v2-parlay-sleeper-board/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(input),
-      signal: controller.signal
+      body: JSON.stringify(input)
     });
-    clearTimeout(timeoutId);
     httpStatus = resp.status;
     const text = await resp.text();
     try {
@@ -6467,227 +6580,18 @@ async function enqueueStaticPlayersWeeklyIfDue(env, cronExpression) {
   return { enqueued: true, request_id: requestId, chain_id: chainId };
 }
 
-
-function terminalStatusFromOutput(output) {
-  if (!output || output.ok !== true || output.data_ok !== true) return "failed";
-  return "completed";
-}
-
-function certificationFromOutput(output, fallback = "reconciled_child_output") {
-  return String((output && (output.certification || output.certification_status)) || fallback).slice(0, 120);
-}
-
-async function insertReconciledRunIfMissing(env, row, runId, runStatus, certification, rowsRead, rowsWritten, externalCalls, inputJson, outputJson, errorCode, errorMessage) {
-  const existing = await first(env.CONTROL_DB, "SELECT COUNT(*) AS c FROM control_job_runs WHERE request_id=?", row.request_id);
-  if (Number(existing && existing.c || 0) > 0) return false;
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, 0, ?, ?, ?, ?)",
-    runId,
-    row.request_id,
-    row.chain_id,
-    row.job_key,
-    row.worker_name,
-    runStatus,
-    runStatus === "completed" ? 1 : 0,
-    certification,
-    Number(rowsRead || 0),
-    Number(rowsWritten || 0),
-    Number(externalCalls || 0),
-    row.started_at || null,
-    inputJson || row.input_json || "{}",
-    outputJson,
-    errorCode,
-    errorMessage
-  );
-  return true;
-}
-
-async function reconcileDeltaCertifierQueueRowFromCoverageBatch(env, row, trigger, reason = "scheduled_child_domain_batch_reconcile") {
-  if (!row || row.job_key !== "delta-certifier" || row.worker_name !== "alphadog-v2-delta-certifier") return { reconciled: false, reason: "not_delta_certifier" };
-  if (!env.TEAM_DB) return { reconciled: false, reason: "missing_team_db_binding" };
-  const batch = await first(env.TEAM_DB,
-    `SELECT batch_id, request_id, worker_name, worker_version, mode, status, coverage_window_start, coverage_window_end,
-            missing_game_layer_count, blocking_gap_count, certification_status, certification_grade,
-            created_at, updated_at, output_json
-       FROM mlb_game_coverage_batches
-      WHERE request_id=?
-      ORDER BY datetime(created_at) DESC, batch_id DESC
-      LIMIT 1`,
-    row.request_id
-  );
-  if (!batch || !batch.output_json) return { reconciled: false, reason: "no_coverage_batch_output" };
-
-  const output = parseJsonSafeText(batch.output_json || "{}", {});
-  const statusText = String(batch.status || output.status || "");
-  const gradeText = String(batch.certification_grade || output.certification_grade || "");
-  const completed = statusText.includes("COMPLETED") && output.ok === true && output.data_ok === true;
-  const failed = statusText.includes("FAILED") || gradeText.includes("FAIL") || output.ok === false || output.data_ok === false;
-  if (!completed && !failed) return { reconciled: false, reason: "latest_batch_not_terminal", batch_status: statusText, grade: gradeText };
-
-  const queueStatus = completed ? "completed" : "failed";
-  const errorCode = completed ? null : "delta_certifier_reconciled_failed_batch";
-  const errorMessage = completed ? null : String(output.status || batch.certification_status || "Delta Certifier reconciled failed batch").slice(0, 900);
-  const certification = certificationFromOutput(output, batch.certification_status || (completed ? "delta_certifier_reconciled_completed" : "delta_certifier_reconciled_failed"));
-  const rowsRead = Number(output.rows_read || output.source_game_count || 0);
-  const rowsWritten = Number(output.rows_written || output.coverage_rows_written || 0);
-  const externalCalls = Number(output.external_calls_performed || output.external_calls || 0);
-  const reconciledOutput = {
-    ...output,
-    orchestrator_reconcile: {
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      trigger,
-      reason,
-      reconciled_from: "TEAM_DB.mlb_game_coverage_batches",
-      batch_id: batch.batch_id,
-      batch_created_at: batch.created_at,
-      batch_updated_at: batch.updated_at,
-      queue_status_before: row.status,
-      queue_status_after: queueStatus,
-      scheduled_child_finalize_reconcile_v0_2_159: true,
-      no_source_history_mutation: true,
-      no_manual_sql_required: true
-    }
-  };
-  const outJson = JSON.stringify(reconciledOutput);
-  const runId = "run_reconcile_" + rid("child");
-  const insertedRun = await insertReconciledRunIfMissing(env, row, runId, queueStatus, certification, rowsRead, rowsWritten, externalCalls, row.input_json || "{}", outJson, errorCode, errorMessage);
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=? AND finished_at IS NULL",
-    queueStatus, outJson, errorCode, errorMessage, row.request_id
-  );
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'scheduled_child_reconciled_from_domain_batch', 'Finalized stale scheduled child row from authoritative domain batch output', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, completed ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, chain_id: row.chain_id, batch_id: batch.batch_id, queue_status: queueStatus, certification, inserted_run: insertedRun, reason })
-  );
-  return { reconciled: true, request_id: row.request_id, queue_status: queueStatus, certification, batch_id: batch.batch_id };
-}
-
-async function failVeryStaleBoardSleeperChildWithoutRun(env, row, trigger) {
-  if (!row || row.job_key !== "parlay-sleeper-board" || row.worker_name !== "alphadog-v2-parlay-sleeper-board") return { reconciled: false, reason: "not_sleeper" };
-  const runCount = await first(env.CONTROL_DB, "SELECT COUNT(*) AS c FROM control_job_runs WHERE request_id=?", row.request_id);
-  if (Number(runCount && runCount.c || 0) > 0) return { reconciled: false, reason: "run_row_exists" };
-  const stale = await first(env.CONTROL_DB,
-    "SELECT CASE WHEN datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-45 minutes') THEN 1 ELSE 0 END AS stale FROM control_job_queue WHERE request_id=? AND status='running' AND finished_at IS NULL",
-    row.request_id
-  );
-  if (Number(stale && stale.stale || 0) !== 1) return { reconciled: false, reason: "not_stale_enough" };
-  const output = {
-    ok: false,
-    data_ok: false,
-    version: SYSTEM_VERSION,
-    worker_name: row.worker_name,
-    job_key: row.job_key,
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    status: "PARLAY_SLEEPER_BOARD_STALE_RUNNING_NO_RUN_ROW_BLOCKED",
-    certification: "PARLAY_SLEEPER_BOARD_STALE_RUNNING_NO_RUN_ROW_BLOCKED",
-    certification_grade: "BLOCKED",
-    error: "Sleeper board child stayed running without control_job_runs/output beyond stale threshold. Finalized as blocked to prevent scheduled chain from hanging forever.",
-    orchestrator_reconcile: {
-      version: SYSTEM_VERSION,
-      processed_by: WORKER_NAME,
-      trigger,
-      reason: "stale_running_sleeper_child_without_run_row",
-      queue_status_before: row.status,
-      queue_status_after: "blocked",
-      scheduled_child_finalize_reconcile_v0_2_159: true,
-      no_market_mutation: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board: true
-    }
-  };
-  const outJson = JSON.stringify(output);
-  const runId = "run_reconcile_" + rid("sleeper");
-  await insertReconciledRunIfMissing(env, row, runId, "blocked", output.certification, 0, 0, 0, row.input_json || "{}", outJson, "parlay_sleeper_stale_running_no_run_row", output.error);
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='parlay_sleeper_stale_running_no_run_row', error_message=? WHERE request_id=? AND status='running' AND finished_at IS NULL",
-    outJson, output.error.slice(0, 900), row.request_id
-  );
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'ERROR', 'scheduled_sleeper_child_blocked_stale_no_run', 'Blocked stale Sleeper child with no run row so parent chain can fail honestly instead of hanging', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, chain_id: row.chain_id, trigger, scheduled_child_finalize_reconcile_v0_2_159: true })
-  );
-  return { reconciled: true, request_id: row.request_id, queue_status: "blocked", certification: output.certification };
-}
-
-async function requeueParentsAfterChildReconciliation(env, trigger) {
-  const rows = await all(env.CONTROL_DB,
-    `SELECT DISTINCT p.request_id, p.chain_id, p.job_key, p.worker_name, p.status, p.error_code, p.error_message
-       FROM control_job_queue p
-       JOIN control_job_queue c ON c.parent_request_id=p.request_id AND c.chain_id=p.chain_id
-      WHERE p.worker_name='alphadog-v2-orchestrator'
-        AND p.job_key IN ('incremental-morning-full-run','board-full-run')
-        AND p.status IN ('blocked','failed')
-        AND p.finished_at IS NOT NULL
-        AND (p.error_message='child_stale_unfinished' OR p.error_code LIKE '%child_blocked%' OR p.error_code LIKE '%child_failed%')
-        AND c.status IN ('completed','failed','blocked')
-        AND c.finished_at IS NOT NULL
-      ORDER BY datetime(p.updated_at) DESC
-      LIMIT 10`
-  );
-  let requeued = 0;
-  for (const p of rows) {
-    await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', finished_at=NULL, run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('blocked','failed')",
-      p.request_id
-    );
-    await run(env.CONTROL_DB,
-      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'parent_requeued_after_child_reconcile', 'Requeued parent chain after child terminal state was reconciled', ?, CURRENT_TIMESTAMP)",
-      p.request_id, WORKER_NAME, p.job_key, JSON.stringify({ request_id: p.request_id, chain_id: p.chain_id, previous_status: p.status, trigger, scheduled_child_finalize_reconcile_v0_2_159: true })
-    );
-    requeued++;
-  }
-  return requeued;
-}
-
-async function reconcileScheduledChildRows(env, trigger) {
-  const results = [];
-  const deltaRows = await all(env.CONTROL_DB,
-    `SELECT request_id, chain_id, parent_request_id, job_key, worker_name, status, tick_count, input_json, output_json, error_code, error_message, created_at, started_at, finished_at, updated_at
-       FROM control_job_queue
-      WHERE job_key='delta-certifier'
-        AND worker_name='alphadog-v2-delta-certifier'
-        AND status IN ('running','partial_continue')
-        AND finished_at IS NULL
-      ORDER BY datetime(updated_at) ASC
-      LIMIT 5`
-  );
-  for (const row of deltaRows) {
-    const res = await reconcileDeltaCertifierQueueRowFromCoverageBatch(env, row, trigger, "scheduled_delta_certifier_child_reconcile_scan");
-    if (res.reconciled) results.push(res);
-  }
-
-  const sleeperRows = await all(env.CONTROL_DB,
-    `SELECT request_id, chain_id, parent_request_id, job_key, worker_name, status, tick_count, input_json, output_json, error_code, error_message, created_at, started_at, finished_at, updated_at
-       FROM control_job_queue
-      WHERE job_key='parlay-sleeper-board'
-        AND worker_name='alphadog-v2-parlay-sleeper-board'
-        AND status='running'
-        AND finished_at IS NULL
-      ORDER BY datetime(updated_at) ASC
-      LIMIT 5`
-  );
-  for (const row of sleeperRows) {
-    const res = await failVeryStaleBoardSleeperChildWithoutRun(env, row, trigger);
-    if (res.reconciled) results.push(res);
-  }
-
-  const parentsRequeued = await requeueParentsAfterChildReconciliation(env, trigger);
-  return { reconciled: results.length, parents_requeued: parentsRequeued, results };
-}
-
 async function processOneUnlocked(env, trigger) {
-  // v0.2.146: Hot-drain Daily Context Full Run before generic queue work.
-  // This copies the Board/Incremental intent but fixes the Daily-specific pacing
-  // failure where due same-chain children waited for cron while unrelated or
-  // older rows could be selected first.
+  // v0.2.159: Delta Full Run owns its own backend continuation path.
+  // Prefer due same-chain Delta Full Run children, then the parent, before generic
+  // queue work. Do not redispatch RUNNING children here; the parent validates and
+  // auto-finalizes Calendar/Tally from TEAM_DB.mlb_game_coverage_batches when the
+  // worker completed but CONTROL_DB finalization was lost. The 5-minute cron remains
+  // a starter/backup, not the normal stage pump.
   let row = await first(env.CONTROL_DB,
     `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
      FROM control_job_queue p
      JOIN control_job_queue c ON c.parent_request_id = p.request_id AND c.chain_id = p.chain_id
-     WHERE p.job_key='daily-context-full-run'
+     WHERE p.job_key='incremental-morning-full-run'
        AND p.worker_name='alphadog-v2-orchestrator'
        AND p.status IN ('pending','running','partial_continue')
        AND p.finished_at IS NULL
@@ -6697,6 +6601,41 @@ async function processOneUnlocked(env, trigger) {
      ORDER BY datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) ASC, datetime(c.created_at) ASC
      LIMIT 1`
   );
+
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+       FROM control_job_queue
+       WHERE job_key='incremental-morning-full-run'
+         AND worker_name='alphadog-v2-orchestrator'
+         AND status IN ('pending','running','partial_continue')
+         AND finished_at IS NULL
+         AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+       ORDER BY datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) ASC, datetime(created_at) ASC
+       LIMIT 1`
+    );
+  }
+
+  // v0.2.146: Hot-drain Daily Context Full Run before generic queue work.
+  // This copies the Board/Incremental intent but fixes the Daily-specific pacing
+  // failure where due same-chain children waited for cron while unrelated or
+  // older rows could be selected first.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
+       FROM control_job_queue p
+       JOIN control_job_queue c ON c.parent_request_id = p.request_id AND c.chain_id = p.chain_id
+       WHERE p.job_key='daily-context-full-run'
+         AND p.worker_name='alphadog-v2-orchestrator'
+         AND p.status IN ('pending','running','partial_continue')
+         AND p.finished_at IS NULL
+         AND c.status IN ('pending','partial_continue')
+         AND c.finished_at IS NULL
+         AND datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+       ORDER BY datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) ASC, datetime(c.created_at) ASC
+       LIMIT 1`
+    );
+  }
 
   if (!row) {
     row = await first(env.CONTROL_DB,
@@ -6814,34 +6753,11 @@ async function processOneUnlocked(env, trigger) {
     }
   }
 
-  // v0.2.95: Full Run child rows must be hot-continuation eligible without
-  // waiting for the 5-minute cron. If a child was left RUNNING after a bounded
-  // child tick, recover only same-chain child rows owned by the active Full Run
-  // parent, and only after a small freshness guard. This avoids duplicate active
-  // dispatch while preventing the parent from spinning on WAITING_ON_CHILD.
-  if (!row) {
-    row = await first(env.CONTROL_DB,
-      `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
-       FROM control_job_queue c
-       JOIN control_job_queue p ON p.request_id = c.parent_request_id
-       WHERE p.job_key='incremental-morning-full-run'
-         AND p.worker_name='alphadog-v2-orchestrator'
-         AND p.status IN ('pending','running','partial_continue')
-         AND p.finished_at IS NULL
-         AND c.parent_request_id IS NOT NULL
-         AND c.status='running'
-         AND c.finished_at IS NULL
-         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-5 seconds')
-       ORDER BY datetime(c.updated_at) ASC
-       LIMIT 1`
-    );
-    if (row) {
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'incremental_morning_full_run_child_running_rescued_as_due', 'Recovered active Full Run child running row as due work for same-chain hot continuation', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, incremental_morning_full_run_child_hot_rescue_v0_2_95: true })
-      );
-    }
-  }
+  // v0.2.159: Do not redispatch RUNNING Delta Full Run children from the generic
+  // due selector. The parent is the stage driver: it waits, validates, and for
+  // Calendar/Tally auto-finalizes from TEAM_DB.mlb_game_coverage_batches if the
+  // child produced trusted proof but CONTROL_DB finalization was lost. This avoids
+  // duplicate certifier executions and keeps cron as backup only.
 
   if (!row) {
     row = await first(env.CONTROL_DB,
@@ -7437,11 +7353,6 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
 
   const processed = [];
   try {
-    const scheduledChildReconcile = await reconcileScheduledChildRows(env, trigger);
-    if (scheduledChildReconcile.reconciled > 0 || scheduledChildReconcile.parents_requeued > 0) {
-      processed.push({ status: "scheduled_child_rows_reconciled", ...scheduledChildReconcile });
-    }
-
     const staleRecovery = await recoverStaleStaticPlayersJobs(env, trigger);
     if (staleRecovery.recovered > 0) {
       processed.push({ status: "stale_static_players_recovered", recovered_count: staleRecovery.recovered });
@@ -7485,7 +7396,7 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
 
     await releaseLock(env, owner, "IDLE");
 
-    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_market_hitter_prop_context_job" || x.status === "completed_one_oddsapi_hitter_prop_context_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_delta_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job" || x.status === "completed_one_daily_weather_job" || x.status === "completed_one_daily_bullpen_availability_job" || x.status === "completed_one_daily_team_schedule_spot_job" || x.status === "completed_one_daily_starters_job" || x.status === "completed_one_daily_player_availability_job" || x.status === "completed_one_daily_lineups_source_probe_job" || x.status === "completed_one_daily_game_status_job" || x.status === "completed_one_daily_context_certifier_job" || x.status === "completed_one_daily_context_full_run_job" || x.status === "completed_one_prop_factor_miner_job" || x.status === "scheduled_child_rows_reconciled").length;
+    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_market_hitter_prop_context_job" || x.status === "completed_one_oddsapi_hitter_prop_context_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_delta_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job" || x.status === "completed_one_daily_weather_job" || x.status === "completed_one_daily_bullpen_availability_job" || x.status === "completed_one_daily_team_schedule_spot_job" || x.status === "completed_one_daily_starters_job" || x.status === "completed_one_daily_player_availability_job" || x.status === "completed_one_daily_lineups_source_probe_job" || x.status === "completed_one_daily_game_status_job" || x.status === "completed_one_daily_context_certifier_job" || x.status === "completed_one_daily_context_full_run_job" || x.status === "completed_one_prop_factor_miner_job").length;
     const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job" || x.status === "partial_continue_daily_context_full_run_job").length;
     const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_teams_game_odds_job" || x.status === "failed_one_market_hitter_prop_context_job" || x.status === "failed_one_oddsapi_hitter_prop_context_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_delta_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job" || x.status === "failed_one_daily_weather_job" || x.status === "failed_one_daily_bullpen_availability_job" || x.status === "failed_one_daily_team_schedule_spot_job" || x.status === "failed_one_daily_starters_job" || x.status === "failed_one_daily_player_availability_job" || x.status === "failed_one_daily_lineups_source_probe_job" || x.status === "failed_one_daily_game_status_job" || x.status === "failed_one_daily_context_certifier_job" || x.status === "failed_one_daily_context_full_run_job" || x.status === "failed_one_prop_factor_miner_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
@@ -7594,7 +7505,21 @@ async function countDueBoardFullRun(env) {
 
 async function countDueIncrementalMorningFullRun(env) {
   const row = await first(env.CONTROL_DB,
-    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='incremental-morning-full-run' AND worker_name='alphadog-v2-orchestrator' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL"
+    `SELECT COUNT(*) AS c
+     FROM control_job_queue
+     WHERE finished_at IS NULL
+       AND status IN ('pending','running','partial_continue')
+       AND (
+         (job_key='incremental-morning-full-run' AND worker_name='alphadog-v2-orchestrator')
+         OR parent_request_id IN (
+           SELECT request_id
+           FROM control_job_queue
+           WHERE job_key='incremental-morning-full-run'
+             AND worker_name='alphadog-v2-orchestrator'
+             AND finished_at IS NULL
+             AND status IN ('pending','running','partial_continue')
+         )
+       )`
   );
   return Number(row && row.c ? row.c : 0);
 }
