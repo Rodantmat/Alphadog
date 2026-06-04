@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.158-scoring-v0.2.4-score-sort-fix";
+const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.159-scheduled-child-finalize-reconcile";
 function nowIso() { return new Date().toISOString(); }
 
 const DB_BINDINGS = [
@@ -873,6 +873,7 @@ async function runJob(request, env, ctx) {
       "orchestrator_health",
       "orchestrator_status",
       "orchestrator_enqueue_test",
+      "orchestrator_reconcile_scheduled_children",
       "orchestrator_enqueue_prizepicks_github_board",
       "orchestrator_enqueue_parlay_sleeper_board",
       "orchestrator_enqueue_board_full_run",
@@ -987,6 +988,57 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
       locks: locks.results || [],
       state: state.results || []
     });
+  }
+
+
+  if (job === "orchestrator_reconcile_scheduled_children") {
+    const pendingBefore = await env.CONTROL_DB.prepare(
+      "SELECT request_id, chain_id, parent_request_id, job_key, worker_name, status, tick_count, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE status IN ('pending','running','partial_continue','blocked','failed') ORDER BY datetime(updated_at) DESC LIMIT 20"
+    ).all();
+
+    const payload = {
+      source: "control_room_scheduled_child_finalize_reconcile",
+      max_jobs: 8,
+      wake_only: true,
+      auto_pump: true,
+      pump: true,
+      backend_budget_loop_requested: true,
+      max_cycles: 8,
+      max_jobs_per_cycle: 1,
+      max_ms: 45000,
+      max_pump_chains: 40,
+      reconcile_scheduled_children_requested: true,
+      scheduled_child_finalize_reconcile_v1_6_159: true,
+      no_browser_loop: true,
+      no_direct_browser_orchestrator_fetch: true,
+      cron_rescue_only: true
+    };
+
+    const pumpResult = await callOrchestrator(env, "/pump", payload);
+    const pumpOk = orchestratorCallOk(pumpResult);
+    const pendingAfter = await env.CONTROL_DB.prepare(
+      "SELECT request_id, chain_id, parent_request_id, job_key, worker_name, status, tick_count, created_at, started_at, finished_at, updated_at, error_code, error_message FROM control_job_queue WHERE status IN ('pending','running','partial_continue','blocked','failed') ORDER BY datetime(updated_at) DESC LIMIT 20"
+    ).all();
+
+    return jsonResponse({
+      ok: pumpOk,
+      data_ok: pumpOk,
+      version,
+      job,
+      visible_button: "ORCHESTRATOR > Reconcile",
+      status: pumpOk ? "scheduled_child_reconcile_pump_started_or_completed" : "SCHEDULED_CHILD_RECONCILE_PROXY_FAILED",
+      backend_service_binding_awaited: true,
+      pump_route: pumpResult.route || null,
+      pump_http_status: pumpResult.http_status,
+      pump_body: pumpResult.body,
+      direct_browser_orchestrator_fetch_removed: true,
+      browser_auto_pump: false,
+      note: pumpOk
+        ? "Reconcile proxied a bounded backend pump. It finalizes stale scheduled child rows from authoritative domain proof when possible, then requeues parent chains for normal continuation."
+        : "Reconcile proxy failed before the backend pump accepted the request. Check ORCHESTRATOR_WORKER service binding.",
+      pending_or_running_before: pendingBefore.results || [],
+      pending_or_running_after: pendingAfter.results || []
+    }, pumpOk ? 200 : 502);
   }
 
   if (job === "orchestrator_enqueue_test") {
