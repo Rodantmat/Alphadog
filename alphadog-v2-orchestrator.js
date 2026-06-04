@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.165-dispatch-exception-containment";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.166-full-run-child-finalization-reconcile";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1287,6 +1287,83 @@ const STATIC_FULL_RUN_STAGES = [
 
 function parseJsonSafeText(text, fallback = {}) {
   try { return text ? JSON.parse(text) : fallback; } catch (_) { return fallback; }
+}
+
+
+function isPartialContinueOutput(output) {
+  const rawStatus = String((output && output.status) || "").toLowerCase();
+  const certification = String((output && output.certification) || "").toLowerCase();
+  return !!(output && output.ok === true && (
+    rawStatus === "partial_continue" ||
+    rawStatus.startsWith("partial_continue_") ||
+    certification.includes("partial_continue") ||
+    output.continuation_required === true ||
+    output.orchestrator_should_self_continue === true
+  ));
+}
+
+function isCompletedOutput(output) {
+  const rawStatus = String((output && output.status) || "").toLowerCase();
+  return !!(output && output.ok === true && !isPartialContinueOutput(output) && (
+    output.data_ok === true ||
+    rawStatus.startsWith("completed") ||
+    rawStatus.includes("certified")
+  ));
+}
+
+async function reconcileRunningDeltaFullRunChildrenFromOutput(env, trigger) {
+  // v0.2.166 root fix: service-binding workers can commit CONTROL_DB output_json
+  // after a chunk but leave the queue row in running when the HTTP response is
+  // interrupted. Do not blindly redispatch those rows and do not manually fail
+  // them. Promote the queue state from the worker-owned output_json so the same
+  // child/factor resumes or completes exactly once. This is scoped to Delta Full
+  // Run children only and covers all factor stages, not only hitter/pitcher logs.
+  const rows = await all(env.CONTROL_DB,
+    `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.output_json, c.updated_at
+     FROM control_job_queue c
+     JOIN control_job_queue p ON p.request_id = c.parent_request_id AND p.chain_id = c.chain_id
+     WHERE p.job_key='incremental-morning-full-run'
+       AND p.worker_name='alphadog-v2-orchestrator'
+       AND p.status IN ('pending','running','partial_continue')
+       AND p.finished_at IS NULL
+       AND c.parent_request_id IS NOT NULL
+       AND c.status='running'
+       AND c.finished_at IS NULL
+       AND c.output_json IS NOT NULL
+     ORDER BY datetime(c.updated_at) ASC
+     LIMIT 20`
+  );
+
+  let reconciled_pending = 0;
+  let reconciled_completed = 0;
+  let ignored = 0;
+  for (const row of rows) {
+    const output = parseJsonSafeText(row.output_json || "{}", {});
+    if (isPartialContinueOutput(output)) {
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND status='running' AND finished_at IS NULL",
+        row.request_id
+      );
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'delta_full_run_child_partial_output_reconciled', 'Reconciled running Delta Full Run child from worker output_json PARTIAL_CONTINUE back to pending without duplicate manual cleanup', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ trigger, request_id: row.request_id, job_key: row.job_key, worker_name: row.worker_name, previous_status: row.status, output_status: output.status || null, certification: output.certification || null, tick_count: row.tick_count, version: SYSTEM_VERSION, applies_to_all_factor_stages: true })
+      );
+      reconciled_pending += 1;
+    } else if (isCompletedOutput(output)) {
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND status='running' AND finished_at IS NULL",
+        row.request_id
+      );
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'delta_full_run_child_completed_output_reconciled', 'Reconciled running Delta Full Run child from worker output_json COMPLETED to completed without redispatch', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ trigger, request_id: row.request_id, job_key: row.job_key, worker_name: row.worker_name, previous_status: row.status, output_status: output.status || null, certification: output.certification || null, tick_count: row.tick_count, version: SYSTEM_VERSION, applies_to_all_factor_stages: true })
+      );
+      reconciled_completed += 1;
+    } else {
+      ignored += 1;
+    }
+  }
+  return { reconciled_pending, reconciled_completed, ignored, scanned: rows.length };
 }
 
 function childPassedStaticFullRun(stage, child) {
@@ -3228,15 +3305,7 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
   }
 
   const rawStatus = String((output && output.status) || "").toLowerCase();
-  const partialContinue = !!(output && output.ok && (
-    rawStatus === "partial_continue" ||
-    rawStatus === "partial_continue_base_pitcher_game_logs" ||
-    rawStatus === "partial_continue_base_pitcher_game_logs_stage_only" ||
-    rawStatus === "partial_continue_base_pitcher_game_logs_job" ||
-    rawStatus === "partial_continue_base_pitcher_game_logs_stage_only_job" ||
-    output.continuation_required === true ||
-    output.orchestrator_should_self_continue === true
-  ));
+  const partialContinue = isPartialContinueOutput(output);
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
   const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
@@ -7163,15 +7232,7 @@ async function processOneUnlocked(env, trigger) {
   if (isBaseHitterGameLogsJob(row)) {
     const output = await processBaseHitterGameLogsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
-    const partial = !!(output && output.ok && (
-      rawStatus === "partial_continue" ||
-      rawStatus === "partial_continue_base_hitter_game_logs" ||
-      rawStatus === "partial_continue_delta_hitter_game_logs" ||
-      rawStatus === "source_shape_probe_partial_continue" ||
-    rawStatus === "partial_continue_base_team_game_logs" ||
-      output.continuation_required === true ||
-      output.orchestrator_should_self_continue === true
-    ));
+    const partial = isPartialContinueOutput(output) || rawStatus === "source_shape_probe_partial_continue";
     return {
       status: partial ? "partial_continue_base_hitter_game_logs_job" : (output && output.ok ? "completed_one_base_hitter_game_logs_job" : "failed_one_base_hitter_game_logs_job"),
       request_id: row.request_id,
@@ -7194,12 +7255,7 @@ async function processOneUnlocked(env, trigger) {
   if (isBaseHitterMetricsJob(row)) {
     const output = await processBaseHitterMetricsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
-    const partial = !!(output && output.ok && (
-      rawStatus === "partial_continue" ||
-      rawStatus === "partial_continue_base_hitter_metrics" ||
-      output.continuation_required === true ||
-      output.orchestrator_should_self_continue === true
-    ));
+    const partial = isPartialContinueOutput(output);
     return {
       status: partial ? "partial_continue_base_hitter_metrics_job" : (output && output.ok ? "completed_one_base_hitter_metrics_job" : "failed_one_base_hitter_metrics_job"),
       request_id: row.request_id,
@@ -7222,13 +7278,7 @@ async function processOneUnlocked(env, trigger) {
   if (isBasePitcherGameLogsJob(row)) {
     const output = await processBasePitcherGameLogsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
-    const partial = !!(output && output.ok && (
-      rawStatus === "partial_continue" ||
-      rawStatus === "partial_continue_base_pitcher_game_logs" ||
-      rawStatus === "partial_continue_base_pitcher_game_logs_stage_only" ||
-      output.continuation_required === true ||
-      output.orchestrator_should_self_continue === true
-    ));
+    const partial = isPartialContinueOutput(output);
     return {
       status: partial ? "partial_continue_base_pitcher_game_logs_job" : (output && output.ok ? "completed_one_base_pitcher_game_logs_job" : "failed_one_base_pitcher_game_logs_job"),
       request_id: row.request_id,
@@ -7241,14 +7291,7 @@ async function processOneUnlocked(env, trigger) {
   if (isBaseTeamGameLogsJob(row)) {
     const output = await processBaseTeamGameLogsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
-    const partial = !!(output && output.ok && (
-      rawStatus === "partial_continue" ||
-      rawStatus === "partial_continue_base_team_game_logs" ||
-      rawStatus === "source_shape_probe_partial_continue" ||
-    rawStatus === "partial_continue_base_team_game_logs" ||
-      output.continuation_required === true ||
-      output.orchestrator_should_self_continue === true
-    ));
+    const partial = isPartialContinueOutput(output) || rawStatus === "source_shape_probe_partial_continue";
     return {
       status: partial ? "partial_continue_base_team_game_logs_job" : (output && output.ok ? "completed_one_base_team_game_logs_job" : "failed_one_base_team_game_logs_job"),
       request_id: row.request_id,
@@ -7261,12 +7304,7 @@ async function processOneUnlocked(env, trigger) {
   if (isBaseStarterHistoryJob(row)) {
     const output = await processBaseStarterHistoryJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
-    const partial = !!(output && output.ok && (
-      rawStatus === "partial_continue" ||
-      rawStatus === "source_shape_probe_partial_continue" ||
-      output.continuation_required === true ||
-      output.orchestrator_should_self_continue === true
-    ));
+    const partial = isPartialContinueOutput(output) || rawStatus === "source_shape_probe_partial_continue";
     return {
       status: partial ? "partial_continue_base_starter_history_job" : (output && output.ok ? "completed_one_base_starter_history_job" : "failed_one_base_starter_history_job"),
       request_id: row.request_id,
@@ -7279,12 +7317,7 @@ async function processOneUnlocked(env, trigger) {
   if (isBaseBullpenHistoryJob(row)) {
     const output = await processBaseBullpenHistoryJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
-    const partial = !!(output && output.ok && (
-      rawStatus === "partial_continue" ||
-      rawStatus === "source_shape_probe_partial_continue" ||
-      output.continuation_required === true ||
-      output.orchestrator_should_self_continue === true
-    ));
+    const partial = isPartialContinueOutput(output) || rawStatus === "source_shape_probe_partial_continue";
     return {
       status: partial ? "partial_continue_base_bullpen_history_job" : (output && output.ok ? "completed_one_base_bullpen_history_job" : "failed_one_base_bullpen_history_job"),
       request_id: row.request_id,
@@ -7296,12 +7329,7 @@ async function processOneUnlocked(env, trigger) {
   if (isBasePitcherSplitsJob(row)) {
     const output = await processBasePitcherSplitsJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
-    const partial = !!(output && output.ok && (
-      rawStatus === "partial_continue" ||
-      rawStatus === "partial_continue_base_pitcher_splits" ||
-      output.continuation_required === true ||
-      output.orchestrator_should_self_continue === true
-    ));
+    const partial = isPartialContinueOutput(output);
     return {
       status: partial ? "partial_continue_base_pitcher_splits_job" : (output && output.ok ? "completed_one_base_pitcher_splits_job" : "failed_one_base_pitcher_splits_job"),
       request_id: row.request_id,
@@ -7539,6 +7567,11 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
 
   const processed = [];
   try {
+    const deltaChildReconcile = await reconcileRunningDeltaFullRunChildrenFromOutput(env, trigger);
+    if (deltaChildReconcile.reconciled_pending > 0 || deltaChildReconcile.reconciled_completed > 0) {
+      processed.push({ status: "delta_full_run_child_output_reconciled", ...deltaChildReconcile });
+    }
+
     const staleRecovery = await recoverStaleStaticPlayersJobs(env, trigger);
     if (staleRecovery.recovered > 0) {
       processed.push({ status: "stale_static_players_recovered", recovered_count: staleRecovery.recovered });
