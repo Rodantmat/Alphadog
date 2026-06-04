@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.2.4-db-config-score-sort-boundary-fix";
+const VERSION = "alphadog-v2-scoring-engine-v0.2.5-db-config-batch-safe-timeout-guard";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -441,7 +441,7 @@ function sqlCaseFromMap(expression, map, fallback) {
 
 function simulationFormulaMetadata() {
   return {
-    formula_key: "SCORING_SIMULATION_V0_2_4_DB_CONFIG_SCORE_SORT_BOUNDARY_FIX",
+    formula_key: "SCORING_SIMULATION_V0_2_5_DB_CONFIG_SCORE_SORT_BOUNDARY_FIX",
     worker_version: VERSION,
     simulation_only: true,
     active_values_source: "SCORE_DB.scoring_engine_simulation_profile_configs.config_json",
@@ -741,7 +741,7 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
           WHEN hard_blocked = 1 OR model_deferred_calc = 1 OR selected_side_calc IS NULL THEN NULL
           ELSE MIN(confidence_cap_calc, MAX(0, MIN(100, ${p.baseConfidence} - confidence_penalty_total_calc)))
         END AS confidence_calc,
-        ((COALESCE(mlb_player_id,0) * 31 + COALESCE(game_pk,0) * 17 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 13) % 999) * ${p.microScale} / 999.0 AS sort_micro_adjustment_calc
+        ABS(((COALESCE(mlb_player_id,0) * 31 + COALESCE(game_pk,0) * 17 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 13) % 999)) * ${p.microScale} / 999.0 AS sort_micro_adjustment_calc
       FROM penalties
     ), final AS (
       SELECT
@@ -889,13 +889,37 @@ async function summarizeSimulationProfile(env, batchId, profileKey) {
       SUM(CASE WHEN source_key = 'sleeper' AND canonical_prop_key = 'rfi_nrfi' AND score_status <> 'model_deferred' THEN 1 ELSE 0 END) AS sleeper_rfi_not_deferred,
       SUM(CASE WHEN source_key = 'prizepicks' AND canonical_prop_key = 'triples' AND score_status <> 'model_deferred' THEN 1 ELSE 0 END) AS prizepicks_triples_not_deferred,
       SUM(CASE WHEN score_sort_0_100 IS NOT NULL AND ABS(score_sort_0_100 - score_integer_0_100) >= 0.0001 THEN 1 ELSE 0 END) AS score_sort_micro_out_of_bounds,
-      SUM(CASE WHEN score_sort_0_100 IS NOT NULL AND CAST(score_sort_0_100 AS INTEGER) <> CAST(score_integer_0_100 AS INTEGER) THEN 1 ELSE 0 END) AS score_sort_integer_boundary_cross
+      SUM(CASE WHEN score_sort_0_100 IS NOT NULL AND (score_sort_0_100 < score_integer_0_100 OR score_sort_0_100 >= score_integer_0_100 + 1) THEN 1 ELSE 0 END) AS score_sort_integer_boundary_cross
     FROM scoring_engine_simulation_shadow
     WHERE simulation_batch_id=? AND profile_key=?
   `, batchId, profileKey);
   const out = {};
   for (const [k, v] of Object.entries(row || {})) out[k] = Number(v || 0);
   return out;
+}
+
+
+async function failStaleRunningSimulationBatches(env) {
+  // v0.2.5: repair stale batch records left by D1 object reset/timeouts before creating a new simulation batch.
+  await run(env.SCORE_DB, `
+    UPDATE scoring_engine_simulation_batches
+    SET status='failed_runtime_timeout_stale',
+        certification='SCORING_SIMULATION_STALE_RUNNING_MARKED_FAILED',
+        certification_grade='FAILED',
+        finished_at=COALESCE(finished_at, CURRENT_TIMESTAMP),
+        output_json=json_object(
+          'ok', 0,
+          'data_ok', 0,
+          'version', ?,
+          'status', 'failed_runtime_timeout_stale',
+          'certification', 'SCORING_SIMULATION_STALE_RUNNING_MARKED_FAILED',
+          'certification_grade', 'FAILED',
+          'repair_reason', 'stale running batch found before new simulation run; previous D1 timeout/object reset left batch open'
+        )
+    WHERE status='running'
+      AND finished_at IS NULL
+      AND datetime(started_at) <= datetime(CURRENT_TIMESTAMP, '-5 minutes')
+  `, VERSION);
 }
 
 async function recordSimulationInvariants(env, batchId, profileKey, summary) {
@@ -935,6 +959,7 @@ async function runScoringSimulation(env, input) {
 
   await ensureSimulationSchema(env);
   await ensureSimulationProfileConfigs(env);
+  await failStaleRunningSimulationBatches(env);
   const requestId = input.request_id || `scoring_simulation_${Date.now().toString(36)}`;
   const chainId = input.chain_id || null;
   const batchId = `scoring_simulation_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -950,7 +975,8 @@ async function runScoringSimulation(env, input) {
     ) VALUES (?, ?, 'scoring-engine-simulation', 'running', 'SCORING_SIMULATION_STARTED', 'RUNNING', ?, 0, 0, 0, 0, ?, ?, CURRENT_TIMESTAMP)
   `, batchId, VERSION, matrixRows, JSON.stringify(simulationFormulaMetadata()), JSON.stringify(DEFAULT_SIM_CONFIGS));
 
-  await run(env.SCORE_DB, `DELETE FROM scoring_engine_simulation_shadow`);
+  // v0.2.5: do not global-delete shadow rows; a large DELETE caused D1 storage timeout/object reset in v0.2.4.
+  await run(env.SCORE_DB, `DELETE FROM scoring_engine_simulation_shadow WHERE simulation_batch_id=?`, batchId);
   await run(env.SCORE_DB, `DELETE FROM scoring_engine_simulation_issues`);
 
   if (matrixRows <= 0) {
@@ -986,8 +1012,8 @@ async function runScoringSimulation(env, input) {
   const simulationRowsWritten = strictRows + hybridRows;
 
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_V0_2_4_DB_CONFIG_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_2_4_DB_CONFIG_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_2_4_DB_CONFIG_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_2_5_DB_CONFIG_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_2_5_DB_CONFIG_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_2_5_DB_CONFIG_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
   const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
 
@@ -1023,7 +1049,7 @@ async function runScoringSimulation(env, input) {
     selected_side_policy: "Two-sided selected_side is chosen from raw pre-cap side scores using DB-configured raw_side_delta_threshold; Goblin/Demon are more_only and Less remains NULL.",
     notes: [
       "Simulation writes only to SCORE_DB.scoring_engine_simulation_shadow and related simulation audit tables.",
-      "v0.2.4 keeps chunked D1 inserts, DB-stored tunable variables, pre-cap side selection, and fixes score_sort_0_100 so its deterministic micro adjustment never crosses the integer boundary.",
+      "v0.2.5 keeps chunked D1 inserts, DB-stored tunable variables, pre-cap side selection, and fixes score_sort_0_100 so its deterministic micro adjustment never crosses the integer boundary.",
       "score_0_100 and confidence_0_100 are separated; live_playable requires score/confidence gates and never uses score_sort_0_100.",
       "score_sort_0_100 is deterministic sort-only micro-adjustment and never controls archive/live/bin thresholds.",
       "Strict-B is the primary safety profile; Hybrid-Control is comparison only and is not production-approved.",
