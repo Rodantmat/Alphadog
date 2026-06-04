@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.2.3-full-run-fast-gap-contract";
+const VERSION = "alphadog-v2-delta-certifier-v0.2.4-past-date-forced-gap-contract";
 const JOB_KEY = "delta-certifier";
 
 const ACTIVE_COVERAGE_LAYER_KEYS = [
@@ -614,9 +614,18 @@ function calendarGameIsFinalOrStatsReady(g) {
   return Number(g.is_available_for_stats || 0) === 1 || Number(g.is_final || 0) === 1;
 }
 
+function officialDateIsPast(officialDate, currentOfficialDate) {
+  const official = String(officialDate || "").slice(0, 10);
+  const current = String(currentOfficialDate || "").slice(0, 10);
+  return Boolean(official && current && official < current);
+}
+
 function shouldWaitForNonFinalCalendarGame(g, currentOfficialDate) {
   const officialDate = String(g.official_date || "").slice(0, 10);
-  if (!officialDate || officialDate < String(currentOfficialDate || "")) return false;
+  // Past dates are never allowed to remain nonblocking simply because the local calendar mirror is stale.
+  // If a historical game/layer is not complete, the coverage matrix must expose a blocking gap so the
+  // Delta Full Run mines it instead of fabricating a no-op.
+  if (!officialDate || officialDateIsPast(officialDate, currentOfficialDate)) return false;
   if (calendarGameIsFinalOrStatsReady(g)) return false;
   if (Number(g.is_postponed || 0) === 1 || Number(g.is_suspended || 0) === 1 || Number(g.is_cancelled || 0) === 1) return true;
   const abstractState = String(g.abstract_game_state || "").toLowerCase();
@@ -635,6 +644,31 @@ function shouldWaitForNonFinalCalendarGame(g, currentOfficialDate) {
     statusCode === "P" ||
     statusCode === "I";
   return scheduledOrLiveNotFinal;
+}
+
+function pastDateForcedMissingLayer(layerKey, g, liveSourceRowsForGame, extraDetails = {}) {
+  return {
+    layerKey,
+    status: "missing",
+    grade: "MISSING_PAST_DATE_BLOCKER",
+    blocking: 1,
+    liveRows: Number(liveSourceRowsForGame || 0),
+    entityCount: 0,
+    expectedRows: null,
+    missingRows: null,
+    reason: "PAST_OFFICIAL_DATE_INCOMPLETE_COVERAGE_FORCES_BLOCKING_GAP",
+    details: {
+      calendar_is_available_for_stats: Number(g.is_available_for_stats || 0),
+      calendar_is_final: Number(g.is_final || 0),
+      calendar_status_code: g.status_code || null,
+      calendar_abstract_game_state: g.abstract_game_state || null,
+      calendar_detailed_state: g.detailed_state || null,
+      live_source_rows_for_game: Number(liveSourceRowsForGame || 0),
+      past_date_forced_gap_contract_v0_2_4: true,
+      stale_calendar_status_cannot_suppress_gap_v0_2_4: true,
+      ...extraDetails
+    }
+  };
 }
 
 function scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, extraDetails = {}) {
@@ -889,6 +923,7 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
     const liveSourceRowsForGame = hitter.rows + pitcher.rows + team.rows + starter.rows + bullpen.rows;
     const statEvidenceRowsForGame = hitter.rows + pitcher.rows;
     const downstreamEvidenceRowsForGame = team.rows + starter.rows + bullpen.rows;
+    const officialDatePast = officialDateIsPast(g.official_date, currentOfficialDate);
     const rawWaitForNonFinalCalendarGame = shouldWaitForNonFinalCalendarGame(g, currentOfficialDate);
     const currentOrFutureNonFinal = rawWaitForNonFinalCalendarGame;
     const statEvidenceFinalityGate = !currentOrFutureNonFinal && (statEvidenceRowsForGame > 0 || downstreamEvidenceRowsForGame > 0);
@@ -896,14 +931,30 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
 
     if (!evaluateLiveLayers) {
       for (const layerKey of activeLayers) {
-        addLayer(g, scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, {
-          live_source_override_v0_1_8: false,
-          stat_evidence_finality_gate_v0_2_2: false,
-          stat_evidence_rows_for_game: statEvidenceRowsForGame,
-          downstream_evidence_rows_for_game: downstreamEvidenceRowsForGame,
-          raw_wait_for_nonfinal_calendar_game: rawWaitForNonFinalCalendarGame,
-          wait_suppressed_by_stat_evidence: false
-        }));
+        if (officialDatePast) {
+          const snapshotStrict = ["hitter_splits", "pitcher_splits", "hitter_metrics", "pitcher_metrics"].includes(layerKey)
+            ? snapshotLayerFromTemplate(layerKey, String(g.official_date), snapshotTemplates)
+            : null;
+          addLayer(g, snapshotStrict && snapshotStrict.blocking === 0
+            ? { ...snapshotStrict, details: { ...snapshotStrict.details, past_date_forced_gap_contract_v0_2_4: true, stale_calendar_status_cannot_suppress_gap_v0_2_4: true } }
+            : pastDateForcedMissingLayer(layerKey, g, liveSourceRowsForGame, {
+                live_source_override_v0_1_8: false,
+                stat_evidence_finality_gate_v0_2_2: false,
+                stat_evidence_rows_for_game: statEvidenceRowsForGame,
+                downstream_evidence_rows_for_game: downstreamEvidenceRowsForGame,
+                raw_wait_for_nonfinal_calendar_game: rawWaitForNonFinalCalendarGame,
+                wait_suppressed_by_stat_evidence: false
+              }));
+        } else {
+          addLayer(g, scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, {
+            live_source_override_v0_1_8: false,
+            stat_evidence_finality_gate_v0_2_2: false,
+            stat_evidence_rows_for_game: statEvidenceRowsForGame,
+            downstream_evidence_rows_for_game: downstreamEvidenceRowsForGame,
+            raw_wait_for_nonfinal_calendar_game: rawWaitForNonFinalCalendarGame,
+            wait_suppressed_by_stat_evidence: false
+          }));
+        }
       }
     } else {
       const overrideDetails = {
@@ -1298,7 +1349,22 @@ async function handleFullRunGapContractCheck(input, env) {
 
   await ensureCoverageTables(env);
 
-  const coverageSummary = await first(env.TEAM_DB, `SELECT COUNT(*) AS coverage_rows, COUNT(DISTINCT game_pk) AS games, COUNT(DISTINCT layer_key) AS layers, SUM(CASE WHEN COALESCE(blocking_for_full_run,0)=1 THEN 1 ELSE 0 END) AS blocking_gap_count, SUM(CASE WHEN COALESCE(live_rows,0)=0 AND coverage_status NOT IN ('scheduled_not_ready') THEN 1 ELSE 0 END) AS zero_live_non_wait_rows FROM mlb_game_data_coverage WHERE official_date BETWEEN ? AND ?`, startDate, endDate);
+  const currentOfficialDate = dateOnlyForTimeZone(new Date(), "America/Los_Angeles");
+  const forcedPastGapUpdate = await run(env.TEAM_DB, `
+    UPDATE mlb_game_data_coverage
+    SET blocking_for_full_run=1,
+        coverage_grade=CASE WHEN coverage_status='scheduled_not_ready' THEN 'MISSING_PAST_DATE_BLOCKER' ELSE coverage_grade END,
+        missing_reason=COALESCE(missing_reason, 'PAST_OFFICIAL_DATE_INCOMPLETE_COVERAGE_FORCES_BLOCKING_GAP'),
+        details_json=COALESCE(details_json, '{"past_date_forced_gap_contract_v0_2_4":true,"stale_calendar_status_cannot_suppress_gap_v0_2_4":true}'),
+        updated_at=CURRENT_TIMESTAMP
+    WHERE official_date > '2026-05-18'
+      AND official_date < ?
+      AND official_date BETWEEN ? AND ?
+      AND coverage_status <> 'complete'`,
+    currentOfficialDate, startDate, endDate
+  );
+
+  const coverageSummary = await first(env.TEAM_DB, `SELECT COUNT(*) AS coverage_rows, COUNT(DISTINCT game_pk) AS games, COUNT(DISTINCT layer_key) AS layers, SUM(CASE WHEN COALESCE(blocking_for_full_run,0)=1 THEN 1 ELSE 0 END) AS blocking_gap_count, SUM(CASE WHEN official_date > '2026-05-18' AND official_date < ? AND coverage_status <> 'complete' THEN 1 ELSE 0 END) AS past_incomplete_gap_count, SUM(CASE WHEN COALESCE(live_rows,0)=0 AND coverage_status NOT IN ('scheduled_not_ready') THEN 1 ELSE 0 END) AS zero_live_non_wait_rows FROM mlb_game_data_coverage WHERE official_date BETWEEN ? AND ?`, currentOfficialDate, startDate, endDate);
   const calendarSummary = await first(env.TEAM_DB, `SELECT COUNT(*) AS calendar_rows, COUNT(DISTINCT game_pk) AS games, SUM(COALESCE(is_available_for_stats,0)) AS stats_available_games, MIN(official_date) AS first_official_date, MAX(official_date) AS last_official_date FROM mlb_game_calendar WHERE official_date BETWEEN ? AND ?`, startDate, endDate);
   const layerSummary = await all(env.TEAM_DB, `SELECT layer_key, coverage_status, coverage_grade, blocking_for_full_run, COUNT(*) AS rows, COUNT(DISTINCT game_pk) AS games, SUM(COALESCE(live_rows,0)) AS live_rows FROM mlb_game_data_coverage WHERE official_date BETWEEN ? AND ? GROUP BY layer_key, coverage_status, coverage_grade, blocking_for_full_run ORDER BY layer_key, coverage_status`, startDate, endDate);
   const gapsSample = await all(env.TEAM_DB, `SELECT game_pk, official_date, layer_key, coverage_status, coverage_grade, blocking_for_full_run, missing_reason, exception_reason, live_rows, stage_rows, outcome_rows FROM mlb_game_data_coverage WHERE official_date BETWEEN ? AND ? AND COALESCE(blocking_for_full_run,0)=1 ORDER BY official_date, game_pk, layer_key LIMIT 25`, startDate, endDate);
@@ -1328,6 +1394,7 @@ async function handleFullRunGapContractCheck(input, env) {
     batch_id: batchId,
     mode: "game_calendar_differential_check_update",
     full_run_fast_gap_contract_v0_2_3: true,
+    full_run_fast_gap_contract_v0_2_4_past_date_guard: true,
     full_run_gap_contract: true,
     calendar_tally_stage: calendarTallyStage || null,
     require_zero_blocking_gaps: requireZeroBlockingGaps,
@@ -1362,6 +1429,9 @@ async function handleFullRunGapContractCheck(input, env) {
     layer_coverage_summary: layerSummary,
     missing_game_layer_count: missingGameLayerCount,
     blocking_gap_count: blockingGapCount,
+    past_incomplete_gap_count: Number(coverageSummary?.past_incomplete_gap_count || 0),
+    current_official_date: currentOfficialDate,
+    forced_past_gap_update_changes: Number(forcedPastGapUpdate?.meta?.changes || 0),
     gaps_sample: gapsSample,
     calendar_anchor_policy: {
       official_date_is_canonical_anchor: true,
@@ -1561,7 +1631,8 @@ export default {
           return jsonResponse(await handleCalendarDifferentialCheck(input, env));
         }
         catch (err) {
-          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, mode, status: "GAME_CALENDAR_DIFFERENTIAL_CHECK_FAILED_FAST_FINALIZE", certification: "GAME_CALENDAR_DIFFERENTIAL_CHECK_FAILED_FAST_FINALIZE", certification_grade: "DIFF_FAIL", error: String(err && err.message ? err.message : err), fast_finalize_guard_v0_1_6: true, full_run_fast_gap_contract_v0_2_3: true, no_source_history_mutation: true, no_repair_jobs_created: true, no_scoring: true, no_board_mutation: true, rows_read: 0, rows_written: 0, external_calls_performed: 0 }, 200);
+          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, mode, status: "GAME_CALENDAR_DIFFERENTIAL_CHECK_FAILED_FAST_FINALIZE", certification: "GAME_CALENDAR_DIFFERENTIAL_CHECK_FAILED_FAST_FINALIZE", certification_grade: "DIFF_FAIL", error: String(err && err.message ? err.message : err), fast_finalize_guard_v0_1_6: true, full_run_fast_gap_contract_v0_2_3: true,
+    full_run_fast_gap_contract_v0_2_4_past_date_guard: true, no_source_history_mutation: true, no_repair_jobs_created: true, no_scoring: true, no_board_mutation: true, rows_read: 0, rows_written: 0, external_calls_performed: 0 }, 200);
         }
       }
       if (mode === "game_calendar_coverage_audit") {

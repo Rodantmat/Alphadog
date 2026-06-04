@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.163-delta-full-run-layer-gap-shortcut";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.164-past-date-gap-shortcut-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 
 function jsonResponse(body, status = 200) {
@@ -1457,16 +1457,77 @@ async function enqueueIncrementalMorningFullRunChild(env, parentRow, stage, step
   return { child_request_id: childRequestId, input };
 }
 
+function incrementalMorningFullRunCurrentOfficialDate() {
+  try { return dateOnlyForTimeZone(new Date(), "America/Los_Angeles"); } catch (_) { return new Date().toISOString().slice(0, 10); }
+}
+
 async function getIncrementalFullRunLayerBlockingGapCount(env, layerKey) {
   if (!env.TEAM_DB || !layerKey) return { ok: false, layer_key: layerKey || null, reason: "missing_team_db_or_layer_key", blocking_gap_count: null };
+  const currentOfficialDate = incrementalMorningFullRunCurrentOfficialDate();
   try {
     const row = await first(env.TEAM_DB,
-      "SELECT COUNT(*) AS c FROM mlb_game_data_coverage WHERE layer_key=? AND blocking_for_full_run=1",
+      `SELECT
+         SUM(CASE WHEN COALESCE(blocking_for_full_run,0)=1 THEN 1 ELSE 0 END) AS blocking_gap_count,
+         SUM(CASE WHEN official_date > '2026-05-18' AND official_date < ? AND coverage_status <> 'complete' THEN 1 ELSE 0 END) AS past_incomplete_gap_count,
+         COUNT(*) AS coverage_rows,
+         COUNT(DISTINCT game_pk) AS games
+       FROM mlb_game_data_coverage
+       WHERE layer_key=?`,
+      currentOfficialDate,
       layerKey
     );
-    return { ok: true, layer_key: layerKey, blocking_gap_count: Number(row && row.c ? row.c : 0) };
+    const blocking = Number(row && row.blocking_gap_count ? row.blocking_gap_count : 0);
+    const pastIncomplete = Number(row && row.past_incomplete_gap_count ? row.past_incomplete_gap_count : 0);
+    return {
+      ok: true,
+      layer_key: layerKey,
+      current_official_date: currentOfficialDate,
+      blocking_gap_count: blocking,
+      past_incomplete_gap_count: pastIncomplete,
+      effective_gap_count: blocking + pastIncomplete,
+      coverage_rows: Number(row && row.coverage_rows ? row.coverage_rows : 0),
+      games: Number(row && row.games ? row.games : 0),
+      past_date_gap_shortcut_guard_v0_2_164: true
+    };
   } catch (err) {
-    return { ok: false, layer_key: layerKey, reason: String(err && err.message ? err.message : err).slice(0, 900), blocking_gap_count: null };
+    return { ok: false, layer_key: layerKey, reason: String(err && err.message ? err.message : err).slice(0, 900), blocking_gap_count: null, past_incomplete_gap_count: null, effective_gap_count: null };
+  }
+}
+
+async function getIncrementalFullRunPastIncompleteGapSummary(env) {
+  if (!env.TEAM_DB) return { ok: false, reason: "missing_team_db", current_official_date: null, past_incomplete_gap_count: null };
+  const currentOfficialDate = incrementalMorningFullRunCurrentOfficialDate();
+  try {
+    const row = await first(env.TEAM_DB,
+      `SELECT COUNT(*) AS c, COUNT(DISTINCT game_pk) AS games, COUNT(DISTINCT layer_key) AS layers
+       FROM mlb_game_data_coverage
+       WHERE official_date > '2026-05-18'
+         AND official_date < ?
+         AND coverage_status <> 'complete'`,
+      currentOfficialDate
+    );
+    const sample = await all(env.TEAM_DB,
+      `SELECT official_date, layer_key, coverage_status, coverage_grade, COUNT(*) AS rows, COUNT(DISTINCT game_pk) AS games
+       FROM mlb_game_data_coverage
+       WHERE official_date > '2026-05-18'
+         AND official_date < ?
+         AND coverage_status <> 'complete'
+       GROUP BY official_date, layer_key, coverage_status, coverage_grade
+       ORDER BY official_date DESC, layer_key
+       LIMIT 50`,
+      currentOfficialDate
+    );
+    return {
+      ok: true,
+      current_official_date: currentOfficialDate,
+      past_incomplete_gap_count: Number(row && row.c ? row.c : 0),
+      games: Number(row && row.games ? row.games : 0),
+      layers: Number(row && row.layers ? row.layers : 0),
+      sample,
+      past_date_final_guard_v0_2_164: true
+    };
+  } catch (err) {
+    return { ok: false, current_official_date: currentOfficialDate, reason: String(err && err.message ? err.message : err).slice(0, 900), past_incomplete_gap_count: null };
   }
 }
 
@@ -1681,7 +1742,7 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
       let childNoopProof = null;
       if (stage.layer_key) {
         const gapProof = await getIncrementalFullRunLayerBlockingGapCount(env, stage.layer_key);
-        if (gapProof.ok && Number(gapProof.blocking_gap_count || 0) === 0) {
+        if (gapProof.ok && Number(gapProof.effective_gap_count || gapProof.blocking_gap_count || 0) === 0) {
           enqueued = await completeIncrementalFullRunNoGapLayerChild(env, row, stage, i, runId, trigger, gapProof);
           childStatusForReport = "completed";
           childPassForReport = true;
@@ -1762,7 +1823,40 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     stageReports.push(report);
   }
 
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_AND_ALL_BASE_DELTAS_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_final_check_last: true, final_calendar_tally_blocking_gap_count: 0, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+  const finalGapGuard = await getIncrementalFullRunPastIncompleteGapSummary(env);
+  if (!finalGapGuard.ok || Number(finalGapGuard.past_incomplete_gap_count || 0) > 0) {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      worker_name: WORKER_NAME,
+      job_key: row.job_key,
+      request_id: row.request_id,
+      chain_id: row.chain_id,
+      mode: "incremental_morning_full_run",
+      status: "FAILED_INCREMENTAL_MORNING_FULL_RUN_PAST_DATE_GAPS_REMAIN",
+      certification: "INCREMENTAL_MORNING_FULL_RUN_PAST_DATE_GAPS_REMAIN",
+      certification_grade: "FAILED",
+      full_run_certified: false,
+      completed_stage_count: stageReports.length,
+      total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length,
+      stages: stageReports,
+      final_gap_guard: finalGapGuard,
+      no_board_refresh_included: true,
+      board_refresh_deferred: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
+      no_old_production_touch: true
+    };
+    await releaseIncrementalMorningFullRunLock(env, row);
+    await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, 'INCREMENTAL_MORNING_FULL_RUN_PAST_DATE_GAPS_REMAIN', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, 'past_date_gaps_remain', 'Past-date incomplete coverage remains after Delta Full Run; refusing false FULL_RUN_PASS.')", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='past_date_gaps_remain', error_message='Past-date incomplete coverage remains after Delta Full Run; refusing false FULL_RUN_PASS.' WHERE request_id=?", JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'ERROR', 'incremental_morning_full_run_past_date_gaps_remain', 'Incremental Morning Full Run refused certification because past-date gaps remain', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+    return output;
+  }
+
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_AND_ALL_BASE_DELTAS_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_final_check_last: true, final_calendar_tally_blocking_gap_count: 0, final_gap_guard: finalGapGuard, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
   await releaseIncrementalMorningFullRunLock(env, row);
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
