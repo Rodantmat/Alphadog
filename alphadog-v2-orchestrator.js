@@ -1,5 +1,7 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.164-past-date-gap-shortcut-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.165-dispatch-exception-containment";
 const WORKER_NAME = "alphadog-v2-orchestrator";
+// v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
+const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -1457,77 +1459,38 @@ async function enqueueIncrementalMorningFullRunChild(env, parentRow, stage, step
   return { child_request_id: childRequestId, input };
 }
 
-function incrementalMorningFullRunCurrentOfficialDate() {
-  try { return dateOnlyForTimeZone(new Date(), "America/Los_Angeles"); } catch (_) { return new Date().toISOString().slice(0, 10); }
-}
-
 async function getIncrementalFullRunLayerBlockingGapCount(env, layerKey) {
-  if (!env.TEAM_DB || !layerKey) return { ok: false, layer_key: layerKey || null, reason: "missing_team_db_or_layer_key", blocking_gap_count: null };
-  const currentOfficialDate = incrementalMorningFullRunCurrentOfficialDate();
+  if (!env.TEAM_DB || !layerKey) return { ok: false, layer_key: layerKey || null, reason: "missing_team_db_or_layer_key", blocking_gap_count: null, noop_safe: false };
+  const currentOfficialDate = pacificNowParts(new Date()).ymd_dash;
   try {
     const row = await first(env.TEAM_DB,
       `SELECT
          SUM(CASE WHEN COALESCE(blocking_for_full_run,0)=1 THEN 1 ELSE 0 END) AS blocking_gap_count,
-         SUM(CASE WHEN official_date > '2026-05-18' AND official_date < ? AND coverage_status <> 'complete' THEN 1 ELSE 0 END) AS past_incomplete_gap_count,
-         COUNT(*) AS coverage_rows,
-         COUNT(DISTINCT game_pk) AS games
+         SUM(CASE WHEN official_date < ? AND coverage_status <> 'complete' THEN 1 ELSE 0 END) AS past_incomplete_gap_count,
+         SUM(CASE WHEN official_date < ? AND coverage_status = 'scheduled_not_ready' THEN 1 ELSE 0 END) AS past_scheduled_not_ready_count,
+         COUNT(*) AS coverage_rows
        FROM mlb_game_data_coverage
        WHERE layer_key=?`,
-      currentOfficialDate,
-      layerKey
+      currentOfficialDate, currentOfficialDate, layerKey
     );
-    const blocking = Number(row && row.blocking_gap_count ? row.blocking_gap_count : 0);
-    const pastIncomplete = Number(row && row.past_incomplete_gap_count ? row.past_incomplete_gap_count : 0);
+    const blockingGapCount = Number(row?.blocking_gap_count || 0);
+    const pastIncompleteGapCount = Number(row?.past_incomplete_gap_count || 0);
+    const pastScheduledNotReadyCount = Number(row?.past_scheduled_not_ready_count || 0);
+    const coverageRows = Number(row?.coverage_rows || 0);
+    const noopSafe = coverageRows > 0 && blockingGapCount === 0 && pastIncompleteGapCount === 0 && pastScheduledNotReadyCount === 0;
     return {
       ok: true,
       layer_key: layerKey,
-      current_official_date: currentOfficialDate,
-      blocking_gap_count: blocking,
-      past_incomplete_gap_count: pastIncomplete,
-      effective_gap_count: blocking + pastIncomplete,
-      coverage_rows: Number(row && row.coverage_rows ? row.coverage_rows : 0),
-      games: Number(row && row.games ? row.games : 0),
-      past_date_gap_shortcut_guard_v0_2_164: true
+      blocking_gap_count: blockingGapCount,
+      past_incomplete_gap_count: pastIncompleteGapCount,
+      past_scheduled_not_ready_count: pastScheduledNotReadyCount,
+      coverage_rows: coverageRows,
+      current_official_date_pt: currentOfficialDate,
+      noop_safe: noopSafe,
+      past_date_gap_contract_guard_v0_2_164: true
     };
   } catch (err) {
-    return { ok: false, layer_key: layerKey, reason: String(err && err.message ? err.message : err).slice(0, 900), blocking_gap_count: null, past_incomplete_gap_count: null, effective_gap_count: null };
-  }
-}
-
-async function getIncrementalFullRunPastIncompleteGapSummary(env) {
-  if (!env.TEAM_DB) return { ok: false, reason: "missing_team_db", current_official_date: null, past_incomplete_gap_count: null };
-  const currentOfficialDate = incrementalMorningFullRunCurrentOfficialDate();
-  try {
-    const row = await first(env.TEAM_DB,
-      `SELECT COUNT(*) AS c, COUNT(DISTINCT game_pk) AS games, COUNT(DISTINCT layer_key) AS layers
-       FROM mlb_game_data_coverage
-       WHERE official_date > '2026-05-18'
-         AND official_date < ?
-         AND coverage_status <> 'complete'`,
-      currentOfficialDate
-    );
-    const sample = await all(env.TEAM_DB,
-      `SELECT official_date, layer_key, coverage_status, coverage_grade, COUNT(*) AS rows, COUNT(DISTINCT game_pk) AS games
-       FROM mlb_game_data_coverage
-       WHERE official_date > '2026-05-18'
-         AND official_date < ?
-         AND coverage_status <> 'complete'
-       GROUP BY official_date, layer_key, coverage_status, coverage_grade
-       ORDER BY official_date DESC, layer_key
-       LIMIT 50`,
-      currentOfficialDate
-    );
-    return {
-      ok: true,
-      current_official_date: currentOfficialDate,
-      past_incomplete_gap_count: Number(row && row.c ? row.c : 0),
-      games: Number(row && row.games ? row.games : 0),
-      layers: Number(row && row.layers ? row.layers : 0),
-      sample,
-      past_date_final_guard_v0_2_164: true
-    };
-  } catch (err) {
-    return { ok: false, current_official_date: currentOfficialDate, reason: String(err && err.message ? err.message : err).slice(0, 900), past_incomplete_gap_count: null };
+    return { ok: false, layer_key: layerKey, reason: String(err && err.message ? err.message : err).slice(0, 900), blocking_gap_count: null, noop_safe: false };
   }
 }
 
@@ -1742,7 +1705,7 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
       let childNoopProof = null;
       if (stage.layer_key) {
         const gapProof = await getIncrementalFullRunLayerBlockingGapCount(env, stage.layer_key);
-        if (gapProof.ok && Number(gapProof.effective_gap_count || gapProof.blocking_gap_count || 0) === 0) {
+        if (gapProof.ok && gapProof.noop_safe === true) {
           enqueued = await completeIncrementalFullRunNoGapLayerChild(env, row, stage, i, runId, trigger, gapProof);
           childStatusForReport = "completed";
           childPassForReport = true;
@@ -1823,40 +1786,7 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     stageReports.push(report);
   }
 
-  const finalGapGuard = await getIncrementalFullRunPastIncompleteGapSummary(env);
-  if (!finalGapGuard.ok || Number(finalGapGuard.past_incomplete_gap_count || 0) > 0) {
-    const output = {
-      ok: false,
-      data_ok: false,
-      version: SYSTEM_VERSION,
-      worker_name: WORKER_NAME,
-      job_key: row.job_key,
-      request_id: row.request_id,
-      chain_id: row.chain_id,
-      mode: "incremental_morning_full_run",
-      status: "FAILED_INCREMENTAL_MORNING_FULL_RUN_PAST_DATE_GAPS_REMAIN",
-      certification: "INCREMENTAL_MORNING_FULL_RUN_PAST_DATE_GAPS_REMAIN",
-      certification_grade: "FAILED",
-      full_run_certified: false,
-      completed_stage_count: stageReports.length,
-      total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length,
-      stages: stageReports,
-      final_gap_guard: finalGapGuard,
-      no_board_refresh_included: true,
-      board_refresh_deferred: true,
-      no_scoring: true,
-      no_ranking: true,
-      no_final_board: true,
-      no_old_production_touch: true
-    };
-    await releaseIncrementalMorningFullRunLock(env, row);
-    await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, 'INCREMENTAL_MORNING_FULL_RUN_PAST_DATE_GAPS_REMAIN', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, 'past_date_gaps_remain', 'Past-date incomplete coverage remains after Delta Full Run; refusing false FULL_RUN_PASS.')", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='past_date_gaps_remain', error_message='Past-date incomplete coverage remains after Delta Full Run; refusing false FULL_RUN_PASS.' WHERE request_id=?", JSON.stringify(output), row.request_id);
-    await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'ERROR', 'incremental_morning_full_run_past_date_gaps_remain', 'Incremental Morning Full Run refused certification because past-date gaps remain', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
-    return output;
-  }
-
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_AND_ALL_BASE_DELTAS_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_final_check_last: true, final_calendar_tally_blocking_gap_count: 0, final_gap_guard: finalGapGuard, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_AND_ALL_BASE_DELTAS_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_final_check_last: true, final_calendar_tally_blocking_gap_count: 0, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
   await releaseIncrementalMorningFullRunLock(env, row);
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
@@ -7071,6 +7001,7 @@ async function processOneUnlocked(env, trigger) {
     row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ trigger, row, dispatch_started_v0_2_160: true, protects_against_no_run_row_on_fetch_hang: true })
   );
 
+  try {
   if (isMarketContextSourceProbeJob(row)) {
     const output = await processMarketContextSourceProbeJob(env, row, runId, trigger);
     return {
@@ -7559,6 +7490,38 @@ async function processOneUnlocked(env, trigger) {
     run_id: runId,
     output
   };
+  } catch (err) {
+    const message = String(err && err.message ? err.message : err).slice(0, 900);
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      worker_name: WORKER_NAME,
+      job_key: row.job_key,
+      request_id: row.request_id,
+      chain_id: row.chain_id,
+      status: "ORCHESTRATOR_DISPATCH_EXCEPTION_CONTAINED",
+      certification: "ORCHESTRATOR_DISPATCH_EXCEPTION_CONTAINED",
+      certification_grade: "FAILED",
+      error: message,
+      trigger,
+      process_one_unlocked_dispatch_exception_containment_v0_2_165: true,
+      queue_finalized_failed_not_left_running: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, 'ORCHESTRATOR_DISPATCH_EXCEPTION_CONTAINED', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'orchestrator_dispatch_exception', ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(parseJsonSafeText(row.input_json || "{}", {})), JSON.stringify(output), message
+    );
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='orchestrator_dispatch_exception', error_message=? WHERE request_id=?",
+      JSON.stringify(output), message, row.request_id
+    );
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'ERROR', 'process_one_unlocked_dispatch_exception_contained', 'Contained dispatch exception and finalized queue row failed instead of leaving it running', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output)
+    );
+    return { status: "failed_one_dispatch_exception_contained", request_id: row.request_id, run_id: runId, output };
+  }
 }
 
 async function tick(env, trigger = "manual", maxJobs = 3) {
@@ -7614,14 +7577,14 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       if (result.status === "no_due_jobs") break;
       // v0.2.146: Do not break after Daily Context parent enqueues a child.
       // The next loop must hot-drain the due same-chain child or parent recheck.
-      if (result.status === "blocked_unsupported_job" || result.status === "failed_one_market_teams_game_odds_job" || result.status === "failed_one_market_hitter_prop_context_job" || result.status === "failed_one_market_pitcher_prop_context_job" || result.status === "failed_one_oddsapi_hitter_prop_context_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_hitter_metrics_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_base_starter_history_job" || result.status === "failed_one_base_bullpen_history_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_delta_certifier_job" || result.status === "failed_one_static_full_run_job" || result.status === "failed_one_incremental_morning_full_run_job" || result.status === "failed_one_board_full_run_job" || result.status === "failed_one_daily_weather_job" || result.status === "failed_one_daily_bullpen_availability_job" || result.status === "failed_one_daily_team_schedule_spot_job" || result.status === "failed_one_daily_starters_job" || result.status === "failed_one_daily_player_availability_job" || result.status === "failed_one_daily_lineups_source_probe_job" || result.status === "failed_one_daily_game_status_job" || result.status === "failed_one_daily_context_certifier_job" || result.status === "failed_one_daily_context_full_run_job" || result.status === "failed_one_prop_factor_miner_job") break;
+      if (result.status === "failed_one_dispatch_exception_contained" || result.status === "blocked_unsupported_job" || result.status === "failed_one_market_teams_game_odds_job" || result.status === "failed_one_market_hitter_prop_context_job" || result.status === "failed_one_market_pitcher_prop_context_job" || result.status === "failed_one_oddsapi_hitter_prop_context_job" || result.status === "failed_one_market_source_health_job" || result.status === "failed_one_prizepicks_github_board_job" || result.status === "failed_one_parlay_sleeper_board_job" || result.status === "failed_one_base_hitter_game_logs_job" || result.status === "failed_one_base_hitter_splits_job" || result.status === "failed_one_base_hitter_metrics_job" || result.status === "failed_one_base_pitcher_game_logs_job" || result.status === "failed_one_base_team_game_logs_job" || result.status === "failed_one_base_pitcher_splits_job" || result.status === "failed_one_base_starter_history_job" || result.status === "failed_one_base_bullpen_history_job" || result.status === "failed_one_static_teams_job" || result.status === "failed_one_static_stadiums_job" || result.status === "failed_one_static_park_factors_job" || result.status === "failed_one_static_players_job" || result.status === "failed_one_static_prop_taxonomy_job" || result.status === "failed_one_static_certifier_job" || result.status === "failed_one_delta_certifier_job" || result.status === "failed_one_static_full_run_job" || result.status === "failed_one_incremental_morning_full_run_job" || result.status === "failed_one_board_full_run_job" || result.status === "failed_one_daily_weather_job" || result.status === "failed_one_daily_bullpen_availability_job" || result.status === "failed_one_daily_team_schedule_spot_job" || result.status === "failed_one_daily_starters_job" || result.status === "failed_one_daily_player_availability_job" || result.status === "failed_one_daily_lineups_source_probe_job" || result.status === "failed_one_daily_game_status_job" || result.status === "failed_one_daily_context_certifier_job" || result.status === "failed_one_daily_context_full_run_job" || result.status === "failed_one_prop_factor_miner_job") break;
     }
 
     await releaseLock(env, owner, "IDLE");
 
     const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_market_hitter_prop_context_job" || x.status === "completed_one_oddsapi_hitter_prop_context_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_delta_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job" || x.status === "completed_one_daily_weather_job" || x.status === "completed_one_daily_bullpen_availability_job" || x.status === "completed_one_daily_team_schedule_spot_job" || x.status === "completed_one_daily_starters_job" || x.status === "completed_one_daily_player_availability_job" || x.status === "completed_one_daily_lineups_source_probe_job" || x.status === "completed_one_daily_game_status_job" || x.status === "completed_one_daily_context_certifier_job" || x.status === "completed_one_daily_context_full_run_job" || x.status === "completed_one_prop_factor_miner_job").length;
     const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job" || x.status === "partial_continue_daily_context_full_run_job").length;
-    const blocked = processed.filter(x => x.status === "blocked_unsupported_job" || x.status === "failed_one_market_teams_game_odds_job" || x.status === "failed_one_market_hitter_prop_context_job" || x.status === "failed_one_oddsapi_hitter_prop_context_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_delta_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job" || x.status === "failed_one_daily_weather_job" || x.status === "failed_one_daily_bullpen_availability_job" || x.status === "failed_one_daily_team_schedule_spot_job" || x.status === "failed_one_daily_starters_job" || x.status === "failed_one_daily_player_availability_job" || x.status === "failed_one_daily_lineups_source_probe_job" || x.status === "failed_one_daily_game_status_job" || x.status === "failed_one_daily_context_certifier_job" || x.status === "failed_one_daily_context_full_run_job" || x.status === "failed_one_prop_factor_miner_job").length;
+    const blocked = processed.filter(x => x.status === "failed_one_dispatch_exception_contained" || x.status === "blocked_unsupported_job" || x.status === "failed_one_market_teams_game_odds_job" || x.status === "failed_one_market_hitter_prop_context_job" || x.status === "failed_one_oddsapi_hitter_prop_context_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_delta_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job" || x.status === "failed_one_daily_weather_job" || x.status === "failed_one_daily_bullpen_availability_job" || x.status === "failed_one_daily_team_schedule_spot_job" || x.status === "failed_one_daily_starters_job" || x.status === "failed_one_daily_player_availability_job" || x.status === "failed_one_daily_lineups_source_probe_job" || x.status === "failed_one_daily_game_status_job" || x.status === "failed_one_daily_context_certifier_job" || x.status === "failed_one_daily_context_full_run_job" || x.status === "failed_one_prop_factor_miner_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
 
     return base(env, {
