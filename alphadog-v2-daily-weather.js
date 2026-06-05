@@ -1,10 +1,12 @@
 const WORKER_NAME = "alphadog-v2-daily-weather";
-const VERSION = "alphadog-v2-daily-weather-v0.1.1-bounded-parallel-current-replace";
+const VERSION = "alphadog-v2-daily-weather-v0.1.2-bounded-heartbeat-non-destructive-retention";
 const JOB_KEY = "daily-weather";
 const MLB_SOURCE_KEY = "official_mlb_statsapi_live_feed_weather";
 const OPEN_METEO_SOURCE_KEY = "open_meteo_no_key_forecast";
 const OPENWEATHER_SOURCE_KEY = "openweather_onecall_forecast";
-const FETCH_TIMEOUT_MS = 6000;
+const FETCH_TIMEOUT_MS = 2500;
+const WEATHER_SOFT_LIMIT_MS = 90000;
+const WEATHER_FETCH_CONCURRENCY = 4;
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "MLB_API_BASE_URL", "OPEN_METEO_BASE_URL"];
@@ -28,18 +30,6 @@ async function all(db, sql, ...binds) { const s = db.prepare(sql); const r = bin
 async function first(db, sql, ...binds) { const s = db.prepare(sql); return binds.length ? await s.bind(...binds).first() : await s.first(); }
 async function run(db, sql, ...binds) { const s = db.prepare(sql); return binds.length ? await s.bind(...binds).run() : await s.run(); }
 function placeholders(n) { return Array.from({ length: n }, () => "?").join(","); }
-async function mapWithConcurrency(items, limit, mapper) {
-  const out = new Array(items.length);
-  let next = 0;
-  const workers = Array.from({ length: Math.min(Math.max(1, limit), items.length || 1) }, async () => {
-    while (next < items.length) {
-      const idx = next++;
-      out[idx] = await mapper(items[idx], idx);
-    }
-  });
-  await Promise.all(workers);
-  return out;
-}
 function safeJson(value, max = 14000) {
   if (value === undefined || value === null) return null;
   let text;
@@ -314,15 +304,6 @@ async function pruneRetention(env, retention, batchId) {
     protected_batch_id: batchId || null
   };
 }
-async function replaceOperationalCurrentForWindow(env, retention) {
-  const current = await run(env.DAILY_DB, `DELETE FROM daily_game_weather_current WHERE official_date IN (?, ?)`, retention.start, retention.end);
-  return {
-    current_deleted: current && current.meta ? current.meta.changes : null,
-    retention_date_start: retention.start,
-    retention_date_end: retention.end,
-    policy: "latest_successful_batch_replaces_operational_weather_current_for_today_tomorrow"
-  };
-}
 async function getPreparedGames(env, retention) {
   return all(env.SCORE_DB, `SELECT
       official_game_pk,
@@ -576,182 +557,397 @@ async function writeGame(env, batchId, record) {
   }
   return { current_written: 1, snapshot_written: 1, issues_written: record.issues.length };
 }
+
+function compactWeatherProgress(payload) {
+  return safeJson({
+    ok: true,
+    data_ok: true,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    status: "RUNNING_DAILY_WEATHER_PROGRESS",
+    ...payload,
+    timestamp_utc: nowUtc(),
+    root_cause_guard: "worker_updates_child_queue_heartbeat_and_batch_progress_so_parent_stale_guard_does_not_misclassify_legitimate_work"
+  }, 3500);
+}
+
+async function heartbeatWeather(env, requestId, batchId, step, extra = {}) {
+  if (!requestId) return;
+  const progress = compactWeatherProgress({ request_id: requestId, batch_id: batchId || null, step, ...extra });
+  try {
+    if (env && env.CONTROL_DB) {
+      await run(env.CONTROL_DB,
+        `UPDATE control_job_queue
+         SET updated_at=CURRENT_TIMESTAMP,
+             output_json=?
+         WHERE request_id=?
+           AND status='running'
+           AND finished_at IS NULL`,
+        progress, requestId);
+    }
+  } catch (_) {
+    // Heartbeat is lifecycle-only. Never let heartbeat failure break weather context.
+  }
+}
+
+async function markWeatherBatch(env, batchId, fields = {}) {
+  if (!batchId) return;
+  const allowed = [
+    "status", "calendar_games_checked", "prepared_games_checked", "prepared_rows_read", "weather_rows_written",
+    "snapshot_rows_written", "indoor_games", "outdoor_games", "retractable_roof_games", "weather_source_failures",
+    "roof_unknown_count", "weather_unknown_count", "blocker_count", "warning_count", "external_calls",
+    "certification_status", "certification_grade", "certification_reason", "output_json", "completed_at"
+  ];
+  const sets = [];
+  const binds = [];
+  for (const key of allowed) {
+    if (Object.prototype.hasOwnProperty.call(fields, key)) {
+      sets.push(`${key}=?`);
+      binds.push(fields[key]);
+    }
+  }
+  if (!sets.length) return;
+  sets.push("updated_at=CURRENT_TIMESTAMP");
+  binds.push(batchId);
+  await run(env.DAILY_DB, `UPDATE daily_game_weather_batches SET ${sets.join(", ")} WHERE batch_id=?`, ...binds);
+}
+
+function assertWeatherBudget(startedMs, step) {
+  const elapsed = Date.now() - startedMs;
+  if (elapsed > WEATHER_SOFT_LIMIT_MS) {
+    const err = new Error(`Daily Weather soft time budget exceeded at ${step} after ${elapsed}ms`);
+    err.code = "DAILY_WEATHER_SOFT_TIME_BUDGET_EXCEEDED";
+    err.elapsed_ms = elapsed;
+    err.step = step;
+    throw err;
+  }
+}
+
+async function mapLimit(items, limit, worker) {
+  const out = new Array(items.length);
+  let next = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await worker(items[i], i);
+    }
+  });
+  await Promise.all(runners);
+  return out;
+}
+
+async function cleanupWeatherBatchSidecars(env, batchId) {
+  if (!batchId) return { cleaned: false };
+  // Non-destructive failure cleanup: do NOT delete current rows. INSERT OR REPLACE can replace a prior
+  // certified current row; deleting failed-batch current rows can leave the live layer empty. A terminal
+  // failure response prevents parent stale cleanup; old/mixed current rows are safer than an empty layer.
+  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_game_weather_snapshots WHERE batch_id=?`, batchId);
+  const issues = await run(env.DAILY_DB, `DELETE FROM daily_game_weather_issues WHERE batch_id=?`, batchId);
+  return {
+    cleaned: true,
+    batch_id: batchId,
+    current_deleted: 0,
+    current_cleanup_policy: "non_destructive_keep_current_rows_on_failure",
+    snapshots_deleted: snapshots && snapshots.meta ? snapshots.meta.changes : null,
+    issues_deleted: issues && issues.meta ? issues.meta.changes : null
+  };
+}
+
+async function finalizeWeatherWindowReplacement(env, retention, batchId) {
+  // Success-only cleanup: after the new batch has full certified coverage, remove stale current rows
+  // in the active PT today/tomorrow window that were not refreshed by this successful batch.
+  const staleCurrent = await run(env.DAILY_DB,
+    `DELETE FROM daily_game_weather_current
+     WHERE official_date IN (?, ?)
+       AND (batch_id IS NULL OR batch_id <> ?)`,
+    retention.start, retention.end, batchId);
+  return {
+    cleaned: true,
+    stale_current_deleted: staleCurrent && staleCurrent.meta ? staleCurrent.meta.changes : null,
+    active_batch_id: batchId,
+    retention_date_start: retention.start,
+    retention_date_end: retention.end
+  };
+}
+
 async function runWeather(env, input) {
+  const startedMs = Date.now();
   const startedAt = nowUtc();
   const batchId = rid("daily_game_weather_batch");
   const requestId = input.request_id || batchId;
   const runId = input.run_id || null;
-  await ensureSchema(env);
-  const retention = retentionWindowPt();
-  const preRetentionPrune = await pruneRetention(env, retention, null);
-  await run(env.DAILY_DB, `INSERT INTO daily_game_weather_batches (batch_id, request_id, run_id, worker_name, worker_version, job_key, mode, status, window_start, window_end, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, ?)`,
-    batchId, requestId, runId, WORKER_NAME, VERSION, input.job_key || JOB_KEY, input.mode || "daily_weather_refresh_window", retention.start, retention.end, startedAt
-  );
-  const prepared = await getPreparedGames(env, retention);
-  const gamePks = [...new Set(prepared.map(r => intOrNull(r.official_game_pk)).filter(v => v !== null))];
-  const calendars = await getCalendar(env, gamePks);
-  const calendarByGame = new Map(calendars.map(r => [intOrNull(r.game_pk), r]));
-  const venueIds = [...new Set(calendars.map(r => intOrNull(r.venue_id)).filter(v => v !== null))];
-  const stadiums = await getStadiums(env, venueIds);
-  const stadiumByVenue = new Map(stadiums.map(r => [intOrNull(r.mlb_venue_id), r]));
-  const parkFactors = await getParkFactors(env, venueIds);
-  const parkByVenue = new Map();
-  for (const pf of parkFactors) if (!parkByVenue.has(intOrNull(pf.mlb_venue_id))) parkByVenue.set(intOrNull(pf.mlb_venue_id), pf);
-  await run(env.DAILY_DB, `UPDATE daily_game_weather_batches SET calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, calendars.length, prepared.length, prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0), batchId);
-  const operationalCurrentReplace = await replaceOperationalCurrentForWindow(env, retention);
-  const sourceSnapshotAt = nowUtc();
-  let externalCalls = 0;
-  let sourceFailures = 0;
-  const records = await mapWithConcurrency(prepared, 4, async (p) => {
-    const gamePk = intOrNull(p.official_game_pk);
-    const cal = calendarByGame.get(gamePk) || {};
-    const venueId = intOrNull(cal.venue_id);
-    const stadium = stadiumByVenue.get(venueId) || null;
-    const parkFactor = parkByVenue.get(venueId) || null;
-    const mlbFetch = await fetchMlbFeed(env, gamePk);
-    externalCalls++;
-    const mlbWeather = mlbFetch.ok ? extractMlbWeather(mlbFetch.json) : { ok: false, source_key: MLB_SOURCE_KEY, weather: null };
-    if (!mlbFetch.ok) sourceFailures++;
-    let external = await fetchOpenWeather(env, stadium, p.official_game_time_utc);
-    if (!external.skipped) externalCalls++;
-    if (!external.ok) {
-      const fallback = await fetchOpenMeteo(env, stadium, p.official_game_time_utc);
-      if (!fallback.skipped) externalCalls++;
-      external = fallback;
-    }
-    if (!external.ok && !external.skipped) sourceFailures++;
-    const merged = mergeWeather(mlbWeather, external);
-    const classified = classifyWeather(p, cal, stadium, parkFactor, mlbWeather, external, merged);
-    const sourceParts = [];
-    if (mlbWeather.ok) sourceParts.push(MLB_SOURCE_KEY);
-    if (external.ok) sourceParts.push(external.source_key);
-    const sourceKey = sourceParts.length ? sourceParts.join("+") : "source_missing";
-    const sourceEndpoint = [mlbFetch && mlbFetch.url, external && external.url].filter(Boolean).join(" | ") || null;
-    return {
-      game_pk: gamePk,
-      official_date: p.official_date || cal.official_date,
-      game_time_utc: p.official_game_time_utc || cal.game_time_utc,
-      venue_id: venueId,
-      venue_name: cal.venue_name || (stadium && stadium.stadium_name) || null,
-      home_team_id: intOrNull(cal.home_team_id),
-      away_team_id: intOrNull(cal.away_team_id),
-      prepared_board_relevant: 1,
-      prepared_board_pickable_rows: Number(p.prepared_board_pickable_rows || 0),
-      weather_status: classified.weather_status,
-      weather_confidence: classified.weather_confidence,
-      source_key: sourceKey,
-      source_endpoint: sourceEndpoint,
-      source_snapshot_at: sourceSnapshotAt,
-      forecast_time_utc: merged.forecast_time_utc,
-      forecast_offset_minutes: merged.forecast_offset_minutes,
-      temperature_f: merged.temperature_f,
-      feels_like_f: merged.feels_like_f,
-      humidity_pct: merged.humidity_pct,
-      pressure_mb: merged.pressure_mb,
-      wind_speed_mph: merged.wind_speed_mph,
-      wind_gust_mph: merged.wind_gust_mph,
-      wind_direction_degrees: merged.wind_direction_degrees,
-      wind_direction_cardinal: merged.wind_direction_cardinal,
-      wind_context: merged.wind_context,
-      precipitation_probability_pct: merged.precipitation_probability_pct,
-      precipitation_type: merged.precipitation_type,
-      rain_risk_flag: classified.rain_risk_flag,
-      delay_risk_flag: classified.delay_risk_flag,
-      roof_type: classified.roof_type,
-      roof_status: classified.roof_status,
-      roof_confidence: classified.roof_confidence,
-      indoor_flag: classified.indoor_flag,
-      retractable_roof_flag: classified.retractable_roof_flag,
-      weather_applicable_flag: classified.weather_applicable_flag,
-      park_weather_notes: classified.park_weather_notes,
-      issues: classified.issues,
-      raw_json: {
-        prepared: p,
-        calendar: cal,
-        stadium,
-        park_factor: parkFactor,
-        mlb_weather: mlbWeather,
-        external_weather: external ? { ok: external.ok, skipped: external.skipped || false, source_key: external.source_key, status: external.status, reason: external.reason || null, weather: external.weather || null, url: external.url || null, error: external.error || null } : null,
-        merged_weather: merged,
-        classification: classified
-      }
-    };
-  });
+  let batchStarted = false;
+  let prepared = [];
+  let calendars = [];
+  let records = [];
   let currentWritten = 0;
   let snapshotWritten = 0;
   let issuesWritten = 0;
-  for (const record of records) {
-    const w = await writeGame(env, batchId, record);
-    currentWritten += w.current_written;
-    snapshotWritten += w.snapshot_written;
-    issuesWritten += w.issues_written;
-  }
-  const postRetentionPrune = await pruneRetention(env, retention, batchId);
-  const blockerCount = records.reduce((n, r) => n + r.issues.filter(i => i.severity === "blocker").length, 0);
-  const warningCount = records.reduce((n, r) => n + r.issues.filter(i => i.severity === "warning").length, 0);
-  const weatherUnknownCount = records.filter(r => ["source_missing", "blocked"].includes(String(r.weather_status || ""))).length;
-  const roofUnknownCount = records.filter(r => String(r.roof_status || "").includes("unknown")).length;
-  const indoorGames = records.filter(r => r.indoor_flag === 1).length;
-  const outdoorGames = records.filter(r => r.roof_status === "outdoor").length;
-  const retractableGames = records.filter(r => r.retractable_roof_flag === 1).length;
-  const coverageOk = records.length === prepared.length && currentWritten === records.length && snapshotWritten === records.length;
-  const noPickableSlate = prepared.length === 0;
-  const dataOk = noPickableSlate || (coverageOk && blockerCount === 0);
-  const certification = noPickableSlate ? "DAILY_WEATHER_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (dataOk ? (warningCount ? "DAILY_WEATHER_CERTIFIED_WITH_WARNINGS" : "DAILY_WEATHER_CERTIFIED_READY") : "DAILY_WEATHER_FAILED_BLOCKERS_OR_COVERAGE");
-  const grade = noPickableSlate ? "VALID_ZERO" : (dataOk ? (warningCount ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL");
-  const status = dataOk ? "completed" : "failed_blockers_or_coverage";
-  const output = {
-    ok: dataOk,
-    data_ok: dataOk,
-    version: VERSION,
-    worker_name: WORKER_NAME,
-    job_key: JOB_KEY,
-    request_id: requestId,
-    batch_id: batchId,
-    status,
-    certification,
-    certification_grade: grade,
-    certification_reason: noPickableSlate ? "No prepared-board pickable_safe games exist for today/tomorrow retention window." : (dataOk ? "Every prepared-board relevant game received weather/roof current and snapshot rows; warnings are sidecar issues." : "One or more prepared-board relevant games had blockers or coverage gaps."),
-    window_start: retention.start,
-    window_end: retention.end,
-    calendar_games_checked: calendars.length,
-    prepared_games_checked: records.length,
-    prepared_rows_read: prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0),
-    weather_rows_written: currentWritten,
-    snapshot_rows_written: snapshotWritten,
-    issues_written: issuesWritten,
-    indoor_games: indoorGames,
-    outdoor_games: outdoorGames,
-    retractable_roof_games: retractableGames,
-    weather_source_failures: sourceFailures,
-    roof_unknown_count: roofUnknownCount,
-    weather_unknown_count: weatherUnknownCount,
-    blocker_count: blockerCount,
-    warning_count: warningCount,
-    external_calls: externalCalls,
-    current_games: records.map(r => ({ game_pk: r.game_pk, official_date: r.official_date, venue_name: r.venue_name, roof_status: r.roof_status, weather_status: r.weather_status, weather_confidence: r.weather_confidence, source_key: r.source_key, temp_f: r.temperature_f, wind_mph: r.wind_speed_mph, precip_pct: r.precipitation_probability_pct, issues: r.issues.length })),
-    retention_policy: "current_snapshots_issues_today_tomorrow_only_batches_retained_for_audit",
-    retention_pre_prune: preRetentionPrune,
-    operational_current_replace: operationalCurrentReplace,
-    retention_post_prune: postRetentionPrune,
-    sidecar_tables: ["daily_game_weather_current", "daily_game_weather_snapshots", "daily_game_weather_batches", "daily_game_weather_issues"],
-    legacy_tables_untouched: ["daily_weather", "daily_roof_status"],
-    static_reference_tables_read_only: ["REF_DB.ref_stadiums", "REF_DB.ref_stadium_aliases", "REF_DB.ref_park_factors"],
-    no_score_db_mutation: true,
-    no_board_mutation: true,
-    no_calendar_rebuild: true,
-    no_daily_starters_duplication: true,
-    no_daily_lineups_duplication: true,
-    no_daily_player_availability_duplication: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    timestamp_utc: nowUtc()
-  };
-  await run(env.DAILY_DB, `UPDATE daily_game_weather_batches SET status=?, calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, weather_rows_written=?, snapshot_rows_written=?, indoor_games=?, outdoor_games=?, retractable_roof_games=?, weather_source_failures=?, roof_unknown_count=?, weather_unknown_count=?, blocker_count=?, warning_count=?, external_calls=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    status, calendars.length, records.length, output.prepared_rows_read, currentWritten, snapshotWritten, indoorGames, outdoorGames, retractableGames, sourceFailures, roofUnknownCount, weatherUnknownCount, blockerCount, warningCount, externalCalls, certification, grade, output.certification_reason, safeJson(output, 14000), nowUtc(), batchId
+  let externalCalls = 0;
+  let sourceFailures = 0;
+  const retention = retentionWindowPt();
+
+  await ensureSchema(env);
+  await run(env.DAILY_DB, `INSERT INTO daily_game_weather_batches (batch_id, request_id, run_id, worker_name, worker_version, job_key, mode, status, window_start, window_end, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, ?)`,
+    batchId, requestId, runId, WORKER_NAME, VERSION, input.job_key || JOB_KEY, input.mode || "daily_weather_refresh_window", retention.start, retention.end, startedAt
   );
-  return output;
+  batchStarted = true;
+  await heartbeatWeather(env, requestId, batchId, "batch_created", { window_start: retention.start, window_end: retention.end, fetch_timeout_ms: FETCH_TIMEOUT_MS, fetch_concurrency: WEATHER_FETCH_CONCURRENCY });
+
+  try {
+    // Root-cause fix: no pre-run destructive current cleanup. The prior weather lifecycle could hang after
+    // creating a running batch, then the parent stale cleanup could leave the live weather layer empty.
+    prepared = await getPreparedGames(env, retention);
+    const preparedRowsRead = prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0);
+    await markWeatherBatch(env, batchId, { prepared_rows_read: preparedRowsRead, certification_status: "DAILY_WEATHER_STEP_PREPARED_READ" });
+    await heartbeatWeather(env, requestId, batchId, "prepared_rows_read", { prepared_games_seen: prepared.length, prepared_rows_read: preparedRowsRead });
+    assertWeatherBudget(startedMs, "prepared_rows_read");
+
+    const gamePks = [...new Set(prepared.map(r => intOrNull(r.official_game_pk)).filter(v => v !== null))];
+    calendars = await getCalendar(env, gamePks);
+    const calendarByGame = new Map(calendars.map(r => [intOrNull(r.game_pk), r]));
+    const venueIds = [...new Set(calendars.map(r => intOrNull(r.venue_id)).filter(v => v !== null))];
+    const stadiums = await getStadiums(env, venueIds);
+    const stadiumByVenue = new Map(stadiums.map(r => [intOrNull(r.mlb_venue_id), r]));
+    const parkFactors = await getParkFactors(env, venueIds);
+    const parkByVenue = new Map();
+    for (const pf of parkFactors) if (!parkByVenue.has(intOrNull(pf.mlb_venue_id))) parkByVenue.set(intOrNull(pf.mlb_venue_id), pf);
+    await markWeatherBatch(env, batchId, { calendar_games_checked: calendars.length, prepared_games_checked: gamePks.length, certification_status: "DAILY_WEATHER_STEP_REFERENCE_READ" });
+    await heartbeatWeather(env, requestId, batchId, "reference_rows_read", { prepared_games_checked: gamePks.length, calendar_games_checked: calendars.length, venue_count: venueIds.length, stadium_rows: stadiums.length, park_factor_rows: parkFactors.length });
+    assertWeatherBudget(startedMs, "reference_rows_read");
+
+    const sourceSnapshotAt = nowUtc();
+    const progressEvery = Math.max(1, Math.min(4, Math.ceil(prepared.length / 3)));
+    let processed = 0;
+    records = await mapLimit(prepared, WEATHER_FETCH_CONCURRENCY, async (p, idx) => {
+      const gamePk = intOrNull(p.official_game_pk);
+      const cal = calendarByGame.get(gamePk) || {};
+      const venueId = intOrNull(cal.venue_id);
+      const stadium = stadiumByVenue.get(venueId) || null;
+      const parkFactor = parkByVenue.get(venueId) || null;
+      const mlbFetch = await fetchMlbFeed(env, gamePk);
+      externalCalls++;
+      const mlbWeather = mlbFetch.ok ? extractMlbWeather(mlbFetch.json) : { ok: false, source_key: MLB_SOURCE_KEY, weather: null };
+      if (!mlbFetch.ok) sourceFailures++;
+
+      let external = await fetchOpenWeather(env, stadium, p.official_game_time_utc);
+      if (!external.skipped) externalCalls++;
+      if (!external.ok) {
+        const fallback = await fetchOpenMeteo(env, stadium, p.official_game_time_utc);
+        if (!fallback.skipped) externalCalls++;
+        external = fallback;
+      }
+      if (!external.ok && !external.skipped) sourceFailures++;
+
+      const merged = mergeWeather(mlbWeather, external);
+      const classified = classifyWeather(p, cal, stadium, parkFactor, mlbWeather, external, merged);
+      const sourceParts = [];
+      if (mlbWeather.ok) sourceParts.push(MLB_SOURCE_KEY);
+      if (external.ok) sourceParts.push(external.source_key);
+      const sourceKey = sourceParts.length ? sourceParts.join("+") : "source_missing";
+      const sourceEndpoint = [mlbFetch && mlbFetch.url, external && external.url].filter(Boolean).join(" | ") || null;
+      const record = {
+        game_pk: gamePk,
+        official_date: p.official_date || cal.official_date,
+        game_time_utc: p.official_game_time_utc || cal.game_time_utc,
+        venue_id: venueId,
+        venue_name: cal.venue_name || (stadium && stadium.stadium_name) || null,
+        home_team_id: intOrNull(cal.home_team_id),
+        away_team_id: intOrNull(cal.away_team_id),
+        prepared_board_relevant: 1,
+        prepared_board_pickable_rows: Number(p.prepared_board_pickable_rows || 0),
+        weather_status: classified.weather_status,
+        weather_confidence: classified.weather_confidence,
+        source_key: sourceKey,
+        source_endpoint: sourceEndpoint,
+        source_snapshot_at: sourceSnapshotAt,
+        forecast_time_utc: merged.forecast_time_utc,
+        forecast_offset_minutes: merged.forecast_offset_minutes,
+        temperature_f: merged.temperature_f,
+        feels_like_f: merged.feels_like_f,
+        humidity_pct: merged.humidity_pct,
+        pressure_mb: merged.pressure_mb,
+        wind_speed_mph: merged.wind_speed_mph,
+        wind_gust_mph: merged.wind_gust_mph,
+        wind_direction_degrees: merged.wind_direction_degrees,
+        wind_direction_cardinal: merged.wind_direction_cardinal,
+        wind_context: merged.wind_context,
+        precipitation_probability_pct: merged.precipitation_probability_pct,
+        precipitation_type: merged.precipitation_type,
+        rain_risk_flag: classified.rain_risk_flag,
+        delay_risk_flag: classified.delay_risk_flag,
+        roof_type: classified.roof_type,
+        roof_status: classified.roof_status,
+        roof_confidence: classified.roof_confidence,
+        indoor_flag: classified.indoor_flag,
+        retractable_roof_flag: classified.retractable_roof_flag,
+        weather_applicable_flag: classified.weather_applicable_flag,
+        park_weather_notes: classified.park_weather_notes,
+        issues: classified.issues,
+        raw_json: {
+          prepared: p,
+          calendar: cal,
+          stadium,
+          park_factor: parkFactor,
+          mlb_weather: mlbWeather,
+          external_weather: external ? { ok: external.ok, skipped: external.skipped || false, source_key: external.source_key, status: external.status, reason: external.reason || null, weather: external.weather || null, url: external.url || null, error: external.error || null } : null,
+          merged_weather: merged,
+          classification: classified
+        }
+      };
+      processed += 1;
+      if (processed === prepared.length || processed % progressEvery === 0) {
+        await markWeatherBatch(env, batchId, { calendar_games_checked: calendars.length, prepared_games_checked: gamePks.length, prepared_rows_read: preparedRowsRead, weather_source_failures: sourceFailures, external_calls: externalCalls, certification_status: "DAILY_WEATHER_STEP_FETCHING_SOURCES" });
+        await heartbeatWeather(env, requestId, batchId, "fetching_sources", { processed_games: processed, total_games: prepared.length, external_calls: externalCalls, source_failures: sourceFailures });
+        assertWeatherBudget(startedMs, "fetching_sources");
+      }
+      return record;
+    });
+
+    await heartbeatWeather(env, requestId, batchId, "source_fetch_complete", { records: records.length, external_calls: externalCalls, source_failures: sourceFailures });
+    assertWeatherBudget(startedMs, "source_fetch_complete");
+
+    for (let i = 0; i < records.length; i += 1) {
+      const w = await writeGame(env, batchId, records[i]);
+      currentWritten += w.current_written;
+      snapshotWritten += w.snapshot_written;
+      issuesWritten += w.issues_written;
+      if (i === records.length - 1 || (i + 1) % 4 === 0) {
+        await markWeatherBatch(env, batchId, { weather_rows_written: currentWritten, snapshot_rows_written: snapshotWritten, certification_status: "DAILY_WEATHER_STEP_WRITING_CONTEXT" });
+        await heartbeatWeather(env, requestId, batchId, "writing_context", { written_games: i + 1, total_games: records.length, weather_rows_written: currentWritten, snapshot_rows_written: snapshotWritten, issues_written: issuesWritten });
+        assertWeatherBudget(startedMs, "writing_context");
+      }
+    }
+
+    const replacementCleanup = await finalizeWeatherWindowReplacement(env, retention, batchId);
+    const postRetentionPrune = await pruneRetention(env, retention, batchId);
+    await heartbeatWeather(env, requestId, batchId, "success_cleanup_complete", { replacement_cleanup: replacementCleanup, retention_post_prune: postRetentionPrune });
+    assertWeatherBudget(startedMs, "success_cleanup_complete");
+
+    const blockerCount = records.reduce((n, r) => n + r.issues.filter(i => i.severity === "blocker").length, 0);
+    const warningCount = records.reduce((n, r) => n + r.issues.filter(i => i.severity === "warning").length, 0);
+    const weatherUnknownCount = records.filter(r => ["source_missing", "blocked"].includes(String(r.weather_status || ""))).length;
+    const roofUnknownCount = records.filter(r => String(r.roof_status || "").includes("unknown")).length;
+    const indoorGames = records.filter(r => r.indoor_flag === 1).length;
+    const outdoorGames = records.filter(r => r.roof_status === "outdoor").length;
+    const retractableGames = records.filter(r => r.retractable_roof_flag === 1).length;
+    const coverageOk = records.length === prepared.length && currentWritten === records.length && snapshotWritten === records.length;
+    const noPickableSlate = prepared.length === 0;
+    const dataOk = noPickableSlate || (coverageOk && blockerCount === 0);
+    const certification = noPickableSlate ? "DAILY_WEATHER_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (dataOk ? (warningCount ? "DAILY_WEATHER_CERTIFIED_WITH_WARNINGS" : "DAILY_WEATHER_CERTIFIED_READY") : "DAILY_WEATHER_FAILED_BLOCKERS_OR_COVERAGE");
+    const grade = noPickableSlate ? "VALID_ZERO" : (dataOk ? (warningCount ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL");
+    const status = dataOk ? "completed" : "failed_blockers_or_coverage";
+    const output = {
+      ok: dataOk,
+      data_ok: dataOk,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      request_id: requestId,
+      run_id: runId,
+      batch_id: batchId,
+      status,
+      certification,
+      certification_grade: grade,
+      certification_reason: noPickableSlate ? "No prepared-board pickable_safe games exist for today/tomorrow retention window." : (dataOk ? "Every prepared-board relevant game received weather/roof current and snapshot rows; warnings are sidecar issues." : "One or more prepared-board relevant games had blockers or coverage gaps."),
+      window_start: retention.start,
+      window_end: retention.end,
+      calendar_games_checked: calendars.length,
+      prepared_games_checked: records.length,
+      prepared_rows_read: preparedRowsRead,
+      weather_rows_written: currentWritten,
+      rows_written: currentWritten,
+      snapshot_rows_written: snapshotWritten,
+      issues_written: issuesWritten,
+      indoor_games: indoorGames,
+      outdoor_games: outdoorGames,
+      retractable_roof_games: retractableGames,
+      weather_source_failures: sourceFailures,
+      roof_unknown_count: roofUnknownCount,
+      weather_unknown_count: weatherUnknownCount,
+      blocker_count: blockerCount,
+      warning_count: warningCount,
+      external_calls: externalCalls,
+      external_calls_performed: externalCalls,
+      current_games: records.map(r => ({ game_pk: r.game_pk, official_date: r.official_date, venue_name: r.venue_name, roof_status: r.roof_status, weather_status: r.weather_status, weather_confidence: r.weather_confidence, source_key: r.source_key, temp_f: r.temperature_f, wind_mph: r.wind_speed_mph, precip_pct: r.precipitation_probability_pct, issues: r.issues.length })),
+      retention_policy: "non_destructive_fetch_then_success_only_window_replacement_today_tomorrow_batches_retained_for_audit",
+      successful_window_replacement_cleanup: replacementCleanup,
+      retention_post_prune: postRetentionPrune,
+      source_fetch_timeout_ms: FETCH_TIMEOUT_MS,
+      source_fetch_concurrency: WEATHER_FETCH_CONCURRENCY,
+      lifecycle_fix: "bounded_parallel_fetch_heartbeat_progress_terminal_failure_non_destructive_current",
+      sidecar_tables: ["daily_game_weather_current", "daily_game_weather_snapshots", "daily_game_weather_batches", "daily_game_weather_issues"],
+      legacy_tables_untouched: ["daily_weather", "daily_roof_status"],
+      static_reference_tables_read_only: ["REF_DB.ref_stadiums", "REF_DB.ref_stadium_aliases", "REF_DB.ref_park_factors"],
+      no_score_db_mutation: true,
+      no_board_mutation: true,
+      no_calendar_rebuild: true,
+      no_daily_starters_duplication: true,
+      no_daily_lineups_duplication: true,
+      no_daily_player_availability_duplication: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
+      timestamp_utc: nowUtc()
+    };
+    await markWeatherBatch(env, batchId, {
+      status, calendar_games_checked: calendars.length, prepared_games_checked: records.length, prepared_rows_read: preparedRowsRead,
+      weather_rows_written: currentWritten, snapshot_rows_written: snapshotWritten, indoor_games: indoorGames, outdoor_games: outdoorGames,
+      retractable_roof_games: retractableGames, weather_source_failures: sourceFailures, roof_unknown_count: roofUnknownCount,
+      weather_unknown_count: weatherUnknownCount, blocker_count: blockerCount, warning_count: warningCount, external_calls: externalCalls,
+      certification_status: certification, certification_grade: grade, certification_reason: output.certification_reason,
+      output_json: safeJson(output, 14000), completed_at: nowUtc()
+    });
+    return output;
+  } catch (err) {
+    const errorText = String(err && err.stack ? err.stack : err);
+    let cleanup = null;
+    if (batchStarted) cleanup = await cleanupWeatherBatchSidecars(env, batchId);
+    const preparedRowsRead = prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0);
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      request_id: requestId,
+      run_id: runId,
+      batch_id: batchId,
+      status: "failed_exception_terminal",
+      certification: "DAILY_WEATHER_FAILED_EXCEPTION_TERMINAL_NON_DESTRUCTIVE",
+      certification_grade: "FAIL",
+      certification_reason: "Daily Weather failed inside bounded worker lifecycle; partial snapshots/issues for this batch were cleaned and current rows were preserved.",
+      error: errorText,
+      cleanup,
+      window_start: retention.start,
+      window_end: retention.end,
+      calendar_games_checked: calendars.length,
+      prepared_games_checked: records.length || prepared.length,
+      prepared_rows_read: preparedRowsRead,
+      weather_rows_written: currentWritten,
+      snapshot_rows_written: snapshotWritten,
+      issues_written: issuesWritten,
+      external_calls: externalCalls,
+      source_failures: sourceFailures,
+      source_fetch_timeout_ms: FETCH_TIMEOUT_MS,
+      source_fetch_concurrency: WEATHER_FETCH_CONCURRENCY,
+      lifecycle_fix: "terminal_failure_returned_to_orchestrator_instead_of_parent_stale_child_cleanup",
+      timestamp_utc: nowUtc(),
+      no_score_db_mutation: true,
+      no_board_mutation: true,
+      no_scoring: true
+    };
+    if (batchStarted) await markWeatherBatch(env, batchId, {
+      status: "failed_exception_terminal", calendar_games_checked: calendars.length, prepared_games_checked: records.length || prepared.length,
+      prepared_rows_read: preparedRowsRead, weather_rows_written: currentWritten, snapshot_rows_written: snapshotWritten,
+      weather_source_failures: sourceFailures, external_calls: externalCalls, certification_status: output.certification,
+      certification_grade: output.certification_grade, certification_reason: output.certification_reason,
+      output_json: safeJson(output, 14000), completed_at: nowUtc()
+    });
+    await heartbeatWeather(env, requestId, batchId, "failed_exception_terminal", { certification: output.certification, error: errorText.slice(0, 500) });
+    return output;
+  }
 }
 
 export default {
@@ -771,7 +967,7 @@ export default {
       try {
         return jsonResponse(await runWeather(env, input));
       } catch (err) {
-        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_WEATHER_EXCEPTION", error: String(err && err.stack ? err.stack : err), timestamp_utc: nowUtc(), no_score_db_mutation: true, no_board_mutation: true }, 500);
+        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception_terminal", certification: "DAILY_WEATHER_EXCEPTION_TERMINAL", error: String(err && err.stack ? err.stack : err), timestamp_utc: nowUtc(), no_score_db_mutation: true, no_board_mutation: true });
       }
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
