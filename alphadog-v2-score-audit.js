@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.2.9-dynamic-side-score-spread-calibration";
+const VERSION = "alphadog-v2-scoring-engine-v0.3.0-dynamic-side-score-pressure-cte-fix";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -441,7 +441,7 @@ function sqlCaseFromMap(expression, map, fallback) {
 
 function simulationFormulaMetadata() {
   return {
-    formula_key: "SCORING_SIMULATION_V0_2_9_DYNAMIC_SIDE_SCORE_SPREAD_CALIBRATION",
+    formula_key: "SCORING_SIMULATION_V0_3_0_DYNAMIC_SIDE_SCORE_PRESSURE_CTE_FIX",
     worker_version: VERSION,
     simulation_only: true,
     active_values_source: "SCORE_DB.scoring_engine_simulation_profile_configs.config_json",
@@ -470,7 +470,7 @@ function simulationFormulaMetadata() {
 
 const DEFAULT_SIM_CONFIGS = {
   HYBRID_CONTROL: {
-    profile_version: "0.2.9-control-dynamic-side-spread",
+    profile_version: "0.3.0-control-dynamic-side-pressure-cte-fix",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -515,7 +515,7 @@ const DEFAULT_SIM_CONFIGS = {
     }
   },
   STRICT_B: {
-    profile_version: "0.2.9-strict-b-dynamic-side-spread",
+    profile_version: "0.3.0-strict-b-dynamic-side-pressure-cte-fix",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -732,7 +732,7 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
       WHERE (? IS NULL OR m.matrix_id > ?)
       ORDER BY m.matrix_id
       LIMIT ?
-    ), rawed AS (
+    ), pressure AS (
       SELECT
         base.*,
         CASE
@@ -746,10 +746,14 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
           ELSE ((100.0 / (v_under_price + 100.0)) - 0.50) * 100.0 * ${p.pricePressureScale}
         END AS price_less_pressure_calc,
         (((ABS(COALESCE(mlb_player_id,0) * 31 + COALESCE(game_pk,0) * 17 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 13) % 11) - 5) * ${p.deterministicSpreadScale}) AS more_spread_calc,
-        (((ABS(COALESCE(mlb_player_id,0) * 37 + COALESCE(game_pk,0) * 19 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 7) % 11) - 5) * ${p.deterministicSpreadScale}) AS less_spread_calc,
+        (((ABS(COALESCE(mlb_player_id,0) * 37 + COALESCE(game_pk,0) * 19 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 7) % 11) - 5) * ${p.deterministicSpreadScale}) AS less_spread_calc
+      FROM base
+    ), rawed AS (
+      SELECT
+        pressure.*,
         MAX(0, MIN(100, raw_base_pre + prop_more_adjustment_calc + (line_more_pressure_calc * ${p.linePressureScale}) + CASE WHEN v_side_mode = 'two_sided' THEN price_more_pressure_calc ELSE 0 END + more_spread_calc)) AS raw_more_score_calc,
         CASE WHEN v_side_mode = 'two_sided' THEN MAX(0, MIN(100, raw_base_pre + prop_less_adjustment_calc + (line_less_pressure_calc * ${p.linePressureScale}) + price_less_pressure_calc + less_spread_calc)) ELSE NULL END AS raw_less_score_calc
-      FROM base
+      FROM pressure
     ), side_selected AS (
       SELECT
         rawed.*,
@@ -876,7 +880,7 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
         'profile_version', ?,
         'active_values_source', 'SCORE_DB.scoring_engine_simulation_profile_configs.config_json',
         'all_calibration_variables_db_stored', 1,
-        'formula_order', 'inventory_defer_gate -> independent_more_less_scores -> price_line_prop_side_pressure -> pre_cap_side_selection -> score_penalties -> score_cap -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
+        'formula_order', 'inventory_defer_gate -> independent_more_less_scores -> price_line_prop_side_pressure_cte_safe -> pre_cap_side_selection -> score_penalties -> score_cap -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
         'raw_side_delta_threshold', ${p.rawSideDeltaThreshold},
         'min_live_score', ${p.minLiveScore},
         'min_live_confidence', ${p.minLiveConfidence},
@@ -1129,8 +1133,8 @@ async function runScoringSimulation(env, input) {
   const simulationRowsWritten = strictRows + hybridRows;
 
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_V0_2_9_DYNAMIC_SIDE_SCORE_SPREAD_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_2_9_DYNAMIC_SIDE_SCORE_SPREAD_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_2_9_DYNAMIC_SIDE_SCORE_SPREAD_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_3_0_DYNAMIC_SIDE_SCORE_PRESSURE_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_0_DYNAMIC_SIDE_SCORE_PRESSURE_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_0_DYNAMIC_SIDE_SCORE_PRESSURE_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
   const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
 
