@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-bullpen-availability";
-const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.1-current-replace-retention";
+const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.2-bounded-heartbeat-non-destructive-retention";
 const JOB_KEY = "daily-bullpen-availability";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -268,17 +268,6 @@ async function pruneRetention(env, retention) {
     retention_date_end: retention.end
   };
 }
-async function replaceOperationalCurrentForWindow(env, retention) {
-  const current = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_current WHERE official_date IN (?, ?)`, retention.start, retention.end);
-  const pitcher = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_pitcher_availability_current WHERE official_date IN (?, ?)`, retention.start, retention.end);
-  return {
-    current_deleted: current && current.meta ? current.meta.changes : null,
-    pitcher_current_deleted: pitcher && pitcher.meta ? pitcher.meta.changes : null,
-    retention_date_start: retention.start,
-    retention_date_end: retention.end,
-    policy: "latest_successful_batch_replaces_operational_bullpen_current_for_today_tomorrow"
-  };
-}
 async function getPreparedTeamRows(env, retention) {
   return all(env.SCORE_DB, `SELECT
       official_game_pk,
@@ -473,100 +462,254 @@ async function writePitchers(env, batchId, target, classified, sourceSnapshotAt)
   }
   return written;
 }
+const BULLPEN_SOFT_LIMIT_MS = 90000;
+
+function compactProgress(payload) {
+  return safeJson({
+    ok: true,
+    data_ok: true,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    status: "RUNNING_DAILY_BULLPEN_PROGRESS",
+    ...payload,
+    timestamp_utc: nowUtc(),
+    root_cause_guard: "worker_updates_child_queue_heartbeat_and_batch_progress_so_parent_stale_guard_does_not_misclassify_legitimate_work"
+  }, 3500);
+}
+
+async function heartbeat(env, requestId, batchId, step, extra = {}) {
+  if (!requestId) return;
+  const progress = compactProgress({ request_id: requestId, batch_id: batchId || null, step, ...extra });
+  try {
+    if (env && env.CONTROL_DB) {
+      await run(env.CONTROL_DB,
+        `UPDATE control_job_queue
+         SET updated_at=CURRENT_TIMESTAMP,
+             output_json=?
+         WHERE request_id=?
+           AND status='running'
+           AND finished_at IS NULL`,
+        progress, requestId);
+    }
+  } catch (_) {
+    // Heartbeat is diagnostic/lifecycle-only. Never let it break the sidecar worker.
+  }
+}
+
+async function markBatch(env, batchId, fields = {}) {
+  if (!batchId) return;
+  const allowed = [
+    "status", "calendar_games_checked", "prepared_games_checked", "prepared_rows_read", "teams_checked",
+    "team_rows_written", "pitcher_rows_written", "snapshot_rows_written", "source_failures", "blocker_count",
+    "warning_count", "high_risk_team_count", "unknown_team_count", "certification_status", "certification_grade",
+    "certification_reason", "output_json", "completed_at"
+  ];
+  const sets = [];
+  const binds = [];
+  for (const key of allowed) {
+    if (Object.prototype.hasOwnProperty.call(fields, key)) {
+      sets.push(`${key}=?`);
+      binds.push(fields[key]);
+    }
+  }
+  if (!sets.length) return;
+  sets.push("updated_at=CURRENT_TIMESTAMP");
+  binds.push(batchId);
+  await run(env.DAILY_DB, `UPDATE daily_bullpen_availability_batches SET ${sets.join(", ")} WHERE batch_id=?`, ...binds);
+}
+
+function assertBudget(startedMs, step) {
+  const elapsed = Date.now() - startedMs;
+  if (elapsed > BULLPEN_SOFT_LIMIT_MS) {
+    const err = new Error(`Daily Bullpen soft time budget exceeded at ${step} after ${elapsed}ms`);
+    err.code = "DAILY_BULLPEN_SOFT_TIME_BUDGET_EXCEEDED";
+    err.elapsed_ms = elapsed;
+    err.step = step;
+    throw err;
+  }
+}
+
+async function cleanupBatchRows(env, batchId) {
+  if (!batchId) return { cleaned: false };
+  const current = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_current WHERE batch_id=?`, batchId);
+  const pitcher = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_pitcher_availability_current WHERE batch_id=?`, batchId);
+  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_snapshots WHERE batch_id=?`, batchId);
+  const issues = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_issues WHERE batch_id=?`, batchId);
+  return {
+    cleaned: true,
+    batch_id: batchId,
+    current_deleted: current && current.meta ? current.meta.changes : null,
+    pitcher_current_deleted: pitcher && pitcher.meta ? pitcher.meta.changes : null,
+    snapshots_deleted: snapshots && snapshots.meta ? snapshots.meta.changes : null,
+    issues_deleted: issues && issues.meta ? issues.meta.changes : null
+  };
+}
+
 async function runBullpen(env, input) {
+  const startedMs = Date.now();
   await ensureSchema(env);
   const requestId = input.request_id || rid("daily_bullpen_req");
   const batchId = rid("daily_bullpen_batch");
   const sourceSnapshotAt = nowUtc();
   const retention = retentionWindowPt();
+
   await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_bullpen_availability_batches (batch_id, request_id, run_id, worker_name, worker_version, job_key, mode, status, window_start, window_end, started_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "daily_bullpen_availability_refresh_window", retention.start, retention.end, sourceSnapshotAt);
-  const prePrune = await pruneRetention(env, retention);
-  const operationalCurrentReplace = await replaceOperationalCurrentForWindow(env, retention);
-  const prepared = await getPreparedTeamRows(env, retention);
-  const gamePks = [...new Set(prepared.map(r => Number(r.official_game_pk)).filter(Boolean))];
-  const calendars = await getCalendar(env, gamePks);
-  const targets = makeTargets(prepared, calendars).filter(t => Number(t.prepared_board_pickable_rows || 0) > 0);
-  const teamIds = [...new Set(targets.map(t => Number(t.team_id)).filter(Boolean))];
-  const minDate = targets.length ? targets.map(t => addDays(t.official_date, -3)).sort()[0] : addDays(retention.start, -3);
-  const maxDate = targets.length ? targets.map(t => addDays(t.official_date, -1)).sort().slice(-1)[0] : retention.end;
-  const bullpenRows = await getBullpenRows(env, teamIds, minDate, maxDate);
-  const recentCalendarRows = await getRecentCalendarRows(env, teamIds, minDate, maxDate);
-  let currentWritten = 0, snapshotWritten = 0, issuesWritten = 0, pitcherWritten = 0;
-  const summaries = [];
-  for (const target of targets) {
-    const classified = classifyTarget(target, bullpenRows, recentCalendarRows);
-    const writes = await writeTarget(env, batchId, target, classified, sourceSnapshotAt);
-    const pitcherRows = await writePitchers(env, batchId, target, classified, sourceSnapshotAt);
-    currentWritten += writes.current_written;
-    snapshotWritten += writes.snapshot_written;
-    issuesWritten += writes.issues_written;
-    pitcherWritten += pitcherRows;
-    summaries.push({ game_pk: target.game_pk, team_id: target.team_id, team_name: target.team_name, status: classified.status, risk: classified.risk, score: classified.fatigueScore, pitches_last_1_day: classified.pitches1, pitches_last_2_days: classified.pitches2, relievers_last_3_days: classified.pitchers3, high_usage_relievers: classified.highUsage, back_to_back_relievers: classified.backToBack, likely_unavailable_relievers: classified.likelyUnavailable, issues: classified.issues.length });
+  await heartbeat(env, requestId, batchId, "batch_created", { window_start: retention.start, window_end: retention.end });
+
+  try {
+    // Critical root-cause fix: do not prune existing current rows before the new replacement is certified.
+    // The previous lifecycle deleted active today/tomorrow sidecars first, so a slow/killed child could leave DAILY_DB empty.
+    const prepared = await getPreparedTeamRows(env, retention);
+    await markBatch(env, batchId, { prepared_rows_read: prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0), certification_status: "DAILY_BULLPEN_STEP_PREPARED_READ" });
+    await heartbeat(env, requestId, batchId, "prepared_rows_read", { prepared_team_rows: prepared.length, prepared_rows_read: prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0) });
+    assertBudget(startedMs, "prepared_rows_read");
+
+    const gamePks = [...new Set(prepared.map(r => Number(r.official_game_pk)).filter(Boolean))];
+    const calendars = await getCalendar(env, gamePks);
+    await markBatch(env, batchId, { calendar_games_checked: calendars.length, prepared_games_checked: gamePks.length, certification_status: "DAILY_BULLPEN_STEP_CALENDAR_READ" });
+    await heartbeat(env, requestId, batchId, "calendar_read", { prepared_games_checked: gamePks.length, calendar_games_checked: calendars.length });
+    assertBudget(startedMs, "calendar_read");
+
+    const targets = makeTargets(prepared, calendars).filter(t => Number(t.prepared_board_pickable_rows || 0) > 0);
+    const teamIds = [...new Set(targets.map(t => Number(t.team_id)).filter(Boolean))];
+    await markBatch(env, batchId, { teams_checked: targets.length, certification_status: "DAILY_BULLPEN_STEP_TARGETS_BUILT" });
+    await heartbeat(env, requestId, batchId, "targets_built", { teams_checked: targets.length, unique_team_ids: teamIds.length });
+    assertBudget(startedMs, "targets_built");
+
+    const minDate = targets.length ? targets.map(t => addDays(t.official_date, -3)).sort()[0] : addDays(retention.start, -3);
+    const maxDate = targets.length ? targets.map(t => addDays(t.official_date, -1)).sort().slice(-1)[0] : retention.end;
+    const bullpenRows = await getBullpenRows(env, teamIds, minDate, maxDate);
+    await markBatch(env, batchId, { certification_status: "DAILY_BULLPEN_STEP_BULLPEN_HISTORY_READ" });
+    await heartbeat(env, requestId, batchId, "bullpen_history_read", { bullpen_history_rows: bullpenRows.length, recent_window_start: minDate, recent_window_end: maxDate });
+    assertBudget(startedMs, "bullpen_history_read");
+
+    const recentCalendarRows = await getRecentCalendarRows(env, teamIds, minDate, maxDate);
+    await markBatch(env, batchId, { certification_status: "DAILY_BULLPEN_STEP_RECENT_CALENDAR_READ" });
+    await heartbeat(env, requestId, batchId, "recent_calendar_read", { recent_calendar_rows: recentCalendarRows.length });
+    assertBudget(startedMs, "recent_calendar_read");
+
+    let currentWritten = 0, snapshotWritten = 0, issuesWritten = 0, pitcherWritten = 0;
+    const summaries = [];
+    for (let i = 0; i < targets.length; i += 1) {
+      const target = targets[i];
+      const classified = classifyTarget(target, bullpenRows, recentCalendarRows);
+      const writes = await writeTarget(env, batchId, target, classified, sourceSnapshotAt);
+      const pitcherRows = await writePitchers(env, batchId, target, classified, sourceSnapshotAt);
+      currentWritten += writes.current_written;
+      snapshotWritten += writes.snapshot_written;
+      issuesWritten += writes.issues_written;
+      pitcherWritten += pitcherRows;
+      summaries.push({ game_pk: target.game_pk, team_id: target.team_id, team_name: target.team_name, status: classified.status, risk: classified.risk, score: classified.fatigueScore, pitches_last_1_day: classified.pitches1, pitches_last_2_days: classified.pitches2, relievers_last_3_days: classified.pitchers3, high_usage_relievers: classified.highUsage, back_to_back_relievers: classified.backToBack, likely_unavailable_relievers: classified.likelyUnavailable, issues: classified.issues.length });
+      if (i === targets.length - 1 || (i + 1) % 4 === 0) {
+        await markBatch(env, batchId, { team_rows_written: currentWritten, pitcher_rows_written: pitcherWritten, snapshot_rows_written: snapshotWritten, certification_status: "DAILY_BULLPEN_STEP_WRITING_TARGETS" });
+        await heartbeat(env, requestId, batchId, "writing_targets", { target_index: i + 1, target_count: targets.length, team_rows_written: currentWritten, pitcher_rows_written: pitcherWritten, snapshot_rows_written: snapshotWritten });
+        assertBudget(startedMs, "writing_targets");
+      }
+    }
+
+    const postPrune = await pruneRetention(env, retention);
+    await heartbeat(env, requestId, batchId, "post_success_retention_prune", postPrune);
+    assertBudget(startedMs, "post_success_retention_prune");
+
+    const blockerCount = summaries.reduce((n, s) => n + (s.status === "blocked" ? 1 : 0), 0);
+    const warningCount = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_bullpen_availability_issues WHERE batch_id=? AND severity='warning'`, batchId);
+    const warningN = Number(warningCount && warningCount.c || 0);
+    const highRiskTeamCount = summaries.filter(s => ["high", "severe"].includes(s.risk)).length;
+    const unknownTeamCount = summaries.filter(s => ["unknown", "blocked"].includes(s.risk)).length;
+    const noPickableSlate = prepared.length === 0 || targets.length === 0;
+    const coverageOk = noPickableSlate || (currentWritten === targets.length && snapshotWritten === targets.length);
+    const dataOk = noPickableSlate || (coverageOk && blockerCount === 0);
+    const certification = noPickableSlate ? "DAILY_BULLPEN_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (dataOk ? (warningN ? "DAILY_BULLPEN_CERTIFIED_WITH_WARNINGS" : "DAILY_BULLPEN_CERTIFIED_READY") : "DAILY_BULLPEN_FAILED_BLOCKERS_OR_COVERAGE");
+    const grade = noPickableSlate ? "VALID_ZERO" : (dataOk ? (warningN ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL");
+    const status = dataOk ? "completed" : "failed_blockers_or_coverage";
+    const output = {
+      ok: dataOk,
+      data_ok: dataOk,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      request_id: requestId,
+      run_id: input.run_id || null,
+      batch_id: batchId,
+      status,
+      certification,
+      certification_grade: grade,
+      certification_reason: noPickableSlate ? "No prepared-board pickable_safe games exist for today/tomorrow retention window." : (dataOk ? "Every prepared-board relevant team received bullpen availability current and snapshot rows; warnings are sidecar issues." : "One or more prepared-board relevant teams had blockers or coverage gaps."),
+      window_start: retention.start,
+      window_end: retention.end,
+      calendar_games_checked: calendars.length,
+      prepared_games_checked: gamePks.length,
+      prepared_rows_read: prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0),
+      teams_checked: targets.length,
+      team_rows_written: currentWritten,
+      pitcher_rows_written: pitcherWritten,
+      snapshot_rows_written: snapshotWritten,
+      issues_written: issuesWritten,
+      source_failures: 0,
+      blocker_count: blockerCount,
+      warning_count: warningN,
+      high_risk_team_count: highRiskTeamCount,
+      unknown_team_count: unknownTeamCount,
+      team_summaries: summaries,
+      elapsed_ms: Date.now() - startedMs,
+      lifecycle_fix: "heartbeat_progress_plus_non_destructive_retention_prune_after_success",
+      retention_policy: "current_pitcher_snapshots_issues_today_tomorrow_only_batches_retained_for_audit",
+      retention_pre_prune: null,
+      retention_post_prune: postPrune,
+      sidecar_tables: ["daily_bullpen_availability_current", "daily_bullpen_pitcher_availability_current", "daily_bullpen_availability_snapshots", "daily_bullpen_availability_batches", "daily_bullpen_availability_issues"],
+      source_tables_read_only: ["TEAM_DB.bullpen_history", "TEAM_DB.mlb_game_calendar", "SCORE_DB.score_board_prepared_current"],
+      optional_tables_not_required: ["DAILY_DB.daily_starters_current", "DAILY_DB.daily_player_availability_current", "STATS_PITCHER_DB.pitcher_game_logs"],
+      no_external_calls: true,
+      external_calls_performed: 0,
+      no_score_db_mutation: true,
+      no_board_mutation: true,
+      no_calendar_rebuild: true,
+      no_daily_game_status_duplication: true,
+      no_daily_starters_duplication: true,
+      no_daily_lineups_duplication: true,
+      no_daily_player_availability_dependency: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
+      timestamp_utc: nowUtc()
+    };
+    await markBatch(env, batchId, { status, calendar_games_checked: calendars.length, prepared_games_checked: gamePks.length, prepared_rows_read: output.prepared_rows_read, teams_checked: targets.length, team_rows_written: currentWritten, pitcher_rows_written: pitcherWritten, snapshot_rows_written: snapshotWritten, source_failures: 0, blocker_count: blockerCount, warning_count: warningN, high_risk_team_count: highRiskTeamCount, unknown_team_count: unknownTeamCount, certification_status: certification, certification_grade: grade, certification_reason: output.certification_reason, output_json: safeJson(output, 14000), completed_at: nowUtc() });
+    await heartbeat(env, requestId, batchId, "completed", { certification, certification_grade: grade, data_ok: dataOk, elapsed_ms: output.elapsed_ms });
+    return output;
+  } catch (err) {
+    const cleanup = await cleanupBatchRows(env, batchId);
+    const message = String(err && err.stack ? err.stack : err).slice(0, 2200);
+    const certification = err && err.code === "DAILY_BULLPEN_SOFT_TIME_BUDGET_EXCEEDED" ? "DAILY_BULLPEN_FAILED_SOFT_TIME_BUDGET" : "DAILY_BULLPEN_FAILED_INTERNAL_EXCEPTION";
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      request_id: requestId,
+      run_id: input.run_id || null,
+      batch_id: batchId,
+      status: "failed_internal_exception_cleaned",
+      certification,
+      certification_grade: "FAILED",
+      certification_reason: "Daily Bullpen failed before certification; rows for this batch were cleaned and prior current rows were not pre-pruned.",
+      error: message,
+      failed_step: err && err.step ? err.step : null,
+      elapsed_ms: Date.now() - startedMs,
+      cleanup,
+      window_start: retention.start,
+      window_end: retention.end,
+      no_score_db_mutation: true,
+      no_board_mutation: true,
+      no_external_calls: true,
+      lifecycle_fix: "graceful_terminal_failure_instead_of_parent_stale_child_cleanup",
+      timestamp_utc: nowUtc()
+    };
+    await markBatch(env, batchId, { status: "failed", certification_status: certification, certification_grade: "FAILED", certification_reason: output.certification_reason, output_json: safeJson(output, 14000), completed_at: nowUtc() });
+    await heartbeat(env, requestId, batchId, "failed_cleaned", { certification, error_preview: message.slice(0, 500), cleanup });
+    return output;
   }
-  const postPrune = await pruneRetention(env, retention);
-  const blockerCount = summaries.reduce((n, s) => n + (s.status === "blocked" ? 1 : 0), 0);
-  const warningCount = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_bullpen_availability_issues WHERE batch_id=? AND severity='warning'`, batchId);
-  const warningN = Number(warningCount && warningCount.c || 0);
-  const highRiskTeamCount = summaries.filter(s => ["high", "severe"].includes(s.risk)).length;
-  const unknownTeamCount = summaries.filter(s => ["unknown", "blocked"].includes(s.risk)).length;
-  const noPickableSlate = prepared.length === 0 || targets.length === 0;
-  const coverageOk = noPickableSlate || (currentWritten === targets.length && snapshotWritten === targets.length);
-  const dataOk = noPickableSlate || (coverageOk && blockerCount === 0);
-  const certification = noPickableSlate ? "DAILY_BULLPEN_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (dataOk ? (warningN ? "DAILY_BULLPEN_CERTIFIED_WITH_WARNINGS" : "DAILY_BULLPEN_CERTIFIED_READY") : "DAILY_BULLPEN_FAILED_BLOCKERS_OR_COVERAGE");
-  const grade = noPickableSlate ? "VALID_ZERO" : (dataOk ? (warningN ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL");
-  const status = dataOk ? "completed" : "failed_blockers_or_coverage";
-  const output = {
-    ok: dataOk,
-    data_ok: dataOk,
-    version: VERSION,
-    worker_name: WORKER_NAME,
-    job_key: JOB_KEY,
-    request_id: requestId,
-    batch_id: batchId,
-    status,
-    certification,
-    certification_grade: grade,
-    certification_reason: noPickableSlate ? "No prepared-board pickable_safe games exist for today/tomorrow retention window." : (dataOk ? "Every prepared-board relevant team received bullpen availability current and snapshot rows; warnings are sidecar issues." : "One or more prepared-board relevant teams had blockers or coverage gaps."),
-    window_start: retention.start,
-    window_end: retention.end,
-    calendar_games_checked: calendars.length,
-    prepared_games_checked: gamePks.length,
-    prepared_rows_read: prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0),
-    teams_checked: targets.length,
-    team_rows_written: currentWritten,
-    pitcher_rows_written: pitcherWritten,
-    snapshot_rows_written: snapshotWritten,
-    issues_written: issuesWritten,
-    source_failures: 0,
-    blocker_count: blockerCount,
-    warning_count: warningN,
-    high_risk_team_count: highRiskTeamCount,
-    unknown_team_count: unknownTeamCount,
-    team_summaries: summaries,
-    retention_policy: "current_pitcher_snapshots_issues_today_tomorrow_only_batches_retained_for_audit",
-    retention_pre_prune: prePrune,
-    operational_current_replace: operationalCurrentReplace,
-    retention_post_prune: postPrune,
-    sidecar_tables: ["daily_bullpen_availability_current", "daily_bullpen_pitcher_availability_current", "daily_bullpen_availability_snapshots", "daily_bullpen_availability_batches", "daily_bullpen_availability_issues"],
-    source_tables_read_only: ["TEAM_DB.bullpen_history", "TEAM_DB.mlb_game_calendar", "SCORE_DB.score_board_prepared_current"],
-    optional_tables_not_required: ["DAILY_DB.daily_starters_current", "DAILY_DB.daily_player_availability_current", "STATS_PITCHER_DB.pitcher_game_logs"],
-    no_external_calls: true,
-    external_calls_performed: 0,
-    no_score_db_mutation: true,
-    no_board_mutation: true,
-    no_calendar_rebuild: true,
-    no_daily_game_status_duplication: true,
-    no_daily_starters_duplication: true,
-    no_daily_lineups_duplication: true,
-    no_daily_player_availability_dependency: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    timestamp_utc: nowUtc()
-  };
-  await run(env.DAILY_DB, `UPDATE daily_bullpen_availability_batches SET status=?, calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, teams_checked=?, team_rows_written=?, pitcher_rows_written=?, snapshot_rows_written=?, source_failures=?, blocker_count=?, warning_count=?, high_risk_team_count=?, unknown_team_count=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    status, calendars.length, gamePks.length, output.prepared_rows_read, targets.length, currentWritten, pitcherWritten, snapshotWritten, 0, blockerCount, warningN, highRiskTeamCount, unknownTeamCount, certification, grade, output.certification_reason, safeJson(output, 14000), nowUtc(), batchId);
-  return output;
 }
 
 export default {
