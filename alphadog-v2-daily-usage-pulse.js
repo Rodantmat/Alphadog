@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-usage-pulse";
-const VERSION = "alphadog-v2-daily-usage-pulse-v0.2.0-daily-umpire-context-official-source-probe-retention";
+const VERSION = "alphadog-v2-daily-usage-pulse-v0.2.1-bounded-heartbeat-non-destructive-retention";
 const JOB_KEY = "daily-umpire-context";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -92,6 +92,9 @@ function baseIdentity(env) {
       game_level_one_row_per_game_pk: true,
       current_snapshot_issue_retention_today_tomorrow_only: true,
       current_snapshot_issue_run_replacement_cleanup: true,
+      non_destructive_active_replacement: true,
+      bounded_source_fetch_timeout_ms: 2500,
+      per_game_heartbeat_progress: true,
       batches_retained_for_audit: true,
       missing_assignment_warning_only_v0_1: true,
       no_umpire_tendencies_without_proven_history: true,
@@ -240,16 +243,14 @@ async function pruneRetention(env, retention) {
   const currentOutside = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_current WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
   const snapshotsOutside = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_snapshots WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
   const issuesOutside = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_issues WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
-  const currentWindow = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_current WHERE official_date IN (?, ?)`, retention.start, retention.end);
-  const snapshotsWindow = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_snapshots WHERE official_date IN (?, ?)`, retention.start, retention.end);
-  const issuesWindow = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_issues WHERE official_date IN (?, ?)`, retention.start, retention.end);
   return {
     current_outside_deleted: currentOutside && currentOutside.meta ? currentOutside.meta.changes : null,
     snapshots_outside_deleted: snapshotsOutside && snapshotsOutside.meta ? snapshotsOutside.meta.changes : null,
     issues_outside_deleted: issuesOutside && issuesOutside.meta ? issuesOutside.meta.changes : null,
-    current_window_replaced: currentWindow && currentWindow.meta ? currentWindow.meta.changes : null,
-    snapshots_window_replaced: snapshotsWindow && snapshotsWindow.meta ? snapshotsWindow.meta.changes : null,
-    issues_window_replaced: issuesWindow && issuesWindow.meta ? issuesWindow.meta.changes : null,
+    current_window_replaced: 0,
+    snapshots_window_replaced: 0,
+    issues_window_replaced: 0,
+    non_destructive_window_replacement: true,
     retention_date_start: retention.start,
     retention_date_end: retention.end
   };
@@ -265,6 +266,35 @@ async function postPruneRetention(env, retention) {
     retention_date_start: retention.start,
     retention_date_end: retention.end
   };
+}
+async function finalizeWindowReplacement(env, retention, batchId) {
+  const current = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_current WHERE official_date IN (?, ?) AND (batch_id IS NULL OR batch_id <> ?)`, retention.start, retention.end, batchId);
+  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_snapshots WHERE official_date IN (?, ?) AND (batch_id IS NULL OR batch_id <> ?)`, retention.start, retention.end, batchId);
+  const issues = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_issues WHERE official_date IN (?, ?) AND (batch_id IS NULL OR batch_id <> ?)`, retention.start, retention.end, batchId);
+  return {
+    current_old_window_deleted_after_success: current && current.meta ? current.meta.changes : null,
+    snapshots_old_window_deleted_after_success: snapshots && snapshots.meta ? snapshots.meta.changes : null,
+    issues_old_window_deleted_after_success: issues && issues.meta ? issues.meta.changes : null,
+    replacement_batch_id: batchId
+  };
+}
+async function cleanupBatchSidecars(env, batchId) {
+  const current = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_current WHERE batch_id=?`, batchId);
+  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_snapshots WHERE batch_id=?`, batchId);
+  const issues = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_issues WHERE batch_id=?`, batchId);
+  return {
+    batch_id: batchId,
+    current_deleted: current && current.meta ? current.meta.changes : null,
+    snapshots_deleted: snapshots && snapshots.meta ? snapshots.meta.changes : null,
+    issues_deleted: issues && issues.meta ? issues.meta.changes : null
+  };
+}
+async function heartbeatUmpireBatch(env, batchId, fields = {}) {
+  await run(env.DAILY_DB, `UPDATE daily_umpire_context_batches SET calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, games_checked=?, game_rows_written=?, snapshot_rows_written=?, assignments_found=?, assignments_missing=?, assignments_pending=?, assignments_changed=?, source_failures=?, warning_count=?, unknown_umpire_count=?, external_calls=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    Number(fields.calendar_games_checked || 0), Number(fields.prepared_games_checked || 0), Number(fields.prepared_rows_read || 0), Number(fields.games_checked || 0), Number(fields.game_rows_written || 0), Number(fields.snapshot_rows_written || 0), Number(fields.assignments_found || 0), Number(fields.assignments_missing || 0), Number(fields.assignments_pending || 0), Number(fields.assignments_changed || 0), Number(fields.source_failures || 0), Number(fields.warning_count || 0), Number(fields.unknown_umpire_count || 0), Number(fields.external_calls || 0), batchId);
+}
+async function markUmpireBatchFailed(env, batchId, certification, reason, output) {
+  await run(env.DAILY_DB, `UPDATE daily_umpire_context_batches SET status='failed', certification_status=?, certification_grade='FAIL', certification_reason=?, output_json=?, completed_at=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, certification, reason, safeJson(output, 14000), nowUtc(), batchId);
 }
 async function getPreviousCurrent(env, retention) {
   const rows = await all(env.DAILY_DB, `SELECT official_date, game_pk, home_plate_umpire_id, home_plate_umpire_name FROM daily_umpire_context_current WHERE official_date IN (?, ?)`, retention.start, retention.end);
@@ -315,16 +345,22 @@ function makeTargets(preparedRows, calendars) {
   }
   return targets.filter(t => t.game_pk && t.official_date && Number(t.prepared_board_pickable_rows || 0) > 0);
 }
-async function fetchJson(url) {
+async function fetchJson(url, timeoutMs = 2500) {
   const started = Date.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("daily_umpire_source_timeout"), timeoutMs);
   try {
-    const resp = await fetch(url, { method: "GET", headers: { "accept": "application/json", "user-agent": "AlphaDog-v2 Daily Umpire Context" } });
+    const resp = await fetch(url, { method: "GET", headers: { "accept": "application/json", "user-agent": "AlphaDog-v2 Daily Umpire Context" }, signal: controller.signal });
     const text = await resp.text();
-    if (!resp.ok) return { ok: false, status: resp.status, url, elapsed_ms: Date.now() - started, error: `HTTP ${resp.status}`, text_preview: text.slice(0, 500) };
-    try { return { ok: true, status: resp.status, url, elapsed_ms: Date.now() - started, json: JSON.parse(text) }; }
-    catch (err) { return { ok: false, status: resp.status, url, elapsed_ms: Date.now() - started, error: "non_json_response", text_preview: text.slice(0, 500) }; }
+    if (!resp.ok) return { ok: false, status: resp.status, url, elapsed_ms: Date.now() - started, error: `HTTP ${resp.status}`, text_preview: text.slice(0, 500), bounded_timeout_ms: timeoutMs };
+    try { return { ok: true, status: resp.status, url, elapsed_ms: Date.now() - started, json: JSON.parse(text), bounded_timeout_ms: timeoutMs }; }
+    catch (err) { return { ok: false, status: resp.status, url, elapsed_ms: Date.now() - started, error: "non_json_response", text_preview: text.slice(0, 500), bounded_timeout_ms: timeoutMs }; }
   } catch (err) {
-    return { ok: false, status: null, url, elapsed_ms: Date.now() - started, error: String(err && err.message ? err.message : err) };
+    const message = String(err && err.message ? err.message : err);
+    const isAbort = (err && err.name === "AbortError") || message.toLowerCase().includes("abort") || (Date.now() - started) >= timeoutMs;
+    return { ok: false, status: null, url, elapsed_ms: Date.now() - started, error: isAbort ? "source_timeout" : message, bounded_timeout_ms: timeoutMs };
+  } finally {
+    clearTimeout(timer);
   }
 }
 function officialName(obj) {
@@ -497,100 +533,174 @@ async function runUmpireContext(env, input) {
   const batchId = rid("daily_umpire_batch");
   const sourceSnapshotAt = nowUtc();
   const retention = retentionWindowPt();
-  await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_umpire_context_batches (batch_id, request_id, run_id, worker_name, worker_version, job_key, mode, status, window_start, window_end, started_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "daily_umpire_context_refresh_window", retention.start, retention.end, sourceSnapshotAt);
-  const previous = await getPreviousCurrent(env, retention);
-  const prePrune = await pruneRetention(env, retention);
-  const prepared = await getPreparedGameRows(env, retention);
-  const gamePks = [...new Set(prepared.map(r => Number(r.official_game_pk)).filter(Boolean))];
-  const calendars = await getCalendar(env, gamePks);
-  const targets = makeTargets(prepared, calendars);
+  let batchStarted = false;
+  let prePrune = null;
+  let prepared = [];
+  let gamePks = [];
+  let calendars = [];
+  let targets = [];
   let currentWritten = 0, snapshotWritten = 0, issuesWritten = 0, assignmentsFound = 0, assignmentsMissing = 0, assignmentsPending = 0, assignmentsChanged = 0, sourceFailures = 0, unknownUmpireCount = 0, externalCalls = 0;
   const summaries = [];
-  for (const target of targets) {
-    const probe = await probeUmpireSource(target);
-    externalCalls += probe.calls ? probe.calls.length : 0;
-    sourceFailures += Number(probe.source_failures || 0);
-    const prev = previous.get(`${target.official_date}|${target.game_pk}`) || null;
-    const classified = classifyTarget(target, probe, prev);
-    const writes = await writeTarget(env, batchId, target, probe, classified, sourceSnapshotAt);
-    currentWritten += writes.current_written;
-    snapshotWritten += writes.snapshot_written;
-    issuesWritten += writes.issues_written;
-    if (probe.found) assignmentsFound += 1;
-    if (classified.missing) assignmentsMissing += 1;
-    if (classified.pending) assignmentsPending += 1;
-    if (classified.changed) assignmentsChanged += 1;
-    if (classified.unknown) unknownUmpireCount += 1;
-    summaries.push({ game_pk: target.game_pk, official_date: target.official_date, home: target.home_team_name, away: target.away_team_name, prepared_rows: target.prepared_board_pickable_rows, status: classified.status, confidence: classified.confidence, source_status: classified.sourceStatus, home_plate_umpire_id: probe.home_plate_umpire_id || null, home_plate_umpire_name: probe.home_plate_umpire_name || null, assignment_source_path: probe.path || null, issues: classified.issues.length });
+  const results = [];
+  try {
+    await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_umpire_context_batches (batch_id, request_id, run_id, worker_name, worker_version, job_key, mode, status, window_start, window_end, started_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "daily_umpire_context_refresh_window", retention.start, retention.end, sourceSnapshotAt);
+    batchStarted = true;
+    const previous = await getPreviousCurrent(env, retention);
+    prePrune = await pruneRetention(env, retention);
+    prepared = await getPreparedGameRows(env, retention);
+    gamePks = [...new Set(prepared.map(r => Number(r.official_game_pk)).filter(Boolean))];
+    calendars = await getCalendar(env, gamePks);
+    targets = makeTargets(prepared, calendars);
+    const preparedRowsRead = prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0);
+    await heartbeatUmpireBatch(env, batchId, { calendar_games_checked: calendars.length, prepared_games_checked: gamePks.length, prepared_rows_read: preparedRowsRead });
+
+    for (const target of targets) {
+      let probe;
+      try {
+        probe = await probeUmpireSource(target);
+      } catch (err) {
+        const errMsg = String(err && err.message ? err.message : err);
+        probe = {
+          found: false,
+          available_no_plate: false,
+          path: null,
+          officials_count: 0,
+          officials_sample: [],
+          source_key: "mlb_statsapi_probe_exception",
+          source_endpoint: `${MLB_LIVE_BASE}/${target.game_pk}/feed/live`,
+          calls: [{ source_key: "mlb_statsapi_probe_exception", ok: false, status: null, url: `${MLB_LIVE_BASE}/${target.game_pk}/feed/live`, elapsed_ms: 0, error: errMsg }],
+          source_failures: 1,
+          raw: { exception: errMsg }
+        };
+      }
+      externalCalls += probe.calls ? probe.calls.length : 0;
+      sourceFailures += Number(probe.source_failures || 0);
+      const prev = previous.get(`${target.official_date}|${target.game_pk}`) || null;
+      const classified = classifyTarget(target, probe, prev);
+      if (probe.found) assignmentsFound += 1;
+      if (classified.missing) assignmentsMissing += 1;
+      if (classified.pending) assignmentsPending += 1;
+      if (classified.changed) assignmentsChanged += 1;
+      if (classified.unknown) unknownUmpireCount += 1;
+      issuesWritten += classified.issues.length;
+      results.push({ target, probe, classified });
+      summaries.push({ game_pk: target.game_pk, official_date: target.official_date, home: target.home_team_name, away: target.away_team_name, prepared_rows: target.prepared_board_pickable_rows, status: classified.status, confidence: classified.confidence, source_status: classified.sourceStatus, home_plate_umpire_id: probe.home_plate_umpire_id || null, home_plate_umpire_name: probe.home_plate_umpire_name || null, assignment_source_path: probe.path || null, issues: classified.issues.length, calls: probe.calls ? probe.calls.map(c => ({ source_key: c.source_key, ok: c.ok, status: c.status, elapsed_ms: c.elapsed_ms, error: c.error || null })) : [] });
+      await heartbeatUmpireBatch(env, batchId, { calendar_games_checked: calendars.length, prepared_games_checked: gamePks.length, prepared_rows_read: preparedRowsRead, games_checked: results.length, game_rows_written: 0, snapshot_rows_written: 0, assignments_found: assignmentsFound, assignments_missing: assignmentsMissing, assignments_pending: assignmentsPending, assignments_changed: assignmentsChanged, source_failures: sourceFailures, warning_count: issuesWritten, unknown_umpire_count: unknownUmpireCount, external_calls: externalCalls });
+    }
+
+    for (const result of results) {
+      const writes = await writeTarget(env, batchId, result.target, result.probe, result.classified, sourceSnapshotAt);
+      currentWritten += writes.current_written;
+      snapshotWritten += writes.snapshot_written;
+      await heartbeatUmpireBatch(env, batchId, { calendar_games_checked: calendars.length, prepared_games_checked: gamePks.length, prepared_rows_read: preparedRowsRead, games_checked: targets.length, game_rows_written: currentWritten, snapshot_rows_written: snapshotWritten, assignments_found: assignmentsFound, assignments_missing: assignmentsMissing, assignments_pending: assignmentsPending, assignments_changed: assignmentsChanged, source_failures: sourceFailures, warning_count: issuesWritten, unknown_umpire_count: unknownUmpireCount, external_calls: externalCalls });
+    }
+
+    const replacementCleanup = await finalizeWindowReplacement(env, retention, batchId);
+    const postPrune = await postPruneRetention(env, retention);
+    const warningRow = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_umpire_context_issues WHERE batch_id=? AND severity='warning'`, batchId);
+    const blockerRow = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_umpire_context_issues WHERE batch_id=? AND severity='blocker'`, batchId);
+    const warningN = Number(warningRow && warningRow.c || 0);
+    const blockerN = Number(blockerRow && blockerRow.c || 0);
+    const noPickableSlate = prepared.length === 0 || targets.length === 0;
+    const coverageOk = noPickableSlate || (currentWritten === targets.length && snapshotWritten === targets.length);
+    const dataOk = noPickableSlate || (coverageOk && blockerN === 0);
+    const certification = noPickableSlate ? "DAILY_UMPIRE_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (dataOk ? (warningN ? "DAILY_UMPIRE_CERTIFIED_WITH_WARNINGS" : "DAILY_UMPIRE_CERTIFIED_READY") : "DAILY_UMPIRE_FAILED_BLOCKERS_OR_COVERAGE");
+    const grade = noPickableSlate ? "VALID_ZERO" : (dataOk ? (warningN ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL");
+    const status = dataOk ? "completed" : "failed_blockers_or_coverage";
+    const output = {
+      ok: dataOk,
+      data_ok: dataOk,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      request_id: requestId,
+      batch_id: batchId,
+      status,
+      certification,
+      certification_grade: grade,
+      certification_reason: noPickableSlate ? "No prepared-board pickable_safe games exist for today/tomorrow retention window." : (dataOk ? "Every prepared-board relevant game received an umpire context current and snapshot row; missing/pending assignments are warning-only in v0.1." : "One or more prepared-board relevant games had coverage gaps or blockers."),
+      window_start: retention.start,
+      window_end: retention.end,
+      calendar_games_checked: calendars.length,
+      prepared_games_checked: gamePks.length,
+      prepared_rows_read: preparedRowsRead,
+      games_checked: targets.length,
+      game_rows_written: currentWritten,
+      rows_written: currentWritten,
+      snapshot_rows_written: snapshotWritten,
+      issues_written: warningN + blockerN,
+      assignments_found: assignmentsFound,
+      assignments_missing: assignmentsMissing,
+      assignments_pending: assignmentsPending,
+      assignments_changed: assignmentsChanged,
+      source_failures: sourceFailures,
+      blocker_count: blockerN,
+      warning_count: warningN,
+      unknown_umpire_count: unknownUmpireCount,
+      external_calls: externalCalls,
+      external_calls_performed: externalCalls,
+      game_summaries: summaries,
+      retention_policy: "non_destructive_probe_then_atomic_window_replacement_today_tomorrow_batches_retained_for_audit",
+      retention_pre_prune: prePrune,
+      successful_window_replacement_cleanup: replacementCleanup,
+      retention_post_prune: postPrune,
+      source_fetch_timeout_ms: 2500,
+      sidecar_tables: ["daily_umpire_context_current", "daily_umpire_context_snapshots", "daily_umpire_context_batches", "daily_umpire_context_issues"],
+      source_tables_read_only: ["TEAM_DB.mlb_game_calendar", "SCORE_DB.score_board_prepared_current"],
+      source_endpoints_probed: ["MLB StatsAPI live feed", "MLB StatsAPI boxscore"],
+      no_score_db_mutation: true,
+      no_board_mutation: true,
+      no_calendar_rebuild: true,
+      no_daily_game_status_duplication: true,
+      no_daily_starters_duplication: true,
+      no_daily_lineups_duplication: true,
+      no_daily_player_availability_duplication: true,
+      no_daily_weather_duplication: true,
+      no_daily_bullpen_duplication: true,
+      no_daily_team_schedule_spot_duplication: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
+      timestamp_utc: nowUtc()
+    };
+    await run(env.DAILY_DB, `UPDATE daily_umpire_context_batches SET status=?, calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, games_checked=?, game_rows_written=?, snapshot_rows_written=?, assignments_found=?, assignments_missing=?, assignments_pending=?, assignments_changed=?, source_failures=?, blocker_count=?, warning_count=?, unknown_umpire_count=?, external_calls=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+      status, calendars.length, gamePks.length, preparedRowsRead, targets.length, currentWritten, snapshotWritten, assignmentsFound, assignmentsMissing, assignmentsPending, assignmentsChanged, sourceFailures, blockerN, warningN, unknownUmpireCount, externalCalls, certification, grade, output.certification_reason, safeJson(output, 14000), nowUtc(), batchId);
+    return output;
+  } catch (err) {
+    const errorText = String(err && err.stack ? err.stack : err);
+    let cleanup = null;
+    if (batchStarted) cleanup = await cleanupBatchSidecars(env, batchId);
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      request_id: requestId,
+      batch_id: batchId,
+      status: "failed_exception_terminal",
+      certification: "DAILY_UMPIRE_FAILED_EXCEPTION_TERMINAL_CLEANED",
+      certification_grade: "FAIL",
+      certification_reason: "Daily Umpire failed inside bounded worker lifecycle; partial sidecars for this batch were cleaned and a terminal response was returned.",
+      error: errorText,
+      cleanup,
+      window_start: retention.start,
+      window_end: retention.end,
+      calendar_games_checked: calendars.length,
+      prepared_games_checked: gamePks.length,
+      prepared_rows_read: prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0),
+      games_checked: results.length,
+      game_rows_written: 0,
+      snapshot_rows_written: 0,
+      source_fetch_timeout_ms: 2500,
+      timestamp_utc: nowUtc(),
+      no_score_db_mutation: true,
+      no_board_mutation: true,
+      no_scoring: true
+    };
+    if (batchStarted) await markUmpireBatchFailed(env, batchId, output.certification, output.certification_reason, output);
+    return output;
   }
-  const postPrune = await postPruneRetention(env, retention);
-  const warningRow = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_umpire_context_issues WHERE batch_id=? AND severity='warning'`, batchId);
-  const blockerRow = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_umpire_context_issues WHERE batch_id=? AND severity='blocker'`, batchId);
-  const warningN = Number(warningRow && warningRow.c || 0);
-  const blockerN = Number(blockerRow && blockerRow.c || 0);
-  const noPickableSlate = prepared.length === 0 || targets.length === 0;
-  const coverageOk = noPickableSlate || (currentWritten === targets.length && snapshotWritten === targets.length);
-  const dataOk = noPickableSlate || (coverageOk && blockerN === 0);
-  const certification = noPickableSlate ? "DAILY_UMPIRE_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (dataOk ? (warningN ? "DAILY_UMPIRE_CERTIFIED_WITH_WARNINGS" : "DAILY_UMPIRE_CERTIFIED_READY") : "DAILY_UMPIRE_FAILED_BLOCKERS_OR_COVERAGE");
-  const grade = noPickableSlate ? "VALID_ZERO" : (dataOk ? (warningN ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL");
-  const status = dataOk ? "completed" : "failed_blockers_or_coverage";
-  const output = {
-    ok: dataOk,
-    data_ok: dataOk,
-    version: VERSION,
-    worker_name: WORKER_NAME,
-    job_key: JOB_KEY,
-    request_id: requestId,
-    batch_id: batchId,
-    status,
-    certification,
-    certification_grade: grade,
-    certification_reason: noPickableSlate ? "No prepared-board pickable_safe games exist for today/tomorrow retention window." : (dataOk ? "Every prepared-board relevant game received an umpire context current and snapshot row; missing/pending assignments are warning-only in v0.1." : "One or more prepared-board relevant games had coverage gaps or blockers."),
-    window_start: retention.start,
-    window_end: retention.end,
-    calendar_games_checked: calendars.length,
-    prepared_games_checked: gamePks.length,
-    prepared_rows_read: prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0),
-    games_checked: targets.length,
-    game_rows_written: currentWritten,
-    rows_written: currentWritten,
-    snapshot_rows_written: snapshotWritten,
-    issues_written: issuesWritten,
-    assignments_found: assignmentsFound,
-    assignments_missing: assignmentsMissing,
-    assignments_pending: assignmentsPending,
-    assignments_changed: assignmentsChanged,
-    source_failures: sourceFailures,
-    blocker_count: blockerN,
-    warning_count: warningN,
-    unknown_umpire_count: unknownUmpireCount,
-    external_calls: externalCalls,
-    external_calls_performed: externalCalls,
-    game_summaries: summaries,
-    retention_policy: "current_snapshots_issues_today_tomorrow_only_batches_retained_for_audit",
-    retention_pre_prune: prePrune,
-    retention_post_prune: postPrune,
-    sidecar_tables: ["daily_umpire_context_current", "daily_umpire_context_snapshots", "daily_umpire_context_batches", "daily_umpire_context_issues"],
-    source_tables_read_only: ["TEAM_DB.mlb_game_calendar", "SCORE_DB.score_board_prepared_current"],
-    source_endpoints_probed: ["MLB StatsAPI live feed", "MLB StatsAPI boxscore"],
-    no_score_db_mutation: true,
-    no_board_mutation: true,
-    no_calendar_rebuild: true,
-    no_daily_game_status_duplication: true,
-    no_daily_starters_duplication: true,
-    no_daily_lineups_duplication: true,
-    no_daily_player_availability_duplication: true,
-    no_daily_weather_duplication: true,
-    no_daily_bullpen_duplication: true,
-    no_daily_team_schedule_spot_duplication: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    timestamp_utc: nowUtc()
-  };
-  await run(env.DAILY_DB, `UPDATE daily_umpire_context_batches SET status=?, calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, games_checked=?, game_rows_written=?, snapshot_rows_written=?, assignments_found=?, assignments_missing=?, assignments_pending=?, assignments_changed=?, source_failures=?, blocker_count=?, warning_count=?, unknown_umpire_count=?, external_calls=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    status, calendars.length, gamePks.length, output.prepared_rows_read, targets.length, currentWritten, snapshotWritten, assignmentsFound, assignmentsMissing, assignmentsPending, assignmentsChanged, sourceFailures, blockerN, warningN, unknownUmpireCount, externalCalls, certification, grade, output.certification_reason, safeJson(output, 14000), nowUtc(), batchId);
-  return output;
 }
 
 export default {
