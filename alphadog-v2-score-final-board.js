@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.1-review-tier-calibration";
+const VERSION = "alphadog-v2-score-final-board-v0.1.2-primary-cluster-cap-leveling";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_B";
 
@@ -337,6 +337,72 @@ function annotateCorrelation(rows) {
   return rows;
 }
 
+function appendCalibrationAdjustment(row, adjustment) {
+  let payload = {};
+  try { payload = row.calibration_json ? JSON.parse(row.calibration_json) : {}; } catch (_) { payload = {}; }
+  if (!Array.isArray(payload.score_adjustments)) payload.score_adjustments = [];
+  payload.score_adjustments.push(adjustment);
+  payload.primary_cluster_cap = {
+    enabled: true,
+    max_primary_rows_per_player: 2,
+    action: adjustment && adjustment.key === "primary_cluster_cap_demoted_to_review" ? "demoted_to_review" : "kept_primary"
+  };
+  row.calibration_json = safeJson(payload);
+  return row;
+}
+
+function applyPrimaryClusterCap(primaryRows, reviewRows, maxPerPlayer = 2) {
+  const sortedPrimary = [...primaryRows].sort((a, b) =>
+    (num(b.score_0_100) - num(a.score_0_100)) ||
+    (num(b.confidence_0_100) - num(a.confidence_0_100)) ||
+    (num(b.score_sort_0_100) - num(a.score_sort_0_100)) ||
+    String(a.player_name || "").localeCompare(String(b.player_name || "")) ||
+    String(a.canonical_prop_key || "").localeCompare(String(b.canonical_prop_key || "")) ||
+    String(a.matrix_id || "").localeCompare(String(b.matrix_id || ""))
+  );
+
+  const playerCounts = new Map();
+  const keptPrimary = [];
+  const demotedToReview = [];
+
+  for (const row of sortedPrimary) {
+    const playerKey = String(row.mlb_player_id || row.player_name || "UNKNOWN_PLAYER");
+    const nextCount = (playerCounts.get(playerKey) || 0) + 1;
+    playerCounts.set(playerKey, nextCount);
+
+    if (nextCount <= maxPerPlayer) {
+      appendCalibrationAdjustment(row, { key: "primary_cluster_cap_kept_primary", player_primary_rank: nextCount, max_primary_rows_per_player: maxPerPlayer, delta: 0 });
+      keptPrimary.push(row);
+    } else {
+      row.board_tier = "REVIEW";
+      row.live_playable = 0;
+      row.review_playable = 1;
+      appendCalibrationAdjustment(row, { key: "primary_cluster_cap_demoted_to_review", player_primary_rank: nextCount, max_primary_rows_per_player: maxPerPlayer, delta: 0, note: "Demoted from PRIMARY to REVIEW to keep PRIMARY from over-indexing on one player narrative." });
+      demotedToReview.push(row);
+    }
+  }
+
+  const combinedReview = [...reviewRows, ...demotedToReview].sort((a, b) =>
+    (num(b.score_0_100) - num(a.score_0_100)) ||
+    (num(b.confidence_0_100) - num(a.confidence_0_100)) ||
+    (num(b.score_sort_0_100) - num(a.score_sort_0_100)) ||
+    String(a.player_name || "").localeCompare(String(b.player_name || "")) ||
+    String(a.canonical_prop_key || "").localeCompare(String(b.canonical_prop_key || "")) ||
+    String(a.matrix_id || "").localeCompare(String(b.matrix_id || ""))
+  );
+
+  return {
+    primaryRows: keptPrimary,
+    reviewRows: combinedReview,
+    demotedRows: demotedToReview,
+    primaryRowsBeforeClusterCap: sortedPrimary.length,
+    primaryRowsAfterClusterCap: keptPrimary.length,
+    reviewRowsBeforeClusterCap: reviewRows.length,
+    reviewRowsAfterClusterCap: combinedReview.length,
+    maxPrimaryRowsPerPlayer: maxPerPlayer
+  };
+}
+
 async function insertBoardRow(env, table, id, batchId, simBatchId, rank, row) {
   await run(env.SCORE_DB, `
     INSERT OR REPLACE INTO ${table} (
@@ -462,8 +528,9 @@ async function generateFinalBoard(env, input) {
     .map(r => applyCalibration(r, "REVIEW"))
     .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 76 && Number(r.confidence_0_100) >= 55);
 
-  primaryRows.sort((a, b) => (num(b.score_0_100) - num(a.score_0_100)) || (num(b.confidence_0_100) - num(a.confidence_0_100)) || (num(b.score_sort_0_100) - num(a.score_sort_0_100)) || String(a.player_name || "").localeCompare(String(b.player_name || "")) || String(a.canonical_prop_key || "").localeCompare(String(b.canonical_prop_key || "")) || String(a.matrix_id || "").localeCompare(String(b.matrix_id || "")));
-  reviewRows.sort((a, b) => (num(b.score_0_100) - num(a.score_0_100)) || (num(b.confidence_0_100) - num(a.confidence_0_100)) || (num(b.score_sort_0_100) - num(a.score_sort_0_100)) || String(a.player_name || "").localeCompare(String(b.player_name || "")) || String(a.canonical_prop_key || "").localeCompare(String(b.canonical_prop_key || "")) || String(a.matrix_id || "").localeCompare(String(b.matrix_id || "")));
+  const clusterCapResult = applyPrimaryClusterCap(primaryRows, reviewRows, 2);
+  primaryRows = clusterCapResult.primaryRows;
+  reviewRows = clusterCapResult.reviewRows;
 
   const rows = annotateCorrelation([...primaryRows, ...reviewRows]);
 
@@ -524,7 +591,9 @@ async function generateFinalBoard(env, input) {
         OR board_tier NOT IN ('PRIMARY','REVIEW')
         OR review_playable NOT IN (0,1)
         OR (board_tier = 'PRIMARY' AND live_playable <> 1)
+        OR (board_tier = 'PRIMARY' AND review_playable <> 0)
         OR (board_tier = 'REVIEW' AND review_playable <> 1)
+        OR (board_tier = 'REVIEW' AND live_playable <> 0)
       )
   `, batchId);
   const finalBadRows = Number(finalBad && finalBad.bad_rows || 0);
@@ -535,14 +604,32 @@ async function generateFinalBoard(env, input) {
     return output;
   }
 
+  const primaryClusterCheck = await first(env.SCORE_DB, `
+    SELECT MAX(player_rows) AS max_primary_rows_per_player
+    FROM (
+      SELECT mlb_player_id, COUNT(*) AS player_rows
+      FROM score_final_board_current
+      WHERE final_board_batch_id = ?
+        AND board_tier = 'PRIMARY'
+      GROUP BY mlb_player_id
+    )
+  `, batchId);
+  const maxPrimaryRowsPerPlayer = Number(primaryClusterCheck && primaryClusterCheck.max_primary_rows_per_player || 0);
+  if (maxPrimaryRowsPerPlayer > 2) {
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"blocked_primary_cluster_cap_failure", certification:"SCORE_FINAL_BOARD_BLOCKED_PRIMARY_CLUSTER_CAP_FAILURE", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId, max_primary_rows_per_player:maxPrimaryRowsPerPlayer };
+    await writeIssue(env, batchId, simBatchId, "PRIMARY_CLUSTER_CAP_FAILURE", "BLOCKER", maxPrimaryRowsPerPlayer, output);
+    await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
+    return output;
+  }
+
   const output = {
     ok: true,
     data_ok: true,
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "completed_final_board_current_replaced_with_review_tier",
-    certification: "SCORE_FINAL_BOARD_CERTIFIED_CURRENT_REPLACED_WITH_REVIEW_WARNINGS",
+    status: "completed_final_board_current_replaced_with_cluster_leveling",
+    certification: "SCORE_FINAL_BOARD_CERTIFIED_CURRENT_REPLACED_WITH_CLUSTER_LEVELING",
     certification_grade: "PASS_WITH_REVIEW_WARNINGS",
     final_board_batch_id: batchId,
     source_simulation_batch_id: simBatchId,
@@ -551,8 +638,13 @@ async function generateFinalBoard(env, input) {
     matrix_rows_read: Number(sim.matrix_rows_read || 0),
     primary_raw_rows_read: primaryRaw.length,
     review_raw_rows_read: reviewRaw.length,
+    primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap,
+    primary_cluster_cap_max_per_player: clusterCapResult.maxPrimaryRowsPerPlayer,
+    primary_cluster_cap_demoted_rows: clusterCapResult.demotedRows.length,
+    review_rows_before_cluster_cap: clusterCapResult.reviewRowsBeforeClusterCap,
     primary_rows_written: primaryRows.length,
     review_rows_written: reviewRows.length,
+    review_rows_after_cluster_cap: clusterCapResult.reviewRowsAfterClusterCap,
     live_rows_read: primaryRaw.length,
     final_rows_written: rows.length,
     current_rows_written: rows.length,
@@ -563,6 +655,8 @@ async function generateFinalBoard(env, input) {
     no_source_board_mutation: true,
     no_simulation_shadow_mutation: true,
     calibration_active: true,
+    primary_cluster_cap_active: true,
+    max_primary_rows_per_player: maxPrimaryRowsPerPlayer,
     by_tier_source: byTierSource,
     by_source_prop_side: bySourcePropSide,
     elapsed_ms: Date.now() - started,
@@ -571,6 +665,7 @@ async function generateFinalBoard(env, input) {
 
   await writeIssue(env, batchId, simBatchId, "LIVE_INVARIANT_FAILURE", "INFO", 0, { note: "No live row invariant failures detected before final board write." });
   await writeIssue(env, batchId, simBatchId, "REVIEW_TIER_INCLUDED", "WARNING", reviewRows.length, { note: "Review tier rows are intentionally included as safe soft rows. They are not strict PRIMARY rows.", review_rows_written: reviewRows.length });
+  await writeIssue(env, batchId, simBatchId, "PRIMARY_CLUSTER_CAP_APPLIED", clusterCapResult.demotedRows.length ? "WARNING" : "INFO", clusterCapResult.demotedRows.length, { note: "PRIMARY is capped at two rows per player; overflow rows are demoted to REVIEW, not deleted.", max_primary_rows_per_player: clusterCapResult.maxPrimaryRowsPerPlayer, primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap, primary_rows_after_cluster_cap: clusterCapResult.primaryRowsAfterClusterCap, demoted_rows: clusterCapResult.demotedRows.length });
   await run(env.SCORE_DB, `
     UPDATE score_final_board_batches
     SET status=?, certification=?, certification_grade=?, matrix_rows_read=?, live_rows_read=?, final_rows_written=?, current_rows_written=?, finished_at=CURRENT_TIMESTAMP, output_json=?
@@ -581,7 +676,7 @@ async function generateFinalBoard(env, input) {
 }
 
 function baseIdentity() {
-  return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"READY", timestamp_utc:nowUtc(), purpose:"Generate SCORE_DB.score_final_board_current from latest completed STRICT_B scoring simulation with PRIMARY and calibrated REVIEW tiers." };
+  return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"READY", timestamp_utc:nowUtc(), purpose:"Generate SCORE_DB.score_final_board_current from latest completed STRICT_B scoring simulation with PRIMARY cluster-cap leveling and calibrated REVIEW tier." };
 }
 
 export default {
