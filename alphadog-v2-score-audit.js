@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.3.3-bounded-multirow-finalizer";
+const VERSION = "alphadog-v2-scoring-engine-v0.3.4-json-batch-finalizer";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -441,7 +441,7 @@ function sqlCaseFromMap(expression, map, fallback) {
 
 function simulationFormulaMetadata() {
   return {
-    formula_key: "SCORING_SIMULATION_V0_3_2_STABLE_V031_SINGLE_ROW_INSERT_PRESERVE_GOOD_SHADOW",
+    formula_key: "SCORING_SIMULATION_V0_3_4_JSON_BATCH_FINALIZER",
     worker_version: VERSION,
     simulation_only: true,
     active_values_source: "SCORE_DB.scoring_engine_simulation_profile_configs.config_json",
@@ -848,7 +848,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     no_true_hit_probability_claims: 1,
     score_sort_policy: 'score_sort_0_100_only; positive_micro_lt_0_0001; never used for archive/live/bins',
     goblin_demon_less_score_policy: 'NULL_NOT_ZERO',
-    d1_memory_policy: 'no_large_scoring_cte; bounded_js_chunk_compute_and_single_row_inserts_to_stay_under_D1_bind_limit'
+    d1_memory_policy: 'no_large_scoring_cte; bounded_js_chunk_compute_and_json_each_batch_inserts_one_bind_per_batch'
   });
 
   return [
@@ -911,6 +911,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
 
 async function insertShadowRows(env, valueRows) {
   if (!valueRows.length) return 0;
+  const jsonRows = JSON.stringify(valueRows);
   const columns = `
       simulation_row_id, simulation_batch_id, profile_key, profile_version,
       matrix_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc,
@@ -923,9 +924,16 @@ async function insertShadowRows(env, valueRows) {
       confidence_0_100, confidence_status, live_playable, model_deferred, model_deferred_reason,
       score_sort_0_100, score_integer_0_100,
       created_at, updated_at`;
-  const one = `(${new Array(54).fill('?').join(', ')}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`;
-  const sql = `INSERT INTO scoring_engine_simulation_shadow (${columns}) VALUES ${valueRows.map(() => one).join(', ')}`;
-  await run(env.SCORE_DB, sql, ...valueRows.flat());
+  const selects = Array.from({ length: 54 }, (_, i) => `json_extract(value, '$[${i}]')`).join(',\n      ');
+  const sql = `
+    INSERT INTO scoring_engine_simulation_shadow (${columns})
+    SELECT
+      ${selects},
+      CURRENT_TIMESTAMP,
+      CURRENT_TIMESTAMP
+    FROM json_each(?)
+  `;
+  await run(env.SCORE_DB, sql, jsonRows);
   return valueRows.length;
 }
 
@@ -933,7 +941,7 @@ async function insertSimulationProfile(env, batchId, profileKey) {
   const p = await profileConstants(env, profileKey);
   const readChunkSize = 75;
   // 54 bound vars per shadow row. D1/SQLite var ceiling is near 999, so 15 rows = 810 vars.
-  const writeBatchSize = 15;
+  const writeBatchSize = 10;
   let cursorMatrixId = null;
   let insertedRows = 0;
   let processedChunks = 0;
@@ -1194,7 +1202,7 @@ async function runScoringSimulation(env, input) {
 
   let cleanupStats = { shadow_rows_deleted: 0, issue_rows_deleted: 0 };
   try {
-    // v0.3.2: do not delete the prior good shadow before the new simulation proves it can write.
+    // v0.3.4: do not delete the prior good shadow before the new simulation proves it can write.
     // New simulation row IDs include batchId, so this run can build beside the previous shadow safely.
 
     if (matrixRows <= 0) {
@@ -1235,8 +1243,8 @@ async function runScoringSimulation(env, input) {
   cleanupStats = await cleanupOldSimulationScratchTablesAfterSuccess(env, batchId, 500, 1000);
 
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_V0_3_3_BOUNDED_MULTIROW_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_3_BOUNDED_MULTIROW_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_3_BOUNDED_MULTIROW_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_3_4_JSON_BATCH_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_4_JSON_BATCH_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_4_JSON_BATCH_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
   const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
 
@@ -1251,8 +1259,8 @@ async function runScoringSimulation(env, input) {
     profile_under_review: "STRICT_B",
     comparison_profile: "HYBRID_CONTROL",
     chunked_d1_memory_mode: true,
-    simulation_chunk_size: 75,
-    simulation_write_batch_size: 15,
+    simulation_chunk_size: 80,
+    simulation_write_batch_size: 10,
     profile_completion_guard: {
       expected_rows_per_profile: matrixRows,
       strict_b: strictProfileCompleteness,
@@ -1280,7 +1288,7 @@ async function runScoringSimulation(env, input) {
     selected_side_policy: "Two-sided selected_side is chosen from raw pre-cap side scores using DB-configured raw_side_delta_threshold; Goblin/Demon are more_only and Less remains NULL.",
     notes: [
       "Simulation writes only to SCORE_DB.scoring_engine_simulation_shadow and related simulation audit tables.",
-      "v0.3.3 keeps the uploaded v0.3.1/v0.3.2 formula logic, writes bounded 15-row multirow batches under D1 SQL variable limits, and finalizes only after DB row counts prove both profiles equal prop_matrix_current.",
+      "v0.3.4 keeps the uploaded v0.3.1/v0.3.2 formula logic, writes bounded JSON batches through json_each with one SQL bind per batch, and finalizes only after DB row counts prove both profiles equal prop_matrix_current.",
       "score_0_100 and confidence_0_100 are separated; live_playable requires score/confidence gates and never uses score_sort_0_100.",
       "score_sort_0_100 is deterministic sort-only micro-adjustment and never controls archive/live/bin thresholds.",
       "Strict-B is the primary safety profile; Hybrid-Control is comparison only and is not production-approved.",
