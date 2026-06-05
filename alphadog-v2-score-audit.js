@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.2.6-fresh-shadow-dynamic-deferred-guard";
+const VERSION = "alphadog-v2-scoring-engine-v0.2.7-fresh-shadow-issues-dynamic-deferred-chunk-guard";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -838,7 +838,7 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
 }
 
 async function insertSimulationProfile(env, batchId, profileKey) {
-  const chunkSize = 200;
+  const chunkSize = 50;
   let cursorMatrixId = null;
   let insertedRows = 0;
   let processedChunks = 0;
@@ -899,6 +899,51 @@ async function summarizeSimulationProfile(env, batchId, profileKey) {
 }
 
 
+function d1Changes(res) {
+  const raw = res && res.meta && Number.isFinite(Number(res.meta.changes)) ? Number(res.meta.changes) : null;
+  return raw === null ? 0 : Math.max(0, Math.trunc(raw));
+}
+
+async function deleteByPrimaryKeyChunks(db, tableName, primaryKeyColumn, chunkSize = 1000, maxLoops = 1000) {
+  let totalDeleted = 0;
+  let loops = 0;
+  while (loops < maxLoops) {
+    const safeLimit = Math.max(1, Math.min(1000, Math.trunc(Number(chunkSize) || 1000)));
+    const res = await run(db, `
+      DELETE FROM ${tableName}
+      WHERE ${primaryKeyColumn} IN (
+        SELECT ${primaryKeyColumn}
+        FROM ${tableName}
+        LIMIT ${safeLimit}
+      )
+    `);
+    const deleted = d1Changes(res);
+    totalDeleted += deleted;
+    loops += 1;
+    if (deleted < safeLimit) break;
+  }
+  if (loops >= maxLoops) throw new Error(`chunked_cleanup_guard_exceeded:${tableName}`);
+  return totalDeleted;
+}
+
+async function refreshSimulationScratchTables(env) {
+  const shadowRowsDeleted = await deleteByPrimaryKeyChunks(env.SCORE_DB, 'scoring_engine_simulation_shadow', 'simulation_row_id', 1000, 1000);
+  const issueRowsDeleted = await deleteByPrimaryKeyChunks(env.SCORE_DB, 'scoring_engine_simulation_issues', 'issue_id', 1000, 1000);
+  return { shadow_rows_deleted: shadowRowsDeleted, issue_rows_deleted: issueRowsDeleted };
+}
+
+async function expectedModelDeferredRows(env) {
+  const row = await first(env.SCORE_DB, `
+    SELECT COUNT(*) AS rows
+    FROM prop_matrix_current
+    WHERE matrix_status = 'matrix_deferred'
+       OR (source_key = 'sleeper' AND canonical_prop_key = 'rfi_nrfi')
+       OR (source_key = 'prizepicks' AND canonical_prop_key = 'triples')
+  `);
+  return Number(row && row.rows ? row.rows : 0);
+}
+
+
 async function failStaleRunningSimulationBatches(env) {
   // v0.2.5: repair stale batch records left by D1 object reset/timeouts before creating a new simulation batch.
   await run(env.SCORE_DB, `
@@ -922,7 +967,10 @@ async function failStaleRunningSimulationBatches(env) {
   `, VERSION);
 }
 
-async function recordSimulationInvariants(env, batchId, profileKey, summary, expectedModelDeferredRows) {
+async function recordSimulationInvariants(env, batchId, profileKey, summary, expectedDeferredRows) {
+  const expectedDeferred = Number(expectedDeferredRows || 0);
+  const actualDeferred = Number(summary.model_deferred_rows || 0);
+  const deferredMismatch = actualDeferred !== expectedDeferred;
   const checks = [
     ["BLOCKED_OR_DEFERRED_SCORE_LEAK", summary.blocked_or_deferred_score_leak, "BLOCKER", "Hard-blocked or model-deferred rows must not receive score, selected_side, archive_eligible, or live_playable."],
     ["SELECTED_SIDE_WITHOUT_SCORE", summary.selected_side_without_score, "BLOCKER", "No selected_side may exist without score_0_100."],
@@ -936,7 +984,7 @@ async function recordSimulationInvariants(env, batchId, profileKey, summary, exp
     ["PRIZEPICKS_TRIPLES_NOT_DEFERRED", summary.prizepicks_triples_not_deferred, "BLOCKER", "PrizePicks triples inventory must route to model_deferred_low_event_prop."],
     ["SCORE_SORT_MICRO_OUT_OF_BOUNDS", summary.score_sort_micro_out_of_bounds, "BLOCKER", "score_sort_0_100 micro adjustment must stay below 0.0001 from score_integer_0_100."],
     ["SCORE_SORT_INTEGER_BOUNDARY_CROSS", summary.score_sort_integer_boundary_cross, "BLOCKER", "score_sort_0_100 must never cross an integer boundary."],
-    ["MODEL_DEFERRED_COUNT_MISMATCH", summary.model_deferred_rows !== expectedModelDeferredRows ? summary.model_deferred_rows : 0, "BLOCKER", `Expected model_deferred rows to match current prop_matrix_current matrix_deferred count (${expectedModelDeferredRows}).`],
+    ["MODEL_DEFERRED_COUNT_MISMATCH", deferredMismatch ? actualDeferred : 0, "BLOCKER", `Expected model_deferred rows to equal current matrix deferred rows. expected=${expectedDeferred}; actual=${actualDeferred}.`],
     ["TRUE_MICRO_TIE_REVIEW", summary.true_micro_tie_null_side, "WARNING", "True raw side ties should be very rare and require deterministic tie-breaker review if present."]
   ];
   for (const [key, count, severity, note] of checks) {
@@ -966,8 +1014,6 @@ async function runScoringSimulation(env, input) {
   const started = Date.now();
   const matrixCountRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM prop_matrix_current`);
   const matrixRows = Number(matrixCountRow && matrixCountRow.rows ? matrixCountRow.rows : 0);
-  const expectedDeferredRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM prop_matrix_current WHERE matrix_status = 'matrix_deferred'`);
-  const expectedModelDeferredRows = Number(expectedDeferredRow && expectedDeferredRow.rows ? expectedDeferredRow.rows : 0);
 
   await run(env.SCORE_DB, `
     INSERT INTO scoring_engine_simulation_batches (
@@ -977,11 +1023,12 @@ async function runScoringSimulation(env, input) {
     ) VALUES (?, ?, 'scoring-engine-simulation', 'running', 'SCORING_SIMULATION_STARTED', 'RUNNING', ?, 0, 0, 0, 0, ?, ?, CURRENT_TIMESTAMP)
   `, batchId, VERSION, matrixRows, JSON.stringify(simulationFormulaMetadata()), JSON.stringify(DEFAULT_SIM_CONFIGS));
 
-  // v0.2.6: scoring simulation is a fresh review surface. Do not retain stale shadow/issue rows between reruns.
-  await run(env.SCORE_DB, `DELETE FROM scoring_engine_simulation_shadow`);
-  await run(env.SCORE_DB, `DELETE FROM scoring_engine_simulation_issues`);
+  let cleanupStats = { shadow_rows_deleted: 0, issue_rows_deleted: 0 };
+  try {
+    // v0.2.7: simulation scratch tables are full-refresh only. No stale shadow/issues survive a rerun.
+    cleanupStats = await refreshSimulationScratchTables(env);
 
-  if (matrixRows <= 0) {
+    if (matrixRows <= 0) {
     const output = baseIdentity({
       request_id: requestId,
       chain_id: chainId,
@@ -998,12 +1045,13 @@ async function runScoringSimulation(env, input) {
     return output;
   }
 
+  const expectedDeferred = await expectedModelDeferredRows(env);
   const strictRows = await insertSimulationProfile(env, batchId, "STRICT_B");
   const hybridRows = await insertSimulationProfile(env, batchId, "HYBRID_CONTROL");
   const strictSummary = await summarizeSimulationProfile(env, batchId, "STRICT_B");
   const hybridSummary = await summarizeSimulationProfile(env, batchId, "HYBRID_CONTROL");
-  await recordSimulationInvariants(env, batchId, "STRICT_B", strictSummary, expectedModelDeferredRows);
-  await recordSimulationInvariants(env, batchId, "HYBRID_CONTROL", hybridSummary, expectedModelDeferredRows);
+  await recordSimulationInvariants(env, batchId, "STRICT_B", strictSummary, expectedDeferred);
+  await recordSimulationInvariants(env, batchId, "HYBRID_CONTROL", hybridSummary, expectedDeferred);
 
   const strictBlockersRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_simulation_issues WHERE simulation_batch_id=? AND profile_key='STRICT_B' AND severity='BLOCKER' AND issue_count > 0`, batchId);
   const strictWarningsRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_simulation_issues WHERE simulation_batch_id=? AND profile_key='STRICT_B' AND severity='WARNING' AND issue_count > 0`, batchId);
@@ -1014,8 +1062,8 @@ async function runScoringSimulation(env, input) {
   const simulationRowsWritten = strictRows + hybridRows;
 
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_V0_2_6_DB_CONFIG_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_2_6_DB_CONFIG_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_2_6_DB_CONFIG_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_2_7_DB_CONFIG_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_2_7_DB_CONFIG_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_2_7_DB_CONFIG_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
   const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
 
@@ -1030,9 +1078,10 @@ async function runScoringSimulation(env, input) {
     profile_under_review: "STRICT_B",
     comparison_profile: "HYBRID_CONTROL",
     chunked_d1_memory_mode: true,
-    simulation_chunk_size: 200,
+    simulation_chunk_size: 50,
+    fresh_shadow_issue_cleanup: cleanupStats,
+    expected_model_deferred_rows_per_profile: expectedDeferred,
     matrix_rows_read: matrixRows,
-    expected_model_deferred_rows: expectedModelDeferredRows,
     simulation_rows_written: simulationRowsWritten,
     strict_b_rows_written: strictRows,
     hybrid_control_rows_written: hybridRows,
@@ -1052,7 +1101,7 @@ async function runScoringSimulation(env, input) {
     selected_side_policy: "Two-sided selected_side is chosen from raw pre-cap side scores using DB-configured raw_side_delta_threshold; Goblin/Demon are more_only and Less remains NULL.",
     notes: [
       "Simulation writes only to SCORE_DB.scoring_engine_simulation_shadow and related simulation audit tables.",
-      "v0.2.5 keeps chunked D1 inserts, DB-stored tunable variables, pre-cap side selection, and fixes score_sort_0_100 so its deterministic micro adjustment never crosses the integer boundary.",
+      "v0.2.7 full-refreshes simulation shadow/issues with bounded chunk cleanup, uses dynamic model-deferred expectations from prop_matrix_current, and keeps D1-safe chunked inserts.",
       "score_0_100 and confidence_0_100 are separated; live_playable requires score/confidence gates and never uses score_sort_0_100.",
       "score_sort_0_100 is deterministic sort-only micro-adjustment and never controls archive/live/bin thresholds.",
       "Strict-B is the primary safety profile; Hybrid-Control is comparison only and is not production-approved.",
@@ -1068,6 +1117,32 @@ async function runScoringSimulation(env, input) {
   `, status, certification, certificationGrade, simulationRowsWritten, strictRows, hybridRows, JSON.stringify(output), batchId);
 
   return output;
+  } catch (err) {
+    const errorMessage = String(err && err.message ? err.message : err);
+    const output = baseIdentity({
+      ok: false,
+      data_ok: false,
+      request_id: requestId,
+      chain_id: chainId,
+      simulation_batch_id: batchId,
+      status: "scoring_engine_exception",
+      certification: "SCORING_ENGINE_EXCEPTION",
+      certification_grade: "FAILED",
+      matrix_rows_read: matrixRows,
+      simulation_rows_written: 0,
+      fresh_shadow_issue_cleanup: cleanupStats,
+      error: errorMessage,
+      external_calls_performed: 0,
+      no_ranking: true,
+      no_final_board: true
+    });
+    await run(env.SCORE_DB, `
+      UPDATE scoring_engine_simulation_batches
+      SET status='failed_runtime_exception', certification='SCORING_ENGINE_EXCEPTION', certification_grade='FAILED', finished_at=CURRENT_TIMESTAMP, output_json=?
+      WHERE simulation_batch_id=?
+    `, JSON.stringify(output), batchId);
+    return output;
+  }
 }
 
 async function runScoringEngine(env, input) {
