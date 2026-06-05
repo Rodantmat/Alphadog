@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.11-calendar-tally-gap-scoped-refresh";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.12-pt-past-date-only-refresh";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
@@ -20,6 +20,18 @@ const EXPECTED_SECRETS = ["MLB_API_USER_AGENT"];
 
 function nowUtc() { return new Date().toISOString(); }
 function todayUtc() { return new Date().toISOString().slice(0, 10); }
+function dateOnlyForTimeZone(date = new Date(), timeZone = "America/Los_Angeles") {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date).reduce((acc, part) => {
+    if (part.type !== "literal") acc[part.type] = part.value;
+    return acc;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
 function asInt(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? Math.trunc(n) : fallback; }
 function safeJson(v) { try { return JSON.stringify(v ?? null); } catch (_) { return JSON.stringify({ stringify_error: true }); } }
@@ -1086,9 +1098,22 @@ function scheduleDateOfGame(game, fallbackDate = null) {
 }
 async function fetchLatestCompleteGameDate(env, startDate) {
   const start = dateOnlyUtc(startDate) || todayUtc();
+  const currentOfficialDatePt = dateOnlyForTimeZone(new Date(), "America/Los_Angeles");
+  const maxPastOfficialDatePt = addDays(currentOfficialDatePt, -1);
   const today = todayUtc();
+  if (start > maxPastOfficialDatePt) {
+    return {
+      ok: false,
+      endpoint: null,
+      error: "NO_PAST_COMPLETE_OFFICIAL_DATE_IN_RANGE",
+      today_utc: today,
+      current_official_date_pt: currentOfficialDatePt,
+      max_past_official_date_pt: maxPastOfficialDatePt,
+      same_day_partial_refresh_blocked_v0_5_12: true
+    };
+  }
   const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "");
-  const endpoint = `${base}/schedule?sportId=1&gameTypes=R&startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(today)}`;
+  const endpoint = `${base}/schedule?sportId=1&gameTypes=R&startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(maxPastOfficialDatePt)}`;
   try {
     const fetched = await fetchTextWithTimeout(endpoint, { method: "GET", headers: { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-base-pitcher-splits") } }, FETCH_TIMEOUT_MS);
     if (!fetched.ok || !fetched.resp || !fetched.resp.ok) return { ok: false, endpoint, error: fetched.error || `HTTP_${fetched.resp && fetched.resp.status}`, today_utc: today };
@@ -1112,11 +1137,11 @@ async function fetchLatestCompleteGameDate(env, startDate) {
         else if (isNonDataScheduleGame(game)) nonDataGames++;
         else unfinishedDataGames++;
       }
-      dateAudits.push({ date: dateStr, regular_games: regularGames.length, final_games: finalGames.length, non_data_games: nonDataGames, unfinished_data_games: unfinishedDataGames, final_date_discovery_v0_5_7: true });
-      // Mirror the proven granular final-game workers: a date is actionable when
-      // it has completed regular-season games. Postponed/canceled rows are non-data
-      // rows, and incomplete games must not erase completed final-game evidence.
-      if (finalGames.length && (!latest || dateStr > latest)) latest = dateStr;
+      dateAudits.push({ date: dateStr, regular_games: regularGames.length, final_games: finalGames.length, non_data_games: nonDataGames, unfinished_data_games: unfinishedDataGames, final_date_discovery_v0_5_7: true, same_day_partial_refresh_blocked_v0_5_12: true, current_official_date_pt: currentOfficialDatePt, max_past_official_date_pt: maxPastOfficialDatePt });
+      // v0.5.12: Pitcher Splits is a snapshot-style daily refresh. It must not
+      // advance to the current PT official date just because early/day games have
+      // already gone final. Only fully past official dates are eligible.
+      if (finalGames.length && unfinishedDataGames === 0 && dateStr < currentOfficialDatePt && (!latest || dateStr > latest)) latest = dateStr;
     }
     if (!latest) return { ok: false, endpoint, error: "NO_COMPLETE_FINAL_MLB_GAME_DATE_IN_RANGE", today_utc: today, date_audits: dateAudits.slice(-5) };
     return { ok: true, endpoint, latest_complete_game_date: latest, today_utc: today, date_audits: dateAudits.slice(-5) };

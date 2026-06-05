@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.2.4-past-date-forced-gap-contract";
+const VERSION = "alphadog-v2-delta-certifier-v0.2.5-final-gap-rebuild-before-read";
 const JOB_KEY = "delta-certifier";
 
 const ACTIVE_COVERAGE_LAYER_KEYS = [
@@ -1349,6 +1349,10 @@ async function handleFullRunGapContractCheck(input, env) {
 
   await ensureCoverageTables(env);
 
+  // v0.2.5: Final full-run gate must rebuild the coverage matrix from current live tables
+  // before reading blockers. Otherwise old precheck rows can survive after children have mined/promoted.
+  const coverageRebuild = await rebuildCoverage(env, batchId, requestId, startDate, endDate);
+
   const currentOfficialDate = dateOnlyForTimeZone(new Date(), "America/Los_Angeles");
   const forcedPastGapUpdate = await run(env.TEAM_DB, `
     UPDATE mlb_game_data_coverage
@@ -1396,8 +1400,21 @@ async function handleFullRunGapContractCheck(input, env) {
     full_run_fast_gap_contract_v0_2_3: true,
     full_run_fast_gap_contract_v0_2_4_past_date_guard: true,
     full_run_gap_contract: true,
+    full_run_gap_contract_rebuild_before_read_v0_2_5: true,
     calendar_tally_stage: calendarTallyStage || null,
     require_zero_blocking_gaps: requireZeroBlockingGaps,
+    coverage_rebuild_before_final_read: {
+      coverage_rows_written: coverageRebuild.coverageRows,
+      blocking_gap_count_after_rebuild: coverageRebuild.blockingGaps,
+      expected_coverage_rows: coverageRebuild.expected_coverage_rows,
+      actual_coverage_rows: coverageRebuild.actual_coverage_rows,
+      latest_batch_coverage_rows: coverageRebuild.latest_batch_coverage_rows,
+      stale_coverage_owner_rows: coverageRebuild.stale_coverage_owner_rows,
+      coverage_ownership_clean: coverageRebuild.coverage_ownership_clean,
+      open_gap_rows_before_resolution: coverageRebuild.open_gap_rows_before_resolution,
+      stale_gap_rows_resolved: coverageRebuild.stale_gap_rows_resolved,
+      open_gap_rows_after_resolution: coverageRebuild.open_gap_rows_after_resolution
+    },
     status,
     certification,
     certification_grade: grade,
@@ -1417,14 +1434,14 @@ async function handleFullRunGapContractCheck(input, env) {
     coverage_checked: true,
     coverage_rows_written: coverageRows,
     active_layer_count: Number(coverageSummary?.layers || activeCoverageLayerKeys().length),
-    expected_coverage_rows: coverageRows,
-    actual_coverage_rows: coverageRows,
-    latest_batch_coverage_rows: coverageRows,
-    stale_coverage_owner_rows: 0,
-    coverage_rows_with_null_batch: 0,
-    coverage_rows_with_null_checked_at: 0,
-    coverage_rows_with_null_status_grade: 0,
-    coverage_ownership_clean: !ownershipFailed,
+    expected_coverage_rows: coverageRebuild.expected_coverage_rows,
+    actual_coverage_rows: coverageRebuild.actual_coverage_rows,
+    latest_batch_coverage_rows: coverageRebuild.latest_batch_coverage_rows,
+    stale_coverage_owner_rows: coverageRebuild.stale_coverage_owner_rows,
+    coverage_rows_with_null_batch: coverageRebuild.coverage_rows_with_null_batch,
+    coverage_rows_with_null_checked_at: coverageRebuild.coverage_rows_with_null_checked_at,
+    coverage_rows_with_null_status_grade: coverageRebuild.coverage_rows_with_null_status_grade,
+    coverage_ownership_clean: coverageRebuild.coverage_ownership_clean && !ownershipFailed,
     layer_keys_checked: activeCoverageLayerKeys(),
     layer_coverage_summary: layerSummary,
     missing_game_layer_count: missingGameLayerCount,
@@ -1449,7 +1466,7 @@ async function handleFullRunGapContractCheck(input, env) {
     no_board_mutation: true,
     no_daily_context_mutation: true,
     rows_read: coverageRows,
-    rows_written: coverageRows,
+    rows_written: Number(coverageRebuild.coverageRows || 0) + coverageRows,
     external_calls_performed: 0,
     finished_at: nowUtc()
   };
