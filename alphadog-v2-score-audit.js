@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.2.8-hardblock-side-invariant-guard";
+const VERSION = "alphadog-v2-scoring-engine-v0.2.9-dynamic-side-score-spread-calibration";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -441,7 +441,7 @@ function sqlCaseFromMap(expression, map, fallback) {
 
 function simulationFormulaMetadata() {
   return {
-    formula_key: "SCORING_SIMULATION_V0_2_5_DB_CONFIG_SCORE_SORT_BOUNDARY_FIX",
+    formula_key: "SCORING_SIMULATION_V0_2_9_DYNAMIC_SIDE_SCORE_SPREAD_CALIBRATION",
     worker_version: VERSION,
     simulation_only: true,
     active_values_source: "SCORE_DB.scoring_engine_simulation_profile_configs.config_json",
@@ -454,7 +454,8 @@ function simulationFormulaMetadata() {
     no_ranking: true,
     execution_order: [
       "inventory_defer_gate",
-      "raw_more_raw_less_generation_from_db_config",
+      "independent_raw_more_raw_less_generation_from_db_config",
+      "price_line_prop_side_pressure",
       "goblin_demon_more_only_sanitization",
       "pre_cap_side_selection_raw_delta",
       "selected_side_score_penalties_from_db_config",
@@ -469,9 +470,9 @@ function simulationFormulaMetadata() {
 
 const DEFAULT_SIM_CONFIGS = {
   HYBRID_CONTROL: {
-    profile_version: "0.2.4-control-db-config",
+    profile_version: "0.2.9-control-dynamic-side-spread",
     config: {
-      min_live_score: 70,
+      min_live_score: 76,
       min_live_confidence: 55,
       archive_score_threshold: 70,
       grade_archive_min: 70,
@@ -481,8 +482,11 @@ const DEFAULT_SIM_CONFIGS = {
       raw_side_delta_threshold: 0.50,
       base_raw_packet_ready: 82,
       base_raw_packet_partial: 76,
-      raw_less_delta_from_more: 1,
+      raw_less_delta_from_more: 0,
       max_score_cap: 100,
+      price_pressure_scale: 0.16,
+      line_pressure_scale: 1.00,
+      deterministic_spread_scale: 0.45,
       base_confidence: 100,
       score_sort_micro_scale: 0.0001,
       clean_bonus_score: 0,
@@ -490,7 +494,8 @@ const DEFAULT_SIM_CONFIGS = {
       daily_raw_adjustments: { ready_with_warnings: 0, partial_enrichment: -5, default: 1 },
       source_raw_adjustments: { sleeper: -1, default: 0 },
       odds_raw_adjustments: { goblin: -4, demon: -4, default: 0 },
-      prop_raw_adjustments: { pitcher_strikeouts: 3, hits: 2, total_bases: -2, hits_runs_rbis: -2, home_runs: -4, stolen_bases: -4, earned_runs_allowed: -3, hits_allowed: -3, pitcher_outs: -1, pitching_outs: -1, default: 0 },
+      prop_raw_adjustments: { pitcher_strikeouts: 3, hits: 2, total_bases: -2, hits_runs_rbis: -2, home_runs: -4, stolen_bases: -4, earned_runs: 2, earned_runs_allowed: 2, hits_allowed: 1, pitcher_outs: 2, pitching_outs: 2, walks: -1, walks_allowed: 1, rbis: -1, runs: -1, doubles: -2, singles: 0, fantasy: -2, default: 0 },
+      prop_less_raw_adjustments: { pitcher_strikeouts: -1, hits: 0, total_bases: 2, hits_runs_rbis: 2, home_runs: 3, stolen_bases: 3, earned_runs: -1, earned_runs_allowed: -1, hits_allowed: -1, pitcher_outs: -1, pitching_outs: -1, walks: 1, walks_allowed: -1, rbis: 2, runs: 1, doubles: 2, singles: 1, fantasy: 1, default: 0 },
       score_penalty_market_not_found: 4,
       score_penalty_market_missing: 6,
       score_penalty_complete_market_blindness: 10,
@@ -510,9 +515,9 @@ const DEFAULT_SIM_CONFIGS = {
     }
   },
   STRICT_B: {
-    profile_version: "0.2.4-strict-b-db-config",
+    profile_version: "0.2.9-strict-b-dynamic-side-spread",
     config: {
-      min_live_score: 70,
+      min_live_score: 76,
       min_live_confidence: 55,
       archive_score_threshold: 70,
       grade_archive_min: 70,
@@ -522,8 +527,11 @@ const DEFAULT_SIM_CONFIGS = {
       raw_side_delta_threshold: 0.50,
       base_raw_packet_ready: 82,
       base_raw_packet_partial: 76,
-      raw_less_delta_from_more: 1,
+      raw_less_delta_from_more: 0,
       max_score_cap: 100,
+      price_pressure_scale: 0.16,
+      line_pressure_scale: 1.00,
+      deterministic_spread_scale: 0.45,
       base_confidence: 100,
       score_sort_micro_scale: 0.0001,
       clean_bonus_score: 0,
@@ -531,7 +539,8 @@ const DEFAULT_SIM_CONFIGS = {
       daily_raw_adjustments: { ready_with_warnings: 0, partial_enrichment: -5, default: 1 },
       source_raw_adjustments: { sleeper: -1, default: 0 },
       odds_raw_adjustments: { goblin: -4, demon: -4, default: 0 },
-      prop_raw_adjustments: { pitcher_strikeouts: 3, hits: 2, total_bases: -2, hits_runs_rbis: -2, home_runs: -4, stolen_bases: -4, earned_runs_allowed: -3, hits_allowed: -3, pitcher_outs: -1, pitching_outs: -1, default: 0 },
+      prop_raw_adjustments: { pitcher_strikeouts: 3, hits: 2, total_bases: -2, hits_runs_rbis: -2, home_runs: -4, stolen_bases: -4, earned_runs: 2, earned_runs_allowed: 2, hits_allowed: 1, pitcher_outs: 2, pitching_outs: 2, walks: -1, walks_allowed: 1, rbis: -1, runs: -1, doubles: -2, singles: 0, fantasy: -2, default: 0 },
+      prop_less_raw_adjustments: { pitcher_strikeouts: -1, hits: 0, total_bases: 2, hits_runs_rbis: 2, home_runs: 3, stolen_bases: 3, earned_runs: -1, earned_runs_allowed: -1, hits_allowed: -1, pitcher_outs: -1, pitching_outs: -1, walks: 1, walks_allowed: -1, rbis: 2, runs: 1, doubles: 2, singles: 1, fantasy: 1, default: 0 },
       score_penalty_market_not_found: 8,
       score_penalty_market_missing: 10,
       score_penalty_complete_market_blindness: 14,
@@ -556,10 +565,19 @@ async function ensureSimulationProfileConfigs(env) {
   const metadata = simulationFormulaMetadata();
   for (const [profileKey, spec] of Object.entries(DEFAULT_SIM_CONFIGS)) {
     await run(env.SCORE_DB, `
-      INSERT OR IGNORE INTO scoring_engine_simulation_profile_configs (
+      INSERT INTO scoring_engine_simulation_profile_configs (
         profile_key, profile_version, profile_status, config_json, formula_metadata_json,
         thresholds_locked, scoring_enabled, true_probability_enabled, created_at, updated_at
       ) VALUES (?, ?, 'active_simulation_only', ?, ?, 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ON CONFLICT(profile_key) DO UPDATE SET
+        profile_version=excluded.profile_version,
+        profile_status='active_simulation_only',
+        config_json=excluded.config_json,
+        formula_metadata_json=excluded.formula_metadata_json,
+        thresholds_locked=0,
+        scoring_enabled=0,
+        true_probability_enabled=0,
+        updated_at=CURRENT_TIMESTAMP
     `, profileKey, spec.profile_version, JSON.stringify(spec.config), JSON.stringify(metadata));
   }
 }
@@ -617,7 +635,11 @@ async function profileConstants(env, profileKey) {
     confidencePenaltySleeperNullOdds: finiteNumber(cfg.confidence_penalty_sleeper_null_odds, 5),
     confidencePenaltyWarning68: finiteNumber(cfg.confidence_penalty_warning_6_8, 8),
     confidencePenaltyWarning35: finiteNumber(cfg.confidence_penalty_warning_3_5, 4),
-    confidencePenaltyWarning9Plus: finiteNumber(cfg.confidence_penalty_warning_9_plus, 20)
+    confidencePenaltyWarning9Plus: finiteNumber(cfg.confidence_penalty_warning_9_plus, 20),
+    pricePressureScale: finiteNumber(cfg.price_pressure_scale, 0.16),
+    linePressureScale: finiteNumber(cfg.line_pressure_scale, 1.0),
+    deterministicSpreadScale: finiteNumber(cfg.deterministic_spread_scale, 0.45),
+    propLessRawCase: sqlCaseFromMap("m.canonical_prop_key", cfg.prop_less_raw_adjustments, 0)
   };
 }
 
@@ -646,6 +668,16 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
         json_extract(m.matrix_payload_json, '$.prepared.payout_variant') AS v_payout_variant,
         json_extract(m.matrix_payload_json, '$.side_context.side_mode') AS v_side_mode,
         json_extract(m.matrix_payload_json, '$.side_context.available_sides') AS v_available_sides_json,
+        COALESCE(
+          CAST(json_extract(m.details_json, '$.side_variation.source_prices.over_price') AS REAL),
+          CAST(json_extract(m.matrix_payload_json, '$.side_context.source_prices.over_price') AS REAL),
+          CAST(json_extract(m.matrix_payload_json, '$.variation_context.source_prices.over_price') AS REAL)
+        ) AS v_over_price,
+        COALESCE(
+          CAST(json_extract(m.details_json, '$.side_variation.source_prices.under_price') AS REAL),
+          CAST(json_extract(m.matrix_payload_json, '$.side_context.source_prices.under_price') AS REAL),
+          CAST(json_extract(m.matrix_payload_json, '$.variation_context.source_prices.under_price') AS REAL)
+        ) AS v_under_price,
         CASE
           WHEN m.source_key = 'sleeper' AND m.canonical_prop_key = 'rfi_nrfi' THEN 1
           WHEN m.source_key = 'prizepicks' AND m.canonical_prop_key = 'triples' THEN 1
@@ -671,8 +703,31 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
           + ${p.marketRawCase}
           + ${p.dailyRawCase}
           + ${p.sourceRawCase}
-          + ${p.propRawCase}
-          + ${p.oddsRawCase} AS raw_more_pre
+          + ${p.oddsRawCase} AS raw_base_pre,
+        ${p.propRawCase} AS prop_more_adjustment_calc,
+        ${p.propLessRawCase} AS prop_less_adjustment_calc,
+        CASE
+          WHEN m.canonical_prop_key IN ('hits','singles') AND COALESCE(m.board_line_value,0) <= 0.5 THEN 1.25
+          WHEN m.canonical_prop_key IN ('hits','singles') AND COALESCE(m.board_line_value,0) >= 1.5 THEN -1.25
+          WHEN m.canonical_prop_key IN ('total_bases','hits_runs_rbis','rbis','runs') AND COALESCE(m.board_line_value,0) <= 1.5 THEN 0.75
+          WHEN m.canonical_prop_key IN ('total_bases','hits_runs_rbis','rbis','runs') AND COALESCE(m.board_line_value,0) >= 2.5 THEN -1.50
+          WHEN m.canonical_prop_key IN ('pitcher_strikeouts') AND COALESCE(m.board_line_value,0) <= 3.5 THEN 1.25
+          WHEN m.canonical_prop_key IN ('pitcher_strikeouts') AND COALESCE(m.board_line_value,0) >= 6.5 THEN -1.50
+          WHEN m.canonical_prop_key IN ('pitcher_outs','pitching_outs') AND COALESCE(m.board_line_value,0) <= 14.5 THEN 1.25
+          WHEN m.canonical_prop_key IN ('pitcher_outs','pitching_outs') AND COALESCE(m.board_line_value,0) >= 18.5 THEN -1.50
+          ELSE 0
+        END AS line_more_pressure_calc,
+        CASE
+          WHEN m.canonical_prop_key IN ('hits','singles') AND COALESCE(m.board_line_value,0) <= 0.5 THEN -0.75
+          WHEN m.canonical_prop_key IN ('hits','singles') AND COALESCE(m.board_line_value,0) >= 1.5 THEN 1.25
+          WHEN m.canonical_prop_key IN ('total_bases','hits_runs_rbis','rbis','runs') AND COALESCE(m.board_line_value,0) <= 1.5 THEN -0.50
+          WHEN m.canonical_prop_key IN ('total_bases','hits_runs_rbis','rbis','runs') AND COALESCE(m.board_line_value,0) >= 2.5 THEN 1.50
+          WHEN m.canonical_prop_key IN ('pitcher_strikeouts') AND COALESCE(m.board_line_value,0) <= 3.5 THEN -1.00
+          WHEN m.canonical_prop_key IN ('pitcher_strikeouts') AND COALESCE(m.board_line_value,0) >= 6.5 THEN 1.50
+          WHEN m.canonical_prop_key IN ('pitcher_outs','pitching_outs') AND COALESCE(m.board_line_value,0) <= 14.5 THEN -1.00
+          WHEN m.canonical_prop_key IN ('pitcher_outs','pitching_outs') AND COALESCE(m.board_line_value,0) >= 18.5 THEN 1.50
+          ELSE 0
+        END AS line_less_pressure_calc
       FROM prop_matrix_current m
       WHERE (? IS NULL OR m.matrix_id > ?)
       ORDER BY m.matrix_id
@@ -680,8 +735,20 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
     ), rawed AS (
       SELECT
         base.*,
-        MAX(0, MIN(100, raw_more_pre)) AS raw_more_score_calc,
-        CASE WHEN v_side_mode = 'two_sided' THEN MAX(0, MIN(100, raw_more_pre - ${p.rawLessDeltaFromMore})) ELSE NULL END AS raw_less_score_calc
+        CASE
+          WHEN v_over_price IS NULL THEN 0
+          WHEN v_over_price < 0 THEN ((ABS(v_over_price) * 100.0 / (ABS(v_over_price) + 100.0)) - 50.0) * ${p.pricePressureScale}
+          ELSE ((100.0 / (v_over_price + 100.0)) - 0.50) * 100.0 * ${p.pricePressureScale}
+        END AS price_more_pressure_calc,
+        CASE
+          WHEN v_under_price IS NULL THEN 0
+          WHEN v_under_price < 0 THEN ((ABS(v_under_price) * 100.0 / (ABS(v_under_price) + 100.0)) - 50.0) * ${p.pricePressureScale}
+          ELSE ((100.0 / (v_under_price + 100.0)) - 0.50) * 100.0 * ${p.pricePressureScale}
+        END AS price_less_pressure_calc,
+        (((ABS(COALESCE(mlb_player_id,0) * 31 + COALESCE(game_pk,0) * 17 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 13) % 11) - 5) * ${p.deterministicSpreadScale}) AS more_spread_calc,
+        (((ABS(COALESCE(mlb_player_id,0) * 37 + COALESCE(game_pk,0) * 19 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 7) % 11) - 5) * ${p.deterministicSpreadScale}) AS less_spread_calc,
+        MAX(0, MIN(100, raw_base_pre + prop_more_adjustment_calc + (line_more_pressure_calc * ${p.linePressureScale}) + CASE WHEN v_side_mode = 'two_sided' THEN price_more_pressure_calc ELSE 0 END + more_spread_calc)) AS raw_more_score_calc,
+        CASE WHEN v_side_mode = 'two_sided' THEN MAX(0, MIN(100, raw_base_pre + prop_less_adjustment_calc + (line_less_pressure_calc * ${p.linePressureScale}) + price_less_pressure_calc + less_spread_calc)) ELSE NULL END AS raw_less_score_calc
       FROM base
     ), side_selected AS (
       SELECT
@@ -733,13 +800,13 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
         ${p.maxScoreCap} AS structural_cap_calc,
         CASE
           WHEN hard_blocked = 1 OR model_deferred_calc = 1 OR selected_side_calc IS NULL THEN NULL
-          WHEN selected_side_calc = 'more' THEN MIN(${p.maxScoreCap}, MAX(0, MIN(100, raw_more_score_calc - penalty_total_calc + bonus_calc)))
-          WHEN selected_side_calc = 'less' THEN MIN(${p.maxScoreCap}, MAX(0, MIN(100, raw_less_score_calc - penalty_total_calc + bonus_calc)))
+          WHEN selected_side_calc = 'more' THEN ROUND(MIN(${p.maxScoreCap}, MAX(0, MIN(100, raw_more_score_calc - penalty_total_calc + bonus_calc))), 0)
+          WHEN selected_side_calc = 'less' THEN ROUND(MIN(${p.maxScoreCap}, MAX(0, MIN(100, raw_less_score_calc - penalty_total_calc + bonus_calc))), 0)
           ELSE NULL
         END AS score_integer_calc,
         CASE
           WHEN hard_blocked = 1 OR model_deferred_calc = 1 OR selected_side_calc IS NULL THEN NULL
-          ELSE MIN(confidence_cap_calc, MAX(0, MIN(100, ${p.baseConfidence} - confidence_penalty_total_calc)))
+          ELSE ROUND(MIN(confidence_cap_calc, MAX(0, MIN(100, ${p.baseConfidence} - confidence_penalty_total_calc + MIN(6, ABS(COALESCE(raw_more_score_calc,0) - COALESCE(raw_less_score_calc, raw_more_score_calc)) * 1.15) + CASE WHEN market_prop_context_status = 'market_prop_context_present' THEN 3 ELSE 0 END + CASE WHEN v_over_price IS NOT NULL OR v_under_price IS NOT NULL THEN 2 ELSE 0 END))), 0)
         END AS confidence_calc,
         ABS(((COALESCE(mlb_player_id,0) * 31 + COALESCE(game_pk,0) * 17 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 13) % 999)) * ${p.microScale} / 999.0 AS sort_micro_adjustment_calc
       FROM penalties
@@ -747,7 +814,7 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
       SELECT
         scored.*,
         CASE WHEN selected_side_calc = 'more' THEN score_integer_calc ELSE NULL END AS more_final,
-        CASE WHEN v_side_mode = 'more_only' THEN NULL WHEN selected_side_calc = 'less' THEN score_integer_calc WHEN selected_side_calc = 'more' THEN MIN(${p.maxScoreCap}, MAX(0, MIN(100, raw_less_score_calc - penalty_total_calc + bonus_calc))) ELSE NULL END AS less_final,
+        CASE WHEN v_side_mode = 'more_only' THEN NULL WHEN selected_side_calc = 'less' THEN score_integer_calc WHEN selected_side_calc = 'more' THEN ROUND(MIN(${p.maxScoreCap}, MAX(0, MIN(100, raw_less_score_calc - penalty_total_calc + bonus_calc))), 0) ELSE NULL END AS less_final,
         CASE WHEN score_integer_calc IS NULL THEN NULL ELSE score_integer_calc + sort_micro_adjustment_calc END AS score_sort_calc,
         CASE
           WHEN model_deferred_calc = 1 THEN 'model_deferred'
@@ -809,7 +876,7 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
         'profile_version', ?,
         'active_values_source', 'SCORE_DB.scoring_engine_simulation_profile_configs.config_json',
         'all_calibration_variables_db_stored', 1,
-        'formula_order', 'inventory_defer_gate -> db_config_raw_side_scores -> pre_cap_side_selection -> score_penalties -> score_cap -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
+        'formula_order', 'inventory_defer_gate -> independent_more_less_scores -> price_line_prop_side_pressure -> pre_cap_side_selection -> score_penalties -> score_cap -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
         'raw_side_delta_threshold', ${p.rawSideDeltaThreshold},
         'min_live_score', ${p.minLiveScore},
         'min_live_confidence', ${p.minLiveConfidence},
@@ -1062,8 +1129,8 @@ async function runScoringSimulation(env, input) {
   const simulationRowsWritten = strictRows + hybridRows;
 
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_V0_2_7_DB_CONFIG_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_2_7_DB_CONFIG_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_2_7_DB_CONFIG_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_2_9_DYNAMIC_SIDE_SCORE_SPREAD_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_2_9_DYNAMIC_SIDE_SCORE_SPREAD_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_2_9_DYNAMIC_SIDE_SCORE_SPREAD_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
   const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
 
