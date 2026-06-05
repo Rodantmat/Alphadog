@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.3.1-dynamic-side-score-js-memory-guard";
+const VERSION = "alphadog-v2-scoring-engine-v0.3.2-stable-v031-single-row-insert-preserve-good-shadow";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -441,7 +441,7 @@ function sqlCaseFromMap(expression, map, fallback) {
 
 function simulationFormulaMetadata() {
   return {
-    formula_key: "SCORING_SIMULATION_V0_3_1_DYNAMIC_SIDE_SCORE_JS_MEMORY_GUARD",
+    formula_key: "SCORING_SIMULATION_V0_3_2_STABLE_V031_SINGLE_ROW_INSERT_PRESERVE_GOOD_SHADOW",
     worker_version: VERSION,
     simulation_only: true,
     active_values_source: "SCORE_DB.scoring_engine_simulation_profile_configs.config_json",
@@ -470,7 +470,7 @@ function simulationFormulaMetadata() {
 
 const DEFAULT_SIM_CONFIGS = {
   HYBRID_CONTROL: {
-    profile_version: "0.3.1-control-dynamic-side-pressure-js-memory-guard",
+    profile_version: "0.3.2-control-stable-v031-single-row-insert-preserve-good-shadow",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -515,7 +515,7 @@ const DEFAULT_SIM_CONFIGS = {
     }
   },
   STRICT_B: {
-    profile_version: "0.3.1-strict-b-dynamic-side-pressure-js-memory-guard",
+    profile_version: "0.3.2-strict-b-stable-v031-single-row-insert-preserve-good-shadow",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -848,7 +848,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     no_true_hit_probability_claims: 1,
     score_sort_policy: 'score_sort_0_100_only; positive_micro_lt_0_0001; never used for archive/live/bins',
     goblin_demon_less_score_policy: 'NULL_NOT_ZERO',
-    d1_memory_policy: 'no_large_scoring_cte; bounded_js_chunk_compute_and_small_insert_batches'
+    d1_memory_policy: 'no_large_scoring_cte; bounded_js_chunk_compute_and_single_row_inserts_to_stay_under_D1_bind_limit'
   });
 
   return [
@@ -932,7 +932,7 @@ async function insertShadowRows(env, valueRows) {
 async function insertSimulationProfile(env, batchId, profileKey) {
   const p = await profileConstants(env, profileKey);
   const readChunkSize = 80;
-  const writeBatchSize = 8;
+  const writeBatchSize = 1;
   let cursorMatrixId = null;
   let insertedRows = 0;
   let processedChunks = 0;
@@ -1034,6 +1034,50 @@ async function refreshSimulationScratchTables(env) {
   return { shadow_rows_deleted: shadowRowsDeleted, issue_rows_deleted: issueRowsDeleted };
 }
 
+async function cleanupOldSimulationScratchTablesAfterSuccess(env, activeBatchId, chunkSize = 500, maxLoops = 1000) {
+  let shadowRowsDeleted = 0;
+  let issueRowsDeleted = 0;
+  let loops = 0;
+  const safeLimit = Math.max(1, Math.min(500, Math.trunc(Number(chunkSize) || 500)));
+
+  while (loops < maxLoops) {
+    const res = await run(env.SCORE_DB, `
+      DELETE FROM scoring_engine_simulation_shadow
+      WHERE simulation_row_id IN (
+        SELECT simulation_row_id
+        FROM scoring_engine_simulation_shadow
+        WHERE simulation_batch_id <> ?
+        LIMIT ${safeLimit}
+      )
+    `, activeBatchId);
+    const deleted = d1Changes(res);
+    shadowRowsDeleted += deleted;
+    loops += 1;
+    if (deleted < safeLimit) break;
+  }
+  if (loops >= maxLoops) throw new Error('chunked_post_success_shadow_cleanup_guard_exceeded');
+
+  loops = 0;
+  while (loops < maxLoops) {
+    const res = await run(env.SCORE_DB, `
+      DELETE FROM scoring_engine_simulation_issues
+      WHERE issue_id IN (
+        SELECT issue_id
+        FROM scoring_engine_simulation_issues
+        WHERE simulation_batch_id <> ?
+        LIMIT ${safeLimit}
+      )
+    `, activeBatchId);
+    const deleted = d1Changes(res);
+    issueRowsDeleted += deleted;
+    loops += 1;
+    if (deleted < safeLimit) break;
+  }
+  if (loops >= maxLoops) throw new Error('chunked_post_success_issue_cleanup_guard_exceeded');
+
+  return { shadow_rows_deleted: shadowRowsDeleted, issue_rows_deleted: issueRowsDeleted };
+}
+
 async function expectedModelDeferredRows(env) {
   const row = await first(env.SCORE_DB, `
     SELECT COUNT(*) AS rows
@@ -1127,8 +1171,8 @@ async function runScoringSimulation(env, input) {
 
   let cleanupStats = { shadow_rows_deleted: 0, issue_rows_deleted: 0 };
   try {
-    // v0.2.7: simulation scratch tables are full-refresh only. No stale shadow/issues survive a rerun.
-    cleanupStats = await refreshSimulationScratchTables(env);
+    // v0.3.2: do not delete the prior good shadow before the new simulation proves it can write.
+    // New simulation row IDs include batchId, so this run can build beside the previous shadow safely.
 
     if (matrixRows <= 0) {
     const output = baseIdentity({
@@ -1163,9 +1207,11 @@ async function runScoringSimulation(env, input) {
   const hybridBlockers = Number(hybridBlockersRow && hybridBlockersRow.rows ? hybridBlockersRow.rows : 0);
   const simulationRowsWritten = strictRows + hybridRows;
 
+  cleanupStats = await cleanupOldSimulationScratchTablesAfterSuccess(env, batchId, 500, 1000);
+
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_V0_3_1_DYNAMIC_SIDE_SCORE_JS_MEMORY_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_1_DYNAMIC_SIDE_SCORE_JS_MEMORY_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_1_DYNAMIC_SIDE_SCORE_JS_MEMORY_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_3_2_STABLE_V031_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_2_STABLE_V031_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_2_STABLE_V031_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
   const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
 
@@ -1181,6 +1227,7 @@ async function runScoringSimulation(env, input) {
     comparison_profile: "HYBRID_CONTROL",
     chunked_d1_memory_mode: true,
     simulation_chunk_size: 80,
+    simulation_write_batch_size: 1,
     fresh_shadow_issue_cleanup: cleanupStats,
     expected_model_deferred_rows_per_profile: expectedDeferred,
     matrix_rows_read: matrixRows,
@@ -1203,7 +1250,7 @@ async function runScoringSimulation(env, input) {
     selected_side_policy: "Two-sided selected_side is chosen from raw pre-cap side scores using DB-configured raw_side_delta_threshold; Goblin/Demon are more_only and Less remains NULL.",
     notes: [
       "Simulation writes only to SCORE_DB.scoring_engine_simulation_shadow and related simulation audit tables.",
-      "v0.3.1 full-refreshes simulation shadow/issues, computes dynamic side pressure in bounded JS chunks instead of large D1 scoring CTEs, and keeps small insert batches to avoid SQLITE_NOMEM.",
+      "v0.3.2 uses the uploaded v0.3.1 logic base, computes dynamic side pressure in bounded JS chunks, writes simulation shadow rows one at a time to stay under D1 SQL variable limits, and preserves the last good shadow until the new run completes.",
       "score_0_100 and confidence_0_100 are separated; live_playable requires score/confidence gates and never uses score_sort_0_100.",
       "score_sort_0_100 is deterministic sort-only micro-adjustment and never controls archive/live/bin thresholds.",
       "Strict-B is the primary safety profile; Hybrid-Control is comparison only and is not production-approved.",
