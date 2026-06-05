@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-bullpen-availability";
-const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.2-bounded-heartbeat-non-destructive-retention";
+const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.3-self-terminal-lifecycle";
 const JOB_KEY = "daily-bullpen-availability";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -519,6 +519,24 @@ async function markBatch(env, batchId, fields = {}) {
   await run(env.DAILY_DB, `UPDATE daily_bullpen_availability_batches SET ${sets.join(", ")} WHERE batch_id=?`, ...binds);
 }
 
+
+async function finalizeControlLifecycleBullpen(env, requestId, output, rowsRead, rowsWritten, externalCalls) {
+  if (!requestId || !env || !env.CONTROL_DB || !output) return;
+  const ok = output.ok === true;
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const cert = String(output.certification || output.certification_status || (ok ? "completed" : "failed")).slice(0, 120);
+  const errCode = ok ? null : "daily_bullpen_worker_failed";
+  const errMsg = ok ? null : String(output.error || output.certification || output.status || "worker failed").slice(0, 900);
+  const out = safeJson(output, 14000);
+  try {
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=? AND status IN ('pending','running','queued','partial_continue') AND finished_at IS NULL", queueStatus, out, errCode, errMsg, requestId);
+    await run(env.CONTROL_DB, "UPDATE control_job_runs SET status=?, data_ok=?, certification_status=?, rows_read=?, rows_written=?, external_calls=?, finished_at=CURRENT_TIMESTAMP, elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END, output_json=?, error_code=?, error_message=? WHERE request_id=? AND status='running' AND finished_at IS NULL", runStatus, ok ? 1 : 0, cert, Number(rowsRead || 0), Number(rowsWritten || 0), Number(externalCalls || 0), out, errCode, errMsg, requestId);
+  } catch (_) {
+    // Best-effort terminal handoff. The worker response remains source of truth for orchestrator dispatch.
+  }
+}
+
 function assertBudget(startedMs, step) {
   const elapsed = Date.now() - startedMs;
   if (elapsed > BULLPEN_SOFT_LIMIT_MS) {
@@ -676,6 +694,7 @@ async function runBullpen(env, input) {
     };
     await markBatch(env, batchId, { status, calendar_games_checked: calendars.length, prepared_games_checked: gamePks.length, prepared_rows_read: output.prepared_rows_read, teams_checked: targets.length, team_rows_written: currentWritten, pitcher_rows_written: pitcherWritten, snapshot_rows_written: snapshotWritten, source_failures: 0, blocker_count: blockerCount, warning_count: warningN, high_risk_team_count: highRiskTeamCount, unknown_team_count: unknownTeamCount, certification_status: certification, certification_grade: grade, certification_reason: output.certification_reason, output_json: safeJson(output, 14000), completed_at: nowUtc() });
     await heartbeat(env, requestId, batchId, "completed", { certification, certification_grade: grade, data_ok: dataOk, elapsed_ms: output.elapsed_ms });
+    await finalizeControlLifecycleBullpen(env, requestId, output, output.prepared_rows_read, output.team_rows_written, 0);
     return output;
   } catch (err) {
     const cleanup = await cleanupBatchRows(env, batchId);
@@ -708,6 +727,7 @@ async function runBullpen(env, input) {
     };
     await markBatch(env, batchId, { status: "failed", certification_status: certification, certification_grade: "FAILED", certification_reason: output.certification_reason, output_json: safeJson(output, 14000), completed_at: nowUtc() });
     await heartbeat(env, requestId, batchId, "failed_cleaned", { certification, error_preview: message.slice(0, 500), cleanup });
+    await finalizeControlLifecycleBullpen(env, requestId, output, output.prepared_rows_read, output.team_rows_written, 0);
     return output;
   }
 }

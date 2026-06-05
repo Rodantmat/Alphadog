@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-usage-pulse";
-const VERSION = "alphadog-v2-daily-usage-pulse-v0.2.2-queue-heartbeat-terminal-retention";
+const VERSION = "alphadog-v2-daily-usage-pulse-v0.2.3-self-terminal-lifecycle";
 const JOB_KEY = "daily-umpire-context";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -327,6 +327,24 @@ async function heartbeatUmpireQueue(env, requestId, batchId, step, fields = {}) 
     // Lifecycle heartbeat only; never let this break umpire sidecar generation.
   }
 }
+
+async function finalizeControlLifecycleUmpire(env, requestId, output, rowsRead, rowsWritten, externalCalls) {
+  if (!requestId || !env || !env.CONTROL_DB || !output) return;
+  const ok = output.ok === true;
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const cert = String(output.certification || output.certification_status || (ok ? "completed" : "failed")).slice(0, 120);
+  const errCode = ok ? null : "daily_umpire_context_worker_failed";
+  const errMsg = ok ? null : String(output.error || output.certification || output.status || "worker failed").slice(0, 900);
+  const out = safeJson(output, 14000);
+  try {
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=? AND status IN ('pending','running','queued','partial_continue') AND finished_at IS NULL", queueStatus, out, errCode, errMsg, requestId);
+    await run(env.CONTROL_DB, "UPDATE control_job_runs SET status=?, data_ok=?, certification_status=?, rows_read=?, rows_written=?, external_calls=?, finished_at=CURRENT_TIMESTAMP, elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END, output_json=?, error_code=?, error_message=? WHERE request_id=? AND status='running' AND finished_at IS NULL", runStatus, ok ? 1 : 0, cert, Number(rowsRead || 0), Number(rowsWritten || 0), Number(externalCalls || 0), out, errCode, errMsg, requestId);
+  } catch (_) {
+    // Best-effort terminal handoff. The worker response remains source of truth for orchestrator dispatch.
+  }
+}
+
 async function markUmpireBatchFailed(env, batchId, certification, reason, output) {
   await run(env.DAILY_DB, `UPDATE daily_umpire_context_batches SET status='failed', certification_status=?, certification_grade='FAIL', certification_reason=?, output_json=?, completed_at=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, certification, reason, safeJson(output, 14000), nowUtc(), batchId);
 }
@@ -704,6 +722,7 @@ async function runUmpireContext(env, input) {
     };
     await run(env.DAILY_DB, `UPDATE daily_umpire_context_batches SET status=?, calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, games_checked=?, game_rows_written=?, snapshot_rows_written=?, assignments_found=?, assignments_missing=?, assignments_pending=?, assignments_changed=?, source_failures=?, blocker_count=?, warning_count=?, unknown_umpire_count=?, external_calls=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
       status, calendars.length, gamePks.length, preparedRowsRead, targets.length, currentWritten, snapshotWritten, assignmentsFound, assignmentsMissing, assignmentsPending, assignmentsChanged, sourceFailures, blockerN, warningN, unknownUmpireCount, externalCalls, certification, grade, output.certification_reason, safeJson(output, 14000), nowUtc(), batchId);
+    await finalizeControlLifecycleUmpire(env, requestId, output, output.prepared_rows_read, output.game_rows_written, output.external_calls);
     return output;
   } catch (err) {
     const errorText = String(err && err.stack ? err.stack : err);
@@ -739,6 +758,7 @@ async function runUmpireContext(env, input) {
     };
     if (batchStarted) await markUmpireBatchFailed(env, batchId, output.certification, output.certification_reason, output);
     await heartbeatUmpireQueue(env, requestId, batchId, "failed_exception_terminal", { certification: output.certification, error: errorText.slice(0, 500) });
+    await finalizeControlLifecycleUmpire(env, requestId, output, output.prepared_rows_read, output.game_rows_written, output.external_calls);
     return output;
   }
 }
