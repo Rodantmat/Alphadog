@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.8-classified-block-reasons-and-source-mismatch";
+const VERSION = "alphadog-v2-score-prep-v0.2.9-current-window-prepared-retention";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_SLEEPER = "sleeper";
@@ -30,6 +30,26 @@ async function readJsonSafe(request) {
 function safeStr(v) {
   if (v === undefined || v === null) return "";
   return String(v).trim();
+}
+
+function dateOnly(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function ptTodayTomorrow() {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(now);
+  const m = {};
+  for (const part of parts) m[part.type] = part.value;
+  const today = `${m.year}-${m.month}-${m.day}`;
+  const noonPt = new Date(`${today}T12:00:00-07:00`);
+  noonPt.setDate(noonPt.getDate() + 1);
+  return [today, dateOnly(noonPt)];
 }
 
 function safeJsonParse(v, fallback = null) {
@@ -1171,12 +1191,19 @@ async function runBoardPrep(env, input) {
   const now = new Date();
 
   const resolveStart = Date.now();
-  const prepared = [
+  const preparedAllSources = [
     ...preparePrizePicksRows(prizepicksRows, ref, calendar, batchId, now),
     ...prepareSleeperRows(sleeperRows, ref, calendar, batchId, now)
   ];
+  const explicitWindowDates = Array.isArray(input.window_dates) && input.window_dates.length >= 2
+    ? input.window_dates.slice(0, 2).map(safeStr).filter(Boolean)
+    : ptTodayTomorrow();
+  const currentWindowDateSet = new Set(explicitWindowDates);
+  const prepared = preparedAllSources.filter(r => currentWindowDateSet.has(r.official_date));
+  const staleExcluded = preparedAllSources.filter(r => !currentWindowDateSet.has(r.official_date));
   timing.resolve_ms = Date.now() - resolveStart;
   const initialBySource = summarizeBySource(prepared);
+  const staleExcludedBySource = summarizeBySource(staleExcluded);
   const writeResult = await writePreparedRows(env, batchId, prepared, initialBySource, startedAt, input, timing);
   const totals = writeResult.totals;
   const bySource = writeResult.bySource;
@@ -1221,8 +1248,13 @@ LIMIT 20`, [batchId]);
     certification_grade: totals.blocked_rows > 0 ? "PREP_PASS_WITH_BLOCK_FLAGS" : "PREP_PASS",
     ...totals,
     attempted_rows: prepared.length,
+    all_source_rows_seen_before_window_filter: preparedAllSources.length,
+    current_window_dates: Array.from(currentWindowDateSet),
+    stale_or_out_of_window_rows_excluded_from_current: staleExcluded.length,
+    stale_or_out_of_window_by_source: staleExcludedBySource,
     inserted_current_rows: writeResult.insertedCurrentRows,
     final_db_truth: true,
+    current_table_retention_policy: "score_board_prepared_current_current_pt_today_tomorrow_only",
     by_source: bySource,
     sleeper_event_resolution: writeResult.sleeperEvents,
     blocked_samples: blockedSamples,

@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.3-hitter-chunked-memory-fix";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.3-hitter-chunked-memory-fix";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.4-prepared-source-parity-guard";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.4-prepared-source-parity-guard";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -245,6 +245,40 @@ async function markStaleRunningBatches(env, dates, family, reason = "STALE_RUNNI
       AND window_start IN (?, ?)
       AND window_end IN (?, ?)`,
     reason, SYSTEM_VERSION, reason, family, today, tomorrow, today, tomorrow);
+}
+
+
+async function getPreparedSourceDiagnostics(env, dates) {
+  const [today, tomorrow] = dates;
+  const currentByDateSource = await all(env.SCORE_DB, `SELECT
+      official_date,
+      source_key,
+      COUNT(*) AS rows,
+      SUM(CASE WHEN pickable_safe=1 THEN 1 ELSE 0 END) AS pickable_safe_rows
+    FROM score_board_prepared_current
+    GROUP BY official_date, source_key
+    ORDER BY official_date, source_key`);
+  const eligibleByDateSource = await all(env.SCORE_DB, `SELECT
+      official_date,
+      source_key,
+      COUNT(*) AS eligible_rows,
+      COUNT(DISTINCT official_game_pk) AS games,
+      COUNT(DISTINCT resolved_mlb_player_id) AS players
+    FROM score_board_prepared_current
+    WHERE official_date IN (?, ?)
+      AND pickable_safe=1
+      AND matchup_status='calendar_matched'
+      AND player_match_status='matched'
+      AND official_game_pk IS NOT NULL
+      AND official_game_time_utc IS NOT NULL
+    GROUP BY official_date, source_key
+    ORDER BY official_date, source_key`, today, tomorrow);
+  return {
+    current_table_by_date_source: currentByDateSource,
+    eligible_window_by_date_source: eligibleByDateSource,
+    source_keys_eligible_in_window: [...new Set(eligibleByDateSource.map(r => r.source_key).filter(Boolean))],
+    window_dates: dates
+  };
 }
 
 async function getPreparedRows(env, dates) {
@@ -643,6 +677,7 @@ async function runFactorMining(request, env) {
   );
 
   try {
+    const preparedDiagnostics = await getPreparedSourceDiagnostics(env, dates);
     const prepared = await getPreparedRows(env, dates);
     const ctx = await loadContext(env, dates);
     const coverageRows = [];
@@ -705,7 +740,7 @@ async function runFactorMining(request, env) {
     const status = blockedRows > 0 || warningRows > 0 ? "completed_with_warnings" : "completed";
     const certification = blockedRows > 0 || warningRows > 0 ? "PROP_FACTOR_PACKETS_CERTIFIED_WITH_WARNINGS" : "PROP_FACTOR_PACKETS_CERTIFIED";
     const grade = blockedRows > 0 ? "PASS_WITH_BLOCKED_ROWS" : (warningRows > 0 ? "PASS_WITH_WARNINGS" : "PASS");
-    const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode, factor_family:family, status, certification, certification_grade:grade, batch_id:batchId, run_id:runId, window_dates:dates, prepared_rows_read:prepared.length, eligible_rows:eligibleRows, packets_written:packetsWritten, blocked_rows:blockedRows, warning_rows:warningRows, issue_rows:issueRows, missing_factor_rows:missingRows, games_processed:gamesProcessed, chunked_memory_mode: family === "hitter", packet_flush_size:flushSize, coverage_rows_written:coverageRows.length, stale_running_batches_marked_before_run:true, coverage_current_written_after_final_packet_flush:true, retention_policy:"today_tomorrow_only_packets_issues_coverage_and_batches", daily_readiness_dates_available:ctx.readinessDatesAvailable, daily_readiness_missing_for_current_window:ctx.readinessDatesAvailable.length === 0, base_metrics_primary_source: family === "pitcher" ? "pitcher_metric_snapshots" : "hitter_metric_snapshots", legacy_metric_tables_optional: true, legacy_empty_tables_are_not_blocking: true, external_calls:0, no_scoring:true, no_ranking:true, no_final_board:true, no_matrix_builder:true };
+    const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode, factor_family:family, status, certification, certification_grade:grade, batch_id:batchId, run_id:runId, window_dates:dates, prepared_rows_read:prepared.length, eligible_rows:eligibleRows, packets_written:packetsWritten, blocked_rows:blockedRows, warning_rows:warningRows, issue_rows:issueRows, missing_factor_rows:missingRows, games_processed:gamesProcessed, prepared_source_diagnostics:preparedDiagnostics, source_keys_processed:[...new Set(prepared.map(r => r.source_key).filter(Boolean))], chunked_memory_mode: family === "hitter", packet_flush_size:flushSize, coverage_rows_written:coverageRows.length, stale_running_batches_marked_before_run:true, coverage_current_written_after_final_packet_flush:true, retention_policy:"today_tomorrow_only_packets_issues_coverage_and_batches", daily_readiness_dates_available:ctx.readinessDatesAvailable, daily_readiness_missing_for_current_window:ctx.readinessDatesAvailable.length === 0, base_metrics_primary_source: family === "pitcher" ? "pitcher_metric_snapshots" : "hitter_metric_snapshots", legacy_metric_tables_optional: true, legacy_empty_tables_are_not_blocking: true, external_calls:0, no_scoring:true, no_ranking:true, no_final_board:true, no_matrix_builder:true };
     await run(env.SCORE_DB, `UPDATE prop_factor_batches SET status=?, prepared_rows_read=?, eligible_rows=?, packets_written=?, blocked_rows=?, warning_rows=?, issue_rows=?, missing_factor_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
       status, prepared.length, eligibleRows, packetsWritten, blockedRows, warningRows, issueRows, missingRows, certification, grade, JSON.stringify(output), batchId);
     return jsonResponse(output);
