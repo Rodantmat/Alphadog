@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.3.6-live-playable-readiness-gate";
+const VERSION = "alphadog-v2-scoring-engine-v0.3.7-live-playable-market-context-gate";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -441,7 +441,7 @@ function sqlCaseFromMap(expression, map, fallback) {
 
 function simulationFormulaMetadata() {
   return {
-    formula_key: "SCORING_SIMULATION_V0_3_6_LIVE_PLAYABLE_READINESS_GATE",
+    formula_key: "SCORING_SIMULATION_V0_3_7_LIVE_PLAYABLE_MARKET_CONTEXT_GATE",
     worker_version: VERSION,
     simulation_only: true,
     active_values_source: "SCORE_DB.scoring_engine_simulation_profile_configs.config_json",
@@ -470,7 +470,7 @@ function simulationFormulaMetadata() {
 
 const DEFAULT_SIM_CONFIGS = {
   HYBRID_CONTROL: {
-    profile_version: "0.3.6-control-live-playable-readiness-gate",
+    profile_version: "0.3.7-control-live-playable-market-context-gate",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -515,7 +515,7 @@ const DEFAULT_SIM_CONFIGS = {
     }
   },
   STRICT_B: {
-    profile_version: "0.3.6-strict-b-live-playable-readiness-gate",
+    profile_version: "0.3.7-strict-b-live-playable-market-context-gate",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -834,7 +834,8 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     scoreInteger >= p.minLiveScore &&
     confidence >= p.minLiveConfidence &&
     row.factor_status === 'packet_ready' &&
-    ['ready', 'ready_with_warnings'].includes(row.daily_readiness_status)
+    ['ready', 'ready_with_warnings'].includes(row.daily_readiness_status) &&
+    row.market_prop_context_status === 'market_prop_context_present'
   ) ? 1 : 0;
   const archiveEligible = (!modelDeferred && !hardBlocked && selectedSide && scoreInteger >= p.archiveScoreThreshold) ? 1 : 0;
 
@@ -1027,6 +1028,7 @@ async function summarizeSimulationProfile(env, batchId, profileKey) {
       SUM(CASE WHEN live_playable = 1 AND selected_side IS NULL THEN 1 ELSE 0 END) AS live_playable_null_side,
       SUM(CASE WHEN live_playable = 1 AND factor_status <> 'packet_ready' THEN 1 ELSE 0 END) AS live_playable_not_packet_ready,
       SUM(CASE WHEN live_playable = 1 AND daily_readiness_status NOT IN ('ready','ready_with_warnings') THEN 1 ELSE 0 END) AS live_playable_not_daily_ready,
+      SUM(CASE WHEN live_playable = 1 AND market_prop_context_status <> 'market_prop_context_present' THEN 1 ELSE 0 END) AS live_playable_market_context_not_present,
       SUM(CASE WHEN side_mode = 'two_sided' AND raw_more_score IS NOT NULL AND raw_less_score IS NOT NULL AND ABS(raw_more_score - raw_less_score) >= 0.50 AND selected_side IS NULL AND model_deferred = 0 AND score_status <> 'simulation_hard_blocked' AND COALESCE(blocking_for_scoring,0) = 0 THEN 1 ELSE 0 END) AS raw_delta_selectable_but_null_side,
       SUM(CASE WHEN side_mode = 'two_sided' AND raw_more_score IS NOT NULL AND raw_less_score IS NOT NULL AND ABS(raw_more_score - raw_less_score) < 0.50 AND selected_side IS NULL AND model_deferred = 0 AND score_status <> 'simulation_hard_blocked' AND COALESCE(blocking_for_scoring,0) = 0 THEN 1 ELSE 0 END) AS true_micro_tie_null_side,
       SUM(CASE WHEN source_key = 'sleeper' AND canonical_prop_key = 'rfi_nrfi' AND score_status <> 'model_deferred' THEN 1 ELSE 0 END) AS sleeper_rfi_not_deferred,
@@ -1168,6 +1170,7 @@ async function recordSimulationInvariants(env, batchId, profileKey, summary, exp
     ["LIVE_PLAYABLE_NULL_SIDE", summary.live_playable_null_side, "BLOCKER", "No live_playable row can have selected_side NULL."],
     ["LIVE_PLAYABLE_NOT_PACKET_READY", summary.live_playable_not_packet_ready, "BLOCKER", "No live_playable row can have factor_status other than packet_ready."],
     ["LIVE_PLAYABLE_NOT_DAILY_READY", summary.live_playable_not_daily_ready, "BLOCKER", "No live_playable row can have daily_readiness_status outside ready/ready_with_warnings."],
+    ["LIVE_PLAYABLE_MARKET_CONTEXT_NOT_PRESENT", summary.live_playable_market_context_not_present, "BLOCKER", "No live_playable row can have market_prop_context_status other than market_prop_context_present."],
     ["RAW_DELTA_SELECTABLE_BUT_NULL_SIDE", summary.raw_delta_selectable_but_null_side, "BLOCKER", "Two-sided non-blocked rows with raw side delta >= 0.50 must select a side before cap/compression; hard-blocked/matrix_source_missing rows are excluded."],
     ["SLEEPER_RFI_NOT_DEFERRED", summary.sleeper_rfi_not_deferred, "BLOCKER", "Sleeper rfi_nrfi inventory must route to model_deferred."],
     ["PRIZEPICKS_TRIPLES_NOT_DEFERRED", summary.prizepicks_triples_not_deferred, "BLOCKER", "PrizePicks triples inventory must route to model_deferred_low_event_prop."],
@@ -1255,8 +1258,8 @@ async function runScoringSimulation(env, input) {
   cleanupStats = await cleanupOldSimulationScratchTablesAfterSuccess(env, batchId, 500, 1000);
 
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_V0_3_6_LIVE_PLAYABLE_READINESS_GATE_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_6_LIVE_PLAYABLE_READINESS_GATE_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_6_LIVE_PLAYABLE_READINESS_GATE_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_3_7_LIVE_PLAYABLE_MARKET_CONTEXT_GATE_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_7_LIVE_PLAYABLE_MARKET_CONTEXT_GATE_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_7_LIVE_PLAYABLE_MARKET_CONTEXT_GATE_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
   const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
 
@@ -1300,8 +1303,8 @@ async function runScoringSimulation(env, input) {
     selected_side_policy: "Two-sided selected_side is chosen from raw pre-cap side scores using DB-configured raw_side_delta_threshold; Goblin/Demon are more_only and Less remains NULL.",
     notes: [
       "Simulation writes only to SCORE_DB.scoring_engine_simulation_shadow and related simulation audit tables.",
-      "v0.3.6 keeps the v0.3.5 batch-scoped shadow row-id/finalization fixes and tightens live_playable so only packet_ready plus ready/ready_with_warnings rows can go live; archive eligibility remains score-only review inventory.",
-      "score_0_100 and confidence_0_100 are separated; live_playable requires score/confidence plus packet_ready and daily readiness gates, and never uses score_sort_0_100.",
+      "v0.3.7 keeps the v0.3.5 batch-scoped shadow row-id/finalization fixes and tightens live_playable so both profiles require packet_ready, ready/ready_with_warnings, and market_prop_context_present; archive eligibility remains score-only review inventory.",
+      "score_0_100 and confidence_0_100 are separated; live_playable requires score/confidence plus packet_ready, daily readiness, and market prop context gates, and never uses score_sort_0_100.",
       "score_sort_0_100 is deterministic sort-only micro-adjustment and never controls archive/live/bin thresholds.",
       "Strict-B is the primary safety profile; Hybrid-Control is comparison only and is not production-approved.",
       "No true hit probability, ranking, final board, candidate board, or archive snapshot is produced."
