@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.3.4-json-batch-finalizer";
+const VERSION = "alphadog-v2-scoring-engine-v0.3.5-batch-scoped-shadow-row-id";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -470,7 +470,7 @@ function simulationFormulaMetadata() {
 
 const DEFAULT_SIM_CONFIGS = {
   HYBRID_CONTROL: {
-    profile_version: "0.3.3-control-bounded-multirow-finalizer",
+    profile_version: "0.3.5-control-batch-scoped-shadow-row-id",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -515,7 +515,7 @@ const DEFAULT_SIM_CONFIGS = {
     }
   },
   STRICT_B: {
-    profile_version: "0.3.3-strict-b-bounded-multirow-finalizer",
+    profile_version: "0.3.5-strict-b-batch-scoped-shadow-row-id",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -852,7 +852,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
   });
 
   return [
-    `${profileKey}|sim|${row.matrix_id || row.prepared_row_id || row.source_line_id || `${row.player_name}|${prop}`}`,
+    `${batchId}|${profileKey}|sim|${row.matrix_id || row.prepared_row_id || row.source_line_id || `${row.player_name}|${prop}`}`,
     batchId,
     profileKey,
     p.version,
@@ -1243,8 +1243,8 @@ async function runScoringSimulation(env, input) {
   cleanupStats = await cleanupOldSimulationScratchTablesAfterSuccess(env, batchId, 500, 1000);
 
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_V0_3_4_JSON_BATCH_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_4_JSON_BATCH_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_4_JSON_BATCH_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_3_5_BATCH_SCOPED_SHADOW_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_5_BATCH_SCOPED_SHADOW_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_5_BATCH_SCOPED_SHADOW_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
   const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
 
@@ -1288,7 +1288,7 @@ async function runScoringSimulation(env, input) {
     selected_side_policy: "Two-sided selected_side is chosen from raw pre-cap side scores using DB-configured raw_side_delta_threshold; Goblin/Demon are more_only and Less remains NULL.",
     notes: [
       "Simulation writes only to SCORE_DB.scoring_engine_simulation_shadow and related simulation audit tables.",
-      "v0.3.4 keeps the uploaded v0.3.1/v0.3.2 formula logic, writes bounded JSON batches through json_each with one SQL bind per batch, and finalizes only after DB row counts prove both profiles equal prop_matrix_current.",
+      "v0.3.5 keeps the uploaded v0.3.1/v0.3.2 formula logic, writes bounded JSON batches through json_each with one SQL bind per batch, namespaces shadow primary keys by simulation_batch_id, and finalizes only after DB row counts prove both profiles equal prop_matrix_current.",
       "score_0_100 and confidence_0_100 are separated; live_playable requires score/confidence gates and never uses score_sort_0_100.",
       "score_sort_0_100 is deterministic sort-only micro-adjustment and never controls archive/live/bin thresholds.",
       "Strict-B is the primary safety profile; Hybrid-Control is comparison only and is not production-approved.",
