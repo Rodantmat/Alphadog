@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.2.5-db-config-batch-safe-timeout-guard";
+const VERSION = "alphadog-v2-scoring-engine-v0.2.6-fresh-shadow-dynamic-deferred-guard";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -922,7 +922,7 @@ async function failStaleRunningSimulationBatches(env) {
   `, VERSION);
 }
 
-async function recordSimulationInvariants(env, batchId, profileKey, summary) {
+async function recordSimulationInvariants(env, batchId, profileKey, summary, expectedModelDeferredRows) {
   const checks = [
     ["BLOCKED_OR_DEFERRED_SCORE_LEAK", summary.blocked_or_deferred_score_leak, "BLOCKER", "Hard-blocked or model-deferred rows must not receive score, selected_side, archive_eligible, or live_playable."],
     ["SELECTED_SIDE_WITHOUT_SCORE", summary.selected_side_without_score, "BLOCKER", "No selected_side may exist without score_0_100."],
@@ -936,7 +936,7 @@ async function recordSimulationInvariants(env, batchId, profileKey, summary) {
     ["PRIZEPICKS_TRIPLES_NOT_DEFERRED", summary.prizepicks_triples_not_deferred, "BLOCKER", "PrizePicks triples inventory must route to model_deferred_low_event_prop."],
     ["SCORE_SORT_MICRO_OUT_OF_BOUNDS", summary.score_sort_micro_out_of_bounds, "BLOCKER", "score_sort_0_100 micro adjustment must stay below 0.0001 from score_integer_0_100."],
     ["SCORE_SORT_INTEGER_BOUNDARY_CROSS", summary.score_sort_integer_boundary_cross, "BLOCKER", "score_sort_0_100 must never cross an integer boundary."],
-    ["MODEL_DEFERRED_COUNT_NOT_26", summary.model_deferred_rows !== 26 ? summary.model_deferred_rows : 0, "BLOCKER", "Expected exactly 26 model_deferred rows per profile from current matrix snapshot."],
+    ["MODEL_DEFERRED_COUNT_MISMATCH", summary.model_deferred_rows !== expectedModelDeferredRows ? summary.model_deferred_rows : 0, "BLOCKER", `Expected model_deferred rows to match current prop_matrix_current matrix_deferred count (${expectedModelDeferredRows}).`],
     ["TRUE_MICRO_TIE_REVIEW", summary.true_micro_tie_null_side, "WARNING", "True raw side ties should be very rare and require deterministic tie-breaker review if present."]
   ];
   for (const [key, count, severity, note] of checks) {
@@ -966,6 +966,8 @@ async function runScoringSimulation(env, input) {
   const started = Date.now();
   const matrixCountRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM prop_matrix_current`);
   const matrixRows = Number(matrixCountRow && matrixCountRow.rows ? matrixCountRow.rows : 0);
+  const expectedDeferredRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM prop_matrix_current WHERE matrix_status = 'matrix_deferred'`);
+  const expectedModelDeferredRows = Number(expectedDeferredRow && expectedDeferredRow.rows ? expectedDeferredRow.rows : 0);
 
   await run(env.SCORE_DB, `
     INSERT INTO scoring_engine_simulation_batches (
@@ -975,8 +977,8 @@ async function runScoringSimulation(env, input) {
     ) VALUES (?, ?, 'scoring-engine-simulation', 'running', 'SCORING_SIMULATION_STARTED', 'RUNNING', ?, 0, 0, 0, 0, ?, ?, CURRENT_TIMESTAMP)
   `, batchId, VERSION, matrixRows, JSON.stringify(simulationFormulaMetadata()), JSON.stringify(DEFAULT_SIM_CONFIGS));
 
-  // v0.2.5: do not global-delete shadow rows; a large DELETE caused D1 storage timeout/object reset in v0.2.4.
-  await run(env.SCORE_DB, `DELETE FROM scoring_engine_simulation_shadow WHERE simulation_batch_id=?`, batchId);
+  // v0.2.6: scoring simulation is a fresh review surface. Do not retain stale shadow/issue rows between reruns.
+  await run(env.SCORE_DB, `DELETE FROM scoring_engine_simulation_shadow`);
   await run(env.SCORE_DB, `DELETE FROM scoring_engine_simulation_issues`);
 
   if (matrixRows <= 0) {
@@ -1000,8 +1002,8 @@ async function runScoringSimulation(env, input) {
   const hybridRows = await insertSimulationProfile(env, batchId, "HYBRID_CONTROL");
   const strictSummary = await summarizeSimulationProfile(env, batchId, "STRICT_B");
   const hybridSummary = await summarizeSimulationProfile(env, batchId, "HYBRID_CONTROL");
-  await recordSimulationInvariants(env, batchId, "STRICT_B", strictSummary);
-  await recordSimulationInvariants(env, batchId, "HYBRID_CONTROL", hybridSummary);
+  await recordSimulationInvariants(env, batchId, "STRICT_B", strictSummary, expectedModelDeferredRows);
+  await recordSimulationInvariants(env, batchId, "HYBRID_CONTROL", hybridSummary, expectedModelDeferredRows);
 
   const strictBlockersRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_simulation_issues WHERE simulation_batch_id=? AND profile_key='STRICT_B' AND severity='BLOCKER' AND issue_count > 0`, batchId);
   const strictWarningsRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_simulation_issues WHERE simulation_batch_id=? AND profile_key='STRICT_B' AND severity='WARNING' AND issue_count > 0`, batchId);
@@ -1012,8 +1014,8 @@ async function runScoringSimulation(env, input) {
   const simulationRowsWritten = strictRows + hybridRows;
 
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_V0_2_5_DB_CONFIG_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_2_5_DB_CONFIG_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_2_5_DB_CONFIG_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_2_6_DB_CONFIG_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_2_6_DB_CONFIG_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_2_6_DB_CONFIG_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
   const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
 
@@ -1030,6 +1032,7 @@ async function runScoringSimulation(env, input) {
     chunked_d1_memory_mode: true,
     simulation_chunk_size: 200,
     matrix_rows_read: matrixRows,
+    expected_model_deferred_rows: expectedModelDeferredRows,
     simulation_rows_written: simulationRowsWritten,
     strict_b_rows_written: strictRows,
     hybrid_control_rows_written: hybridRows,
