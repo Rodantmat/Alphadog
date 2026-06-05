@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.3.0-dynamic-side-score-pressure-cte-fix";
+const VERSION = "alphadog-v2-scoring-engine-v0.3.1-dynamic-side-score-js-memory-guard";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -441,7 +441,7 @@ function sqlCaseFromMap(expression, map, fallback) {
 
 function simulationFormulaMetadata() {
   return {
-    formula_key: "SCORING_SIMULATION_V0_3_0_DYNAMIC_SIDE_SCORE_PRESSURE_CTE_FIX",
+    formula_key: "SCORING_SIMULATION_V0_3_1_DYNAMIC_SIDE_SCORE_JS_MEMORY_GUARD",
     worker_version: VERSION,
     simulation_only: true,
     active_values_source: "SCORE_DB.scoring_engine_simulation_profile_configs.config_json",
@@ -470,7 +470,7 @@ function simulationFormulaMetadata() {
 
 const DEFAULT_SIM_CONFIGS = {
   HYBRID_CONTROL: {
-    profile_version: "0.3.0-control-dynamic-side-pressure-cte-fix",
+    profile_version: "0.3.1-control-dynamic-side-pressure-js-memory-guard",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -515,7 +515,7 @@ const DEFAULT_SIM_CONFIGS = {
     }
   },
   STRICT_B: {
-    profile_version: "0.3.0-strict-b-dynamic-side-pressure-cte-fix",
+    profile_version: "0.3.1-strict-b-dynamic-side-pressure-js-memory-guard",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -643,10 +643,275 @@ async function profileConstants(env, profileKey) {
   };
 }
 
-async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatrixId, chunkSize) {
-  const p = await profileConstants(env, profileKey);
-  await run(env.SCORE_DB, `
-    INSERT INTO scoring_engine_simulation_shadow (
+function parseJsonObject(value) {
+  if (!value || typeof value !== 'string') return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function getPath(obj, path) {
+  let cur = obj;
+  for (const part of path) {
+    if (cur == null || typeof cur !== 'object') return null;
+    cur = cur[part];
+  }
+  return cur == null ? null : cur;
+}
+
+function numOrNull(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function clamp(n, lo = 0, hi = 100) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return null;
+  return Math.max(lo, Math.min(hi, x));
+}
+
+function round0(n) {
+  const x = Number(n);
+  return Number.isFinite(x) ? Math.round(x) : null;
+}
+
+function adjustment(map, key, fallback = 0) {
+  const m = map || {};
+  if (Object.prototype.hasOwnProperty.call(m, key == null ? '__null__' : String(key))) return finiteNumber(m[key == null ? '__null__' : String(key)], fallback);
+  if (Object.prototype.hasOwnProperty.call(m, 'default')) return finiteNumber(m.default, fallback);
+  return fallback;
+}
+
+function americanPressure(price, scale) {
+  const p = numOrNull(price);
+  if (p == null) return 0;
+  if (p < 0) return (((Math.abs(p) * 100.0) / (Math.abs(p) + 100.0)) - 50.0) * scale;
+  return (((100.0 / (p + 100.0)) - 0.50) * 100.0) * scale;
+}
+
+function linePressure(canonicalPropKey, lineValue, side) {
+  const line = numOrNull(lineValue) ?? 0;
+  const prop = String(canonicalPropKey || '');
+  const more = side === 'more';
+  if (['hits','singles'].includes(prop)) {
+    if (line <= 0.5) return more ? 1.25 : -0.75;
+    if (line >= 1.5) return more ? -1.25 : 1.25;
+  }
+  if (['total_bases','hits_runs_rbis','rbis','runs'].includes(prop)) {
+    if (line <= 1.5) return more ? 0.75 : -0.50;
+    if (line >= 2.5) return more ? -1.50 : 1.50;
+  }
+  if (prop === 'pitcher_strikeouts') {
+    if (line <= 3.5) return more ? 1.25 : -1.00;
+    if (line >= 6.5) return more ? -1.50 : 1.50;
+  }
+  if (['pitcher_outs','pitching_outs'].includes(prop)) {
+    if (line <= 14.5) return more ? 1.25 : -1.00;
+    if (line >= 18.5) return more ? -1.50 : 1.50;
+  }
+  return 0;
+}
+
+function deterministicSpread(row, side, scale) {
+  const player = Number(row.mlb_player_id || 0);
+  const game = Number(row.game_pk || 0);
+  const line = Math.trunc((Number(row.board_line_value || 0) || 0) * 100);
+  const seed = side === 'more'
+    ? Math.abs(player * 31 + game * 17 + line * 13)
+    : Math.abs(player * 37 + game * 19 + line * 7);
+  return (((seed % 11) - 5) * scale);
+}
+
+function buildSimulationShadowRow(batchId, profileKey, p, row) {
+  const matrixPayload = parseJsonObject(row.matrix_payload_json);
+  const details = parseJsonObject(row.details_json);
+  const sideCtx = getPath(matrixPayload, ['side_context']) || {};
+  const variationCtx = getPath(matrixPayload, ['variation_context']) || {};
+  const prepared = getPath(matrixPayload, ['prepared']) || {};
+  const sideVariation = getPath(details, ['side_variation']) || {};
+
+  const sourceLineType = prepared.source_line_type ?? null;
+  const oddsType = prepared.odds_type ?? null;
+  const payoutVariant = prepared.payout_variant ?? null;
+  const sideMode = sideCtx.side_mode ?? null;
+  const availableSides = sideCtx.available_sides == null ? null : (typeof sideCtx.available_sides === 'string' ? sideCtx.available_sides : JSON.stringify(sideCtx.available_sides));
+  const variationKey = variationCtx.variation_key ?? sideVariation.variation_key ?? null;
+  const overPrice = numOrNull(getPath(sideVariation, ['source_prices','over_price']) ?? getPath(sideCtx, ['source_prices','over_price']) ?? getPath(variationCtx, ['source_prices','over_price']));
+  const underPrice = numOrNull(getPath(sideVariation, ['source_prices','under_price']) ?? getPath(sideCtx, ['source_prices','under_price']) ?? getPath(variationCtx, ['source_prices','under_price']));
+
+  const sourceKey = row.source_key;
+  const prop = row.canonical_prop_key;
+  const modelDeferred = (sourceKey === 'sleeper' && prop === 'rfi_nrfi') || (sourceKey === 'prizepicks' && prop === 'triples') ? 1 : 0;
+  const modelDeferredReason = sourceKey === 'sleeper' && prop === 'rfi_nrfi'
+    ? 'model_deferred_rfi_nrfi'
+    : (sourceKey === 'prizepicks' && prop === 'triples' ? 'model_deferred_low_event_prop' : null);
+  const hardBlocked = !modelDeferred && (Number(row.blocking_for_scoring || 0) === 1 || row.matrix_status === 'matrix_deferred' || row.factor_status === 'blocked') ? 1 : 0;
+  const completeMarketBlind = ['market_prop_context_missing','market_prop_context_not_found'].includes(row.market_prop_context_status)
+    && ['', 'market_game_context_missing','market_game_context_not_found','market_game_context_absent'].includes(String(row.market_game_context_status || '')) ? 1 : 0;
+
+  const cfg = p.config || {};
+  const rawBase = (row.factor_status === 'packet_ready' ? p.baseRawPacketReady : p.baseRawPacketPartial)
+    + adjustment(cfg.market_raw_adjustments, row.market_prop_context_status, -2)
+    + adjustment(cfg.daily_raw_adjustments, row.daily_readiness_status, 0)
+    + adjustment(cfg.source_raw_adjustments, sourceKey, 0)
+    + adjustment(cfg.odds_raw_adjustments, oddsType, 0);
+  const rawMore = clamp(rawBase
+    + adjustment(cfg.prop_raw_adjustments, prop, 0)
+    + (linePressure(prop, row.board_line_value, 'more') * p.linePressureScale)
+    + (sideMode === 'two_sided' ? americanPressure(overPrice, p.pricePressureScale) : 0)
+    + deterministicSpread(row, 'more', p.deterministicSpreadScale));
+  const rawLess = sideMode === 'two_sided'
+    ? clamp(rawBase
+      + adjustment(cfg.prop_less_raw_adjustments, prop, 0)
+      + (linePressure(prop, row.board_line_value, 'less') * p.linePressureScale)
+      + americanPressure(underPrice, p.pricePressureScale)
+      + deterministicSpread(row, 'less', p.deterministicSpreadScale))
+    : null;
+
+  let selectedSide = null;
+  if (!hardBlocked && !modelDeferred) {
+    if (sideMode === 'more_only') selectedSide = 'more';
+    else if (sideMode === 'two_sided' && rawMore != null && rawLess != null) {
+      if ((rawMore - rawLess) >= p.rawSideDeltaThreshold) selectedSide = 'more';
+      else if ((rawLess - rawMore) >= p.rawSideDeltaThreshold) selectedSide = 'less';
+      else if (rawMore > rawLess) selectedSide = 'more';
+      else if (rawLess > rawMore) selectedSide = 'less';
+    }
+  }
+
+  const scorePenalty = (completeMarketBlind ? p.scorePenaltyCompleteMarketBlindness : 0)
+    + (!completeMarketBlind && row.market_prop_context_status === 'market_prop_context_missing' ? p.scorePenaltyMarketMissing : 0)
+    + (!completeMarketBlind && row.market_prop_context_status === 'market_prop_context_not_found' ? p.scorePenaltyMarketNotFound : 0)
+    + (row.factor_status === 'packet_partial' ? p.scorePenaltyPacketPartial : 0)
+    + (row.daily_readiness_status === 'partial_enrichment' ? p.scorePenaltyPartialEnrichment : 0);
+  const bonus = (!hardBlocked && !modelDeferred && row.market_prop_context_status === 'market_prop_context_present' && Number(row.warning_count || 0) === 0 && row.factor_status === 'packet_ready' && row.daily_readiness_status !== 'partial_enrichment') ? p.cleanBonusScore : 0;
+  const confidencePenalty = (row.factor_status === 'packet_partial' ? p.confidencePenaltyPacketPartial : 0)
+    + (row.daily_readiness_status === 'partial_enrichment' ? p.confidencePenaltyPartialEnrichment : 0)
+    + (sourceKey === 'sleeper' && oddsType == null ? p.confidencePenaltySleeperNullOdds : 0)
+    + (Number(row.warning_count || 0) >= 9 ? p.confidencePenaltyWarning9Plus : 0)
+    + (Number(row.warning_count || 0) >= 6 && Number(row.warning_count || 0) <= 8 ? p.confidencePenaltyWarning68 : 0)
+    + (Number(row.warning_count || 0) >= 3 && Number(row.warning_count || 0) <= 5 ? p.confidencePenaltyWarning35 : 0);
+  const confidenceCap = Math.min(
+    100,
+    completeMarketBlind ? p.confidenceCapCompleteMarketBlindness : 100,
+    (!completeMarketBlind && row.market_prop_context_status === 'market_prop_context_missing') ? p.confidenceCapMarketMissing : 100,
+    (!completeMarketBlind && row.market_prop_context_status === 'market_prop_context_not_found') ? p.confidenceCapMarketNotFound : 100,
+    Number(row.warning_count || 0) >= 9 ? p.confidenceCapWarning9Plus : 100
+  );
+
+  let scoreInteger = null;
+  if (!hardBlocked && !modelDeferred && selectedSide) {
+    const selectedRaw = selectedSide === 'more' ? rawMore : rawLess;
+    scoreInteger = round0(Math.min(p.maxScoreCap, clamp(selectedRaw - scorePenalty + bonus)));
+  }
+  const sideGap = Math.abs((rawMore ?? 0) - (rawLess ?? rawMore ?? 0));
+  const confidence = (!hardBlocked && !modelDeferred && selectedSide)
+    ? round0(Math.min(confidenceCap, clamp(p.baseConfidence - confidencePenalty + Math.min(6, sideGap * 1.15) + (row.market_prop_context_status === 'market_prop_context_present' ? 3 : 0) + ((overPrice != null || underPrice != null) ? 2 : 0))))
+    : null;
+  const sortMicro = Math.abs(((Number(row.mlb_player_id || 0) * 31 + Number(row.game_pk || 0) * 17 + Math.trunc((Number(row.board_line_value || 0) || 0) * 100) * 13) % 999)) * p.microScale / 999.0;
+  const scoreSort = scoreInteger == null ? null : scoreInteger + sortMicro;
+  const moreFinal = selectedSide === 'more' ? scoreInteger : null;
+  const lessAlt = rawLess == null ? null : round0(Math.min(p.maxScoreCap, clamp(rawLess - scorePenalty + bonus)));
+  const lessFinal = sideMode === 'more_only' ? null : (selectedSide === 'less' ? scoreInteger : (selectedSide === 'more' ? lessAlt : null));
+
+  const scoreStatus = modelDeferred ? 'model_deferred' : (hardBlocked ? 'simulation_hard_blocked' : (!selectedSide ? 'simulation_side_tie_unresolved' : 'simulated_profile_locked'));
+  let scoreGrade = 'BIN_REJECT';
+  if (modelDeferred) scoreGrade = 'BIN_MODEL_DEFERRED';
+  else if (hardBlocked) scoreGrade = 'BIN_HARD_BLOCK';
+  else if (scoreInteger == null) scoreGrade = 'BIN_0_NULL';
+  else if (scoreInteger >= p.gradeEliteMin) scoreGrade = 'BIN_ELITE';
+  else if (scoreInteger >= p.gradeStrongMin) scoreGrade = 'BIN_STRONG';
+  else if (scoreInteger >= p.gradeQualifiedMin) scoreGrade = 'BIN_QUALIFIED';
+  else if (scoreInteger >= p.gradeArchiveMin) scoreGrade = 'BIN_ARCHIVE';
+  const confidenceStatus = confidence == null ? null : (confidence >= p.minLiveConfidence ? 'confidence_live_eligible' : 'confidence_archive_only');
+  const livePlayable = (!modelDeferred && !hardBlocked && selectedSide && scoreInteger >= p.minLiveScore && confidence >= p.minLiveConfidence) ? 1 : 0;
+  const archiveEligible = (!modelDeferred && !hardBlocked && selectedSide && scoreInteger >= p.archiveScoreThreshold) ? 1 : 0;
+
+  const calculationJson = JSON.stringify({
+    worker_version: VERSION,
+    simulation_only: 1,
+    profile_key: profileKey,
+    profile_version: p.version,
+    active_values_source: 'SCORE_DB.scoring_engine_simulation_profile_configs.config_json',
+    all_calibration_variables_db_stored: 1,
+    formula_order: 'inventory_defer_gate -> js_bounded_independent_more_less_scores -> price_line_prop_side_pressure -> pre_cap_side_selection -> score_penalties -> score_cap -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
+    raw_side_delta_threshold: p.rawSideDeltaThreshold,
+    min_live_score: p.minLiveScore,
+    min_live_confidence: p.minLiveConfidence,
+    archive_score_threshold: p.archiveScoreThreshold,
+    thresholds_locked: 0,
+    scoring_enabled: 0,
+    true_probability_enabled: 0,
+    no_true_hit_probability_claims: 1,
+    score_sort_policy: 'score_sort_0_100_only; positive_micro_lt_0_0001; never used for archive/live/bins',
+    goblin_demon_less_score_policy: 'NULL_NOT_ZERO',
+    d1_memory_policy: 'no_large_scoring_cte; bounded_js_chunk_compute_and_small_insert_batches'
+  });
+
+  return [
+    `${profileKey}|sim|${row.matrix_id || row.prepared_row_id || row.source_line_id || `${row.player_name}|${prop}`}`,
+    batchId,
+    profileKey,
+    p.version,
+    row.matrix_id,
+    row.prepared_row_id,
+    row.source_line_id,
+    sourceKey,
+    row.game_pk,
+    row.official_date,
+    row.official_game_time_utc,
+    row.mlb_player_id,
+    row.player_name,
+    prop,
+    row.board_line_value,
+    variationKey,
+    sourceLineType,
+    oddsType,
+    payoutVariant,
+    sideMode,
+    availableSides,
+    row.matrix_status,
+    row.matrix_grade,
+    row.factor_status,
+    row.market_game_context_status,
+    row.market_prop_context_status,
+    row.daily_readiness_status,
+    Number(row.blocking_for_scoring || 0),
+    Number(row.warning_count || 0),
+    Number(row.blocker_count || 0),
+    Number(row.missing_component_count || 0),
+    p.maxScoreCap,
+    scorePenalty,
+    bonus,
+    rawMore,
+    rawLess,
+    moreFinal,
+    lessFinal,
+    scoreInteger,
+    selectedSide,
+    scoreStatus,
+    scoreGrade,
+    archiveEligible,
+    0,
+    calculationJson,
+    row.matrix_payload_json,
+    row.details_json,
+    confidence,
+    confidenceStatus,
+    livePlayable,
+    modelDeferred,
+    modelDeferredReason,
+    scoreSort,
+    scoreInteger
+  ];
+}
+
+async function insertShadowRows(env, valueRows) {
+  if (!valueRows.length) return 0;
+  const columns = `
       simulation_row_id, simulation_batch_id, profile_key, profile_version,
       matrix_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc,
       mlb_player_id, player_name, canonical_prop_key, line_value, variation_key, source_line_type, odds_type, payout_variant,
@@ -657,280 +922,46 @@ async function insertSimulationProfileChunk(env, batchId, profileKey, cursorMatr
       archive_eligible, invariant_violation_count, calculation_json, matrix_payload_json_snapshot, details_json_snapshot,
       confidence_0_100, confidence_status, live_playable, model_deferred, model_deferred_reason,
       score_sort_0_100, score_integer_0_100,
-      created_at, updated_at
-    )
-    WITH base AS (
-      SELECT
-        m.*,
-        json_extract(m.matrix_payload_json, '$.variation_context.variation_key') AS v_variation_key,
-        json_extract(m.matrix_payload_json, '$.prepared.source_line_type') AS v_source_line_type,
-        json_extract(m.matrix_payload_json, '$.prepared.odds_type') AS v_odds_type,
-        json_extract(m.matrix_payload_json, '$.prepared.payout_variant') AS v_payout_variant,
-        json_extract(m.matrix_payload_json, '$.side_context.side_mode') AS v_side_mode,
-        json_extract(m.matrix_payload_json, '$.side_context.available_sides') AS v_available_sides_json,
-        COALESCE(
-          CAST(json_extract(m.details_json, '$.side_variation.source_prices.over_price') AS REAL),
-          CAST(json_extract(m.matrix_payload_json, '$.side_context.source_prices.over_price') AS REAL),
-          CAST(json_extract(m.matrix_payload_json, '$.variation_context.source_prices.over_price') AS REAL)
-        ) AS v_over_price,
-        COALESCE(
-          CAST(json_extract(m.details_json, '$.side_variation.source_prices.under_price') AS REAL),
-          CAST(json_extract(m.matrix_payload_json, '$.side_context.source_prices.under_price') AS REAL),
-          CAST(json_extract(m.matrix_payload_json, '$.variation_context.source_prices.under_price') AS REAL)
-        ) AS v_under_price,
-        CASE
-          WHEN m.source_key = 'sleeper' AND m.canonical_prop_key = 'rfi_nrfi' THEN 1
-          WHEN m.source_key = 'prizepicks' AND m.canonical_prop_key = 'triples' THEN 1
-          ELSE 0
-        END AS model_deferred_calc,
-        CASE
-          WHEN m.source_key = 'sleeper' AND m.canonical_prop_key = 'rfi_nrfi' THEN 'model_deferred_rfi_nrfi'
-          WHEN m.source_key = 'prizepicks' AND m.canonical_prop_key = 'triples' THEN 'model_deferred_low_event_prop'
-          ELSE NULL
-        END AS model_deferred_reason_calc,
-        CASE
-          WHEN NOT (m.source_key = 'sleeper' AND m.canonical_prop_key = 'rfi_nrfi')
-           AND NOT (m.source_key = 'prizepicks' AND m.canonical_prop_key = 'triples')
-           AND (COALESCE(m.blocking_for_scoring,0) = 1 OR m.matrix_status = 'matrix_deferred' OR m.factor_status = 'blocked') THEN 1
-          ELSE 0
-        END AS hard_blocked,
-        CASE
-          WHEN m.market_prop_context_status IN ('market_prop_context_missing','market_prop_context_not_found')
-           AND COALESCE(m.market_game_context_status,'') IN ('','market_game_context_missing','market_game_context_not_found','market_game_context_absent') THEN 1
-          ELSE 0
-        END AS complete_market_blind_calc,
-        CASE WHEN m.factor_status = 'packet_ready' THEN ${p.baseRawPacketReady} ELSE ${p.baseRawPacketPartial} END
-          + ${p.marketRawCase}
-          + ${p.dailyRawCase}
-          + ${p.sourceRawCase}
-          + ${p.oddsRawCase} AS raw_base_pre,
-        ${p.propRawCase} AS prop_more_adjustment_calc,
-        ${p.propLessRawCase} AS prop_less_adjustment_calc,
-        CASE
-          WHEN m.canonical_prop_key IN ('hits','singles') AND COALESCE(m.board_line_value,0) <= 0.5 THEN 1.25
-          WHEN m.canonical_prop_key IN ('hits','singles') AND COALESCE(m.board_line_value,0) >= 1.5 THEN -1.25
-          WHEN m.canonical_prop_key IN ('total_bases','hits_runs_rbis','rbis','runs') AND COALESCE(m.board_line_value,0) <= 1.5 THEN 0.75
-          WHEN m.canonical_prop_key IN ('total_bases','hits_runs_rbis','rbis','runs') AND COALESCE(m.board_line_value,0) >= 2.5 THEN -1.50
-          WHEN m.canonical_prop_key IN ('pitcher_strikeouts') AND COALESCE(m.board_line_value,0) <= 3.5 THEN 1.25
-          WHEN m.canonical_prop_key IN ('pitcher_strikeouts') AND COALESCE(m.board_line_value,0) >= 6.5 THEN -1.50
-          WHEN m.canonical_prop_key IN ('pitcher_outs','pitching_outs') AND COALESCE(m.board_line_value,0) <= 14.5 THEN 1.25
-          WHEN m.canonical_prop_key IN ('pitcher_outs','pitching_outs') AND COALESCE(m.board_line_value,0) >= 18.5 THEN -1.50
-          ELSE 0
-        END AS line_more_pressure_calc,
-        CASE
-          WHEN m.canonical_prop_key IN ('hits','singles') AND COALESCE(m.board_line_value,0) <= 0.5 THEN -0.75
-          WHEN m.canonical_prop_key IN ('hits','singles') AND COALESCE(m.board_line_value,0) >= 1.5 THEN 1.25
-          WHEN m.canonical_prop_key IN ('total_bases','hits_runs_rbis','rbis','runs') AND COALESCE(m.board_line_value,0) <= 1.5 THEN -0.50
-          WHEN m.canonical_prop_key IN ('total_bases','hits_runs_rbis','rbis','runs') AND COALESCE(m.board_line_value,0) >= 2.5 THEN 1.50
-          WHEN m.canonical_prop_key IN ('pitcher_strikeouts') AND COALESCE(m.board_line_value,0) <= 3.5 THEN -1.00
-          WHEN m.canonical_prop_key IN ('pitcher_strikeouts') AND COALESCE(m.board_line_value,0) >= 6.5 THEN 1.50
-          WHEN m.canonical_prop_key IN ('pitcher_outs','pitching_outs') AND COALESCE(m.board_line_value,0) <= 14.5 THEN -1.00
-          WHEN m.canonical_prop_key IN ('pitcher_outs','pitching_outs') AND COALESCE(m.board_line_value,0) >= 18.5 THEN 1.50
-          ELSE 0
-        END AS line_less_pressure_calc
-      FROM prop_matrix_current m
-      WHERE (? IS NULL OR m.matrix_id > ?)
-      ORDER BY m.matrix_id
-      LIMIT ?
-    ), pressure AS (
-      SELECT
-        base.*,
-        CASE
-          WHEN v_over_price IS NULL THEN 0
-          WHEN v_over_price < 0 THEN ((ABS(v_over_price) * 100.0 / (ABS(v_over_price) + 100.0)) - 50.0) * ${p.pricePressureScale}
-          ELSE ((100.0 / (v_over_price + 100.0)) - 0.50) * 100.0 * ${p.pricePressureScale}
-        END AS price_more_pressure_calc,
-        CASE
-          WHEN v_under_price IS NULL THEN 0
-          WHEN v_under_price < 0 THEN ((ABS(v_under_price) * 100.0 / (ABS(v_under_price) + 100.0)) - 50.0) * ${p.pricePressureScale}
-          ELSE ((100.0 / (v_under_price + 100.0)) - 0.50) * 100.0 * ${p.pricePressureScale}
-        END AS price_less_pressure_calc,
-        (((ABS(COALESCE(mlb_player_id,0) * 31 + COALESCE(game_pk,0) * 17 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 13) % 11) - 5) * ${p.deterministicSpreadScale}) AS more_spread_calc,
-        (((ABS(COALESCE(mlb_player_id,0) * 37 + COALESCE(game_pk,0) * 19 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 7) % 11) - 5) * ${p.deterministicSpreadScale}) AS less_spread_calc
-      FROM base
-    ), rawed AS (
-      SELECT
-        pressure.*,
-        MAX(0, MIN(100, raw_base_pre + prop_more_adjustment_calc + (line_more_pressure_calc * ${p.linePressureScale}) + CASE WHEN v_side_mode = 'two_sided' THEN price_more_pressure_calc ELSE 0 END + more_spread_calc)) AS raw_more_score_calc,
-        CASE WHEN v_side_mode = 'two_sided' THEN MAX(0, MIN(100, raw_base_pre + prop_less_adjustment_calc + (line_less_pressure_calc * ${p.linePressureScale}) + price_less_pressure_calc + less_spread_calc)) ELSE NULL END AS raw_less_score_calc
-      FROM pressure
-    ), side_selected AS (
-      SELECT
-        rawed.*,
-        CASE
-          WHEN hard_blocked = 1 OR model_deferred_calc = 1 THEN NULL
-          WHEN v_side_mode = 'more_only' THEN 'more'
-          WHEN v_side_mode = 'two_sided' AND raw_more_score_calc IS NOT NULL AND raw_less_score_calc IS NOT NULL AND (raw_more_score_calc - raw_less_score_calc) >= ${p.rawSideDeltaThreshold} THEN 'more'
-          WHEN v_side_mode = 'two_sided' AND raw_more_score_calc IS NOT NULL AND raw_less_score_calc IS NOT NULL AND (raw_less_score_calc - raw_more_score_calc) >= ${p.rawSideDeltaThreshold} THEN 'less'
-          WHEN v_side_mode = 'two_sided' AND raw_more_score_calc IS NOT NULL AND raw_less_score_calc IS NOT NULL AND ABS(raw_more_score_calc - raw_less_score_calc) < ${p.rawSideDeltaThreshold} AND raw_more_score_calc > raw_less_score_calc THEN 'more'
-          WHEN v_side_mode = 'two_sided' AND raw_more_score_calc IS NOT NULL AND raw_less_score_calc IS NOT NULL AND ABS(raw_more_score_calc - raw_less_score_calc) < ${p.rawSideDeltaThreshold} AND raw_less_score_calc > raw_more_score_calc THEN 'less'
-          ELSE NULL
-        END AS selected_side_calc
-      FROM rawed
-    ), penalties AS (
-      SELECT
-        side_selected.*,
-        (
-          CASE WHEN complete_market_blind_calc = 1 THEN ${p.scorePenaltyCompleteMarketBlindness} ELSE 0 END +
-          CASE WHEN complete_market_blind_calc = 0 AND market_prop_context_status = 'market_prop_context_missing' THEN ${p.scorePenaltyMarketMissing} ELSE 0 END +
-          CASE WHEN complete_market_blind_calc = 0 AND market_prop_context_status = 'market_prop_context_not_found' THEN ${p.scorePenaltyMarketNotFound} ELSE 0 END +
-          CASE WHEN factor_status = 'packet_partial' THEN ${p.scorePenaltyPacketPartial} ELSE 0 END +
-          CASE WHEN daily_readiness_status = 'partial_enrichment' THEN ${p.scorePenaltyPartialEnrichment} ELSE 0 END
-        ) AS penalty_total_calc,
-        CASE
-          WHEN hard_blocked = 1 OR model_deferred_calc = 1 THEN 0
-          WHEN market_prop_context_status = 'market_prop_context_present' AND COALESCE(warning_count,0) = 0 AND factor_status = 'packet_ready' AND daily_readiness_status <> 'partial_enrichment' THEN ${p.cleanBonusScore}
-          ELSE 0
-        END AS bonus_calc,
-        (
-          CASE WHEN factor_status = 'packet_partial' THEN ${p.confidencePenaltyPacketPartial} ELSE 0 END +
-          CASE WHEN daily_readiness_status = 'partial_enrichment' THEN ${p.confidencePenaltyPartialEnrichment} ELSE 0 END +
-          CASE WHEN source_key = 'sleeper' AND v_odds_type IS NULL THEN ${p.confidencePenaltySleeperNullOdds} ELSE 0 END +
-          CASE WHEN COALESCE(warning_count,0) >= 9 THEN ${p.confidencePenaltyWarning9Plus} ELSE 0 END +
-          CASE WHEN COALESCE(warning_count,0) BETWEEN 6 AND 8 THEN ${p.confidencePenaltyWarning68} ELSE 0 END +
-          CASE WHEN COALESCE(warning_count,0) BETWEEN 3 AND 5 THEN ${p.confidencePenaltyWarning35} ELSE 0 END
-        ) AS confidence_penalty_total_calc,
-        MIN(
-          100,
-          CASE WHEN complete_market_blind_calc = 1 THEN ${p.confidenceCapCompleteMarketBlindness} ELSE 100 END,
-          CASE WHEN complete_market_blind_calc = 0 AND market_prop_context_status = 'market_prop_context_missing' THEN ${p.confidenceCapMarketMissing} ELSE 100 END,
-          CASE WHEN complete_market_blind_calc = 0 AND market_prop_context_status = 'market_prop_context_not_found' THEN ${p.confidenceCapMarketNotFound} ELSE 100 END,
-          CASE WHEN COALESCE(warning_count,0) >= 9 THEN ${p.confidenceCapWarning9Plus} ELSE 100 END
-        ) AS confidence_cap_calc
-      FROM side_selected
-    ), scored AS (
-      SELECT
-        penalties.*,
-        ${p.maxScoreCap} AS structural_cap_calc,
-        CASE
-          WHEN hard_blocked = 1 OR model_deferred_calc = 1 OR selected_side_calc IS NULL THEN NULL
-          WHEN selected_side_calc = 'more' THEN ROUND(MIN(${p.maxScoreCap}, MAX(0, MIN(100, raw_more_score_calc - penalty_total_calc + bonus_calc))), 0)
-          WHEN selected_side_calc = 'less' THEN ROUND(MIN(${p.maxScoreCap}, MAX(0, MIN(100, raw_less_score_calc - penalty_total_calc + bonus_calc))), 0)
-          ELSE NULL
-        END AS score_integer_calc,
-        CASE
-          WHEN hard_blocked = 1 OR model_deferred_calc = 1 OR selected_side_calc IS NULL THEN NULL
-          ELSE ROUND(MIN(confidence_cap_calc, MAX(0, MIN(100, ${p.baseConfidence} - confidence_penalty_total_calc + MIN(6, ABS(COALESCE(raw_more_score_calc,0) - COALESCE(raw_less_score_calc, raw_more_score_calc)) * 1.15) + CASE WHEN market_prop_context_status = 'market_prop_context_present' THEN 3 ELSE 0 END + CASE WHEN v_over_price IS NOT NULL OR v_under_price IS NOT NULL THEN 2 ELSE 0 END))), 0)
-        END AS confidence_calc,
-        ABS(((COALESCE(mlb_player_id,0) * 31 + COALESCE(game_pk,0) * 17 + CAST(COALESCE(board_line_value,0) * 100 AS INTEGER) * 13) % 999)) * ${p.microScale} / 999.0 AS sort_micro_adjustment_calc
-      FROM penalties
-    ), final AS (
-      SELECT
-        scored.*,
-        CASE WHEN selected_side_calc = 'more' THEN score_integer_calc ELSE NULL END AS more_final,
-        CASE WHEN v_side_mode = 'more_only' THEN NULL WHEN selected_side_calc = 'less' THEN score_integer_calc WHEN selected_side_calc = 'more' THEN ROUND(MIN(${p.maxScoreCap}, MAX(0, MIN(100, raw_less_score_calc - penalty_total_calc + bonus_calc))), 0) ELSE NULL END AS less_final,
-        CASE WHEN score_integer_calc IS NULL THEN NULL ELSE score_integer_calc + sort_micro_adjustment_calc END AS score_sort_calc,
-        CASE
-          WHEN model_deferred_calc = 1 THEN 'model_deferred'
-          WHEN hard_blocked = 1 THEN 'simulation_hard_blocked'
-          WHEN selected_side_calc IS NULL THEN 'simulation_side_tie_unresolved'
-          ELSE 'simulated_profile_locked'
-        END AS score_status_calc,
-        CASE
-          WHEN model_deferred_calc = 1 THEN 'BIN_MODEL_DEFERRED'
-          WHEN hard_blocked = 1 THEN 'BIN_HARD_BLOCK'
-          WHEN score_integer_calc IS NULL THEN 'BIN_0_NULL'
-          WHEN score_integer_calc >= ${p.gradeEliteMin} THEN 'BIN_ELITE'
-          WHEN score_integer_calc >= ${p.gradeStrongMin} THEN 'BIN_STRONG'
-          WHEN score_integer_calc >= ${p.gradeQualifiedMin} THEN 'BIN_QUALIFIED'
-          WHEN score_integer_calc >= ${p.gradeArchiveMin} THEN 'BIN_ARCHIVE'
-          ELSE 'BIN_REJECT'
-        END AS score_grade_calc,
-        CASE
-          WHEN confidence_calc IS NULL THEN NULL
-          WHEN confidence_calc >= ${p.minLiveConfidence} THEN 'confidence_live_eligible'
-          ELSE 'confidence_archive_only'
-        END AS confidence_status_calc,
-        CASE
-          WHEN model_deferred_calc = 0 AND hard_blocked = 0 AND selected_side_calc IS NOT NULL
-           AND score_integer_calc >= ${p.minLiveScore}
-           AND confidence_calc >= ${p.minLiveConfidence}
-          THEN 1 ELSE 0
-        END AS live_playable_calc,
-        CASE
-          WHEN model_deferred_calc = 0 AND hard_blocked = 0 AND selected_side_calc IS NOT NULL AND score_integer_calc >= ${p.archiveScoreThreshold}
-          THEN 1 ELSE 0
-        END AS archive_eligible_calc
-      FROM scored
-    )
-    SELECT
-      ? || '|sim|' || COALESCE(matrix_id, prepared_row_id, source_line_id, player_name || '|' || canonical_prop_key) AS simulation_row_id,
-      ? AS simulation_batch_id,
-      ? AS profile_key,
-      ? AS profile_version,
-      matrix_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc,
-      mlb_player_id, player_name, canonical_prop_key, board_line_value AS line_value,
-      v_variation_key AS variation_key, v_source_line_type AS source_line_type, v_odds_type AS odds_type, v_payout_variant AS payout_variant,
-      v_side_mode AS side_mode, v_available_sides_json AS available_sides_json,
-      matrix_status, matrix_grade, factor_status, market_game_context_status, market_prop_context_status, daily_readiness_status,
-      COALESCE(blocking_for_scoring,0), COALESCE(warning_count,0), COALESCE(blocker_count,0), COALESCE(missing_component_count,0),
-      structural_cap_calc, penalty_total_calc, bonus_calc, raw_more_score_calc, raw_less_score_calc,
-      more_final,
-      CASE WHEN v_side_mode = 'more_only' THEN NULL ELSE less_final END,
-      score_integer_calc AS score_0_100,
-      selected_side_calc AS selected_side,
-      score_status_calc,
-      score_grade_calc,
-      archive_eligible_calc,
-      0 AS invariant_violation_count,
-      json_object(
-        'worker_version', ?,
-        'simulation_only', 1,
-        'profile_key', ?,
-        'profile_version', ?,
-        'active_values_source', 'SCORE_DB.scoring_engine_simulation_profile_configs.config_json',
-        'all_calibration_variables_db_stored', 1,
-        'formula_order', 'inventory_defer_gate -> independent_more_less_scores -> price_line_prop_side_pressure_cte_safe -> pre_cap_side_selection -> score_penalties -> score_cap -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
-        'raw_side_delta_threshold', ${p.rawSideDeltaThreshold},
-        'min_live_score', ${p.minLiveScore},
-        'min_live_confidence', ${p.minLiveConfidence},
-        'archive_score_threshold', ${p.archiveScoreThreshold},
-        'thresholds_locked', 0,
-        'scoring_enabled', 0,
-        'true_probability_enabled', 0,
-        'no_true_hit_probability_claims', 1,
-        'score_sort_policy', 'score_sort_0_100_only; positive_micro_lt_0_0001; never used for archive/live/bins',
-        'goblin_demon_less_score_policy', 'NULL_NOT_ZERO',
-        'dedupe_deferred_to_ranking_final_board', 1
-      ) AS calculation_json,
-      matrix_payload_json,
-      details_json,
-      confidence_calc,
-      confidence_status_calc,
-      live_playable_calc,
-      model_deferred_calc,
-      model_deferred_reason_calc,
-      score_sort_calc,
-      score_integer_calc,
-      CURRENT_TIMESTAMP,
-      CURRENT_TIMESTAMP
-    FROM final
-  `, cursorMatrixId, cursorMatrixId, chunkSize, profileKey, batchId, profileKey, p.version, VERSION, profileKey, p.version);
+      created_at, updated_at`;
+  const one = `(${new Array(54).fill('?').join(', ')}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`;
+  const sql = `INSERT INTO scoring_engine_simulation_shadow (${columns}) VALUES ${valueRows.map(() => one).join(', ')}`;
+  await run(env.SCORE_DB, sql, ...valueRows.flat());
+  return valueRows.length;
 }
 
 async function insertSimulationProfile(env, batchId, profileKey) {
-  const chunkSize = 50;
+  const p = await profileConstants(env, profileKey);
+  const readChunkSize = 80;
+  const writeBatchSize = 8;
   let cursorMatrixId = null;
   let insertedRows = 0;
   let processedChunks = 0;
   while (true) {
-    const chunkRows = await all(
-      env.SCORE_DB,
-      `SELECT matrix_id FROM prop_matrix_current WHERE (? IS NULL OR matrix_id > ?) ORDER BY matrix_id LIMIT ?`,
-      cursorMatrixId,
-      cursorMatrixId,
-      chunkSize
-    );
-    if (!chunkRows.length) break;
-    await insertSimulationProfileChunk(env, batchId, profileKey, cursorMatrixId, chunkSize);
-    insertedRows += chunkRows.length;
+    const rows = await all(env.SCORE_DB, `
+      SELECT
+        matrix_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc,
+        mlb_player_id, player_name, canonical_prop_key, board_line_value,
+        matrix_status, matrix_grade, factor_status, market_game_context_status, market_prop_context_status,
+        daily_readiness_status, blocking_for_scoring, warning_count, blocker_count, missing_component_count,
+        matrix_payload_json, details_json
+      FROM prop_matrix_current
+      WHERE (? IS NULL OR matrix_id > ?)
+      ORDER BY matrix_id
+      LIMIT ?
+    `, cursorMatrixId, cursorMatrixId, readChunkSize);
+    if (!rows.length) break;
+    const built = rows.map(row => buildSimulationShadowRow(batchId, profileKey, p, row));
+    for (let i = 0; i < built.length; i += writeBatchSize) {
+      insertedRows += await insertShadowRows(env, built.slice(i, i + writeBatchSize));
+    }
     processedChunks += 1;
-    cursorMatrixId = chunkRows[chunkRows.length - 1].matrix_id;
+    cursorMatrixId = rows[rows.length - 1].matrix_id;
     if (processedChunks > 1000) throw new Error('scoring_simulation_chunk_guard_exceeded');
   }
   const countRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_simulation_shadow WHERE simulation_batch_id=? AND profile_key=?`, batchId, profileKey);
   return Number(countRow && countRow.rows ? countRow.rows : insertedRows);
 }
+
 
 async function summarizeSimulationProfile(env, batchId, profileKey) {
   const row = await first(env.SCORE_DB, `
@@ -1133,8 +1164,8 @@ async function runScoringSimulation(env, input) {
   const simulationRowsWritten = strictRows + hybridRows;
 
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_V0_3_0_DYNAMIC_SIDE_SCORE_PRESSURE_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_0_DYNAMIC_SIDE_SCORE_PRESSURE_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_0_DYNAMIC_SIDE_SCORE_PRESSURE_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_3_1_DYNAMIC_SIDE_SCORE_JS_MEMORY_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_1_DYNAMIC_SIDE_SCORE_JS_MEMORY_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_1_DYNAMIC_SIDE_SCORE_JS_MEMORY_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
   const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
 
@@ -1149,7 +1180,7 @@ async function runScoringSimulation(env, input) {
     profile_under_review: "STRICT_B",
     comparison_profile: "HYBRID_CONTROL",
     chunked_d1_memory_mode: true,
-    simulation_chunk_size: 50,
+    simulation_chunk_size: 80,
     fresh_shadow_issue_cleanup: cleanupStats,
     expected_model_deferred_rows_per_profile: expectedDeferred,
     matrix_rows_read: matrixRows,
@@ -1172,7 +1203,7 @@ async function runScoringSimulation(env, input) {
     selected_side_policy: "Two-sided selected_side is chosen from raw pre-cap side scores using DB-configured raw_side_delta_threshold; Goblin/Demon are more_only and Less remains NULL.",
     notes: [
       "Simulation writes only to SCORE_DB.scoring_engine_simulation_shadow and related simulation audit tables.",
-      "v0.2.7 full-refreshes simulation shadow/issues with bounded chunk cleanup, uses dynamic model-deferred expectations from prop_matrix_current, and keeps D1-safe chunked inserts.",
+      "v0.3.1 full-refreshes simulation shadow/issues, computes dynamic side pressure in bounded JS chunks instead of large D1 scoring CTEs, and keeps small insert batches to avoid SQLITE_NOMEM.",
       "score_0_100 and confidence_0_100 are separated; live_playable requires score/confidence gates and never uses score_sort_0_100.",
       "score_sort_0_100 is deterministic sort-only micro-adjustment and never controls archive/live/bin thresholds.",
       "Strict-B is the primary safety profile; Hybrid-Control is comparison only and is not production-approved.",
