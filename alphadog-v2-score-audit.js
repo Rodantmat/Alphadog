@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.3.7-live-playable-market-context-gate";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.0-final-board-current";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -1572,6 +1572,256 @@ async function runScoringEngine(env, input) {
   return output;
 }
 
+
+async function ensureFinalBoardSchema(env) {
+  await run(env.SCORE_DB, `
+    CREATE TABLE IF NOT EXISTS scoring_final_board_batches (
+      final_board_batch_id TEXT PRIMARY KEY,
+      worker_version TEXT,
+      source_simulation_batch_id TEXT,
+      profile_key TEXT,
+      status TEXT,
+      certification TEXT,
+      certification_grade TEXT,
+      simulation_rows_read INTEGER DEFAULT 0,
+      final_board_rows_written INTEGER DEFAULT 0,
+      started_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      finished_at TEXT,
+      output_json TEXT
+    )
+  `);
+
+  await run(env.SCORE_DB, `
+    CREATE TABLE IF NOT EXISTS scoring_final_board_current (
+      final_board_row_id TEXT PRIMARY KEY,
+      final_board_batch_id TEXT NOT NULL,
+      final_rank INTEGER,
+      source_simulation_batch_id TEXT NOT NULL,
+      simulation_row_id TEXT NOT NULL,
+      matrix_id TEXT,
+      prepared_row_id TEXT,
+      source_line_id TEXT,
+      source_key TEXT,
+      game_pk INTEGER,
+      official_date TEXT,
+      official_game_time_utc TEXT,
+      mlb_player_id INTEGER,
+      player_name TEXT,
+      canonical_prop_key TEXT,
+      line_value REAL,
+      selected_side TEXT,
+      score_0_100 REAL,
+      confidence_0_100 REAL,
+      score_sort_0_100 REAL,
+      score_grade TEXT,
+      factor_status TEXT,
+      market_prop_context_status TEXT,
+      daily_readiness_status TEXT,
+      side_mode TEXT,
+      odds_type TEXT,
+      payout_variant TEXT,
+      variation_key TEXT,
+      calculation_json TEXT,
+      matrix_payload_json_snapshot TEXT,
+      details_json_snapshot TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await run(env.SCORE_DB, `
+    CREATE TABLE IF NOT EXISTS scoring_final_board_archive (
+      final_board_row_id TEXT,
+      final_board_batch_id TEXT,
+      final_rank INTEGER,
+      source_simulation_batch_id TEXT,
+      simulation_row_id TEXT,
+      matrix_id TEXT,
+      prepared_row_id TEXT,
+      source_line_id TEXT,
+      source_key TEXT,
+      game_pk INTEGER,
+      official_date TEXT,
+      official_game_time_utc TEXT,
+      mlb_player_id INTEGER,
+      player_name TEXT,
+      canonical_prop_key TEXT,
+      line_value REAL,
+      selected_side TEXT,
+      score_0_100 REAL,
+      confidence_0_100 REAL,
+      score_sort_0_100 REAL,
+      score_grade TEXT,
+      factor_status TEXT,
+      market_prop_context_status TEXT,
+      daily_readiness_status TEXT,
+      side_mode TEXT,
+      odds_type TEXT,
+      payout_variant TEXT,
+      variation_key TEXT,
+      calculation_json TEXT,
+      matrix_payload_json_snapshot TEXT,
+      details_json_snapshot TEXT,
+      archived_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await run(env.SCORE_DB, `
+    CREATE TABLE IF NOT EXISTS scoring_final_board_issues (
+      issue_id TEXT PRIMARY KEY,
+      final_board_batch_id TEXT,
+      issue_key TEXT,
+      severity TEXT,
+      issue_count INTEGER DEFAULT 0,
+      issue_json TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_scoring_final_board_current_rank ON scoring_final_board_current(final_rank)`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_scoring_final_board_current_player ON scoring_final_board_current(mlb_player_id, canonical_prop_key)`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_scoring_final_board_current_game ON scoring_final_board_current(game_pk, source_key)`);
+}
+
+async function writeFinalBoardIssue(env, batchId, key, severity, count, payload = {}) {
+  await run(env.SCORE_DB, `
+    INSERT OR REPLACE INTO scoring_final_board_issues (issue_id, final_board_batch_id, issue_key, severity, issue_count, issue_json, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+  `, `${batchId}:${key}`, batchId, key, severity, Number(count || 0), JSON.stringify(payload));
+}
+
+async function runScoringFinalBoard(env, input) {
+  const missingBindings = requireSimulationBindings(env);
+  if (missingBindings.length) {
+    return baseIdentity({ ok:false, data_ok:false, status:'blocked_missing_bindings', certification:'SCORING_FINAL_BOARD_BINDINGS_MISSING', certification_grade:'BLOCKED', missing_bindings: missingBindings, no_final_board:false });
+  }
+
+  await ensureSimulationSchema(env);
+  await ensureFinalBoardSchema(env);
+
+  const requestId = input.request_id || `scoring_final_board_${Date.now().toString(36)}`;
+  const chainId = input.chain_id || null;
+  const finalBatchId = `scoring_final_board_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
+  const started = Date.now();
+  const profileKey = 'STRICT_B';
+
+  const requestedSimulationBatchId = input.source_simulation_batch_id || (input.input_json && input.input_json.source_simulation_batch_id) || null;
+  const simBatch = requestedSimulationBatchId
+    ? await first(env.SCORE_DB, `SELECT simulation_batch_id, worker_version, status, certification, certification_grade FROM scoring_engine_simulation_batches WHERE simulation_batch_id=?`, requestedSimulationBatchId)
+    : await first(env.SCORE_DB, `
+        SELECT simulation_batch_id, worker_version, status, certification, certification_grade
+        FROM scoring_engine_simulation_batches
+        WHERE status='completed_simulation_shadow_only'
+          AND certification_grade IN ('PASS_WITH_REVIEW_WARNINGS','PASS_SIMULATION_REVIEW_READY')
+          AND worker_version LIKE '%v0.3.7%'
+        ORDER BY datetime(started_at) DESC
+        LIMIT 1
+      `);
+
+  if (!simBatch || !simBatch.simulation_batch_id) {
+    const output = baseIdentity({ ok:false, data_ok:false, request_id:requestId, chain_id:chainId, final_board_batch_id:finalBatchId, status:'blocked_no_certified_simulation_batch', certification:'SCORING_FINAL_BOARD_BLOCKED_NO_CERTIFIED_SIMULATION_BATCH', certification_grade:'BLOCKED', no_final_board:false });
+    await run(env.SCORE_DB, `INSERT INTO scoring_final_board_batches (final_board_batch_id, worker_version, source_simulation_batch_id, profile_key, status, certification, certification_grade, started_at, finished_at, output_json) VALUES (?, ?, NULL, ?, 'blocked', ?, 'BLOCKED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)`, finalBatchId, VERSION, profileKey, output.certification, JSON.stringify(output));
+    return output;
+  }
+
+  const sourceBatchId = simBatch.simulation_batch_id;
+  const eligible = await all(env.SCORE_DB, `
+    SELECT *
+    FROM scoring_engine_simulation_shadow
+    WHERE simulation_batch_id=?
+      AND profile_key=?
+      AND live_playable=1
+      AND archive_eligible=1
+      AND invariant_violation_count=0
+      AND selected_side IS NOT NULL
+      AND score_0_100 >= 76
+      AND confidence_0_100 >= 55
+      AND factor_status='packet_ready'
+      AND market_prop_context_status='market_prop_context_present'
+      AND daily_readiness_status IN ('ready','ready_with_warnings')
+    ORDER BY score_0_100 DESC, confidence_0_100 DESC, COALESCE(score_sort_0_100, score_0_100) DESC, player_name, canonical_prop_key, selected_side, source_line_id
+  `, sourceBatchId, profileKey);
+
+  const simRows = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_simulation_shadow WHERE simulation_batch_id=? AND profile_key=?`, sourceBatchId, profileKey);
+  await run(env.SCORE_DB, `
+    INSERT INTO scoring_final_board_batches (final_board_batch_id, worker_version, source_simulation_batch_id, profile_key, status, certification, certification_grade, simulation_rows_read, final_board_rows_written, started_at)
+    VALUES (?, ?, ?, ?, 'running', 'SCORING_FINAL_BOARD_STARTED', 'RUNNING', ?, 0, CURRENT_TIMESTAMP)
+  `, finalBatchId, VERSION, sourceBatchId, profileKey, Number(simRows && simRows.rows || 0));
+
+  await run(env.SCORE_DB, `
+    INSERT INTO scoring_final_board_archive (
+      final_board_row_id, final_board_batch_id, final_rank, source_simulation_batch_id, simulation_row_id, matrix_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc,
+      mlb_player_id, player_name, canonical_prop_key, line_value, selected_side, score_0_100, confidence_0_100, score_sort_0_100, score_grade, factor_status, market_prop_context_status,
+      daily_readiness_status, side_mode, odds_type, payout_variant, variation_key, calculation_json, matrix_payload_json_snapshot, details_json_snapshot, archived_at
+    )
+    SELECT final_board_row_id, final_board_batch_id, final_rank, source_simulation_batch_id, simulation_row_id, matrix_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc,
+      mlb_player_id, player_name, canonical_prop_key, line_value, selected_side, score_0_100, confidence_0_100, score_sort_0_100, score_grade, factor_status, market_prop_context_status,
+      daily_readiness_status, side_mode, odds_type, payout_variant, variation_key, calculation_json, matrix_payload_json_snapshot, details_json_snapshot, CURRENT_TIMESTAMP
+    FROM scoring_final_board_current
+  `);
+  await run(env.SCORE_DB, `DELETE FROM scoring_final_board_current`);
+
+  let rank = 0;
+  for (const r of eligible) {
+    rank += 1;
+    const rowId = `${finalBatchId}:${rank}:${r.simulation_row_id}`;
+    await run(env.SCORE_DB, `
+      INSERT INTO scoring_final_board_current (
+        final_board_row_id, final_board_batch_id, final_rank, source_simulation_batch_id, simulation_row_id, matrix_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc,
+        mlb_player_id, player_name, canonical_prop_key, line_value, selected_side, score_0_100, confidence_0_100, score_sort_0_100, score_grade, factor_status, market_prop_context_status,
+        daily_readiness_status, side_mode, odds_type, payout_variant, variation_key, calculation_json, matrix_payload_json_snapshot, details_json_snapshot, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `, rowId, finalBatchId, rank, sourceBatchId, r.simulation_row_id, r.matrix_id, r.prepared_row_id, r.source_line_id, r.source_key, r.game_pk, r.official_date, r.official_game_time_utc,
+       r.mlb_player_id, r.player_name, r.canonical_prop_key, r.line_value, r.selected_side, r.score_0_100, r.confidence_0_100, r.score_sort_0_100, r.score_grade, r.factor_status, r.market_prop_context_status,
+       r.daily_readiness_status, r.side_mode, r.odds_type, r.payout_variant, r.variation_key, r.calculation_json, r.matrix_payload_json_snapshot, r.details_json_snapshot);
+  }
+
+  const badRows = await first(env.SCORE_DB, `
+    SELECT COUNT(*) AS rows FROM scoring_final_board_current
+    WHERE final_board_batch_id=? AND (
+      selected_side IS NULL OR score_0_100 < 76 OR confidence_0_100 < 55 OR factor_status <> 'packet_ready' OR market_prop_context_status <> 'market_prop_context_present' OR daily_readiness_status NOT IN ('ready','ready_with_warnings')
+    )
+  `, finalBatchId);
+  const badCount = Number(badRows && badRows.rows || 0);
+  await writeFinalBoardIssue(env, finalBatchId, 'FINAL_BOARD_GATE_VIOLATION', badCount > 0 ? 'BLOCKER' : 'INFO', badCount, { note:'Final board current rows must satisfy live-playable production gates.' });
+
+  const certification = badCount > 0 ? 'SCORING_FINAL_BOARD_BLOCKED_GATE_VIOLATION' : 'SCORING_FINAL_BOARD_CURRENT_CERTIFIED';
+  const grade = badCount > 0 ? 'BLOCKED' : 'PASS';
+  const status = badCount > 0 ? 'blocked_gate_violation' : 'completed_final_board_current';
+
+  const output = baseIdentity({
+    request_id: requestId,
+    chain_id: chainId,
+    final_board_batch_id: finalBatchId,
+    source_simulation_batch_id: sourceBatchId,
+    source_simulation_worker_version: simBatch.worker_version,
+    profile_key: profileKey,
+    status,
+    certification,
+    certification_grade: grade,
+    simulation_rows_read: Number(simRows && simRows.rows || 0),
+    final_board_rows_written: eligible.length,
+    final_board_current_table: 'SCORE_DB.scoring_final_board_current',
+    final_board_archive_table: 'SCORE_DB.scoring_final_board_archive',
+    final_board_batches_table: 'SCORE_DB.scoring_final_board_batches',
+    final_ui_ready: badCount === 0,
+    no_final_board: false,
+    final_board_generated: true,
+    no_candidate_board_write: true,
+    no_true_hit_probability_claims: true,
+    ranking_policy: 'final_rank is deterministic display order from score/confidence/sort tie-breakers; no dedupe collapse across line variations.',
+    notes: [
+      'Final board is generated from latest certified STRICT_B simulation live_playable rows only.',
+      'Current table is replacement-style and ready for a separate final UI to read.',
+      'No old prop score tables or candidate board tables are touched.'
+    ],
+    elapsed_ms: Date.now() - started
+  });
+
+  await run(env.SCORE_DB, `UPDATE scoring_final_board_batches SET status=?, certification=?, certification_grade=?, final_board_rows_written=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, status, certification, grade, eligible.length, JSON.stringify(output), finalBatchId);
+  return output;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -1607,8 +1857,9 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       try {
+        const isFinalBoard = input && (input.mode === "scoring_final_board_generate" || input.job_key === "scoring-final-board");
         const isSimulation = input && (input.mode === "scoring_engine_simulation_shadow_strict_b" || input.job_key === "scoring-engine-simulation");
-        const output = isSimulation ? await runScoringSimulation(env, input) : await runScoringEngine(env, input);
+        const output = isFinalBoard ? await runScoringFinalBoard(env, input) : (isSimulation ? await runScoringSimulation(env, input) : await runScoringEngine(env, input));
         return jsonResponse(output, output.ok ? 200 : 500);
       } catch (err) {
         return jsonResponse(baseIdentity({
