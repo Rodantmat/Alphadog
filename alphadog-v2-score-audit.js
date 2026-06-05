@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.3.2-stable-v031-single-row-insert-preserve-good-shadow";
+const VERSION = "alphadog-v2-scoring-engine-v0.3.3-bounded-multirow-finalizer";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -470,7 +470,7 @@ function simulationFormulaMetadata() {
 
 const DEFAULT_SIM_CONFIGS = {
   HYBRID_CONTROL: {
-    profile_version: "0.3.2-control-stable-v031-single-row-insert-preserve-good-shadow",
+    profile_version: "0.3.3-control-bounded-multirow-finalizer",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -515,7 +515,7 @@ const DEFAULT_SIM_CONFIGS = {
     }
   },
   STRICT_B: {
-    profile_version: "0.3.2-strict-b-stable-v031-single-row-insert-preserve-good-shadow",
+    profile_version: "0.3.3-strict-b-bounded-multirow-finalizer",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -931,8 +931,9 @@ async function insertShadowRows(env, valueRows) {
 
 async function insertSimulationProfile(env, batchId, profileKey) {
   const p = await profileConstants(env, profileKey);
-  const readChunkSize = 80;
-  const writeBatchSize = 1;
+  const readChunkSize = 75;
+  // 54 bound vars per shadow row. D1/SQLite var ceiling is near 999, so 15 rows = 810 vars.
+  const writeBatchSize = 15;
   let cursorMatrixId = null;
   let insertedRows = 0;
   let processedChunks = 0;
@@ -959,7 +960,29 @@ async function insertSimulationProfile(env, batchId, profileKey) {
     if (processedChunks > 1000) throw new Error('scoring_simulation_chunk_guard_exceeded');
   }
   const countRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_simulation_shadow WHERE simulation_batch_id=? AND profile_key=?`, batchId, profileKey);
-  return Number(countRow && countRow.rows ? countRow.rows : insertedRows);
+  const persistedRows = Number(countRow && countRow.rows ? countRow.rows : insertedRows);
+  if (persistedRows !== insertedRows) {
+    throw new Error(`scoring_simulation_profile_count_mismatch:${profileKey}:inserted=${insertedRows}:persisted=${persistedRows}`);
+  }
+  return persistedRows;
+}
+
+async function assertSimulationProfileComplete(env, batchId, profileKey, expectedRows) {
+  const row = await first(env.SCORE_DB, `
+    SELECT
+      COUNT(*) AS rows,
+      COUNT(DISTINCT matrix_id) AS distinct_matrix_ids,
+      COUNT(DISTINCT prepared_row_id) AS distinct_prepared_rows
+    FROM scoring_engine_simulation_shadow
+    WHERE simulation_batch_id=? AND profile_key=?
+  `, batchId, profileKey);
+  const rows = Number(row && row.rows ? row.rows : 0);
+  const matrixIds = Number(row && row.distinct_matrix_ids ? row.distinct_matrix_ids : 0);
+  const preparedRows = Number(row && row.distinct_prepared_rows ? row.distinct_prepared_rows : 0);
+  if (rows !== expectedRows || matrixIds !== expectedRows || preparedRows !== expectedRows) {
+    throw new Error(`scoring_simulation_profile_incomplete:${profileKey}:rows=${rows}:matrix_ids=${matrixIds}:prepared_rows=${preparedRows}:expected=${expectedRows}`);
+  }
+  return { rows, distinct_matrix_ids: matrixIds, distinct_prepared_rows: preparedRows };
 }
 
 
@@ -1193,7 +1216,9 @@ async function runScoringSimulation(env, input) {
 
   const expectedDeferred = await expectedModelDeferredRows(env);
   const strictRows = await insertSimulationProfile(env, batchId, "STRICT_B");
+  const strictProfileCompleteness = await assertSimulationProfileComplete(env, batchId, "STRICT_B", matrixRows);
   const hybridRows = await insertSimulationProfile(env, batchId, "HYBRID_CONTROL");
+  const hybridProfileCompleteness = await assertSimulationProfileComplete(env, batchId, "HYBRID_CONTROL", matrixRows);
   const strictSummary = await summarizeSimulationProfile(env, batchId, "STRICT_B");
   const hybridSummary = await summarizeSimulationProfile(env, batchId, "HYBRID_CONTROL");
   await recordSimulationInvariants(env, batchId, "STRICT_B", strictSummary, expectedDeferred);
@@ -1210,8 +1235,8 @@ async function runScoringSimulation(env, input) {
   cleanupStats = await cleanupOldSimulationScratchTablesAfterSuccess(env, batchId, 500, 1000);
 
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_V0_3_2_STABLE_V031_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_2_STABLE_V031_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_2_STABLE_V031_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_3_3_BOUNDED_MULTIROW_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_3_BOUNDED_MULTIROW_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_3_BOUNDED_MULTIROW_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
   const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
 
@@ -1226,8 +1251,13 @@ async function runScoringSimulation(env, input) {
     profile_under_review: "STRICT_B",
     comparison_profile: "HYBRID_CONTROL",
     chunked_d1_memory_mode: true,
-    simulation_chunk_size: 80,
-    simulation_write_batch_size: 1,
+    simulation_chunk_size: 75,
+    simulation_write_batch_size: 15,
+    profile_completion_guard: {
+      expected_rows_per_profile: matrixRows,
+      strict_b: strictProfileCompleteness,
+      hybrid_control: hybridProfileCompleteness
+    },
     fresh_shadow_issue_cleanup: cleanupStats,
     expected_model_deferred_rows_per_profile: expectedDeferred,
     matrix_rows_read: matrixRows,
@@ -1250,7 +1280,7 @@ async function runScoringSimulation(env, input) {
     selected_side_policy: "Two-sided selected_side is chosen from raw pre-cap side scores using DB-configured raw_side_delta_threshold; Goblin/Demon are more_only and Less remains NULL.",
     notes: [
       "Simulation writes only to SCORE_DB.scoring_engine_simulation_shadow and related simulation audit tables.",
-      "v0.3.2 uses the uploaded v0.3.1 logic base, computes dynamic side pressure in bounded JS chunks, writes simulation shadow rows one at a time to stay under D1 SQL variable limits, and preserves the last good shadow until the new run completes.",
+      "v0.3.3 keeps the uploaded v0.3.1/v0.3.2 formula logic, writes bounded 15-row multirow batches under D1 SQL variable limits, and finalizes only after DB row counts prove both profiles equal prop_matrix_current.",
       "score_0_100 and confidence_0_100 are separated; live_playable requires score/confidence gates and never uses score_sort_0_100.",
       "score_sort_0_100 is deterministic sort-only micro-adjustment and never controls archive/live/bin thresholds.",
       "Strict-B is the primary safety profile; Hybrid-Control is comparison only and is not production-approved.",
