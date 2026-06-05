@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.0-strict-b-live-board-current";
+const VERSION = "alphadog-v2-score-final-board-v0.1.1-review-tier-calibration";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_B";
 
@@ -13,6 +13,9 @@ async function run(db, sql, ...binds) { return await db.prepare(sql).bind(...bin
 async function first(db, sql, ...binds) { return await db.prepare(sql).bind(...binds).first(); }
 async function all(db, sql, ...binds) { const r = await db.prepare(sql).bind(...binds).all(); return (r && r.results) || []; }
 function safeJson(v) { try { return JSON.stringify(v == null ? {} : v); } catch (_) { return "{}"; } }
+function num(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
+function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+function norm(v) { return String(v == null ? "" : v).trim().toLowerCase(); }
 
 async function addColumnIfMissing(db, table, col, ddl) {
   const cols = await all(db, `PRAGMA table_info(${table})`);
@@ -48,6 +51,8 @@ async function ensureSchema(env) {
       source_simulation_batch_id TEXT,
       profile_key TEXT,
       rank_order INTEGER,
+      board_tier TEXT,
+      review_playable INTEGER DEFAULT 0,
       source_key TEXT,
       game_pk INTEGER,
       official_date TEXT,
@@ -60,6 +65,8 @@ async function ensureSchema(env) {
       canonical_prop_key TEXT,
       line_value REAL,
       selected_side TEXT,
+      raw_score_0_100 REAL,
+      raw_confidence_0_100 REAL,
       score_0_100 REAL,
       confidence_0_100 REAL,
       score_grade TEXT,
@@ -72,6 +79,9 @@ async function ensureSchema(env) {
       payout_variant TEXT,
       archive_eligible INTEGER DEFAULT 1,
       live_playable INTEGER DEFAULT 1,
+      cluster_player_count INTEGER,
+      correlation_risk_tier TEXT,
+      calibration_json TEXT,
       calculation_json TEXT,
       matrix_payload_json_snapshot TEXT,
       details_json_snapshot TEXT,
@@ -87,6 +97,8 @@ async function ensureSchema(env) {
       source_simulation_batch_id TEXT,
       profile_key TEXT,
       rank_order INTEGER,
+      board_tier TEXT,
+      review_playable INTEGER DEFAULT 0,
       source_key TEXT,
       game_pk INTEGER,
       official_date TEXT,
@@ -99,6 +111,8 @@ async function ensureSchema(env) {
       canonical_prop_key TEXT,
       line_value REAL,
       selected_side TEXT,
+      raw_score_0_100 REAL,
+      raw_confidence_0_100 REAL,
       score_0_100 REAL,
       confidence_0_100 REAL,
       score_grade TEXT,
@@ -111,6 +125,9 @@ async function ensureSchema(env) {
       payout_variant TEXT,
       archive_eligible INTEGER DEFAULT 1,
       live_playable INTEGER DEFAULT 1,
+      cluster_player_count INTEGER,
+      correlation_risk_tier TEXT,
+      calibration_json TEXT,
       calculation_json TEXT,
       matrix_payload_json_snapshot TEXT,
       details_json_snapshot TEXT,
@@ -132,20 +149,33 @@ async function ensureSchema(env) {
     )
   `);
 
-  const currentExtra = [
-    ["source_simulation_batch_id", "source_simulation_batch_id TEXT"], ["confidence_0_100", "confidence_0_100 REAL"],
-    ["score_sort_0_100", "score_sort_0_100 REAL"], ["side_mode", "side_mode TEXT"], ["odds_type", "odds_type TEXT"],
-    ["payout_variant", "payout_variant TEXT"], ["calculation_json", "calculation_json TEXT"],
-    ["matrix_payload_json_snapshot", "matrix_payload_json_snapshot TEXT"], ["details_json_snapshot", "details_json_snapshot TEXT"]
+  const extraCols = [
+    ["source_simulation_batch_id", "source_simulation_batch_id TEXT"],
+    ["board_tier", "board_tier TEXT"],
+    ["review_playable", "review_playable INTEGER DEFAULT 0"],
+    ["raw_score_0_100", "raw_score_0_100 REAL"],
+    ["raw_confidence_0_100", "raw_confidence_0_100 REAL"],
+    ["confidence_0_100", "confidence_0_100 REAL"],
+    ["score_sort_0_100", "score_sort_0_100 REAL"],
+    ["side_mode", "side_mode TEXT"],
+    ["odds_type", "odds_type TEXT"],
+    ["payout_variant", "payout_variant TEXT"],
+    ["cluster_player_count", "cluster_player_count INTEGER"],
+    ["correlation_risk_tier", "correlation_risk_tier TEXT"],
+    ["calibration_json", "calibration_json TEXT"],
+    ["calculation_json", "calculation_json TEXT"],
+    ["matrix_payload_json_snapshot", "matrix_payload_json_snapshot TEXT"],
+    ["details_json_snapshot", "details_json_snapshot TEXT"]
   ];
-  for (const [col, ddl] of currentExtra) {
+  for (const [col, ddl] of extraCols) {
     await addColumnIfMissing(env.SCORE_DB, "score_final_board_current", col, ddl);
     await addColumnIfMissing(env.SCORE_DB, "score_final_board_history", col, ddl);
   }
 
-  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_final_board_current_rank ON score_final_board_current(profile_key, rank_order)`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_final_board_current_rank ON score_final_board_current(profile_key, board_tier, rank_order)`);
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_final_board_current_date ON score_final_board_current(official_date, source_key, canonical_prop_key)`);
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_final_board_current_game ON score_final_board_current(game_pk, mlb_player_id)`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_final_board_current_tier_source ON score_final_board_current(board_tier, source_key, score_0_100)`);
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_final_board_history_batch ON score_final_board_history(final_board_batch_id, rank_order)`);
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_final_board_batches_started ON score_final_board_batches(started_at, status)`);
 }
@@ -179,28 +209,160 @@ async function writeIssue(env, batchId, simBatchId, key, severity, count, payloa
 }
 
 function rowId(batchId, rank, row) {
-  return `final|${batchId}|${PRIMARY_PROFILE}|${String(rank).padStart(4, "0")}|${row.matrix_id || row.prepared_row_id || row.source_line_id || rank}`;
+  const tier = row.board_tier || "PRIMARY";
+  return `final|${batchId}|${PRIMARY_PROFILE}|${tier}|${String(rank).padStart(4, "0")}|${row.matrix_id || row.prepared_row_id || row.source_line_id || rank}`;
+}
+
+function gradeForScore(score) {
+  if (score == null) return "BIN_0_NULL";
+  if (score >= 88) return "BIN_ELITE";
+  if (score >= 82) return "BIN_STRONG";
+  if (score >= 76) return "BIN_QUALIFIED";
+  if (score >= 70) return "BIN_ARCHIVE";
+  return "BIN_REJECT";
+}
+
+function applyCalibration(rawRow, boardTier) {
+  const sourceKey = norm(rawRow.source_key);
+  const propKey = norm(rawRow.canonical_prop_key);
+  const side = norm(rawRow.selected_side);
+  const sideMode = norm(rawRow.side_mode);
+  const factorStatus = norm(rawRow.factor_status);
+  const readinessStatus = norm(rawRow.daily_readiness_status);
+  const rawScore = num(rawRow.score_0_100, NaN);
+  const rawConfidence = num(rawRow.confidence_0_100, NaN);
+  let score = rawScore;
+  let confidence = rawConfidence;
+  let confidenceCap = 94;
+  const scoreAdjustments = [];
+  const confidenceAdjustments = [];
+
+  if (!Number.isFinite(score) || !Number.isFinite(confidence)) {
+    return { ...rawRow, board_tier: boardTier, review_playable: boardTier === "REVIEW" ? 1 : 0, calibration_failed: true };
+  }
+
+  if (sourceKey === "prizepicks" || sideMode === "more_only") {
+    score -= 3;
+    confidence *= 0.92;
+    scoreAdjustments.push({ key: "single_source_or_prizepicks_soft_tax", delta: -3 });
+    confidenceAdjustments.push({ key: "single_source_or_prizepicks_confidence_haircut", multiplier: 0.92 });
+  }
+
+  let readinessPenalty = 0;
+  const readinessReasons = [];
+  if (factorStatus === "packet_partial") { readinessPenalty -= 2; readinessReasons.push("packet_partial"); }
+  if (readinessStatus === "missing_current_readiness") { readinessPenalty -= 2; readinessReasons.push("missing_current_readiness"); }
+  if (readinessStatus === "partial_enrichment") { readinessPenalty -= 2; readinessReasons.push("partial_enrichment"); }
+  readinessPenalty = Math.max(readinessPenalty, -4);
+  if (readinessPenalty < 0) {
+    score += readinessPenalty;
+    confidence *= 0.97;
+    scoreAdjustments.push({ key: "soft_readiness_penalty_capped", reasons: readinessReasons, delta: readinessPenalty });
+    confidenceAdjustments.push({ key: "soft_readiness_confidence_haircut", multiplier: 0.97 });
+  }
+
+  if (propKey === "hits_allowed") {
+    score -= 3;
+    confidenceCap = Math.min(confidenceCap, 88);
+    scoreAdjustments.push({ key: "hits_allowed_volatility_dampener", delta: -3 });
+  }
+  if (propKey === "earned_runs" || propKey === "earned_runs_allowed") {
+    score -= 4;
+    confidenceCap = Math.min(confidenceCap, 86);
+    scoreAdjustments.push({ key: "earned_runs_volatility_dampener", delta: -4 });
+  }
+  if (propKey === "walks_allowed") {
+    score -= 3;
+    confidenceCap = Math.min(confidenceCap, 86);
+    scoreAdjustments.push({ key: "walks_allowed_volatility_dampener", delta: -3 });
+  }
+  if (propKey === "pitcher_outs" && side === "more" && num(rawRow.line_value, 999) <= 15.5) {
+    score -= 3;
+    confidenceCap = Math.min(confidenceCap, 88);
+    scoreAdjustments.push({ key: "low_pitcher_outs_more_volume_dampener", delta: -3 });
+  }
+  if (propKey === "pitcher_strikeouts" && side === "more" && num(rawRow.line_value, 999) <= 3.5) {
+    score -= 3;
+    confidenceCap = Math.min(confidenceCap, 92);
+    scoreAdjustments.push({ key: "low_strikeout_more_volume_dampener", delta: -3 });
+  }
+  if (boardTier === "REVIEW") confidenceCap = Math.min(confidenceCap, 88);
+
+  const cappedConfidence = Math.min(confidence, confidenceCap);
+  if (cappedConfidence !== confidence) confidenceAdjustments.push({ key: "confidence_cap", cap: confidenceCap });
+
+  const roundedScore = Math.round(clamp(score, 0, 100));
+  const roundedConfidence = Math.round(clamp(cappedConfidence, 0, 100));
+  const rawSort = num(rawRow.score_sort_0_100, rawScore);
+  const fractionalTie = rawSort - Math.floor(rawSort);
+
+  return {
+    ...rawRow,
+    board_tier: boardTier,
+    review_playable: boardTier === "REVIEW" ? 1 : 0,
+    live_playable: boardTier === "PRIMARY" ? 1 : 0,
+    raw_score_0_100: rawScore,
+    raw_confidence_0_100: rawConfidence,
+    score_0_100: roundedScore,
+    confidence_0_100: roundedConfidence,
+    score_grade: gradeForScore(roundedScore),
+    score_sort_0_100: roundedScore + fractionalTie,
+    calibration_json: safeJson({
+      version: VERSION,
+      board_tier: boardTier,
+      raw_score_0_100: rawScore,
+      raw_confidence_0_100: rawConfidence,
+      calibrated_score_0_100: roundedScore,
+      calibrated_confidence_0_100: roundedConfidence,
+      confidence_cap: confidenceCap,
+      score_adjustments: scoreAdjustments,
+      confidence_adjustments: confidenceAdjustments,
+      note: "Light, considerate calibration only; hard gates remain limited to core identity/line/market-context safety."
+    })
+  };
+}
+
+function annotateCorrelation(rows) {
+  const counts = new Map();
+  for (const r of rows) {
+    const key = String(r.mlb_player_id || "");
+    if (!key) continue;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  for (const r of rows) {
+    const count = counts.get(String(r.mlb_player_id || "")) || 0;
+    r.cluster_player_count = count;
+    r.correlation_risk_tier = count >= 3 ? "HIGH" : count === 2 ? "MED" : "LOW";
+  }
+  return rows;
 }
 
 async function insertBoardRow(env, table, id, batchId, simBatchId, rank, row) {
   await run(env.SCORE_DB, `
     INSERT OR REPLACE INTO ${table} (
       final_board_row_id, final_board_batch_id, source_simulation_batch_id, profile_key, rank_order,
+      board_tier, review_playable,
       source_key, game_pk, official_date, official_game_time_utc, prepared_row_id, matrix_id, source_line_id,
-      mlb_player_id, player_name, canonical_prop_key, line_value, selected_side, score_0_100, confidence_0_100,
+      mlb_player_id, player_name, canonical_prop_key, line_value, selected_side,
+      raw_score_0_100, raw_confidence_0_100, score_0_100, confidence_0_100,
       score_grade, score_sort_0_100, factor_status, market_prop_context_status, daily_readiness_status,
       side_mode, odds_type, payout_variant, archive_eligible, live_playable,
+      cluster_player_count, correlation_risk_tier, calibration_json,
       calculation_json, matrix_payload_json_snapshot, details_json_snapshot, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
   `,
     id, batchId, simBatchId, PRIMARY_PROFILE, rank,
+    row.board_tier || "PRIMARY", Number(row.review_playable || 0),
     row.source_key || null, row.game_pk || null, row.official_date || null, row.official_game_time_utc || null,
     row.prepared_row_id || null, row.matrix_id || null, row.source_line_id || null,
     row.mlb_player_id || null, row.player_name || null, row.canonical_prop_key || null, row.line_value == null ? null : Number(row.line_value),
-    row.selected_side || null, row.score_0_100 == null ? null : Number(row.score_0_100), row.confidence_0_100 == null ? null : Number(row.confidence_0_100),
+    row.selected_side || null,
+    row.raw_score_0_100 == null ? null : Number(row.raw_score_0_100), row.raw_confidence_0_100 == null ? null : Number(row.raw_confidence_0_100),
+    row.score_0_100 == null ? null : Number(row.score_0_100), row.confidence_0_100 == null ? null : Number(row.confidence_0_100),
     row.score_grade || null, row.score_sort_0_100 == null ? null : Number(row.score_sort_0_100), row.factor_status || null,
     row.market_prop_context_status || null, row.daily_readiness_status || null, row.side_mode || null, row.odds_type || null, row.payout_variant || null,
     Number(row.archive_eligible || 0), Number(row.live_playable || 0),
+    row.cluster_player_count == null ? null : Number(row.cluster_player_count), row.correlation_risk_tier || null, row.calibration_json || null,
     row.calculation_json || null, row.matrix_payload_json_snapshot || null, row.details_json_snapshot || null
   );
 }
@@ -232,9 +394,12 @@ async function generateFinalBoard(env, input) {
       AND live_playable = 1
       AND (
         archive_eligible <> 1
-        OR score_0_100 < 76
-        OR confidence_0_100 < 55
         OR selected_side IS NULL
+        OR line_value IS NULL
+        OR player_name IS NULL
+        OR canonical_prop_key IS NULL
+        OR source_key IS NULL
+        OR mlb_player_id IS NULL
         OR factor_status <> 'packet_ready'
         OR market_prop_context_status <> 'market_prop_context_present'
         OR daily_readiness_status NOT IN ('ready','ready_with_warnings')
@@ -249,7 +414,7 @@ async function generateFinalBoard(env, input) {
     return output;
   }
 
-  const rows = await all(env.SCORE_DB, `
+  const primaryRaw = await all(env.SCORE_DB, `
     SELECT *
     FROM scoring_engine_simulation_shadow
     WHERE simulation_batch_id = ?
@@ -260,15 +425,51 @@ async function generateFinalBoard(env, input) {
       AND market_prop_context_status = 'market_prop_context_present'
       AND daily_readiness_status IN ('ready','ready_with_warnings')
       AND selected_side IS NOT NULL
+      AND line_value IS NOT NULL
+      AND player_name IS NOT NULL
+      AND canonical_prop_key IS NOT NULL
+      AND source_key IS NOT NULL
+      AND mlb_player_id IS NOT NULL
       AND score_0_100 >= 76
       AND confidence_0_100 >= 55
       AND invariant_violation_count = 0
-    ORDER BY score_0_100 DESC, confidence_0_100 DESC, COALESCE(score_sort_0_100, score_0_100) DESC, player_name, canonical_prop_key, selected_side, matrix_id
   `, simBatchId, PRIMARY_PROFILE);
 
-  if (!rows.length) {
-    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"blocked_no_live_rows", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_LIVE_ROWS", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId };
-    await writeIssue(env, batchId, simBatchId, "NO_LIVE_ROWS", "BLOCKER", 1, output);
+  const primaryMatrixIds = new Set(primaryRaw.map(r => String(r.matrix_id || "")).filter(Boolean));
+  const reviewRaw = await all(env.SCORE_DB, `
+    SELECT *
+    FROM scoring_engine_simulation_shadow
+    WHERE simulation_batch_id = ?
+      AND profile_key = ?
+      AND archive_eligible = 1
+      AND live_playable = 0
+      AND market_prop_context_status = 'market_prop_context_present'
+      AND selected_side IS NOT NULL
+      AND line_value IS NOT NULL
+      AND player_name IS NOT NULL
+      AND canonical_prop_key IS NOT NULL
+      AND source_key IS NOT NULL
+      AND mlb_player_id IS NOT NULL
+      AND score_0_100 >= 76
+      AND invariant_violation_count = 0
+  `, simBatchId, PRIMARY_PROFILE);
+
+  let primaryRows = primaryRaw.map(r => applyCalibration(r, "PRIMARY"))
+    .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 76 && Number(r.confidence_0_100) >= 55);
+
+  let reviewRows = reviewRaw
+    .filter(r => !primaryMatrixIds.has(String(r.matrix_id || "")))
+    .map(r => applyCalibration(r, "REVIEW"))
+    .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 76 && Number(r.confidence_0_100) >= 55);
+
+  primaryRows.sort((a, b) => (num(b.score_0_100) - num(a.score_0_100)) || (num(b.confidence_0_100) - num(a.confidence_0_100)) || (num(b.score_sort_0_100) - num(a.score_sort_0_100)) || String(a.player_name || "").localeCompare(String(b.player_name || "")) || String(a.canonical_prop_key || "").localeCompare(String(b.canonical_prop_key || "")) || String(a.matrix_id || "").localeCompare(String(b.matrix_id || "")));
+  reviewRows.sort((a, b) => (num(b.score_0_100) - num(a.score_0_100)) || (num(b.confidence_0_100) - num(a.confidence_0_100)) || (num(b.score_sort_0_100) - num(a.score_sort_0_100)) || String(a.player_name || "").localeCompare(String(b.player_name || "")) || String(a.canonical_prop_key || "").localeCompare(String(b.canonical_prop_key || "")) || String(a.matrix_id || "").localeCompare(String(b.matrix_id || "")));
+
+  const rows = annotateCorrelation([...primaryRows, ...reviewRows]);
+
+  if (!rows.length || !primaryRows.length) {
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"blocked_no_final_rows_after_calibration", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_FINAL_ROWS_AFTER_CALIBRATION", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId, primary_rows_after_calibration:primaryRows.length, review_rows_after_calibration:reviewRows.length };
+    await writeIssue(env, batchId, simBatchId, "NO_FINAL_ROWS_AFTER_CALIBRATION", "BLOCKER", 1, output);
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
   }
@@ -288,13 +489,51 @@ async function generateFinalBoard(env, input) {
     await insertBoardRow(env, "score_final_board_current", id, batchId, simBatchId, rank, row);
   }
 
-  const bySource = await all(env.SCORE_DB, `
-    SELECT source_key, canonical_prop_key, selected_side, COUNT(*) AS rows, MIN(score_0_100) AS min_score, MAX(score_0_100) AS max_score
+  const byTierSource = await all(env.SCORE_DB, `
+    SELECT board_tier, review_playable, source_key, COUNT(*) AS rows, COUNT(DISTINCT canonical_prop_key) AS prop_families, COUNT(DISTINCT mlb_player_id) AS players, MIN(score_0_100) AS min_score, MAX(score_0_100) AS max_score, AVG(score_0_100) AS avg_score
     FROM score_final_board_current
     WHERE final_board_batch_id = ?
-    GROUP BY source_key, canonical_prop_key, selected_side
-    ORDER BY rows DESC, max_score DESC
+    GROUP BY board_tier, review_playable, source_key
+    ORDER BY board_tier, rows DESC
   `, batchId);
+
+  const bySourcePropSide = await all(env.SCORE_DB, `
+    SELECT board_tier, source_key, canonical_prop_key, selected_side, COUNT(*) AS rows, MIN(score_0_100) AS min_score, MAX(score_0_100) AS max_score, AVG(score_0_100) AS avg_score
+    FROM score_final_board_current
+    WHERE final_board_batch_id = ?
+    GROUP BY board_tier, source_key, canonical_prop_key, selected_side
+    ORDER BY board_tier, rows DESC, max_score DESC
+  `, batchId);
+
+  const finalBad = await first(env.SCORE_DB, `
+    SELECT COUNT(*) AS bad_rows
+    FROM score_final_board_current
+    WHERE final_board_batch_id = ?
+      AND (
+        profile_key <> 'STRICT_B'
+        OR archive_eligible <> 1
+        OR selected_side IS NULL
+        OR line_value IS NULL
+        OR player_name IS NULL
+        OR canonical_prop_key IS NULL
+        OR source_key IS NULL
+        OR mlb_player_id IS NULL
+        OR market_prop_context_status <> 'market_prop_context_present'
+        OR score_0_100 < 76
+        OR confidence_0_100 < 55
+        OR board_tier NOT IN ('PRIMARY','REVIEW')
+        OR review_playable NOT IN (0,1)
+        OR (board_tier = 'PRIMARY' AND live_playable <> 1)
+        OR (board_tier = 'REVIEW' AND review_playable <> 1)
+      )
+  `, batchId);
+  const finalBadRows = Number(finalBad && finalBad.bad_rows || 0);
+  if (finalBadRows > 0) {
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"blocked_written_board_invariant_failure", certification:"SCORE_FINAL_BOARD_BLOCKED_WRITTEN_BOARD_INVARIANTS", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId, bad_written_rows:finalBadRows };
+    await writeIssue(env, batchId, simBatchId, "WRITTEN_BOARD_INVARIANT_FAILURE", "BLOCKER", finalBadRows, output);
+    await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
+    return output;
+  }
 
   const output = {
     ok: true,
@@ -302,28 +541,36 @@ async function generateFinalBoard(env, input) {
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "completed_final_board_current_replaced",
-    certification: "SCORE_FINAL_BOARD_CERTIFIED_CURRENT_REPLACED",
-    certification_grade: "PASS",
+    status: "completed_final_board_current_replaced_with_review_tier",
+    certification: "SCORE_FINAL_BOARD_CERTIFIED_CURRENT_REPLACED_WITH_REVIEW_WARNINGS",
+    certification_grade: "PASS_WITH_REVIEW_WARNINGS",
     final_board_batch_id: batchId,
     source_simulation_batch_id: simBatchId,
     source_scoring_worker_version: sim.worker_version,
     profile_key: PRIMARY_PROFILE,
     matrix_rows_read: Number(sim.matrix_rows_read || 0),
-    live_rows_read: rows.length,
+    primary_raw_rows_read: primaryRaw.length,
+    review_raw_rows_read: reviewRaw.length,
+    primary_rows_written: primaryRows.length,
+    review_rows_written: reviewRows.length,
+    live_rows_read: primaryRaw.length,
     final_rows_written: rows.length,
     current_rows_written: rows.length,
     table_for_final_ui: "SCORE_DB.score_final_board_current",
     history_table: "SCORE_DB.score_final_board_history",
+    final_ui_contract: "Read board_tier. PRIMARY rows are strict live rows; REVIEW rows are safe calibrated soft rows with review_playable=1.",
     no_external_calls: true,
     no_source_board_mutation: true,
     no_simulation_shadow_mutation: true,
-    by_source_prop_side: bySource,
+    calibration_active: true,
+    by_tier_source: byTierSource,
+    by_source_prop_side: bySourcePropSide,
     elapsed_ms: Date.now() - started,
     timestamp_utc: nowUtc()
   };
 
   await writeIssue(env, batchId, simBatchId, "LIVE_INVARIANT_FAILURE", "INFO", 0, { note: "No live row invariant failures detected before final board write." });
+  await writeIssue(env, batchId, simBatchId, "REVIEW_TIER_INCLUDED", "WARNING", reviewRows.length, { note: "Review tier rows are intentionally included as safe soft rows. They are not strict PRIMARY rows.", review_rows_written: reviewRows.length });
   await run(env.SCORE_DB, `
     UPDATE score_final_board_batches
     SET status=?, certification=?, certification_grade=?, matrix_rows_read=?, live_rows_read=?, final_rows_written=?, current_rows_written=?, finished_at=CURRENT_TIMESTAMP, output_json=?
@@ -334,7 +581,7 @@ async function generateFinalBoard(env, input) {
 }
 
 function baseIdentity() {
-  return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"READY", timestamp_utc:nowUtc(), purpose:"Generate SCORE_DB.score_final_board_current from latest completed STRICT_B scoring simulation live rows." };
+  return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"READY", timestamp_utc:nowUtc(), purpose:"Generate SCORE_DB.score_final_board_current from latest completed STRICT_B scoring simulation with PRIMARY and calibrated REVIEW tiers." };
 }
 
 export default {
