@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.180-prop-matrix-partial-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.181-scoring-engine-partial-scope-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -4951,6 +4951,7 @@ async function processDailyProbablePitchersJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false; // scoped false outside prop-matrix resumable continuation; prevents leaked Matrix partial flag from breaking this dispatch path.
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -5107,6 +5108,7 @@ async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false; // scoped false outside prop-matrix resumable continuation; prevents leaked Matrix partial flag from breaking this dispatch path.
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -5267,6 +5269,7 @@ async function processDailyWeatherJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false; // scoped false outside prop-matrix resumable continuation; prevents leaked Matrix partial flag from breaking this dispatch path.
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -5417,6 +5420,7 @@ async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false; // scoped false outside prop-matrix resumable continuation; prevents leaked Matrix partial flag from breaking this dispatch path.
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -5577,6 +5581,7 @@ async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false; // scoped false outside prop-matrix resumable continuation; prevents leaked Matrix partial flag from breaking this dispatch path.
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -5748,6 +5753,7 @@ async function processDailyUmpireContextJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false; // scoped false outside prop-matrix resumable continuation; prevents leaked Matrix partial flag from breaking this dispatch path.
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -6390,6 +6396,7 @@ async function processDailyLineupsJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false; // scoped false outside prop-matrix resumable continuation; prevents leaked Matrix partial flag from breaking this dispatch path.
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -6537,6 +6544,7 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false; // scoped false outside prop-matrix resumable continuation; prevents leaked Matrix partial flag from breaking this dispatch path.
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -6683,6 +6691,7 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false; // scoped false outside prop-matrix resumable continuation; prevents leaked Matrix partial flag from breaking this dispatch path.
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -7004,6 +7013,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false; // scoped false outside prop-matrix resumable continuation; prevents leaked Matrix partial flag from breaking this dispatch path.
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -7126,6 +7136,7 @@ async function processScoreFinalBoardJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false; // scoped false outside prop-matrix resumable continuation; prevents leaked Matrix partial flag from breaking this dispatch path.
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -7257,6 +7268,7 @@ async function processScorePrepJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false; // scoped false outside prop-matrix resumable continuation; prevents leaked Matrix partial flag from breaking this dispatch path.
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -7446,6 +7458,7 @@ async function processDeltaCertifierJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false; // scoped false outside prop-matrix resumable continuation; prevents leaked Matrix partial flag from breaking this dispatch path.
   if (partial) {
     const nextInput = {
       ...rowInput,
