@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.3-final-plus-calibrated-primary";
+const VERSION = "alphadog-v2-score-final-board-v0.1.4-cutoff-volatility-trim";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_B";
 
@@ -400,8 +400,96 @@ function applyCalibration(rawRow, preferredTier = null) {
       confidence_cap: calibrated.confidence_cap,
       score_adjustments: calibrated.score_adjustments,
       confidence_adjustments: calibrated.confidence_adjustments,
-      note: "v0.1.3-final-plus calibrates cross-source/prop leg strength. PrizePicks and hitter props are PRIMARY-eligible; pitcher tracking/low-line props are dampened; max two PRIMARY rows per player remains enforced."
+      note: "v0.1.4 keeps v0.1.3 final-plus cross-source calibration, then applies a narrow cutoff volatility trim only to fragile pitcher rows near the PRIMARY boundary. PrizePicks/hitter rows remain organically PRIMARY-eligible; no source quota or forced balance is used."
     })
+  };
+}
+
+function applyCutoffVolatilityTrim(row) {
+  const propKey = norm(row.canonical_prop_key);
+  const side = norm(row.selected_side);
+  const lineValue = num(row.line_value, NaN);
+  const clusterCount = num(row.cluster_player_count, 0);
+  const preTrimScore = num(row.score_0_100, NaN);
+  let score = preTrimScore;
+  let confidence = num(row.confidence_0_100, NaN);
+  const scoreAdjustments = [];
+  const confidenceAdjustments = [];
+
+  if (!Number.isFinite(score) || !Number.isFinite(confidence)) return row;
+
+  const isHitsAllowedMore = propKey === "hits_allowed" && side === "more";
+  const isLowOutsMore = propKey === "pitcher_outs" && side === "more" && Number.isFinite(lineValue) && lineValue <= 15.5;
+  const isLowKMore = propKey === "pitcher_strikeouts" && side === "more" && Number.isFinite(lineValue) && lineValue <= 3.5;
+  const isEarnedRuns = propKey === "earned_runs" || propKey === "earned_runs_allowed";
+  const fragilePitcherCutoffRow = isHitsAllowedMore || isLowOutsMore || isLowKMore || isEarnedRuns;
+
+  if (isHitsAllowedMore) {
+    score -= 1;
+    scoreAdjustments.push({ key: "v0_1_4_cutoff_hits_allowed_more_trim", delta: -1, note: "Borderline hits-allowed More rows get one extra point of volatility trim; not a source or hitter gate." });
+  }
+  if (isLowOutsMore) {
+    score -= 1;
+    scoreAdjustments.push({ key: "v0_1_4_cutoff_low_outs_more_trim", line_value: lineValue, delta: -1 });
+  }
+  if (isLowKMore) {
+    score -= 1;
+    scoreAdjustments.push({ key: "v0_1_4_cutoff_low_strikeout_more_trim", line_value: lineValue, delta: -1 });
+  }
+  if (clusterCount >= 5 && preTrimScore <= 86 && fragilePitcherCutoffRow) {
+    score -= 1;
+    scoreAdjustments.push({ key: "v0_1_4_extreme_cluster_fragile_cutoff_trim", cluster_player_count: clusterCount, pre_trim_score_0_100: preTrimScore, delta: -1, note: "Cluster pressure is only used as a narrow tie-breaker for fragile pitcher rows already near the PRIMARY cutoff." });
+  }
+
+  let confidenceCap = null;
+  if (isEarnedRuns) confidenceCap = 86;
+  if (propKey === "hits_allowed") confidenceCap = confidenceCap == null ? 87 : Math.min(confidenceCap, 87);
+  if (isLowOutsMore) confidenceCap = confidenceCap == null ? 87 : Math.min(confidenceCap, 87);
+  if (isLowKMore) confidenceCap = confidenceCap == null ? 89 : Math.min(confidenceCap, 89);
+  if (confidenceCap != null) {
+    const capped = Math.min(confidence, confidenceCap);
+    if (capped !== confidence) {
+      confidence = capped;
+      confidenceAdjustments.push({ key: "v0_1_4_cutoff_volatility_confidence_cap", cap: confidenceCap });
+    }
+  }
+
+  if (!scoreAdjustments.length && !confidenceAdjustments.length) return row;
+
+  const roundedScore = Math.round(clamp(score, 0, 100));
+  const roundedConfidence = Math.round(clamp(confidence, 0, 100));
+  const fractionalTie = num(row.score_sort_0_100, num(row.score_0_100, 0)) - Math.floor(num(row.score_sort_0_100, num(row.score_0_100, 0)));
+  const boardTier = (roundedScore >= 84 && roundedConfidence >= 80) ? "PRIMARY" : "REVIEW";
+
+  let payload = {};
+  try { payload = row.calibration_json ? JSON.parse(row.calibration_json) : {}; } catch (_) { payload = {}; }
+  if (!Array.isArray(payload.score_adjustments)) payload.score_adjustments = [];
+  if (!Array.isArray(payload.confidence_adjustments)) payload.confidence_adjustments = [];
+  payload.score_adjustments.push(...scoreAdjustments);
+  payload.confidence_adjustments.push(...confidenceAdjustments);
+  payload.cutoff_volatility_trim = {
+    enabled: true,
+    version: VERSION,
+    pre_trim_score_0_100: preTrimScore,
+    post_trim_score_0_100: roundedScore,
+    pre_trim_confidence_0_100: row.confidence_0_100,
+    post_trim_confidence_0_100: roundedConfidence,
+    rule: "Only fragile pitcher rows near the cutoff receive extra trim. No platform quota, no forced source balance, no broad cluster penalty."
+  };
+  payload.calibrated_score_0_100 = roundedScore;
+  payload.calibrated_confidence_0_100 = roundedConfidence;
+  payload.board_tier = boardTier;
+
+  return {
+    ...row,
+    score_0_100: roundedScore,
+    confidence_0_100: roundedConfidence,
+    score_grade: gradeForScore(roundedScore),
+    score_sort_0_100: roundedScore + fractionalTie,
+    board_tier: boardTier,
+    live_playable: boardTier === "PRIMARY" ? 1 : 0,
+    review_playable: boardTier === "REVIEW" ? 1 : 0,
+    calibration_json: safeJson(payload)
   };
 }
 
@@ -603,16 +691,22 @@ async function generateFinalBoard(env, input) {
       AND invariant_violation_count = 0
   `, simBatchId, PRIMARY_PROFILE);
 
-  // v0.1.3-final-plus: build one calibrated merit pool. Strict live rows and safe review candidates
-  // both receive the same calibrated score. Tier assignment is based on leg strength, not source/data perfection.
+  // v0.1.4-cutoff-volatility-trim: build one calibrated merit pool. Strict live rows and safe review candidates
+  // both receive the same calibrated score. Then apply only narrow volatility trims to fragile pitcher rows at the cutoff.
   const strictLiveCandidates = primaryRaw.map(r => ({ ...r, source_candidate_tier: "STRICT_LIVE" }));
   const safeReviewCandidates = reviewRaw
     .filter(r => !primaryMatrixIds.has(String(r.matrix_id || "")))
     .map(r => ({ ...r, source_candidate_tier: "SAFE_REVIEW" }));
 
-  const calibratedCandidates = [...strictLiveCandidates, ...safeReviewCandidates]
+  const initiallyCalibratedCandidates = [...strictLiveCandidates, ...safeReviewCandidates]
     .map(r => applyCalibration(r, null))
     .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 76 && Number(r.confidence_0_100) >= 55);
+
+  // Cluster counts are computed across the calibrated candidate ecosystem before the final trim.
+  // The count is metadata first; v0.1.4 only uses it as a one-point tie-breaker on fragile pitcher rows already near the cutoff.
+  const calibratedCandidates = annotateCorrelation(initiallyCalibratedCandidates)
+    .map(r => applyCutoffVolatilityTrim(r))
+    .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 74 && Number(r.confidence_0_100) >= 55);
 
   let primaryRows = calibratedCandidates.filter(r => r.board_tier === "PRIMARY");
   let reviewRows = calibratedCandidates.filter(r => r.board_tier === "REVIEW");
@@ -624,7 +718,7 @@ async function generateFinalBoard(env, input) {
   const rows = annotateCorrelation([...primaryRows, ...reviewRows]);
 
   if (!rows.length || !primaryRows.length) {
-    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"blocked_no_final_rows_after_calibration", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_FINAL_ROWS_AFTER_CALIBRATION", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId, primary_rows_after_calibration:primaryRows.length, review_rows_after_calibration:reviewRows.length };
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"blocked_no_final_rows_after_cutoff_volatility_trim", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_FINAL_ROWS_AFTER_CUTOFF_VOLATILITY_TRIM", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId, primary_rows_after_calibration:primaryRows.length, review_rows_after_calibration:reviewRows.length };
     await writeIssue(env, batchId, simBatchId, "NO_FINAL_ROWS_AFTER_CALIBRATION", "BLOCKER", 1, output);
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
@@ -675,7 +769,7 @@ async function generateFinalBoard(env, input) {
         OR source_key IS NULL
         OR mlb_player_id IS NULL
         OR market_prop_context_status <> 'market_prop_context_present'
-        OR score_0_100 < 76
+        OR score_0_100 < 74
         OR confidence_0_100 < 55
         OR board_tier NOT IN ('PRIMARY','REVIEW')
         OR review_playable NOT IN (0,1)
@@ -717,8 +811,8 @@ async function generateFinalBoard(env, input) {
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "completed_final_board_current_replaced_with_final_plus_calibration",
-    certification: "SCORE_FINAL_BOARD_CERTIFIED_CURRENT_REPLACED_WITH_FINAL_PLUS_CALIBRATION",
+    status: "completed_final_board_current_replaced_with_cutoff_volatility_trim",
+    certification: "SCORE_FINAL_BOARD_CERTIFIED_CURRENT_REPLACED_WITH_CUTOFF_VOLATILITY_TRIM",
     certification_grade: "PASS_WITH_REVIEW_WARNINGS",
     final_board_batch_id: batchId,
     source_simulation_batch_id: simBatchId,
@@ -729,6 +823,7 @@ async function generateFinalBoard(env, input) {
     review_raw_rows_read: reviewRaw.length,
     strict_live_candidates_read: strictLiveCandidates.length,
     safe_review_candidates_read: safeReviewCandidates.length,
+    initially_calibrated_candidates_read: initiallyCalibratedCandidates.length,
     calibrated_candidates_written: calibratedCandidates.length,
     primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap,
     primary_cluster_cap_max_per_player: clusterCapResult.maxPrimaryRowsPerPlayer,
@@ -748,6 +843,8 @@ async function generateFinalBoard(env, input) {
     no_simulation_shadow_mutation: true,
     calibration_active: true,
     final_plus_calibration_active: true,
+    cutoff_volatility_trim_active: true,
+    cutoff_volatility_trim_policy: "narrow fragile-pitcher cutoff trim only; no source quota, no forced balance, no broad cluster penalty",
     primary_threshold_score: 84,
     primary_threshold_confidence: 80,
     primary_cluster_cap_active: true,
@@ -771,7 +868,7 @@ async function generateFinalBoard(env, input) {
 }
 
 function baseIdentity() {
-  return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"READY", timestamp_utc:nowUtc(), purpose:"Generate SCORE_DB.score_final_board_current from latest completed STRICT_B scoring simulation using v0.1.3-final-plus calibrated PRIMARY/REVIEW tiering." };
+  return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"READY", timestamp_utc:nowUtc(), purpose:"Generate SCORE_DB.score_final_board_current from latest completed STRICT_B scoring simulation using v0.1.4 cutoff volatility trim calibrated PRIMARY/REVIEW tiering." };
 }
 
 export default {
