@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-normalizer";
-const VERSION = "alphadog-v2-market-normalizer-v0.1.8-progress-heartbeat-and-reconcile-proof";
+const VERSION = "alphadog-v2-market-normalizer-v0.1.9-control-lifecycle-heartbeat-finalizer";
 const JOB_KEY = "market-normalizer";
 const PHASE_KEY = "market_teams_game_odds";
 const ODDS_API_SOURCE_KEY = "odds_api";
@@ -60,6 +60,76 @@ async function batchRun(db, sql, bindRows, chunkSize = 50) {
     statements += chunk.length;
   }
   return { batches, statements };
+}
+
+
+async function controlHeartbeat(env, requestId, runId, statusText = "running", data = {}) {
+  if (!env || !env.CONTROL_DB || !requestId) return { ok: false, skipped: "missing_control_db_or_request_id" };
+  const preview = safeJson({
+    ok: true,
+    data_ok: true,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    request_id: requestId,
+    run_id: runId || null,
+    status: statusText,
+    certification: "MARKET_TEAMS_GAME_ODDS_WORKER_HEARTBEAT",
+    certification_grade: "RUNNING",
+    control_lifecycle_heartbeat: true,
+    ...data,
+    timestamp_utc: nowUtc()
+  }, 3600);
+  try {
+    await run(env.CONTROL_DB, `UPDATE control_job_queue
+      SET status='running', updated_at=CURRENT_TIMESTAMP, output_json=?
+      WHERE request_id=? AND status IN ('pending','running')`, preview, requestId);
+    if (runId) {
+      await run(env.CONTROL_DB, `UPDATE control_job_runs
+        SET status='running', data_ok=0, certification_status='MARKET_TEAMS_GAME_ODDS_WORKER_HEARTBEAT', rows_read=COALESCE(rows_read,0), rows_written=COALESCE(rows_written,0), external_calls=COALESCE(external_calls,0), output_json=?
+        WHERE run_id=? AND finished_at IS NULL`, preview, runId);
+    } else {
+      await run(env.CONTROL_DB, `UPDATE control_job_runs
+        SET status='running', data_ok=0, certification_status='MARKET_TEAMS_GAME_ODDS_WORKER_HEARTBEAT', output_json=?
+        WHERE request_id=? AND finished_at IS NULL`, preview, requestId);
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: safeText(err && err.message ? err.message : err, 700) };
+  }
+}
+
+async function controlFinalize(env, output, terminalStatus = "completed") {
+  if (!env || !env.CONTROL_DB || !output || !output.request_id) return { ok: false, skipped: "missing_control_db_or_output" };
+  const requestId = output.request_id;
+  const runId = output.run_id || null;
+  const isOk = terminalStatus === "completed" && output.ok !== false && output.data_ok !== false;
+  const queueStatus = isOk ? "completed" : "failed";
+  const runStatus = isOk ? "completed" : "failed";
+  const certification = output.certification || output.certification_status || (isOk ? "MARKET_TEAMS_GAME_ODDS_EVIDENCE_WRITTEN" : "MARKET_TEAMS_GAME_ODDS_FAILED");
+  const outJson = safeJson({ ...output, control_lifecycle_self_finalized: true, control_lifecycle_finalized_at: nowUtc() }, 9000);
+  try {
+    await run(env.CONTROL_DB, `UPDATE control_job_queue
+      SET status=?, finished_at=COALESCE(finished_at, CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=CASE WHEN ?='completed' THEN error_code ELSE COALESCE(error_code, 'market_normalizer_worker_failed') END, error_message=CASE WHEN ?='completed' THEN error_message ELSE COALESCE(error_message, ?) END
+      WHERE request_id=? AND status IN ('pending','running')`, queueStatus, outJson, queueStatus, queueStatus, safeText(output.error || output.error_message || certification, 900), requestId);
+    const runUpdateByRunId = `UPDATE control_job_runs
+      SET status=?, data_ok=?, certification_status=?, rows_read=?, rows_written=?, external_calls=?, finished_at=COALESCE(finished_at, CURRENT_TIMESTAMP), elapsed_ms=COALESCE(elapsed_ms, ?), output_json=?, error_code=CASE WHEN ?='completed' THEN error_code ELSE COALESCE(error_code, 'market_normalizer_worker_failed') END, error_message=CASE WHEN ?='completed' THEN error_message ELSE COALESCE(error_message, ?) END
+      WHERE run_id=? AND finished_at IS NULL`;
+    const elapsed = Number(output.elapsed_ms || 0) || null;
+    const rowsRead = Number(output.rows_read || output.prepared_rows_read || 0) || 0;
+    const rowsWritten = Number(output.rows_written || 0) || 0;
+    const externalCalls = Number(output.external_calls_performed || output.external_calls || 0) || 0;
+    if (runId) {
+      await run(env.CONTROL_DB, runUpdateByRunId, runStatus, isOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, elapsed, outJson, runStatus, runStatus, safeText(output.error || output.error_message || certification, 900), runId);
+    } else {
+      await run(env.CONTROL_DB, `UPDATE control_job_runs
+        SET status=?, data_ok=?, certification_status=?, rows_read=?, rows_written=?, external_calls=?, finished_at=COALESCE(finished_at, CURRENT_TIMESTAMP), elapsed_ms=COALESCE(elapsed_ms, ?), output_json=?, error_code=CASE WHEN ?='completed' THEN error_code ELSE COALESCE(error_code, 'market_normalizer_worker_failed') END, error_message=CASE WHEN ?='completed' THEN error_message ELSE COALESCE(error_message, ?) END
+        WHERE request_id=? AND finished_at IS NULL`, runStatus, isOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, elapsed, outJson, runStatus, runStatus, safeText(output.error || output.error_message || certification, 900), requestId);
+    }
+    return { ok: true, queue_status: queueStatus, run_status: runStatus, certification };
+  } catch (err) {
+    return { ok: false, error: safeText(err && err.message ? err.message : err, 900) };
+  }
 }
 async function mapLimit(items, limit, mapper) {
   const list = Array.isArray(items) ? items : [];
@@ -1038,6 +1108,7 @@ async function runMarketSourceProbe(env, input = {}) {
   // loses the service-binding response after the worker commits output.
   await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_context_probe_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, slate_window_key, window_start_date, window_end_date, status, prepared_rows_read, prepared_games_checked, prepared_players_checked, prepared_prop_keys_checked, odds_api_config_present, warning_count, blocker_count, certification_status, certification_grade, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
     batchId, requestId, runId, WORKER_NAME, VERSION, "market_teams_game_odds", slateWindowKey, today, tomorrow, "running_teams_game_odds_started", preparedRows.length, gamePks.length, playerIds.length, propKeys.length, sourceHas(env, "ODDS_API_KEY") ? 1 : 0, 0, 0, "MARKET_TEAMS_GAME_ODDS_RUNNING_STARTED", "RUNNING", safeJson({ retention, started_heartbeat: true, request_id: requestId, run_id: runId }, 3000));
+  await controlHeartbeat(env, requestId, runId, 'running_teams_game_odds_started', { batch_id: batchId, prepared_rows_read: preparedRows.length, prepared_games_checked: gamePks.length });
   const calendarRows = await loadCalendarGames(env, gamePks);
   const calendarGameSet = new Set(calendarRows.map(r => String(r.game_pk)));
   const missingCalendar = gamePks.filter(g => !calendarGameSet.has(String(g)));
@@ -1046,7 +1117,9 @@ async function runMarketSourceProbe(env, input = {}) {
     blockerCount += 1;
     await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_context_probe_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, slate_window_key, window_start_date, window_end_date, status, prepared_rows_read, prepared_games_checked, prepared_players_checked, prepared_prop_keys_checked, odds_api_config_present, warning_count, blocker_count, certification_status, certification_grade, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       batchId, requestId, runId, WORKER_NAME, VERSION, "market_teams_game_odds", slateWindowKey, today, tomorrow, "blocked_no_prepared_safe_rows", 0, 0, 0, 0, sourceHas(env, "ODDS_API_KEY") ? 1 : 0, warningCount, blockerCount, "MARKET_TEAMS_GAME_ODDS_NO_PREPARED_SAFE_ROWS", "BLOCKED", safeJson({ retention, prune }));
-    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, run_id: runId, batch_id: batchId, status: "blocked_no_prepared_safe_rows", certification: "MARKET_TEAMS_GAME_ODDS_NO_PREPARED_SAFE_ROWS", certification_grade: "BLOCKED", rows_read: 0, rows_written: 1, external_calls_performed: 0, retention, prune, elapsed_ms: Date.now() - startedMs, timestamp_utc: nowUtc() };
+    const blockedOutput = { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, run_id: runId, batch_id: batchId, status: "blocked_no_prepared_safe_rows", certification: "MARKET_TEAMS_GAME_ODDS_NO_PREPARED_SAFE_ROWS", certification_grade: "BLOCKED", rows_read: 0, rows_written: 1, external_calls_performed: 0, retention, prune, elapsed_ms: Date.now() - startedMs, timestamp_utc: nowUtc() };
+    blockedOutput.control_lifecycle = await controlFinalize(env, blockedOutput, "failed");
+    return blockedOutput;
   }
 
   if (missingCalendar.length) {
@@ -1057,9 +1130,11 @@ async function runMarketSourceProbe(env, input = {}) {
   const teamAliases = await loadTeamAliases(env);
   const matcher = buildGameMatcher(calendarRows, teamAliases);
   await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status='running_fetching_featured_game_odds', certification_status='MARKET_TEAMS_GAME_ODDS_RUNNING_FETCHING_FEATURED', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", batchId);
+  await controlHeartbeat(env, requestId, runId, 'running_fetching_featured_game_odds', { batch_id: batchId });
   const odds = await fetchOddsApiGameOdds(env);
   externalCalls += odds.external_calls || 0;
   await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status='running_featured_game_odds_fetched', odds_api_events_seen=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", Number((odds && odds.events && odds.events.length) || 0), batchId);
+  await controlHeartbeat(env, requestId, runId, 'running_featured_game_odds_fetched', { batch_id: batchId, odds_api_events_seen: Number((odds && odds.events && odds.events.length) || 0) });
   if (!odds.ok) {
     if (odds.missing_key) blockerCount += 1; else warningCount += 1;
     await writeIssue(env, batchId, slateWindowKey, today, odds.missing_key ? "BLOCKER" : "WARNING", odds.missing_key ? "ODDS_API_KEY_MISSING" : "ODDS_API_GAME_ODDS_FETCH_FAILED", null, null, ODDS_API_SOURCE_KEY, odds.error || "Odds API game odds fetch failed", odds);
@@ -1075,9 +1150,11 @@ async function runMarketSourceProbe(env, input = {}) {
   }
 
   await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status='running_expanded_game_team_markets', odds_api_events_mapped=?, odds_api_game_odds_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", oddsWrite.mappedEvents || 0, oddsWrite.gameOddsRows || 0, batchId);
+  await controlHeartbeat(env, requestId, runId, 'running_expanded_game_team_markets', { batch_id: batchId, odds_api_events_mapped: oddsWrite.mappedEvents || 0, odds_api_game_odds_rows: oddsWrite.gameOddsRows || 0 });
   const expanded = odds.ok ? await probeExpandedGameTeamMarkets(env, batchId, slateWindowKey, oddsWrite.mappedEventsList || [], odds.bookmaker_targets || "") : { externalCalls: 0, expansionRows: 0, expandedGameOddsRows: 0, normalizedRows: [], marketKeys: [], byMarket: {}, skipped: true };
   externalCalls += expanded.externalCalls || 0;
   await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status='running_writing_normalized_game_market_context', odds_api_game_odds_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", (oddsWrite.gameOddsRows || 0) + (expanded.expandedGameOddsRows || 0), batchId);
+  await controlHeartbeat(env, requestId, runId, 'running_writing_normalized_game_market_context', { batch_id: batchId, odds_api_game_odds_rows: (oddsWrite.gameOddsRows || 0) + (expanded.expandedGameOddsRows || 0), external_calls_performed: externalCalls });
   const allMarketRows = [...(oddsWrite.normalizedRows || []), ...(expanded.normalizedRows || [])];
   const normalizedMining = odds.ok ? await writeNormalizedGameMarketMining(env, batchId, slateWindowKey, allMarketRows, odds.events || [], matcher, odds.bookmaker_targets || "") : { statusRows: 0, summaryRows: 0 };
 
@@ -1090,6 +1167,7 @@ async function runMarketSourceProbe(env, input = {}) {
     parlay_coverage_grade: "NOT_PROBED_BOARD_SOURCE_EXCLUDED",
     reason: "Teams worker is sportsbook-reference-only. Sleeper and PrizePicks are user board/source inventory and are not valid external reference books for external Teams odds context."
   };
+  await controlHeartbeat(env, requestId, runId, 'running_writing_market_context_coverage', { batch_id: batchId });
   const coverage = await writeCoverage(env, batchId, slateWindowKey, preparedRows, oddsWrite.mappedGameSet);
 
   const certificationGrade = blockerCount > 0 ? "BLOCKED" : (warningCount > 0 ? "PASS_WITH_WARNINGS" : "PASS");
@@ -1114,7 +1192,7 @@ async function runMarketSourceProbe(env, input = {}) {
   await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_context_probe_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, slate_window_key, window_start_date, window_end_date, status, prepared_rows_read, prepared_games_checked, prepared_players_checked, prepared_prop_keys_checked, odds_api_config_present, odds_api_events_seen, odds_api_events_mapped, odds_api_game_odds_rows, parlay_inventory_rows_seen, parlay_props_mapped_to_prepared, parlay_coverage_grade, warning_count, blocker_count, certification_status, certification_grade, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
     batchId, requestId, runId, WORKER_NAME, VERSION, "market_teams_game_odds", slateWindowKey, today, tomorrow, status, preparedRows.length, gamePks.length, playerIds.length, propKeys.length, sourceHas(env, "ODDS_API_KEY") ? 1 : 0, oddsWrite.eventRows, oddsWrite.mappedEvents, oddsWrite.gameOddsRows + (expanded.expandedGameOddsRows || 0), 0, 0, "NOT_PROBED_BOARD_SOURCE_EXCLUDED", warningCount, blockerCount, certification, certificationGrade, safeJson(output, 9000));
 
-  return {
+  const finalOutput = {
     ok: true,
     data_ok: blockerCount === 0,
     version: VERSION,
@@ -1156,6 +1234,8 @@ async function runMarketSourceProbe(env, input = {}) {
     elapsed_ms: Date.now() - startedMs,
     timestamp_utc: nowUtc()
   };
+  finalOutput.control_lifecycle = await controlFinalize(env, finalOutput, blockerCount === 0 ? "completed" : "failed");
+  return finalOutput;
 }
 
 export default {
@@ -1178,8 +1258,32 @@ export default {
     }
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const output = await runMarketSourceProbe(env, input);
-      return jsonResponse(output, 200);
+      try {
+        const output = await runMarketSourceProbe(env, input);
+        return jsonResponse(output, 200);
+      } catch (err) {
+        const failOutput = {
+          ok: false,
+          data_ok: false,
+          version: VERSION,
+          worker_name: WORKER_NAME,
+          job_key: JOB_KEY,
+          request_id: input.request_id || null,
+          run_id: input.run_id || null,
+          mode: input.mode || PHASE_KEY,
+          status: "failed_market_normalizer_exception",
+          certification: "MARKET_TEAMS_GAME_ODDS_WORKER_EXCEPTION",
+          certification_grade: "FAIL",
+          rows_read: 0,
+          rows_written: 0,
+          external_calls_performed: 0,
+          error: safeText(err && err.stack ? err.stack : (err && err.message ? err.message : err), 2400),
+          elapsed_ms: null,
+          timestamp_utc: nowUtc()
+        };
+        failOutput.control_lifecycle = await controlFinalize(env, failOutput, "failed");
+        return jsonResponse(failOutput, 200);
+      }
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
   }
