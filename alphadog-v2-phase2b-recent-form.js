@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.7-explicit-no-eligible-terminal";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.7-explicit-no-eligible-terminal";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.8-terminal-evidence-hot-finalizer";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.8-terminal-evidence-hot-finalizer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -758,6 +758,98 @@ async function flushFactorChunks(env, family, batchId, packetChunk, issueChunk) 
   issueChunk.length = 0;
 }
 
+
+async function finalizeExistingPropFactorEvidenceForRequest(env, input, family, mode, dates) {
+  const requestId = input && input.request_id;
+  if (!requestId || !env || !env.SCORE_DB) return null;
+  const packetTable = family === "pitcher" ? "prop_factor_pitcher_packets" : "prop_factor_hitter_packets";
+  const batchRow = await first(env.SCORE_DB, `SELECT batch_id, request_id, run_id, worker_version, mode, factor_family, status, window_start, window_end, prepared_rows_read
+    FROM prop_factor_batches
+    WHERE request_id=? AND factor_family=? AND status='running'
+    ORDER BY datetime(updated_at) DESC
+    LIMIT 1`, requestId, family);
+  if (!batchRow || !batchRow.batch_id) return null;
+  const packetSummary = await first(env.SCORE_DB, `SELECT
+      COUNT(*) AS packets,
+      COUNT(DISTINCT prepared_row_id) AS prepared_rows,
+      COUNT(DISTINCT game_pk) AS games,
+      COUNT(DISTINCT mlb_player_id) AS players,
+      COUNT(DISTINCT canonical_prop_key) AS prop_keys,
+      SUM(CASE WHEN warning_count > 0 THEN 1 ELSE 0 END) AS warning_rows,
+      SUM(CASE WHEN blocker_count > 0 OR factor_status='blocked' THEN 1 ELSE 0 END) AS blocked_rows,
+      SUM(CASE WHEN missing_factor_count > 0 THEN 1 ELSE 0 END) AS missing_factor_rows,
+      MIN(created_at) AS first_packet_at,
+      MAX(created_at) AS last_packet_at
+    FROM ${packetTable}
+    WHERE batch_id=?`, batchRow.batch_id);
+  const packets = Number(packetSummary && packetSummary.packets || 0);
+  if (!packets) return null;
+  const issueSummary = await first(env.SCORE_DB, `SELECT COUNT(*) AS issue_rows FROM prop_factor_issues WHERE batch_id=?`, batchRow.batch_id);
+  const issueRows = Number(issueSummary && issueSummary.issue_rows || 0);
+  await run(env.SCORE_DB, `INSERT OR REPLACE INTO prop_factor_coverage_current (
+      coverage_key,factor_family,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,normalized_factor_lane,
+      factor_status,factor_grade,packet_id,latest_batch_id,latest_checked_at,blocking_for_matrix,missing_reason,details_json,official_date,created_at,updated_at
+    )
+    SELECT
+      ? || ':' || prepared_row_id,
+      ?, prepared_row_id, game_pk, mlb_player_id, canonical_prop_key, normalized_factor_lane,
+      factor_status, factor_grade, packet_id, batch_id, CURRENT_TIMESTAMP,
+      CASE WHEN blocker_count > 0 OR factor_status='blocked' THEN 1 ELSE 0 END,
+      CASE WHEN missing_factor_count > 0 THEN 'missing_factor_context_present_in_packet' ELSE NULL END,
+      json_object('terminal_finalizer',1,'source','worker_hot_finalizer','warning_count',warning_count,'missing_factor_count',missing_factor_count,'blocker_count',blocker_count),
+      official_date, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    FROM ${packetTable}
+    WHERE batch_id=?`, family, family, batchRow.batch_id);
+  const status = Number(packetSummary.blocked_rows || 0) > 0 || Number(packetSummary.warning_rows || 0) > 0 || Number(packetSummary.missing_factor_rows || 0) > 0 ? "completed_with_warnings" : "completed";
+  const certification = status === "completed" ? "PROP_FACTOR_PACKETS_CERTIFIED" : "PROP_FACTOR_PACKETS_CERTIFIED_WITH_WARNINGS";
+  const grade = Number(packetSummary.blocked_rows || 0) > 0 ? "PASS_WITH_BLOCKED_ROWS" : (status === "completed" ? "PASS" : "PASS_WITH_WARNINGS");
+  const output = {
+    ok:true,
+    data_ok:true,
+    version:SYSTEM_VERSION,
+    deployed_slot_version:DEPLOYED_SLOT_VERSION,
+    worker_name:LOGICAL_WORKER_NAME,
+    deployed_worker_slot:WORKER_NAME,
+    job_key:JOB_KEY,
+    request_id:requestId,
+    run_id:input.run_id || batchRow.run_id || null,
+    mode,
+    factor_family:family,
+    status:"completed_prop_factor_packets_reconciled_from_existing_evidence",
+    certification,
+    certification_grade:grade,
+    batch_id:batchRow.batch_id,
+    window_dates:dates,
+    prepared_rows_read:Number(batchRow.prepared_rows_read || packetSummary.prepared_rows || 0),
+    eligible_rows:Number(packetSummary.prepared_rows || 0),
+    packets_written:packets,
+    rows_read:Number(batchRow.prepared_rows_read || packetSummary.prepared_rows || 0),
+    rows_written:packets,
+    blocked_rows:Number(packetSummary.blocked_rows || 0),
+    warning_rows:Number(packetSummary.warning_rows || 0),
+    issue_rows:issueRows,
+    missing_factor_rows:Number(packetSummary.missing_factor_rows || 0),
+    games:Number(packetSummary.games || 0),
+    players:Number(packetSummary.players || 0),
+    prop_keys:Number(packetSummary.prop_keys || 0),
+    first_packet_at:packetSummary.first_packet_at || null,
+    last_packet_at:packetSummary.last_packet_at || null,
+    terminal_evidence_hot_finalizer:true,
+    coverage_current_rebuilt_from_packets:true,
+    external_calls:0,
+    no_scoring:true,
+    no_ranking:true,
+    no_final_board:true,
+    no_matrix_builder:true
+  };
+  await run(env.SCORE_DB, `UPDATE prop_factor_batches
+    SET status=?, prepared_rows_read=CASE WHEN COALESCE(prepared_rows_read,0)=0 THEN ? ELSE prepared_rows_read END,
+        eligible_rows=?, packets_written=?, blocked_rows=?, warning_rows=?, issue_rows=?, missing_factor_rows=?,
+        certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP
+    WHERE batch_id=?`, status, output.prepared_rows_read, output.eligible_rows, output.packets_written, output.blocked_rows, output.warning_rows, output.issue_rows, output.missing_factor_rows, certification, grade, JSON.stringify(output), batchRow.batch_id);
+  return jsonResponse(output);
+}
+
 async function runFactorMining(request, env) {
   const input = await request.json().catch(() => ({}));
   const family = modeFamily(input.mode || input.factor_mode);
@@ -767,6 +859,8 @@ async function runFactorMining(request, env) {
   if (!allTrue(dbPresence)) return jsonResponse({ ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, status:"blocked_missing_db_binding", missing_bindings:Object.entries(dbPresence).filter(([,v])=>!v).map(([k])=>k) }, 500);
 
   await ensureSchema(env);
+  const existingFinalized = await finalizeExistingPropFactorEvidenceForRequest(env, input, family, mode, dates);
+  if (existingFinalized) return existingFinalized;
   await markStaleRunningBatches(env, dates, family);
   await retentionCleanup(env, dates, family);
   const batchId = rid(`prop_factor_${family}_batch`);

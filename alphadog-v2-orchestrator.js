@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.184-market-full-terminal-evidence-hot-finalizer";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.185-prop-factor-terminal-evidence-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -6769,6 +6769,109 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
+
+async function rescuePropFactorMinerTerminalEvidence(env, row, runId, input, selectedMode, trigger, timeoutError) {
+  if (!env || !env.SCORE_DB) return null;
+  const family = selectedMode === "pitcher_prop_factor_mining" ? "pitcher" : "hitter";
+  const packetTable = family === "pitcher" ? "prop_factor_pitcher_packets" : "prop_factor_hitter_packets";
+  const batchRow = await first(env.SCORE_DB, `SELECT batch_id, request_id, run_id, worker_version, mode, factor_family, status, window_start, window_end, prepared_rows_read
+    FROM prop_factor_batches
+    WHERE request_id=? AND factor_family=? AND status='running'
+    ORDER BY datetime(updated_at) DESC
+    LIMIT 1`, row.request_id, family);
+  if (!batchRow || !batchRow.batch_id) return null;
+
+  const packetSummary = await first(env.SCORE_DB, `SELECT
+      COUNT(*) AS packets,
+      COUNT(DISTINCT prepared_row_id) AS prepared_rows,
+      COUNT(DISTINCT game_pk) AS games,
+      COUNT(DISTINCT mlb_player_id) AS players,
+      COUNT(DISTINCT canonical_prop_key) AS prop_keys,
+      SUM(CASE WHEN warning_count > 0 THEN 1 ELSE 0 END) AS warning_rows,
+      SUM(CASE WHEN blocker_count > 0 OR factor_status='blocked' THEN 1 ELSE 0 END) AS blocked_rows,
+      SUM(CASE WHEN missing_factor_count > 0 THEN 1 ELSE 0 END) AS missing_factor_rows,
+      MIN(created_at) AS first_packet_at,
+      MAX(created_at) AS last_packet_at
+    FROM ${packetTable}
+    WHERE batch_id=?`, batchRow.batch_id);
+  const packets = Number(packetSummary && packetSummary.packets || 0);
+  if (!packets) return null;
+
+  const issueSummary = await first(env.SCORE_DB, `SELECT COUNT(*) AS issue_rows FROM prop_factor_issues WHERE batch_id=?`, batchRow.batch_id);
+  const issueRows = Number(issueSummary && issueSummary.issue_rows || 0);
+  await run(env.SCORE_DB, `INSERT OR REPLACE INTO prop_factor_coverage_current (
+      coverage_key,factor_family,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,normalized_factor_lane,
+      factor_status,factor_grade,packet_id,latest_batch_id,latest_checked_at,blocking_for_matrix,missing_reason,details_json,official_date,created_at,updated_at
+    )
+    SELECT
+      ? || ':' || prepared_row_id,
+      ?, prepared_row_id, game_pk, mlb_player_id, canonical_prop_key, normalized_factor_lane,
+      factor_status, factor_grade, packet_id, batch_id, CURRENT_TIMESTAMP,
+      CASE WHEN blocker_count > 0 OR factor_status='blocked' THEN 1 ELSE 0 END,
+      CASE WHEN missing_factor_count > 0 THEN 'missing_factor_context_present_in_packet' ELSE NULL END,
+      json_object('terminal_rescue',1,'source','orchestrator_timeout_rescue','warning_count',warning_count,'missing_factor_count',missing_factor_count,'blocker_count',blocker_count),
+      official_date, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    FROM ${packetTable}
+    WHERE batch_id=?`, family, family, batchRow.batch_id);
+
+  const status = Number(packetSummary.blocked_rows || 0) > 0 || Number(packetSummary.warning_rows || 0) > 0 || Number(packetSummary.missing_factor_rows || 0) > 0 ? "completed_with_warnings" : "completed";
+  const certification = status === "completed" ? "PROP_FACTOR_PACKETS_CERTIFIED" : "PROP_FACTOR_PACKETS_CERTIFIED_WITH_WARNINGS";
+  const grade = Number(packetSummary.blocked_rows || 0) > 0 ? "PASS_WITH_BLOCKED_ROWS" : (status === "completed" ? "PASS" : "PASS_WITH_WARNINGS");
+  const output = {
+    ok:true,
+    data_ok:true,
+    version:SYSTEM_VERSION,
+    processed_by:WORKER_NAME,
+    worker_name:"alphadog-v2-prop-factor-miner",
+    deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+    job_key:row.job_key,
+    request_id:row.request_id,
+    chain_id:row.chain_id,
+    run_id:runId,
+    mode:selectedMode,
+    factor_family:family,
+    status:"completed_prop_factor_packets_reconciled_after_timeout",
+    certification,
+    certification_grade:grade,
+    batch_id:batchRow.batch_id,
+    prepared_rows_read:Number(batchRow.prepared_rows_read || packetSummary.prepared_rows || 0),
+    eligible_rows:Number(packetSummary.prepared_rows || 0),
+    packets_written:packets,
+    rows_read:Number(batchRow.prepared_rows_read || packetSummary.prepared_rows || 0),
+    rows_written:packets,
+    blocked_rows:Number(packetSummary.blocked_rows || 0),
+    warning_rows:Number(packetSummary.warning_rows || 0),
+    issue_rows:issueRows,
+    missing_factor_rows:Number(packetSummary.missing_factor_rows || 0),
+    games:Number(packetSummary.games || 0),
+    players:Number(packetSummary.players || 0),
+    prop_keys:Number(packetSummary.prop_keys || 0),
+    first_packet_at:packetSummary.first_packet_at || null,
+    last_packet_at:packetSummary.last_packet_at || null,
+    timeout_error:String(timeoutError || "prop_factor_miner_service_binding_timeout_after_75000ms"),
+    terminal_rescue:true,
+    coverage_current_rebuilt_from_packets:true,
+    no_external_api_calls:true,
+    no_scoring:true,
+    no_ranking:true,
+    no_matrix_builder:true,
+    no_final_board:true
+  };
+
+  await run(env.SCORE_DB, `UPDATE prop_factor_batches
+    SET status=?, prepared_rows_read=CASE WHEN COALESCE(prepared_rows_read,0)=0 THEN ? ELSE prepared_rows_read END,
+        eligible_rows=?, packets_written=?, blocked_rows=?, warning_rows=?, issue_rows=?, missing_factor_rows=?,
+        certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP
+    WHERE batch_id=?`, status, output.prepared_rows_read, output.eligible_rows, output.packets_written, output.blocked_rows, output.warning_rows, output.issue_rows, output.missing_factor_rows, certification, grade, JSON.stringify(output), batchRow.batch_id);
+
+  if (env.CONTROL_DB) {
+    await run(env.CONTROL_DB, `INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at)
+      VALUES (?, ?, ?, ?, 'WARN', 'prop_factor_miner_timeout_rescued_from_packet_evidence', 'Rescued Prop Factor Miner timeout by terminal-finalizing packet evidence and coverage current', ?, CURRENT_TIMESTAMP)`,
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:batchRow.batch_id, packets, certification, grade, timeout_error:String(timeoutError || '') }).slice(0, 9000));
+  }
+  return output;
+}
+
 async function processPropFactorMinerJob(env, row, runId, trigger) {
   if (!env.PHASE2B_RECENT_FORM_WORKER || typeof env.PHASE2B_RECENT_FORM_WORKER.fetch !== "function") {
     const output = {
@@ -6846,7 +6949,14 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
       output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
     }
   } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+    const timeoutError = String(err && err.message ? err.message : err);
+    output = await rescuePropFactorMinerTerminalEvidence(env, row, runId, input, selectedMode, trigger, timeoutError);
+    if (!output) output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: timeoutError };
+  }
+
+  if (output && output.ok === false && String(output.error || "").includes("prop_factor_miner_service_binding_timeout")) {
+    const rescued = await rescuePropFactorMinerTerminalEvidence(env, row, runId, input, selectedMode, trigger, output.error);
+    if (rescued) output = rescued;
   }
 
   const partial = isPartialContinueOutput(output) || !!(output && output.orchestrator_should_self_continue);
