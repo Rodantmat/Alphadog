@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-line-shape-classifier";
-const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.16-market-full-sequence-timebox-finalizer";
+const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.17-market-full-terminal-evidence-finalizer";
 const JOB_KEY = "market-line-shape-classifier";
 const MODE_HITTER = "market_hitter_prop_line_context";
 const MODE_PITCHER = "market_pitcher_prop_line_context";
@@ -1235,7 +1235,8 @@ async function finalizePlayerPropBatchFromEvidence(env, input, config, batch, pr
   if (propRows <= 0) return null;
   const covCountRow = await first(env.MARKET_DB, `SELECT COUNT(*) AS coverage_rows FROM market_context_probe_coverage WHERE batch_id=?`, batchId) || {};
   let coverageRowsWritten = Number(covCountRow.coverage_rows || 0);
-  if (coverageRowsWritten === 0 && Array.isArray(preparedRows) && preparedRows.length && !marketFullSoftDeadlineExceeded(Date.now() - 1, 0)) {
+  const backendSequenceFinalizer = isBackendMarketSequence(input);
+  if (coverageRowsWritten === 0 && !backendSequenceFinalizer && Array.isArray(preparedRows) && preparedRows.length && !marketFullSoftDeadlineExceeded(Date.now() - 1, 0)) {
     const matchedIds = new Set((await all(env.MARKET_DB, `SELECT DISTINCT prepared_row_id FROM market_context_probe_player_props WHERE batch_id=? AND prepared_row_id IS NOT NULL AND prepared_row_id <> ''`, batchId)).map(r => String(r.prepared_row_id)));
     const coverageRows = preparedRows.map(row => {
       const has = matchedIds.has(String(row.prepared_row_id));
@@ -1246,13 +1247,13 @@ async function finalizePlayerPropBatchFromEvidence(env, input, config, batch, pr
   }
   const issueRows = await first(env.MARKET_DB, `SELECT COUNT(*) AS issue_rows FROM market_context_probe_issues WHERE batch_id=?`, batchId) || {};
   const matchedPrepared = Number(counts.prepared_rows || 0);
-  const warningCount = Number(batch.warning_count || 0) || (propRows > matchedPrepared ? 1 : 0) || (coverageRowsWritten === 0 ? 1 : 0);
+  const warningCount = Number(batch.warning_count || 0) || (propRows > matchedPrepared ? 1 : 0) || (coverageRowsWritten === 0 ? 1 : 0) || (backendSequenceFinalizer ? 1 : 0);
   const blockerCount = 0;
   const coverageGrade = matchedPrepared > 0 ? "NORMALIZED_PARLAY_CONTEXT_PARTIAL_MATCH" : "PARLAY_NORMALIZED_RESOLVER_UNMATCHED";
   const certification = "MARKET_PLAYER_PROP_CONTEXT_EVIDENCE_WRITTEN";
   const certificationGrade = warningCount ? "PASS_WITH_WARNINGS" : "PASS";
   const status = "completed_player_prop_context_evidence_written";
-  const output = { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:input.request_id || batch.request_id || null, run_id:input.run_id || batch.run_id || null, batch_id:batchId, mode:config.mode, prop_family:config.prop_family, status, certification, certification_grade:certificationGrade, rows_read:Number(batch.prepared_rows_read || (preparedRows || []).length || 0), rows_written:propRows + coverageRowsWritten + Number(issueRows.issue_rows || 0) + 1, external_calls_performed:Number(input.external_calls_performed || 0), retention, prune, recovered_or_timebox_finalized:true, finalizer_reason:reason, evidence_summary:{ player_prop_rows:propRows, matched_player_prop_rows:Number(counts.matched_rows || 0), distinct_matched_prepared_rows:matchedPrepared, coverage_rows:coverageRowsWritten, issue_rows:Number(issueRows.issue_rows || 0), source_keys:Number(counts.source_keys || 0), games:Number(counts.games || 0), players:Number(counts.players || 0), prop_keys:Number(counts.prop_keys || 0), first_player_prop_at:counts.first_at || null, last_player_prop_at:counts.last_at || null }, boundaries:{ no_teams_game_odds:true, opposite_prop_family_not_in_this_run:true, no_market_current_lines:true, no_prepared_board_mutation:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_matrix:true, no_final_board:true } };
+  const output = { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:input.request_id || batch.request_id || null, run_id:input.run_id || batch.run_id || null, batch_id:batchId, mode:config.mode, prop_family:config.prop_family, status, certification, certification_grade:certificationGrade, rows_read:Number(batch.prepared_rows_read || (preparedRows || []).length || 0), rows_written:propRows + coverageRowsWritten + Number(issueRows.issue_rows || 0) + 1, external_calls_performed:Number(input.external_calls_performed || 0), retention, prune, recovered_or_timebox_finalized:true, finalizer_reason:reason, backend_sequence_terminal_finalizer: backendSequenceFinalizer, coverage_write_skipped_for_backend_timebox: backendSequenceFinalizer && coverageRowsWritten === 0, evidence_summary:{ player_prop_rows:propRows, matched_player_prop_rows:Number(counts.matched_rows || 0), distinct_matched_prepared_rows:matchedPrepared, coverage_rows:coverageRowsWritten, issue_rows:Number(issueRows.issue_rows || 0), source_keys:Number(counts.source_keys || 0), games:Number(counts.games || 0), players:Number(counts.players || 0), prop_keys:Number(counts.prop_keys || 0), first_player_prop_at:counts.first_at || null, last_player_prop_at:counts.last_at || null }, boundaries:{ no_teams_game_odds:true, opposite_prop_family_not_in_this_run:true, no_market_current_lines:true, no_prepared_board_mutation:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_matrix:true, no_final_board:true } };
   await run(env.MARKET_DB, `UPDATE market_context_probe_batches SET worker_version=?, status=?, parlay_props_mapped_to_prepared=?, parlay_coverage_grade=?, warning_count=?, blocker_count=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, VERSION, status, Number(counts.matched_rows || 0), coverageGrade, warningCount, blockerCount, certification, certificationGrade, safeJson(output, 9000), batchId);
   return output;
 }
@@ -1402,6 +1403,30 @@ async function runPlayerPropContext(env, input = {}) {
     warningCount += 1;
   }
   await batchRun(env.MARKET_DB, `INSERT INTO market_context_probe_player_props (probe_row_id, batch_id, slate_window_key, official_date, prepared_row_id, source_key, source_event_id, source_line_id, game_pk, resolved_mlb_player_id, source_player_name, canonical_prop_key, source_market_key, line_value, price_american, price_decimal, outcome_side, mapping_status, coverage_status, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, effectivePropRows, backendSequence ? MARKET_FULL_BACKEND_BATCH_CHUNK_SIZE : 75);
+  if (backendSequence) {
+    const terminalFromEvidence = await finalizePlayerPropBatchFromEvidence(
+      env,
+      { ...input, external_calls_performed: externalCalls },
+      config,
+      { batch_id: batchId, request_id: requestId, run_id: runId, prepared_rows_read: preparedRows.length, warning_count: warningCount + 1, blocker_count: blockerCount },
+      preparedRows,
+      today,
+      tomorrow,
+      slateWindowKey,
+      retention,
+      { ...prune, immediate_terminal_after_player_prop_evidence_insert: true, coverage_write_skipped_for_backend_timebox: true },
+      "backend_sequence_terminal_after_player_prop_evidence_insert"
+    );
+    if (terminalFromEvidence) {
+      terminalFromEvidence.backend_sequence_terminal_short_circuit = true;
+      terminalFromEvidence.persisted_player_prop_rows = effectivePropRows.length;
+      terminalFromEvidence.source_player_prop_rows_seen_before_timebox = propRows.length;
+      terminalFromEvidence.prop_evidence_truncated_for_backend_timebox = propEvidenceTruncatedForBackendTimebox;
+      terminalFromEvidence.coverage_write_skipped_for_backend_timebox = true;
+      terminalFromEvidence.elapsed_ms = Date.now() - startedMs;
+      return terminalFromEvidence;
+    }
+  }
   let coverageWriteSkippedForTimebox = false;
   if (backendSequence && marketFullSoftDeadlineExceeded(startedMs, 3500)) {
     coverageWriteSkippedForTimebox = true;

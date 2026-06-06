@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.181-real-engine-current-routing";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.182-market-full-player-props-terminal-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -7990,6 +7990,38 @@ async function processOneUnlocked(env, trigger) {
       await run(env.CONTROL_DB,
         "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'daily_context_full_run_running_parent_rescued_as_due', 'Recovered running Daily Context Full Run parent row as due work for backend continuation', ?, CURRENT_TIMESTAMP)",
         row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, daily_context_parent_hot_rescue_v0_2_144: true })
+      );
+    }
+  }
+
+
+  // v0.2.182: Market Full player-prop stages are intentionally backend timeboxed.
+  // If the service-binding response is interrupted after evidence rows are written,
+  // redispatch the same child quickly so the worker can terminal-finalize from its
+  // own MARKET_DB evidence instead of leaving the parent waiting for the 12-minute
+  // generic long-stage stale window. Scoped to market-line-shape-classifier only.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
+       FROM control_job_queue c
+       JOIN control_job_queue p ON p.request_id = c.parent_request_id AND p.chain_id = c.chain_id
+       WHERE p.job_key='market-scoring-full-run'
+         AND p.worker_name='alphadog-v2-orchestrator'
+         AND p.status IN ('pending','running','partial_continue')
+         AND p.finished_at IS NULL
+         AND c.parent_request_id IS NOT NULL
+         AND c.job_key='market-line-shape-classifier'
+         AND c.worker_name='alphadog-v2-market-line-shape-classifier'
+         AND c.status='running'
+         AND c.finished_at IS NULL
+         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds')
+       ORDER BY datetime(c.updated_at) ASC
+       LIMIT 1`
+    );
+    if (row) {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'market_scoring_full_run_player_prop_child_rescued_as_due', 'Recovered running Market Full player-prop child as due so worker can terminal-finalize from evidence rows', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, stale_threshold_seconds: 20, market_scoring_player_prop_terminal_rescue_v0_2_182: true, no_new_child_created: true, expected_worker_evidence_finalizer: true })
       );
     }
   }
