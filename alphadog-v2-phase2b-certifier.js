@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-certifier";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-matrix-builder";
 const JOB_KEY = "prop-matrix-builder";
-const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.8-domain-batch-exception-finalizer";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.7-domain-batch-exception-finalizer";
+const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.9-resumable-chunk-terminal-finalizer";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.8-resumable-chunk-terminal-finalizer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -166,6 +166,46 @@ async function controlLifecycleFinalize(env, input = {}, output = {}, terminalHi
 }
 async function responseToOutputObject(response) {
   try { return JSON.parse(await response.clone().text()); } catch (_) { return { ok:false, data_ok:false, status:"worker_response_parse_failed", certification:"WORKER_RESPONSE_PARSE_FAILED" }; }
+}
+function isWorkerPartialContinueOutput(output) {
+  const rawStatus = String((output && output.status) || "").toLowerCase();
+  const cert = String((output && (output.certification || output.certification_status)) || "").toLowerCase();
+  return !!(output && output.ok === true && (
+    rawStatus === "partial_continue" ||
+    rawStatus.startsWith("partial_continue_") ||
+    cert.includes("partial_continue") ||
+    output.continuation_required === true ||
+    output.orchestrator_should_self_continue === true
+  ));
+}
+async function controlLifecyclePartial(env, input = {}, output = {}) {
+  const requestId = output.request_id || input.request_id || null;
+  if (!env || !env.CONTROL_DB || !requestId) return { ok:false, skipped:"missing_control_db_or_request_id" };
+  const runId = output.run_id || input.run_id || null;
+  const jobKey = output.job_key || controlJobKey(input);
+  const cert = output.certification || output.certification_status || `${String(jobKey).toUpperCase().replace(/[^A-Z0-9]+/g,"_")}_PARTIAL_CONTINUE`;
+  const rowsRead = Number(output.rows_read ?? output.prepared_rows_read ?? output.matrix_rows_read ?? 0) || 0;
+  const rowsWritten = Number(output.rows_written ?? output.matrix_rows_written ?? 0) || 0;
+  const externalCalls = Number(output.external_calls_performed ?? output.external_calls ?? 0) || 0;
+  const finalJson = controlSafeJson({
+    ...output,
+    request_id: requestId,
+    run_id: runId,
+    control_lifecycle_partial_continue: true,
+    control_lifecycle_partial_at: (typeof nowUtc === "function" ? nowUtc() : (typeof nowIso === "function" ? nowIso() : new Date().toISOString()))
+  }, 9000);
+  try {
+    await run(env.CONTROL_DB, `UPDATE control_job_queue
+      SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL
+      WHERE request_id=? AND status IN ('pending','running','partial_continue')`, finalJson, requestId);
+    const runSql = `UPDATE control_job_runs
+      SET status='partial_continue', data_ok=1, certification_status=?, rows_read=?, rows_written=?, external_calls=?, finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), output_json=?, error_code=NULL, error_message=NULL
+      WHERE ${runId ? 'run_id=?' : 'request_id=?'} AND finished_at IS NULL`;
+    await run(env.CONTROL_DB, runSql, cert, rowsRead, rowsWritten, externalCalls, finalJson, runId || requestId);
+    return { ok:true, queue_status:"pending", run_status:"partial_continue", certification:cert };
+  } catch (err) {
+    return { ok:false, error:controlSafeText(err && err.message ? err.message : err, 900) };
+  }
 }
 function classifyProp(propKey, sourcePropName) {
   const keyLc = String(propKey || "").toLowerCase();
@@ -610,6 +650,46 @@ async function insertMatrixRows(env, matrixRows, issueRows, coverageRows) {
     c.coverage_key, c.prepared_row_id, c.matrix_id, c.matrix_status, c.matrix_grade, c.blocking_for_scoring ? 1 : 0, c.latest_batch_id, c.latest_checked_at, c.missing_reason || null, JSON.stringify(c.details || {}), c.official_date
   )), 40);
 }
+async function summarizeMatrixBatch(env, batchId) {
+  const row = await first(env.SCORE_DB, `SELECT
+      COUNT(*) AS matrix_rows_written,
+      SUM(CASE WHEN matrix_status='matrix_ready' THEN 1 ELSE 0 END) AS matrix_ready_rows,
+      SUM(CASE WHEN matrix_status='matrix_ready_with_warnings' THEN 1 ELSE 0 END) AS matrix_ready_with_warnings_rows,
+      SUM(CASE WHEN matrix_status='matrix_partial_context' THEN 1 ELSE 0 END) AS matrix_partial_context_rows,
+      SUM(CASE WHEN matrix_status='matrix_blocked' THEN 1 ELSE 0 END) AS matrix_blocked_rows,
+      SUM(CASE WHEN matrix_status='matrix_deferred' THEN 1 ELSE 0 END) AS matrix_deferred_rows,
+      SUM(CASE WHEN matrix_status='matrix_source_missing' THEN 1 ELSE 0 END) AS matrix_source_missing_rows,
+      SUM(CASE WHEN warning_count > 0 THEN 1 ELSE 0 END) AS warning_rows,
+      SUM(CASE WHEN blocker_count > 0 OR blocking_for_scoring=1 THEN 1 ELSE 0 END) AS blocker_rows,
+      SUM(CASE WHEN missing_component_count > 0 THEN 1 ELSE 0 END) AS missing_component_rows
+    FROM prop_matrix_current WHERE batch_id=?`, batchId);
+  const issues = await first(env.SCORE_DB, `SELECT COUNT(*) AS issue_rows FROM prop_matrix_issues WHERE batch_id=?`, batchId);
+  const clean = row || {};
+  return {
+    matrix_rows_written: Number(clean.matrix_rows_written || 0),
+    matrix_ready_rows: Number(clean.matrix_ready_rows || 0),
+    matrix_ready_with_warnings_rows: Number(clean.matrix_ready_with_warnings_rows || 0),
+    matrix_partial_context_rows: Number(clean.matrix_partial_context_rows || 0),
+    matrix_blocked_rows: Number(clean.matrix_blocked_rows || 0),
+    matrix_deferred_rows: Number(clean.matrix_deferred_rows || 0),
+    matrix_source_missing_rows: Number(clean.matrix_source_missing_rows || 0),
+    issue_rows: Number((issues && issues.issue_rows) || 0),
+    warning_rows: Number(clean.warning_rows || 0),
+    blocker_rows: Number(clean.blocker_rows || 0),
+    missing_component_rows: Number(clean.missing_component_rows || 0)
+  };
+}
+async function findResumeMatrixBatch(env, input, dates) {
+  const requested = input.matrix_batch_id || input.resume_batch_id || null;
+  if (requested) {
+    const row = await first(env.SCORE_DB, `SELECT * FROM prop_matrix_batches WHERE batch_id=? AND window_start=? AND window_end=? AND status LIKE 'running%' ORDER BY datetime(updated_at) DESC LIMIT 1`, requested, dates[0], dates[1]);
+    if (row) return row;
+  }
+  if (input.request_id) {
+    return await first(env.SCORE_DB, `SELECT * FROM prop_matrix_batches WHERE request_id=? AND window_start=? AND window_end=? AND status LIKE 'running%' ORDER BY datetime(updated_at) DESC LIMIT 1`, input.request_id, dates[0], dates[1]);
+  }
+  return null;
+}
 async function runMatrixBuilder(request, env) {
   const input = await request.json().catch(() => ({}));
   const dates = Array.isArray(input.window_dates) && input.window_dates.length >= 2 ? input.window_dates.slice(0, 2) : ptTodayTomorrow();
@@ -617,26 +697,40 @@ async function runMatrixBuilder(request, env) {
   if (!allTrue(dbPresence)) return jsonResponse({ ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, status:"blocked_missing_db_binding", missing_bindings:Object.entries(dbPresence).filter(([,v])=>!v).map(([k])=>k) }, 500);
 
   await ensureSchema(env);
-  await retentionCleanup(env, dates);
-  const batchId = rid("prop_matrix_batch");
   const runId = input.run_id || rid("run");
   const sourceTables = { score_db:["score_board_prepared_current","prop_factor_coverage_current","prop_factor_hitter_packets","prop_factor_pitcher_packets","prop_factor_issues","prop_factor_batches"], market_db:["market_context_probe_batches","market_context_probe_coverage","market_context_probe_player_props","market_context_probe_game_market_summary"], daily_db:["daily_context_readiness_current","daily_context_readiness_batches"], team_db:["mlb_game_calendar"] };
-  await run(env.SCORE_DB, `INSERT OR REPLACE INTO prop_matrix_batches (batch_id,request_id,run_id,worker_name,worker_version,deployed_worker_slot,deployed_slot_version,mode,status,window_start,window_end,source_tables_checked_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
-    batchId, input.request_id || null, runId, LOGICAL_WORKER_NAME, SYSTEM_VERSION, WORKER_NAME, DEPLOYED_SLOT_VERSION, "prop_matrix_build", "running", dates[0], dates[1], JSON.stringify(sourceTables));
+
+  const resumeBatch = await findResumeMatrixBatch(env, input, dates);
+  let batchId;
+  let resumedExistingBatch = false;
+  if (resumeBatch && resumeBatch.batch_id) {
+    batchId = resumeBatch.batch_id;
+    resumedExistingBatch = true;
+    await run(env.SCORE_DB, `UPDATE prop_matrix_batches SET run_id=?, worker_version=?, deployed_slot_version=?, status='running_chunked', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, runId, SYSTEM_VERSION, DEPLOYED_SLOT_VERSION, batchId);
+  } else {
+    await retentionCleanup(env, dates);
+    batchId = rid("prop_matrix_batch");
+    await run(env.SCORE_DB, `INSERT OR REPLACE INTO prop_matrix_batches (batch_id,request_id,run_id,worker_name,worker_version,deployed_worker_slot,deployed_slot_version,mode,status,window_start,window_end,source_tables_checked_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+      batchId, input.request_id || null, runId, LOGICAL_WORKER_NAME, SYSTEM_VERSION, WORKER_NAME, DEPLOYED_SLOT_VERSION, "prop_matrix_build", "running", dates[0], dates[1], JSON.stringify(sourceTables));
+  }
 
   const prepared = await getPreparedRows(env, dates);
   const globalCtx = await loadGlobalPrerequisites(env, dates, prepared);
+  const existingRows = await all(env.SCORE_DB, `SELECT prepared_row_id FROM prop_matrix_current WHERE batch_id=?`, batchId);
+  const existingPrepared = new Set(existingRows.map(r => String(r.prepared_row_id || "")).filter(Boolean));
+  const remainingPrepared = prepared.filter(r => !existingPrepared.has(String(r.prepared_row_id || "")));
+
   const requestedChunkSize = Number(input.chunk_size || 75);
   const chunkSize = Math.max(25, Math.min(75, Number.isFinite(requestedChunkSize) ? requestedChunkSize : 75));
-  const statusCounts = {};
-  let matrixRowsWritten = 0;
-  let totalIssueRows = 0;
-  let warningRows = 0;
-  let blockerRows = 0;
-  let missingComponentRows = 0;
+  const maxChunksPerInvocationRaw = Number(input.max_chunks_per_invocation || input.matrix_max_chunks_per_invocation || 45);
+  const maxChunksPerInvocation = Math.max(1, Math.min(45, Number.isFinite(maxChunksPerInvocationRaw) ? maxChunksPerInvocationRaw : 45));
+  const maxRuntimeMsRaw = Number(input.max_runtime_ms || input.matrix_max_runtime_ms || 52000);
+  const deadlineMs = Date.now() + Math.max(15000, Math.min(60000, Number.isFinite(maxRuntimeMsRaw) ? maxRuntimeMsRaw : 52000));
   let processedChunks = 0;
 
-  for (const chunkRows of arrChunks(prepared, chunkSize)) {
+  for (const chunkRows of arrChunks(remainingPrepared, chunkSize)) {
+    if (processedChunks >= maxChunksPerInvocation) break;
+    if (processedChunks > 0 && Date.now() >= deadlineMs) break;
     processedChunks++;
     const ctx = await loadChunkPrerequisites(env, dates, chunkRows, globalCtx);
     const issues = [];
@@ -714,11 +808,6 @@ async function runMatrixBuilder(request, env) {
     const packetDailyStatus = packet && (packet.daily_context_status || packet.readiness_status) ? String(packet.daily_context_status || packet.readiness_status) : null;
     const effectiveDailyStatus = readiness ? String(readiness.context_status || "") : (packetDailyStatus || "daily_readiness_missing_soft_fallback");
     if (!readiness) {
-      // v0.1.6: Matrix must not hard-block a safe prepared row only because the
-      // row-level daily readiness ledger is behind the current prepared board.
-      // The factor packet already carries the daily-context result used for factor
-      // certification, so missing readiness_current is a warning / partial-context
-      // condition, not source-missing and not BLOCKED_UNSAFE.
       warningCount++;
       missingComponentCount++;
       addIssue(issues, batchId, matrixId, row, "warning", "daily_readiness_missing_soft_fallback", "DAILY_CONTEXT_READINESS_ROW_MISSING_USING_FACTOR_PACKET_DAILY_STATUS", { packet_daily_context_status: packetDailyStatus, fallback_status: effectiveDailyStatus });
@@ -752,44 +841,30 @@ async function runMatrixBuilder(request, env) {
       addIssue(issues, batchId, matrixId, row, "warning", "market_context_partial", "MARKET_CONTEXT_PARTIAL_OR_PROP_LINE_MISSING", { statuses: marketRows.map(r => ({ batch_id:r.batch_id, market_context_status:r.market_context_status, coverage_grade:r.coverage_grade, game_market_status:r.game_market_status, player_prop_market_status:r.player_prop_market_status })) });
     }
 
-    const factorIssues = ctx.factorIssues.get(key(row.prepared_row_id)) || [];
-    if (factorIssues.length) {
-      for (const fi of factorIssues.slice(0, 6)) {
-        const sev = String(fi.severity || "warning").toLowerCase() === "blocker" ? "blocker" : "warning";
-        if (sev === "blocker") blockerCount++; else warningCount++;
-        addIssue(issues, batchId, matrixId, row, sev, "carried_factor_issue", fi.reason || fi.issue_type || "FACTOR_ISSUE_CARRIED_FORWARD", { factor_issue_id: fi.issue_id, issue_type: fi.issue_type, factor_family: fi.factor_family, details: safeJsonParse(fi.details_json, {}) });
-      }
+    const carried = ctx.factorIssues.get(key(row.prepared_row_id)) || [];
+    for (const fi of carried) {
+      const sev = String(fi.severity || "warning").toLowerCase() === "blocker" ? "blocker" : "warning";
+      if (sev === "blocker" && matrixStatus !== "matrix_deferred") { blocking = 1; blockerCount++; if (matrixStatus !== "matrix_blocked") { matrixStatus = "matrix_blocked"; matrixGrade = "BLOCKED_UNSAFE"; } }
+      else if (sev === "warning") warningCount++;
+      addIssue(issues, batchId, matrixId, row, sev, "carried_factor_issue", fi.reason || fi.issue_type || "FACTOR_PACKET_ISSUE", { source_issue_id: fi.issue_id, source_issue_type: fi.issue_type, source_details: safeJsonParse(fi.details_json, {}) });
     }
 
-    if (!blocking) {
-      if (market.partial || !marketRows.length || String(effectiveDailyStatus || "").toLowerCase().includes("partial") || !readiness) {
-        matrixStatus = "matrix_partial_context";
-        matrixGrade = "PARTIAL_CONTEXT_PASS";
-      } else if (warningCount > 0 || (packet && Number(packet.warning_count || 0) > 0)) {
-        matrixStatus = "matrix_ready_with_warnings";
-        matrixGrade = "PASS_WITH_WARNINGS";
-      } else {
-        matrixStatus = "matrix_ready";
-        matrixGrade = "PASS";
-      }
+    if (warningCount > 0 && !blocking && matrixStatus === "matrix_ready") {
+      matrixStatus = "matrix_partial_context";
+      matrixGrade = "PARTIAL_CONTEXT_PASS";
     }
 
-    const packetDetails = packet ? { packet_id: packet.packet_id, batch_id: packet.batch_id, factor_status: packet.factor_status, factor_grade: packet.factor_grade, readiness_status: packet.readiness_status, market_context_status: packet.market_context_status, daily_context_status: packet.daily_context_status, base_metric_status: packet.base_metric_status, warning_count: packet.warning_count, blocker_count: packet.blocker_count, missing_factor_count: packet.missing_factor_count, factor_payload: safeJsonParse(packet.factor_payload_json, {}) } : null;
+    const sourceLineId = buildSourceLineId(row);
+    const packetDetails = packet ? safeJsonParse(packet.details_json, {}) : null;
     const details = {
       classification,
-      side_variation: sideVariation,
-      factor_coverage: factorCov ? { factor_family: factorCov.factor_family, factor_status: factorCov.factor_status, factor_grade: factorCov.factor_grade, blocking_for_matrix: factorCov.blocking_for_matrix, missing_reason: factorCov.missing_reason, latest_batch_id: factorCov.latest_batch_id } : null,
-      daily_readiness: readiness ? { batch_id: readiness.batch_id, context_status: readiness.context_status, context_grade: readiness.context_grade, hard_blocker_count: readiness.hard_blocker_count, warning_count: readiness.warning_count, enrichment_gap_count: readiness.enrichment_gap_count, starter_context_status: readiness.starter_context_status, lineup_context_status: readiness.lineup_context_status, player_availability_status: readiness.player_availability_status, weather_context_status: readiness.weather_context_status, bullpen_context_status: readiness.bullpen_context_status, schedule_spot_context_status: readiness.schedule_spot_context_status, umpire_context_status: readiness.umpire_context_status } : { context_status: effectiveDailyStatus, fallback_source: "factor_packet_daily_context_status", packet_daily_context_status: packetDailyStatus },
-      market_context: { coverage_summary: { game_status: market.game_status, prop_status: market.prop_status, context_status: market.context_status, coverage_grade: market.coverage_grade, coverage_rows: market.rows.length }, player_prop_evidence: propEvidence, game_market: gameMarket },
-      calendar: game ? { game_pk: game.game_pk, status_code: game.status_code, abstract_game_state: game.abstract_game_state, detailed_state: game.detailed_state, is_pregame: game.is_pregame, is_live: game.is_live, is_final: game.is_final } : null,
-      row_issue_count: issues.length - rowIssuesBefore
+      game_context: game || null,
+      market_context: { game_summary: gameMarket, prop_evidence: propEvidence, coverage_rows: marketRows },
+      daily_readiness: readiness || { status: effectiveDailyStatus, fallback_from_factor_packet: true },
+      factor_coverage: factorCov || null,
+      issue_counts: { warning_count: warningCount, blocker_count: blockerCount, missing_component_count: missingComponentCount }
     };
-    const sourceLineId = packet && packet.source_line_id ? packet.source_line_id : sideVariation.source_line_id;
-    const teamId = packet && packet.team_id ? packet.team_id : (readiness && readiness.team_id ? readiness.team_id : row.team || null);
-    const opponentTeamId = packet && packet.opponent_team_id ? packet.opponent_team_id : (readiness && readiness.opponent_team_id ? readiness.opponent_team_id : row.opponent || null);
-    const isHome = packet && packet.is_home !== null && packet.is_home !== undefined ? packet.is_home : null;
-    matrixRows.push({
-      matrix_id: matrixId, batch_id: batchId, prepared_row_id: row.prepared_row_id, source_line_id: sourceLineId, source_key: row.source_key, game_pk: row.official_game_pk, official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, mlb_player_id: playerId, player_name: row.player_name, team_id: teamId, opponent_team_id: opponentTeamId, is_home: isHome, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value, prop_side: null, factor_family: factorCov ? factorCov.factor_family : classification.family, factor_packet_id: factorCov && factorCov.packet_id ? factorCov.packet_id : null, factor_status: factorCov ? factorCov.factor_status : "factor_coverage_missing", market_game_context_status: market.game_status, market_prop_context_status: market.prop_status, daily_readiness_status: effectiveDailyStatus, matrix_status: matrixStatus, matrix_grade: matrixGrade, blocking_for_scoring: blocking, warning_count: warningCount + (packet ? Number(packet.warning_count || 0) : 0), blocker_count: blockerCount, missing_component_count: missingComponentCount, matrix_payload: {
+    matrixRows.push({ matrix_id: matrixId, batch_id: batchId, prepared_row_id: row.prepared_row_id, source_line_id: sourceLineId, source_key: row.source_key, game_pk: row.official_game_pk, official_date: row.official_date, official_game_time_utc: row.official_game_time_utc, mlb_player_id: playerId, player_name: row.player_name, team_id: row.team, opponent_team_id: row.opponent, is_home: row.team && game && String(game.home_team_id || game.home_team || "") === String(row.team) ? 1 : null, canonical_prop_key: row.canonical_prop_key, board_line_value: row.line_value, prop_side: null, factor_family: factorCov ? factorCov.factor_family : classification.family, factor_packet_id: factorCov && factorCov.packet_id ? factorCov.packet_id : null, factor_status: factorCov ? factorCov.factor_status : "factor_coverage_missing", market_game_context_status: market.game_status, market_prop_context_status: market.prop_status, daily_readiness_status: effectiveDailyStatus, matrix_status: matrixStatus, matrix_grade: matrixGrade, blocking_for_scoring: blocking, warning_count: warningCount + (packet ? Number(packet.warning_count || 0) : 0), blocker_count: blockerCount, missing_component_count: missingComponentCount, matrix_payload: {
         prepared: {
           prepared_row_id: row.prepared_row_id,
           prep_batch_id: row.prep_batch_id,
@@ -863,25 +938,30 @@ async function runMatrixBuilder(request, env) {
     }
 
     await insertMatrixRows(env, matrixRows, issues, coverageRows);
-    matrixRowsWritten += matrixRows.length;
-    totalIssueRows += issues.length;
-    for (const r of matrixRows) statusCounts[r.matrix_status] = (statusCounts[r.matrix_status] || 0) + 1;
-    warningRows += matrixRows.filter(r => Number(r.warning_count || 0) > 0).length;
-    blockerRows += matrixRows.filter(r => Number(r.blocker_count || 0) > 0 || r.blocking_for_scoring).length;
-    missingComponentRows += matrixRows.filter(r => Number(r.missing_component_count || 0) > 0).length;
+    const checkpoint = await summarizeMatrixBatch(env, batchId);
     await run(env.SCORE_DB, `UPDATE prop_matrix_batches SET status=?, prepared_rows_read=?, eligible_rows=?, matrix_rows_written=?, issue_rows=?, warning_rows=?, blocker_rows=?, missing_component_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-      "running_chunked", prepared.length, prepared.length, matrixRowsWritten, totalIssueRows, warningRows, blockerRows, missingComponentRows, batchId);
+      "running_chunked", prepared.length, prepared.length, checkpoint.matrix_rows_written, checkpoint.issue_rows, checkpoint.warning_rows, checkpoint.blocker_rows, checkpoint.missing_component_rows, batchId);
   }
 
-  const noSilentDropOk = matrixRowsWritten === prepared.length;
-  const status = noSilentDropOk ? "completed_with_certified_matrix_rows" : "failed_no_silent_drop_violation";
-  const certification = noSilentDropOk ? "PROP_MATRIX_CERTIFIED_ONE_ROW_PER_SAFE_PREPARED_ROW" : "PROP_MATRIX_FAILED_ROW_PRESERVATION";
-  const grade = !noSilentDropOk ? "FAILED_ROW_PRESERVATION" : (blockerRows > 0 ? "PASS_WITH_BLOCKED_OR_DEFERRED_ROWS" : (warningRows > 0 ? "PASS_WITH_WARNINGS" : "PASS"));
-  const output = { ok:noSilentDropOk, data_ok:noSilentDropOk, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode:"prop_matrix_build", status, certification, certification_grade:grade, batch_id:batchId, run_id:runId, window_dates:dates, prepared_rows_read:prepared.length, eligible_rows:prepared.length, matrix_rows_written:matrixRowsWritten, matrix_ready_rows:statusCounts.matrix_ready || 0, matrix_ready_with_warnings_rows:statusCounts.matrix_ready_with_warnings || 0, matrix_partial_context_rows:statusCounts.matrix_partial_context || 0, matrix_blocked_rows:statusCounts.matrix_blocked || 0, matrix_deferred_rows:statusCounts.matrix_deferred || 0, matrix_source_missing_rows:statusCounts.matrix_source_missing || 0, issue_rows:totalIssueRows, warning_rows:warningRows, blocker_rows:blockerRows, missing_component_rows:missingComponentRows, no_silent_drops:noSilentDropOk, one_matrix_row_per_safe_prepared_row:noSilentDropOk, prerequisite_freshness:globalCtx.freshness, chunked_memory_mode:true, chunk_size:chunkSize, processed_chunks:processedChunks, retention_policy:"today_tomorrow_only_latest_matrix_current_issues_coverage_and_batch", daily_readiness_missing_soft_fallback:true, no_daily_readiness_missing_hard_block:true, internal_only:true, external_calls:0, no_external_api_calls:true, no_mlb_api_calls:true, no_odds_api_calls:true, no_parlay_api_calls:true, no_gemini_calls:true, no_probability:true, no_edge:true, no_value_rating:true, no_qualified_flag:true, no_rank:true, no_pick_recommendation:true, no_scoring:true, no_ranking:true, no_final_board:true, side_variation_preservation:true, matrix_payload_preserves_line_type_and_side_context:true, side_context_payload_path:"matrix_payload_json.side_context", variation_context_payload_path:"matrix_payload_json.variation_context", scoring_placeholders_payload_path:"matrix_payload_json.scoring_placeholders" };
+  const summary = await summarizeMatrixBatch(env, batchId);
+  const complete = summary.matrix_rows_written === prepared.length;
+  if (!complete) {
+    const remainingRows = Math.max(0, prepared.length - summary.matrix_rows_written);
+    const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode:"prop_matrix_build", status:"partial_continue_prop_matrix_builder_chunk_written", certification:"PROP_MATRIX_BUILDER_PARTIAL_CONTINUE_CHUNK_WRITTEN", certification_grade:"PARTIAL", batch_id:batchId, matrix_batch_id:batchId, run_id:runId, window_dates:dates, prepared_rows_read:prepared.length, eligible_rows:prepared.length, matrix_rows_written:summary.matrix_rows_written, remaining_rows:remainingRows, processed_chunks:processedChunks, chunk_size:chunkSize, max_chunks_per_invocation:maxChunksPerInvocation, resumed_existing_batch:resumedExistingBatch, continuation_required:true, orchestrator_should_self_continue:true, no_silent_drops:false, one_matrix_row_per_safe_prepared_row:false, ...summary, prerequisite_freshness:globalCtx.freshness, internal_only:true, external_calls:0, no_external_api_calls:true, no_mlb_api_calls:true, no_odds_api_calls:true, no_parlay_api_calls:true, no_gemini_calls:true, no_probability:true, no_edge:true, no_value_rating:true, no_qualified_flag:true, no_rank:true, no_pick_recommendation:true, no_scoring:true, no_ranking:true, no_final_board:true, side_variation_preservation:true, matrix_payload_preserves_line_type_and_side_context:true };
+    await run(env.SCORE_DB, `UPDATE prop_matrix_batches SET status='running_chunked', prepared_rows_read=?, eligible_rows=?, matrix_rows_written=?, matrix_ready_rows=?, matrix_ready_with_warnings_rows=?, matrix_partial_context_rows=?, matrix_blocked_rows=?, matrix_deferred_rows=?, issue_rows=?, warning_rows=?, blocker_rows=?, missing_component_rows=?, prerequisite_freshness_json=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+      prepared.length, prepared.length, summary.matrix_rows_written, summary.matrix_ready_rows, summary.matrix_ready_with_warnings_rows, summary.matrix_partial_context_rows, summary.matrix_blocked_rows, summary.matrix_deferred_rows, summary.issue_rows, summary.warning_rows, summary.blocker_rows, summary.missing_component_rows, JSON.stringify(globalCtx.freshness), JSON.stringify(output), batchId);
+    return jsonResponse(output);
+  }
+
+  const status = "completed_with_certified_matrix_rows";
+  const certification = "PROP_MATRIX_CERTIFIED_ONE_ROW_PER_SAFE_PREPARED_ROW";
+  const grade = summary.blocker_rows > 0 ? "PASS_WITH_BLOCKED_OR_DEFERRED_ROWS" : (summary.warning_rows > 0 ? "PASS_WITH_WARNINGS" : "PASS");
+  const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode:"prop_matrix_build", status, certification, certification_grade:grade, batch_id:batchId, matrix_batch_id:batchId, run_id:runId, window_dates:dates, prepared_rows_read:prepared.length, eligible_rows:prepared.length, ...summary, no_silent_drops:true, one_matrix_row_per_safe_prepared_row:true, prerequisite_freshness:globalCtx.freshness, chunked_memory_mode:true, chunk_size:chunkSize, processed_chunks:processedChunks, resumed_existing_batch:resumedExistingBatch, retention_policy:"today_tomorrow_only_latest_matrix_current_issues_coverage_and_batch", daily_readiness_missing_soft_fallback:true, no_daily_readiness_missing_hard_block:true, internal_only:true, external_calls:0, no_external_api_calls:true, no_mlb_api_calls:true, no_odds_api_calls:true, no_parlay_api_calls:true, no_gemini_calls:true, no_probability:true, no_edge:true, no_value_rating:true, no_qualified_flag:true, no_rank:true, no_pick_recommendation:true, no_scoring:true, no_ranking:true, no_final_board:true, side_variation_preservation:true, matrix_payload_preserves_line_type_and_side_context:true, side_context_payload_path:"matrix_payload_json.side_context", variation_context_payload_path:"matrix_payload_json.variation_context", scoring_placeholders_payload_path:"matrix_payload_json.scoring_placeholders" };
   await run(env.SCORE_DB, `UPDATE prop_matrix_batches SET status=?, prepared_rows_read=?, eligible_rows=?, matrix_rows_written=?, matrix_ready_rows=?, matrix_ready_with_warnings_rows=?, matrix_partial_context_rows=?, matrix_blocked_rows=?, matrix_deferred_rows=?, issue_rows=?, warning_rows=?, blocker_rows=?, missing_component_rows=?, prerequisite_freshness_json=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    status, prepared.length, prepared.length, matrixRowsWritten, output.matrix_ready_rows, output.matrix_ready_with_warnings_rows, output.matrix_partial_context_rows, output.matrix_blocked_rows, output.matrix_deferred_rows, totalIssueRows, warningRows, blockerRows, missingComponentRows, JSON.stringify(globalCtx.freshness), certification, grade, JSON.stringify(output), batchId);
+    status, prepared.length, prepared.length, summary.matrix_rows_written, summary.matrix_ready_rows, summary.matrix_ready_with_warnings_rows, summary.matrix_partial_context_rows, summary.matrix_blocked_rows, summary.matrix_deferred_rows, summary.issue_rows, summary.warning_rows, summary.blocker_rows, summary.missing_component_rows, JSON.stringify(globalCtx.freshness), certification, grade, JSON.stringify(output), batchId);
   return jsonResponse(output);
 }
+
 function identity(env) {
   const db = reqDb(env);
   return { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, status:"ready", internal_only:true, no_external_calls:true, no_scoring:true, no_ranking:true, no_final_board:true, side_variation_preservation:true, schema_owner:"SCORE_DB.prop_matrix_*", retention_policy:"today_tomorrow_only", required_db_bindings_present:allTrue(db), db_bindings:db };
@@ -898,6 +978,10 @@ export default {
       try {
         const response = await runMatrixBuilder(request, env);
         const output = await responseToOutputObject(response);
+        if (isWorkerPartialContinueOutput(output)) {
+          output.control_lifecycle = await controlLifecyclePartial(env, inputForLifecycle, output);
+          return jsonResponse(output, 200);
+        }
         output.control_lifecycle = await controlLifecycleFinalize(env, inputForLifecycle, output, output.ok !== false && output.data_ok !== false ? "completed" : "failed");
         return jsonResponse(output, response.status || (output.ok !== false ? 200 : 500));
       }

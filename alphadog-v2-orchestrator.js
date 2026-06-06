@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.179-market-full-late-stage-proof-reconcile";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.180-prop-matrix-partial-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -4951,10 +4951,24 @@ async function processDailyProbablePitchersJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_starters_dispatch_completed', 'Orchestrator completed exact Daily Starters dispatch', ?, CURRENT_TIMESTAMP)",
@@ -5093,10 +5107,24 @@ async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_player_availability_dispatch_completed', 'Orchestrator completed exact Daily Player Availability dispatch', ?, CURRENT_TIMESTAMP)",
@@ -5239,10 +5267,24 @@ async function processDailyWeatherJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_weather_dispatch_completed', 'Orchestrator completed exact Daily Weather/Roof dispatch', ?, CURRENT_TIMESTAMP)",
@@ -5375,10 +5417,24 @@ async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_team_schedule_spot_dispatch_completed', 'Orchestrator completed exact Daily Team Schedule Spot dispatch', ?, CURRENT_TIMESTAMP)",
@@ -5521,10 +5577,24 @@ async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_bullpen_dispatch_completed', 'Orchestrator completed exact Daily Bullpen Availability dispatch', ?, CURRENT_TIMESTAMP)",
@@ -5678,10 +5748,24 @@ async function processDailyUmpireContextJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_umpire_context_dispatch_completed', 'Orchestrator completed exact Daily Umpire Context dispatch', ?, CURRENT_TIMESTAMP)",
@@ -6306,10 +6390,24 @@ async function processDailyLineupsJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_lineups_source_probe_dispatch_completed', 'Orchestrator completed exact Daily Lineups source-probe dispatch', ?, CURRENT_TIMESTAMP)",
@@ -6439,10 +6537,24 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_game_status_dispatch_completed', 'Orchestrator completed exact Daily Game Status dispatch', ?, CURRENT_TIMESTAMP)",
@@ -6571,10 +6683,24 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'prop_factor_miner_dispatch_completed', 'Orchestrator completed exact Prop Factor Miner dispatch', ?, CURRENT_TIMESTAMP)",
@@ -6669,16 +6795,17 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
     output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
   }
 
+  const partial = isPartialContinueOutput(output);
   const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
+  const dataOk = partial || !!(output && output.data_ok);
   const rowsRead = Number(output && output.prepared_rows_read ? output.prepared_rows_read : 0);
   const rowsWritten = Number(output && output.matrix_rows_written ? output.matrix_rows_written : 0);
   const externalCalls = Number(output && (output.external_calls || output.external_calls_performed) ? (output.external_calls || output.external_calls_performed) : 0);
-  const certification = String((output && output.certification) || (ok ? "prop_matrix_builder_completed" : "prop_matrix_builder_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "prop_matrix_builder_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Prop Matrix Builder worker failed").slice(0, 900);
+  const certification = String((output && output.certification) || (partial ? "PROP_MATRIX_BUILDER_PARTIAL_CONTINUE" : (ok ? "prop_matrix_builder_completed" : "prop_matrix_builder_failed"))).slice(0, 120);
+  const queueStatus = partial ? "pending" : (ok ? "completed" : "failed");
+  const runStatus = partial ? "partial_continue" : (ok ? "completed" : "failed");
+  const errorCode = (ok || partial) ? null : "prop_matrix_builder_worker_failed";
+  const errorMessage = (ok || partial) ? null : String((output && (output.error || output.status)) || "Prop Matrix Builder worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
     orchestrator_dispatch: {
@@ -6715,14 +6842,28 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'prop_matrix_builder_dispatch_completed', 'Orchestrator completed exact Prop Matrix Builder dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, matrix_rows_written: rowsWritten, dispatch: cappedOutput.orchestrator_dispatch })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'prop_matrix_builder_dispatch_completed', ?, ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, partial ? "INFO" : (ok ? "INFO" : "ERROR"), partial ? "Orchestrator partial-continued exact Prop Matrix Builder dispatch" : "Orchestrator completed exact Prop Matrix Builder dispatch", JSON.stringify({ request_id: row.request_id, certification, partial_continue: partial, rows_read: rowsRead, matrix_rows_written: rowsWritten, dispatch: cappedOutput.orchestrator_dispatch })
   );
 
   return cappedOutput;
@@ -6863,10 +7004,24 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'scoring_engine_dispatch_completed', 'Orchestrator completed exact Scoring Engine framework/simulation dispatch', ?, CURRENT_TIMESTAMP)",
@@ -6971,10 +7126,24 @@ async function processScoreFinalBoardJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'score_final_board_dispatch_completed', 'Orchestrator completed exact Score Final Board dispatch', ?, CURRENT_TIMESTAMP)",
@@ -7088,10 +7257,24 @@ async function processScorePrepJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'score_prep_dispatch_completed', 'Orchestrator completed exact Score Prep dispatch', ?, CURRENT_TIMESTAMP)",
@@ -7263,10 +7446,24 @@ async function processDeltaCertifierJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-    queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
-  );
+  if (partial) {
+    const nextInput = {
+      ...rowInput,
+      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
+      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      matrix_resume: true,
+      continuation_from_request_id: row.request_id
+    };
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
+    );
+  } else {
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+    );
+  }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'delta_certifier_dispatch_completed', 'Orchestrator completed exact delta-certifier calendar/tally dispatch', ?, CURRENT_TIMESTAMP)",
@@ -8233,8 +8430,9 @@ async function processOneUnlocked(env, trigger) {
 
   if (isPropMatrixBuilderJob(row)) {
     const output = await processPropMatrixBuilderJob(env, row, runId, trigger);
+    const partial = isPartialContinueOutput(output);
     return {
-      status: output && output.ok ? "completed_one_prop_matrix_builder_job" : "failed_one_prop_matrix_builder_job",
+      status: partial ? "partial_continue_prop_matrix_builder_job" : (output && output.ok ? "completed_one_prop_matrix_builder_job" : "failed_one_prop_matrix_builder_job"),
       request_id: row.request_id,
       run_id: runId,
       output
@@ -8420,7 +8618,7 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
     await releaseLock(env, owner, "IDLE");
 
     const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_market_teams_game_odds_job" || x.status === "completed_one_market_hitter_prop_context_job" || x.status === "completed_one_market_pitcher_prop_context_job" || x.status === "completed_one_oddsapi_hitter_prop_context_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_delta_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job" || x.status === "completed_one_daily_weather_job" || x.status === "completed_one_daily_bullpen_availability_job" || x.status === "completed_one_daily_team_schedule_spot_job" || x.status === "completed_one_daily_starters_job" || x.status === "completed_one_daily_player_availability_job" || x.status === "completed_one_daily_lineups_source_probe_job" || x.status === "completed_one_daily_game_status_job" || x.status === "completed_one_daily_context_certifier_job" || x.status === "completed_one_daily_context_full_run_job" || x.status === "completed_one_prop_factor_miner_job" || x.status === "completed_one_prop_matrix_builder_job" || x.status === "completed_one_scoring_engine_job" || x.status === "completed_one_score_final_board_job" || x.status === "completed_one_market_scoring_full_run_job").length;
-    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job" || x.status === "partial_continue_daily_context_full_run_job" || x.status === "partial_continue_market_scoring_full_run_job").length;
+    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job" || x.status === "partial_continue_daily_context_full_run_job" || x.status === "partial_continue_market_scoring_full_run_job" || x.status === "partial_continue_prop_matrix_builder_job").length;
     const blocked = processed.filter(x => x.status === "failed_one_dispatch_exception_contained" || x.status === "blocked_unsupported_job" || x.status === "failed_one_market_teams_game_odds_job" || x.status === "failed_one_market_hitter_prop_context_job" || x.status === "failed_one_market_pitcher_prop_context_job" || x.status === "failed_one_oddsapi_hitter_prop_context_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_delta_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job" || x.status === "failed_one_daily_weather_job" || x.status === "failed_one_daily_bullpen_availability_job" || x.status === "failed_one_daily_team_schedule_spot_job" || x.status === "failed_one_daily_starters_job" || x.status === "failed_one_daily_player_availability_job" || x.status === "failed_one_daily_lineups_source_probe_job" || x.status === "failed_one_daily_game_status_job" || x.status === "failed_one_daily_context_certifier_job" || x.status === "failed_one_daily_context_full_run_job" || x.status === "failed_one_prop_factor_miner_job" || x.status === "failed_one_prop_matrix_builder_job" || x.status === "failed_one_scoring_engine_job" || x.status === "failed_one_score_final_board_job" || x.status === "failed_one_market_scoring_full_run_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
 
