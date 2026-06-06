@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.7-engine-current-source-gate";
+const VERSION = "alphadog-v2-score-final-board-v0.1.8-engine-current-timebox-finalizer";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_B";
 
@@ -731,6 +731,182 @@ async function insertBoardRow(env, table, id, batchId, sourceEngineBatchId, rank
   );
 }
 
+
+function boardRowBindValues(batchId, sourceEngineBatchId, rank, row, id) {
+  return [
+    id, batchId, sourceEngineBatchId, PRIMARY_PROFILE, rank,
+    row.board_tier || "PRIMARY", Number(row.review_playable || 0),
+    row.source_key || null, row.game_pk || null, row.official_date || null, row.official_game_time_utc || null,
+    row.prepared_row_id || null, row.matrix_id || null, row.source_line_id || null,
+    row.mlb_player_id || null, row.player_name || null, row.canonical_prop_key || null, row.line_value == null ? null : Number(row.line_value),
+    row.selected_side || null,
+    row.raw_score_0_100 == null ? null : Number(row.raw_score_0_100), row.raw_confidence_0_100 == null ? null : Number(row.raw_confidence_0_100),
+    row.score_0_100 == null ? null : Number(row.score_0_100), row.confidence_0_100 == null ? null : Number(row.confidence_0_100),
+    row.score_grade || null, row.score_sort_0_100 == null ? null : Number(row.score_sort_0_100), row.factor_status || null,
+    row.market_prop_context_status || null, row.daily_readiness_status || null, row.side_mode || null, row.odds_type || null, row.payout_variant || null,
+    Number(row.archive_eligible || 0), Number(row.live_playable || 0),
+    row.cluster_player_count == null ? null : Number(row.cluster_player_count), row.correlation_risk_tier || null, row.calibration_json || null,
+    row.calculation_json || null, row.matrix_payload_json_snapshot || null, row.details_json_snapshot || null
+  ];
+}
+
+function boardInsertSql(table) {
+  return `
+    INSERT OR REPLACE INTO ${table} (
+      final_board_row_id, final_board_batch_id, source_simulation_batch_id, source_engine_batch_id, profile_key, rank_order,
+      board_tier, review_playable,
+      source_key, game_pk, official_date, official_game_time_utc, prepared_row_id, matrix_id, source_line_id,
+      mlb_player_id, player_name, canonical_prop_key, line_value, selected_side,
+      raw_score_0_100, raw_confidence_0_100, score_0_100, confidence_0_100,
+      score_grade, score_sort_0_100, factor_status, market_prop_context_status, daily_readiness_status,
+      side_mode, odds_type, payout_variant, archive_eligible, live_playable,
+      cluster_player_count, correlation_risk_tier, calibration_json,
+      calculation_json, matrix_payload_json_snapshot, details_json_snapshot, created_at, updated_at
+    ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+  `;
+}
+
+async function insertBoardRowsBatched(env, table, batchId, sourceEngineBatchId, rows, chunkSize = 100) {
+  const sql = boardInsertSql(table);
+  let rank = 0;
+  let written = 0;
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+    const statements = [];
+    for (const row of chunk) {
+      rank += 1;
+      const id = rowId(batchId, rank, row);
+      const stmt = env.SCORE_DB.prepare(sql).bind(...boardRowBindValues(batchId, sourceEngineBatchId, rank, row, id));
+      statements.push(stmt);
+    }
+    if (typeof env.SCORE_DB.batch === "function") {
+      await env.SCORE_DB.batch(statements);
+    } else {
+      for (const stmt of statements) await stmt.run();
+    }
+    written += chunk.length;
+  }
+  return written;
+}
+
+async function copyHistoryToCurrent(env, batchId) {
+  const currentCols = (await all(env.SCORE_DB, `PRAGMA table_info(score_final_board_current)`)).map(c => String(c.name));
+  const historySet = new Set((await all(env.SCORE_DB, `PRAGMA table_info(score_final_board_history)`)).map(c => String(c.name)));
+  const cols = currentCols.filter(c => historySet.has(c));
+  if (!cols.length) return { ok:false, reason:"no_common_columns" };
+  const colSql = cols.map(c => `"${c.replace(/"/g, '""')}"`).join(", ");
+  await run(env.SCORE_DB, `DELETE FROM score_final_board_current`);
+  await run(env.SCORE_DB, `INSERT OR REPLACE INTO score_final_board_current (${colSql}) SELECT ${colSql} FROM score_final_board_history WHERE final_board_batch_id = ?`, batchId);
+  return { ok:true, columns:cols.length };
+}
+
+async function reconcileStaleRunningFinalBoard(env, input, engine, started) {
+  if (!engine || !engine.batch_id) return null;
+  const stale = await first(env.SCORE_DB, `
+    SELECT final_board_batch_id, worker_version, source_engine_batch_id, source_scoring_worker_version, profile_key, started_at
+    FROM score_final_board_batches
+    WHERE source_engine_batch_id = ?
+      AND status = 'running'
+      AND finished_at IS NULL
+    ORDER BY datetime(started_at) DESC
+    LIMIT 1
+  `, engine.batch_id);
+  if (!stale || !stale.final_board_batch_id) return null;
+  const staleBatchId = stale.final_board_batch_id;
+  const history = await first(env.SCORE_DB, `
+    SELECT COUNT(*) AS rows, COUNT(DISTINCT final_board_row_id) AS distinct_rows, COUNT(DISTINCT prepared_row_id) AS prepared_rows,
+           COUNT(DISTINCT matrix_id) AS matrix_rows, COUNT(DISTINCT source_line_id) AS source_line_ids,
+           COUNT(DISTINCT game_pk) AS games, COUNT(DISTINCT mlb_player_id) AS players, COUNT(DISTINCT canonical_prop_key) AS prop_keys,
+           COUNT(DISTINCT selected_side) AS selected_sides, MIN(rank_order) AS min_rank, MAX(rank_order) AS max_rank,
+           MIN(score_0_100) AS min_score, MAX(score_0_100) AS max_score
+    FROM score_final_board_history
+    WHERE final_board_batch_id = ?
+  `, staleBatchId);
+  const historyRows = Number(history && history.rows || 0);
+  if (historyRows <= 0) return null;
+  await copyHistoryToCurrent(env, staleBatchId);
+  const current = await first(env.SCORE_DB, `
+    SELECT COUNT(*) AS rows, COUNT(DISTINCT final_board_row_id) AS distinct_rows, COUNT(DISTINCT prepared_row_id) AS prepared_rows,
+           COUNT(DISTINCT matrix_id) AS matrix_rows, COUNT(DISTINCT source_line_id) AS source_line_ids,
+           COUNT(DISTINCT game_pk) AS games, COUNT(DISTINCT mlb_player_id) AS players, COUNT(DISTINCT canonical_prop_key) AS prop_keys,
+           COUNT(DISTINCT selected_side) AS selected_sides, MIN(rank_order) AS min_rank, MAX(rank_order) AS max_rank,
+           MIN(score_0_100) AS min_score, MAX(score_0_100) AS max_score
+    FROM score_final_board_current
+    WHERE final_board_batch_id = ?
+  `, staleBatchId);
+  const currentRows = Number(current && current.rows || 0);
+  const bad = await first(env.SCORE_DB, `
+    SELECT COUNT(*) AS bad_rows
+    FROM score_final_board_current
+    WHERE final_board_batch_id = ?
+      AND (
+        profile_key <> 'STRICT_B'
+        OR archive_eligible <> 1
+        OR selected_side IS NULL
+        OR line_value IS NULL
+        OR player_name IS NULL
+        OR canonical_prop_key IS NULL
+        OR source_key IS NULL
+        OR mlb_player_id IS NULL
+        OR market_prop_context_status <> 'market_prop_context_present'
+        OR score_0_100 < 74
+        OR confidence_0_100 < 55
+        OR board_tier NOT IN ('PRIMARY','REVIEW')
+        OR review_playable NOT IN (0,1)
+        OR (board_tier = 'PRIMARY' AND live_playable <> 1)
+        OR (board_tier = 'PRIMARY' AND review_playable <> 0)
+        OR (board_tier = 'REVIEW' AND review_playable <> 1)
+        OR (board_tier = 'REVIEW' AND live_playable <> 0)
+      )
+  `, staleBatchId);
+  const badRows = Number(bad && bad.bad_rows || 0);
+  if (currentRows <= 0 || currentRows !== historyRows || badRows > 0) return null;
+  const byTierSource = await all(env.SCORE_DB, `
+    SELECT board_tier, review_playable, source_key, COUNT(*) AS rows, COUNT(DISTINCT canonical_prop_key) AS prop_families, COUNT(DISTINCT mlb_player_id) AS players, MIN(score_0_100) AS min_score, MAX(score_0_100) AS max_score, AVG(score_0_100) AS avg_score
+    FROM score_final_board_current
+    WHERE final_board_batch_id = ?
+    GROUP BY board_tier, review_playable, source_key
+    ORDER BY board_tier, rows DESC
+  `, staleBatchId);
+  const output = {
+    ok:true,
+    data_ok:true,
+    version:VERSION,
+    worker_name:WORKER_NAME,
+    job_key:JOB_KEY,
+    request_id:input.request_id || null,
+    run_id:input.run_id || null,
+    status:"completed_final_board_current_reconciled_after_timeout",
+    certification:"SCORE_FINAL_BOARD_CERTIFIED_CURRENT_RECONCILED_AFTER_TIMEOUT",
+    certification_grade:"PASS_WITH_REVIEW_WARNINGS",
+    final_board_batch_id:staleBatchId,
+    source_engine_batch_id:engine.batch_id,
+    source_scoring_worker_version:engine.worker_version,
+    profile_key:PRIMARY_PROFILE,
+    matrix_rows_read:Number(engine.matrix_rows_read || 0),
+    live_rows_read:currentRows,
+    final_rows_written:historyRows,
+    current_rows_written:currentRows,
+    stale_running_batch_reconciled:true,
+    copied_history_to_current:true,
+    current_summary:current,
+    history_summary:history,
+    by_tier_source:byTierSource,
+    no_external_calls:true,
+    no_source_board_mutation:true,
+    no_simulation_shadow_mutation:true,
+    elapsed_ms:Date.now() - started,
+    timestamp_utc:nowUtc()
+  };
+  await writeIssue(env, staleBatchId, engine.batch_id, "SERVICE_BINDING_TIMEOUT_RECONCILED", "WARNING", 1, { note:"Prior invocation wrote history/current evidence but timed out before finalizing the batch row. v0.1.8 rebuilt current from history, verified invariants, and finalized the batch." });
+  await run(env.SCORE_DB, `
+    UPDATE score_final_board_batches
+    SET worker_version=?, source_simulation_batch_id=NULL, source_engine_batch_id=?, source_scoring_worker_version=?, profile_key=?, status=?, certification=?, certification_grade=?, matrix_rows_read=?, live_rows_read=?, final_rows_written=?, current_rows_written=?, finished_at=CURRENT_TIMESTAMP, output_json=?
+    WHERE final_board_batch_id=?
+  `, VERSION, engine.batch_id, engine.worker_version, PRIMARY_PROFILE, output.status, output.certification, output.certification_grade, output.matrix_rows_read, output.live_rows_read, output.final_rows_written, output.current_rows_written, safeJson(output), staleBatchId);
+  return output;
+}
+
 async function generateFinalBoard(env, input) {
   await ensureSchema(env);
   const started = Date.now();
@@ -739,17 +915,24 @@ async function generateFinalBoard(env, input) {
   const runId = input.run_id || null;
   const engine = await latestCompletedEngineBatch(env, input.source_engine_batch_id || input.scoring_engine_batch_id || null);
 
-  await run(env.SCORE_DB, `
-    INSERT INTO score_final_board_batches (final_board_batch_id, worker_version, job_key, source_simulation_batch_id, source_engine_batch_id, source_scoring_worker_version, profile_key, status, certification, certification_grade, started_at)
-    VALUES (?, ?, ?, NULL, ?, ?, ?, 'running', 'SCORE_FINAL_BOARD_STARTED', 'RUNNING', CURRENT_TIMESTAMP)
-  `, batchId, VERSION, JOB_KEY, engine && engine.batch_id || null, engine && engine.worker_version || null, PRIMARY_PROFILE);
-
   if (!engine || engine.status !== "completed_scoring_current_rows_written" || engine.certification !== "SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS") {
+    await run(env.SCORE_DB, `
+      INSERT INTO score_final_board_batches (final_board_batch_id, worker_version, job_key, source_simulation_batch_id, source_engine_batch_id, source_scoring_worker_version, profile_key, status, certification, certification_grade, started_at)
+      VALUES (?, ?, ?, NULL, ?, ?, ?, 'running', 'SCORE_FINAL_BOARD_STARTED', 'RUNNING', CURRENT_TIMESTAMP)
+    `, batchId, VERSION, JOB_KEY, engine && engine.batch_id || null, engine && engine.worker_version || null, PRIMARY_PROFILE);
     const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_no_completed_engine_scoring_batch", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_COMPLETED_ENGINE_SCORING", certification_grade:"BLOCKED", final_board_batch_id:batchId, requested_engine_batch_id:input.source_engine_batch_id || input.scoring_engine_batch_id || null };
     await writeIssue(env, batchId, engine && engine.batch_id || null, "NO_COMPLETED_ENGINE_SCORING_BATCH", "BLOCKER", 1, output);
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
   }
+
+  const reconciled = await reconcileStaleRunningFinalBoard(env, input, engine, started);
+  if (reconciled) return reconciled;
+
+  await run(env.SCORE_DB, `
+    INSERT INTO score_final_board_batches (final_board_batch_id, worker_version, job_key, source_simulation_batch_id, source_engine_batch_id, source_scoring_worker_version, profile_key, status, certification, certification_grade, started_at)
+    VALUES (?, ?, ?, NULL, ?, ?, ?, 'running', 'SCORE_FINAL_BOARD_STARTED', 'RUNNING', CURRENT_TIMESTAMP)
+  `, batchId, VERSION, JOB_KEY, engine.batch_id, engine.worker_version || null, PRIMARY_PROFILE);
 
   const simBatchId = engine.batch_id;
   const bad = await first(env.SCORE_DB, `
@@ -853,20 +1036,10 @@ async function generateFinalBoard(env, input) {
     return output;
   }
 
-  let rank = 0;
-  for (const row of rows) {
-    rank += 1;
-    const id = rowId(batchId, rank, row);
-    await insertBoardRow(env, "score_final_board_history", id, batchId, simBatchId, rank, row);
-  }
+  await insertBoardRowsBatched(env, "score_final_board_history", batchId, simBatchId, rows, 100);
 
   await run(env.SCORE_DB, `DELETE FROM score_final_board_current`);
-  rank = 0;
-  for (const row of rows) {
-    rank += 1;
-    const id = rowId(batchId, rank, row);
-    await insertBoardRow(env, "score_final_board_current", id, batchId, simBatchId, rank, row);
-  }
+  await insertBoardRowsBatched(env, "score_final_board_current", batchId, simBatchId, rows, 100);
 
   const byTierSource = await all(env.SCORE_DB, `
     SELECT board_tier, review_playable, source_key, COUNT(*) AS rows, COUNT(DISTINCT canonical_prop_key) AS prop_families, COUNT(DISTINCT mlb_player_id) AS players, MIN(score_0_100) AS min_score, MAX(score_0_100) AS max_score, AVG(score_0_100) AS avg_score
@@ -942,14 +1115,14 @@ async function generateFinalBoard(env, input) {
     job_key: JOB_KEY,
     request_id: requestId,
     run_id: runId,
-    status: "completed_final_board_current_replaced_with_cutoff_volatility_trim",
-    certification: "SCORE_FINAL_BOARD_CERTIFIED_CURRENT_REPLACED_WITH_CUTOFF_VOLATILITY_TRIM",
+    status: "completed_final_board_current_replaced_from_engine_current",
+    certification: "SCORE_FINAL_BOARD_CERTIFIED_CURRENT_REPLACED_FROM_ENGINE_CURRENT",
     certification_grade: "PASS_WITH_REVIEW_WARNINGS",
     final_board_batch_id: batchId,
     source_engine_batch_id: simBatchId,
-    source_scoring_worker_version: sim.worker_version,
+    source_scoring_worker_version: engine.worker_version,
     profile_key: PRIMARY_PROFILE,
-    matrix_rows_read: Number(sim.matrix_rows_read || 0),
+    matrix_rows_read: Number(engine.matrix_rows_read || 0),
     primary_raw_rows_read: primaryRaw.length,
     review_raw_rows_read: reviewRaw.length,
     strict_live_candidates_read: strictLiveCandidates.length,
@@ -999,7 +1172,7 @@ async function generateFinalBoard(env, input) {
 }
 
 function baseIdentity() {
-  return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"READY", timestamp_utc:nowUtc(), purpose:"Generate SCORE_DB.score_final_board_current from latest completed STRICT_B scoring simulation using v0.1.4 cutoff volatility trim calibrated PRIMARY/REVIEW tiering." };
+  return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"READY", timestamp_utc:nowUtc(), purpose:"Generate SCORE_DB.score_final_board_current from latest completed real Scoring Engine current batch. Simulation is not a production source for this path." };
 }
 
 export default {
