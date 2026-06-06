@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.182-market-full-player-props-terminal-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.183-market-full-stage-partial-and-running-child-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -4963,6 +4963,7 @@ async function processDailyProbablePitchersJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false;
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -5119,6 +5120,7 @@ async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false;
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -5279,6 +5281,7 @@ async function processDailyWeatherJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false;
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -5429,6 +5432,7 @@ async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false;
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -5589,6 +5593,7 @@ async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false;
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -5760,6 +5765,7 @@ async function processDailyUmpireContextJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false;
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -6402,6 +6408,7 @@ async function processDailyLineupsJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false;
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -6549,6 +6556,7 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false;
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -6695,6 +6703,7 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false;
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -7273,6 +7282,7 @@ async function processScorePrepJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false;
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -7462,6 +7472,7 @@ async function processDeltaCertifierJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
+  const partial = false;
   if (partial) {
     const nextInput = {
       ...rowInput,
@@ -7776,6 +7787,38 @@ async function processOneUnlocked(env, trigger) {
        ORDER BY datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) ASC, datetime(created_at) ASC
        LIMIT 1`
     );
+  }
+
+  // v0.2.183: Market Full running player-prop child rescue must be BEFORE the
+  // Market Full parent pending selector. If the parent row is selected first, it
+  // only observes the child as active/waiting and this rescue is never reached.
+  // This is scoped to the Market Full player-prop context child only; it re-runs
+  // the same request_id so the classifier can terminal-finalize from already
+  // written MARKET_DB evidence rows without creating a duplicate child.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
+       FROM control_job_queue c
+       JOIN control_job_queue p ON p.request_id = c.parent_request_id AND p.chain_id = c.chain_id
+       WHERE p.job_key='market-scoring-full-run'
+         AND p.worker_name='alphadog-v2-orchestrator'
+         AND p.status IN ('pending','running','partial_continue')
+         AND p.finished_at IS NULL
+         AND c.parent_request_id IS NOT NULL
+         AND c.job_key='market-line-shape-classifier'
+         AND c.worker_name='alphadog-v2-market-line-shape-classifier'
+         AND c.status='running'
+         AND c.finished_at IS NULL
+         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds')
+       ORDER BY datetime(c.updated_at) ASC
+       LIMIT 1`
+    );
+    if (row) {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'market_scoring_full_run_player_prop_child_pre_parent_rescued_as_due', 'Recovered running Market Full player-prop child before parent selection so worker can terminal-finalize from evidence rows', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, stale_threshold_seconds: 20, market_scoring_player_prop_pre_parent_terminal_rescue_v0_2_183: true, no_new_child_created: true, expected_worker_evidence_finalizer: true })
+      );
+    }
   }
 
   // v0.2.174: Hot-drain Market/Factors/Matrix/Scoring Full Run before generic queue work.
