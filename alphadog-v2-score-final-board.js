@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.2-primary-cluster-cap-leveling";
+const VERSION = "alphadog-v2-score-final-board-v0.1.3-final-plus-calibrated-primary";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_B";
 
@@ -222,13 +222,32 @@ function gradeForScore(score) {
   return "BIN_REJECT";
 }
 
-function applyCalibration(rawRow, boardTier) {
+const HITTER_PROP_KEYS = new Set([
+  "hits",
+  "total_bases",
+  "hits_runs_rbis",
+  "runs",
+  "rbis",
+  "home_runs",
+  "singles",
+  "doubles",
+  "walks",
+  "hitter_strikeouts",
+  "stolen_bases",
+  "fantasy"
+]);
+
+function isHitterProp(propKey) {
+  return HITTER_PROP_KEYS.has(norm(propKey));
+}
+
+function calibrateScoreAndConfidence(rawRow) {
   const sourceKey = norm(rawRow.source_key);
   const propKey = norm(rawRow.canonical_prop_key);
   const side = norm(rawRow.selected_side);
-  const sideMode = norm(rawRow.side_mode);
   const factorStatus = norm(rawRow.factor_status);
   const readinessStatus = norm(rawRow.daily_readiness_status);
+  const lineValue = num(rawRow.line_value, NaN);
   const rawScore = num(rawRow.score_0_100, NaN);
   const rawConfidence = num(rawRow.confidence_0_100, NaN);
   let score = rawScore;
@@ -238,55 +257,95 @@ function applyCalibration(rawRow, boardTier) {
   const confidenceAdjustments = [];
 
   if (!Number.isFinite(score) || !Number.isFinite(confidence)) {
-    return { ...rawRow, board_tier: boardTier, review_playable: boardTier === "REVIEW" ? 1 : 0, calibration_failed: true };
+    return { calibration_failed: true };
   }
 
-  if (sourceKey === "prizepicks" || sideMode === "more_only") {
-    score -= 3;
-    confidence *= 0.92;
-    scoreAdjustments.push({ key: "single_source_or_prizepicks_soft_tax", delta: -3 });
-    confidenceAdjustments.push({ key: "single_source_or_prizepicks_confidence_haircut", multiplier: 0.92 });
+  // v0.1.3-final-plus: score leg strength, not data perfection. Keep these penalties light.
+  if (sourceKey === "prizepicks") {
+    score -= 2;
+    scoreAdjustments.push({ key: "prizepicks_platform_friction", delta: -2, note: "Light platform friction; PrizePicks remains PRIMARY-eligible when calibrated strength clears threshold." });
+  }
+  if (factorStatus === "packet_partial") {
+    score -= 1;
+    scoreAdjustments.push({ key: "packet_partial_light_friction", delta: -1 });
+  }
+  if (readinessStatus === "missing_current_readiness") {
+    score -= 1;
+    scoreAdjustments.push({ key: "missing_current_readiness_light_friction", delta: -1 });
+  }
+  if (readinessStatus === "partial_enrichment") {
+    score -= 1;
+    scoreAdjustments.push({ key: "partial_enrichment_light_friction", delta: -1 });
   }
 
-  let readinessPenalty = 0;
-  const readinessReasons = [];
-  if (factorStatus === "packet_partial") { readinessPenalty -= 2; readinessReasons.push("packet_partial"); }
-  if (readinessStatus === "missing_current_readiness") { readinessPenalty -= 2; readinessReasons.push("missing_current_readiness"); }
-  if (readinessStatus === "partial_enrichment") { readinessPenalty -= 2; readinessReasons.push("partial_enrichment"); }
-  readinessPenalty = Math.max(readinessPenalty, -4);
-  if (readinessPenalty < 0) {
-    score += readinessPenalty;
-    confidence *= 0.97;
-    scoreAdjustments.push({ key: "soft_readiness_penalty_capped", reasons: readinessReasons, delta: readinessPenalty });
-    confidenceAdjustments.push({ key: "soft_readiness_confidence_haircut", multiplier: 0.97 });
+  // Hitter normalization: lets elite hitter legs compete with pitcher legs without flooding low-threshold props.
+  if (propKey === "hits") {
+    score += 1.5;
+    scoreAdjustments.push({ key: "hitter_hits_normalization", delta: 1.5 });
+  } else if (propKey === "total_bases") {
+    score += 1.25;
+    scoreAdjustments.push({ key: "hitter_total_bases_normalization", delta: 1.25 });
+  } else if (propKey === "hits_runs_rbis") {
+    score += 1;
+    scoreAdjustments.push({ key: "hitter_hrr_normalization", delta: 1 });
+  } else if (propKey === "runs" || propKey === "rbis" || propKey === "home_runs") {
+    score += 0.5;
+    scoreAdjustments.push({ key: "hitter_discrete_prop_normalization", prop_key: propKey, delta: 0.5 });
   }
 
+  // Avoid over-correcting into a board full of 0.5 More hitter thresholds.
+  if ((propKey === "hits" || propKey === "runs" || propKey === "rbis") && side === "more" && Number.isFinite(lineValue) && lineValue <= 0.5) {
+    score -= 1;
+    scoreAdjustments.push({ key: "hitter_low_threshold_more_control", prop_key: propKey, line_value: lineValue, delta: -1 });
+  }
+
+  // Pitcher tracking and low-line dampening. These are targeted, not blanket source gates.
   if (propKey === "hits_allowed") {
     score -= 3;
     confidenceCap = Math.min(confidenceCap, 88);
-    scoreAdjustments.push({ key: "hits_allowed_volatility_dampener", delta: -3 });
+    scoreAdjustments.push({ key: "hits_allowed_tracking_volatility_dampener", delta: -3 });
+    if (Number.isFinite(lineValue) && lineValue <= 2.5) {
+      score -= 1.5;
+      scoreAdjustments.push({ key: "hits_allowed_low_line_extra_dampener", line_value: lineValue, delta: -1.5 });
+    }
   }
   if (propKey === "earned_runs" || propKey === "earned_runs_allowed") {
     score -= 4;
     confidenceCap = Math.min(confidenceCap, 86);
-    scoreAdjustments.push({ key: "earned_runs_volatility_dampener", delta: -4 });
+    scoreAdjustments.push({ key: "earned_runs_tracking_volatility_dampener", delta: -4 });
+    if (Number.isFinite(lineValue) && lineValue <= 2.5) {
+      score -= 1;
+      scoreAdjustments.push({ key: "earned_runs_low_line_extra_dampener", line_value: lineValue, delta: -1 });
+    }
   }
   if (propKey === "walks_allowed") {
-    score -= 3;
+    score -= 2;
     confidenceCap = Math.min(confidenceCap, 86);
-    scoreAdjustments.push({ key: "walks_allowed_volatility_dampener", delta: -3 });
+    scoreAdjustments.push({ key: "walks_allowed_volatility_dampener", delta: -2 });
   }
-  if (propKey === "pitcher_outs" && side === "more" && num(rawRow.line_value, 999) <= 15.5) {
-    score -= 3;
-    confidenceCap = Math.min(confidenceCap, 88);
-    scoreAdjustments.push({ key: "low_pitcher_outs_more_volume_dampener", delta: -3 });
+  if (propKey === "pitcher_strikeouts") {
+    confidenceCap = Math.min(confidenceCap, Number.isFinite(lineValue) && lineValue <= 3.5 ? 90 : 94);
+    if (side === "more" && Number.isFinite(lineValue) && lineValue <= 3.5) {
+      score -= 2.5;
+      scoreAdjustments.push({ key: "low_strikeout_more_line_control", line_value: lineValue, delta: -2.5 });
+    }
   }
-  if (propKey === "pitcher_strikeouts" && side === "more" && num(rawRow.line_value, 999) <= 3.5) {
-    score -= 3;
-    confidenceCap = Math.min(confidenceCap, 92);
-    scoreAdjustments.push({ key: "low_strikeout_more_volume_dampener", delta: -3 });
+  if (propKey === "pitcher_outs") {
+    if (side === "less" && Number.isFinite(lineValue) && lineValue >= 18.5) {
+      confidenceCap = Math.min(confidenceCap, 92);
+    } else if (side === "more") {
+      confidenceCap = Math.min(confidenceCap, 88);
+      if (Number.isFinite(lineValue) && lineValue <= 15.5) {
+        score -= 2;
+        scoreAdjustments.push({ key: "low_pitcher_outs_more_line_control", line_value: lineValue, delta: -2 });
+      } else if (Number.isFinite(lineValue) && lineValue <= 17.5) {
+        score -= 1;
+        scoreAdjustments.push({ key: "medium_low_pitcher_outs_more_line_control", line_value: lineValue, delta: -1 });
+      }
+    }
   }
-  if (boardTier === "REVIEW") confidenceCap = Math.min(confidenceCap, 88);
+
+  if (isHitterProp(propKey)) confidenceCap = Math.min(confidenceCap, 90);
 
   const cappedConfidence = Math.min(confidence, confidenceCap);
   if (cappedConfidence !== confidence) confidenceAdjustments.push({ key: "confidence_cap", cap: confidenceCap });
@@ -297,27 +356,51 @@ function applyCalibration(rawRow, boardTier) {
   const fractionalTie = rawSort - Math.floor(rawSort);
 
   return {
-    ...rawRow,
-    board_tier: boardTier,
-    review_playable: boardTier === "REVIEW" ? 1 : 0,
-    live_playable: boardTier === "PRIMARY" ? 1 : 0,
+    calibration_failed: false,
     raw_score_0_100: rawScore,
     raw_confidence_0_100: rawConfidence,
     score_0_100: roundedScore,
     confidence_0_100: roundedConfidence,
-    score_grade: gradeForScore(roundedScore),
     score_sort_0_100: roundedScore + fractionalTie,
+    score_grade: gradeForScore(roundedScore),
+    confidence_cap: confidenceCap,
+    score_adjustments: scoreAdjustments,
+    confidence_adjustments: confidenceAdjustments
+  };
+}
+
+function applyCalibration(rawRow, preferredTier = null) {
+  const calibrated = calibrateScoreAndConfidence(rawRow);
+  if (calibrated.calibration_failed) {
+    const fallbackTier = preferredTier || "REVIEW";
+    return { ...rawRow, board_tier: fallbackTier, review_playable: fallbackTier === "REVIEW" ? 1 : 0, live_playable: fallbackTier === "PRIMARY" ? 1 : 0, calibration_failed: true };
+  }
+
+  const boardTier = preferredTier || ((calibrated.score_0_100 >= 84 && calibrated.confidence_0_100 >= 80) ? "PRIMARY" : "REVIEW");
+
+  return {
+    ...rawRow,
+    board_tier: boardTier,
+    review_playable: boardTier === "REVIEW" ? 1 : 0,
+    live_playable: boardTier === "PRIMARY" ? 1 : 0,
+    raw_score_0_100: calibrated.raw_score_0_100,
+    raw_confidence_0_100: calibrated.raw_confidence_0_100,
+    score_0_100: calibrated.score_0_100,
+    confidence_0_100: calibrated.confidence_0_100,
+    score_grade: calibrated.score_grade,
+    score_sort_0_100: calibrated.score_sort_0_100,
     calibration_json: safeJson({
       version: VERSION,
       board_tier: boardTier,
-      raw_score_0_100: rawScore,
-      raw_confidence_0_100: rawConfidence,
-      calibrated_score_0_100: roundedScore,
-      calibrated_confidence_0_100: roundedConfidence,
-      confidence_cap: confidenceCap,
-      score_adjustments: scoreAdjustments,
-      confidence_adjustments: confidenceAdjustments,
-      note: "Light, considerate calibration only; hard gates remain limited to core identity/line/market-context safety."
+      tier_rule: "PRIMARY when calibrated_score_0_100 >= 84 and calibrated_confidence_0_100 >= 80; otherwise REVIEW.",
+      raw_score_0_100: calibrated.raw_score_0_100,
+      raw_confidence_0_100: calibrated.raw_confidence_0_100,
+      calibrated_score_0_100: calibrated.score_0_100,
+      calibrated_confidence_0_100: calibrated.confidence_0_100,
+      confidence_cap: calibrated.confidence_cap,
+      score_adjustments: calibrated.score_adjustments,
+      confidence_adjustments: calibrated.confidence_adjustments,
+      note: "v0.1.3-final-plus calibrates cross-source/prop leg strength. PrizePicks and hitter props are PRIMARY-eligible; pitcher tracking/low-line props are dampened; max two PRIMARY rows per player remains enforced."
     })
   };
 }
@@ -520,13 +603,19 @@ async function generateFinalBoard(env, input) {
       AND invariant_violation_count = 0
   `, simBatchId, PRIMARY_PROFILE);
 
-  let primaryRows = primaryRaw.map(r => applyCalibration(r, "PRIMARY"))
+  // v0.1.3-final-plus: build one calibrated merit pool. Strict live rows and safe review candidates
+  // both receive the same calibrated score. Tier assignment is based on leg strength, not source/data perfection.
+  const strictLiveCandidates = primaryRaw.map(r => ({ ...r, source_candidate_tier: "STRICT_LIVE" }));
+  const safeReviewCandidates = reviewRaw
+    .filter(r => !primaryMatrixIds.has(String(r.matrix_id || "")))
+    .map(r => ({ ...r, source_candidate_tier: "SAFE_REVIEW" }));
+
+  const calibratedCandidates = [...strictLiveCandidates, ...safeReviewCandidates]
+    .map(r => applyCalibration(r, null))
     .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 76 && Number(r.confidence_0_100) >= 55);
 
-  let reviewRows = reviewRaw
-    .filter(r => !primaryMatrixIds.has(String(r.matrix_id || "")))
-    .map(r => applyCalibration(r, "REVIEW"))
-    .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 76 && Number(r.confidence_0_100) >= 55);
+  let primaryRows = calibratedCandidates.filter(r => r.board_tier === "PRIMARY");
+  let reviewRows = calibratedCandidates.filter(r => r.board_tier === "REVIEW");
 
   const clusterCapResult = applyPrimaryClusterCap(primaryRows, reviewRows, 2);
   primaryRows = clusterCapResult.primaryRows;
@@ -628,8 +717,8 @@ async function generateFinalBoard(env, input) {
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
-    status: "completed_final_board_current_replaced_with_cluster_leveling",
-    certification: "SCORE_FINAL_BOARD_CERTIFIED_CURRENT_REPLACED_WITH_CLUSTER_LEVELING",
+    status: "completed_final_board_current_replaced_with_final_plus_calibration",
+    certification: "SCORE_FINAL_BOARD_CERTIFIED_CURRENT_REPLACED_WITH_FINAL_PLUS_CALIBRATION",
     certification_grade: "PASS_WITH_REVIEW_WARNINGS",
     final_board_batch_id: batchId,
     source_simulation_batch_id: simBatchId,
@@ -638,6 +727,9 @@ async function generateFinalBoard(env, input) {
     matrix_rows_read: Number(sim.matrix_rows_read || 0),
     primary_raw_rows_read: primaryRaw.length,
     review_raw_rows_read: reviewRaw.length,
+    strict_live_candidates_read: strictLiveCandidates.length,
+    safe_review_candidates_read: safeReviewCandidates.length,
+    calibrated_candidates_written: calibratedCandidates.length,
     primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap,
     primary_cluster_cap_max_per_player: clusterCapResult.maxPrimaryRowsPerPlayer,
     primary_cluster_cap_demoted_rows: clusterCapResult.demotedRows.length,
@@ -655,6 +747,9 @@ async function generateFinalBoard(env, input) {
     no_source_board_mutation: true,
     no_simulation_shadow_mutation: true,
     calibration_active: true,
+    final_plus_calibration_active: true,
+    primary_threshold_score: 84,
+    primary_threshold_confidence: 80,
     primary_cluster_cap_active: true,
     max_primary_rows_per_player: maxPrimaryRowsPerPlayer,
     by_tier_source: byTierSource,
@@ -676,7 +771,7 @@ async function generateFinalBoard(env, input) {
 }
 
 function baseIdentity() {
-  return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"READY", timestamp_utc:nowUtc(), purpose:"Generate SCORE_DB.score_final_board_current from latest completed STRICT_B scoring simulation with PRIMARY cluster-cap leveling and calibrated REVIEW tier." };
+  return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"READY", timestamp_utc:nowUtc(), purpose:"Generate SCORE_DB.score_final_board_current from latest completed STRICT_B scoring simulation using v0.1.3-final-plus calibrated PRIMARY/REVIEW tiering." };
 }
 
 export default {
