@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-line-shape-classifier";
-const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.14-parlay-budget-race-finalizer";
+const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.15-backend-chain-parlay-soft-finalizer";
 const JOB_KEY = "market-line-shape-classifier";
 const MODE_HITTER = "market_hitter_prop_line_context";
 const MODE_PITCHER = "market_pitcher_prop_line_context";
@@ -22,6 +22,7 @@ const PARLAY_MAX_PAGES = 4;
 const PARLAY_MAX_DISCOVERY_PROBES = 14;
 const PARLAY_FETCH_TIMEOUT_MS = 9000;
 const PARLAY_TOTAL_FETCH_BUDGET_MS = 55000;
+const PARLAY_BACKEND_CHAIN_LIVE_FETCH_DEFAULT = false;
 const PARLAY_OWNED_BOOKS_EXCLUDED_FROM_DECISION = ["prizepicks", "sleeper"];
 const PARLAY_PICKEM_BOOKS_QUARANTINE = ["underdog", "betr", "pick6", "parlayplay", "dabble"];
 const PARLAY_PICKEM_BOOKS_COMPARISON = ["underdog", "pick6"];
@@ -299,6 +300,38 @@ function americanToDecimal(american) {
   if (n === null || n === 0) return null;
   return n > 0 ? Number((1 + n / 100).toFixed(4)) : Number((1 + 100 / Math.abs(n)).toFixed(4));
 }
+function shouldAttemptLiveParlayFetch(input = {}) {
+  const backendChain = input && (input.backend_chain_only === true || input.backend_scheduled_continuation === true || input.source === "market_scoring_full_run_parent");
+  const forcedLive = input && (input.force_parlay_live_fetch === true || input.allow_parlay_live_fetch === true || String(input.parlay_live_fetch || "").toLowerCase() === "true");
+  if (backendChain && !forcedLive) return false;
+  return PARLAY_BACKEND_CHAIN_LIVE_FETCH_DEFAULT || !backendChain || forcedLive;
+}
+
+function syntheticParlaySkippedForBackendChain(input = {}, config = modeConfig(input)) {
+  return {
+    ok: false,
+    skipped_for_backend_chain: true,
+    external_calls: 0,
+    http_status: null,
+    response_preview: "parlay_live_fetch_skipped_for_backend_chain_service_binding_safety",
+    rows: [],
+    normalized: [],
+    rows_seen: 0,
+    normalized_player_prop_rows: 0,
+    endpoint: { ok: true, skipped: true, request_strategy: "backend_chain_soft_finalizer_no_live_parlay_fetch" },
+    probe_strategy: {
+      split_book_probe_active: false,
+      backend_chain_soft_finalizer: true,
+      prop_family: config.prop_family,
+      reason: "Prior runs proved service-binding child can hang after running_parlay_prop_fetch before rows/issues/finalizer; backend chain now fails open with a MARKET warning unless force_parlay_live_fetch=true."
+    },
+    pagination: { pages: [], max_pages: 0, deduped_rows: 0, book_counts: {}, book_quality_counts: {}, missing_core_books_after_split_and_fallback: PARLAY_CORE_FALLBACK_BOOKS },
+    detected_rows_path: null,
+    detected_array_candidates: [],
+    normalized_primary_non_owned_rows: 0
+  };
+}
+
 function parseObjectSafe(value) {
   if (!value) return {};
   if (typeof value === "object" && !Array.isArray(value)) return value;
@@ -1175,12 +1208,17 @@ async function runPlayerPropContext(env, input = {}) {
     return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, run_id: runId, batch_id: batchId, mode: config.mode, status: "blocked_no_prepared_safe_player_prop_rows", certification: "MARKET_PLAYER_PROP_CONTEXT_NO_PREPARED_SAFE_ROWS", certification_grade: "BLOCKED", rows_read: 0, rows_written: 1, external_calls_performed: 0, retention, prune, timestamp_utc: nowUtc() };
   }
 
-  await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status=?, certification_status=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", `running_${config.prop_family}_parlay_prop_fetch`, `MARKET_${config.issue_prefix}_CONTEXT_RUNNING_PARLAY_FETCH`, batchId);
+  const liveParlayFetchAllowed = shouldAttemptLiveParlayFetch(input);
+  await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status=?, certification_status=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", `running_${config.prop_family}_parlay_prop_fetch`, `MARKET_${config.issue_prefix}_CONTEXT_RUNNING_PARLAY_FETCH`, safeJson({ retention, request_id: requestId, run_id: runId, prop_family: config.prop_family, phase: "parlay_fetch_gate", live_parlay_fetch_allowed: liveParlayFetchAllowed, backend_chain_only: input.backend_chain_only === true, backend_scheduled_continuation: input.backend_scheduled_continuation === true }, 4000), batchId);
   let parlay;
-  try {
-    parlay = await promiseWithTimeout(fetchParlayProps(env, input, config), PARLAY_TOTAL_FETCH_BUDGET_MS + 5000, `parlay_${config.prop_family}_total_fetch_budget_timeout`);
-  } catch (err) {
-    parlay = { ok:false, external_calls:0, http_status:null, response_preview:safeText(err && err.message ? err.message : err), rows:[], normalized:[], rows_seen:0, normalized_player_prop_rows:0, total_fetch_budget_timeout:true, endpoint:await configuredParlayEndpoint(env, input), parlay_total_fetch_budget_ms:PARLAY_TOTAL_FETCH_BUDGET_MS, parlay_fetch_timeout_ms:PARLAY_FETCH_TIMEOUT_MS };
+  if (!liveParlayFetchAllowed) {
+    parlay = syntheticParlaySkippedForBackendChain(input, config);
+  } else {
+    try {
+      parlay = await promiseWithTimeout(fetchParlayProps(env, input, config), PARLAY_TOTAL_FETCH_BUDGET_MS + 5000, `parlay_${config.prop_family}_total_fetch_budget_timeout`);
+    } catch (err) {
+      parlay = { ok:false, external_calls:0, http_status:null, response_preview:safeText(err && err.message ? err.message : err), rows:[], normalized:[], rows_seen:0, normalized_player_prop_rows:0, total_fetch_budget_timeout:true, endpoint:await configuredParlayEndpoint(env, input), parlay_total_fetch_budget_ms:PARLAY_TOTAL_FETCH_BUDGET_MS, parlay_fetch_timeout_ms:PARLAY_FETCH_TIMEOUT_MS };
+    }
   }
   const externalCalls = parlay.external_calls || 0;
   await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status=?, parlay_inventory_rows_seen=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", `running_${config.prop_family}_mapping_player_props`, Number((parlay && parlay.rows_seen) || (parlay && parlay.normalized && parlay.normalized.length) || 0), batchId);
@@ -1319,7 +1357,7 @@ async function runPlayerPropContext(env, input = {}) {
     prepared_games_checked: gamePks.length,
     prepared_players_checked: playerIds.length,
     prepared_prop_keys_checked: propKeys.length,
-    parlay_api: { config_present: !!(parlay.endpoint && parlay.endpoint.ok), key_present: sourceHas(env, "PARLAY_API_KEY"), fetch_ok: !!parlay.ok, http_status: parlay.http_status || null, endpoint_preview: parlay.endpoint && parlay.endpoint.endpoint_preview || null, request_strategy: parlay.endpoint && parlay.endpoint.request_strategy || null, legacy_sleeper_endpoint_ignored: parlay.endpoint && parlay.endpoint.legacy_sleeper_endpoint_ignored || false, detected_rows_path: parlay.detected_rows_path || null, rows_seen: parlay.rows_seen || 0, normalized_player_prop_rows: parlay.normalized_player_prop_rows || 0, pagination: parlay.pagination || null, probe_strategy: parlay.probe_strategy || null, normalized_primary_non_owned_rows: parlay.normalized_primary_non_owned_rows || 0, enriched_player_prop_rows: enrichedParlayRows.length, rows_with_price_context: sourceRowsWithOverUnder, matched_to_prepared: matched, no_prepared_match: noMatch, ambiguous_prepared_match: ambiguous, prepared_unique_player_prop_units: preparedUniquePlayerPropUnits.size, unique_coverage_summary: uniqueCoverageSummary, matched_rows_by_source_key: matchedBySourceKey, unique_matched_units_by_source_key: uniqueMatchedBySourceKeyCounts, book_counts_normalized: bookCountsNormalized, book_quality_row_counts: bookQualityRowCounts, normalization_status_counts: normalizationStatusCounts, threshold_rows_normalized: enrichedParlayRows.filter(r => r.threshold_line_value !== null && r.threshold_line_value !== undefined).length, title_player_rows_normalized: enrichedParlayRows.filter(r => String(r.player_name_resolution_reason || "").includes("market_title_player_parser")).length, template_rows_recovered: enrichedParlayRows.filter(r => (r.normalization_issues || []).includes("template_player_label_recovered")).length, template_quarantined_rows: normalizationStatusCounts.quarantined_template_player_label || 0, event_level_quarantined_rows: normalizationStatusCounts.quarantined_event_level_market || 0, prop_unit_multi_line_anchor_rows: propRows.filter(r => String(r[17] || "").includes("prop_unit_multiple_board_lines")).length, owned_excluded_rows: bookQualityRowCounts.owned_board_excluded_from_vendor_decision || 0, pickem_comparison_rows: bookQualityRowCounts.pickem_comparison || 0, primary_comparison_rows: bookQualityRowCounts.primary_comparison_book || 0, exchange_reference_rows: bookQualityRowCounts.exchange_or_sharp_reference || 0, requires_shape_validation_rows: bookQualityRowCounts.requires_shape_validation || 0, total_non_owned_usable_coverage_pct: uniqueCoverageSummary.total_non_owned_pct, external_resolver_summary: externalResolverSummary, board_matched_source_rows: sourceRowStatusCounts.board_matched || 0, external_valid_unanchored_rows: externalValidUnanchoredRows, quarantined_rows: quarantinedRows, true_hard_unmatched_rows: trueHardUnmatchedRows, true_hard_unmatched_rate_excluding_quarantined: externalResolverSummary.true_hard_unmatched_rate_excluding_quarantined, coverage_plus_external_valid_pct_excluding_quarantined: externalResolverSummary.coverage_plus_external_valid_pct_excluding_quarantined, resolver_audit: { team_aliases_loaded: teamAliases.size, player_aliases_loaded: playerAliases.size, raw_player_column_persisted: true, raw_commence_time_not_trusted_as_primary_match_key: true, team_pair_calendar_prepared_resolver_enabled: true, global_name_fallback_blocked_when_source_team_pair_resolved: true } },
+    parlay_api: { config_present: !!(parlay.endpoint && parlay.endpoint.ok), key_present: sourceHas(env, "PARLAY_API_KEY"), fetch_ok: !!parlay.ok, live_fetch_allowed: liveParlayFetchAllowed, skipped_for_backend_chain: !!parlay.skipped_for_backend_chain, http_status: parlay.http_status || null, endpoint_preview: parlay.endpoint && parlay.endpoint.endpoint_preview || null, request_strategy: parlay.endpoint && parlay.endpoint.request_strategy || null, legacy_sleeper_endpoint_ignored: parlay.endpoint && parlay.endpoint.legacy_sleeper_endpoint_ignored || false, detected_rows_path: parlay.detected_rows_path || null, rows_seen: parlay.rows_seen || 0, normalized_player_prop_rows: parlay.normalized_player_prop_rows || 0, pagination: parlay.pagination || null, probe_strategy: parlay.probe_strategy || null, normalized_primary_non_owned_rows: parlay.normalized_primary_non_owned_rows || 0, enriched_player_prop_rows: enrichedParlayRows.length, rows_with_price_context: sourceRowsWithOverUnder, matched_to_prepared: matched, no_prepared_match: noMatch, ambiguous_prepared_match: ambiguous, prepared_unique_player_prop_units: preparedUniquePlayerPropUnits.size, unique_coverage_summary: uniqueCoverageSummary, matched_rows_by_source_key: matchedBySourceKey, unique_matched_units_by_source_key: uniqueMatchedBySourceKeyCounts, book_counts_normalized: bookCountsNormalized, book_quality_row_counts: bookQualityRowCounts, normalization_status_counts: normalizationStatusCounts, threshold_rows_normalized: enrichedParlayRows.filter(r => r.threshold_line_value !== null && r.threshold_line_value !== undefined).length, title_player_rows_normalized: enrichedParlayRows.filter(r => String(r.player_name_resolution_reason || "").includes("market_title_player_parser")).length, template_rows_recovered: enrichedParlayRows.filter(r => (r.normalization_issues || []).includes("template_player_label_recovered")).length, template_quarantined_rows: normalizationStatusCounts.quarantined_template_player_label || 0, event_level_quarantined_rows: normalizationStatusCounts.quarantined_event_level_market || 0, prop_unit_multi_line_anchor_rows: propRows.filter(r => String(r[17] || "").includes("prop_unit_multiple_board_lines")).length, owned_excluded_rows: bookQualityRowCounts.owned_board_excluded_from_vendor_decision || 0, pickem_comparison_rows: bookQualityRowCounts.pickem_comparison || 0, primary_comparison_rows: bookQualityRowCounts.primary_comparison_book || 0, exchange_reference_rows: bookQualityRowCounts.exchange_or_sharp_reference || 0, requires_shape_validation_rows: bookQualityRowCounts.requires_shape_validation || 0, total_non_owned_usable_coverage_pct: uniqueCoverageSummary.total_non_owned_pct, external_resolver_summary: externalResolverSummary, board_matched_source_rows: sourceRowStatusCounts.board_matched || 0, external_valid_unanchored_rows: externalValidUnanchoredRows, quarantined_rows: quarantinedRows, true_hard_unmatched_rows: trueHardUnmatchedRows, true_hard_unmatched_rate_excluding_quarantined: externalResolverSummary.true_hard_unmatched_rate_excluding_quarantined, coverage_plus_external_valid_pct_excluding_quarantined: externalResolverSummary.coverage_plus_external_valid_pct_excluding_quarantined, resolver_audit: { team_aliases_loaded: teamAliases.size, player_aliases_loaded: playerAliases.size, raw_player_column_persisted: true, raw_commence_time_not_trusted_as_primary_match_key: true, team_pair_calendar_prepared_resolver_enabled: true, global_name_fallback_blocked_when_source_team_pair_resolved: true } },
     rows_written_detail: { player_prop_rows: propRows.length, coverage_rows: coverageRows.length, issue_rows: issues.length, batch_rows: 1 },
     coverage_grade: coverageGrade,
     warning_count: warningCount,
