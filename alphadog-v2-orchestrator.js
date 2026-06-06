@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.174-market-scoring-hot-continuation-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.175-market-scoring-autopump-cascade-hardening";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -912,7 +912,7 @@ async function ensureMarketScoringFullRunLock(env, parentRow) {
     return { ok: false, reason: "market_scoring_full_run_active_parent_exists", lock, active_other_parent: activeOther };
   }
   await run(env.CONTROL_DB,
-    "UPDATE control_locks SET lock_flag=1, owner_request_id=?, owner_worker_name=?, acquired_at=COALESCE(acquired_at,CURRENT_TIMESTAMP), expires_at=datetime('now','+30 minutes'), updated_at=CURRENT_TIMESTAMP WHERE lock_key=?",
+    "UPDATE control_locks SET lock_flag=1, owner_request_id=?, owner_worker_name=?, acquired_at=CURRENT_TIMESTAMP, expires_at=datetime('now','+45 minutes'), updated_at=CURRENT_TIMESTAMP WHERE lock_key=?",
     parentRow.request_id, WORKER_NAME, MARKET_SCORING_FULL_RUN_LOCK_KEY
   );
   return { ok: true };
@@ -7594,7 +7594,7 @@ async function processOneUnlocked(env, trigger) {
 
   // v0.2.174: Market Scoring Full Run running-row rescue.
   // External market stages and scoring simulation can run longer than daily context
-  // workers, so the child stale threshold is deliberately four minutes to avoid
+  // workers, so the child stale threshold is deliberately two minutes to avoid
   // duplicate external calls during legitimate runs. Once stale, the same row is
   // treated as due again so backend auto-pump/cron can recover without manual Wake.
   if (!row) {
@@ -7609,14 +7609,14 @@ async function processOneUnlocked(env, trigger) {
          AND c.parent_request_id IS NOT NULL
          AND c.status='running'
          AND c.finished_at IS NULL
-         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-4 minutes')
+         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-2 minutes')
        ORDER BY datetime(c.updated_at) ASC
        LIMIT 1`
     );
     if (row) {
       await run(env.CONTROL_DB,
         "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'market_scoring_full_run_child_running_rescued_as_due', 'Recovered stale running Market Scoring Full Run child row as due work for backend continuation', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, stale_threshold_minutes: 4, market_scoring_child_hot_rescue_v0_2_174: true, no_manual_wake_required: true, board_refresh_not_in_chain: true })
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, stale_threshold_minutes: 2, market_scoring_child_hot_rescue_v0_2_175: true, no_manual_wake_required: true, board_refresh_not_in_chain: true })
       );
     }
   }
@@ -8449,7 +8449,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   // of waiting for the 5-minute cron cadence.
   const deadlineMs = Math.max(15000, Math.min(Number(maxMs || 65000), 75000));
   const depth = Math.max(0, Math.min(Number(pumpDepth || 0), 20));
-  const maxChains = Math.max(0, Math.min(Number(maxPumpChains || 12), 30));
+  const maxChains = Math.max(0, Math.min(Number(maxPumpChains || 12), 80));
 
   for (let i = 0; i < hardCycles; i++) {
     if (Date.now() - started >= deadlineMs) {
@@ -8495,10 +8495,18 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const sawLockBusy = terminalStatuses.includes("lock_busy");
   const sawHardStop = terminalStatuses.some(s => s === "blocked" || s === "error");
   const continuationAllowedByLastCycle = !sawLockBusy && !sawHardStop;
-  const shouldSelfContinue = continuationAllowedByLastCycle && (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0) && depth < maxChains && !!ctx;
+  const dueAnyHotChain = (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0);
+  // v0.2.175: Market Scoring Full Run contains long external-market/scoring stages.
+  // A bounded pump can legitimately observe GLOBAL_ORCHESTRATOR busy while a prior
+  // service-binding fetch is still running or while its 5-minute owner lock is waiting
+  // to expire after a platform interruption. Unlike generic workers, the Market Full
+  // parent/child rows are chain-scoped, lock-guarded, and counted by countDueMarketScoringFullRun(),
+  // so continuing after lock_busy is safe and prevents manual Wake from becoming required.
+  const marketScoringLockBusyContinuation = sawLockBusy && !sawHardStop && dueMarketScoringFullRun > 0;
+  const shouldSelfContinue = (continuationAllowedByLastCycle || marketScoringLockBusyContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
-  const hotContinuationDelayMs = shouldSelfContinue && lastStatus === "no_due_jobs" ? 6500 : 0;
+  const hotContinuationDelayMs = shouldSelfContinue && (lastStatus === "no_due_jobs" || marketScoringLockBusyContinuation) ? 6500 : 0;
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -8530,6 +8538,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
       self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
       continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
+      market_scoring_lock_busy_continuation: !!marketScoringLockBusyContinuation,
       hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
       cron_is_rescue_only_for_base_hitter: true, cron_is_rescue_only_for_base_hitter_splits: true, base_hitter_splits_hot_continuation_v0_2_32: true, base_pitcher_splits_hot_continuation_v0_2_35: true,
       version: SYSTEM_VERSION
@@ -8566,6 +8575,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         self_continue_delay_ms: hotContinuationDelayMs,
         full_run_hot_continuation_v0_2_95: true,
         continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
+        market_scoring_lock_busy_continuation: !!marketScoringLockBusyContinuation,
         self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
         version: SYSTEM_VERSION,
