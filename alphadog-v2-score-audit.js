@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.1-control-lifecycle-finalizer";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.2-real-current-scoring-producer";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -287,6 +287,30 @@ async function ensureScoreSchema(env) {
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_scoring_engine_current_variation ON scoring_engine_current(variation_key)`);
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_scoring_engine_current_source_prop ON scoring_engine_current(source_key, canonical_prop_key)`);
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_scoring_engine_current_score_status ON scoring_engine_current(score_status)`);
+
+  // v0.4.2: production Engine current needs the same score/support fields that the proven STRICT_B
+  // simulation path already emits. These are additive/schema-first and preserve older deployments.
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'matrix_status', 'matrix_status TEXT');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'matrix_grade', 'matrix_grade TEXT');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'factor_status', 'factor_status TEXT');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'market_game_context_status', 'market_game_context_status TEXT');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'market_prop_context_status', 'market_prop_context_status TEXT');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'daily_readiness_status', 'daily_readiness_status TEXT');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'blocking_for_scoring', 'blocking_for_scoring INTEGER DEFAULT 0');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'warning_count', 'warning_count INTEGER DEFAULT 0');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'blocker_count', 'blocker_count INTEGER DEFAULT 0');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'missing_component_count', 'missing_component_count INTEGER DEFAULT 0');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'confidence_0_100', 'confidence_0_100 REAL');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'confidence_status', 'confidence_status TEXT');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'live_playable', 'live_playable INTEGER DEFAULT 0');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'model_deferred', 'model_deferred INTEGER DEFAULT 0');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'model_deferred_reason', 'model_deferred_reason TEXT');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'score_sort_0_100', 'score_sort_0_100 REAL');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'score_integer_0_100', 'score_integer_0_100 REAL');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'raw_more_score', 'raw_more_score REAL');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'raw_less_score', 'raw_less_score REAL');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'penalty_total', 'penalty_total REAL');
+  await addColumnIfMissing(env.SCORE_DB, 'scoring_engine_current', 'bonus_total', 'bonus_total REAL');
 
   await run(env.SCORE_DB, `
     CREATE TABLE IF NOT EXISTS scoring_engine_issues (
@@ -1446,6 +1470,307 @@ async function runScoringSimulation(env, input) {
   }
 }
 
+
+async function seedProductionScoringProfile(env) {
+  await ensureSimulationProfileConfigs(env);
+  const p = await profileConstants(env, 'STRICT_B');
+  await run(env.SCORE_DB, `
+    INSERT INTO scoring_engine_profiles_current (
+      profile_key,
+      profile_version,
+      profile_status,
+      profile_mode,
+      thresholds_locked,
+      scoring_enabled,
+      archive_score_threshold,
+      final_qualification_threshold,
+      true_probability_enabled,
+      formula_metadata_json,
+      created_at,
+      updated_at
+    ) VALUES (?, ?, 'active_engine_scoring_current', 'strict_b_current_scoring_from_existing_db_config', 0, 1, ?, ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ON CONFLICT(profile_key) DO UPDATE SET
+      profile_version=excluded.profile_version,
+      profile_status='active_engine_scoring_current',
+      profile_mode='strict_b_current_scoring_from_existing_db_config',
+      thresholds_locked=0,
+      scoring_enabled=1,
+      archive_score_threshold=excluded.archive_score_threshold,
+      final_qualification_threshold=excluded.final_qualification_threshold,
+      true_probability_enabled=0,
+      formula_metadata_json=excluded.formula_metadata_json,
+      updated_at=CURRENT_TIMESTAMP
+  `, 'STRICT_B', p.version, p.archiveScoreThreshold, p.gradeQualifiedMin, JSON.stringify({
+    ...simulationFormulaMetadata(),
+    production_current_scoring: true,
+    source_config_table: 'SCORE_DB.scoring_engine_simulation_profile_configs',
+    source_profile_key: 'STRICT_B',
+    true_probability_enabled: false,
+    no_true_hit_probability_claims: true,
+    no_ranking: true,
+    no_final_board: true
+  }));
+  return p;
+}
+
+async function insertEngineCurrentRows(env, valueRows) {
+  if (!valueRows.length) return 0;
+  const mapped = valueRows.map(v => [
+    String(v[0]).replace('|sim|', '|engine|'), // score_row_id
+    v[1],  // batch_id
+    v[4],  // matrix_id
+    v[5],  // prepared_row_id
+    v[6],  // source_line_id
+    v[7],  // source_key
+    v[8],  // game_pk
+    v[9],  // official_date
+    v[10], // official_game_time_utc
+    v[11], // mlb_player_id
+    v[12], // player_name
+    v[13], // canonical_prop_key
+    v[14], // line_value
+    v[15], // variation_key
+    v[16], // source_line_type
+    v[17], // odds_type
+    v[18], // payout_variant
+    v[19], // side_mode
+    v[20], // available_sides_json
+    v[39], // selected_side
+    v[36], // more_score_0_100
+    v[37], // less_score_0_100
+    v[38], // score_0_100
+    v[40] === 'simulation_hard_blocked' ? 'blocked_by_matrix' : (v[40] === 'simulated_profile_locked' ? 'scored_current' : v[40]),
+    v[41], // score_grade
+    null, null, null, null, // side eligibility fields filled below from matrix payload snapshot in SQL? keep null-safe here; older engine proof already validated side mode/available sides.
+    v[2],  // profile_key
+    v[3],  // profile_version
+    0,     // thresholds_locked
+    70,    // archive_score_threshold; actual threshold is also embedded in calculation_json
+    v[42], // archive_eligible
+    0,     // archive_written
+    String(v[44] || '').replace('"simulation_only":1', '"simulation_only":0,"production_engine_current":1'),
+    v[45], // matrix_payload_json_snapshot
+    v[46], // details_json_snapshot
+    v[21], // matrix_status
+    v[22], // matrix_grade
+    v[23], // factor_status
+    v[24], // market_game_context_status
+    v[25], // market_prop_context_status
+    v[26], // daily_readiness_status
+    v[27], // blocking_for_scoring
+    v[28], // warning_count
+    v[29], // blocker_count
+    v[30], // missing_component_count
+    v[47], // confidence_0_100
+    v[48], // confidence_status
+    v[49], // live_playable
+    v[50], // model_deferred
+    v[51], // model_deferred_reason
+    v[52], // score_sort_0_100
+    v[53], // score_integer_0_100
+    v[34], // raw_more_score
+    v[35], // raw_less_score
+    v[32], // penalty_total
+    v[33]  // bonus_total
+  ]);
+  const jsonRows = JSON.stringify(mapped);
+  const columns = `
+      score_row_id, batch_id, matrix_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc,
+      mlb_player_id, player_name, canonical_prop_key, line_value, variation_key, source_line_type, odds_type, payout_variant,
+      side_mode, available_sides_json, selected_side, more_score_0_100, less_score_0_100, score_0_100, score_status, score_grade,
+      side_eligibility_status, side_eligibility_reason, side_availability_status, goblin_demon_under_blocker,
+      profile_key, profile_version, thresholds_locked, archive_score_threshold, archive_eligible, archive_written,
+      calculation_json, matrix_payload_json_snapshot, details_json_snapshot,
+      matrix_status, matrix_grade, factor_status, market_game_context_status, market_prop_context_status, daily_readiness_status,
+      blocking_for_scoring, warning_count, blocker_count, missing_component_count,
+      confidence_0_100, confidence_status, live_playable, model_deferred, model_deferred_reason,
+      score_sort_0_100, score_integer_0_100, raw_more_score, raw_less_score, penalty_total, bonus_total,
+      created_at, updated_at`;
+  const selects = Array.from({ length: 59 }, (_, i) => `json_extract(value, '$[${i}]')`).join(',\n      ');
+  await run(env.SCORE_DB, `
+    INSERT OR REPLACE INTO scoring_engine_current (${columns})
+    SELECT
+      ${selects},
+      CURRENT_TIMESTAMP,
+      CURRENT_TIMESTAMP
+    FROM json_each(?)
+  `, jsonRows);
+  // Fill side eligibility diagnostics from the preserved matrix payload JSON using schema-safe JSON extraction.
+  await run(env.SCORE_DB, `
+    UPDATE scoring_engine_current
+    SET
+      side_eligibility_status = json_extract(matrix_payload_json_snapshot, '$.side_context.side_eligibility_status'),
+      side_eligibility_reason = json_extract(matrix_payload_json_snapshot, '$.side_context.side_eligibility_reason'),
+      side_availability_status = json_extract(matrix_payload_json_snapshot, '$.side_context.side_availability_status'),
+      goblin_demon_under_blocker = json_extract(matrix_payload_json_snapshot, '$.side_context.goblin_demon_under_blocker')
+    WHERE batch_id = json_extract(?, '$[0][1]')
+      AND side_eligibility_status IS NULL
+  `, jsonRows);
+  return valueRows.length;
+}
+
+async function insertEngineCurrentProfile(env, batchId, profileKey) {
+  const p = await profileConstants(env, profileKey);
+  const readChunkSize = 75;
+  const writeBatchSize = 10;
+  let cursorMatrixId = null;
+  let insertedRows = 0;
+  let processedChunks = 0;
+  while (true) {
+    const rows = await all(env.SCORE_DB, `
+      SELECT
+        matrix_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc,
+        mlb_player_id, player_name, canonical_prop_key, board_line_value,
+        matrix_status, matrix_grade, factor_status, market_game_context_status, market_prop_context_status,
+        daily_readiness_status, blocking_for_scoring, warning_count, blocker_count, missing_component_count,
+        matrix_payload_json, details_json
+      FROM prop_matrix_current
+      WHERE (? IS NULL OR matrix_id > ?)
+      ORDER BY matrix_id
+      LIMIT ?
+    `, cursorMatrixId, cursorMatrixId, readChunkSize);
+    if (!rows.length) break;
+    const built = rows.map(row => buildSimulationShadowRow(batchId, profileKey, p, row));
+    for (let i = 0; i < built.length; i += writeBatchSize) {
+      insertedRows += await insertEngineCurrentRows(env, built.slice(i, i + writeBatchSize));
+    }
+    processedChunks += 1;
+    cursorMatrixId = rows[rows.length - 1].matrix_id;
+    if (processedChunks > 1000) throw new Error('scoring_engine_current_chunk_guard_exceeded');
+  }
+  const countRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_current WHERE batch_id=? AND profile_key=?`, batchId, profileKey);
+  const persistedRows = Number(countRow && countRow.rows ? countRow.rows : insertedRows);
+  if (persistedRows !== insertedRows) {
+    throw new Error(`scoring_engine_current_count_mismatch:${profileKey}:inserted=${insertedRows}:persisted=${persistedRows}`);
+  }
+  return persistedRows;
+}
+
+async function summarizeEngineCurrent(env, batchId) {
+  const row = await first(env.SCORE_DB, `
+    SELECT
+      COUNT(*) AS score_rows,
+      SUM(CASE WHEN score_status = 'blocked_by_matrix' THEN 1 ELSE 0 END) AS hard_blocked_rows,
+      SUM(CASE WHEN score_status = 'model_deferred' THEN 1 ELSE 0 END) AS model_deferred_rows,
+      SUM(CASE WHEN score_status = 'scoring_side_tie_unresolved' OR score_status = 'simulation_side_tie_unresolved' THEN 1 ELSE 0 END) AS side_unresolved_rows,
+      SUM(CASE WHEN score_grade = 'BIN_REJECT' THEN 1 ELSE 0 END) AS reject_rows,
+      SUM(CASE WHEN score_grade = 'BIN_ARCHIVE' THEN 1 ELSE 0 END) AS archive_rows,
+      SUM(CASE WHEN score_grade = 'BIN_QUALIFIED' THEN 1 ELSE 0 END) AS qualified_rows,
+      SUM(CASE WHEN score_grade = 'BIN_STRONG' THEN 1 ELSE 0 END) AS strong_rows,
+      SUM(CASE WHEN score_grade = 'BIN_ELITE' THEN 1 ELSE 0 END) AS elite_rows,
+      SUM(CASE WHEN score_0_100 IS NOT NULL THEN 1 ELSE 0 END) AS non_null_score_rows,
+      SUM(CASE WHEN selected_side IS NOT NULL THEN 1 ELSE 0 END) AS selected_side_rows,
+      SUM(CASE WHEN archive_eligible = 1 THEN 1 ELSE 0 END) AS archive_eligible_rows,
+      SUM(CASE WHEN live_playable = 1 THEN 1 ELSE 0 END) AS live_playable_rows,
+      SUM(CASE WHEN selected_side IS NOT NULL AND score_0_100 IS NULL THEN 1 ELSE 0 END) AS selected_side_without_score,
+      SUM(CASE WHEN side_mode = 'more_only' AND less_score_0_100 IS NOT NULL THEN 1 ELSE 0 END) AS more_only_less_score_not_null,
+      SUM(CASE WHEN source_key = 'prizepicks' AND odds_type IN ('goblin','demon') AND selected_side = 'less' THEN 1 ELSE 0 END) AS goblin_demon_less_selected,
+      SUM(CASE WHEN score_status IN ('blocked_by_matrix','model_deferred') AND (score_0_100 IS NOT NULL OR archive_eligible = 1 OR live_playable = 1 OR selected_side IS NOT NULL) THEN 1 ELSE 0 END) AS blocked_or_deferred_score_leak,
+      SUM(CASE WHEN live_playable = 1 AND confidence_0_100 < 55 THEN 1 ELSE 0 END) AS live_playable_confidence_under_55,
+      SUM(CASE WHEN live_playable = 1 AND score_0_100 < 70 THEN 1 ELSE 0 END) AS live_playable_score_under_70,
+      SUM(CASE WHEN live_playable = 1 AND selected_side IS NULL THEN 1 ELSE 0 END) AS live_playable_null_side,
+      SUM(CASE WHEN live_playable = 1 AND factor_status <> 'packet_ready' THEN 1 ELSE 0 END) AS live_playable_not_packet_ready,
+      SUM(CASE WHEN live_playable = 1 AND daily_readiness_status NOT IN ('ready','ready_with_warnings') THEN 1 ELSE 0 END) AS live_playable_not_daily_ready,
+      SUM(CASE WHEN live_playable = 1 AND market_prop_context_status <> 'market_prop_context_present' THEN 1 ELSE 0 END) AS live_playable_market_context_not_present
+    FROM scoring_engine_current
+    WHERE batch_id=?
+  `, batchId);
+  const out = {};
+  for (const [k, v] of Object.entries(row || {})) out[k] = Number(v || 0);
+  return out;
+}
+
+async function recordEngineCurrentInvariants(env, batchId, summary) {
+  const checks = [
+    ['BLOCKED_OR_DEFERRED_SCORE_LEAK', summary.blocked_or_deferred_score_leak, 'BLOCKER', 'Blocked/deferred rows must not receive score, selected_side, archive_eligible, or live_playable.'],
+    ['SELECTED_SIDE_WITHOUT_SCORE', summary.selected_side_without_score, 'BLOCKER', 'No selected_side may exist without score_0_100.'],
+    ['MORE_ONLY_LESS_SCORE_NOT_NULL', summary.more_only_less_score_not_null, 'BLOCKER', 'More-only Goblin/Demon rows must keep less_score_0_100 NULL.'],
+    ['GOBLIN_DEMON_LESS_SELECTED', summary.goblin_demon_less_selected, 'BLOCKER', 'Goblin/Demon cannot select Less/Under.'],
+    ['LIVE_PLAYABLE_CONFIDENCE_UNDER_55', summary.live_playable_confidence_under_55, 'BLOCKER', 'No live_playable row can have confidence_0_100 below 55.'],
+    ['LIVE_PLAYABLE_SCORE_UNDER_70', summary.live_playable_score_under_70, 'BLOCKER', 'No live_playable row can have score_0_100 below 70.'],
+    ['LIVE_PLAYABLE_NULL_SIDE', summary.live_playable_null_side, 'BLOCKER', 'No live_playable row can have selected_side NULL.'],
+    ['LIVE_PLAYABLE_NOT_PACKET_READY', summary.live_playable_not_packet_ready, 'BLOCKER', 'No live_playable row can have factor_status other than packet_ready.'],
+    ['LIVE_PLAYABLE_NOT_DAILY_READY', summary.live_playable_not_daily_ready, 'BLOCKER', 'No live_playable row can have daily_readiness_status outside ready/ready_with_warnings.'],
+    ['LIVE_PLAYABLE_MARKET_CONTEXT_NOT_PRESENT', summary.live_playable_market_context_not_present, 'BLOCKER', 'No live_playable row can have market_prop_context_status other than market_prop_context_present.']
+  ];
+  for (const [key, count, severity, note] of checks) {
+    await writeIssue(env, batchId, key, Number(count || 0) > 0 ? severity : 'INFO', Number(count || 0), { note });
+  }
+}
+
+async function runScoringEngineCurrent(env, input) {
+  const missingBindings = requireBindings(env);
+  if (missingBindings.length) {
+    return baseIdentity({ ok:false, data_ok:false, status:'blocked_missing_bindings', certification:'SCORING_ENGINE_BINDINGS_MISSING', certification_grade:'BLOCKED', missing_bindings: missingBindings, framework_only:false });
+  }
+  await ensureScoreSchema(env);
+  await seedFrameworkProfile(env);
+  const profile = await seedProductionScoringProfile(env);
+  const requestId = input.request_id || `scoring_engine_${Date.now().toString(36)}`;
+  const chainId = input.chain_id || null;
+  const batchId = `scoring_engine_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const started = Date.now();
+  const matrixCountRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM prop_matrix_current`);
+  const matrixRows = Number(matrixCountRow && matrixCountRow.rows ? matrixCountRow.rows : 0);
+  await run(env.SCORE_DB, `
+    INSERT INTO scoring_engine_batches (
+      batch_id, profile_key, profile_version, worker_version, job_key, status, certification, certification_grade,
+      matrix_rows_read, score_rows_written, archive_rows_written, thresholds_locked, archive_score_threshold, final_qualification_threshold, started_at
+    ) VALUES (?, 'STRICT_B', ?, ?, ?, 'running', 'SCORING_ENGINE_CURRENT_STARTED', 'RUNNING', ?, 0, 0, 0, ?, ?, CURRENT_TIMESTAMP)
+  `, batchId, profile.version, VERSION, JOB_KEY, matrixRows, profile.archiveScoreThreshold, profile.gradeQualifiedMin);
+  if (matrixRows <= 0) {
+    await writeIssue(env, batchId, 'NO_MATRIX_ROWS', 'BLOCKER', 1, { reason:'prop_matrix_current has zero rows' });
+    const output = baseIdentity({ ok:false, data_ok:false, request_id:requestId, chain_id:chainId, batch_id:batchId, status:'blocked_no_matrix_rows', certification:'SCORING_ENGINE_BLOCKED_NO_MATRIX_ROWS', certification_grade:'BLOCKED', matrix_rows_read:0, score_rows_written:0, archive_rows_written:0, framework_only:false });
+    await run(env.SCORE_DB, `UPDATE scoring_engine_batches SET status='blocked', certification=?, certification_grade='BLOCKED', finished_at=CURRENT_TIMESTAMP, output_json=? WHERE batch_id=?`, output.certification, JSON.stringify(output), batchId);
+    return output;
+  }
+  await run(env.SCORE_DB, `DELETE FROM scoring_engine_current`);
+  await run(env.SCORE_DB, `DELETE FROM scoring_engine_issues`);
+  const scoreRowsWritten = await insertEngineCurrentProfile(env, batchId, 'STRICT_B');
+  const summary = await summarizeEngineCurrent(env, batchId);
+  await recordEngineCurrentInvariants(env, batchId, summary);
+  const hardIssueRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_issues WHERE batch_id=? AND severity='BLOCKER' AND issue_count > 0`, batchId);
+  const hardIssues = Number(hardIssueRow && hardIssueRow.rows ? hardIssueRow.rows : 0);
+  const archiveRowsWritten = Number(summary.archive_eligible_rows || 0);
+  const certification = hardIssues > 0 ? 'SCORING_ENGINE_CURRENT_BLOCKED_BY_INVARIANTS' : 'SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS';
+  const certificationGrade = hardIssues > 0 ? 'BLOCKED' : 'PASS_WITH_REVIEW_WARNINGS';
+  const status = hardIssues > 0 ? 'completed_scoring_current_with_blockers' : 'completed_scoring_current_rows_written';
+  const output = baseIdentity({
+    request_id: requestId,
+    chain_id: chainId,
+    batch_id: batchId,
+    status,
+    certification,
+    certification_grade: certificationGrade,
+    framework_only: false,
+    production_scoring_current: true,
+    profile_key: 'STRICT_B',
+    profile_version: profile.version,
+    matrix_rows_read: matrixRows,
+    score_rows_written: scoreRowsWritten,
+    archive_rows_written: archiveRowsWritten,
+    thresholds_locked: false,
+    scoring_enabled: true,
+    true_probability_enabled: false,
+    no_true_hit_probability_claims: true,
+    no_ranking: true,
+    no_final_board: true,
+    hard_issue_count: hardIssues,
+    scoring_summary: summary,
+    score_current_table: 'SCORE_DB.scoring_engine_current',
+    profile_table: 'SCORE_DB.scoring_engine_profiles_current',
+    archive_table: 'ARCHIVE_DB.scoring_engine_archive_snapshots',
+    selected_side_policy: 'STRICT_B current scoring uses the proven simulation side-selection path; Goblin/Demon remain more-only; no ranking/final-board write here.',
+    elapsed_ms: Date.now() - started
+  });
+  await run(env.SCORE_DB, `
+    UPDATE scoring_engine_batches
+    SET status=?, certification=?, certification_grade=?, score_rows_written=?, archive_rows_written=?, finished_at=CURRENT_TIMESTAMP, output_json=?
+    WHERE batch_id=?
+  `, status, certification, certificationGrade, scoreRowsWritten, archiveRowsWritten, JSON.stringify(output), batchId);
+  return output;
+}
+
 async function runScoringEngine(env, input) {
   const missingBindings = requireBindings(env);
   if (missingBindings.length) {
@@ -1959,7 +2284,8 @@ export default {
         const isFinalBoard = input && (input.mode === "scoring_final_board_generate" || input.job_key === "scoring-final-board");
         const isSimulation = input && (input.mode === "scoring_engine_simulation_shadow_strict_b" || input.job_key === "scoring-engine-simulation");
         await controlLifecycleHeartbeat(env, input, isSimulation ? "running_scoring_engine_simulation_worker_started" : (isFinalBoard ? "running_scoring_final_board_worker_started" : "running_scoring_engine_worker_started"), { selected_mode: input.mode || null });
-        const output = isFinalBoard ? await runScoringFinalBoard(env, input) : (isSimulation ? await runScoringSimulation(env, input) : await runScoringEngine(env, input));
+        const isFrameworkGate = input && input.mode === "scoring_engine_framework_profile_gate" && input.framework_only === true && input.real_scoring_enabled !== true;
+        const output = isFinalBoard ? await runScoringFinalBoard(env, input) : (isSimulation ? await runScoringSimulation(env, input) : (isFrameworkGate ? await runScoringEngine(env, input) : await runScoringEngineCurrent(env, input)));
         output.control_lifecycle = await controlLifecycleFinalize(env, input, output, output.ok !== false && output.data_ok !== false ? "completed" : "failed");
         return jsonResponse(output, output.ok !== false ? 200 : 500);
       } catch (err) {
