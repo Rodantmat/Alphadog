@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.173-market-scoring-full-run";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.174-market-scoring-hot-continuation-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -7376,6 +7376,41 @@ async function processOneUnlocked(env, trigger) {
     );
   }
 
+  // v0.2.174: Hot-drain Market/Factors/Matrix/Scoring Full Run before generic queue work.
+  // This mirrors Daily Context and Incremental Morning Full Run: same-chain children are
+  // preferred over unrelated pending work, and the parent remains the stage driver.
+  // Board refresh is intentionally not part of this chain.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
+       FROM control_job_queue p
+       JOIN control_job_queue c ON c.parent_request_id = p.request_id AND c.chain_id = p.chain_id
+       WHERE p.job_key='market-scoring-full-run'
+         AND p.worker_name='alphadog-v2-orchestrator'
+         AND p.status IN ('pending','running','partial_continue')
+         AND p.finished_at IS NULL
+         AND c.status IN ('pending','partial_continue')
+         AND c.finished_at IS NULL
+         AND datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+       ORDER BY datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) ASC, datetime(c.created_at) ASC
+       LIMIT 1`
+    );
+  }
+
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+       FROM control_job_queue
+       WHERE job_key='market-scoring-full-run'
+         AND worker_name='alphadog-v2-orchestrator'
+         AND status IN ('pending','partial_continue')
+         AND finished_at IS NULL
+         AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+       ORDER BY datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) ASC, datetime(created_at) ASC
+       LIMIT 1`
+    );
+  }
+
   if (!row) {
     row = await first(env.CONTROL_DB,
       "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json FROM control_job_queue WHERE status='pending' AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP) ORDER BY priority ASC, datetime(created_at) ASC LIMIT 1"
@@ -7553,6 +7588,55 @@ async function processOneUnlocked(env, trigger) {
       await run(env.CONTROL_DB,
         "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'daily_context_full_run_running_parent_rescued_as_due', 'Recovered running Daily Context Full Run parent row as due work for backend continuation', ?, CURRENT_TIMESTAMP)",
         row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, daily_context_parent_hot_rescue_v0_2_144: true })
+      );
+    }
+  }
+
+  // v0.2.174: Market Scoring Full Run running-row rescue.
+  // External market stages and scoring simulation can run longer than daily context
+  // workers, so the child stale threshold is deliberately four minutes to avoid
+  // duplicate external calls during legitimate runs. Once stale, the same row is
+  // treated as due again so backend auto-pump/cron can recover without manual Wake.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
+       FROM control_job_queue c
+       JOIN control_job_queue p ON p.request_id = c.parent_request_id AND p.chain_id = c.chain_id
+       WHERE p.job_key='market-scoring-full-run'
+         AND p.worker_name='alphadog-v2-orchestrator'
+         AND p.status IN ('pending','running','partial_continue')
+         AND p.finished_at IS NULL
+         AND c.parent_request_id IS NOT NULL
+         AND c.status='running'
+         AND c.finished_at IS NULL
+         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-4 minutes')
+       ORDER BY datetime(c.updated_at) ASC
+       LIMIT 1`
+    );
+    if (row) {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'market_scoring_full_run_child_running_rescued_as_due', 'Recovered stale running Market Scoring Full Run child row as due work for backend continuation', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, stale_threshold_minutes: 4, market_scoring_child_hot_rescue_v0_2_174: true, no_manual_wake_required: true, board_refresh_not_in_chain: true })
+      );
+    }
+  }
+
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+       FROM control_job_queue
+       WHERE job_key='market-scoring-full-run'
+         AND worker_name='alphadog-v2-orchestrator'
+         AND status='running'
+         AND finished_at IS NULL
+         AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds')
+       ORDER BY datetime(updated_at) ASC
+       LIMIT 1`
+    );
+    if (row) {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'market_scoring_full_run_running_parent_rescued_as_due', 'Recovered running Market Scoring Full Run parent row as due work for backend continuation', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, market_scoring_parent_hot_rescue_v0_2_174: true, no_manual_wake_required: true, board_refresh_not_in_chain: true })
       );
     }
   }
@@ -8030,12 +8114,12 @@ async function processOneUnlocked(env, trigger) {
     };
 
     await run(env.CONTROL_DB,
-      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_32', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, exact delta-certifier calendar/tally, exact market-scoring-full-run backend chain, and exact static-full-run jobs are enabled in orchestrator v0.2.173')",
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'blocked_safe_shell', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'unsupported_job_in_v0_2_32', 'Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, exact delta-certifier calendar/tally, exact market-scoring-full-run backend chain, and exact static-full-run jobs are enabled in orchestrator v0.2.174')",
       runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output)
     );
 
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_32', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, exact delta-certifier calendar/tally, exact market-scoring-full-run backend chain, and exact static-full-run jobs are enabled in orchestrator v0.2.173' WHERE request_id=?",
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='unsupported_job_in_v0_2_32', error_message='Only safe system-health, exact market-source-health, exact prizepicks-github-board, exact parlay-sleeper-board source-probe, exact board-full-run backend chain, exact base-hitter-game-logs self-continuing base_backfill, exact base-hitter-splits base promotion and delta no-op/restore gate with backend hot continuation, exact base-hitter-metrics v0.4.1 snapshot promote/retained-stage delta repair dispatch, exact base-pitcher-metrics v0.4.1 snapshot delta-repair/snapshot-promote/snapshot-prep/full-stage dispatch, exact base-pitcher-game-logs base/delta continuation with bounded tick recovery, exact active static workers, exact static-certifier, exact delta-certifier calendar/tally, exact market-scoring-full-run backend chain, and exact static-full-run jobs are enabled in orchestrator v0.2.174' WHERE request_id=?",
       JSON.stringify(output), row.request_id
     );
 
@@ -8146,7 +8230,7 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
 
     await releaseLock(env, owner, "IDLE");
 
-    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_market_teams_game_odds_job" || x.status === "completed_one_market_hitter_prop_context_job" || x.status === "completed_one_oddsapi_hitter_prop_context_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_delta_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job" || x.status === "completed_one_daily_weather_job" || x.status === "completed_one_daily_bullpen_availability_job" || x.status === "completed_one_daily_team_schedule_spot_job" || x.status === "completed_one_daily_starters_job" || x.status === "completed_one_daily_player_availability_job" || x.status === "completed_one_daily_lineups_source_probe_job" || x.status === "completed_one_daily_game_status_job" || x.status === "completed_one_daily_context_certifier_job" || x.status === "completed_one_daily_context_full_run_job" || x.status === "completed_one_prop_factor_miner_job" || x.status === "completed_one_prop_matrix_builder_job" || x.status === "completed_one_scoring_engine_job" || x.status === "completed_one_score_final_board_job" || x.status === "completed_one_market_scoring_full_run_job").length;
+    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_market_teams_game_odds_job" || x.status === "completed_one_market_hitter_prop_context_job" || x.status === "completed_one_market_pitcher_prop_context_job" || x.status === "completed_one_oddsapi_hitter_prop_context_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_delta_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job" || x.status === "completed_one_daily_weather_job" || x.status === "completed_one_daily_bullpen_availability_job" || x.status === "completed_one_daily_team_schedule_spot_job" || x.status === "completed_one_daily_starters_job" || x.status === "completed_one_daily_player_availability_job" || x.status === "completed_one_daily_lineups_source_probe_job" || x.status === "completed_one_daily_game_status_job" || x.status === "completed_one_daily_context_certifier_job" || x.status === "completed_one_daily_context_full_run_job" || x.status === "completed_one_prop_factor_miner_job" || x.status === "completed_one_prop_matrix_builder_job" || x.status === "completed_one_scoring_engine_job" || x.status === "completed_one_score_final_board_job" || x.status === "completed_one_market_scoring_full_run_job").length;
     const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job" || x.status === "partial_continue_daily_context_full_run_job" || x.status === "partial_continue_market_scoring_full_run_job").length;
     const blocked = processed.filter(x => x.status === "failed_one_dispatch_exception_contained" || x.status === "blocked_unsupported_job" || x.status === "failed_one_market_teams_game_odds_job" || x.status === "failed_one_market_hitter_prop_context_job" || x.status === "failed_one_market_pitcher_prop_context_job" || x.status === "failed_one_oddsapi_hitter_prop_context_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_delta_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job" || x.status === "failed_one_daily_weather_job" || x.status === "failed_one_daily_bullpen_availability_job" || x.status === "failed_one_daily_team_schedule_spot_job" || x.status === "failed_one_daily_starters_job" || x.status === "failed_one_daily_player_availability_job" || x.status === "failed_one_daily_lineups_source_probe_job" || x.status === "failed_one_daily_game_status_job" || x.status === "failed_one_daily_context_certifier_job" || x.status === "failed_one_daily_context_full_run_job" || x.status === "failed_one_prop_factor_miner_job" || x.status === "failed_one_prop_matrix_builder_job" || x.status === "failed_one_scoring_engine_job" || x.status === "failed_one_score_final_board_job" || x.status === "failed_one_market_scoring_full_run_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
@@ -8462,6 +8546,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
       due_board_full_run_after_pump: dueBoardFullRun,
         due_daily_context_full_run_after_pump: dueDailyContextFullRun,
+        due_market_scoring_full_run_after_pump: dueMarketScoringFullRun,
         due_static_players_after_pump: dueStaticPlayers,
         due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
         due_base_hitter_splits_after_pump: dueBaseHitterSplits,
