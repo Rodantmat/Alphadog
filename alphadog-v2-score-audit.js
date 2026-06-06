@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.0-final-board-current";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.1-control-lifecycle-finalizer";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -31,6 +31,105 @@ async function readJsonSafe(request) {
 async function run(db, sql, ...binds) {
   const stmt = db.prepare(sql);
   return binds.length ? stmt.bind(...binds).run() : stmt.run();
+}
+
+
+function controlVersion() {
+  try { if (typeof SYSTEM_VERSION !== "undefined") return SYSTEM_VERSION; } catch (_) {}
+  try { if (typeof VERSION !== "undefined") return VERSION; } catch (_) {}
+  return "unknown";
+}
+function controlWorkerName() {
+  try { if (typeof LOGICAL_WORKER_NAME !== "undefined") return LOGICAL_WORKER_NAME; } catch (_) {}
+  try { if (typeof WORKER_NAME !== "undefined") return WORKER_NAME; } catch (_) {}
+  return "unknown";
+}
+function controlDeployedSlot() {
+  try { if (typeof WORKER_NAME !== "undefined") return WORKER_NAME; } catch (_) {}
+  return null;
+}
+function controlJobKey(input = {}) {
+  return String(input.job_key || (typeof JOB_KEY !== "undefined" ? JOB_KEY : "worker"));
+}
+function controlSafeText(value, max = 900) {
+  const text = value === undefined || value === null ? "" : String(value);
+  return text.length > max ? text.slice(0, max) : text;
+}
+function controlSafeJson(value, max = 9000) {
+  let text = "{}";
+  try { text = JSON.stringify(value == null ? {} : value); } catch (_) { text = JSON.stringify({ ok:false, serialization_error:true }); }
+  return text.length > max ? text.slice(0, max) : text;
+}
+async function controlLifecycleHeartbeat(env, input = {}, statusText = "running", extra = {}) {
+  const requestId = input.request_id || extra.request_id || null;
+  if (!env || !env.CONTROL_DB || !requestId) return { ok:false, skipped:"missing_control_db_or_request_id" };
+  const runId = input.run_id || extra.run_id || null;
+  const jobKey = controlJobKey(input);
+  const workerName = controlWorkerName();
+  const preview = controlSafeJson({
+    ok:true,
+    data_ok:true,
+    version:controlVersion(),
+    worker_name:workerName,
+    deployed_worker_slot:controlDeployedSlot(),
+    job_key:jobKey,
+    request_id:requestId,
+    run_id:runId,
+    mode:input.mode || input.factor_mode || null,
+    status:statusText,
+    certification:`${String(jobKey).toUpperCase().replace(/[^A-Z0-9]+/g,"_")}_WORKER_HEARTBEAT`,
+    certification_grade:"RUNNING",
+    control_lifecycle_heartbeat:true,
+    ...extra,
+    timestamp_utc:(typeof nowUtc === "function" ? nowUtc() : (typeof nowIso === "function" ? nowIso() : new Date().toISOString()))
+  }, 3600);
+  try {
+    await run(env.CONTROL_DB, `UPDATE control_job_queue
+      SET status='running', updated_at=CURRENT_TIMESTAMP, output_json=?
+      WHERE request_id=? AND status IN ('pending','running')`, preview, requestId);
+    if (runId) {
+      await run(env.CONTROL_DB, `UPDATE control_job_runs
+        SET status='running', data_ok=0, certification_status=?, output_json=?
+        WHERE run_id=? AND finished_at IS NULL`, `${String(jobKey).toUpperCase().replace(/[^A-Z0-9]+/g,"_")}_WORKER_HEARTBEAT`, preview, runId);
+    } else {
+      await run(env.CONTROL_DB, `UPDATE control_job_runs
+        SET status='running', data_ok=0, certification_status=?, output_json=?
+        WHERE request_id=? AND finished_at IS NULL`, `${String(jobKey).toUpperCase().replace(/[^A-Z0-9]+/g,"_")}_WORKER_HEARTBEAT`, preview, requestId);
+    }
+    return { ok:true };
+  } catch (err) {
+    return { ok:false, error:controlSafeText(err && err.message ? err.message : err, 700) };
+  }
+}
+async function controlLifecycleFinalize(env, input = {}, output = {}, terminalHint = null) {
+  const requestId = output.request_id || input.request_id || null;
+  if (!env || !env.CONTROL_DB || !requestId) return { ok:false, skipped:"missing_control_db_or_request_id" };
+  const runId = output.run_id || input.run_id || null;
+  const jobKey = output.job_key || controlJobKey(input);
+  const isOk = (terminalHint === "completed" || (!terminalHint && output.ok !== false && output.data_ok !== false));
+  const queueStatus = isOk ? "completed" : "failed";
+  const runStatus = isOk ? "completed" : "failed";
+  const cert = output.certification || output.certification_status || (isOk ? `${String(jobKey).toUpperCase().replace(/[^A-Z0-9]+/g,"_")}_COMPLETED` : `${String(jobKey).toUpperCase().replace(/[^A-Z0-9]+/g,"_")}_FAILED`);
+  const rowsRead = Number(output.rows_read ?? output.prepared_rows_read ?? output.matrix_rows_read ?? 0) || 0;
+  const rowsWritten = Number(output.rows_written ?? output.packets_written ?? output.matrix_rows_written ?? output.final_rows_written ?? output.current_rows_written ?? 0) || 0;
+  const externalCalls = Number(output.external_calls_performed ?? output.external_calls ?? 0) || 0;
+  const elapsed = Number(output.elapsed_ms || 0) || null;
+  const finalJson = controlSafeJson({ ...output, request_id:requestId, run_id:runId, control_lifecycle_self_finalized:true, control_lifecycle_finalized_at:(typeof nowUtc === "function" ? nowUtc() : (typeof nowIso === "function" ? nowIso() : new Date().toISOString())) }, 9000);
+  try {
+    await run(env.CONTROL_DB, `UPDATE control_job_queue
+      SET status=?, finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=CASE WHEN ?='completed' THEN error_code ELSE COALESCE(error_code, ?) END, error_message=CASE WHEN ?='completed' THEN error_message ELSE COALESCE(error_message, ?) END
+      WHERE request_id=? AND status IN ('pending','running')`, queueStatus, finalJson, queueStatus, `${String(jobKey).replace(/[^a-zA-Z0-9]+/g,"_").toLowerCase()}_worker_failed`, queueStatus, controlSafeText(output.error || output.error_message || cert, 900), requestId);
+    const runSql = `UPDATE control_job_runs
+      SET status=?, data_ok=?, certification_status=?, rows_read=?, rows_written=?, external_calls=?, finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), elapsed_ms=COALESCE(elapsed_ms, ?), output_json=?, error_code=CASE WHEN ?='completed' THEN error_code ELSE COALESCE(error_code, ?) END, error_message=CASE WHEN ?='completed' THEN error_message ELSE COALESCE(error_message, ?) END
+      WHERE ${runId ? 'run_id=?' : 'request_id=?'} AND finished_at IS NULL`;
+    await run(env.CONTROL_DB, runSql, runStatus, isOk ? 1 : 0, cert, rowsRead, rowsWritten, externalCalls, elapsed, finalJson, runStatus, `${String(jobKey).replace(/[^a-zA-Z0-9]+/g,"_").toLowerCase()}_worker_failed`, runStatus, controlSafeText(output.error || output.error_message || cert, 900), runId || requestId);
+    return { ok:true, queue_status:queueStatus, run_status:runStatus, certification:cert };
+  } catch (err) {
+    return { ok:false, error:controlSafeText(err && err.message ? err.message : err, 900) };
+  }
+}
+async function responseToOutputObject(response) {
+  try { return JSON.parse(await response.clone().text()); } catch (_) { return { ok:false, data_ok:false, status:"worker_response_parse_failed", certification:"WORKER_RESPONSE_PARSE_FAILED" }; }
 }
 
 async function first(db, sql, ...binds) {
@@ -1859,12 +1958,17 @@ export default {
       try {
         const isFinalBoard = input && (input.mode === "scoring_final_board_generate" || input.job_key === "scoring-final-board");
         const isSimulation = input && (input.mode === "scoring_engine_simulation_shadow_strict_b" || input.job_key === "scoring-engine-simulation");
+        await controlLifecycleHeartbeat(env, input, isSimulation ? "running_scoring_engine_simulation_worker_started" : (isFinalBoard ? "running_scoring_final_board_worker_started" : "running_scoring_engine_worker_started"), { selected_mode: input.mode || null });
         const output = isFinalBoard ? await runScoringFinalBoard(env, input) : (isSimulation ? await runScoringSimulation(env, input) : await runScoringEngine(env, input));
-        return jsonResponse(output, output.ok ? 200 : 500);
+        output.control_lifecycle = await controlLifecycleFinalize(env, input, output, output.ok !== false && output.data_ok !== false ? "completed" : "failed");
+        return jsonResponse(output, output.ok !== false ? 200 : 500);
       } catch (err) {
-        return jsonResponse(baseIdentity({
+        const failOutput = baseIdentity({
           ok: false,
           data_ok: false,
+          request_id: input.request_id || null,
+          run_id: input.run_id || null,
+          job_key: input.job_key || JOB_KEY,
           status: "scoring_engine_exception",
           certification: "SCORING_ENGINE_EXCEPTION",
           certification_grade: "FAILED",
@@ -1872,7 +1976,9 @@ export default {
           external_calls_performed: 0,
           no_ranking: true,
           no_final_board: true
-        }), 500);
+        });
+        failOutput.control_lifecycle = await controlLifecycleFinalize(env, input, failOutput, "failed");
+        return jsonResponse(failOutput, 500);
       }
     }
 
