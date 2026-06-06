@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.183-market-full-stage-partial-and-running-child-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.184-market-full-terminal-evidence-hot-finalizer";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -985,6 +985,187 @@ function marketScoringFullRunStageKeyFromChild(child) {
 }
 
 
+async function synthesizeMarketPlayerPropTerminalProofFromEvidence(env, stageKey, requestId) {
+  if (!env.MARKET_DB) return null;
+  const wantedMode = stageKey === "market_context_pitchers" ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
+  if (stageKey !== "market_context_hitters" && stageKey !== "market_context_pitchers") return null;
+
+  const batch = await first(env.MARKET_DB,
+    `SELECT batch_id, request_id, run_id, worker_name, worker_version, mode, status, slate_window_key, window_start_date, window_end_date,
+            prepared_rows_read, prepared_games_checked, prepared_players_checked, prepared_prop_keys_checked,
+            parlay_inventory_rows_seen, parlay_props_mapped_to_prepared, warning_count, blocker_count,
+            certification_status, certification_grade, output_json, updated_at, created_at
+       FROM market_context_probe_batches
+       WHERE request_id=?
+         AND mode=?
+       ORDER BY datetime(COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)) DESC, batch_id DESC
+       LIMIT 1`,
+    requestId, wantedMode
+  );
+  if (!batch || !batch.batch_id) return null;
+
+  const summary = await first(env.MARKET_DB,
+    `SELECT COUNT(*) AS evidence_rows,
+            COUNT(DISTINCT source_key) AS source_count,
+            COUNT(DISTINCT prepared_row_id) AS prepared_rows,
+            COUNT(DISTINCT game_pk) AS games,
+            COUNT(DISTINCT resolved_mlb_player_id) AS players,
+            COUNT(DISTINCT canonical_prop_key) AS prop_keys,
+            MIN(created_at) AS first_row_at,
+            MAX(created_at) AS last_row_at,
+            CASE WHEN MAX(created_at) IS NOT NULL AND datetime(MAX(created_at)) <= datetime(CURRENT_TIMESTAMP, '-45 seconds') THEN 1 ELSE 0 END AS evidence_quiet
+       FROM market_context_probe_player_props
+       WHERE batch_id=?`,
+    batch.batch_id
+  );
+
+  const evidenceRows = Number(summary && summary.evidence_rows || 0);
+  const preparedRows = Number(summary && summary.prepared_rows || 0);
+  const evidenceQuiet = Number(summary && summary.evidence_quiet || 0) === 1;
+  if (evidenceRows <= 0 || preparedRows <= 0 || !evidenceQuiet) return null;
+
+  const issueSummary = await first(env.MARKET_DB,
+    `SELECT COUNT(*) AS issue_rows,
+            SUM(CASE WHEN UPPER(COALESCE(severity,'')) IN ('ERROR','BLOCKER','FAILED') THEN 1 ELSE 0 END) AS hard_issue_rows
+       FROM market_context_probe_issues
+       WHERE batch_id=?`,
+    batch.batch_id
+  );
+  const issueRows = Number(issueSummary && issueSummary.issue_rows || 0);
+  const hardIssueRows = Number(issueSummary && issueSummary.hard_issue_rows || 0);
+  const ok = hardIssueRows === 0;
+  const cert = ok ? "MARKET_PLAYER_PROP_CONTEXT_EVIDENCE_WRITTEN" : "MARKET_PLAYER_PROP_CONTEXT_EVIDENCE_WRITTEN_WITH_HARD_ISSUES";
+  const grade = ok ? (issueRows > 0 ? "PASS_WITH_WARNINGS" : "PASS_WITH_WARNINGS") : "FAILED";
+  const propFamily = stageKey === "market_context_pitchers" ? "pitcher" : "hitter";
+  const status = ok ? "completed_player_prop_context_evidence_written" : "failed_player_prop_context_hard_issues";
+
+  const output = {
+    ok,
+    data_ok: ok,
+    version: SYSTEM_VERSION,
+    worker_name: batch.worker_name || "alphadog-v2-market-line-shape-classifier",
+    job_key: "market-line-shape-classifier",
+    request_id: requestId,
+    run_id: batch.run_id || null,
+    batch_id: batch.batch_id,
+    mode: wantedMode,
+    prop_family: propFamily,
+    status,
+    certification: cert,
+    certification_status: cert,
+    certification_grade: grade,
+    rows_read: Number(batch.prepared_rows_read || 0),
+    rows_written: evidenceRows,
+    external_calls_performed: 0,
+    prepared_rows_read: Number(batch.prepared_rows_read || 0),
+    prepared_games_checked: Number(batch.prepared_games_checked || 0),
+    prepared_players_checked: Number(batch.prepared_players_checked || 0),
+    prepared_prop_keys_checked: Number(batch.prepared_prop_keys_checked || 0),
+    parlay_inventory_rows_seen: Number(batch.parlay_inventory_rows_seen || 0),
+    parlay_props_mapped_to_prepared: preparedRows,
+    persisted_player_prop_rows: evidenceRows,
+    source_count: Number(summary && summary.source_count || 0),
+    games: Number(summary && summary.games || 0),
+    players: Number(summary && summary.players || 0),
+    prop_keys: Number(summary && summary.prop_keys || 0),
+    warning_count: issueRows,
+    blocker_count: hardIssueRows,
+    terminalized_from_quiet_evidence_rows: true,
+    evidence_first_row_at: summary && summary.first_row_at || null,
+    evidence_last_row_at: summary && summary.last_row_at || null,
+    no_market_current_lines_writes: true,
+    no_prepared_board_mutation: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true
+  };
+
+  await run(env.MARKET_DB,
+    `UPDATE market_context_probe_batches
+        SET status=?,
+            parlay_props_mapped_to_prepared=?,
+            parlay_coverage_grade=?,
+            warning_count=?,
+            blocker_count=?,
+            certification_status=?,
+            certification_grade=?,
+            output_json=?,
+            updated_at=CURRENT_TIMESTAMP
+      WHERE batch_id=?`,
+    status, preparedRows, grade, issueRows, hardIssueRows, cert, grade, JSON.stringify(output), batch.batch_id
+  );
+
+  return {
+    batch_id: batch.batch_id,
+    request_id: requestId,
+    run_id: batch.run_id || null,
+    worker_name: batch.worker_name || "alphadog-v2-market-line-shape-classifier",
+    worker_version: batch.worker_version || null,
+    mode: wantedMode,
+    status,
+    prepared_rows_read: Number(batch.prepared_rows_read || 0),
+    rows_written: evidenceRows,
+    certification_status: cert,
+    certification_grade: grade,
+    output_json: JSON.stringify(output),
+    updated_at: null,
+    created_at: null
+  };
+}
+
+async function rescueMarketScoringFullRunTerminalEvidenceChild(env, trigger) {
+  if (!env.CONTROL_DB || !env.MARKET_DB) return null;
+  const children = await all(env.CONTROL_DB,
+    `SELECT c.request_id, c.chain_id, c.parent_request_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json, c.output_json, c.created_at, c.started_at, c.finished_at, c.updated_at,
+            p.request_id AS parent_request_id_resolved, p.chain_id AS parent_chain_id, p.job_key AS parent_job_key, p.worker_name AS parent_worker_name
+       FROM control_job_queue c
+       JOIN control_job_queue p ON p.request_id = c.parent_request_id AND p.chain_id = c.chain_id
+       WHERE p.job_key='market-scoring-full-run'
+         AND p.worker_name='alphadog-v2-orchestrator'
+         AND p.status IN ('pending','running','partial_continue')
+         AND p.finished_at IS NULL
+         AND c.parent_request_id IS NOT NULL
+         AND c.status='running'
+         AND c.finished_at IS NULL
+         AND c.job_key='market-line-shape-classifier'
+         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds')
+       ORDER BY datetime(c.updated_at) ASC
+       LIMIT 4`
+  );
+  for (const child of children || []) {
+    const stageKey = marketScoringFullRunStageKeyFromChild(child);
+    if (stageKey !== "market_context_hitters" && stageKey !== "market_context_pitchers") continue;
+    const stage = MARKET_SCORING_FULL_RUN_STAGES.find(s => s.stage_key === stageKey);
+    if (!stage) continue;
+    const reconciled = await reconcileMarketScoringFullRunChildFromProof(env, stage, child, `${trigger}:terminal_evidence_hot_rescue`);
+    if (!reconciled || reconciled.reconciled !== true) continue;
+    const parent = await first(env.CONTROL_DB,
+      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+         FROM control_job_queue
+        WHERE request_id=?
+          AND job_key='market-scoring-full-run'
+          AND worker_name='alphadog-v2-orchestrator'
+          AND status IN ('pending','running','partial_continue')
+          AND finished_at IS NULL
+        LIMIT 1`,
+      child.parent_request_id
+    );
+    if (parent) {
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE request_id=?",
+        parent.request_id
+      );
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'market_scoring_full_run_terminal_evidence_child_hot_finalized', 'Finalized Market Full player-prop child from quiet evidence rows and returned parent as due work', ?, CURRENT_TIMESTAMP)",
+        child.request_id, WORKER_NAME, child.job_key, JSON.stringify({ child_request_id: child.request_id, parent_request_id: parent.request_id, stage_key: stageKey, trigger, reconciled: true, version: SYSTEM_VERSION })
+      );
+      return parent;
+    }
+  }
+  return null;
+}
+
+
 async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, trigger = "market_scoring_full_run_reconcile") {
   if (!child || String(child.status || "") !== "running" || child.finished_at) return { reconciled: false, reason: "child_not_running" };
   const stageKey = String(stage && stage.stage_key || marketScoringFullRunStageKeyFromChild(child) || "");
@@ -1024,6 +1205,10 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
       requestId, wantedMode
     );
     proofSource = "MARKET_DB.market_context_probe_batches";
+    if (!proof) {
+      proof = await synthesizeMarketPlayerPropTerminalProofFromEvidence(env, stageKey, requestId);
+      if (proof) proofSource = "MARKET_DB.market_context_probe_player_props_quiet_evidence";
+    }
   } else if ((stageKey === "prop_factor_hitters" || stageKey === "prop_factor_pitchers") && env.SCORE_DB) {
     proof = await first(env.SCORE_DB,
       `SELECT batch_id, request_id, run_id, worker_name, worker_version, mode, status, prepared_rows_read, packets_written, certification_status, certification_grade, output_json, updated_at, created_at
@@ -6664,16 +6849,17 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
     output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
   }
 
+  const partial = isPartialContinueOutput(output) || !!(output && output.orchestrator_should_self_continue);
   const ok = !!(output && output.ok);
-  const dataOk = !!(output && output.data_ok);
+  const dataOk = partial || !!(output && output.data_ok);
   const rowsRead = Number(output && output.prepared_rows_read ? output.prepared_rows_read : 0);
   const rowsWritten = Number(output && output.packets_written ? output.packets_written : 0);
   const externalCalls = Number(output && (output.external_calls || output.external_calls_performed) ? (output.external_calls || output.external_calls_performed) : 0);
-  const certification = String((output && output.certification) || (ok ? "prop_factor_miner_completed" : "prop_factor_miner_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "prop_factor_miner_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Prop Factor Miner worker failed").slice(0, 900);
+  const certification = String((output && output.certification) || (partial ? "PROP_FACTOR_MINER_PARTIAL_CONTINUE" : (ok ? "prop_factor_miner_completed" : "prop_factor_miner_failed"))).slice(0, 120);
+  const queueStatus = partial ? "pending" : (ok ? "completed" : "failed");
+  const runStatus = partial ? "partial_continue" : (ok ? "completed" : "failed");
+  const errorCode = (ok || partial) ? null : "prop_factor_miner_worker_failed";
+  const errorMessage = (ok || partial) ? null : String((output && (output.error || output.status)) || "Prop Factor Miner worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
     orchestrator_dispatch: {
@@ -6703,13 +6889,12 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  const partial = false;
   if (partial) {
     const nextInput = {
       ...rowInput,
-      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
-      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
-      matrix_resume: true,
+      factor_batch_id: output && (output.factor_batch_id || output.batch_id) ? (output.factor_batch_id || output.batch_id) : rowInput.factor_batch_id || null,
+      resume_batch_id: output && (output.factor_batch_id || output.batch_id) ? (output.factor_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
+      factor_resume: true,
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
@@ -7819,6 +8004,14 @@ async function processOneUnlocked(env, trigger) {
         row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, stale_threshold_seconds: 20, market_scoring_player_prop_pre_parent_terminal_rescue_v0_2_183: true, no_new_child_created: true, expected_worker_evidence_finalizer: true })
       );
     }
+  }
+
+  // v0.2.184: Before selecting the Market Full parent again, first terminalize
+  // active player-prop children that already wrote quiet MARKET_DB evidence rows.
+  // This avoids waiting for a stale-running timeout when a service-binding worker
+  // returned only a heartbeat but completed its evidence writes in the background.
+  if (!row) {
+    row = await rescueMarketScoringFullRunTerminalEvidenceChild(env, trigger);
   }
 
   // v0.2.174: Hot-drain Market/Factors/Matrix/Scoring Full Run before generic queue work.
