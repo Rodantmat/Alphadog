@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-certifier";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-matrix-builder";
 const JOB_KEY = "prop-matrix-builder";
-const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.9-resumable-chunk-terminal-finalizer";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.8-resumable-chunk-terminal-finalizer";
+const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.10-source-line-id-helper-finalizer";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.9-source-line-id-helper-finalizer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -290,6 +290,33 @@ function numOrNull(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
+function buildSourceLineId(row) {
+  const payload = safeJsonParse(row && row.row_payload_json, {}) || {};
+  const sourceKey = row && row.source_key ? row.source_key : (payload.source_key || "unknown_source");
+  const sourceNativeId =
+    (row && (row.source_line_id || row.source_row_id || row.projection_id || row.source_event_id)) ||
+    payload.source_line_id ||
+    payload.line_id ||
+    payload.source_row_id ||
+    payload.projection_id ||
+    payload.id ||
+    payload.event_id ||
+    "";
+  const lineValue = numOrNull(row && row.line_value);
+  const oddsType = payload.odds_type || payload.payout_variant || payload.source_line_type || payload.projection_type || "standard_or_source";
+  return key(
+    "matrix_source_line",
+    sourceKey,
+    sourceNativeId,
+    row && (row.official_game_pk || row.game_pk) || "",
+    row && (row.resolved_mlb_player_id || row.resolved_player_id || row.mlb_player_id) || "",
+    row && (row.canonical_prop_key || row.prop_key) || "",
+    lineValue === null ? "" : lineValue,
+    oddsType,
+    row && row.prepared_row_id || ""
+  );
+}
+
 function buildSideVariationContext(row) {
   const payload = safeJsonParse(row.row_payload_json, {}) || {};
   const sourceKey = normalizeSourceKeyForSideRules(row.source_key, payload);
