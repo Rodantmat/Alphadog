@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.177-cascade-service-timeout-finalizer";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.178-service-binding-race-finalizer";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -45,10 +45,31 @@ function timeoutSignal(ms) {
   return controller.signal;
 }
 
+async function promiseWithTimeout(promise, timeoutMs, label = "operation_timeout") {
+  const ms = Math.max(1000, Number(timeoutMs || EXACT_WORKER_SERVICE_TIMEOUT_MS));
+  let timer = null;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label}_after_${ms}ms`)), ms);
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function serviceBindingFetch(binding, url, init = {}, label = "worker", timeoutMs = EXACT_WORKER_SERVICE_TIMEOUT_MS) {
   const ms = Math.max(1000, Number(timeoutMs || EXACT_WORKER_SERVICE_TIMEOUT_MS));
   try {
-    return await binding.fetch(url, { ...init, signal: timeoutSignal(ms) });
+    const resp = await promiseWithTimeout(binding.fetch(url, { ...init, signal: timeoutSignal(ms) }), ms + 500, `${label}_service_binding_timeout`);
+    return {
+      ok: resp.ok,
+      status: resp.status,
+      headers: resp.headers,
+      text: () => promiseWithTimeout(resp.text(), Math.min(20000, ms), `${label}_service_binding_body_timeout`)
+    };
   } catch (err) {
     const raw = String(err && (err.name || err.message) ? (err.name || err.message) : err);
     if (raw.toLowerCase().includes("abort") || raw.toLowerCase().includes("timeout")) {

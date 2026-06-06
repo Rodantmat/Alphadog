@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-line-shape-classifier";
-const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.13-parlay-fetch-timeout-finalizer";
+const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.14-parlay-budget-race-finalizer";
 const JOB_KEY = "market-line-shape-classifier";
 const MODE_HITTER = "market_hitter_prop_line_context";
 const MODE_PITCHER = "market_pitcher_prop_line_context";
@@ -744,10 +744,25 @@ function timeoutSignal(ms) {
   return controller.signal;
 }
 
+async function promiseWithTimeout(promise, timeoutMs, label = "operation_timeout") {
+  const ms = Math.max(1000, Number(timeoutMs || PARLAY_FETCH_TIMEOUT_MS));
+  let timer = null;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label}_after_${ms}ms`)), ms);
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function fetchWithTimeout(url, init = {}, timeoutMs = PARLAY_FETCH_TIMEOUT_MS) {
   const ms = Math.max(1000, Number(timeoutMs || PARLAY_FETCH_TIMEOUT_MS));
   try {
-    return await fetch(url, { ...init, signal: timeoutSignal(ms) });
+    return await promiseWithTimeout(fetch(url, { ...init, signal: timeoutSignal(ms) }), ms + 500, "parlay_fetch_timeout");
   } catch (err) {
     const msg = String(err && (err.name || err.message) ? (err.name || err.message) : err);
     if (msg.toLowerCase().includes("abort") || msg.toLowerCase().includes("timeout")) {
@@ -772,7 +787,7 @@ async function fetchOneParlayProbe(env, probe, deadlineAt = Date.now() + PARLAY_
       const remainingMs = Math.max(1000, Math.min(PARLAY_FETCH_TIMEOUT_MS, deadlineAt - Date.now()));
       const resp = await fetchWithTimeout(nextUrl, { method: "GET", headers: authHeaders(env) }, remainingMs);
       httpStatus = resp.status;
-      const text = await resp.text();
+      const text = await promiseWithTimeout(resp.text(), Math.max(1000, remainingMs), "parlay_response_body_timeout");
       let json = null;
       try { json = JSON.parse(text); } catch (_) { ok = false; nonJson = true; responsePreview = safeText(text); break; }
       if (!resp.ok) ok = false;
@@ -1161,7 +1176,12 @@ async function runPlayerPropContext(env, input = {}) {
   }
 
   await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status=?, certification_status=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", `running_${config.prop_family}_parlay_prop_fetch`, `MARKET_${config.issue_prefix}_CONTEXT_RUNNING_PARLAY_FETCH`, batchId);
-  const parlay = await fetchParlayProps(env, input, config);
+  let parlay;
+  try {
+    parlay = await promiseWithTimeout(fetchParlayProps(env, input, config), PARLAY_TOTAL_FETCH_BUDGET_MS + 5000, `parlay_${config.prop_family}_total_fetch_budget_timeout`);
+  } catch (err) {
+    parlay = { ok:false, external_calls:0, http_status:null, response_preview:safeText(err && err.message ? err.message : err), rows:[], normalized:[], rows_seen:0, normalized_player_prop_rows:0, total_fetch_budget_timeout:true, endpoint:await configuredParlayEndpoint(env, input), parlay_total_fetch_budget_ms:PARLAY_TOTAL_FETCH_BUDGET_MS, parlay_fetch_timeout_ms:PARLAY_FETCH_TIMEOUT_MS };
+  }
   const externalCalls = parlay.external_calls || 0;
   await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status=?, parlay_inventory_rows_seen=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", `running_${config.prop_family}_mapping_player_props`, Number((parlay && parlay.rows_seen) || (parlay && parlay.normalized && parlay.normalized.length) || 0), batchId);
   const teamAliases = await loadTeamAliasMap(env);
