@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.175-market-scoring-autopump-cascade-hardening";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.176-market-scoring-child-lifecycle-reconcile";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -940,6 +940,119 @@ function marketScoringFullRunStageKeyFromChild(child) {
   return String(input.stage_key || "");
 }
 
+
+async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, trigger = "market_scoring_full_run_reconcile") {
+  if (!child || String(child.status || "") !== "running" || child.finished_at) return { reconciled: false, reason: "child_not_running" };
+  const stageKey = String(stage && stage.stage_key || marketScoringFullRunStageKeyFromChild(child) || "");
+  const requestId = String(child.request_id || "");
+  const runRows = await all(env.CONTROL_DB,
+    "SELECT run_id, status, certification_status, started_at, finished_at FROM control_job_runs WHERE request_id=? ORDER BY datetime(started_at) DESC LIMIT 5",
+    requestId
+  );
+  const latestRun = runRows && runRows.length ? runRows[0] : null;
+
+  let proof = null;
+  let proofSource = null;
+  if (stageKey === "market_context_teams" && env.MARKET_DB) {
+    proof = await first(env.MARKET_DB,
+      `SELECT batch_id, request_id, run_id, worker_name, worker_version, mode, status, prepared_rows_read, odds_api_game_odds_rows, certification_status, certification_grade, output_json, updated_at, created_at
+       FROM market_context_probe_batches
+       WHERE request_id=?
+         AND mode='market_teams_game_odds'
+         AND certification_status IS NOT NULL
+         AND status NOT LIKE 'running%'
+       ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC
+       LIMIT 1`,
+      requestId
+    );
+    proofSource = "MARKET_DB.market_context_probe_batches";
+  } else if ((stageKey === "market_context_hitters" || stageKey === "market_context_pitchers") && env.MARKET_DB) {
+    const wantedMode = stageKey === "market_context_pitchers" ? "market_pitcher_prop_line_context" : "market_hitter_prop_line_context";
+    proof = await first(env.MARKET_DB,
+      `SELECT batch_id, request_id, run_id, worker_name, worker_version, mode, status, prepared_rows_read, certification_status, certification_grade, output_json, updated_at, created_at
+       FROM market_context_probe_batches
+       WHERE request_id=?
+         AND mode=?
+         AND certification_status IS NOT NULL
+         AND status NOT LIKE 'running%'
+       ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC
+       LIMIT 1`,
+      requestId, wantedMode
+    );
+    proofSource = "MARKET_DB.market_context_probe_batches";
+  } else if ((stageKey === "prop_factor_hitters" || stageKey === "prop_factor_pitchers") && env.SCORE_DB) {
+    proof = await first(env.SCORE_DB,
+      `SELECT batch_id, request_id, run_id, worker_name, worker_version, mode, status, prepared_rows_read, packets_written, certification_status, certification_grade, output_json, updated_at, created_at
+       FROM prop_factor_batches
+       WHERE request_id=?
+         AND certification_status IS NOT NULL
+         AND status NOT LIKE 'running%'
+       ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC
+       LIMIT 1`,
+      requestId
+    );
+    proofSource = "SCORE_DB.prop_factor_batches";
+  } else if (stageKey === "prop_matrix_build" && env.SCORE_DB) {
+    proof = await first(env.SCORE_DB,
+      `SELECT batch_id, request_id, run_id, worker_name, worker_version, mode, status, prepared_rows_read, matrix_rows_written, certification_status, certification_grade, output_json, updated_at, created_at
+       FROM prop_matrix_batches
+       WHERE request_id=?
+         AND certification_status IS NOT NULL
+         AND status NOT LIKE 'running%'
+       ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC
+       LIMIT 1`,
+      requestId
+    );
+    proofSource = "SCORE_DB.prop_matrix_batches";
+  }
+
+  if (!proof) return { reconciled: false, reason: "no_terminal_child_proof_found", latest_run: latestRun || null };
+  const outputFromProof = parseJsonSafeText(proof.output_json || "{}", {});
+  const cert = String(proof.certification_status || proof.certification || outputFromProof.certification || outputFromProof.certification_status || "MARKET_SCORING_CHILD_RECONCILED_FROM_PROOF").slice(0, 120);
+  const grade = String(proof.certification_grade || outputFromProof.certification_grade || "PASS");
+  const ok = !String(grade).toUpperCase().includes("BLOCKED") && !String(grade).toUpperCase().includes("FAILED");
+  const rowsRead = Number(proof.prepared_rows_read || proof.matrix_rows_read || outputFromProof.rows_read || outputFromProof.prepared_rows_read || 0);
+  const rowsWritten = Number(proof.rows_written || proof.packets_written || proof.matrix_rows_written || outputFromProof.rows_written || outputFromProof.packets_written || outputFromProof.matrix_rows_written || 0);
+  const externalCalls = Number(outputFromProof.external_calls_performed || outputFromProof.external_calls || 0);
+  const reconciledOutput = {
+    ...outputFromProof,
+    ok,
+    data_ok: ok,
+    version: SYSTEM_VERSION,
+    worker_name: child.worker_name,
+    job_key: child.job_key,
+    request_id: requestId,
+    chain_id: child.chain_id,
+    status: proof.status || outputFromProof.status || "completed_reconciled_from_child_proof",
+    certification: cert,
+    certification_status: cert,
+    certification_grade: grade,
+    rows_read: rowsRead,
+    rows_written: rowsWritten,
+    external_calls_performed: externalCalls,
+    batch_id: proof.batch_id || outputFromProof.batch_id || null,
+    reconciled_from_child_proof: true,
+    proof_source: proofSource,
+    latest_dispatch_run: latestRun || null,
+    trigger
+  };
+  const queueStatus = ok ? "completed" : "failed";
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=? AND status IN ('running','pending','partial_continue')",
+    queueStatus, JSON.stringify(reconciledOutput), ok ? null : "market_scoring_child_reconciled_failed_proof", ok ? null : String(cert).slice(0, 900), requestId
+  );
+  const targetRunId = latestRun && latestRun.run_id ? latestRun.run_id : rid("run_reconciled");
+  await run(env.CONTROL_DB,
+    "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT started_at FROM control_job_runs WHERE run_id=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, 0, ?, ?, ?, ?)",
+    targetRunId, requestId, child.chain_id, child.job_key, child.worker_name, queueStatus, ok ? 1 : 0, cert, rowsRead, rowsWritten, externalCalls, targetRunId, child.input_json || "{}", JSON.stringify(reconciledOutput), ok ? null : "market_scoring_child_reconciled_failed_proof", ok ? null : String(cert).slice(0, 900)
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'market_scoring_full_run_child_reconciled_from_proof', 'Reconciled running Market Scoring Full Run child from terminal worker proof table instead of redispatching', ?, CURRENT_TIMESTAMP)",
+    requestId, targetRunId, WORKER_NAME, child.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ stage_key: stageKey, proof_source: proofSource, certification: cert, certification_grade: grade, batch_id: proof.batch_id || null, no_duplicate_dispatch: true, version: SYSTEM_VERSION })
+  );
+  return { reconciled: true, ok, output: reconciledOutput };
+}
+
 function childPassedMarketScoringFullRun(stage, child) {
   if (!child) return { pass: false, wait: false, reason: "child_missing" };
   const status = String(child.status || "");
@@ -992,6 +1105,14 @@ async function processMarketScoringFullRunJob(env, row, runId, trigger) {
       await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED', ?, 1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
       await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+6 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
       return output;
+    }
+    if (String(child.status || "") === "running" && !child.finished_at) {
+      await reconcileMarketScoringFullRunChildFromProof(env, stage, child, trigger);
+      const refreshedChild = await first(env.CONTROL_DB,
+        "SELECT request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, error_code, error_message, output_json, input_json, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE request_id=? LIMIT 1",
+        child.request_id
+      );
+      if (refreshedChild) Object.assign(child, refreshedChild);
     }
     const validation = childPassedMarketScoringFullRun(stage, child);
     const report = { stage_key: stage.stage_key, job_key: stage.job_key, worker_name: stage.worker_name, request_id: child.request_id, child_status: child.status, pass: validation.pass, wait: validation.wait, reason: validation.reason || null, certification: validation.certification || null, certification_grade: validation.certification_grade || null, rows_read: validation.rows_read || 0, rows_written: validation.rows_written || 0, external_calls: validation.external_calls || 0, batch_id: validation.batch_id || null };
@@ -7609,14 +7730,14 @@ async function processOneUnlocked(env, trigger) {
          AND c.parent_request_id IS NOT NULL
          AND c.status='running'
          AND c.finished_at IS NULL
-         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-2 minutes')
+         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-12 minutes')
        ORDER BY datetime(c.updated_at) ASC
        LIMIT 1`
     );
     if (row) {
       await run(env.CONTROL_DB,
         "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'market_scoring_full_run_child_running_rescued_as_due', 'Recovered stale running Market Scoring Full Run child row as due work for backend continuation', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, stale_threshold_minutes: 2, market_scoring_child_hot_rescue_v0_2_175: true, no_manual_wake_required: true, board_refresh_not_in_chain: true })
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, stale_threshold_minutes: 12, market_scoring_child_hot_rescue_v0_2_176: true, no_duplicate_dispatch_before_long_stage_grace_window: true, no_manual_wake_required: true, board_refresh_not_in_chain: true })
       );
     }
   }
