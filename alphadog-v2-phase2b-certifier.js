@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-certifier";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-matrix-builder";
 const JOB_KEY = "prop-matrix-builder";
-const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.7-control-lifecycle-finalizer";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.6-control-lifecycle-finalizer";
+const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.8-domain-batch-exception-finalizer";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.7-domain-batch-exception-finalizer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -903,6 +903,13 @@ export default {
       }
       catch (err) {
         const failOutput = { ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, request_id:inputForLifecycle.request_id || null, run_id:inputForLifecycle.run_id || null, status:"prop_matrix_builder_exception", certification:"PROP_MATRIX_BUILDER_EXCEPTION", certification_grade:"FAILED", error:String(err && err.stack ? err.stack : err), external_calls:0, no_scoring:true, no_ranking:true, no_final_board:true };
+        try {
+          if (env && env.SCORE_DB && (inputForLifecycle.request_id || inputForLifecycle.run_id)) {
+            await run(env.SCORE_DB, `UPDATE prop_matrix_batches
+              SET status='failed_runtime_exception', certification_status='PROP_MATRIX_BUILDER_EXCEPTION', certification_grade='FAILED', output_json=?, updated_at=CURRENT_TIMESTAMP
+              WHERE status LIKE 'running%' AND (request_id=? OR run_id=?)`, JSON.stringify(failOutput), inputForLifecycle.request_id || null, inputForLifecycle.run_id || null);
+          }
+        } catch (_) {}
         failOutput.control_lifecycle = await controlLifecycleFinalize(env, inputForLifecycle, failOutput, "failed");
         return jsonResponse(failOutput, 500);
       }

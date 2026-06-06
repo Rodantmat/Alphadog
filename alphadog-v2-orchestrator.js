@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.178-service-binding-race-finalizer";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.179-market-full-late-stage-proof-reconcile";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1048,6 +1048,30 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
       requestId
     );
     proofSource = "SCORE_DB.prop_matrix_batches";
+  } else if (stageKey === "scoring_engine_simulation" && env.SCORE_DB) {
+    proof = await first(env.SCORE_DB,
+      `SELECT simulation_batch_id AS batch_id, NULL AS request_id, NULL AS run_id, 'alphadog-v2-scoring-engine' AS worker_name, worker_version, 'scoring_engine_simulation_shadow_strict_b' AS mode, status, matrix_rows_read AS prepared_rows_read, simulation_rows_written AS rows_written, certification AS certification_status, certification_grade, output_json, finished_at AS updated_at, started_at AS created_at
+       FROM scoring_engine_simulation_batches
+       WHERE certification IS NOT NULL
+         AND status NOT LIKE 'running%'
+         AND output_json LIKE '%' || ? || '%'
+       ORDER BY datetime(finished_at) DESC, datetime(started_at) DESC
+       LIMIT 1`,
+      requestId
+    );
+    proofSource = "SCORE_DB.scoring_engine_simulation_batches";
+  } else if (stageKey === "score_final_board" && env.SCORE_DB) {
+    proof = await first(env.SCORE_DB,
+      `SELECT final_board_batch_id AS batch_id, NULL AS request_id, NULL AS run_id, 'alphadog-v2-score-final-board' AS worker_name, worker_version, 'score_final_board_generate_current' AS mode, status, matrix_rows_read AS prepared_rows_read, final_rows_written AS rows_written, certification AS certification_status, certification_grade, output_json, finished_at AS updated_at, started_at AS created_at
+       FROM score_final_board_batches
+       WHERE certification IS NOT NULL
+         AND status NOT LIKE 'running%'
+         AND output_json LIKE '%' || ? || '%'
+       ORDER BY datetime(finished_at) DESC, datetime(started_at) DESC
+       LIMIT 1`,
+      requestId
+    );
+    proofSource = "SCORE_DB.score_final_board_batches";
   }
 
   if (!proof) return { reconciled: false, reason: "no_terminal_child_proof_found", latest_run: latestRun || null };
@@ -1056,7 +1080,7 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
   const grade = String(proof.certification_grade || outputFromProof.certification_grade || "PASS");
   const ok = !String(grade).toUpperCase().includes("BLOCKED") && !String(grade).toUpperCase().includes("FAILED");
   const rowsRead = Number(proof.prepared_rows_read || proof.matrix_rows_read || outputFromProof.rows_read || outputFromProof.prepared_rows_read || 0);
-  const rowsWritten = Number(proof.rows_written || proof.packets_written || proof.matrix_rows_written || outputFromProof.rows_written || outputFromProof.packets_written || outputFromProof.matrix_rows_written || 0);
+  const rowsWritten = Number(proof.rows_written || proof.packets_written || proof.matrix_rows_written || outputFromProof.rows_written || outputFromProof.packets_written || outputFromProof.matrix_rows_written || outputFromProof.simulation_rows_written || outputFromProof.final_rows_written || 0);
   const externalCalls = Number(outputFromProof.external_calls_performed || outputFromProof.external_calls || 0);
   const reconciledOutput = {
     ...outputFromProof,

@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.5-control-lifecycle-finalizer";
+const VERSION = "alphadog-v2-score-final-board-v0.1.6-domain-batch-exception-finalizer";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_B";
 
@@ -707,6 +707,8 @@ async function generateFinalBoard(env, input) {
   await ensureSchema(env);
   const started = Date.now();
   const batchId = rid("score_final_board_batch");
+  const requestId = input.request_id || null;
+  const runId = input.run_id || null;
   const sim = await latestCompletedSimulationBatch(env, input.source_simulation_batch_id || input.simulation_batch_id || null);
 
   await run(env.SCORE_DB, `
@@ -715,7 +717,7 @@ async function generateFinalBoard(env, input) {
   `, batchId, VERSION, JOB_KEY, sim && sim.simulation_batch_id || null, sim && sim.worker_version || null, PRIMARY_PROFILE);
 
   if (!sim || sim.status !== "completed_simulation_shadow_only") {
-    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"blocked_no_completed_simulation_batch", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_COMPLETED_SIMULATION", certification_grade:"BLOCKED", final_board_batch_id:batchId, requested_simulation_batch_id:input.source_simulation_batch_id || input.simulation_batch_id || null };
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_no_completed_simulation_batch", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_COMPLETED_SIMULATION", certification_grade:"BLOCKED", final_board_batch_id:batchId, requested_simulation_batch_id:input.source_simulation_batch_id || input.simulation_batch_id || null };
     await writeIssue(env, batchId, sim && sim.simulation_batch_id || null, "NO_COMPLETED_SIMULATION_BATCH", "BLOCKER", 1, output);
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
@@ -744,7 +746,7 @@ async function generateFinalBoard(env, input) {
   `, simBatchId, PRIMARY_PROFILE);
   const badRows = Number(bad && bad.bad_rows || 0);
   if (badRows > 0) {
-    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"blocked_live_invariant_failure", certification:"SCORE_FINAL_BOARD_BLOCKED_LIVE_INVARIANTS", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId, bad_live_rows:badRows };
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_live_invariant_failure", certification:"SCORE_FINAL_BOARD_BLOCKED_LIVE_INVARIANTS", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId, bad_live_rows:badRows };
     await writeIssue(env, batchId, simBatchId, "LIVE_INVARIANT_FAILURE", "BLOCKER", badRows, output);
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
@@ -817,7 +819,7 @@ async function generateFinalBoard(env, input) {
   const rows = annotateCorrelation([...primaryRows, ...reviewRows]);
 
   if (!rows.length || !primaryRows.length) {
-    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"blocked_no_final_rows_after_cutoff_volatility_trim", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_FINAL_ROWS_AFTER_CUTOFF_VOLATILITY_TRIM", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId, primary_rows_after_calibration:primaryRows.length, review_rows_after_calibration:reviewRows.length };
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_no_final_rows_after_cutoff_volatility_trim", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_FINAL_ROWS_AFTER_CUTOFF_VOLATILITY_TRIM", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId, primary_rows_after_calibration:primaryRows.length, review_rows_after_calibration:reviewRows.length };
     await writeIssue(env, batchId, simBatchId, "NO_FINAL_ROWS_AFTER_CALIBRATION", "BLOCKER", 1, output);
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
@@ -880,7 +882,7 @@ async function generateFinalBoard(env, input) {
   `, batchId);
   const finalBadRows = Number(finalBad && finalBad.bad_rows || 0);
   if (finalBadRows > 0) {
-    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"blocked_written_board_invariant_failure", certification:"SCORE_FINAL_BOARD_BLOCKED_WRITTEN_BOARD_INVARIANTS", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId, bad_written_rows:finalBadRows };
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_written_board_invariant_failure", certification:"SCORE_FINAL_BOARD_BLOCKED_WRITTEN_BOARD_INVARIANTS", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId, bad_written_rows:finalBadRows };
     await writeIssue(env, batchId, simBatchId, "WRITTEN_BOARD_INVARIANT_FAILURE", "BLOCKER", finalBadRows, output);
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
@@ -898,7 +900,7 @@ async function generateFinalBoard(env, input) {
   `, batchId);
   const maxPrimaryRowsPerPlayer = Number(primaryClusterCheck && primaryClusterCheck.max_primary_rows_per_player || 0);
   if (maxPrimaryRowsPerPlayer > 2) {
-    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"blocked_primary_cluster_cap_failure", certification:"SCORE_FINAL_BOARD_BLOCKED_PRIMARY_CLUSTER_CAP_FAILURE", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId, max_primary_rows_per_player:maxPrimaryRowsPerPlayer };
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_primary_cluster_cap_failure", certification:"SCORE_FINAL_BOARD_BLOCKED_PRIMARY_CLUSTER_CAP_FAILURE", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_simulation_batch_id:simBatchId, max_primary_rows_per_player:maxPrimaryRowsPerPlayer };
     await writeIssue(env, batchId, simBatchId, "PRIMARY_CLUSTER_CAP_FAILURE", "BLOCKER", maxPrimaryRowsPerPlayer, output);
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
@@ -910,6 +912,8 @@ async function generateFinalBoard(env, input) {
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
+    request_id: requestId,
+    run_id: runId,
     status: "completed_final_board_current_replaced_with_cutoff_volatility_trim",
     certification: "SCORE_FINAL_BOARD_CERTIFIED_CURRENT_REPLACED_WITH_CUTOFF_VOLATILITY_TRIM",
     certification_grade: "PASS_WITH_REVIEW_WARNINGS",
@@ -995,6 +999,13 @@ export default {
       } catch (err) {
         
         const failOutput = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:input.request_id || null, run_id:input.run_id || null, status:"score_final_board_exception", certification:"SCORE_FINAL_BOARD_EXCEPTION", certification_grade:"FAILED", error:String(err && err.message ? err.message : err), timestamp_utc:nowUtc() };
+        try {
+          if (env && env.SCORE_DB) {
+            await run(env.SCORE_DB, `UPDATE score_final_board_batches
+              SET status='failed_runtime_exception', certification='SCORE_FINAL_BOARD_EXCEPTION', certification_grade='FAILED', finished_at=COALESCE(finished_at, CURRENT_TIMESTAMP), output_json=?
+              WHERE final_board_batch_id IN (SELECT final_board_batch_id FROM score_final_board_batches WHERE status='running' AND finished_at IS NULL ORDER BY datetime(started_at) DESC LIMIT 1)`, safeJson(failOutput));
+          }
+        } catch (_) {}
         failOutput.control_lifecycle = await controlLifecycleFinalize(env, input || {}, failOutput, "failed");
         return jsonResponse(failOutput, 500);
       }
