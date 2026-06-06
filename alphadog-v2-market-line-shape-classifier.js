@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-line-shape-classifier";
-const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.12-control-lifecycle-finalizer";
+const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.13-parlay-fetch-timeout-finalizer";
 const JOB_KEY = "market-line-shape-classifier";
 const MODE_HITTER = "market_hitter_prop_line_context";
 const MODE_PITCHER = "market_pitcher_prop_line_context";
@@ -20,6 +20,8 @@ const PARLAY_ODDS_MARKETS = PARLAY_HITTER_ODDS_MARKETS;
 const PARLAY_PAGE_LIMIT = 10000;
 const PARLAY_MAX_PAGES = 4;
 const PARLAY_MAX_DISCOVERY_PROBES = 14;
+const PARLAY_FETCH_TIMEOUT_MS = 9000;
+const PARLAY_TOTAL_FETCH_BUDGET_MS = 55000;
 const PARLAY_OWNED_BOOKS_EXCLUDED_FROM_DECISION = ["prizepicks", "sleeper"];
 const PARLAY_PICKEM_BOOKS_QUARANTINE = ["underdog", "betr", "pick6", "parlayplay", "dabble"];
 const PARLAY_PICKEM_BOOKS_COMPARISON = ["underdog", "pick6"];
@@ -734,7 +736,28 @@ function flattenOddsEndpointRows(json, probe = {}) {
   }
   return rows;
 }
-async function fetchOneParlayProbe(env, probe) {
+function timeoutSignal(ms) {
+  if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") return AbortSignal.timeout(ms);
+  if (typeof AbortController === "undefined") return undefined;
+  const controller = new AbortController();
+  setTimeout(() => { try { controller.abort("timeout"); } catch (_) {} }, ms);
+  return controller.signal;
+}
+
+async function fetchWithTimeout(url, init = {}, timeoutMs = PARLAY_FETCH_TIMEOUT_MS) {
+  const ms = Math.max(1000, Number(timeoutMs || PARLAY_FETCH_TIMEOUT_MS));
+  try {
+    return await fetch(url, { ...init, signal: timeoutSignal(ms) });
+  } catch (err) {
+    const msg = String(err && (err.name || err.message) ? (err.name || err.message) : err);
+    if (msg.toLowerCase().includes("abort") || msg.toLowerCase().includes("timeout")) {
+      throw new Error(`parlay_fetch_timeout_after_${ms}ms`);
+    }
+    throw err;
+  }
+}
+
+async function fetchOneParlayProbe(env, probe, deadlineAt = Date.now() + PARLAY_TOTAL_FETCH_BUDGET_MS) {
   const rows = [];
   const candidates = [];
   const pages = [];
@@ -745,7 +768,9 @@ async function fetchOneParlayProbe(env, probe) {
   let nextUrl = probe.url;
   try {
     for (let page = 0; page < PARLAY_MAX_PAGES && nextUrl; page++) {
-      const resp = await fetch(nextUrl, { method: "GET", headers: authHeaders(env) });
+      if (Date.now() >= deadlineAt) { ok = false; responsePreview = "parlay_total_fetch_budget_exhausted"; break; }
+      const remainingMs = Math.max(1000, Math.min(PARLAY_FETCH_TIMEOUT_MS, deadlineAt - Date.now()));
+      const resp = await fetchWithTimeout(nextUrl, { method: "GET", headers: authHeaders(env) }, remainingMs);
       httpStatus = resp.status;
       const text = await resp.text();
       let json = null;
@@ -778,13 +803,15 @@ async function fetchParlayProps(env, input = {}, config = modeConfig(input)) {
   if (!endpoint.ok) return { ok: false, external_calls: 0, missing_config: true, rows: [], normalized: [], endpoint };
   if (!sourceHas(env, "PARLAY_API_KEY")) return { ok: false, external_calls: 0, missing_key: true, rows: [], normalized: [], endpoint };
   const probes = buildProbePlan(endpoint, input, config);
+  const deadlineAt = Date.now() + PARLAY_TOTAL_FETCH_BUDGET_MS;
   const probeResults = [];
   const allRows = [];
   let ok = true;
   let httpStatus = null;
   let responsePreview = null;
   for (const probe of probes) {
-    const result = await fetchOneParlayProbe(env, probe);
+    if (Date.now() >= deadlineAt) { ok = false; responsePreview = responsePreview || "parlay_total_fetch_budget_exhausted_before_probe"; break; }
+    const result = await fetchOneParlayProbe(env, probe, deadlineAt);
     probeResults.push(result);
     if (!result.ok) ok = false;
     httpStatus = result.http_status || httpStatus;
@@ -811,7 +838,8 @@ async function fetchParlayProps(env, input = {}, config = modeConfig(input)) {
   const propsBase = parlayBaseUrlFromEndpoint(endpoint);
   for (const book of missingCoreBooks.slice(0, Math.max(0, PARLAY_MAX_DISCOVERY_PROBES - probes.length))) {
     const probe = { probe_id: `props_single_book_fallback_${book}`, endpoint_kind: "props", bookmakers: [book], url: cloneUrlWithParams(propsBase, { bookmakers: book, markets: config.parlay_markets.join(","), limit: PARLAY_PAGE_LIMIT, dfsOdds: "effective" }) };
-    const result = await fetchOneParlayProbe(env, probe);
+    if (Date.now() >= deadlineAt) { ok = false; responsePreview = responsePreview || "parlay_total_fetch_budget_exhausted_before_probe"; break; }
+    const result = await fetchOneParlayProbe(env, probe, deadlineAt);
     fallbackResults.push(result);
     if (!result.ok) ok = false;
     for (const row of result.rows || []) {
@@ -838,7 +866,7 @@ async function fetchParlayProps(env, input = {}, config = modeConfig(input)) {
   const pages = allProbeResults.flatMap(r => r.pages || []);
   const allCandidates = allProbeResults.flatMap(r => r.candidates || []);
   const primaryBookRows = normalized.filter(r => ["primary_comparison_book", "exchange_or_sharp_reference", "requires_shape_validation", "pickem_comparison"].includes(bookmakerQuality(r.bookmaker))).length;
-  return { ok, external_calls: allProbeResults.length, http_status: httpStatus, response_preview: responsePreview, endpoint, probe_strategy: { split_book_probe_active: true, broad_probe_default_enabled: false, props_endpoint_used: true, odds_endpoint_probe_used: probes.some(p => p.endpoint_kind === "odds"), per_book_fallback_used: fallbackResults.length > 0, prop_family: config.prop_family, owned_books_excluded_from_decision: PARLAY_OWNED_BOOKS_EXCLUDED_FROM_DECISION, pickem_books_comparison: PARLAY_PICKEM_BOOKS_COMPARISON, pickem_books_quarantine: PARLAY_PICKEM_BOOKS_QUARANTINE }, pagination: { pages, max_pages: PARLAY_MAX_PAGES, deduped_rows: unique.length, book_counts: bookCounts, book_quality_counts: bookQualityCounts, missing_core_books_after_split_and_fallback: PARLAY_CORE_FALLBACK_BOOKS.filter(b => !bookCounts[b]) }, detected_rows_path: pages[0] && pages[0].detected_rows_path || null, detected_array_candidates: allCandidates.slice(0, 12), rows_seen: unique.length, normalized_player_prop_rows: normalized.length, normalized_primary_non_owned_rows: primaryBookRows, rows: unique.slice(0, MAX_PARLAY_ROWS), normalized };
+  return { ok, external_calls: allProbeResults.length, http_status: httpStatus, response_preview: responsePreview, parlay_total_fetch_budget_ms: PARLAY_TOTAL_FETCH_BUDGET_MS, parlay_fetch_timeout_ms: PARLAY_FETCH_TIMEOUT_MS, endpoint, probe_strategy: { split_book_probe_active: true, broad_probe_default_enabled: false, props_endpoint_used: true, odds_endpoint_probe_used: probes.some(p => p.endpoint_kind === "odds"), per_book_fallback_used: fallbackResults.length > 0, prop_family: config.prop_family, owned_books_excluded_from_decision: PARLAY_OWNED_BOOKS_EXCLUDED_FROM_DECISION, pickem_books_comparison: PARLAY_PICKEM_BOOKS_COMPARISON, pickem_books_quarantine: PARLAY_PICKEM_BOOKS_QUARANTINE }, pagination: { pages, max_pages: PARLAY_MAX_PAGES, deduped_rows: unique.length, book_counts: bookCounts, book_quality_counts: bookQualityCounts, missing_core_books_after_split_and_fallback: PARLAY_CORE_FALLBACK_BOOKS.filter(b => !bookCounts[b]) }, detected_rows_path: pages[0] && pages[0].detected_rows_path || null, detected_array_candidates: allCandidates.slice(0, 12), rows_seen: unique.length, normalized_player_prop_rows: normalized.length, normalized_primary_non_owned_rows: primaryBookRows, rows: unique.slice(0, MAX_PARLAY_ROWS), normalized };
 }
 async function loadPreparedRows(env, today, tomorrow, config = modeConfig()) {
   const ph = config.prop_keys.map(() => "?").join(",");

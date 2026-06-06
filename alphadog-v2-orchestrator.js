@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.176-market-scoring-child-lifecycle-reconcile";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.177-cascade-service-timeout-finalizer";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -33,6 +33,29 @@ async function first(db, sql, ...binds) {
 async function run(db, sql, ...binds) {
   const stmt = db.prepare(sql);
   return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
+}
+
+const EXACT_WORKER_SERVICE_TIMEOUT_MS = 75000;
+
+function timeoutSignal(ms) {
+  if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") return AbortSignal.timeout(ms);
+  if (typeof AbortController === "undefined") return undefined;
+  const controller = new AbortController();
+  setTimeout(() => { try { controller.abort("timeout"); } catch (_) {} }, ms);
+  return controller.signal;
+}
+
+async function serviceBindingFetch(binding, url, init = {}, label = "worker", timeoutMs = EXACT_WORKER_SERVICE_TIMEOUT_MS) {
+  const ms = Math.max(1000, Number(timeoutMs || EXACT_WORKER_SERVICE_TIMEOUT_MS));
+  try {
+    return await binding.fetch(url, { ...init, signal: timeoutSignal(ms) });
+  } catch (err) {
+    const raw = String(err && (err.name || err.message) ? (err.name || err.message) : err);
+    if (raw.toLowerCase().includes("abort") || raw.toLowerCase().includes("timeout")) {
+      throw new Error(`${label}_service_binding_timeout_after_${ms}ms`);
+    }
+    throw err;
+  }
 }
 
 function base(env, extra = {}) {
@@ -2464,7 +2487,7 @@ async function processMarketContextSourceProbeJob(env, row, runId, trigger) {
   let output;
   let httpStatus = null;
   try {
-    const resp = await env.MARKET_NORMALIZER_WORKER.fetch("https://internal.alphadog-v2-market-normalizer/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) });
+    const resp = await serviceBindingFetch(env.MARKET_NORMALIZER_WORKER, "https://internal.alphadog-v2-market-normalizer/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "market_normalizer");
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
@@ -2530,7 +2553,7 @@ async function processMarketHitterPropContextJob(env, row, runId, trigger) {
   let output;
   let httpStatus = null;
   try {
-    const resp = await env.MARKET_LINE_SHAPE_CLASSIFIER_WORKER.fetch("https://internal.alphadog-v2-market-line-shape-classifier/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) });
+    const resp = await serviceBindingFetch(env.MARKET_LINE_SHAPE_CLASSIFIER_WORKER, "https://internal.alphadog-v2-market-line-shape-classifier/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "market_line_shape_classifier");
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
@@ -4873,7 +4896,7 @@ async function processDailyProbablePitchersJob(env, row, runId, trigger) {
       no_scoring: true,
       no_ranking: true,
       no_final_board_write: true,
-      writes_shadow_table_only: isSimulationJob,
+      writes_shadow_table_only: false,
       no_old_production_touch: true
     }
   };
@@ -5015,7 +5038,7 @@ async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
       no_scoring: true,
       no_ranking: true,
       no_final_board_write: true,
-      writes_shadow_table_only: isSimulationJob,
+      writes_shadow_table_only: false,
       no_old_production_touch: true
     }
   };
@@ -5161,7 +5184,7 @@ async function processDailyWeatherJob(env, row, runId, trigger) {
       no_scoring: true,
       no_ranking: true,
       no_final_board_write: true,
-      writes_shadow_table_only: isSimulationJob,
+      writes_shadow_table_only: false,
       no_old_production_touch: true
     }
   };
@@ -5297,7 +5320,7 @@ async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
       no_scoring: true,
       no_ranking: true,
       no_final_board_write: true,
-      writes_shadow_table_only: isSimulationJob,
+      writes_shadow_table_only: false,
       no_old_production_touch: true
     }
   };
@@ -5443,7 +5466,7 @@ async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
       no_scoring: true,
       no_ranking: true,
       no_final_board_write: true,
-      writes_shadow_table_only: isSimulationJob,
+      writes_shadow_table_only: false,
       no_old_production_touch: true
     }
   };
@@ -5600,7 +5623,7 @@ async function processDailyUmpireContextJob(env, row, runId, trigger) {
       no_scoring: true,
       no_ranking: true,
       no_final_board_write: true,
-      writes_shadow_table_only: isSimulationJob,
+      writes_shadow_table_only: false,
       no_old_production_touch: true
     }
   };
@@ -6228,7 +6251,7 @@ async function processDailyLineupsJob(env, row, runId, trigger) {
       no_scoring: true,
       no_ranking: true,
       no_final_board_write: true,
-      writes_shadow_table_only: isSimulationJob,
+      writes_shadow_table_only: false,
       no_old_production_touch: true
     }
   };
@@ -6361,7 +6384,7 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
       no_scoring: true,
       no_ranking: true,
       no_final_board_write: true,
-      writes_shadow_table_only: isSimulationJob,
+      writes_shadow_table_only: false,
       no_old_production_touch: true
     }
   };
@@ -6449,11 +6472,11 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
   let output;
   let httpStatus = null;
   try {
-    const resp = await env.PHASE2B_RECENT_FORM_WORKER.fetch("https://internal.alphadog-v2-phase2b-recent-form/run", {
+    const resp = await serviceBindingFetch(env.PHASE2B_RECENT_FORM_WORKER, "https://internal.alphadog-v2-phase2b-recent-form/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    });
+    }, "prop_factor_miner");
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); }
@@ -6493,7 +6516,7 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
       no_ranking: true,
       no_matrix_builder: true,
       no_final_board_write: true,
-      writes_shadow_table_only: isSimulationJob,
+      writes_shadow_table_only: false,
       no_old_production_touch: true
     }
   };
@@ -6586,11 +6609,11 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
   let output;
   let httpStatus = null;
   try {
-    const resp = await env.PHASE2B_CERTIFIER_WORKER.fetch("https://internal.alphadog-v2-phase2b-certifier/run", {
+    const resp = await serviceBindingFetch(env.PHASE2B_CERTIFIER_WORKER, "https://internal.alphadog-v2-phase2b-certifier/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    });
+    }, "prop_matrix_builder");
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); }
@@ -6637,7 +6660,7 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
       no_scoring: true,
       no_ranking: true,
       no_final_board_write: true,
-      writes_shadow_table_only: isSimulationJob,
+      writes_shadow_table_only: false,
       no_old_production_touch: true
     }
   };
@@ -6735,11 +6758,11 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   let output;
   let httpStatus = null;
   try {
-    const resp = await env.SCORE_AUDIT_WORKER.fetch("https://internal.alphadog-v2-score-audit/run", {
+    const resp = await serviceBindingFetch(env.SCORE_AUDIT_WORKER, "https://internal.alphadog-v2-score-audit/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    });
+    }, "scoring_engine");
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); }
@@ -6785,7 +6808,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       no_candidate_board_write: true,
       no_ranking: true,
       no_final_board_write: true,
-      writes_shadow_table_only: isSimulationJob,
+      writes_shadow_table_only: false,
       no_old_production_touch: true
     }
   };
@@ -6858,11 +6881,11 @@ async function processScoreFinalBoardJob(env, row, runId, trigger) {
   let output;
   let httpStatus = null;
   try {
-    const resp = await env.SCORE_FINAL_BOARD_WORKER.fetch("https://internal.alphadog-v2-score-final-board/run", {
+    const resp = await serviceBindingFetch(env.SCORE_FINAL_BOARD_WORKER, "https://internal.alphadog-v2-score-final-board/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    });
+    }, "score_final_board");
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); }
@@ -7010,7 +7033,7 @@ async function processScorePrepJob(env, row, runId, trigger) {
       no_scoring: true,
       no_ranking: true,
       no_final_board_write: true,
-      writes_shadow_table_only: isSimulationJob,
+      writes_shadow_table_only: false,
       no_old_production_touch: true
     }
   };

@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.5-control-lifecycle-finalizer";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.5-control-lifecycle-finalizer";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.6-control-lifecycle-finalizer-wrapper";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.6-control-lifecycle-finalizer-wrapper";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -866,8 +866,19 @@ export default {
     const path = url.pathname.replace(/\/$/, "") || "/";
     if (request.method === "GET" && (path === "/" || path === "/health")) return jsonResponse(identity(env));
     if (request.method === "POST" && (path === "/run" || path === "/mine")) {
-      try { return await runFactorMining(request, env); }
-      catch (err) { return jsonResponse({ ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, status:"prop_factor_miner_exception", error:String(err && err.stack ? err.stack : err) }, 500); }
+      const inputForLifecycle = await request.clone().json().catch(() => ({}));
+      await controlLifecycleHeartbeat(env, inputForLifecycle, "running_prop_factor_miner_worker_started", { mode: inputForLifecycle.mode || inputForLifecycle.factor_mode || null });
+      try {
+        const response = await runFactorMining(request, env);
+        const output = await responseToOutputObject(response);
+        output.control_lifecycle = await controlLifecycleFinalize(env, inputForLifecycle, output, output.ok !== false && output.data_ok !== false ? "completed" : "failed");
+        return jsonResponse(output, response.status || (output.ok !== false ? 200 : 500));
+      }
+      catch (err) {
+        const failOutput = { ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, request_id:inputForLifecycle.request_id || null, run_id:inputForLifecycle.run_id || null, status:"prop_factor_miner_exception", certification:"PROP_FACTOR_MINER_EXCEPTION", certification_grade:"FAILED", error:String(err && err.stack ? err.stack : err), external_calls:0, no_scoring:true, no_ranking:true, no_final_board:true, no_matrix_builder:true };
+        failOutput.control_lifecycle = await controlLifecycleFinalize(env, inputForLifecycle, failOutput, "failed");
+        return jsonResponse(failOutput, 500);
+      }
     }
     return jsonResponse({ ok:false, error:"not_found", version:SYSTEM_VERSION, path }, 404);
   }
