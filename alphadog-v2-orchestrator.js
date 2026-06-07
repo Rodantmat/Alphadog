@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.185-prop-factor-terminal-evidence-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.186-prop-factor-fast-timeout-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -6799,21 +6799,9 @@ async function rescuePropFactorMinerTerminalEvidence(env, row, runId, input, sel
 
   const issueSummary = await first(env.SCORE_DB, `SELECT COUNT(*) AS issue_rows FROM prop_factor_issues WHERE batch_id=?`, batchRow.batch_id);
   const issueRows = Number(issueSummary && issueSummary.issue_rows || 0);
-  await run(env.SCORE_DB, `INSERT OR REPLACE INTO prop_factor_coverage_current (
-      coverage_key,factor_family,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,normalized_factor_lane,
-      factor_status,factor_grade,packet_id,latest_batch_id,latest_checked_at,blocking_for_matrix,missing_reason,details_json,official_date,created_at,updated_at
-    )
-    SELECT
-      ? || ':' || prepared_row_id,
-      ?, prepared_row_id, game_pk, mlb_player_id, canonical_prop_key, normalized_factor_lane,
-      factor_status, factor_grade, packet_id, batch_id, CURRENT_TIMESTAMP,
-      CASE WHEN blocker_count > 0 OR factor_status='blocked' THEN 1 ELSE 0 END,
-      CASE WHEN missing_factor_count > 0 THEN 'missing_factor_context_present_in_packet' ELSE NULL END,
-      json_object('terminal_rescue',1,'source','orchestrator_timeout_rescue','warning_count',warning_count,'missing_factor_count',missing_factor_count,'blocker_count',blocker_count),
-      official_date, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-    FROM ${packetTable}
-    WHERE batch_id=?`, family, family, batchRow.batch_id);
-
+  // v0.2.186: keep timeout rescue O(1). The worker now writes coverage incrementally;
+  // if a timeout happens after packets exist, parent continuation must not spend the
+  // last milliseconds rebuilding coverage and timing out inside the rescue path.
   const status = Number(packetSummary.blocked_rows || 0) > 0 || Number(packetSummary.warning_rows || 0) > 0 || Number(packetSummary.missing_factor_rows || 0) > 0 ? "completed_with_warnings" : "completed";
   const certification = status === "completed" ? "PROP_FACTOR_PACKETS_CERTIFIED" : "PROP_FACTOR_PACKETS_CERTIFIED_WITH_WARNINGS";
   const grade = Number(packetSummary.blocked_rows || 0) > 0 ? "PASS_WITH_BLOCKED_ROWS" : (status === "completed" ? "PASS" : "PASS_WITH_WARNINGS");
@@ -6850,7 +6838,8 @@ async function rescuePropFactorMinerTerminalEvidence(env, row, runId, input, sel
     last_packet_at:packetSummary.last_packet_at || null,
     timeout_error:String(timeoutError || "prop_factor_miner_service_binding_timeout_after_75000ms"),
     terminal_rescue:true,
-    coverage_current_rebuilt_from_packets:true,
+    coverage_current_rescue_rebuild_skipped_fast_path:true,
+    coverage_current_written_incrementally_by_worker:true,
     no_external_api_calls:true,
     no_scoring:true,
     no_ranking:true,
@@ -6866,7 +6855,7 @@ async function rescuePropFactorMinerTerminalEvidence(env, row, runId, input, sel
 
   if (env.CONTROL_DB) {
     await run(env.CONTROL_DB, `INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at)
-      VALUES (?, ?, ?, ?, 'WARN', 'prop_factor_miner_timeout_rescued_from_packet_evidence', 'Rescued Prop Factor Miner timeout by terminal-finalizing packet evidence and coverage current', ?, CURRENT_TIMESTAMP)`,
+      VALUES (?, ?, ?, ?, 'WARN', 'prop_factor_miner_timeout_rescued_from_packet_evidence', 'Rescued Prop Factor Miner timeout by terminal-finalizing packet evidence fast path', ?, CURRENT_TIMESTAMP)`,
       row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:batchRow.batch_id, packets, certification, grade, timeout_error:String(timeoutError || '') }).slice(0, 9000));
   }
   return output;
