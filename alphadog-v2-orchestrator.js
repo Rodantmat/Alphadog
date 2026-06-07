@@ -485,7 +485,7 @@ function isPropMatrixBuilderJob(row) {
 function isScoringEngineJob(row) {
   const job = String(row && row.job_key || "");
   const worker = String(row && row.worker_name || "");
-  return (job === "scoring-engine" || job === "scoring-engine-simulation") && worker === "alphadog-v2-score-audit";
+  return (job === "scoring-engine" || job === "scoring-engine-simulation" || job === "hit-probability") && worker === "alphadog-v2-score-audit";
 }
 
 function isScoreFinalBoardJob(row) {
@@ -7364,6 +7364,7 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
 
 async function processScoringEngineJob(env, row, runId, trigger) {
   const isSimulationJob = row && row.job_key === "scoring-engine-simulation";
+  const isHitProbabilityJob = row && row.job_key === "hit-probability";
   if (!env.SCORE_AUDIT_WORKER || typeof env.SCORE_AUDIT_WORKER.fetch !== "function") {
     const output = {
       ok: false,
@@ -7371,13 +7372,13 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
       worker_name: row.worker_name,
-      logical_worker_name: isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine",
+      logical_worker_name: isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"),
       job_key: row.job_key,
       status: "blocked_missing_service_binding",
       certification: "SCORING_ENGINE_SERVICE_BINDING_MISSING",
       certification_grade: "BLOCKED",
       trigger,
-      note: "Exact dispatch requires SCORE_AUDIT_WORKER service binding. Existing score-audit slot is used for Scoring Engine current scoring/simulation; no worker_manifest/global deploy change required."
+      note: "Exact dispatch requires SCORE_AUDIT_WORKER service binding. Existing score-audit slot is used for Scoring Engine current scoring/simulation/hit-probability; no worker_manifest/global deploy change required."
     };
     await run(env.CONTROL_DB,
       "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_scoring_engine_service_binding', 'SCORE_AUDIT_WORKER service binding is missing')",
@@ -7397,20 +7398,22 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     run_id: runId,
     job_key: row.job_key,
     worker_name: row.worker_name,
-    logical_worker_name: isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine",
+    logical_worker_name: isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"),
     deployed_worker_slot: "alphadog-v2-score-audit",
     trigger,
-    mode: isSimulationJob ? "scoring_engine_simulation_shadow_strict_b" : "scoring_engine_current_strict_c_realistic_v3_2",
+    mode: isHitProbabilityJob ? "hit_probability_current_estimate" : (isSimulationJob ? "scoring_engine_simulation_shadow_strict_b" : "scoring_engine_current_strict_c_realistic_v3_2"),
     input_json: rowInput,
     exact_worker_only: true,
     framework_only: false,
-    production_scoring_current: !isSimulationJob,
+    production_scoring_current: (!isSimulationJob && !isHitProbabilityJob),
     simulation_only: isSimulationJob,
-    primary_simulation_profile: isSimulationJob ? "STRICT_B" : "STRICT_C_REALISTIC_V3_2",
+      hit_probability_only: isHitProbabilityJob,
+    hit_probability_only: isHitProbabilityJob,
+    primary_simulation_profile: isHitProbabilityJob ? "HP_EMPIRICAL_V0_1_1_SAME_SCORE_AUDIT_SLOT" : (isSimulationJob ? "STRICT_B" : "STRICT_C_REALISTIC_V3_2"),
     comparison_profile: isSimulationJob ? "HYBRID_CONTROL" : null,
     writes_shadow_table_only: isSimulationJob,
     thresholds_locked: false,
-    scoring_enabled: !isSimulationJob,
+    scoring_enabled: (!isSimulationJob && !isHitProbabilityJob),
     archive_score_threshold_locked: 70,
     final_qualification_threshold_locked: false,
     no_true_hit_probability_claims: true,
@@ -7423,9 +7426,10 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     goblin_demon_more_only: true,
     goblin_demon_under_blocker: "GOBLIN_DEMON_UNDER_NOT_SELECTABLE",
     dedupe_deferred_to_ranking_final_board: true,
-    writes_score_db_scoring_engine_only: !isSimulationJob,
+    writes_score_db_scoring_engine_only: (!isSimulationJob && !isHitProbabilityJob),
     writes_score_db_simulation_shadow_only: isSimulationJob,
-    writes_archive_db_snapshot_table_schema_only: !isSimulationJob,
+    writes_score_db_hit_probability_only: isHitProbabilityJob,
+    writes_archive_db_snapshot_table_schema_only: (!isSimulationJob && !isHitProbabilityJob),
     no_candidate_board_write: true,
     no_old_prop_scores_write: true,
     no_ranking: true,
@@ -7454,8 +7458,8 @@ async function processScoringEngineJob(env, row, runId, trigger) {
 
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
-  const rowsRead = Number(output && output.matrix_rows_read ? output.matrix_rows_read : 0);
-  const rowsWritten = Number(output && (output.score_rows_written || output.simulation_rows_written) ? (output.score_rows_written || output.simulation_rows_written) : 0);
+  const rowsRead = Number(output && (output.matrix_rows_read || output.source_rows_read || output.rows_read) ? (output.matrix_rows_read || output.source_rows_read || output.rows_read) : 0);
+  const rowsWritten = Number(output && (output.score_rows_written || output.simulation_rows_written || output.probability_rows_written || output.rows_written) ? (output.score_rows_written || output.simulation_rows_written || output.probability_rows_written || output.rows_written) : 0);
   const archiveRowsWritten = Number(output && output.archive_rows_written ? output.archive_rows_written : 0);
   const certification = String((output && output.certification) || (ok ? "scoring_engine_framework_completed" : "scoring_engine_framework_failed")).slice(0, 120);
   const queueStatus = ok ? "completed" : "failed";
@@ -7464,23 +7468,24 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
-    deployed_slot_version: isSimulationJob ? "alphadog-v2-scoring-engine-v0.4.7-strict-c-realistic-v3-2-effective-warning-severity" : "alphadog-v2-scoring-engine-v0.4.7-strict-c-realistic-v3-2-effective-warning-severity",
+    deployed_slot_version: isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.8-hit-probability-same-slot" : "alphadog-v2-scoring-engine-v0.4.7-strict-c-realistic-v3-2-effective-warning-severity",
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
       exact_worker_only: true,
-      logical_worker_name: isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine",
+      logical_worker_name: isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"),
       deployed_worker_slot: "alphadog-v2-score-audit",
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
       framework_only: false,
-      production_scoring_current: !isSimulationJob,
+      production_scoring_current: (!isSimulationJob && !isHitProbabilityJob),
       simulation_only: isSimulationJob,
       thresholds_locked: false,
-      scoring_enabled: !isSimulationJob,
+      scoring_enabled: (!isSimulationJob && !isHitProbabilityJob),
       archive_score_threshold_locked: 70,
-      no_true_hit_probability_claims: true,
+      no_true_hit_probability_claims: !isHitProbabilityJob,
+      estimated_hit_probability_phase: isHitProbabilityJob,
       side_aware_required: true,
       source_line_type_aware_required: true,
       variation_aware_required: true,
@@ -7488,7 +7493,8 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       no_candidate_board_write: true,
       no_ranking: true,
       no_final_board_write: true,
-      writes_shadow_table_only: false,
+      writes_shadow_table_only: isSimulationJob,
+      writes_hit_probability_tables_only: isHitProbabilityJob,
       no_old_production_touch: true
     }
   };
@@ -7519,7 +7525,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'scoring_engine_dispatch_completed', 'Orchestrator completed exact Scoring Engine current scoring/simulation dispatch', ?, CURRENT_TIMESTAMP)",
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'scoring_engine_dispatch_completed', 'Orchestrator completed exact score-audit-slot dispatch', ?, CURRENT_TIMESTAMP)",
     row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, matrix_rows_read: rowsRead, score_rows_written: rowsWritten, archive_rows_written: archiveRowsWritten, dispatch: cappedOutput.orchestrator_dispatch })
   );
 

@@ -2586,6 +2586,119 @@ async function runScoringFinalBoard(env, input) {
   return output;
 }
 
+
+// ============================================================
+// Hit Probability Phase v0.1.1 — same deployed scoring engine slot
+// ============================================================
+// This phase is intentionally isolated. It writes only SCORE_DB.hit_probability_* tables.
+// It does not mutate scoring_engine_current, score_final_board_current, prepared board,
+// source boards, score fields, ranking, or live/review gates.
+const HP_JOB_KEY = "hit-probability";
+const HP_MODE = "hit_probability_current_estimate";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.8-hit-probability-same-slot";
+const HP_PROFILE_VERSION = "HP_EMPIRICAL_V0_1_1_SAME_SCORE_AUDIT_SLOT";
+const HP_MAX_ROWS_PER_RUN = 12000;
+const HP_PLAYER_CHUNK_SIZE = 70;
+
+const HP_HITTER_PROP_PROFILES = {
+  hits: { family:"hitter", stat:"hits", label:"Hits", minSample:8, targetSample:20, windows:[5,10,20,40], profile:"HITTER_COUNT_HALF_LINE" },
+  singles: { family:"hitter", stat:"singles", label:"Singles", minSample:8, targetSample:20, windows:[5,10,20,40], profile:"HITTER_COUNT_HALF_LINE" },
+  doubles: { family:"hitter", stat:"doubles", label:"Doubles", minSample:8, targetSample:20, windows:[5,10,20,40], profile:"HITTER_LOW_FREQUENCY_HALF_LINE" },
+  home_runs: { family:"hitter", stat:"home_runs", label:"Home Runs", minSample:8, targetSample:25, windows:[5,10,20,40], profile:"HITTER_LOW_FREQUENCY_HALF_LINE" },
+  total_bases: { family:"hitter", stat:"total_bases", label:"Total Bases", minSample:8, targetSample:20, windows:[5,10,20,40], profile:"HITTER_ACCUMULATION_LINE" },
+  runs: { family:"hitter", stat:"runs", label:"Runs", minSample:8, targetSample:20, windows:[5,10,20,40], profile:"HITTER_RUN_CONTEXT_LINE" },
+  rbis: { family:"hitter", stat:"rbi", label:"RBIs", minSample:8, targetSample:20, windows:[5,10,20,40], profile:"HITTER_RBI_CONTEXT_LINE" },
+  walks: { family:"hitter", stat:"walks", label:"Walks", minSample:8, targetSample:20, windows:[5,10,20,40], profile:"HITTER_PLATE_DISCIPLINE_LINE" },
+  hits_runs_rbis: { family:"hitter", stat:"hits_runs_rbis", label:"Hits+Runs+RBIs", minSample:8, targetSample:20, windows:[5,10,20,40], profile:"HITTER_COMBO_ACCUMULATION_LINE" }
+};
+
+const HP_PITCHER_PROP_PROFILES = {
+  pitcher_strikeouts: { family:"pitcher", stat:"strikeouts", label:"Pitcher Strikeouts", minSample:6, targetSample:18, windows:[3,5,10,20], profile:"PITCHER_STRIKEOUT_LINE" },
+  pitcher_outs: { family:"pitcher", stat:"outs_recorded", label:"Pitcher Outs", minSample:6, targetSample:18, windows:[3,5,10,20], profile:"PITCHER_OUTS_LINE" },
+  hits_allowed: { family:"pitcher", stat:"hits_allowed", label:"Hits Allowed", minSample:6, targetSample:18, windows:[3,5,10,20], profile:"PITCHER_ALLOWED_COUNT_LINE" },
+  earned_runs: { family:"pitcher", stat:"earned_runs", label:"Earned Runs", minSample:6, targetSample:18, windows:[3,5,10,20], profile:"PITCHER_RUN_PREVENTION_LINE" },
+  walks_allowed: { family:"pitcher", stat:"walks_allowed", label:"Walks Allowed", minSample:6, targetSample:18, windows:[3,5,10,20], profile:"PITCHER_COMMAND_LINE" },
+  runs_allowed: { family:"pitcher", stat:"runs_allowed", label:"Runs Allowed", minSample:6, targetSample:18, windows:[3,5,10,20], profile:"PITCHER_RUN_PREVENTION_LINE" }
+};
+
+function hpUid(prefix){ return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8); }
+function hpNum(v, d=0){ const n=Number(v); return Number.isFinite(n) ? n : d; }
+function hpSafeJson(value, max=12000){ let s="{}"; try { s=JSON.stringify(value == null ? {} : value); } catch (_) { s=JSON.stringify({serialization_error:true}); } return s.length > max ? s.slice(0,max) : s; }
+function hpUnique(arr){ return [...new Set(arr.filter(v => v !== null && v !== undefined && String(v)!==""))]; }
+function hpChunks(arr,n){ const out=[]; for(let i=0;i<arr.length;i+=n) out.push(arr.slice(i,i+n)); return out; }
+function hpSide(v){ const s=String(v||"").toLowerCase(); if(["more","over","o"].includes(s)) return "more"; if(["less","under","u"].includes(s)) return "less"; return null; }
+function hpProfile(prop){ return HP_HITTER_PROP_PROFILES[prop] || HP_PITCHER_PROP_PROFILES[prop] || null; }
+function hpLineBucket(line){ const n=hpNum(line, NaN); if(!Number.isFinite(n)) return "LINE_UNKNOWN"; if(Math.abs(n-0.5)<0.0001) return "LINE_0_5"; if(Math.abs(n-1.5)<0.0001) return "LINE_1_5"; if(Math.abs(n-2.5)<0.0001) return "LINE_2_5"; if(Math.abs(n-3.5)<0.0001) return "LINE_3_5"; if(Math.abs(n-4.5)<0.0001) return "LINE_4_5"; if(Math.abs(n-Math.round(n))<0.0001) return "INTEGER_LINE_PUSH_CAPABLE"; return ("HALF_LINE_" + String(n).replace(/[^0-9a-z]/gi,"_")).toUpperCase(); }
+function hpStatValue(row, profile){ const s=profile.stat; if(s === "hits_runs_rbis") return hpNum(row.hits)+hpNum(row.runs)+hpNum(row.rbi); if(s === "outs_recorded") return hpNum(row.outs_recorded, Math.round(hpNum(row.innings_pitched_decimal)*3)); return hpNum(row[s]); }
+function hpClassify(actual, line, side){ if(!Number.isFinite(actual) || !Number.isFinite(Number(line))) return "unknown"; const l=Number(line); if(Math.abs(actual-l)<0.000001) return "push"; if(side === "more") return actual > l ? "hit" : "miss"; if(side === "less") return actual < l ? "hit" : "miss"; return "unknown"; }
+function hpSummarizeWindow(games, line, side, profile, windowSize){ const slice=games.slice(0, windowSize || games.length); let hit=0, miss=0, push=0, unknown=0; const actuals=[]; for(const g of slice){ const actual=hpStatValue(g, profile); actuals.push(actual); const c=hpClassify(actual,line,side); if(c==="hit") hit++; else if(c==="miss") miss++; else if(c==="push") push++; else unknown++; } const nonPush=hit+miss; const raw=nonPush>0 ? hit/nonPush : null; const mean=actuals.length ? actuals.reduce((a,b)=>a+b,0)/actuals.length : null; return { window:windowSize || "all", sample:slice.length, hit, miss, push, unknown, non_push_sample:nonPush, raw_hit_rate:raw, mean_actual:mean }; }
+function hpEstimate(games,line,side,profile){ const windows=profile.windows || [5,10,20,40]; const summaries=windows.map(w=>hpSummarizeWindow(games,line,side,profile,w)); const full=hpSummarizeWindow(games,line,side,profile,Math.min(games.length,40)); const weightBase=[0.40,0.30,0.20,0.10]; let weighted=0, weight=0; for(let i=0;i<summaries.length;i++){ const r=summaries[i].raw_hit_rate; if(r !== null){ weighted += r*weightBase[i]; weight += weightBase[i]; } } const empirical=weight>0 ? weighted/weight : (full.raw_hit_rate !== null ? full.raw_hit_rate : 0.5); const nonPush=full.non_push_sample; const reliability=Math.max(0,Math.min(1,nonPush/Math.max(1,profile.targetSample || 20))); const pushRisk=full.sample>0 ? full.push/full.sample : 0; const estimated=(0.5*(1-reliability))+(empirical*reliability); const confidence=Math.max(0,Math.min(100,Math.round((reliability*100)-(pushRisk*20)))); const pct=Math.round(estimated*1000)/10; let band="HP_INSUFFICIENT_SAMPLE"; if(nonPush >= profile.minSample){ if(pct>=70) band="HP_70_PLUS"; else if(pct>=62) band="HP_62_TO_69"; else if(pct>=55) band="HP_55_TO_61"; else if(pct>=45) band="HP_NEUTRAL_45_TO_54"; else band="HP_BELOW_45"; } const warnings=[]; if(nonPush < profile.minSample) warnings.push("LOW_NON_PUSH_SAMPLE"); if(pushRisk >= 0.15) warnings.push("HIGH_PUSH_RISK"); if(games.length === 0) warnings.push("NO_HISTORICAL_GAME_LOGS"); return { estimated_hit_probability_0_100:pct, probability_band:band, probability_confidence_0_100:confidence, reliability_0_1:Math.round(reliability*1000)/1000, empirical_hit_rate_0_1:Math.round(empirical*1000)/1000, push_risk_0_1:Math.round(pushRisk*1000)/1000, sample_size:full.sample, non_push_sample:nonPush, hit_count:full.hit, miss_count:full.miss, push_count:full.push, warning_flags:warnings, windows:summaries }; }
+
+async function hpEnsureSchema(env){
+  const stmts=[
+    `CREATE TABLE IF NOT EXISTS hit_probability_batches (batch_id TEXT PRIMARY KEY, request_id TEXT, run_id TEXT, worker_version TEXT, profile_version TEXT, mode TEXT, status TEXT, source_table TEXT, source_final_board_batch_id TEXT, source_engine_batch_id TEXT, source_rows_read INTEGER DEFAULT 0, supported_rows INTEGER DEFAULT 0, probability_rows_written INTEGER DEFAULT 0, issue_rows_written INTEGER DEFAULT 0, hitter_players_checked INTEGER DEFAULT 0, pitcher_players_checked INTEGER DEFAULT 0, certification_status TEXT, certification_grade TEXT, output_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS hit_probability_current (probability_row_id TEXT PRIMARY KEY, batch_id TEXT, source_table TEXT, final_board_row_id TEXT, score_row_id TEXT, prepared_row_id TEXT, matrix_id TEXT, source_line_id TEXT, source_key TEXT, game_pk INTEGER, official_date TEXT, official_game_time_utc TEXT, mlb_player_id INTEGER, player_name TEXT, canonical_prop_key TEXT, line_value REAL, selected_side TEXT, prop_family TEXT, prop_line_profile_key TEXT, probability_model_version TEXT, probability_status TEXT, probability_grade TEXT, estimated_hit_probability_0_100 REAL, probability_confidence_0_100 REAL, probability_band TEXT, empirical_hit_rate_0_1 REAL, reliability_0_1 REAL, sample_size INTEGER, non_push_sample INTEGER, hit_count INTEGER, miss_count INTEGER, push_count INTEGER, push_risk_0_1 REAL, score_0_100 REAL, score_grade TEXT, board_tier TEXT, live_playable INTEGER, review_playable INTEGER, warning_count INTEGER DEFAULT 0, blocker_count INTEGER DEFAULT 0, model_notes_json TEXT, window_summary_json TEXT, source_snapshot_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS hit_probability_issues (issue_id TEXT PRIMARY KEY, batch_id TEXT, probability_row_id TEXT, final_board_row_id TEXT, score_row_id TEXT, prepared_row_id TEXT, game_pk INTEGER, mlb_player_id INTEGER, canonical_prop_key TEXT, selected_side TEXT, severity TEXT, issue_type TEXT, reason TEXT, details_json TEXT, official_date TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE INDEX IF NOT EXISTS idx_hit_probability_current_board ON hit_probability_current(final_board_row_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_hit_probability_current_prepared ON hit_probability_current(prepared_row_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_hit_probability_current_player_prop ON hit_probability_current(mlb_player_id, canonical_prop_key, selected_side)`,
+    `CREATE INDEX IF NOT EXISTS idx_hit_probability_current_band ON hit_probability_current(probability_band, probability_confidence_0_100)`,
+    `CREATE INDEX IF NOT EXISTS idx_hit_probability_batches_status ON hit_probability_batches(status, updated_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_hit_probability_issues_batch ON hit_probability_issues(batch_id, severity)`
+  ];
+  for(const s of stmts) await run(env.SCORE_DB, s);
+}
+async function hpSourceRows(env){
+  const finalRows = await all(env.SCORE_DB, `SELECT * FROM score_final_board_current ORDER BY rank_order ASC LIMIT ${HP_MAX_ROWS_PER_RUN}`);
+  if(finalRows.length){ return { source_table:"score_final_board_current", rows:finalRows, final_board_batch_id:finalRows[0].final_board_batch_id || null, engine_batch_id:finalRows[0].source_engine_batch_id || null }; }
+  const scoreRows = await all(env.SCORE_DB, `SELECT * FROM scoring_engine_current WHERE score_0_100 IS NOT NULL ORDER BY score_0_100 DESC LIMIT ${HP_MAX_ROWS_PER_RUN}`);
+  return { source_table:"scoring_engine_current", rows:scoreRows, final_board_batch_id:null, engine_batch_id:scoreRows[0] ? scoreRows[0].batch_id : null };
+}
+async function hpFetchHitterLogs(env, playerIds, maxDate){ const map=new Map(); for(const c of hpChunks(playerIds, HP_PLAYER_CHUNK_SIZE)){ if(!c.length) continue; const q=`SELECT player_id, game_pk, game_date, hits, singles, doubles, home_runs, total_bases, runs, rbi, walks FROM hitter_game_logs WHERE player_id IN (${c.map(()=>'?').join(',')}) AND game_date < ? ORDER BY player_id, game_date DESC`; const rows=await all(env.STATS_HITTER_DB, q, ...c, maxDate); for(const r of rows){ const k=String(r.player_id); if(!map.has(k)) map.set(k,[]); map.get(k).push(r); } } return map; }
+async function hpFetchPitcherLogs(env, playerIds, maxDate){ const map=new Map(); for(const c of hpChunks(playerIds, HP_PLAYER_CHUNK_SIZE)){ if(!c.length) continue; const q=`SELECT player_id, game_pk, game_date, outs_recorded, innings_pitched_decimal, hits_allowed, runs_allowed, earned_runs, walks_allowed, strikeouts FROM pitcher_game_logs WHERE player_id IN (${c.map(()=>'?').join(',')}) AND game_date < ? ORDER BY player_id, game_date DESC`; const rows=await all(env.STATS_PITCHER_DB, q, ...c, maxDate); for(const r of rows){ const k=String(r.player_id); if(!map.has(k)) map.set(k,[]); map.get(k).push(r); } } return map; }
+async function hpWriteIssue(env,batchId,src,probabilityRowId,severity,issueType,reason,details={}){ await run(env.SCORE_DB, `INSERT INTO hit_probability_issues (issue_id,batch_id,probability_row_id,final_board_row_id,score_row_id,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,selected_side,severity,issue_type,reason,details_json,official_date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, hpUid('hp_issue'), batchId, probabilityRowId || null, src.final_board_row_id || null, src.score_row_id || null, src.prepared_row_id || null, src.game_pk || null, src.mlb_player_id || null, src.canonical_prop_key || null, src.selected_side || null, severity, issueType, reason, hpSafeJson(details,4000), src.official_date || null); }
+
+async function runHitProbabilityCurrent(env, input = {}){
+  const started=Date.now();
+  if(!env.SCORE_DB || !env.STATS_HITTER_DB || !env.STATS_PITCHER_DB) return baseIdentity({ ok:false, data_ok:false, version:HP_VERSION, job_key:HP_JOB_KEY, status:"blocked_missing_db_bindings", certification:"HIT_PROBABILITY_MISSING_DB_BINDINGS", certification_grade:"BLOCKED", required_bindings:{SCORE_DB:!!env.SCORE_DB,STATS_HITTER_DB:!!env.STATS_HITTER_DB,STATS_PITCHER_DB:!!env.STATS_PITCHER_DB}, no_score_mutation:true, no_final_board_mutation:true });
+  await hpEnsureSchema(env);
+  const batchId=hpUid('hit_probability_batch');
+  const source=await hpSourceRows(env);
+  const maxDate = source.rows.reduce((m,r)=> String(r.official_date||"")>m ? String(r.official_date||"") : m, "0000-00-00") || new Date().toISOString().slice(0,10);
+  const supported=[];
+  const unsupported=[];
+  for(const r of source.rows){ const prop=String(r.canonical_prop_key||""); const profile=hpProfile(prop); const side=hpSide(r.selected_side || r.prop_side); if(!profile || !side || !r.mlb_player_id || r.line_value == null){ unsupported.push({row:r, reason:!profile?'unsupported_prop':(!side?'missing_side':(!r.mlb_player_id?'missing_player':'missing_line'))}); } else supported.push({...r, selected_side:side, _profile:profile}); }
+  const hitterIds=hpUnique(supported.filter(r=>r._profile.family==='hitter').map(r=>Number(r.mlb_player_id)));
+  const pitcherIds=hpUnique(supported.filter(r=>r._profile.family==='pitcher').map(r=>Number(r.mlb_player_id)));
+  const hitterLogs=await hpFetchHitterLogs(env,hitterIds,maxDate);
+  const pitcherLogs=await hpFetchPitcherLogs(env,pitcherIds,maxDate);
+  await run(env.SCORE_DB, "DELETE FROM hit_probability_current");
+  await run(env.SCORE_DB, "DELETE FROM hit_probability_issues WHERE created_at < datetime('now','-2 days')");
+  let written=0, issues=0, blocked=0, warnings=0;
+  for(const src of unsupported){ issues++; blocked++; await hpWriteIssue(env,batchId,src.row,null,'blocker','HIT_PROBABILITY_ROW_UNSUPPORTED',src.reason,{isolated_same_scoring_worker_slot:true,no_score_mutation:true}); }
+  for(const r of supported){
+    const profile=r._profile;
+    const logs=(profile.family==='hitter' ? hitterLogs : pitcherLogs).get(String(r.mlb_player_id)) || [];
+    const est=hpEstimate(logs, Number(r.line_value), r.selected_side, profile);
+    const probabilityRowId=hpUid('hp_row');
+    const status=logs.length ? (est.non_push_sample >= profile.minSample ? 'estimated_current' : 'estimated_low_sample') : 'blocked_no_history';
+    const grade=status === 'estimated_current' ? 'HP_ESTIMATED' : (status === 'estimated_low_sample' ? 'HP_LOW_SAMPLE' : 'HP_BLOCKED');
+    const warningCount=est.warning_flags.length;
+    if(warningCount) warnings++;
+    if(status === 'blocked_no_history') blocked++;
+    const profileKey=[profile.profile, r.canonical_prop_key, hpLineBucket(r.line_value), r.selected_side].join('__').toUpperCase();
+    await run(env.SCORE_DB, `INSERT INTO hit_probability_current (probability_row_id,batch_id,source_table,final_board_row_id,score_row_id,prepared_row_id,matrix_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,canonical_prop_key,line_value,selected_side,prop_family,prop_line_profile_key,probability_model_version,probability_status,probability_grade,estimated_hit_probability_0_100,probability_confidence_0_100,probability_band,empirical_hit_rate_0_1,reliability_0_1,sample_size,non_push_sample,hit_count,miss_count,push_count,push_risk_0_1,score_0_100,score_grade,board_tier,live_playable,review_playable,warning_count,blocker_count,model_notes_json,window_summary_json,source_snapshot_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, probabilityRowId,batchId,source.source_table,r.final_board_row_id||null,r.score_row_id||null,r.prepared_row_id||null,r.matrix_id||null,r.source_line_id||null,r.source_key||null,r.game_pk||null,r.official_date||null,r.official_game_time_utc||null,r.mlb_player_id||null,r.player_name||null,r.canonical_prop_key||null,r.line_value||null,r.selected_side,profile.family,profileKey,HP_PROFILE_VERSION,status,grade,est.estimated_hit_probability_0_100,est.probability_confidence_0_100,est.probability_band,est.empirical_hit_rate_0_1,est.reliability_0_1,est.sample_size,est.non_push_sample,est.hit_count,est.miss_count,est.push_count,est.push_risk_0_1,r.score_0_100||null,r.score_grade||null,r.board_tier||null,r.live_playable||0,r.review_playable||0,warningCount,status==='blocked_no_history'?1:0,hpSafeJson({estimated_not_true_probability:true,method:'empirical_recent_weighted_with_50_percent_low_sample_shrinkage',same_deployed_worker_slot:'alphadog-v2-score-audit',no_score_mutation:true,no_final_board_mutation:true,no_ranking:true,profile_label:profile.label},4000),hpSafeJson(est.windows,6000),hpSafeJson({source_final_board_batch_id:source.final_board_batch_id, source_engine_batch_id:source.engine_batch_id},3000));
+    written++;
+    for(const f of est.warning_flags){ issues++; await hpWriteIssue(env,batchId,r,probabilityRowId,f==='NO_HISTORICAL_GAME_LOGS'?'blocker':'warning',f,f,{sample_size:est.sample_size,non_push_sample:est.non_push_sample,prop_line_profile_key:profileKey}); }
+  }
+  const status=written>0 ? 'completed_hit_probability_current_estimates_written' : 'completed_no_supported_rows';
+  const cert=written>0 ? 'HIT_PROBABILITY_CURRENT_CERTIFIED_ESTIMATED_PROBABILITIES_WRITTEN' : 'HIT_PROBABILITY_NO_SUPPORTED_ROWS';
+  const grade=blocked>0 || warnings>0 ? 'PASS_WITH_WARNINGS' : 'PASS';
+  const output=baseIdentity({ ok:true, data_ok:true, version:HP_VERSION, worker_name:WORKER_NAME, logical_worker_name:'alphadog-v2-hit-probability', deployed_worker_slot:'alphadog-v2-score-audit', job_key:HP_JOB_KEY, request_id:input.request_id||null, run_id:input.run_id||null, chain_id:input.chain_id||null, mode:input.mode||HP_MODE, status, certification:cert, certification_grade:grade, batch_id:batchId, source_table:source.source_table, source_final_board_batch_id:source.final_board_batch_id, source_engine_batch_id:source.engine_batch_id, source_rows_read:source.rows.length, rows_read:source.rows.length, supported_rows:supported.length, unsupported_rows:unsupported.length, probability_rows_written:written, rows_written:written, issue_rows_written:issues, warning_rows:warnings, blocker_rows:blocked, hitter_players_checked:hitterIds.length, pitcher_players_checked:pitcherIds.length, profile_version:HP_PROFILE_VERSION, supported_hitter_props:Object.keys(HP_HITTER_PROP_PROFILES), supported_pitcher_props:Object.keys(HP_PITCHER_PROP_PROFILES), estimated_not_true_probability:true, no_score_mutation:true, no_scoring_engine_current_mutation:true, no_final_board_mutation:true, no_prepared_board_mutation:true, no_source_board_mutation:true, no_ranking:true, no_pick_recommendation:true, elapsed_ms:Date.now()-started });
+  await run(env.SCORE_DB, `INSERT OR REPLACE INTO hit_probability_batches (batch_id,request_id,run_id,worker_version,profile_version,mode,status,source_table,source_final_board_batch_id,source_engine_batch_id,source_rows_read,supported_rows,probability_rows_written,issue_rows_written,hitter_players_checked,pitcher_players_checked,certification_status,certification_grade,output_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, batchId,input.request_id||null,input.run_id||null,HP_VERSION,HP_PROFILE_VERSION,input.mode||HP_MODE,status,source.source_table,source.final_board_batch_id,source.engine_batch_id,source.rows.length,supported.length,written,issues,hitterIds.length,pitcherIds.length,cert,grade,hpSafeJson(output,10000));
+  return output;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -2623,9 +2736,10 @@ export default {
       try {
         const isFinalBoard = input && (input.mode === "scoring_final_board_generate" || input.job_key === "scoring-final-board");
         const isSimulation = input && (input.mode === "scoring_engine_simulation_shadow_strict_b" || input.job_key === "scoring-engine-simulation");
-        await controlLifecycleHeartbeat(env, input, isSimulation ? "running_scoring_engine_simulation_worker_started" : (isFinalBoard ? "running_scoring_final_board_worker_started" : "running_scoring_engine_worker_started"), { selected_mode: input.mode || null });
+        const isHitProbability = input && (input.mode === "hit_probability_current_estimate" || input.job_key === "hit-probability");
+        await controlLifecycleHeartbeat(env, input, isHitProbability ? "running_hit_probability_worker_started" : (isSimulation ? "running_scoring_engine_simulation_worker_started" : (isFinalBoard ? "running_scoring_final_board_worker_started" : "running_scoring_engine_worker_started")), { selected_mode: input.mode || null });
         const isFrameworkGate = input && input.mode === "scoring_engine_framework_profile_gate" && input.framework_only === true && input.real_scoring_enabled !== true;
-        const output = isFinalBoard ? await runScoringFinalBoard(env, input) : (isSimulation ? await runScoringSimulation(env, input) : (isFrameworkGate ? await runScoringEngine(env, input) : await runScoringEngineCurrent(env, input)));
+        const output = isHitProbability ? await runHitProbabilityCurrent(env, input) : (isFinalBoard ? await runScoringFinalBoard(env, input) : (isSimulation ? await runScoringSimulation(env, input) : (isFrameworkGate ? await runScoringEngine(env, input) : await runScoringEngineCurrent(env, input))));
         if (isWorkerPartialContinueOutput(output)) {
           output.control_lifecycle = await controlLifecyclePartial(env, input, output);
           return jsonResponse(output, 200);
