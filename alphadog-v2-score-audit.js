@@ -1,6 +1,7 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.5-batch-schema-terminalizer";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.6-realistic-db-calibration-caps";
+const PRODUCTION_PROFILE_KEY = "STRICT_C_REALISTIC_V3_2";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -604,7 +605,7 @@ function sqlCaseFromMap(expression, map, fallback) {
 
 function simulationFormulaMetadata() {
   return {
-    formula_key: "SCORING_SIMULATION_V0_3_7_LIVE_PLAYABLE_MARKET_CONTEXT_GATE",
+    formula_key: "SCORING_SIMULATION_V0_4_0_LIVE_PLAYABLE_MARKET_CONTEXT_GATE",
     worker_version: VERSION,
     simulation_only: true,
     active_values_source: "SCORE_DB.scoring_engine_simulation_profile_configs.config_json",
@@ -721,6 +722,61 @@ const DEFAULT_SIM_CONFIGS = {
       confidence_penalty_warning_9_plus: 25,
       model_deferred_rules: { sleeper_rfi_nrfi: "model_deferred_rfi_nrfi", prizepicks_triples: "model_deferred_low_event_prop" }
     }
+  },
+  STRICT_C_REALISTIC_V3_2: {
+    profile_version: "0.4.0-realistic-v3-2-db-caps-soft-flow",
+    config: {
+      min_live_score: 76,
+      min_live_confidence: 55,
+      archive_score_threshold: 70,
+      grade_archive_min: 70,
+      grade_qualified_min: 76,
+      grade_strong_min: 82,
+      grade_elite_min: 90,
+      primary_threshold_score: 90,
+      primary_threshold_confidence: 85,
+      raw_side_delta_threshold: 0.50,
+      base_raw_packet_ready: 82,
+      base_raw_packet_partial: 76,
+      raw_less_delta_from_more: 0,
+      max_score_cap: 100,
+      price_pressure_scale: 0.16,
+      line_pressure_scale: 1.00,
+      deterministic_spread_scale: 0.45,
+      base_confidence: 100,
+      score_sort_micro_scale: 0.0001,
+      clean_bonus_score: 0,
+      require_direct_prop_evidence_for_market_present: true,
+      market_direct_evidence_raw_adjustments: { direct_prop_evidence_rows_gte_5: 4, direct_prop_evidence_rows_2_to_4: 2, direct_prop_evidence_rows_1: 0, direct_prop_evidence_rows_0_with_coverage: -2, direct_prop_evidence_rows_0_no_coverage: -4, default: 0 },
+      market_evidence_score_caps: { direct_prop_evidence_rows_gte_5: 97, direct_prop_evidence_rows_2_to_4: 94, direct_prop_evidence_rows_1: 89, direct_prop_evidence_rows_0_with_coverage: 83, direct_prop_evidence_rows_0_no_coverage: 76, default: 100 },
+      market_evidence_confidence_caps: { direct_prop_evidence_rows_gte_5: 94, direct_prop_evidence_rows_2_to_4: 92, direct_prop_evidence_rows_1: 88, direct_prop_evidence_rows_0_with_coverage: 72, direct_prop_evidence_rows_0_no_coverage: 60, default: 100 },
+      context_score_caps: { matrix_full_context: 100, matrix_partial_context_warning_0_2: 96, matrix_partial_context_warning_3_5: 94, matrix_partial_context_warning_6_8: 90, matrix_partial_context_warning_9_plus: 84, default: 100 },
+      context_confidence_caps: { matrix_full_context: 100, matrix_partial_context_warning_0_2: 94, matrix_partial_context_warning_3_5: 91, matrix_partial_context_warning_6_8: 86, matrix_partial_context_warning_9_plus: 78, default: 100 },
+      side_symmetry_rules: { delta_lt: 1.0, zero_direct_evidence_cap: 76, direct_evidence_cap: 88, defer_side_selection: false },
+      market_raw_adjustments: { market_prop_context_present: 2, market_prop_context_not_found: -4, market_prop_context_missing: -6, default: -2 },
+      daily_raw_adjustments: { ready_with_warnings: 0, partial_enrichment: -3, not_applicable: 0, default: 0 },
+      source_raw_adjustments: { sleeper: -1, default: 0 },
+      odds_raw_adjustments: { goblin: -4, demon: -4, default: 0 },
+      prop_raw_adjustments: { pitcher_strikeouts: 1, hits: 1, total_bases: -1, hits_runs_rbis: -1, home_runs: -4, stolen_bases: -4, earned_runs: 0, earned_runs_allowed: 0, hits_allowed: 0, pitcher_outs: 1, pitching_outs: 1, walks: -1, walks_allowed: 0, rbis: -1, runs: -1, doubles: -2, singles: 0, fantasy: -2, default: 0 },
+      prop_less_raw_adjustments: { pitcher_strikeouts: -1, hits: 0, total_bases: 1, hits_runs_rbis: 1, home_runs: 0, stolen_bases: 0, earned_runs: -1, earned_runs_allowed: -1, hits_allowed: -1, pitcher_outs: -1, pitching_outs: -1, walks: 1, walks_allowed: -1, rbis: 1, runs: 1, doubles: 1, singles: 1, fantasy: 0, default: 0 },
+      score_penalty_market_not_found: 8,
+      score_penalty_market_missing: 10,
+      score_penalty_complete_market_blindness: 14,
+      score_penalty_packet_partial: 5,
+      score_penalty_partial_enrichment: 6,
+      confidence_cap_market_not_found: 60,
+      confidence_cap_market_missing: 50,
+      confidence_cap_complete_market_blindness: 40,
+      confidence_cap_warning_9_plus: 45,
+      confidence_penalty_packet_partial: 10,
+      confidence_penalty_partial_enrichment: 12,
+      confidence_penalty_sleeper_null_odds: 4,
+      confidence_penalty_warning_6_8: 5,
+      confidence_penalty_warning_3_5: 3,
+      confidence_penalty_warning_9_plus: 25,
+      primary_gates: { score_gte: 90, confidence_gte: 85, direct_prop_evidence_rows_gte: 1, side_symmetry_risk_allowed: false },
+      model_deferred_rules: { sleeper_rfi_nrfi: "model_deferred_rfi_nrfi", prizepicks_triples: "model_deferred_low_event_prop" }
+    }
   }
 };
 
@@ -799,6 +855,14 @@ async function profileConstants(env, profileKey) {
     confidencePenaltyWarning68: finiteNumber(cfg.confidence_penalty_warning_6_8, 8),
     confidencePenaltyWarning35: finiteNumber(cfg.confidence_penalty_warning_3_5, 4),
     confidencePenaltyWarning9Plus: finiteNumber(cfg.confidence_penalty_warning_9_plus, 20),
+    requireDirectPropEvidenceForMarketPresent: cfg.require_direct_prop_evidence_for_market_present !== false,
+    marketDirectEvidenceRawAdjustments: cfg.market_direct_evidence_raw_adjustments || {},
+    marketEvidenceScoreCaps: cfg.market_evidence_score_caps || {},
+    marketEvidenceConfidenceCaps: cfg.market_evidence_confidence_caps || {},
+    contextScoreCaps: cfg.context_score_caps || {},
+    contextConfidenceCaps: cfg.context_confidence_caps || {},
+    sideSymmetryRules: cfg.side_symmetry_rules || {},
+    primaryGates: cfg.primary_gates || {},
     pricePressureScale: finiteNumber(cfg.price_pressure_scale, 0.16),
     linePressureScale: finiteNumber(cfg.line_pressure_scale, 1.0),
     deterministicSpreadScale: finiteNumber(cfg.deterministic_spread_scale, 0.45),
@@ -888,6 +952,37 @@ function deterministicSpread(row, side, scale) {
   return (((seed % 11) - 5) * scale);
 }
 
+
+function evidenceBucketFromCount(count, hasCoverage) {
+  const c = Number(count);
+  if (!Number.isFinite(c) || c <= 0) return hasCoverage ? 'direct_prop_evidence_rows_0_with_coverage' : 'direct_prop_evidence_rows_0_no_coverage';
+  if (c >= 5) return 'direct_prop_evidence_rows_gte_5';
+  if (c >= 2) return 'direct_prop_evidence_rows_2_to_4';
+  return 'direct_prop_evidence_rows_1';
+}
+function directPropEvidenceInfo(details) {
+  const ev = getPath(details || {}, ['market_context','prop_evidence']) || {};
+  const rawCount = Number(ev.row_count ?? ev.rows ?? ev.count ?? 0);
+  const rowCount = Number.isFinite(rawCount) ? Math.max(0, Math.trunc(rawCount)) : 0;
+  const present = ev.present === true || rowCount > 0;
+  const coverage = getPath(details || {}, ['market_context','coverage_rows']);
+  const hasCoverage = Array.isArray(coverage) ? coverage.length > 0 : !!coverage;
+  return { rowCount, present, hasCoverage, bucket: evidenceBucketFromCount(rowCount, hasCoverage) };
+}
+function capFromMap(map, key, fallback) {
+  if (!map || typeof map !== 'object') return fallback;
+  return finiteNumber(Object.prototype.hasOwnProperty.call(map, key) ? map[key] : map.default, fallback);
+}
+function contextBucket(matrixStatus, warningCount) {
+  const status = String(matrixStatus || '');
+  const w = Number(warningCount || 0);
+  if (status !== 'matrix_partial_context') return 'matrix_full_context';
+  if (w >= 9) return 'matrix_partial_context_warning_9_plus';
+  if (w >= 6) return 'matrix_partial_context_warning_6_8';
+  if (w >= 3) return 'matrix_partial_context_warning_3_5';
+  return 'matrix_partial_context_warning_0_2';
+}
+
 function buildSimulationShadowRow(batchId, profileKey, p, row) {
   const matrixPayload = parseJsonObject(row.matrix_payload_json);
   const details = parseJsonObject(row.details_json);
@@ -907,17 +1002,25 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
 
   const sourceKey = row.source_key;
   const prop = row.canonical_prop_key;
+  const directEvidence = directPropEvidenceInfo(details);
+  const evidenceBucket = directEvidence.bucket;
+  const contextCapBucket = contextBucket(row.matrix_status, Number(row.warning_count || 0));
+  let effectiveMarketPropContextStatus = row.market_prop_context_status;
+  if (p.requireDirectPropEvidenceForMarketPresent && row.market_prop_context_status === 'market_prop_context_present' && directEvidence.rowCount <= 0) {
+    effectiveMarketPropContextStatus = directEvidence.hasCoverage ? 'market_prop_context_not_found' : 'market_prop_context_missing';
+  }
   const modelDeferred = (sourceKey === 'sleeper' && prop === 'rfi_nrfi') || (sourceKey === 'prizepicks' && prop === 'triples') ? 1 : 0;
   const modelDeferredReason = sourceKey === 'sleeper' && prop === 'rfi_nrfi'
     ? 'model_deferred_rfi_nrfi'
     : (sourceKey === 'prizepicks' && prop === 'triples' ? 'model_deferred_low_event_prop' : null);
   const hardBlocked = !modelDeferred && (Number(row.blocking_for_scoring || 0) === 1 || row.matrix_status === 'matrix_deferred' || row.factor_status === 'blocked') ? 1 : 0;
-  const completeMarketBlind = ['market_prop_context_missing','market_prop_context_not_found'].includes(row.market_prop_context_status)
+  const completeMarketBlind = ['market_prop_context_missing','market_prop_context_not_found'].includes(effectiveMarketPropContextStatus)
     && ['', 'market_game_context_missing','market_game_context_not_found','market_game_context_absent'].includes(String(row.market_game_context_status || '')) ? 1 : 0;
 
   const cfg = p.config || {};
   const rawBase = (row.factor_status === 'packet_ready' ? p.baseRawPacketReady : p.baseRawPacketPartial)
-    + adjustment(cfg.market_raw_adjustments, row.market_prop_context_status, -2)
+    + adjustment(cfg.market_raw_adjustments, effectiveMarketPropContextStatus, -2)
+    + adjustment(cfg.market_direct_evidence_raw_adjustments, evidenceBucket, 0)
     + adjustment(cfg.daily_raw_adjustments, row.daily_readiness_status, 0)
     + adjustment(cfg.source_raw_adjustments, sourceKey, 0)
     + adjustment(cfg.odds_raw_adjustments, oddsType, 0);
@@ -946,11 +1049,11 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
   }
 
   const scorePenalty = (completeMarketBlind ? p.scorePenaltyCompleteMarketBlindness : 0)
-    + (!completeMarketBlind && row.market_prop_context_status === 'market_prop_context_missing' ? p.scorePenaltyMarketMissing : 0)
-    + (!completeMarketBlind && row.market_prop_context_status === 'market_prop_context_not_found' ? p.scorePenaltyMarketNotFound : 0)
+    + (!completeMarketBlind && effectiveMarketPropContextStatus === 'market_prop_context_missing' ? p.scorePenaltyMarketMissing : 0)
+    + (!completeMarketBlind && effectiveMarketPropContextStatus === 'market_prop_context_not_found' ? p.scorePenaltyMarketNotFound : 0)
     + (row.factor_status === 'packet_partial' ? p.scorePenaltyPacketPartial : 0)
     + (row.daily_readiness_status === 'partial_enrichment' ? p.scorePenaltyPartialEnrichment : 0);
-  const bonus = (!hardBlocked && !modelDeferred && row.market_prop_context_status === 'market_prop_context_present' && Number(row.warning_count || 0) === 0 && row.factor_status === 'packet_ready' && row.daily_readiness_status !== 'partial_enrichment') ? p.cleanBonusScore : 0;
+  const bonus = (!hardBlocked && !modelDeferred && effectiveMarketPropContextStatus === 'market_prop_context_present' && Number(row.warning_count || 0) === 0 && row.factor_status === 'packet_ready' && row.daily_readiness_status !== 'partial_enrichment') ? p.cleanBonusScore : 0;
   const confidencePenalty = (row.factor_status === 'packet_partial' ? p.confidencePenaltyPacketPartial : 0)
     + (row.daily_readiness_status === 'partial_enrichment' ? p.confidencePenaltyPartialEnrichment : 0)
     + (sourceKey === 'sleeper' && oddsType == null ? p.confidencePenaltySleeperNullOdds : 0)
@@ -960,24 +1063,37 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
   const confidenceCap = Math.min(
     100,
     completeMarketBlind ? p.confidenceCapCompleteMarketBlindness : 100,
-    (!completeMarketBlind && row.market_prop_context_status === 'market_prop_context_missing') ? p.confidenceCapMarketMissing : 100,
-    (!completeMarketBlind && row.market_prop_context_status === 'market_prop_context_not_found') ? p.confidenceCapMarketNotFound : 100,
-    Number(row.warning_count || 0) >= 9 ? p.confidenceCapWarning9Plus : 100
+    (!completeMarketBlind && effectiveMarketPropContextStatus === 'market_prop_context_missing') ? p.confidenceCapMarketMissing : 100,
+    (!completeMarketBlind && effectiveMarketPropContextStatus === 'market_prop_context_not_found') ? p.confidenceCapMarketNotFound : 100,
+    Number(row.warning_count || 0) >= 9 ? p.confidenceCapWarning9Plus : 100,
+    capFromMap(p.marketEvidenceConfidenceCaps, evidenceBucket, 100),
+    capFromMap(p.contextConfidenceCaps, contextCapBucket, 100)
   );
+
+  const sideGap = Math.abs((rawMore ?? 0) - (rawLess ?? rawMore ?? 0));
+  const symmetryDelta = finiteNumber((p.sideSymmetryRules || {}).delta_lt, 0);
+  const sideSymmetryRisk = sideMode === 'two_sided' && rawMore != null && rawLess != null && symmetryDelta > 0 && sideGap < symmetryDelta ? 1 : 0;
+  const symmetryScoreCap = sideSymmetryRisk
+    ? (directEvidence.rowCount <= 0
+      ? finiteNumber((p.sideSymmetryRules || {}).zero_direct_evidence_cap, 76)
+      : finiteNumber((p.sideSymmetryRules || {}).direct_evidence_cap, 88))
+    : 100;
+  const evidenceScoreCap = capFromMap(p.marketEvidenceScoreCaps, evidenceBucket, p.maxScoreCap);
+  const contextScoreCap = capFromMap(p.contextScoreCaps, contextCapBucket, p.maxScoreCap);
+  const effectiveScoreCap = Math.min(p.maxScoreCap, evidenceScoreCap, contextScoreCap, symmetryScoreCap);
 
   let scoreInteger = null;
   if (!hardBlocked && !modelDeferred && selectedSide) {
     const selectedRaw = selectedSide === 'more' ? rawMore : rawLess;
-    scoreInteger = round0(Math.min(p.maxScoreCap, clamp(selectedRaw - scorePenalty + bonus)));
+    scoreInteger = round0(Math.min(effectiveScoreCap, clamp(selectedRaw - scorePenalty + bonus)));
   }
-  const sideGap = Math.abs((rawMore ?? 0) - (rawLess ?? rawMore ?? 0));
   const confidence = (!hardBlocked && !modelDeferred && selectedSide)
-    ? round0(Math.min(confidenceCap, clamp(p.baseConfidence - confidencePenalty + Math.min(6, sideGap * 1.15) + (row.market_prop_context_status === 'market_prop_context_present' ? 3 : 0) + ((overPrice != null || underPrice != null) ? 2 : 0))))
+    ? round0(Math.min(confidenceCap, clamp(p.baseConfidence - confidencePenalty + Math.min(6, sideGap * 1.15) + (effectiveMarketPropContextStatus === 'market_prop_context_present' ? 3 : 0) + ((overPrice != null || underPrice != null) ? 2 : 0))))
     : null;
   const sortMicro = Math.abs(((Number(row.mlb_player_id || 0) * 31 + Number(row.game_pk || 0) * 17 + Math.trunc((Number(row.board_line_value || 0) || 0) * 100) * 13) % 999)) * p.microScale / 999.0;
   const scoreSort = scoreInteger == null ? null : scoreInteger + sortMicro;
   const moreFinal = selectedSide === 'more' ? scoreInteger : null;
-  const lessAlt = rawLess == null ? null : round0(Math.min(p.maxScoreCap, clamp(rawLess - scorePenalty + bonus)));
+  const lessAlt = rawLess == null ? null : round0(Math.min(effectiveScoreCap, clamp(rawLess - scorePenalty + bonus)));
   const lessFinal = sideMode === 'more_only' ? null : (selectedSide === 'less' ? scoreInteger : (selectedSide === 'more' ? lessAlt : null));
 
   const scoreStatus = modelDeferred ? 'model_deferred' : (hardBlocked ? 'simulation_hard_blocked' : (!selectedSide ? 'simulation_side_tie_unresolved' : 'simulated_profile_locked'));
@@ -998,7 +1114,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     confidence >= p.minLiveConfidence &&
     row.factor_status === 'packet_ready' &&
     ['ready', 'ready_with_warnings'].includes(row.daily_readiness_status) &&
-    row.market_prop_context_status === 'market_prop_context_present'
+    effectiveMarketPropContextStatus === 'market_prop_context_present'
   ) ? 1 : 0;
   const archiveEligible = (!modelDeferred && !hardBlocked && selectedSide && scoreInteger >= p.archiveScoreThreshold) ? 1 : 0;
 
@@ -1009,7 +1125,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     profile_version: p.version,
     active_values_source: 'SCORE_DB.scoring_engine_simulation_profile_configs.config_json',
     all_calibration_variables_db_stored: 1,
-    formula_order: 'inventory_defer_gate -> js_bounded_independent_more_less_scores -> price_line_prop_side_pressure -> pre_cap_side_selection -> score_penalties -> score_cap -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
+    formula_order: 'inventory_defer_gate -> js_bounded_independent_more_less_scores -> direct_prop_evidence_context_override -> price_line_prop_side_pressure -> pre_cap_side_selection -> db_config_score_caps -> score_penalties -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
     raw_side_delta_threshold: p.rawSideDeltaThreshold,
     min_live_score: p.minLiveScore,
     min_live_confidence: p.minLiveConfidence,
@@ -1020,6 +1136,17 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     no_true_hit_probability_claims: 1,
     score_sort_policy: 'score_sort_0_100_only; positive_micro_lt_0_0001; never used for archive/live/bins',
     goblin_demon_less_score_policy: 'NULL_NOT_ZERO',
+    direct_prop_evidence_row_count: directEvidence.rowCount,
+    direct_prop_evidence_present: directEvidence.present,
+    direct_prop_evidence_bucket: evidenceBucket,
+    original_market_prop_context_status: row.market_prop_context_status,
+    effective_market_prop_context_status: effectiveMarketPropContextStatus,
+    context_cap_bucket: contextCapBucket,
+    evidence_score_cap: evidenceScoreCap,
+    context_score_cap: contextScoreCap,
+    side_symmetry_risk: sideSymmetryRisk,
+    symmetry_score_cap: symmetryScoreCap,
+    effective_score_cap: effectiveScoreCap,
     d1_memory_policy: 'no_large_scoring_cte; bounded_js_chunk_compute_and_json_each_batch_inserts_one_bind_per_batch'
   });
 
@@ -1421,10 +1548,10 @@ async function runScoringSimulation(env, input) {
   cleanupStats = await cleanupOldSimulationScratchTablesAfterSuccess(env, batchId, 500, 1000);
 
   const certification = strictBlockers > 0
-    ? "SCORING_SIMULATION_V0_3_7_LIVE_PLAYABLE_MARKET_CONTEXT_GATE_BLOCKED_BY_INVARIANTS"
-    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_3_7_LIVE_PLAYABLE_MARKET_CONTEXT_GATE_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_3_7_LIVE_PLAYABLE_MARKET_CONTEXT_GATE_CERTIFIED_FOR_PROFILE_REVIEW");
+    ? "SCORING_SIMULATION_V0_4_0_LIVE_PLAYABLE_MARKET_CONTEXT_GATE_BLOCKED_BY_INVARIANTS"
+    : (strictWarnings > 0 ? "SCORING_SIMULATION_V0_4_0_LIVE_PLAYABLE_MARKET_CONTEXT_GATE_PASS_WITH_REVIEW_WARNINGS" : "SCORING_SIMULATION_V0_4_0_LIVE_PLAYABLE_MARKET_CONTEXT_GATE_CERTIFIED_FOR_PROFILE_REVIEW");
   const certificationGrade = strictBlockers > 0 ? "BLOCKED" : (strictWarnings > 0 ? "PASS_WITH_REVIEW_WARNINGS" : "PASS_SIMULATION_REVIEW_READY");
-  const status = strictBlockers > 0 ? "completed_simulation_with_strict_b_blockers" : "completed_simulation_shadow_only";
+  const status = strictBlockers > 0 ? "completed_simulation_with_strict_profile_blockers" : "completed_simulation_shadow_only";
 
   const output = baseIdentity({
     request_id: requestId,
@@ -1513,7 +1640,7 @@ async function runScoringSimulation(env, input) {
 
 async function seedProductionScoringProfile(env) {
   await ensureSimulationProfileConfigs(env);
-  const p = await profileConstants(env, 'STRICT_B');
+  const p = await profileConstants(env, PRODUCTION_PROFILE_KEY);
   await run(env.SCORE_DB, `
     INSERT INTO scoring_engine_profiles_current (
       profile_key,
@@ -1528,11 +1655,11 @@ async function seedProductionScoringProfile(env) {
       formula_metadata_json,
       created_at,
       updated_at
-    ) VALUES (?, ?, 'active_engine_scoring_current', 'strict_b_current_scoring_from_existing_db_config', 0, 1, ?, ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ) VALUES (?, ?, 'active_engine_scoring_current', 'strict_c_realistic_v3_2_current_scoring_from_db_config', 0, 1, ?, ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     ON CONFLICT(profile_key) DO UPDATE SET
       profile_version=excluded.profile_version,
       profile_status='active_engine_scoring_current',
-      profile_mode='strict_b_current_scoring_from_existing_db_config',
+      profile_mode='strict_c_realistic_v3_2_current_scoring_from_db_config',
       thresholds_locked=0,
       scoring_enabled=1,
       archive_score_threshold=excluded.archive_score_threshold,
@@ -1540,11 +1667,11 @@ async function seedProductionScoringProfile(env) {
       true_probability_enabled=0,
       formula_metadata_json=excluded.formula_metadata_json,
       updated_at=CURRENT_TIMESTAMP
-  `, 'STRICT_B', p.version, p.archiveScoreThreshold, p.gradeQualifiedMin, JSON.stringify({
+  `, PRODUCTION_PROFILE_KEY, p.version, p.archiveScoreThreshold, p.gradeQualifiedMin, JSON.stringify({
     ...simulationFormulaMetadata(),
     production_current_scoring: true,
     source_config_table: 'SCORE_DB.scoring_engine_simulation_profile_configs',
-    source_profile_key: 'STRICT_B',
+    source_profile_key: PRODUCTION_PROFILE_KEY,
     true_probability_enabled: false,
     no_true_hit_probability_claims: true,
     no_ranking: true,
@@ -1785,12 +1912,12 @@ async function runScoringEngineCurrent(env, input) {
     SELECT batch_id, status, score_rows_written, matrix_rows_read, started_at
     FROM scoring_engine_batches
     WHERE job_key=?
-      AND profile_key='STRICT_B'
+      AND profile_key=?
       AND status IN ('running','partial_continue_scoring_current')
       AND output_json LIKE ?
     ORDER BY datetime(started_at) DESC
     LIMIT 1
-  `, JOB_KEY, `%"request_id":"${requestId}"%`);
+  `, JOB_KEY, PRODUCTION_PROFILE_KEY, `%"request_id":"${requestId}"%`);
 
   let batchId = batch && batch.batch_id ? batch.batch_id : null;
   let resumedExistingBatch = !!batchId;
@@ -1810,7 +1937,7 @@ async function runScoringEngineCurrent(env, input) {
       status: 'running',
       certification: 'SCORING_ENGINE_CURRENT_STARTED',
       certification_grade: 'RUNNING',
-      profile_key: 'STRICT_B',
+      profile_key: PRODUCTION_PROFILE_KEY,
       profile_version: profile.version,
       matrix_rows_read: matrixRows,
       score_rows_written: 0,
@@ -1821,8 +1948,8 @@ async function runScoringEngineCurrent(env, input) {
       INSERT INTO scoring_engine_batches (
         batch_id, profile_key, profile_version, worker_version, job_key, status, certification, certification_grade,
         matrix_rows_read, score_rows_written, archive_rows_written, thresholds_locked, archive_score_threshold, final_qualification_threshold, started_at, output_json
-      ) VALUES (?, 'STRICT_B', ?, ?, ?, 'running', 'SCORING_ENGINE_CURRENT_STARTED', 'RUNNING', ?, 0, 0, 0, ?, ?, CURRENT_TIMESTAMP, ?)
-    `, batchId, profile.version, VERSION, JOB_KEY, matrixRows, profile.archiveScoreThreshold, profile.gradeQualifiedMin, JSON.stringify(initialOutput));
+      ) VALUES (?, ?, ?, ?, ?, 'running', 'SCORING_ENGINE_CURRENT_STARTED', 'RUNNING', ?, 0, 0, 0, ?, ?, CURRENT_TIMESTAMP, ?)
+    `, batchId, PRODUCTION_PROFILE_KEY, profile.version, VERSION, JOB_KEY, matrixRows, profile.archiveScoreThreshold, profile.gradeQualifiedMin, JSON.stringify(initialOutput));
     await run(env.SCORE_DB, `DELETE FROM scoring_engine_current`);
     await run(env.SCORE_DB, `DELETE FROM scoring_engine_issues`);
   }
@@ -1834,7 +1961,7 @@ async function runScoringEngineCurrent(env, input) {
     return output;
   }
 
-  const chunk = await insertEngineCurrentProfileChunk(env, batchId, 'STRICT_B', { readChunkSize: 60, writeBatchSize: 8, maxRowsThisInvocation: 420, maxMillis: 43000 });
+  const chunk = await insertEngineCurrentProfileChunk(env, batchId, PRODUCTION_PROFILE_KEY, { readChunkSize: 60, writeBatchSize: 8, maxRowsThisInvocation: 420, maxMillis: 43000 });
   await run(env.SCORE_DB, `
     UPDATE scoring_engine_batches
     SET status=?, certification=?, certification_grade=?, matrix_rows_read=?, score_rows_written=?, output_json=?
@@ -1853,7 +1980,7 @@ async function runScoringEngineCurrent(env, input) {
       status: chunk.remaining_rows > 0 ? 'partial_continue_scoring_engine_current_chunk_written' : 'running_finalizing_scoring_engine_current',
       certification: chunk.remaining_rows > 0 ? 'SCORING_ENGINE_CURRENT_PARTIAL_CONTINUE_CHUNK_WRITTEN' : 'SCORING_ENGINE_CURRENT_CHUNKS_WRITTEN_FINALIZING',
       certification_grade: chunk.remaining_rows > 0 ? 'PARTIAL' : 'RUNNING',
-      profile_key: 'STRICT_B',
+      profile_key: PRODUCTION_PROFILE_KEY,
       profile_version: profile.version,
       matrix_rows_read: matrixRows,
       score_rows_written: chunk.persisted_rows,
@@ -1884,7 +2011,7 @@ async function runScoringEngineCurrent(env, input) {
       certification_grade: 'PARTIAL',
       framework_only: false,
       production_scoring_current: true,
-      profile_key: 'STRICT_B',
+      profile_key: PRODUCTION_PROFILE_KEY,
       profile_version: profile.version,
       matrix_rows_read: matrixRows,
       score_rows_written: chunk.persisted_rows,
@@ -1924,7 +2051,7 @@ async function runScoringEngineCurrent(env, input) {
     certification_grade: certificationGrade,
     framework_only: false,
     production_scoring_current: true,
-    profile_key: 'STRICT_B',
+    profile_key: PRODUCTION_PROFILE_KEY,
     profile_version: profile.version,
     matrix_rows_read: matrixRows,
     score_rows_written: scoreRowsWritten,
@@ -1941,7 +2068,7 @@ async function runScoringEngineCurrent(env, input) {
     scoring_summary: summary,
     score_current_table: 'SCORE_DB.scoring_engine_current',
     profile_table: 'SCORE_DB.scoring_engine_profiles_current',
-    selected_side_policy: 'STRICT_B current scoring uses the proven simulation side-selection path; Goblin/Demon remain more-only; no ranking/final-board write here.',
+    selected_side_policy: PRODUCTION_PROFILE_KEY + ' current scoring uses the proven simulation side-selection path; Goblin/Demon remain more-only; no ranking/final-board write here.',
     chunked_current_scoring: true,
     resumed_existing_batch: resumedExistingBatch,
     elapsed_ms: Date.now() - started

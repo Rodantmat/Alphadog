@@ -889,7 +889,7 @@ const MARKET_SCORING_FULL_RUN_STAGES = [
   { stage_key: "prop_factor_hitters", job_key: "prop-factor-miner", worker_name: "alphadog-v2-phase2b-recent-form", display_name: "Prop Factor Miner Hitters", visible_button: "FACTORS > Hitters", mode: "hitter_prop_factor_mining", worker_group: "10 Factors", phase_key: "factors", priority: 6, factor_family: "hitter" },
   { stage_key: "prop_factor_pitchers", job_key: "prop-factor-miner", worker_name: "alphadog-v2-phase2b-recent-form", display_name: "Prop Factor Miner Pitchers", visible_button: "FACTORS > Pitchers", mode: "pitcher_prop_factor_mining", worker_group: "10 Factors", phase_key: "factors", priority: 6, factor_family: "pitcher" },
   { stage_key: "prop_matrix_build", job_key: "prop-matrix-builder", worker_name: "alphadog-v2-phase2b-certifier", display_name: "Prop Matrix Build", visible_button: "MATRIX > Build", mode: "prop_matrix_build", worker_group: "10 Matrix", phase_key: "matrix", priority: 6 },
-  { stage_key: "scoring_engine", job_key: "scoring-engine", worker_name: "alphadog-v2-score-audit", display_name: "Scoring Engine Current", visible_button: "SCORING > Engine", mode: "scoring_engine_current_strict_b", worker_group: "11 Scoring", phase_key: "scoring", priority: 6 },
+  { stage_key: "scoring_engine", job_key: "scoring-engine", worker_name: "alphadog-v2-score-audit", display_name: "Scoring Engine Current", visible_button: "SCORING > Engine", mode: "scoring_engine_current_strict_c_realistic_v3_2", worker_group: "11 Scoring", phase_key: "scoring", priority: 6 },
   { stage_key: "score_final_board", job_key: "score-final-board", worker_name: "alphadog-v2-score-final-board", display_name: "Score Final Board", visible_button: "SCORING > Final Board", mode: "score_final_board_generate_current", worker_group: "11 Scoring", phase_key: "scoring", priority: 7 }
 ];
 
@@ -931,10 +931,10 @@ function marketScoringFullRunChildInput(parentRow, stage, stepIndex, retryCount 
     return { ...base, logical_worker_name: "alphadog-v2-prop-matrix-builder", deployed_worker_slot: "alphadog-v2-phase2b-certifier", exact_worker_only: true, internal_only: true, no_external_api_calls: true, no_mlb_api_calls: true, no_odds_api_calls: true, no_parlay_api_calls: true, no_gemini_calls: true, reads_score_prepared_board: true, reads_prop_factor_packets: true, reads_market_context_evidence: true, reads_daily_context_readiness: true, writes_score_matrix_only: true, one_row_per_safe_prepared_row: true, preserve_blocked_and_deferred_rows: true, retention_policy: "today_tomorrow_only", no_score_probability: true, no_confidence_score: true, no_edge: true, no_value_rating: true, no_qualified_flag: true, no_rank: true, no_pick_recommendation: true, no_scoring: true, no_ranking: true, no_final_board: true };
   }
   if (stage.job_key === "scoring-engine") {
-    return { ...base, logical_worker_name: "alphadog-v2-scoring-engine", deployed_worker_slot: "alphadog-v2-score-audit", exact_worker_only: true, framework_only: false, production_scoring_current: true, primary_profile: "STRICT_B", worker_owned_schema_creation: true, writes_score_db_scoring_engine_only: true, no_simulation_shadow_mutation: true, no_archive_mutation: false, thresholds_locked: false, scoring_enabled: true, true_probability_enabled: false, no_true_hit_probability_claims: true, regular_lines_two_sided: true, goblin_demon_more_only: true, goblin_demon_under_blocker: "GOBLIN_DEMON_UNDER_NOT_SELECTABLE", no_candidate_board_write: true, no_old_prop_scores_write: true, no_ranking: true, no_final_board: true };
+    return { ...base, logical_worker_name: "alphadog-v2-scoring-engine", deployed_worker_slot: "alphadog-v2-score-audit", exact_worker_only: true, framework_only: false, production_scoring_current: true, primary_profile: "STRICT_C_REALISTIC_V3_2", worker_owned_schema_creation: true, writes_score_db_scoring_engine_only: true, no_simulation_shadow_mutation: true, no_archive_mutation: false, thresholds_locked: false, scoring_enabled: true, true_probability_enabled: false, no_true_hit_probability_claims: true, regular_lines_two_sided: true, goblin_demon_more_only: true, goblin_demon_under_blocker: "GOBLIN_DEMON_UNDER_NOT_SELECTABLE", no_candidate_board_write: true, no_old_prop_scores_write: true, no_ranking: true, no_final_board: true };
   }
   if (stage.job_key === "score-final-board") {
-    return { ...base, exact_worker_only: true, deployed_worker_slot: "alphadog-v2-score-final-board", service_binding_name: "SCORE_FINAL_BOARD_WORKER", profile_key: "STRICT_B", source_engine_batch_policy: "market_full_requires_explicit_same_chain_completed_scoring_batch", writes_score_final_board_current: true, writes_score_final_board_history: true, no_external_calls: true, no_source_board_mutation: true, no_simulation_shadow_mutation: true, requires_real_engine_scoring_batch: true };
+    return { ...base, exact_worker_only: true, deployed_worker_slot: "alphadog-v2-score-final-board", service_binding_name: "SCORE_FINAL_BOARD_WORKER", profile_key: "STRICT_C_REALISTIC_V3_2", source_engine_batch_policy: "market_full_requires_explicit_same_chain_completed_scoring_batch", writes_score_final_board_current: true, writes_score_final_board_history: true, no_external_calls: true, no_source_board_mutation: true, no_simulation_shadow_mutation: true, requires_real_engine_scoring_batch: true };
   }
   return base;
 }
@@ -1121,7 +1121,7 @@ async function synthesizeScoringEngineCurrentTerminalProofFromEvidence(env, requ
     `SELECT batch_id, worker_version, job_key, status, certification, certification_grade,
             matrix_rows_read, score_rows_written, archive_rows_written, started_at, finished_at, output_json
        FROM scoring_engine_batches
-       WHERE profile_key='STRICT_B'
+       WHERE profile_key='STRICT_C_REALISTIC_V3_2'
          AND (status LIKE 'running%' OR certification='SCORING_ENGINE_CURRENT_STARTED' OR certification IS NULL OR finished_at IS NULL)
          AND (? IS NULL OR datetime(started_at) >= datetime(?, '-5 minutes'))
        ORDER BY datetime(started_at) DESC, batch_id DESC
@@ -1181,7 +1181,7 @@ async function synthesizeScoringEngineCurrentTerminalProofFromEvidence(env, requ
     certification_status: cert,
     certification_grade: grade,
     production_scoring_current: true,
-    profile_key: 'STRICT_B',
+    profile_key: 'STRICT_C_REALISTIC_V3_2',
     matrix_rows_read: matrixRows,
     score_rows_written: currentRows,
     rows_read: matrixRows,
@@ -1211,7 +1211,7 @@ async function synthesizeScoringEngineCurrentTerminalProofFromEvidence(env, requ
     run_id: null,
     worker_name: 'alphadog-v2-scoring-engine',
     worker_version: batch.worker_version || null,
-    mode: 'scoring_engine_current_strict_b',
+    mode: 'scoring_engine_current_strict_c_realistic_v3_2',
     status,
     prepared_rows_read: matrixRows,
     rows_written: currentRows,
@@ -1345,7 +1345,7 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
     proofSource = "SCORE_DB.prop_matrix_batches";
   } else if (stageKey === "scoring_engine" && env.SCORE_DB) {
     proof = await first(env.SCORE_DB,
-      `SELECT batch_id, NULL AS request_id, NULL AS run_id, 'alphadog-v2-scoring-engine' AS worker_name, worker_version, 'scoring_engine_current_strict_b' AS mode, status, matrix_rows_read AS prepared_rows_read, score_rows_written AS rows_written, certification AS certification_status, certification_grade, output_json, finished_at AS updated_at, started_at AS created_at
+      `SELECT batch_id, NULL AS request_id, NULL AS run_id, 'alphadog-v2-scoring-engine' AS worker_name, worker_version, 'scoring_engine_current_strict_c_realistic_v3_2' AS mode, status, matrix_rows_read AS prepared_rows_read, score_rows_written AS rows_written, certification AS certification_status, certification_grade, output_json, finished_at AS updated_at, started_at AS created_at
        FROM scoring_engine_batches
        WHERE status='completed_scoring_current_rows_written'
          AND certification='SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS'
@@ -1362,7 +1362,7 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
     }
   } else if (stageKey === "scoring_engine_simulation" && env.SCORE_DB) {
     proof = await first(env.SCORE_DB,
-      `SELECT simulation_batch_id AS batch_id, NULL AS request_id, NULL AS run_id, 'alphadog-v2-scoring-engine' AS worker_name, worker_version, 'scoring_engine_simulation_shadow_strict_b' AS mode, status, matrix_rows_read AS prepared_rows_read, simulation_rows_written AS rows_written, certification AS certification_status, certification_grade, output_json, finished_at AS updated_at, started_at AS created_at
+      `SELECT simulation_batch_id AS batch_id, NULL AS request_id, NULL AS run_id, 'alphadog-v2-scoring-engine' AS worker_name, worker_version, 'scoring_engine_simulation_shadow_strict_c_realistic_v3_2' AS mode, status, matrix_rows_read AS prepared_rows_read, simulation_rows_written AS rows_written, certification AS certification_status, certification_grade, output_json, finished_at AS updated_at, started_at AS created_at
        FROM scoring_engine_simulation_batches
        WHERE certification IS NOT NULL
          AND status NOT LIKE 'running%'
@@ -7372,13 +7372,13 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     logical_worker_name: isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine",
     deployed_worker_slot: "alphadog-v2-score-audit",
     trigger,
-    mode: isSimulationJob ? "scoring_engine_simulation_shadow_strict_b" : "scoring_engine_current_strict_b",
+    mode: isSimulationJob ? "scoring_engine_simulation_shadow_strict_c_realistic_v3_2" : "scoring_engine_current_strict_c_realistic_v3_2",
     input_json: rowInput,
     exact_worker_only: true,
     framework_only: false,
     production_scoring_current: !isSimulationJob,
     simulation_only: isSimulationJob,
-    primary_simulation_profile: isSimulationJob ? "STRICT_B" : null,
+    primary_simulation_profile: isSimulationJob ? "STRICT_C_REALISTIC_V3_2" : null,
     comparison_profile: isSimulationJob ? "HYBRID_CONTROL" : null,
     writes_shadow_table_only: isSimulationJob,
     thresholds_locked: false,
@@ -7536,7 +7536,7 @@ async function processScoreFinalBoardJob(env, row, runId, trigger) {
     mode: "score_final_board_generate_current",
     input_json: rowInput,
     source_simulation_batch_id: rowInput.source_simulation_batch_id || rowInput.simulation_batch_id || null,
-    profile_key: "STRICT_B",
+    profile_key: "STRICT_C_REALISTIC_V3_2",
     exact_worker_only: true,
     writes_score_final_board_current: true,
     no_external_calls: true,

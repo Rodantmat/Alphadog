@@ -1,7 +1,7 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.9-explicit-engine-batch-gate";
+const VERSION = "alphadog-v2-score-final-board-v0.1.10-realistic-db-profile-gates";
 const JOB_KEY = "score-final-board";
-const PRIMARY_PROFILE = "STRICT_B";
+const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
@@ -16,6 +16,55 @@ function safeJson(v) { try { return JSON.stringify(v == null ? {} : v); } catch 
 function num(v, fallback = 0) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
 function norm(v) { return String(v == null ? "" : v).trim().toLowerCase(); }
+
+function parseJsonObject(value) {
+  if (!value || typeof value !== "string") return {};
+  try { const parsed = JSON.parse(value); return parsed && typeof parsed === "object" ? parsed : {}; } catch (_) { return {}; }
+}
+function pathGet(obj, keys) {
+  let cur = obj;
+  for (const key of keys) {
+    if (!cur || typeof cur !== "object" || !(key in cur)) return undefined;
+    cur = cur[key];
+  }
+  return cur;
+}
+function finite(v, fallback) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
+function mapValue(map, key, fallback) {
+  if (!map || typeof map !== "object") return fallback;
+  return finite(Object.prototype.hasOwnProperty.call(map, key) ? map[key] : map.default, fallback);
+}
+function evidenceBucketFromCount(count, hasCoverage) {
+  const c = Number(count);
+  if (!Number.isFinite(c) || c <= 0) return hasCoverage ? "direct_prop_evidence_rows_0_with_coverage" : "direct_prop_evidence_rows_0_no_coverage";
+  if (c >= 5) return "direct_prop_evidence_rows_gte_5";
+  if (c >= 2) return "direct_prop_evidence_rows_2_to_4";
+  return "direct_prop_evidence_rows_1";
+}
+function directEvidenceInfoFromDetails(detailsJson) {
+  const details = parseJsonObject(detailsJson);
+  const ev = pathGet(details, ["market_context", "prop_evidence"]) || {};
+  const rawCount = Number(ev.row_count ?? ev.rows ?? ev.count ?? 0);
+  const rowCount = Number.isFinite(rawCount) ? Math.max(0, Math.trunc(rawCount)) : 0;
+  const coverage = pathGet(details, ["market_context", "coverage_rows"]);
+  const hasCoverage = Array.isArray(coverage) ? coverage.length > 0 : !!coverage;
+  return { rowCount, present: ev.present === true || rowCount > 0, hasCoverage, bucket: evidenceBucketFromCount(rowCount, hasCoverage) };
+}
+function contextBucket(matrixStatus, warningCount) {
+  const status = String(matrixStatus || "");
+  const w = Number(warningCount || 0);
+  if (status !== "matrix_partial_context") return "matrix_full_context";
+  if (w >= 9) return "matrix_partial_context_warning_9_plus";
+  if (w >= 6) return "matrix_partial_context_warning_6_8";
+  if (w >= 3) return "matrix_partial_context_warning_3_5";
+  return "matrix_partial_context_warning_0_2";
+}
+async function loadProfileConfig(env, profileKey = PRIMARY_PROFILE) {
+  const row = await first(env.SCORE_DB, `SELECT config_json, profile_version FROM scoring_engine_simulation_profile_configs WHERE profile_key=? LIMIT 1`, profileKey);
+  const cfg = row && row.config_json ? parseJsonObject(row.config_json) : {};
+  return { profile_key: profileKey, profile_version: row && row.profile_version || null, config: cfg };
+}
+
 
 async function addColumnIfMissing(db, table, col, ddl) {
   const cols = await all(db, `PRAGMA table_info(${table})`);
@@ -340,12 +389,12 @@ function rowId(batchId, rank, row) {
   return `final|${batchId}|${PRIMARY_PROFILE}|${tier}|${String(rank).padStart(4, "0")}|${row.matrix_id || row.prepared_row_id || row.source_line_id || rank}`;
 }
 
-function gradeForScore(score) {
+function gradeForScore(score, cfg = {}) {
   if (score == null) return "BIN_0_NULL";
-  if (score >= 88) return "BIN_ELITE";
-  if (score >= 82) return "BIN_STRONG";
-  if (score >= 76) return "BIN_QUALIFIED";
-  if (score >= 70) return "BIN_ARCHIVE";
+  if (score >= finite(cfg.grade_elite_min, 90)) return "BIN_ELITE";
+  if (score >= finite(cfg.grade_strong_min, 82)) return "BIN_STRONG";
+  if (score >= finite(cfg.grade_qualified_min, 76)) return "BIN_QUALIFIED";
+  if (score >= finite(cfg.grade_archive_min, 70)) return "BIN_ARCHIVE";
   return "BIN_REJECT";
 }
 
@@ -368,7 +417,8 @@ function isHitterProp(propKey) {
   return HITTER_PROP_KEYS.has(norm(propKey));
 }
 
-function calibrateScoreAndConfidence(rawRow) {
+function calibrateScoreAndConfidence(rawRow, profileCfg = {}) {
+  const cfg = profileCfg || {};
   const sourceKey = norm(rawRow.source_key);
   const propKey = norm(rawRow.canonical_prop_key);
   const side = norm(rawRow.selected_side);
@@ -377,6 +427,12 @@ function calibrateScoreAndConfidence(rawRow) {
   const lineValue = num(rawRow.line_value, NaN);
   const rawScore = num(rawRow.score_0_100, NaN);
   const rawConfidence = num(rawRow.confidence_0_100, NaN);
+  const directEvidence = directEvidenceInfoFromDetails(rawRow.details_json_snapshot || rawRow.details_json || null);
+  const evidenceBucket = directEvidence.bucket;
+  const ctxBucket = contextBucket(rawRow.matrix_status, Number(rawRow.warning_count || 0));
+  const sideDelta = rawRow.more_score_0_100 != null && rawRow.less_score_0_100 != null ? Math.abs(num(rawRow.more_score_0_100, 0) - num(rawRow.less_score_0_100, 0)) : null;
+  const symmetryRules = cfg.side_symmetry_rules || {};
+  const symmetryRisk = sideDelta != null && sideDelta < finite(symmetryRules.delta_lt, 0) ? 1 : 0;
   let score = rawScore;
   let confidence = rawConfidence;
   let confidenceCap = 94;
@@ -474,8 +530,24 @@ function calibrateScoreAndConfidence(rawRow) {
 
   if (isHitterProp(propKey)) confidenceCap = Math.min(confidenceCap, 90);
 
+  const evidenceScoreCap = mapValue(cfg.market_evidence_score_caps, evidenceBucket, 100);
+  const contextScoreCap = mapValue(cfg.context_score_caps, ctxBucket, 100);
+  const symmetryScoreCap = symmetryRisk
+    ? (directEvidence.rowCount <= 0 ? finite(symmetryRules.zero_direct_evidence_cap, 76) : finite(symmetryRules.direct_evidence_cap, 88))
+    : 100;
+  const configuredScoreCap = Math.min(100, evidenceScoreCap, contextScoreCap, symmetryScoreCap);
+  if (score > configuredScoreCap) {
+    scoreAdjustments.push({ key: "db_configured_realistic_score_cap", cap: configuredScoreCap, evidence_bucket: evidenceBucket, context_bucket: ctxBucket, symmetry_risk: symmetryRisk });
+    score = configuredScoreCap;
+  }
+
+  confidenceCap = Math.min(
+    confidenceCap,
+    mapValue(cfg.market_evidence_confidence_caps, evidenceBucket, 100),
+    mapValue(cfg.context_confidence_caps, ctxBucket, 100)
+  );
   const cappedConfidence = Math.min(confidence, confidenceCap);
-  if (cappedConfidence !== confidence) confidenceAdjustments.push({ key: "confidence_cap", cap: confidenceCap });
+  if (cappedConfidence !== confidence) confidenceAdjustments.push({ key: "confidence_cap", cap: confidenceCap, evidence_bucket: evidenceBucket, context_bucket: ctxBucket });
 
   const roundedScore = Math.round(clamp(score, 0, 100));
   const roundedConfidence = Math.round(clamp(cappedConfidence, 0, 100));
@@ -489,21 +561,35 @@ function calibrateScoreAndConfidence(rawRow) {
     score_0_100: roundedScore,
     confidence_0_100: roundedConfidence,
     score_sort_0_100: roundedScore + fractionalTie,
-    score_grade: gradeForScore(roundedScore),
+    score_grade: gradeForScore(roundedScore, cfg),
     confidence_cap: confidenceCap,
     score_adjustments: scoreAdjustments,
-    confidence_adjustments: confidenceAdjustments
+    confidence_adjustments: confidenceAdjustments,
+    direct_prop_evidence_row_count: directEvidence.rowCount,
+    direct_prop_evidence_bucket: evidenceBucket,
+    context_cap_bucket: ctxBucket,
+    side_symmetry_risk: symmetryRisk,
+    configured_score_cap: configuredScoreCap
   };
 }
 
-function applyCalibration(rawRow, preferredTier = null) {
-  const calibrated = calibrateScoreAndConfidence(rawRow);
+function applyCalibration(rawRow, preferredTier = null, profileCfg = {}) {
+  const calibrated = calibrateScoreAndConfidence(rawRow, profileCfg);
   if (calibrated.calibration_failed) {
     const fallbackTier = preferredTier || "REVIEW";
     return { ...rawRow, board_tier: fallbackTier, review_playable: fallbackTier === "REVIEW" ? 1 : 0, live_playable: fallbackTier === "PRIMARY" ? 1 : 0, calibration_failed: true };
   }
 
-  const boardTier = preferredTier || ((calibrated.score_0_100 >= 84 && calibrated.confidence_0_100 >= 80) ? "PRIMARY" : "REVIEW");
+  const gates = profileCfg.primary_gates || {};
+  const primaryScore = finite(gates.score_gte, finite(profileCfg.primary_threshold_score, 90));
+  const primaryConfidence = finite(gates.confidence_gte, finite(profileCfg.primary_threshold_confidence, 85));
+  const minDirectEvidence = finite(gates.direct_prop_evidence_rows_gte, 1);
+  const symmetryAllowed = gates.side_symmetry_risk_allowed === true;
+  const primaryEligible = calibrated.score_0_100 >= primaryScore
+    && calibrated.confidence_0_100 >= primaryConfidence
+    && calibrated.direct_prop_evidence_row_count >= minDirectEvidence
+    && (symmetryAllowed || calibrated.side_symmetry_risk === 0);
+  const boardTier = preferredTier || (primaryEligible ? "PRIMARY" : "REVIEW");
 
   return {
     ...rawRow,
@@ -519,12 +605,17 @@ function applyCalibration(rawRow, preferredTier = null) {
     calibration_json: safeJson({
       version: VERSION,
       board_tier: boardTier,
-      tier_rule: "PRIMARY when calibrated_score_0_100 >= 84 and calibrated_confidence_0_100 >= 80; otherwise REVIEW.",
+      tier_rule: "PRIMARY when DB-configured primary gates pass; otherwise REVIEW.",
       raw_score_0_100: calibrated.raw_score_0_100,
       raw_confidence_0_100: calibrated.raw_confidence_0_100,
       calibrated_score_0_100: calibrated.score_0_100,
       calibrated_confidence_0_100: calibrated.confidence_0_100,
       confidence_cap: calibrated.confidence_cap,
+      direct_prop_evidence_row_count: calibrated.direct_prop_evidence_row_count,
+      direct_prop_evidence_bucket: calibrated.direct_prop_evidence_bucket,
+      context_cap_bucket: calibrated.context_cap_bucket,
+      side_symmetry_risk: calibrated.side_symmetry_risk,
+      configured_score_cap: calibrated.configured_score_cap,
       score_adjustments: calibrated.score_adjustments,
       confidence_adjustments: calibrated.confidence_adjustments,
       note: "v0.1.4 keeps v0.1.3 final-plus cross-source calibration, then applies a narrow cutoff volatility trim only to fragile pitcher rows near the PRIMARY boundary. PrizePicks/hitter rows remain organically PRIMARY-eligible; no source quota or forced balance is used."
@@ -611,7 +702,7 @@ function applyCutoffVolatilityTrim(row) {
     ...row,
     score_0_100: roundedScore,
     confidence_0_100: roundedConfidence,
-    score_grade: gradeForScore(roundedScore),
+    score_grade: gradeForScore(roundedScore, cfg),
     score_sort_0_100: roundedScore + fractionalTie,
     board_tier: boardTier,
     live_playable: boardTier === "PRIMARY" ? 1 : 0,
@@ -840,7 +931,7 @@ async function reconcileStaleRunningFinalBoard(env, input, engine, started) {
     FROM score_final_board_current
     WHERE final_board_batch_id = ?
       AND (
-        profile_key <> 'STRICT_B'
+        profile_key <> 'STRICT_C_REALISTIC_V3_2'
         OR archive_eligible <> 1
         OR selected_side IS NULL
         OR line_value IS NULL
@@ -926,6 +1017,7 @@ async function generateFinalBoard(env, input) {
   }
 
   const engine = await latestCompletedEngineBatch(env, requestedEngineBatchId);
+  const profile = await loadProfileConfig(env, PRIMARY_PROFILE);
 
   if (!engine || engine.status !== "completed_scoring_current_rows_written" || engine.certification !== "SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS") {
     await run(env.SCORE_DB, `
@@ -1023,7 +1115,7 @@ async function generateFinalBoard(env, input) {
     .map(r => ({ ...r, source_candidate_tier: "SAFE_REVIEW" }));
 
   const initiallyCalibratedCandidates = [...strictLiveCandidates, ...safeReviewCandidates]
-    .map(r => applyCalibration(r, null))
+    .map(r => applyCalibration(r, null, profile.config))
     .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 76 && Number(r.confidence_0_100) >= 55);
 
   // Cluster counts are computed across the calibrated candidate ecosystem before the final trim.
@@ -1041,7 +1133,7 @@ async function generateFinalBoard(env, input) {
 
   const rows = annotateCorrelation([...primaryRows, ...reviewRows]);
 
-  if (!rows.length || !primaryRows.length) {
+  if (!rows.length) {
     const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_no_final_rows_after_cutoff_volatility_trim", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_FINAL_ROWS_AFTER_CUTOFF_VOLATILITY_TRIM", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_engine_batch_id:simBatchId, primary_rows_after_calibration:primaryRows.length, review_rows_after_calibration:reviewRows.length };
     await writeIssue(env, batchId, simBatchId, "NO_FINAL_ROWS_AFTER_CALIBRATION", "BLOCKER", 1, output);
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
@@ -1074,7 +1166,7 @@ async function generateFinalBoard(env, input) {
     FROM score_final_board_current
     WHERE final_board_batch_id = ?
       AND (
-        profile_key <> 'STRICT_B'
+        profile_key <> 'STRICT_C_REALISTIC_V3_2'
         OR archive_eligible <> 1
         OR selected_side IS NULL
         OR line_value IS NULL
@@ -1159,10 +1251,12 @@ async function generateFinalBoard(env, input) {
     no_simulation_shadow_mutation: true,
     calibration_active: true,
     final_plus_calibration_active: true,
+    db_profile_calibration_active: true,
+    profile_config_version: profile.profile_version,
     cutoff_volatility_trim_active: true,
     cutoff_volatility_trim_policy: "narrow fragile-pitcher cutoff trim only; no source quota, no forced balance, no broad cluster penalty",
-    primary_threshold_score: 84,
-    primary_threshold_confidence: 80,
+    primary_threshold_score: finite((profile.config.primary_gates || {}).score_gte, finite(profile.config.primary_threshold_score, 90)),
+    primary_threshold_confidence: finite((profile.config.primary_gates || {}).confidence_gte, finite(profile.config.primary_threshold_confidence, 85)),
     primary_cluster_cap_active: true,
     max_primary_rows_per_player: maxPrimaryRowsPerPlayer,
     by_tier_source: byTierSource,
