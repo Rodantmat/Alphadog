@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.3-current-timeout-rescue-compatible";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.4-chunked-current-scoring-terminalizer";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -130,6 +130,46 @@ async function controlLifecycleFinalize(env, input = {}, output = {}, terminalHi
 }
 async function responseToOutputObject(response) {
   try { return JSON.parse(await response.clone().text()); } catch (_) { return { ok:false, data_ok:false, status:"worker_response_parse_failed", certification:"WORKER_RESPONSE_PARSE_FAILED" }; }
+}
+function isWorkerPartialContinueOutput(output) {
+  const rawStatus = String((output && output.status) || "").toLowerCase();
+  const cert = String((output && (output.certification || output.certification_status)) || "").toLowerCase();
+  return !!(output && output.ok === true && (
+    rawStatus === "partial_continue" ||
+    rawStatus.startsWith("partial_continue_") ||
+    cert.includes("partial_continue") ||
+    output.continuation_required === true ||
+    output.orchestrator_should_self_continue === true
+  ));
+}
+async function controlLifecyclePartial(env, input = {}, output = {}) {
+  const requestId = output.request_id || input.request_id || null;
+  if (!env || !env.CONTROL_DB || !requestId) return { ok:false, skipped:"missing_control_db_or_request_id" };
+  const runId = output.run_id || input.run_id || null;
+  const jobKey = output.job_key || controlJobKey(input);
+  const cert = output.certification || output.certification_status || `${String(jobKey).toUpperCase().replace(/[^A-Z0-9]+/g,"_")}_PARTIAL_CONTINUE`;
+  const rowsRead = Number(output.rows_read ?? output.matrix_rows_read ?? 0) || 0;
+  const rowsWritten = Number(output.rows_written ?? output.score_rows_written ?? output.current_rows_written ?? 0) || 0;
+  const externalCalls = Number(output.external_calls_performed ?? output.external_calls ?? 0) || 0;
+  const finalJson = controlSafeJson({
+    ...output,
+    request_id: requestId,
+    run_id: runId,
+    control_lifecycle_partial_continue: true,
+    control_lifecycle_partial_at: (typeof nowUtc === "function" ? nowUtc() : new Date().toISOString())
+  }, 9000);
+  try {
+    await run(env.CONTROL_DB, `UPDATE control_job_queue
+      SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL
+      WHERE request_id=? AND status IN ('pending','running','partial_continue')`, finalJson, requestId);
+    const runSql = `UPDATE control_job_runs
+      SET status='partial_continue', data_ok=1, certification_status=?, rows_read=?, rows_written=?, external_calls=?, finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), output_json=?, error_code=NULL, error_message=NULL
+      WHERE ${runId ? 'run_id=?' : 'request_id=?'} AND finished_at IS NULL`;
+    await run(env.CONTROL_DB, runSql, cert, rowsRead, rowsWritten, externalCalls, finalJson, runId || requestId);
+    return { ok:true, queue_status:"pending", run_status:"partial_continue", certification:cert };
+  } catch (err) {
+    return { ok:false, error:controlSafeText(err && err.message ? err.message : err, 900) };
+  }
 }
 
 async function first(db, sql, ...binds) {
@@ -1609,14 +1649,22 @@ async function insertEngineCurrentRows(env, valueRows) {
   return valueRows.length;
 }
 
-async function insertEngineCurrentProfile(env, batchId, profileKey) {
+async function insertEngineCurrentProfileChunk(env, batchId, profileKey, options = {}) {
   const p = await profileConstants(env, profileKey);
-  const readChunkSize = 75;
-  const writeBatchSize = 10;
-  let cursorMatrixId = null;
+  const readChunkSize = Number(options.readChunkSize || 60);
+  const writeBatchSize = Number(options.writeBatchSize || 8);
+  const maxRowsThisInvocation = Number(options.maxRowsThisInvocation || 420);
+  const maxMillis = Number(options.maxMillis || 43000);
+  const started = Date.now();
+  const cursorRow = await first(env.SCORE_DB, `
+    SELECT MAX(matrix_id) AS cursor_matrix_id, COUNT(*) AS rows
+    FROM scoring_engine_current
+    WHERE batch_id=? AND profile_key=?
+  `, batchId, profileKey);
+  let cursorMatrixId = cursorRow && cursorRow.cursor_matrix_id ? cursorRow.cursor_matrix_id : null;
   let insertedRows = 0;
   let processedChunks = 0;
-  while (true) {
+  while (insertedRows < maxRowsThisInvocation && (Date.now() - started) < maxMillis) {
     const rows = await all(env.SCORE_DB, `
       SELECT
         matrix_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc,
@@ -1633,17 +1681,37 @@ async function insertEngineCurrentProfile(env, batchId, profileKey) {
     const built = rows.map(row => buildSimulationShadowRow(batchId, profileKey, p, row));
     for (let i = 0; i < built.length; i += writeBatchSize) {
       insertedRows += await insertEngineCurrentRows(env, built.slice(i, i + writeBatchSize));
+      if ((Date.now() - started) >= maxMillis) break;
     }
     processedChunks += 1;
     cursorMatrixId = rows[rows.length - 1].matrix_id;
-    if (processedChunks > 1000) throw new Error('scoring_engine_current_chunk_guard_exceeded');
+    if (processedChunks > 100) throw new Error('scoring_engine_current_chunk_guard_exceeded');
   }
   const countRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_current WHERE batch_id=? AND profile_key=?`, batchId, profileKey);
-  const persistedRows = Number(countRow && countRow.rows ? countRow.rows : insertedRows);
-  if (persistedRows !== insertedRows) {
-    throw new Error(`scoring_engine_current_count_mismatch:${profileKey}:inserted=${insertedRows}:persisted=${persistedRows}`);
+  const persistedRows = Number(countRow && countRow.rows ? countRow.rows : 0);
+  const remainingRow = await first(env.SCORE_DB, `
+    SELECT COUNT(*) AS rows
+    FROM prop_matrix_current
+    WHERE (? IS NULL OR matrix_id > ?)
+  `, cursorMatrixId, cursorMatrixId);
+  return {
+    inserted_this_invocation: insertedRows,
+    persisted_rows: persistedRows,
+    cursor_matrix_id: cursorMatrixId,
+    remaining_rows: Number(remainingRow && remainingRow.rows ? remainingRow.rows : 0),
+    processed_chunks: processedChunks,
+    elapsed_ms: Date.now() - started
+  };
+}
+
+async function insertEngineCurrentProfile(env, batchId, profileKey) {
+  let total = 0;
+  for (let i = 0; i < 1000; i++) {
+    const chunk = await insertEngineCurrentProfileChunk(env, batchId, profileKey, { maxRowsThisInvocation: 100000, maxMillis: 240000 });
+    total = chunk.persisted_rows;
+    if (!chunk.remaining_rows) break;
   }
-  return persistedRows;
+  return total;
 }
 
 async function summarizeEngineCurrent(env, batchId) {
@@ -1707,26 +1775,137 @@ async function runScoringEngineCurrent(env, input) {
   await seedFrameworkProfile(env);
   const profile = await seedProductionScoringProfile(env);
   const requestId = input.request_id || `scoring_engine_${Date.now().toString(36)}`;
+  const runId = input.run_id || null;
   const chainId = input.chain_id || null;
-  const batchId = `scoring_engine_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   const started = Date.now();
   const matrixCountRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM prop_matrix_current`);
   const matrixRows = Number(matrixCountRow && matrixCountRow.rows ? matrixCountRow.rows : 0);
-  await run(env.SCORE_DB, `
-    INSERT INTO scoring_engine_batches (
-      batch_id, profile_key, profile_version, worker_version, job_key, status, certification, certification_grade,
-      matrix_rows_read, score_rows_written, archive_rows_written, thresholds_locked, archive_score_threshold, final_qualification_threshold, started_at
-    ) VALUES (?, 'STRICT_B', ?, ?, ?, 'running', 'SCORING_ENGINE_CURRENT_STARTED', 'RUNNING', ?, 0, 0, 0, ?, ?, CURRENT_TIMESTAMP)
-  `, batchId, profile.version, VERSION, JOB_KEY, matrixRows, profile.archiveScoreThreshold, profile.gradeQualifiedMin);
+
+  let batch = await first(env.SCORE_DB, `
+    SELECT batch_id, status, score_rows_written, matrix_rows_read, started_at
+    FROM scoring_engine_batches
+    WHERE job_key=?
+      AND profile_key='STRICT_B'
+      AND status IN ('running','partial_continue_scoring_current')
+      AND output_json LIKE ?
+    ORDER BY datetime(started_at) DESC
+    LIMIT 1
+  `, JOB_KEY, `%"request_id":"${requestId}"%`);
+
+  let batchId = batch && batch.batch_id ? batch.batch_id : null;
+  let resumedExistingBatch = !!batchId;
+
+  if (!batchId) {
+    await run(env.SCORE_DB, `
+      UPDATE scoring_engine_batches
+      SET status='failed_stale_interrupted', certification='STALE_RUNNING_BATCH_MARKED_FAILED_BEFORE_NEW_RUN', certification_grade='FAIL_STALE_INTERRUPTED', finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), output_json=COALESCE(output_json, ?)
+      WHERE job_key=? AND status IN ('running','partial_continue_scoring_current')
+    `, JSON.stringify({ ok:false, data_ok:false, status:'failed_stale_interrupted', certification:'STALE_RUNNING_BATCH_MARKED_FAILED_BEFORE_NEW_RUN', worker_version:VERSION, reason:'new_scoring_engine_current_run_started' }), JOB_KEY);
+    batchId = `scoring_engine_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    const initialOutput = baseIdentity({
+      request_id: requestId,
+      run_id: runId,
+      chain_id: chainId,
+      batch_id: batchId,
+      status: 'running',
+      certification: 'SCORING_ENGINE_CURRENT_STARTED',
+      certification_grade: 'RUNNING',
+      profile_key: 'STRICT_B',
+      profile_version: profile.version,
+      matrix_rows_read: matrixRows,
+      score_rows_written: 0,
+      archive_rows_written: 0,
+      chunked_current_scoring: true
+    });
+    await run(env.SCORE_DB, `
+      INSERT INTO scoring_engine_batches (
+        batch_id, profile_key, profile_version, worker_version, job_key, status, certification, certification_grade,
+        matrix_rows_read, score_rows_written, archive_rows_written, thresholds_locked, archive_score_threshold, final_qualification_threshold, started_at, output_json
+      ) VALUES (?, 'STRICT_B', ?, ?, ?, 'running', 'SCORING_ENGINE_CURRENT_STARTED', 'RUNNING', ?, 0, 0, 0, ?, ?, CURRENT_TIMESTAMP, ?)
+    `, batchId, profile.version, VERSION, JOB_KEY, matrixRows, profile.archiveScoreThreshold, profile.gradeQualifiedMin, JSON.stringify(initialOutput));
+    await run(env.SCORE_DB, `DELETE FROM scoring_engine_current`);
+    await run(env.SCORE_DB, `DELETE FROM scoring_engine_issues`);
+  }
+
   if (matrixRows <= 0) {
     await writeIssue(env, batchId, 'NO_MATRIX_ROWS', 'BLOCKER', 1, { reason:'prop_matrix_current has zero rows' });
-    const output = baseIdentity({ ok:false, data_ok:false, request_id:requestId, chain_id:chainId, batch_id:batchId, status:'blocked_no_matrix_rows', certification:'SCORING_ENGINE_BLOCKED_NO_MATRIX_ROWS', certification_grade:'BLOCKED', matrix_rows_read:0, score_rows_written:0, archive_rows_written:0, framework_only:false });
+    const output = baseIdentity({ ok:false, data_ok:false, request_id:requestId, run_id:runId, chain_id:chainId, batch_id:batchId, status:'blocked_no_matrix_rows', certification:'SCORING_ENGINE_BLOCKED_NO_MATRIX_ROWS', certification_grade:'BLOCKED', matrix_rows_read:0, score_rows_written:0, archive_rows_written:0, framework_only:false });
     await run(env.SCORE_DB, `UPDATE scoring_engine_batches SET status='blocked', certification=?, certification_grade='BLOCKED', finished_at=CURRENT_TIMESTAMP, output_json=? WHERE batch_id=?`, output.certification, JSON.stringify(output), batchId);
     return output;
   }
-  await run(env.SCORE_DB, `DELETE FROM scoring_engine_current`);
-  await run(env.SCORE_DB, `DELETE FROM scoring_engine_issues`);
-  const scoreRowsWritten = await insertEngineCurrentProfile(env, batchId, 'STRICT_B');
+
+  const chunk = await insertEngineCurrentProfileChunk(env, batchId, 'STRICT_B', { readChunkSize: 60, writeBatchSize: 8, maxRowsThisInvocation: 420, maxMillis: 43000 });
+  await run(env.SCORE_DB, `
+    UPDATE scoring_engine_batches
+    SET status=?, certification=?, certification_grade=?, matrix_rows_read=?, score_rows_written=?, updated_at=CURRENT_TIMESTAMP, output_json=?
+    WHERE batch_id=?
+  `,
+    chunk.remaining_rows > 0 ? 'partial_continue_scoring_current' : 'running_finalizing_scoring_current',
+    chunk.remaining_rows > 0 ? 'SCORING_ENGINE_CURRENT_PARTIAL_CONTINUE_CHUNK_WRITTEN' : 'SCORING_ENGINE_CURRENT_CHUNKS_WRITTEN_FINALIZING',
+    chunk.remaining_rows > 0 ? 'PARTIAL' : 'RUNNING',
+    matrixRows,
+    chunk.persisted_rows,
+    JSON.stringify(baseIdentity({
+      request_id: requestId,
+      run_id: runId,
+      chain_id: chainId,
+      batch_id: batchId,
+      status: chunk.remaining_rows > 0 ? 'partial_continue_scoring_engine_current_chunk_written' : 'running_finalizing_scoring_engine_current',
+      certification: chunk.remaining_rows > 0 ? 'SCORING_ENGINE_CURRENT_PARTIAL_CONTINUE_CHUNK_WRITTEN' : 'SCORING_ENGINE_CURRENT_CHUNKS_WRITTEN_FINALIZING',
+      certification_grade: chunk.remaining_rows > 0 ? 'PARTIAL' : 'RUNNING',
+      profile_key: 'STRICT_B',
+      profile_version: profile.version,
+      matrix_rows_read: matrixRows,
+      score_rows_written: chunk.persisted_rows,
+      rows_read: matrixRows,
+      rows_written: chunk.persisted_rows,
+      inserted_this_invocation: chunk.inserted_this_invocation,
+      remaining_rows: chunk.remaining_rows,
+      cursor_matrix_id: chunk.cursor_matrix_id,
+      resumed_existing_batch: resumedExistingBatch,
+      continuation_required: chunk.remaining_rows > 0,
+      orchestrator_should_self_continue: chunk.remaining_rows > 0,
+      chunked_current_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
+      elapsed_ms: Date.now() - started
+    })),
+    batchId
+  );
+
+  if (chunk.remaining_rows > 0) {
+    return baseIdentity({
+      request_id: requestId,
+      run_id: runId,
+      chain_id: chainId,
+      batch_id: batchId,
+      status: 'partial_continue_scoring_engine_current_chunk_written',
+      certification: 'SCORING_ENGINE_CURRENT_PARTIAL_CONTINUE_CHUNK_WRITTEN',
+      certification_grade: 'PARTIAL',
+      framework_only: false,
+      production_scoring_current: true,
+      profile_key: 'STRICT_B',
+      profile_version: profile.version,
+      matrix_rows_read: matrixRows,
+      score_rows_written: chunk.persisted_rows,
+      rows_read: matrixRows,
+      rows_written: chunk.persisted_rows,
+      inserted_this_invocation: chunk.inserted_this_invocation,
+      remaining_rows: chunk.remaining_rows,
+      cursor_matrix_id: chunk.cursor_matrix_id,
+      resumed_existing_batch: resumedExistingBatch,
+      continuation_required: true,
+      orchestrator_should_self_continue: true,
+      chunked_current_scoring: true,
+      external_calls_performed: 0,
+      no_true_hit_probability_claims: true,
+      no_ranking: true,
+      no_final_board: true,
+      elapsed_ms: Date.now() - started
+    });
+  }
+
+  const scoreRowsWritten = chunk.persisted_rows;
   const summary = await summarizeEngineCurrent(env, batchId);
   await recordEngineCurrentInvariants(env, batchId, summary);
   const hardIssueRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_issues WHERE batch_id=? AND severity='BLOCKER' AND issue_count > 0`, batchId);
@@ -1737,6 +1916,7 @@ async function runScoringEngineCurrent(env, input) {
   const status = hardIssues > 0 ? 'completed_scoring_current_with_blockers' : 'completed_scoring_current_rows_written';
   const output = baseIdentity({
     request_id: requestId,
+    run_id: runId,
     chain_id: chainId,
     batch_id: batchId,
     status,
@@ -1748,6 +1928,8 @@ async function runScoringEngineCurrent(env, input) {
     profile_version: profile.version,
     matrix_rows_read: matrixRows,
     score_rows_written: scoreRowsWritten,
+    rows_read: matrixRows,
+    rows_written: scoreRowsWritten,
     archive_rows_written: archiveRowsWritten,
     thresholds_locked: false,
     scoring_enabled: true,
@@ -1759,8 +1941,9 @@ async function runScoringEngineCurrent(env, input) {
     scoring_summary: summary,
     score_current_table: 'SCORE_DB.scoring_engine_current',
     profile_table: 'SCORE_DB.scoring_engine_profiles_current',
-    archive_table: 'ARCHIVE_DB.scoring_engine_archive_snapshots',
     selected_side_policy: 'STRICT_B current scoring uses the proven simulation side-selection path; Goblin/Demon remain more-only; no ranking/final-board write here.',
+    chunked_current_scoring: true,
+    resumed_existing_batch: resumedExistingBatch,
     elapsed_ms: Date.now() - started
   });
   await run(env.SCORE_DB, `
@@ -2286,6 +2469,10 @@ export default {
         await controlLifecycleHeartbeat(env, input, isSimulation ? "running_scoring_engine_simulation_worker_started" : (isFinalBoard ? "running_scoring_final_board_worker_started" : "running_scoring_engine_worker_started"), { selected_mode: input.mode || null });
         const isFrameworkGate = input && input.mode === "scoring_engine_framework_profile_gate" && input.framework_only === true && input.real_scoring_enabled !== true;
         const output = isFinalBoard ? await runScoringFinalBoard(env, input) : (isSimulation ? await runScoringSimulation(env, input) : (isFrameworkGate ? await runScoringEngine(env, input) : await runScoringEngineCurrent(env, input)));
+        if (isWorkerPartialContinueOutput(output)) {
+          output.control_lifecycle = await controlLifecyclePartial(env, input, output);
+          return jsonResponse(output, 200);
+        }
         output.control_lifecycle = await controlLifecycleFinalize(env, input, output, output.ok !== false && output.data_ok !== false ? "completed" : "failed");
         return jsonResponse(output, output.ok !== false ? 200 : 500);
       } catch (err) {
