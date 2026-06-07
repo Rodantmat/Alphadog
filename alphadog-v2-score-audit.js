@@ -2103,6 +2103,53 @@ async function runScoringEngineCurrent(env, input) {
     resumed_existing_batch: resumedExistingBatch,
     elapsed_ms: Date.now() - started
   });
+  let hitProbabilityOutput = null;
+  let hitProbabilityError = null;
+  if (input && input.auto_run_hit_probability !== false && hardIssues <= 0) {
+    try {
+      hitProbabilityOutput = await runHitProbabilityCurrent(env, {
+        ...input,
+        job_key: "hit-probability",
+        mode: "hit_probability_current_estimate",
+        source_preference: "scoring_engine_current",
+        force_scoring_engine_current_source: true,
+        parent_scoring_engine_batch_id: batchId,
+        visible_button: input.visible_button || "SCORING > Engine",
+        auto_invoked_after_scoring_engine_current: true
+      });
+      output.hit_probability_phase = {
+        attempted: true,
+        ok: hitProbabilityOutput && hitProbabilityOutput.ok !== false,
+        status: hitProbabilityOutput ? hitProbabilityOutput.status : null,
+        certification: hitProbabilityOutput ? hitProbabilityOutput.certification : null,
+        certification_grade: hitProbabilityOutput ? hitProbabilityOutput.certification_grade : null,
+        batch_id: hitProbabilityOutput ? hitProbabilityOutput.batch_id : null,
+        source_table: hitProbabilityOutput ? hitProbabilityOutput.source_table : null,
+        rows_read: hitProbabilityOutput ? hitProbabilityOutput.rows_read : null,
+        rows_written: hitProbabilityOutput ? hitProbabilityOutput.rows_written : null,
+        non_mutating_sidecar: true
+      };
+    } catch (hpErr) {
+      hitProbabilityError = String(hpErr && hpErr.message ? hpErr.message : hpErr);
+      output.hit_probability_phase = {
+        attempted: true,
+        ok: false,
+        nonfatal: true,
+        error: hitProbabilityError,
+        non_mutating_sidecar: true
+      };
+      try {
+        await writeIssue(env, batchId, "HIT_PROBABILITY_AUTO_PHASE_NONFATAL_ERROR", "WARNING", 1, { error: hitProbabilityError, note: "Hit Probability sidecar failed after scoring current; scoring_engine_current remained certified and unmutated." });
+      } catch (_) {}
+    }
+  } else {
+    output.hit_probability_phase = {
+      attempted: false,
+      reason: hardIssues > 0 ? "scoring_engine_hard_issues_present" : "disabled_by_input_auto_run_hit_probability_false",
+      non_mutating_sidecar: true
+    };
+  }
+
   await run(env.SCORE_DB, `
     UPDATE scoring_engine_batches
     SET status=?, certification=?, certification_grade=?, score_rows_written=?, archive_rows_written=?, finished_at=CURRENT_TIMESTAMP, output_json=?
@@ -2595,7 +2642,7 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.8-hit-probability-same-slot";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.9-hit-probability-auto-after-scoring";
 const HP_PROFILE_VERSION = "HP_EMPIRICAL_V0_1_1_SAME_SCORE_AUDIT_SLOT";
 const HP_MAX_ROWS_PER_RUN = 12000;
 const HP_PLAYER_CHUNK_SIZE = 70;
@@ -2648,9 +2695,12 @@ async function hpEnsureSchema(env){
   ];
   for(const s of stmts) await run(env.SCORE_DB, s);
 }
-async function hpSourceRows(env){
-  const finalRows = await all(env.SCORE_DB, `SELECT * FROM score_final_board_current ORDER BY rank_order ASC LIMIT ${HP_MAX_ROWS_PER_RUN}`);
-  if(finalRows.length){ return { source_table:"score_final_board_current", rows:finalRows, final_board_batch_id:finalRows[0].final_board_batch_id || null, engine_batch_id:finalRows[0].source_engine_batch_id || null }; }
+async function hpSourceRows(env, input = {}){
+  const preferScoringCurrent = input && (input.source_preference === "scoring_engine_current" || input.force_scoring_engine_current_source === true);
+  if(!preferScoringCurrent){
+    const finalRows = await all(env.SCORE_DB, `SELECT * FROM score_final_board_current ORDER BY rank_order ASC LIMIT ${HP_MAX_ROWS_PER_RUN}`);
+    if(finalRows.length){ return { source_table:"score_final_board_current", rows:finalRows, final_board_batch_id:finalRows[0].final_board_batch_id || null, engine_batch_id:finalRows[0].source_engine_batch_id || null }; }
+  }
   const scoreRows = await all(env.SCORE_DB, `SELECT * FROM scoring_engine_current WHERE score_0_100 IS NOT NULL ORDER BY score_0_100 DESC LIMIT ${HP_MAX_ROWS_PER_RUN}`);
   return { source_table:"scoring_engine_current", rows:scoreRows, final_board_batch_id:null, engine_batch_id:scoreRows[0] ? scoreRows[0].batch_id : null };
 }
@@ -2663,7 +2713,7 @@ async function runHitProbabilityCurrent(env, input = {}){
   if(!env.SCORE_DB || !env.STATS_HITTER_DB || !env.STATS_PITCHER_DB) return baseIdentity({ ok:false, data_ok:false, version:HP_VERSION, job_key:HP_JOB_KEY, status:"blocked_missing_db_bindings", certification:"HIT_PROBABILITY_MISSING_DB_BINDINGS", certification_grade:"BLOCKED", required_bindings:{SCORE_DB:!!env.SCORE_DB,STATS_HITTER_DB:!!env.STATS_HITTER_DB,STATS_PITCHER_DB:!!env.STATS_PITCHER_DB}, no_score_mutation:true, no_final_board_mutation:true });
   await hpEnsureSchema(env);
   const batchId=hpUid('hit_probability_batch');
-  const source=await hpSourceRows(env);
+  const source=await hpSourceRows(env, input);
   const maxDate = source.rows.reduce((m,r)=> String(r.official_date||"")>m ? String(r.official_date||"") : m, "0000-00-00") || new Date().toISOString().slice(0,10);
   const supported=[];
   const unsupported=[];
