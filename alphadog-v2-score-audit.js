@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.2-real-current-scoring-producer";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.3-current-timeout-rescue-compatible";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";

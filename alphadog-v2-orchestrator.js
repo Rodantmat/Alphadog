@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.186-prop-factor-fast-timeout-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.187-scoring-engine-current-timeout-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1113,6 +1113,116 @@ async function synthesizeMarketPlayerPropTerminalProofFromEvidence(env, stageKey
   };
 }
 
+
+async function synthesizeScoringEngineCurrentTerminalProofFromEvidence(env, requestId, child) {
+  if (!env.SCORE_DB) return null;
+  const childStartedAt = child && (child.started_at || child.created_at) ? String(child.started_at || child.created_at) : null;
+  const batch = await first(env.SCORE_DB,
+    `SELECT batch_id, worker_version, job_key, status, certification, certification_grade,
+            matrix_rows_read, score_rows_written, archive_rows_written, started_at, finished_at, output_json
+       FROM scoring_engine_batches
+       WHERE profile_key='STRICT_B'
+         AND (status LIKE 'running%' OR certification='SCORING_ENGINE_CURRENT_STARTED' OR certification IS NULL OR finished_at IS NULL)
+         AND (? IS NULL OR datetime(started_at) >= datetime(?, '-5 minutes'))
+       ORDER BY datetime(started_at) DESC, batch_id DESC
+       LIMIT 1`,
+    childStartedAt, childStartedAt
+  );
+  if (!batch || !batch.batch_id) return null;
+
+  const counts = await first(env.SCORE_DB,
+    `SELECT COUNT(*) AS current_rows,
+            SUM(CASE WHEN score_0_100 IS NULL THEN 1 ELSE 0 END) AS missing_score_rows,
+            SUM(CASE WHEN selected_side IS NULL OR selected_side = '' THEN 1 ELSE 0 END) AS missing_selected_side_rows,
+            SUM(CASE WHEN matrix_id IS NULL OR matrix_id = '' THEN 1 ELSE 0 END) AS missing_matrix_id_rows,
+            MIN(created_at) AS first_row_at,
+            MAX(created_at) AS last_row_at,
+            CASE WHEN MAX(created_at) IS NOT NULL AND datetime(MAX(created_at)) <= datetime(CURRENT_TIMESTAMP, '-20 seconds') THEN 1 ELSE 0 END AS evidence_quiet
+       FROM scoring_engine_current
+      WHERE batch_id=?`,
+    batch.batch_id
+  );
+  const currentRows = Number(counts && counts.current_rows || 0);
+  const matrixRows = Number(batch.matrix_rows_read || 0);
+  const missingScoreRows = Number(counts && counts.missing_score_rows || 0);
+  const missingSelectedSideRows = Number(counts && counts.missing_selected_side_rows || 0);
+  const missingMatrixIdRows = Number(counts && counts.missing_matrix_id_rows || 0);
+  const evidenceQuiet = Number(counts && counts.evidence_quiet || 0) === 1;
+  if (currentRows <= 0 || matrixRows <= 0 || currentRows < matrixRows || !evidenceQuiet) return null;
+
+  const issueRow = await first(env.SCORE_DB,
+    `SELECT COUNT(*) AS hard_issues
+       FROM scoring_engine_issues
+      WHERE batch_id=?
+        AND UPPER(COALESCE(severity,'')) IN ('BLOCKER','ERROR','FAILED')
+        AND COALESCE(issue_count,0) > 0`,
+    batch.batch_id
+  );
+  const hardIssues = Number(issueRow && issueRow.hard_issues || 0);
+  const invariantHard = missingScoreRows > 0 || missingSelectedSideRows > 0 || missingMatrixIdRows > 0;
+  const ok = hardIssues === 0 && !invariantHard;
+  const cert = ok ? 'SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS' : 'SCORING_ENGINE_CURRENT_RECONCILED_WITH_BLOCKERS';
+  const grade = ok ? 'PASS_WITH_REVIEW_WARNINGS' : 'BLOCKED';
+  const status = ok ? 'completed_scoring_current_reconciled_after_timeout' : 'completed_scoring_current_reconciled_with_blockers';
+  const archiveRows = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_current WHERE batch_id=? AND archive_eligible=1`, batch.batch_id);
+  const output = {
+    ok,
+    data_ok: ok,
+    version: SYSTEM_VERSION,
+    worker_name: 'alphadog-v2-score-audit',
+    logical_worker_name: 'alphadog-v2-scoring-engine',
+    job_key: 'scoring-engine',
+    request_id: requestId,
+    chain_id: child && child.chain_id || null,
+    batch_id: batch.batch_id,
+    source_matrix_batch_id: null,
+    status,
+    certification: cert,
+    certification_status: cert,
+    certification_grade: grade,
+    production_scoring_current: true,
+    profile_key: 'STRICT_B',
+    matrix_rows_read: matrixRows,
+    score_rows_written: currentRows,
+    rows_read: matrixRows,
+    rows_written: currentRows,
+    archive_rows_written: Number(archiveRows && archiveRows.rows || 0),
+    hard_issue_count: hardIssues,
+    missing_score_rows: missingScoreRows,
+    missing_selected_side_rows: missingSelectedSideRows,
+    missing_matrix_id_rows: missingMatrixIdRows,
+    reconciled_after_service_binding_timeout: true,
+    terminalized_from_scoring_engine_current_rows: true,
+    evidence_first_row_at: counts && counts.first_row_at || null,
+    evidence_last_row_at: counts && counts.last_row_at || null,
+    no_true_hit_probability_claims: true,
+    no_ranking: true,
+    no_final_board: true
+  };
+  await run(env.SCORE_DB,
+    `UPDATE scoring_engine_batches
+        SET status=?, certification=?, certification_grade=?, score_rows_written=?, archive_rows_written=?, finished_at=CURRENT_TIMESTAMP, output_json=?
+      WHERE batch_id=?`,
+    status, cert, grade, currentRows, Number(archiveRows && archiveRows.rows || 0), JSON.stringify(output), batch.batch_id
+  );
+  return {
+    batch_id: batch.batch_id,
+    request_id: requestId,
+    run_id: null,
+    worker_name: 'alphadog-v2-scoring-engine',
+    worker_version: batch.worker_version || null,
+    mode: 'scoring_engine_current_strict_b',
+    status,
+    prepared_rows_read: matrixRows,
+    rows_written: currentRows,
+    certification_status: cert,
+    certification_grade: grade,
+    output_json: JSON.stringify(output),
+    updated_at: null,
+    created_at: batch.started_at || null
+  };
+}
+
 async function rescueMarketScoringFullRunTerminalEvidenceChild(env, trigger) {
   if (!env.CONTROL_DB || !env.MARKET_DB) return null;
   const children = await all(env.CONTROL_DB,
@@ -1245,6 +1355,10 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
       requestId
     );
     proofSource = "SCORE_DB.scoring_engine_batches";
+    if (!proof) {
+      proof = await synthesizeScoringEngineCurrentTerminalProofFromEvidence(env, requestId, child);
+      if (proof) proofSource = "SCORE_DB.scoring_engine_current_quiet_evidence";
+    }
   } else if (stageKey === "scoring_engine_simulation" && env.SCORE_DB) {
     proof = await first(env.SCORE_DB,
       `SELECT simulation_batch_id AS batch_id, NULL AS request_id, NULL AS run_id, 'alphadog-v2-scoring-engine' AS worker_name, worker_version, 'scoring_engine_simulation_shadow_strict_b' AS mode, status, matrix_rows_read AS prepared_rows_read, simulation_rows_written AS rows_written, certification AS certification_status, certification_grade, output_json, finished_at AS updated_at, started_at AS created_at
