@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.11-effective-warning-severity-final-gates";
+const VERSION = "alphadog-v2-score-final-board-v0.1.12-archive-review-admission";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
@@ -862,7 +862,7 @@ async function reconcileStaleRunningFinalBoard(env, input, engine, started) {
         OR source_key IS NULL
         OR mlb_player_id IS NULL
         OR market_prop_context_status <> 'market_prop_context_present'
-        OR score_0_100 < 74
+        OR score_0_100 < 70
         OR confidence_0_100 < 55
         OR board_tier NOT IN ('PRIMARY','REVIEW')
         OR review_playable NOT IN (0,1)
@@ -995,6 +995,8 @@ async function generateFinalBoard(env, input) {
       AND profile_key = ?
       AND live_playable = 1
       AND archive_eligible = 1
+      AND blocker_count = 0
+      AND blocking_for_scoring = 0
       AND factor_status = 'packet_ready'
       AND market_prop_context_status = 'market_prop_context_present'
       AND daily_readiness_status IN ('ready','ready_with_warnings')
@@ -1016,6 +1018,8 @@ async function generateFinalBoard(env, input) {
     WHERE batch_id = ?
       AND profile_key = ?
       AND archive_eligible = 1
+      AND blocker_count = 0
+      AND blocking_for_scoring = 0
       AND live_playable = 0
       AND market_prop_context_status = 'market_prop_context_present'
       AND selected_side IS NOT NULL
@@ -1024,9 +1028,14 @@ async function generateFinalBoard(env, input) {
       AND canonical_prop_key IS NOT NULL
       AND source_key IS NOT NULL
       AND mlb_player_id IS NOT NULL
-      AND score_0_100 >= 76
+      AND score_0_100 >= 70
       AND score_status NOT IN ('blocked_by_matrix','model_deferred','simulation_hard_blocked')
   `, simBatchId, PRIMARY_PROFILE);
+
+  // v0.1.12-archive-review-admission: BIN_ARCHIVE/archive_eligible rows are review-safe inventory.
+  // A 70-75 cap can break ties and keep rows out of PRIMARY, but it must not silently kill
+  // playable review rows when blocker_count=0 and blocking_for_scoring=0. Goblin/demon/standard
+  // payout_variant is metadata/tie-break context, not an automatic exclusion.
 
   // v0.1.4-cutoff-volatility-trim: build one calibrated merit pool. Strict live rows and safe review candidates
   // both receive the same calibrated score. Then apply only narrow volatility trims to fragile pitcher rows at the cutoff.
@@ -1037,13 +1046,13 @@ async function generateFinalBoard(env, input) {
 
   const initiallyCalibratedCandidates = [...strictLiveCandidates, ...safeReviewCandidates]
     .map(r => applyCalibration(r, null))
-    .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 76 && Number(r.confidence_0_100) >= 55);
+    .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 70 && Number(r.confidence_0_100) >= 55);
 
   // Cluster counts are computed across the calibrated candidate ecosystem before the final trim.
   // The count is metadata first; v0.1.4 only uses it as a one-point tie-breaker on fragile pitcher rows already near the cutoff.
   const calibratedCandidates = annotateCorrelation(initiallyCalibratedCandidates)
     .map(r => applyCutoffVolatilityTrim(r))
-    .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 74 && Number(r.confidence_0_100) >= 55);
+    .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 70 && Number(r.confidence_0_100) >= 55);
 
   let primaryRows = calibratedCandidates.filter(r => r.board_tier === "PRIMARY");
   let reviewRows = calibratedCandidates.filter(r => r.board_tier === "REVIEW");
@@ -1096,7 +1105,7 @@ async function generateFinalBoard(env, input) {
         OR source_key IS NULL
         OR mlb_player_id IS NULL
         OR market_prop_context_status <> 'market_prop_context_present'
-        OR score_0_100 < 74
+        OR score_0_100 < 70
         OR confidence_0_100 < 55
         OR board_tier NOT IN ('PRIMARY','REVIEW')
         OR review_playable NOT IN (0,1)
@@ -1113,6 +1122,19 @@ async function generateFinalBoard(env, input) {
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
   }
+
+  const archiveReviewCandidates = rows.filter(r => r.board_tier === "REVIEW" && r.score_grade === "BIN_ARCHIVE" && Number(r.archive_eligible || 0) === 1);
+  const archiveReviewBySource = archiveReviewCandidates.reduce((acc, r) => {
+    const key = `${r.source_key || "unknown"}|${r.payout_variant || "standard_or_null"}|${r.side_mode || "unknown"}`;
+    if (!acc[key]) acc[key] = { source_key: r.source_key || null, payout_variant: r.payout_variant || null, side_mode: r.side_mode || null, rows: 0, min_score: null, max_score: null };
+    acc[key].rows += 1;
+    const score = Number(r.score_0_100);
+    if (Number.isFinite(score)) {
+      acc[key].min_score = acc[key].min_score == null ? score : Math.min(acc[key].min_score, score);
+      acc[key].max_score = acc[key].max_score == null ? score : Math.max(acc[key].max_score, score);
+    }
+    return acc;
+  }, {});
 
   const primaryClusterCheck = await first(env.SCORE_DB, `
     SELECT MAX(player_rows) AS max_primary_rows_per_player
@@ -1161,12 +1183,16 @@ async function generateFinalBoard(env, input) {
     primary_rows_written: primaryRows.length,
     review_rows_written: reviewRows.length,
     review_rows_after_cluster_cap: clusterCapResult.reviewRowsAfterClusterCap,
+    archive_review_rows_written: archiveReviewCandidates.length,
+    archive_review_by_source: Object.values(archiveReviewBySource),
+    archive_review_admission_active: true,
+    archive_review_admission_policy: "BIN_ARCHIVE with archive_eligible=1, blocker_count=0, blocking_for_scoring=0, score>=70, confidence>=55 enters REVIEW only; payout_variant is not an exclusion.",
     live_rows_read: primaryRaw.length,
     final_rows_written: rows.length,
     current_rows_written: rows.length,
     table_for_final_ui: "SCORE_DB.score_final_board_current",
     history_table: "SCORE_DB.score_final_board_history",
-    final_ui_contract: "Read board_tier. PRIMARY rows are strict live rows; REVIEW rows are safe calibrated soft rows with review_playable=1.",
+    final_ui_contract: "Read board_tier. PRIMARY rows are strict live rows; REVIEW rows are safe calibrated soft rows with review_playable=1. BIN_ARCHIVE/archive_eligible rows are REVIEW-only, not killed.",
     no_external_calls: true,
     no_source_board_mutation: true,
     no_simulation_shadow_mutation: true,
@@ -1186,6 +1212,7 @@ async function generateFinalBoard(env, input) {
 
   await writeIssue(env, batchId, simBatchId, "LIVE_INVARIANT_FAILURE", "INFO", 0, { note: "No live row invariant failures detected before final board write." });
   await writeIssue(env, batchId, simBatchId, "REVIEW_TIER_INCLUDED", "WARNING", reviewRows.length, { note: "Review tier rows are intentionally included as safe soft rows. They are not strict PRIMARY rows.", review_rows_written: reviewRows.length });
+  await writeIssue(env, batchId, simBatchId, "ARCHIVE_REVIEW_ADMITTED", archiveReviewCandidates.length ? "WARNING" : "INFO", archiveReviewCandidates.length, { note: "BIN_ARCHIVE/archive_eligible rows are admitted to REVIEW only instead of being silently killed by the 76+ qualified gate.", archive_review_rows_written: archiveReviewCandidates.length, archive_review_by_source: Object.values(archiveReviewBySource) });
   await writeIssue(env, batchId, simBatchId, "PRIMARY_CLUSTER_CAP_APPLIED", clusterCapResult.demotedRows.length ? "WARNING" : "INFO", clusterCapResult.demotedRows.length, { note: "PRIMARY is capped at two rows per player; overflow rows are demoted to REVIEW, not deleted.", max_primary_rows_per_player: clusterCapResult.maxPrimaryRowsPerPlayer, primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap, primary_rows_after_cluster_cap: clusterCapResult.primaryRowsAfterClusterCap, demoted_rows: clusterCapResult.demotedRows.length });
   await run(env.SCORE_DB, `
     UPDATE score_final_board_batches
