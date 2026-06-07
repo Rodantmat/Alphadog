@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.10-strict-c-realistic-v3-2-final-gates";
+const VERSION = "alphadog-v2-score-final-board-v0.1.11-effective-warning-severity-final-gates";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
@@ -45,8 +45,24 @@ function evidenceScoreCapFor(info) {
   if (info.rowCount <= 4) return 94;
   return 97;
 }
-function contextScoreCapFor(row) {
-  const warnings = num(row.warning_count, 0);
+function effectiveWarningCountFromBoardRow(row, evidenceInfo = null) {
+  const calc = parseJsonObject(row.calculation_json);
+  if (calc && calc.effective_warning_count != null) return Math.max(0, Math.trunc(num(calc.effective_warning_count, num(row.warning_count, 0))));
+  const rawWarnings = Math.max(0, Math.trunc(num(row.warning_count, 0)));
+  const info = evidenceInfo || directEvidenceInfoFromBoardRow(row);
+  if (rawWarnings >= 9
+    && norm(row.matrix_status) === "matrix_partial_context"
+    && num(row.blocker_count, 0) <= 0
+    && norm(row.factor_status) === "packet_partial"
+    && norm(row.market_prop_context_status) === "market_prop_context_present"
+    && info.rowCount > 0
+    && ["missing_current_readiness", "daily_readiness_missing_soft_fallback", "partial_enrichment"].includes(norm(row.daily_readiness_status))) {
+    return 6;
+  }
+  return rawWarnings;
+}
+function contextScoreCapFor(row, evidenceInfo = null) {
+  const warnings = effectiveWarningCountFromBoardRow(row, evidenceInfo);
   if (norm(row.matrix_status) !== "matrix_partial_context") return 100;
   if (warnings >= 9) return 82;
   if (warnings >= 6) return 90;
@@ -427,7 +443,7 @@ function calibrateScoreAndConfidence(rawRow) {
 
   if (!Number.isFinite(score) || !Number.isFinite(confidence)) return { calibration_failed: true };
 
-  // v0.1.10: final board must preserve sharp score meaning. No platform quota and no source balancing.
+  // v0.1.11: final board must preserve sharp score meaning. No platform quota and no source balancing.
   // This layer only applies transparent caps/very small volatility trims so DB/profile scoring remains primary.
   if (propKey === "home_runs" && side === "less") {
     score -= 0.5;
@@ -440,7 +456,7 @@ function calibrateScoreAndConfidence(rawRow) {
 
   const capCandidates = [
     { key: "market_evidence_score_cap", cap: evidenceScoreCapFor(evidenceInfo), direct_prop_evidence_row_count: evidenceInfo.rowCount, evidence_bucket: evidenceInfo.bucket },
-    { key: "context_score_cap", cap: contextScoreCapFor(rawRow), matrix_status: rawRow.matrix_status, warning_count: num(rawRow.warning_count, 0) }
+    { key: "context_score_cap", cap: contextScoreCapFor(rawRow, evidenceInfo), matrix_status: rawRow.matrix_status, warning_count: num(rawRow.warning_count, 0), effective_warning_count: effectiveWarningCountFromBoardRow(rawRow, evidenceInfo) }
   ];
   if (symmetryRisk) capCandidates.push({ key: "side_symmetry_score_cap", cap: evidenceInfo.rowCount <= 0 ? 76 : 88, side_delta_lt: 1 });
   for (const c of capCandidates) {
@@ -452,7 +468,7 @@ function calibrateScoreAndConfidence(rawRow) {
 
   let confidenceCap = 100;
   if (evidenceInfo.rowCount <= 0) confidenceCap = Math.min(confidenceCap, evidenceInfo.coverageCount > 0 ? 60 : 50);
-  if (num(rawRow.warning_count, 0) >= 9) confidenceCap = Math.min(confidenceCap, 45);
+  if (effectiveWarningCountFromBoardRow(rawRow, evidenceInfo) >= 9) confidenceCap = Math.min(confidenceCap, 45);
   if (confidence > confidenceCap) {
     confidence = confidenceCap;
     confidenceAdjustments.push({ key: "confidence_cap", cap: confidenceCap, direct_prop_evidence_row_count: evidenceInfo.rowCount });
@@ -520,9 +536,11 @@ function applyCalibration(rawRow, preferredTier = null) {
       direct_prop_evidence_bucket: calibrated.direct_prop_evidence_bucket,
       side_symmetry_risk: calibrated.side_symmetry_risk,
       confidence_cap: calibrated.confidence_cap,
+      raw_warning_count: num(rawRow.warning_count, 0),
+      effective_warning_count: effectiveWarningCountFromBoardRow(rawRow, directEvidenceInfoFromBoardRow(rawRow)),
       score_adjustments: calibrated.score_adjustments,
       confidence_adjustments: calibrated.confidence_adjustments,
-      note: "STRICT_C_REALISTIC_V3_2 uses DB/profile scoring first, then final board caps for direct market evidence, partial-context warning density, and side symmetry. No platform quota, no forced balance."
+      note: "STRICT_C_REALISTIC_V3_2 uses DB/profile scoring first, then final board caps for direct market evidence, effective partial-context warning density, and side symmetry. No platform quota, no forced balance."
     })
   };
 }

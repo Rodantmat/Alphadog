@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.189-strict-c-realistic-v3-2-calibration";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.190-effective-warning-severity-calibration";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -7436,7 +7436,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
-    deployed_slot_version: isSimulationJob ? "alphadog-v2-scoring-engine-v0.4.6-strict-c-realistic-v3-2-db-calibration" : "alphadog-v2-scoring-engine-v0.4.6-strict-c-realistic-v3-2-db-calibration",
+    deployed_slot_version: isSimulationJob ? "alphadog-v2-scoring-engine-v0.4.7-strict-c-realistic-v3-2-effective-warning-severity" : "alphadog-v2-scoring-engine-v0.4.7-strict-c-realistic-v3-2-effective-warning-severity",
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,

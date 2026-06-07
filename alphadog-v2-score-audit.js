@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.6-strict-c-realistic-v3-2-db-calibration";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.7-strict-c-realistic-v3-2-effective-warning-severity";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_REALISTIC_V3_2";
@@ -724,7 +724,7 @@ const DEFAULT_SIM_CONFIGS = {
     }
   },
   STRICT_C_REALISTIC_V3_2: {
-    profile_version: "0.4.6-strict-c-realistic-v3-2-db-calibration",
+    profile_version: "0.4.7-strict-c-realistic-v3-2-effective-warning-severity",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -748,6 +748,7 @@ const DEFAULT_SIM_CONFIGS = {
       market_direct_evidence_raw_adjustments: { direct_prop_evidence_rows_gte_5: 1.5, direct_prop_evidence_rows_2_to_4: 0.75, direct_prop_evidence_rows_1: 0, direct_prop_evidence_rows_0_with_coverage: -1, direct_prop_evidence_rows_0_no_coverage: -3, default: 0 },
       market_evidence_score_caps: { direct_prop_evidence_rows_gte_5: 97, direct_prop_evidence_rows_2_to_4: 94, direct_prop_evidence_rows_1: 89, direct_prop_evidence_rows_0_with_coverage: 82, direct_prop_evidence_rows_0_no_coverage: 74, default: 90 },
       context_score_caps: { matrix_full_context: 100, matrix_partial_context_warning_0_2: 96, matrix_partial_context_warning_3_5: 93, matrix_partial_context_warning_6_8: 90, matrix_partial_context_warning_9_plus: 82 },
+      effective_warning_rules: { enabled: true, soft_partial_context_effective_warning_count: 6, soft_partial_context_requires_blocker_count_lte: 0, soft_partial_context_requires_direct_prop_evidence_rows_gte: 1, soft_partial_context_factor_statuses: ["packet_partial"], soft_partial_context_daily_statuses: ["missing_current_readiness", "daily_readiness_missing_soft_fallback", "partial_enrichment"], soft_partial_context_market_prop_statuses: ["market_prop_context_present"] },
       symmetry_rules: { two_sided_delta_lt: 1.0, zero_direct_evidence_symmetry_cap: 76, nonzero_direct_evidence_symmetry_cap: 88 },
       daily_raw_adjustments: { ready_with_warnings: 0, partial_enrichment: -4, not_applicable: 0, default: 0 },
       source_raw_adjustments: { sleeper: -1, default: 0 },
@@ -921,9 +922,33 @@ function evidenceScoreCap(cfg, info, fallback = 100) {
   return finiteNumber((cfg.market_evidence_score_caps || {})[info.bucket], fallback);
 }
 
-function contextScoreCap(cfg, row, fallback = 100) {
+function arrayIncludesNormalized(list, value) {
+  const needle = String(value == null ? '' : value).trim().toLowerCase();
+  return Array.isArray(list) && list.map(v => String(v == null ? '' : v).trim().toLowerCase()).includes(needle);
+}
+
+function effectiveWarningCount(cfg, row, evidenceInfo, effectiveMarketPropContextStatus) {
+  const rawWarnings = Math.max(0, Math.trunc(Number(row.warning_count || 0)));
+  const rules = cfg.effective_warning_rules || {};
+  if (!rules.enabled || rawWarnings < 9) return rawWarnings;
+
+  const blockerCount = Math.max(0, Math.trunc(Number(row.blocker_count || 0)));
+  const blockerLimit = Math.max(0, Math.trunc(finiteNumber(rules.soft_partial_context_requires_blocker_count_lte, 0)));
+  const minEvidenceRows = Math.max(0, Math.trunc(finiteNumber(rules.soft_partial_context_requires_direct_prop_evidence_rows_gte, 1)));
+  const softStatus = String(row.matrix_status || '') === 'matrix_partial_context'
+    && blockerCount <= blockerLimit
+    && Number(evidenceInfo && evidenceInfo.rowCount || 0) >= minEvidenceRows
+    && arrayIncludesNormalized(rules.soft_partial_context_factor_statuses || ['packet_partial'], row.factor_status)
+    && arrayIncludesNormalized(rules.soft_partial_context_daily_statuses || ['missing_current_readiness'], row.daily_readiness_status)
+    && arrayIncludesNormalized(rules.soft_partial_context_market_prop_statuses || ['market_prop_context_present'], effectiveMarketPropContextStatus);
+
+  if (softStatus) return Math.max(0, Math.trunc(finiteNumber(rules.soft_partial_context_effective_warning_count, 6)));
+  return rawWarnings;
+}
+
+function contextScoreCap(cfg, row, fallback = 100, effectiveWarningsOverride = null) {
   const status = String(row.matrix_status || '');
-  const warnings = Number(row.warning_count || 0);
+  const warnings = effectiveWarningsOverride == null ? Number(row.warning_count || 0) : Number(effectiveWarningsOverride || 0);
   const caps = cfg.context_score_caps || {};
   if (status === 'matrix_partial_context') {
     if (warnings >= 9) return finiteNumber(caps.matrix_partial_context_warning_9_plus, fallback);
@@ -1018,6 +1043,9 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
   const effectiveMarketPropContextStatus = evidenceInfo.rowCount <= 0
     ? (evidenceInfo.coverageCount > 0 ? 'market_prop_context_not_found' : 'market_prop_context_missing')
     : row.market_prop_context_status;
+  const rawWarningCount = Math.max(0, Math.trunc(Number(row.warning_count || 0)));
+  const effectiveWarnings = effectiveWarningCount(cfg, row, evidenceInfo, effectiveMarketPropContextStatus);
+  const effectiveWarningSeverity = effectiveWarnings >= 9 ? 'warning_9_plus' : (effectiveWarnings >= 6 ? 'warning_6_8' : (effectiveWarnings >= 3 ? 'warning_3_5' : 'warning_0_2'));
   const rawBase = (row.factor_status === 'packet_ready' ? p.baseRawPacketReady : p.baseRawPacketPartial)
     + adjustment(cfg.market_raw_adjustments, effectiveMarketPropContextStatus, -2)
     + adjustment(cfg.market_direct_evidence_raw_adjustments, evidenceInfo.bucket, 0)
@@ -1059,22 +1087,22 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
   const confidencePenalty = (row.factor_status === 'packet_partial' ? p.confidencePenaltyPacketPartial : 0)
     + (row.daily_readiness_status === 'partial_enrichment' ? p.confidencePenaltyPartialEnrichment : 0)
     + (sourceKey === 'sleeper' && oddsType == null ? p.confidencePenaltySleeperNullOdds : 0)
-    + (Number(row.warning_count || 0) >= 9 ? p.confidencePenaltyWarning9Plus : 0)
-    + (Number(row.warning_count || 0) >= 6 && Number(row.warning_count || 0) <= 8 ? p.confidencePenaltyWarning68 : 0)
-    + (Number(row.warning_count || 0) >= 3 && Number(row.warning_count || 0) <= 5 ? p.confidencePenaltyWarning35 : 0);
+    + (effectiveWarnings >= 9 ? p.confidencePenaltyWarning9Plus : 0)
+    + (effectiveWarnings >= 6 && effectiveWarnings <= 8 ? p.confidencePenaltyWarning68 : 0)
+    + (effectiveWarnings >= 3 && effectiveWarnings <= 5 ? p.confidencePenaltyWarning35 : 0);
   const confidenceCap = Math.min(
     100,
     completeMarketBlind ? p.confidenceCapCompleteMarketBlindness : 100,
     (!completeMarketBlind && effectiveMarketPropContextStatus === 'market_prop_context_missing') ? p.confidenceCapMarketMissing : 100,
     (!completeMarketBlind && effectiveMarketPropContextStatus === 'market_prop_context_not_found') ? p.confidenceCapMarketNotFound : 100,
-    Number(row.warning_count || 0) >= 9 ? p.confidenceCapWarning9Plus : 100,
+    effectiveWarnings >= 9 ? p.confidenceCapWarning9Plus : 100,
     evidenceInfo.rowCount <= 0 && evidenceInfo.coverageCount > 0 ? p.confidenceCapMarketNotFound : 100,
     evidenceInfo.rowCount <= 0 && evidenceInfo.coverageCount <= 0 ? p.confidenceCapMarketMissing : 100
   );
 
   const hardCaps = [
     { key: 'market_evidence_score_cap', value: evidenceScoreCap(cfg, evidenceInfo, p.maxScoreCap), evidence_bucket: evidenceInfo.bucket, direct_prop_evidence_row_count: evidenceInfo.rowCount },
-    { key: 'context_score_cap', value: contextScoreCap(cfg, row, p.maxScoreCap), matrix_status: row.matrix_status, warning_count: Number(row.warning_count || 0) }
+    { key: 'context_score_cap', value: contextScoreCap(cfg, row, p.maxScoreCap, effectiveWarnings), matrix_status: row.matrix_status, warning_count: rawWarningCount, effective_warning_count: effectiveWarnings, effective_warning_severity: effectiveWarningSeverity }
   ];
   if (sideSymmetryRisk) {
     hardCaps.push({ key: 'side_symmetry_score_cap', value: evidenceInfo.rowCount <= 0 ? finiteNumber((cfg.symmetry_rules || {}).zero_direct_evidence_symmetry_cap, 76) : finiteNumber((cfg.symmetry_rules || {}).nonzero_direct_evidence_symmetry_cap, 88), side_delta: Math.abs((rawMore ?? 0) - (rawLess ?? 0)) });
@@ -1142,6 +1170,10 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     direct_prop_evidence_bucket: evidenceInfo.bucket,
     direct_prop_evidence_present: evidenceInfo.present,
     market_coverage_row_count: evidenceInfo.coverageCount,
+    raw_warning_count: rawWarningCount,
+    effective_warning_count: effectiveWarnings,
+    effective_warning_severity: effectiveWarningSeverity,
+    effective_warning_policy: 'raw_warning_count_preserved_but_soft_partial_missing_current_readiness_with_direct_evidence_uses_effective_warning_tier',
     score_caps_applied: selectedCapResult.applied,
     side_symmetry_risk: sideSymmetryRisk,
     goblin_demon_less_score_policy: 'NULL_NOT_ZERO',
