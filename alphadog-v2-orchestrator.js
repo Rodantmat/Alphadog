@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.190-effective-warning-severity-calibration";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.191-board-full-window-parity-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -767,25 +767,53 @@ async function validateBoardFullRunFinalGuard(env, stageReports) {
   const marketSleeper = await first(env.MARKET_DB, "SELECT COUNT(*) AS rows FROM sleeper_board_current");
   const scorePrizePicks = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current WHERE source_key = 'prizepicks'");
   const scoreSleeper = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current WHERE source_key = 'sleeper'");
+  const scoreTotal = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current");
   const prepBatchCount = await first(env.SCORE_DB, "SELECT COUNT(DISTINCT prep_batch_id) AS rows FROM score_board_prepared_current");
 
+  const scorePrepPrizePicksRows = Number(scorePrepReport.prizepicks_rows || 0);
+  const scorePrepSleeperRows = Number(scorePrepReport.sleeper_rows || 0);
+  const scorePrepPreparedRows = Number(scorePrepReport.prepared_rows || 0);
+  const scorePrepAllSourceRowsBeforeWindow = Number(scorePrepReport.all_source_rows_seen_before_window_filter || 0);
+
+  const marketPrizePicksRows = Number(marketPrizePicks && marketPrizePicks.rows || 0);
+  const marketSleeperRows = Number(marketSleeper && marketSleeper.rows || 0);
+  const scorePrizePicksRows = Number(scorePrizePicks && scorePrizePicks.rows || 0);
+  const scoreSleeperRows = Number(scoreSleeper && scoreSleeper.rows || 0);
+  const scoreTotalRows = Number(scoreTotal && scoreTotal.rows || 0);
+  const marketTotalRows = marketPrizePicksRows + marketSleeperRows;
+
   const parity = {
-    market_prizepicks_rows: Number(marketPrizePicks && marketPrizePicks.rows || 0),
-    score_prizepicks_rows: Number(scorePrizePicks && scorePrizePicks.rows || 0),
-    market_sleeper_rows: Number(marketSleeper && marketSleeper.rows || 0),
-    score_sleeper_rows: Number(scoreSleeper && scoreSleeper.rows || 0),
-    score_distinct_prep_batches: Number(prepBatchCount && prepBatchCount.rows || 0)
+    market_prizepicks_rows_raw_current: marketPrizePicksRows,
+    score_prizepicks_rows_current_window: scorePrizePicksRows,
+    score_prep_prizepicks_rows_current_window: scorePrepPrizePicksRows,
+    market_sleeper_rows_raw_current: marketSleeperRows,
+    score_sleeper_rows_current_window: scoreSleeperRows,
+    score_prep_sleeper_rows_current_window: scorePrepSleeperRows,
+    market_total_rows_raw_current: marketTotalRows,
+    score_total_rows_current_window: scoreTotalRows,
+    score_prep_prepared_rows_current_window: scorePrepPreparedRows,
+    score_prep_all_source_rows_before_window_filter: scorePrepAllSourceRowsBeforeWindow,
+    board_rows_excluded_by_score_prep_window: scorePrepAllSourceRowsBeforeWindow > 0 ? scorePrepAllSourceRowsBeforeWindow - scorePrepPreparedRows : marketTotalRows - scoreTotalRows,
+    score_distinct_prep_batches: Number(prepBatchCount && prepBatchCount.rows || 0),
+    current_window_dates: scorePrepReport.current_window_dates || null,
+    guard_policy: "compare_score_current_to_score_prep_current_window_and_market_raw_to_score_prep_raw_seen"
   };
 
   const mismatches = [];
-  if (parity.market_prizepicks_rows !== parity.score_prizepicks_rows) mismatches.push("prizepicks_market_score_row_mismatch");
-  if (parity.market_sleeper_rows !== parity.score_sleeper_rows) mismatches.push("sleeper_market_score_row_mismatch");
+  if (parity.score_prizepicks_rows_current_window !== parity.score_prep_prizepicks_rows_current_window) mismatches.push("score_prizepicks_rows_do_not_match_score_prep_current_window");
+  if (parity.score_sleeper_rows_current_window !== parity.score_prep_sleeper_rows_current_window) mismatches.push("score_sleeper_rows_do_not_match_score_prep_current_window");
+  if (parity.score_total_rows_current_window !== parity.score_prep_prepared_rows_current_window) mismatches.push("score_total_rows_do_not_match_score_prep_prepared_rows");
   if (parity.score_distinct_prep_batches !== 1) mismatches.push("score_prepared_current_multiple_or_missing_batches");
+  if (scorePrepAllSourceRowsBeforeWindow > 0 && marketTotalRows !== scorePrepAllSourceRowsBeforeWindow) mismatches.push("market_raw_total_does_not_match_score_prep_raw_seen_before_window_filter");
+  if (scorePrepAllSourceRowsBeforeWindow <= 0 && marketTotalRows !== scoreTotalRows) mismatches.push("legacy_market_score_row_mismatch_without_window_report");
+  if (marketPrizePicksRows < scorePrizePicksRows) mismatches.push("market_prizepicks_raw_less_than_score_prizepicks_current_window");
+  if (marketSleeperRows < scoreSleeperRows) mismatches.push("market_sleeper_raw_less_than_score_sleeper_current_window");
+  if (parity.board_rows_excluded_by_score_prep_window < 0) mismatches.push("negative_window_exclusion_count");
 
   if (mismatches.length > 0) {
     return {
       ok: false,
-      reason: "board_full_run_final_market_score_parity_failed",
+      reason: "board_full_run_final_market_score_window_parity_failed",
       mismatches,
       parity,
       score_prep_report: scorePrepReport
@@ -794,7 +822,7 @@ async function validateBoardFullRunFinalGuard(env, stageReports) {
 
   return {
     ok: true,
-    reason: "board_full_run_final_guard_passed",
+    reason: "board_full_run_final_guard_passed_current_window_parity",
     required_stage_keys: requiredStageKeys,
     parity,
     score_prep_report: scorePrepReport
@@ -833,7 +861,7 @@ async function processBoardFullRunJob(env, row, runId, trigger) {
 
     const validation = childPassedBoardFullRun(stage, child);
     const childOutput = parseJsonSafeText(child.output_json || "{}", {});
-    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, prizepicks_stale_cleared: validation.prizepicks_stale_cleared === true, prizepicks_nonfatal_warning: validation.prizepicks_nonfatal_warning === true, prizepicks_stage_nonfatal: validation.prizepicks_stage_nonfatal === true, source_refresh_dispatch_ok: validation.source_refresh_dispatch_ok === true, source_refresh_dispatch_error: validation.source_refresh_dispatch_error || null, rows_read: childOutput.rows_read || 0, rows_written: childOutput.rows_written || 0, rows_promoted: childOutput.rows_promoted || childOutput.promoted_rows_written || 0, future_pickable_rows: childOutput.future_pickable_rows || 0, expired_or_started_rows: childOutput.expired_or_started_rows || 0, prepared_rows: childOutput.prepared_rows || 0, pickable_safe_rows: childOutput.pickable_safe_rows || 0, blocked_rows: childOutput.blocked_rows || 0, matchup_unresolved_rows: childOutput.matchup_unresolved_rows || 0, unresolved_player_rows: childOutput.unresolved_player_rows || 0, final_db_truth: childOutput.final_db_truth === true, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0, attempts: stageAttempts.length };
+    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, prizepicks_stale_cleared: validation.prizepicks_stale_cleared === true, prizepicks_nonfatal_warning: validation.prizepicks_nonfatal_warning === true, prizepicks_stage_nonfatal: validation.prizepicks_stage_nonfatal === true, source_refresh_dispatch_ok: validation.source_refresh_dispatch_ok === true, source_refresh_dispatch_error: validation.source_refresh_dispatch_error || null, rows_read: childOutput.rows_read || 0, rows_written: childOutput.rows_written || 0, rows_promoted: childOutput.rows_promoted || childOutput.promoted_rows_written || 0, future_pickable_rows: childOutput.future_pickable_rows || 0, expired_or_started_rows: childOutput.expired_or_started_rows || 0, prepared_rows: childOutput.prepared_rows || 0, prizepicks_rows: childOutput.prizepicks_rows || 0, sleeper_rows: childOutput.sleeper_rows || 0, all_source_rows_seen_before_window_filter: childOutput.all_source_rows_seen_before_window_filter || 0, current_window_dates: childOutput.current_window_dates || null, pickable_safe_rows: childOutput.pickable_safe_rows || 0, blocked_rows: childOutput.blocked_rows || 0, matchup_unresolved_rows: childOutput.matchup_unresolved_rows || 0, unresolved_player_rows: childOutput.unresolved_player_rows || 0, final_db_truth: childOutput.final_db_truth === true, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0, attempts: stageAttempts.length };
 
     if (validation.wait) {
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "PARTIAL_CONTINUE_BOARD_FULL_RUN_WAITING_ON_CHILD", certification: "BOARD_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
