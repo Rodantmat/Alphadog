@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.188-market-full-scoring-partial-gate";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.189-strict-c-realistic-v3-2-calibration";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1362,7 +1362,7 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
     }
   } else if (stageKey === "scoring_engine_simulation" && env.SCORE_DB) {
     proof = await first(env.SCORE_DB,
-      `SELECT simulation_batch_id AS batch_id, NULL AS request_id, NULL AS run_id, 'alphadog-v2-scoring-engine' AS worker_name, worker_version, 'scoring_engine_simulation_shadow_strict_c_realistic_v3_2' AS mode, status, matrix_rows_read AS prepared_rows_read, simulation_rows_written AS rows_written, certification AS certification_status, certification_grade, output_json, finished_at AS updated_at, started_at AS created_at
+      `SELECT simulation_batch_id AS batch_id, NULL AS request_id, NULL AS run_id, 'alphadog-v2-scoring-engine' AS worker_name, worker_version, 'scoring_engine_simulation_shadow_strict_b' AS mode, status, matrix_rows_read AS prepared_rows_read, simulation_rows_written AS rows_written, certification AS certification_status, certification_grade, output_json, finished_at AS updated_at, started_at AS created_at
        FROM scoring_engine_simulation_batches
        WHERE certification IS NOT NULL
          AND status NOT LIKE 'running%'
@@ -7372,13 +7372,13 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     logical_worker_name: isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine",
     deployed_worker_slot: "alphadog-v2-score-audit",
     trigger,
-    mode: isSimulationJob ? "scoring_engine_simulation_shadow_strict_c_realistic_v3_2" : "scoring_engine_current_strict_c_realistic_v3_2",
+    mode: isSimulationJob ? "scoring_engine_simulation_shadow_strict_b" : "scoring_engine_current_strict_c_realistic_v3_2",
     input_json: rowInput,
     exact_worker_only: true,
     framework_only: false,
     production_scoring_current: !isSimulationJob,
     simulation_only: isSimulationJob,
-    primary_simulation_profile: isSimulationJob ? "STRICT_C_REALISTIC_V3_2" : null,
+    primary_simulation_profile: isSimulationJob ? "STRICT_B" : "STRICT_C_REALISTIC_V3_2",
     comparison_profile: isSimulationJob ? "HYBRID_CONTROL" : null,
     writes_shadow_table_only: isSimulationJob,
     thresholds_locked: false,
@@ -7436,7 +7436,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
-    deployed_slot_version: isSimulationJob ? "alphadog-v2-score-audit-v0.2.4-db-config-score-sort-boundary-fix" : "alphadog-v2-score-audit-v0.2.4-db-config-score-sort-boundary-fix",
+    deployed_slot_version: isSimulationJob ? "alphadog-v2-scoring-engine-v0.4.6-strict-c-realistic-v3-2-db-calibration" : "alphadog-v2-scoring-engine-v0.4.6-strict-c-realistic-v3-2-db-calibration",
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
