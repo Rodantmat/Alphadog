@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.4-chunked-current-scoring-terminalizer";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.5-batch-schema-terminalizer";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PROFILE_VERSION = "0.2.1";
@@ -1837,7 +1837,7 @@ async function runScoringEngineCurrent(env, input) {
   const chunk = await insertEngineCurrentProfileChunk(env, batchId, 'STRICT_B', { readChunkSize: 60, writeBatchSize: 8, maxRowsThisInvocation: 420, maxMillis: 43000 });
   await run(env.SCORE_DB, `
     UPDATE scoring_engine_batches
-    SET status=?, certification=?, certification_grade=?, matrix_rows_read=?, score_rows_written=?, updated_at=CURRENT_TIMESTAMP, output_json=?
+    SET status=?, certification=?, certification_grade=?, matrix_rows_read=?, score_rows_written=?, output_json=?
     WHERE batch_id=?
   `,
     chunk.remaining_rows > 0 ? 'partial_continue_scoring_current' : 'running_finalizing_scoring_current',
