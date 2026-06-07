@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.187-scoring-engine-current-timeout-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.188-market-full-scoring-partial-gate";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -934,7 +934,7 @@ function marketScoringFullRunChildInput(parentRow, stage, stepIndex, retryCount 
     return { ...base, logical_worker_name: "alphadog-v2-scoring-engine", deployed_worker_slot: "alphadog-v2-score-audit", exact_worker_only: true, framework_only: false, production_scoring_current: true, primary_profile: "STRICT_B", worker_owned_schema_creation: true, writes_score_db_scoring_engine_only: true, no_simulation_shadow_mutation: true, no_archive_mutation: false, thresholds_locked: false, scoring_enabled: true, true_probability_enabled: false, no_true_hit_probability_claims: true, regular_lines_two_sided: true, goblin_demon_more_only: true, goblin_demon_under_blocker: "GOBLIN_DEMON_UNDER_NOT_SELECTABLE", no_candidate_board_write: true, no_old_prop_scores_write: true, no_ranking: true, no_final_board: true };
   }
   if (stage.job_key === "score-final-board") {
-    return { ...base, exact_worker_only: true, deployed_worker_slot: "alphadog-v2-score-final-board", service_binding_name: "SCORE_FINAL_BOARD_WORKER", profile_key: "STRICT_B", source_engine_batch_policy: "latest_completed_real_engine_scoring_batch_unless_explicit_batch_supplied", writes_score_final_board_current: true, writes_score_final_board_history: true, no_external_calls: true, no_source_board_mutation: true, no_simulation_shadow_mutation: true, requires_real_engine_scoring_batch: true };
+    return { ...base, exact_worker_only: true, deployed_worker_slot: "alphadog-v2-score-final-board", service_binding_name: "SCORE_FINAL_BOARD_WORKER", profile_key: "STRICT_B", source_engine_batch_policy: "market_full_requires_explicit_same_chain_completed_scoring_batch", writes_score_final_board_current: true, writes_score_final_board_history: true, no_external_calls: true, no_source_board_mutation: true, no_simulation_shadow_mutation: true, requires_real_engine_scoring_batch: true };
   }
   return base;
 }
@@ -969,9 +969,9 @@ async function releaseMarketScoringFullRunLock(env, parentRow) {
   );
 }
 
-async function enqueueMarketScoringFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0) {
+async function enqueueMarketScoringFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0, extraInput = {}) {
   const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
-  const input = marketScoringFullRunChildInput(parentRow, stage, stepIndex, retryCount);
+  const input = { ...marketScoringFullRunChildInput(parentRow, stage, stepIndex, retryCount), ...(extraInput || {}) };
   await run(env.CONTROL_DB,
     "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, datetime('now', '+' || ? || ' seconds'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
     childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input), MARKET_SCORING_FULL_RUN_CHILD_RUN_AFTER_SECONDS
@@ -1347,8 +1347,9 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
     proof = await first(env.SCORE_DB,
       `SELECT batch_id, NULL AS request_id, NULL AS run_id, 'alphadog-v2-scoring-engine' AS worker_name, worker_version, 'scoring_engine_current_strict_b' AS mode, status, matrix_rows_read AS prepared_rows_read, score_rows_written AS rows_written, certification AS certification_status, certification_grade, output_json, finished_at AS updated_at, started_at AS created_at
        FROM scoring_engine_batches
-       WHERE certification IS NOT NULL
-         AND status NOT LIKE 'running%'
+       WHERE status='completed_scoring_current_rows_written'
+         AND certification='SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS'
+         AND certification_grade LIKE 'PASS%'
          AND output_json LIKE '%' || ? || '%'
        ORDER BY datetime(finished_at) DESC, datetime(started_at) DESC
        LIMIT 1`,
@@ -1432,12 +1433,39 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
   return { reconciled: true, ok, output: reconciledOutput };
 }
 
+function isMarketScoringFullRunPartialChildOutput(output) {
+  if (!output) return false;
+  const status = String(output.status || "").toLowerCase();
+  const cert = String(output.certification || output.certification_status || "").toUpperCase();
+  const grade = String(output.certification_grade || "").toUpperCase();
+  return output.continuation_required === true
+    || output.orchestrator_should_self_continue === true
+    || Number(output.remaining_rows || 0) > 0
+    || status.includes("partial_continue")
+    || cert.includes("PARTIAL_CONTINUE")
+    || grade === "PARTIAL";
+}
+
 function childPassedMarketScoringFullRun(stage, child) {
   if (!child) return { pass: false, wait: false, reason: "child_missing" };
   const status = String(child.status || "");
   if (["pending", "running", "partial_continue"].includes(status) && !child.finished_at) return { pass: false, wait: true, reason: "child_active", child_status: status };
   const output = parseJsonSafeText(child.output_json || "{}", {});
   const cert = String(output.certification || output.certification_status || "");
+  if (status === "completed" && isMarketScoringFullRunPartialChildOutput(output)) {
+    return {
+      pass: false,
+      wait: true,
+      reason: "child_partial_continue_not_terminal",
+      child_status: status,
+      certification: cert,
+      certification_grade: output.certification_grade || null,
+      rows_read: output.rows_read || output.prepared_rows_read || output.matrix_rows_read || 0,
+      rows_written: output.rows_written || output.packets_written || output.matrix_rows_written || output.simulation_rows_written || output.current_rows_written || output.final_rows_written || 0,
+      batch_id: output.batch_id || output.simulation_batch_id || output.final_board_batch_id || null,
+      output
+    };
+  }
   if (status !== "completed") return { pass: false, wait: false, reason: "child_not_completed", child_status: status, child_error_code: child.error_code || null, child_error_message: child.error_message || null, certification: cert, output };
   if (!output || output.ok !== true || output.data_ok !== true) return { pass: false, wait: false, reason: "child_output_not_data_ok", child_status: status, output_ok: output && output.ok, data_ok: output && output.data_ok, certification: cert, output };
   return {
@@ -1479,7 +1507,16 @@ async function processMarketScoringFullRunJob(env, row, runId, trigger) {
     });
     const child = stageChildren[stageChildren.length - 1] || null;
     if (!child) {
-      const enqueued = await enqueueMarketScoringFullRunChild(env, row, stage, i, 0);
+      const extraChildInput = {};
+      if (stage.stage_key === "score_final_board") {
+        const scoringReport = stageReports.find(r => r.stage_key === "scoring_engine" && r.batch_id);
+        if (scoringReport && scoringReport.batch_id) {
+          extraChildInput.source_engine_batch_id = scoringReport.batch_id;
+          extraChildInput.scoring_engine_batch_id = scoringReport.batch_id;
+          extraChildInput.source_engine_batch_required_from_same_chain = true;
+        }
+      }
+      const enqueued = await enqueueMarketScoringFullRunChild(env, row, stage, i, 0, extraChildInput);
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_scoring_full_run", status: "PARTIAL_CONTINUE_MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED", certification: "MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: MARKET_SCORING_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, hard_child_request_boundary: true, child_run_after_delay_seconds: MARKET_SCORING_FULL_RUN_CHILD_RUN_AFTER_SECONDS, parent_recheck_delay_seconds: MARKET_SCORING_FULL_RUN_PARENT_RECHECK_SECONDS, lock_held: true, approved_chain_order: MARKET_SCORING_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports };
       await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED', ?, 1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
       await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+6 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
@@ -1496,7 +1533,15 @@ async function processMarketScoringFullRunJob(env, row, runId, trigger) {
     const validation = childPassedMarketScoringFullRun(stage, child);
     const report = { stage_key: stage.stage_key, job_key: stage.job_key, worker_name: stage.worker_name, request_id: child.request_id, child_status: child.status, pass: validation.pass, wait: validation.wait, reason: validation.reason || null, certification: validation.certification || null, certification_grade: validation.certification_grade || null, rows_read: validation.rows_read || 0, rows_written: validation.rows_written || 0, external_calls: validation.external_calls || 0, batch_id: validation.batch_id || null };
     if (validation.wait) {
-      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_scoring_full_run", status: "PARTIAL_CONTINUE_MARKET_SCORING_FULL_RUN_WAITING_ON_CHILD", certification: "MARKET_SCORING_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: MARKET_SCORING_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
+      if (validation.reason === "child_partial_continue_not_terminal" && String(child.status || "") === "completed") {
+        await run(env.CONTROL_DB,
+          "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+          JSON.stringify({ ...(validation.output || {}), recovered_to_pending_for_partial_continue: true, recovery_version: SYSTEM_VERSION }), child.request_id
+        );
+        child.status = "pending";
+        child.finished_at = null;
+      }
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_scoring_full_run", status: "PARTIAL_CONTINUE_MARKET_SCORING_FULL_RUN_WAITING_ON_CHILD", certification: "MARKET_SCORING_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, waiting_reason: validation.reason || null, completed_stage_count: stageReports.length, total_stage_count: MARKET_SCORING_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
       await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'MARKET_SCORING_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
       await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+6 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
       return output;

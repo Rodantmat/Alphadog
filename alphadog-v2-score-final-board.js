@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.8-engine-current-timebox-finalizer";
+const VERSION = "alphadog-v2-score-final-board-v0.1.9-explicit-engine-batch-gate";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_B";
 
@@ -913,14 +913,26 @@ async function generateFinalBoard(env, input) {
   const batchId = rid("score_final_board_batch");
   const requestId = input.request_id || null;
   const runId = input.run_id || null;
-  const engine = await latestCompletedEngineBatch(env, input.source_engine_batch_id || input.scoring_engine_batch_id || null);
+  const requestedEngineBatchId = input.source_engine_batch_id || input.scoring_engine_batch_id || null;
+  if (input.requires_real_engine_scoring_batch === true && !requestedEngineBatchId) {
+    await run(env.SCORE_DB, `
+      INSERT INTO score_final_board_batches (final_board_batch_id, worker_version, job_key, source_simulation_batch_id, source_engine_batch_id, source_scoring_worker_version, profile_key, status, certification, certification_grade, started_at)
+      VALUES (?, ?, ?, NULL, NULL, NULL, ?, 'blocked_missing_explicit_engine_batch', 'SCORE_FINAL_BOARD_BLOCKED_MISSING_EXPLICIT_ENGINE_BATCH', 'BLOCKED', CURRENT_TIMESTAMP)
+    `, batchId, VERSION, JOB_KEY, PRIMARY_PROFILE);
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_missing_explicit_engine_batch", certification:"SCORE_FINAL_BOARD_BLOCKED_MISSING_EXPLICIT_ENGINE_BATCH", certification_grade:"BLOCKED", final_board_batch_id:batchId, reason:"Market Full must pass the same-chain terminal scoring_engine batch_id; Final Board is not allowed to fall back to an old completed batch." };
+    await writeIssue(env, batchId, null, "MISSING_EXPLICIT_ENGINE_BATCH", "BLOCKER", 1, output);
+    await run(env.SCORE_DB, `UPDATE score_final_board_batches SET output_json=?, finished_at=CURRENT_TIMESTAMP WHERE final_board_batch_id=?`, safeJson(output), batchId);
+    return output;
+  }
+
+  const engine = await latestCompletedEngineBatch(env, requestedEngineBatchId);
 
   if (!engine || engine.status !== "completed_scoring_current_rows_written" || engine.certification !== "SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS") {
     await run(env.SCORE_DB, `
       INSERT INTO score_final_board_batches (final_board_batch_id, worker_version, job_key, source_simulation_batch_id, source_engine_batch_id, source_scoring_worker_version, profile_key, status, certification, certification_grade, started_at)
       VALUES (?, ?, ?, NULL, ?, ?, ?, 'running', 'SCORE_FINAL_BOARD_STARTED', 'RUNNING', CURRENT_TIMESTAMP)
     `, batchId, VERSION, JOB_KEY, engine && engine.batch_id || null, engine && engine.worker_version || null, PRIMARY_PROFILE);
-    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_no_completed_engine_scoring_batch", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_COMPLETED_ENGINE_SCORING", certification_grade:"BLOCKED", final_board_batch_id:batchId, requested_engine_batch_id:input.source_engine_batch_id || input.scoring_engine_batch_id || null };
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_no_completed_engine_scoring_batch", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_COMPLETED_ENGINE_SCORING", certification_grade:"BLOCKED", final_board_batch_id:batchId, requested_engine_batch_id:requestedEngineBatchId };
     await writeIssue(env, batchId, engine && engine.batch_id || null, "NO_COMPLETED_ENGINE_SCORING_BATCH", "BLOCKER", 1, output);
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
