@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.206-daily-context-zero-delay-hot-drain";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.207-daily-master-full-run";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -463,6 +463,12 @@ function isMarketScoringFullRunJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "market-scoring-full-run" && worker === "alphadog-v2-orchestrator";
+}
+
+function isDailyFullRunJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "daily-full-run" && worker === "alphadog-v2-orchestrator";
 }
 
 function isScorePrepJob(row) {
@@ -1705,6 +1711,190 @@ async function processMarketScoringFullRunJob(env, row, runId, trigger) {
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalCertification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
   await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'market_scoring_full_run_completed', 'Market/Factors/Matrix/Scoring/Final Board/Hit Probability full run chain completed', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+  return output;
+}
+
+
+const DAILY_FULL_RUN_LOCK_KEY = "DAILY_FULL_RUN";
+const DAILY_FULL_RUN_STAGES = [
+  { stage_key: "daily_context_full_run", job_key: "daily-context-full-run", worker_name: "alphadog-v2-orchestrator", display_name: "Daily Context Full Run", visible_button: "DAILY JOBS > Full Run", mode: "daily_full_run_daily_context", worker_group: "Daily", phase_key: "daily", priority: 3 },
+  { stage_key: "board_full_run", job_key: "board-full-run", worker_name: "alphadog-v2-orchestrator", display_name: "Board Full Run", visible_button: "BOARD > Full Run", mode: "daily_full_run_board", worker_group: "Board", phase_key: "board", priority: 3 },
+  { stage_key: "market_scoring_full_run", job_key: "market-scoring-full-run", worker_name: "alphadog-v2-orchestrator", display_name: "Market + Scoring Full Run", visible_button: "SCORING > Market Full", mode: "daily_full_run_market_scoring", worker_group: "12 Full Runs", phase_key: "daily_master", priority: 3 }
+];
+
+function dailyFullRunStageKeyFromChild(child) {
+  const input = parseJsonSafeText((child && child.input_json) || "{}", {});
+  return String(input.stage_key || "");
+}
+
+function dailyFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
+  return {
+    source: "daily_full_run_parent",
+    visible_button: stage.visible_button,
+    mode: stage.mode,
+    chain_id: parentRow.chain_id,
+    parent_chain_id: parentRow.chain_id,
+    parent_request_id: parentRow.request_id,
+    stage_key: stage.stage_key,
+    stage_index: stepIndex,
+    stage_count: DAILY_FULL_RUN_STAGES.length,
+    retry_count: retryCount,
+    approved_chain_order: DAILY_FULL_RUN_STAGES.map(s => s.job_key),
+    stop_on_first_failed_stage: true,
+    backend_chain_only: true,
+    no_browser_loop: true,
+    backend_scheduled_continuation: true,
+    no_generic_dispatch: true,
+    full_daily_master_run: true,
+    includes_daily_context_full_run: stage.stage_key === "daily_context_full_run",
+    includes_board_full_run: stage.stage_key === "board_full_run",
+    includes_market_scoring_full_run: stage.stage_key === "market_scoring_full_run",
+    prepared_for_split_slate: true,
+    prepared_for_half_slate: true,
+    prepared_for_single_game_slate: true,
+    today_tomorrow_retention_only: true,
+    no_static_work: true,
+    no_base_delta_workers: true,
+    no_incremental_morning_full_run: true,
+    old_production_mutation_forbidden: true,
+    no_old_production_touch: true,
+    created_at: nowIso()
+  };
+}
+
+async function ensureDailyFullRunLock(env, parentRow) {
+  await run(env.CONTROL_DB, "INSERT OR IGNORE INTO control_locks (lock_key, lock_flag, updated_at) VALUES (?, 0, CURRENT_TIMESTAMP)", DAILY_FULL_RUN_LOCK_KEY);
+  const lock = await first(env.CONTROL_DB,
+    "SELECT lock_key, lock_flag, owner_request_id, owner_worker_name, acquired_at, expires_at, updated_at, CASE WHEN expires_at IS NOT NULL AND datetime(expires_at) > datetime('now') THEN 1 ELSE 0 END AS not_expired FROM control_locks WHERE lock_key=?",
+    DAILY_FULL_RUN_LOCK_KEY
+  );
+  const activeOther = await first(env.CONTROL_DB,
+    "SELECT request_id, chain_id, status, updated_at FROM control_job_queue WHERE job_key='daily-full-run' AND request_id<>? AND status IN ('pending','running','partial_continue') AND finished_at IS NULL ORDER BY datetime(created_at) DESC LIMIT 1",
+    parentRow.request_id
+  );
+  if (lock && Number(lock.lock_flag) === 1 && lock.owner_request_id && lock.owner_request_id !== parentRow.request_id && Number(lock.not_expired) === 1) {
+    return { ok: false, reason: "daily_full_run_lock_busy", lock, active_other_parent: activeOther || null };
+  }
+  if (lock && Number(lock.lock_flag) === 1 && lock.owner_request_id && lock.owner_request_id !== parentRow.request_id && activeOther) {
+    return { ok: false, reason: "daily_full_run_active_parent_exists", lock, active_other_parent: activeOther };
+  }
+  await run(env.CONTROL_DB,
+    "UPDATE control_locks SET lock_flag=1, owner_request_id=?, owner_worker_name=?, acquired_at=COALESCE(acquired_at,CURRENT_TIMESTAMP), expires_at=datetime('now','+45 minutes'), updated_at=CURRENT_TIMESTAMP WHERE lock_key=?",
+    parentRow.request_id, WORKER_NAME, DAILY_FULL_RUN_LOCK_KEY
+  );
+  return { ok: true, recovered_stale_lock: !!(lock && Number(lock.lock_flag) === 1 && lock.owner_request_id !== parentRow.request_id) };
+}
+
+async function releaseDailyFullRunLock(env, parentRow) {
+  await run(env.CONTROL_DB,
+    "UPDATE control_locks SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE lock_key=? AND (owner_request_id=? OR owner_request_id IS NULL)",
+    DAILY_FULL_RUN_LOCK_KEY, parentRow.request_id
+  );
+}
+
+async function enqueueDailyFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0) {
+  const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
+  const input = dailyFullRunChildInput(parentRow, stage, stepIndex, retryCount);
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input)
+  );
+  return { child_request_id: childRequestId, input };
+}
+
+function dailyFullRunChildPassed(stage, child) {
+  if (!child) return { pass: false, wait: false, reason: "child_missing" };
+  const childStatus = String(child.status || "");
+  if (["pending", "running", "partial_continue"].includes(childStatus) && !child.finished_at) {
+    return { pass: false, wait: true, reason: "child_active", child_status: childStatus };
+  }
+  const output = parseJsonSafeText(child.output_json || "{}", {});
+  if (childStatus !== "completed") return { pass: false, reason: "child_not_completed", child_status: childStatus, child_error_code: child.error_code || null, child_error_message: child.error_message || null };
+  if (!output || output.ok !== true) return { pass: false, reason: "child_output_ok_not_true", output_ok: output && output.ok };
+  if (output.data_ok !== true) return { pass: false, reason: "child_data_ok_not_true", data_ok: output && output.data_ok };
+  if (stage.stage_key === "daily_context_full_run") {
+    if (output.daily_context_full_run_certified !== true) return { pass: false, reason: "daily_context_full_run_not_certified", certification: output.certification || output.certification_status || null };
+    if (Number(output.completed_stage_count || 0) !== Number(output.total_stage_count || DAILY_CONTEXT_FULL_RUN_STAGES.length)) return { pass: false, reason: "daily_context_full_run_stage_count_mismatch", completed_stage_count: output.completed_stage_count || 0, total_stage_count: output.total_stage_count || null };
+  }
+  if (stage.stage_key === "board_full_run") {
+    if (output.board_full_run_certified !== true) return { pass: false, reason: "board_full_run_not_certified", certification: output.certification || output.certification_status || null };
+    if (output.board_prep_completed !== true) return { pass: false, reason: "board_full_run_score_prep_not_completed", board_prep_completed: output.board_prep_completed };
+  }
+  if (stage.stage_key === "market_scoring_full_run") {
+    if (output.market_scoring_full_run_certified !== true) return { pass: false, reason: "market_scoring_full_run_not_certified", certification: output.certification || output.certification_status || null };
+    if (output.hit_probability_included !== true || output.hp_board_included !== true) return { pass: false, reason: "market_scoring_full_run_hit_probability_missing", hit_probability_included: output.hit_probability_included, hp_board_included: output.hp_board_included };
+  }
+  return { pass: true, certification: output.certification || output.certification_status || null, certification_grade: output.certification_grade || null, output };
+}
+
+async function processDailyFullRunJob(env, row, runId, trigger) {
+  const started = Date.now();
+  const parentInput = parseJsonSafeText(row.input_json || "{}", {});
+  const lock = await ensureDailyFullRunLock(env, row);
+  if (!lock.ok) {
+    const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_full_run", status: "PARTIAL_CONTINUE_DAILY_FULL_RUN_LOCK_BUSY", certification: "DAILY_FULL_RUN_LOCK_BUSY_WAIT", lock, continuation_required: true, orchestrator_should_self_continue: true };
+    await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_FULL_RUN_LOCK_BUSY_WAIT', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+10 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+    return output;
+  }
+
+  const childRows = await all(env.CONTROL_DB,
+    "SELECT request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, error_code, error_message, output_json, input_json, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE parent_request_id=? AND chain_id=? ORDER BY datetime(created_at) ASC",
+    row.request_id, row.chain_id
+  );
+  const stageReports = [];
+
+  for (let i = 0; i < DAILY_FULL_RUN_STAGES.length; i++) {
+    const stage = DAILY_FULL_RUN_STAGES[i];
+    const stageChildren = childRows.filter(c => {
+      const childStageKey = dailyFullRunStageKeyFromChild(c);
+      return childStageKey ? childStageKey === stage.stage_key : (c.job_key === stage.job_key && c.worker_name === stage.worker_name);
+    });
+    const child = stageChildren[stageChildren.length - 1] || null;
+
+    if (!child) {
+      const enqueued = await enqueueDailyFullRunChild(env, row, stage, i, 0);
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_full_run", status: "PARTIAL_CONTINUE_DAILY_FULL_RUN_CHILD_ENQUEUED", certification: "DAILY_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: DAILY_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, hard_child_request_boundary: true, child_run_after_delay_seconds: 0, parent_recheck_delay_seconds: 0, lock_held: true, approved_chain_order: DAILY_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports, full_daily_master_run: true };
+      await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_FULL_RUN_CHILD_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'daily_full_run_child_enqueued', 'Daily Full Run enqueued next parent full-run stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: enqueued.child_request_id, stage_key: stage.stage_key, stage_index: i, mode: stage.mode, approved_chain_order: DAILY_FULL_RUN_STAGES.map(s => s.job_key) }));
+      return output;
+    }
+
+    const validation = dailyFullRunChildPassed(stage, child);
+    const childOutput = parseJsonSafeText(child.output_json || "{}", {});
+    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || childOutput.certification_status || null, child_certification_grade: childOutput.certification_grade || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, completed_stage_count: childOutput.completed_stage_count || null, total_stage_count: childOutput.total_stage_count || null, rows_read: childOutput.rows_read || childOutput.prepared_rows_read || 0, rows_written: childOutput.rows_written || childOutput.current_rows_written || childOutput.prepared_rows || 0, external_calls: childOutput.external_calls || 0, child_summary_flags: { daily_context_full_run_certified: childOutput.daily_context_full_run_certified === true, board_full_run_certified: childOutput.board_full_run_certified === true, board_prep_completed: childOutput.board_prep_completed === true, market_scoring_full_run_certified: childOutput.market_scoring_full_run_certified === true, hit_probability_included: childOutput.hit_probability_included === true, hp_board_included: childOutput.hp_board_included === true } };
+
+    if (validation.wait) {
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_full_run", status: "PARTIAL_CONTINUE_DAILY_FULL_RUN_WAITING_ON_CHILD", certification: "DAILY_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: DAILY_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
+      await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+6 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      return output;
+    }
+
+    if (!validation.pass) {
+      const finalStatus = "FAILED_DAILY_FULL_RUN_CHILD_FAILED";
+      const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: validation.reason, child_error_code: child.error_code || null, child_error_message: child.error_message || null, stages: [...stageReports, report], completed_stage_count: stageReports.length, total_stage_count: DAILY_FULL_RUN_STAGES.length, approved_chain_order: DAILY_FULL_RUN_STAGES.map(s => s.job_key), full_daily_master_run_certified: false };
+      await releaseDailyFullRunLock(env, row);
+      await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "daily full run child failed").slice(0, 900));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "daily full run child failed").slice(0, 900), row.request_id);
+      return output;
+    }
+
+    stageReports.push(report);
+  }
+
+  const rowsRead = stageReports.reduce((sum, r) => sum + Number(r.rows_read || 0), 0);
+  const rowsWritten = stageReports.reduce((sum, r) => sum + Number(r.rows_written || 0), 0);
+  const externalCalls = stageReports.reduce((sum, r) => sum + Number(r.external_calls || 0), 0);
+  const warningStages = stageReports.filter(r => String(r.child_certification_grade || "").toUpperCase().includes("WARNING") || String(r.child_certification_grade || "").toUpperCase().includes("HARD_BLOCKER")).length;
+  const finalCertification = warningStages > 0 ? "DAILY_FULL_RUN_CERTIFIED_WITH_WARNINGS" : "DAILY_FULL_RUN_CERTIFIED";
+  const finalGrade = warningStages > 0 ? "FULL_RUN_PASS_WITH_WARNINGS" : "FULL_RUN_PASS";
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_full_run", status: "COMPLETED_DAILY_FULL_RUN", certification: finalCertification, certification_grade: finalGrade, full_daily_master_run_certified: true, completed_stage_count: stageReports.length, total_stage_count: DAILY_FULL_RUN_STAGES.length, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, warning_stage_count: warningStages, stages: stageReports, approved_chain_order: DAILY_FULL_RUN_STAGES.map(s => s.job_key), full_run_order: DAILY_FULL_RUN_STAGES.map(s => s.stage_key), includes_daily_context_full_run: true, includes_board_full_run: true, includes_market_scoring_full_run: true, includes_pricepicks_refresh: true, includes_sleeper_refresh: true, includes_score_prep: true, includes_market_context: true, includes_factors_matrix_scoring_final_board: true, includes_hit_probability: true, prepared_for_split_slate: true, prepared_for_half_slate: true, prepared_for_single_game_slate: true, no_static_work: true, no_base_delta_workers: true, no_incremental_morning_full_run: true, no_old_production_touch: true };
+  await releaseDailyFullRunLock(env, row);
+  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalCertification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'daily_full_run_completed', 'Daily Full Run certified Daily Context Full Run, Board Full Run, and Market/Scoring Full Run in order', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
   return output;
 }
 
@@ -8598,6 +8788,42 @@ async function processOneUnlocked(env, trigger) {
     );
   }
 
+
+  // v0.2.207: Hot-drain top-level Daily Full Run before its component chains.
+  // This parent owns the day-level order: Daily Context Full Run, Board Full Run,
+  // then Market/Scoring Full Run. Children remain hard parent boundaries; this
+  // selector only ensures the parent can enqueue/observe the next component without cron/manual wake.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
+       FROM control_job_queue p
+       JOIN control_job_queue c ON c.parent_request_id = p.request_id AND c.chain_id = p.chain_id
+       WHERE p.job_key='daily-full-run'
+         AND p.worker_name='alphadog-v2-orchestrator'
+         AND p.status IN ('pending','running','partial_continue')
+         AND p.finished_at IS NULL
+         AND c.status IN ('pending','partial_continue')
+         AND c.finished_at IS NULL
+         AND datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+       ORDER BY datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) ASC, datetime(c.created_at) ASC
+       LIMIT 1`
+    );
+  }
+
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+       FROM control_job_queue
+       WHERE job_key='daily-full-run'
+         AND worker_name='alphadog-v2-orchestrator'
+         AND status IN ('pending','partial_continue')
+         AND finished_at IS NULL
+         AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+       ORDER BY datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) ASC, datetime(created_at) ASC
+       LIMIT 1`
+    );
+  }
+
   // v0.2.146: Hot-drain Daily Context Full Run before generic queue work.
   // This copies the Board/Incremental intent but fixes the Daily-specific pacing
   // failure where due same-chain children waited for cron while unrelated or
@@ -9334,6 +9560,16 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+
+  if (isDailyFullRunJob(row)) {
+    const output = await processDailyFullRunJob(env, row, runId, trigger);
+    const rawStatus = String((output && output.status) || "").toLowerCase();
+    const status = rawStatus.includes("partial_continue") || output && output.orchestrator_should_self_continue
+      ? "partial_continue_daily_full_run_job"
+      : (output && output.ok ? "completed_one_daily_full_run_job" : "failed_one_daily_full_run_job");
+    return { status, request_id: row.request_id, run_id: runId, output };
+  }
+
   if (isMarketScoringFullRunJob(row)) {
     const output = await processMarketScoringFullRunJob(env, row, runId, trigger);
     const rawStatus = String((output && output.status) || "").toLowerCase();
@@ -9570,9 +9806,9 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
 
     await releaseLock(env, owner, "IDLE");
 
-    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_market_teams_game_odds_job" || x.status === "completed_one_market_hitter_prop_context_job" || x.status === "completed_one_market_pitcher_prop_context_job" || x.status === "completed_one_oddsapi_hitter_prop_context_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_delta_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job" || x.status === "completed_one_daily_weather_job" || x.status === "completed_one_daily_bullpen_availability_job" || x.status === "completed_one_daily_team_schedule_spot_job" || x.status === "completed_one_daily_starters_job" || x.status === "completed_one_daily_player_availability_job" || x.status === "completed_one_daily_lineups_source_probe_job" || x.status === "completed_one_daily_game_status_job" || x.status === "completed_one_daily_context_certifier_job" || x.status === "completed_one_daily_context_full_run_job" || x.status === "completed_one_prop_factor_miner_job" || x.status === "completed_one_prop_matrix_builder_job" || x.status === "completed_one_scoring_engine_job" || x.status === "completed_one_score_final_board_job" || x.status === "completed_one_market_scoring_full_run_job").length;
-    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job" || x.status === "partial_continue_daily_context_full_run_job" || x.status === "partial_continue_market_scoring_full_run_job" || x.status === "partial_continue_prop_matrix_builder_job").length;
-    const blocked = processed.filter(x => x.status === "failed_one_dispatch_exception_contained" || x.status === "blocked_unsupported_job" || x.status === "failed_one_market_teams_game_odds_job" || x.status === "failed_one_market_hitter_prop_context_job" || x.status === "failed_one_market_pitcher_prop_context_job" || x.status === "failed_one_oddsapi_hitter_prop_context_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_delta_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job" || x.status === "failed_one_daily_weather_job" || x.status === "failed_one_daily_bullpen_availability_job" || x.status === "failed_one_daily_team_schedule_spot_job" || x.status === "failed_one_daily_starters_job" || x.status === "failed_one_daily_player_availability_job" || x.status === "failed_one_daily_lineups_source_probe_job" || x.status === "failed_one_daily_game_status_job" || x.status === "failed_one_daily_context_certifier_job" || x.status === "failed_one_daily_context_full_run_job" || x.status === "failed_one_prop_factor_miner_job" || x.status === "failed_one_prop_matrix_builder_job" || x.status === "failed_one_scoring_engine_job" || x.status === "failed_one_score_final_board_job" || x.status === "failed_one_market_scoring_full_run_job").length;
+    const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_market_teams_game_odds_job" || x.status === "completed_one_market_hitter_prop_context_job" || x.status === "completed_one_market_pitcher_prop_context_job" || x.status === "completed_one_oddsapi_hitter_prop_context_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_delta_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job" || x.status === "completed_one_daily_weather_job" || x.status === "completed_one_daily_bullpen_availability_job" || x.status === "completed_one_daily_team_schedule_spot_job" || x.status === "completed_one_daily_starters_job" || x.status === "completed_one_daily_player_availability_job" || x.status === "completed_one_daily_lineups_source_probe_job" || x.status === "completed_one_daily_game_status_job" || x.status === "completed_one_daily_context_certifier_job" || x.status === "completed_one_daily_context_full_run_job" || x.status === "completed_one_prop_factor_miner_job" || x.status === "completed_one_prop_matrix_builder_job" || x.status === "completed_one_scoring_engine_job" || x.status === "completed_one_score_final_board_job" || x.status === "completed_one_market_scoring_full_run_job" || x.status === "completed_one_daily_full_run_job").length;
+    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job" || x.status === "partial_continue_daily_context_full_run_job" || x.status === "partial_continue_market_scoring_full_run_job" || x.status === "partial_continue_daily_full_run_job" || x.status === "partial_continue_prop_matrix_builder_job").length;
+    const blocked = processed.filter(x => x.status === "failed_one_dispatch_exception_contained" || x.status === "blocked_unsupported_job" || x.status === "failed_one_market_teams_game_odds_job" || x.status === "failed_one_market_hitter_prop_context_job" || x.status === "failed_one_market_pitcher_prop_context_job" || x.status === "failed_one_oddsapi_hitter_prop_context_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_delta_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job" || x.status === "failed_one_daily_weather_job" || x.status === "failed_one_daily_bullpen_availability_job" || x.status === "failed_one_daily_team_schedule_spot_job" || x.status === "failed_one_daily_starters_job" || x.status === "failed_one_daily_player_availability_job" || x.status === "failed_one_daily_lineups_source_probe_job" || x.status === "failed_one_daily_game_status_job" || x.status === "failed_one_daily_context_certifier_job" || x.status === "failed_one_daily_context_full_run_job" || x.status === "failed_one_prop_factor_miner_job" || x.status === "failed_one_prop_matrix_builder_job" || x.status === "failed_one_scoring_engine_job" || x.status === "failed_one_score_final_board_job" || x.status === "failed_one_market_scoring_full_run_job" || x.status === "failed_one_daily_full_run_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
 
     return base(env, {
@@ -9698,6 +9934,28 @@ async function countDueIncrementalMorningFullRun(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
+
+async function countDueDailyFullRun(env) {
+  const row = await first(env.CONTROL_DB,
+    `SELECT COUNT(*) AS c
+     FROM control_job_queue
+     WHERE finished_at IS NULL
+       AND status IN ('pending','running','partial_continue')
+       AND (
+         (job_key='daily-full-run' AND worker_name='alphadog-v2-orchestrator')
+         OR parent_request_id IN (
+           SELECT request_id
+           FROM control_job_queue
+           WHERE job_key='daily-full-run'
+             AND worker_name='alphadog-v2-orchestrator'
+             AND finished_at IS NULL
+             AND status IN ('pending','running','partial_continue')
+         )
+       )`
+  );
+  return Number(row && row.c ? row.c : 0);
+}
+
 async function countDueMarketScoringFullRun(env) {
   const row = await first(env.CONTROL_DB,
     `SELECT COUNT(*) AS c
@@ -9811,6 +10069,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
 
   const dueIncrementalMorningFullRun = await countDueIncrementalMorningFullRun(env);
   const dueBoardFullRun = await countDueBoardFullRun(env);
+  const dueDailyFullRun = await countDueDailyFullRun(env);
   const dueDailyContextFullRun = await countDueDailyContextFullRun(env);
   const dueMarketScoringFullRun = await countDueMarketScoringFullRun(env);
   const dueStaticPlayers = await countDueStaticPlayers(env);
@@ -9835,7 +10094,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const sawLockBusy = terminalStatuses.includes("lock_busy");
   const sawHardStop = terminalStatuses.some(s => s === "blocked" || s === "error");
   const continuationAllowedByLastCycle = !sawLockBusy && !sawHardStop;
-  const dueAnyHotChain = (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0);
+  const dueAnyHotChain = (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0);
   // v0.2.175: Market Scoring Full Run contains long external-market/scoring stages.
   // A bounded pump can legitimately observe GLOBAL_ORCHESTRATOR busy while a prior
   // service-binding fetch is still running or while its 5-minute owner lock is waiting
@@ -9850,8 +10109,9 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   // cron or manual Wake for the next stage/final parent closeout. Treat the
   // active Daily Context chain like Market Scoring: continue after a short delay
   // when due work remains.
+  const dailyFullRunLockBusyContinuation = sawLockBusy && !sawHardStop && dueDailyFullRun > 0;
   const dailyContextLockBusyContinuation = sawLockBusy && !sawHardStop && dueDailyContextFullRun > 0;
-  const lockBusyHotContinuation = marketScoringLockBusyContinuation || dailyContextLockBusyContinuation;
+  const lockBusyHotContinuation = marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation;
   const shouldSelfContinue = (continuationAllowedByLastCycle || lockBusyHotContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
@@ -9867,6 +10127,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       cycle_count: cycles.length,
       due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
       due_board_full_run_after_pump: dueBoardFullRun,
+      due_daily_full_run_after_pump: dueDailyFullRun,
       due_daily_context_full_run_after_pump: dueDailyContextFullRun,
       due_market_scoring_full_run_after_pump: dueMarketScoringFullRun,
       due_static_players_after_pump: dueStaticPlayers,
@@ -9888,6 +10149,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
       continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
       market_scoring_lock_busy_continuation: !!marketScoringLockBusyContinuation,
+      daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
       daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
       lock_busy_hot_continuation: !!lockBusyHotContinuation,
       daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_context_zero_delay_hot_drain_v0_2_206: true,
@@ -9906,6 +10168,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         next_source: nextSource,
         due_incremental_morning_full_run_after_pump: dueIncrementalMorningFullRun,
       due_board_full_run_after_pump: dueBoardFullRun,
+        due_daily_full_run_after_pump: dueDailyFullRun,
         due_daily_context_full_run_after_pump: dueDailyContextFullRun,
         due_market_scoring_full_run_after_pump: dueMarketScoringFullRun,
         due_static_players_after_pump: dueStaticPlayers,
@@ -9928,6 +10191,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         full_run_hot_continuation_v0_2_95: true,
         continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
         market_scoring_lock_busy_continuation: !!marketScoringLockBusyContinuation,
+        daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
         daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
         lock_busy_hot_continuation: !!lockBusyHotContinuation,
         daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_context_zero_delay_hot_drain_v0_2_206: true,
