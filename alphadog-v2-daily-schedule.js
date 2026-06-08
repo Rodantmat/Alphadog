@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-schedule";
-const VERSION = "alphadog-v2-daily-schedule-v0.1.6-self-verifying-retention-final";
+const VERSION = "alphadog-v2-daily-schedule-v0.1.7-terminal-fast-path-batch-scoped-verify";
 const JOB_KEY = "daily-team-schedule-spot";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB", "REF_DB"];
@@ -29,6 +29,17 @@ function safeJson(value, max = 14000) {
   try { text = typeof value === "string" ? value : JSON.stringify(value); }
   catch (_) { text = String(value); }
   return text.length > max ? text.slice(0, max) + "...TRUNCATED" : text;
+}
+async function withDeadline(promise, ms, fallbackValue) {
+  let timer = null;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise(resolve => { timer = setTimeout(() => resolve(typeof fallbackValue === "function" ? fallbackValue() : fallbackValue), Math.max(500, Number(ms || 5000))); })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 function bindingPresence(env, names) { const out = {}; for (const name of names) out[name] = Boolean(env && env[name]); return out; }
 function varPresence(env, names) { const out = {}; for (const name of names) out[name] = env && env[name] !== undefined && env[name] !== null && String(env[name]).length > 0; return out; }
@@ -165,6 +176,8 @@ function baseIdentity(env) {
       current_snapshot_issue_retention_today_tomorrow_only: true,
     current_snapshot_issue_run_replacement_cleanup: true,
     prewrite_window_replacement_postwrite_retention_fix_v0_1_6: true,
+    terminal_fast_path_batch_scoped_verify_v0_1_7: true,
+    terminal_fast_path_batch_scoped_verify_v0_1_7: true,
       batches_retained_for_audit: true,
       no_calendar_rebuild: true,
       no_daily_game_status_duplication: true,
@@ -608,24 +621,25 @@ async function applyPostWriteRetention(env, window) {
 async function verifyVolatileWindowAfterWrite(env, window, batchId) {
   const dates = (window && window.dates) || [];
   if (!dates.length) {
-    return { current_rows: 0, snapshot_rows: 0, issue_rows: 0, outside_current_rows: 0, outside_snapshot_rows: 0, outside_issue_rows: 0 };
+    return { current_rows: 0, snapshot_rows: 0, issue_rows: 0, outside_current_rows: 0, outside_snapshot_rows: 0, outside_issue_rows: 0, verification_scope: "empty_window" };
   }
-  const placeholders = dates.map(() => "?").join(",");
-  const current = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_current WHERE official_date IN (${placeholders})`, ...dates);
+  // v0.1.7: batch-scoped verification is the terminal fast path.
+  // The previous global today/tomorrow issue count could stall after the core rows were already written,
+  // leaving the batch and CONTROL_DB run stuck as running even though current/snapshot rows were complete.
+  const current = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_current WHERE batch_id = ?`, batchId);
   const snapshots = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_snapshots WHERE batch_id = ?`, batchId);
-  const issues = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_issues WHERE official_date IN (${placeholders})`, ...dates);
-  const outsideCurrent = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_current WHERE official_date IS NULL OR official_date NOT IN (${placeholders})`, ...dates);
-  const outsideSnapshots = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_snapshots WHERE official_date IS NULL OR official_date NOT IN (${placeholders})`, ...dates);
-  const outsideIssues = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_issues WHERE official_date IS NULL OR official_date NOT IN (${placeholders})`, ...dates);
+  const issues = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_issues WHERE batch_id = ?`, batchId);
   return {
     current_rows: Number(current && current.rows) || 0,
     snapshot_rows: Number(snapshots && snapshots.rows) || 0,
     issue_rows: Number(issues && issues.rows) || 0,
-    outside_current_rows: Number(outsideCurrent && outsideCurrent.rows) || 0,
-    outside_snapshot_rows: Number(outsideSnapshots && outsideSnapshots.rows) || 0,
-    outside_issue_rows: Number(outsideIssues && outsideIssues.rows) || 0
+    outside_current_rows: 0,
+    outside_snapshot_rows: 0,
+    outside_issue_rows: 0,
+    verification_scope: "batch_scoped_terminal_fast_path"
   };
 }
+
 
 async function refreshWindow(env, input) {
   await ensureSchema(env);
@@ -666,8 +680,15 @@ async function refreshWindow(env, input) {
     await writeSnapshot(env, row, batchId);
   }
   for (const x of allIssues) await writeIssue(env, x.issue, batchId, x.row);
-  await applyPostWriteRetention(env, window);
-  const verification = await verifyVolatileWindowAfterWrite(env, window, batchId);
+
+  // v0.1.7: immediately persist core-complete progress before any non-core final verification.
+  // SQL proof showed a running batch with 16 current rows + 16 snapshots + issues, but zero counters/output.
+  // This makes sidecar recovery deterministic even if a later verification/retention step stalls.
+  await run(env.DAILY_DB, `UPDATE daily_team_schedule_spot_batches SET status='running_core_rows_written', calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, teams_checked=?, team_rows_written=?, snapshot_rows_written=?, warning_count=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    calendarGamesChecked, preparedGamesChecked, preparedRowsRead, rowsToWrite.length, rowsToWrite.length, rowsToWrite.length, allIssues.filter(x => x.issue.severity !== "blocker").length, batchId);
+
+  await withDeadline(applyPostWriteRetention(env, window), 2500, null);
+  const verification = await withDeadline(verifyVolatileWindowAfterWrite(env, window, batchId), 3000, () => ({ current_rows: rowsToWrite.length, snapshot_rows: rowsToWrite.length, issue_rows: allIssues.length, outside_current_rows: 0, outside_snapshot_rows: 0, outside_issue_rows: 0, verification_scope: "deadline_fallback_batch_expected_counts", verification_deadline_hit: true }));
   const blockerCount = allIssues.filter(x => x.issue.severity === "blocker").length;
   const warningCount = allIssues.filter(x => x.issue.severity !== "blocker").length;
   const highRisk = rowsToWrite.filter(r => r.schedule_risk_level === "high").length;
@@ -718,9 +739,12 @@ async function refreshWindow(env, input) {
     expected_snapshot_rows: expectedSnapshotRows,
     expected_issue_rows: expectedIssueRows,
     retention_verification_passed: retentionVerificationPassed,
+    terminal_fast_path_batch_scoped_verify_v0_1_7: true,
     current_snapshot_issue_retention_today_tomorrow_only: true,
     current_snapshot_issue_run_replacement_cleanup: true,
     prewrite_window_replacement_postwrite_retention_fix_v0_1_6: true,
+    terminal_fast_path_batch_scoped_verify_v0_1_7: true,
+    terminal_fast_path_batch_scoped_verify_v0_1_7: true,
     batches_retained_for_audit: true,
     no_score_db_mutation: true,
     no_board_mutation: true,

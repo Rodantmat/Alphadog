@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.201-daily-certifier-bounded-self-terminal";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.202-daily-team-spot-timeout-sidecar-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -5792,6 +5792,55 @@ async function processDailyWeatherJob(env, row, runId, trigger) {
 }
 
 
+async function recoverDailyTeamScheduleSpotSidecarForDispatch(env, row, timeoutError) {
+  const batch = await first(env.DAILY_DB, "SELECT * FROM daily_team_schedule_spot_batches WHERE request_id=? ORDER BY datetime(created_at) DESC LIMIT 1", row.request_id);
+  if (!batch || !batch.batch_id) return null;
+  const c = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_team_schedule_spot_current WHERE batch_id=?", batch.batch_id);
+  const s = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_team_schedule_spot_snapshots WHERE batch_id=?", batch.batch_id);
+  const i = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_team_schedule_spot_issues WHERE batch_id=?", batch.batch_id);
+  const currentRows = Number(c && c.n || 0);
+  const snapshotRows = Number(s && s.n || 0);
+  const issueRows = Number(i && i.n || 0);
+  const expected = Number(batch.teams_checked || batch.team_rows_written || currentRows || 0);
+  if (!(currentRows > 0 && snapshotRows > 0 && currentRows === snapshotRows && (expected <= 0 || currentRows >= expected))) return null;
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    worker_name: row.worker_name,
+    job_key: row.job_key,
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    batch_id: batch.batch_id,
+    status: "completed_recovered_from_team_schedule_sidecar_after_dispatch_timeout",
+    certification: issueRows > 0 ? "DAILY_TEAM_SCHEDULE_SPOT_CERTIFIED_WITH_WARNINGS" : "DAILY_TEAM_SCHEDULE_SPOT_CERTIFIED_READY",
+    certification_grade: issueRows > 0 ? "PASS_WITH_WARNINGS" : "PASS",
+    certification_reason: "Recovered complete Daily Team Schedule Spot sidecar rows after service-binding terminal handoff stalled; batch/current/snapshot rows were DB-verified.",
+    window_start: batch.window_start || null,
+    window_end: batch.window_end || null,
+    calendar_games_checked: Number(batch.calendar_games_checked || 0),
+    prepared_games_checked: Number(batch.prepared_games_checked || 0),
+    prepared_rows_read: Number(batch.prepared_rows_read || 0),
+    teams_checked: Math.max(expected, currentRows),
+    team_rows_written: currentRows,
+    rows_written: currentRows,
+    snapshot_rows_written: snapshotRows,
+    issues_written: issueRows,
+    warning_count: issueRows,
+    external_calls: Number(batch.external_calls || 0),
+    recovered_from_sidecar_terminalization: true,
+    dispatch_timeout_reconciled_from_sidecar: true,
+    timeout_error: String(timeoutError || "daily_team_schedule_spot_service_binding_timeout").slice(0, 900),
+    no_score_db_mutation: true,
+    no_board_mutation: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true
+  };
+  await run(env.DAILY_DB, "UPDATE daily_team_schedule_spot_batches SET status='completed', teams_checked=?, team_rows_written=?, snapshot_rows_written=?, warning_count=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", Math.max(expected, currentRows), currentRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id);
+  return output;
+}
+
 async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
   if (!env.DAILY_SCHEDULE_WORKER || typeof env.DAILY_SCHEDULE_WORKER.fetch !== "function") {
     const output = {
@@ -5856,11 +5905,13 @@ async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
   let output;
   let httpStatus = null;
   try {
-    const resp = await env.DAILY_SCHEDULE_WORKER.fetch("https://internal.alphadog-v2-daily-schedule/run", {
+    // v0.2.202: Team Schedule Spot has proven it can write complete sidecar rows but stall before terminal response.
+    // Bound the service-binding wait and reconcile from DB-verified sidecar rows instead of holding GLOBAL_ORCHESTRATOR.
+    const resp = await serviceBindingFetch(env.DAILY_SCHEDULE_WORKER, "https://internal.alphadog-v2-daily-schedule/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    });
+    }, "daily_team_schedule_spot", 30000);
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); }
@@ -5868,7 +5919,11 @@ async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
       output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
     }
   } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+    const timeoutText = String(err && err.message ? err.message : err);
+    try { output = await recoverDailyTeamScheduleSpotSidecarForDispatch(env, row, timeoutText); } catch (_) { output = null; }
+    if (!output) {
+      output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: timeoutText, dispatch_timeout_reconcile_attempted: true };
+    }
   }
 
   const ok = !!(output && output.ok);
