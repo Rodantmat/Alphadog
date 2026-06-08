@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.15-primary-sanity-hp-advisory-balance";
+const VERSION = "alphadog-v2-score-final-board-v0.1.16-primary-diversification-player-cap";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
@@ -662,7 +662,7 @@ function appendCalibrationAdjustment(row, adjustment) {
   payload.score_adjustments.push(adjustment);
   payload.primary_cluster_cap = {
     enabled: true,
-    max_primary_rows_per_player: 2,
+    max_primary_rows_per_player: 1,
     action: adjustment && adjustment.key === "primary_cluster_cap_demoted_to_review" ? "demoted_to_review" : "kept_primary"
   };
   row.calibration_json = safeJson(payload);
@@ -1230,7 +1230,7 @@ async function generateFinalBoard(env, input) {
   let primaryRows = sanityBalancedCandidates.filter(r => r.board_tier === "PRIMARY");
   let reviewRows = sanityBalancedCandidates.filter(r => r.board_tier === "REVIEW");
 
-  const clusterCapResult = applyPrimaryClusterCap(primaryRows, reviewRows, 2);
+  const clusterCapResult = applyPrimaryClusterCap(primaryRows, reviewRows, 1);
   primaryRows = clusterCapResult.primaryRows;
   reviewRows = clusterCapResult.reviewRows;
 
@@ -1386,6 +1386,7 @@ async function generateFinalBoard(env, input) {
     primary_threshold_score: PRIMARY_THRESHOLD_SCORE,
     primary_threshold_confidence: PRIMARY_THRESHOLD_CONFIDENCE,
     primary_cluster_cap_active: true,
+    primary_diversification_policy: "PRIMARY caps one row per player/game slate key after HP advisory selection; overflow rows remain REVIEW. No source quotas, no prop quotas, no forced equality.",
     max_primary_rows_per_player: maxPrimaryRowsPerPlayer,
     by_tier_source: byTierSource,
     by_source_prop_side: bySourcePropSide,
@@ -1396,7 +1397,7 @@ async function generateFinalBoard(env, input) {
   await writeIssue(env, batchId, simBatchId, "LIVE_INVARIANT_FAILURE", "INFO", 0, { note: "No live row invariant failures detected before final board write." });
   await writeIssue(env, batchId, simBatchId, "REVIEW_TIER_INCLUDED", "WARNING", reviewRows.length, { note: "Review tier rows are intentionally included as safe soft rows. They are not strict PRIMARY rows.", review_rows_written: reviewRows.length });
   await writeIssue(env, batchId, simBatchId, "ARCHIVE_REVIEW_ADMITTED", archiveReviewCandidates.length ? "WARNING" : "INFO", archiveReviewCandidates.length, { note: "BIN_ARCHIVE/archive_eligible rows are admitted to REVIEW only instead of being silently killed by the 76+ qualified gate.", archive_review_rows_written: archiveReviewCandidates.length, archive_review_by_source: Object.values(archiveReviewBySource) });
-  await writeIssue(env, batchId, simBatchId, "PRIMARY_CLUSTER_CAP_APPLIED", clusterCapResult.demotedRows.length ? "WARNING" : "INFO", clusterCapResult.demotedRows.length, { note: "PRIMARY is capped at two rows per player; overflow rows are demoted to REVIEW, not deleted.", max_primary_rows_per_player: clusterCapResult.maxPrimaryRowsPerPlayer, primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap, primary_rows_after_cluster_cap: clusterCapResult.primaryRowsAfterClusterCap, demoted_rows: clusterCapResult.demotedRows.length });
+  await writeIssue(env, batchId, simBatchId, "PRIMARY_CLUSTER_CAP_APPLIED", clusterCapResult.demotedRows.length ? "WARNING" : "INFO", clusterCapResult.demotedRows.length, { note: "PRIMARY is capped at one row per player/game slate cluster key; overflow rows are demoted to REVIEW, not deleted. This is a diversification/correlation safety rail, not a quality killer or source quota.", max_primary_rows_per_player: clusterCapResult.maxPrimaryRowsPerPlayer, primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap, primary_rows_after_cluster_cap: clusterCapResult.primaryRowsAfterClusterCap, demoted_rows: clusterCapResult.demotedRows.length });
   await writeIssue(env, batchId, simBatchId, "PRIMARY_SANITY_HP_ADVISORY_APPLIED", (primarySanityResult.rescuedRows || primarySanityResult.demotedRows) ? "WARNING" : "INFO", (primarySanityResult.rescuedRows || 0) + (primarySanityResult.demotedRows || 0), { note: "Hit Probability advisory is used as a PRIMARY safety net only. It can rescue robust high-HP near-elite rows or demote robust low-HP PRIMARY rows to REVIEW. It does not delete rows, force equality, or apply source/prop quotas.", hp_advisory_batch_id: hpAdvisory.batch && hpAdvisory.batch.batch_id || null, hp_advisory_rows_loaded: hpAdvisory.rows || 0, candidate_rows_with_advisory: primarySanityResult.advisoryRowsSeen, rescued_to_primary_rows: primarySanityResult.rescuedRows, demoted_to_review_rows: primarySanityResult.demotedRows });
   await run(env.SCORE_DB, `
     UPDATE score_final_board_batches
