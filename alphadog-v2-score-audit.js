@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.11-source-payout-fairness-calibration";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.12-standard-market-blind-fairness-guard";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_REALISTIC_V3_2";
@@ -979,7 +979,7 @@ function americanPressure(price, scale) {
 }
 
 
-function sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, lineValue, selectedSide, scoreBefore) {
+function sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, lineValue, selectedSide, scoreBefore, context = {}) {
   if (scoreBefore == null) return { adjusted_score: null, adjustment: 0, cap: null, reason: 'no_selected_score' };
   const source = String(sourceKey || '').toLowerCase();
   if (source !== 'prizepicks') return { adjusted_score: scoreBefore, adjustment: 0, cap: null, reason: 'non_prizepicks_no_adjustment' };
@@ -997,9 +997,24 @@ function sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sid
   // This layer is intentionally source-fair, not recommendation/ranking logic: it reduces the
   // artificial source/payout discount while preserving a payout risk ceiling below elite.
   if (odds === 'standard') {
-    adjustment = 10;
-    cap = 87;
-    reason = 'prizepicks_standard_same_line_gap_recentered_with_strong_cap';
+    const effectiveMarket = String(context.effective_market_prop_context_status || '').toLowerCase();
+    const directRows = Math.max(0, Math.trunc(Number(context.direct_prop_evidence_row_count || 0)));
+    const evidenceBlind = effectiveMarket === 'market_prop_context_not_found' || effectiveMarket === 'market_prop_context_missing' || directRows <= 0;
+
+    // v0.4.12 guard: standard PrizePicks recentering must not manufacture an edge when
+    // the row is market/evidence blind. SQL same-line audits showed deterministic +11 gaps
+    // versus Sleeper on identical player/game/prop/side/line rows with identical warnings and
+    // no direct prop evidence. Keep the source-fair recenter only when direct/effective market
+    // context exists; otherwise leave the score on the base independent formula.
+    if (evidenceBlind) {
+      adjustment = 0;
+      cap = null;
+      reason = 'prizepicks_standard_market_blind_no_recenter_same_line_guard';
+    } else {
+      adjustment = 10;
+      cap = 87;
+      reason = 'prizepicks_standard_market_present_same_line_gap_recentered_with_strong_cap';
+    }
   } else if (odds === 'goblin') {
     adjustment = 20;
     cap = 79;
@@ -1162,9 +1177,9 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     const uncappedSelected = Math.min(p.maxScoreCap, clamp(selectedRaw - scorePenalty + bonus));
     selectedCapResult = capScoreWithReasons(uncappedSelected, hardCaps);
     const preFairnessScore = round0(selectedCapResult.score);
-    const fairness = sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, row.board_line_value, selectedSide, preFairnessScore);
+    const fairness = sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, row.board_line_value, selectedSide, preFairnessScore, { effective_market_prop_context_status: effectiveMarketPropContextStatus, direct_prop_evidence_row_count: evidenceInfo.rowCount, direct_prop_evidence_bucket: evidenceInfo.bucket });
     scoreInteger = round0(fairness.adjusted_score);
-    if (fairness.adjustment !== 0) {
+    if (fairness.adjustment !== 0 || fairness.reason === 'prizepicks_standard_market_blind_no_recenter_same_line_guard') {
       selectedCapResult.applied = [
         ...(selectedCapResult.applied || []),
         {
@@ -1242,7 +1257,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     effective_warning_policy: 'raw_warning_count_preserved_but_soft_partial_missing_current_readiness_with_direct_evidence_uses_effective_warning_tier',
     score_caps_applied: selectedCapResult.applied,
     source_payout_fairness_calibration_enabled: 1,
-    source_payout_fairness_policy: 'prizepicks_standard_gap_recenter_plus_goblin_demon_more_only_tempered_payout_caps; no_sleeper_boost; no_final_board_mutation',
+    source_payout_fairness_policy: 'prizepicks_standard_market_blind_no_recenter_guard_plus_market_present_recenter; goblin_demon_more_only_tempered_payout_caps; no_sleeper_boost; no_final_board_mutation',
     side_symmetry_risk: sideSymmetryRisk,
     goblin_demon_less_score_policy: 'NULL_NOT_ZERO',
     d1_memory_policy: 'no_large_scoring_cte; bounded_js_chunk_compute_and_json_each_batch_inserts_one_bind_per_batch'
