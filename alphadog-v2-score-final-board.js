@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.21-complete-review-ledger-offset-reader";
+const VERSION = "alphadog-v2-score-final-board-v0.1.22-no-final-recap-profile-evidence-board";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
@@ -47,10 +47,10 @@ function directEvidenceInfoFromBoardRow(row) {
   return { rowCount, coverageCount, bucket, present: rowCount > 0 };
 }
 function evidenceScoreCapFor(info) {
-  if (info.rowCount <= 0) return info.coverageCount > 0 ? 82 : 74;
-  if (info.rowCount === 1) return 89;
-  if (info.rowCount <= 4) return 94;
-  return 97;
+  // v0.1.22: kept only for legacy calculation_json compatibility.
+  // Final Board no longer re-caps score by market-evidence row count. Evidence quality
+  // affects PRIMARY/REVIEW tiering and confidence, not the score ceiling.
+  return 100;
 }
 function effectiveWarningCountFromBoardRow(row, evidenceInfo = null) {
   const calc = parseJsonObject(row.calculation_json);
@@ -476,7 +476,6 @@ function calibrateScoreAndConfidence(rawRow) {
   }
 
   const capCandidates = [
-    { key: "market_evidence_score_cap", cap: evidenceScoreCapFor(evidenceInfo), direct_prop_evidence_row_count: evidenceInfo.rowCount, evidence_bucket: evidenceInfo.bucket },
     { key: "context_score_cap", cap: contextScoreCapFor(rawRow, evidenceInfo), matrix_status: rawRow.matrix_status, warning_count: num(rawRow.warning_count, 0), effective_warning_count: effectiveWarningCountFromBoardRow(rawRow, evidenceInfo) }
   ];
   if (symmetryRisk) capCandidates.push({ key: "side_symmetry_score_cap", cap: evidenceInfo.rowCount <= 0 ? 76 : 88, side_delta_lt: 1 });
@@ -486,6 +485,7 @@ function calibrateScoreAndConfidence(rawRow) {
       scoreAdjustments.push(c);
     }
   }
+  scoreAdjustments.push({ key: "market_evidence_score_cap_removed_v0_1_22", delta: 0, direct_prop_evidence_row_count: evidenceInfo.rowCount, evidence_bucket: evidenceInfo.bucket, note: "Final Board does not re-cap score for missing/thin market prop rows. Evidence quality controls tiering/confidence only." });
 
   let confidenceCap = 100;
   if (evidenceInfo.rowCount <= 0) confidenceCap = Math.min(confidenceCap, evidenceInfo.coverageCount > 0 ? 60 : 50);
@@ -548,7 +548,7 @@ function applyCalibration(rawRow, preferredTier = null) {
       version: VERSION,
       board_tier: boardTier,
       review_subtier: boardTier === "REVIEW" ? calibrated.review_subtier : null,
-      tier_rule: "PRIMARY when calibrated_score_0_100 >= 88, calibrated_confidence_0_100 >= 85, direct_prop_evidence_row_count > 0, and no side symmetry risk, with optional robust Hit Probability advisory sanity rescue/demotion; otherwise REVIEW.",
+      tier_rule: "PRIMARY when calibrated_score_0_100 >= 88, calibrated_confidence_0_100 >= 85, direct_prop_evidence_row_count > 0, and no side symmetry risk, with optional robust Hit Probability advisory sanity rescue/demotion; otherwise REVIEW. No final score re-cap by source, payout, prop rarity, or market evidence row count.",
       raw_score_0_100: calibrated.raw_score_0_100,
       raw_confidence_0_100: calibrated.raw_confidence_0_100,
       calibrated_score_0_100: calibrated.score_0_100,
@@ -561,7 +561,7 @@ function applyCalibration(rawRow, preferredTier = null) {
       effective_warning_count: effectiveWarningCountFromBoardRow(rawRow, directEvidenceInfoFromBoardRow(rawRow)),
       score_adjustments: calibrated.score_adjustments,
       confidence_adjustments: calibrated.confidence_adjustments,
-      note: "STRICT_C_REALISTIC_V3_2 uses DB/profile scoring first, then final board caps for direct market evidence, effective partial-context warning density, and side symmetry. No platform quota, no forced balance. Optional HP advisory is a safety net, not a killer."
+      note: "STRICT_C_REALISTIC_V3_2 uses DB/profile scoring first. Final Board does not re-score or re-cap by source, payout, prop rarity, demon/goblin, HR/SB, or direct market row count. Only partial-context and side-symmetry safety caps remain. Optional HP advisory is a safety net, not a killer."
     })
   };
 }
@@ -888,7 +888,7 @@ function applyEngineFieldTierCalibration(rawRow) {
     version: VERSION,
     policy: "engine_field_only_no_recalibration",
     board_tier: boardTier,
-    rule: "PRIMARY uses engine BIN_STRONG/score>=84 plus direct market context with required playable fields; REVIEW is the complete safe archive_eligible ledger for engine BIN_QUALIFIED/score>=76 plus high archive band score>=74. Final Board does not re-score, re-cap REVIEW, or read review_playable from scoring_engine_current.",
+    rule: "PRIMARY uses calibrated score/confidence plus direct market context with required playable fields; REVIEW is the complete safe archive_eligible ledger for engine BIN_QUALIFIED/score>=76 plus high archive band score>=74. Final Board does not re-score or re-cap by source, payout, prop rarity, demon/goblin, HR/SB, or direct market row count.",
     engine_score_0_100: score,
     engine_confidence_0_100: confidence,
     engine_score_grade: grade,
@@ -1475,7 +1475,7 @@ async function generateFinalBoard(env, input) {
     archive_review_rows_written: archiveReviewCandidates.length,
     archive_review_by_source: Object.values(archiveReviewBySource),
     archive_review_admission_active: true,
-    archive_review_admission_policy: "BIN_ARCHIVE with archive_eligible=1, blocker_count=0, blocking_for_scoring=0, score>=70, confidence>=55 enters REVIEW only; payout_variant is not an exclusion.",
+    archive_review_admission_policy: "BIN_ARCHIVE with archive_eligible=1, blocker_count=0, blocking_for_scoring=0, score>=70, confidence>=55 enters REVIEW inventory only; payout_variant and prop rarity are not exclusions.",
     live_rows_read: primaryRaw.length,
     final_rows_written: rows.length,
     current_rows_written: rows.length,
