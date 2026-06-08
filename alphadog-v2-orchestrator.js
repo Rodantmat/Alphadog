@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.197-daily-context-stale-sidecar-nonfatal";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.198-daily-context-warning-grade-and-core-coverage";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -6788,10 +6788,15 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
     stageReports.push(report);
   }
 
-  const nonfatalStageCount = stageReports.filter(r => r.child_nonfatal_warning === true || r.child_data_ok !== true).length;
-  const finalCertification = nonfatalStageCount > 0 ? "DAILY_CONTEXT_FULL_RUN_CERTIFIED_WITH_NONFATAL_ENRICHMENT_WARNINGS" : "DAILY_CONTEXT_FULL_RUN_CERTIFIED_ALL_CONTEXT_STAGES_PASS";
-  const finalGrade = nonfatalStageCount > 0 ? "FULL_RUN_PASS_WITH_WARNINGS" : "FULL_RUN_PASS";
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "COMPLETED_DAILY_CONTEXT_FULL_RUN", certification: finalCertification, certification_grade: finalGrade, daily_context_full_run_certified: true, daily_context_nonfatal_enrichment_warning_count: nonfatalStageCount, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: DAILY_CONTEXT_FULL_RUN_STAGES.map(s => s.job_key), includes_daily_starters: true, includes_daily_lineups: true, includes_daily_player_availability: true, includes_daily_weather_roof: true, includes_daily_bullpen_availability: true, includes_daily_team_schedule_spot: true, includes_daily_umpire_context: true, includes_daily_context_certifier: true, no_daily_game_status_duplication: true, no_board_full_run: true, no_incremental_morning_full_run: true, no_static_work: true, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+  const warningStageCount = stageReports.filter(r => {
+    const grade = String(r.child_certification_grade || "").toUpperCase();
+    const cert = String(r.child_certification || "").toUpperCase();
+    return r.child_nonfatal_warning === true || r.child_data_ok !== true || grade.includes("WARN") || grade.includes("BLOCKER") || cert.includes("WARNING") || cert.includes("HARD_BLOCKER");
+  }).length;
+  const nonfatalStageCount = warningStageCount;
+  const finalCertification = warningStageCount > 0 ? "DAILY_CONTEXT_FULL_RUN_CERTIFIED_WITH_CONTEXT_WARNINGS" : "DAILY_CONTEXT_FULL_RUN_CERTIFIED_ALL_CONTEXT_STAGES_PASS";
+  const finalGrade = warningStageCount > 0 ? "FULL_RUN_PASS_WITH_WARNINGS" : "FULL_RUN_PASS";
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "COMPLETED_DAILY_CONTEXT_FULL_RUN", certification: finalCertification, certification_grade: finalGrade, daily_context_full_run_certified: true, daily_context_nonfatal_enrichment_warning_count: nonfatalStageCount, daily_context_warning_stage_count: warningStageCount, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: DAILY_CONTEXT_FULL_RUN_STAGES.map(s => s.job_key), includes_daily_starters: true, includes_daily_lineups: true, includes_daily_player_availability: true, includes_daily_weather_roof: true, includes_daily_bullpen_availability: true, includes_daily_team_schedule_spot: true, includes_daily_umpire_context: true, includes_daily_context_certifier: true, no_daily_game_status_duplication: true, no_board_full_run: true, no_incremental_morning_full_run: true, no_static_work: true, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
   await releaseDailyContextFullRunLock(env, row);
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalCertification, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
