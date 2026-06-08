@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-bullpen-availability";
-const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.11-strict-core-all-targets";
+const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.12-atomic-core-batch-no-predelete";
 const JOB_KEY = "daily-bullpen-availability";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -25,6 +25,12 @@ async function readJsonSafe(request) { try { return await request.json(); } catc
 async function all(db, sql, ...binds) { const s = db.prepare(sql); const r = binds.length ? await s.bind(...binds).all() : await s.all(); return r.results || []; }
 async function first(db, sql, ...binds) { const rows = await all(db, sql, ...binds); return rows[0] || null; }
 async function run(db, sql, ...binds) { const s = db.prepare(sql); return binds.length ? await s.bind(...binds).run() : await s.run(); }
+async function batchRun(db, statements, chunkSize = 20) {
+  for (let i = 0; i < statements.length; i += chunkSize) {
+    const chunk = statements.slice(i, i + chunkSize);
+    if (chunk.length) await db.batch(chunk);
+  }
+}
 function placeholders(n) { return Array.from({ length: n }, () => "?").join(","); }
 function safeJson(value, max = 14000) {
   if (value === undefined || value === null) return null;
@@ -271,15 +277,15 @@ async function pruneRetention(env, retention) {
     retention_date_end: retention.end
   };
 }
-async function replaceOperationalCurrentForWindow(env, retention) {
-  const current = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_current WHERE official_date IN (?, ?)`, retention.start, retention.end);
-  const pitcher = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_pitcher_availability_current WHERE official_date IN (?, ?)`, retention.start, retention.end);
+async function retirePriorOperationalCurrentForWindow(env, retention, batchId) {
+  const current = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_current WHERE official_date IN (?, ?) AND (batch_id IS NULL OR batch_id <> ?)`, retention.start, retention.end, batchId);
+  const pitcher = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_pitcher_availability_current WHERE official_date IN (?, ?) AND (batch_id IS NULL OR batch_id <> ?)`, retention.start, retention.end, batchId);
   return {
     current_deleted: current && current.meta ? current.meta.changes : null,
     pitcher_current_deleted: pitcher && pitcher.meta ? pitcher.meta.changes : null,
     retention_date_start: retention.start,
     retention_date_end: retention.end,
-    policy: "latest_successful_batch_replaces_operational_bullpen_current_for_today_tomorrow"
+    policy: "retire_prior_current_only_after_new_batch_core_is_db_verified"
   };
 }
 async function getPreparedTeamRows(env, retention) {
@@ -448,6 +454,37 @@ async function writeIssue(env, batchId, target, issue, pitcherId = null) {
   await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_bullpen_availability_issues (issue_id, batch_id, official_date, game_pk, team_id, pitcher_id, issue_status, issue_type, severity, reason, details_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
     rid("bullpen_issue"), batchId, target.official_date, target.game_pk, target.team_id, pitcherId, issue.issue_type || "unknown", issue.severity || "warning", issue.reason || "", safeJson({ target, issue }, 4000));
 }
+function buildTargetStatements(env, batchId, target, classified, sourceSnapshotAt) {
+  const key = `${target.official_date}_${target.game_pk}_${target.team_id}`;
+  const raw = safeJson({ target, classified, thresholds: { pitcher_high_1_day: 25, pitcher_high_2_day: 35, team_taxed_1_day: 80, team_high_risk_2_day: 130 } }, 12000);
+  const changedAt = nowUtc();
+  const statements = [];
+  statements.push(env.DAILY_DB.prepare(`INSERT OR REPLACE INTO daily_bullpen_availability_current (
+    bullpen_availability_key, batch_id, official_date, game_pk, game_time_utc, team_id, team_name, opponent_team_id, opponent_team_name, is_home, prepared_board_relevant, prepared_board_pickable_rows, bullpen_status, bullpen_confidence, availability_grade, recent_games_window_start, recent_games_window_end, games_checked, games_played_last_1_day, games_played_last_2_days, games_played_last_3_days, bullpen_pitchers_used_last_1_day, bullpen_pitchers_used_last_2_days, bullpen_pitchers_used_last_3_days, bullpen_pitches_last_1_day, bullpen_pitches_last_2_days, bullpen_pitches_last_3_days, bullpen_outs_last_1_day, bullpen_outs_last_2_days, bullpen_outs_last_3_days, high_usage_reliever_count, back_to_back_reliever_count, likely_unavailable_reliever_count, rested_reliever_count, unknown_reliever_count, closer_recent_usage_flag, setup_recent_usage_flag, doubleheader_recent_flag, extra_innings_recent_flag, bullpen_fatigue_score, bullpen_risk_level, source_key, source_endpoint, source_snapshot_at, first_seen_at, last_seen_at, changed_at, details_json, raw_json, created_at, updated_at
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, 0, ?, ?, 'team_db_bullpen_history', 'TEAM_DB.bullpen_history + TEAM_DB.mlb_game_calendar + SCORE_DB.score_board_prepared_current', ?, COALESCE((SELECT first_seen_at FROM daily_bullpen_availability_current WHERE official_date=? AND game_pk=? AND team_id=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, COALESCE(?, (SELECT changed_at FROM daily_bullpen_availability_current WHERE official_date=? AND game_pk=? AND team_id=?)), ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`).bind(
+    key, batchId, target.official_date, target.game_pk, target.game_time_utc, target.team_id, target.team_name, target.opponent_team_id, target.opponent_team_name, target.is_home, Number(target.prepared_board_pickable_rows || 0), classified.status, classified.confidence, classified.grade, addDays(target.official_date, -3), addDays(target.official_date, -1), classified.games3, classified.games1, classified.games2, classified.games3, classified.pitchers1, classified.pitchers2, classified.pitchers3, classified.pitches1, classified.pitches2, classified.pitches3, classified.outs1, classified.outs2, classified.outs3, classified.highUsage, classified.backToBack, classified.likelyUnavailable, classified.restedRelieverCount, classified.unknownRelieverCount, classified.doubleheaderRecent, classified.fatigueScore, classified.risk, sourceSnapshotAt, target.official_date, target.game_pk, target.team_id, changedAt, target.official_date, target.game_pk, target.team_id, safeJson({ issues: classified.issues, pitcher_count: classified.pitcherRisk.length }, 4000), raw));
+  statements.push(env.DAILY_DB.prepare(`INSERT OR REPLACE INTO daily_bullpen_availability_snapshots (snapshot_id, batch_id, official_date, game_pk, team_id, bullpen_status, availability_grade, bullpen_fatigue_score, bullpen_risk_level, source_snapshot_at, details_json, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`).bind(
+    rid("bullpen_snap"), batchId, target.official_date, target.game_pk, target.team_id, classified.status, classified.grade, classified.fatigueScore, classified.risk, sourceSnapshotAt, safeJson({ target, issues: classified.issues }, 4000), raw));
+  for (const issue of classified.issues) {
+    statements.push(env.DAILY_DB.prepare(`INSERT OR REPLACE INTO daily_bullpen_availability_issues (issue_id, batch_id, official_date, game_pk, team_id, pitcher_id, issue_status, issue_type, severity, reason, details_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`).bind(
+      rid("bullpen_issue"), batchId, target.official_date, target.game_pk, target.team_id, null, issue.issue_type || "unknown", issue.severity || "warning", issue.reason || "", safeJson({ target, issue }, 4000)));
+  }
+  return statements;
+}
+function buildPitcherStatements(env, batchId, target, classified, sourceSnapshotAt) {
+  const statements = [];
+  for (const p of classified.pitcherRisk.slice(0, MAX_PITCHER_DETAIL_ROWS_PER_TEAM)) {
+    const row = p.row || {};
+    const m = p.metrics;
+    const status = m.likelyUnavailable ? "likely_unavailable" : (m.highPitch || m.backToBack ? "limited" : "available");
+    const confidence = m.likelyUnavailable ? "WARNING_HIGH_PITCH_RECENT" : (m.highPitch ? "WARNING_HIGH_PITCH_RECENT" : (m.backToBack ? "WARNING_BACK_TO_BACK_USAGE" : "HIGH_RECENT_HISTORY_COMPLETE"));
+    const key = `${target.official_date}_${target.team_id}_${p.pitcher_id}`;
+    statements.push(env.DAILY_DB.prepare(`INSERT OR REPLACE INTO daily_bullpen_pitcher_availability_current (pitcher_availability_key, batch_id, official_date, team_id, pitcher_id, pitcher_name, pitcher_hand, role_hint, active_roster_flag, availability_status, availability_confidence, pitches_last_1_day, pitches_last_2_days, pitches_last_3_days, outs_last_1_day, outs_last_2_days, outs_last_3_days, appearances_last_1_day, appearances_last_2_days, appearances_last_3_days, back_to_back_flag, high_pitch_recent_flag, likely_unavailable_flag, notes, source_snapshot_at, details_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`).bind(
+      key, batchId, target.official_date, target.team_id, p.pitcher_id, row.pitcher_name || null, row.pitcher_hand || null, row.pitcher_role || row.relief_classification || "reliever", status, confidence, m.pitches1, m.pitches2, m.pitches3, m.outs1, m.outs2, m.outs3, m.app1, m.app2, m.app3, m.backToBack, m.highPitch, m.likelyUnavailable, m.dates.join(","), sourceSnapshotAt, safeJson({ target_game_pk: target.game_pk, team_name: target.team_name, dates_used: m.dates }, 3000)));
+  }
+  return statements;
+}
+
 async function writeTarget(env, batchId, target, classified, sourceSnapshotAt) {
   const key = `${target.official_date}_${target.game_pk}_${target.team_id}`;
   const old = await first(env.DAILY_DB, `SELECT bullpen_availability_key, raw_json FROM daily_bullpen_availability_current WHERE official_date=? AND game_pk=? AND team_id=?`, target.official_date, target.game_pk, target.team_id);
@@ -512,7 +549,7 @@ async function runBullpen(env, input) {
   const retention = retentionWindowPt();
   await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_bullpen_availability_batches (batch_id, request_id, run_id, worker_name, worker_version, job_key, mode, status, window_start, window_end, started_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "daily_bullpen_availability_refresh_window", retention.start, retention.end, sourceSnapshotAt);
   const prePrune = await pruneRetention(env, retention);
-  const operationalCurrentReplace = await replaceOperationalCurrentForWindow(env, retention);
+  let operationalCurrentRetire = null;
   const prepared = await getPreparedTeamRows(env, retention);
   const gamePks = [...new Set(prepared.map(r => Number(r.official_game_pk)).filter(Boolean))];
   const calendars = await getCalendar(env, gamePks);
@@ -524,35 +561,37 @@ async function runBullpen(env, input) {
   const recentCalendarRows = await getRecentCalendarRows(env, teamIds, minDate, maxDate);
   let currentWritten = 0, snapshotWritten = 0, issuesWritten = 0, pitcherWritten = 0;
   let deadlineSoftStopped = false;
-  let coreOnlyMode = false;
+  const fullRunChild = Boolean(input && input.daily_context_full_run_child);
   const summaries = [];
-  for (const target of targets) {
-    if (deadlineExceeded(runStartedMs)) {
-      deadlineSoftStopped = true;
-      coreOnlyMode = true;
-    }
+  const classifiedTargets = targets.map(target => {
     const classified = classifyTarget(target, bullpenRows, recentCalendarRows);
-    const writes = await writeTarget(env, batchId, target, classified, sourceSnapshotAt);
-    currentWritten += writes.current_written;
-    snapshotWritten += writes.snapshot_written;
-    issuesWritten += writes.issues_written;
     summaries.push({ game_pk: target.game_pk, team_id: target.team_id, team_name: target.team_name, status: classified.status, risk: classified.risk, score: classified.fatigueScore, pitches_last_1_day: classified.pitches1, pitches_last_2_days: classified.pitches2, relievers_last_3_days: classified.pitchers3, high_usage_relievers: classified.highUsage, back_to_back_relievers: classified.backToBack, likely_unavailable_relievers: classified.likelyUnavailable, issues: classified.issues.length });
-    await run(env.DAILY_DB, `UPDATE daily_bullpen_availability_batches SET calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, teams_checked=?, team_rows_written=?, snapshot_rows_written=?, warning_count=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-      calendars.length, gamePks.length, prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0), targets.length, currentWritten, snapshotWritten, issuesWritten, batchId);
-    if (deadlineExceeded(runStartedMs)) {
-      deadlineSoftStopped = true;
-      coreOnlyMode = true;
-    }
-    if (coreOnlyMode) continue;
-    const pitcherRows = await writePitchers(env, batchId, target, classified, sourceSnapshotAt);
-    pitcherWritten += pitcherRows;
-  }
-  if (deadlineSoftStopped) {
-    const issueTarget = targets[Math.max(0, Math.min(targets.length - 1, currentWritten - 1))] || { official_date: retention.start, game_pk: null, team_id: null };
-    await writeIssue(env, batchId, issueTarget, { severity: "warning", issue_type: "daily_bullpen_timebox_core_complete_pitcher_detail_limited", reason: "Daily bullpen protected core team/snapshot coverage first; pitcher detail rows may be partial because the soft deadline was reached." });
-    issuesWritten += 1;
-  }
+    return { target, classified };
+  });
+  const coreStatements = [];
+  for (const item of classifiedTargets) coreStatements.push(...buildTargetStatements(env, batchId, item.target, item.classified, sourceSnapshotAt));
+  await batchRun(env.DAILY_DB, coreStatements, 20);
+  currentWritten = targets.length;
+  snapshotWritten = targets.length;
+  issuesWritten = classifiedTargets.reduce((n, item) => n + item.classified.issues.length, 0);
+  await run(env.DAILY_DB, `UPDATE daily_bullpen_availability_batches SET calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, teams_checked=?, team_rows_written=?, snapshot_rows_written=?, warning_count=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    calendars.length, gamePks.length, prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0), targets.length, currentWritten, snapshotWritten, issuesWritten, batchId);
   const coreCoverage = await verifyCoreCoverage(env, batchId, targets);
+  if (coreCoverage.core_complete) {
+    operationalCurrentRetire = await retirePriorOperationalCurrentForWindow(env, retention, batchId);
+  }
+  const pitcherDetailDeferred = fullRunChild || deadlineExceeded(runStartedMs);
+  if (pitcherDetailDeferred && targets.length > 0) {
+    deadlineSoftStopped = true;
+    const issueTarget = targets[0] || { official_date: retention.start, game_pk: null, team_id: null };
+    await writeIssue(env, batchId, issueTarget, { severity: "warning", issue_type: "daily_bullpen_pitcher_detail_deferred_core_complete", reason: "Daily bullpen wrote and DB-verified complete team/snapshot core coverage first; pitcher detail rows are deferred in Full Run to stay under D1/runtime budgets." });
+    issuesWritten += 1;
+  } else {
+    const pitcherStatements = [];
+    for (const item of classifiedTargets) pitcherStatements.push(...buildPitcherStatements(env, batchId, item.target, item.classified, sourceSnapshotAt));
+    await batchRun(env.DAILY_DB, pitcherStatements, 20);
+    pitcherWritten = pitcherStatements.length;
+  }
   if (!coreCoverage.core_complete && targets.length > 0) {
     const issueTarget = targets[0] || { official_date: retention.start, game_pk: null, team_id: null };
     await writeIssue(env, batchId, issueTarget, { severity: "blocker", issue_type: "daily_bullpen_core_coverage_incomplete", reason: "Daily bullpen did not write one current and one snapshot row for every prepared-board relevant game/team target." });
@@ -605,7 +644,8 @@ async function runBullpen(env, input) {
     team_summaries: summaries,
     retention_policy: "current_pitcher_snapshots_issues_today_tomorrow_only_batches_retained_for_audit",
     retention_pre_prune: prePrune,
-    operational_current_replace: operationalCurrentReplace,
+    operational_current_retire_after_core_verified: operationalCurrentRetire,
+    pitcher_detail_deferred_for_full_run_stability: pitcherDetailDeferred,
     retention_post_prune: postPrune,
     sidecar_tables: ["daily_bullpen_availability_current", "daily_bullpen_pitcher_availability_current", "daily_bullpen_availability_snapshots", "daily_bullpen_availability_batches", "daily_bullpen_availability_issues"],
     source_tables_read_only: ["TEAM_DB.bullpen_history", "TEAM_DB.mlb_game_calendar", "SCORE_DB.score_board_prepared_current"],
