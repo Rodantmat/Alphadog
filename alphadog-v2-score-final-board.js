@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.17-current-engine-batch-freshness-guard";
+const VERSION = "alphadog-v2-score-final-board-v0.1.18-engine-field-tier-calibration";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
@@ -843,6 +843,79 @@ function applyPrimarySanityHpAdvisory(rows) {
   return { rows: out, demotedRows, rescuedRows, advisoryRowsSeen };
 }
 
+
+function scoreEngineGradeRank(row) {
+  const grade = norm(row.score_grade);
+  if (grade === "bin_strong") return 4;
+  if (grade === "bin_qualified") return 3;
+  if (grade === "bin_archive") return 2;
+  if (grade === "bin_reject") return 1;
+  return 0;
+}
+
+function engineRowIsBoardCandidate(row) {
+  if (!row) return false;
+  if (num(row.archive_eligible, 0) !== 1) return false;
+  if (num(row.blocker_count, 0) > 0 || num(row.blocking_for_scoring, 0) > 0) return false;
+  if (!row.selected_side || row.line_value == null || !row.player_name || !row.canonical_prop_key || !row.source_key || !row.mlb_player_id) return false;
+  const status = norm(row.score_status);
+  if (status === "blocked_by_matrix" || status === "model_deferred" || status === "simulation_hard_blocked") return false;
+  const score = num(row.score_0_100, NaN);
+  const confidence = num(row.confidence_0_100, NaN);
+  if (!Number.isFinite(score) || !Number.isFinite(confidence)) return false;
+  if (confidence < 55) return false;
+  const grade = norm(row.score_grade);
+  return score >= 76 || grade === "bin_qualified" || grade === "bin_strong" || (grade === "bin_archive" && score >= 74);
+}
+
+function applyEngineFieldTierCalibration(rawRow) {
+  const score = Math.round(clamp(num(rawRow.score_0_100, 0), 0, 100));
+  const confidence = Math.round(clamp(num(rawRow.confidence_0_100, 0), 0, 100));
+  const grade = rawRow.score_grade || gradeForScore(score);
+  const strong = norm(grade) === "bin_strong" || score >= 84;
+  const qualified = norm(grade) === "bin_qualified" || score >= 76;
+  const primaryCandidate = strong
+    && confidence >= 55
+    && num(rawRow.archive_eligible, 0) === 1
+    && num(rawRow.blocker_count, 0) === 0
+    && num(rawRow.blocking_for_scoring, 0) === 0
+    && norm(rawRow.score_status) !== "model_deferred";
+  const boardTier = primaryCandidate ? "PRIMARY" : "REVIEW";
+  let payload = {};
+  try { payload = rawRow.calculation_json ? JSON.parse(rawRow.calculation_json) : {}; } catch (_) { payload = {}; }
+  payload.final_board_tier_calibration = {
+    version: VERSION,
+    policy: "engine_field_only_no_recalibration",
+    board_tier: boardTier,
+    rule: "PRIMARY uses engine BIN_STRONG/score>=84 with required playable fields; REVIEW uses engine BIN_QUALIFIED/score>=76 plus high archive band score>=74. Final Board does not re-score, re-cap, or read review_playable from scoring_engine_current.",
+    engine_score_0_100: score,
+    engine_confidence_0_100: confidence,
+    engine_score_grade: grade,
+    source_key: rawRow.source_key || null,
+    payout_variant: rawRow.payout_variant || null,
+    selected_side: rawRow.selected_side || null,
+    archive_eligible: num(rawRow.archive_eligible, 0),
+    live_playable_from_engine: num(rawRow.live_playable, 0)
+  };
+  const rawSort = num(rawRow.score_sort_0_100, score);
+  return {
+    ...rawRow,
+    board_tier: boardTier,
+    live_playable: boardTier === "PRIMARY" ? 1 : 0,
+    review_playable: boardTier === "REVIEW" ? 1 : 0,
+    raw_score_0_100: score,
+    raw_confidence_0_100: confidence,
+    score_0_100: score,
+    confidence_0_100: confidence,
+    score_grade: grade,
+    score_sort_0_100: Number.isFinite(rawSort) ? rawSort : score,
+    calibration_failed: false,
+    calibration_json: safeJson(payload),
+    final_board_candidate_grade_rank: scoreEngineGradeRank(rawRow),
+    source_candidate_tier: qualified ? "ENGINE_QUALIFIED_OR_STRONG" : "ENGINE_HIGH_ARCHIVE_REVIEW"
+  };
+}
+
 function applyPrimaryClusterCap(primaryRows, reviewRows, maxPerPlayer = 2) {
   const sortedPrimary = [...primaryRows].sort((a, b) =>
     (num(b.score_0_100) - num(a.score_0_100)) ||
@@ -1181,76 +1254,41 @@ async function generateFinalBoard(env, input) {
     return output;
   }
 
-  const primaryRaw = await all(env.SCORE_DB, `
+  const engineRaw = await all(env.SCORE_DB, `
     SELECT *
     FROM scoring_engine_current
     WHERE batch_id = ?
       AND profile_key = ?
-      AND live_playable = 1
       AND archive_eligible = 1
       AND blocker_count = 0
       AND blocking_for_scoring = 0
-      AND factor_status = 'packet_ready'
-      AND market_prop_context_status = 'market_prop_context_present'
-      AND daily_readiness_status IN ('ready','ready_with_warnings')
       AND selected_side IS NOT NULL
       AND line_value IS NOT NULL
       AND player_name IS NOT NULL
       AND canonical_prop_key IS NOT NULL
       AND source_key IS NOT NULL
       AND mlb_player_id IS NOT NULL
-      AND score_0_100 >= 76
       AND confidence_0_100 >= 55
       AND score_status NOT IN ('blocked_by_matrix','model_deferred','simulation_hard_blocked')
+      AND (
+        score_0_100 >= 76
+        OR score_grade IN ('BIN_QUALIFIED','BIN_STRONG')
+        OR (score_grade = 'BIN_ARCHIVE' AND score_0_100 >= 74)
+      )
   `, simBatchId, PRIMARY_PROFILE);
 
-  const primaryMatrixIds = new Set(primaryRaw.map(r => String(r.matrix_id || "")).filter(Boolean));
-  const reviewRaw = await all(env.SCORE_DB, `
-    SELECT *
-    FROM scoring_engine_current
-    WHERE batch_id = ?
-      AND profile_key = ?
-      AND archive_eligible = 1
-      AND blocker_count = 0
-      AND blocking_for_scoring = 0
-      AND live_playable = 0
-      AND market_prop_context_status = 'market_prop_context_present'
-      AND selected_side IS NOT NULL
-      AND line_value IS NOT NULL
-      AND player_name IS NOT NULL
-      AND canonical_prop_key IS NOT NULL
-      AND source_key IS NOT NULL
-      AND mlb_player_id IS NOT NULL
-      AND score_0_100 >= 70
-      AND score_status NOT IN ('blocked_by_matrix','model_deferred','simulation_hard_blocked')
-  `, simBatchId, PRIMARY_PROFILE);
+  // v0.1.18-engine-field-tier-calibration:
+  // Final Board is a selector/ranker, not a second scoring engine. It must not re-score PrizePicks/Sleeper,
+  // must not read review_playable from scoring_engine_current, and must not silently kill qualified engine rows
+  // because platform payout variants create different score distributions. Use engine-owned fields only.
+  const strictLiveCandidates = engineRaw
+    .filter(engineRowIsBoardCandidate)
+    .map(r => applyEngineFieldTierCalibration(r));
+  const safeReviewCandidates = [];
+  const calibratedCandidates = annotateCorrelation(strictLiveCandidates)
+    .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 74 && Number(r.confidence_0_100) >= 55);
 
-  // v0.1.12-archive-review-admission: BIN_ARCHIVE/archive_eligible rows are review-safe inventory.
-  // A 70-75 cap can break ties and keep rows out of PRIMARY, but it must not silently kill
-  // playable review rows when blocker_count=0 and blocking_for_scoring=0. Goblin/demon/standard
-  // payout_variant is metadata/tie-break context, not an automatic exclusion.
-
-  // v0.1.4-cutoff-volatility-trim: build one calibrated merit pool. Strict live rows and safe review candidates
-  // both receive the same calibrated score. Then apply only narrow volatility trims to fragile pitcher rows at the cutoff.
-  const strictLiveCandidates = primaryRaw.map(r => ({ ...r, source_candidate_tier: "STRICT_LIVE" }));
-  const safeReviewCandidates = reviewRaw
-    .filter(r => !primaryMatrixIds.has(String(r.matrix_id || "")))
-    .map(r => ({ ...r, source_candidate_tier: "SAFE_REVIEW" }));
-
-  const initiallyCalibratedCandidates = [...strictLiveCandidates, ...safeReviewCandidates]
-    .map(r => applyCalibration(r, null))
-    .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 70 && Number(r.confidence_0_100) >= 55);
-
-  // Cluster counts are computed across the calibrated candidate ecosystem before the final trim.
-  // The count is metadata first; v0.1.4 only uses it as a one-point tie-breaker on fragile pitcher rows already near the cutoff.
-  const hpAdvisory = await loadHitProbabilityAdvisoryMap(env, simBatchId);
-
-  const calibratedCandidates = annotateCorrelation(initiallyCalibratedCandidates)
-    .map(r => applyCutoffVolatilityTrim(r))
-    .map(r => attachHitProbabilityAdvisory(r, hpAdvisory.map))
-    .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 70 && Number(r.confidence_0_100) >= 55);
-
-  const primarySanityResult = applyPrimarySanityHpAdvisory(calibratedCandidates);
+  const primarySanityResult = { rows: calibratedCandidates, demotedRows: 0, rescuedRows: 0, advisoryRowsSeen: 0 };
   const sanityBalancedCandidates = primarySanityResult.rows;
 
   let primaryRows = sanityBalancedCandidates.filter(r => r.board_tier === "PRIMARY");
@@ -1369,10 +1407,10 @@ async function generateFinalBoard(env, input) {
     source_scoring_worker_version: engine.worker_version,
     profile_key: PRIMARY_PROFILE,
     matrix_rows_read: Number(engine.matrix_rows_read || 0),
-    primary_raw_rows_read: primaryRaw.length,
-    review_raw_rows_read: reviewRaw.length,
-    strict_live_candidates_read: strictLiveCandidates.length,
-    safe_review_candidates_read: safeReviewCandidates.length,
+    primary_raw_rows_read: strictLiveCandidates.filter(r => r.board_tier === "PRIMARY").length,
+    review_raw_rows_read: strictLiveCandidates.filter(r => r.board_tier === "REVIEW").length,
+    strict_live_candidates_read: strictLiveCandidates.filter(r => r.board_tier === "PRIMARY").length,
+    safe_review_candidates_read: strictLiveCandidates.filter(r => r.board_tier === "REVIEW").length,
     initially_calibrated_candidates_read: initiallyCalibratedCandidates.length,
     calibrated_candidates_written: calibratedCandidates.length,
     hp_advisory_batch_id: hpAdvisory.batch && hpAdvisory.batch.batch_id || null,
@@ -1396,7 +1434,7 @@ async function generateFinalBoard(env, input) {
     current_rows_written: rows.length,
     table_for_final_ui: "SCORE_DB.score_final_board_current",
     history_table: "SCORE_DB.score_final_board_history",
-    final_ui_contract: "Read board_tier. PRIMARY rows are strict live rows; REVIEW rows are safe calibrated soft rows with review_playable=1. BIN_ARCHIVE/archive_eligible rows are REVIEW-only, not killed.",
+    final_ui_contract: "Read board_tier. PRIMARY rows are engine BIN_STRONG/score>=84 rows after diversification; REVIEW rows are engine-qualified or high-archive safe rows with review_playable=1. Final Board does not re-score engine rows or require review_playable in scoring_engine_current.",
     no_external_calls: true,
     no_source_board_mutation: true,
     no_simulation_shadow_mutation: true,
