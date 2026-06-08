@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.19-runtime-output-scope-fix";
+const VERSION = "alphadog-v2-score-final-board-v0.1.20-paged-engine-current-reader";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
@@ -916,6 +916,48 @@ function applyEngineFieldTierCalibration(rawRow) {
   };
 }
 
+
+async function fetchEngineBoardCandidateRows(env, sourceEngineBatchId, profileKey, pageSize = 500) {
+  const rows = [];
+  let lastScoreRowId = "";
+  let pages = 0;
+  while (true) {
+    const page = await all(env.SCORE_DB, `
+      SELECT *
+      FROM scoring_engine_current
+      WHERE batch_id = ?
+        AND profile_key = ?
+        AND archive_eligible = 1
+        AND blocker_count = 0
+        AND blocking_for_scoring = 0
+        AND selected_side IS NOT NULL
+        AND line_value IS NOT NULL
+        AND player_name IS NOT NULL
+        AND canonical_prop_key IS NOT NULL
+        AND source_key IS NOT NULL
+        AND mlb_player_id IS NOT NULL
+        AND confidence_0_100 >= 55
+        AND score_status NOT IN ('blocked_by_matrix','model_deferred','simulation_hard_blocked')
+        AND (
+          score_0_100 >= 76
+          OR score_grade IN ('BIN_QUALIFIED','BIN_STRONG')
+          OR (score_grade = 'BIN_ARCHIVE' AND score_0_100 >= 74)
+        )
+        AND score_row_id > ?
+      ORDER BY score_row_id
+      LIMIT ${Math.max(1, Math.min(1000, Math.trunc(pageSize)))}
+    `, sourceEngineBatchId, profileKey, lastScoreRowId);
+
+    pages += 1;
+    if (!page.length) break;
+    rows.push(...page);
+    lastScoreRowId = String(page[page.length - 1].score_row_id || lastScoreRowId);
+    if (page.length < pageSize) break;
+    if (pages > 1000) throw new Error("score_final_board_engine_current_pagination_guard_exceeded");
+  }
+  return { rows, pages, page_size: pageSize };
+}
+
 function applyPrimaryClusterCap(primaryRows, reviewRows, maxPerPlayer = 2) {
   const sortedPrimary = [...primaryRows].sort((a, b) =>
     (num(b.score_0_100) - num(a.score_0_100)) ||
@@ -1254,28 +1296,14 @@ async function generateFinalBoard(env, input) {
     return output;
   }
 
-  const engineRaw = await all(env.SCORE_DB, `
-    SELECT *
-    FROM scoring_engine_current
-    WHERE batch_id = ?
-      AND profile_key = ?
-      AND archive_eligible = 1
-      AND blocker_count = 0
-      AND blocking_for_scoring = 0
-      AND selected_side IS NOT NULL
-      AND line_value IS NOT NULL
-      AND player_name IS NOT NULL
-      AND canonical_prop_key IS NOT NULL
-      AND source_key IS NOT NULL
-      AND mlb_player_id IS NOT NULL
-      AND confidence_0_100 >= 55
-      AND score_status NOT IN ('blocked_by_matrix','model_deferred','simulation_hard_blocked')
-      AND (
-        score_0_100 >= 76
-        OR score_grade IN ('BIN_QUALIFIED','BIN_STRONG')
-        OR (score_grade = 'BIN_ARCHIVE' AND score_0_100 >= 74)
-      )
-  `, simBatchId, PRIMARY_PROFILE);
+  const engineRead = await fetchEngineBoardCandidateRows(env, simBatchId, PRIMARY_PROFILE, 500);
+  const engineRaw = engineRead.rows;
+
+  // v0.1.20-paged-engine-current-reader over v0.1.19-runtime-output-scope-fix:
+  // D1 prepared .all() can silently return only a bounded first page for large SELECT result sets.
+  // Final Board must read every eligible scoring_engine_current row for the terminal engine batch,
+  // so the engine-current scan is keyset-paged by score_row_id. No source quotas, no payout quotas,
+  // and no mutation of scoring_engine_current or prepared/source boards.
 
   // v0.1.19-runtime-output-scope-fix over v0.1.18-engine-field-tier-calibration:
   // Final Board is a selector/ranker, not a second scoring engine. It must not re-score PrizePicks/Sleeper,
@@ -1415,6 +1443,10 @@ async function generateFinalBoard(env, input) {
     source_scoring_worker_version: engine.worker_version,
     profile_key: PRIMARY_PROFILE,
     matrix_rows_read: Number(engine.matrix_rows_read || 0),
+    engine_current_candidate_rows_read: engineRaw.length,
+    engine_current_candidate_read_pages: engineRead.pages,
+    engine_current_candidate_page_size: engineRead.page_size,
+    paged_engine_current_reader_active: true,
     primary_raw_rows_read: strictLiveCandidates.filter(r => r.board_tier === "PRIMARY").length,
     review_raw_rows_read: strictLiveCandidates.filter(r => r.board_tier === "REVIEW").length,
     strict_live_candidates_read: strictLiveCandidates.filter(r => r.board_tier === "PRIMARY").length,
@@ -1442,7 +1474,7 @@ async function generateFinalBoard(env, input) {
     current_rows_written: rows.length,
     table_for_final_ui: "SCORE_DB.score_final_board_current",
     history_table: "SCORE_DB.score_final_board_history",
-    final_ui_contract: "Read board_tier. PRIMARY rows are engine BIN_STRONG/score>=84 rows after diversification; REVIEW rows are engine-qualified or high-archive safe rows with review_playable=1. Final Board does not re-score engine rows or require review_playable in scoring_engine_current.",
+    final_ui_contract: "Read board_tier. PRIMARY rows are engine BIN_STRONG/score>=84 rows after diversification; REVIEW rows are engine-qualified or high-archive safe rows with review_playable=1. Final Board does not re-score engine rows or require review_playable in scoring_engine_current; engine current is read through keyset pagination so large PrizePicks boards are not truncated by D1 page limits.",
     no_external_calls: true,
     no_source_board_mutation: true,
     no_simulation_shadow_mutation: true,
