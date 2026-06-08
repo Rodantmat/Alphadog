@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.203-daily-cascade-service-timeout-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.204-daily-context-lockbusy-hot-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -9749,10 +9749,19 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   // parent/child rows are chain-scoped, lock-guarded, and counted by countDueMarketScoringFullRun(),
   // so continuing after lock_busy is safe and prevents manual Wake from becoming required.
   const marketScoringLockBusyContinuation = sawLockBusy && !sawHardStop && dueMarketScoringFullRun > 0;
-  const shouldSelfContinue = (continuationAllowedByLastCycle || marketScoringLockBusyContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
+  // v0.2.204: Daily Context Full Run is also a lock-guarded backend cascade.
+  // A child service-binding fetch can hold GLOBAL_ORCHESTRATOR long enough for a
+  // parallel hot pump/manual wake/cron pump to see lock_busy. Suppressing all
+  // self-continuation on that lock_busy made Daily Context rely on the 5-minute
+  // cron or manual Wake for the next stage/final parent closeout. Treat the
+  // active Daily Context chain like Market Scoring: continue after a short delay
+  // when due work remains.
+  const dailyContextLockBusyContinuation = sawLockBusy && !sawHardStop && dueDailyContextFullRun > 0;
+  const lockBusyHotContinuation = marketScoringLockBusyContinuation || dailyContextLockBusyContinuation;
+  const shouldSelfContinue = (continuationAllowedByLastCycle || lockBusyHotContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
-  const hotContinuationDelayMs = shouldSelfContinue && (lastStatus === "no_due_jobs" || marketScoringLockBusyContinuation) ? 6500 : 0;
+  const hotContinuationDelayMs = shouldSelfContinue && (lastStatus === "no_due_jobs" || lockBusyHotContinuation) ? 6500 : 0;
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -9781,10 +9790,13 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       self_continue_scheduled: !!shouldSelfContinue,
       self_continue_delay_ms: hotContinuationDelayMs,
       full_run_hot_continuation_v0_2_95: true,
-      self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
+      self_continue_suppressed_due_to_lock_busy: !!(sawLockBusy && !lockBusyHotContinuation),
       self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
       continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
       market_scoring_lock_busy_continuation: !!marketScoringLockBusyContinuation,
+      daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
+      lock_busy_hot_continuation: !!lockBusyHotContinuation,
+      daily_context_lockbusy_hot_continuation_v0_2_204: true,
       hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
       cron_is_rescue_only_for_base_hitter: true, cron_is_rescue_only_for_base_hitter_splits: true, base_hitter_splits_hot_continuation_v0_2_32: true, base_pitcher_splits_hot_continuation_v0_2_35: true,
       version: SYSTEM_VERSION
@@ -9822,7 +9834,10 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         full_run_hot_continuation_v0_2_95: true,
         continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
         market_scoring_lock_busy_continuation: !!marketScoringLockBusyContinuation,
-        self_continue_suppressed_due_to_lock_busy: !!sawLockBusy,
+        daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
+        lock_busy_hot_continuation: !!lockBusyHotContinuation,
+        daily_context_lockbusy_hot_continuation_v0_2_204: true,
+        self_continue_suppressed_due_to_lock_busy: !!(sawLockBusy && !lockBusyHotContinuation),
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
         version: SYSTEM_VERSION,
         hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
