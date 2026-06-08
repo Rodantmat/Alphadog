@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.13-prizepicks-standard-present-fairness-restore";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.14-prizepicks-standard-raw-market-present-restore";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_REALISTIC_V3_2";
@@ -998,23 +998,29 @@ function sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sid
   // artificial source/payout discount while preserving a payout risk ceiling below elite.
   if (odds === 'standard') {
     const effectiveMarket = String(context.effective_market_prop_context_status || '').toLowerCase();
-    const directRows = Math.max(0, Math.trunc(Number(context.direct_prop_evidence_row_count || 0)));
-    const evidenceBlind = effectiveMarket === 'market_prop_context_not_found' || effectiveMarket === 'market_prop_context_missing' || directRows <= 0;
+    const rawMarket = String(context.raw_market_prop_context_status || effectiveMarket || '').toLowerCase();
 
-    // v0.4.13 simulation-locked guard/restore:
-    // - market/evidence blind PrizePicks standard rows stay un-recentered, preserving the v0.4.12
-    //   fix that removed the artificial +11 same-line edge versus Sleeper on blind rows.
-    // - market-present PrizePicks standard rows restore the source-fair same-line recenter.
-    //   Manual SQL simulations showed +14 with cap 83 moves present rows near Sleeper parity
-    //   (roughly -1 to -3 points) while preventing a BIN_STRONG flood from standard rows.
-    if (evidenceBlind) {
+    // v0.4.14 root-cause fix:
+    // v0.4.13 still keyed the PP-standard restore off effectiveMarket/direct prop row count.
+    // For rows where the persisted row-level market status was market_prop_context_present but
+    // details.market_context.prop_evidence.row_count was absent/0, effectiveMarket was downgraded
+    // to not_found/missing before this layer. That made the restore branch unreachable for the
+    // exact market-present same-line rows that SQL simulations targeted, leaving the -15/-16 gap.
+    // Use the persisted row market status for this source-fair payout restore gate. Raw not_found /
+    // missing rows remain guarded and unrecentered, preserving the v0.4.12 blind-row fix.
+    const rowMarketBlind = rawMarket === 'market_prop_context_not_found' || rawMarket === 'market_prop_context_missing' || rawMarket === '';
+    if (rowMarketBlind) {
       adjustment = 0;
       cap = null;
-      reason = 'prizepicks_standard_market_blind_no_recenter_same_line_guard';
-    } else {
+      reason = 'prizepicks_standard_raw_market_blind_no_recenter_same_line_guard';
+    } else if (rawMarket === 'market_prop_context_present') {
       adjustment = 14;
       cap = 83;
-      reason = 'prizepicks_standard_market_present_fairness_restore_plus14_cap83';
+      reason = 'prizepicks_standard_raw_market_present_fairness_restore_plus14_cap83';
+    } else {
+      adjustment = 0;
+      cap = null;
+      reason = 'prizepicks_standard_unknown_market_status_no_recenter_guard';
     }
   } else if (odds === 'goblin') {
     adjustment = 20;
@@ -1178,7 +1184,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     const uncappedSelected = Math.min(p.maxScoreCap, clamp(selectedRaw - scorePenalty + bonus));
     selectedCapResult = capScoreWithReasons(uncappedSelected, hardCaps);
     const preFairnessScore = round0(selectedCapResult.score);
-    const fairness = sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, row.board_line_value, selectedSide, preFairnessScore, { effective_market_prop_context_status: effectiveMarketPropContextStatus, direct_prop_evidence_row_count: evidenceInfo.rowCount, direct_prop_evidence_bucket: evidenceInfo.bucket });
+    const fairness = sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, row.board_line_value, selectedSide, preFairnessScore, { raw_market_prop_context_status: row.market_prop_context_status, effective_market_prop_context_status: effectiveMarketPropContextStatus, direct_prop_evidence_row_count: evidenceInfo.rowCount, direct_prop_evidence_bucket: evidenceInfo.bucket });
     scoreInteger = round0(fairness.adjusted_score);
     if (fairness.adjustment !== 0 || fairness.reason === 'prizepicks_standard_market_blind_no_recenter_same_line_guard') {
       selectedCapResult.applied = [
@@ -1258,7 +1264,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     effective_warning_policy: 'raw_warning_count_preserved_but_soft_partial_missing_current_readiness_with_direct_evidence_uses_effective_warning_tier',
     score_caps_applied: selectedCapResult.applied,
     source_payout_fairness_calibration_enabled: 1,
-    source_payout_fairness_policy: 'prizepicks_standard_market_blind_no_recenter_guard_plus_market_present_restore_plus14_cap83; goblin_demon_more_only_tempered_payout_caps; no_sleeper_boost; no_final_board_mutation',
+    source_payout_fairness_policy: 'prizepicks_standard_raw_market_blind_guard_plus_raw_market_present_restore_plus14_cap83; goblin_demon_more_only_tempered_payout_caps; no_sleeper_boost; no_final_board_mutation',
     side_symmetry_risk: sideSymmetryRisk,
     goblin_demon_less_score_policy: 'NULL_NOT_ZERO',
     d1_memory_policy: 'no_large_scoring_cte; bounded_js_chunk_compute_and_json_each_batch_inserts_one_bind_per_batch'
