@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.17-selective-elite-escape-calibration";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.15-hp-board-same-worker-profile";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_REALISTIC_V3_2";
@@ -605,7 +605,7 @@ function sqlCaseFromMap(expression, map, fallback) {
 
 function simulationFormulaMetadata() {
   return {
-    formula_key: "SCORING_SIMULATION_V0_4_15_PROFILE_EVIDENCE_UNLOCK_NO_SOURCE_CAPS",
+    formula_key: "SCORING_SIMULATION_V0_3_7_LIVE_PLAYABLE_MARKET_CONTEXT_GATE",
     worker_version: VERSION,
     simulation_only: true,
     active_values_source: "SCORE_DB.scoring_engine_simulation_profile_configs.config_json",
@@ -623,9 +623,7 @@ function simulationFormulaMetadata() {
       "goblin_demon_more_only_sanitization",
       "pre_cap_side_selection_raw_delta",
       "selected_side_score_penalties_from_db_config",
-      "profile_evidence_unlock_lifts",
-      "context_and_symmetry_safety_caps_only",
-      "score_integer",
+      "score_cap_and_score_integer",
       "confidence_penalties_and_caps_from_db_config",
       "score_sort_micro_adjustment_for_sort_only",
       "archive_and_live_playable_gates",
@@ -726,7 +724,7 @@ const DEFAULT_SIM_CONFIGS = {
     }
   },
   STRICT_C_REALISTIC_V3_2: {
-    profile_version: "0.4.17-strict-c-realistic-v3-2-selective-elite-escape-calibration",
+    profile_version: "0.4.7-strict-c-realistic-v3-2-effective-warning-severity",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -736,26 +734,26 @@ const DEFAULT_SIM_CONFIGS = {
       grade_strong_min: 84,
       grade_elite_min: 90,
       raw_side_delta_threshold: 0.50,
-      base_raw_packet_ready: 83,
+      base_raw_packet_ready: 82,
       base_raw_packet_partial: 76,
       raw_less_delta_from_more: 0,
       max_score_cap: 100,
       price_pressure_scale: 0.16,
-      line_pressure_scale: 0.95,
-      deterministic_spread_scale: 0.85,
-      base_confidence: 98,
+      line_pressure_scale: 1.00,
+      deterministic_spread_scale: 0.45,
+      base_confidence: 100,
       score_sort_micro_scale: 0.0001,
       clean_bonus_score: 0,
-      market_raw_adjustments: { market_prop_context_present: 3, market_prop_context_not_found: -5, market_prop_context_missing: -7, default: -3 },
-      market_direct_evidence_raw_adjustments: { direct_prop_evidence_rows_gte_5: 2.0, direct_prop_evidence_rows_2_to_4: 1.0, direct_prop_evidence_rows_1: 0.5, direct_prop_evidence_rows_0_with_coverage: -1.5, direct_prop_evidence_rows_0_no_coverage: -4, default: 0 },
-      market_evidence_score_caps: { direct_prop_evidence_rows_gte_5: 100, direct_prop_evidence_rows_2_to_4: 100, direct_prop_evidence_rows_1: 100, direct_prop_evidence_rows_0_with_coverage: 100, direct_prop_evidence_rows_0_no_coverage: 100, default: 100 },
+      market_raw_adjustments: { market_prop_context_present: 3, market_prop_context_not_found: -4, market_prop_context_missing: -6, default: -2 },
+      market_direct_evidence_raw_adjustments: { direct_prop_evidence_rows_gte_5: 1.5, direct_prop_evidence_rows_2_to_4: 0.75, direct_prop_evidence_rows_1: 0, direct_prop_evidence_rows_0_with_coverage: -1, direct_prop_evidence_rows_0_no_coverage: -3, default: 0 },
+      market_evidence_score_caps: { direct_prop_evidence_rows_gte_5: 97, direct_prop_evidence_rows_2_to_4: 94, direct_prop_evidence_rows_1: 89, direct_prop_evidence_rows_0_with_coverage: 82, direct_prop_evidence_rows_0_no_coverage: 74, default: 90 },
       context_score_caps: { matrix_full_context: 100, matrix_partial_context_warning_0_2: 96, matrix_partial_context_warning_3_5: 93, matrix_partial_context_warning_6_8: 90, matrix_partial_context_warning_9_plus: 82 },
       effective_warning_rules: { enabled: true, soft_partial_context_effective_warning_count: 6, soft_partial_context_requires_blocker_count_lte: 0, soft_partial_context_requires_direct_prop_evidence_rows_gte: 1, soft_partial_context_factor_statuses: ["packet_partial"], soft_partial_context_daily_statuses: ["missing_current_readiness", "daily_readiness_missing_soft_fallback", "partial_enrichment"], soft_partial_context_market_prop_statuses: ["market_prop_context_present"] },
       symmetry_rules: { two_sided_delta_lt: 1.0, zero_direct_evidence_symmetry_cap: 76, nonzero_direct_evidence_symmetry_cap: 88 },
       daily_raw_adjustments: { ready_with_warnings: 0, partial_enrichment: -4, not_applicable: 0, default: 0 },
-      source_raw_adjustments: { sleeper: 0, default: 0 },
-      odds_raw_adjustments: { goblin: -3, demon: -3, default: 0 },
-      prop_raw_adjustments: { pitcher_strikeouts: 1, hits: 1, total_bases: -0.5, hits_runs_rbis: -0.5, home_runs: -3, stolen_bases: -4, earned_runs: 0, earned_runs_allowed: 0, hits_allowed: 0, pitcher_outs: 1, pitching_outs: 1, walks: -1, walks_allowed: 0, rbis: 0, runs: 0, doubles: -2, singles: 0, fantasy: -2, default: 0 },
+      source_raw_adjustments: { sleeper: -1, default: 0 },
+      odds_raw_adjustments: { goblin: -4, demon: -4, default: 0 },
+      prop_raw_adjustments: { pitcher_strikeouts: 1, hits: 1, total_bases: -1, hits_runs_rbis: -1, home_runs: -4, stolen_bases: -4, earned_runs: 0, earned_runs_allowed: 0, hits_allowed: 0, pitcher_outs: 1, pitching_outs: 1, walks: -1, walks_allowed: 0, rbis: -1, runs: -1, doubles: -2, singles: 0, fantasy: -2, default: 0 },
       prop_less_raw_adjustments: { pitcher_strikeouts: -1, hits: 0, total_bases: 1, hits_runs_rbis: 1, home_runs: 0, stolen_bases: 0, earned_runs: -1, earned_runs_allowed: -1, hits_allowed: -1, pitcher_outs: -1, pitching_outs: -1, walks: 1, walks_allowed: -1, rbis: 1, runs: 1, doubles: 1, singles: 1, fantasy: 0, default: 0 },
       score_penalty_market_not_found: 8,
       score_penalty_market_missing: 10,
@@ -987,231 +985,66 @@ function sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sid
   if (source !== 'prizepicks') return { adjusted_score: scoreBefore, adjustment: 0, cap: null, reason: 'non_prizepicks_no_adjustment' };
 
   const odds = String(oddsType || payoutVariant || '').toLowerCase();
-  const rawMarket = String(context.raw_market_prop_context_status || context.effective_market_prop_context_status || '').toLowerCase();
-  const directRows = Math.max(0, Math.trunc(Number(context.direct_prop_evidence_row_count || 0)));
-  const marketPresent = rawMarket === 'market_prop_context_present';
+  const propKey = String(prop || '').toLowerCase();
+  const line = numOrNull(lineValue);
   let adjustment = 0;
-  let reason = 'prizepicks_source_payout_no_cap_no_adjustment';
+  let cap = null;
+  let reason = 'prizepicks_no_source_payout_adjustment';
 
-  // v0.4.17: source/payout is a difficulty modifier only. No source, payout variant,
-  // prop family, side, or line profile is capped below Elite. The restore is large enough
-  // to undo the failed v0.4.16 all-Strong ceiling, but still cannot create Elite without
-  // the individual evidence escape gate below.
+  // Grounded calibration from same player/game/prop/side/line audits:
+  // v0.4.10 left PP standard about 15-16 points behind Sleeper, and PP goblin/demon
+  // more-only about 27-29 points behind Sleeper, even when prepared/matrix context matched.
+  // This layer is intentionally source-fair, not recommendation/ranking logic: it reduces the
+  // artificial source/payout discount while preserving a payout risk ceiling below elite.
   if (odds === 'standard') {
-    adjustment = marketPresent ? 6 : 2;
-    if (directRows >= 5) adjustment += 1;
-    reason = marketPresent ? 'prizepicks_standard_market_present_selective_restore_no_cap_v0_4_17' : 'prizepicks_standard_market_thin_small_restore_no_cap_v0_4_17';
+    const effectiveMarket = String(context.effective_market_prop_context_status || '').toLowerCase();
+    const rawMarket = String(context.raw_market_prop_context_status || effectiveMarket || '').toLowerCase();
+
+    // v0.4.14 root-cause fix:
+    // v0.4.13 still keyed the PP-standard restore off effectiveMarket/direct prop row count.
+    // For rows where the persisted row-level market status was market_prop_context_present but
+    // details.market_context.prop_evidence.row_count was absent/0, effectiveMarket was downgraded
+    // to not_found/missing before this layer. That made the restore branch unreachable for the
+    // exact market-present same-line rows that SQL simulations targeted, leaving the -15/-16 gap.
+    // Use the persisted row market status for this source-fair payout restore gate. Raw not_found /
+    // missing rows remain guarded and unrecentered, preserving the v0.4.12 blind-row fix.
+    const rowMarketBlind = rawMarket === 'market_prop_context_not_found' || rawMarket === 'market_prop_context_missing' || rawMarket === '';
+    if (rowMarketBlind) {
+      adjustment = 0;
+      cap = null;
+      reason = 'prizepicks_standard_raw_market_blind_no_recenter_same_line_guard';
+    } else if (rawMarket === 'market_prop_context_present') {
+      adjustment = 14;
+      cap = 83;
+      reason = 'prizepicks_standard_raw_market_present_fairness_restore_plus14_cap83';
+    } else {
+      adjustment = 0;
+      cap = null;
+      reason = 'prizepicks_standard_unknown_market_status_no_recenter_guard';
+    }
   } else if (odds === 'goblin') {
-    adjustment = marketPresent ? 6 : 3;
-    if (directRows >= 5) adjustment += 1;
-    reason = marketPresent ? 'prizepicks_goblin_easier_line_selective_restore_no_cap_v0_4_17' : 'prizepicks_goblin_market_thin_small_restore_no_cap_v0_4_17';
+    adjustment = 20;
+    cap = 79;
+    reason = 'prizepicks_goblin_more_only_gap_recentered_with_payout_risk_cap';
+    if (['total_bases','hits_runs_rbis','rbis','runs','singles','walks'].includes(propKey) && line != null && line <= 0.5) {
+      adjustment = 14;
+      cap = 76;
+      reason = 'prizepicks_goblin_low_line_medium_frequency_tempered_gap_recenter';
+    }
   } else if (odds === 'demon') {
-    adjustment = marketPresent ? 5 : 2;
-    if (directRows >= 5) adjustment += 1;
-    reason = marketPresent ? 'prizepicks_demon_harder_line_selective_restore_no_cap_v0_4_17' : 'prizepicks_demon_market_thin_small_restore_no_cap_v0_4_17';
-  }
-
-  if (!adjustment) return { adjusted_score: scoreBefore, adjustment: 0, cap: null, reason };
-  const adjusted = clamp(scoreBefore + adjustment, 0, 100);
-  return { adjusted_score: adjusted, adjustment: adjusted - scoreBefore, cap: null, reason };
-}
-
-function lineBucketAdjustment(canonicalPropKey, lineValue, side) {
-  const line = numOrNull(lineValue);
-  const prop = String(canonicalPropKey || '').toLowerCase();
-  const more = side === 'more';
-  if (line == null) return 0;
-  const half = Math.round(line * 2) / 2;
-
-  if (prop === 'hits') {
-    if (more) return half <= 0.5 ? 3 : (half <= 1.5 ? -4 : -9);
-    return half <= 0.5 ? -2 : 4;
-  }
-  if (prop === 'singles' || prop === 'doubles' || prop === 'walks') {
-    if (more) return half <= 0.5 ? -1 : -5;
-    return half <= 0.5 ? 1 : 4;
-  }
-  if (prop === 'home_runs') {
-    return more ? -8 : 4;
-  }
-  if (prop === 'stolen_bases') {
-    return more ? -8 : 3;
-  }
-  if (prop === 'rbis') {
-    if (more) return half <= 0.5 ? 1 : -5;
-    return half <= 0.5 ? -1 : 3;
-  }
-  if (prop === 'runs') {
-    if (more) return half <= 0.5 ? 2 : -5;
-    return half <= 0.5 ? 2 : 4;
-  }
-  if (prop === 'hits_runs_rbis') {
-    if (more) {
-      if (half <= 0.5) return 1;
-      if (half <= 1.5) return -2;
-      if (half <= 2.5) return -7;
-      if (half <= 3.5) return -10;
-      return -13;
+    adjustment = 22;
+    cap = 77;
+    reason = 'prizepicks_demon_more_only_gap_recentered_with_payout_risk_cap';
+    if (['home_runs','stolen_bases','doubles'].includes(propKey)) {
+      adjustment = 15;
+      cap = 74;
+      reason = 'prizepicks_demon_low_frequency_tempered_gap_recenter';
     }
-    return half <= 1.5 ? 3 : 5;
-  }
-  if (prop === 'total_bases') {
-    if (more) {
-      if (half <= 0.5) return 1;
-      if (half <= 1.5) return -2;
-      if (half <= 2.5) return -7;
-      if (half <= 3.5) return -10;
-      if (half <= 4.5) return -13;
-      return -16;
-    }
-    return half <= 0.5 ? -4 : 3;
-  }
-  if (prop === 'hitter_strikeouts') {
-    if (more) return half <= 0.5 ? 0 : (half <= 1.5 ? -2 : -6);
-    return half <= 0.5 ? -2 : 3;
-  }
-  if (prop === 'pitcher_strikeouts') {
-    if (more) {
-      if (half <= 1.5) return 5;
-      if (half <= 2.5) return 3;
-      if (half <= 3.5) return 1;
-      if (half <= 4.5) return -1;
-      if (half <= 5.5) return -3;
-      if (half <= 6.5) return -5;
-      if (half <= 7.5) return -7;
-      if (half <= 8.5) return -9;
-      return -11;
-    }
-    if (half <= 4.5) return -1;
-    if (half <= 5.5) return 1;
-    if (half <= 6.5) return 3;
-    return 5;
-  }
-  if (prop === 'pitcher_outs' || prop === 'pitching_outs') {
-    if (more) {
-      if (half <= 15.5) return 2;
-      if (half <= 17.5) return -2;
-      return -6;
-    }
-    if (half <= 17.5) return 1;
-    if (half <= 20.5) return 3;
-    return 5;
-  }
-  if (prop === 'hits_allowed' || prop === 'walks_allowed' || prop === 'earned_runs' || prop === 'earned_runs_allowed') {
-    if (more) return half <= 1.5 ? 2 : (half <= 4.5 ? 0 : -2);
-    return half <= 1.5 ? -1 : 2;
-  }
-  return 0;
-}
-
-function evidenceUnlockLift(row, evidenceInfo, effectiveMarketPropContextStatus, effectiveWarnings, side, sourceKey, oddsType, prop, lineValue) {
-  const propKey = String(prop || '').toLowerCase();
-  let lift = 0;
-  const reasons = [];
-  const directRows = Math.max(0, Math.trunc(Number(evidenceInfo && evidenceInfo.rowCount || 0)));
-
-  // v0.4.17: restore the missing Elite escape path without restoring mass profile stamps.
-  // The lift is evidence-derived and still passes through profileEliteSanityCalibration.
-  if (row.factor_status === 'packet_ready') { lift += 1.5; reasons.push('packet_ready_plus1_5'); }
-  if (effectiveMarketPropContextStatus === 'market_prop_context_present') { lift += 2.0; reasons.push('market_prop_context_present_plus2'); }
-  if (directRows === 1) { lift += 0.75; reasons.push('direct_prop_evidence_1_plus0_75'); }
-  else if (directRows <= 4 && directRows > 1) { lift += 1.5; reasons.push('direct_prop_evidence_2_to_4_plus1_5'); }
-  else if (directRows >= 5) { lift += 2.25; reasons.push('direct_prop_evidence_gte5_plus2_25'); }
-  if (['ready','ready_with_warnings'].includes(String(row.daily_readiness_status || ''))) { lift += 1.0; reasons.push('daily_ready_plus1'); }
-  if (effectiveWarnings <= 0) { lift += 1.0; reasons.push('no_effective_warnings_plus1'); }
-  else if (effectiveWarnings <= 2) { lift += 0.5; reasons.push('low_effective_warnings_plus0_5'); }
-
-  const line = numOrNull(lineValue);
-  const isRareUpside = side === 'more' && ['home_runs','stolen_bases','doubles','triples'].includes(propKey);
-  if (isRareUpside && directRows >= 2 && effectiveMarketPropContextStatus === 'market_prop_context_present' && row.factor_status === 'packet_ready') {
-    lift += 1.25;
-    reasons.push('rare_event_direct_evidence_unlock_plus1_25');
-  }
-  const isHighLine = side === 'more' && line != null && (
-    (['hits','runs','rbis','singles','walks'].includes(propKey) && line >= 1.5) ||
-    (['total_bases','hits_runs_rbis','hitter_strikeouts'].includes(propKey) && line >= 2.5) ||
-    (propKey === 'pitcher_strikeouts' && line >= 6.5) ||
-    (['pitcher_outs','pitching_outs'].includes(propKey) && line >= 17.5)
-  );
-  if (isHighLine && effectiveMarketPropContextStatus === 'market_prop_context_present' && directRows >= 2) {
-    lift += 1.25;
-    reasons.push('high_line_direct_evidence_unlock_plus1_25');
-  }
-  return { lift, reasons };
-}
-
-
-function profileEliteSanityCalibration(scoreBefore, row, evidenceInfo, effectiveMarketPropContextStatus, effectiveWarnings, selectedSide, sourceKey, oddsType, payoutVariant, prop, lineValue, rawSideGap) {
-  if (scoreBefore == null) return { adjusted_score: null, adjustment: 0, reasons: ['no_score'] };
-  let score = Number(scoreBefore);
-  if (!Number.isFinite(score)) return { adjusted_score: scoreBefore, adjustment: 0, reasons: ['non_finite_score'] };
-
-  const source = String(sourceKey || '').toLowerCase();
-  const odds = String(oddsType || payoutVariant || '').toLowerCase();
-  const propKey = String(prop || '').toLowerCase();
-  const side = String(selectedSide || '').toLowerCase();
-  const line = numOrNull(lineValue);
-  const directRows = Math.max(0, Math.trunc(Number(evidenceInfo && evidenceInfo.rowCount || 0)));
-  const marketPresent = effectiveMarketPropContextStatus === 'market_prop_context_present';
-  const packetReady = row.factor_status === 'packet_ready';
-  const dailyReady = ['ready','ready_with_warnings'].includes(String(row.daily_readiness_status || ''));
-  const noMajorWarnings = effectiveWarnings <= 2;
-  const sideGap = Number(rawSideGap || 0);
-
-  let evidencePoints = 0;
-  if (packetReady) evidencePoints += 1;
-  if (marketPresent) evidencePoints += 1;
-  if (directRows >= 1) evidencePoints += 1;
-  if (directRows >= 5) evidencePoints += 1;
-  if (dailyReady) evidencePoints += 1;
-  if (noMajorWarnings) evidencePoints += 1;
-  if (sideGap >= 3) evidencePoints += 1;
-  if (sideGap >= 5) evidencePoints += 1;
-
-  const broadSleeperProfile = source === 'sleeper' && (
-    (propKey === 'hits' && side === 'more' && line != null && line <= 0.5) ||
-    (propKey === 'hits_runs_rbis' && side === 'less' && line != null && line <= 1.5) ||
-    (propKey === 'total_bases' && side === 'less' && line != null && line <= 1.5)
-  );
-  const lowEventLess = side === 'less' && ['home_runs'].includes(propKey) && line != null && line <= 0.5;
-  const standardShortLine = source === 'prizepicks' && odds === 'standard' && line != null && line <= 1.5;
-  const moreOnlyVariant = source === 'prizepicks' && ['demon','goblin'].includes(odds);
-
-  const reasons = [];
-  let eliteNeed = 5;
-  if (broadSleeperProfile || lowEventLess) eliteNeed = 6;
-  if (standardShortLine && directRows <= 0) eliteNeed = 6;
-  if (moreOnlyVariant && directRows <= 0) eliteNeed = 6;
-
-  // Selective escape: this fixes the failed v0.4.16 all-Strong ceiling. A leg that is already
-  // sitting at the Elite boundary may cross 90 when its own evidence stack clears the gate.
-  if (score >= 88 && score < 90 && evidencePoints >= eliteNeed && marketPresent && packetReady && dailyReady) {
-    let escapeLift = 1.0;
-    if (directRows >= 5) escapeLift += 0.75;
-    if (sideGap >= 5) escapeLift += 0.5;
-    if (standardShortLine || moreOnlyVariant) escapeLift += 0.25;
-    if (broadSleeperProfile && score < 89) escapeLift = Math.min(escapeLift, 0.75);
-    const before = score;
-    score = Math.min(92, score + escapeLift);
-    reasons.push(`selective_elite_escape_${before}_to_${score}_points_${evidencePoints}_need_${eliteNeed}`);
   }
 
-  // Perfect-score sanity: 96+ needs a nearly complete evidence stack. This is not a source cap;
-  // it only prevents shortcut 98s from weak or incomplete evidence.
-  if (score >= 96 && evidencePoints < 7) {
-    const before = score;
-    score = Math.min(score, 94);
-    reasons.push(`rare_perfect_gate_${before}_to_${score}_evidence_${evidencePoints}`);
-  }
-
-  // Elite gate: individual weak legs stop at 89. Profiles/sources are not capped.
-  if (score >= 90 && evidencePoints < eliteNeed) {
-    const before = score;
-    score = Math.min(score, 89);
-    reasons.push(`elite_evidence_gate_${before}_to_${score}_points_${evidencePoints}_need_${eliteNeed}`);
-  }
-
-  return { adjusted_score: clamp(score, 0, 100), adjustment: score - scoreBefore, reasons, evidence_points: evidencePoints, elite_need: eliteNeed };
+  if (!adjustment || cap == null) return { adjusted_score: scoreBefore, adjustment: 0, cap: null, reason };
+  const adjusted = Math.min(cap, clamp(scoreBefore + adjustment));
+  return { adjusted_score: adjusted, adjustment: adjusted - scoreBefore, cap, reason };
 }
 
 function linePressure(canonicalPropKey, lineValue, side) {
@@ -1290,14 +1123,12 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     + adjustment(cfg.odds_raw_adjustments, oddsType, 0);
   const rawMore = clamp(rawBase
     + adjustment(cfg.prop_raw_adjustments, prop, 0)
-    + lineBucketAdjustment(prop, row.board_line_value, 'more')
     + (linePressure(prop, row.board_line_value, 'more') * p.linePressureScale)
     + (sideMode === 'two_sided' ? americanPressure(overPrice, p.pricePressureScale) : 0)
     + deterministicSpread(row, 'more', p.deterministicSpreadScale));
   const rawLess = sideMode === 'two_sided'
     ? clamp(rawBase
       + adjustment(cfg.prop_less_raw_adjustments, prop, 0)
-      + lineBucketAdjustment(prop, row.board_line_value, 'less')
       + (linePressure(prop, row.board_line_value, 'less') * p.linePressureScale)
       + americanPressure(underPrice, p.pricePressureScale)
       + deterministicSpread(row, 'less', p.deterministicSpreadScale))
@@ -1339,6 +1170,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
   );
 
   const hardCaps = [
+    { key: 'market_evidence_score_cap', value: evidenceScoreCap(cfg, evidenceInfo, p.maxScoreCap), evidence_bucket: evidenceInfo.bucket, direct_prop_evidence_row_count: evidenceInfo.rowCount },
     { key: 'context_score_cap', value: contextScoreCap(cfg, row, p.maxScoreCap, effectiveWarnings), matrix_status: row.matrix_status, warning_count: rawWarningCount, effective_warning_count: effectiveWarnings, effective_warning_severity: effectiveWarningSeverity }
   ];
   if (sideSymmetryRisk) {
@@ -1349,32 +1181,11 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
   let selectedCapResult = { applied: [] };
   if (!hardBlocked && !modelDeferred && selectedSide) {
     const selectedRaw = selectedSide === 'more' ? rawMore : rawLess;
-    const unlock = evidenceUnlockLift(row, evidenceInfo, effectiveMarketPropContextStatus, effectiveWarnings, selectedSide, sourceKey, oddsType, prop, row.board_line_value);
-    const uncappedSelected = Math.min(p.maxScoreCap, clamp(selectedRaw - scorePenalty + bonus + unlock.lift));
+    const uncappedSelected = Math.min(p.maxScoreCap, clamp(selectedRaw - scorePenalty + bonus));
     selectedCapResult = capScoreWithReasons(uncappedSelected, hardCaps);
-    selectedCapResult.applied = [
-      ...(selectedCapResult.applied || []),
-      { key: 'profile_evidence_unlock_lift', lift: unlock.lift, reasons: unlock.reasons, no_source_or_prop_cap: true }
-    ];
     const preFairnessScore = round0(selectedCapResult.score);
     const fairness = sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, row.board_line_value, selectedSide, preFairnessScore, { raw_market_prop_context_status: row.market_prop_context_status, effective_market_prop_context_status: effectiveMarketPropContextStatus, direct_prop_evidence_row_count: evidenceInfo.rowCount, direct_prop_evidence_bucket: evidenceInfo.bucket });
-    const rawSideGapForElite = Math.abs((rawMore ?? 0) - (rawLess ?? rawMore ?? 0));
-    const eliteSanity = profileEliteSanityCalibration(fairness.adjusted_score, row, evidenceInfo, effectiveMarketPropContextStatus, effectiveWarnings, selectedSide, sourceKey, oddsType, payoutVariant, prop, row.board_line_value, rawSideGapForElite);
-    scoreInteger = round0(eliteSanity.adjusted_score);
-    if (eliteSanity.adjustment !== 0 || (eliteSanity.reasons || []).length) {
-      selectedCapResult.applied = [
-        ...(selectedCapResult.applied || []),
-        {
-          key: 'profile_elite_sanity_calibration_v0_4_17',
-          score_before: fairness.adjusted_score,
-          score_after: scoreInteger,
-          adjustment: eliteSanity.adjustment,
-          evidence_points: eliteSanity.evidence_points,
-          reasons: eliteSanity.reasons,
-          note: 'Selective individual-leg Elite escape/gate; does not cap true high-evidence profiles or sources.'
-        }
-      ];
-    }
+    scoreInteger = round0(fairness.adjusted_score);
     if (fairness.adjustment !== 0 || fairness.reason === 'prizepicks_standard_market_blind_no_recenter_same_line_guard') {
       selectedCapResult.applied = [
         ...(selectedCapResult.applied || []),
@@ -1394,9 +1205,8 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     }
   }
   const sideGap = Math.abs((rawMore ?? 0) - (rawLess ?? rawMore ?? 0));
-  const confidenceSpread = (((Number(row.mlb_player_id || 0) * 13 + Number(row.game_pk || 0) * 7 + Math.trunc((Number(row.board_line_value || 0) || 0) * 100)) % 7) - 3);
   const confidence = (!hardBlocked && !modelDeferred && selectedSide)
-    ? round0(Math.min(confidenceCap, clamp(p.baseConfidence - confidencePenalty + Math.min(6, sideGap * 0.95) + (effectiveMarketPropContextStatus === 'market_prop_context_present' ? 2 : 0) + ((overPrice != null || underPrice != null) ? 1 : 0) + (evidenceInfo.rowCount >= 5 ? 2 : (evidenceInfo.rowCount > 0 ? 1 : 0)) + confidenceSpread)))
+    ? round0(Math.min(confidenceCap, clamp(p.baseConfidence - confidencePenalty + Math.min(6, sideGap * 1.15) + (effectiveMarketPropContextStatus === 'market_prop_context_present' ? 3 : 0) + ((overPrice != null || underPrice != null) ? 2 : 0))))
     : null;
   const sortMicro = Math.abs(((Number(row.mlb_player_id || 0) * 31 + Number(row.game_pk || 0) * 17 + Math.trunc((Number(row.board_line_value || 0) || 0) * 100) * 13) % 999)) * p.microScale / 999.0;
   const scoreSort = scoreInteger == null ? null : scoreInteger + sortMicro;
@@ -1433,7 +1243,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     profile_version: p.version,
     active_values_source: 'SCORE_DB.scoring_engine_simulation_profile_configs.config_json',
     all_calibration_variables_db_stored: 1,
-    formula_order: 'inventory_defer_gate -> profile_line_specific_raw_scores -> tempered_evidence_unlock_lifts -> score_penalties -> context_symmetry_safety_caps_only -> source_payout_modifier_no_cap -> profile_elite_sanity_gate -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
+    formula_order: 'inventory_defer_gate -> js_bounded_independent_more_less_scores -> price_line_prop_side_pressure -> pre_cap_side_selection -> score_penalties -> score_cap -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
     raw_side_delta_threshold: p.rawSideDeltaThreshold,
     min_live_score: p.minLiveScore,
     min_live_confidence: p.minLiveConfidence,
@@ -1453,11 +1263,8 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     effective_warning_severity: effectiveWarningSeverity,
     effective_warning_policy: 'raw_warning_count_preserved_but_soft_partial_missing_current_readiness_with_direct_evidence_uses_effective_warning_tier',
     score_caps_applied: selectedCapResult.applied,
-    source_or_prop_caps_removed: true,
-    prop_line_profile_key: `${String(prop || '').toLowerCase()}|${String(selectedSide || '').toLowerCase()}|${row.board_line_value == null ? 'null' : String(row.board_line_value)}|${String(sourceKey || '').toLowerCase()}|${String(payoutVariant || oddsType || 'none').toLowerCase()}`,
-    profile_line_adjustment_selected_side: selectedSide === 'more' ? lineBucketAdjustment(prop, row.board_line_value, 'more') : (selectedSide === 'less' ? lineBucketAdjustment(prop, row.board_line_value, 'less') : null),
     source_payout_fairness_calibration_enabled: 1,
-    source_payout_fairness_policy: 'v0.4.15 source/payout difficulty modifiers only; no source, payout, rare-event, demon, goblin, HR, or SB hard caps; evidence unlocks can lift any profile high',
+    source_payout_fairness_policy: 'prizepicks_standard_raw_market_blind_guard_plus_raw_market_present_restore_plus14_cap83; goblin_demon_more_only_tempered_payout_caps; no_sleeper_boost; no_final_board_mutation',
     side_symmetry_risk: sideSymmetryRisk,
     goblin_demon_less_score_policy: 'NULL_NOT_ZERO',
     d1_memory_policy: 'no_large_scoring_cte; bounded_js_chunk_compute_and_json_each_batch_inserts_one_bind_per_batch'
@@ -2922,10 +2729,24 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.14-hit-probability-stolen-bases-route-fix";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.15-hp-board-same-worker-profile";
 const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_1_6_STOLEN_BASES_ROUTE_LOCK";
 const HP_MAX_ROWS_PER_RUN = 12000;
 const HP_PLAYER_CHUNK_SIZE = 70;
+const HP_BOARD_MODE = "hp_board_current_build";
+const HP_BOARD_JOB_KEY = "hp-board";
+const HP_BOARD_PROFILE_KEY = "HP_BOARD_RECENT_FORM_PROFILE";
+const HP_BOARD_PROFILE_VERSION = "HP_BOARD_RECENT_FORM_PROFILE_V0_1_0";
+const HP_BOARD_LANE_ORDER = {
+  HP_PRIMARY_ELITE: 1,
+  HP_PRIMARY_STRONG: 2,
+  HP_SUPPORTED_REVIEW: 3,
+  HP_SCORE_STRONG_HP_WEAK_REVIEW: 4,
+  HP_LOW_SAMPLE_REVIEW: 5,
+  HP_NEUTRAL_REVIEW: 6,
+  HP_WEAK_SUPPORT: 7,
+  HP_FADE_RECENT_FORM: 8
+};
 
 const HP_HITTER_PROP_PROFILES = {
   hits: { family:"hitter", stat:"hits", label:"Hits", windows:[5,10,20,40], profile:"HITTER_HIGH_FREQ" },
@@ -3196,6 +3017,196 @@ async function hpFetchHitterLogs(env, playerIds, maxDate){ const map=new Map(); 
 async function hpFetchPitcherLogs(env, playerIds, maxDate){ const map=new Map(); for(const c of hpChunks(playerIds, HP_PLAYER_CHUNK_SIZE)){ if(!c.length) continue; const q=`SELECT player_id, game_pk, game_date, outs_recorded, innings_pitched_decimal, hits_allowed, runs_allowed, earned_runs, walks_allowed, strikeouts FROM pitcher_game_logs WHERE player_id IN (${c.map(()=>'?').join(',')}) AND game_date < ? ORDER BY player_id, game_date DESC`; const rows=await all(env.STATS_PITCHER_DB, q, ...c, maxDate); for(const r of rows){ const k=String(r.player_id); if(!map.has(k)) map.set(k,[]); map.get(k).push(r); } } return map; }
 async function hpWriteIssue(env,batchId,src,probabilityRowId,severity,issueType,reason,details={}){ await run(env.SCORE_DB, `INSERT INTO hit_probability_issues (issue_id,batch_id,probability_row_id,final_board_row_id,score_row_id,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,selected_side,severity,issue_type,reason,details_json,official_date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, hpUid('hp_issue'), batchId, probabilityRowId || null, src.final_board_row_id || null, src.score_row_id || null, src.prepared_row_id || null, src.game_pk || null, src.mlb_player_id || null, src.canonical_prop_key || null, src.selected_side || null, severity, issueType, reason, hpSafeJson(details,4000), src.official_date || null); }
 
+
+async function hpEnsureBoardSchema(env){
+  const stmts=[
+    `CREATE TABLE IF NOT EXISTS hp_board_batches (hp_board_batch_id TEXT PRIMARY KEY, request_id TEXT, run_id TEXT, worker_version TEXT, profile_key TEXT, profile_version TEXT, mode TEXT, status TEXT, source_table TEXT, source_hp_batch_id TEXT, source_final_board_batch_id TEXT, source_engine_batch_id TEXT, source_rows_read INTEGER DEFAULT 0, board_rows_written INTEGER DEFAULT 0, history_rows_written INTEGER DEFAULT 0, issue_rows_written INTEGER DEFAULT 0, primary_rows INTEGER DEFAULT 0, review_rows INTEGER DEFAULT 0, fade_rows INTEGER DEFAULT 0, certification_status TEXT, certification_grade TEXT, thresholds_locked INTEGER DEFAULT 0, no_true_probability_claims INTEGER DEFAULT 1, output_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS hp_board_current (hp_board_row_id TEXT PRIMARY KEY, hp_board_batch_id TEXT, source_hp_batch_id TEXT, source_final_board_batch_id TEXT, source_engine_batch_id TEXT, probability_row_id TEXT, final_board_row_id TEXT, prepared_row_id TEXT, matrix_id TEXT, source_line_id TEXT, profile_key TEXT, hp_profile_version TEXT, hp_rank INTEGER, hp_lane TEXT, hp_lane_rank INTEGER, hp_sort_0_100 REAL, source_key TEXT, game_pk INTEGER, official_date TEXT, official_game_time_utc TEXT, mlb_player_id INTEGER, player_name TEXT, canonical_prop_key TEXT, line_value REAL, selected_side TEXT, prop_family TEXT, estimated_hit_probability_0_100 REAL, probability_confidence_0_100 REAL, probability_band TEXT, probability_grade TEXT, empirical_hit_rate_0_1 REAL, reliability_0_1 REAL, sample_size INTEGER, non_push_sample INTEGER, hit_count INTEGER, miss_count INTEGER, push_count INTEGER, push_risk_0_1 REAL, score_0_100 REAL, score_grade TEXT, board_tier TEXT, live_playable INTEGER, review_playable INTEGER, hp_primary_playable INTEGER DEFAULT 0, hp_review_playable INTEGER DEFAULT 0, hp_fade_flag INTEGER DEFAULT 0, warning_count INTEGER DEFAULT 0, blocker_count INTEGER DEFAULT 0, lane_reason TEXT, calibration_json TEXT, source_snapshot_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS hp_board_history (hp_board_row_id TEXT PRIMARY KEY, hp_board_batch_id TEXT, source_hp_batch_id TEXT, source_final_board_batch_id TEXT, source_engine_batch_id TEXT, probability_row_id TEXT, final_board_row_id TEXT, prepared_row_id TEXT, matrix_id TEXT, source_line_id TEXT, profile_key TEXT, hp_profile_version TEXT, hp_rank INTEGER, hp_lane TEXT, hp_lane_rank INTEGER, hp_sort_0_100 REAL, source_key TEXT, game_pk INTEGER, official_date TEXT, official_game_time_utc TEXT, mlb_player_id INTEGER, player_name TEXT, canonical_prop_key TEXT, line_value REAL, selected_side TEXT, prop_family TEXT, estimated_hit_probability_0_100 REAL, probability_confidence_0_100 REAL, probability_band TEXT, probability_grade TEXT, empirical_hit_rate_0_1 REAL, reliability_0_1 REAL, sample_size INTEGER, non_push_sample INTEGER, hit_count INTEGER, miss_count INTEGER, push_count INTEGER, push_risk_0_1 REAL, score_0_100 REAL, score_grade TEXT, board_tier TEXT, live_playable INTEGER, review_playable INTEGER, hp_primary_playable INTEGER DEFAULT 0, hp_review_playable INTEGER DEFAULT 0, hp_fade_flag INTEGER DEFAULT 0, warning_count INTEGER DEFAULT 0, blocker_count INTEGER DEFAULT 0, lane_reason TEXT, calibration_json TEXT, source_snapshot_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS hp_board_issues (issue_id TEXT PRIMARY KEY, hp_board_batch_id TEXT, source_hp_batch_id TEXT, source_final_board_batch_id TEXT, source_engine_batch_id TEXT, probability_row_id TEXT, hp_board_row_id TEXT, final_board_row_id TEXT, prepared_row_id TEXT, game_pk INTEGER, mlb_player_id INTEGER, canonical_prop_key TEXT, selected_side TEXT, severity TEXT, issue_type TEXT, reason TEXT, details_json TEXT, official_date TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE INDEX IF NOT EXISTS idx_hp_board_batches_status ON hp_board_batches(status, updated_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_hp_board_current_rank ON hp_board_current(profile_key, hp_rank)`,
+    `CREATE INDEX IF NOT EXISTS idx_hp_board_current_lane ON hp_board_current(hp_lane, hp_lane_rank)`,
+    `CREATE INDEX IF NOT EXISTS idx_hp_board_current_final_board ON hp_board_current(final_board_row_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_hp_board_current_prepared ON hp_board_current(prepared_row_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_hp_board_current_player_prop ON hp_board_current(mlb_player_id, canonical_prop_key, selected_side)`,
+    `CREATE INDEX IF NOT EXISTS idx_hp_board_current_date ON hp_board_current(official_date, source_key, canonical_prop_key)`,
+    `CREATE INDEX IF NOT EXISTS idx_hp_board_history_batch ON hp_board_history(hp_board_batch_id, hp_rank)`,
+    `CREATE INDEX IF NOT EXISTS idx_hp_board_issues_batch ON hp_board_issues(hp_board_batch_id, severity)`
+  ];
+  for(const sql of stmts) await run(env.SCORE_DB, sql);
+}
+
+function hpBoardLane(row){
+  const hp=hpNum(row.estimated_hit_probability_0_100, 0);
+  const conf=hpNum(row.probability_confidence_0_100, 0);
+  const sample=hpNum(row.sample_size, 0);
+  const score=hpNum(row.score_0_100, 0);
+  if(hp >= 70 && conf >= 95 && sample >= 20 && score >= 84) return 'HP_PRIMARY_ELITE';
+  if(hp >= 62 && conf >= 90 && sample >= 20 && score >= 84) return 'HP_PRIMARY_STRONG';
+  if(hp >= 55 && conf >= 70 && sample >= 15 && score >= 76) return 'HP_SUPPORTED_REVIEW';
+  if(score >= 84 && hp < 45 && sample >= 15) return 'HP_SCORE_STRONG_HP_WEAK_REVIEW';
+  if(sample < 15) return 'HP_LOW_SAMPLE_REVIEW';
+  if(hp >= 45 && hp < 55) return 'HP_NEUTRAL_REVIEW';
+  if(hp < 35 && conf >= 90 && sample >= 20) return 'HP_FADE_RECENT_FORM';
+  return 'HP_WEAK_SUPPORT';
+}
+
+function hpBoardLaneReason(lane){
+  if(lane === 'HP_PRIMARY_ELITE') return 'Recent-form HP is 70+ with strong confidence, full sample support, and strong framework score.';
+  if(lane === 'HP_PRIMARY_STRONG') return 'Recent-form HP is 62+ with strong confidence, stable sample, and strong framework score.';
+  if(lane === 'HP_SUPPORTED_REVIEW') return 'Recent-form HP is supportive but not primary; keep as review lane.';
+  if(lane === 'HP_SCORE_STRONG_HP_WEAK_REVIEW') return 'Framework score is strong, but recent-form HP is weak; review divergence before using.';
+  if(lane === 'HP_LOW_SAMPLE_REVIEW') return 'Recent-form sample is below HP board threshold; preserve row for review only.';
+  if(lane === 'HP_NEUTRAL_REVIEW') return 'Recent-form HP is neutral; not primary support.';
+  if(lane === 'HP_FADE_RECENT_FORM') return 'Recent-form HP is materially weak with stable confidence; fade/reject candidate.';
+  return 'Recent-form HP support is weak or incomplete; not a primary candidate.';
+}
+
+function hpBoardCalibrationJson(){
+  return hpSafeJson({
+    profile: HP_BOARD_PROFILE_VERSION,
+    framework_only: true,
+    no_true_probability_claims: true,
+    primary_elite: 'hp>=70 confidence>=95 sample>=20 score>=84',
+    primary_strong: 'hp>=62 confidence>=90 sample>=20 score>=84',
+    supported_review: 'hp>=55 confidence>=70 sample>=15 score>=76',
+    divergence_review: 'score>=84 hp<45 sample>=15',
+    low_sample_review: 'sample<15',
+    neutral_review: '45<=hp<55',
+    fade_recent_form: 'hp<35 confidence>=90 sample>=20'
+  }, 3000);
+}
+
+async function runHpBoardCurrent(env, input = {}){
+  const started=Date.now();
+  if(!env.SCORE_DB) return baseIdentity({ ok:false, data_ok:false, version:HP_VERSION, job_key:HP_BOARD_JOB_KEY, mode:HP_BOARD_MODE, status:'blocked_missing_score_db', certification:'HP_BOARD_MISSING_SCORE_DB', certification_grade:'BLOCKED' });
+  await hpEnsureSchema(env);
+  await hpEnsureBoardSchema(env);
+
+  const sourceRows=await all(env.SCORE_DB, `SELECT * FROM hit_probability_current ORDER BY probability_row_id LIMIT ${HP_MAX_ROWS_PER_RUN}`);
+  if(!sourceRows.length){
+    return baseIdentity({ ok:false, data_ok:false, version:HP_VERSION, worker_name:WORKER_NAME, logical_worker_name:'alphadog-v2-hit-probability', deployed_worker_slot:'alphadog-v2-score-audit', job_key:HP_BOARD_JOB_KEY, mode:HP_BOARD_MODE, status:'blocked_no_hit_probability_current_rows', certification:'HP_BOARD_NO_HIT_PROBABILITY_CURRENT_ROWS', certification_grade:'BLOCKED', no_true_probability_claims:true, no_final_board_mutation:true, no_prepared_board_mutation:true });
+  }
+
+  const sourceHpBatchId=String(sourceRows[0].batch_id || 'unknown_hp_batch');
+  const hpBatch=await first(env.SCORE_DB, `SELECT * FROM hit_probability_batches WHERE batch_id=?`, sourceHpBatchId) || {};
+  const hpBoardBatchId='hp_board_batch_for_' + sourceHpBatchId;
+  const sourceFinalBoardBatchId=hpBatch.source_final_board_batch_id || null;
+  const sourceEngineBatchId=hpBatch.source_engine_batch_id || null;
+  const calibration=hpBoardCalibrationJson();
+
+  const classified=sourceRows.map(r => {
+    const lane=hpBoardLane(r);
+    const hp=hpNum(r.estimated_hit_probability_0_100, 0);
+    const conf=hpNum(r.probability_confidence_0_100, 0);
+    const sample=hpNum(r.sample_size, 0);
+    const score=hpNum(r.score_0_100, 0);
+    return {
+      ...r,
+      hp_lane: lane,
+      lane_reason: hpBoardLaneReason(lane),
+      hp_primary_playable: (hp >= 62 && conf >= 90 && sample >= 20 && score >= 84) ? 1 : 0,
+      hp_review_playable: (hp >= 45 && score >= 76) ? 1 : 0,
+      hp_fade_flag: (hp < 35 && conf >= 90 && sample >= 20) ? 1 : 0
+    };
+  });
+  classified.sort((a,b) => {
+    const ao=HP_BOARD_LANE_ORDER[a.hp_lane] || 99;
+    const bo=HP_BOARD_LANE_ORDER[b.hp_lane] || 99;
+    if(ao !== bo) return ao - bo;
+    const fields=['estimated_hit_probability_0_100','probability_confidence_0_100','sample_size','score_0_100'];
+    for(const f of fields){ const d=hpNum(b[f],0)-hpNum(a[f],0); if(Math.abs(d)>0.000001) return d; }
+    return String(a.player_name||'').localeCompare(String(b.player_name||''))
+      || String(a.canonical_prop_key||'').localeCompare(String(b.canonical_prop_key||''))
+      || String(a.selected_side||'').localeCompare(String(b.selected_side||''))
+      || (hpNum(a.line_value,0)-hpNum(b.line_value,0));
+  });
+  const laneRanks={};
+  classified.forEach((r,idx)=>{ r.hp_rank=idx+1; laneRanks[r.hp_lane]=(laneRanks[r.hp_lane]||0)+1; r.hp_lane_rank=laneRanks[r.hp_lane]; });
+
+  await run(env.SCORE_DB, `DELETE FROM hp_board_current`);
+  await run(env.SCORE_DB, `DELETE FROM hp_board_history WHERE hp_board_batch_id=?`, hpBoardBatchId);
+  await run(env.SCORE_DB, `DELETE FROM hp_board_issues WHERE hp_board_batch_id=?`, hpBoardBatchId);
+
+  let primaryRows=0, reviewRows=0, fadeRows=0;
+  for(const r of classified){
+    primaryRows += r.hp_primary_playable ? 1 : 0;
+    reviewRows += r.hp_review_playable ? 1 : 0;
+    fadeRows += r.hp_fade_flag ? 1 : 0;
+    const hpBoardRowId='hpboard|' + hpBoardBatchId + '|' + r.probability_row_id;
+    await run(env.SCORE_DB, `INSERT OR REPLACE INTO hp_board_current (hp_board_row_id,hp_board_batch_id,source_hp_batch_id,source_final_board_batch_id,source_engine_batch_id,probability_row_id,final_board_row_id,prepared_row_id,matrix_id,source_line_id,profile_key,hp_profile_version,hp_rank,hp_lane,hp_lane_rank,hp_sort_0_100,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,canonical_prop_key,line_value,selected_side,prop_family,estimated_hit_probability_0_100,probability_confidence_0_100,probability_band,probability_grade,empirical_hit_rate_0_1,reliability_0_1,sample_size,non_push_sample,hit_count,miss_count,push_count,push_risk_0_1,score_0_100,score_grade,board_tier,live_playable,review_playable,hp_primary_playable,hp_review_playable,hp_fade_flag,warning_count,blocker_count,lane_reason,calibration_json,source_snapshot_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
+      hpBoardRowId,hpBoardBatchId,sourceHpBatchId,sourceFinalBoardBatchId,sourceEngineBatchId,r.probability_row_id||null,r.final_board_row_id||null,r.prepared_row_id||null,r.matrix_id||null,r.source_line_id||null,HP_BOARD_PROFILE_KEY,HP_BOARD_PROFILE_VERSION,r.hp_rank,r.hp_lane,r.hp_lane_rank,hpNum(r.estimated_hit_probability_0_100,0),r.source_key||null,r.game_pk||null,r.official_date||null,r.official_game_time_utc||null,r.mlb_player_id||null,r.player_name||null,r.canonical_prop_key||null,r.line_value||null,r.selected_side||null,r.prop_family||null,r.estimated_hit_probability_0_100||null,r.probability_confidence_0_100||null,r.probability_band||null,r.probability_grade||null,r.empirical_hit_rate_0_1||null,r.reliability_0_1||null,r.sample_size||0,r.non_push_sample||0,r.hit_count||0,r.miss_count||0,r.push_count||0,r.push_risk_0_1||0,r.score_0_100||null,r.score_grade||null,r.board_tier||null,r.live_playable||0,r.review_playable||0,r.hp_primary_playable,r.hp_review_playable,r.hp_fade_flag,r.warning_count||0,r.blocker_count||0,r.lane_reason,calibration,r.source_snapshot_json||null);
+  }
+
+  await run(env.SCORE_DB, `INSERT OR REPLACE INTO hp_board_history SELECT * FROM hp_board_current WHERE hp_board_batch_id=?`, hpBoardBatchId);
+  await run(env.SCORE_DB, `INSERT OR REPLACE INTO hp_board_issues (issue_id,hp_board_batch_id,source_hp_batch_id,source_final_board_batch_id,source_engine_batch_id,probability_row_id,hp_board_row_id,final_board_row_id,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,selected_side,severity,issue_type,reason,details_json,official_date)
+    SELECT 'hpboard_issue|' || c.hp_board_batch_id || '|' || i.issue_id, c.hp_board_batch_id, c.source_hp_batch_id, c.source_final_board_batch_id, c.source_engine_batch_id, i.probability_row_id, c.hp_board_row_id, i.final_board_row_id, i.prepared_row_id, i.game_pk, i.mlb_player_id, i.canonical_prop_key, i.selected_side, i.severity, i.issue_type, i.reason, i.details_json, i.official_date
+    FROM hit_probability_issues i JOIN hp_board_current c ON c.probability_row_id=i.probability_row_id WHERE i.batch_id=?`, sourceHpBatchId);
+
+  const qa=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, COUNT(DISTINCT hp_board_row_id) AS hp_rows, COUNT(DISTINCT hp_rank) AS ranks, MIN(hp_rank) AS min_rank, MAX(hp_rank) AS max_rank, COUNT(DISTINCT final_board_row_id) AS final_rows, COUNT(DISTINCT prepared_row_id) AS prepared_rows, SUM(CASE WHEN final_board_row_id IS NULL THEN 1 ELSE 0 END) AS null_final_rows, SUM(CASE WHEN prepared_row_id IS NULL THEN 1 ELSE 0 END) AS null_prepared_rows, SUM(CASE WHEN blocker_count > 0 THEN 1 ELSE 0 END) AS blocker_rows, ROUND(AVG(score_0_100),2) AS avg_score, ROUND(AVG(estimated_hit_probability_0_100),2) AS avg_hp FROM hp_board_current WHERE hp_board_batch_id=?`, hpBoardBatchId) || {};
+  const issueCountRow=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_issues WHERE hp_board_batch_id=?`, hpBoardBatchId) || {};
+  const rowCount=Number(qa.rows||0);
+  let status='completed_hp_board_current_written';
+  let cert='HP_BOARD_PROFILE_CURRENT_CERTIFIED_WRITTEN';
+  let grade='PASS_WITH_REVIEW_WARNINGS';
+  if(rowCount === 0 || rowCount !== Number(qa.hp_rows||0) || rowCount !== Number(qa.ranks||0) || Number(qa.min_rank||0) !== 1 || Number(qa.max_rank||0) !== rowCount || rowCount !== Number(qa.final_rows||0) || rowCount !== Number(qa.prepared_rows||0) || Number(qa.null_final_rows||0)>0 || Number(qa.null_prepared_rows||0)>0 || Number(qa.blocker_rows||0)>0){
+    status='failed_hp_board_integrity_check';
+    cert='HP_BOARD_PROFILE_CURRENT_INTEGRITY_FAILED';
+    grade='BLOCKED';
+  }
+  const output=baseIdentity({
+    ok: grade !== 'BLOCKED',
+    data_ok: grade !== 'BLOCKED',
+    version: HP_VERSION,
+    worker_name: WORKER_NAME,
+    logical_worker_name: 'alphadog-v2-hit-probability',
+    deployed_worker_slot: 'alphadog-v2-score-audit',
+    job_key: HP_BOARD_JOB_KEY,
+    mode: HP_BOARD_MODE,
+    request_id: input.request_id || hpBatch.request_id || null,
+    run_id: input.run_id || hpBatch.run_id || null,
+    chain_id: input.chain_id || null,
+    status,
+    certification: cert,
+    certification_status: cert,
+    certification_grade: grade,
+    hp_board_batch_id: hpBoardBatchId,
+    source_hp_batch_id: sourceHpBatchId,
+    source_final_board_batch_id: sourceFinalBoardBatchId,
+    source_engine_batch_id: sourceEngineBatchId,
+    profile_key: HP_BOARD_PROFILE_KEY,
+    profile_version: HP_BOARD_PROFILE_VERSION,
+    source_table: 'hit_probability_current',
+    source_rows_read: sourceRows.length,
+    board_rows_written: rowCount,
+    history_rows_written: rowCount,
+    issue_rows_written: Number(issueCountRow.rows || 0),
+    primary_rows: primaryRows,
+    review_rows: reviewRows,
+    fade_rows: fadeRows,
+    warning_rows: Number((await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND warning_count>0`, hpBoardBatchId) || {}).rows || 0),
+    blocker_rows: Number(qa.blocker_rows || 0),
+    avg_score: qa.avg_score,
+    avg_hp: qa.avg_hp,
+    thresholds_locked: true,
+    framework_only: true,
+    no_true_probability_claims: true,
+    no_score_mutation: true,
+    no_scoring_engine_current_mutation: true,
+    no_final_board_mutation: true,
+    no_prepared_board_mutation: true,
+    no_source_board_mutation: true,
+    hp_board_ranking: true,
+    no_candidate_board_write: true,
+    layout: 'final_board_style_hp_focused',
+    qa_status: grade === 'BLOCKED' ? 'FAIL_HP_BOARD_INTEGRITY' : 'PASS_READY_TO_PROMOTE_HP_BOARD_FROM_SAME_WORKER',
+    elapsed_ms: Date.now()-started
+  });
+  await run(env.SCORE_DB, `INSERT OR REPLACE INTO hp_board_batches (hp_board_batch_id,request_id,run_id,worker_version,profile_key,profile_version,mode,status,source_table,source_hp_batch_id,source_final_board_batch_id,source_engine_batch_id,source_rows_read,board_rows_written,history_rows_written,issue_rows_written,primary_rows,review_rows,fade_rows,certification_status,certification_grade,thresholds_locked,no_true_probability_claims,output_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, hpBoardBatchId,output.request_id,output.run_id,HP_VERSION,HP_BOARD_PROFILE_KEY,HP_BOARD_PROFILE_VERSION,HP_BOARD_MODE,status,'hit_probability_current',sourceHpBatchId,sourceFinalBoardBatchId,sourceEngineBatchId,sourceRows.length,rowCount,rowCount,Number(issueCountRow.rows||0),primaryRows,reviewRows,fadeRows,cert,grade,1,1,hpSafeJson(output,14000));
+  return output;
+}
+
 async function runHitProbabilityCurrent(env, input = {}){
   const started=Date.now();
   if(!env.SCORE_DB || !env.STATS_HITTER_DB || !env.STATS_PITCHER_DB) return baseIdentity({ ok:false, data_ok:false, version:HP_VERSION, job_key:HP_JOB_KEY, status:"blocked_missing_db_bindings", certification:"HIT_PROBABILITY_MISSING_DB_BINDINGS", certification_grade:"BLOCKED", required_bindings:{SCORE_DB:!!env.SCORE_DB,STATS_HITTER_DB:!!env.STATS_HITTER_DB,STATS_PITCHER_DB:!!env.STATS_PITCHER_DB}, no_score_mutation:true, no_final_board_mutation:true });
@@ -3285,10 +3296,29 @@ export default {
       try {
         const isFinalBoard = input && (input.mode === "scoring_final_board_generate" || input.job_key === "scoring-final-board");
         const isSimulation = input && (input.mode === "scoring_engine_simulation_shadow_strict_b" || input.job_key === "scoring-engine-simulation");
-        const isHitProbability = input && (input.mode === "hit_probability_current_estimate" || input.job_key === "hit-probability");
+        const isHitProbabilityEstimate = input && (input.mode === "hit_probability_current_estimate" || input.job_key === "hit-probability");
+        const isHpBoard = input && (input.mode === HP_BOARD_MODE || input.job_key === HP_BOARD_JOB_KEY);
+        const isHitProbability = isHitProbabilityEstimate || isHpBoard;
         await controlLifecycleHeartbeat(env, input, isHitProbability ? "running_hit_probability_worker_started" : (isSimulation ? "running_scoring_engine_simulation_worker_started" : (isFinalBoard ? "running_scoring_final_board_worker_started" : "running_scoring_engine_worker_started")), { selected_mode: input.mode || null });
         const isFrameworkGate = input && input.mode === "scoring_engine_framework_profile_gate" && input.framework_only === true && input.real_scoring_enabled !== true;
-        const output = isHitProbability ? await runHitProbabilityCurrent(env, input) : (isFinalBoard ? await runScoringFinalBoard(env, input) : (isSimulation ? await runScoringSimulation(env, input) : (isFrameworkGate ? await runScoringEngine(env, input) : await runScoringEngineCurrent(env, input))));
+        let output;
+        if (isHpBoard) {
+          output = await runHpBoardCurrent(env, input);
+        } else if (isHitProbabilityEstimate) {
+          output = await runHitProbabilityCurrent(env, input);
+          if (output && output.ok !== false && input.skip_hp_board !== true) {
+            const hpBoardOutput = await runHpBoardCurrent(env, { ...input, mode: HP_BOARD_MODE, job_key: HP_BOARD_JOB_KEY });
+            output.hp_board_output = hpBoardOutput;
+            output.hp_board_current_written = hpBoardOutput.board_rows_written || 0;
+            output.hp_board_batch_id = hpBoardOutput.hp_board_batch_id || null;
+            output.hp_board_certification = hpBoardOutput.certification || null;
+            output.hp_board_certification_grade = hpBoardOutput.certification_grade || null;
+            output.no_ranking = true;
+            output.hp_board_ranking = true;
+          }
+        } else {
+          output = isFinalBoard ? await runScoringFinalBoard(env, input) : (isSimulation ? await runScoringSimulation(env, input) : (isFrameworkGate ? await runScoringEngine(env, input) : await runScoringEngineCurrent(env, input)));
+        }
         if (isWorkerPartialContinueOutput(output)) {
           output.control_lifecycle = await controlLifecyclePartial(env, input, output);
           return jsonResponse(output, 200);
