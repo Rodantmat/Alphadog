@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.10-current-finalization-timeout-fix";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.11-source-payout-fairness-calibration";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_REALISTIC_V3_2";
@@ -978,6 +978,53 @@ function americanPressure(price, scale) {
   return (((100.0 / (p + 100.0)) - 0.50) * 100.0) * scale;
 }
 
+
+function sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, lineValue, selectedSide, scoreBefore) {
+  if (scoreBefore == null) return { adjusted_score: null, adjustment: 0, cap: null, reason: 'no_selected_score' };
+  const source = String(sourceKey || '').toLowerCase();
+  if (source !== 'prizepicks') return { adjusted_score: scoreBefore, adjustment: 0, cap: null, reason: 'non_prizepicks_no_adjustment' };
+
+  const odds = String(oddsType || payoutVariant || '').toLowerCase();
+  const propKey = String(prop || '').toLowerCase();
+  const line = numOrNull(lineValue);
+  let adjustment = 0;
+  let cap = null;
+  let reason = 'prizepicks_no_source_payout_adjustment';
+
+  // Grounded calibration from same player/game/prop/side/line audits:
+  // v0.4.10 left PP standard about 15-16 points behind Sleeper, and PP goblin/demon
+  // more-only about 27-29 points behind Sleeper, even when prepared/matrix context matched.
+  // This layer is intentionally source-fair, not recommendation/ranking logic: it reduces the
+  // artificial source/payout discount while preserving a payout risk ceiling below elite.
+  if (odds === 'standard') {
+    adjustment = 10;
+    cap = 87;
+    reason = 'prizepicks_standard_same_line_gap_recentered_with_strong_cap';
+  } else if (odds === 'goblin') {
+    adjustment = 20;
+    cap = 79;
+    reason = 'prizepicks_goblin_more_only_gap_recentered_with_payout_risk_cap';
+    if (['total_bases','hits_runs_rbis','rbis','runs','singles','walks'].includes(propKey) && line != null && line <= 0.5) {
+      adjustment = 14;
+      cap = 76;
+      reason = 'prizepicks_goblin_low_line_medium_frequency_tempered_gap_recenter';
+    }
+  } else if (odds === 'demon') {
+    adjustment = 22;
+    cap = 77;
+    reason = 'prizepicks_demon_more_only_gap_recentered_with_payout_risk_cap';
+    if (['home_runs','stolen_bases','doubles'].includes(propKey)) {
+      adjustment = 15;
+      cap = 74;
+      reason = 'prizepicks_demon_low_frequency_tempered_gap_recenter';
+    }
+  }
+
+  if (!adjustment || cap == null) return { adjusted_score: scoreBefore, adjustment: 0, cap: null, reason };
+  const adjusted = Math.min(cap, clamp(scoreBefore + adjustment));
+  return { adjusted_score: adjusted, adjustment: adjusted - scoreBefore, cap, reason };
+}
+
 function linePressure(canonicalPropKey, lineValue, side) {
   const line = numOrNull(lineValue) ?? 0;
   const prop = String(canonicalPropKey || '');
@@ -1114,7 +1161,26 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     const selectedRaw = selectedSide === 'more' ? rawMore : rawLess;
     const uncappedSelected = Math.min(p.maxScoreCap, clamp(selectedRaw - scorePenalty + bonus));
     selectedCapResult = capScoreWithReasons(uncappedSelected, hardCaps);
-    scoreInteger = round0(selectedCapResult.score);
+    const preFairnessScore = round0(selectedCapResult.score);
+    const fairness = sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, row.board_line_value, selectedSide, preFairnessScore);
+    scoreInteger = round0(fairness.adjusted_score);
+    if (fairness.adjustment !== 0) {
+      selectedCapResult.applied = [
+        ...(selectedCapResult.applied || []),
+        {
+          key: 'source_payout_fairness_calibration',
+          source_key: sourceKey,
+          odds_type: oddsType,
+          payout_variant: payoutVariant,
+          selected_side: selectedSide,
+          score_before: preFairnessScore,
+          adjustment: fairness.adjustment,
+          cap: fairness.cap,
+          score_after: scoreInteger,
+          reason: fairness.reason
+        }
+      ];
+    }
   }
   const sideGap = Math.abs((rawMore ?? 0) - (rawLess ?? rawMore ?? 0));
   const confidence = (!hardBlocked && !modelDeferred && selectedSide)
@@ -1175,6 +1241,8 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     effective_warning_severity: effectiveWarningSeverity,
     effective_warning_policy: 'raw_warning_count_preserved_but_soft_partial_missing_current_readiness_with_direct_evidence_uses_effective_warning_tier',
     score_caps_applied: selectedCapResult.applied,
+    source_payout_fairness_calibration_enabled: 1,
+    source_payout_fairness_policy: 'prizepicks_standard_gap_recenter_plus_goblin_demon_more_only_tempered_payout_caps; no_sleeper_boost; no_final_board_mutation',
     side_symmetry_risk: sideSymmetryRisk,
     goblin_demon_less_score_policy: 'NULL_NOT_ZERO',
     d1_memory_policy: 'no_large_scoring_cte; bounded_js_chunk_compute_and_json_each_batch_inserts_one_bind_per_batch'
