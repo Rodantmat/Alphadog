@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.20-paged-engine-current-reader";
+const VERSION = "alphadog-v2-score-final-board-v0.1.21-complete-review-ledger-offset-reader";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
@@ -879,6 +879,7 @@ function applyEngineFieldTierCalibration(rawRow) {
     && num(rawRow.archive_eligible, 0) === 1
     && num(rawRow.blocker_count, 0) === 0
     && num(rawRow.blocking_for_scoring, 0) === 0
+    && norm(rawRow.market_prop_context_status) === "market_prop_context_present"
     && norm(rawRow.score_status) !== "model_deferred";
   const boardTier = primaryCandidate ? "PRIMARY" : "REVIEW";
   let payload = {};
@@ -887,7 +888,7 @@ function applyEngineFieldTierCalibration(rawRow) {
     version: VERSION,
     policy: "engine_field_only_no_recalibration",
     board_tier: boardTier,
-    rule: "PRIMARY uses engine BIN_STRONG/score>=84 with required playable fields; REVIEW uses engine BIN_QUALIFIED/score>=76 plus high archive band score>=74. Final Board does not re-score, re-cap, or read review_playable from scoring_engine_current.",
+    rule: "PRIMARY uses engine BIN_STRONG/score>=84 plus direct market context with required playable fields; REVIEW is the complete safe archive_eligible ledger for engine BIN_QUALIFIED/score>=76 plus high archive band score>=74. Final Board does not re-score, re-cap REVIEW, or read review_playable from scoring_engine_current.",
     engine_score_0_100: score,
     engine_confidence_0_100: confidence,
     engine_score_grade: grade,
@@ -919,8 +920,16 @@ function applyEngineFieldTierCalibration(rawRow) {
 
 async function fetchEngineBoardCandidateRows(env, sourceEngineBatchId, profileKey, pageSize = 500) {
   const rows = [];
-  let lastScoreRowId = "";
+  const limit = Math.max(1, Math.min(1000, Math.trunc(pageSize)));
+  let offset = 0;
   let pages = 0;
+
+  // v0.1.21-complete-review-ledger-offset-reader:
+  // v0.1.20 used keyset pagination on score_row_id. In D1 this under-read the eligible
+  // engine-current review universe: the completed board wrote 773 rows even while SQL proved
+  // many archive_eligible BIN_QUALIFIED / BIN_STRONG rows remained missing from Final Board.
+  // Final Board is allowed to be a complete REVIEW ledger, so use deterministic LIMIT/OFFSET
+  // paging over the already-small current scoring artifact instead of score_row_id keyset paging.
   while (true) {
     const page = await all(env.SCORE_DB, `
       SELECT *
@@ -943,19 +952,18 @@ async function fetchEngineBoardCandidateRows(env, sourceEngineBatchId, profileKe
           OR score_grade IN ('BIN_QUALIFIED','BIN_STRONG')
           OR (score_grade = 'BIN_ARCHIVE' AND score_0_100 >= 74)
         )
-        AND score_row_id > ?
-      ORDER BY score_row_id
-      LIMIT ${Math.max(1, Math.min(1000, Math.trunc(pageSize)))}
-    `, sourceEngineBatchId, profileKey, lastScoreRowId);
+      ORDER BY score_0_100 DESC, confidence_0_100 DESC, score_sort_0_100 DESC, score_row_id
+      LIMIT ${limit} OFFSET ${offset}
+    `, sourceEngineBatchId, profileKey);
 
     pages += 1;
     if (!page.length) break;
     rows.push(...page);
-    lastScoreRowId = String(page[page.length - 1].score_row_id || lastScoreRowId);
-    if (page.length < pageSize) break;
+    if (page.length < limit) break;
+    offset += limit;
     if (pages > 1000) throw new Error("score_final_board_engine_current_pagination_guard_exceeded");
   }
-  return { rows, pages, page_size: pageSize };
+  return { rows, pages, page_size: limit, pagination_mode: "limit_offset_score_order" };
 }
 
 function applyPrimaryClusterCap(primaryRows, reviewRows, maxPerPlayer = 2) {
@@ -1157,7 +1165,6 @@ async function reconcileStaleRunningFinalBoard(env, input, engine, started) {
         OR canonical_prop_key IS NULL
         OR source_key IS NULL
         OR mlb_player_id IS NULL
-        OR market_prop_context_status <> 'market_prop_context_present'
         OR score_0_100 < 70
         OR confidence_0_100 < 55
         OR board_tier NOT IN ('PRIMARY','REVIEW')
@@ -1283,7 +1290,6 @@ async function generateFinalBoard(env, input) {
         OR source_key IS NULL
         OR mlb_player_id IS NULL
         OR factor_status <> 'packet_ready'
-        OR market_prop_context_status <> 'market_prop_context_present'
         OR daily_readiness_status NOT IN ('ready','ready_with_warnings')
         OR score_status IN ('blocked_by_matrix','model_deferred','simulation_hard_blocked')
       )
@@ -1299,8 +1305,8 @@ async function generateFinalBoard(env, input) {
   const engineRead = await fetchEngineBoardCandidateRows(env, simBatchId, PRIMARY_PROFILE, 500);
   const engineRaw = engineRead.rows;
 
-  // v0.1.20-paged-engine-current-reader over v0.1.19-runtime-output-scope-fix:
-  // D1 prepared .all() can silently return only a bounded first page for large SELECT result sets.
+  // v0.1.21-complete-review-ledger-offset-reader over v0.1.20-paged-engine-current-reader:
+  // D1 prepared .all() plus score_row_id keyset paging under-read the review universe; LIMIT/OFFSET paging reads the complete bounded first page for large SELECT result sets.
   // Final Board must read every eligible scoring_engine_current row for the terminal engine batch,
   // so the engine-current scan is keyset-paged by score_row_id. No source quotas, no payout quotas,
   // and no mutation of scoring_engine_current or prepared/source boards.
@@ -1377,7 +1383,6 @@ async function generateFinalBoard(env, input) {
         OR canonical_prop_key IS NULL
         OR source_key IS NULL
         OR mlb_player_id IS NULL
-        OR market_prop_context_status <> 'market_prop_context_present'
         OR score_0_100 < 70
         OR confidence_0_100 < 55
         OR board_tier NOT IN ('PRIMARY','REVIEW')
@@ -1447,6 +1452,8 @@ async function generateFinalBoard(env, input) {
     engine_current_candidate_read_pages: engineRead.pages,
     engine_current_candidate_page_size: engineRead.page_size,
     paged_engine_current_reader_active: true,
+    engine_current_candidate_pagination_mode: engineRead.pagination_mode || "unknown",
+    complete_review_ledger_mode: true,
     primary_raw_rows_read: strictLiveCandidates.filter(r => r.board_tier === "PRIMARY").length,
     review_raw_rows_read: strictLiveCandidates.filter(r => r.board_tier === "REVIEW").length,
     strict_live_candidates_read: strictLiveCandidates.filter(r => r.board_tier === "PRIMARY").length,
