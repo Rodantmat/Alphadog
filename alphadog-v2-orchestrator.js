@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.193-board-full-prizepicks-refresh-required";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.194-scoring-current-partial-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -7388,13 +7388,20 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const rowsWritten = Number(output && (output.score_rows_written || output.simulation_rows_written || output.probability_rows_written || output.rows_written) ? (output.score_rows_written || output.simulation_rows_written || output.probability_rows_written || output.rows_written) : 0);
   const archiveRowsWritten = Number(output && output.archive_rows_written ? output.archive_rows_written : 0);
   const certification = String((output && output.certification) || (ok ? "scoring_engine_framework_completed" : "scoring_engine_framework_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
+  const partial = !!(ok && output && (
+    output.continuation_required === true ||
+    output.orchestrator_should_self_continue === true ||
+    String(output.status || "").toLowerCase().startsWith("partial_continue") ||
+    String(output.certification || output.certification_status || "").toUpperCase().includes("PARTIAL_CONTINUE") ||
+    String(output.certification_grade || "").toUpperCase() === "PARTIAL"
+  ));
+  const queueStatus = partial ? "pending" : (ok ? "completed" : "failed");
+  const runStatus = partial ? "partial_continue" : (ok ? "completed" : "failed");
   const errorCode = ok ? null : "scoring_engine_worker_failed";
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
-    deployed_slot_version: isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.8-hit-probability-same-slot" : "alphadog-v2-scoring-engine-v0.4.7-strict-c-realistic-v3-2-effective-warning-severity",
+    deployed_slot_version: isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.8-hit-probability-same-slot" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock",
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
@@ -7430,14 +7437,13 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  const partial = false;
   if (partial) {
     const nextInput = {
       ...rowInput,
-      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
-      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
-      matrix_resume: true,
-      continuation_from_request_id: row.request_id
+      resume_batch_id: output && output.batch_id ? output.batch_id : rowInput.resume_batch_id || null,
+      scoring_engine_resume: true,
+      continuation_from_request_id: row.request_id,
+      continuation_certification: certification
     };
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
@@ -7451,8 +7457,8 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   }
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'scoring_engine_dispatch_completed', 'Orchestrator completed exact score-audit-slot dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, matrix_rows_read: rowsRead, score_rows_written: rowsWritten, archive_rows_written: archiveRowsWritten, dispatch: cappedOutput.orchestrator_dispatch })
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'scoring_engine_dispatch_completed', ?, ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, partial ? "INFO" : (ok ? "INFO" : "ERROR"), partial ? "Orchestrator partial-continued exact score-audit-slot dispatch" : "Orchestrator completed exact score-audit-slot dispatch", JSON.stringify({ request_id: row.request_id, certification, partial_continue: partial, matrix_rows_read: rowsRead, score_rows_written: rowsWritten, archive_rows_written: archiveRowsWritten, dispatch: cappedOutput.orchestrator_dispatch })
   );
 
   return cappedOutput;

@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.16-primary-diversification-player-cap";
+const VERSION = "alphadog-v2-score-final-board-v0.1.17-current-engine-batch-freshness-guard";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
@@ -392,6 +392,20 @@ async function latestCompletedEngineBatch(env, requestedBatchId) {
     ORDER BY datetime(finished_at) DESC, datetime(started_at) DESC
     LIMIT 1
   `);
+}
+
+async function latestEngineBatchAnyStatus(env) {
+  return await first(env.SCORE_DB, `
+    SELECT batch_id, worker_version, status, certification, certification_grade, matrix_rows_read, score_rows_written, archive_rows_written, started_at, finished_at
+    FROM scoring_engine_batches
+    WHERE score_rows_written > 0 OR matrix_rows_read > 0
+    ORDER BY datetime(COALESCE(finished_at, started_at)) DESC, datetime(started_at) DESC
+    LIMIT 1
+  `);
+}
+
+function isCompletedCertifiedEngineBatch(engine) {
+  return !!(engine && engine.status === 'completed_scoring_current_rows_written' && engine.certification === 'SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS' && String(engine.certification_grade || '').startsWith('PASS'));
 }
 
 async function writeIssue(env, batchId, sourceBatchId, key, severity, count, payload) {
@@ -1105,7 +1119,19 @@ async function generateFinalBoard(env, input) {
     return output;
   }
 
-  const engine = await latestCompletedEngineBatch(env, requestedEngineBatchId);
+  const newestEngine = requestedEngineBatchId ? await latestCompletedEngineBatch(env, requestedEngineBatchId) : await latestEngineBatchAnyStatus(env);
+  const engine = requestedEngineBatchId ? newestEngine : (isCompletedCertifiedEngineBatch(newestEngine) ? newestEngine : await latestCompletedEngineBatch(env, null));
+
+  if (!isCompletedCertifiedEngineBatch(newestEngine)) {
+    await run(env.SCORE_DB, `
+      INSERT INTO score_final_board_batches (final_board_batch_id, worker_version, job_key, source_simulation_batch_id, source_engine_batch_id, source_scoring_worker_version, profile_key, status, certification, certification_grade, started_at)
+      VALUES (?, ?, ?, NULL, ?, ?, ?, 'blocked_latest_engine_batch_not_terminal', 'SCORE_FINAL_BOARD_BLOCKED_LATEST_ENGINE_BATCH_NOT_TERMINAL', 'BLOCKED', CURRENT_TIMESTAMP)
+    `, batchId, VERSION, JOB_KEY, newestEngine && newestEngine.batch_id || null, newestEngine && newestEngine.worker_version || null, PRIMARY_PROFILE);
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_latest_engine_batch_not_terminal", certification:"SCORE_FINAL_BOARD_BLOCKED_LATEST_ENGINE_BATCH_NOT_TERMINAL", certification_grade:"BLOCKED", final_board_batch_id:batchId, requested_engine_batch_id:requestedEngineBatchId, latest_engine_batch_id:newestEngine && newestEngine.batch_id || null, latest_engine_status:newestEngine && newestEngine.status || null, latest_engine_certification:newestEngine && newestEngine.certification || null, latest_engine_score_rows_written:newestEngine && newestEngine.score_rows_written || 0, reason:"The newest Scoring Engine batch is not terminal/certified. Final Board refused to fall back to an older completed scoring batch." };
+    await writeIssue(env, batchId, newestEngine && newestEngine.batch_id || null, "LATEST_ENGINE_BATCH_NOT_TERMINAL", "BLOCKER", 1, output);
+    await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
+    return output;
+  }
 
   if (!engine || engine.status !== "completed_scoring_current_rows_written" || engine.certification !== "SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS") {
     await run(env.SCORE_DB, `
