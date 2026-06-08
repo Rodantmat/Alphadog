@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.205-daily-context-prelock-sidecar-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.206-daily-context-zero-delay-hot-drain";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -6407,8 +6407,13 @@ async function processDailyContextCertifierJob(env, row, runId, trigger) {
 
 const DAILY_CONTEXT_FULL_RUN_LOCK_KEY = "DAILY_CONTEXT_FULL_RUN";
 const DAILY_CONTEXT_FULL_RUN_STALE_MINUTES = 20;
-const DAILY_CONTEXT_FULL_RUN_CHILD_RUN_AFTER_SECONDS = 1;
-const DAILY_CONTEXT_FULL_RUN_PARENT_RECHECK_SECONDS = 3;
+// v0.2.206: Match the proven Market/Scoring cascade timing.
+// Child rows must be due immediately so the same backend pump can drain the
+// next child in the same hot loop. A +1s child run_after forces a no_due_jobs
+// break and relies on delayed waitUntil/cron to resume, which is not reliable
+// enough for the Daily Context full-run lock lifecycle.
+const DAILY_CONTEXT_FULL_RUN_CHILD_RUN_AFTER_SECONDS = 0;
+const DAILY_CONTEXT_FULL_RUN_PARENT_RECHECK_SECONDS = 0;
 const DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS = 120;
 
 const DAILY_CONTEXT_FULL_RUN_STAGES = [
@@ -9885,7 +9890,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       market_scoring_lock_busy_continuation: !!marketScoringLockBusyContinuation,
       daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
       lock_busy_hot_continuation: !!lockBusyHotContinuation,
-      daily_context_lockbusy_hot_continuation_v0_2_204: true,
+      daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_context_zero_delay_hot_drain_v0_2_206: true,
       hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
       cron_is_rescue_only_for_base_hitter: true, cron_is_rescue_only_for_base_hitter_splits: true, base_hitter_splits_hot_continuation_v0_2_32: true, base_pitcher_splits_hot_continuation_v0_2_35: true,
       version: SYSTEM_VERSION
@@ -9925,7 +9930,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         market_scoring_lock_busy_continuation: !!marketScoringLockBusyContinuation,
         daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
         lock_busy_hot_continuation: !!lockBusyHotContinuation,
-        daily_context_lockbusy_hot_continuation_v0_2_204: true,
+        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_context_zero_delay_hot_drain_v0_2_206: true,
         self_continue_suppressed_due_to_lock_busy: !!(sawLockBusy && !lockBusyHotContinuation),
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
         version: SYSTEM_VERSION,
