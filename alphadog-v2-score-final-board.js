@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.14-primary-elite-threshold-source-profile-lock";
+const VERSION = "alphadog-v2-score-final-board-v0.1.15-primary-sanity-hp-advisory-balance";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
@@ -20,6 +20,13 @@ function parseJsonObject(value) { try { const parsed = JSON.parse(value || "{}")
 function getPath(obj, path) { let cur = obj; for (const part of path) { if (cur == null || typeof cur !== "object") return null; cur = cur[part]; } return cur == null ? null : cur; }
 const PRIMARY_THRESHOLD_SCORE = 88;
 const PRIMARY_THRESHOLD_CONFIDENCE = 85;
+const PRIMARY_SANITY_DEMOTE_HP_BELOW = 45;
+const PRIMARY_SANITY_RESCUE_SCORE_A = 86;
+const PRIMARY_SANITY_RESCUE_HP_A = 70;
+const PRIMARY_SANITY_RESCUE_SCORE_B = 85;
+const PRIMARY_SANITY_RESCUE_HP_B = 80;
+const PRIMARY_SANITY_MIN_HP_CONFIDENCE = 80;
+const PRIMARY_SANITY_MIN_NON_PUSH_SAMPLE = 25;
 function directEvidenceInfoFromBoardRow(row) {
   const calc = parseJsonObject(row.calculation_json);
   if (calc && calc.direct_prop_evidence_bucket) {
@@ -527,7 +534,7 @@ function applyCalibration(rawRow, preferredTier = null) {
       version: VERSION,
       board_tier: boardTier,
       review_subtier: boardTier === "REVIEW" ? calibrated.review_subtier : null,
-      tier_rule: "PRIMARY when calibrated_score_0_100 >= 90, calibrated_confidence_0_100 >= 85, direct_prop_evidence_row_count > 0, and no side symmetry risk; otherwise REVIEW.",
+      tier_rule: "PRIMARY when calibrated_score_0_100 >= 88, calibrated_confidence_0_100 >= 85, direct_prop_evidence_row_count > 0, and no side symmetry risk, with optional robust Hit Probability advisory sanity rescue/demotion; otherwise REVIEW.",
       raw_score_0_100: calibrated.raw_score_0_100,
       raw_confidence_0_100: calibrated.raw_confidence_0_100,
       calibrated_score_0_100: calibrated.score_0_100,
@@ -540,7 +547,7 @@ function applyCalibration(rawRow, preferredTier = null) {
       effective_warning_count: effectiveWarningCountFromBoardRow(rawRow, directEvidenceInfoFromBoardRow(rawRow)),
       score_adjustments: calibrated.score_adjustments,
       confidence_adjustments: calibrated.confidence_adjustments,
-      note: "STRICT_C_REALISTIC_V3_2 uses DB/profile scoring first, then final board caps for direct market evidence, effective partial-context warning density, and side symmetry. No platform quota, no forced balance."
+      note: "STRICT_C_REALISTIC_V3_2 uses DB/profile scoring first, then final board caps for direct market evidence, effective partial-context warning density, and side symmetry. No platform quota, no forced balance. Optional HP advisory is a safety net, not a killer."
     })
   };
 }
@@ -660,6 +667,166 @@ function appendCalibrationAdjustment(row, adjustment) {
   };
   row.calibration_json = safeJson(payload);
   return row;
+}
+
+
+function hpAdvisoryKey(row) {
+  return `${String(row.prepared_row_id || "")}||${norm(row.selected_side)}`;
+}
+
+async function latestHitProbabilityBatchForEngine(env, sourceEngineBatchId) {
+  try {
+    return await first(env.SCORE_DB, `
+      SELECT batch_id, worker_version, profile_version, source_final_board_batch_id, source_engine_batch_id, probability_rows_written, created_at
+      FROM hit_probability_batches
+      WHERE source_engine_batch_id = ?
+        AND status IN ('completed_recent_form_hit_rate_written','completed_hit_probability_current_estimates_written')
+        AND probability_rows_written > 0
+      ORDER BY datetime(created_at) DESC
+      LIMIT 1
+    `, sourceEngineBatchId);
+  } catch (err) {
+    return null;
+  }
+}
+
+async function loadHitProbabilityAdvisoryMap(env, sourceEngineBatchId) {
+  const batch = await latestHitProbabilityBatchForEngine(env, sourceEngineBatchId);
+  if (!batch || !batch.batch_id) return { batch: null, map: new Map(), rows: 0 };
+  let rows = [];
+  try {
+    rows = await all(env.SCORE_DB, `
+      SELECT
+        batch_id,
+        prepared_row_id,
+        selected_side,
+        estimated_hit_probability_0_100,
+        probability_confidence_0_100,
+        sample_size,
+        non_push_sample,
+        probability_grade,
+        probability_band
+      FROM hit_probability_current
+      WHERE batch_id = ?
+        AND prepared_row_id IS NOT NULL
+        AND selected_side IS NOT NULL
+    `, batch.batch_id);
+  } catch (err) {
+    return { batch, map: new Map(), rows: 0, error: String(err && err.message ? err.message : err) };
+  }
+  const map = new Map();
+  for (const r of rows) map.set(hpAdvisoryKey(r), r);
+  return { batch, map, rows: rows.length };
+}
+
+function attachHitProbabilityAdvisory(row, hpMap) {
+  const hp = hpMap && hpMap.get(hpAdvisoryKey(row));
+  if (!hp) return row;
+  const hpValue = num(hp.estimated_hit_probability_0_100, NaN);
+  const hpConfidence = num(hp.probability_confidence_0_100, NaN);
+  const hpSample = Math.max(0, Math.trunc(num(hp.sample_size, 0)));
+  const hpNonPush = Math.max(0, Math.trunc(num(hp.non_push_sample, 0)));
+  if (!Number.isFinite(hpValue)) return row;
+  return {
+    ...row,
+    hp_advisory_available: true,
+    hp_estimated_hit_probability_0_100: hpValue,
+    hp_probability_confidence_0_100: Number.isFinite(hpConfidence) ? hpConfidence : null,
+    hp_sample_size: hpSample,
+    hp_non_push_sample: hpNonPush,
+    hp_probability_grade: hp.probability_grade || null,
+    hp_probability_band: hp.probability_band || null
+  };
+}
+
+function hpAdvisoryIsRobust(row) {
+  return row && row.hp_advisory_available === true
+    && Number.isFinite(num(row.hp_estimated_hit_probability_0_100, NaN))
+    && num(row.hp_probability_confidence_0_100, 0) >= PRIMARY_SANITY_MIN_HP_CONFIDENCE
+    && num(row.hp_non_push_sample, 0) >= PRIMARY_SANITY_MIN_NON_PUSH_SAMPLE;
+}
+
+function appendPrimarySanityAdjustment(row, adjustment) {
+  let payload = {};
+  try { payload = row.calibration_json ? JSON.parse(row.calibration_json) : {}; } catch (_) { payload = {}; }
+  if (!Array.isArray(payload.score_adjustments)) payload.score_adjustments = [];
+  payload.score_adjustments.push(adjustment);
+  payload.primary_sanity_hp_advisory = {
+    enabled: true,
+    version: VERSION,
+    hp_advisory_available: row.hp_advisory_available === true,
+    estimated_hit_probability_0_100: row.hp_estimated_hit_probability_0_100 == null ? null : num(row.hp_estimated_hit_probability_0_100, null),
+    probability_confidence_0_100: row.hp_probability_confidence_0_100 == null ? null : num(row.hp_probability_confidence_0_100, null),
+    non_push_sample: row.hp_non_push_sample == null ? null : num(row.hp_non_push_sample, null),
+    action: adjustment && adjustment.key || null,
+    note: "Hit Probability advisory is a sanity safety-net for PRIMARY tiering only. It does not delete rows, force equality, or override DB scoring; it can demote weak-HP PRIMARY rows to REVIEW or rescue robust high-HP review rows near the top score band."
+  };
+  row.calibration_json = safeJson(payload);
+  return row;
+}
+
+function primarySanityCandidate(row) {
+  if (num(row.blocker_count, 0) > 0 || num(row.blocking_for_scoring, 0) > 0) return false;
+  if (num(row.archive_eligible, 0) !== 1) return false;
+  if (norm(row.market_prop_context_status) !== "market_prop_context_present") return false;
+  if (norm(row.score_status) === "blocked_by_matrix" || norm(row.score_status) === "model_deferred" || norm(row.score_status) === "simulation_hard_blocked") return false;
+  if (!row.selected_side || row.line_value == null || !row.player_name || !row.canonical_prop_key || !row.source_key || !row.mlb_player_id) return false;
+  if (directEvidenceInfoFromBoardRow(row).rowCount <= 0) return false;
+  if (sideSymmetryRisk(row)) return false;
+  return true;
+}
+
+function applyPrimarySanityHpAdvisory(rows) {
+  let demotedRows = 0;
+  let rescuedRows = 0;
+  let advisoryRowsSeen = 0;
+  const out = [];
+  for (const row of rows) {
+    const hpValue = num(row.hp_estimated_hit_probability_0_100, NaN);
+    const robust = hpAdvisoryIsRobust(row);
+    const hasHp = row.hp_advisory_available === true && Number.isFinite(hpValue);
+    if (hasHp) advisoryRowsSeen += 1;
+
+    let next = { ...row };
+    if (next.board_tier === "PRIMARY" && robust && hpValue < PRIMARY_SANITY_DEMOTE_HP_BELOW) {
+      next.board_tier = "REVIEW";
+      next.live_playable = 0;
+      next.review_playable = 1;
+      demotedRows += 1;
+      appendPrimarySanityAdjustment(next, {
+        key: "primary_sanity_hp_demoted_to_review",
+        estimated_hit_probability_0_100: hpValue,
+        probability_confidence_0_100: num(next.hp_probability_confidence_0_100, null),
+        non_push_sample: num(next.hp_non_push_sample, null),
+        cutoff: PRIMARY_SANITY_DEMOTE_HP_BELOW,
+        delta: 0,
+        note: "Robust low Hit Probability advisory kept the row safe in REVIEW instead of PRIMARY."
+      });
+    } else if (next.board_tier === "REVIEW" && robust && primarySanityCandidate(next)) {
+      const score = num(next.score_0_100, 0);
+      const confidence = num(next.confidence_0_100, 0);
+      const rescueA = score >= PRIMARY_SANITY_RESCUE_SCORE_A && confidence >= PRIMARY_THRESHOLD_CONFIDENCE && hpValue >= PRIMARY_SANITY_RESCUE_HP_A;
+      const rescueB = score >= PRIMARY_SANITY_RESCUE_SCORE_B && confidence >= PRIMARY_THRESHOLD_CONFIDENCE && hpValue >= PRIMARY_SANITY_RESCUE_HP_B;
+      if (rescueA || rescueB) {
+        next.board_tier = "PRIMARY";
+        next.live_playable = 1;
+        next.review_playable = 0;
+        rescuedRows += 1;
+        appendPrimarySanityAdjustment(next, {
+          key: rescueB && !rescueA ? "primary_sanity_hp_rescued_high_hp_85_band" : "primary_sanity_hp_rescued_86_band",
+          estimated_hit_probability_0_100: hpValue,
+          probability_confidence_0_100: num(next.hp_probability_confidence_0_100, null),
+          non_push_sample: num(next.hp_non_push_sample, null),
+          score_0_100: score,
+          confidence_0_100: confidence,
+          delta: 0,
+          note: "Robust high Hit Probability advisory elevated a near-elite review row to PRIMARY."
+        });
+      }
+    }
+    out.push(next);
+  }
+  return { rows: out, demotedRows, rescuedRows, advisoryRowsSeen };
 }
 
 function applyPrimaryClusterCap(primaryRows, reviewRows, maxPerPlayer = 2) {
@@ -1050,12 +1217,18 @@ async function generateFinalBoard(env, input) {
 
   // Cluster counts are computed across the calibrated candidate ecosystem before the final trim.
   // The count is metadata first; v0.1.4 only uses it as a one-point tie-breaker on fragile pitcher rows already near the cutoff.
+  const hpAdvisory = await loadHitProbabilityAdvisoryMap(env, simBatchId);
+
   const calibratedCandidates = annotateCorrelation(initiallyCalibratedCandidates)
     .map(r => applyCutoffVolatilityTrim(r))
+    .map(r => attachHitProbabilityAdvisory(r, hpAdvisory.map))
     .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 70 && Number(r.confidence_0_100) >= 55);
 
-  let primaryRows = calibratedCandidates.filter(r => r.board_tier === "PRIMARY");
-  let reviewRows = calibratedCandidates.filter(r => r.board_tier === "REVIEW");
+  const primarySanityResult = applyPrimarySanityHpAdvisory(calibratedCandidates);
+  const sanityBalancedCandidates = primarySanityResult.rows;
+
+  let primaryRows = sanityBalancedCandidates.filter(r => r.board_tier === "PRIMARY");
+  let reviewRows = sanityBalancedCandidates.filter(r => r.board_tier === "REVIEW");
 
   const clusterCapResult = applyPrimaryClusterCap(primaryRows, reviewRows, 2);
   primaryRows = clusterCapResult.primaryRows;
@@ -1176,6 +1349,11 @@ async function generateFinalBoard(env, input) {
     safe_review_candidates_read: safeReviewCandidates.length,
     initially_calibrated_candidates_read: initiallyCalibratedCandidates.length,
     calibrated_candidates_written: calibratedCandidates.length,
+    hp_advisory_batch_id: hpAdvisory.batch && hpAdvisory.batch.batch_id || null,
+    hp_advisory_rows_loaded: hpAdvisory.rows || 0,
+    hp_advisory_candidate_rows_seen: primarySanityResult.advisoryRowsSeen,
+    hp_advisory_rescued_to_primary_rows: primarySanityResult.rescuedRows,
+    hp_advisory_demoted_to_review_rows: primarySanityResult.demotedRows,
     primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap,
     primary_cluster_cap_max_per_player: clusterCapResult.maxPrimaryRowsPerPlayer,
     primary_cluster_cap_demoted_rows: clusterCapResult.demotedRows.length,
@@ -1200,6 +1378,11 @@ async function generateFinalBoard(env, input) {
     final_plus_calibration_active: true,
     cutoff_volatility_trim_active: true,
     cutoff_volatility_trim_policy: "narrow fragile-pitcher cutoff trim only; no source quota, no forced balance, no broad cluster penalty",
+    primary_sanity_hp_advisory_active: true,
+    primary_sanity_hp_advisory_policy: "Optional same-engine Hit Probability advisory can demote robust hp<45 PRIMARY rows to REVIEW and rescue robust high-HP near-elite REVIEW rows to PRIMARY; no deletion, no quota, no forced equality.",
+    primary_sanity_rescue_rule_a: `score>=${PRIMARY_SANITY_RESCUE_SCORE_A}, confidence>=${PRIMARY_THRESHOLD_CONFIDENCE}, hp>=${PRIMARY_SANITY_RESCUE_HP_A}, hp_confidence>=${PRIMARY_SANITY_MIN_HP_CONFIDENCE}, non_push_sample>=${PRIMARY_SANITY_MIN_NON_PUSH_SAMPLE}`,
+    primary_sanity_rescue_rule_b: `score>=${PRIMARY_SANITY_RESCUE_SCORE_B}, confidence>=${PRIMARY_THRESHOLD_CONFIDENCE}, hp>=${PRIMARY_SANITY_RESCUE_HP_B}, hp_confidence>=${PRIMARY_SANITY_MIN_HP_CONFIDENCE}, non_push_sample>=${PRIMARY_SANITY_MIN_NON_PUSH_SAMPLE}`,
+    primary_sanity_demote_rule: `PRIMARY robust hp<${PRIMARY_SANITY_DEMOTE_HP_BELOW} becomes REVIEW`,
     primary_threshold_score: PRIMARY_THRESHOLD_SCORE,
     primary_threshold_confidence: PRIMARY_THRESHOLD_CONFIDENCE,
     primary_cluster_cap_active: true,
@@ -1214,6 +1397,7 @@ async function generateFinalBoard(env, input) {
   await writeIssue(env, batchId, simBatchId, "REVIEW_TIER_INCLUDED", "WARNING", reviewRows.length, { note: "Review tier rows are intentionally included as safe soft rows. They are not strict PRIMARY rows.", review_rows_written: reviewRows.length });
   await writeIssue(env, batchId, simBatchId, "ARCHIVE_REVIEW_ADMITTED", archiveReviewCandidates.length ? "WARNING" : "INFO", archiveReviewCandidates.length, { note: "BIN_ARCHIVE/archive_eligible rows are admitted to REVIEW only instead of being silently killed by the 76+ qualified gate.", archive_review_rows_written: archiveReviewCandidates.length, archive_review_by_source: Object.values(archiveReviewBySource) });
   await writeIssue(env, batchId, simBatchId, "PRIMARY_CLUSTER_CAP_APPLIED", clusterCapResult.demotedRows.length ? "WARNING" : "INFO", clusterCapResult.demotedRows.length, { note: "PRIMARY is capped at two rows per player; overflow rows are demoted to REVIEW, not deleted.", max_primary_rows_per_player: clusterCapResult.maxPrimaryRowsPerPlayer, primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap, primary_rows_after_cluster_cap: clusterCapResult.primaryRowsAfterClusterCap, demoted_rows: clusterCapResult.demotedRows.length });
+  await writeIssue(env, batchId, simBatchId, "PRIMARY_SANITY_HP_ADVISORY_APPLIED", (primarySanityResult.rescuedRows || primarySanityResult.demotedRows) ? "WARNING" : "INFO", (primarySanityResult.rescuedRows || 0) + (primarySanityResult.demotedRows || 0), { note: "Hit Probability advisory is used as a PRIMARY safety net only. It can rescue robust high-HP near-elite rows or demote robust low-HP PRIMARY rows to REVIEW. It does not delete rows, force equality, or apply source/prop quotas.", hp_advisory_batch_id: hpAdvisory.batch && hpAdvisory.batch.batch_id || null, hp_advisory_rows_loaded: hpAdvisory.rows || 0, candidate_rows_with_advisory: primarySanityResult.advisoryRowsSeen, rescued_to_primary_rows: primarySanityResult.rescuedRows, demoted_to_review_rows: primarySanityResult.demotedRows });
   await run(env.SCORE_DB, `
     UPDATE score_final_board_batches
     SET status=?, certification=?, certification_grade=?, matrix_rows_read=?, live_rows_read=?, final_rows_written=?, current_rows_written=?, finished_at=CURRENT_TIMESTAMP, output_json=?
