@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.191-board-full-window-parity-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.192-board-full-prizepicks-stale-clear-accept";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -654,7 +654,7 @@ function childPassedBoardFullRun(stage, child) {
         certification: cert,
         reason: dispatch && dispatch.ok === true
           ? "prizepicks_source_stale_refresh_dispatched_nonfatal_continue_to_sleeper_and_score_prep"
-          : "prizepicks_source_stale_preserved_current_nonfatal_continue_to_sleeper_and_score_prep",
+          : "prizepicks_source_stale_current_cleared_nonfatal_continue_to_sleeper_and_score_prep",
         prizepicks_stale_cleared: true,
         prizepicks_nonfatal_warning: true,
         prizepicks_stage_nonfatal: true,
@@ -731,7 +731,9 @@ function childPassedBoardFullRun(stage, child) {
     if (output.final_db_truth !== true) return { pass: false, reason: "score_prep_final_db_truth_missing", final_db_truth: output.final_db_truth };
     if (Number(output.prepared_rows || 0) <= 0) return { pass: false, reason: "score_prep_prepared_rows_zero", prepared_rows: output.prepared_rows || 0 };
     if (Number(output.inserted_current_rows || output.prepared_rows || 0) !== Number(output.prepared_rows || 0)) return { pass: false, reason: "score_prep_inserted_current_rows_mismatch", prepared_rows: output.prepared_rows || 0, inserted_current_rows: output.inserted_current_rows || 0 };
-    if (Number(output.prizepicks_rows || 0) <= 0) return { pass: false, reason: "score_prep_prizepicks_rows_zero", prizepicks_rows: output.prizepicks_rows || 0 };
+    // PrizePicks can be legitimately absent from the current prepared board when the source
+    // refresh proves there are no future pickable MLB rows. Do not fail the Board Full Run
+    // for zero PrizePicks prepared rows; the final guard verifies current-window parity.
     if (Number(output.sleeper_rows || 0) <= 0) return { pass: false, reason: "score_prep_sleeper_rows_zero", sleeper_rows: output.sleeper_rows || 0 };
     if (Number(output.pickable_safe_rows || 0) <= 0) return { pass: false, reason: "score_prep_pickable_safe_rows_zero", pickable_safe_rows: output.pickable_safe_rows || 0 };
     if (output.no_market_board_mutation !== true || output.no_raw_board_delete !== true || output.no_scoring !== true || output.no_ranking !== true || output.no_final_board !== true) return { pass: false, reason: "score_prep_safety_flags_missing" };
@@ -896,12 +898,15 @@ async function processBoardFullRunJob(env, row, runId, trigger) {
 
   const prizepicksStaleCleared = stageReports.some(r => r.prizepicks_stale_cleared === true || r.child_certification === "PRIZEPICKS_SOURCE_STALE_NO_FUTURE_PICKABLE_ROWS");
   const prizepicksNonfatalWarningCount = stageReports.filter(r => r.prizepicks_nonfatal_warning === true || r.prizepicks_stage_nonfatal === true).length;
-  const finalCertification = "BOARD_FULL_RUN_CERTIFIED_PRIZEPICKS_SLEEPER_AND_SCORE_PREP_PASS";
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "COMPLETED_BOARD_FULL_RUN", certification: finalCertification, certification_grade: "FULL_RUN_PASS", board_full_run_certified: true, board_prep_required: true, board_prep_completed: true, final_guard: finalGuard, market_score_parity: finalGuard.parity, prizepicks_stale_cleared: prizepicksStaleCleared, prizepicks_nonfatal_warning_count: prizepicksNonfatalWarningCount, prizepicks_nonfatal_continue_policy: true, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: BOARD_FULL_RUN_STAGES.map(s => s.job_key), board_full_run_only: true, no_delta_full_run: true, no_incremental_morning_full_run: true, no_static_work: true, no_base_delta_workers: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+  const finalCertification = prizepicksStaleCleared
+    ? "BOARD_FULL_RUN_CERTIFIED_SLEEPER_AND_SCORE_PREP_PASS_PRIZEPICKS_STALE_CLEARED"
+    : "BOARD_FULL_RUN_CERTIFIED_PRIZEPICKS_SLEEPER_AND_SCORE_PREP_PASS";
+  const finalGrade = prizepicksStaleCleared ? "FULL_RUN_PASS_WITH_PRIZEPICKS_STALE_WARNING" : "FULL_RUN_PASS";
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "COMPLETED_BOARD_FULL_RUN", certification: finalCertification, certification_grade: finalGrade, board_full_run_certified: true, board_prep_required: true, board_prep_completed: true, final_guard: finalGuard, market_score_parity: finalGuard.parity, prizepicks_stale_cleared: prizepicksStaleCleared, prizepicks_nonfatal_warning_count: prizepicksNonfatalWarningCount, prizepicks_nonfatal_continue_policy: true, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: BOARD_FULL_RUN_STAGES.map(s => s.job_key), board_full_run_only: true, no_delta_full_run: true, no_incremental_morning_full_run: true, no_static_work: true, no_base_delta_workers: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
   await releaseBoardFullRunLock(env, row);
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalCertification, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'board_full_run_completed', 'Board Full Run certified PrizePicks/Sleeper refresh plus required Score Prep; PrizePicks source warnings are nonfatal after preserve-current policy', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'board_full_run_completed', 'Board Full Run certified required Score Prep; PrizePicks stale/no-future source is nonfatal only after stale current inventory is cleared', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
   return output;
 }
 
