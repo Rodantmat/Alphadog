@@ -1,10 +1,10 @@
 const WORKER_NAME = "alphadog-v2-daily-bullpen-availability";
-const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.10-core-complete-before-soft-timebox";
+const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.11-strict-core-all-targets";
 const JOB_KEY = "daily-bullpen-availability";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON"];
-const RUN_DEADLINE_MS = 70000;
+const RUN_DEADLINE_MS = 85000;
 const MAX_PITCHER_DETAIL_ROWS_PER_TEAM = 4;
 
 function nowUtc() { return new Date().toISOString(); }
@@ -476,6 +476,33 @@ async function writePitchers(env, batchId, target, classified, sourceSnapshotAt)
   }
   return written;
 }
+async function verifyCoreCoverage(env, batchId, targets) {
+  const currentRows = await all(env.DAILY_DB, `SELECT official_date, game_pk, team_id FROM daily_bullpen_availability_current WHERE batch_id=?`, batchId);
+  const snapshotRows = await all(env.DAILY_DB, `SELECT official_date, game_pk, team_id FROM daily_bullpen_availability_snapshots WHERE batch_id=?`, batchId);
+  const currentKeys = new Set(currentRows.map(r => `${dateOnly(r.official_date)}|${Number(r.game_pk)}|${Number(r.team_id)}`));
+  const snapshotKeys = new Set(snapshotRows.map(r => `${dateOnly(r.official_date)}|${Number(r.game_pk)}|${Number(r.team_id)}`));
+  const expectedKeys = targets.map(t => `${dateOnly(t.official_date)}|${Number(t.game_pk)}|${Number(t.team_id)}`);
+  const missingCurrent = [];
+  const missingSnapshots = [];
+  for (const t of targets) {
+    const key = `${dateOnly(t.official_date)}|${Number(t.game_pk)}|${Number(t.team_id)}`;
+    const row = { official_date: t.official_date, game_pk: t.game_pk, team_id: t.team_id, team_name: t.team_name, prepared_board_pickable_rows: Number(t.prepared_board_pickable_rows || 0) };
+    if (!currentKeys.has(key)) missingCurrent.push(row);
+    if (!snapshotKeys.has(key)) missingSnapshots.push(row);
+  }
+  return {
+    expected_team_rows: expectedKeys.length,
+    current_rows: currentRows.length,
+    snapshot_rows: snapshotRows.length,
+    unique_current_team_keys: currentKeys.size,
+    unique_snapshot_team_keys: snapshotKeys.size,
+    missing_current_count: missingCurrent.length,
+    missing_snapshot_count: missingSnapshots.length,
+    missing_current: missingCurrent.slice(0, 40),
+    missing_snapshots: missingSnapshots.slice(0, 40),
+    core_complete: expectedKeys.length === currentKeys.size && expectedKeys.length === snapshotKeys.size && missingCurrent.length === 0 && missingSnapshots.length === 0
+  };
+}
 async function runBullpen(env, input) {
   const runStartedMs = Date.now();
   await ensureSchema(env);
@@ -525,14 +552,20 @@ async function runBullpen(env, input) {
     await writeIssue(env, batchId, issueTarget, { severity: "warning", issue_type: "daily_bullpen_timebox_core_complete_pitcher_detail_limited", reason: "Daily bullpen protected core team/snapshot coverage first; pitcher detail rows may be partial because the soft deadline was reached." });
     issuesWritten += 1;
   }
+  const coreCoverage = await verifyCoreCoverage(env, batchId, targets);
+  if (!coreCoverage.core_complete && targets.length > 0) {
+    const issueTarget = targets[0] || { official_date: retention.start, game_pk: null, team_id: null };
+    await writeIssue(env, batchId, issueTarget, { severity: "blocker", issue_type: "daily_bullpen_core_coverage_incomplete", reason: "Daily bullpen did not write one current and one snapshot row for every prepared-board relevant game/team target." });
+    issuesWritten += 1;
+  }
   const postPrune = await pruneRetention(env, retention);
-  const blockerCount = summaries.reduce((n, s) => n + (s.status === "blocked" ? 1 : 0), 0);
+  const blockerCount = summaries.reduce((n, s) => n + (s.status === "blocked" ? 1 : 0), 0) + (coreCoverage.core_complete ? 0 : (targets.length > 0 ? 1 : 0));
   const warningCount = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_bullpen_availability_issues WHERE batch_id=? AND severity='warning'`, batchId);
   const warningN = Number(warningCount && warningCount.c || 0);
   const highRiskTeamCount = summaries.filter(s => ["high", "severe"].includes(s.risk)).length;
   const unknownTeamCount = summaries.filter(s => ["unknown", "blocked"].includes(s.risk)).length;
   const noPickableSlate = prepared.length === 0 || targets.length === 0;
-  const coverageOk = noPickableSlate || (currentWritten === targets.length && snapshotWritten === targets.length);
+  const coverageOk = noPickableSlate || coreCoverage.core_complete;
   const dataOk = noPickableSlate || (coverageOk && blockerCount === 0);
   const certification = noPickableSlate ? "DAILY_BULLPEN_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (dataOk ? (deadlineSoftStopped ? "DAILY_BULLPEN_CERTIFIED_CORE_COMPLETE_PITCHER_DETAIL_LIMITED" : (warningN ? "DAILY_BULLPEN_CERTIFIED_WITH_WARNINGS" : "DAILY_BULLPEN_CERTIFIED_READY")) : "DAILY_BULLPEN_FAILED_BLOCKERS_OR_COVERAGE");
   const grade = noPickableSlate ? "VALID_ZERO" : (dataOk ? (deadlineSoftStopped || warningN ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL");
@@ -548,7 +581,7 @@ async function runBullpen(env, input) {
     status,
     certification,
     certification_grade: grade,
-    certification_reason: noPickableSlate ? "No prepared-board pickable_safe games exist for today/tomorrow retention window." : (dataOk ? (deadlineSoftStopped ? "Every prepared-board relevant team received bullpen availability current and snapshot rows; pitcher detail rows may be limited by soft deadline." : "Every prepared-board relevant team received bullpen availability current and snapshot rows; warnings are sidecar issues.") : "One or more prepared-board relevant teams had missing core bullpen current/snapshot coverage or blockers."),
+    certification_reason: noPickableSlate ? "No prepared-board pickable_safe games exist for today/tomorrow retention window." : (dataOk ? (deadlineSoftStopped ? "Every prepared-board relevant team was DB-verified with one bullpen current row and one snapshot row; pitcher detail rows may be limited by soft deadline." : "Every prepared-board relevant team was DB-verified with one bullpen current row and one snapshot row; warnings are sidecar issues.") : "One or more prepared-board relevant teams failed strict DB verification for core bullpen current/snapshot coverage, or real source blockers exist."),
     window_start: retention.start,
     window_end: retention.end,
     calendar_games_checked: calendars.length,
@@ -564,6 +597,7 @@ async function runBullpen(env, input) {
     warning_count: warningN,
     deadline_soft_stopped: deadlineSoftStopped,
     core_team_snapshot_coverage_complete: coverageOk,
+    core_coverage_verification: coreCoverage,
     run_deadline_ms: RUN_DEADLINE_MS,
     max_pitcher_detail_rows_per_team: MAX_PITCHER_DETAIL_ROWS_PER_TEAM,
     high_risk_team_count: highRiskTeamCount,
