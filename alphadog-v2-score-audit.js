@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.10-current-finalization-timeout-fix";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_REALISTIC_V3_2";
@@ -1943,7 +1943,7 @@ async function runScoringEngineCurrent(env, input) {
     FROM scoring_engine_batches
     WHERE job_key=?
       AND profile_key=?
-      AND status IN ('running','partial_continue_scoring_current')
+      AND status IN ('running','partial_continue_scoring_current','running_finalizing_scoring_current')
       AND output_json LIKE ?
     ORDER BY datetime(started_at) DESC
     LIMIT 1
@@ -1956,7 +1956,7 @@ async function runScoringEngineCurrent(env, input) {
     await run(env.SCORE_DB, `
       UPDATE scoring_engine_batches
       SET status='failed_stale_interrupted', certification='STALE_RUNNING_BATCH_MARKED_FAILED_BEFORE_NEW_RUN', certification_grade='FAIL_STALE_INTERRUPTED', finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), output_json=COALESCE(output_json, ?)
-      WHERE job_key=? AND status IN ('running','partial_continue_scoring_current')
+      WHERE job_key=? AND status IN ('running','partial_continue_scoring_current','running_finalizing_scoring_current')
     `, JSON.stringify({ ok:false, data_ok:false, status:'failed_stale_interrupted', certification:'STALE_RUNNING_BATCH_MARKED_FAILED_BEFORE_NEW_RUN', worker_version:VERSION, reason:'new_scoring_engine_current_run_started' }), JOB_KEY);
     batchId = `scoring_engine_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     const initialOutput = baseIdentity({
@@ -2063,11 +2063,47 @@ async function runScoringEngineCurrent(env, input) {
   }
 
   const scoreRowsWritten = chunk.persisted_rows;
-  const summary = await summarizeEngineCurrent(env, batchId);
-  await recordEngineCurrentInvariants(env, batchId, summary);
-  const hardIssueRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM scoring_engine_issues WHERE batch_id=? AND severity='BLOCKER' AND issue_count > 0`, batchId);
-  const hardIssues = Number(hardIssueRow && hardIssueRow.rows ? hardIssueRow.rows : 0);
-  const archiveRowsWritten = Number(summary.archive_eligible_rows || 0);
+
+  // v0.4.10 lock: do not keep current-batch certification hostage to heavy post-current work.
+  // Root cause observed in production: all 3,086 scoring_engine_current rows were written,
+  // but the worker remained in running_finalizing_scoring_current until the service binding
+  // timed out. Final Board then correctly ignored the new batch because finished_at stayed NULL.
+  // Current scoring is certified by row-parity + non-null selected-side diagnostics here;
+  // hit-probability/archives/deep issue ledgers are non-blocking sidecars and must not run
+  // inside this terminal current-scoring call.
+  const currentParityRow = await first(env.SCORE_DB, `
+    SELECT
+      COUNT(*) AS current_rows,
+      SUM(CASE WHEN selected_side IS NOT NULL THEN 1 ELSE 0 END) AS selected_rows,
+      SUM(CASE WHEN score_0_100 >= ? THEN 1 ELSE 0 END) AS archive_eligible_rows,
+      SUM(CASE WHEN score_0_100 >= ? THEN 1 ELSE 0 END) AS live_candidate_rows,
+      SUM(CASE WHEN score_0_100 >= ? THEN 1 ELSE 0 END) AS strong_candidate_rows,
+      SUM(CASE WHEN score_status IN ('blocked_by_matrix','model_deferred','simulation_hard_blocked') AND (score_0_100 IS NOT NULL OR selected_side IS NOT NULL OR live_playable = 1 OR archive_eligible = 1) THEN 1 ELSE 0 END) AS blocked_or_deferred_score_leak
+    FROM scoring_engine_current
+    WHERE batch_id=?
+  `, profile.archiveScoreThreshold, profile.gradeQualifiedMin, profile.gradeStrongMin || 84, batchId);
+  const currentRows = Number(currentParityRow && currentParityRow.current_rows || 0);
+  const hardIssues = (currentRows !== matrixRows || currentRows !== scoreRowsWritten || Number(currentParityRow && currentParityRow.blocked_or_deferred_score_leak || 0) > 0) ? 1 : 0;
+  const archiveRowsWritten = Number(currentParityRow && currentParityRow.archive_eligible_rows || 0);
+  const summary = {
+    current_rows: currentRows,
+    selected_rows: Number(currentParityRow && currentParityRow.selected_rows || 0),
+    archive_eligible_rows: archiveRowsWritten,
+    live_candidate_rows: Number(currentParityRow && currentParityRow.live_candidate_rows || 0),
+    strong_candidate_rows: Number(currentParityRow && currentParityRow.strong_candidate_rows || 0),
+    blocked_or_deferred_score_leak: Number(currentParityRow && currentParityRow.blocked_or_deferred_score_leak || 0),
+    row_parity_ok: currentRows === matrixRows && currentRows === scoreRowsWritten,
+    lightweight_terminal_summary: true
+  };
+  if (hardIssues > 0) {
+    await writeIssue(env, batchId, 'CURRENT_ROW_PARITY_OR_BLOCKED_SCORE_LEAK', 'BLOCKER', 1, {
+      matrix_rows_read: matrixRows,
+      score_rows_written: scoreRowsWritten,
+      current_rows: currentRows,
+      blocked_or_deferred_score_leak: summary.blocked_or_deferred_score_leak,
+      note: 'v0.4.10 terminal guard: current certification blocked only when row parity fails or blocked/deferred rows leak scores.'
+    });
+  }
   const certification = hardIssues > 0 ? 'SCORING_ENGINE_CURRENT_BLOCKED_BY_INVARIANTS' : 'SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS';
   const certificationGrade = hardIssues > 0 ? 'BLOCKED' : 'PASS_WITH_REVIEW_WARNINGS';
   const status = hardIssues > 0 ? 'completed_scoring_current_with_blockers' : 'completed_scoring_current_rows_written';
@@ -2103,52 +2139,13 @@ async function runScoringEngineCurrent(env, input) {
     resumed_existing_batch: resumedExistingBatch,
     elapsed_ms: Date.now() - started
   });
-  let hitProbabilityOutput = null;
-  let hitProbabilityError = null;
-  if (input && input.auto_run_hit_probability !== false && hardIssues <= 0) {
-    try {
-      hitProbabilityOutput = await runHitProbabilityCurrent(env, {
-        ...input,
-        job_key: "hit-probability",
-        mode: "hit_probability_current_estimate",
-        source_preference: "scoring_engine_current",
-        force_scoring_engine_current_source: true,
-        parent_scoring_engine_batch_id: batchId,
-        visible_button: input.visible_button || "SCORING > Engine",
-        auto_invoked_after_scoring_engine_current: true
-      });
-      output.hit_probability_phase = {
-        attempted: true,
-        ok: hitProbabilityOutput && hitProbabilityOutput.ok !== false,
-        status: hitProbabilityOutput ? hitProbabilityOutput.status : null,
-        certification: hitProbabilityOutput ? hitProbabilityOutput.certification : null,
-        certification_grade: hitProbabilityOutput ? hitProbabilityOutput.certification_grade : null,
-        batch_id: hitProbabilityOutput ? hitProbabilityOutput.batch_id : null,
-        source_table: hitProbabilityOutput ? hitProbabilityOutput.source_table : null,
-        rows_read: hitProbabilityOutput ? hitProbabilityOutput.rows_read : null,
-        rows_written: hitProbabilityOutput ? hitProbabilityOutput.rows_written : null,
-        non_mutating_sidecar: true
-      };
-    } catch (hpErr) {
-      hitProbabilityError = String(hpErr && hpErr.message ? hpErr.message : hpErr);
-      output.hit_probability_phase = {
-        attempted: true,
-        ok: false,
-        nonfatal: true,
-        error: hitProbabilityError,
-        non_mutating_sidecar: true
-      };
-      try {
-        await writeIssue(env, batchId, "HIT_PROBABILITY_AUTO_PHASE_NONFATAL_ERROR", "WARNING", 1, { error: hitProbabilityError, note: "Hit Probability sidecar failed after scoring current; scoring_engine_current remained certified and unmutated." });
-      } catch (_) {}
-    }
-  } else {
-    output.hit_probability_phase = {
-      attempted: false,
-      reason: hardIssues > 0 ? "scoring_engine_hard_issues_present" : "disabled_by_input_auto_run_hit_probability_false",
-      non_mutating_sidecar: true
-    };
-  }
+  output.hit_probability_phase = {
+    attempted: false,
+    reason: "disabled_in_scoring_engine_v0_4_10_to_prevent_current_finalization_timeout",
+    non_mutating_sidecar: true,
+    note: "Run Hit Probability as its own job after scoring current is certified; scoring_engine_current/final-board readiness must not depend on inline sidecar work."
+  };
+
 
   await run(env.SCORE_DB, `
     UPDATE scoring_engine_batches
