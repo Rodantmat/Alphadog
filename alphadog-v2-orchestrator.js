@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.200-daily-context-verified-stale-only";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.201-daily-certifier-bounded-self-terminal";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -6284,16 +6284,53 @@ async function processDailyContextCertifierJob(env, row, runId, trigger) {
     return output;
   }
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  const input = { request_id: row.request_id, chain_id: row.chain_id, job_key: row.job_key, worker_name: row.worker_name, trigger, mode:"daily_context_readiness_refresh_window", input_json: rowInput, exact_worker_only:true, readiness_enrichment_only:true, not_strict_all_context_enforcement:true, prepared_board_relevance_only:true, reads_locked_daily_context_sidecars_only:true, volatile_current_issue_retention_today_tomorrow_only:true, batches_retained_for_audit:true, no_external_calls:true, no_sidecar_repair:true, no_calendar_rebuild:true, no_daily_game_status_duplication:true, no_board_mutation:true, no_market_odds:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true, no_old_production_touch:true };
+  const input = { request_id: row.request_id, run_id: runId, chain_id: row.chain_id, job_key: row.job_key, worker_name: row.worker_name, trigger, mode:"daily_context_readiness_refresh_window", input_json: rowInput, exact_worker_only:true, readiness_enrichment_only:true, not_strict_all_context_enforcement:true, prepared_board_relevance_only:true, reads_locked_daily_context_sidecars_only:true, volatile_current_issue_retention_today_tomorrow_only:true, batches_retained_for_audit:true, no_external_calls:true, no_sidecar_repair:true, no_calendar_rebuild:true, no_daily_game_status_duplication:true, no_board_mutation:true, no_market_odds:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true, no_old_production_touch:true };
   const started = Date.now();
+  const dispatchTimeoutMs = 45000;
   let output;
   let httpStatus = null;
+  let timedOut = false;
   try {
-    const resp = await env.DAILY_CERTIFIER_WORKER.fetch("https://internal.alphadog-v2-daily-certifier/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) });
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
-  } catch (err) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) }; }
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      timedOut = true;
+      try { controller.abort("daily_context_certifier_dispatch_timeout"); } catch (_) {}
+    }, dispatchTimeoutMs);
+    try {
+      const resp = await env.DAILY_CERTIFIER_WORKER.fetch("https://internal.alphadog-v2-daily-certifier/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input), signal:controller.signal });
+      httpStatus = resp.status;
+      const text = await resp.text();
+      try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch (err) {
+    const errText = String(err && err.message ? err.message : err || "");
+    const batch = await first(env.DAILY_DB, "SELECT batch_id, status, certification_status, certification_grade, prepared_rows_read, current_rows_written, issue_rows_written, output_json, completed_at, updated_at FROM daily_context_readiness_batches WHERE request_id=? ORDER BY datetime(created_at) DESC LIMIT 1", row.request_id);
+    if (batch && batch.status === "completed" && batch.output_json) {
+      try { output = JSON.parse(batch.output_json); } catch (_) { output = null; }
+      output = { ...(output || {}), ok:true, data_ok:true, recovered_from_completed_readiness_batch:true, recovered_batch_id:batch.batch_id, dispatch_error_before_recovery:errText };
+    } else {
+      output = {
+        ok:false,
+        data_ok:false,
+        version:SYSTEM_VERSION,
+        processed_by:WORKER_NAME,
+        worker_name:row.worker_name,
+        job_key:row.job_key,
+        request_id:row.request_id,
+        run_id:runId,
+        status: timedOut ? "daily_context_certifier_dispatch_timeout" : "worker_dispatch_exception",
+        certification: timedOut ? "FAILED_DAILY_CONTEXT_CERTIFIER_DISPATCH_TIMEOUT" : "FAILED_DAILY_CONTEXT_CERTIFIER_DISPATCH_EXCEPTION",
+        certification_grade:"FAILED",
+        error: errText,
+        dispatch_timeout_ms: dispatchTimeoutMs,
+        readiness_batch_found: !!batch,
+        readiness_batch_status: batch ? batch.status : null,
+        no_soft_sidecar_recovery_without_completed_readiness_batch: true
+      };
+    }
+  }
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
   const rowsRead = Number(output && output.prepared_rows_read ? output.prepared_rows_read : 0);
@@ -6302,9 +6339,9 @@ async function processDailyContextCertifierJob(env, row, runId, trigger) {
   const certification = String((output && output.certification) || (ok ? "daily_context_certifier_completed" : "daily_context_certifier_failed")).slice(0,120);
   const queueStatus = ok ? "completed" : "failed";
   const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "daily_context_certifier_worker_failed";
+  const errorCode = ok ? null : (timedOut ? "daily_context_certifier_dispatch_timeout" : "daily_context_certifier_worker_failed");
   const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Daily Context Certifier worker failed").slice(0,900);
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, readiness_enrichment_only:true, not_strict_all_context_enforcement:true, volatile_current_issue_retention_today_tomorrow_only:true, no_external_calls:true, no_sidecar_repair:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board_write:true, no_old_production_touch:true } };
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, dispatch_timeout_ms:dispatchTimeoutMs, timed_out:timedOut, readiness_enrichment_only:true, not_strict_all_context_enforcement:true, volatile_current_issue_retention_today_tomorrow_only:true, no_external_calls:true, no_sidecar_repair:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board_write:true, no_old_production_touch:true } };
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
   await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_context_certifier_dispatch_completed', 'Orchestrator completed exact Daily Context Readiness dispatch', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, dispatch: cappedOutput.orchestrator_dispatch }));
