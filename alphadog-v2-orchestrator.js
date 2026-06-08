@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.207-daily-master-full-run";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.208-daily-full-grandchild-hot-priority";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -8789,6 +8789,43 @@ async function processOneUnlocked(env, trigger) {
   }
 
 
+  // v0.2.208: When Daily Full Run is active, prefer due grandchildren of its
+  // component full-run child before reselecting the component parent. Root cause:
+  // v0.2.207 correctly let Daily Full own the outer order, but its direct-child
+  // selector kept choosing the Daily Context parent while that parent was already
+  // waiting on a due inner child (for example daily-certifier). The parent then
+  // observed WAITING_ON_CHILD repeatedly until its stale-child guard failed a
+  // child that had never been dispatched. This preserves the hard parent boundary
+  // and only changes hot-drain selection priority: runnable inner child first,
+  // then component parent observation/advance.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT gc.request_id, gc.chain_id, gc.job_key, gc.worker_name, gc.status, gc.tick_count, gc.input_json
+       FROM control_job_queue gp
+       JOIN control_job_queue p ON p.parent_request_id = gp.request_id AND p.chain_id = gp.chain_id
+       JOIN control_job_queue gc ON gc.parent_request_id = p.request_id AND gc.chain_id = p.chain_id
+       WHERE gp.job_key='daily-full-run'
+         AND gp.worker_name='alphadog-v2-orchestrator'
+         AND gp.status IN ('pending','running','partial_continue')
+         AND gp.finished_at IS NULL
+         AND p.job_key IN ('daily-context-full-run','board-full-run','market-scoring-full-run')
+         AND p.worker_name='alphadog-v2-orchestrator'
+         AND p.status IN ('pending','running','partial_continue')
+         AND p.finished_at IS NULL
+         AND gc.status IN ('pending','partial_continue')
+         AND gc.finished_at IS NULL
+         AND datetime(COALESCE(gc.run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+       ORDER BY datetime(COALESCE(gc.run_after, CURRENT_TIMESTAMP)) ASC, datetime(gc.created_at) ASC
+       LIMIT 1`
+    );
+    if (row) {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'daily_full_run_grandchild_selected_before_component_parent', 'Selected due inner full-run child before reselecting Daily Full component parent', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ trigger, selected_request_id: row.request_id, selected_job_key: row.job_key, selected_worker_name: row.worker_name, daily_full_run_grandchild_hot_priority_v0_2_208: true, preserves_parent_boundary: true, no_new_child_created: true, version: SYSTEM_VERSION })
+      );
+    }
+  }
+
   // v0.2.207: Hot-drain top-level Daily Full Run before its component chains.
   // This parent owns the day-level order: Daily Context Full Run, Board Full Run,
   // then Market/Scoring Full Run. Children remain hard parent boundaries; this
@@ -10152,7 +10189,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
       daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
       lock_busy_hot_continuation: !!lockBusyHotContinuation,
-      daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_context_zero_delay_hot_drain_v0_2_206: true,
+      daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true,
       hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
       cron_is_rescue_only_for_base_hitter: true, cron_is_rescue_only_for_base_hitter_splits: true, base_hitter_splits_hot_continuation_v0_2_32: true, base_pitcher_splits_hot_continuation_v0_2_35: true,
       version: SYSTEM_VERSION
@@ -10194,7 +10231,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
         daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
         lock_busy_hot_continuation: !!lockBusyHotContinuation,
-        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_context_zero_delay_hot_drain_v0_2_206: true,
+        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true,
         self_continue_suppressed_due_to_lock_busy: !!(sawLockBusy && !lockBusyHotContinuation),
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
         version: SYSTEM_VERSION,
