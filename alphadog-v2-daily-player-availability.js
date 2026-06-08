@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-player-availability";
-const VERSION = "alphadog-v2-daily-player-availability-v0.1.8-source-deadline-core-complete";
+const VERSION = "alphadog-v2-daily-player-availability-v0.1.9-master-chain-terminal-source-budget";
 const JOB_KEY = "daily-player-availability";
 const SOURCE_KEY = "official_mlb_statsapi_roster_transactions_v1";
 const MAX_PREPARED_PLAYERS = 500;
@@ -82,10 +82,10 @@ function sourceBase(env) {
 function requestHeaders(env) {
   return { "accept": "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDog-v2-Daily-Player-Availability/0.1") };
 }
-async function fetchJson(url, env, optional = false) {
+async function fetchJson(url, env, optional = false, timeoutMs = FETCH_TIMEOUT_MS) {
   const started = Date.now();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort("timeout"), FETCH_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort("timeout"), Math.max(750, Number(timeoutMs) || FETCH_TIMEOUT_MS));
   try {
     const resp = await fetch(url, { headers: requestHeaders(env), signal: controller.signal });
     const text = await resp.text();
@@ -147,16 +147,12 @@ function deadlineFallbackSources(teamIds, playerIds, startDate, endDate) {
     source_deadline_window: { startDate, endDate, teams: (teamIds || []).length, players: (playerIds || []).length }
   };
 }
-async function cleanupBatchRows(env, batchId) {
-  if (!batchId) return { current_deleted: null, snapshots_deleted: null, issues_deleted: null };
-  const current = await run(env.DAILY_DB, `DELETE FROM daily_player_availability_current_v1 WHERE batch_id=?`, batchId);
-  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_player_availability_snapshots_v1 WHERE batch_id=?`, batchId);
-  const issues = await run(env.DAILY_DB, `DELETE FROM daily_player_availability_issues_v1 WHERE batch_id=?`, batchId);
-  return {
-    current_deleted: current?.meta?.changes ?? null,
-    snapshots_deleted: snapshots?.meta?.changes ?? null,
-    issues_deleted: issues?.meta?.changes ?? null
-  };
+async function preserveBatchRowsForTerminalFailure(env, batchId) {
+  if (!batchId) return { preserved: false, current_rows: null, snapshots: null, issues: null };
+  const current = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_player_availability_current_v1 WHERE batch_id=?`, batchId);
+  const snapshots = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_player_availability_snapshots_v1 WHERE batch_id=?`, batchId);
+  const issues = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_player_availability_issues_v1 WHERE batch_id=?`, batchId);
+  return { preserved: true, current_rows: Number(current?.c || 0), snapshots: Number(snapshots?.c || 0), issues: Number(issues?.c || 0) };
 }
 function dateOnly(value) {
   const m = String(value || "").match(/^(\d{4}-\d{2}-\d{2})/);
@@ -477,7 +473,7 @@ function peopleMap(responses) {
   }
   return m;
 }
-async function fetchSources(env, teamIds, playerIds, startDate, endDate) {
+async function fetchSources(env, teamIds, playerIds, startDate, endDate, options = {}) {
   const base = sourceBase(env);
   const sourceFailures = [];
   const activeByTeam = new Map();
@@ -486,38 +482,27 @@ async function fetchSources(env, teamIds, playerIds, startDate, endDate) {
   const txByTeam = new Map();
   const endpointLog = [];
   let externalCalls = 0;
+  const masterChainSourceBudget = options.masterChainSourceBudget === true;
+  const fetchTimeoutMs = masterChainSourceBudget ? 2500 : FETCH_TIMEOUT_MS;
 
-  const teamResults = await mapLimit(teamIds, FETCH_CONCURRENCY, async (teamId) => {
-    const [active, forty, il, tx] = await Promise.all([
-      fetchJson(`${base}/teams/${teamId}/roster/active`, env, false),
-      fetchJson(`${base}/teams/${teamId}/roster/40Man`, env, true),
-      fetchJson(`${base}/teams/${teamId}/roster/injuredList`, env, true),
-      fetchJson(`${base}/transactions?teamId=${encodeURIComponent(String(teamId))}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`, env, true)
-    ]);
-    return { teamId, active, forty, il, tx };
+  // v0.1.9: master-chain path is active-roster first and bounded. The old all-endpoints-per-team
+  // fanout could leave the worker in running_sources_started until the parent stale guard killed it.
+  const activeResults = await mapLimit(teamIds, FETCH_CONCURRENCY, async (teamId) => {
+    const active = await fetchJson(`${base}/teams/${teamId}/roster/active`, env, false, fetchTimeoutMs);
+    return { teamId, active };
   });
-
-  for (const item of teamResults) {
-    const { teamId, active, forty, il, tx } = item;
-    externalCalls += 4;
+  for (const item of activeResults) {
+    const { teamId, active } = item;
+    externalCalls++;
     endpointLog.push({ teamId, endpoint: "active", ok: active.ok, status: active.status, elapsed_ms: active.elapsed_ms });
-    endpointLog.push({ teamId, endpoint: "40Man", ok: forty.ok, status: forty.status, elapsed_ms: forty.elapsed_ms });
-    endpointLog.push({ teamId, endpoint: "injuredList", ok: il.ok, status: il.status, elapsed_ms: il.elapsed_ms });
-    endpointLog.push({ teamId, endpoint: "transactions", ok: tx.ok, status: tx.status, elapsed_ms: tx.elapsed_ms });
     if (!active.ok) sourceFailures.push({ teamId, endpoint: "active", hard: true, status: active.status, error: active.error || active.text_preview || null });
-    if (!forty.ok) sourceFailures.push({ teamId, endpoint: "40Man", hard: false, status: forty.status, error: forty.error || forty.text_preview || null });
-    if (!il.ok) sourceFailures.push({ teamId, endpoint: "injuredList", hard: false, status: il.status, error: il.error || il.text_preview || null });
-    if (!tx.ok) sourceFailures.push({ teamId, endpoint: "transactions", hard: false, status: tx.status, error: tx.error || tx.text_preview || null });
     activeByTeam.set(teamId, rosterMap(active, "active"));
-    fortyByTeam.set(teamId, rosterMap(forty, "any"));
-    ilByTeam.set(teamId, rosterMap(il, "injuredList"));
-    txByTeam.set(teamId, txMap(tx));
   }
 
   const peopleBatches = [];
   for (let i = 0; i < playerIds.length; i += PEOPLE_BATCH_SIZE) peopleBatches.push(playerIds.slice(i, i + PEOPLE_BATCH_SIZE));
   const peopleResponses = await mapLimit(peopleBatches, FETCH_CONCURRENCY, async (ids) => {
-    return await fetchJson(`${base}/people?personIds=${encodeURIComponent(ids.join(","))}`, env, true);
+    return await fetchJson(`${base}/people?personIds=${encodeURIComponent(ids.join(","))}`, env, true, fetchTimeoutMs);
   });
   for (let i = 0; i < peopleResponses.length; i++) {
     const resp = peopleResponses[i];
@@ -526,7 +511,50 @@ async function fetchSources(env, teamIds, playerIds, startDate, endDate) {
     endpointLog.push({ endpoint: "people", ids: ids.length, ok: resp.ok, status: resp.status, elapsed_ms: resp.elapsed_ms });
     if (!resp.ok) sourceFailures.push({ endpoint: "people", hard: false, status: resp.status, error: resp.error || resp.text_preview || null });
   }
-  return { activeByTeam, fortyByTeam, ilByTeam, txByTeam, people: peopleMap(peopleResponses), sourceFailures, endpointLog, externalCalls, fetch_concurrency: FETCH_CONCURRENCY, fetch_timeout_ms: FETCH_TIMEOUT_MS };
+
+  if (!masterChainSourceBudget) {
+    const secondaryResults = await mapLimit(teamIds, FETCH_CONCURRENCY, async (teamId) => {
+      const [forty, il, tx] = await Promise.all([
+        fetchJson(`${base}/teams/${teamId}/roster/40Man`, env, true),
+        fetchJson(`${base}/teams/${teamId}/roster/injuredList`, env, true),
+        fetchJson(`${base}/transactions?teamId=${encodeURIComponent(String(teamId))}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`, env, true)
+      ]);
+      return { teamId, forty, il, tx };
+    });
+    for (const item of secondaryResults) {
+      const { teamId, forty, il, tx } = item;
+      externalCalls += 3;
+      endpointLog.push({ teamId, endpoint: "40Man", ok: forty.ok, status: forty.status, elapsed_ms: forty.elapsed_ms });
+      endpointLog.push({ teamId, endpoint: "injuredList", ok: il.ok, status: il.status, elapsed_ms: il.elapsed_ms });
+      endpointLog.push({ teamId, endpoint: "transactions", ok: tx.ok, status: tx.status, elapsed_ms: tx.elapsed_ms });
+      if (!forty.ok) sourceFailures.push({ teamId, endpoint: "40Man", hard: false, status: forty.status, error: forty.error || forty.text_preview || null });
+      if (!il.ok) sourceFailures.push({ teamId, endpoint: "injuredList", hard: false, status: il.status, error: il.error || il.text_preview || null });
+      if (!tx.ok) sourceFailures.push({ teamId, endpoint: "transactions", hard: false, status: tx.status, error: tx.error || tx.text_preview || null });
+      fortyByTeam.set(teamId, rosterMap(forty, "any"));
+      ilByTeam.set(teamId, rosterMap(il, "injuredList"));
+      txByTeam.set(teamId, txMap(tx));
+    }
+  } else {
+    for (const teamId of teamIds) {
+      endpointLog.push({ teamId, endpoint: "40Man", ok: false, status: "skipped_master_chain_source_budget", elapsed_ms: 0 });
+      endpointLog.push({ teamId, endpoint: "injuredList", ok: false, status: "skipped_master_chain_source_budget", elapsed_ms: 0 });
+      endpointLog.push({ teamId, endpoint: "transactions", ok: false, status: "skipped_master_chain_source_budget", elapsed_ms: 0 });
+    }
+  }
+
+  return {
+    activeByTeam,
+    fortyByTeam,
+    ilByTeam,
+    txByTeam,
+    people: peopleMap(peopleResponses),
+    sourceFailures,
+    endpointLog,
+    externalCalls,
+    fetch_concurrency: FETCH_CONCURRENCY,
+    fetch_timeout_ms: fetchTimeoutMs,
+    master_chain_source_budget: masterChainSourceBudget
+  };
 }
 
 function isFortyManActiveFallback(forty, people, expectedTeamMlbId) {
@@ -782,13 +810,14 @@ async function runAvailability(env, input) {
   const staticPlayers = await getStaticPlayers(env, playerIds);
   const staticByMlbId = new Map(staticPlayers.map((r) => [intOrNull(r.mlb_player_id), r]));
   const officialDates = prepared.map((r) => r.official_date).filter(Boolean).sort();
-  const windowStart = addDays(officialDates[0] || todayPt(), -7);
-  const windowEnd = officialDates[officialDates.length - 1] || todayPt();
+  const masterChainSourceBudget = input.daily_context_full_run_child === true || input.full_daily_master_run === true || input.backend_chain_only === true || String(input.mode || "").includes("daily_context_full_run");
+  const windowStart = masterChainSourceBudget ? retention.start : addDays(officialDates[0] || todayPt(), -7);
+  const windowEnd = masterChainSourceBudget ? retention.end : (officialDates[officialDates.length - 1] || todayPt());
   const teamIds = [...new Set(teamRows.map((r) => intOrNull(r.mlb_team_id)).filter((v) => v !== null))];
   await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1 SET window_start=?, window_end=?, teams_checked=?, status='running_sources_started', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, windowStart, windowEnd, teamIds.length, batchId);
   const sources = await withDeadline(
-    fetchSources(env, teamIds, playerIds, windowStart, windowEnd),
-    SOURCE_DEADLINE_MS,
+    fetchSources(env, teamIds, playerIds, windowStart, windowEnd, { masterChainSourceBudget }),
+    masterChainSourceBudget ? 14000 : SOURCE_DEADLINE_MS,
     () => deadlineFallbackSources(teamIds, playerIds, windowStart, windowEnd)
   );
   await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1 SET source_failures=?, external_calls=?, status=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, (sources.sourceFailures || []).length, Number(sources.externalCalls || 0), sources.source_deadline_hit ? 'running_source_deadline_fallback' : 'running_sources_completed', batchId);
@@ -882,8 +911,9 @@ async function runAvailability(env, input) {
     unresolved_hard_source_failures: unresolvedHardSourceFailures,
     fetch_concurrency: sources.fetch_concurrency || FETCH_CONCURRENCY,
     fetch_timeout_ms: sources.fetch_timeout_ms || FETCH_TIMEOUT_MS,
-    source_deadline_ms: sources.source_deadline_ms || SOURCE_DEADLINE_MS,
+    source_deadline_ms: sources.source_deadline_ms || (masterChainSourceBudget ? 14000 : SOURCE_DEADLINE_MS),
     source_deadline_hit: sources.source_deadline_hit === true,
+    master_chain_source_budget: sources.master_chain_source_budget === true,
     source_deadline_window: sources.source_deadline_window || null,
     write_batch_row_limit: written.write_batch_row_limit || WRITE_BATCH_ROW_LIMIT,
     no_score_db_mutation: true,
@@ -923,27 +953,27 @@ export default {
         const message = String(err && err.stack ? err.stack : err);
         let cleanup = null;
         try {
-          const runningRows = await all(env.DAILY_DB, `SELECT batch_id FROM daily_player_availability_batches_v1 WHERE request_id=? AND status='running'`, input.request_id || null);
+          const runningRows = await all(env.DAILY_DB, `SELECT batch_id, status FROM daily_player_availability_batches_v1 WHERE request_id=? AND status LIKE 'running%'`, input.request_id || null);
           for (const row of runningRows) {
-            const oneCleanup = await cleanupBatchRows(env, row.batch_id);
+            const oneCleanup = await preserveBatchRowsForTerminalFailure(env, row.batch_id);
             cleanup = cleanup || [];
-            cleanup.push({ batch_id: row.batch_id, ...oneCleanup });
+            cleanup.push({ batch_id: row.batch_id, previous_status: row.status, ...oneCleanup });
           }
           await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1
-            SET status='failed',
-                certification_status='DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINAL_CLEANUP',
+            SET status='failed_exception_terminalized',
+                certification_status='DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINALIZED_RUNNING_STATE',
                 certification_grade='FAIL',
                 certification_reason=?,
                 output_json=?,
                 completed_at=CURRENT_TIMESTAMP,
                 updated_at=CURRENT_TIMESTAMP
-            WHERE request_id=? AND status='running'`,
+            WHERE request_id=? AND status LIKE 'running%'`,
             message.slice(0, 900),
-            safeJson({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINAL_CLEANUP", error: message, cleanup, timestamp_utc: nowUtc() }, 12000),
+            safeJson({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINALIZED_RUNNING_STATE", error: message, preserved_sidecars: cleanup, running_status_like_guard: true, timestamp_utc: nowUtc() }, 12000),
             input.request_id || null
           );
         } catch (_) {}
-        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINAL_CLEANUP", error: message, cleanup, timestamp_utc: nowUtc(), no_score_db_mutation: true }, 500);
+        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_PLAYER_AVAILABILITY_EXCEPTION_TERMINALIZED_RUNNING_STATE", error: message, cleanup, timestamp_utc: nowUtc(), no_score_db_mutation: true }, 500);
       }
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);

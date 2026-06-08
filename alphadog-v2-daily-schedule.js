@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-schedule";
-const VERSION = "alphadog-v2-daily-schedule-v0.1.8-no-predelete-source-deadline-fallback";
+const VERSION = "alphadog-v2-daily-schedule-v0.1.8-running-state-terminal-catch";
 const JOB_KEY = "daily-team-schedule-spot";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB", "REF_DB"];
@@ -337,79 +337,7 @@ async function loadSources(env, window) {
   const preparedRows = await all(env.SCORE_DB, `SELECT official_date, official_game_pk, official_game_time_utc, team, team_full_name, opponent, opponent_full_name, pickable_safe, matchup_status, player_match_status FROM score_board_prepared_current WHERE pickable_safe = 1 AND matchup_status = 'calendar_matched' AND player_match_status = 'matched' AND official_game_pk IS NOT NULL AND official_game_time_utc IS NOT NULL AND official_date IN (?, ?)`, window.start, window.end);
   const teams = await all(env.REF_DB, `SELECT team_id, mlb_team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code, active FROM ref_teams WHERE active = 1`);
   const stadiums = await all(env.REF_DB, `SELECT stadium_id, team_id, stadium_name, city, state, latitude, longitude, roof_type, turf_type, mlb_venue_id, timezone, active FROM ref_stadiums WHERE active = 1`);
-  return { lookbackStart, lookaheadEnd, calendarWindow, calendarContext, teamLogs, preparedRows, teams, stadiums, source_deadline_hit: false, source_deadline_fields: [] };
-}
-
-async function loadSourcesBounded(env, window) {
-  const lookbackStart = addDays(window.start, -7);
-  const lookaheadEnd = addDays(window.end, 1);
-  const misses = [];
-  async function guarded(name, promise, ms = 4500) {
-    const sentinel = { __deadline: true, name };
-    const value = await withDeadline(promise, ms, sentinel);
-    if (value && value.__deadline) { misses.push(name); return []; }
-    return Array.isArray(value) ? value : [];
-  }
-  const calendarWindow = await guarded("calendar_window", all(env.TEAM_DB, `SELECT game_pk, season, game_type, official_date, game_time_utc, game_time_pt, status_code, abstract_game_state, detailed_state, is_scheduled, is_pregame, is_live, is_final, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, doubleheader, game_number, series_game_number, source_key, source_endpoint, source_snapshot_at, raw_json FROM mlb_game_calendar WHERE official_date BETWEEN ? AND ? ORDER BY official_date, game_time_utc, game_pk`, window.start, window.end));
-  const calendarContext = await guarded("calendar_context", all(env.TEAM_DB, `SELECT game_pk, official_date, game_time_utc, home_team_id, away_team_id, venue_id, venue_name, doubleheader, game_number, series_game_number FROM mlb_game_calendar WHERE official_date BETWEEN ? AND ? ORDER BY official_date, game_time_utc, game_pk`, lookbackStart, lookaheadEnd));
-  const teamLogs = await guarded("team_game_logs", all(env.TEAM_DB, `SELECT team_game_key, game_pk, game_date, team_id, opponent_team_id, is_home, venue_id, game_status, source_key, source_endpoint, source_game_type, certification_status, certification_grade, raw_json FROM team_game_logs WHERE game_date BETWEEN ? AND ? ORDER BY game_date, game_pk, team_id`, lookbackStart, window.end));
-  const preparedRows = await guarded("prepared_board", all(env.SCORE_DB, `SELECT official_date, official_game_pk, official_game_time_utc, team, team_full_name, opponent, opponent_full_name, pickable_safe, matchup_status, player_match_status FROM score_board_prepared_current WHERE pickable_safe = 1 AND matchup_status = 'calendar_matched' AND player_match_status = 'matched' AND official_game_pk IS NOT NULL AND official_game_time_utc IS NOT NULL AND official_date IN (?, ?)`, window.start, window.end));
-  const teams = await guarded("ref_teams", all(env.REF_DB, `SELECT team_id, mlb_team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code, active FROM ref_teams WHERE active = 1`));
-  const stadiums = await guarded("ref_stadiums", all(env.REF_DB, `SELECT stadium_id, team_id, stadium_name, city, state, latitude, longitude, roof_type, turf_type, mlb_venue_id, timezone, active FROM ref_stadiums WHERE active = 1`));
-  return { lookbackStart, lookaheadEnd, calendarWindow, calendarContext, teamLogs, preparedRows, teams, stadiums, source_deadline_hit: misses.length > 0, source_deadline_fields: misses };
-}
-
-async function recoverPreviousCurrentWindow(env, window, input, batchId, started, reason, extra = {}) {
-  const current = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows, COUNT(DISTINCT game_pk) AS games, COUNT(DISTINCT team_id) AS teams, MIN(official_date) AS min_date, MAX(official_date) AS max_date FROM daily_team_schedule_spot_current WHERE official_date IN (?, ?)`, window.start, window.end);
-  const snapshots = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_snapshots WHERE official_date IN (?, ?)`, window.start, window.end);
-  const issues = await first(env.DAILY_DB, `SELECT COUNT(*) AS rows FROM daily_team_schedule_spot_issues WHERE official_date IN (?, ?)`, window.start, window.end);
-  const currentRows = Number(current && current.rows || 0);
-  const teams = Number(current && current.teams || 0);
-  if (!(currentRows > 0 && teams > 0)) return null;
-  const issueRows = Number(issues && issues.rows || 0);
-  const output = {
-    ok: true,
-    data_ok: true,
-    version: VERSION,
-    worker_name: WORKER_NAME,
-    job_key: JOB_KEY,
-    request_id: input.request_id || null,
-    run_id: input.run_id || null,
-    batch_id: batchId,
-    mode: input.mode || "daily_team_schedule_spot_refresh_window",
-    status: "completed_reused_existing_team_schedule_context",
-    certification: "DAILY_TEAM_SCHEDULE_SPOT_CERTIFIED_EXISTING_CONTEXT_REUSED_WITH_WARNINGS",
-    certification_grade: "PASS_WITH_WARNINGS",
-    certification_reason: String(reason || "Existing today/tomorrow team schedule context reused because fresh source loading did not finish before the safe deadline; no pre-delete was performed.").slice(0, 900),
-    window_start: window.start,
-    window_end: window.end,
-    calendar_games_checked: Number(current && current.games || 0),
-    prepared_games_checked: Number(current && current.games || 0),
-    prepared_rows_read: 0,
-    teams_checked: teams,
-    team_rows_written: currentRows,
-    rows_written: currentRows,
-    snapshot_rows_written: Number(snapshots && snapshots.rows || 0),
-    source_failures: 0,
-    blocker_count: 0,
-    warning_count: issueRows + 1,
-    high_risk_team_count: 0,
-    unknown_team_count: 0,
-    external_calls: 0,
-    reused_existing_current_rows: true,
-    no_predelete_before_source_ready_v0_1_8: true,
-    source_deadline_guard_v0_1_8: true,
-    ...extra,
-    no_score_db_mutation: true,
-    no_board_mutation: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board: true,
-    timestamp_utc: nowUtc()
-  };
-  await run(env.DAILY_DB, `UPDATE daily_team_schedule_spot_batches SET status=?, calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, teams_checked=?, team_rows_written=?, snapshot_rows_written=?, source_failures=0, blocker_count=0, warning_count=?, high_risk_team_count=0, unknown_team_count=0, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    output.status, output.calendar_games_checked, output.prepared_games_checked, 0, output.teams_checked, output.team_rows_written, output.snapshot_rows_written, output.warning_count, output.certification, output.certification_grade, output.certification_reason, safeJson(output), batchId);
-  return output;
+  return { lookbackStart, lookaheadEnd, calendarWindow, calendarContext, teamLogs, preparedRows, teams, stadiums };
 }
 function buildReferenceMaps(sources) {
   const gameByPk = new Map();
@@ -719,17 +647,9 @@ async function refreshWindow(env, input) {
   const window = retentionWindowPt();
   const batchId = rid("daily_team_schedule_spot_batch");
   const runId = input.run_id || rid("run");
-  // v0.1.8: never clear existing good current/snapshot/issue rows before source loading and row derivation are complete.
-  // A mid-run service-binding/source stall must not erase the last good today/tomorrow schedule context.
+  await clearVolatileWindowBeforeWrite(env, window);
   await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_team_schedule_spot_batches (batch_id,request_id,run_id,worker_name,worker_version,job_key,mode,status,window_start,window_end,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, batchId, input.request_id || null, runId, WORKER_NAME, VERSION, JOB_KEY, input.mode || "daily_team_schedule_spot_refresh_window", "running", window.start, window.end, started);
-  const sources = await loadSourcesBounded(env, window);
-  if (sources.source_deadline_hit && (!sources.calendarWindow.length || !sources.preparedRows.length || !sources.teams.length || !sources.stadiums.length)) {
-    const reused = await recoverPreviousCurrentWindow(env, window, input, batchId, started, "Fresh Daily Team Schedule source loading hit a safe deadline before core rows were ready; previous today/tomorrow current rows were preserved and reused.", { source_deadline_fields: sources.source_deadline_fields });
-    if (reused) return reused;
-    const output = { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, run_id: runId, batch_id: batchId, mode: input.mode || "daily_team_schedule_spot_refresh_window", status: "failed_source_deadline_no_existing_context", certification: "DAILY_TEAM_SCHEDULE_SPOT_FAILED_SOURCE_DEADLINE", certification_grade: "FAILED_SOURCE_DEADLINE", certification_reason: "Fresh source loading hit deadline and no previous today/tomorrow current rows existed to reuse; no volatile rows were deleted.", window_start: window.start, window_end: window.end, source_deadline_fields: sources.source_deadline_fields, no_predelete_before_source_ready_v0_1_8: true, source_deadline_guard_v0_1_8: true, no_score_db_mutation: true, no_board_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc() };
-    await run(env.DAILY_DB, `UPDATE daily_team_schedule_spot_batches SET status=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, output.status, output.certification, output.certification_grade, output.certification_reason, safeJson(output), batchId);
-    return output;
-  }
+  const sources = await loadSources(env, window);
   const maps = buildReferenceMaps(sources);
   const relevance = buildPreparedRelevance(sources, maps);
   const rowsToWrite = [];
@@ -755,8 +675,6 @@ async function refreshWindow(env, input) {
   const calendarGamesChecked = sources.calendarWindow.length;
   const noPickableSlate = rowsToWrite.length === 0;
   if (noPickableSlate) allIssues.push({ row: null, issue: { type: "no_pickable_safe_prepared_games", severity: "warning", reason: "No pickable_safe prepared-board games found for today/tomorrow schedule-spot window." } });
-  // v0.1.8: replace volatile window only after the fresh replacement rows are built.
-  await clearVolatileWindowBeforeWrite(env, window);
   for (const row of rowsToWrite) {
     await writeCurrentRow(env, row);
     await writeSnapshot(env, row, batchId);
@@ -822,10 +740,6 @@ async function refreshWindow(env, input) {
     expected_issue_rows: expectedIssueRows,
     retention_verification_passed: retentionVerificationPassed,
     terminal_fast_path_batch_scoped_verify_v0_1_7: true,
-    no_predelete_before_source_ready_v0_1_8: true,
-    source_deadline_guard_v0_1_8: true,
-    source_deadline_hit: !!sources.source_deadline_hit,
-    source_deadline_fields: sources.source_deadline_fields || [],
     current_snapshot_issue_retention_today_tomorrow_only: true,
     current_snapshot_issue_run_replacement_cleanup: true,
     prewrite_window_replacement_postwrite_retention_fix_v0_1_6: true,
@@ -867,7 +781,32 @@ export default {
         const out = await refreshWindow(env, input || {});
         return jsonResponse(out, out.data_ok ? 200 : 200);
       } catch (err) {
-        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_TEAM_SCHEDULE_SPOT_EXCEPTION", error: String(err && err.stack ? err.stack : err), timestamp_utc: nowUtc(), no_score_db_mutation: true, no_board_mutation: true, no_external_calls: true }, 500);
+        const message = String(err && err.stack ? err.stack : err);
+        let terminalized = null;
+        try {
+          const runningRows = await all(env.DAILY_DB, `SELECT batch_id, status FROM daily_team_schedule_spot_batches WHERE request_id=? AND status LIKE 'running%'`, input.request_id || null);
+          terminalized = [];
+          for (const row of runningRows) {
+            const current = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_team_schedule_spot_current WHERE batch_id=?`, row.batch_id);
+            const snapshots = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_team_schedule_spot_snapshots WHERE batch_id=?`, row.batch_id);
+            const issues = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_team_schedule_spot_issues WHERE batch_id=?`, row.batch_id);
+            terminalized.push({ batch_id: row.batch_id, previous_status: row.status, preserved_current_rows: Number(current?.c || 0), preserved_snapshots: Number(snapshots?.c || 0), preserved_issues: Number(issues?.c || 0) });
+          }
+          await run(env.DAILY_DB, `UPDATE daily_team_schedule_spot_batches
+            SET status='failed_exception_terminalized',
+                certification_status='DAILY_TEAM_SCHEDULE_SPOT_EXCEPTION_TERMINALIZED_RUNNING_STATE',
+                certification_grade='FAIL',
+                certification_reason=?,
+                output_json=?,
+                completed_at=CURRENT_TIMESTAMP,
+                updated_at=CURRENT_TIMESTAMP
+            WHERE request_id=? AND status LIKE 'running%'`,
+            message.slice(0, 900),
+            safeJson({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_TEAM_SCHEDULE_SPOT_EXCEPTION_TERMINALIZED_RUNNING_STATE", error: message, preserved_sidecars: terminalized, running_status_like_guard: true, timestamp_utc: nowUtc() }),
+            input.request_id || null
+          );
+        } catch (_) {}
+        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_TEAM_SCHEDULE_SPOT_EXCEPTION_TERMINALIZED_RUNNING_STATE", error: message, terminalized, timestamp_utc: nowUtc(), no_score_db_mutation: true, no_board_mutation: true, no_external_calls: true }, 500);
       }
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
