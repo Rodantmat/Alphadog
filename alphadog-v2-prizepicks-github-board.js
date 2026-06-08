@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.11-stale-clear-current-nonfatal-chain";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.12-fresh-producer-required-gate";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
@@ -92,12 +92,12 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "READY",
     timestamp_utc: nowUtc(),
-    phase: "prizepicks_github_board_multi_surface_freshness_select_v0_1_8",
+    phase: "prizepicks_github_board_multi_surface_freshness_select_v0_1_12",
     notes: [
       "Reads the configured PrizePicks GitHub JSON source.",
       "Parses JSON, stages PrizePicks rows into MARKET_DB.prizepicks_board_stage, and writes a batch certification row.",
       "Promotes only certified staged rows into MARKET_DB.prizepicks_board_current and flips MARKET_DB.prizepicks_board_active_batches after inserts succeed.",
-      "No market_current_lines writes, no scoring, no ranking, no final board. Fetches multiple GitHub surfaces, selects the freshest valid PrizePicks JSON candidate, and only treats the source as stale when every usable candidate has no future pickable rows. If all consumed candidates are stale, dispatch the existing GitHub scraper workflow and require a later fresh consumer run before Board Full Run can pass."
+      "No market_current_lines writes, no scoring, no ranking, no final board. Fetches multiple GitHub surfaces, selects the freshest valid PrizePicks JSON candidate, and only treats the source as stale when every usable candidate has no future pickable rows. If all consumed candidates are stale, clear stale current inventory, dispatch the GitHub scraper workflow, and require a later fresh consumer run before Board Full Run can pass."
     ],
     binding_summary: {
       required_db_bindings_present: allTrue(db),
@@ -1406,7 +1406,7 @@ async function runBoardParseStageCertify(env, input = {}) {
     lifecycle_locked: {
       fetch_parse_stage_certify_promote_complete: finalPassed,
       source_stale_no_future_pickable_handled: sourceStaleHandled,
-      source_stale_current_preserved: sourceStaleHandled,
+      source_stale_current_preserved: false,
       active_pointer_table: "prizepicks_board_active_batches",
       current_board_table: "prizepicks_board_current",
       stage_cleaned_after_success: Boolean(promotion.stage_cleanup && promotion.stage_cleanup.cleaned),
@@ -1417,7 +1417,7 @@ async function runBoardParseStageCertify(env, input = {}) {
       github_source_refresh_dispatch_enabled: true,
       manual_buttons: ["BOARD > PrizePicks", "ORCHESTRATOR > Wake"]
     },
-    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, or final board. v0.1.8 compares GitHub metadata/download/raw/blob surfaces and selects the freshest valid JSON before any stale-clear decision.",
+    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, or final board. v0.1.12 compares GitHub metadata/download/raw/blob surfaces and requires the producer freshness gate before any promotion. Stale/no-future source clears current inventory and requires a later fresh consumer run.",
     timestamp_utc: nowUtc()
   };
 }
