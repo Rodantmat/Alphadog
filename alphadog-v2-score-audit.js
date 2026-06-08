@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.15-hp-board-same-worker-profile";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_REALISTIC_V3_2";
@@ -2729,14 +2729,14 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.15-hp-board-same-worker-profile";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker";
 const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_1_6_STOLEN_BASES_ROUTE_LOCK";
 const HP_MAX_ROWS_PER_RUN = 12000;
 const HP_PLAYER_CHUNK_SIZE = 70;
 const HP_BOARD_MODE = "hp_board_current_build";
 const HP_BOARD_JOB_KEY = "hp-board";
 const HP_BOARD_PROFILE_KEY = "HP_BOARD_RECENT_FORM_PROFILE";
-const HP_BOARD_PROFILE_VERSION = "HP_BOARD_RECENT_FORM_PROFILE_V0_1_0";
+const HP_BOARD_PROFILE_VERSION = "HP_BOARD_RECENT_FORM_PROFILE_V0_1_1_DISPLAY_CALIBRATED";
 const HP_BOARD_LANE_ORDER = {
   HP_PRIMARY_ELITE: 1,
   HP_PRIMARY_STRONG: 2,
@@ -3063,11 +3063,78 @@ function hpBoardLaneReason(lane){
   return 'Recent-form HP support is weak or incomplete; not a primary candidate.';
 }
 
-function hpBoardCalibrationJson(){
+function hpBoardRawHpBucket(hp){
+  const v=hpNum(hp,0);
+  if(v >= 90) return '90_PLUS';
+  if(v >= 80) return '80_TO_89';
+  if(v >= 70) return '70_TO_79';
+  if(v >= 60) return '60_TO_69';
+  if(v >= 50) return '50_TO_59';
+  if(v >= 40) return '40_TO_49';
+  if(v >= 30) return '30_TO_39';
+  if(v >= 20) return '20_TO_29';
+  if(v >= 10) return '10_TO_19';
+  return 'BELOW_10';
+}
+
+function hpBoardDisplayCalibrationAction(bucket, gap){
+  if(bucket === '90_PLUS') return 'display_soft_cap_top_bucket';
+  if(bucket === '80_TO_89' || bucket === '70_TO_79') return 'display_soft_cap_high_bucket';
+  if(bucket === '60_TO_69') return 'display_mild_adjustment';
+  if(bucket === '50_TO_59' || bucket === '40_TO_49') return 'display_minor_adjustment';
+  if(bucket === '30_TO_39' || bucket === '20_TO_29' || bucket === '10_TO_19') return 'display_minor_lift';
+  return gap < 0 ? 'display_minor_lift' : 'preserve_raw_low_bucket';
+}
+
+function hpBuildBoardDisplayCalibrationMap(rows){
+  const buckets={};
+  for(const r of rows || []){
+    const bucket=hpBoardRawHpBucket(r.estimated_hit_probability_0_100);
+    if(!buckets[bucket]) buckets[bucket]={ bucket, rows:0, total_raw_hp:0, total_non_push_sample:0, total_hits:0, total_misses:0, total_pushes:0 };
+    const b=buckets[bucket];
+    b.rows += 1;
+    b.total_raw_hp += hpNum(r.estimated_hit_probability_0_100,0);
+    b.total_non_push_sample += hpNum(r.non_push_sample,0);
+    b.total_hits += hpNum(r.hit_count,0);
+    b.total_misses += hpNum(r.miss_count,0);
+    b.total_pushes += hpNum(r.push_count,0);
+  }
+  for(const b of Object.values(buckets)){
+    b.bucket_avg_estimate = b.rows > 0 ? hpRound(b.total_raw_hp / b.rows, 2) : null;
+    b.bucket_pooled_empirical = b.total_non_push_sample > 0 ? hpRound(100.0 * b.total_hits / b.total_non_push_sample, 2) : null;
+    b.bucket_gap_estimate_minus_empirical = (b.bucket_avg_estimate != null && b.bucket_pooled_empirical != null) ? hpRound(b.bucket_avg_estimate - b.bucket_pooled_empirical, 2) : null;
+    b.calibration_action = hpBoardDisplayCalibrationAction(b.bucket, hpNum(b.bucket_gap_estimate_minus_empirical,0));
+    b.calibrated_display_hp_0_100 = b.bucket_pooled_empirical != null ? b.bucket_pooled_empirical : b.bucket_avg_estimate;
+  }
+  return buckets;
+}
+
+function hpBoardCalibrationJson(row, bucketCalibration){
+  const rawBucket=hpBoardRawHpBucket(row && row.estimated_hit_probability_0_100);
+  const b=(bucketCalibration && bucketCalibration[rawBucket]) || {};
   return hpSafeJson({
-    profile: HP_BOARD_PROFILE_VERSION,
+    calibration_profile: HP_BOARD_PROFILE_VERSION,
+    calibration_type: 'internal_recent_form_display_only',
     framework_only: true,
+    true_probability_claim: false,
     no_true_probability_claims: true,
+    raw_bucket: rawBucket,
+    raw_estimated_hit_probability_0_100: hpRound(row && row.estimated_hit_probability_0_100, 2),
+    bucket_rows: b.rows || 0,
+    bucket_total_non_push_sample: b.total_non_push_sample || 0,
+    bucket_total_hits: b.total_hits || 0,
+    bucket_total_misses: b.total_misses || 0,
+    bucket_total_pushes: b.total_pushes || 0,
+    bucket_avg_estimate: b.bucket_avg_estimate == null ? null : b.bucket_avg_estimate,
+    bucket_pooled_empirical: b.bucket_pooled_empirical == null ? null : b.bucket_pooled_empirical,
+    bucket_gap_estimate_minus_empirical: b.bucket_gap_estimate_minus_empirical == null ? null : b.bucket_gap_estimate_minus_empirical,
+    calibration_action: b.calibration_action || 'preserve_raw_bucket',
+    calibrated_display_hp_0_100: b.calibrated_display_hp_0_100 == null ? hpRound(row && row.estimated_hit_probability_0_100, 2) : b.calibrated_display_hp_0_100,
+    raw_hp_preserved: true,
+    lanes_preserved: true,
+    ranks_preserved: true,
+    true_calibration_blocked_reason: 'No settled outcome/backtest/settlement table exists in SCORE_DB; this is internal recent-form display calibration only.',
+    note: 'Use calibrated_display_hp_0_100 only as display compression/lift for current recent-form HP buckets. Do not treat as true modeled hit probability.',
     primary_elite: 'hp>=70 confidence>=95 sample>=20 score>=84',
     primary_strong: 'hp>=62 confidence>=90 sample>=20 score>=84',
     supported_review: 'hp>=55 confidence>=70 sample>=15 score>=76',
@@ -3075,7 +3142,7 @@ function hpBoardCalibrationJson(){
     low_sample_review: 'sample<15',
     neutral_review: '45<=hp<55',
     fade_recent_form: 'hp<35 confidence>=90 sample>=20'
-  }, 3000);
+  }, 5000);
 }
 
 async function runHpBoardCurrent(env, input = {}){
@@ -3094,8 +3161,6 @@ async function runHpBoardCurrent(env, input = {}){
   const hpBoardBatchId='hp_board_batch_for_' + sourceHpBatchId;
   const sourceFinalBoardBatchId=hpBatch.source_final_board_batch_id || null;
   const sourceEngineBatchId=hpBatch.source_engine_batch_id || null;
-  const calibration=hpBoardCalibrationJson();
-
   const classified=sourceRows.map(r => {
     const lane=hpBoardLane(r);
     const hp=hpNum(r.estimated_hit_probability_0_100, 0);
@@ -3125,6 +3190,8 @@ async function runHpBoardCurrent(env, input = {}){
   const laneRanks={};
   classified.forEach((r,idx)=>{ r.hp_rank=idx+1; laneRanks[r.hp_lane]=(laneRanks[r.hp_lane]||0)+1; r.hp_lane_rank=laneRanks[r.hp_lane]; });
 
+  const displayCalibrationByBucket=hpBuildBoardDisplayCalibrationMap(classified);
+
   await run(env.SCORE_DB, `DELETE FROM hp_board_current`);
   await run(env.SCORE_DB, `DELETE FROM hp_board_history WHERE hp_board_batch_id=?`, hpBoardBatchId);
   await run(env.SCORE_DB, `DELETE FROM hp_board_issues WHERE hp_board_batch_id=?`, hpBoardBatchId);
@@ -3135,6 +3202,7 @@ async function runHpBoardCurrent(env, input = {}){
     reviewRows += r.hp_review_playable ? 1 : 0;
     fadeRows += r.hp_fade_flag ? 1 : 0;
     const hpBoardRowId='hpboard|' + hpBoardBatchId + '|' + r.probability_row_id;
+    const calibration=hpBoardCalibrationJson(r, displayCalibrationByBucket);
     await run(env.SCORE_DB, `INSERT OR REPLACE INTO hp_board_current (hp_board_row_id,hp_board_batch_id,source_hp_batch_id,source_final_board_batch_id,source_engine_batch_id,probability_row_id,final_board_row_id,prepared_row_id,matrix_id,source_line_id,profile_key,hp_profile_version,hp_rank,hp_lane,hp_lane_rank,hp_sort_0_100,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,canonical_prop_key,line_value,selected_side,prop_family,estimated_hit_probability_0_100,probability_confidence_0_100,probability_band,probability_grade,empirical_hit_rate_0_1,reliability_0_1,sample_size,non_push_sample,hit_count,miss_count,push_count,push_risk_0_1,score_0_100,score_grade,board_tier,live_playable,review_playable,hp_primary_playable,hp_review_playable,hp_fade_flag,warning_count,blocker_count,lane_reason,calibration_json,source_snapshot_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
       hpBoardRowId,hpBoardBatchId,sourceHpBatchId,sourceFinalBoardBatchId,sourceEngineBatchId,r.probability_row_id||null,r.final_board_row_id||null,r.prepared_row_id||null,r.matrix_id||null,r.source_line_id||null,HP_BOARD_PROFILE_KEY,HP_BOARD_PROFILE_VERSION,r.hp_rank,r.hp_lane,r.hp_lane_rank,hpNum(r.estimated_hit_probability_0_100,0),r.source_key||null,r.game_pk||null,r.official_date||null,r.official_game_time_utc||null,r.mlb_player_id||null,r.player_name||null,r.canonical_prop_key||null,r.line_value||null,r.selected_side||null,r.prop_family||null,r.estimated_hit_probability_0_100||null,r.probability_confidence_0_100||null,r.probability_band||null,r.probability_grade||null,r.empirical_hit_rate_0_1||null,r.reliability_0_1||null,r.sample_size||0,r.non_push_sample||0,r.hit_count||0,r.miss_count||0,r.push_count||0,r.push_risk_0_1||0,r.score_0_100||null,r.score_grade||null,r.board_tier||null,r.live_playable||0,r.review_playable||0,r.hp_primary_playable,r.hp_review_playable,r.hp_fade_flag,r.warning_count||0,r.blocker_count||0,r.lane_reason,calibration,r.source_snapshot_json||null);
   }
@@ -3147,9 +3215,9 @@ async function runHpBoardCurrent(env, input = {}){
   const qa=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, COUNT(DISTINCT hp_board_row_id) AS hp_rows, COUNT(DISTINCT hp_rank) AS ranks, MIN(hp_rank) AS min_rank, MAX(hp_rank) AS max_rank, COUNT(DISTINCT final_board_row_id) AS final_rows, COUNT(DISTINCT prepared_row_id) AS prepared_rows, SUM(CASE WHEN final_board_row_id IS NULL THEN 1 ELSE 0 END) AS null_final_rows, SUM(CASE WHEN prepared_row_id IS NULL THEN 1 ELSE 0 END) AS null_prepared_rows, SUM(CASE WHEN blocker_count > 0 THEN 1 ELSE 0 END) AS blocker_rows, ROUND(AVG(score_0_100),2) AS avg_score, ROUND(AVG(estimated_hit_probability_0_100),2) AS avg_hp FROM hp_board_current WHERE hp_board_batch_id=?`, hpBoardBatchId) || {};
   const issueCountRow=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_issues WHERE hp_board_batch_id=?`, hpBoardBatchId) || {};
   const rowCount=Number(qa.rows||0);
-  let status='completed_hp_board_current_written';
-  let cert='HP_BOARD_PROFILE_CURRENT_CERTIFIED_WRITTEN';
-  let grade='PASS_WITH_REVIEW_WARNINGS';
+  let status='completed_hp_board_current_display_calibrated';
+  let cert='HP_BOARD_DISPLAY_CALIBRATION_CERTIFIED_INTERNAL_RECENT_FORM';
+  let grade='PASS_WITH_TRUE_CALIBRATION_BLOCKED';
   if(rowCount === 0 || rowCount !== Number(qa.hp_rows||0) || rowCount !== Number(qa.ranks||0) || Number(qa.min_rank||0) !== 1 || Number(qa.max_rank||0) !== rowCount || rowCount !== Number(qa.final_rows||0) || rowCount !== Number(qa.prepared_rows||0) || Number(qa.null_final_rows||0)>0 || Number(qa.null_prepared_rows||0)>0 || Number(qa.blocker_rows||0)>0){
     status='failed_hp_board_integrity_check';
     cert='HP_BOARD_PROFILE_CURRENT_INTEGRITY_FAILED';
@@ -3189,6 +3257,13 @@ async function runHpBoardCurrent(env, input = {}){
     blocker_rows: Number(qa.blocker_rows || 0),
     avg_score: qa.avg_score,
     avg_hp: qa.avg_hp,
+    display_calibration_profile: HP_BOARD_PROFILE_VERSION,
+    calibration_type: 'internal_recent_form_display_only',
+    true_calibration_blocked_reason: 'No settled outcome/backtest/settlement table exists in SCORE_DB.',
+    raw_hp_preserved: true,
+    lanes_preserved: true,
+    ranks_preserved: true,
+    display_calibration_by_bucket: displayCalibrationByBucket,
     thresholds_locked: true,
     framework_only: true,
     no_true_probability_claims: true,
@@ -3200,7 +3275,7 @@ async function runHpBoardCurrent(env, input = {}){
     hp_board_ranking: true,
     no_candidate_board_write: true,
     layout: 'final_board_style_hp_focused',
-    qa_status: grade === 'BLOCKED' ? 'FAIL_HP_BOARD_INTEGRITY' : 'PASS_READY_TO_PROMOTE_HP_BOARD_FROM_SAME_WORKER',
+    qa_status: grade === 'BLOCKED' ? 'FAIL_HP_BOARD_INTEGRITY' : 'PASS_INTERNAL_DISPLAY_CALIBRATION_WRITTEN_SAME_WORKER',
     elapsed_ms: Date.now()-started
   });
   await run(env.SCORE_DB, `INSERT OR REPLACE INTO hp_board_batches (hp_board_batch_id,request_id,run_id,worker_version,profile_key,profile_version,mode,status,source_table,source_hp_batch_id,source_final_board_batch_id,source_engine_batch_id,source_rows_read,board_rows_written,history_rows_written,issue_rows_written,primary_rows,review_rows,fade_rows,certification_status,certification_grade,thresholds_locked,no_true_probability_claims,output_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, hpBoardBatchId,output.request_id,output.run_id,HP_VERSION,HP_BOARD_PROFILE_KEY,HP_BOARD_PROFILE_VERSION,HP_BOARD_MODE,status,'hit_probability_current',sourceHpBatchId,sourceFinalBoardBatchId,sourceEngineBatchId,sourceRows.length,rowCount,rowCount,Number(issueCountRow.rows||0),primaryRows,reviewRows,fadeRows,cert,grade,1,1,hpSafeJson(output,14000));
