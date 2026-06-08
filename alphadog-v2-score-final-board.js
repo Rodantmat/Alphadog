@@ -1,7 +1,7 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.13-primary-elite-threshold-reopen";
+const VERSION = "alphadog-v2-score-final-board-v0.1.14-primary-elite-threshold-source-profile-lock";
 const JOB_KEY = "score-final-board";
-const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_3_PRIMARY_ELITE_REOPEN";
+const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
@@ -527,7 +527,7 @@ function applyCalibration(rawRow, preferredTier = null) {
       version: VERSION,
       board_tier: boardTier,
       review_subtier: boardTier === "REVIEW" ? calibrated.review_subtier : null,
-      tier_rule: "PRIMARY when calibrated_score_0_100 >= 88, calibrated_confidence_0_100 >= 85, direct_prop_evidence_row_count > 0, and no side symmetry risk; otherwise REVIEW. v0.1.13 reopens strict elite PRIMARY because v0.1.12 max calibrated score was 88, making PRIMARY unreachable while keeping low-probability/volatile rows in REVIEW.",
+      tier_rule: "PRIMARY when calibrated_score_0_100 >= 90, calibrated_confidence_0_100 >= 85, direct_prop_evidence_row_count > 0, and no side symmetry risk; otherwise REVIEW.",
       raw_score_0_100: calibrated.raw_score_0_100,
       raw_confidence_0_100: calibrated.raw_confidence_0_100,
       calibrated_score_0_100: calibrated.score_0_100,
@@ -1201,7 +1201,6 @@ async function generateFinalBoard(env, input) {
     cutoff_volatility_trim_active: true,
     cutoff_volatility_trim_policy: "narrow fragile-pitcher cutoff trim only; no source quota, no forced balance, no broad cluster penalty",
     primary_threshold_score: PRIMARY_THRESHOLD_SCORE,
-    primary_threshold_policy: "v0.1.13 lowers PRIMARY score threshold from 90 to 88 because live evidence showed all rows were REVIEW and max calibrated score was 88; confidence/evidence/symmetry gates remain unchanged.",
     primary_threshold_confidence: PRIMARY_THRESHOLD_CONFIDENCE,
     primary_cluster_cap_active: true,
     max_primary_rows_per_player: maxPrimaryRowsPerPlayer,
