@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.23-engine-grade-threshold-and-no-archive-current";
+const VERSION = "alphadog-v2-score-final-board-v0.1.24-no-archive-and-preserve-engine-elite";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
@@ -561,7 +561,7 @@ function applyCalibration(rawRow, preferredTier = null) {
       effective_warning_count: effectiveWarningCountFromBoardRow(rawRow, directEvidenceInfoFromBoardRow(rawRow)),
       score_adjustments: calibrated.score_adjustments,
       confidence_adjustments: calibrated.confidence_adjustments,
-      note: "STRICT_C_REALISTIC_V3_2 uses DB/profile scoring first. Final Board does not re-score or re-cap by source, payout, prop rarity, demon/goblin, HR/SB, or direct market row count. Only partial-context and side-symmetry safety caps remain. Optional HP advisory is a safety net, not a killer."
+      note: "STRICT_C_REALISTIC_V3_2 uses DB/profile scoring first. Final Board does not re-score or re-cap by source, payout, prop rarity, demon/goblin, HR/SB, or direct market row count; BIN_ARCHIVE rows are excluded from current entirely. Only partial-context and side-symmetry safety caps remain. Optional HP advisory is a safety net, not a killer."
     })
   };
 }
@@ -949,8 +949,7 @@ async function fetchEngineBoardCandidateRows(env, sourceEngineBatchId, profileKe
         AND score_status NOT IN ('blocked_by_matrix','model_deferred','simulation_hard_blocked')
         AND (
           score_0_100 >= 76
-          OR score_grade IN ('BIN_QUALIFIED','BIN_STRONG')
-          OR (score_grade = 'BIN_ARCHIVE' AND score_0_100 >= 74)
+          OR score_grade IN ('BIN_QUALIFIED','BIN_STRONG','BIN_ELITE')
         )
       ORDER BY score_0_100 DESC, confidence_0_100 DESC, score_sort_0_100 DESC, score_row_id
       LIMIT ${limit} OFFSET ${offset}
@@ -1472,16 +1471,16 @@ async function generateFinalBoard(env, input) {
     primary_rows_written: primaryRows.length,
     review_rows_written: reviewRows.length,
     review_rows_after_cluster_cap: clusterCapResult.reviewRowsAfterClusterCap,
-    archive_review_rows_written: archiveReviewCandidates.length,
-    archive_review_by_source: Object.values(archiveReviewBySource),
-    archive_review_admission_active: true,
-    archive_review_admission_policy: "BIN_ARCHIVE with archive_eligible=1, blocker_count=0, blocking_for_scoring=0, score>=70, confidence>=55 enters REVIEW inventory only; payout_variant and prop rarity are not exclusions.",
+    archive_review_rows_written: 0,
+    archive_review_by_source: [],
+    archive_review_admission_active: false,
+    archive_review_admission_policy: "BIN_ARCHIVE rows are excluded from score_final_board_current; engine inventory remains preserved upstream in scoring_engine_current/history.",
     live_rows_read: primaryRaw.length,
     final_rows_written: rows.length,
     current_rows_written: rows.length,
     table_for_final_ui: "SCORE_DB.score_final_board_current",
     history_table: "SCORE_DB.score_final_board_history",
-    final_ui_contract: "Read board_tier. PRIMARY rows are engine BIN_STRONG/score>=84 rows after diversification; REVIEW rows are engine-qualified or high-archive safe rows with review_playable=1. Final Board does not re-score engine rows or require review_playable in scoring_engine_current; engine current is read through keyset pagination so large PrizePicks boards are not truncated by D1 page limits.",
+    final_ui_contract: "Read board_tier. PRIMARY rows are high-confidence engine rows after diversification; REVIEW rows are engine-qualified safe rows with review_playable=1. BIN_ARCHIVE rows are excluded from current. Final Board does not re-score engine rows or require review_playable in scoring_engine_current; engine current is read through deterministic LIMIT/OFFSET pagination so large PrizePicks boards are not truncated by D1 page limits.",
     no_external_calls: true,
     no_source_board_mutation: true,
     no_simulation_shadow_mutation: true,
@@ -1507,7 +1506,7 @@ async function generateFinalBoard(env, input) {
 
   await writeIssue(env, batchId, simBatchId, "LIVE_INVARIANT_FAILURE", "INFO", 0, { note: "No live row invariant failures detected before final board write." });
   await writeIssue(env, batchId, simBatchId, "REVIEW_TIER_INCLUDED", "WARNING", reviewRows.length, { note: "Review tier rows are intentionally included as safe soft rows. They are not strict PRIMARY rows.", review_rows_written: reviewRows.length });
-  await writeIssue(env, batchId, simBatchId, "ARCHIVE_REVIEW_ADMITTED", archiveReviewCandidates.length ? "WARNING" : "INFO", archiveReviewCandidates.length, { note: "BIN_ARCHIVE/archive_eligible rows are admitted to REVIEW only instead of being silently killed by the 76+ qualified gate.", archive_review_rows_written: archiveReviewCandidates.length, archive_review_by_source: Object.values(archiveReviewBySource) });
+  await writeIssue(env, batchId, simBatchId, "ARCHIVE_EXCLUDED_FROM_CURRENT", "INFO", 0, { note: "BIN_ARCHIVE rows are intentionally excluded from score_final_board_current. They remain preserved in scoring_engine_current/history and are not deleted from source inventory." });
   await writeIssue(env, batchId, simBatchId, "PRIMARY_CLUSTER_CAP_APPLIED", clusterCapResult.demotedRows.length ? "WARNING" : "INFO", clusterCapResult.demotedRows.length, { note: "PRIMARY is capped at one row per player/game slate cluster key; overflow rows are demoted to REVIEW, not deleted. This is a diversification/correlation safety rail, not a quality killer or source quota.", max_primary_rows_per_player: clusterCapResult.maxPrimaryRowsPerPlayer, primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap, primary_rows_after_cluster_cap: clusterCapResult.primaryRowsAfterClusterCap, demoted_rows: clusterCapResult.demotedRows.length });
   await writeIssue(env, batchId, simBatchId, "PRIMARY_SANITY_HP_ADVISORY_APPLIED", (primarySanityResult.rescuedRows || primarySanityResult.demotedRows) ? "WARNING" : "INFO", (primarySanityResult.rescuedRows || 0) + (primarySanityResult.demotedRows || 0), { note: "Hit Probability advisory is used as a PRIMARY safety net only. It can rescue robust high-HP near-elite rows or demote robust low-HP PRIMARY rows to REVIEW. It does not delete rows, force equality, or apply source/prop quotas.", hp_advisory_batch_id: hpAdvisory.batch && hpAdvisory.batch.batch_id || null, hp_advisory_rows_loaded: hpAdvisory.rows || 0, candidate_rows_with_advisory: primarySanityResult.advisoryRowsSeen, rescued_to_primary_rows: primarySanityResult.rescuedRows, demoted_to_review_rows: primarySanityResult.demotedRows });
   await run(env.SCORE_DB, `
