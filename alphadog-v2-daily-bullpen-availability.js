@@ -1,11 +1,11 @@
 const WORKER_NAME = "alphadog-v2-daily-bullpen-availability";
-const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.8-bounded-self-terminal-fast-path";
+const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.9-timeboxed-terminal-progress";
 const JOB_KEY = "daily-bullpen-availability";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON"];
-const RUN_DEADLINE_MS = 85000;
-const MAX_PITCHER_DETAIL_ROWS_PER_TEAM = 8;
+const RUN_DEADLINE_MS = 18000;
+const MAX_PITCHER_DETAIL_ROWS_PER_TEAM = 4;
 
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
@@ -507,12 +507,20 @@ async function runBullpen(env, input) {
     }
     const classified = classifyTarget(target, bullpenRows, recentCalendarRows);
     const writes = await writeTarget(env, batchId, target, classified, sourceSnapshotAt);
-    const pitcherRows = await writePitchers(env, batchId, target, classified, sourceSnapshotAt);
     currentWritten += writes.current_written;
     snapshotWritten += writes.snapshot_written;
     issuesWritten += writes.issues_written;
-    pitcherWritten += pitcherRows;
     summaries.push({ game_pk: target.game_pk, team_id: target.team_id, team_name: target.team_name, status: classified.status, risk: classified.risk, score: classified.fatigueScore, pitches_last_1_day: classified.pitches1, pitches_last_2_days: classified.pitches2, relievers_last_3_days: classified.pitchers3, high_usage_relievers: classified.highUsage, back_to_back_relievers: classified.backToBack, likely_unavailable_relievers: classified.likelyUnavailable, issues: classified.issues.length });
+    await run(env.DAILY_DB, `UPDATE daily_bullpen_availability_batches SET calendar_games_checked=?, prepared_games_checked=?, prepared_rows_read=?, teams_checked=?, team_rows_written=?, snapshot_rows_written=?, warning_count=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+      calendars.length, gamePks.length, prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0), targets.length, currentWritten, snapshotWritten, issuesWritten, batchId);
+    if (deadlineExceeded(runStartedMs)) {
+      deadlineSoftStopped = true;
+      await writeIssue(env, batchId, target, { severity: "warning", issue_type: "daily_bullpen_timebox_after_team_rows", reason: "Daily bullpen finalized after core team/snapshot rows to avoid stale child timeout; pitcher detail rows may be partial." });
+      issuesWritten += 1;
+      break;
+    }
+    const pitcherRows = await writePitchers(env, batchId, target, classified, sourceSnapshotAt);
+    pitcherWritten += pitcherRows;
   }
   const postPrune = await pruneRetention(env, retention);
   const blockerCount = summaries.reduce((n, s) => n + (s.status === "blocked" ? 1 : 0), 0);

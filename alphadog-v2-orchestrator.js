@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.196-daily-context-nonfatal-cascade";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.197-daily-context-stale-sidecar-nonfatal";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -6759,6 +6759,14 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
           stageReports.push(recovered.report);
           continue;
         }
+        if (stage.job_key !== "daily-certifier") {
+          const softOutput = { ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:stage.worker_name, job_key:stage.job_key, request_id:child.request_id, status:"daily_context_child_stale_nonfatal_warning", certification:"DAILY_CONTEXT_CHILD_STALE_NONFATAL_WARNING", certification_grade:"PASS_WITH_WARNINGS", reason:"Daily sidecar child became stale before terminal handoff; full run continues and preserves sidecar audit rows.", no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
+          await cleanupDailyContextOrphanChildSidecars(env, stage, child, "DAILY_CONTEXT_CHILD_STALE_NONFATAL_WARNING");
+          await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','queued','partial_continue') AND finished_at IS NULL", JSON.stringify(softOutput), child.request_id);
+          await run(env.CONTROL_DB, "UPDATE control_job_runs SET status='completed', data_ok=1, certification_status='DAILY_CONTEXT_CHILD_STALE_NONFATAL_WARNING', finished_at=CURRENT_TIMESTAMP, elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status='running' AND finished_at IS NULL", JSON.stringify(softOutput), child.request_id);
+          stageReports.push({ ...report, child_status:"completed", child_certification:"DAILY_CONTEXT_CHILD_STALE_NONFATAL_WARNING", child_certification_grade:"PASS_WITH_WARNINGS", child_data_ok:false, child_nonfatal_warning:true, pass:true, wait:false, reason:"stale_child_reclassified_nonfatal_daily_sidecar_warning", rows_read:0, rows_written:0, external_calls:0 });
+          continue;
+        }
         return await failDailyContextStaleChild(env, row, stage, child, stageReports, report, parentInput, runId, started, "Daily Context Full Run child was running too long without a terminal control_job_runs row.");
       }
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification: "DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
@@ -8633,7 +8641,7 @@ async function processOneUnlocked(env, trigger) {
   // Morning Full Run, static, market, score prep, or individual daily workers.
   if (!row) {
     row = await first(env.CONTROL_DB,
-      `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
+      `SELECT p.request_id, p.chain_id, p.job_key, p.worker_name, p.status, p.tick_count, p.input_json
        FROM control_job_queue c
        JOIN control_job_queue p ON p.request_id = c.parent_request_id
        WHERE p.job_key='daily-context-full-run'
@@ -8643,14 +8651,14 @@ async function processOneUnlocked(env, trigger) {
          AND c.parent_request_id IS NOT NULL
          AND c.status='running'
          AND c.finished_at IS NULL
-         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-5 seconds')
+         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds')
        ORDER BY datetime(c.updated_at) ASC
        LIMIT 1`
     );
     if (row) {
       await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'daily_context_full_run_child_running_rescued_as_due', 'Recovered active Daily Context Full Run child running row as due work for same-chain hot continuation', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, daily_context_child_hot_rescue_v0_2_144: true })
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'daily_context_full_run_child_running_rescued_as_due', 'Recovered Daily Context Full Run parent as due work so stale child can be recovered from sidecar instead of redispatched', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, daily_context_parent_sidecar_recovery_v0_2_197: true })
       );
     }
   }
