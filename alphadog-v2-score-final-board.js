@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.18-engine-field-tier-calibration";
+const VERSION = "alphadog-v2-score-final-board-v0.1.19-runtime-output-scope-fix";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
@@ -1277,15 +1277,23 @@ async function generateFinalBoard(env, input) {
       )
   `, simBatchId, PRIMARY_PROFILE);
 
-  // v0.1.18-engine-field-tier-calibration:
+  // v0.1.19-runtime-output-scope-fix over v0.1.18-engine-field-tier-calibration:
   // Final Board is a selector/ranker, not a second scoring engine. It must not re-score PrizePicks/Sleeper,
   // must not read review_playable from scoring_engine_current, and must not silently kill qualified engine rows
   // because platform payout variants create different score distributions. Use engine-owned fields only.
   const strictLiveCandidates = engineRaw
     .filter(engineRowIsBoardCandidate)
     .map(r => applyEngineFieldTierCalibration(r));
+
+  // Runtime-scope repair: v0.1.18 intentionally switched Final Board to engine-field tiering,
+  // but left output/reporting references to the old primaryRaw / initiallyCalibratedCandidates / hpAdvisory
+  // variables. Keep the v0.1.18 selection behavior and bind those reporting variables explicitly.
+  const primaryRaw = strictLiveCandidates.filter(r => r.board_tier === "PRIMARY");
   const safeReviewCandidates = [];
-  const calibratedCandidates = annotateCorrelation(strictLiveCandidates)
+  const initiallyCalibratedCandidates = [...strictLiveCandidates, ...safeReviewCandidates];
+  const hpAdvisory = { batch: null, map: new Map(), rows: 0 };
+
+  const calibratedCandidates = annotateCorrelation(initiallyCalibratedCandidates)
     .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 74 && Number(r.confidence_0_100) >= 55);
 
   const primarySanityResult = { rows: calibratedCandidates, demotedRows: 0, rescuedRows: 0, advisoryRowsSeen: 0 };
@@ -1442,8 +1450,8 @@ async function generateFinalBoard(env, input) {
     final_plus_calibration_active: true,
     cutoff_volatility_trim_active: true,
     cutoff_volatility_trim_policy: "narrow fragile-pitcher cutoff trim only; no source quota, no forced balance, no broad cluster penalty",
-    primary_sanity_hp_advisory_active: true,
-    primary_sanity_hp_advisory_policy: "Optional same-engine Hit Probability advisory can demote robust hp<45 PRIMARY rows to REVIEW and rescue robust high-HP near-elite REVIEW rows to PRIMARY; no deletion, no quota, no forced equality.",
+    primary_sanity_hp_advisory_active: false,
+    primary_sanity_hp_advisory_policy: "Disabled in v0.1.19 runtime-scope repair path; Final Board uses engine-owned score/grade/tier fields only.",
     primary_sanity_rescue_rule_a: `score>=${PRIMARY_SANITY_RESCUE_SCORE_A}, confidence>=${PRIMARY_THRESHOLD_CONFIDENCE}, hp>=${PRIMARY_SANITY_RESCUE_HP_A}, hp_confidence>=${PRIMARY_SANITY_MIN_HP_CONFIDENCE}, non_push_sample>=${PRIMARY_SANITY_MIN_NON_PUSH_SAMPLE}`,
     primary_sanity_rescue_rule_b: `score>=${PRIMARY_SANITY_RESCUE_SCORE_B}, confidence>=${PRIMARY_THRESHOLD_CONFIDENCE}, hp>=${PRIMARY_SANITY_RESCUE_HP_B}, hp_confidence>=${PRIMARY_SANITY_MIN_HP_CONFIDENCE}, non_push_sample>=${PRIMARY_SANITY_MIN_NON_PUSH_SAMPLE}`,
     primary_sanity_demote_rule: `PRIMARY robust hp<${PRIMARY_SANITY_DEMOTE_HP_BELOW} becomes REVIEW`,
