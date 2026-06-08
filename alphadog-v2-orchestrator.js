@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.194-scoring-current-partial-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.195-market-scoring-hit-probability-stage";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -844,7 +844,8 @@ const MARKET_SCORING_FULL_RUN_STAGES = [
   { stage_key: "prop_factor_pitchers", job_key: "prop-factor-miner", worker_name: "alphadog-v2-phase2b-recent-form", display_name: "Prop Factor Miner Pitchers", visible_button: "FACTORS > Pitchers", mode: "pitcher_prop_factor_mining", worker_group: "10 Factors", phase_key: "factors", priority: 6, factor_family: "pitcher" },
   { stage_key: "prop_matrix_build", job_key: "prop-matrix-builder", worker_name: "alphadog-v2-phase2b-certifier", display_name: "Prop Matrix Build", visible_button: "MATRIX > Build", mode: "prop_matrix_build", worker_group: "10 Matrix", phase_key: "matrix", priority: 6 },
   { stage_key: "scoring_engine", job_key: "scoring-engine", worker_name: "alphadog-v2-score-audit", display_name: "Scoring Engine Current", visible_button: "SCORING > Engine", mode: "scoring_engine_current_strict_c_realistic_v3_2", worker_group: "11 Scoring", phase_key: "scoring", priority: 6 },
-  { stage_key: "score_final_board", job_key: "score-final-board", worker_name: "alphadog-v2-score-final-board", display_name: "Score Final Board", visible_button: "SCORING > Final Board", mode: "score_final_board_generate_current", worker_group: "11 Scoring", phase_key: "scoring", priority: 7 }
+  { stage_key: "score_final_board", job_key: "score-final-board", worker_name: "alphadog-v2-score-final-board", display_name: "Score Final Board", visible_button: "SCORING > Final Board", mode: "score_final_board_generate_current", worker_group: "11 Scoring", phase_key: "scoring", priority: 7 },
+  { stage_key: "hit_probability", job_key: "hit-probability", worker_name: "alphadog-v2-score-audit", display_name: "Hit Probability + HP Board", visible_button: "SCORING > Hit Prob", mode: "hit_probability_current_estimate", worker_group: "11 Scoring", phase_key: "scoring", priority: 7 }
 ];
 
 function marketScoringFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
@@ -886,6 +887,9 @@ function marketScoringFullRunChildInput(parentRow, stage, stepIndex, retryCount 
   }
   if (stage.job_key === "scoring-engine") {
     return { ...base, logical_worker_name: "alphadog-v2-scoring-engine", deployed_worker_slot: "alphadog-v2-score-audit", exact_worker_only: true, framework_only: false, production_scoring_current: true, primary_profile: "STRICT_C_REALISTIC_V3_2", worker_owned_schema_creation: true, writes_score_db_scoring_engine_only: true, no_simulation_shadow_mutation: true, no_archive_mutation: false, thresholds_locked: false, scoring_enabled: true, true_probability_enabled: false, no_true_hit_probability_claims: true, regular_lines_two_sided: true, goblin_demon_more_only: true, goblin_demon_under_blocker: "GOBLIN_DEMON_UNDER_NOT_SELECTABLE", no_candidate_board_write: true, no_old_prop_scores_write: true, no_ranking: true, no_final_board: true };
+  }
+  if (stage.job_key === "hit-probability") {
+    return { ...base, logical_worker_name: "alphadog-v2-hit-probability", deployed_worker_slot: "alphadog-v2-score-audit", exact_worker_only: true, worker_owned_schema_creation: true, estimated_hit_probability_phase: true, estimated_not_true_probability: true, hit_probability_only: true, hp_board_required: true, hp_board_same_worker: true, hp_board_display_calibration_required: true, writes_hit_probability_tables_only: true, writes_hp_board_tables_only: true, reads_score_final_board_current_first: true, fallback_reads_scoring_engine_current: true, true_probability_enabled: false, no_true_hit_probability_claims: true, framework_only: true, no_score_mutation: true, no_scoring_engine_current_mutation: true, no_final_board_mutation: true, no_prepared_board_mutation: true, no_source_board_mutation: true, no_candidate_board_write: true, no_ranking: true, no_pick_recommendation: true, no_live_playable_mutation: true, no_review_playable_mutation: true, d1_limit_safe_chunking_required: true, service_binding_timeout_reconcile_from_tables: true };
   }
   if (stage.job_key === "score-final-board") {
     return { ...base, exact_worker_only: true, deployed_worker_slot: "alphadog-v2-score-final-board", service_binding_name: "SCORE_FINAL_BOARD_WORKER", profile_key: "STRICT_C_REALISTIC_V3_2", source_engine_batch_policy: "market_full_requires_explicit_same_chain_completed_scoring_batch", writes_score_final_board_current: true, writes_score_final_board_history: true, no_external_calls: true, no_source_board_mutation: true, no_simulation_shadow_mutation: true, requires_real_engine_scoring_batch: true };
@@ -1177,6 +1181,153 @@ async function synthesizeScoringEngineCurrentTerminalProofFromEvidence(env, requ
   };
 }
 
+
+async function synthesizeHitProbabilityTerminalProofFromEvidence(env, requestId, child) {
+  if (!env.SCORE_DB) return null;
+  const hpBatch = await first(env.SCORE_DB,
+    `SELECT batch_id, request_id, run_id, worker_version, profile_version, mode, status, source_table, source_final_board_batch_id, source_engine_batch_id, source_rows_read, supported_rows, probability_rows_written, issue_rows_written, certification_status, certification_grade, output_json, created_at, updated_at
+       FROM hit_probability_batches
+      WHERE request_id=?
+      ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC
+      LIMIT 1`,
+    requestId
+  );
+  if (!hpBatch || !hpBatch.batch_id) return null;
+
+  const hpCounts = await first(env.SCORE_DB,
+    `SELECT COUNT(*) AS rows,
+            COUNT(DISTINCT probability_row_id) AS distinct_probability_rows,
+            COUNT(DISTINCT final_board_row_id) AS distinct_final_board_rows,
+            COUNT(DISTINCT prepared_row_id) AS distinct_prepared_rows,
+            SUM(CASE WHEN final_board_row_id IS NULL THEN 1 ELSE 0 END) AS null_final_rows,
+            SUM(CASE WHEN prepared_row_id IS NULL THEN 1 ELSE 0 END) AS null_prepared_rows,
+            SUM(CASE WHEN blocker_count > 0 THEN 1 ELSE 0 END) AS blocker_rows,
+            MIN(created_at) AS first_row_at,
+            MAX(created_at) AS last_row_at,
+            CASE WHEN MAX(created_at) IS NOT NULL AND datetime(MAX(created_at)) <= datetime(CURRENT_TIMESTAMP, '-10 seconds') THEN 1 ELSE 0 END AS evidence_quiet
+       FROM hit_probability_current
+      WHERE batch_id=?`,
+    hpBatch.batch_id
+  );
+  const hpRows = Number(hpCounts && hpCounts.rows || 0);
+  if (hpRows <= 0) return null;
+
+  const boardBatch = await first(env.SCORE_DB,
+    `SELECT hp_board_batch_id, worker_version, profile_key, profile_version, mode, status, source_hp_batch_id, source_final_board_batch_id, source_engine_batch_id, source_rows_read, board_rows_written, history_rows_written, issue_rows_written, primary_rows, review_rows, fade_rows, certification_status, certification_grade, output_json, created_at, updated_at
+       FROM hp_board_batches
+      WHERE source_hp_batch_id=?
+      ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC
+      LIMIT 1`,
+    hpBatch.batch_id
+  );
+  const boardCounts = boardBatch && boardBatch.hp_board_batch_id ? await first(env.SCORE_DB,
+    `SELECT COUNT(*) AS rows,
+            COUNT(DISTINCT hp_board_row_id) AS distinct_rows,
+            COUNT(DISTINCT hp_rank) AS distinct_ranks,
+            MIN(hp_rank) AS min_rank,
+            MAX(hp_rank) AS max_rank,
+            SUM(CASE WHEN calibration_json IS NULL THEN 1 ELSE 0 END) AS missing_calibration_rows,
+            SUM(CASE WHEN blocker_count > 0 THEN 1 ELSE 0 END) AS blocker_rows
+       FROM hp_board_current
+      WHERE hp_board_batch_id=?`,
+    boardBatch.hp_board_batch_id
+  ) : null;
+
+  const boardRows = Number(boardCounts && boardCounts.rows || 0);
+  const missingCalibration = Number(boardCounts && boardCounts.missing_calibration_rows || 0);
+  const hpBlockers = Number(hpCounts && hpCounts.blocker_rows || 0);
+  const boardBlockers = Number(boardCounts && boardCounts.blocker_rows || 0);
+  const ranksOk = boardRows > 0 && Number(boardCounts && boardCounts.distinct_ranks || 0) === boardRows && Number(boardCounts && boardCounts.min_rank || 0) === 1 && Number(boardCounts && boardCounts.max_rank || 0) === boardRows;
+  const linksOk = Number(hpCounts && hpCounts.null_final_rows || 0) === 0 && Number(hpCounts && hpCounts.null_prepared_rows || 0) === 0;
+  const parityOk = boardRows === hpRows && Number(boardCounts && boardCounts.distinct_rows || 0) === boardRows;
+  const quiet = Number(hpCounts && hpCounts.evidence_quiet || 0) === 1;
+  if (!boardBatch || boardRows <= 0 || !quiet) return null;
+
+  const ok = parityOk && linksOk && ranksOk && missingCalibration === 0 && hpBlockers === 0 && boardBlockers === 0;
+  const cert = ok ? "HP_BOARD_DISPLAY_CALIBRATION_CERTIFIED_INTERNAL_RECENT_FORM" : "HP_BOARD_RECONCILED_WITH_BLOCKERS";
+  const grade = ok ? "PASS_WITH_TRUE_CALIBRATION_BLOCKED" : "BLOCKED";
+  const status = ok ? "completed_hp_board_current_display_calibrated_reconciled_after_timeout" : "completed_hp_board_reconciled_with_blockers";
+  const output = {
+    ok,
+    data_ok: ok,
+    version: SYSTEM_VERSION,
+    worker_name: "alphadog-v2-score-audit",
+    logical_worker_name: "alphadog-v2-hit-probability",
+    job_key: "hit-probability",
+    request_id: requestId,
+    chain_id: child && child.chain_id || null,
+    mode: "hit_probability_current_estimate",
+    status,
+    certification: cert,
+    certification_status: cert,
+    certification_grade: grade,
+    batch_id: hpBatch.batch_id,
+    hp_board_batch_id: boardBatch.hp_board_batch_id,
+    source_final_board_batch_id: hpBatch.source_final_board_batch_id || boardBatch.source_final_board_batch_id || null,
+    source_engine_batch_id: hpBatch.source_engine_batch_id || boardBatch.source_engine_batch_id || null,
+    rows_read: Number(hpBatch.source_rows_read || hpRows),
+    rows_written: hpRows,
+    source_rows_read: Number(hpBatch.source_rows_read || hpRows),
+    probability_rows_written: hpRows,
+    hp_board_current_written: boardRows,
+    board_rows_written: boardRows,
+    issue_rows_written: Number(boardBatch.issue_rows_written || hpBatch.issue_rows_written || 0),
+    primary_rows: Number(boardBatch.primary_rows || 0),
+    review_rows: Number(boardBatch.review_rows || 0),
+    fade_rows: Number(boardBatch.fade_rows || 0),
+    terminalized_from_hit_probability_hp_board_rows: true,
+    reconciled_after_service_binding_timeout: true,
+    evidence_first_row_at: hpCounts && hpCounts.first_row_at || null,
+    evidence_last_row_at: hpCounts && hpCounts.last_row_at || null,
+    raw_hp_preserved: true,
+    hp_board_display_calibration_required: true,
+    hp_board_display_calibration_written: missingCalibration === 0,
+    calibration_type: "internal_recent_form_display_only",
+    no_true_hit_probability_claims: true,
+    no_true_probability_claims: true,
+    no_score_mutation: true,
+    no_final_board_mutation: true,
+    no_prepared_board_mutation: true,
+    no_source_board_mutation: true,
+    no_ranking: false,
+    hp_board_ranking: true,
+    rank_integrity_ok: ranksOk,
+    row_parity_ok: parityOk,
+    link_integrity_ok: linksOk,
+    blocker_rows: hpBlockers + boardBlockers
+  };
+
+  await run(env.SCORE_DB,
+    `UPDATE hit_probability_batches
+        SET status=?, certification_status=?, certification_grade=?, probability_rows_written=?, output_json=?, updated_at=CURRENT_TIMESTAMP
+      WHERE batch_id=?`,
+    status, cert, grade, hpRows, JSON.stringify(output), hpBatch.batch_id
+  );
+  await run(env.SCORE_DB,
+    `UPDATE hp_board_batches
+        SET status=?, certification_status=?, certification_grade=?, board_rows_written=?, history_rows_written=?, output_json=?, updated_at=CURRENT_TIMESTAMP
+      WHERE hp_board_batch_id=?`,
+    status, cert, grade, boardRows, boardRows, JSON.stringify(output), boardBatch.hp_board_batch_id
+  );
+
+  return {
+    batch_id: boardBatch.hp_board_batch_id,
+    request_id: requestId,
+    run_id: hpBatch.run_id || null,
+    worker_name: "alphadog-v2-score-audit",
+    worker_version: boardBatch.worker_version || hpBatch.worker_version || null,
+    mode: "hit_probability_current_estimate",
+    status,
+    prepared_rows_read: Number(hpBatch.source_rows_read || hpRows),
+    rows_written: boardRows,
+    certification_status: cert,
+    certification_grade: grade,
+    output_json: JSON.stringify(output),
+    updated_at: boardBatch.updated_at || null,
+    created_at: boardBatch.created_at || hpBatch.created_at || null
+  };
+}
+
 async function rescueMarketScoringFullRunTerminalEvidenceChild(env, trigger) {
   if (!env.CONTROL_DB || !env.MARKET_DB) return null;
   const children = await all(env.CONTROL_DB,
@@ -1338,6 +1489,22 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
       requestId
     );
     proofSource = "SCORE_DB.score_final_board_batches";
+  } else if (stageKey === "hit_probability" && env.SCORE_DB) {
+    proof = await first(env.SCORE_DB,
+      `SELECT hp.hp_board_batch_id AS batch_id, hp.request_id, hp.run_id, hp.worker_version, hp.mode, hp.status, hp.source_rows_read AS prepared_rows_read, hp.board_rows_written AS rows_written, hp.certification_status, hp.certification_grade, hp.output_json, hp.updated_at, hp.created_at
+       FROM hp_board_batches hp
+       WHERE hp.request_id=?
+         AND hp.certification_status IS NOT NULL
+         AND hp.status NOT LIKE 'running%'
+       ORDER BY datetime(hp.updated_at) DESC, datetime(hp.created_at) DESC
+       LIMIT 1`,
+      requestId
+    );
+    proofSource = "SCORE_DB.hp_board_batches";
+    if (!proof) {
+      proof = await synthesizeHitProbabilityTerminalProofFromEvidence(env, requestId, child);
+      if (proof) proofSource = "SCORE_DB.hit_probability_hp_board_quiet_evidence";
+    }
   }
 
   if (!proof) return { reconciled: false, reason: "no_terminal_child_proof_found", latest_run: latestRun || null };
@@ -1470,6 +1637,23 @@ async function processMarketScoringFullRunJob(env, row, runId, trigger) {
           extraChildInput.source_engine_batch_required_from_same_chain = true;
         }
       }
+      if (stage.stage_key === "hit_probability") {
+        const scoringReport = stageReports.find(r => r.stage_key === "scoring_engine" && r.batch_id);
+        const finalBoardReport = stageReports.find(r => r.stage_key === "score_final_board" && r.batch_id);
+        if (scoringReport && scoringReport.batch_id) {
+          extraChildInput.source_engine_batch_id = scoringReport.batch_id;
+          extraChildInput.scoring_engine_batch_id = scoringReport.batch_id;
+        }
+        if (finalBoardReport && finalBoardReport.batch_id) {
+          extraChildInput.source_final_board_batch_id = finalBoardReport.batch_id;
+          extraChildInput.final_board_batch_id = finalBoardReport.batch_id;
+          extraChildInput.source_final_board_batch_required_from_same_chain = true;
+        }
+        extraChildInput.skip_hp_board = false;
+        extraChildInput.hp_board_required = true;
+        extraChildInput.hp_board_display_calibration_required = true;
+        extraChildInput.service_binding_timeout_reconcile_from_tables = true;
+      }
       const enqueued = await enqueueMarketScoringFullRunChild(env, row, stage, i, 0, extraChildInput);
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_scoring_full_run", status: "PARTIAL_CONTINUE_MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED", certification: "MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: MARKET_SCORING_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, hard_child_request_boundary: true, child_run_after_delay_seconds: MARKET_SCORING_FULL_RUN_CHILD_RUN_AFTER_SECONDS, parent_recheck_delay_seconds: MARKET_SCORING_FULL_RUN_PARENT_RECHECK_SECONDS, lock_held: true, approved_chain_order: MARKET_SCORING_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports };
       await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED', ?, 1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
@@ -1515,11 +1699,11 @@ async function processMarketScoringFullRunJob(env, row, runId, trigger) {
   const rowsWritten = stageReports.reduce((sum, r) => sum + Number(r.rows_written || 0), 0);
   const externalCalls = stageReports.reduce((sum, r) => sum + Number(r.external_calls || 0), 0);
   const finalCertification = "MARKET_SCORING_FULL_RUN_CERTIFIED_CHAIN_COMPLETED";
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_scoring_full_run", status: "COMPLETED_MARKET_SCORING_FULL_RUN", certification: finalCertification, certification_grade: "FULL_RUN_PASS_WITH_REVIEW_WARNINGS_ALLOWED", market_scoring_full_run_certified: true, completed_stage_count: stageReports.length, total_stage_count: MARKET_SCORING_FULL_RUN_STAGES.length, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, stages: stageReports, approved_chain_order: MARKET_SCORING_FULL_RUN_STAGES.map(s => s.job_key), full_run_order: MARKET_SCORING_FULL_RUN_STAGES.map(s => s.stage_key), no_source_board_mutation: true, no_prepared_board_mutation: true, no_old_production_touch: true };
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_scoring_full_run", status: "COMPLETED_MARKET_SCORING_FULL_RUN", certification: finalCertification, certification_grade: "FULL_RUN_PASS_WITH_REVIEW_WARNINGS_ALLOWED", market_scoring_full_run_certified: true, completed_stage_count: stageReports.length, total_stage_count: MARKET_SCORING_FULL_RUN_STAGES.length, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, stages: stageReports, approved_chain_order: MARKET_SCORING_FULL_RUN_STAGES.map(s => s.job_key), full_run_order: MARKET_SCORING_FULL_RUN_STAGES.map(s => s.stage_key), no_source_board_mutation: true, no_prepared_board_mutation: true, no_old_production_touch: true, hit_probability_included: true, hp_board_included: true, hp_board_display_calibration_included: true, no_true_hit_probability_claims: true };
   await releaseMarketScoringFullRunLock(env, row);
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalCertification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'market_scoring_full_run_completed', 'Market/Factors/Matrix/Scoring/Final Board full run chain completed', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'market_scoring_full_run_completed', 'Market/Factors/Matrix/Scoring/Final Board/Hit Probability full run chain completed', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
   return output;
 }
 
@@ -7355,6 +7539,11 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     writes_score_db_scoring_engine_only: (!isSimulationJob && !isHitProbabilityJob),
     writes_score_db_simulation_shadow_only: isSimulationJob,
     writes_score_db_hit_probability_only: isHitProbabilityJob,
+    writes_hp_board_tables_only: isHitProbabilityJob,
+    hp_board_required: isHitProbabilityJob,
+    hp_board_same_worker: isHitProbabilityJob,
+    hp_board_display_calibration_required: isHitProbabilityJob,
+    service_binding_timeout_reconcile_from_tables: isHitProbabilityJob,
     writes_archive_db_snapshot_table_schema_only: (!isSimulationJob && !isHitProbabilityJob),
     no_candidate_board_write: true,
     no_old_prop_scores_write: true,
@@ -7401,7 +7590,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
-    deployed_slot_version: isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.8-hit-probability-same-slot" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock",
+    deployed_slot_version: isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock",
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
@@ -7417,8 +7606,10 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       thresholds_locked: false,
       scoring_enabled: (!isSimulationJob && !isHitProbabilityJob),
       archive_score_threshold_locked: 70,
-      no_true_hit_probability_claims: !isHitProbabilityJob,
+      no_true_hit_probability_claims: true,
       estimated_hit_probability_phase: isHitProbabilityJob,
+      hp_board_required: isHitProbabilityJob,
+      hp_board_display_calibration_required: isHitProbabilityJob,
       side_aware_required: true,
       source_line_type_aware_required: true,
       variation_aware_required: true,
