@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.204-daily-context-lockbusy-hot-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.205-daily-context-prelock-sidecar-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -6545,8 +6545,8 @@ async function recoverDailyContextStaleChildFromSidecar(env, parentRow, stage, c
         const i = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_player_availability_issues_v1 WHERE batch_id=?", batch.batch_id);
         const currentRows = Number(c && c.n || 0), snapshotRows = Number(s && s.n || 0), issueRows = Number(i && i.n || 0);
         const expected = Number(batch.prepared_players_checked || batch.rows_written || 0);
-        if (currentRows > 0 && snapshotRows > 0 && (expected <= 0 || currentRows >= expected || currentRows === snapshotRows)) {
-          output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:stage.worker_name, job_key:stage.job_key, request_id:requestId, batch_id:batch.batch_id, status:"completed", certification:"DAILY_PLAYER_AVAILABILITY_CERTIFIED_READY", certification_grade:issueRows>0?"PASS_WITH_WARNINGS":"PASS", certification_reason:"Recovered complete Daily Player Availability v1 sidecar rows after child terminal handoff stalled.", prepared_games_checked:Number(batch.prepared_games_checked||0), prepared_rows_read:Number(batch.prepared_rows_read||0), prepared_players_checked:Number(batch.prepared_players_checked||currentRows), teams_checked:Number(batch.teams_checked||0), rows_written:currentRows, snapshot_rows_written:snapshotRows, issues_written:issueRows, external_calls:Number(batch.external_calls||0), recovered_from_sidecar_terminalization:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
+        if (currentRows > 0 && snapshotRows > 0 && currentRows === snapshotRows && (expected <= 0 || currentRows >= expected)) {
+          output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:stage.worker_name, job_key:stage.job_key, request_id:requestId, batch_id:batch.batch_id, status:"completed", certification:issueRows>0?"DAILY_PLAYER_AVAILABILITY_CERTIFIED_WITH_PLAYER_BLOCKERS":"DAILY_PLAYER_AVAILABILITY_CERTIFIED_READY", certification_grade:issueRows>0?"PASS_WITH_WARNINGS":"PASS", certification_reason:"Recovered complete Daily Player Availability v1 sidecar rows after child terminal handoff stalled.", prepared_games_checked:Number(batch.prepared_games_checked||0), prepared_rows_read:Number(batch.prepared_rows_read||0), prepared_players_checked:Number(batch.prepared_players_checked||currentRows), teams_checked:Number(batch.teams_checked||0), rows_written:currentRows, snapshot_rows_written:snapshotRows, issues_written:issueRows, external_calls:Number(batch.external_calls||0), recovered_from_sidecar_terminalization:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
           await run(env.DAILY_DB, "UPDATE daily_player_availability_batches_v1 SET status='completed', rows_written=?, snapshot_rows_written=?, warning_count=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", currentRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id);
         }
       }
@@ -6558,8 +6558,8 @@ async function recoverDailyContextStaleChildFromSidecar(env, parentRow, stage, c
         const s = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_game_weather_snapshots WHERE batch_id=?", batch.batch_id);
         const i = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_game_weather_issues WHERE batch_id=?", batch.batch_id);
         const currentRows = Number(c && c.n || 0), snapshotRows = Number(s && s.n || 0), issueRows = Number(i && i.n || 0);
-        const expected = Number(batch.prepared_games_checked || batch.weather_rows_written || 0);
-        if (currentRows > 0 && snapshotRows > 0 && (expected <= 0 || currentRows >= expected || currentRows === snapshotRows)) {
+        const expected = Number(batch.prepared_games_checked || batch.calendar_games_checked || 0);
+        if (currentRows > 0 && snapshotRows > 0 && currentRows === snapshotRows && (expected <= 0 || currentRows >= expected)) {
           output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:stage.worker_name, job_key:stage.job_key, request_id:requestId, batch_id:batch.batch_id, status:"completed", certification:issueRows>0?"DAILY_WEATHER_CERTIFIED_WITH_WARNINGS":"DAILY_WEATHER_CERTIFIED_READY", certification_grade:issueRows>0?"PASS_WITH_WARNINGS":"PASS", certification_reason:"Recovered complete Daily Weather/Roof sidecar rows after child terminal handoff stalled.", window_start:batch.window_start, window_end:batch.window_end, calendar_games_checked:Number(batch.calendar_games_checked||0), prepared_games_checked:Number(batch.prepared_games_checked||currentRows), prepared_rows_read:Number(batch.prepared_rows_read||0), weather_rows_written:currentRows, rows_written:currentRows, snapshot_rows_written:snapshotRows, issues_written:issueRows, external_calls:Number(batch.external_calls||0), recovered_from_sidecar_terminalization:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
           await run(env.DAILY_DB, "UPDATE daily_game_weather_batches SET status='completed', weather_rows_written=?, snapshot_rows_written=?, warning_count=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", currentRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id);
         }
@@ -6587,7 +6587,7 @@ async function recoverDailyContextStaleChildFromSidecar(env, parentRow, stage, c
         const i = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM daily_team_schedule_spot_issues WHERE batch_id=?", batch.batch_id);
         const currentRows = Number(c && c.n || 0), snapshotRows = Number(s && s.n || 0), issueRows = Number(i && i.n || 0);
         const expected = Number(batch.teams_checked || batch.team_rows_written || 0);
-        if (currentRows > 0 && snapshotRows > 0 && (expected <= 0 || currentRows >= expected || currentRows === snapshotRows)) {
+        if (currentRows > 0 && snapshotRows > 0 && currentRows === snapshotRows && (expected <= 0 || currentRows >= expected)) {
           output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:stage.worker_name, job_key:stage.job_key, request_id:requestId, batch_id:batch.batch_id, status:"completed", certification:issueRows>0?"DAILY_TEAM_SCHEDULE_SPOT_CERTIFIED_WITH_WARNINGS":"DAILY_TEAM_SCHEDULE_SPOT_CERTIFIED_READY", certification_grade:issueRows>0?"PASS_WITH_WARNINGS":"PASS", certification_reason:"Recovered complete Daily Team Schedule Spot sidecar rows after child terminal handoff stalled.", window_start:batch.window_start, window_end:batch.window_end, calendar_games_checked:Number(batch.calendar_games_checked||0), prepared_games_checked:Number(batch.prepared_games_checked||0), prepared_rows_read:Number(batch.prepared_rows_read||0), teams_checked:Number(batch.teams_checked||currentRows), team_rows_written:currentRows, rows_written:currentRows, snapshot_rows_written:snapshotRows, issues_written:issueRows, external_calls:Number(batch.external_calls||0), recovered_from_sidecar_terminalization:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
           await run(env.DAILY_DB, "UPDATE daily_team_schedule_spot_batches SET status='completed', team_rows_written=?, snapshot_rows_written=?, warning_count=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", currentRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id);
         }
@@ -6621,6 +6621,80 @@ async function recoverDailyContextStaleChildFromSidecar(env, parentRow, stage, c
   await run(env.CONTROL_DB, "UPDATE control_job_runs SET status='completed', data_ok=1, certification_status=?, rows_read=?, rows_written=?, external_calls=?, finished_at=CURRENT_TIMESTAMP, elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status='running' AND finished_at IS NULL", certification, rowsRead, rowsWritten, externalCalls, JSON.stringify(capped), requestId);
   await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'daily_context_full_run_child_recovered_from_sidecar', 'Recovered stale Daily Context child from complete sidecar rows instead of cleaning live rows', ?, CURRENT_TIMESTAMP)", parentRow.request_id, runId, WORKER_NAME, parentRow.job_key, JSON.stringify({ child_request_id: requestId, stage_key: stage.stage_key, certification, rows_read: rowsRead, rows_written: rowsWritten }));
   return { report: { ...report, child_status:"completed", child_certification:certification, child_certification_grade:capped.certification_grade || null, child_data_ok:true, pass:true, wait:false, reason:"recovered_from_complete_sidecar_rows", rows_read:rowsRead, rows_written:rowsWritten, external_calls:externalCalls } };
+}
+
+function dailyContextStageForChildRow(row) {
+  if (!row) return null;
+  const input = parseJsonSafeText(row.input_json || "{}", {});
+  const stageKey = String(input.stage_key || "");
+  if (stageKey) {
+    const stage = DAILY_CONTEXT_FULL_RUN_STAGES.find(s => s.stage_key === stageKey);
+    if (stage) return stage;
+  }
+  return DAILY_CONTEXT_FULL_RUN_STAGES.find(s => s.job_key === row.job_key && s.worker_name === row.worker_name) || null;
+}
+
+function dailyContextStageSupportsSidecarRescue(stage) {
+  const key = String(stage && stage.job_key || "");
+  return key === "daily-player-availability" || key === "daily-weather" || key === "daily-bullpen-availability" || key === "daily-team-schedule-spot" || key === "daily-umpire-context";
+}
+
+async function recoverDailyContextRunningChildrenFromCompleteSidecarsPreLock(env, trigger) {
+  if (!env || !env.CONTROL_DB || !env.DAILY_DB) return { recovered: 0, checked: 0, reason: "missing_db_binding" };
+  const rows = await all(env.CONTROL_DB,
+    `SELECT
+       c.request_id, c.chain_id, c.parent_request_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json, c.started_at, c.updated_at, c.finished_at,
+       p.request_id AS parent_request_id_real, p.job_key AS parent_job_key, p.worker_name AS parent_worker_name, p.input_json AS parent_input_json
+     FROM control_job_queue c
+     JOIN control_job_queue p ON p.request_id=c.parent_request_id AND p.chain_id=c.chain_id
+     WHERE p.job_key='daily-context-full-run'
+       AND p.worker_name='alphadog-v2-orchestrator'
+       AND p.status IN ('pending','running','partial_continue')
+       AND p.finished_at IS NULL
+       AND c.status='running'
+       AND c.finished_at IS NULL
+       AND datetime(COALESCE(c.updated_at, c.started_at, c.created_at)) <= datetime(CURRENT_TIMESTAMP, '-15 seconds')
+     ORDER BY datetime(COALESCE(c.updated_at, c.started_at, c.created_at)) ASC
+     LIMIT 5`
+  );
+  let recovered = 0;
+  const recoveredChildren = [];
+  for (const child of rows) {
+    const stage = dailyContextStageForChildRow(child);
+    if (!dailyContextStageSupportsSidecarRescue(stage)) continue;
+    const parentRow = {
+      request_id: child.parent_request_id_real || child.parent_request_id,
+      chain_id: child.chain_id,
+      job_key: "daily-context-full-run",
+      worker_name: "alphadog-v2-orchestrator",
+      input_json: child.parent_input_json || "{}"
+    };
+    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, pass: false, wait: true, reason: "prelock_running_child_sidecar_probe" };
+    const runId = rid("prelock_daily_context_sidecar_recovery");
+    const rec = await recoverDailyContextStaleChildFromSidecar(env, parentRow, stage, child, report, runId);
+    if (rec && rec.report) {
+      recovered += 1;
+      recoveredChildren.push({ request_id: child.request_id, parent_request_id: parentRow.request_id, stage_key: stage.stage_key, job_key: stage.job_key, reason: rec.report.reason || "recovered_from_complete_sidecar_rows" });
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue') AND finished_at IS NULL",
+        parentRow.request_id
+      );
+    }
+  }
+  if (recovered > 0) {
+    await run(env.CONTROL_DB,
+      "UPDATE control_locks SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, expires_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE lock_key='GLOBAL_ORCHESTRATOR' AND owner_worker_name=?",
+      WORKER_NAME
+    );
+    await run(env.CONTROL_DB,
+      "UPDATE control_system_state SET lock_flag=0, running_job_key=NULL, running_request_id=NULL, running_chain_id=NULL, status='IDLE', updated_at=CURRENT_TIMESTAMP WHERE state_key='GLOBAL'"
+    );
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'WARN', 'daily_context_prelock_sidecar_recovery_released_lock', 'Pre-lock watchdog recovered complete Daily Context child sidecar rows and released stale GLOBAL_ORCHESTRATOR lock', ?, CURRENT_TIMESTAMP)",
+      WORKER_NAME, JSON.stringify({ trigger, recovered, recovered_children: recoveredChildren, version: SYSTEM_VERSION, recovery_policy: "complete_sidecar_rows_only_no_false_pass" })
+    );
+  }
+  return { recovered, checked: rows.length, recovered_children: recoveredChildren };
 }
 
 async function failDailyContextStaleChild(env, parentRow, stage, child, stageReports, report, parentInput, runId, started, reason) {
@@ -6861,6 +6935,11 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
     const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || childOutput.certification_status || null, child_certification_grade: childOutput.certification_grade || null, child_data_ok: childOutput.data_ok === true, child_nonfatal_warning: validation.nonfatal === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, rows_read: childOutput.prepared_rows_read || childOutput.rows_read || childOutput.rows_read_total || 0, rows_written: childOutput.current_rows_written || childOutput.rows_written || childOutput.rows_promoted || childOutput.weather_rows_written || childOutput.team_rows_written || childOutput.game_rows_written || 0, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0 };
 
     if (validation.wait) {
+      const immediateRecovered = await recoverDailyContextStaleChildFromSidecar(env, row, stage, child, report, runId);
+      if (immediateRecovered && immediateRecovered.report) {
+        stageReports.push(immediateRecovered.report);
+        continue;
+      }
       const staleChild = await first(env.CONTROL_DB,
         "SELECT request_id FROM control_job_queue WHERE request_id=? AND status IN ('running','pending','queued','partial_continue') AND finished_at IS NULL AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-120 seconds') LIMIT 1",
         child.request_id
@@ -9414,6 +9493,15 @@ async function processOneUnlocked(env, trigger) {
 }
 
 async function tick(env, trigger = "manual", maxJobs = 3) {
+  let prelockDailyContextRecovery = null;
+  try {
+    prelockDailyContextRecovery = await recoverDailyContextRunningChildrenFromCompleteSidecarsPreLock(env, trigger);
+  } catch (err) {
+    prelockDailyContextRecovery = { recovered: 0, error: String(err && err.message ? err.message : err).slice(0, 900) };
+    try {
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'WARN', 'daily_context_prelock_sidecar_recovery_failed', 'Pre-lock Daily Context sidecar recovery probe failed before acquiring GLOBAL_ORCHESTRATOR', ?, CURRENT_TIMESTAMP)", WORKER_NAME, JSON.stringify({ trigger, error: prelockDailyContextRecovery.error, version: SYSTEM_VERSION }));
+    } catch (_) {}
+  }
   const owner = rid("owner");
   const lock = await acquireLock(env, owner);
 
@@ -9422,7 +9510,8 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       job: "orchestrator_tick",
       status: "lock_busy",
       trigger,
-      lock
+      lock,
+      prelock_daily_context_recovery: prelockDailyContextRecovery
     });
   }
 
