@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.2.5-final-gap-rebuild-before-read";
+const VERSION = "alphadog-v2-delta-certifier-v0.2.6-postponed-rescheduled-calendar-refresh";
 const JOB_KEY = "delta-certifier";
 
 const ACTIVE_COVERAGE_LAYER_KEYS = [
@@ -695,6 +695,126 @@ function scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, extraDetails
   };
 }
 
+
+function calendarGameIsOfficialNonStatException(g) {
+  if (calendarGameIsFinalOrStatsReady(g)) return false;
+  return Number(g.is_postponed || 0) === 1 || Number(g.is_suspended || 0) === 1 || Number(g.is_cancelled || 0) === 1;
+}
+
+function calendarExceptionReason(g) {
+  if (Number(g.is_postponed || 0) === 1) return "MLB_OFFICIAL_NON_STAT_GAME_POSTPONED_OR_RESCHEDULED";
+  if (Number(g.is_suspended || 0) === 1) return "MLB_OFFICIAL_NON_STAT_GAME_SUSPENDED";
+  if (Number(g.is_cancelled || 0) === 1) return "MLB_OFFICIAL_NON_STAT_GAME_CANCELLED";
+  return "MLB_OFFICIAL_NON_STAT_GAME_EXCEPTION";
+}
+
+function calendarNonStatExceptionLayer(layerKey, g, liveSourceRowsForGame, extraDetails = {}) {
+  const reason = calendarExceptionReason(g);
+  return {
+    layerKey,
+    status: "calendar_exception",
+    grade: "NON_STAT_CALENDAR_EXCEPTION",
+    blocking: 0,
+    liveRows: Number(liveSourceRowsForGame || 0),
+    entityCount: 0,
+    expectedRows: null,
+    missingRows: 0,
+    exceptionCount: 1,
+    reason: null,
+    exceptionReason: reason,
+    details: {
+      calendar_is_available_for_stats: Number(g.is_available_for_stats || 0),
+      calendar_is_final: Number(g.is_final || 0),
+      calendar_is_postponed: Number(g.is_postponed || 0),
+      calendar_is_suspended: Number(g.is_suspended || 0),
+      calendar_is_cancelled: Number(g.is_cancelled || 0),
+      calendar_status_code: g.status_code || null,
+      calendar_abstract_game_state: g.abstract_game_state || null,
+      calendar_detailed_state: g.detailed_state || null,
+      live_source_rows_for_game: Number(liveSourceRowsForGame || 0),
+      official_non_stat_calendar_exception_v0_2_6: true,
+      no_stat_rows_expected_until_makeup_or_resume_v0_2_6: true,
+      ...extraDetails
+    }
+  };
+}
+
+async function refreshPastDateChangedCalendarGames(env, startDate, endDate, currentOfficialDate) {
+  const candidates = await all(env.TEAM_DB, `
+    SELECT game_pk, official_date, game_time_utc, away_team_id, home_team_id, status_code, abstract_game_state, detailed_state, updated_at
+    FROM mlb_game_calendar
+    WHERE official_date BETWEEN ? AND ?
+      AND official_date < ?
+      AND COALESCE(is_available_for_stats,0)=0
+      AND COALESCE(is_final,0)=0
+      AND COALESCE(is_postponed,0)=0
+      AND COALESCE(is_suspended,0)=0
+      AND COALESCE(is_cancelled,0)=0
+      AND (
+        COALESCE(is_scheduled,0)=1
+        OR COALESCE(is_pregame,0)=1
+        OR LOWER(COALESCE(abstract_game_state,''))='preview'
+        OR LOWER(COALESCE(detailed_state,'')) LIKE '%scheduled%'
+        OR UPPER(COALESCE(status_code,'')) IN ('S','P','I')
+      )
+    ORDER BY official_date, game_pk
+    LIMIT 40`, startDate, endDate, currentOfficialDate);
+
+  const datesToFetch = [...new Set(candidates.map(r => String(r.official_date || '').slice(0,10)).filter(Boolean))];
+  const refreshedGamePks = new Set();
+  const rescheduleDatesToFetch = new Set();
+  let sourceGamesSeen = 0;
+  let upserted = 0;
+  const statusSamples = [];
+
+  for (const d of datesToFetch) {
+    const schedule = await fetchSchedule(d, d, "R,P", "team,venue,linescore,probablePitcher(note),flags");
+    sourceGamesSeen += schedule.games.length;
+    upserted += await upsertCalendar(env, schedule.games, schedule.endpoint);
+    for (const game of schedule.games) {
+      const gamePk = Number(game.gamePk || 0);
+      if (gamePk) refreshedGamePks.add(gamePk);
+      const rsDate = String(game.rescheduleGameDate || game.rescheduleDate || '').slice(0,10);
+      if (rsDate && rsDate >= currentOfficialDate) rescheduleDatesToFetch.add(rsDate);
+      if (statusSamples.length < 20) {
+        statusSamples.push({
+          game_pk: gamePk || null,
+          official_date: game.officialDate || null,
+          game_date: game.gameDate || null,
+          status_code: game?.status?.statusCode || null,
+          detailed_state: game?.status?.detailedState || null,
+          reason: game?.status?.reason || null,
+          reschedule_game_date: game.rescheduleGameDate || null,
+          reschedule_date: game.rescheduleDate || null,
+          description: game.description || null
+        });
+      }
+    }
+  }
+
+  for (const d of rescheduleDatesToFetch) {
+    const schedule = await fetchSchedule(d, d, "R,P", "team,venue,linescore,probablePitcher(note),flags");
+    sourceGamesSeen += schedule.games.length;
+    upserted += await upsertCalendar(env, schedule.games, schedule.endpoint);
+    for (const game of schedule.games) {
+      const gamePk = Number(game.gamePk || 0);
+      if (gamePk) refreshedGamePks.add(gamePk);
+    }
+  }
+
+  return {
+    changed_game_refresh_v0_2_6: true,
+    candidate_rows: candidates.length,
+    source_dates_checked: datesToFetch,
+    reschedule_dates_checked: [...rescheduleDatesToFetch],
+    source_games_seen: sourceGamesSeen,
+    refreshed_game_pks: [...refreshedGamePks].slice(0, 80),
+    calendar_rows_upserted: upserted,
+    external_calls_performed: datesToFetch.length + rescheduleDatesToFetch.size,
+    status_samples: statusSamples
+  };
+}
+
 function snapshotLayerFromTemplateOrWaiting(layerKey, officialDate, templates, shouldWait, g, liveSourceRowsForGame, extraDetails = {}) {
   const strictLayer = snapshotLayerFromTemplate(layerKey, officialDate, templates);
   if (!shouldWait || strictLayer.blocking === 0) return strictLayer;
@@ -756,9 +876,9 @@ async function resolveStaleCoverageGaps(env, batchId, requestId, startDate, endD
      AND c.layer_key = g.layer_key
     WHERE g.official_date BETWEEN ? AND ?
       AND g.gap_status IN ('missing','blocking','open','unresolved')
-      AND c.coverage_status IN ('complete','scheduled_not_ready')
+      AND c.coverage_status IN ('complete','scheduled_not_ready','calendar_exception')
       AND COALESCE(c.blocking_for_full_run,0) = 0
-      AND (c.coverage_status = 'scheduled_not_ready' OR COALESCE(c.missing_rows,0) = 0)
+      AND (c.coverage_status IN ('scheduled_not_ready','calendar_exception') OR COALESCE(c.missing_rows,0) = 0)
   `, startDate, endDate);
   const statements = [];
   const resolvedAt = nowUtc();
@@ -928,8 +1048,18 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
     const currentOrFutureNonFinal = rawWaitForNonFinalCalendarGame;
     const statEvidenceFinalityGate = !currentOrFutureNonFinal && (statEvidenceRowsForGame > 0 || downstreamEvidenceRowsForGame > 0);
     const evaluateLiveLayers = calendarStatsReady || Number(g.is_final || 0) === 1 || statEvidenceFinalityGate || currentOrFutureNonFinal;
+    const officialNonStatException = calendarGameIsOfficialNonStatException(g);
 
-    if (!evaluateLiveLayers) {
+    if (officialNonStatException) {
+      for (const layerKey of activeLayers) {
+        addLayer(g, calendarNonStatExceptionLayer(layerKey, g, liveSourceRowsForGame, {
+          official_date_past: officialDatePast,
+          stat_evidence_rows_for_game: statEvidenceRowsForGame,
+          downstream_evidence_rows_for_game: downstreamEvidenceRowsForGame,
+          raw_wait_for_nonfinal_calendar_game: rawWaitForNonFinalCalendarGame
+        }));
+      }
+    } else if (!evaluateLiveLayers) {
       for (const layerKey of activeLayers) {
         if (officialDatePast) {
           const snapshotStrict = ["hitter_splits", "pitcher_splits", "hitter_metrics", "pitcher_metrics"].includes(layerKey)
@@ -1349,11 +1479,13 @@ async function handleFullRunGapContractCheck(input, env) {
 
   await ensureCoverageTables(env);
 
-  // v0.2.5: Final full-run gate must rebuild the coverage matrix from current live tables
-  // before reading blockers. Otherwise old precheck rows can survive after children have mined/promoted.
+  const currentOfficialDate = dateOnlyForTimeZone(new Date(), "America/Los_Angeles");
+  const changedGameRefresh = await refreshPastDateChangedCalendarGames(env, startDate, endDate, currentOfficialDate);
+
+  // v0.2.6: Refresh stale past-date Scheduled/Preview rows before rebuilding coverage.
+  // Postponed/rescheduled MLB source games must not create fake stat requirements.
   const coverageRebuild = await rebuildCoverage(env, batchId, requestId, startDate, endDate);
 
-  const currentOfficialDate = dateOnlyForTimeZone(new Date(), "America/Los_Angeles");
   const forcedPastGapUpdate = await run(env.TEAM_DB, `
     UPDATE mlb_game_data_coverage
     SET blocking_for_full_run=1,
@@ -1364,11 +1496,12 @@ async function handleFullRunGapContractCheck(input, env) {
     WHERE official_date > '2026-05-18'
       AND official_date < ?
       AND official_date BETWEEN ? AND ?
-      AND coverage_status <> 'complete'`,
+      AND coverage_status NOT IN ('complete','calendar_exception')
+      AND COALESCE(represented_by_exception,0)=0`,
     currentOfficialDate, startDate, endDate
   );
 
-  const coverageSummary = await first(env.TEAM_DB, `SELECT COUNT(*) AS coverage_rows, COUNT(DISTINCT game_pk) AS games, COUNT(DISTINCT layer_key) AS layers, SUM(CASE WHEN COALESCE(blocking_for_full_run,0)=1 THEN 1 ELSE 0 END) AS blocking_gap_count, SUM(CASE WHEN official_date > '2026-05-18' AND official_date < ? AND coverage_status <> 'complete' THEN 1 ELSE 0 END) AS past_incomplete_gap_count, SUM(CASE WHEN COALESCE(live_rows,0)=0 AND coverage_status NOT IN ('scheduled_not_ready') THEN 1 ELSE 0 END) AS zero_live_non_wait_rows FROM mlb_game_data_coverage WHERE official_date BETWEEN ? AND ?`, currentOfficialDate, startDate, endDate);
+  const coverageSummary = await first(env.TEAM_DB, `SELECT COUNT(*) AS coverage_rows, COUNT(DISTINCT game_pk) AS games, COUNT(DISTINCT layer_key) AS layers, SUM(CASE WHEN COALESCE(blocking_for_full_run,0)=1 THEN 1 ELSE 0 END) AS blocking_gap_count, SUM(CASE WHEN official_date > '2026-05-18' AND official_date < ? AND coverage_status NOT IN ('complete','calendar_exception') THEN 1 ELSE 0 END) AS past_incomplete_gap_count, SUM(CASE WHEN COALESCE(live_rows,0)=0 AND coverage_status NOT IN ('scheduled_not_ready') THEN 1 ELSE 0 END) AS zero_live_non_wait_rows FROM mlb_game_data_coverage WHERE official_date BETWEEN ? AND ?`, currentOfficialDate, startDate, endDate);
   const calendarSummary = await first(env.TEAM_DB, `SELECT COUNT(*) AS calendar_rows, COUNT(DISTINCT game_pk) AS games, SUM(COALESCE(is_available_for_stats,0)) AS stats_available_games, MIN(official_date) AS first_official_date, MAX(official_date) AS last_official_date FROM mlb_game_calendar WHERE official_date BETWEEN ? AND ?`, startDate, endDate);
   const layerSummary = await all(env.TEAM_DB, `SELECT layer_key, coverage_status, coverage_grade, blocking_for_full_run, COUNT(*) AS rows, COUNT(DISTINCT game_pk) AS games, SUM(COALESCE(live_rows,0)) AS live_rows FROM mlb_game_data_coverage WHERE official_date BETWEEN ? AND ? GROUP BY layer_key, coverage_status, coverage_grade, blocking_for_full_run ORDER BY layer_key, coverage_status`, startDate, endDate);
   const gapsSample = await all(env.TEAM_DB, `SELECT game_pk, official_date, layer_key, coverage_status, coverage_grade, blocking_for_full_run, missing_reason, exception_reason, live_rows, stage_rows, outcome_rows FROM mlb_game_data_coverage WHERE official_date BETWEEN ? AND ? AND COALESCE(blocking_for_full_run,0)=1 ORDER BY official_date, game_pk, layer_key LIMIT 25`, startDate, endDate);
@@ -1401,6 +1534,7 @@ async function handleFullRunGapContractCheck(input, env) {
     full_run_fast_gap_contract_v0_2_4_past_date_guard: true,
     full_run_gap_contract: true,
     full_run_gap_contract_rebuild_before_read_v0_2_5: true,
+    postponed_rescheduled_changed_game_refresh_v0_2_6: true,
     calendar_tally_stage: calendarTallyStage || null,
     require_zero_blocking_gaps: requireZeroBlockingGaps,
     coverage_rebuild_before_final_read: {
@@ -1424,7 +1558,7 @@ async function handleFullRunGapContractCheck(input, env) {
     source_game_count: calendarRows,
     source_stats_available_game_count: Number(calendarSummary?.stats_available_games || 0),
     stage_rows_upserted: 0,
-    calendar_differential: { fast_gap_contract: true, applied: 0, skipped_external_calendar_refresh: true },
+    calendar_differential: { fast_gap_contract: true, applied: 0, changed_game_refresh: changedGameRefresh },
     stored_calendar_rows_in_range: calendarRows,
     stored_distinct_game_pks_in_range: Number(calendarSummary?.games || 0),
     first_official_date: calendarSummary?.first_official_date || null,
@@ -1457,7 +1591,8 @@ async function handleFullRunGapContractCheck(input, env) {
       game_date_metric_input_anchor_for_metrics: true,
       game_pk_columns_are_not_faked_for_snapshot_tables: true
     },
-    no_external_calendar_refresh_in_full_run_fast_gap_contract: true,
+    changed_game_refresh_before_final_tally: changedGameRefresh,
+    no_external_calendar_refresh_in_full_run_fast_gap_contract: false,
     no_source_history_mutation: true,
     no_repair_jobs_created: true,
     no_scoring: true,
@@ -1467,7 +1602,7 @@ async function handleFullRunGapContractCheck(input, env) {
     no_daily_context_mutation: true,
     rows_read: coverageRows,
     rows_written: Number(coverageRebuild.coverageRows || 0) + coverageRows,
-    external_calls_performed: 0,
+    external_calls_performed: Number(changedGameRefresh.external_calls_performed || 0),
     finished_at: nowUtc()
   };
 
