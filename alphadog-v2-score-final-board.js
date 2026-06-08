@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.22-no-final-recap-profile-evidence-board";
+const VERSION = "alphadog-v2-score-final-board-v0.1.23-engine-grade-threshold-and-no-archive-current";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
 
@@ -422,8 +422,8 @@ function rowId(batchId, rank, row) {
 
 function gradeForScore(score) {
   if (score == null) return "BIN_0_NULL";
-  if (score >= 88) return "BIN_ELITE";
-  if (score >= 82) return "BIN_STRONG";
+  if (score >= 90) return "BIN_ELITE";
+  if (score >= 84) return "BIN_STRONG";
   if (score >= 76) return "BIN_QUALIFIED";
   if (score >= 70) return "BIN_ARCHIVE";
   return "BIN_REJECT";
@@ -865,13 +865,13 @@ function engineRowIsBoardCandidate(row) {
   if (!Number.isFinite(score) || !Number.isFinite(confidence)) return false;
   if (confidence < 55) return false;
   const grade = norm(row.score_grade);
-  return score >= 76 || grade === "bin_qualified" || grade === "bin_strong" || (grade === "bin_archive" && score >= 74);
+  return score >= 76 || grade === "bin_qualified" || grade === "bin_strong" || grade === "bin_elite";
 }
 
 function applyEngineFieldTierCalibration(rawRow) {
   const score = Math.round(clamp(num(rawRow.score_0_100, 0), 0, 100));
   const confidence = Math.round(clamp(num(rawRow.confidence_0_100, 0), 0, 100));
-  const grade = rawRow.score_grade || gradeForScore(score);
+  const grade = gradeForScore(score);
   const strong = norm(grade) === "bin_strong" || score >= 84;
   const qualified = norm(grade) === "bin_qualified" || score >= 76;
   const primaryCandidate = strong
@@ -888,7 +888,7 @@ function applyEngineFieldTierCalibration(rawRow) {
     version: VERSION,
     policy: "engine_field_only_no_recalibration",
     board_tier: boardTier,
-    rule: "PRIMARY uses calibrated score/confidence plus direct market context with required playable fields; REVIEW is the complete safe archive_eligible ledger for engine BIN_QUALIFIED/score>=76 plus high archive band score>=74. Final Board does not re-score or re-cap by source, payout, prop rarity, demon/goblin, HR/SB, or direct market row count.",
+    rule: "PRIMARY uses calibrated score/confidence plus direct market context with required playable fields; REVIEW is the safe candidate ledger for engine score>=76 / BIN_QUALIFIED+ rows. BIN_ARCHIVE rows are not written to current final board.",
     engine_score_0_100: score,
     engine_confidence_0_100: confidence,
     engine_score_grade: grade,

@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.15-profile-evidence-unlock-no-source-caps";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.16-evidence-gated-elite-calibration";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_REALISTIC_V3_2";
@@ -726,7 +726,7 @@ const DEFAULT_SIM_CONFIGS = {
     }
   },
   STRICT_C_REALISTIC_V3_2: {
-    profile_version: "0.4.15-strict-c-realistic-v3-2-profile-evidence-unlock-no-source-caps",
+    profile_version: "0.4.16-strict-c-realistic-v3-2-evidence-gated-elite-calibration",
     config: {
       min_live_score: 76,
       min_live_confidence: 55,
@@ -736,26 +736,26 @@ const DEFAULT_SIM_CONFIGS = {
       grade_strong_min: 84,
       grade_elite_min: 90,
       raw_side_delta_threshold: 0.50,
-      base_raw_packet_ready: 82,
-      base_raw_packet_partial: 76,
+      base_raw_packet_ready: 81,
+      base_raw_packet_partial: 75,
       raw_less_delta_from_more: 0,
       max_score_cap: 100,
       price_pressure_scale: 0.16,
-      line_pressure_scale: 1.00,
-      deterministic_spread_scale: 0.45,
-      base_confidence: 100,
+      line_pressure_scale: 0.85,
+      deterministic_spread_scale: 0.70,
+      base_confidence: 96,
       score_sort_micro_scale: 0.0001,
       clean_bonus_score: 0,
-      market_raw_adjustments: { market_prop_context_present: 3, market_prop_context_not_found: -4, market_prop_context_missing: -6, default: -2 },
-      market_direct_evidence_raw_adjustments: { direct_prop_evidence_rows_gte_5: 1.5, direct_prop_evidence_rows_2_to_4: 0.75, direct_prop_evidence_rows_1: 0, direct_prop_evidence_rows_0_with_coverage: -1, direct_prop_evidence_rows_0_no_coverage: -3, default: 0 },
+      market_raw_adjustments: { market_prop_context_present: 2, market_prop_context_not_found: -5, market_prop_context_missing: -7, default: -3 },
+      market_direct_evidence_raw_adjustments: { direct_prop_evidence_rows_gte_5: 1.0, direct_prop_evidence_rows_2_to_4: 0.5, direct_prop_evidence_rows_1: 0, direct_prop_evidence_rows_0_with_coverage: -1.5, direct_prop_evidence_rows_0_no_coverage: -4, default: 0 },
       market_evidence_score_caps: { direct_prop_evidence_rows_gte_5: 100, direct_prop_evidence_rows_2_to_4: 100, direct_prop_evidence_rows_1: 100, direct_prop_evidence_rows_0_with_coverage: 100, direct_prop_evidence_rows_0_no_coverage: 100, default: 100 },
       context_score_caps: { matrix_full_context: 100, matrix_partial_context_warning_0_2: 96, matrix_partial_context_warning_3_5: 93, matrix_partial_context_warning_6_8: 90, matrix_partial_context_warning_9_plus: 82 },
       effective_warning_rules: { enabled: true, soft_partial_context_effective_warning_count: 6, soft_partial_context_requires_blocker_count_lte: 0, soft_partial_context_requires_direct_prop_evidence_rows_gte: 1, soft_partial_context_factor_statuses: ["packet_partial"], soft_partial_context_daily_statuses: ["missing_current_readiness", "daily_readiness_missing_soft_fallback", "partial_enrichment"], soft_partial_context_market_prop_statuses: ["market_prop_context_present"] },
       symmetry_rules: { two_sided_delta_lt: 1.0, zero_direct_evidence_symmetry_cap: 76, nonzero_direct_evidence_symmetry_cap: 88 },
       daily_raw_adjustments: { ready_with_warnings: 0, partial_enrichment: -4, not_applicable: 0, default: 0 },
       source_raw_adjustments: { sleeper: -1, default: 0 },
-      odds_raw_adjustments: { goblin: -4, demon: -4, default: 0 },
-      prop_raw_adjustments: { pitcher_strikeouts: 1, hits: 1, total_bases: -1, hits_runs_rbis: -1, home_runs: -4, stolen_bases: -4, earned_runs: 0, earned_runs_allowed: 0, hits_allowed: 0, pitcher_outs: 1, pitching_outs: 1, walks: -1, walks_allowed: 0, rbis: -1, runs: -1, doubles: -2, singles: 0, fantasy: -2, default: 0 },
+      odds_raw_adjustments: { goblin: -5, demon: -5, default: 0 },
+      prop_raw_adjustments: { pitcher_strikeouts: 1, hits: 0, total_bases: -1, hits_runs_rbis: -1, home_runs: -4, stolen_bases: -4, earned_runs: 0, earned_runs_allowed: 0, hits_allowed: 0, pitcher_outs: 1, pitching_outs: 1, walks: -1, walks_allowed: 0, rbis: -1, runs: -1, doubles: -2, singles: 0, fantasy: -2, default: 0 },
       prop_less_raw_adjustments: { pitcher_strikeouts: -1, hits: 0, total_bases: 1, hits_runs_rbis: 1, home_runs: 0, stolen_bases: 0, earned_runs: -1, earned_runs_allowed: -1, hits_allowed: -1, pitcher_outs: -1, pitching_outs: -1, walks: 1, walks_allowed: -1, rbis: 1, runs: 1, doubles: 1, singles: 1, fantasy: 0, default: 0 },
       score_penalty_market_not_found: 8,
       score_penalty_market_missing: 10,
@@ -993,27 +993,28 @@ function sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sid
   let adjustment = 0;
   let reason = 'prizepicks_source_payout_no_cap_no_adjustment';
 
-  // v0.4.15: source/payout is a difficulty/price modifier only. It must not hard-cap
-  // demon, goblin, standard, HR, SB, or any other profile. High scores are allowed when
-  // evidence unlocks them. Missing market rows receive smaller restores but are not killed.
+  // v0.4.16: source/payout remains a modest difficulty/price modifier, not a cap and not an
+  // automatic elite creator. v0.4.15 correctly removed source caps, but the restores were still
+  // too large and produced broad 92-confidence/elite profile stamping. High scores remain allowed
+  // when evidence and individual-line shape support them; source/variant alone cannot carry them.
   if (odds === 'standard') {
-    adjustment = marketPresent ? 8 : 2;
-    reason = marketPresent ? 'prizepicks_standard_market_present_fairness_restore_no_cap' : 'prizepicks_standard_market_thin_small_restore_no_cap';
+    adjustment = marketPresent ? 4 : 1;
+    if (directRows >= 5) adjustment += 1;
+    reason = marketPresent ? 'prizepicks_standard_market_present_modest_restore_no_cap_v0_4_16' : 'prizepicks_standard_market_thin_tiny_restore_no_cap_v0_4_16';
   } else if (odds === 'goblin') {
-    adjustment = marketPresent ? 6 : 3;
-    if (directRows >= 1) adjustment += 1;
-    reason = marketPresent ? 'prizepicks_goblin_easier_line_payout_drag_balanced_no_cap' : 'prizepicks_goblin_market_thin_balanced_no_cap';
+    adjustment = marketPresent ? 4 : 2;
+    if (directRows >= 5) adjustment += 1;
+    reason = marketPresent ? 'prizepicks_goblin_easier_line_modest_restore_no_cap_v0_4_16' : 'prizepicks_goblin_market_thin_small_restore_no_cap_v0_4_16';
   } else if (odds === 'demon') {
-    adjustment = marketPresent ? 5 : 2;
-    if (directRows >= 1) adjustment += 1;
-    reason = marketPresent ? 'prizepicks_demon_difficulty_drag_payout_upside_balanced_no_cap' : 'prizepicks_demon_market_thin_small_restore_no_cap';
+    adjustment = marketPresent ? 3 : 1;
+    if (directRows >= 5) adjustment += 1;
+    reason = marketPresent ? 'prizepicks_demon_difficulty_drag_modest_restore_no_cap_v0_4_16' : 'prizepicks_demon_market_thin_tiny_restore_no_cap_v0_4_16';
   }
 
   if (!adjustment) return { adjusted_score: scoreBefore, adjustment: 0, cap: null, reason };
   const adjusted = clamp(scoreBefore + adjustment, 0, 100);
   return { adjusted_score: adjusted, adjustment: adjusted - scoreBefore, cap: null, reason };
 }
-
 
 function lineBucketAdjustment(canonicalPropKey, lineValue, side) {
   const line = numOrNull(lineValue);
@@ -1108,29 +1109,91 @@ function evidenceUnlockLift(row, evidenceInfo, effectiveMarketPropContextStatus,
   let lift = 0;
   const reasons = [];
   const directRows = Math.max(0, Math.trunc(Number(evidenceInfo && evidenceInfo.rowCount || 0)));
-  if (row.factor_status === 'packet_ready') { lift += 2; reasons.push('packet_ready_plus2'); }
-  if (effectiveMarketPropContextStatus === 'market_prop_context_present') { lift += 3; reasons.push('market_prop_context_present_plus3'); }
-  if (directRows === 1) { lift += 1; reasons.push('direct_prop_evidence_1_plus1'); }
-  else if (directRows <= 4 && directRows > 1) { lift += 2; reasons.push('direct_prop_evidence_2_to_4_plus2'); }
-  else if (directRows >= 5) { lift += 3; reasons.push('direct_prop_evidence_gte5_plus3'); }
-  if (['ready','ready_with_warnings'].includes(String(row.daily_readiness_status || ''))) { lift += 1; reasons.push('daily_ready_plus1'); }
-  if (effectiveWarnings <= 0) { lift += 1; reasons.push('no_effective_warnings_plus1'); }
+
+  // v0.4.16: evidence lift is deliberately smaller than v0.4.15. It unlocks upside but does not
+  // stamp whole profiles into 90+. Elite must come from total line/factor shape after penalties,
+  // not from a generic packet/market/source checklist.
+  if (row.factor_status === 'packet_ready') { lift += 1.0; reasons.push('packet_ready_plus1'); }
+  if (effectiveMarketPropContextStatus === 'market_prop_context_present') { lift += 1.5; reasons.push('market_prop_context_present_plus1_5'); }
+  if (directRows === 1) { lift += 0.5; reasons.push('direct_prop_evidence_1_plus0_5'); }
+  else if (directRows <= 4 && directRows > 1) { lift += 1.0; reasons.push('direct_prop_evidence_2_to_4_plus1'); }
+  else if (directRows >= 5) { lift += 1.5; reasons.push('direct_prop_evidence_gte5_plus1_5'); }
+  if (['ready','ready_with_warnings'].includes(String(row.daily_readiness_status || ''))) { lift += 0.5; reasons.push('daily_ready_plus0_5'); }
+  if (effectiveWarnings <= 0) { lift += 0.5; reasons.push('no_effective_warnings_plus0_5'); }
+
+  const line = numOrNull(lineValue);
   const isRareUpside = side === 'more' && ['home_runs','stolen_bases','doubles','triples'].includes(propKey);
-  if (isRareUpside && effectiveMarketPropContextStatus === 'market_prop_context_present' && row.factor_status === 'packet_ready') {
-    lift += 4;
-    reasons.push('rare_event_full_profile_unlock_plus4');
+  if (isRareUpside && directRows >= 2 && effectiveMarketPropContextStatus === 'market_prop_context_present' && row.factor_status === 'packet_ready') {
+    lift += 1.0;
+    reasons.push('rare_event_direct_evidence_unlock_plus1');
   }
-  const isHighLine = side === 'more' && (
-    (['hits','runs','rbis','singles','walks'].includes(propKey) && numOrNull(lineValue) >= 1.5) ||
-    (['total_bases','hits_runs_rbis','hitter_strikeouts'].includes(propKey) && numOrNull(lineValue) >= 2.5) ||
-    (propKey === 'pitcher_strikeouts' && numOrNull(lineValue) >= 6.5) ||
-    (['pitcher_outs','pitching_outs'].includes(propKey) && numOrNull(lineValue) >= 17.5)
+  const isHighLine = side === 'more' && line != null && (
+    (['hits','runs','rbis','singles','walks'].includes(propKey) && line >= 1.5) ||
+    (['total_bases','hits_runs_rbis','hitter_strikeouts'].includes(propKey) && line >= 2.5) ||
+    (propKey === 'pitcher_strikeouts' && line >= 6.5) ||
+    (['pitcher_outs','pitching_outs'].includes(propKey) && line >= 17.5)
   );
-  if (isHighLine && effectiveMarketPropContextStatus === 'market_prop_context_present' && directRows > 0) {
-    lift += 3;
-    reasons.push('high_line_evidence_unlock_plus3');
+  if (isHighLine && effectiveMarketPropContextStatus === 'market_prop_context_present' && directRows >= 2) {
+    lift += 1.0;
+    reasons.push('high_line_direct_evidence_unlock_plus1');
   }
   return { lift, reasons };
+}
+
+
+function profileEliteSanityCalibration(scoreBefore, row, evidenceInfo, effectiveMarketPropContextStatus, effectiveWarnings, selectedSide, sourceKey, oddsType, payoutVariant, prop, lineValue, rawSideGap) {
+  if (scoreBefore == null) return { adjusted_score: null, adjustment: 0, reasons: ['no_score'] };
+  let score = Number(scoreBefore);
+  if (!Number.isFinite(score)) return { adjusted_score: scoreBefore, adjustment: 0, reasons: ['non_finite_score'] };
+
+  const source = String(sourceKey || '').toLowerCase();
+  const odds = String(oddsType || payoutVariant || '').toLowerCase();
+  const propKey = String(prop || '').toLowerCase();
+  const side = String(selectedSide || '').toLowerCase();
+  const line = numOrNull(lineValue);
+  const directRows = Math.max(0, Math.trunc(Number(evidenceInfo && evidenceInfo.rowCount || 0)));
+  const marketPresent = effectiveMarketPropContextStatus === 'market_prop_context_present';
+  const packetReady = row.factor_status === 'packet_ready';
+  const dailyReady = ['ready','ready_with_warnings'].includes(String(row.daily_readiness_status || ''));
+  const noMajorWarnings = effectiveWarnings <= 2;
+  const sideGap = Number(rawSideGap || 0);
+
+  let evidencePoints = 0;
+  if (packetReady) evidencePoints += 1;
+  if (marketPresent) evidencePoints += 1;
+  if (directRows >= 1) evidencePoints += 1;
+  if (directRows >= 5) evidencePoints += 1;
+  if (dailyReady) evidencePoints += 1;
+  if (noMajorWarnings) evidencePoints += 1;
+  if (sideGap >= 3) evidencePoints += 1;
+
+  const broadSleeperProfile = source === 'sleeper' && (
+    (propKey === 'hits' && side === 'more' && line != null && line <= 0.5) ||
+    (propKey === 'hits_runs_rbis' && side === 'less' && line != null && line <= 1.5) ||
+    (propKey === 'total_bases' && side === 'less' && line != null && line <= 1.5)
+  );
+  const lowEventLess = side === 'less' && ['home_runs'].includes(propKey) && line != null && line <= 0.5;
+  const standardShortLine = source === 'prizepicks' && odds === 'standard' && line != null && line <= 1.5;
+
+  const reasons = [];
+  if (score >= 96 && evidencePoints < 7) {
+    const before = score;
+    score = Math.min(score, 94);
+    reasons.push(`rare_perfect_gate_${before}_to_${score}_evidence_${evidencePoints}`);
+  }
+  if (score >= 90) {
+    let eliteNeed = 5;
+    if (broadSleeperProfile || lowEventLess) eliteNeed = 6;
+    if (standardShortLine && directRows < 5) eliteNeed = 6;
+    if (['demon','goblin'].includes(odds) && directRows < 2) eliteNeed = 6;
+    if (evidencePoints < eliteNeed) {
+      const before = score;
+      score = Math.min(score, 89);
+      reasons.push(`elite_evidence_gate_${before}_to_${score}_points_${evidencePoints}_need_${eliteNeed}`);
+    }
+  }
+
+  return { adjusted_score: clamp(score, 0, 100), adjustment: score - scoreBefore, reasons, evidence_points: evidencePoints };
 }
 
 function linePressure(canonicalPropKey, lineValue, side) {
@@ -1277,7 +1340,23 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     ];
     const preFairnessScore = round0(selectedCapResult.score);
     const fairness = sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, row.board_line_value, selectedSide, preFairnessScore, { raw_market_prop_context_status: row.market_prop_context_status, effective_market_prop_context_status: effectiveMarketPropContextStatus, direct_prop_evidence_row_count: evidenceInfo.rowCount, direct_prop_evidence_bucket: evidenceInfo.bucket });
-    scoreInteger = round0(fairness.adjusted_score);
+    const rawSideGapForElite = Math.abs((rawMore ?? 0) - (rawLess ?? rawMore ?? 0));
+    const eliteSanity = profileEliteSanityCalibration(fairness.adjusted_score, row, evidenceInfo, effectiveMarketPropContextStatus, effectiveWarnings, selectedSide, sourceKey, oddsType, payoutVariant, prop, row.board_line_value, rawSideGapForElite);
+    scoreInteger = round0(eliteSanity.adjusted_score);
+    if (eliteSanity.adjustment !== 0 || (eliteSanity.reasons || []).length) {
+      selectedCapResult.applied = [
+        ...(selectedCapResult.applied || []),
+        {
+          key: 'profile_elite_sanity_calibration_v0_4_16',
+          score_before: fairness.adjusted_score,
+          score_after: scoreInteger,
+          adjustment: eliteSanity.adjustment,
+          evidence_points: eliteSanity.evidence_points,
+          reasons: eliteSanity.reasons,
+          note: 'Soft elite/perfect-score evidence gate; does not cap true high-evidence legs.'
+        }
+      ];
+    }
     if (fairness.adjustment !== 0 || fairness.reason === 'prizepicks_standard_market_blind_no_recenter_same_line_guard') {
       selectedCapResult.applied = [
         ...(selectedCapResult.applied || []),
@@ -1298,7 +1377,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
   }
   const sideGap = Math.abs((rawMore ?? 0) - (rawLess ?? rawMore ?? 0));
   const confidence = (!hardBlocked && !modelDeferred && selectedSide)
-    ? round0(Math.min(confidenceCap, clamp(p.baseConfidence - confidencePenalty + Math.min(6, sideGap * 1.15) + (effectiveMarketPropContextStatus === 'market_prop_context_present' ? 3 : 0) + ((overPrice != null || underPrice != null) ? 2 : 0))))
+    ? round0(Math.min(confidenceCap, clamp(p.baseConfidence - confidencePenalty + Math.min(5, sideGap * 0.85) + (effectiveMarketPropContextStatus === 'market_prop_context_present' ? 1 : 0) + ((overPrice != null || underPrice != null) ? 1 : 0) + (evidenceInfo.rowCount >= 5 ? 1 : 0))))
     : null;
   const sortMicro = Math.abs(((Number(row.mlb_player_id || 0) * 31 + Number(row.game_pk || 0) * 17 + Math.trunc((Number(row.board_line_value || 0) || 0) * 100) * 13) % 999)) * p.microScale / 999.0;
   const scoreSort = scoreInteger == null ? null : scoreInteger + sortMicro;
@@ -1335,7 +1414,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     profile_version: p.version,
     active_values_source: 'SCORE_DB.scoring_engine_simulation_profile_configs.config_json',
     all_calibration_variables_db_stored: 1,
-    formula_order: 'inventory_defer_gate -> profile_line_specific_raw_scores -> evidence_unlock_lifts -> score_penalties -> context_symmetry_safety_caps_only -> source_payout_modifier_no_cap -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
+    formula_order: 'inventory_defer_gate -> profile_line_specific_raw_scores -> tempered_evidence_unlock_lifts -> score_penalties -> context_symmetry_safety_caps_only -> source_payout_modifier_no_cap -> profile_elite_sanity_gate -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
     raw_side_delta_threshold: p.rawSideDeltaThreshold,
     min_live_score: p.minLiveScore,
     min_live_confidence: p.minLiveConfidence,
