@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.198-daily-context-warning-grade-and-core-coverage";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.199-daily-context-all-sidecar-stale-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -2739,7 +2739,7 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
   }
 
   const childRows = await all(env.CONTROL_DB,
-    "SELECT request_id, parent_request_id, chain_id, job_key, worker_name, status, input_json, output_json, error_code, error_message, created_at, started_at, finished_at, updated_at, CASE WHEN status IN ('pending','running','partial_continue') AND finished_at IS NULL AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-2 minutes') THEN 1 ELSE 0 END AS is_stale FROM control_job_queue WHERE parent_request_id=? ORDER BY datetime(created_at) ASC",
+    "SELECT request_id, parent_request_id, chain_id, job_key, worker_name, status, input_json, output_json, error_code, error_message, created_at, started_at, finished_at, updated_at, CASE WHEN status IN ('pending','running','partial_continue') AND finished_at IS NULL AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-75 seconds') THEN 1 ELSE 0 END AS is_stale FROM control_job_queue WHERE parent_request_id=? ORDER BY datetime(created_at) ASC",
     row.request_id
   );
   const stageReports = [];
@@ -6760,7 +6760,7 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
           continue;
         }
         if (stage.job_key !== "daily-certifier") {
-          const softOutput = { ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:stage.worker_name, job_key:stage.job_key, request_id:child.request_id, status:"daily_context_child_stale_nonfatal_warning", certification:"DAILY_CONTEXT_CHILD_STALE_NONFATAL_WARNING", certification_grade:"PASS_WITH_WARNINGS", reason:"Daily sidecar child became stale before terminal handoff; full run continues and preserves sidecar audit rows.", no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
+          const softOutput = { ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:stage.worker_name, job_key:stage.job_key, request_id:child.request_id, status:"daily_context_child_stale_nonfatal_warning", certification:"DAILY_CONTEXT_CHILD_STALE_NONFATAL_WARNING", certification_grade:"PASS_WITH_WARNINGS", reason:"Daily sidecar child became stale before terminal handoff. Parent continues only as warning; downstream certifier must expose missing core context rows.", no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true };
           await cleanupDailyContextOrphanChildSidecars(env, stage, child, "DAILY_CONTEXT_CHILD_STALE_NONFATAL_WARNING");
           await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','queued','partial_continue') AND finished_at IS NULL", JSON.stringify(softOutput), child.request_id);
           await run(env.CONTROL_DB, "UPDATE control_job_runs SET status='completed', data_ok=1, certification_status='DAILY_CONTEXT_CHILD_STALE_NONFATAL_WARNING', finished_at=CURRENT_TIMESTAMP, elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status='running' AND finished_at IS NULL", JSON.stringify(softOutput), child.request_id);

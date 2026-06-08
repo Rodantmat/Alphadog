@@ -1,10 +1,10 @@
 const WORKER_NAME = "alphadog-v2-daily-bullpen-availability";
-const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.9-timeboxed-terminal-progress";
+const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.10-core-complete-before-soft-timebox";
 const JOB_KEY = "daily-bullpen-availability";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON"];
-const RUN_DEADLINE_MS = 18000;
+const RUN_DEADLINE_MS = 70000;
 const MAX_PITCHER_DETAIL_ROWS_PER_TEAM = 4;
 
 function nowUtc() { return new Date().toISOString(); }
@@ -497,13 +497,12 @@ async function runBullpen(env, input) {
   const recentCalendarRows = await getRecentCalendarRows(env, teamIds, minDate, maxDate);
   let currentWritten = 0, snapshotWritten = 0, issuesWritten = 0, pitcherWritten = 0;
   let deadlineSoftStopped = false;
+  let coreOnlyMode = false;
   const summaries = [];
   for (const target of targets) {
     if (deadlineExceeded(runStartedMs)) {
       deadlineSoftStopped = true;
-      await writeIssue(env, batchId, target, { severity: "warning", issue_type: "daily_bullpen_soft_deadline_stop", reason: "Daily bullpen worker stopped before platform/orchestrator stale-child guard; partial current rows are terminalized with warnings instead of leaving the child running." });
-      issuesWritten += 1;
-      break;
+      coreOnlyMode = true;
     }
     const classified = classifyTarget(target, bullpenRows, recentCalendarRows);
     const writes = await writeTarget(env, batchId, target, classified, sourceSnapshotAt);
@@ -515,12 +514,16 @@ async function runBullpen(env, input) {
       calendars.length, gamePks.length, prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0), targets.length, currentWritten, snapshotWritten, issuesWritten, batchId);
     if (deadlineExceeded(runStartedMs)) {
       deadlineSoftStopped = true;
-      await writeIssue(env, batchId, target, { severity: "warning", issue_type: "daily_bullpen_timebox_after_team_rows", reason: "Daily bullpen finalized after core team/snapshot rows to avoid stale child timeout; pitcher detail rows may be partial." });
-      issuesWritten += 1;
-      break;
+      coreOnlyMode = true;
     }
+    if (coreOnlyMode) continue;
     const pitcherRows = await writePitchers(env, batchId, target, classified, sourceSnapshotAt);
     pitcherWritten += pitcherRows;
+  }
+  if (deadlineSoftStopped) {
+    const issueTarget = targets[Math.max(0, Math.min(targets.length - 1, currentWritten - 1))] || { official_date: retention.start, game_pk: null, team_id: null };
+    await writeIssue(env, batchId, issueTarget, { severity: "warning", issue_type: "daily_bullpen_timebox_core_complete_pitcher_detail_limited", reason: "Daily bullpen protected core team/snapshot coverage first; pitcher detail rows may be partial because the soft deadline was reached." });
+    issuesWritten += 1;
   }
   const postPrune = await pruneRetention(env, retention);
   const blockerCount = summaries.reduce((n, s) => n + (s.status === "blocked" ? 1 : 0), 0);
@@ -529,9 +532,9 @@ async function runBullpen(env, input) {
   const highRiskTeamCount = summaries.filter(s => ["high", "severe"].includes(s.risk)).length;
   const unknownTeamCount = summaries.filter(s => ["unknown", "blocked"].includes(s.risk)).length;
   const noPickableSlate = prepared.length === 0 || targets.length === 0;
-  const coverageOk = noPickableSlate || (!deadlineSoftStopped ? (currentWritten === targets.length && snapshotWritten === targets.length) : (currentWritten > 0 && snapshotWritten > 0));
+  const coverageOk = noPickableSlate || (currentWritten === targets.length && snapshotWritten === targets.length);
   const dataOk = noPickableSlate || (coverageOk && blockerCount === 0);
-  const certification = noPickableSlate ? "DAILY_BULLPEN_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (dataOk ? (deadlineSoftStopped ? "DAILY_BULLPEN_CERTIFIED_PARTIAL_DEADLINE_WITH_WARNINGS" : (warningN ? "DAILY_BULLPEN_CERTIFIED_WITH_WARNINGS" : "DAILY_BULLPEN_CERTIFIED_READY")) : "DAILY_BULLPEN_FAILED_BLOCKERS_OR_COVERAGE");
+  const certification = noPickableSlate ? "DAILY_BULLPEN_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (dataOk ? (deadlineSoftStopped ? "DAILY_BULLPEN_CERTIFIED_CORE_COMPLETE_PITCHER_DETAIL_LIMITED" : (warningN ? "DAILY_BULLPEN_CERTIFIED_WITH_WARNINGS" : "DAILY_BULLPEN_CERTIFIED_READY")) : "DAILY_BULLPEN_FAILED_BLOCKERS_OR_COVERAGE");
   const grade = noPickableSlate ? "VALID_ZERO" : (dataOk ? (deadlineSoftStopped || warningN ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL");
   const status = dataOk ? "completed" : "failed_blockers_or_coverage";
   const output = {
@@ -545,7 +548,7 @@ async function runBullpen(env, input) {
     status,
     certification,
     certification_grade: grade,
-    certification_reason: noPickableSlate ? "No prepared-board pickable_safe games exist for today/tomorrow retention window." : (dataOk ? "Every prepared-board relevant team received bullpen availability current and snapshot rows; warnings are sidecar issues." : "One or more prepared-board relevant teams had blockers or coverage gaps."),
+    certification_reason: noPickableSlate ? "No prepared-board pickable_safe games exist for today/tomorrow retention window." : (dataOk ? (deadlineSoftStopped ? "Every prepared-board relevant team received bullpen availability current and snapshot rows; pitcher detail rows may be limited by soft deadline." : "Every prepared-board relevant team received bullpen availability current and snapshot rows; warnings are sidecar issues.") : "One or more prepared-board relevant teams had missing core bullpen current/snapshot coverage or blockers."),
     window_start: retention.start,
     window_end: retention.end,
     calendar_games_checked: calendars.length,
@@ -560,6 +563,7 @@ async function runBullpen(env, input) {
     blocker_count: blockerCount,
     warning_count: warningN,
     deadline_soft_stopped: deadlineSoftStopped,
+    core_team_snapshot_coverage_complete: coverageOk,
     run_deadline_ms: RUN_DEADLINE_MS,
     max_pitcher_detail_rows_per_team: MAX_PITCHER_DETAIL_ROWS_PER_TEAM,
     high_risk_team_count: highRiskTeamCount,

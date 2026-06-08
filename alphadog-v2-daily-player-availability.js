@@ -1,11 +1,12 @@
 const WORKER_NAME = "alphadog-v2-daily-player-availability";
-const VERSION = "alphadog-v2-daily-player-availability-v0.1.7-forty-man-active-source-gap-fallback";
+const VERSION = "alphadog-v2-daily-player-availability-v0.1.8-source-deadline-core-complete";
 const JOB_KEY = "daily-player-availability";
 const SOURCE_KEY = "official_mlb_statsapi_roster_transactions_v1";
 const MAX_PREPARED_PLAYERS = 500;
 const PEOPLE_BATCH_SIZE = 50;
-const FETCH_TIMEOUT_MS = 7000;
+const FETCH_TIMEOUT_MS = 5000;
 const FETCH_CONCURRENCY = 8;
+const SOURCE_DEADLINE_MS = 22000;
 const WRITE_BATCH_ROW_LIMIT = 20;
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
@@ -109,6 +110,42 @@ async function mapLimit(items, limit, fn) {
   }
   await Promise.all(Array.from({ length: workerCount }, () => worker()));
   return out;
+}
+async function withDeadline(promise, ms, fallbackFactory) {
+  let timer = null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((resolve) => {
+        timer = setTimeout(() => resolve(typeof fallbackFactory === "function" ? fallbackFactory() : fallbackFactory), Math.max(1000, Number(ms) || 1000));
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+function deadlineFallbackSources(teamIds, playerIds, startDate, endDate) {
+  const sourceFailures = [];
+  const endpointLog = [];
+  for (const teamId of teamIds || []) {
+    sourceFailures.push({ teamId, endpoint: "active", hard: true, status: "deadline_timeout", error: "Daily Player Availability source deadline reached before active roster source completed." });
+    endpointLog.push({ teamId, endpoint: "active", ok: false, status: "deadline_timeout", elapsed_ms: SOURCE_DEADLINE_MS });
+  }
+  return {
+    activeByTeam: new Map(),
+    fortyByTeam: new Map(),
+    ilByTeam: new Map(),
+    txByTeam: new Map(),
+    people: new Map(),
+    sourceFailures,
+    endpointLog,
+    externalCalls: 0,
+    fetch_concurrency: FETCH_CONCURRENCY,
+    fetch_timeout_ms: FETCH_TIMEOUT_MS,
+    source_deadline_ms: SOURCE_DEADLINE_MS,
+    source_deadline_hit: true,
+    source_deadline_window: { startDate, endDate, teams: (teamIds || []).length, players: (playerIds || []).length }
+  };
 }
 async function cleanupBatchRows(env, batchId) {
   if (!batchId) return { current_deleted: null, snapshots_deleted: null, issues_deleted: null };
@@ -737,6 +774,7 @@ async function runAvailability(env, input) {
   const gamePks = [...new Set(prepared.map((r) => intOrNull(r.official_game_pk)).filter((v) => v !== null))];
   const teamAbbrs = [...new Set(prepared.flatMap((r) => [normTeam(r.team), normTeam(r.opponent)]).filter(Boolean))];
   const playerIds = [...new Set(prepared.map((r) => intOrNull(r.resolved_mlb_player_id)).filter((v) => v !== null))];
+  await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1 SET window_start=?, window_end=?, prepared_games_checked=?, prepared_rows_read=?, prepared_players_checked=?, status='running_prepared_loaded', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, retention.start, retention.end, gamePks.length, prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0), playerIds.length, batchId);
   const calendars = await getCalendar(env, gamePks);
   const calendarByGame = new Map(calendars.map((r) => [intOrNull(r.game_pk), r]));
   const teamRows = await getTeams(env, teamAbbrs);
@@ -747,7 +785,13 @@ async function runAvailability(env, input) {
   const windowStart = addDays(officialDates[0] || todayPt(), -7);
   const windowEnd = officialDates[officialDates.length - 1] || todayPt();
   const teamIds = [...new Set(teamRows.map((r) => intOrNull(r.mlb_team_id)).filter((v) => v !== null))];
-  const sources = await fetchSources(env, teamIds, playerIds, windowStart, windowEnd);
+  await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1 SET window_start=?, window_end=?, teams_checked=?, status='running_sources_started', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, windowStart, windowEnd, teamIds.length, batchId);
+  const sources = await withDeadline(
+    fetchSources(env, teamIds, playerIds, windowStart, windowEnd),
+    SOURCE_DEADLINE_MS,
+    () => deadlineFallbackSources(teamIds, playerIds, windowStart, windowEnd)
+  );
+  await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1 SET source_failures=?, external_calls=?, status=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, (sources.sourceFailures || []).length, Number(sources.externalCalls || 0), sources.source_deadline_hit ? 'running_source_deadline_fallback' : 'running_sources_completed', batchId);
   const sourceSnapshotAt = nowUtc();
 
   const results = [];
@@ -838,6 +882,9 @@ async function runAvailability(env, input) {
     unresolved_hard_source_failures: unresolvedHardSourceFailures,
     fetch_concurrency: sources.fetch_concurrency || FETCH_CONCURRENCY,
     fetch_timeout_ms: sources.fetch_timeout_ms || FETCH_TIMEOUT_MS,
+    source_deadline_ms: sources.source_deadline_ms || SOURCE_DEADLINE_MS,
+    source_deadline_hit: sources.source_deadline_hit === true,
+    source_deadline_window: sources.source_deadline_window || null,
     write_batch_row_limit: written.write_batch_row_limit || WRITE_BATCH_ROW_LIMIT,
     no_score_db_mutation: true,
     no_calendar_rebuild: true,
