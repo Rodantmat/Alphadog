@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-weather";
-const VERSION = "alphadog-v2-daily-weather-v0.1.3-self-terminal-lifecycle";
+const VERSION = "alphadog-v2-daily-weather-v0.1.4-roof-missing-warning-full-run-safe";
 const JOB_KEY = "daily-weather";
 const MLB_SOURCE_KEY = "official_mlb_statsapi_live_feed_weather";
 const OPEN_METEO_SOURCE_KEY = "open_meteo_no_key_forecast";
@@ -477,8 +477,8 @@ function classifyWeather(row, calendar, stadium, parkFactor, mlbResult, external
     issues.push({ severity: "warning", issue_type: "roof_unknown_retractable", reason: "Retractable roof venue has no proved live open/closed source; weather is collected but roof status remains unknown." });
   } else {
     roofStatus = "unknown";
-    roofConfidence = "BLOCKED_ROOF_CLASSIFICATION_MISSING";
-    issues.push({ severity: "blocker", issue_type: "roof_classification_missing", reason: "Prepared-board relevant venue is missing safe roof classification." });
+    roofConfidence = "WARNING_ROOF_CLASSIFICATION_MISSING";
+    issues.push({ severity: "warning", issue_type: "roof_classification_missing", reason: "Prepared-board relevant venue is missing safe roof classification; weather row is still written and full-run continues with warning." });
   }
 
   const hasMlb = !!(mlbResult && mlbResult.ok && mlbResult.weather);

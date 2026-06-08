@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.195-market-scoring-hit-probability-stage";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.196-daily-context-nonfatal-cascade";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -6646,22 +6646,52 @@ function dailyContextFullRunChildNonfatalCompleted(stage, output) {
   return hasCompletionSignal && hasWorkEvidence;
 }
 
+function dailyContextFullRunChildSoftFailureAllowed(stage, child, output) {
+  if (!stage || !output) return false;
+  if (stage.job_key === "daily-certifier") return false;
+  const hay = String(`${output.certification || ""} ${output.certification_status || ""} ${output.status || ""} ${output.certification_grade || ""} ${child && child.error_code || ""}`).toLowerCase();
+  if (hay.includes("missing_service_binding") || hay.includes("unsupported") || hay.includes("dummy") || hay.includes("dispatch_exception") || hay.includes("worker_non_json_response")) return false;
+  const hasSidecarEvidence =
+    Number(output.prepared_rows_read || 0) > 0 ||
+    Number(output.rows_written || 0) > 0 ||
+    Number(output.current_rows_written || 0) > 0 ||
+    Number(output.snapshot_rows_written || 0) > 0 ||
+    Number(output.weather_rows_written || 0) > 0 ||
+    Number(output.team_rows_written || 0) > 0 ||
+    Number(output.game_rows_written || 0) > 0 ||
+    Number(output.issues_written || 0) > 0;
+  return hasSidecarEvidence && (hay.includes("failed_blockers_or_coverage") || hay.includes("blocker") || hay.includes("warning") || hay.includes("failed"));
+}
+
 function dailyContextFullRunChildPassed(stage, child) {
   if (!child) return { pass: false, wait: false, reason: "child_missing" };
   const childStatus = String(child.status || "");
   if (["pending", "running", "partial_continue"].includes(childStatus) && !child.finished_at) {
     return { pass: false, wait: true, reason: "child_active", child_status: childStatus };
   }
-  if (childStatus !== "completed") return { pass: false, reason: "child_not_completed", child_status: childStatus, child_error_code: child.error_code || null, child_error_message: child.error_message || null };
   const output = parseJsonSafeText(child.output_json || "{}", {});
-  if (!output || output.ok !== true) return { pass: false, reason: "child_output_ok_not_true", output_ok: output && output.ok };
+  if (childStatus !== "completed") {
+    if (dailyContextFullRunChildSoftFailureAllowed(stage, child, output)) {
+      return { pass: true, nonfatal: true, reason: "daily_context_stage_failed_but_sidecar_rows_written_continue_with_warning", child_status: childStatus, data_ok: output && output.data_ok, certification: output && (output.certification || output.certification_status) || null, status: output && output.status || null, output };
+    }
+    return { pass: false, reason: "child_not_completed", child_status: childStatus, child_error_code: child.error_code || null, child_error_message: child.error_message || null };
+  }
+  if (!output || output.ok !== true) {
+    if (dailyContextFullRunChildSoftFailureAllowed(stage, child, output)) {
+      return { pass: true, nonfatal: true, reason: "daily_context_stage_output_not_ok_but_sidecar_rows_written_continue_with_warning", output_ok: output && output.ok, certification: output && (output.certification || output.certification_status) || null, status: output && output.status || null, output };
+    }
+    return { pass: false, reason: "child_output_ok_not_true", output_ok: output && output.ok };
+  }
   const cert = String(output.certification || output.certification_status || "");
   const status = String(output.status || "");
   if (dailyContextFullRunChildHasFatalCertification(stage, output)) {
+    if (dailyContextFullRunChildSoftFailureAllowed(stage, child, output)) {
+      return { pass: true, nonfatal: true, reason: "daily_context_stage_fatal_cert_reclassified_nonfatal_sidecar_warning", certification: cert, status, output };
+    }
     return { pass: false, reason: "missing_dummy_unsupported_or_failed_certification", certification: cert, status };
   }
   if (output.data_ok !== true) {
-    if (dailyContextFullRunChildNonfatalCompleted(stage, output)) {
+    if (dailyContextFullRunChildNonfatalCompleted(stage, output) || dailyContextFullRunChildSoftFailureAllowed(stage, child, output)) {
       return { pass: true, nonfatal: true, reason: "daily_context_enrichment_nonfatal_child_data_ok_false", data_ok: output.data_ok, certification: cert, status, output };
     }
     return { pass: false, reason: "child_data_ok_not_true", data_ok: output && output.data_ok };
