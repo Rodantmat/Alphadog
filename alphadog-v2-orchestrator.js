@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.214-daily-context-stale-child-rescue-retry";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.215-prizepicks-output-size-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -14,6 +14,84 @@ function jsonResponse(body, status = 200) {
       "access-control-allow-methods": "GET,POST,OPTIONS"
     }
   });
+}
+
+
+function limitTextForD1(value, maxLen = 1500) {
+  const text = String(value == null ? "" : value);
+  if (text.length <= maxLen) return text;
+  return text.slice(0, maxLen) + `...[truncated ${text.length - maxLen} chars]`;
+}
+
+function compactValueForD1(value, depth = 0) {
+  if (value == null) return value;
+  if (typeof value === "string") return limitTextForD1(value, depth <= 1 ? 2400 : 1200);
+  if (typeof value === "number" || typeof value === "boolean") return value;
+  if (Array.isArray(value)) {
+    const kept = value.slice(0, 3).map(v => compactValueForD1(v, depth + 1));
+    if (value.length > kept.length) kept.push({ __truncated_array_items: value.length - kept.length });
+    return kept;
+  }
+  if (typeof value === "object") {
+    if (depth >= 5) return { __truncated_object: true };
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (["raw_json", "raw", "html", "body", "response_body", "source_json", "payload", "full_response"].includes(k)) {
+        out[k + "_preview"] = limitTextForD1(typeof v === "string" ? v : JSON.stringify(v || null), 900);
+        out[k + "_truncated"] = true;
+        continue;
+      }
+      out[k] = compactValueForD1(v, depth + 1);
+    }
+    return out;
+  }
+  return limitTextForD1(value, 900);
+}
+
+function safeStringifyD1(value, maxBytes = 60000) {
+  let compact = compactValueForD1(value);
+  let json = JSON.stringify(compact);
+  if (json.length <= maxBytes) return json;
+  const fallback = {
+    ok: !!(value && value.ok),
+    data_ok: !!(value && value.data_ok),
+    version: value && value.version || null,
+    worker_name: value && value.worker_name || null,
+    job_key: value && value.job_key || null,
+    request_id: value && value.request_id || null,
+    chain_id: value && value.chain_id || null,
+    status: value && value.status || "output_compacted_for_d1",
+    certification: value && value.certification || null,
+    certification_grade: value && value.certification_grade || null,
+    certification_reason: limitTextForD1(value && value.certification_reason || "", 1500),
+    error: limitTextForD1(value && value.error || "", 1500),
+    rows_read: Number(value && value.rows_read || 0),
+    rows_staged: Number(value && value.rows_staged || 0),
+    rows_promoted: Number(value && (value.rows_promoted || value.promoted_rows_written) || 0),
+    rows_written: Number(value && value.rows_written || 0),
+    future_pickable_rows: Number(value && value.future_pickable_rows || 0),
+    expired_or_started_rows: Number(value && value.expired_or_started_rows || 0),
+    mlb_rows: Number(value && value.mlb_rows || 0),
+    valid_rows: Number(value && value.valid_rows || 0),
+    invalid_rows: Number(value && value.invalid_rows || 0),
+    external_calls: Number(value && (value.external_calls_performed || value.external_calls) || 0),
+    source_refresh_dispatch: compactValueForD1(value && value.source_refresh_dispatch || null),
+    source_refresh_wait: compactValueForD1(value && value.source_refresh_wait || null),
+    orchestrator_dispatch: compactValueForD1(value && value.orchestrator_dispatch || null),
+    d1_output_compacted: true,
+    original_json_chars_after_first_compact: json.length,
+    no_scoring: value && value.no_scoring !== false,
+    no_ranking: value && value.no_ranking !== false,
+    no_final_board_write: value && value.no_final_board_write !== false
+  };
+  return JSON.stringify(fallback);
+}
+
+function compactPrizePicksOutputForD1(output) {
+  const compact = compactValueForD1(output || {});
+  const firstJson = JSON.stringify(compact);
+  if (firstJson.length <= 60000) return compact;
+  return JSON.parse(safeStringifyD1(output || {}, 60000));
 }
 
 function nowIso() { return new Date().toISOString(); }
@@ -3754,7 +3832,7 @@ async function processPrizePicksGithubBoardJob(env, row, runId, trigger) {
   const errorCode = ok ? null : "prizepicks_github_board_worker_failed";
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "PrizePicks GitHub board worker failed").slice(0, 900);
 
-  const cappedOutput = {
+  const cappedOutput = compactPrizePicksOutputForD1({
     ...output,
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
@@ -3763,33 +3841,35 @@ async function processPrizePicksGithubBoardJob(env, row, runId, trigger) {
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
+      output_size_guard: "prizepicks_dispatch_output_compacted_before_d1_write",
       no_generic_dispatch: true,
       prizepicks_dispatch_queue_close_fix_v0_2_97: true,
       no_scoring: true,
       no_final_board_write: true
     }
-  };
+  });
+  const cappedOutputJson = safeStringifyD1(cappedOutput, 60000);
 
   await run(env.CONTROL_DB,
     "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
-    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), cappedOutputJson, errorCode, errorMessage
   );
 
   if (partialContinue) {
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
-      JSON.stringify(cappedOutput), row.request_id
+      cappedOutputJson, row.request_id
     );
   } else {
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+      queueStatus, cappedOutputJson, errorCode, errorMessage, row.request_id
     );
   }
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'prizepicks_github_board_dispatch_completed', 'Orchestrator completed exact prizepicks-github-board dispatch', ?, CURRENT_TIMESTAMP)",
-    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, partial_continue: partialContinue })
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, output_json_chars: cappedOutputJson.length, output_size_guard: true, partial_continue: partialContinue })
   );
 
   return cappedOutput;
