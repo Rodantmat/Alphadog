@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.12-fresh-producer-required-gate";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.13-refresh-wait-filled-json";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
@@ -8,6 +8,10 @@ const STAGE_CERT_FAIL = "failed_not_promoted";
 const PROMOTION_CERT_PASS = "promoted_current_board";
 const PROMOTION_CERT_FAIL = "promotion_failed_active_board_preserved";
 const SOURCE_STALE_CERT = "PRIZEPICKS_SOURCE_STALE_NO_FUTURE_PICKABLE_ROWS";
+const SOURCE_REFRESH_WAIT_CERT = "PRIZEPICKS_SOURCE_REFRESH_WAIT_EXHAUSTED_NO_FUTURE_ROWS_CURRENT_PRESERVED";
+const SOURCE_REFRESH_WAIT_MAX_MS = 35000;
+const SOURCE_REFRESH_WORKER_BUDGET_MS = 56000;
+const SOURCE_REFRESH_POLL_INTERVAL_MS = 5000;
 const MAX_RAW_JSON_CHARS = 180000;
 const MAX_HEALTH_JSON_CHARS = 7000;
 const MAX_OUTPUT_PREVIEW_CHARS = 900;
@@ -23,6 +27,7 @@ const EXPECTED_PP_CURRENT_COLUMNS = ["current_row_id", "batch_id", "source_key",
 const EXPECTED_PP_ACTIVE_COLUMNS = ["source_key", "slate_date", "active_batch_id", "certification_status", "row_count", "valid_rows", "activated_at", "updated_at"];
 
 function nowUtc() { return new Date().toISOString(); }
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, Math.max(0, Number(ms || 0)))); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
 
 function jsonResponse(body, status = 200) {
@@ -796,6 +801,53 @@ async function clearActivePrizePicksBoardForStaleSource(env, batchId, slateDate,
   };
 }
 
+async function preserveActivePrizePicksBoardForUnrefreshedSource(env, batchId, slateDate, cert, timing, sourceRefreshWait, sourceRefreshDispatch) {
+  const reason = "Fetched PrizePicks source still had no future pickable MLB rows after bounded refresh wait; existing PrizePicks current inventory was preserved so downstream cannot be emptied by a transient stale producer file.";
+  const certificationJson = safeJson({
+    version: VERSION,
+    batch_id: batchId,
+    source_key: SOURCE_KEY,
+    slate_date: slateDate,
+    certification: SOURCE_REFRESH_WAIT_CERT,
+    reason,
+    board_timing: timing,
+    source_refresh_dispatch: sourceRefreshDispatch || null,
+    source_refresh_wait: sourceRefreshWait || null,
+    stale_current_policy: "preserve_existing_prizepicks_current_when_refresh_wait_does_not_observe_future_pickable_rows",
+    no_market_current_lines_write: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board_write: true
+  }, 6000);
+
+  await env.MARKET_DB.batch([
+    env.MARKET_DB.prepare("DELETE FROM prizepicks_board_stage WHERE batch_id=?").bind(batchId),
+    env.MARKET_DB.prepare("UPDATE prizepicks_board_batches SET certification_status=?, certification_reason=?, certification_json=?, cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?").bind(SOURCE_REFRESH_WAIT_CERT, reason, certificationJson, batchId)
+  ]);
+
+  return {
+    promoted: false,
+    source_refresh_wait_exhausted_no_future_pickable: true,
+    certification_status: SOURCE_REFRESH_WAIT_CERT,
+    reason,
+    batch_id: batchId,
+    slate_date: slateDate,
+    rows_promoted: 0,
+    board_timing: timing,
+    active_board_preserved: true,
+    active_board_cleared: false,
+    current_clear: { table: "prizepicks_board_current", source_key: SOURCE_KEY, cleared_existing_current_rows: false },
+    active_pointer_clear: { table: "prizepicks_board_active_batches", source_key: SOURCE_KEY, cleared_existing_active_pointer: false },
+    stage_cleanup: { table: "prizepicks_board_stage", batch_id: batchId, cleaned: true },
+    source_refresh_dispatch: sourceRefreshDispatch || null,
+    source_refresh_wait: sourceRefreshWait || null,
+    no_market_current_lines_write: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board_write: true
+  };
+}
+
 async function promoteCertifiedBatch(env, batchId, slateDate, cert, stagedRows, timing) {
   if (!cert.passed || cert.validRows !== cert.mlbRows || cert.validRows !== stagedRows.length) {
     return {
@@ -1096,6 +1148,88 @@ function candidatePublicSummary(candidate) {
     error: candidate && candidate.error ? safeString(candidate.error, 500) : null
   };
 }
+function sourceFetchHasRowsButNoFuturePickable(sourceFetch) {
+  const selected = sourceFetch && sourceFetch.selected_candidate ? sourceFetch.selected_candidate : null;
+  return Boolean(
+    sourceFetch &&
+    sourceFetch.ok &&
+    selected &&
+    Number(selected.row_count || 0) > 0 &&
+    Number(selected.future_pickable_rows || 0) === 0 &&
+    Number(selected.expired_or_started_rows || 0) > 0
+  );
+}
+
+async function waitForFilledPrizePicksJsonAfterRefresh(env, source, input, initialSourceFetch, refreshDispatch, workerStartedMs) {
+  const elapsedBeforeWait = Date.now() - Number(workerStartedMs || Date.now());
+  const remainingBudget = Math.max(0, SOURCE_REFRESH_WORKER_BUDGET_MS - elapsedBeforeWait);
+  const maxWaitMs = Math.min(SOURCE_REFRESH_WAIT_MAX_MS, remainingBudget);
+  const attempts = [];
+  const startedAtMs = Date.now();
+  const startedAt = new Date(startedAtMs).toISOString();
+  const deadline = startedAtMs + maxWaitMs;
+  let bestObserved = initialSourceFetch && initialSourceFetch.selected_candidate ? initialSourceFetch.selected_candidate : null;
+
+  if (maxWaitMs <= 0) {
+    return {
+      ok: false,
+      waited_ms: 0,
+      attempts,
+      started_at: startedAt,
+      completed_at: nowUtc(),
+      reason: "no_worker_budget_remaining_for_prizepicks_source_refresh_wait",
+      refresh_dispatch: refreshDispatch || null,
+      best_observed_candidate: bestObserved
+    };
+  }
+
+  while (Date.now() < deadline) {
+    const remaining = deadline - Date.now();
+    await sleep(Math.min(SOURCE_REFRESH_POLL_INTERVAL_MS, remaining));
+    const checkedAt = nowUtc();
+    const candidateFetch = await fetchGithubJsonBySha(source, env);
+    const selected = candidateFetch && candidateFetch.selected_candidate ? candidateFetch.selected_candidate : null;
+    if (selected) {
+      const currentFuture = Number(selected.future_pickable_rows || 0);
+      const bestFuture = bestObserved ? Number(bestObserved.future_pickable_rows || 0) : -1;
+      const currentRows = Number(selected.row_count || 0);
+      const bestRows = bestObserved ? Number(bestObserved.row_count || 0) : -1;
+      if (!bestObserved || currentFuture > bestFuture || (currentFuture === bestFuture && currentRows > bestRows)) bestObserved = selected;
+    }
+    attempts.push({
+      checked_at: checkedAt,
+      ok: Boolean(candidateFetch && candidateFetch.ok),
+      selected_candidate: selected,
+      external_calls_performed: candidateFetch && candidateFetch.external_calls_performed ? candidateFetch.external_calls_performed : 0,
+      error: candidateFetch && candidateFetch.error ? safeString(candidateFetch.error, 500) : null
+    });
+    if (candidateFetch && candidateFetch.ok && selected && Number(selected.future_pickable_rows || 0) > 0) {
+      return {
+        ok: true,
+        waited_ms: Date.now() - startedAtMs,
+        attempts,
+        started_at: startedAt,
+        completed_at: nowUtc(),
+        reason: "fresh_prizepicks_json_with_future_pickable_rows_observed_after_refresh_wait",
+        refresh_dispatch: refreshDispatch || null,
+        best_observed_candidate: selected,
+        fresh_source_fetch: candidateFetch
+      };
+    }
+  }
+
+  return {
+    ok: false,
+    waited_ms: Date.now() - startedAtMs,
+    attempts,
+    started_at: startedAt,
+    completed_at: nowUtc(),
+    reason: "prizepicks_source_refresh_wait_exhausted_without_future_pickable_rows",
+    refresh_dispatch: refreshDispatch || null,
+    best_observed_candidate: bestObserved
+  };
+}
+
 
 function chooseBestGithubCandidate(candidates) {
   const usable = candidates.filter(c => c && c.ok && c.summary && c.summary.row_count > 0);
@@ -1233,11 +1367,29 @@ async function runBoardParseStageCertify(env, input = {}) {
   }
 
   const source = await githubSourceConfig(env);
-  const fetchStarted = nowUtc();
+  let fetchStarted = nowUtc();
   let sourceFetch;
   let text = "";
+  let sourceRefreshDispatch = null;
+  let sourceRefreshWait = null;
+  let sourceRefreshWaitPreservedCurrent = false;
   try {
     sourceFetch = await fetchGithubJsonBySha(source, env);
+    if (sourceFetchHasRowsButNoFuturePickable(sourceFetch)) {
+      sourceRefreshDispatch = await triggerPrizePicksSourceRefresh(
+        env,
+        source,
+        { ...input, request_id: requestId, chain_id: chainId, slate_date: currentPtDate() },
+        "initial_github_json_had_no_future_pickable_rows_before_stage_or_clear"
+      );
+      sourceRefreshWait = await waitForFilledPrizePicksJsonAfterRefresh(env, source, input, sourceFetch, sourceRefreshDispatch, started);
+      if (sourceRefreshWait && sourceRefreshWait.ok && sourceRefreshWait.fresh_source_fetch) {
+        sourceFetch = sourceRefreshWait.fresh_source_fetch;
+        fetchStarted = nowUtc();
+      } else {
+        sourceRefreshWaitPreservedCurrent = true;
+      }
+    }
     text = sourceFetch.text || "";
   } catch (err) {
     const error = safeString(err && err.message ? err.message : err);
@@ -1298,7 +1450,11 @@ async function runBoardParseStageCertify(env, input = {}) {
   let promotion = { promoted: false, certification_status: cert.certification_status, reason: cert.passed ? "promotion_not_attempted" : cert.certification_reason, active_board_preserved: true };
   if (cert.passed) {
     try {
-      promotion = await promoteCertifiedBatch(env, batchId, slateDate, cert, stagedRows, boardTiming);
+      if (sourceRefreshWaitPreservedCurrent && boardTiming && boardTiming.all_valid_rows_started_or_expired) {
+        promotion = await preserveActivePrizePicksBoardForUnrefreshedSource(env, batchId, slateDate, cert, boardTiming, sourceRefreshWait, sourceRefreshDispatch);
+      } else {
+        promotion = await promoteCertifiedBatch(env, batchId, slateDate, cert, stagedRows, boardTiming);
+      }
     } catch (err) {
       const promotionError = safeString(err && err.message ? err.message : err, 900);
       promotion = { promoted: false, certification_status: PROMOTION_CERT_FAIL, reason: promotionError, active_board_preserved: true };
@@ -1313,8 +1469,8 @@ async function runBoardParseStageCertify(env, input = {}) {
   }
 
   const sourceStaleHandled = Boolean(promotion && promotion.source_stale_no_future_pickable);
-  let sourceRefreshDispatch = null;
-  if (sourceStaleHandled) {
+  const sourceRefreshWaitPreserved = Boolean(promotion && promotion.source_refresh_wait_exhausted_no_future_pickable);
+  if (sourceStaleHandled && !sourceRefreshDispatch) {
     sourceRefreshDispatch = await triggerPrizePicksSourceRefresh(
       env,
       source,
@@ -1324,7 +1480,7 @@ async function runBoardParseStageCertify(env, input = {}) {
   }
   const finalPassed = cert.passed && promotion.promoted;
   const finalHandled = finalPassed || sourceStaleHandled;
-  const finalCertification = finalPassed ? PROMOTION_CERT_PASS : (sourceStaleHandled ? SOURCE_STALE_CERT : (cert.passed ? PROMOTION_CERT_FAIL : cert.certification_status));
+  const finalCertification = finalPassed ? PROMOTION_CERT_PASS : (sourceStaleHandled ? SOURCE_STALE_CERT : (sourceRefreshWaitPreserved ? SOURCE_REFRESH_WAIT_CERT : (cert.passed ? PROMOTION_CERT_FAIL : cert.certification_status)));
   const finalReason = finalPassed ? "Certified PrizePicks batch promoted to active current board." : (promotion.reason || cert.certification_reason);
   const healthStatus = finalPassed ? "healthy" : (sourceStaleHandled ? "source_stale_no_future_pickable_rows" : "warning");
   const health = {
@@ -1356,6 +1512,8 @@ async function runBoardParseStageCertify(env, input = {}) {
     batch: { batch_id: batchId, certification_status: finalCertification, certification_reason: finalReason, valid_rate: cert.validRate },
     board_timing: boardTiming,
     promotion,
+    source_refresh_wait: sourceRefreshWait,
+    source_refresh_wait_preserved_current: sourceRefreshWaitPreservedCurrent,
     raw_snapshot: rawWrite,
     no_market_current_lines_write: true,
     no_scoring: true,
@@ -1402,11 +1560,13 @@ async function runBoardParseStageCertify(env, input = {}) {
     board_timing: boardTiming,
     promotion,
     source_refresh_dispatch: sourceRefreshDispatch,
+    source_refresh_wait: sourceRefreshWait,
     writes: { raw_snapshot: rawWrite, batch_pending: batchPending, stage: stageWrite, batch_finalize: batchFinalize, promotion, source_health: healthWrite },
     lifecycle_locked: {
       fetch_parse_stage_certify_promote_complete: finalPassed,
       source_stale_no_future_pickable_handled: sourceStaleHandled,
-      source_stale_current_preserved: false,
+      source_stale_current_preserved: Boolean(promotion && promotion.active_board_preserved),
+      source_refresh_wait_preserved_current: Boolean(promotion && promotion.source_refresh_wait_exhausted_no_future_pickable),
       active_pointer_table: "prizepicks_board_active_batches",
       current_board_table: "prizepicks_board_current",
       stage_cleaned_after_success: Boolean(promotion.stage_cleanup && promotion.stage_cleanup.cleaned),
@@ -1417,7 +1577,7 @@ async function runBoardParseStageCertify(env, input = {}) {
       github_source_refresh_dispatch_enabled: true,
       manual_buttons: ["BOARD > PrizePicks", "ORCHESTRATOR > Wake"]
     },
-    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, or final board. v0.1.12 compares GitHub metadata/download/raw/blob surfaces and requires the producer freshness gate before any promotion. Stale/no-future source clears current inventory and requires a later fresh consumer run.",
+    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, or final board. v0.1.13 compares GitHub metadata/download/raw/blob surfaces, dispatches the producer on no-future source, waits/polls for a filled JSON before staging/promotion, and preserves existing current inventory if the producer file remains stale after the bounded wait.",
     timestamp_utc: nowUtc()
   };
 }
