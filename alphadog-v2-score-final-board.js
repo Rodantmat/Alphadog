@@ -1,7 +1,7 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.24-no-archive-and-preserve-engine-elite";
+const VERSION = "alphadog-v2-score-final-board-v0.1.25-adaptive-engine-profile-key";
 const JOB_KEY = "score-final-board";
-const PRIMARY_PROFILE = "STRICT_C_REALISTIC_V3_2";
+const PRIMARY_PROFILE = "STRICT_C_REALITY_SANITY_V4_0"; // fallback only; runtime resolves the active profile_key from the terminal scoring_engine_current batch
 
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
@@ -918,6 +918,26 @@ function applyEngineFieldTierCalibration(rawRow) {
 }
 
 
+
+async function resolveEngineProfileKey(env, engineBatchId) {
+  if (!engineBatchId) return PRIMARY_PROFILE;
+  try {
+    const row = await first(env.SCORE_DB, `
+      SELECT profile_key, COUNT(*) AS rows
+      FROM scoring_engine_current
+      WHERE batch_id = ?
+        AND profile_key IS NOT NULL
+        AND TRIM(profile_key) <> ''
+      GROUP BY profile_key
+      ORDER BY rows DESC
+      LIMIT 1
+    `, engineBatchId);
+    return row && row.profile_key ? String(row.profile_key) : PRIMARY_PROFILE;
+  } catch (_) {
+    return PRIMARY_PROFILE;
+  }
+}
+
 async function fetchEngineBoardCandidateRows(env, sourceEngineBatchId, profileKey, pageSize = 500) {
   const rows = [];
   const limit = Math.max(1, Math.min(1000, Math.trunc(pageSize)));
@@ -1268,12 +1288,13 @@ async function generateFinalBoard(env, input) {
   const reconciled = await reconcileStaleRunningFinalBoard(env, input, engine, started);
   if (reconciled) return reconciled;
 
+  const simBatchId = engine.batch_id;
+  const activeProfileKey = await resolveEngineProfileKey(env, simBatchId);
+
   await run(env.SCORE_DB, `
     INSERT INTO score_final_board_batches (final_board_batch_id, worker_version, job_key, source_simulation_batch_id, source_engine_batch_id, source_scoring_worker_version, profile_key, status, certification, certification_grade, started_at)
     VALUES (?, ?, ?, NULL, ?, ?, ?, 'running', 'SCORE_FINAL_BOARD_STARTED', 'RUNNING', CURRENT_TIMESTAMP)
-  `, batchId, VERSION, JOB_KEY, engine.batch_id, engine.worker_version || null, PRIMARY_PROFILE);
-
-  const simBatchId = engine.batch_id;
+  `, batchId, VERSION, JOB_KEY, simBatchId, engine.worker_version || null, activeProfileKey);
   const bad = await first(env.SCORE_DB, `
     SELECT COUNT(*) AS bad_rows
     FROM scoring_engine_current
@@ -1292,7 +1313,7 @@ async function generateFinalBoard(env, input) {
         OR daily_readiness_status NOT IN ('ready','ready_with_warnings')
         OR score_status IN ('blocked_by_matrix','model_deferred','simulation_hard_blocked')
       )
-  `, simBatchId, PRIMARY_PROFILE);
+  `, simBatchId, activeProfileKey);
   const badRows = Number(bad && bad.bad_rows || 0);
   if (badRows > 0) {
     const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_live_invariant_failure", certification:"SCORE_FINAL_BOARD_BLOCKED_LIVE_INVARIANTS", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_engine_batch_id:simBatchId, bad_live_rows:badRows };
@@ -1301,7 +1322,7 @@ async function generateFinalBoard(env, input) {
     return output;
   }
 
-  const engineRead = await fetchEngineBoardCandidateRows(env, simBatchId, PRIMARY_PROFILE, 500);
+  const engineRead = await fetchEngineBoardCandidateRows(env, simBatchId, activeProfileKey, 500);
   const engineRaw = engineRead.rows;
 
   // v0.1.21-complete-review-ledger-offset-reader over v0.1.20-paged-engine-current-reader:
@@ -1342,7 +1363,7 @@ async function generateFinalBoard(env, input) {
   const rows = annotateCorrelation([...primaryRows, ...reviewRows]);
 
   if (!rows.length) {
-    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_no_final_rows_after_calibration", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_FINAL_ROWS_AFTER_CALIBRATION", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_engine_batch_id:simBatchId, primary_rows_after_calibration:primaryRows.length, review_rows_after_calibration:reviewRows.length };
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_no_final_rows_after_calibration", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_FINAL_ROWS_AFTER_CALIBRATION", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_engine_batch_id:simBatchId, profile_key:activeProfileKey, primary_rows_after_calibration:primaryRows.length, review_rows_after_calibration:reviewRows.length };
     await writeIssue(env, batchId, simBatchId, "NO_FINAL_ROWS_AFTER_CALIBRATION", "BLOCKER", 1, output);
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
@@ -1445,7 +1466,7 @@ async function generateFinalBoard(env, input) {
     final_board_batch_id: batchId,
     source_engine_batch_id: simBatchId,
     source_scoring_worker_version: engine.worker_version,
-    profile_key: PRIMARY_PROFILE,
+    profile_key: (typeof activeProfileKey !== "undefined" ? activeProfileKey : PRIMARY_PROFILE),
     matrix_rows_read: Number(engine.matrix_rows_read || 0),
     engine_current_candidate_rows_read: engineRaw.length,
     engine_current_candidate_read_pages: engineRead.pages,
