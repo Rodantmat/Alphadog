@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 AlphaDog v2 PrizePicks GitHub JSON Producer
-Version: alphadog-v2-prizepicks-producer-v0.1.4-proxy-url-canonical-preflight
+Version: alphadog-v2-prizepicks-producer-v0.1.5-proxy-url-import-fix
 
 Purpose:
 - Fetch the raw PrizePicks MLB projections payload from multiple known PrizePicks JSON surfaces.
@@ -22,12 +22,13 @@ import re
 import socket
 import time
 from datetime import datetime, timezone
+from urllib.parse import quote, urlsplit, urlunsplit
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from curl_cffi import requests
 
-SCRIPT_VERSION = "alphadog-v2-prizepicks-producer-v0.1.4-proxy-url-canonical-preflight"
+SCRIPT_VERSION = "alphadog-v2-prizepicks-producer-v0.1.5-proxy-url-import-fix"
 PRIZEPICKS_MLB_PROJECTIONS_URLS = [
     "https://api.prizepicks.com/projections?league_id=2&per_page=1000&single_stat=true",
     "https://api.prizepicks.com/projections?league_id=2&per_page=5000",
@@ -57,7 +58,6 @@ def mask_proxy_url(proxy_url: str) -> str:
     if not text:
         return ""
     try:
-        from urllib.parse import quote, urlsplit, urlunsplit
         parts = urlsplit(text if "://" in text else "http://" + text)
         host = parts.hostname or ""
         port = f":{parts.port}" if parts.port else ""
