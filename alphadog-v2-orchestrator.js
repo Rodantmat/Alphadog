@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.212-board-prizepicks-no-future-nonfatal";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.214-daily-context-stale-child-rescue-retry";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -6768,6 +6768,7 @@ const DAILY_CONTEXT_FULL_RUN_STALE_MINUTES = 20;
 const DAILY_CONTEXT_FULL_RUN_CHILD_RUN_AFTER_SECONDS = 0;
 const DAILY_CONTEXT_FULL_RUN_PARENT_RECHECK_SECONDS = 0;
 const DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS = 120;
+const DAILY_CONTEXT_FULL_RUN_STALE_CHILD_RETRY_MAX = 1;
 
 const DAILY_CONTEXT_FULL_RUN_STAGES = [
   { stage_key: "daily_starters", job_key: "daily-probable-pitchers", worker_name: "alphadog-v2-daily-probable-pitchers", display_name: "Daily Starters", visible_button: "DAILY JOBS > Starters", mode: "daily_context_full_run_starters", worker_group: "Daily", phase_key: "daily", priority: 5 },
@@ -6999,12 +7000,107 @@ function dailyContextStageSupportsSidecarRescue(stage) {
 
 function dailyContextFullRunStageStaleSeconds(stage) {
   const key = String(stage && stage.job_key || "");
-  // v0.2.210: Daily Team Schedule Spot can legitimately hold the service-binding
-  // dispatch open well past the generic 120s parent stale guard while D1/internal
-  // schedule context writes are still in-flight. Do not let the parent kill and
-  // overwrite an active child run before the worker has a fair terminal window.
+  // v0.2.214: Daily Context children are service-binding backed and some stages
+  // legitimately need more than the old generic 120s guard. Keep fast stages
+  // bounded, but give external-call-heavy sidecars a fair terminal window before
+  // rescue/retry. This does not pass incomplete rows; it only delays stale rescue.
   if (key === "daily-team-schedule-spot") return 900;
+  if (key === "daily-weather") return 360;
+  if (key === "daily-bullpen-availability") return 420;
+  if (key === "daily-umpire-context") return 360;
+  if (key === "daily-player-availability") return 180;
   return DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS;
+}
+
+function dailyContextStaleChildRetryAllowed(stage, child) {
+  if (!stage || !child) return false;
+  if (stage.job_key === "daily-certifier") return false;
+  const retryCount = dailyContextFullRunChildInputRetryCount(child);
+  return retryCount < DAILY_CONTEXT_FULL_RUN_STALE_CHILD_RETRY_MAX;
+}
+
+async function requeueDailyContextStaleChild(env, parentRow, stage, child, stageReports, report, parentInput, runId, started, reason) {
+  const retryCount = dailyContextFullRunChildInputRetryCount(child) + 1;
+  const cleanup = await cleanupDailyContextOrphanChildSidecars(env, stage, child, "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_REPLACED_BY_RETRY");
+  const replacedOutput = {
+    ok: false,
+    data_ok: false,
+    version: SYSTEM_VERSION,
+    worker_name: WORKER_NAME,
+    job_key: child.job_key,
+    request_id: child.request_id,
+    chain_id: child.chain_id,
+    status: "DAILY_CONTEXT_STALE_CHILD_REPLACED_BY_RETRY",
+    certification: "DAILY_CONTEXT_STALE_CHILD_REPLACED_BY_RETRY",
+    certification_grade: "REPLACED_BY_RETRY",
+    stage_key: stage.stage_key,
+    retry_count: retryCount,
+    stale_child_guard_seconds: dailyContextFullRunStageStaleSeconds(stage),
+    previous_child_status: child.status,
+    previous_child_started_at: child.started_at || null,
+    previous_child_updated_at: child.updated_at || null,
+    cleanup,
+    reason: String(reason || "stale_child_no_terminal_control_job_runs_row").slice(0, 900),
+    no_board_mutation: true,
+    no_score_db_mutation: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true
+  };
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='daily_context_stale_child_replaced_by_retry', error_message='Daily Context stale child was closed and replaced by one same-stage retry.' WHERE request_id=? AND status IN ('pending','running','queued','partial_continue') AND finished_at IS NULL",
+    JSON.stringify(replacedOutput), child.request_id
+  );
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_runs SET status='failed', data_ok=0, certification_status='DAILY_CONTEXT_STALE_CHILD_REPLACED_BY_RETRY', finished_at=CURRENT_TIMESTAMP, elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END, output_json=?, error_code='daily_context_stale_child_replaced_by_retry', error_message='Daily Context stale child was closed and replaced by one same-stage retry.' WHERE request_id=? AND status='running' AND finished_at IS NULL",
+    JSON.stringify(replacedOutput), child.request_id
+  );
+
+  const retryStageIndex = DAILY_CONTEXT_FULL_RUN_STAGES.findIndex(s => s.stage_key === stage.stage_key);
+  const enqueued = await enqueueDailyContextFullRunChild(env, parentRow, stage, retryStageIndex >= 0 ? retryStageIndex : 0, retryCount);
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    worker_name: WORKER_NAME,
+    job_key: parentRow.job_key,
+    request_id: parentRow.request_id,
+    chain_id: parentRow.chain_id,
+    mode: "daily_context_full_run",
+    status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_STALE_CHILD_RETRY_ENQUEUED",
+    certification: "DAILY_CONTEXT_FULL_RUN_STALE_CHILD_RETRY_ENQUEUED",
+    certification_grade: "PARTIAL",
+    current_stage_key: stage.stage_key,
+    failed_child_request_id: child.request_id,
+    retry_child_request_id: enqueued.child_request_id,
+    retry_count: retryCount,
+    stale_child_guard_seconds: dailyContextFullRunStageStaleSeconds(stage),
+    cleanup,
+    completed_stage_count: stageReports.length,
+    total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length,
+    stages: [...stageReports, { ...report, pass:false, wait:false, reason:"stale_child_replaced_by_retry", retry_child_request_id:enqueued.child_request_id, retry_count:retryCount }],
+    continuation_required: true,
+    orchestrator_should_self_continue: true,
+    lock_held: true,
+    no_board_mutation: true,
+    no_score_db_mutation: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true
+  };
+  await run(env.CONTROL_DB,
+    "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_STALE_CHILD_RETRY_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
+    runId, parentRow.request_id, parentRow.chain_id, parentRow.job_key, parentRow.worker_name, stageReports.length + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
+  );
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+    JSON.stringify(output), parentRow.request_id
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'daily_context_full_run_stale_child_retry_enqueued', 'Daily Context Full Run closed one stale child and enqueued one same-stage retry after sidecar recovery failed', ?, CURRENT_TIMESTAMP)",
+    parentRow.request_id, runId, WORKER_NAME, parentRow.job_key, JSON.stringify({ stage_key:stage.stage_key, failed_child_request_id:child.request_id, retry_child_request_id:enqueued.child_request_id, retry_count:retryCount, cleanup, version:SYSTEM_VERSION })
+  );
+  return output;
 }
 
 async function recoverDailyContextRunningChildrenFromCompleteSidecarsPreLock(env, trigger) {
@@ -7320,7 +7416,10 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
           stageReports.push(recovered.report);
           continue;
         }
-        return await failDailyContextStaleChild(env, row, stage, child, stageReports, report, parentInput, runId, started, "Daily Context Full Run child became stale and could not be verified from complete sidecar rows; refusing to false-pass an incomplete mining stage.");
+        if (dailyContextStaleChildRetryAllowed(stage, child)) {
+          return await requeueDailyContextStaleChild(env, row, stage, child, stageReports, report, parentInput, runId, started, "Daily Context Full Run child became stale before terminal completion; complete sidecar recovery was not available, so one same-stage retry was enqueued instead of failing the full run.");
+        }
+        return await failDailyContextStaleChild(env, row, stage, child, stageReports, report, parentInput, runId, started, "Daily Context Full Run child became stale and could not be verified from complete sidecar rows after retry budget was exhausted; refusing to false-pass an incomplete mining stage.");
       }
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification: "DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, stage_stale_guard_seconds: stageStaleSeconds, generic_stale_guard_seconds: DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
       await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
