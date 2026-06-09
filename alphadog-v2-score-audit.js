@@ -2821,7 +2821,7 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.18-hit-probability-fast-hp-board-terminal";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.20-hp-board-sanity-overlay-caps";
 const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_1_6_STOLEN_BASES_ROUTE_LOCK";
 const HP_MAX_ROWS_PER_RUN = 12000;
 const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 260;
@@ -2830,7 +2830,7 @@ const HP_PLAYER_CHUNK_SIZE = 70;
 const HP_BOARD_MODE = "hp_board_current_build";
 const HP_BOARD_JOB_KEY = "hp-board";
 const HP_BOARD_PROFILE_KEY = "HP_BOARD_RECENT_FORM_PROFILE";
-const HP_BOARD_PROFILE_VERSION = "HP_BOARD_RECENT_FORM_PROFILE_V0_1_1_DISPLAY_CALIBRATED";
+const HP_BOARD_PROFILE_VERSION = "HP_BOARD_RECENT_FORM_PROFILE_V0_1_2_SANITY_OVERLAY_CAPS";
 const HP_BOARD_LANE_ORDER = {
   HP_PRIMARY_ELITE: 1,
   HP_PRIMARY_STRONG: 2,
@@ -3269,7 +3269,9 @@ function hpBoardSanityCalibratedScore(row, cfg = {}) {
   const raw = Math.round(hpNum(cfg.base, 50) + (hpNum(cfg.hp_weight, 0.45) * hp) + sampleAdj + propLift - variationPenalty);
 
   let hpCap = hpNum(cfg.hp_cap_90_plus, 94);
-  if (hp < 45) hpCap = hpNum(cfg.hp_cap_below_45, 74);
+  if (hp < 20) hpCap = hpNum(cfg.hp_cap_below_20, 55);
+  else if (hp < 35) hpCap = hpNum(cfg.hp_cap_below_35, 64);
+  else if (hp < 45) hpCap = hpNum(cfg.hp_cap_below_45, 72);
   else if (hp < 55) hpCap = hpNum(cfg.hp_cap_below_55, 78);
   else if (hp < 62) hpCap = hpNum(cfg.hp_cap_below_62, 82);
   else if (hp < 70) hpCap = hpNum(cfg.hp_cap_below_70, 86);
@@ -3277,9 +3279,16 @@ function hpBoardSanityCalibratedScore(row, cfg = {}) {
   else if (hp < 90) hpCap = hpNum(cfg.hp_cap_below_90, 92);
 
   let sampleCap = hpNum(cfg.sample_cap_30_plus, 94);
-  if (nonPush < 15) sampleCap = hpNum(cfg.sample_cap_under_15, 80);
-  else if (nonPush < 20) sampleCap = hpNum(cfg.sample_cap_under_20, 83);
-  else if (nonPush < 30) sampleCap = hpNum(cfg.sample_cap_under_30, 86);
+  if (['pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks'].includes(prop)) {
+    if (nonPush < 15) sampleCap = hpNum(cfg.pitcher_sample_cap_under_15, 76);
+    else if (nonPush < 20) sampleCap = hpNum(cfg.pitcher_sample_cap_under_20, 80);
+    else if (nonPush < 30) sampleCap = hpNum(cfg.pitcher_sample_cap_under_30, 84);
+  } else {
+    if (nonPush < 10) sampleCap = hpNum(cfg.sample_cap_under_10, 70);
+    else if (nonPush < 15) sampleCap = hpNum(cfg.sample_cap_under_15, 76);
+    else if (nonPush < 20) sampleCap = hpNum(cfg.sample_cap_under_20, 80);
+    else if (nonPush < 30) sampleCap = hpNum(cfg.sample_cap_under_30, 86);
+  }
 
   const variationCap = isDemon ? hpNum(cfg.demon_cap, 78) : (isGoblin ? hpNum(cfg.goblin_cap, 83) : hpNum(cfg.standard_cap, 94));
   return Math.max(0, Math.min(100, raw, hpCap, sampleCap, variationCap));
@@ -3316,9 +3325,13 @@ async function runHpBoardCurrent(env, input = {}){
       ...r,
       hp_lane: lane,
       lane_reason: hpBoardLaneReason(lane),
-      hp_primary_playable: (hp >= 62 && conf >= 90 && sample >= 20 && score >= 84) ? 1 : 0,
-      hp_review_playable: (hp >= 45 && score >= 76) ? 1 : 0,
+      hp_primary_playable: (['HP_PRIMARY_ELITE','HP_PRIMARY_STRONG'].includes(lane) && hp >= 62 && conf >= 90 && sample >= 20 && score >= 84) ? 1 : 0,
+      hp_review_playable: (!['HP_PRIMARY_ELITE','HP_PRIMARY_STRONG'].includes(lane) && score >= 70) ? 1 : 0,
       hp_fade_flag: (hp < 35 && conf >= 90 && sample >= 20) ? 1 : 0,
+      board_tier: (['HP_PRIMARY_ELITE','HP_PRIMARY_STRONG'].includes(lane) && hp >= 62 && conf >= 90 && sample >= 20 && score >= 84) ? 'PRIMARY' : 'REVIEW',
+      live_playable: (['HP_PRIMARY_ELITE','HP_PRIMARY_STRONG'].includes(lane) && hp >= 62 && conf >= 90 && sample >= 20 && score >= 84) ? 1 : 0,
+      review_playable: (!['HP_PRIMARY_ELITE','HP_PRIMARY_STRONG'].includes(lane) && score >= 70) ? 1 : 0,
+      score_grade: score >= 84 ? 'BIN_STRONG' : (score >= 76 ? 'BIN_QUALIFIED' : (score >= 70 ? 'BIN_ARCHIVE' : 'BIN_REJECT')),
       hp_board_sanity_calibration_enabled: hpSanityCfg.enabled !== false
     };
   });
@@ -3452,10 +3465,14 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
   const existing = await first(env.SCORE_DB, `SELECT hp_board_batch_id FROM hp_board_batches WHERE source_hp_batch_id=? ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC LIMIT 1`, sourceHpBatchId);
   const hpBoardBatchId = existing && existing.hp_board_batch_id ? existing.hp_board_batch_id : hpUid('hp_board_batch');
   const calibrationJson = hpSafeJson({
-    calibration_type:'internal_recent_form_display_only_fast_terminal',
+    calibration_type:'internal_recent_form_display_score_overlay_fast_terminal',
     true_calibration_blocked_reason:'No settled outcome/backtest/settlement table exists in SCORE_DB.',
     raw_hp_preserved:true,
     fast_terminal_sql_builder:true,
+    score_overlay_caps:{hp_below_20:55,hp_below_35:64,hp_below_45:72,hp_below_55:78,hp_below_62:82,pitcher_sample_under_15:76},
+    primary_live_requires:'hp>=62 confidence>=90 sample>=20 adjusted_score>=84',
+    weak_hp_high_score_guard:'hp<45 adjusted_score must be <80',
+    low_sample_pitcher_guard:'pitcher sample<15 adjusted_score must be <84 and live=0',
     version:HP_VERSION
   }, 3000);
 
@@ -3482,18 +3499,213 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
       ranked.mlb_player_id,ranked.player_name,ranked.canonical_prop_key,ranked.line_value,ranked.selected_side,ranked.prop_family,
       ranked.estimated_hit_probability_0_100,ranked.probability_confidence_0_100,ranked.probability_band,ranked.probability_grade,
       ranked.empirical_hit_rate_0_1,ranked.reliability_0_1,ranked.sample_size,ranked.non_push_sample,ranked.hit_count,ranked.miss_count,ranked.push_count,ranked.push_risk_0_1,
-      ranked.score_0_100,ranked.score_grade,ranked.board_tier,ranked.live_playable,ranked.review_playable,
-      CASE WHEN ranked.hp_lane IN ('HP_PRIMARY_ELITE','HP_PRIMARY_STRONG') AND COALESCE(ranked.blocker_count,0)=0 THEN 1 ELSE 0 END,
-      CASE WHEN ranked.hp_lane NOT IN ('HP_PRIMARY_ELITE','HP_PRIMARY_STRONG') AND COALESCE(ranked.blocker_count,0)=0 THEN 1 ELSE 0 END,
-      CASE WHEN ranked.hp_lane='HP_FADE_RECENT_FORM' THEN 1 ELSE 0 END,
+      ranked.hp_display_score_0_100,ranked.hp_display_score_grade,ranked.hp_display_board_tier,ranked.hp_display_live_playable,ranked.hp_display_review_playable,
+      CASE WHEN ranked.hp_display_board_tier='PRIMARY' AND COALESCE(ranked.blocker_count,0)=0 THEN 1 ELSE 0 END,
+      CASE WHEN ranked.hp_display_board_tier<>'PRIMARY' AND COALESCE(ranked.blocker_count,0)=0 THEN 1 ELSE 0 END,
+      CASE WHEN ranked.hp_lane='HP_FADE_RECENT_FORM' OR COALESCE(ranked.estimated_hit_probability_0_100,0) < 35 THEN 1 ELSE 0 END,
       COALESCE(ranked.warning_count,0),COALESCE(ranked.blocker_count,0),ranked.lane_reason,?,ranked.source_snapshot_json,CURRENT_TIMESTAMP
     FROM (
       SELECT base.*,
-             ROW_NUMBER() OVER (ORDER BY base.lane_order ASC, COALESCE(base.estimated_hit_probability_0_100,0) DESC, COALESCE(base.probability_confidence_0_100,0) DESC, COALESCE(base.sample_size,0) DESC, COALESCE(base.score_0_100,0) DESC, COALESCE(base.player_name,''), COALESCE(base.canonical_prop_key,''), COALESCE(base.selected_side,'')) AS hp_rank,
-             ROW_NUMBER() OVER (PARTITION BY base.hp_lane ORDER BY COALESCE(base.estimated_hit_probability_0_100,0) DESC, COALESCE(base.probability_confidence_0_100,0) DESC, COALESCE(base.sample_size,0) DESC, COALESCE(base.score_0_100,0) DESC, COALESCE(base.player_name,''), COALESCE(base.canonical_prop_key,''), COALESCE(base.selected_side,'')) AS hp_lane_rank,
+             ROW_NUMBER() OVER (ORDER BY base.lane_order ASC, COALESCE(base.estimated_hit_probability_0_100,0) DESC, COALESCE(base.probability_confidence_0_100,0) DESC, COALESCE(base.sample_size,0) DESC, COALESCE(base.hp_display_score_0_100,0) DESC, COALESCE(base.player_name,''), COALESCE(base.canonical_prop_key,''), COALESCE(base.selected_side,'')) AS hp_rank,
+             ROW_NUMBER() OVER (PARTITION BY base.hp_lane ORDER BY COALESCE(base.estimated_hit_probability_0_100,0) DESC, COALESCE(base.probability_confidence_0_100,0) DESC, COALESCE(base.sample_size,0) DESC, COALESCE(base.hp_display_score_0_100,0) DESC, COALESCE(base.player_name,''), COALESCE(base.canonical_prop_key,''), COALESCE(base.selected_side,'')) AS hp_lane_rank,
              COALESCE(base.estimated_hit_probability_0_100,0) AS hp_sort_0_100
       FROM (
         SELECT c.*,
+          MIN(
+            COALESCE(c.score_0_100,0),
+            CASE
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
+              ELSE 94
+            END,
+            CASE
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
+              ELSE 94
+            END
+          ) AS hp_display_score_0_100,
+          CASE
+            WHEN MIN(
+            COALESCE(c.score_0_100,0),
+            CASE
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
+              ELSE 94
+            END,
+            CASE
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
+              ELSE 94
+            END
+          ) >= 84 THEN 'BIN_STRONG'
+            WHEN MIN(
+            COALESCE(c.score_0_100,0),
+            CASE
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
+              ELSE 94
+            END,
+            CASE
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
+              ELSE 94
+            END
+          ) >= 76 THEN 'BIN_QUALIFIED'
+            WHEN MIN(
+            COALESCE(c.score_0_100,0),
+            CASE
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
+              ELSE 94
+            END,
+            CASE
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
+              ELSE 94
+            END
+          ) >= 70 THEN 'BIN_ARCHIVE'
+            ELSE 'BIN_REJECT'
+          END AS hp_display_score_grade,
+          CASE
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 62
+             AND COALESCE(c.probability_confidence_0_100,0) >= 90
+             AND COALESCE(c.sample_size,0) >= 20
+             AND MIN(
+            COALESCE(c.score_0_100,0),
+            CASE
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
+              ELSE 94
+            END,
+            CASE
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
+              ELSE 94
+            END
+          ) >= 84 THEN 'PRIMARY'
+            ELSE 'REVIEW'
+          END AS hp_display_board_tier,
+          CASE
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 62
+             AND COALESCE(c.probability_confidence_0_100,0) >= 90
+             AND COALESCE(c.sample_size,0) >= 20
+             AND MIN(
+            COALESCE(c.score_0_100,0),
+            CASE
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
+              ELSE 94
+            END,
+            CASE
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
+              ELSE 94
+            END
+          ) >= 84 THEN 1
+            ELSE 0
+          END AS hp_display_live_playable,
+          CASE
+            WHEN NOT (COALESCE(c.estimated_hit_probability_0_100,0) >= 62
+             AND COALESCE(c.probability_confidence_0_100,0) >= 90
+             AND COALESCE(c.sample_size,0) >= 20
+             AND MIN(
+            COALESCE(c.score_0_100,0),
+            CASE
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
+              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
+              ELSE 94
+            END,
+            CASE
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
+              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
+              ELSE 94
+            END
+          ) >= 84) THEN 1
+            ELSE 0
+          END AS hp_display_review_playable,
+          CASE
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 'HP_CAP_BELOW_45'
+            WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 'PITCHER_SAMPLE_CAP_UNDER_15'
+            WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 'SAMPLE_CAP_UNDER_15'
+            ELSE 'NO_HP_DISPLAY_CAP_BINDING'
+          END AS hp_display_cap_reason,
           CASE
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 70 AND COALESCE(c.probability_confidence_0_100,0) >= 95 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 'HP_PRIMARY_ELITE'
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 62 AND COALESCE(c.probability_confidence_0_100,0) >= 90 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 'HP_PRIMARY_STRONG'
@@ -3541,13 +3753,19 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
   const issueCountRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_issues WHERE hp_board_batch_id=?`, hpBoardBatchId) || {};
   const boardRows = Number(qa.rows || 0);
   const blockerRows = Number(qa.blocker_rows || 0);
-  const ok = boardRows === hpRows && boardRows === Number(qa.hp_rows || 0) && boardRows === Number(qa.ranks || 0) && Number(qa.min_rank || 0) === 1 && Number(qa.max_rank || 0) === boardRows && Number(qa.null_final_rows || 0) === 0 && Number(qa.null_prepared_rows || 0) === 0 && Number(qa.missing_calibration_rows || 0) === 0 && blockerRows === 0;
-  const status = ok ? 'completed_hp_board_current_display_calibrated_fast_terminal' : 'failed_hp_board_fast_terminal_integrity_check';
-  const cert = ok ? 'HP_BOARD_DISPLAY_CALIBRATION_CERTIFIED_INTERNAL_RECENT_FORM' : 'HP_BOARD_FAST_TERMINAL_INTEGRITY_FAILED';
-  const grade = ok ? 'PASS_WITH_TRUE_CALIBRATION_BLOCKED' : 'BLOCKED';
   const primaryRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND hp_primary_playable=1`, hpBoardBatchId) || {};
   const reviewRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND hp_review_playable=1`, hpBoardBatchId) || {};
   const fadeRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND hp_fade_flag=1`, hpBoardBatchId) || {};
+  const weakHpHighScoreRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND COALESCE(estimated_hit_probability_0_100,0) < 45 AND COALESCE(score_0_100,0) >= 80 AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
+  const lowSamplePitcherHighScoreRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(sample_size,0) < 15 AND COALESCE(score_0_100,0) >= 84 AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
+  const lowSamplePitcherPrimaryRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(sample_size,0) < 15 AND (COALESCE(hp_primary_playable,0)=1 OR COALESCE(live_playable,0)=1 OR board_tier='PRIMARY') AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
+  const fadeLiveRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND hp_lane IN ('HP_FADE_RECENT_FORM','HP_SCORE_STRONG_HP_WEAK_REVIEW','HP_LOW_SAMPLE_REVIEW') AND (COALESCE(hp_primary_playable,0)=1 OR COALESCE(live_playable,0)=1 OR board_tier='PRIMARY') AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
+  const integrityOk = boardRows === hpRows && boardRows === Number(qa.hp_rows || 0) && boardRows === Number(qa.ranks || 0) && Number(qa.min_rank || 0) === 1 && Number(qa.max_rank || 0) === boardRows && Number(qa.null_final_rows || 0) === 0 && Number(qa.null_prepared_rows || 0) === 0 && Number(qa.missing_calibration_rows || 0) === 0 && blockerRows === 0;
+  const sanityOverlayOk = Number(weakHpHighScoreRow.rows || 0) === 0 && Number(lowSamplePitcherHighScoreRow.rows || 0) === 0 && Number(lowSamplePitcherPrimaryRow.rows || 0) === 0 && Number(fadeLiveRow.rows || 0) === 0;
+  const ok = integrityOk && sanityOverlayOk;
+  const status = ok ? 'completed_hp_board_current_display_sanity_overlay_capped' : 'failed_hp_board_sanity_overlay_guard';
+  const cert = ok ? 'HP_BOARD_DISPLAY_SANITY_OVERLAY_CERTIFIED_CAPS_ENFORCED' : 'HP_BOARD_SANITY_OVERLAY_GUARD_FAILED';
+  const grade = ok ? 'PASS_WITH_TRUE_CALIBRATION_BLOCKED' : 'BLOCKED';
   const output = baseIdentity({
     ok, data_ok: ok, version:HP_VERSION, worker_name:WORKER_NAME, logical_worker_name:'alphadog-v2-hit-probability', deployed_worker_slot:'alphadog-v2-score-audit',
     job_key:HP_JOB_KEY, mode:input.mode || HP_MODE, request_id:requestId, run_id:input.run_id || source.run_id || null, chain_id:input.chain_id || null,
@@ -3556,7 +3774,8 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
     source_table:'hit_probability_current', source_rows_read:Number(source.source_rows_read || hpRows), rows_read:Number(source.source_rows_read || hpRows), supported_rows:hpRows,
     probability_rows_written:hpRows, recent_form_rows_written:hpRows, hp_board_current_written:boardRows, board_rows_written:boardRows, history_rows_written:boardRows, rows_written:boardRows,
     issue_rows_written:Number(issueCountRow.rows || 0), primary_rows:Number(primaryRow.rows || 0), review_rows:Number(reviewRow.rows || 0), fade_rows:Number(fadeRow.rows || 0),
-    avg_score:qa.avg_score, avg_hp:qa.avg_hp, row_parity_ok:boardRows === hpRows, rank_integrity_ok:Number(qa.ranks || 0) === boardRows, link_integrity_ok:Number(qa.null_final_rows || 0) === 0 && Number(qa.null_prepared_rows || 0) === 0,
+    weak_hp_high_score_rows:Number(weakHpHighScoreRow.rows || 0), low_sample_pitcher_high_score_rows:Number(lowSamplePitcherHighScoreRow.rows || 0), low_sample_pitcher_primary_rows:Number(lowSamplePitcherPrimaryRow.rows || 0), hp_review_lane_live_rows:Number(fadeLiveRow.rows || 0),
+    avg_score:qa.avg_score, avg_hp:qa.avg_hp, row_parity_ok:boardRows === hpRows, rank_integrity_ok:Number(qa.ranks || 0) === boardRows, link_integrity_ok:Number(qa.null_final_rows || 0) === 0 && Number(qa.null_prepared_rows || 0) === 0, sanity_overlay_ok:sanityOverlayOk,
     hp_board_included:true, hp_board_current_replaced:true, hp_board_display_calibration_written:Number(qa.missing_calibration_rows || 0) === 0, hp_board_fast_terminal_sql_builder:true,
     true_calibration_blocked_reason:'No settled outcome/backtest/settlement table exists in SCORE_DB.', raw_hp_preserved:true, no_true_hit_probability_claims:true, no_true_probability_claims:true,
     no_score_mutation:true, no_scoring_engine_current_mutation:true, no_final_board_mutation:true, no_prepared_board_mutation:true, no_source_board_mutation:true, hp_board_ranking:true, no_candidate_board_write:true,
