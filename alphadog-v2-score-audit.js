@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.21-hp-first-trust-score-engine";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.22-hp-first-timeout-safe-continuation";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -2236,7 +2236,7 @@ async function runScoringEngineCurrent(env, input) {
     return output;
   }
 
-  const chunk = await insertEngineCurrentProfileChunk(env, batchId, PRODUCTION_PROFILE_KEY, { readChunkSize: 60, writeBatchSize: 8, maxRowsThisInvocation: 420, maxMillis: 43000 });
+  const chunk = await insertEngineCurrentProfileChunk(env, batchId, PRODUCTION_PROFILE_KEY, { readChunkSize: 70, writeBatchSize: 10, maxRowsThisInvocation: 560, maxMillis: 56000 });
   await run(env.SCORE_DB, `
     UPDATE scoring_engine_batches
     SET status=?, certification=?, certification_grade=?, matrix_rows_read=?, score_rows_written=?, output_json=?
@@ -2884,16 +2884,17 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.21-hp-first-trust-score-board";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.22-hp-first-timeout-safe-continuation-board";
 const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_1_6_STOLEN_BASES_ROUTE_LOCK";
 const HP_MAX_ROWS_PER_RUN = 12000;
-const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 260;
-const HP_CURRENT_CHUNK_MAX_MILLIS = 43000;
-const HP_PLAYER_CHUNK_SIZE = 70;
+const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 180;
+const HP_CURRENT_CHUNK_MAX_MILLIS = 32000;
+const HP_PLAYER_CHUNK_SIZE = 50;
 const HP_BOARD_MODE = "hp_board_current_build";
 const HP_BOARD_JOB_KEY = "hp-board";
 const HP_BOARD_PROFILE_KEY = "HP_BOARD_RECENT_FORM_PROFILE";
-const HP_BOARD_PROFILE_VERSION = "HP_BOARD_HP_FIRST_TRUST_SCORE_V0_1_3";
+const HP_BOARD_PROFILE_VERSION = "HP_BOARD_HP_FIRST_TRUST_SCORE_V0_1_4_TIMEOUT_SAFE";
+const HP_BOARD_CHUNK_ROWS_PER_INVOCATION = 140;
 const HP_BOARD_LANE_ORDER = {
   HP_PREMIUM_TRUSTED: 1,
   HP_PREMIUM_LOW_TRUST_REVIEW: 2,
@@ -3545,6 +3546,7 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
   const started = Date.now();
   if(!env.SCORE_DB) return baseIdentity({ ok:false, data_ok:false, version:HP_VERSION, worker_name:WORKER_NAME, logical_worker_name:'alphadog-v2-hit-probability', job_key:HP_JOB_KEY, status:'blocked_missing_score_db_for_fast_hp_board', certification:'HP_BOARD_FAST_TERMINAL_MISSING_SCORE_DB', certification_grade:'BLOCKED' });
   await hpEnsureSchema(env);
+  await hpEnsureBoardSchema(env);
   const requestId = input.request_id || (hpBatch && hpBatch.request_id) || null;
   let source = hpBatch;
   if(!source || !source.batch_id){
@@ -3556,7 +3558,7 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
   const sourceHpBatchId = source.batch_id;
   const sourceFinalBoardBatchId = source.source_final_board_batch_id || null;
   const sourceEngineBatchId = source.source_engine_batch_id || null;
-  const sourceRows = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, COUNT(DISTINCT probability_row_id) AS distinct_rows, SUM(CASE WHEN final_board_row_id IS NULL THEN 1 ELSE 0 END) AS null_final_rows, SUM(CASE WHEN prepared_row_id IS NULL THEN 1 ELSE 0 END) AS null_prepared_rows, SUM(CASE WHEN blocker_count > 0 THEN 1 ELSE 0 END) AS blocker_rows FROM hit_probability_current WHERE batch_id=?`, sourceHpBatchId) || {};
+  const sourceRows = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, COUNT(DISTINCT probability_row_id) AS distinct_rows, SUM(CASE WHEN prepared_row_id IS NULL THEN 1 ELSE 0 END) AS null_prepared_rows FROM hit_probability_current WHERE batch_id=?`, sourceHpBatchId) || {};
   const hpRows = Number(sourceRows.rows || 0);
   if(hpRows <= 0){
     return baseIdentity({ ok:false, data_ok:false, version:HP_VERSION, worker_name:WORKER_NAME, logical_worker_name:'alphadog-v2-hit-probability', job_key:HP_JOB_KEY, request_id:requestId, batch_id:sourceHpBatchId, status:'blocked_no_hp_current_rows_for_fast_hp_board', certification:'HP_BOARD_FAST_TERMINAL_NO_HP_CURRENT_ROWS', certification_grade:'BLOCKED' });
@@ -3564,14 +3566,13 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
   const existing = await first(env.SCORE_DB, `SELECT hp_board_batch_id FROM hp_board_batches WHERE source_hp_batch_id=? ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC LIMIT 1`, sourceHpBatchId);
   const hpBoardBatchId = existing && existing.hp_board_batch_id ? existing.hp_board_batch_id : hpUid('hp_board_batch');
   const calibrationJson = hpSafeJson({
-    calibration_type:'internal_recent_form_display_score_overlay_fast_terminal',
+    calibration_type:'hp_first_trust_score_fast_terminal',
+    hp_reality_gate:'hp_under_60_killed_not_playable',
+    score_meaning:'system_trust_support_quality_preserved_from_scoring_engine',
+    board_sort_formula:'0.72*hit_probability + 0.28*score',
+    score_is_not_translated_from_hp:true,
+    caps_do_not_mutate_score:true,
     true_calibration_blocked_reason:'No settled outcome/backtest/settlement table exists in SCORE_DB.',
-    raw_hp_preserved:true,
-    fast_terminal_sql_builder:true,
-    score_overlay_caps:{hp_below_20:55,hp_below_35:64,hp_below_45:72,hp_below_55:78,hp_below_62:82,pitcher_sample_under_15:76},
-    primary_live_requires:'hp>=62 confidence>=90 sample>=20 adjusted_score>=84',
-    weak_hp_high_score_guard:'hp<45 adjusted_score must be <80',
-    low_sample_pitcher_guard:'pitcher sample<15 adjusted_score must be <84 and live=0',
     version:HP_VERSION
   }, 3000);
 
@@ -3598,242 +3599,67 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
       ranked.mlb_player_id,ranked.player_name,ranked.canonical_prop_key,ranked.line_value,ranked.selected_side,ranked.prop_family,
       ranked.estimated_hit_probability_0_100,ranked.probability_confidence_0_100,ranked.probability_band,ranked.probability_grade,
       ranked.empirical_hit_rate_0_1,ranked.reliability_0_1,ranked.sample_size,ranked.non_push_sample,ranked.hit_count,ranked.miss_count,ranked.push_count,ranked.push_risk_0_1,
-      ranked.hp_display_score_0_100,ranked.hp_display_score_grade,ranked.hp_display_board_tier,ranked.hp_display_live_playable,ranked.hp_display_review_playable,
-      CASE WHEN ranked.hp_display_board_tier='PRIMARY' AND COALESCE(ranked.blocker_count,0)=0 THEN 1 ELSE 0 END,
-      CASE WHEN ranked.hp_display_board_tier<>'PRIMARY' AND COALESCE(ranked.blocker_count,0)=0 THEN 1 ELSE 0 END,
-      CASE WHEN ranked.hp_lane='HP_FADE_RECENT_FORM' OR COALESCE(ranked.estimated_hit_probability_0_100,0) < 35 THEN 1 ELSE 0 END,
+      ranked.score_0_100,ranked.trust_score_grade,ranked.hp_board_tier,ranked.hp_live_playable,ranked.hp_review_playable,
+      ranked.hp_live_playable,ranked.hp_review_playable,CASE WHEN ranked.hp < 60 THEN 1 ELSE 0 END,
       COALESCE(ranked.warning_count,0),COALESCE(ranked.blocker_count,0),ranked.lane_reason,?,ranked.source_snapshot_json,CURRENT_TIMESTAMP
     FROM (
       SELECT base.*,
-             ROW_NUMBER() OVER (ORDER BY base.lane_order ASC, COALESCE(base.estimated_hit_probability_0_100,0) DESC, COALESCE(base.probability_confidence_0_100,0) DESC, COALESCE(base.sample_size,0) DESC, COALESCE(base.hp_display_score_0_100,0) DESC, COALESCE(base.player_name,''), COALESCE(base.canonical_prop_key,''), COALESCE(base.selected_side,'')) AS hp_rank,
-             ROW_NUMBER() OVER (PARTITION BY base.hp_lane ORDER BY COALESCE(base.estimated_hit_probability_0_100,0) DESC, COALESCE(base.probability_confidence_0_100,0) DESC, COALESCE(base.sample_size,0) DESC, COALESCE(base.hp_display_score_0_100,0) DESC, COALESCE(base.player_name,''), COALESCE(base.canonical_prop_key,''), COALESCE(base.selected_side,'')) AS hp_lane_rank,
-             COALESCE(base.estimated_hit_probability_0_100,0) AS hp_sort_0_100
+             ROW_NUMBER() OVER (ORDER BY base.lane_order ASC, base.hp_sort_0_100 DESC, base.hp DESC, base.score DESC, COALESCE(base.probability_confidence_0_100,0) DESC, COALESCE(base.sample_size,0) DESC, COALESCE(base.player_name,''), COALESCE(base.canonical_prop_key,''), COALESCE(base.selected_side,''), COALESCE(base.line_value,0)) AS hp_rank,
+             ROW_NUMBER() OVER (PARTITION BY base.hp_lane ORDER BY base.hp_sort_0_100 DESC, base.hp DESC, base.score DESC, COALESCE(base.probability_confidence_0_100,0) DESC, COALESCE(base.sample_size,0) DESC, COALESCE(base.player_name,''), COALESCE(base.canonical_prop_key,''), COALESCE(base.selected_side,''), COALESCE(base.line_value,0)) AS hp_lane_rank
       FROM (
         SELECT c.*,
-          MIN(
-            COALESCE(c.score_0_100,0),
-            CASE
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
-              ELSE 94
-            END,
-            CASE
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
-              ELSE 94
-            END
-          ) AS hp_display_score_0_100,
+          COALESCE(c.estimated_hit_probability_0_100,0) AS hp,
+          COALESCE(c.score_0_100,0) AS score,
+          ROUND((0.72 * COALESCE(c.estimated_hit_probability_0_100,0)) + (0.28 * COALESCE(c.score_0_100,0)), 3) AS hp_sort_0_100,
           CASE
-            WHEN MIN(
-            COALESCE(c.score_0_100,0),
-            CASE
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
-              ELSE 94
-            END,
-            CASE
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
-              ELSE 94
-            END
-          ) >= 84 THEN 'BIN_STRONG'
-            WHEN MIN(
-            COALESCE(c.score_0_100,0),
-            CASE
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
-              ELSE 94
-            END,
-            CASE
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
-              ELSE 94
-            END
-          ) >= 76 THEN 'BIN_QUALIFIED'
-            WHEN MIN(
-            COALESCE(c.score_0_100,0),
-            CASE
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
-              ELSE 94
-            END,
-            CASE
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
-              ELSE 94
-            END
-          ) >= 70 THEN 'BIN_ARCHIVE'
+            WHEN COALESCE(c.score_0_100,0) >= 92 THEN 'BIN_ELITE'
+            WHEN COALESCE(c.score_0_100,0) >= 82 THEN 'BIN_STRONG'
+            WHEN COALESCE(c.score_0_100,0) >= 65 THEN 'BIN_QUALIFIED'
+            WHEN COALESCE(c.score_0_100,0) >= 50 THEN 'BIN_ARCHIVE'
             ELSE 'BIN_REJECT'
-          END AS hp_display_score_grade,
+          END AS trust_score_grade,
           CASE
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 62
-             AND COALESCE(c.probability_confidence_0_100,0) >= 90
-             AND COALESCE(c.sample_size,0) >= 20
-             AND MIN(
-            COALESCE(c.score_0_100,0),
-            CASE
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
-              ELSE 94
-            END,
-            CASE
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
-              ELSE 94
-            END
-          ) >= 84 THEN 'PRIMARY'
-            ELSE 'REVIEW'
-          END AS hp_display_board_tier,
-          CASE
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 62
-             AND COALESCE(c.probability_confidence_0_100,0) >= 90
-             AND COALESCE(c.sample_size,0) >= 20
-             AND MIN(
-            COALESCE(c.score_0_100,0),
-            CASE
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
-              ELSE 94
-            END,
-            CASE
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
-              ELSE 94
-            END
-          ) >= 84 THEN 1
-            ELSE 0
-          END AS hp_display_live_playable,
-          CASE
-            WHEN NOT (COALESCE(c.estimated_hit_probability_0_100,0) >= 62
-             AND COALESCE(c.probability_confidence_0_100,0) >= 90
-             AND COALESCE(c.sample_size,0) >= 20
-             AND MIN(
-            COALESCE(c.score_0_100,0),
-            CASE
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 20 THEN 55
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 THEN 64
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 72
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 78
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 62 THEN 82
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 70 THEN 86
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 80 THEN 89
-              WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 90 THEN 92
-              ELSE 94
-            END,
-            CASE
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 84
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 10 THEN 70
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 76
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 20 THEN 80
-              WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 30 THEN 86
-              ELSE 94
-            END
-          ) >= 84) THEN 1
-            ELSE 0
-          END AS hp_display_review_playable,
-          CASE
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 45 THEN 'HP_CAP_BELOW_45'
-            WHEN c.canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 'PITCHER_SAMPLE_CAP_UNDER_15'
-            WHEN COALESCE(c.non_push_sample,c.sample_size,0) < 15 THEN 'SAMPLE_CAP_UNDER_15'
-            ELSE 'NO_HP_DISPLAY_CAP_BINDING'
-          END AS hp_display_cap_reason,
-          CASE
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 70 AND COALESCE(c.probability_confidence_0_100,0) >= 95 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 'HP_PRIMARY_ELITE'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 62 AND COALESCE(c.probability_confidence_0_100,0) >= 90 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 'HP_PRIMARY_STRONG'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 55 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 AND COALESCE(c.score_0_100,0) >= 76 THEN 'HP_SUPPORTED_REVIEW'
-            WHEN COALESCE(c.score_0_100,0) >= 84 AND COALESCE(c.estimated_hit_probability_0_100,0) < 45 AND COALESCE(c.sample_size,0) >= 15 THEN 'HP_SCORE_STRONG_HP_WEAK_REVIEW'
-            WHEN COALESCE(c.sample_size,0) < 15 THEN 'HP_LOW_SAMPLE_REVIEW'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 45 AND COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 'HP_NEUTRAL_REVIEW'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 AND COALESCE(c.probability_confidence_0_100,0) >= 90 AND COALESCE(c.sample_size,0) >= 20 THEN 'HP_FADE_RECENT_FORM'
-            ELSE 'HP_WEAK_SUPPORT'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 60 THEN 'HP_KILLED_LOW_PROBABILITY'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 THEN 'HP_PREMIUM_TRUSTED'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 THEN 'HP_PREMIUM_LOW_TRUST_REVIEW'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 THEN 'HP_STRONG_TRUSTED'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 THEN 'HP_STRONG_LOW_TRUST_REVIEW'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 AND COALESCE(c.score_0_100,0) >= 75 THEN 'HP_EDGE_TRUSTED_REVIEW'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 THEN 'HP_EDGE_LOW_TRUST_REVIEW'
+            ELSE 'HP_THIN_EDGE_REVIEW'
           END AS hp_lane,
           CASE
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 70 AND COALESCE(c.probability_confidence_0_100,0) >= 95 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 1
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 62 AND COALESCE(c.probability_confidence_0_100,0) >= 90 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 2
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 55 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 AND COALESCE(c.score_0_100,0) >= 76 THEN 3
-            WHEN COALESCE(c.score_0_100,0) >= 84 AND COALESCE(c.estimated_hit_probability_0_100,0) < 45 AND COALESCE(c.sample_size,0) >= 15 THEN 4
-            WHEN COALESCE(c.sample_size,0) < 15 THEN 5
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 45 AND COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 6
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 AND COALESCE(c.probability_confidence_0_100,0) >= 90 AND COALESCE(c.sample_size,0) >= 20 THEN 7
-            ELSE 8
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 60 THEN 98
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 THEN 1
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 THEN 2
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 THEN 3
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 THEN 4
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 AND COALESCE(c.score_0_100,0) >= 75 THEN 5
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 THEN 6
+            ELSE 7
           END AS lane_order,
           CASE
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 70 AND COALESCE(c.probability_confidence_0_100,0) >= 95 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 'Recent-form HP is 70+ with strong confidence, full sample support, and strong framework score.'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 62 AND COALESCE(c.probability_confidence_0_100,0) >= 90 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 'Recent-form HP is 62+ with strong confidence, stable sample, and strong framework score.'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 55 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 AND COALESCE(c.score_0_100,0) >= 76 THEN 'Recent-form HP is supportive but not primary; keep as review lane.'
-            WHEN COALESCE(c.score_0_100,0) >= 84 AND COALESCE(c.estimated_hit_probability_0_100,0) < 45 AND COALESCE(c.sample_size,0) >= 15 THEN 'Framework score is strong, but recent-form HP is weak; review divergence before using.'
-            WHEN COALESCE(c.sample_size,0) < 15 THEN 'Recent-form sample is below HP board threshold; preserve row for review only.'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 45 AND COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 'Recent-form HP is neutral; not primary support.'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 AND COALESCE(c.probability_confidence_0_100,0) >= 90 AND COALESCE(c.sample_size,0) >= 20 THEN 'Recent-form HP is materially weak with stable confidence; fade/reject candidate.'
-            ELSE 'Recent-form HP support is weak or incomplete; not a primary candidate.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 60 THEN 'KILLED_LOW_HP'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 THEN 'PRIMARY'
+            ELSE 'REVIEW'
+          END AS hp_board_tier,
+          CASE
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 AND COALESCE(c.blocker_count,0)=0 THEN 1
+            ELSE 0
+          END AS hp_live_playable,
+          CASE
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 60 AND NOT (COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15) AND COALESCE(c.blocker_count,0)=0 THEN 1
+            ELSE 0
+          END AS hp_review_playable,
+          CASE
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 60 THEN 'Hit probability is below 60%; killed from useful board/testing consideration regardless of score.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 AND COALESCE(c.score_0_100,0) >= 80 THEN 'Premium HP with trusted system support.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 THEN 'Premium HP survives; score says lower system trust, review only.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 80 THEN 'Strong HP with trusted system support.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 THEN 'Strong HP survives; score says lower system trust, review only.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 AND COALESCE(c.score_0_100,0) >= 75 THEN 'Positive HP edge with useful system trust.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 THEN 'Positive HP edge with lower system trust; review only.'
+            ELSE 'Thin HP edge above 60%; review only.'
           END AS lane_reason
         FROM hit_probability_current c
         WHERE c.batch_id=?
@@ -3850,40 +3676,39 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
 
   const qa = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, COUNT(DISTINCT hp_board_row_id) AS hp_rows, COUNT(DISTINCT hp_rank) AS ranks, MIN(hp_rank) AS min_rank, MAX(hp_rank) AS max_rank, COUNT(DISTINCT final_board_row_id) AS final_rows, COUNT(DISTINCT prepared_row_id) AS prepared_rows, SUM(CASE WHEN final_board_row_id IS NULL THEN 1 ELSE 0 END) AS null_final_rows, SUM(CASE WHEN prepared_row_id IS NULL THEN 1 ELSE 0 END) AS null_prepared_rows, SUM(CASE WHEN calibration_json IS NULL THEN 1 ELSE 0 END) AS missing_calibration_rows, SUM(CASE WHEN blocker_count > 0 THEN 1 ELSE 0 END) AS blocker_rows, ROUND(AVG(score_0_100),2) AS avg_score, ROUND(AVG(estimated_hit_probability_0_100),2) AS avg_hp FROM hp_board_current WHERE hp_board_batch_id=?`, hpBoardBatchId) || {};
   const issueCountRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_issues WHERE hp_board_batch_id=?`, hpBoardBatchId) || {};
-  const boardRows = Number(qa.rows || 0);
-  const blockerRows = Number(qa.blocker_rows || 0);
   const primaryRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND hp_primary_playable=1`, hpBoardBatchId) || {};
   const reviewRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND hp_review_playable=1`, hpBoardBatchId) || {};
   const fadeRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND hp_fade_flag=1`, hpBoardBatchId) || {};
-  const weakHpHighScoreRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND COALESCE(estimated_hit_probability_0_100,0) < 45 AND COALESCE(score_0_100,0) >= 80 AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
-  const lowSamplePitcherHighScoreRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(sample_size,0) < 15 AND COALESCE(score_0_100,0) >= 84 AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
-  const lowSamplePitcherPrimaryRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND canonical_prop_key IN ('pitcher_strikeouts','pitcher_strikeouts_combo','pitcher_outs','earned_runs','hits_allowed','walks_allowed','pitcher_walks') AND COALESCE(sample_size,0) < 15 AND (COALESCE(hp_primary_playable,0)=1 OR COALESCE(live_playable,0)=1 OR board_tier='PRIMARY') AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
-  const fadeLiveRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND hp_lane IN ('HP_FADE_RECENT_FORM','HP_SCORE_STRONG_HP_WEAK_REVIEW','HP_LOW_SAMPLE_REVIEW') AND (COALESCE(hp_primary_playable,0)=1 OR COALESCE(live_playable,0)=1 OR board_tier='PRIMARY') AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
-  const integrityOk = boardRows === hpRows && boardRows === Number(qa.hp_rows || 0) && boardRows === Number(qa.ranks || 0) && Number(qa.min_rank || 0) === 1 && Number(qa.max_rank || 0) === boardRows && Number(qa.null_final_rows || 0) === 0 && Number(qa.null_prepared_rows || 0) === 0 && Number(qa.missing_calibration_rows || 0) === 0 && blockerRows === 0;
-  const sanityOverlayOk = Number(weakHpHighScoreRow.rows || 0) === 0 && Number(lowSamplePitcherHighScoreRow.rows || 0) === 0 && Number(lowSamplePitcherPrimaryRow.rows || 0) === 0 && Number(fadeLiveRow.rows || 0) === 0;
-  const ok = integrityOk && sanityOverlayOk;
-  const status = ok ? 'completed_hp_board_current_display_sanity_overlay_capped' : 'failed_hp_board_sanity_overlay_guard';
-  const cert = ok ? 'HP_BOARD_DISPLAY_SANITY_OVERLAY_CERTIFIED_CAPS_ENFORCED' : 'HP_BOARD_SANITY_OVERLAY_GUARD_FAILED';
+  const lowHpPlayableRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND COALESCE(estimated_hit_probability_0_100,0) < 60 AND (COALESCE(hp_primary_playable,0)=1 OR COALESCE(live_playable,0)=1 OR board_tier='PRIMARY') AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
+  const eligibleMissingScoreRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND COALESCE(estimated_hit_probability_0_100,0) >= 60 AND score_0_100 IS NULL AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
+  const eligibleNotVisibleRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND COALESCE(estimated_hit_probability_0_100,0) >= 60 AND COALESCE(hp_review_playable,0)=0 AND COALESCE(hp_primary_playable,0)=0 AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
+  const boardRows = Number(qa.rows || 0);
+  const finalLinkOk = sourceFinalBoardBatchId ? (Number(qa.null_final_rows || 0) === 0) : true;
+  const integrityOk = boardRows === hpRows && boardRows === Number(qa.hp_rows || 0) && boardRows === Number(qa.ranks || 0) && Number(qa.min_rank || 0) === 1 && Number(qa.max_rank || 0) === boardRows && finalLinkOk && Number(qa.null_prepared_rows || 0) === 0 && Number(qa.missing_calibration_rows || 0) === 0;
+  const hpFirstOk = Number(lowHpPlayableRow.rows || 0) === 0 && Number(eligibleMissingScoreRow.rows || 0) === 0 && Number(eligibleNotVisibleRow.rows || 0) === 0;
+  const ok = integrityOk && hpFirstOk;
+  const status = ok ? 'completed_hp_board_current_hp_first_trust_score_fast_terminal' : 'failed_hp_board_hp_first_trust_guard';
+  const cert = ok ? 'HP_BOARD_HP_FIRST_TRUST_SCORE_CERTIFIED_TIMEOUT_SAFE' : 'HP_BOARD_HP_FIRST_TRUST_SCORE_GUARD_FAILED';
   const grade = ok ? 'PASS_WITH_TRUE_CALIBRATION_BLOCKED' : 'BLOCKED';
   const output = baseIdentity({
     ok, data_ok: ok, version:HP_VERSION, worker_name:WORKER_NAME, logical_worker_name:'alphadog-v2-hit-probability', deployed_worker_slot:'alphadog-v2-score-audit',
     job_key:HP_JOB_KEY, mode:input.mode || HP_MODE, request_id:requestId, run_id:input.run_id || source.run_id || null, chain_id:input.chain_id || null,
     status, certification:cert, certification_status:cert, certification_grade:grade,
     batch_id:sourceHpBatchId, hp_board_batch_id:hpBoardBatchId, source_hp_batch_id:sourceHpBatchId, source_final_board_batch_id:sourceFinalBoardBatchId, source_engine_batch_id:sourceEngineBatchId,
-    source_table:'hit_probability_current', source_rows_read:Number(source.source_rows_read || hpRows), rows_read:Number(source.source_rows_read || hpRows), supported_rows:hpRows,
+    source_table:'hit_probability_current', source_rows_read:hpRows, rows_read:hpRows, supported_rows:hpRows,
     probability_rows_written:hpRows, recent_form_rows_written:hpRows, hp_board_current_written:boardRows, board_rows_written:boardRows, history_rows_written:boardRows, rows_written:boardRows,
     issue_rows_written:Number(issueCountRow.rows || 0), primary_rows:Number(primaryRow.rows || 0), review_rows:Number(reviewRow.rows || 0), fade_rows:Number(fadeRow.rows || 0),
-    weak_hp_high_score_rows:Number(weakHpHighScoreRow.rows || 0), low_sample_pitcher_high_score_rows:Number(lowSamplePitcherHighScoreRow.rows || 0), low_sample_pitcher_primary_rows:Number(lowSamplePitcherPrimaryRow.rows || 0), hp_review_lane_live_rows:Number(fadeLiveRow.rows || 0),
-    avg_score:qa.avg_score, avg_hp:qa.avg_hp, row_parity_ok:boardRows === hpRows, rank_integrity_ok:Number(qa.ranks || 0) === boardRows, link_integrity_ok:Number(qa.null_final_rows || 0) === 0 && Number(qa.null_prepared_rows || 0) === 0, sanity_overlay_ok:sanityOverlayOk,
-    hp_board_included:true, hp_board_current_replaced:true, hp_board_display_calibration_written:Number(qa.missing_calibration_rows || 0) === 0, hp_board_fast_terminal_sql_builder:true,
-    true_calibration_blocked_reason:'No settled outcome/backtest/settlement table exists in SCORE_DB.', raw_hp_preserved:true, no_true_hit_probability_claims:true, no_true_probability_claims:true,
+    low_hp_playable_rows:Number(lowHpPlayableRow.rows || 0), eligible_hp_missing_score_rows:Number(eligibleMissingScoreRow.rows || 0), eligible_hp_not_visible_rows:Number(eligibleNotVisibleRow.rows || 0),
+    avg_score:qa.avg_score, avg_hp:qa.avg_hp, row_parity_ok:boardRows === hpRows, rank_integrity_ok:Number(qa.ranks || 0) === boardRows, hp_first_gate_ok:hpFirstOk,
+    true_calibration_blocked_reason:'No settled outcome/backtest/settlement table exists in SCORE_DB.', raw_hp_preserved:true, score_preserved_as_trust_metric:true, no_true_hit_probability_claims:true, no_true_probability_claims:true,
     no_score_mutation:true, no_scoring_engine_current_mutation:true, no_final_board_mutation:true, no_prepared_board_mutation:true, no_source_board_mutation:true, hp_board_ranking:true, no_candidate_board_write:true,
-    elapsed_ms:Date.now() - started
+    fast_terminal_sql_builder:true, timeout_safe_board_build:true, elapsed_ms:Date.now() - started
   });
-  await run(env.SCORE_DB, `UPDATE hit_probability_batches SET status=?, certification_status=?, certification_grade=?, probability_rows_written=?, issue_rows_written=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, status, cert, grade, hpRows, Number(source.issue_rows_written || 0), hpSafeJson(output,14000), sourceHpBatchId);
+  await run(env.SCORE_DB, `UPDATE hit_probability_batches SET status=?, certification_status=?, certification_grade=?, probability_rows_written=?, issue_rows_written=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, status, cert, grade, hpRows, Number(issueCountRow.rows || 0), hpSafeJson(output,14000), sourceHpBatchId);
   await run(env.SCORE_DB, `INSERT OR REPLACE INTO hp_board_batches (hp_board_batch_id,request_id,run_id,worker_version,profile_key,profile_version,mode,status,source_table,source_hp_batch_id,source_final_board_batch_id,source_engine_batch_id,source_rows_read,board_rows_written,history_rows_written,issue_rows_written,primary_rows,review_rows,fade_rows,certification_status,certification_grade,thresholds_locked,no_true_probability_claims,output_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, hpBoardBatchId,requestId,output.run_id,HP_VERSION,HP_BOARD_PROFILE_KEY,HP_BOARD_PROFILE_VERSION,HP_BOARD_MODE,status,'hit_probability_current',sourceHpBatchId,sourceFinalBoardBatchId,sourceEngineBatchId,hpRows,boardRows,boardRows,Number(issueCountRow.rows||0),Number(primaryRow.rows||0),Number(reviewRow.rows||0),Number(fadeRow.rows||0),cert,grade,1,1,hpSafeJson(output,14000));
   return output;
 }
+
 
 async function runHitProbabilityCurrent(env, input = {}){
   const started=Date.now();
@@ -3917,7 +3742,7 @@ async function runHitProbabilityCurrent(env, input = {}){
       await run(env.SCORE_DB, `UPDATE hit_probability_batches SET status=?, certification_status=?, certification_grade=?, probability_rows_written=?, issue_rows_written=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, output.status, output.certification, output.certification_grade, written, issues, hpSafeJson(output,14000), batchId);
       return output;
     }
-    const boardOutput = await runHpBoardCurrent(env, input);
+    const boardOutput = await runHpBoardCurrentFastTerminal(env, input, batch);
     return boardOutput;
   }
 
