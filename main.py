@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 AlphaDog v2 PrizePicks GitHub JSON Producer
-Version: alphadog-v2-prizepicks-producer-v0.1.2-captcha-cooldown-retry
+Version: alphadog-v2-prizepicks-producer-v0.1.3-proxyscrape-residential-preflight
 
 Purpose:
 - Fetch the raw PrizePicks MLB projections payload from multiple known PrizePicks JSON surfaces.
@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from curl_cffi import requests
 
-SCRIPT_VERSION = "alphadog-v2-prizepicks-producer-v0.1.2-captcha-cooldown-retry"
+SCRIPT_VERSION = "alphadog-v2-prizepicks-producer-v0.1.3-proxyscrape-residential-preflight"
 PRIZEPICKS_MLB_PROJECTIONS_URLS = [
     "https://api.prizepicks.com/projections?league_id=2&per_page=1000&single_stat=true",
     "https://api.prizepicks.com/projections?league_id=2&per_page=5000",
@@ -48,6 +48,98 @@ def atomic_write_text(path: Path, text: str) -> None:
 
 def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def mask_proxy_url(proxy_url: str) -> str:
+    text = (proxy_url or "").strip()
+    if not text:
+        return ""
+    try:
+        from urllib.parse import urlsplit, urlunsplit
+        parts = urlsplit(text if "://" in text else "http://" + text)
+        host = parts.hostname or ""
+        port = f":{parts.port}" if parts.port else ""
+        user = parts.username or ""
+        masked_user = (user[:4] + "..." + user[-4:]) if len(user) > 10 else (user[:2] + "..." if user else "")
+        netloc = f"{masked_user}:***@{host}{port}" if user else f"{host}{port}"
+        return urlunsplit((parts.scheme or "http", netloc, "", "", ""))
+    except Exception:
+        return "***masked_proxy_url***"
+
+
+def normalize_proxy_url(raw: str) -> str:
+    text = (raw or "").strip().strip('"').strip("'")
+    if not text:
+        return ""
+    if "://" in text:
+        return text
+    # Supports ProxyScrape formats: username:password@hostname:port and hostname:port:username:password.
+    if "@" in text:
+        return "http://" + text
+    parts = text.split(":")
+    if len(parts) == 4:
+        host, port, username, password = parts
+        return f"http://{username}:{password}@{host}:{port}"
+    return "http://" + text
+
+
+def proxy_url_from_env() -> str:
+    direct = normalize_proxy_url(os.getenv("PROXY_URL", ""))
+    if direct:
+        return direct
+    host = os.getenv("PROXYSCRAPE_HOSTNAME", "").strip()
+    port = os.getenv("PROXYSCRAPE_PORT", "").strip()
+    username = os.getenv("PROXYSCRAPE_USERNAME", "").strip()
+    password = os.getenv("PROXYSCRAPE_PASSWORD", "").strip()
+    if host and port and username and password:
+        return f"http://{username}:{password}@{host}:{port}"
+    return ""
+
+
+def build_proxies(proxy_url: str) -> Optional[Dict[str, str]]:
+    if not proxy_url:
+        return None
+    return {"http": proxy_url, "https": proxy_url}
+
+
+def proxy_preflight(proxies: Optional[Dict[str, str]], timeout_seconds: int = 20) -> Dict[str, Any]:
+    if not proxies:
+        return {"attempted": False, "ok": False, "reason": "PROXY_URL_not_configured"}
+    url = os.getenv("PRIZEPICKS_PROXY_PREFLIGHT_URL", "https://ipinfo.io/json").strip() or "https://ipinfo.io/json"
+    started = utc_now()
+    out: Dict[str, Any] = {
+        "attempted": True,
+        "ok": False,
+        "url": url,
+        "started_at": started,
+        "proxy_configured": True,
+        "proxy_masked": mask_proxy_url(proxies.get("https") or proxies.get("http") or ""),
+    }
+    try:
+        response = requests.get(url, proxies=proxies, timeout=timeout_seconds, impersonate="chrome124")
+        out.update({
+            "finished_at": utc_now(),
+            "http_status": response.status_code,
+            "response_size_bytes": len(response.content or b""),
+        })
+        if response.status_code == 200:
+            try:
+                body = response.json()
+            except Exception:
+                body = {}
+            out.update({
+                "ok": True,
+                "ip": body.get("ip"),
+                "country": body.get("country"),
+                "region": body.get("region"),
+                "city": body.get("city"),
+                "org": body.get("org"),
+            })
+        else:
+            out["error"] = f"HTTP {response.status_code}: {response.text[:180]}"
+    except Exception as exc:
+        out.update({"finished_at": utc_now(), "error": str(exc)[:500]})
+    return out
 
 
 def detect_collection(payload: Any) -> Tuple[str, int]:
@@ -187,6 +279,7 @@ def fetch_one_prizepicks_candidate(url: str, headers: Dict[str, str], proxies: O
         "content_type": response.headers.get("content-type", ""),
         "response_size_bytes": len(response.content or b""),
         "proxy_configured": bool(proxies),
+        "proxy_masked": mask_proxy_url((proxies or {}).get("https") or (proxies or {}).get("http") or ""),
     }
     if response.status_code != 200:
         return {"ok": False, "url": url, "fetch": fetch_info, "error": f"HTTP {response.status_code}: {response.text[:300]}", "row_count": 0, "freshness": {"future_pickable_rows": 0}}
@@ -228,10 +321,10 @@ def attempt_has_prizepicks_block(candidates: List[Dict[str, Any]]) -> bool:
     return any(candidate_has_prizepicks_block(c) for c in candidates)
 
 def fetch_prizepicks_json() -> Tuple[Any, Dict[str, Any]]:
-    proxy_url = os.getenv("PROXY_URL", "").strip()
-    timeout_seconds = int(os.getenv("PRIZEPICKS_FETCH_TIMEOUT_SECONDS", "45"))
-    attempts = int(os.getenv("PRIZEPICKS_FETCH_ATTEMPTS", "3"))
-    sleep_seconds = float(os.getenv("PRIZEPICKS_FETCH_RETRY_SLEEP_SECONDS", "60"))
+    proxy_url = proxy_url_from_env()
+    timeout_seconds = int(os.getenv("PRIZEPICKS_FETCH_TIMEOUT_SECONDS", "35" if proxy_url else "45"))
+    attempts = int(os.getenv("PRIZEPICKS_FETCH_ATTEMPTS", "4" if proxy_url else "3"))
+    sleep_seconds = float(os.getenv("PRIZEPICKS_FETCH_RETRY_SLEEP_SECONDS", "8" if proxy_url else "60"))
     captcha_cooldown_seconds = float(os.getenv("PRIZEPICKS_CAPTCHA_COOLDOWN_SECONDS", str(sleep_seconds)))
     min_future_rows = int(os.getenv("PRIZEPICKS_MIN_FUTURE_ROWS", "1"))
     override_urls = [u.strip() for u in os.getenv("PRIZEPICKS_PROJECTIONS_URLS", "").split(",") if u.strip()]
@@ -245,7 +338,16 @@ def fetch_prizepicks_json() -> Tuple[Any, Dict[str, Any]]:
         "origin": "https://app.prizepicks.com",
         "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
     }
-    proxies = {"http": proxy_url, "https": proxy_url} if proxy_url else None
+    proxies = build_proxies(proxy_url)
+    preflight = proxy_preflight(proxies, int(os.getenv("PRIZEPICKS_PROXY_PREFLIGHT_TIMEOUT_SECONDS", "20")))
+    print(json.dumps({
+        "ok": bool(preflight.get("ok")),
+        "version": SCRIPT_VERSION,
+        "status": "proxy_preflight_completed",
+        "proxy_configured": bool(proxies),
+        "proxy_preflight": preflight,
+        "timestamp_utc": utc_now(),
+    }, indent=2))
     all_candidates: List[Dict[str, Any]] = []
     last_error = None
     for attempt in range(1, attempts + 1):
@@ -254,7 +356,7 @@ def fetch_prizepicks_json() -> Tuple[Any, Dict[str, Any]]:
             try:
                 candidate = fetch_one_prizepicks_candidate(url, headers, proxies, timeout_seconds, attempt)
             except Exception as exc:
-                candidate = {"ok": False, "url": url, "fetch": {"attempt": attempt, "url": url, "started_at": utc_now(), "finished_at": utc_now(), "proxy_configured": bool(proxies)}, "error": str(exc), "row_count": 0, "freshness": {"future_pickable_rows": 0}}
+                candidate = {"ok": False, "url": url, "fetch": {"attempt": attempt, "url": url, "started_at": utc_now(), "finished_at": utc_now(), "proxy_configured": bool(proxies), "proxy_masked": mask_proxy_url(proxy_url)}, "error": str(exc), "row_count": 0, "freshness": {"future_pickable_rows": 0}}
             attempt_candidates.append(candidate)
             all_candidates.append(candidate)
         selected = select_best_candidate(attempt_candidates)
@@ -292,6 +394,9 @@ def fetch_prizepicks_json() -> Tuple[Any, Dict[str, Any]]:
         "error": last_error or "No usable PrizePicks candidate returned rows",
         "candidate_count": len(all_candidates),
         "attempts_configured": attempts,
+        "proxy_configured": bool(proxies),
+        "proxy_masked": mask_proxy_url(proxy_url),
+        "proxy_preflight": preflight,
         "retry_cooldown_seconds": sleep_seconds,
         "captcha_cooldown_seconds": captcha_cooldown_seconds,
         "prizepicks_api_block_or_captcha_detected": attempt_has_prizepicks_block(all_candidates),
@@ -339,6 +444,8 @@ def main() -> int:
         "alphadog_chain_id": os.getenv("ALPHADOG_CHAIN_ID") or "",
         "alphadog_slate_date": os.getenv("ALPHADOG_SLATE_DATE") or "",
         "fetch": fetch_info.get("fetch", {}),
+        "proxy_configured": bool(proxy_url_from_env()),
+        "proxy_masked": mask_proxy_url(proxy_url_from_env()),
         "selected_candidate": public_candidate(fetch_info),
         "source_candidates": [public_candidate(c) for c in fetch_info.get("all_candidates", [])],
         "shape": sample_shape(payload),
