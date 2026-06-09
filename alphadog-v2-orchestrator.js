@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.215-prizepicks-output-size-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.216-scheduled-daily-full-run";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -2375,6 +2375,199 @@ async function enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpressio
     pacific_time: pt.local_time,
     schedules_read: scheduleRows.length,
     queued_count: results.filter(r => r.status === "SCHEDULED_INCREMENTAL_MORNING_FULL_RUN_QUEUED").length,
+    blocked_count: results.filter(r => r.ok === false || String(r.status || "").startsWith("BLOCKED_")).length,
+    results
+  };
+}
+
+
+async function enqueueScheduledDailyFullRunIfDue(env, cronExpression = "unknown") {
+  await ensureSchema(env);
+  await ensureConfigScheduledJobsTable(env);
+
+  const pt = pacificNowParts(new Date());
+  const scheduleRows = await all(env.CONFIG_DB,
+    `SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, dedupe_scope, input_json, notes
+     FROM config_scheduled_jobs
+     WHERE enabled=1
+       AND job_key='daily-full-run'
+       AND schedule_type='daily'
+       AND timezone='America/Los_Angeles'
+     ORDER BY local_time, schedule_id`
+  );
+
+  const results = [];
+  for (const schedule of scheduleRows) {
+    const parsedTime = parseScheduledLocalTimeHHMM(schedule.local_time);
+    const basePayload = {
+      ok: true,
+      data_ok: true,
+      version: SYSTEM_VERSION,
+      worker_name: WORKER_NAME,
+      job_key: "daily-full-run",
+      mode: "scheduled_daily_full_run_config_scan",
+      cron_expression: cronExpression,
+      schedule_id: schedule.schedule_id,
+      schedule_local_time: schedule.local_time,
+      schedule_type: schedule.schedule_type,
+      schedule_timezone: schedule.timezone,
+      pacific_date: pt.ymd_dash,
+      pacific_time: pt.local_time,
+      approved_window_minutes: INCREMENTAL_MORNING_FULL_RUN_SCHEDULE_WINDOW_MINUTES,
+      includes_daily_context_full_run: true,
+      includes_board_full_run: true,
+      includes_market_scoring_full_run: true,
+      no_incremental_morning_full_run: true,
+      no_static_work: true,
+      no_base_delta_workers: true,
+      no_old_production_touch: true
+    };
+
+    if (!parsedTime) {
+      const payload = { ...basePayload, ok: false, data_ok: false, status: "BLOCKED_SCHEDULED_DAILY_FULL_RUN_BAD_LOCAL_TIME", reason: "local_time must be HH:MM" };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'daily-full-run', 'ERROR', 'scheduled_daily_full_run_bad_local_time', 'Scheduled Daily Full Run row has invalid local_time', ?, CURRENT_TIMESTAMP)",
+        WORKER_NAME, JSON.stringify(payload)
+      );
+      results.push(payload);
+      continue;
+    }
+
+    const scheduledKey = `daily_full_run_${pt.ymd_key}_${parsedTime.key}_PT`;
+    const inWindow = isPacificScheduleWindowDue(pt, parsedTime, INCREMENTAL_MORNING_FULL_RUN_SCHEDULE_WINDOW_MINUTES);
+    if (!inWindow) {
+      results.push({ ...basePayload, status: "SCHEDULED_DAILY_FULL_RUN_NOT_DUE", scheduled_key: scheduledKey });
+      continue;
+    }
+
+    const existingRows = await all(env.CONTROL_DB,
+      `SELECT request_id, chain_id, status, created_at, started_at, finished_at, updated_at, error_code, error_message
+       FROM control_job_queue
+       WHERE job_key='daily-full-run'
+         AND worker_name='alphadog-v2-orchestrator'
+         AND json_extract(input_json,'$.scheduled_key')=?
+       ORDER BY datetime(created_at) DESC
+       LIMIT 10`,
+      scheduledKey
+    );
+
+    const active = existingRows.find(r => ["pending", "running", "partial_continue"].includes(String(r.status || "")) && !r.finished_at);
+    if (active) {
+      const payload = { ...basePayload, status: "SCHEDULED_DAILY_FULL_RUN_NOOP_ACTIVE_EXISTS", scheduled_key: scheduledKey, existing_request_id: active.request_id, existing_chain_id: active.chain_id, existing_status: active.status };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'daily-full-run', 'INFO', 'scheduled_daily_full_run_noop_active_exists', 'Scheduled Daily Full Run did not enqueue because same scheduled key is active', ?, CURRENT_TIMESTAMP)",
+        active.request_id, WORKER_NAME, JSON.stringify(payload)
+      );
+      results.push(payload);
+      continue;
+    }
+
+    const completed = existingRows.find(r => String(r.status || "") === "completed");
+    if (completed) {
+      const payload = { ...basePayload, status: "SCHEDULED_DAILY_FULL_RUN_NOOP_ALREADY_COMPLETED", scheduled_key: scheduledKey, existing_request_id: completed.request_id, existing_chain_id: completed.chain_id, existing_status: completed.status };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'daily-full-run', 'INFO', 'scheduled_daily_full_run_noop_already_completed', 'Scheduled Daily Full Run did not enqueue because same scheduled key already completed', ?, CURRENT_TIMESTAMP)",
+        completed.request_id, WORKER_NAME, JSON.stringify(payload)
+      );
+      results.push(payload);
+      continue;
+    }
+
+    const failed = existingRows.find(r => ["failed", "blocked", "error"].includes(String(r.status || "")) || r.error_code);
+    if (failed) {
+      const payload = { ...basePayload, ok: false, data_ok: false, status: "BLOCKED_SCHEDULED_DAILY_FULL_RUN_SAME_KEY_FAILED_REQUIRES_REVIEW", scheduled_key: scheduledKey, existing_request_id: failed.request_id, existing_chain_id: failed.chain_id, existing_status: failed.status, existing_error_code: failed.error_code || null, existing_error_message: failed.error_message || null };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'daily-full-run', 'ERROR', 'scheduled_daily_full_run_blocked_failed_same_key', 'Scheduled Daily Full Run blocked because same scheduled key failed/blocked and requires review', ?, CURRENT_TIMESTAMP)",
+        failed.request_id, WORKER_NAME, JSON.stringify(payload)
+      );
+      results.push(payload);
+      continue;
+    }
+
+    const configInput = parseJsonSafeText(schedule.input_json || "{}", {});
+    const requestId = scheduledKey;
+    const chainId = `chain_${scheduledKey}`;
+    const childModes = {};
+    for (const stage of DAILY_FULL_RUN_STAGES) childModes[stage.job_key] = stage.mode;
+
+    const input = {
+      ...configInput,
+      source: "config_scheduled_jobs",
+      visible_button: "SCHEDULED > Daily Full Run",
+      mode: "daily_full_run",
+      scheduled: true,
+      scheduled_or_manual: "scheduled",
+      schedule_id: schedule.schedule_id,
+      scheduled_key: scheduledKey,
+      scheduled_dedupe_key: scheduledKey,
+      scheduled_pacific_date: pt.ymd_dash,
+      pacific_date: pt.ymd_dash,
+      scheduled_pacific_time: pt.local_time,
+      local_time: parsedTime.hhmm,
+      timezone: "America/Los_Angeles",
+      cron_expression: cronExpression,
+      created_at: nowIso(),
+      approved_chain_order: DAILY_FULL_RUN_STAGES.map(s => s.job_key),
+      child_modes: childModes,
+      stop_on_first_failed_stage: true,
+      backend_chain_only: true,
+      no_browser_loop: true,
+      backend_scheduled_continuation: true,
+      no_generic_dispatch: true,
+      includes_daily_context_full_run: true,
+      includes_board_full_run: true,
+      includes_market_scoring_full_run: true,
+      includes_pricepicks_refresh: true,
+      includes_sleeper_refresh: true,
+      includes_score_prep: true,
+      includes_market_context: true,
+      includes_factors_matrix_scoring_final_board: true,
+      includes_hit_probability: true,
+      prepared_for_split_slate: true,
+      prepared_for_half_slate: true,
+      prepared_for_single_game_slate: true,
+      no_incremental_morning_full_run: true,
+      no_static_work: true,
+      no_base_delta_workers: true,
+      no_old_production_touch: true
+    };
+
+    const insertScheduled = await run(env.CONTROL_DB,
+      "INSERT OR IGNORE INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'daily-full-run', 'alphadog-v2-orchestrator', '12 Full Runs', 'daily_master', 'Scheduled Daily Full Run Backend Chain', 'pending', 10, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+      requestId, chainId, JSON.stringify(input)
+    );
+    const insertedScheduledRows = Number(insertScheduled && insertScheduled.meta && insertScheduled.meta.changes || 0);
+    if (insertedScheduledRows === 0) {
+      const existingDeterministic = await first(env.CONTROL_DB, "SELECT request_id, chain_id, status, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE request_id=? LIMIT 1", requestId);
+      const payload = { ...basePayload, status: "SCHEDULED_DAILY_FULL_RUN_NOOP_DETERMINISTIC_KEY_EXISTS", scheduled_key: scheduledKey, request_id: requestId, existing_request_id: existingDeterministic && existingDeterministic.request_id, existing_chain_id: existingDeterministic && existingDeterministic.chain_id, existing_status: existingDeterministic && existingDeterministic.status, deterministic_request_id_guard: true };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'daily-full-run', 'INFO', 'scheduled_daily_full_run_noop_deterministic_key_exists', 'Scheduled Daily Full Run did not enqueue because deterministic request id already exists', ?, CURRENT_TIMESTAMP)",
+        requestId, WORKER_NAME, JSON.stringify(payload)
+      );
+      results.push(payload);
+      continue;
+    }
+
+    const payload = { ...basePayload, status: "SCHEDULED_DAILY_FULL_RUN_QUEUED", scheduled_key: scheduledKey, request_id: requestId, chain_id: chainId, queued_job_key: "daily-full-run", queued_worker_name: WORKER_NAME, approved_chain_order: input.approved_chain_order, backend_chain_only: true };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'daily-full-run', 'INFO', 'scheduled_daily_full_run_queued', 'Scheduled Daily Full Run parent backend chain job queued from CONFIG_DB schedule', ?, CURRENT_TIMESTAMP)",
+      requestId, WORKER_NAME, JSON.stringify(payload)
+    );
+    results.push(payload);
+  }
+
+  return {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    worker_name: WORKER_NAME,
+    job_key: "daily-full-run",
+    mode: "scheduled_daily_full_run_config_scan",
+    cron_expression: cronExpression,
+    pacific_date: pt.ymd_dash,
+    pacific_time: pt.local_time,
+    schedules_read: scheduleRows.length,
+    queued_count: results.filter(r => r.status === "SCHEDULED_DAILY_FULL_RUN_QUEUED").length,
     blocked_count: results.filter(r => r.ok === false || String(r.status || "").startsWith("BLOCKED_")).length,
     results
   };
@@ -10705,6 +10898,7 @@ export default {
     ctx.waitUntil((async () => {
       await enqueueStaticPlayersWeeklyIfDue(env, cronExpression);
       await enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpression);
+      await enqueueScheduledDailyFullRunIfDue(env, cronExpression);
       await enqueueScheduledBoardFullRunIfDue(env, cronExpression);
       await pump(env, `cron:${cronExpression}`, 10, 1, 65000, ctx, "https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev/scheduled", 0, 12);
     })());
