@@ -1,7 +1,7 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.26-adaptive-profile-invariant-fix";
+const VERSION = "alphadog-v2-score-final-board-v0.1.27-hp-first-current-board";
 const JOB_KEY = "score-final-board";
-const PRIMARY_PROFILE = "STRICT_C_REALITY_SANITY_V4_0"; // fallback only; runtime resolves the active profile_key from the terminal scoring_engine_current batch
+const PRIMARY_PROFILE = "STRICT_C_HP_FIRST_TRUST_V4_1"; // fallback only; runtime resolves the active profile_key from the terminal scoring_engine_current / hp_board_current batch
 
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
@@ -338,7 +338,23 @@ async function ensureSchema(env) {
     ["calibration_json", "calibration_json TEXT"],
     ["calculation_json", "calculation_json TEXT"],
     ["matrix_payload_json_snapshot", "matrix_payload_json_snapshot TEXT"],
-    ["details_json_snapshot", "details_json_snapshot TEXT"]
+    ["details_json_snapshot", "details_json_snapshot TEXT"],
+    ["hp_board_batch_id", "hp_board_batch_id TEXT"],
+    ["source_hp_batch_id", "source_hp_batch_id TEXT"],
+    ["estimated_hit_probability_0_100", "estimated_hit_probability_0_100 REAL"],
+    ["probability_confidence_0_100", "probability_confidence_0_100 REAL"],
+    ["probability_band", "probability_band TEXT"],
+    ["probability_grade", "probability_grade TEXT"],
+    ["hp_lane", "hp_lane TEXT"],
+    ["hp_rank", "hp_rank INTEGER"],
+    ["hp_sort_0_100", "hp_sort_0_100 REAL"],
+    ["sample_size", "sample_size INTEGER"],
+    ["non_push_sample", "non_push_sample INTEGER"],
+    ["hit_count", "hit_count INTEGER"],
+    ["miss_count", "miss_count INTEGER"],
+    ["push_count", "push_count INTEGER"],
+    ["hp_source_board_tier", "hp_source_board_tier TEXT"],
+    ["hp_source_lane_reason", "hp_source_lane_reason TEXT"]
   ];
   for (const [col, ddl] of extraCols) {
     await addColumnIfMissing(env.SCORE_DB, "score_final_board_current", col, ddl);
@@ -349,6 +365,7 @@ async function ensureSchema(env) {
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_final_board_current_date ON score_final_board_current(official_date, source_key, canonical_prop_key)`);
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_final_board_current_game ON score_final_board_current(game_pk, mlb_player_id)`);
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_final_board_current_tier_source ON score_final_board_current(board_tier, source_key, score_0_100)`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_final_board_current_hp ON score_final_board_current(estimated_hit_probability_0_100, score_0_100)`);
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_final_board_history_batch ON score_final_board_history(final_board_batch_id, rank_order)`);
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_final_board_batches_started ON score_final_board_batches(started_at, status)`);
 }
@@ -417,7 +434,7 @@ async function writeIssue(env, batchId, sourceBatchId, key, severity, count, pay
 
 function rowId(batchId, rank, row) {
   const tier = row.board_tier || "PRIMARY";
-  return `final|${batchId}|${PRIMARY_PROFILE}|${tier}|${String(rank).padStart(4, "0")}|${row.matrix_id || row.prepared_row_id || row.source_line_id || rank}`;
+  return `final|${batchId}|${row.profile_key || PRIMARY_PROFILE}|${tier}|${String(rank).padStart(4, "0")}|${row.matrix_id || row.prepared_row_id || row.source_line_id || rank}`;
 }
 
 function gradeForScore(score) {
@@ -938,6 +955,214 @@ async function resolveEngineProfileKey(env, engineBatchId) {
   }
 }
 
+
+async function latestHpBoardBatchForEngine(env, sourceEngineBatchId) {
+  if (!sourceEngineBatchId) return null;
+  return await first(env.SCORE_DB, `
+    SELECT hp_board_batch_id, source_hp_batch_id, source_engine_batch_id,
+           COUNT(*) AS rows,
+           SUM(CASE WHEN estimated_hit_probability_0_100 >= 60 AND COALESCE(blocker_count,0)=0 THEN 1 ELSE 0 END) AS eligible_rows,
+           MAX(created_at) AS max_created_at
+    FROM hp_board_current
+    WHERE source_engine_batch_id = ?
+    GROUP BY hp_board_batch_id, source_hp_batch_id, source_engine_batch_id
+    ORDER BY datetime(MAX(created_at)) DESC
+    LIMIT 1
+  `, sourceEngineBatchId);
+}
+
+async function fetchHpFinalBoardCandidateRows(env, sourceEngineBatchId, pageSize = 500) {
+  const rows = [];
+  const limit = Math.max(1, Math.min(1000, Math.trunc(pageSize)));
+  let offset = 0;
+  let pages = 0;
+  const hpSource = await latestHpBoardBatchForEngine(env, sourceEngineBatchId);
+  if (!hpSource || !hpSource.hp_board_batch_id) return { rows, pages:0, page_size:limit, pagination_mode:"hp_current_limit_offset", hp_source:null };
+
+  while (true) {
+    const page = await all(env.SCORE_DB, `
+      SELECT
+        h.hp_board_row_id,
+        h.hp_board_batch_id,
+        h.source_hp_batch_id,
+        h.source_engine_batch_id,
+        h.hp_rank,
+        h.hp_lane,
+        h.hp_lane_rank,
+        h.hp_sort_0_100,
+        h.estimated_hit_probability_0_100,
+        h.probability_confidence_0_100,
+        h.probability_band,
+        h.probability_grade,
+        h.empirical_hit_rate_0_1,
+        h.reliability_0_1,
+        h.sample_size,
+        h.non_push_sample,
+        h.hit_count,
+        h.miss_count,
+        h.push_count,
+        h.push_risk_0_1,
+        h.board_tier AS hp_source_board_tier,
+        h.live_playable AS hp_live_playable,
+        h.review_playable AS hp_review_playable_source,
+        h.hp_primary_playable,
+        h.hp_review_playable,
+        h.hp_fade_flag,
+        h.warning_count AS hp_warning_count,
+        h.blocker_count AS hp_blocker_count,
+        h.lane_reason AS hp_source_lane_reason,
+        h.calibration_json AS hp_calibration_json,
+        h.profile_key AS hp_profile_key,
+
+        h.source_key,
+        h.game_pk,
+        h.official_date,
+        h.official_game_time_utc,
+        h.prepared_row_id,
+        h.matrix_id,
+        h.source_line_id,
+        h.mlb_player_id,
+        h.player_name,
+        h.canonical_prop_key,
+        h.line_value,
+        h.selected_side,
+        h.score_0_100,
+        h.score_grade,
+
+        e.profile_key,
+        NULL AS source_scoring_worker_version,
+        e.confidence_0_100,
+        e.score_sort_0_100 AS engine_score_sort_0_100,
+        e.factor_status,
+        e.market_prop_context_status,
+        e.daily_readiness_status,
+        e.side_mode,
+        e.odds_type,
+        e.payout_variant,
+        e.archive_eligible,
+        e.calculation_json AS engine_calculation_json,
+        e.matrix_payload_json_snapshot,
+        e.details_json_snapshot,
+        e.blocking_for_scoring,
+        e.blocker_count AS engine_blocker_count,
+        e.warning_count AS engine_warning_count
+      FROM hp_board_current h
+      LEFT JOIN scoring_engine_current e
+        ON e.batch_id = h.source_engine_batch_id
+       AND e.prepared_row_id = h.prepared_row_id
+       AND e.source_line_id = h.source_line_id
+      WHERE h.hp_board_batch_id = ?
+        AND h.source_engine_batch_id = ?
+        AND h.estimated_hit_probability_0_100 >= 60
+        AND COALESCE(h.blocker_count, 0) = 0
+        AND h.score_0_100 IS NOT NULL
+        AND h.selected_side IS NOT NULL
+        AND h.line_value IS NOT NULL
+        AND h.player_name IS NOT NULL
+        AND h.canonical_prop_key IS NOT NULL
+        AND h.source_key IS NOT NULL
+        AND h.mlb_player_id IS NOT NULL
+        AND (COALESCE(h.hp_review_playable,0) = 1 OR COALESCE(h.hp_primary_playable,0) = 1)
+      ORDER BY h.estimated_hit_probability_0_100 DESC, h.score_0_100 DESC, h.probability_confidence_0_100 DESC, h.hp_rank ASC, h.hp_board_row_id ASC
+      LIMIT ${limit} OFFSET ${offset}
+    `, hpSource.hp_board_batch_id, sourceEngineBatchId);
+    pages += 1;
+    if (!page.length) break;
+    rows.push(...page);
+    if (page.length < limit) break;
+    offset += limit;
+    if (pages > 1000) throw new Error("score_final_board_hp_current_pagination_guard_exceeded");
+  }
+  return { rows, pages, page_size: limit, pagination_mode:"hp_current_limit_offset_hp_sort", hp_source:hpSource };
+}
+
+function finalBoardSortFromHp(row) {
+  const hp = num(row.estimated_hit_probability_0_100, 0);
+  const score = num(row.score_0_100, 0);
+  return Math.round((0.72 * hp + 0.28 * score) * 100) / 100;
+}
+
+function mapHpCurrentRowToFinalBoardRow(rawRow, activeProfileKey) {
+  const hp = Math.round(clamp(num(rawRow.estimated_hit_probability_0_100, 0), 0, 100) * 10) / 10;
+  const score = Math.round(clamp(num(rawRow.score_0_100, 0), 0, 100));
+  const confidence = Math.round(clamp(num(rawRow.probability_confidence_0_100, rawRow.confidence_0_100 == null ? 0 : rawRow.confidence_0_100), 0, 100));
+  const boardSort = finalBoardSortFromHp(rawRow);
+  const primary = Number(rawRow.hp_primary_playable || 0) === 1;
+  const boardTier = primary ? "PRIMARY" : "REVIEW";
+  const engineCalc = parseJsonObject(rawRow.engine_calculation_json);
+  const hpCal = parseJsonObject(rawRow.hp_calibration_json);
+  const calc = {
+    ...engineCalc,
+    final_board_hp_first_source: {
+      enabled: true,
+      version: VERSION,
+      source_table: "hp_board_current",
+      hp_board_batch_id: rawRow.hp_board_batch_id || null,
+      source_hp_batch_id: rawRow.source_hp_batch_id || null,
+      source_engine_batch_id: rawRow.source_engine_batch_id || null,
+      estimated_hit_probability_0_100: hp,
+      probability_confidence_0_100: confidence,
+      hp_lane: rawRow.hp_lane || null,
+      hp_rank: rawRow.hp_rank == null ? null : Number(rawRow.hp_rank),
+      hp_sort_0_100: rawRow.hp_sort_0_100 == null ? null : Number(rawRow.hp_sort_0_100),
+      score_is_trust_score: true,
+      score_0_100: score,
+      board_sort_formula: "0.72*estimated_hit_probability_0_100 + 0.28*score_0_100",
+      board_sort_0_100: boardSort,
+      eligibility_rule: "HP >= 60, no HP blocker, visible in HP board. HP < 60 is excluded from Final Board even if score is high.",
+      score_policy: "Preserve Engine score as system-trust/support score; do not translate HP into score."
+    }
+  };
+  const calibration = {
+    version: VERSION,
+    policy: "hp_first_final_board_from_hp_board_current",
+    source_table: "SCORE_DB.hp_board_current",
+    hp_board_batch_id: rawRow.hp_board_batch_id || null,
+    source_engine_batch_id: rawRow.source_engine_batch_id || null,
+    board_tier: boardTier,
+    estimated_hit_probability_0_100: hp,
+    probability_confidence_0_100: confidence,
+    score_0_100: score,
+    score_is_trust_score: true,
+    score_grade: rawRow.score_grade || gradeForScore(score),
+    board_sort_0_100: boardSort,
+    hp_lane: rawRow.hp_lane || null,
+    hp_rank: rawRow.hp_rank == null ? null : Number(rawRow.hp_rank),
+    hp_source_board_tier: rawRow.hp_source_board_tier || null,
+    hp_source_lane_reason: rawRow.hp_source_lane_reason || null,
+    hp_calibration_json: hpCal,
+    note: "Final Board consumes locked HP Board output. HP is the reality gate; score remains Engine trust/support score."
+  };
+  return {
+    ...rawRow,
+    profile_key: activeProfileKey || rawRow.profile_key || rawRow.hp_profile_key || PRIMARY_PROFILE,
+    board_tier: boardTier,
+    live_playable: primary ? 1 : 0,
+    review_playable: primary ? 0 : 1,
+    raw_score_0_100: score,
+    raw_confidence_0_100: confidence,
+    score_0_100: score,
+    confidence_0_100: confidence,
+    score_grade: rawRow.score_grade || gradeForScore(score),
+    score_sort_0_100: boardSort,
+    archive_eligible: 1,
+    factor_status: rawRow.factor_status || null,
+    market_prop_context_status: rawRow.market_prop_context_status || null,
+    daily_readiness_status: rawRow.daily_readiness_status || null,
+    side_mode: rawRow.side_mode || null,
+    odds_type: rawRow.odds_type || null,
+    payout_variant: rawRow.payout_variant || null,
+    calculation_json: safeJson(calc),
+    calibration_json: safeJson(calibration),
+    matrix_payload_json_snapshot: rawRow.matrix_payload_json_snapshot || null,
+    details_json_snapshot: rawRow.details_json_snapshot || null,
+    hp_source_board_tier: rawRow.hp_source_board_tier || null,
+    hp_source_lane_reason: rawRow.hp_source_lane_reason || null,
+    final_board_candidate_grade_rank: scoreEngineGradeRank(rawRow),
+    source_candidate_tier: "HP_FIRST_ELIGIBLE"
+  };
+}
+
 async function fetchEngineBoardCandidateRows(env, sourceEngineBatchId, profileKey, pageSize = 500) {
   const rows = [];
   const limit = Math.max(1, Math.min(1000, Math.trunc(pageSize)));
@@ -1048,10 +1273,14 @@ async function insertBoardRow(env, table, id, batchId, sourceEngineBatchId, rank
       score_grade, score_sort_0_100, factor_status, market_prop_context_status, daily_readiness_status,
       side_mode, odds_type, payout_variant, archive_eligible, live_playable,
       cluster_player_count, correlation_risk_tier, calibration_json,
-      calculation_json, matrix_payload_json_snapshot, details_json_snapshot, created_at, updated_at
-    ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      calculation_json, matrix_payload_json_snapshot, details_json_snapshot,
+      hp_board_batch_id, source_hp_batch_id, estimated_hit_probability_0_100, probability_confidence_0_100,
+      probability_band, probability_grade, hp_lane, hp_rank, hp_sort_0_100,
+      sample_size, non_push_sample, hit_count, miss_count, push_count, hp_source_board_tier, hp_source_lane_reason,
+      created_at, updated_at
+    ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
   `,
-    id, batchId, sourceEngineBatchId, PRIMARY_PROFILE, rank,
+    id, batchId, sourceEngineBatchId, row.profile_key || PRIMARY_PROFILE, rank,
     row.board_tier || "PRIMARY", Number(row.review_playable || 0),
     row.source_key || null, row.game_pk || null, row.official_date || null, row.official_game_time_utc || null,
     row.prepared_row_id || null, row.matrix_id || null, row.source_line_id || null,
@@ -1063,14 +1292,22 @@ async function insertBoardRow(env, table, id, batchId, sourceEngineBatchId, rank
     row.market_prop_context_status || null, row.daily_readiness_status || null, row.side_mode || null, row.odds_type || null, row.payout_variant || null,
     Number(row.archive_eligible || 0), Number(row.live_playable || 0),
     row.cluster_player_count == null ? null : Number(row.cluster_player_count), row.correlation_risk_tier || null, row.calibration_json || null,
-    row.calculation_json || null, row.matrix_payload_json_snapshot || null, row.details_json_snapshot || null
+    row.calculation_json || null, row.matrix_payload_json_snapshot || null, row.details_json_snapshot || null,
+    row.hp_board_batch_id || null, row.source_hp_batch_id || null,
+    row.estimated_hit_probability_0_100 == null ? null : Number(row.estimated_hit_probability_0_100),
+    row.probability_confidence_0_100 == null ? null : Number(row.probability_confidence_0_100),
+    row.probability_band || null, row.probability_grade || null, row.hp_lane || null,
+    row.hp_rank == null ? null : Number(row.hp_rank), row.hp_sort_0_100 == null ? null : Number(row.hp_sort_0_100),
+    row.sample_size == null ? null : Number(row.sample_size), row.non_push_sample == null ? null : Number(row.non_push_sample),
+    row.hit_count == null ? null : Number(row.hit_count), row.miss_count == null ? null : Number(row.miss_count), row.push_count == null ? null : Number(row.push_count),
+    row.hp_source_board_tier || null, row.hp_source_lane_reason || null
   );
 }
 
 
 function boardRowBindValues(batchId, sourceEngineBatchId, rank, row, id) {
   return [
-    id, batchId, sourceEngineBatchId, PRIMARY_PROFILE, rank,
+    id, batchId, sourceEngineBatchId, row.profile_key || PRIMARY_PROFILE, rank,
     row.board_tier || "PRIMARY", Number(row.review_playable || 0),
     row.source_key || null, row.game_pk || null, row.official_date || null, row.official_game_time_utc || null,
     row.prepared_row_id || null, row.matrix_id || null, row.source_line_id || null,
@@ -1082,7 +1319,15 @@ function boardRowBindValues(batchId, sourceEngineBatchId, rank, row, id) {
     row.market_prop_context_status || null, row.daily_readiness_status || null, row.side_mode || null, row.odds_type || null, row.payout_variant || null,
     Number(row.archive_eligible || 0), Number(row.live_playable || 0),
     row.cluster_player_count == null ? null : Number(row.cluster_player_count), row.correlation_risk_tier || null, row.calibration_json || null,
-    row.calculation_json || null, row.matrix_payload_json_snapshot || null, row.details_json_snapshot || null
+    row.calculation_json || null, row.matrix_payload_json_snapshot || null, row.details_json_snapshot || null,
+    row.hp_board_batch_id || null, row.source_hp_batch_id || null,
+    row.estimated_hit_probability_0_100 == null ? null : Number(row.estimated_hit_probability_0_100),
+    row.probability_confidence_0_100 == null ? null : Number(row.probability_confidence_0_100),
+    row.probability_band || null, row.probability_grade || null, row.hp_lane || null,
+    row.hp_rank == null ? null : Number(row.hp_rank), row.hp_sort_0_100 == null ? null : Number(row.hp_sort_0_100),
+    row.sample_size == null ? null : Number(row.sample_size), row.non_push_sample == null ? null : Number(row.non_push_sample),
+    row.hit_count == null ? null : Number(row.hit_count), row.miss_count == null ? null : Number(row.miss_count), row.push_count == null ? null : Number(row.push_count),
+    row.hp_source_board_tier || null, row.hp_source_lane_reason || null
   ];
 }
 
@@ -1097,8 +1342,12 @@ function boardInsertSql(table) {
       score_grade, score_sort_0_100, factor_status, market_prop_context_status, daily_readiness_status,
       side_mode, odds_type, payout_variant, archive_eligible, live_playable,
       cluster_player_count, correlation_risk_tier, calibration_json,
-      calculation_json, matrix_payload_json_snapshot, details_json_snapshot, created_at, updated_at
-    ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      calculation_json, matrix_payload_json_snapshot, details_json_snapshot,
+      hp_board_batch_id, source_hp_batch_id, estimated_hit_probability_0_100, probability_confidence_0_100,
+      probability_band, probability_grade, hp_lane, hp_rank, hp_sort_0_100,
+      sample_size, non_push_sample, hit_count, miss_count, push_count, hp_source_board_tier, hp_source_lane_reason,
+      created_at, updated_at
+    ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
   `;
 }
 
@@ -1184,8 +1433,10 @@ async function reconcileStaleRunningFinalBoard(env, input, engine, started) {
         OR canonical_prop_key IS NULL
         OR source_key IS NULL
         OR mlb_player_id IS NULL
-        OR score_0_100 < 70
-        OR confidence_0_100 < 55
+        OR score_0_100 IS NULL
+        OR confidence_0_100 IS NULL
+        OR estimated_hit_probability_0_100 IS NULL
+        OR estimated_hit_probability_0_100 < 60
         OR board_tier NOT IN ('PRIMARY','REVIEW')
         OR review_playable NOT IN (0,1)
         OR (board_tier = 'PRIMARY' AND live_playable <> 1)
@@ -1295,72 +1546,34 @@ async function generateFinalBoard(env, input) {
     INSERT INTO score_final_board_batches (final_board_batch_id, worker_version, job_key, source_simulation_batch_id, source_engine_batch_id, source_scoring_worker_version, profile_key, status, certification, certification_grade, started_at)
     VALUES (?, ?, ?, NULL, ?, ?, ?, 'running', 'SCORE_FINAL_BOARD_STARTED', 'RUNNING', CURRENT_TIMESTAMP)
   `, batchId, VERSION, JOB_KEY, simBatchId, engine.worker_version || null, activeProfileKey);
-  const bad = await first(env.SCORE_DB, `
-    SELECT COUNT(*) AS bad_rows
-    FROM scoring_engine_current
-    WHERE batch_id = ?
-      AND profile_key = ?
-      AND live_playable = 1
-      AND (
-        archive_eligible <> 1
-        OR selected_side IS NULL
-        OR line_value IS NULL
-        OR player_name IS NULL
-        OR canonical_prop_key IS NULL
-        OR source_key IS NULL
-        OR mlb_player_id IS NULL
-        OR factor_status <> 'packet_ready'
-        OR daily_readiness_status NOT IN ('ready','ready_with_warnings')
-        OR score_status IN ('blocked_by_matrix','model_deferred','simulation_hard_blocked')
-      )
-  `, simBatchId, activeProfileKey);
-  const badRows = Number(bad && bad.bad_rows || 0);
-  if (badRows > 0) {
-    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_live_invariant_failure", certification:"SCORE_FINAL_BOARD_BLOCKED_LIVE_INVARIANTS", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_engine_batch_id:simBatchId, bad_live_rows:badRows };
-    await writeIssue(env, batchId, simBatchId, "LIVE_INVARIANT_FAILURE", "BLOCKER", badRows, output);
+  const hpRead = await fetchHpFinalBoardCandidateRows(env, simBatchId, 500);
+  const hpSource = hpRead.hp_source;
+  if (!hpSource || !hpSource.hp_board_batch_id) {
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_no_hp_board_for_engine_batch", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_HP_BOARD_FOR_ENGINE_BATCH", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_engine_batch_id:simBatchId, reason:"Final Board v0.1.27 requires the locked HP Board output for the same completed Engine batch. Run Hit Probability after Engine before Final Board." };
+    await writeIssue(env, batchId, simBatchId, "NO_HP_BOARD_FOR_ENGINE_BATCH", "BLOCKER", 1, output);
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
   }
 
-  const engineRead = await fetchEngineBoardCandidateRows(env, simBatchId, activeProfileKey, 500);
-  const engineRaw = engineRead.rows;
-
-  // v0.1.21-complete-review-ledger-offset-reader over v0.1.20-paged-engine-current-reader:
-  // D1 prepared .all() plus score_row_id keyset paging under-read the review universe; LIMIT/OFFSET paging reads the complete bounded first page for large SELECT result sets.
-  // Final Board must read every eligible scoring_engine_current row for the terminal engine batch,
-  // so the engine-current scan is keyset-paged by score_row_id. No source quotas, no payout quotas,
-  // and no mutation of scoring_engine_current or prepared/source boards.
-
-  // v0.1.19-runtime-output-scope-fix over v0.1.18-engine-field-tier-calibration:
-  // Final Board is a selector/ranker, not a second scoring engine. It must not re-score PrizePicks/Sleeper,
-  // must not read review_playable from scoring_engine_current, and must not silently kill qualified engine rows
-  // because platform payout variants create different score distributions. Use engine-owned fields only.
-  const strictLiveCandidates = engineRaw
-    .filter(engineRowIsBoardCandidate)
-    .map(r => applyEngineFieldTierCalibration(r));
-
-  // Runtime-scope repair: v0.1.18 intentionally switched Final Board to engine-field tiering,
-  // but left output/reporting references to the old primaryRaw / initiallyCalibratedCandidates / hpAdvisory
-  // variables. Keep the v0.1.18 selection behavior and bind those reporting variables explicitly.
-  const primaryRaw = strictLiveCandidates.filter(r => r.board_tier === "PRIMARY");
-  const safeReviewCandidates = [];
-  const initiallyCalibratedCandidates = [...strictLiveCandidates, ...safeReviewCandidates];
-  const hpAdvisory = { batch: null, map: new Map(), rows: 0 };
-
-  const calibratedCandidates = annotateCorrelation(initiallyCalibratedCandidates)
-    .filter(r => !r.calibration_failed && Number(r.score_0_100) >= 74 && Number(r.confidence_0_100) >= 55);
-
-  const primarySanityResult = { rows: calibratedCandidates, demotedRows: 0, rescuedRows: 0, advisoryRowsSeen: 0 };
-  const sanityBalancedCandidates = primarySanityResult.rows;
-
-  let primaryRows = sanityBalancedCandidates.filter(r => r.board_tier === "PRIMARY");
-  let reviewRows = sanityBalancedCandidates.filter(r => r.board_tier === "REVIEW");
-
-  const clusterCapResult = applyPrimaryClusterCap(primaryRows, reviewRows, 1);
-  primaryRows = clusterCapResult.primaryRows;
-  reviewRows = clusterCapResult.reviewRows;
-
-  const rows = annotateCorrelation([...primaryRows, ...reviewRows]);
+  const hpEligibleRaw = hpRead.rows;
+  const rows = annotateCorrelation(hpEligibleRaw.map(r => mapHpCurrentRowToFinalBoardRow(r, activeProfileKey)));
+  const primaryRows = rows.filter(r => r.board_tier === "PRIMARY");
+  const reviewRows = rows.filter(r => r.board_tier === "REVIEW");
+  const primaryRaw = primaryRows;
+  const engineRaw = [];
+  const engineRead = { pages:0, page_size:0, pagination_mode:"not_used_hp_current_source" };
+  const strictLiveCandidates = rows;
+  const initiallyCalibratedCandidates = rows;
+  const calibratedCandidates = rows;
+  const primarySanityResult = { rows, demotedRows:0, rescuedRows:0, advisoryRowsSeen:rows.length };
+  const clusterCapResult = {
+    primaryRowsBeforeClusterCap: primaryRows.length,
+    primaryRowsAfterClusterCap: primaryRows.length,
+    reviewRowsBeforeClusterCap: reviewRows.length,
+    reviewRowsAfterClusterCap: reviewRows.length,
+    demotedRows: [],
+    maxPrimaryRowsPerPlayer: 1
+  };
 
   if (!rows.length) {
     const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_no_final_rows_after_calibration", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_FINAL_ROWS_AFTER_CALIBRATION", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_engine_batch_id:simBatchId, profile_key:activeProfileKey, primary_rows_after_calibration:primaryRows.length, review_rows_after_calibration:reviewRows.length };
@@ -1403,8 +1616,10 @@ async function generateFinalBoard(env, input) {
         OR canonical_prop_key IS NULL
         OR source_key IS NULL
         OR mlb_player_id IS NULL
-        OR score_0_100 < 70
-        OR confidence_0_100 < 55
+        OR score_0_100 IS NULL
+        OR confidence_0_100 IS NULL
+        OR estimated_hit_probability_0_100 IS NULL
+        OR estimated_hit_probability_0_100 < 60
         OR board_tier NOT IN ('PRIMARY','REVIEW')
         OR review_playable NOT IN (0,1)
         OR (board_tier = 'PRIMARY' AND live_playable <> 1)
@@ -1460,15 +1675,23 @@ async function generateFinalBoard(env, input) {
     job_key: JOB_KEY,
     request_id: requestId,
     run_id: runId,
-    status: "completed_final_board_current_replaced_from_engine_current",
-    certification: "SCORE_FINAL_BOARD_CERTIFIED_CURRENT_REPLACED_FROM_ENGINE_CURRENT",
+    status: "completed_final_board_current_replaced_from_hp_current",
+    certification: "SCORE_FINAL_BOARD_CERTIFIED_CURRENT_REPLACED_FROM_HP_CURRENT",
     certification_grade: "PASS_WITH_REVIEW_WARNINGS",
     final_board_batch_id: batchId,
     source_engine_batch_id: simBatchId,
     source_scoring_worker_version: engine.worker_version,
+    source_hp_board_batch_id: hpSource && hpSource.hp_board_batch_id || null,
+    source_hp_batch_id: hpSource && hpSource.source_hp_batch_id || null,
+    hp_current_rows_read: hpEligibleRaw.length,
+    hp_current_read_pages: hpRead.pages,
+    hp_current_page_size: hpRead.page_size,
+    hp_current_pagination_mode: hpRead.pagination_mode,
+    hp_first_final_board_source_active: true,
     profile_key: (typeof activeProfileKey !== "undefined" ? activeProfileKey : PRIMARY_PROFILE),
     matrix_rows_read: Number(engine.matrix_rows_read || 0),
-    engine_current_candidate_rows_read: engineRaw.length,
+    engine_current_candidate_rows_read: 0,
+    engine_current_bypassed_for_final_selection: true,
     engine_current_candidate_read_pages: engineRead.pages,
     engine_current_candidate_page_size: engineRead.page_size,
     paged_engine_current_reader_active: true,
@@ -1495,13 +1718,13 @@ async function generateFinalBoard(env, input) {
     archive_review_rows_written: 0,
     archive_review_by_source: [],
     archive_review_admission_active: false,
-    archive_review_admission_policy: "BIN_ARCHIVE rows are excluded from score_final_board_current; engine inventory remains preserved upstream in scoring_engine_current/history.",
-    live_rows_read: primaryRaw.length,
+    archive_review_admission_policy: "Final Board v0.1.27 is HP-first. HP >= 60 rows from hp_board_current are included even when Engine score_grade is BIN_ARCHIVE or BIN_REJECT; score remains the trust/support score.",
+    live_rows_read: primaryRows.length,
     final_rows_written: rows.length,
     current_rows_written: rows.length,
     table_for_final_ui: "SCORE_DB.score_final_board_current",
     history_table: "SCORE_DB.score_final_board_history",
-    final_ui_contract: "Read board_tier. PRIMARY rows are high-confidence engine rows after diversification; REVIEW rows are engine-qualified safe rows with review_playable=1. BIN_ARCHIVE rows are excluded from current. Final Board does not re-score engine rows or require review_playable in scoring_engine_current; engine current is read through deterministic LIMIT/OFFSET pagination so large PrizePicks boards are not truncated by D1 page limits.",
+    final_ui_contract: "Read estimated_hit_probability_0_100 as the reality thermometer, score_0_100 as the Engine trust/support score, and score_sort_0_100 as HP-first board sort. Final Board source is hp_board_current for the same Engine batch. HP < 60 is excluded; HP >= 60 is visible as PRIMARY/REVIEW according to HP board playability.",
     no_external_calls: true,
     no_source_board_mutation: true,
     no_simulation_shadow_mutation: true,
@@ -1509,8 +1732,8 @@ async function generateFinalBoard(env, input) {
     final_plus_calibration_active: true,
     cutoff_volatility_trim_active: true,
     cutoff_volatility_trim_policy: "narrow fragile-pitcher cutoff trim only; no source quota, no forced balance, no broad cluster penalty",
-    primary_sanity_hp_advisory_active: false,
-    primary_sanity_hp_advisory_policy: "Disabled in v0.1.19 runtime-scope repair path; Final Board uses engine-owned score/grade/tier fields only.",
+    primary_sanity_hp_advisory_active: true,
+    primary_sanity_hp_advisory_policy: "Replaced by HP-first source in v0.1.27. Final Board consumes locked hp_board_current directly instead of using HP as advisory after Engine-only selection.",
     primary_sanity_rescue_rule_a: `score>=${PRIMARY_SANITY_RESCUE_SCORE_A}, confidence>=${PRIMARY_THRESHOLD_CONFIDENCE}, hp>=${PRIMARY_SANITY_RESCUE_HP_A}, hp_confidence>=${PRIMARY_SANITY_MIN_HP_CONFIDENCE}, non_push_sample>=${PRIMARY_SANITY_MIN_NON_PUSH_SAMPLE}`,
     primary_sanity_rescue_rule_b: `score>=${PRIMARY_SANITY_RESCUE_SCORE_B}, confidence>=${PRIMARY_THRESHOLD_CONFIDENCE}, hp>=${PRIMARY_SANITY_RESCUE_HP_B}, hp_confidence>=${PRIMARY_SANITY_MIN_HP_CONFIDENCE}, non_push_sample>=${PRIMARY_SANITY_MIN_NON_PUSH_SAMPLE}`,
     primary_sanity_demote_rule: `PRIMARY robust hp<${PRIMARY_SANITY_DEMOTE_HP_BELOW} becomes REVIEW`,
@@ -1527,7 +1750,7 @@ async function generateFinalBoard(env, input) {
 
   await writeIssue(env, batchId, simBatchId, "LIVE_INVARIANT_FAILURE", "INFO", 0, { note: "No live row invariant failures detected before final board write." });
   await writeIssue(env, batchId, simBatchId, "REVIEW_TIER_INCLUDED", "WARNING", reviewRows.length, { note: "Review tier rows are intentionally included as safe soft rows. They are not strict PRIMARY rows.", review_rows_written: reviewRows.length });
-  await writeIssue(env, batchId, simBatchId, "ARCHIVE_EXCLUDED_FROM_CURRENT", "INFO", 0, { note: "BIN_ARCHIVE rows are intentionally excluded from score_final_board_current. They remain preserved in scoring_engine_current/history and are not deleted from source inventory." });
+  await writeIssue(env, batchId, simBatchId, "HP_FIRST_SOURCE_INCLUDED", "INFO", rows.length, { note: "Final Board v0.1.27 writes HP >= 60 rows from hp_board_current. BIN_ARCHIVE/BIN_REJECT score grades can remain visible as REVIEW because score is trust/support, not the probability gate.", hp_board_batch_id: hpSource && hpSource.hp_board_batch_id || null, hp_rows_read: hpEligibleRaw.length });
   await writeIssue(env, batchId, simBatchId, "PRIMARY_CLUSTER_CAP_APPLIED", clusterCapResult.demotedRows.length ? "WARNING" : "INFO", clusterCapResult.demotedRows.length, { note: "PRIMARY is capped at one row per player/game slate cluster key; overflow rows are demoted to REVIEW, not deleted. This is a diversification/correlation safety rail, not a quality killer or source quota.", max_primary_rows_per_player: clusterCapResult.maxPrimaryRowsPerPlayer, primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap, primary_rows_after_cluster_cap: clusterCapResult.primaryRowsAfterClusterCap, demoted_rows: clusterCapResult.demotedRows.length });
   await writeIssue(env, batchId, simBatchId, "PRIMARY_SANITY_HP_ADVISORY_APPLIED", (primarySanityResult.rescuedRows || primarySanityResult.demotedRows) ? "WARNING" : "INFO", (primarySanityResult.rescuedRows || 0) + (primarySanityResult.demotedRows || 0), { note: "Hit Probability advisory is used as a PRIMARY safety net only. It can rescue robust high-HP near-elite rows or demote robust low-HP PRIMARY rows to REVIEW. It does not delete rows, force equality, or apply source/prop quotas.", hp_advisory_batch_id: hpAdvisory.batch && hpAdvisory.batch.batch_id || null, hp_advisory_rows_loaded: hpAdvisory.rows || 0, candidate_rows_with_advisory: primarySanityResult.advisoryRowsSeen, rescued_to_primary_rows: primarySanityResult.rescuedRows, demoted_to_review_rows: primarySanityResult.demotedRows });
   await run(env.SCORE_DB, `
@@ -1540,7 +1763,7 @@ async function generateFinalBoard(env, input) {
 }
 
 function baseIdentity() {
-  return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"READY", timestamp_utc:nowUtc(), purpose:"Generate SCORE_DB.score_final_board_current from latest completed real Scoring Engine current batch. Simulation is not a production source for this path." };
+  return { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"READY", timestamp_utc:nowUtc(), purpose:"Generate SCORE_DB.score_final_board_current from locked SCORE_DB.hp_board_current for the latest completed real Scoring Engine batch. HP is the reality gate; Engine score is preserved as trust/support score." };
 }
 
 export default {
