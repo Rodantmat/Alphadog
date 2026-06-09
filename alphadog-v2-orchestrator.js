@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.212-board-prizepicks-no-future-nonfatal";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.213-full-run-hot-continuation-depth";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -8996,7 +8996,7 @@ async function processOneUnlocked(env, trigger) {
     if (row) {
       await run(env.CONTROL_DB,
         "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'daily_full_run_grandchild_selected_before_component_parent', 'Selected due inner full-run child before reselecting Daily Full component parent', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ trigger, selected_request_id: row.request_id, selected_job_key: row.job_key, selected_worker_name: row.worker_name, daily_full_run_grandchild_hot_priority_v0_2_208: true, preserves_parent_boundary: true, no_new_child_created: true, version: SYSTEM_VERSION })
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ trigger, selected_request_id: row.request_id, selected_job_key: row.job_key, selected_worker_name: row.worker_name, daily_full_run_grandchild_hot_priority_v0_2_208: true, full_run_hot_continuation_depth_v0_2_213: true, preserves_parent_boundary: true, no_new_child_created: true, version: SYSTEM_VERSION })
       );
     }
   }
@@ -10254,7 +10254,7 @@ async function countDueStaticPlayers(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
-async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle = 1, maxMs = 65000, ctx = null, requestUrl = null, pumpDepth = 0, maxPumpChains = 12) {
+async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle = 1, maxMs = 65000, ctx = null, requestUrl = null, pumpDepth = 0, maxPumpChains = 48) {
   const started = Date.now();
   const cycles = [];
   const hardCycles = Math.max(1, Math.min(Number(maxCycles || 10), 18));
@@ -10265,8 +10265,8 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   // This lets the backend drain several micro-ticks in one orchestrator ownership window instead
   // of waiting for the 5-minute cron cadence.
   const deadlineMs = Math.max(15000, Math.min(Number(maxMs || 65000), 75000));
-  const depth = Math.max(0, Math.min(Number(pumpDepth || 0), 20));
-  const maxChains = Math.max(0, Math.min(Number(maxPumpChains || 12), 80));
+  const maxChains = Math.max(0, Math.min(Number(maxPumpChains || 48), 80));
+  const depth = Math.max(0, Math.min(Number(pumpDepth || 0), maxChains));
 
   for (let i = 0; i < hardCycles; i++) {
     if (Date.now() - started >= deadlineMs) {
@@ -10363,7 +10363,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       max_pump_chains: maxChains,
       self_continue_scheduled: !!shouldSelfContinue,
       self_continue_delay_ms: hotContinuationDelayMs,
-      full_run_hot_continuation_v0_2_95: true,
+      full_run_hot_continuation_v0_2_95: true, full_run_hot_continuation_depth_v0_2_213: true,
       self_continue_suppressed_due_to_lock_busy: !!(sawLockBusy && !lockBusyHotContinuation),
       self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
       continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
@@ -10371,7 +10371,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
       daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
       lock_busy_hot_continuation: !!lockBusyHotContinuation,
-      daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true,
+      daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, full_run_hot_continuation_depth_v0_2_213: true,
       hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
       cron_is_rescue_only_for_base_hitter: true, cron_is_rescue_only_for_base_hitter_splits: true, base_hitter_splits_hot_continuation_v0_2_32: true, base_pitcher_splits_hot_continuation_v0_2_35: true,
       version: SYSTEM_VERSION
@@ -10407,13 +10407,13 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         max_jobs_per_cycle: jobsPerCycle,
         max_ms: deadlineMs,
         self_continue_delay_ms: hotContinuationDelayMs,
-        full_run_hot_continuation_v0_2_95: true,
+        full_run_hot_continuation_v0_2_95: true, full_run_hot_continuation_depth_v0_2_213: true,
         continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
         market_scoring_lock_busy_continuation: !!marketScoringLockBusyContinuation,
         daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
         daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
         lock_busy_hot_continuation: !!lockBusyHotContinuation,
-        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true,
+        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, full_run_hot_continuation_depth_v0_2_213: true,
         self_continue_suppressed_due_to_lock_busy: !!(sawLockBusy && !lockBusyHotContinuation),
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
         version: SYSTEM_VERSION,
@@ -10463,7 +10463,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
     due_base_bullpen_history_after_pump: dueBaseBullpenHistory,
     self_continue_scheduled: !!shouldSelfContinue,
     self_continue_delay_ms: hotContinuationDelayMs,
-    full_run_hot_continuation_v0_2_95: true,
+    full_run_hot_continuation_v0_2_95: true, full_run_hot_continuation_depth_v0_2_213: true,
     pump_depth: depth,
     max_pump_chains: maxChains,
     cycles

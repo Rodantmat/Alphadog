@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 AlphaDog v2 PrizePicks GitHub JSON Producer
-Version: alphadog-v2-prizepicks-producer-v0.1.1-fresh-multi-endpoint-guard
+Version: alphadog-v2-prizepicks-producer-v0.1.2-captcha-cooldown-retry
 
 Purpose:
 - Fetch the raw PrizePicks MLB projections payload from multiple known PrizePicks JSON surfaces.
@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from curl_cffi import requests
 
-SCRIPT_VERSION = "alphadog-v2-prizepicks-producer-v0.1.1-fresh-multi-endpoint-guard"
+SCRIPT_VERSION = "alphadog-v2-prizepicks-producer-v0.1.2-captcha-cooldown-retry"
 PRIZEPICKS_MLB_PROJECTIONS_URLS = [
     "https://api.prizepicks.com/projections?league_id=2&per_page=1000&single_stat=true",
     "https://api.prizepicks.com/projections?league_id=2&per_page=5000",
@@ -216,11 +216,23 @@ def select_best_candidate(candidates: List[Dict[str, Any]]) -> Optional[Dict[str
     return usable[0]
 
 
+
+def candidate_has_prizepicks_block(candidate: Dict[str, Any]) -> bool:
+    fetch = candidate.get("fetch", {}) if isinstance(candidate, dict) else {}
+    status = int(fetch.get("http_status") or 0) if isinstance(fetch, dict) else 0
+    err = str(candidate.get("error") or "").lower() if isinstance(candidate, dict) else ""
+    return status in {403, 429} or "captcha" in err or "pxzneitfzp" in err or "perimeterx" in err or "blockscript" in err
+
+
+def attempt_has_prizepicks_block(candidates: List[Dict[str, Any]]) -> bool:
+    return any(candidate_has_prizepicks_block(c) for c in candidates)
+
 def fetch_prizepicks_json() -> Tuple[Any, Dict[str, Any]]:
     proxy_url = os.getenv("PROXY_URL", "").strip()
     timeout_seconds = int(os.getenv("PRIZEPICKS_FETCH_TIMEOUT_SECONDS", "45"))
     attempts = int(os.getenv("PRIZEPICKS_FETCH_ATTEMPTS", "3"))
-    sleep_seconds = float(os.getenv("PRIZEPICKS_FETCH_RETRY_SLEEP_SECONDS", "2"))
+    sleep_seconds = float(os.getenv("PRIZEPICKS_FETCH_RETRY_SLEEP_SECONDS", "60"))
+    captcha_cooldown_seconds = float(os.getenv("PRIZEPICKS_CAPTCHA_COOLDOWN_SECONDS", str(sleep_seconds)))
     min_future_rows = int(os.getenv("PRIZEPICKS_MIN_FUTURE_ROWS", "1"))
     override_urls = [u.strip() for u in os.getenv("PRIZEPICKS_PROJECTIONS_URLS", "").split(",") if u.strip()]
     urls = override_urls or PRIZEPICKS_MLB_PROJECTIONS_URLS
@@ -252,9 +264,25 @@ def fetch_prizepicks_json() -> Tuple[Any, Dict[str, Any]]:
             return selected["payload"], selected
         selected_any = select_best_candidate(all_candidates)
         future_rows = int(selected_any.get("freshness", {}).get("future_pickable_rows") or 0) if selected_any else 0
+        blocked_by_prizepicks = attempt_has_prizepicks_block(attempt_candidates)
         last_error = f"No PrizePicks candidate had future pickable MLB rows; best_future_pickable_rows={future_rows}; min_required={min_future_rows}"
+        if blocked_by_prizepicks:
+            last_error += "; prizepicks_api_block_or_captcha_detected=true"
         if attempt < attempts:
-            time.sleep(sleep_seconds)
+            cooldown = captcha_cooldown_seconds if blocked_by_prizepicks else sleep_seconds
+            print(json.dumps({
+                "ok": False,
+                "version": SCRIPT_VERSION,
+                "status": "retrying_after_prizepicks_block_or_no_future_rows",
+                "attempt": attempt,
+                "max_attempts": attempts,
+                "cooldown_seconds": cooldown,
+                "prizepicks_api_block_or_captcha_detected": blocked_by_prizepicks,
+                "best_future_pickable_rows": future_rows,
+                "min_required": min_future_rows,
+                "timestamp_utc": utc_now(),
+            }, indent=2))
+            time.sleep(cooldown)
     best = select_best_candidate(all_candidates)
     diagnostic = {
         "ok": False,
@@ -263,6 +291,10 @@ def fetch_prizepicks_json() -> Tuple[Any, Dict[str, Any]]:
         "status": "source_stale_no_future_pickable_rows",
         "error": last_error or "No usable PrizePicks candidate returned rows",
         "candidate_count": len(all_candidates),
+        "attempts_configured": attempts,
+        "retry_cooldown_seconds": sleep_seconds,
+        "captcha_cooldown_seconds": captcha_cooldown_seconds,
+        "prizepicks_api_block_or_captcha_detected": attempt_has_prizepicks_block(all_candidates),
         "best_candidate": {k: v for k, v in (best or {}).items() if k != "payload"},
         "candidates": [{k: v for k, v in c.items() if k != "payload"} for c in all_candidates],
         "stale_overwrite_guard": "did_not_overwrite_prizepicks_mlb_current_json_when_all_candidates_were_stale",

@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.13-refresh-wait-filled-json";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.14-producer-cooldown-retry-aware-json-wait";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
@@ -9,9 +9,9 @@ const PROMOTION_CERT_PASS = "promoted_current_board";
 const PROMOTION_CERT_FAIL = "promotion_failed_active_board_preserved";
 const SOURCE_STALE_CERT = "PRIZEPICKS_SOURCE_STALE_NO_FUTURE_PICKABLE_ROWS";
 const SOURCE_REFRESH_WAIT_CERT = "PRIZEPICKS_SOURCE_REFRESH_WAIT_EXHAUSTED_NO_FUTURE_ROWS_CURRENT_PRESERVED";
-const SOURCE_REFRESH_WAIT_MAX_MS = 35000;
-const SOURCE_REFRESH_WORKER_BUDGET_MS = 56000;
-const SOURCE_REFRESH_POLL_INTERVAL_MS = 5000;
+const SOURCE_REFRESH_WAIT_MAX_MS = 55000;
+const SOURCE_REFRESH_WORKER_BUDGET_MS = 68000;
+const SOURCE_REFRESH_POLL_INTERVAL_MS = 10000;
 const MAX_RAW_JSON_CHARS = 180000;
 const MAX_HEALTH_JSON_CHARS = 7000;
 const MAX_OUTPUT_PREVIEW_CHARS = 900;
@@ -97,7 +97,7 @@ function baseIdentity(env, extra = {}) {
     source_key: SOURCE_KEY,
     status: "READY",
     timestamp_utc: nowUtc(),
-    phase: "prizepicks_github_board_multi_surface_freshness_select_v0_1_12",
+    phase: "prizepicks_github_board_multi_surface_freshness_select_v0_1_14",
     notes: [
       "Reads the configured PrizePicks GitHub JSON source.",
       "Parses JSON, stages PrizePicks rows into MARKET_DB.prizepicks_board_stage, and writes a batch certification row.",
@@ -1577,7 +1577,7 @@ async function runBoardParseStageCertify(env, input = {}) {
       github_source_refresh_dispatch_enabled: true,
       manual_buttons: ["BOARD > PrizePicks", "ORCHESTRATOR > Wake"]
     },
-    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, or final board. v0.1.13 compares GitHub metadata/download/raw/blob surfaces, dispatches the producer on no-future source, waits/polls for a filled JSON before staging/promotion, and preserves existing current inventory if the producer file remains stale after the bounded wait.",
+    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, or final board. v0.1.14 compares GitHub metadata/download/raw/blob surfaces, dispatches the producer on no-future source, waits/polls longer for a producer-cooldown refreshed JSON before staging/promotion, and preserves existing current inventory if the producer file remains stale after the bounded wait.",
     timestamp_utc: nowUtc()
   };
 }
