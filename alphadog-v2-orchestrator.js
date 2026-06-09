@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.208-daily-full-grandchild-hot-priority";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.209-prop-factor-blocked-pass-reconcile";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1518,7 +1518,28 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
   const outputFromProof = parseJsonSafeText(proof.output_json || "{}", {});
   const cert = String(proof.certification_status || proof.certification || outputFromProof.certification || outputFromProof.certification_status || "MARKET_SCORING_CHILD_RECONCILED_FROM_PROOF").slice(0, 120);
   const grade = String(proof.certification_grade || outputFromProof.certification_grade || "PASS");
-  const ok = !String(grade).toUpperCase().includes("BLOCKED") && !String(grade).toUpperCase().includes("FAILED");
+  const gradeUpper = String(grade || "").toUpperCase();
+  const certUpper = String(cert || "").toUpperCase();
+  const proofStatusLower = String(proof.status || outputFromProof.status || "").toLowerCase();
+  const proofPacketsWritten = Number(proof.packets_written || outputFromProof.packets_written || 0);
+  const proofEligibleRows = Number(proof.eligible_rows || outputFromProof.eligible_rows || proof.prepared_rows_read || outputFromProof.prepared_rows_read || 0);
+  const propFactorBlockedRowsTerminalPass = (stageKey === "prop_factor_hitters" || stageKey === "prop_factor_pitchers")
+    && gradeUpper === "PASS_WITH_BLOCKED_ROWS"
+    && certUpper.includes("PROP_FACTOR_PACKETS_CERTIFIED")
+    && proofStatusLower.includes("completed")
+    && proofPacketsWritten > 0
+    && proofEligibleRows > 0
+    && !certUpper.includes("FAILED");
+  const proofBodyExplicitFailure = outputFromProof.ok === false || outputFromProof.data_ok === false;
+  const ok = propFactorBlockedRowsTerminalPass
+    || (
+      !proofBodyExplicitFailure
+      && !gradeUpper.includes("BLOCKED")
+      && !gradeUpper.includes("FAILED")
+      && !certUpper.includes("FAILED")
+      && !proofStatusLower.includes("failed")
+      && !proofStatusLower.includes("error")
+    );
   const rowsRead = Number(proof.prepared_rows_read || proof.matrix_rows_read || outputFromProof.rows_read || outputFromProof.prepared_rows_read || 0);
   const rowsWritten = Number(proof.rows_written || proof.packets_written || proof.matrix_rows_written || outputFromProof.rows_written || outputFromProof.packets_written || outputFromProof.matrix_rows_written || outputFromProof.simulation_rows_written || outputFromProof.final_rows_written || 0);
   const externalCalls = Number(outputFromProof.external_calls_performed || outputFromProof.external_calls || 0);
