@@ -1,9 +1,9 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.18-hit-probability-fast-hp-board-terminal";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.19-sanity-map-calibration-db-profile";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
-const PRODUCTION_PROFILE_KEY = "STRICT_C_REALISTIC_V3_2";
+const PRODUCTION_PROFILE_KEY = "STRICT_C_REALITY_SANITY_V4_0";
 const PROFILE_VERSION = "0.2.1";
 const ARCHIVE_SCORE_THRESHOLD = 70;
 
@@ -772,6 +772,99 @@ const DEFAULT_SIM_CONFIGS = {
       confidence_penalty_warning_9_plus: 25,
       model_deferred_rules: { sleeper_rfi_nrfi: "model_deferred_rfi_nrfi", prizepicks_triples: "model_deferred_low_event_prop" }
     }
+  },
+  STRICT_C_REALITY_SANITY_V4_0: {
+    profile_version: "0.4.19-sanity-map-calibration-db-profile",
+    config: {
+      min_live_score: 76,
+      min_live_confidence: 55,
+      archive_score_threshold: 70,
+      grade_archive_min: 70,
+      grade_qualified_min: 76,
+      grade_strong_min: 84,
+      grade_elite_min: 90,
+      raw_side_delta_threshold: 0.50,
+      base_raw_packet_ready: 82,
+      base_raw_packet_partial: 76,
+      raw_less_delta_from_more: 0,
+      max_score_cap: 100,
+      price_pressure_scale: 0.14,
+      line_pressure_scale: 0.90,
+      deterministic_spread_scale: 0.35,
+      base_confidence: 100,
+      score_sort_micro_scale: 0.0001,
+      clean_bonus_score: 0,
+      market_raw_adjustments: { market_prop_context_present: 2, market_prop_context_not_found: -5, market_prop_context_missing: -7, default: -3 },
+      market_direct_evidence_raw_adjustments: { direct_prop_evidence_rows_gte_5: 1, direct_prop_evidence_rows_2_to_4: 0.5, direct_prop_evidence_rows_1: 0, direct_prop_evidence_rows_0_with_coverage: -2, direct_prop_evidence_rows_0_no_coverage: -4, default: 0 },
+      market_evidence_score_caps: { direct_prop_evidence_rows_gte_5: 94, direct_prop_evidence_rows_2_to_4: 90, direct_prop_evidence_rows_1: 86, direct_prop_evidence_rows_0_with_coverage: 80, direct_prop_evidence_rows_0_no_coverage: 74, default: 88 },
+      context_score_caps: { matrix_full_context: 94, matrix_partial_context_warning_0_2: 90, matrix_partial_context_warning_3_5: 84, matrix_partial_context_warning_6_8: 80, matrix_partial_context_warning_9_plus: 74 },
+      effective_warning_rules: { enabled: true, soft_partial_context_effective_warning_count: 6, soft_partial_context_requires_blocker_count_lte: 0, soft_partial_context_requires_direct_prop_evidence_rows_gte: 1, soft_partial_context_factor_statuses: ["packet_partial"], soft_partial_context_daily_statuses: ["missing_current_readiness", "daily_readiness_missing_soft_fallback", "partial_enrichment"], soft_partial_context_market_prop_statuses: ["market_prop_context_present"] },
+      symmetry_rules: { two_sided_delta_lt: 1.0, zero_direct_evidence_symmetry_cap: 74, nonzero_direct_evidence_symmetry_cap: 84 },
+      daily_raw_adjustments: { ready_with_warnings: 0, partial_enrichment: -4, not_applicable: 0, default: 0 },
+      source_raw_adjustments: { sleeper: 0, prizepicks: 0, default: 0 },
+      odds_raw_adjustments: { standard: 0, goblin: -5, demon: -7, default: 0 },
+      prop_raw_adjustments: { pitcher_strikeouts: 0, hits: 1, total_bases: 0, hits_runs_rbis: 0, home_runs: -5, stolen_bases: -5, earned_runs: -1, earned_runs_allowed: -1, hits_allowed: -1, pitcher_outs: 0, pitching_outs: 0, walks: -1, walks_allowed: -1, rbis: -1, runs: -1, doubles: -2, singles: 0, fantasy: -2, default: 0 },
+      prop_less_raw_adjustments: { pitcher_strikeouts: -1, hits: 0, total_bases: 1, hits_runs_rbis: 1, home_runs: 0, stolen_bases: 0, earned_runs: -1, earned_runs_allowed: -1, hits_allowed: -1, pitcher_outs: -1, pitching_outs: -1, walks: 1, walks_allowed: -1, rbis: 1, runs: 1, doubles: 1, singles: 1, fantasy: 0, default: 0 },
+      score_penalty_market_not_found: 9,
+      score_penalty_market_missing: 12,
+      score_penalty_complete_market_blindness: 16,
+      score_penalty_packet_partial: 5,
+      score_penalty_partial_enrichment: 7,
+      confidence_cap_market_not_found: 58,
+      confidence_cap_market_missing: 48,
+      confidence_cap_complete_market_blindness: 38,
+      confidence_cap_warning_9_plus: 42,
+      confidence_penalty_packet_partial: 10,
+      confidence_penalty_partial_enrichment: 16,
+      confidence_penalty_sleeper_null_odds: 0,
+      confidence_penalty_warning_6_8: 7,
+      confidence_penalty_warning_3_5: 4,
+      confidence_penalty_warning_9_plus: 28,
+      source_payout_fairness: {
+        enabled: true,
+        prizepicks_standard_adjustment: 8,
+        prizepicks_standard_cap: 82,
+        prizepicks_goblin_adjustment: 6,
+        prizepicks_goblin_cap: 76,
+        prizepicks_demon_adjustment: 4,
+        prizepicks_demon_cap: 74,
+        prizepicks_low_line_temper_adjustment: 3,
+        prizepicks_low_line_temper_cap: 74,
+        market_blind_recenter_enabled: false
+      },
+      hp_board_sanity_calibration: {
+        enabled: true,
+        base: 50,
+        hp_weight: 0.45,
+        sample_bonus_40: 3,
+        sample_bonus_30: 2,
+        sample_bonus_20: 1,
+        sample_bonus_15: 0,
+        sample_penalty_under_15: -3,
+        prop_lift_hrrbi_more_0_5: 4,
+        prop_lift_hits_more_0_5: 2,
+        prop_lift_total_bases_more_0_5: 1,
+        prop_lift_low_frequency_less_0_5: 1,
+        prop_lift_run_rbi_less_0_5: 1,
+        demon_penalty: 5,
+        goblin_penalty: 3,
+        hp_cap_below_45: 74,
+        hp_cap_below_55: 78,
+        hp_cap_below_62: 82,
+        hp_cap_below_70: 86,
+        hp_cap_below_80: 89,
+        hp_cap_below_90: 92,
+        hp_cap_90_plus: 94,
+        sample_cap_under_15: 80,
+        sample_cap_under_20: 83,
+        sample_cap_under_30: 86,
+        sample_cap_30_plus: 94,
+        demon_cap: 78,
+        goblin_cap: 83,
+        standard_cap: 94
+      },
+      model_deferred_rules: { sleeper_rfi_nrfi: "model_deferred_rfi_nrfi", prizepicks_triples: "model_deferred_low_event_prop" }
+    }
   }
 
 };
@@ -785,14 +878,10 @@ async function ensureSimulationProfileConfigs(env) {
         thresholds_locked, scoring_enabled, true_probability_enabled, created_at, updated_at
       ) VALUES (?, ?, 'active_simulation_only', ?, ?, 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       ON CONFLICT(profile_key) DO UPDATE SET
-        profile_version=excluded.profile_version,
-        profile_status='active_simulation_only',
-        config_json=excluded.config_json,
         formula_metadata_json=excluded.formula_metadata_json,
-        thresholds_locked=0,
-        scoring_enabled=0,
-        true_probability_enabled=0,
         updated_at=CURRENT_TIMESTAMP
+      WHERE scoring_engine_simulation_profile_configs.config_json IS NULL
+         OR length(scoring_engine_simulation_profile_configs.config_json) < 5
     `, profileKey, spec.profile_version, JSON.stringify(spec.config), JSON.stringify(metadata));
   }
 }
@@ -980,6 +1069,8 @@ function americanPressure(price, scale) {
 
 
 function sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, lineValue, selectedSide, scoreBefore, context = {}) {
+  const fairCfg = (context && context.source_payout_fairness_config) || {};
+  if (fairCfg.enabled === false) return { adjusted_score: scoreBefore, adjustment: 0, cap: null, reason: 'source_payout_fairness_disabled_by_db_config' };
   if (scoreBefore == null) return { adjusted_score: null, adjustment: 0, cap: null, reason: 'no_selected_score' };
   const source = String(sourceKey || '').toLowerCase();
   if (source !== 'prizepicks') return { adjusted_score: scoreBefore, adjustment: 0, cap: null, reason: 'non_prizepicks_no_adjustment' };
@@ -1014,31 +1105,31 @@ function sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sid
       cap = null;
       reason = 'prizepicks_standard_raw_market_blind_no_recenter_same_line_guard';
     } else if (rawMarket === 'market_prop_context_present') {
-      adjustment = 14;
-      cap = 83;
-      reason = 'prizepicks_standard_raw_market_present_fairness_restore_plus14_cap83';
+      adjustment = finiteNumber(fairCfg.prizepicks_standard_adjustment, 8);
+      cap = finiteNumber(fairCfg.prizepicks_standard_cap, 82);
+      reason = 'prizepicks_standard_raw_market_present_fairness_restore_db_config';
     } else {
       adjustment = 0;
       cap = null;
       reason = 'prizepicks_standard_unknown_market_status_no_recenter_guard';
     }
   } else if (odds === 'goblin') {
-    adjustment = 20;
-    cap = 79;
-    reason = 'prizepicks_goblin_more_only_gap_recentered_with_payout_risk_cap';
+    adjustment = finiteNumber(fairCfg.prizepicks_goblin_adjustment, 6);
+    cap = finiteNumber(fairCfg.prizepicks_goblin_cap, 76);
+    reason = 'prizepicks_goblin_more_only_tempered_db_config_cap';
     if (['total_bases','hits_runs_rbis','rbis','runs','singles','walks'].includes(propKey) && line != null && line <= 0.5) {
-      adjustment = 14;
-      cap = 76;
-      reason = 'prizepicks_goblin_low_line_medium_frequency_tempered_gap_recenter';
+      adjustment = finiteNumber(fairCfg.prizepicks_low_line_temper_adjustment, 3);
+      cap = finiteNumber(fairCfg.prizepicks_low_line_temper_cap, 74);
+      reason = 'prizepicks_goblin_low_line_tempered_db_config_cap';
     }
   } else if (odds === 'demon') {
-    adjustment = 22;
-    cap = 77;
-    reason = 'prizepicks_demon_more_only_gap_recentered_with_payout_risk_cap';
+    adjustment = finiteNumber(fairCfg.prizepicks_demon_adjustment, 4);
+    cap = finiteNumber(fairCfg.prizepicks_demon_cap, 74);
+    reason = 'prizepicks_demon_more_only_tempered_db_config_cap';
     if (['home_runs','stolen_bases','doubles'].includes(propKey)) {
-      adjustment = 15;
-      cap = 74;
-      reason = 'prizepicks_demon_low_frequency_tempered_gap_recenter';
+      adjustment = finiteNumber(fairCfg.prizepicks_low_line_temper_adjustment, 3);
+      cap = finiteNumber(fairCfg.prizepicks_low_line_temper_cap, 74);
+      reason = 'prizepicks_demon_low_frequency_tempered_db_config_cap';
     }
   }
 
@@ -1184,7 +1275,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     const uncappedSelected = Math.min(p.maxScoreCap, clamp(selectedRaw - scorePenalty + bonus));
     selectedCapResult = capScoreWithReasons(uncappedSelected, hardCaps);
     const preFairnessScore = round0(selectedCapResult.score);
-    const fairness = sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, row.board_line_value, selectedSide, preFairnessScore, { raw_market_prop_context_status: row.market_prop_context_status, effective_market_prop_context_status: effectiveMarketPropContextStatus, direct_prop_evidence_row_count: evidenceInfo.rowCount, direct_prop_evidence_bucket: evidenceInfo.bucket });
+    const fairness = sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, row.board_line_value, selectedSide, preFairnessScore, { raw_market_prop_context_status: row.market_prop_context_status, effective_market_prop_context_status: effectiveMarketPropContextStatus, direct_prop_evidence_row_count: evidenceInfo.rowCount, direct_prop_evidence_bucket: evidenceInfo.bucket, source_payout_fairness_config: cfg.source_payout_fairness || {} });
     scoreInteger = round0(fairness.adjusted_score);
     if (fairness.adjustment !== 0 || fairness.reason === 'prizepicks_standard_market_blind_no_recenter_same_line_guard') {
       selectedCapResult.applied = [
@@ -1264,7 +1355,8 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     effective_warning_policy: 'raw_warning_count_preserved_but_soft_partial_missing_current_readiness_with_direct_evidence_uses_effective_warning_tier',
     score_caps_applied: selectedCapResult.applied,
     source_payout_fairness_calibration_enabled: 1,
-    source_payout_fairness_policy: 'prizepicks_standard_raw_market_blind_guard_plus_raw_market_present_restore_plus14_cap83; goblin_demon_more_only_tempered_payout_caps; no_sleeper_boost; no_final_board_mutation',
+    source_payout_fairness_policy: 'db_configured_source_payout_fairness; no_sleeper_boost; no_final_board_mutation',
+    source_payout_fairness_config_snapshot: cfg.source_payout_fairness || {},
     side_symmetry_risk: sideSymmetryRisk,
     goblin_demon_less_score_policy: 'NULL_NOT_ZERO',
     d1_memory_policy: 'no_large_scoring_cte; bounded_js_chunk_compute_and_json_each_batch_inserts_one_bind_per_batch'
@@ -3147,11 +3239,58 @@ function hpBoardCalibrationJson(row, bucketCalibration){
   }, 5000);
 }
 
+
+function hpBoardSanityCalibratedScore(row, cfg = {}) {
+  if (!cfg || cfg.enabled === false) return hpNum(row && row.score_0_100, null);
+  const hp = hpNum(row && row.estimated_hit_probability_0_100, null);
+  const current = hpNum(row && row.score_0_100, null);
+  if (hp == null || current == null) return current;
+  const nonPush = hpNum(row && (row.non_push_sample != null ? row.non_push_sample : row.sample_size), 0);
+  const prop = String(row && row.canonical_prop_key || '').toLowerCase();
+  const side = String(row && row.selected_side || '').toLowerCase();
+  const line = hpNum(row && row.line_value, 0);
+  const sourceLine = String(row && row.source_line_id || '').toLowerCase();
+  const isGoblin = sourceLine.includes('|goblin|');
+  const isDemon = sourceLine.includes('|demon|');
+  let sampleAdj = hpNum(cfg.sample_penalty_under_15, -3);
+  if (nonPush >= 40) sampleAdj = hpNum(cfg.sample_bonus_40, 3);
+  else if (nonPush >= 30) sampleAdj = hpNum(cfg.sample_bonus_30, 2);
+  else if (nonPush >= 20) sampleAdj = hpNum(cfg.sample_bonus_20, 1);
+  else if (nonPush >= 15) sampleAdj = hpNum(cfg.sample_bonus_15, 0);
+
+  let propLift = 0;
+  if (prop === 'hits_runs_rbis' && side === 'more' && line === 0.5) propLift = hpNum(cfg.prop_lift_hrrbi_more_0_5, 4);
+  else if (prop === 'hits' && side === 'more' && line === 0.5) propLift = hpNum(cfg.prop_lift_hits_more_0_5, 2);
+  else if (prop === 'total_bases' && side === 'more' && line === 0.5) propLift = hpNum(cfg.prop_lift_total_bases_more_0_5, 1);
+  else if (['doubles','triples','home_runs'].includes(prop) && side === 'less' && line === 0.5) propLift = hpNum(cfg.prop_lift_low_frequency_less_0_5, 1);
+  else if (['rbis','runs'].includes(prop) && side === 'less' && line === 0.5) propLift = hpNum(cfg.prop_lift_run_rbi_less_0_5, 1);
+
+  const variationPenalty = isDemon ? hpNum(cfg.demon_penalty, 5) : (isGoblin ? hpNum(cfg.goblin_penalty, 3) : 0);
+  const raw = Math.round(hpNum(cfg.base, 50) + (hpNum(cfg.hp_weight, 0.45) * hp) + sampleAdj + propLift - variationPenalty);
+
+  let hpCap = hpNum(cfg.hp_cap_90_plus, 94);
+  if (hp < 45) hpCap = hpNum(cfg.hp_cap_below_45, 74);
+  else if (hp < 55) hpCap = hpNum(cfg.hp_cap_below_55, 78);
+  else if (hp < 62) hpCap = hpNum(cfg.hp_cap_below_62, 82);
+  else if (hp < 70) hpCap = hpNum(cfg.hp_cap_below_70, 86);
+  else if (hp < 80) hpCap = hpNum(cfg.hp_cap_below_80, 89);
+  else if (hp < 90) hpCap = hpNum(cfg.hp_cap_below_90, 92);
+
+  let sampleCap = hpNum(cfg.sample_cap_30_plus, 94);
+  if (nonPush < 15) sampleCap = hpNum(cfg.sample_cap_under_15, 80);
+  else if (nonPush < 20) sampleCap = hpNum(cfg.sample_cap_under_20, 83);
+  else if (nonPush < 30) sampleCap = hpNum(cfg.sample_cap_under_30, 86);
+
+  const variationCap = isDemon ? hpNum(cfg.demon_cap, 78) : (isGoblin ? hpNum(cfg.goblin_cap, 83) : hpNum(cfg.standard_cap, 94));
+  return Math.max(0, Math.min(100, raw, hpCap, sampleCap, variationCap));
+}
+
 async function runHpBoardCurrent(env, input = {}){
   const started=Date.now();
   if(!env.SCORE_DB) return baseIdentity({ ok:false, data_ok:false, version:HP_VERSION, job_key:HP_BOARD_JOB_KEY, mode:HP_BOARD_MODE, status:'blocked_missing_score_db', certification:'HP_BOARD_MISSING_SCORE_DB', certification_grade:'BLOCKED' });
   await hpEnsureSchema(env);
   await hpEnsureBoardSchema(env);
+  await ensureScoreSchema(env);
 
   const sourceRows=await all(env.SCORE_DB, `SELECT * FROM hit_probability_current ORDER BY probability_row_id LIMIT ${HP_MAX_ROWS_PER_RUN}`);
   if(!sourceRows.length){
@@ -3163,7 +3302,11 @@ async function runHpBoardCurrent(env, input = {}){
   const hpBoardBatchId='hp_board_batch_for_' + sourceHpBatchId;
   const sourceFinalBoardBatchId=hpBatch.source_final_board_batch_id || null;
   const sourceEngineBatchId=hpBatch.source_engine_batch_id || null;
-  const classified=sourceRows.map(r => {
+  const scoringProfile = await profileConstants(env, PRODUCTION_PROFILE_KEY);
+  const hpSanityCfg = ((scoringProfile && scoringProfile.config) || {}).hp_board_sanity_calibration || {};
+  const classified=sourceRows.map(src => {
+    const calibratedScore = hpBoardSanityCalibratedScore(src, hpSanityCfg);
+    const r = { ...src, raw_framework_score_0_100: src.score_0_100, score_0_100: calibratedScore };
     const lane=hpBoardLane(r);
     const hp=hpNum(r.estimated_hit_probability_0_100, 0);
     const conf=hpNum(r.probability_confidence_0_100, 0);
@@ -3175,7 +3318,8 @@ async function runHpBoardCurrent(env, input = {}){
       lane_reason: hpBoardLaneReason(lane),
       hp_primary_playable: (hp >= 62 && conf >= 90 && sample >= 20 && score >= 84) ? 1 : 0,
       hp_review_playable: (hp >= 45 && score >= 76) ? 1 : 0,
-      hp_fade_flag: (hp < 35 && conf >= 90 && sample >= 20) ? 1 : 0
+      hp_fade_flag: (hp < 35 && conf >= 90 && sample >= 20) ? 1 : 0,
+      hp_board_sanity_calibration_enabled: hpSanityCfg.enabled !== false
     };
   });
   classified.sort((a,b) => {
