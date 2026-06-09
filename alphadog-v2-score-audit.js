@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.17-hit-probability-chunked-board-step";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.18-hit-probability-fast-hp-board-terminal";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_REALISTIC_V3_2";
@@ -2729,7 +2729,7 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.17-hit-probability-chunked-board-step";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.18-hit-probability-fast-hp-board-terminal";
 const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_1_6_STOLEN_BASES_ROUTE_LOCK";
 const HP_MAX_ROWS_PER_RUN = 12000;
 const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 260;
@@ -3284,6 +3284,145 @@ async function runHpBoardCurrent(env, input = {}){
   return output;
 }
 
+
+async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
+  const started = Date.now();
+  if(!env.SCORE_DB) return baseIdentity({ ok:false, data_ok:false, version:HP_VERSION, worker_name:WORKER_NAME, logical_worker_name:'alphadog-v2-hit-probability', job_key:HP_JOB_KEY, status:'blocked_missing_score_db_for_fast_hp_board', certification:'HP_BOARD_FAST_TERMINAL_MISSING_SCORE_DB', certification_grade:'BLOCKED' });
+  await hpEnsureSchema(env);
+  const requestId = input.request_id || (hpBatch && hpBatch.request_id) || null;
+  let source = hpBatch;
+  if(!source || !source.batch_id){
+    source = await first(env.SCORE_DB, `SELECT * FROM hit_probability_batches WHERE request_id=? ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC LIMIT 1`, requestId || '');
+  }
+  if(!source || !source.batch_id){
+    return baseIdentity({ ok:false, data_ok:false, version:HP_VERSION, worker_name:WORKER_NAME, logical_worker_name:'alphadog-v2-hit-probability', job_key:HP_JOB_KEY, request_id:requestId, status:'blocked_missing_source_hp_batch_for_fast_hp_board', certification:'HP_BOARD_FAST_TERMINAL_MISSING_SOURCE_HP_BATCH', certification_grade:'BLOCKED' });
+  }
+  const sourceHpBatchId = source.batch_id;
+  const sourceFinalBoardBatchId = source.source_final_board_batch_id || null;
+  const sourceEngineBatchId = source.source_engine_batch_id || null;
+  const sourceRows = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, COUNT(DISTINCT probability_row_id) AS distinct_rows, SUM(CASE WHEN final_board_row_id IS NULL THEN 1 ELSE 0 END) AS null_final_rows, SUM(CASE WHEN prepared_row_id IS NULL THEN 1 ELSE 0 END) AS null_prepared_rows, SUM(CASE WHEN blocker_count > 0 THEN 1 ELSE 0 END) AS blocker_rows FROM hit_probability_current WHERE batch_id=?`, sourceHpBatchId) || {};
+  const hpRows = Number(sourceRows.rows || 0);
+  if(hpRows <= 0){
+    return baseIdentity({ ok:false, data_ok:false, version:HP_VERSION, worker_name:WORKER_NAME, logical_worker_name:'alphadog-v2-hit-probability', job_key:HP_JOB_KEY, request_id:requestId, batch_id:sourceHpBatchId, status:'blocked_no_hp_current_rows_for_fast_hp_board', certification:'HP_BOARD_FAST_TERMINAL_NO_HP_CURRENT_ROWS', certification_grade:'BLOCKED' });
+  }
+  const existing = await first(env.SCORE_DB, `SELECT hp_board_batch_id FROM hp_board_batches WHERE source_hp_batch_id=? ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC LIMIT 1`, sourceHpBatchId);
+  const hpBoardBatchId = existing && existing.hp_board_batch_id ? existing.hp_board_batch_id : hpUid('hp_board_batch');
+  const calibrationJson = hpSafeJson({
+    calibration_type:'internal_recent_form_display_only_fast_terminal',
+    true_calibration_blocked_reason:'No settled outcome/backtest/settlement table exists in SCORE_DB.',
+    raw_hp_preserved:true,
+    fast_terminal_sql_builder:true,
+    version:HP_VERSION
+  }, 3000);
+
+  await run(env.SCORE_DB, `DELETE FROM hp_board_current`);
+  await run(env.SCORE_DB, `DELETE FROM hp_board_history WHERE hp_board_batch_id=?`, hpBoardBatchId);
+  await run(env.SCORE_DB, `DELETE FROM hp_board_issues WHERE hp_board_batch_id=?`, hpBoardBatchId);
+
+  await run(env.SCORE_DB, `
+    INSERT OR REPLACE INTO hp_board_current (
+      hp_board_row_id,hp_board_batch_id,source_hp_batch_id,source_final_board_batch_id,source_engine_batch_id,
+      probability_row_id,final_board_row_id,prepared_row_id,matrix_id,source_line_id,profile_key,hp_profile_version,
+      hp_rank,hp_lane,hp_lane_rank,hp_sort_0_100,source_key,game_pk,official_date,official_game_time_utc,
+      mlb_player_id,player_name,canonical_prop_key,line_value,selected_side,prop_family,
+      estimated_hit_probability_0_100,probability_confidence_0_100,probability_band,probability_grade,
+      empirical_hit_rate_0_1,reliability_0_1,sample_size,non_push_sample,hit_count,miss_count,push_count,push_risk_0_1,
+      score_0_100,score_grade,board_tier,live_playable,review_playable,hp_primary_playable,hp_review_playable,hp_fade_flag,
+      warning_count,blocker_count,lane_reason,calibration_json,source_snapshot_json,updated_at
+    )
+    SELECT
+      ? || ranked.probability_row_id,
+      ?,?,?,?,
+      ranked.probability_row_id,ranked.final_board_row_id,ranked.prepared_row_id,ranked.matrix_id,ranked.source_line_id,?, ?,
+      ranked.hp_rank,ranked.hp_lane,ranked.hp_lane_rank,ranked.hp_sort_0_100,ranked.source_key,ranked.game_pk,ranked.official_date,ranked.official_game_time_utc,
+      ranked.mlb_player_id,ranked.player_name,ranked.canonical_prop_key,ranked.line_value,ranked.selected_side,ranked.prop_family,
+      ranked.estimated_hit_probability_0_100,ranked.probability_confidence_0_100,ranked.probability_band,ranked.probability_grade,
+      ranked.empirical_hit_rate_0_1,ranked.reliability_0_1,ranked.sample_size,ranked.non_push_sample,ranked.hit_count,ranked.miss_count,ranked.push_count,ranked.push_risk_0_1,
+      ranked.score_0_100,ranked.score_grade,ranked.board_tier,ranked.live_playable,ranked.review_playable,
+      CASE WHEN ranked.hp_lane IN ('HP_PRIMARY_ELITE','HP_PRIMARY_STRONG') AND COALESCE(ranked.blocker_count,0)=0 THEN 1 ELSE 0 END,
+      CASE WHEN ranked.hp_lane NOT IN ('HP_PRIMARY_ELITE','HP_PRIMARY_STRONG') AND COALESCE(ranked.blocker_count,0)=0 THEN 1 ELSE 0 END,
+      CASE WHEN ranked.hp_lane='HP_FADE_RECENT_FORM' THEN 1 ELSE 0 END,
+      COALESCE(ranked.warning_count,0),COALESCE(ranked.blocker_count,0),ranked.lane_reason,?,ranked.source_snapshot_json,CURRENT_TIMESTAMP
+    FROM (
+      SELECT base.*,
+             ROW_NUMBER() OVER (ORDER BY base.lane_order ASC, COALESCE(base.estimated_hit_probability_0_100,0) DESC, COALESCE(base.probability_confidence_0_100,0) DESC, COALESCE(base.sample_size,0) DESC, COALESCE(base.score_0_100,0) DESC, COALESCE(base.player_name,''), COALESCE(base.canonical_prop_key,''), COALESCE(base.selected_side,'')) AS hp_rank,
+             ROW_NUMBER() OVER (PARTITION BY base.hp_lane ORDER BY COALESCE(base.estimated_hit_probability_0_100,0) DESC, COALESCE(base.probability_confidence_0_100,0) DESC, COALESCE(base.sample_size,0) DESC, COALESCE(base.score_0_100,0) DESC, COALESCE(base.player_name,''), COALESCE(base.canonical_prop_key,''), COALESCE(base.selected_side,'')) AS hp_lane_rank,
+             COALESCE(base.estimated_hit_probability_0_100,0) AS hp_sort_0_100
+      FROM (
+        SELECT c.*,
+          CASE
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 70 AND COALESCE(c.probability_confidence_0_100,0) >= 95 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 'HP_PRIMARY_ELITE'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 62 AND COALESCE(c.probability_confidence_0_100,0) >= 90 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 'HP_PRIMARY_STRONG'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 55 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 AND COALESCE(c.score_0_100,0) >= 76 THEN 'HP_SUPPORTED_REVIEW'
+            WHEN COALESCE(c.score_0_100,0) >= 84 AND COALESCE(c.estimated_hit_probability_0_100,0) < 45 AND COALESCE(c.sample_size,0) >= 15 THEN 'HP_SCORE_STRONG_HP_WEAK_REVIEW'
+            WHEN COALESCE(c.sample_size,0) < 15 THEN 'HP_LOW_SAMPLE_REVIEW'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 45 AND COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 'HP_NEUTRAL_REVIEW'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 AND COALESCE(c.probability_confidence_0_100,0) >= 90 AND COALESCE(c.sample_size,0) >= 20 THEN 'HP_FADE_RECENT_FORM'
+            ELSE 'HP_WEAK_SUPPORT'
+          END AS hp_lane,
+          CASE
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 70 AND COALESCE(c.probability_confidence_0_100,0) >= 95 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 1
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 62 AND COALESCE(c.probability_confidence_0_100,0) >= 90 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 2
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 55 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 AND COALESCE(c.score_0_100,0) >= 76 THEN 3
+            WHEN COALESCE(c.score_0_100,0) >= 84 AND COALESCE(c.estimated_hit_probability_0_100,0) < 45 AND COALESCE(c.sample_size,0) >= 15 THEN 4
+            WHEN COALESCE(c.sample_size,0) < 15 THEN 5
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 45 AND COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 6
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 AND COALESCE(c.probability_confidence_0_100,0) >= 90 AND COALESCE(c.sample_size,0) >= 20 THEN 7
+            ELSE 8
+          END AS lane_order,
+          CASE
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 70 AND COALESCE(c.probability_confidence_0_100,0) >= 95 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 'Recent-form HP is 70+ with strong confidence, full sample support, and strong framework score.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 62 AND COALESCE(c.probability_confidence_0_100,0) >= 90 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.score_0_100,0) >= 84 THEN 'Recent-form HP is 62+ with strong confidence, stable sample, and strong framework score.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 55 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 AND COALESCE(c.score_0_100,0) >= 76 THEN 'Recent-form HP is supportive but not primary; keep as review lane.'
+            WHEN COALESCE(c.score_0_100,0) >= 84 AND COALESCE(c.estimated_hit_probability_0_100,0) < 45 AND COALESCE(c.sample_size,0) >= 15 THEN 'Framework score is strong, but recent-form HP is weak; review divergence before using.'
+            WHEN COALESCE(c.sample_size,0) < 15 THEN 'Recent-form sample is below HP board threshold; preserve row for review only.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 45 AND COALESCE(c.estimated_hit_probability_0_100,0) < 55 THEN 'Recent-form HP is neutral; not primary support.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 35 AND COALESCE(c.probability_confidence_0_100,0) >= 90 AND COALESCE(c.sample_size,0) >= 20 THEN 'Recent-form HP is materially weak with stable confidence; fade/reject candidate.'
+            ELSE 'Recent-form HP support is weak or incomplete; not a primary candidate.'
+          END AS lane_reason
+        FROM hit_probability_current c
+        WHERE c.batch_id=?
+      ) base
+    ) ranked`,
+    'hpboard|' + hpBoardBatchId + '|', hpBoardBatchId, sourceHpBatchId, sourceFinalBoardBatchId, sourceEngineBatchId,
+    HP_BOARD_PROFILE_KEY, HP_BOARD_PROFILE_VERSION, calibrationJson, sourceHpBatchId
+  );
+
+  await run(env.SCORE_DB, `INSERT OR REPLACE INTO hp_board_history SELECT * FROM hp_board_current WHERE hp_board_batch_id=?`, hpBoardBatchId);
+  await run(env.SCORE_DB, `INSERT OR REPLACE INTO hp_board_issues (issue_id,hp_board_batch_id,source_hp_batch_id,source_final_board_batch_id,source_engine_batch_id,probability_row_id,hp_board_row_id,final_board_row_id,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,selected_side,severity,issue_type,reason,details_json,official_date)
+    SELECT 'hpboard_issue|' || c.hp_board_batch_id || '|' || i.issue_id, c.hp_board_batch_id, c.source_hp_batch_id, c.source_final_board_batch_id, c.source_engine_batch_id, i.probability_row_id, c.hp_board_row_id, i.final_board_row_id, i.prepared_row_id, i.game_pk, i.mlb_player_id, i.canonical_prop_key, i.selected_side, i.severity, i.issue_type, i.reason, i.details_json, i.official_date
+    FROM hit_probability_issues i JOIN hp_board_current c ON c.probability_row_id=i.probability_row_id WHERE i.batch_id=?`, sourceHpBatchId);
+
+  const qa = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, COUNT(DISTINCT hp_board_row_id) AS hp_rows, COUNT(DISTINCT hp_rank) AS ranks, MIN(hp_rank) AS min_rank, MAX(hp_rank) AS max_rank, COUNT(DISTINCT final_board_row_id) AS final_rows, COUNT(DISTINCT prepared_row_id) AS prepared_rows, SUM(CASE WHEN final_board_row_id IS NULL THEN 1 ELSE 0 END) AS null_final_rows, SUM(CASE WHEN prepared_row_id IS NULL THEN 1 ELSE 0 END) AS null_prepared_rows, SUM(CASE WHEN calibration_json IS NULL THEN 1 ELSE 0 END) AS missing_calibration_rows, SUM(CASE WHEN blocker_count > 0 THEN 1 ELSE 0 END) AS blocker_rows, ROUND(AVG(score_0_100),2) AS avg_score, ROUND(AVG(estimated_hit_probability_0_100),2) AS avg_hp FROM hp_board_current WHERE hp_board_batch_id=?`, hpBoardBatchId) || {};
+  const issueCountRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_issues WHERE hp_board_batch_id=?`, hpBoardBatchId) || {};
+  const boardRows = Number(qa.rows || 0);
+  const blockerRows = Number(qa.blocker_rows || 0);
+  const ok = boardRows === hpRows && boardRows === Number(qa.hp_rows || 0) && boardRows === Number(qa.ranks || 0) && Number(qa.min_rank || 0) === 1 && Number(qa.max_rank || 0) === boardRows && Number(qa.null_final_rows || 0) === 0 && Number(qa.null_prepared_rows || 0) === 0 && Number(qa.missing_calibration_rows || 0) === 0 && blockerRows === 0;
+  const status = ok ? 'completed_hp_board_current_display_calibrated_fast_terminal' : 'failed_hp_board_fast_terminal_integrity_check';
+  const cert = ok ? 'HP_BOARD_DISPLAY_CALIBRATION_CERTIFIED_INTERNAL_RECENT_FORM' : 'HP_BOARD_FAST_TERMINAL_INTEGRITY_FAILED';
+  const grade = ok ? 'PASS_WITH_TRUE_CALIBRATION_BLOCKED' : 'BLOCKED';
+  const primaryRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND hp_primary_playable=1`, hpBoardBatchId) || {};
+  const reviewRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND hp_review_playable=1`, hpBoardBatchId) || {};
+  const fadeRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND hp_fade_flag=1`, hpBoardBatchId) || {};
+  const output = baseIdentity({
+    ok, data_ok: ok, version:HP_VERSION, worker_name:WORKER_NAME, logical_worker_name:'alphadog-v2-hit-probability', deployed_worker_slot:'alphadog-v2-score-audit',
+    job_key:HP_JOB_KEY, mode:input.mode || HP_MODE, request_id:requestId, run_id:input.run_id || source.run_id || null, chain_id:input.chain_id || null,
+    status, certification:cert, certification_status:cert, certification_grade:grade,
+    batch_id:sourceHpBatchId, hp_board_batch_id:hpBoardBatchId, source_hp_batch_id:sourceHpBatchId, source_final_board_batch_id:sourceFinalBoardBatchId, source_engine_batch_id:sourceEngineBatchId,
+    source_table:'hit_probability_current', source_rows_read:Number(source.source_rows_read || hpRows), rows_read:Number(source.source_rows_read || hpRows), supported_rows:hpRows,
+    probability_rows_written:hpRows, recent_form_rows_written:hpRows, hp_board_current_written:boardRows, board_rows_written:boardRows, history_rows_written:boardRows, rows_written:boardRows,
+    issue_rows_written:Number(issueCountRow.rows || 0), primary_rows:Number(primaryRow.rows || 0), review_rows:Number(reviewRow.rows || 0), fade_rows:Number(fadeRow.rows || 0),
+    avg_score:qa.avg_score, avg_hp:qa.avg_hp, row_parity_ok:boardRows === hpRows, rank_integrity_ok:Number(qa.ranks || 0) === boardRows, link_integrity_ok:Number(qa.null_final_rows || 0) === 0 && Number(qa.null_prepared_rows || 0) === 0,
+    hp_board_included:true, hp_board_current_replaced:true, hp_board_display_calibration_written:Number(qa.missing_calibration_rows || 0) === 0, hp_board_fast_terminal_sql_builder:true,
+    true_calibration_blocked_reason:'No settled outcome/backtest/settlement table exists in SCORE_DB.', raw_hp_preserved:true, no_true_hit_probability_claims:true, no_true_probability_claims:true,
+    no_score_mutation:true, no_scoring_engine_current_mutation:true, no_final_board_mutation:true, no_prepared_board_mutation:true, no_source_board_mutation:true, hp_board_ranking:true, no_candidate_board_write:true,
+    elapsed_ms:Date.now() - started
+  });
+  await run(env.SCORE_DB, `UPDATE hit_probability_batches SET status=?, certification_status=?, certification_grade=?, probability_rows_written=?, issue_rows_written=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, status, cert, grade, hpRows, Number(source.issue_rows_written || 0), hpSafeJson(output,14000), sourceHpBatchId);
+  await run(env.SCORE_DB, `INSERT OR REPLACE INTO hp_board_batches (hp_board_batch_id,request_id,run_id,worker_version,profile_key,profile_version,mode,status,source_table,source_hp_batch_id,source_final_board_batch_id,source_engine_batch_id,source_rows_read,board_rows_written,history_rows_written,issue_rows_written,primary_rows,review_rows,fade_rows,certification_status,certification_grade,thresholds_locked,no_true_probability_claims,output_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, hpBoardBatchId,requestId,output.run_id,HP_VERSION,HP_BOARD_PROFILE_KEY,HP_BOARD_PROFILE_VERSION,HP_BOARD_MODE,status,'hit_probability_current',sourceHpBatchId,sourceFinalBoardBatchId,sourceEngineBatchId,hpRows,boardRows,boardRows,Number(issueCountRow.rows||0),Number(primaryRow.rows||0),Number(reviewRow.rows||0),Number(fadeRow.rows||0),cert,grade,1,1,hpSafeJson(output,14000));
+  return output;
+}
+
 async function runHitProbabilityCurrent(env, input = {}){
   const started=Date.now();
   if(!env.SCORE_DB || !env.STATS_HITTER_DB || !env.STATS_PITCHER_DB) return baseIdentity({ ok:false, data_ok:false, version:HP_VERSION, job_key:HP_JOB_KEY, status:"blocked_missing_db_bindings", certification:"HIT_PROBABILITY_MISSING_DB_BINDINGS", certification_grade:"BLOCKED", required_bindings:{SCORE_DB:!!env.SCORE_DB,STATS_HITTER_DB:!!env.STATS_HITTER_DB,STATS_PITCHER_DB:!!env.STATS_PITCHER_DB}, no_score_mutation:true, no_final_board_mutation:true });
@@ -3292,11 +3431,11 @@ async function runHitProbabilityCurrent(env, input = {}){
   const runId=input.run_id||null;
   const chainId=input.chain_id||null;
 
-  let batch=await first(env.SCORE_DB, `SELECT * FROM hit_probability_batches WHERE request_id=? AND status IN ('running_hit_probability_current','partial_continue_hit_probability_current','hit_probability_current_complete_hp_board_pending') ORDER BY datetime(created_at) DESC LIMIT 1`, requestId || '');
+  let batch=await first(env.SCORE_DB, `SELECT * FROM hit_probability_batches WHERE request_id=? AND status IN ('running_hit_probability_current','partial_continue_hit_probability_current','hit_probability_current_complete_hp_board_pending','completed_recent_form_hit_rate_written','completed_hp_board_current_display_calibrated_fast_terminal','completed_hp_board_current_display_calibrated') ORDER BY datetime(created_at) DESC LIMIT 1`, requestId || '');
   let batchId=batch && batch.batch_id ? batch.batch_id : null;
   let source=null;
 
-  if(batch && batch.status === 'hit_probability_current_complete_hp_board_pending'){
+  if(batch && (batch.status === 'hit_probability_current_complete_hp_board_pending' || batch.status === 'completed_recent_form_hit_rate_written' || String(batch.status || '').startsWith('completed_hp_board_current_display_calibrated'))){
     const writtenRow=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hit_probability_current WHERE batch_id=?`, batchId) || {};
     const unsupportedRow=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hit_probability_issues WHERE batch_id=? AND issue_type='HIT_PROBABILITY_ROW_UNSUPPORTED'`, batchId) || {};
     const issueRow=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hit_probability_issues WHERE batch_id=?`, batchId) || {};
@@ -3305,57 +3444,19 @@ async function runHitProbabilityCurrent(env, input = {}){
     const unsupported=Number(unsupportedRow.rows||0);
     const issues=Number(issueRow.rows||0);
     const rowParityOk=sourceRows === (written + unsupported);
-    const output=baseIdentity({
-      ok:rowParityOk,
-      data_ok:rowParityOk,
-      version:HP_VERSION,
-      worker_name:WORKER_NAME,
-      logical_worker_name:'alphadog-v2-hit-probability',
-      deployed_worker_slot:'alphadog-v2-score-audit',
-      job_key:HP_JOB_KEY,
-      request_id:requestId,
-      run_id:runId,
-      chain_id:chainId,
-      mode:input.mode||HP_MODE,
-      status: rowParityOk ? 'completed_recent_form_hit_rate_written' : 'failed_recent_form_row_parity_mismatch',
-      certification: rowParityOk ? 'RECENT_FORM_HIT_RATE_PROVISIONAL_PASS' : 'RECENT_FORM_HIT_RATE_ROW_PARITY_FAILED',
-      certification_grade: rowParityOk ? (issues>0 ? 'PASS_WITH_WARNINGS' : 'PASS') : 'BLOCKED',
-      batch_id:batchId,
-      source_table:batch.source_table,
-      source_final_board_batch_id:batch.source_final_board_batch_id||null,
-      source_engine_batch_id:batch.source_engine_batch_id||null,
-      source_rows_read:sourceRows,
-      rows_read:sourceRows,
-      supported_rows:Number(batch.supported_rows||written),
-      unsupported_rows:unsupported,
-      probability_rows_written:written,
-      recent_form_rows_written:written,
-      rows_written:written,
-      row_parity_ok:rowParityOk,
-      issue_rows_written:issues,
-      hitter_players_checked:Number(batch.hitter_players_checked||0),
-      pitcher_players_checked:Number(batch.pitcher_players_checked||0),
-      hp_current_chunked:true,
-      hp_board_ready:true,
-      hp_board_step_separated:true,
-      display_metric_label:'Estimated Recent-Form Hit Rate',
-      raw_metric_preserved:true,
-      legacy_probability_columns_are_display_aliases:true,
-      estimated_not_true_probability:true,
-      framework_only:true,
-      no_score_mutation:true,
-      no_scoring_engine_current_mutation:true,
-      no_final_board_mutation:true,
-      no_prepared_board_mutation:true,
-      no_source_board_mutation:true,
-      no_ranking:true,
-      no_pick_recommendation:true,
-      no_live_playable_mutation:true,
-      no_review_playable_mutation:true,
-      elapsed_ms:Date.now()-started
-    });
-    await run(env.SCORE_DB, `UPDATE hit_probability_batches SET status=?, certification_status=?, certification_grade=?, probability_rows_written=?, issue_rows_written=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, output.status, output.certification, output.certification_grade, written, issues, hpSafeJson(output,14000), batchId);
-    return output;
+    if(!rowParityOk){
+      const output=baseIdentity({
+        ok:false,data_ok:false,version:HP_VERSION,worker_name:WORKER_NAME,logical_worker_name:'alphadog-v2-hit-probability',deployed_worker_slot:'alphadog-v2-score-audit',job_key:HP_JOB_KEY,
+        request_id:requestId,run_id:runId,chain_id:chainId,mode:input.mode||HP_MODE,status:'failed_recent_form_row_parity_mismatch',certification:'RECENT_FORM_HIT_RATE_ROW_PARITY_FAILED',certification_grade:'BLOCKED',
+        batch_id:batchId,source_table:batch.source_table,source_final_board_batch_id:batch.source_final_board_batch_id||null,source_engine_batch_id:batch.source_engine_batch_id||null,
+        source_rows_read:sourceRows,rows_read:sourceRows,supported_rows:Number(batch.supported_rows||written),unsupported_rows:unsupported,probability_rows_written:written,recent_form_rows_written:written,rows_written:written,row_parity_ok:false,issue_rows_written:issues,
+        hp_current_chunked:true,hp_board_ready:false,no_score_mutation:true,no_scoring_engine_current_mutation:true,no_final_board_mutation:true,no_prepared_board_mutation:true,no_source_board_mutation:true,no_ranking:true,elapsed_ms:Date.now()-started
+      });
+      await run(env.SCORE_DB, `UPDATE hit_probability_batches SET status=?, certification_status=?, certification_grade=?, probability_rows_written=?, issue_rows_written=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, output.status, output.certification, output.certification_grade, written, issues, hpSafeJson(output,14000), batchId);
+      return output;
+    }
+    const boardOutput = await runHpBoardCurrentFastTerminal(env, input, batch);
+    return boardOutput;
   }
 
   if(!batchId){
@@ -3559,7 +3660,7 @@ export default {
           output = await runHpBoardCurrent(env, input);
         } else if (isHitProbabilityEstimate) {
           output = await runHitProbabilityCurrent(env, input);
-          if (output && output.ok !== false && input.skip_hp_board !== true && !isWorkerPartialContinueOutput(output)) {
+          if (false && output && output.ok !== false && input.skip_hp_board !== true && !isWorkerPartialContinueOutput(output)) {
             const hpBoardOutput = await runHpBoardCurrent(env, { ...input, mode: HP_BOARD_MODE, job_key: HP_BOARD_JOB_KEY });
             output.hp_board_output = hpBoardOutput;
             output.hp_board_current_written = hpBoardOutput.board_rows_written || 0;

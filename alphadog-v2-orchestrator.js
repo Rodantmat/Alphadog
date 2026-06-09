@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.210-daily-team-schedule-long-running-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.211-hit-probability-hp-board-running-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1333,6 +1333,110 @@ async function synthesizeHitProbabilityTerminalProofFromEvidence(env, requestId,
     updated_at: boardBatch.updated_at || null,
     created_at: boardBatch.created_at || hpBatch.created_at || null
   };
+}
+
+
+async function rescueHitProbabilityCurrentReadyForHpBoardChild(env, trigger) {
+  if (!env.CONTROL_DB || !env.SCORE_DB) return null;
+  const children = await all(env.CONTROL_DB,
+    `SELECT c.request_id, c.chain_id, c.parent_request_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json, c.output_json, c.created_at, c.started_at, c.finished_at, c.updated_at,
+            p.request_id AS parent_request_id_resolved, p.chain_id AS parent_chain_id, p.job_key AS parent_job_key, p.worker_name AS parent_worker_name
+       FROM control_job_queue c
+       JOIN control_job_queue p ON p.request_id = c.parent_request_id AND p.chain_id = c.chain_id
+       WHERE p.job_key='market-scoring-full-run'
+         AND p.worker_name='alphadog-v2-orchestrator'
+         AND p.status IN ('pending','running','partial_continue')
+         AND p.finished_at IS NULL
+         AND c.parent_request_id IS NOT NULL
+         AND c.job_key='hit-probability'
+         AND c.status='running'
+         AND c.finished_at IS NULL
+         AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds')
+       ORDER BY datetime(c.updated_at) ASC
+       LIMIT 3`
+  );
+  for (const child of children || []) {
+    const hpBatch = await first(env.SCORE_DB,
+      `SELECT batch_id, request_id, status, source_rows_read, supported_rows, probability_rows_written, certification_status, certification_grade, output_json, updated_at, created_at
+         FROM hit_probability_batches
+        WHERE request_id=?
+          AND status IN ('hit_probability_current_complete_hp_board_pending','completed_recent_form_hit_rate_written')
+          AND certification_status IS NOT NULL
+        ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC
+        LIMIT 1`,
+      child.request_id
+    );
+    if (!hpBatch || !hpBatch.batch_id) continue;
+    const hpRows = await first(env.SCORE_DB,
+      `SELECT COUNT(*) AS rows FROM hit_probability_current WHERE batch_id=?`,
+      hpBatch.batch_id
+    ) || {};
+    if (Number(hpRows.rows || 0) <= 0) continue;
+    const boardBatch = await first(env.SCORE_DB,
+      `SELECT hp_board_batch_id, status, certification_status, updated_at
+         FROM hp_board_batches
+        WHERE source_hp_batch_id=?
+          AND status NOT LIKE 'running%'
+          AND certification_status IS NOT NULL
+        ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC
+        LIMIT 1`,
+      hpBatch.batch_id
+    );
+    if (boardBatch && boardBatch.hp_board_batch_id) {
+      const stage = MARKET_SCORING_FULL_RUN_STAGES.find(s => s.stage_key === 'hit_probability');
+      const reconciled = await reconcileMarketScoringFullRunChildFromProof(env, stage, child, `${trigger}:hp_board_terminal_evidence_hot_rescue`);
+      if (reconciled && reconciled.reconciled === true) {
+        const parent = await first(env.CONTROL_DB,
+          `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+             FROM control_job_queue
+            WHERE request_id=?
+              AND job_key='market-scoring-full-run'
+              AND worker_name='alphadog-v2-orchestrator'
+              AND status IN ('pending','running','partial_continue')
+              AND finished_at IS NULL
+            LIMIT 1`,
+          child.parent_request_id
+        );
+        if (parent) {
+          await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE request_id=?", parent.request_id);
+          return parent;
+        }
+      }
+      continue;
+    }
+    const requeueOutput = {
+      ok: true,
+      data_ok: true,
+      version: SYSTEM_VERSION,
+      worker_name: child.worker_name,
+      job_key: child.job_key,
+      request_id: child.request_id,
+      chain_id: child.chain_id,
+      status: 'PARTIAL_CONTINUE_HIT_PROBABILITY_HP_CURRENT_READY_REQUEUED_FOR_HP_BOARD',
+      certification: 'HIT_PROBABILITY_HP_CURRENT_READY_REQUEUED_FOR_HP_BOARD',
+      certification_status: 'HIT_PROBABILITY_HP_CURRENT_READY_REQUEUED_FOR_HP_BOARD',
+      certification_grade: 'PARTIAL',
+      batch_id: hpBatch.batch_id,
+      probability_rows_written: Number(hpRows.rows || 0),
+      rows_written: Number(hpRows.rows || 0),
+      hp_board_missing: true,
+      requeued_same_child_for_hp_board_terminalizer: true,
+      no_new_child_created: true,
+      trigger
+    };
+    await run(env.CONTROL_DB,
+      `UPDATE control_job_queue
+          SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL
+        WHERE request_id=? AND status='running' AND finished_at IS NULL`,
+      JSON.stringify(requeueOutput), child.request_id
+    );
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'hit_probability_hp_current_ready_requeued_for_hp_board', 'Recovered running Hit Probability child after HP current rows were written but HP board had not terminalized; same child returned to pending for v0.4.18 fast HP board terminalizer', ?, CURRENT_TIMESTAMP)",
+      child.request_id, WORKER_NAME, child.job_key, JSON.stringify({ child_request_id: child.request_id, parent_request_id: child.parent_request_id, hp_batch_id: hpBatch.batch_id, hp_rows: Number(hpRows.rows || 0), trigger, hit_probability_hp_board_running_rescue_v0_2_211: true, no_new_child_created: true, version: SYSTEM_VERSION })
+    );
+    return { request_id: child.request_id, chain_id: child.chain_id, job_key: child.job_key, worker_name: child.worker_name, status: 'pending', tick_count: child.tick_count, input_json: child.input_json };
+  }
+  return null;
 }
 
 async function rescueMarketScoringFullRunTerminalEvidenceChild(env, trigger) {
@@ -8959,6 +9063,13 @@ async function processOneUnlocked(env, trigger) {
         row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, stale_threshold_seconds: 20, market_scoring_player_prop_pre_parent_terminal_rescue_v0_2_183: true, no_new_child_created: true, expected_worker_evidence_finalizer: true })
       );
     }
+  }
+
+  // v0.2.211: Hit Probability can finish HP current rows and then stall before HP board terminalization.
+  // If the current batch is complete but hp_board_batches is missing, requeue the same child
+  // so the v0.4.18 fast HP-board terminalizer can finish without creating duplicate children.
+  if (!row) {
+    row = await rescueHitProbabilityCurrentReadyForHpBoardChild(env, trigger);
   }
 
   // v0.2.184: Before selecting the Market Full parent again, first terminalize
