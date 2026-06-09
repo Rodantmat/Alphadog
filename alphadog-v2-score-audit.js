@@ -1,9 +1,9 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.19-sanity-map-calibration-db-profile";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.21-hp-first-trust-score-engine";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
-const PRODUCTION_PROFILE_KEY = "STRICT_C_REALITY_SANITY_V4_0";
+const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
 const PROFILE_VERSION = "0.2.1";
 const ARCHIVE_SCORE_THRESHOLD = 70;
 
@@ -869,6 +869,51 @@ const DEFAULT_SIM_CONFIGS = {
 
 };
 
+// HP-first trust-score production profile. This intentionally keeps score as a system-trust metric,
+// not as a translation of hit probability. Hard blockers are only true identity/side/shape blockers;
+// partial matrix/context gaps are scored with penalties and warnings so HP can decide the real edge later.
+DEFAULT_SIM_CONFIGS.STRICT_C_HP_FIRST_TRUST_V4_1 = {
+  profile_version: "0.4.21-hp-first-trust-score-engine",
+  config: {
+    ...DEFAULT_SIM_CONFIGS.STRICT_C_REALITY_SANITY_V4_0.config,
+    min_live_score: 82,
+    archive_score_threshold: 50,
+    grade_archive_min: 50,
+    grade_qualified_min: 65,
+    grade_strong_min: 82,
+    grade_elite_min: 92,
+    base_raw_packet_ready: 80,
+    base_raw_packet_partial: 68,
+    score_penalty_matrix_soft_block: 8,
+    confidence_penalty_matrix_soft_block: 10,
+    score_penalty_market_not_found: 6,
+    score_penalty_market_missing: 8,
+    score_penalty_complete_market_blindness: 11,
+    score_penalty_packet_partial: 8,
+    score_penalty_partial_enrichment: 6,
+    market_evidence_score_caps: {
+      direct_prop_evidence_rows_gte_5: 96,
+      direct_prop_evidence_rows_2_to_4: 92,
+      direct_prop_evidence_rows_1: 88,
+      direct_prop_evidence_rows_0_with_coverage: 82,
+      direct_prop_evidence_rows_0_no_coverage: 76,
+      default: 88
+    },
+    context_score_caps: {
+      matrix_full_context: 96,
+      matrix_partial_context_warning_0_2: 92,
+      matrix_partial_context_warning_3_5: 86,
+      matrix_partial_context_warning_6_8: 80,
+      matrix_partial_context_warning_9_plus: 74
+    },
+    hp_board_sanity_calibration: {
+      enabled: false,
+      reason: "v0.4.21 score is preserved as trust metric; HP gates/sorts separately and does not cap score"
+    }
+  }
+};
+
+
 async function ensureSimulationProfileConfigs(env) {
   const metadata = simulationFormulaMetadata();
   for (const [profileKey, spec] of Object.entries(DEFAULT_SIM_CONFIGS)) {
@@ -940,6 +985,8 @@ async function profileConstants(env, profileKey) {
     confidencePenaltyWarning68: finiteNumber(cfg.confidence_penalty_warning_6_8, 8),
     confidencePenaltyWarning35: finiteNumber(cfg.confidence_penalty_warning_3_5, 4),
     confidencePenaltyWarning9Plus: finiteNumber(cfg.confidence_penalty_warning_9_plus, 20),
+    scorePenaltyMatrixSoftBlock: finiteNumber(cfg.score_penalty_matrix_soft_block, 0),
+    confidencePenaltyMatrixSoftBlock: finiteNumber(cfg.confidence_penalty_matrix_soft_block, 0),
     marketDirectEvidenceRawAdjustments: cfg.market_direct_evidence_raw_adjustments || {},
     marketEvidenceScoreCaps: cfg.market_evidence_score_caps || {},
     contextScoreCaps: cfg.context_score_caps || {},
@@ -1195,7 +1242,17 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
   const modelDeferredReason = sourceKey === 'sleeper' && prop === 'rfi_nrfi'
     ? 'model_deferred_rfi_nrfi'
     : (sourceKey === 'prizepicks' && prop === 'triples' ? 'model_deferred_low_event_prop' : null);
-  const hardBlocked = !modelDeferred && (Number(row.blocking_for_scoring || 0) === 1 || row.matrix_status === 'matrix_deferred' || row.factor_status === 'blocked') ? 1 : 0;
+  const missingSideContext = !sideMode;
+  const missingVariationKey = !variationKey;
+  const impossiblePrizePicksSideShape = sourceKey === 'prizepicks' && ['goblin','demon'].includes(String(oddsType || '').toLowerCase()) && sideMode !== 'more_only';
+  const hardBlocked = !modelDeferred && (
+    row.matrix_status === 'matrix_deferred' ||
+    row.factor_status === 'blocked' ||
+    missingSideContext ||
+    missingVariationKey ||
+    impossiblePrizePicksSideShape
+  ) ? 1 : 0;
+  const matrixSoftBlocked = !hardBlocked && !modelDeferred && Number(row.blocking_for_scoring || 0) === 1 ? 1 : 0;
   const completeMarketBlind = ['market_prop_context_missing','market_prop_context_not_found'].includes(row.market_prop_context_status)
     && ['', 'market_game_context_missing','market_game_context_not_found','market_game_context_absent'].includes(String(row.market_game_context_status || '')) ? 1 : 0;
 
@@ -1238,13 +1295,15 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     }
   }
 
-  const scorePenalty = (completeMarketBlind ? p.scorePenaltyCompleteMarketBlindness : 0)
+  const scorePenalty = (matrixSoftBlocked ? p.scorePenaltyMatrixSoftBlock : 0)
+    + (completeMarketBlind ? p.scorePenaltyCompleteMarketBlindness : 0)
     + (!completeMarketBlind && effectiveMarketPropContextStatus === 'market_prop_context_missing' ? p.scorePenaltyMarketMissing : 0)
     + (!completeMarketBlind && effectiveMarketPropContextStatus === 'market_prop_context_not_found' ? p.scorePenaltyMarketNotFound : 0)
     + (row.factor_status === 'packet_partial' ? p.scorePenaltyPacketPartial : 0)
     + (row.daily_readiness_status === 'partial_enrichment' ? p.scorePenaltyPartialEnrichment : 0);
   const bonus = (!hardBlocked && !modelDeferred && effectiveMarketPropContextStatus === 'market_prop_context_present' && Number(row.warning_count || 0) === 0 && row.factor_status === 'packet_ready' && row.daily_readiness_status !== 'partial_enrichment') ? p.cleanBonusScore : 0;
-  const confidencePenalty = (row.factor_status === 'packet_partial' ? p.confidencePenaltyPacketPartial : 0)
+  const confidencePenalty = (matrixSoftBlocked ? p.confidencePenaltyMatrixSoftBlock : 0)
+    + (row.factor_status === 'packet_partial' ? p.confidencePenaltyPacketPartial : 0)
     + (row.daily_readiness_status === 'partial_enrichment' ? p.confidencePenaltyPartialEnrichment : 0)
     + (sourceKey === 'sleeper' && oddsType == null ? p.confidencePenaltySleeperNullOdds : 0)
     + (effectiveWarnings >= 9 ? p.confidencePenaltyWarning9Plus : 0)
@@ -1334,7 +1393,9 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     profile_version: p.version,
     active_values_source: 'SCORE_DB.scoring_engine_simulation_profile_configs.config_json',
     all_calibration_variables_db_stored: 1,
-    formula_order: 'inventory_defer_gate -> js_bounded_independent_more_less_scores -> price_line_prop_side_pressure -> pre_cap_side_selection -> score_penalties -> score_cap -> confidence_caps_penalties -> score_sort_micro_adjustment -> archive_live_gates',
+    formula_order: 'true_unusable_gate -> side_validation -> trust_score_components -> soft_context_penalties -> trust_score_cap -> confidence_penalties -> hp_probability_gate_later',
+    score_semantics: 'score_0_100 is system trust/support quality, not hit probability and not a probability translation',
+    hp_first_design: 'hit probability is computed later and gates final usability at 60%; engine avoids cutting scorable rows with partial context',
     raw_side_delta_threshold: p.rawSideDeltaThreshold,
     min_live_score: p.minLiveScore,
     min_live_confidence: p.minLiveConfidence,
@@ -1349,6 +1410,8 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     direct_prop_evidence_bucket: evidenceInfo.bucket,
     direct_prop_evidence_present: evidenceInfo.present,
     market_coverage_row_count: evidenceInfo.coverageCount,
+    raw_matrix_blocking_for_scoring: Number(row.blocking_for_scoring || 0),
+    matrix_soft_blocked_scored_with_penalty: matrixSoftBlocked,
     raw_warning_count: rawWarningCount,
     effective_warning_count: effectiveWarnings,
     effective_warning_severity: effectiveWarningSeverity,
@@ -2821,7 +2884,7 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.20-hp-board-sanity-overlay-caps";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.21-hp-first-trust-score-board";
 const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_1_6_STOLEN_BASES_ROUTE_LOCK";
 const HP_MAX_ROWS_PER_RUN = 12000;
 const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 260;
@@ -2830,16 +2893,25 @@ const HP_PLAYER_CHUNK_SIZE = 70;
 const HP_BOARD_MODE = "hp_board_current_build";
 const HP_BOARD_JOB_KEY = "hp-board";
 const HP_BOARD_PROFILE_KEY = "HP_BOARD_RECENT_FORM_PROFILE";
-const HP_BOARD_PROFILE_VERSION = "HP_BOARD_RECENT_FORM_PROFILE_V0_1_2_SANITY_OVERLAY_CAPS";
+const HP_BOARD_PROFILE_VERSION = "HP_BOARD_HP_FIRST_TRUST_SCORE_V0_1_3";
 const HP_BOARD_LANE_ORDER = {
+  HP_PREMIUM_TRUSTED: 1,
+  HP_PREMIUM_LOW_TRUST_REVIEW: 2,
+  HP_STRONG_TRUSTED: 3,
+  HP_STRONG_LOW_TRUST_REVIEW: 4,
+  HP_EDGE_TRUSTED_REVIEW: 5,
+  HP_EDGE_LOW_TRUST_REVIEW: 6,
+  HP_THIN_EDGE_REVIEW: 7,
+  HP_LOW_SAMPLE_REVIEW: 8,
+  HP_KILLED_LOW_PROBABILITY: 98,
+  HP_UNSUPPORTED: 99,
   HP_PRIMARY_ELITE: 1,
-  HP_PRIMARY_STRONG: 2,
-  HP_SUPPORTED_REVIEW: 3,
-  HP_SCORE_STRONG_HP_WEAK_REVIEW: 4,
-  HP_LOW_SAMPLE_REVIEW: 5,
-  HP_NEUTRAL_REVIEW: 6,
-  HP_WEAK_SUPPORT: 7,
-  HP_FADE_RECENT_FORM: 8
+  HP_PRIMARY_STRONG: 3,
+  HP_SUPPORTED_REVIEW: 5,
+  HP_SCORE_STRONG_HP_WEAK_REVIEW: 98,
+  HP_NEUTRAL_REVIEW: 98,
+  HP_WEAK_SUPPORT: 98,
+  HP_FADE_RECENT_FORM: 98
 };
 
 const HP_HITTER_PROP_PROFILES = {
@@ -3099,13 +3171,24 @@ async function hpEnsureSchema(env){
   await hpSeedProfileConfigs(env);
 }
 async function hpSourceRows(env, input = {}){
-  const preferScoringCurrent = input && (input.source_preference === "scoring_engine_current" || input.force_scoring_engine_current_source === true);
-  if(!preferScoringCurrent){
-    const finalRows = await all(env.SCORE_DB, `SELECT * FROM score_final_board_current ORDER BY rank_order ASC LIMIT ${HP_MAX_ROWS_PER_RUN}`);
-    if(finalRows.length){ return { source_table:"score_final_board_current", rows:finalRows, final_board_batch_id:finalRows[0].final_board_batch_id || null, engine_batch_id:finalRows[0].source_engine_batch_id || null }; }
+  const forceFinalBoard = input && (input.source_preference === "score_final_board_current" || input.force_final_board_source === true);
+  if(!forceFinalBoard){
+    const scoreRows = await all(env.SCORE_DB, `
+      SELECT *
+      FROM scoring_engine_current
+      WHERE score_0_100 IS NOT NULL
+        AND selected_side IS NOT NULL
+        AND COALESCE(blocker_count, 0) = 0
+        AND score_status IN ('scored_current','simulated_profile_locked')
+      ORDER BY score_0_100 DESC, confidence_0_100 DESC
+      LIMIT ${HP_MAX_ROWS_PER_RUN}`);
+    if(scoreRows.length){
+      return { source_table:"scoring_engine_current", rows:scoreRows, final_board_batch_id:null, engine_batch_id:scoreRows[0].batch_id || null };
+    }
   }
-  const scoreRows = await all(env.SCORE_DB, `SELECT * FROM scoring_engine_current WHERE score_0_100 IS NOT NULL ORDER BY score_0_100 DESC LIMIT ${HP_MAX_ROWS_PER_RUN}`);
-  return { source_table:"scoring_engine_current", rows:scoreRows, final_board_batch_id:null, engine_batch_id:scoreRows[0] ? scoreRows[0].batch_id : null };
+  const finalRows = await all(env.SCORE_DB, `SELECT * FROM score_final_board_current ORDER BY rank_order ASC LIMIT ${HP_MAX_ROWS_PER_RUN}`);
+  if(finalRows.length){ return { source_table:"score_final_board_current", rows:finalRows, final_board_batch_id:finalRows[0].final_board_batch_id || null, engine_batch_id:finalRows[0].source_engine_batch_id || null }; }
+  return { source_table:"scoring_engine_current", rows:[], final_board_batch_id:null, engine_batch_id:null };
 }
 async function hpFetchHitterLogs(env, playerIds, maxDate){ const map=new Map(); for(const c of hpChunks(playerIds, HP_PLAYER_CHUNK_SIZE)){ if(!c.length) continue; const q=`SELECT player_id, game_pk, game_date, hits, singles, doubles, home_runs, total_bases, runs, rbi, walks, stolen_bases FROM hitter_game_logs WHERE player_id IN (${c.map(()=>'?').join(',')}) AND game_date < ? ORDER BY player_id, game_date DESC`; const rows=await all(env.STATS_HITTER_DB, q, ...c, maxDate); for(const r of rows){ const k=String(r.player_id); if(!map.has(k)) map.set(k,[]); map.get(k).push(r); } } return map; }
 async function hpFetchPitcherLogs(env, playerIds, maxDate){ const map=new Map(); for(const c of hpChunks(playerIds, HP_PLAYER_CHUNK_SIZE)){ if(!c.length) continue; const q=`SELECT player_id, game_pk, game_date, outs_recorded, innings_pitched_decimal, hits_allowed, runs_allowed, earned_runs, walks_allowed, strikeouts FROM pitcher_game_logs WHERE player_id IN (${c.map(()=>'?').join(',')}) AND game_date < ? ORDER BY player_id, game_date DESC`; const rows=await all(env.STATS_PITCHER_DB, q, ...c, maxDate); for(const r of rows){ const k=String(r.player_id); if(!map.has(k)) map.set(k,[]); map.get(k).push(r); } } return map; }
@@ -3136,25 +3219,37 @@ function hpBoardLane(row){
   const conf=hpNum(row.probability_confidence_0_100, 0);
   const sample=hpNum(row.sample_size, 0);
   const score=hpNum(row.score_0_100, 0);
-  if(hp >= 70 && conf >= 95 && sample >= 20 && score >= 84) return 'HP_PRIMARY_ELITE';
-  if(hp >= 62 && conf >= 90 && sample >= 20 && score >= 84) return 'HP_PRIMARY_STRONG';
-  if(hp >= 55 && conf >= 70 && sample >= 15 && score >= 76) return 'HP_SUPPORTED_REVIEW';
-  if(score >= 84 && hp < 45 && sample >= 15) return 'HP_SCORE_STRONG_HP_WEAK_REVIEW';
+  if(hp < 60) return 'HP_KILLED_LOW_PROBABILITY';
   if(sample < 15) return 'HP_LOW_SAMPLE_REVIEW';
-  if(hp >= 45 && hp < 55) return 'HP_NEUTRAL_REVIEW';
-  if(hp < 35 && conf >= 90 && sample >= 20) return 'HP_FADE_RECENT_FORM';
-  return 'HP_WEAK_SUPPORT';
+  if(hp >= 85 && score >= 82 && conf >= 70) return 'HP_PREMIUM_TRUSTED';
+  if(hp >= 85) return 'HP_PREMIUM_LOW_TRUST_REVIEW';
+  if(hp >= 75 && score >= 80 && conf >= 65) return 'HP_STRONG_TRUSTED';
+  if(hp >= 75) return 'HP_STRONG_LOW_TRUST_REVIEW';
+  if(hp >= 65 && score >= 75) return 'HP_EDGE_TRUSTED_REVIEW';
+  if(hp >= 65) return 'HP_EDGE_LOW_TRUST_REVIEW';
+  if(hp >= 60) return 'HP_THIN_EDGE_REVIEW';
+  return 'HP_UNSUPPORTED';
 }
 
 function hpBoardLaneReason(lane){
-  if(lane === 'HP_PRIMARY_ELITE') return 'Recent-form HP is 70+ with strong confidence, full sample support, and strong framework score.';
-  if(lane === 'HP_PRIMARY_STRONG') return 'Recent-form HP is 62+ with strong confidence, stable sample, and strong framework score.';
-  if(lane === 'HP_SUPPORTED_REVIEW') return 'Recent-form HP is supportive but not primary; keep as review lane.';
-  if(lane === 'HP_SCORE_STRONG_HP_WEAK_REVIEW') return 'Framework score is strong, but recent-form HP is weak; review divergence before using.';
+  if(lane === 'HP_PREMIUM_TRUSTED') return 'HP is 85+ and the system trust score is strong; premium trusted candidate.';
+  if(lane === 'HP_PREMIUM_LOW_TRUST_REVIEW') return 'HP is 85+ but system trust is not strong enough for premium trusted status; high-probability review.';
+  if(lane === 'HP_STRONG_TRUSTED') return 'HP is 75+ with strong trust support; strong trusted candidate.';
+  if(lane === 'HP_STRONG_LOW_TRUST_REVIEW') return 'HP is 75+ but trust score/context is weaker; strong-probability review.';
+  if(lane === 'HP_EDGE_TRUSTED_REVIEW') return 'HP is 65+ and trust score is supportive; edge review candidate.';
+  if(lane === 'HP_EDGE_LOW_TRUST_REVIEW') return 'HP is 65+ but trust score/context is thin; low-trust edge review.';
+  if(lane === 'HP_THIN_EDGE_REVIEW') return 'HP is 60–64.9; thin edge, review only.';
+  if(lane === 'HP_LOW_SAMPLE_REVIEW') return 'HP is 60+ but sample is below threshold; keep as review only and do not promote live.';
+  if(lane === 'HP_KILLED_LOW_PROBABILITY') return 'HP is below 60%; not useful for testing/final consideration regardless of trust score.';
+  if(lane === 'HP_UNSUPPORTED') return 'HP/trust support is incomplete or unsupported.';
+  if(lane === 'HP_PRIMARY_ELITE') return 'Legacy alias: premium HP and strong trust.';
+  if(lane === 'HP_PRIMARY_STRONG') return 'Legacy alias: strong HP and strong trust.';
+  if(lane === 'HP_SUPPORTED_REVIEW') return 'Legacy alias: HP-supported review.';
+  if(lane === 'HP_SCORE_STRONG_HP_WEAK_REVIEW') return 'Legacy alias: trust score strong but HP weak; killed by HP-first gate.';
   if(lane === 'HP_LOW_SAMPLE_REVIEW') return 'Recent-form sample is below HP board threshold; preserve row for review only.';
-  if(lane === 'HP_NEUTRAL_REVIEW') return 'Recent-form HP is neutral; not primary support.';
-  if(lane === 'HP_FADE_RECENT_FORM') return 'Recent-form HP is materially weak with stable confidence; fade/reject candidate.';
-  return 'Recent-form HP support is weak or incomplete; not a primary candidate.';
+  if(lane === 'HP_NEUTRAL_REVIEW') return 'Legacy alias: HP below useful threshold.';
+  if(lane === 'HP_FADE_RECENT_FORM') return 'Legacy alias: HP materially weak; killed by HP-first gate.';
+  return 'HP-first trust-score lane.';
 }
 
 function hpBoardRawHpBucket(hp){
@@ -3208,7 +3303,7 @@ function hpBoardCalibrationJson(row, bucketCalibration){
   const b=(bucketCalibration && bucketCalibration[rawBucket]) || {};
   return hpSafeJson({
     calibration_profile: HP_BOARD_PROFILE_VERSION,
-    calibration_type: 'internal_recent_form_display_only',
+    calibration_type: 'hp_first_trust_score_board',
     framework_only: true,
     true_probability_claim: false,
     no_true_probability_claims: true,
@@ -3311,35 +3406,38 @@ async function runHpBoardCurrent(env, input = {}){
   const hpBoardBatchId='hp_board_batch_for_' + sourceHpBatchId;
   const sourceFinalBoardBatchId=hpBatch.source_final_board_batch_id || null;
   const sourceEngineBatchId=hpBatch.source_engine_batch_id || null;
-  const scoringProfile = await profileConstants(env, PRODUCTION_PROFILE_KEY);
-  const hpSanityCfg = ((scoringProfile && scoringProfile.config) || {}).hp_board_sanity_calibration || {};
   const classified=sourceRows.map(src => {
-    const calibratedScore = hpBoardSanityCalibratedScore(src, hpSanityCfg);
-    const r = { ...src, raw_framework_score_0_100: src.score_0_100, score_0_100: calibratedScore };
+    const r = { ...src, raw_framework_score_0_100: src.score_0_100 };
     const lane=hpBoardLane(r);
     const hp=hpNum(r.estimated_hit_probability_0_100, 0);
     const conf=hpNum(r.probability_confidence_0_100, 0);
     const sample=hpNum(r.sample_size, 0);
     const score=hpNum(r.score_0_100, 0);
+    const hpEligible = hp >= 60;
+    const trusted = score >= 82 && conf >= 70 && sample >= 15;
+    const primary = hpEligible && sample >= 15 && ((hp >= 85 && score >= 82 && conf >= 70) || (hp >= 75 && score >= 88 && conf >= 80));
+    const review = hpEligible && !primary;
     return {
       ...r,
       hp_lane: lane,
       lane_reason: hpBoardLaneReason(lane),
-      hp_primary_playable: (['HP_PRIMARY_ELITE','HP_PRIMARY_STRONG'].includes(lane) && hp >= 62 && conf >= 90 && sample >= 20 && score >= 84) ? 1 : 0,
-      hp_review_playable: (!['HP_PRIMARY_ELITE','HP_PRIMARY_STRONG'].includes(lane) && score >= 70) ? 1 : 0,
-      hp_fade_flag: (hp < 35 && conf >= 90 && sample >= 20) ? 1 : 0,
-      board_tier: (['HP_PRIMARY_ELITE','HP_PRIMARY_STRONG'].includes(lane) && hp >= 62 && conf >= 90 && sample >= 20 && score >= 84) ? 'PRIMARY' : 'REVIEW',
-      live_playable: (['HP_PRIMARY_ELITE','HP_PRIMARY_STRONG'].includes(lane) && hp >= 62 && conf >= 90 && sample >= 20 && score >= 84) ? 1 : 0,
-      review_playable: (!['HP_PRIMARY_ELITE','HP_PRIMARY_STRONG'].includes(lane) && score >= 70) ? 1 : 0,
-      score_grade: score >= 84 ? 'BIN_STRONG' : (score >= 76 ? 'BIN_QUALIFIED' : (score >= 70 ? 'BIN_ARCHIVE' : 'BIN_REJECT')),
-      hp_board_sanity_calibration_enabled: hpSanityCfg.enabled !== false
+      hp_sort_0_100: hpRound((0.72 * hp) + (0.28 * score), 3),
+      hp_primary_playable: primary ? 1 : 0,
+      hp_review_playable: review ? 1 : 0,
+      hp_fade_flag: hp < 60 ? 1 : 0,
+      board_tier: !hpEligible ? 'KILLED_LOW_HP' : (primary ? 'PRIMARY' : 'REVIEW'),
+      live_playable: primary ? 1 : 0,
+      review_playable: review ? 1 : 0,
+      score_grade: score >= 92 ? 'BIN_ELITE' : (score >= 82 ? 'BIN_STRONG' : (score >= 65 ? 'BIN_QUALIFIED' : (score >= 50 ? 'BIN_ARCHIVE' : 'BIN_REJECT'))),
+      hp_board_sanity_calibration_enabled: false,
+      hp_first_trust_score_policy: true
     };
   });
   classified.sort((a,b) => {
     const ao=HP_BOARD_LANE_ORDER[a.hp_lane] || 99;
     const bo=HP_BOARD_LANE_ORDER[b.hp_lane] || 99;
     if(ao !== bo) return ao - bo;
-    const fields=['estimated_hit_probability_0_100','probability_confidence_0_100','sample_size','score_0_100'];
+    const fields=['hp_sort_0_100','estimated_hit_probability_0_100','score_0_100','probability_confidence_0_100','sample_size'];
     for(const f of fields){ const d=hpNum(b[f],0)-hpNum(a[f],0); if(Math.abs(d)>0.000001) return d; }
     return String(a.player_name||'').localeCompare(String(b.player_name||''))
       || String(a.canonical_prop_key||'').localeCompare(String(b.canonical_prop_key||''))
@@ -3363,7 +3461,7 @@ async function runHpBoardCurrent(env, input = {}){
     const hpBoardRowId='hpboard|' + hpBoardBatchId + '|' + r.probability_row_id;
     const calibration=hpBoardCalibrationJson(r, displayCalibrationByBucket);
     await run(env.SCORE_DB, `INSERT OR REPLACE INTO hp_board_current (hp_board_row_id,hp_board_batch_id,source_hp_batch_id,source_final_board_batch_id,source_engine_batch_id,probability_row_id,final_board_row_id,prepared_row_id,matrix_id,source_line_id,profile_key,hp_profile_version,hp_rank,hp_lane,hp_lane_rank,hp_sort_0_100,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,canonical_prop_key,line_value,selected_side,prop_family,estimated_hit_probability_0_100,probability_confidence_0_100,probability_band,probability_grade,empirical_hit_rate_0_1,reliability_0_1,sample_size,non_push_sample,hit_count,miss_count,push_count,push_risk_0_1,score_0_100,score_grade,board_tier,live_playable,review_playable,hp_primary_playable,hp_review_playable,hp_fade_flag,warning_count,blocker_count,lane_reason,calibration_json,source_snapshot_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
-      hpBoardRowId,hpBoardBatchId,sourceHpBatchId,sourceFinalBoardBatchId,sourceEngineBatchId,r.probability_row_id||null,r.final_board_row_id||null,r.prepared_row_id||null,r.matrix_id||null,r.source_line_id||null,HP_BOARD_PROFILE_KEY,HP_BOARD_PROFILE_VERSION,r.hp_rank,r.hp_lane,r.hp_lane_rank,hpNum(r.estimated_hit_probability_0_100,0),r.source_key||null,r.game_pk||null,r.official_date||null,r.official_game_time_utc||null,r.mlb_player_id||null,r.player_name||null,r.canonical_prop_key||null,r.line_value||null,r.selected_side||null,r.prop_family||null,r.estimated_hit_probability_0_100||null,r.probability_confidence_0_100||null,r.probability_band||null,r.probability_grade||null,r.empirical_hit_rate_0_1||null,r.reliability_0_1||null,r.sample_size||0,r.non_push_sample||0,r.hit_count||0,r.miss_count||0,r.push_count||0,r.push_risk_0_1||0,r.score_0_100||null,r.score_grade||null,r.board_tier||null,r.live_playable||0,r.review_playable||0,r.hp_primary_playable,r.hp_review_playable,r.hp_fade_flag,r.warning_count||0,r.blocker_count||0,r.lane_reason,calibration,r.source_snapshot_json||null);
+      hpBoardRowId,hpBoardBatchId,sourceHpBatchId,sourceFinalBoardBatchId,sourceEngineBatchId,r.probability_row_id||null,r.final_board_row_id||null,r.prepared_row_id||null,r.matrix_id||null,r.source_line_id||null,HP_BOARD_PROFILE_KEY,HP_BOARD_PROFILE_VERSION,r.hp_rank,r.hp_lane,r.hp_lane_rank,hpNum(r.hp_sort_0_100, hpNum(r.estimated_hit_probability_0_100,0)),r.source_key||null,r.game_pk||null,r.official_date||null,r.official_game_time_utc||null,r.mlb_player_id||null,r.player_name||null,r.canonical_prop_key||null,r.line_value||null,r.selected_side||null,r.prop_family||null,r.estimated_hit_probability_0_100||null,r.probability_confidence_0_100||null,r.probability_band||null,r.probability_grade||null,r.empirical_hit_rate_0_1||null,r.reliability_0_1||null,r.sample_size||0,r.non_push_sample||0,r.hit_count||0,r.miss_count||0,r.push_count||0,r.push_risk_0_1||0,r.score_0_100||null,r.score_grade||null,r.board_tier||null,r.live_playable||0,r.review_playable||0,r.hp_primary_playable,r.hp_review_playable,r.hp_fade_flag,r.warning_count||0,r.blocker_count||0,r.lane_reason,calibration,r.source_snapshot_json||null);
   }
 
   await run(env.SCORE_DB, `INSERT OR REPLACE INTO hp_board_history SELECT * FROM hp_board_current WHERE hp_board_batch_id=?`, hpBoardBatchId);
@@ -3374,10 +3472,11 @@ async function runHpBoardCurrent(env, input = {}){
   const qa=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, COUNT(DISTINCT hp_board_row_id) AS hp_rows, COUNT(DISTINCT hp_rank) AS ranks, MIN(hp_rank) AS min_rank, MAX(hp_rank) AS max_rank, COUNT(DISTINCT final_board_row_id) AS final_rows, COUNT(DISTINCT prepared_row_id) AS prepared_rows, SUM(CASE WHEN final_board_row_id IS NULL THEN 1 ELSE 0 END) AS null_final_rows, SUM(CASE WHEN prepared_row_id IS NULL THEN 1 ELSE 0 END) AS null_prepared_rows, SUM(CASE WHEN blocker_count > 0 THEN 1 ELSE 0 END) AS blocker_rows, ROUND(AVG(score_0_100),2) AS avg_score, ROUND(AVG(estimated_hit_probability_0_100),2) AS avg_hp FROM hp_board_current WHERE hp_board_batch_id=?`, hpBoardBatchId) || {};
   const issueCountRow=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_issues WHERE hp_board_batch_id=?`, hpBoardBatchId) || {};
   const rowCount=Number(qa.rows||0);
-  let status='completed_hp_board_current_display_calibrated';
-  let cert='HP_BOARD_DISPLAY_CALIBRATION_CERTIFIED_INTERNAL_RECENT_FORM';
+  let status='completed_hp_board_current_hp_first_trust_score';
+  let cert='HP_BOARD_HP_FIRST_TRUST_SCORE_CERTIFIED';
   let grade='PASS_WITH_TRUE_CALIBRATION_BLOCKED';
-  if(rowCount === 0 || rowCount !== Number(qa.hp_rows||0) || rowCount !== Number(qa.ranks||0) || Number(qa.min_rank||0) !== 1 || Number(qa.max_rank||0) !== rowCount || rowCount !== Number(qa.final_rows||0) || rowCount !== Number(qa.prepared_rows||0) || Number(qa.null_final_rows||0)>0 || Number(qa.null_prepared_rows||0)>0 || Number(qa.blocker_rows||0)>0){
+  const finalLinkOk = sourceFinalBoardBatchId ? (rowCount === Number(qa.final_rows||0) && Number(qa.null_final_rows||0) === 0) : true;
+  if(rowCount === 0 || rowCount !== Number(qa.hp_rows||0) || rowCount !== Number(qa.ranks||0) || Number(qa.min_rank||0) !== 1 || Number(qa.max_rank||0) !== rowCount || !finalLinkOk || rowCount !== Number(qa.prepared_rows||0) || Number(qa.null_prepared_rows||0)>0 || Number(qa.blocker_rows||0)>0){
     status='failed_hp_board_integrity_check';
     cert='HP_BOARD_PROFILE_CURRENT_INTEGRITY_FAILED';
     grade='BLOCKED';
@@ -3798,7 +3897,7 @@ async function runHitProbabilityCurrent(env, input = {}){
   let batchId=batch && batch.batch_id ? batch.batch_id : null;
   let source=null;
 
-  if(batch && (batch.status === 'hit_probability_current_complete_hp_board_pending' || batch.status === 'completed_recent_form_hit_rate_written' || String(batch.status || '').startsWith('completed_hp_board_current_display_calibrated'))){
+  if(batch && (batch.status === 'hit_probability_current_complete_hp_board_pending' || batch.status === 'completed_recent_form_hit_rate_written' || (String(batch.status || '').startsWith('completed_hp_board_current_display_calibrated') || String(batch.status || '').startsWith('completed_hp_board_current_hp_first_trust_score')))){
     const writtenRow=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hit_probability_current WHERE batch_id=?`, batchId) || {};
     const unsupportedRow=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hit_probability_issues WHERE batch_id=? AND issue_type='HIT_PROBABILITY_ROW_UNSUPPORTED'`, batchId) || {};
     const issueRow=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hit_probability_issues WHERE batch_id=?`, batchId) || {};
@@ -3818,7 +3917,7 @@ async function runHitProbabilityCurrent(env, input = {}){
       await run(env.SCORE_DB, `UPDATE hit_probability_batches SET status=?, certification_status=?, certification_grade=?, probability_rows_written=?, issue_rows_written=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, output.status, output.certification, output.certification_grade, written, issues, hpSafeJson(output,14000), batchId);
       return output;
     }
-    const boardOutput = await runHpBoardCurrentFastTerminal(env, input, batch);
+    const boardOutput = await runHpBoardCurrent(env, input);
     return boardOutput;
   }
 
