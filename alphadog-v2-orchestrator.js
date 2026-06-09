@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.217-hp-before-final-board-full-run";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.218-atomic-dispatch-claim-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -9305,6 +9305,63 @@ async function enqueueStaticPlayersWeeklyIfDue(env, cronExpression) {
   return { enqueued: true, request_id: requestId, chain_id: chainId };
 }
 
+
+async function claimSelectedQueueRowForDispatch(env, row, trigger) {
+  if (!row || !row.request_id) return { claimed: false, reason: "missing_row" };
+  const previousStatus = String(row.status || "");
+  if (previousStatus === "pending" || previousStatus === "partial_continue") {
+    const res = await run(env.CONTROL_DB,
+      `UPDATE control_job_queue
+          SET status='running',
+              started_at=COALESCE(started_at,CURRENT_TIMESTAMP),
+              updated_at=CURRENT_TIMESTAMP,
+              tick_count=COALESCE(tick_count,0)+1
+        WHERE request_id=?
+          AND status IN ('pending','partial_continue')
+          AND finished_at IS NULL`,
+      row.request_id
+    );
+    const changes = Number((res && res.meta && res.meta.changes) || res && res.changes || 0);
+    if (changes !== 1) {
+      const latest = await first(env.CONTROL_DB,
+        "SELECT status, tick_count, started_at, updated_at, finished_at, error_code, error_message FROM control_job_queue WHERE request_id=? LIMIT 1",
+        row.request_id
+      );
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'orchestrator_atomic_dispatch_claim_lost', 'Skipped selected queue row because another hot pump claimed or finished it first', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key || "unknown", JSON.stringify({ trigger, selected_request_id: row.request_id, selected_job_key: row.job_key, selected_worker_name: row.worker_name, previous_status: previousStatus, latest, claim_changes: changes, atomic_dispatch_claim_guard_v0_2_218: true, no_duplicate_service_binding_dispatch: true, version: SYSTEM_VERSION })
+      );
+      return { claimed: false, reason: "claim_lost", latest };
+    }
+    row.status = "running";
+    row.tick_count = Number(row.tick_count || 0) + 1;
+    return { claimed: true, previous_status: previousStatus, acquired_by_atomic_claim: true };
+  }
+  if (previousStatus === "running") {
+    await run(env.CONTROL_DB,
+      `UPDATE control_job_queue
+          SET status='running',
+              started_at=COALESCE(started_at,CURRENT_TIMESTAMP),
+              updated_at=CURRENT_TIMESTAMP,
+              tick_count=COALESCE(tick_count,0)+1
+        WHERE request_id=?
+          AND status='running'
+          AND finished_at IS NULL`,
+      row.request_id
+    );
+    return { claimed: true, previous_status: previousStatus, running_rescue_reclaimed: true };
+  }
+  const latest = await first(env.CONTROL_DB,
+    "SELECT status, tick_count, started_at, updated_at, finished_at, error_code, error_message FROM control_job_queue WHERE request_id=? LIMIT 1",
+    row.request_id
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'orchestrator_atomic_dispatch_non_runnable_status', 'Skipped selected queue row because status was not runnable at claim time', ?, CURRENT_TIMESTAMP)",
+    row.request_id, WORKER_NAME, row.job_key || "unknown", JSON.stringify({ trigger, selected_request_id: row.request_id, previous_status: previousStatus, latest, atomic_dispatch_claim_guard_v0_2_218: true, version: SYSTEM_VERSION })
+  );
+  return { claimed: false, reason: "non_runnable_status", latest };
+}
+
 async function processOneUnlocked(env, trigger) {
   // v0.2.160: Delta Full Run owns its own backend continuation path.
   // Prefer due same-chain Delta Full Run children, then the parent, before generic
@@ -9797,12 +9854,12 @@ async function processOneUnlocked(env, trigger) {
     return { status: "no_due_jobs" };
   }
 
-  const runId = rid("run");
+  const claim = await claimSelectedQueueRowForDispatch(env, row, trigger);
+  if (!claim || claim.claimed !== true) {
+    return { status: "no_due_jobs_atomic_claim_lost", request_id: row.request_id, reason: claim && claim.reason || "claim_not_acquired", latest: claim && claim.latest || null, version: SYSTEM_VERSION, atomic_dispatch_claim_guard_v0_2_218: true };
+  }
 
-  await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status='running', started_at=COALESCE(started_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP, tick_count=COALESCE(tick_count,0)+1 WHERE request_id=?",
-    row.request_id
-  );
+  const runId = rid("run");
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'real_orchestrator_tick_started', 'Real orchestrator backend tick started one job', ?, CURRENT_TIMESTAMP)",
