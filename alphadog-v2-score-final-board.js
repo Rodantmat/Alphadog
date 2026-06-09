@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.25-adaptive-engine-profile-key";
+const VERSION = "alphadog-v2-score-final-board-v0.1.26-adaptive-profile-invariant-fix";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_REALITY_SANITY_V4_0"; // fallback only; runtime resolves the active profile_key from the terminal scoring_engine_current batch
 
@@ -1176,7 +1176,7 @@ async function reconcileStaleRunningFinalBoard(env, input, engine, started) {
     FROM score_final_board_current
     WHERE final_board_batch_id = ?
       AND (
-        profile_key <> 'STRICT_C_REALISTIC_V3_2'
+        profile_key <> ?
         OR archive_eligible <> 1
         OR selected_side IS NULL
         OR line_value IS NULL
@@ -1193,7 +1193,7 @@ async function reconcileStaleRunningFinalBoard(env, input, engine, started) {
         OR (board_tier = 'REVIEW' AND review_playable <> 1)
         OR (board_tier = 'REVIEW' AND live_playable <> 0)
       )
-  `, staleBatchId);
+  `, staleBatchId, PRIMARY_PROFILE);
   const badRows = Number(bad && bad.bad_rows || 0);
   if (currentRows <= 0 || currentRows !== historyRows || badRows > 0) return null;
   const byTierSource = await all(env.SCORE_DB, `
@@ -1395,7 +1395,7 @@ async function generateFinalBoard(env, input) {
     FROM score_final_board_current
     WHERE final_board_batch_id = ?
       AND (
-        profile_key <> 'STRICT_C_REALISTIC_V3_2'
+        profile_key <> ?
         OR archive_eligible <> 1
         OR selected_side IS NULL
         OR line_value IS NULL
@@ -1412,7 +1412,7 @@ async function generateFinalBoard(env, input) {
         OR (board_tier = 'REVIEW' AND review_playable <> 1)
         OR (board_tier = 'REVIEW' AND live_playable <> 0)
       )
-  `, batchId);
+  `, batchId, activeProfileKey);
   const finalBadRows = Number(finalBad && finalBad.bad_rows || 0);
   if (finalBadRows > 0) {
     const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_written_board_invariant_failure", certification:"SCORE_FINAL_BOARD_BLOCKED_WRITTEN_BOARD_INVARIANTS", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_engine_batch_id:simBatchId, bad_written_rows:finalBadRows };
