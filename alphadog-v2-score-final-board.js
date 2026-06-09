@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.27-hp-first-current-board";
+const VERSION = "alphadog-v2-score-final-board-v0.1.28-hp-first-bind-count-fix";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_HP_FIRST_TRUST_V4_1"; // fallback only; runtime resolves the active profile_key from the terminal scoring_engine_current / hp_board_current batch
 
@@ -1278,7 +1278,7 @@ async function insertBoardRow(env, table, id, batchId, sourceEngineBatchId, rank
       probability_band, probability_grade, hp_lane, hp_rank, hp_sort_0_100,
       sample_size, non_push_sample, hit_count, miss_count, push_count, hp_source_board_tier, hp_source_lane_reason,
       created_at, updated_at
-    ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
   `,
     id, batchId, sourceEngineBatchId, row.profile_key || PRIMARY_PROFILE, rank,
     row.board_tier || "PRIMARY", Number(row.review_playable || 0),
@@ -1347,7 +1347,7 @@ function boardInsertSql(table) {
       probability_band, probability_grade, hp_lane, hp_rank, hp_sort_0_100,
       sample_size, non_push_sample, hit_count, miss_count, push_count, hp_source_board_tier, hp_source_lane_reason,
       created_at, updated_at
-    ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
   `;
 }
 
@@ -1549,7 +1549,7 @@ async function generateFinalBoard(env, input) {
   const hpRead = await fetchHpFinalBoardCandidateRows(env, simBatchId, 500);
   const hpSource = hpRead.hp_source;
   if (!hpSource || !hpSource.hp_board_batch_id) {
-    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_no_hp_board_for_engine_batch", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_HP_BOARD_FOR_ENGINE_BATCH", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_engine_batch_id:simBatchId, reason:"Final Board v0.1.27 requires the locked HP Board output for the same completed Engine batch. Run Hit Probability after Engine before Final Board." };
+    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_no_hp_board_for_engine_batch", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_HP_BOARD_FOR_ENGINE_BATCH", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_engine_batch_id:simBatchId, reason:"Final Board v0.1.28 requires the locked HP Board output for the same completed Engine batch. Run Hit Probability after Engine before Final Board." };
     await writeIssue(env, batchId, simBatchId, "NO_HP_BOARD_FOR_ENGINE_BATCH", "BLOCKER", 1, output);
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
@@ -1718,7 +1718,7 @@ async function generateFinalBoard(env, input) {
     archive_review_rows_written: 0,
     archive_review_by_source: [],
     archive_review_admission_active: false,
-    archive_review_admission_policy: "Final Board v0.1.27 is HP-first. HP >= 60 rows from hp_board_current are included even when Engine score_grade is BIN_ARCHIVE or BIN_REJECT; score remains the trust/support score.",
+    archive_review_admission_policy: "Final Board v0.1.28 is HP-first. HP >= 60 rows from hp_board_current are included even when Engine score_grade is BIN_ARCHIVE or BIN_REJECT; score remains the trust/support score.",
     live_rows_read: primaryRows.length,
     final_rows_written: rows.length,
     current_rows_written: rows.length,
@@ -1733,7 +1733,7 @@ async function generateFinalBoard(env, input) {
     cutoff_volatility_trim_active: true,
     cutoff_volatility_trim_policy: "narrow fragile-pitcher cutoff trim only; no source quota, no forced balance, no broad cluster penalty",
     primary_sanity_hp_advisory_active: true,
-    primary_sanity_hp_advisory_policy: "Replaced by HP-first source in v0.1.27. Final Board consumes locked hp_board_current directly instead of using HP as advisory after Engine-only selection.",
+    primary_sanity_hp_advisory_policy: "Replaced by HP-first source in v0.1.28. Final Board consumes locked hp_board_current directly instead of using HP as advisory after Engine-only selection.",
     primary_sanity_rescue_rule_a: `score>=${PRIMARY_SANITY_RESCUE_SCORE_A}, confidence>=${PRIMARY_THRESHOLD_CONFIDENCE}, hp>=${PRIMARY_SANITY_RESCUE_HP_A}, hp_confidence>=${PRIMARY_SANITY_MIN_HP_CONFIDENCE}, non_push_sample>=${PRIMARY_SANITY_MIN_NON_PUSH_SAMPLE}`,
     primary_sanity_rescue_rule_b: `score>=${PRIMARY_SANITY_RESCUE_SCORE_B}, confidence>=${PRIMARY_THRESHOLD_CONFIDENCE}, hp>=${PRIMARY_SANITY_RESCUE_HP_B}, hp_confidence>=${PRIMARY_SANITY_MIN_HP_CONFIDENCE}, non_push_sample>=${PRIMARY_SANITY_MIN_NON_PUSH_SAMPLE}`,
     primary_sanity_demote_rule: `PRIMARY robust hp<${PRIMARY_SANITY_DEMOTE_HP_BELOW} becomes REVIEW`,
@@ -1750,7 +1750,7 @@ async function generateFinalBoard(env, input) {
 
   await writeIssue(env, batchId, simBatchId, "LIVE_INVARIANT_FAILURE", "INFO", 0, { note: "No live row invariant failures detected before final board write." });
   await writeIssue(env, batchId, simBatchId, "REVIEW_TIER_INCLUDED", "WARNING", reviewRows.length, { note: "Review tier rows are intentionally included as safe soft rows. They are not strict PRIMARY rows.", review_rows_written: reviewRows.length });
-  await writeIssue(env, batchId, simBatchId, "HP_FIRST_SOURCE_INCLUDED", "INFO", rows.length, { note: "Final Board v0.1.27 writes HP >= 60 rows from hp_board_current. BIN_ARCHIVE/BIN_REJECT score grades can remain visible as REVIEW because score is trust/support, not the probability gate.", hp_board_batch_id: hpSource && hpSource.hp_board_batch_id || null, hp_rows_read: hpEligibleRaw.length });
+  await writeIssue(env, batchId, simBatchId, "HP_FIRST_SOURCE_INCLUDED", "INFO", rows.length, { note: "Final Board v0.1.28 writes HP >= 60 rows from hp_board_current. BIN_ARCHIVE/BIN_REJECT score grades can remain visible as REVIEW because score is trust/support, not the probability gate.", hp_board_batch_id: hpSource && hpSource.hp_board_batch_id || null, hp_rows_read: hpEligibleRaw.length });
   await writeIssue(env, batchId, simBatchId, "PRIMARY_CLUSTER_CAP_APPLIED", clusterCapResult.demotedRows.length ? "WARNING" : "INFO", clusterCapResult.demotedRows.length, { note: "PRIMARY is capped at one row per player/game slate cluster key; overflow rows are demoted to REVIEW, not deleted. This is a diversification/correlation safety rail, not a quality killer or source quota.", max_primary_rows_per_player: clusterCapResult.maxPrimaryRowsPerPlayer, primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap, primary_rows_after_cluster_cap: clusterCapResult.primaryRowsAfterClusterCap, demoted_rows: clusterCapResult.demotedRows.length });
   await writeIssue(env, batchId, simBatchId, "PRIMARY_SANITY_HP_ADVISORY_APPLIED", (primarySanityResult.rescuedRows || primarySanityResult.demotedRows) ? "WARNING" : "INFO", (primarySanityResult.rescuedRows || 0) + (primarySanityResult.demotedRows || 0), { note: "Hit Probability advisory is used as a PRIMARY safety net only. It can rescue robust high-HP near-elite rows or demote robust low-HP PRIMARY rows to REVIEW. It does not delete rows, force equality, or apply source/prop quotas.", hp_advisory_batch_id: hpAdvisory.batch && hpAdvisory.batch.batch_id || null, hp_advisory_rows_loaded: hpAdvisory.rows || 0, candidate_rows_with_advisory: primarySanityResult.advisoryRowsSeen, rescued_to_primary_rows: primarySanityResult.rescuedRows, demoted_to_review_rows: primarySanityResult.demotedRows });
   await run(env.SCORE_DB, `
