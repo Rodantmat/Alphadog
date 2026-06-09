@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.209-prop-factor-blocked-pass-reconcile";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.210-daily-team-schedule-long-running-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -6855,6 +6855,16 @@ function dailyContextStageSupportsSidecarRescue(stage) {
   return key === "daily-player-availability" || key === "daily-weather" || key === "daily-bullpen-availability" || key === "daily-team-schedule-spot" || key === "daily-umpire-context";
 }
 
+function dailyContextFullRunStageStaleSeconds(stage) {
+  const key = String(stage && stage.job_key || "");
+  // v0.2.210: Daily Team Schedule Spot can legitimately hold the service-binding
+  // dispatch open well past the generic 120s parent stale guard while D1/internal
+  // schedule context writes are still in-flight. Do not let the parent kill and
+  // overwrite an active child run before the worker has a fair terminal window.
+  if (key === "daily-team-schedule-spot") return 900;
+  return DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS;
+}
+
 async function recoverDailyContextRunningChildrenFromCompleteSidecarsPreLock(env, trigger) {
   if (!env || !env.CONTROL_DB || !env.DAILY_DB) return { recovered: 0, checked: 0, reason: "missing_db_binding" };
   const rows = await all(env.CONTROL_DB,
@@ -6937,7 +6947,8 @@ async function failDailyContextStaleChild(env, parentRow, stage, child, stageRep
     child_status: child.status,
     child_started_at: child.started_at || null,
     child_updated_at: child.updated_at || null,
-    stale_child_guard_seconds: DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS,
+    stale_child_guard_seconds: dailyContextFullRunStageStaleSeconds(stage),
+    generic_stale_child_guard_seconds: DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS,
     cleanup,
     stages: [...stageReports, { ...report, pass: false, wait: false, reason: "stale_child_no_terminal_control_job_runs_row" }],
     daily_context_full_run_certified: false,
@@ -7156,9 +7167,10 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
         stageReports.push(immediateRecovered.report);
         continue;
       }
+      const stageStaleSeconds = dailyContextFullRunStageStaleSeconds(stage);
       const staleChild = await first(env.CONTROL_DB,
-        "SELECT request_id FROM control_job_queue WHERE request_id=? AND status IN ('running','pending','queued','partial_continue') AND finished_at IS NULL AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-120 seconds') LIMIT 1",
-        child.request_id
+        "SELECT request_id FROM control_job_queue WHERE request_id=? AND status IN ('running','pending','queued','partial_continue') AND finished_at IS NULL AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-' || ? || ' seconds') LIMIT 1",
+        child.request_id, stageStaleSeconds
       );
       if (staleChild) {
         const recovered = await recoverDailyContextStaleChildFromSidecar(env, row, stage, child, report, runId);
@@ -7168,7 +7180,7 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
         }
         return await failDailyContextStaleChild(env, row, stage, child, stageReports, report, parentInput, runId, started, "Daily Context Full Run child became stale and could not be verified from complete sidecar rows; refusing to false-pass an incomplete mining stage.");
       }
-      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification: "DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: "PARTIAL_CONTINUE_DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification: "DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, stage_stale_guard_seconds: stageStaleSeconds, generic_stale_guard_seconds: DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS, completed_stage_count: stageReports.length, total_stage_count: DAILY_CONTEXT_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
       await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_CONTEXT_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
       await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
       return output;
