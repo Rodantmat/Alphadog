@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 AlphaDog v2 PrizePicks GitHub JSON Producer
-Version: alphadog-v2-prizepicks-producer-v0.1.3-proxyscrape-residential-preflight
+Version: alphadog-v2-prizepicks-producer-v0.1.4-proxy-url-canonical-preflight
 
 Purpose:
 - Fetch the raw PrizePicks MLB projections payload from multiple known PrizePicks JSON surfaces.
@@ -18,6 +18,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
+import socket
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,7 +27,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from curl_cffi import requests
 
-SCRIPT_VERSION = "alphadog-v2-prizepicks-producer-v0.1.3-proxyscrape-residential-preflight"
+SCRIPT_VERSION = "alphadog-v2-prizepicks-producer-v0.1.4-proxy-url-canonical-preflight"
 PRIZEPICKS_MLB_PROJECTIONS_URLS = [
     "https://api.prizepicks.com/projections?league_id=2&per_page=1000&single_stat=true",
     "https://api.prizepicks.com/projections?league_id=2&per_page=5000",
@@ -55,7 +57,7 @@ def mask_proxy_url(proxy_url: str) -> str:
     if not text:
         return ""
     try:
-        from urllib.parse import urlsplit, urlunsplit
+        from urllib.parse import quote, urlsplit, urlunsplit
         parts = urlsplit(text if "://" in text else "http://" + text)
         host = parts.hostname or ""
         port = f":{parts.port}" if parts.port else ""
@@ -67,32 +69,109 @@ def mask_proxy_url(proxy_url: str) -> str:
         return "***masked_proxy_url***"
 
 
+def _clean_env_value(value: str) -> str:
+    return (value or "").strip().strip('"').strip("'").strip()
+
+
+def _quote_proxy_credential(value: str) -> str:
+    # ProxyScrape generated passwords can contain URL-reserved characters after reset.
+    # curl/libcurl then mis-parses the proxy URL unless user/pass are percent-encoded.
+    return quote(_clean_env_value(value), safe="%")
+
+
+def _split_host_port(hostport: str) -> Tuple[str, str]:
+    text = _clean_env_value(hostport).rstrip("/")
+    if text.startswith("[") and "]" in text:
+        end = text.index("]")
+        host = text[: end + 1]
+        rest = text[end + 1 :]
+        port = rest[1:] if rest.startswith(":") else ""
+        return host, port
+    if ":" in text:
+        host, port = text.rsplit(":", 1)
+        return host.strip(), port.strip()
+    return text.strip(), ""
+
+
+def proxy_diagnostics_from_url(proxy_url: str, source: str = "unknown") -> Dict[str, Any]:
+    out: Dict[str, Any] = {"configured": bool(proxy_url), "source": source}
+    if not proxy_url:
+        return out
+    try:
+        parts = urlsplit(proxy_url if "://" in proxy_url else "http://" + proxy_url)
+        host = parts.hostname or ""
+        port = parts.port
+        username = parts.username or ""
+        out.update({
+            "scheme": parts.scheme or "http",
+            "host": host,
+            "port": port,
+            "username_present": bool(username),
+            "username_preview": (username[:8] + "..." + username[-6:]) if len(username) > 18 else (username[:4] + "..." if username else ""),
+            "password_present": bool(parts.password),
+            "canonical_shape": f"{parts.scheme or 'http'}://<username>:<password>@{host}:{port}" if host and port else "unparsed",
+        })
+        if host:
+            try:
+                socket.getaddrinfo(host, int(port or 80))
+                out["dns_ok"] = True
+            except Exception as exc:
+                out["dns_ok"] = False
+                out["dns_error"] = str(exc)[:240]
+    except Exception as exc:
+        out["parse_error"] = str(exc)[:240]
+    return out
+
+
 def normalize_proxy_url(raw: str) -> str:
-    text = (raw or "").strip().strip('"').strip("'")
+    text = _clean_env_value(raw)
     if not text:
         return ""
-    if "://" in text:
-        return text
-    # Supports ProxyScrape formats: username:password@hostname:port and hostname:port:username:password.
-    if "@" in text:
-        return "http://" + text
-    parts = text.split(":")
-    if len(parts) == 4:
-        host, port, username, password = parts
-        return f"http://{username}:{password}@{host}:{port}"
-    return "http://" + text
+
+    scheme = "http"
+    rest = text
+    if "://" in rest:
+        scheme, rest = rest.split("://", 1)
+        scheme = (scheme or "http").lower()
+        if scheme not in {"http", "https", "socks5", "socks5h"}:
+            scheme = "http"
+
+    # Drop accidental URL path/query copied from dashboard fields.
+    rest = rest.split("/", 1)[0].strip()
+
+    # ProxyScrape dashboard formats:
+    #   username:password@hostname:port
+    #   http://username:password@hostname:port
+    #   hostname:port:username:password
+    if "@" in rest:
+        auth, hostport = rest.rsplit("@", 1)
+        username, password = (auth.split(":", 1) + [""])[:2] if ":" in auth else (auth, "")
+        host, port = _split_host_port(hostport)
+        if username and password and host and port:
+            return f"{scheme}://{_quote_proxy_credential(username)}:{_quote_proxy_credential(password)}@{host}:{port}"
+        return f"{scheme}://{rest}"
+
+    parts = rest.split(":")
+    if len(parts) >= 4:
+        # Preserve passwords containing ':' by joining the tail.
+        host, port, username = parts[0], parts[1], parts[2]
+        password = ":".join(parts[3:])
+        if host and port and username and password:
+            return f"{scheme}://{_quote_proxy_credential(username)}:{_quote_proxy_credential(password)}@{host}:{port}"
+
+    return f"{scheme}://{rest}"
 
 
 def proxy_url_from_env() -> str:
     direct = normalize_proxy_url(os.getenv("PROXY_URL", ""))
     if direct:
         return direct
-    host = os.getenv("PROXYSCRAPE_HOSTNAME", "").strip()
-    port = os.getenv("PROXYSCRAPE_PORT", "").strip()
-    username = os.getenv("PROXYSCRAPE_USERNAME", "").strip()
-    password = os.getenv("PROXYSCRAPE_PASSWORD", "").strip()
+    host = _clean_env_value(os.getenv("PROXYSCRAPE_HOSTNAME", "")) or "rp.scrapegw.com"
+    port = _clean_env_value(os.getenv("PROXYSCRAPE_PORT", "")) or "6060"
+    username = _clean_env_value(os.getenv("PROXYSCRAPE_USERNAME", ""))
+    password = _clean_env_value(os.getenv("PROXYSCRAPE_PASSWORD", ""))
     if host and port and username and password:
-        return f"http://{username}:{password}@{host}:{port}"
+        return f"http://{_quote_proxy_credential(username)}:{_quote_proxy_credential(password)}@{host}:{port}"
     return ""
 
 
@@ -107,13 +186,15 @@ def proxy_preflight(proxies: Optional[Dict[str, str]], timeout_seconds: int = 20
         return {"attempted": False, "ok": False, "reason": "PROXY_URL_not_configured"}
     url = os.getenv("PRIZEPICKS_PROXY_PREFLIGHT_URL", "https://ipinfo.io/json").strip() or "https://ipinfo.io/json"
     started = utc_now()
+    proxy_url = proxies.get("https") or proxies.get("http") or ""
     out: Dict[str, Any] = {
         "attempted": True,
         "ok": False,
         "url": url,
         "started_at": started,
         "proxy_configured": True,
-        "proxy_masked": mask_proxy_url(proxies.get("https") or proxies.get("http") or ""),
+        "proxy_masked": mask_proxy_url(proxy_url),
+        "proxy_diagnostics": proxy_diagnostics_from_url(proxy_url, source="effective_proxy_url"),
     }
     try:
         response = requests.get(url, proxies=proxies, timeout=timeout_seconds, impersonate="chrome124")
@@ -340,14 +421,36 @@ def fetch_prizepicks_json() -> Tuple[Any, Dict[str, Any]]:
     }
     proxies = build_proxies(proxy_url)
     preflight = proxy_preflight(proxies, int(os.getenv("PRIZEPICKS_PROXY_PREFLIGHT_TIMEOUT_SECONDS", "20")))
+    proxy_diag = proxy_diagnostics_from_url(proxy_url, source="PROXY_URL_or_PROXYSCRAPE_parts")
     print(json.dumps({
         "ok": bool(preflight.get("ok")),
         "version": SCRIPT_VERSION,
         "status": "proxy_preflight_completed",
         "proxy_configured": bool(proxies),
+        "proxy_diagnostics": proxy_diag,
         "proxy_preflight": preflight,
         "timestamp_utc": utc_now(),
     }, indent=2))
+    require_preflight = os.getenv("PRIZEPICKS_REQUIRE_PROXY_PREFLIGHT", "1").strip().lower() not in {"0", "false", "no"}
+    if proxies and require_preflight and not preflight.get("ok"):
+        diagnostic = {
+            "ok": False,
+            "data_ok": False,
+            "version": SCRIPT_VERSION,
+            "status": "proxy_preflight_failed",
+            "error": "PROXY_URL is configured but proxy preflight failed; refusing to fetch PrizePicks through a broken proxy and refusing to overwrite JSON.",
+            "proxy_configured": True,
+            "proxy_masked": mask_proxy_url(proxy_url),
+            "proxy_diagnostics": proxy_diag,
+            "proxy_preflight": preflight,
+            "fix_hint": "Use PROXY_URL=http://username:password@rp.scrapegw.com:6060, or set separate PROXYSCRAPE_USERNAME/PROXYSCRAPE_PASSWORD secrets. If the password has special characters, this version percent-encodes them automatically.",
+            "stale_overwrite_guard": "did_not_fetch_or_overwrite_when_proxy_preflight_failed",
+            "no_d1_write": True,
+            "no_scoring": True,
+            "no_market_current_lines_write": True,
+        }
+        atomic_write_text(OUTPUT_META, json.dumps(diagnostic, ensure_ascii=False, indent=2, sort_keys=False) + "\n")
+        raise RuntimeError(json.dumps(diagnostic, ensure_ascii=False)[:1800])
     all_candidates: List[Dict[str, Any]] = []
     last_error = None
     for attempt in range(1, attempts + 1):
@@ -396,6 +499,7 @@ def fetch_prizepicks_json() -> Tuple[Any, Dict[str, Any]]:
         "attempts_configured": attempts,
         "proxy_configured": bool(proxies),
         "proxy_masked": mask_proxy_url(proxy_url),
+        "proxy_diagnostics": proxy_diagnostics_from_url(proxy_url, source="PROXY_URL_or_PROXYSCRAPE_parts"),
         "proxy_preflight": preflight,
         "retry_cooldown_seconds": sleep_seconds,
         "captcha_cooldown_seconds": captcha_cooldown_seconds,
@@ -446,6 +550,7 @@ def main() -> int:
         "fetch": fetch_info.get("fetch", {}),
         "proxy_configured": bool(proxy_url_from_env()),
         "proxy_masked": mask_proxy_url(proxy_url_from_env()),
+        "proxy_diagnostics": proxy_diagnostics_from_url(proxy_url_from_env(), source="PROXY_URL_or_PROXYSCRAPE_parts"),
         "selected_candidate": public_candidate(fetch_info),
         "source_candidates": [public_candidate(c) for c in fetch_info.get("all_candidates", [])],
         "shape": sample_shape(payload),
