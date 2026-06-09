@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-normalizer";
-const VERSION = "alphadog-v2-market-normalizer-v0.1.10-batched-mining-terminal-finalizer";
+const VERSION = "alphadog-v2-market-normalizer-v0.1.11-bounded-evidence-terminal-safe";
 const JOB_KEY = "market-normalizer";
 const PHASE_KEY = "market_teams_game_odds";
 const ODDS_API_SOURCE_KEY = "odds_api";
@@ -9,6 +9,10 @@ const EXPANDED_GAME_TEAM_MARKET_KEYS = ["team_totals", "alternate_spreads", "alt
 const ALL_GAME_TEAM_MARKET_KEYS = [...FEATURED_GAME_MARKET_KEYS, ...EXPANDED_GAME_TEAM_MARKET_KEYS];
 const MAX_PREPARED_ROWS = 9000;
 const TEAM_MATCH_TOLERANCE_MINUTES = 25;
+const MARKET_TEAMS_DEFAULT_WORKER_BUDGET_MS = 60000;
+const MARKET_TEAMS_EXPANDED_MIN_REMAINING_MS = 25000;
+const MARKET_TEAMS_EXPANDED_DEFAULT_MAX_EVENTS = 4;
+const MARKET_TEAMS_EXPANDED_DEFAULT_CONCURRENCY = 2;
 
 const REQUIRED_DB_BINDINGS = ["MARKET_DB", "SCORE_DB", "TEAM_DB", "REF_DB", "CONTROL_DB"];
 const OPTIONAL_DB_BINDINGS = ["CONFIG_DB"];
@@ -195,6 +199,22 @@ function sourceHas(env, key) {
 function fetchTimeoutMs(env) {
   const n = Number(env && env.ODDS_API_FETCH_TIMEOUT_MS ? env.ODDS_API_FETCH_TIMEOUT_MS : 12000);
   return Number.isFinite(n) && n > 1000 ? Math.min(n, 25000) : 12000;
+}
+function marketTeamsWorkerBudgetMs(env) {
+  const n = Number(env && env.MARKET_TEAMS_WORKER_BUDGET_MS ? env.MARKET_TEAMS_WORKER_BUDGET_MS : MARKET_TEAMS_DEFAULT_WORKER_BUDGET_MS);
+  return Number.isFinite(n) && n >= 20000 ? Math.min(n, 70000) : MARKET_TEAMS_DEFAULT_WORKER_BUDGET_MS;
+}
+function remainingBudgetMs(deadlineMs) {
+  if (!Number.isFinite(Number(deadlineMs))) return Number.POSITIVE_INFINITY;
+  return Number(deadlineMs) - Date.now();
+}
+function hasRemainingBudget(deadlineMs, minRemainingMs = 2500) {
+  return remainingBudgetMs(deadlineMs) > Number(minRemainingMs || 0);
+}
+function marketTeamsExpandedMaxEvents(env) {
+  const raw = env && env.ODDS_API_EXPANDED_MAX_EVENTS !== undefined ? Number(env.ODDS_API_EXPANDED_MAX_EVENTS) : MARKET_TEAMS_EXPANDED_DEFAULT_MAX_EVENTS;
+  if (!Number.isFinite(raw)) return MARKET_TEAMS_EXPANDED_DEFAULT_MAX_EVENTS;
+  return Math.max(0, Math.min(20, raw));
 }
 async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
   const controller = new AbortController();
@@ -713,17 +733,26 @@ async function writeOddsApiEvidence(env, batchId, slateWindowKey, oddsEvents, ma
   const normalizedRows = [];
   const mappedGameSet = new Set();
   const mappedEventsList = [];
-  for (const ev of oddsEvents) {
+  const eventMapSql = `INSERT INTO market_context_probe_event_map (probe_row_id, batch_id, slate_window_key, official_date, game_pk, source_key, source_event_id, source_commence_time_utc, source_home_team, source_away_team, mapping_status, mapping_confidence, mapping_reason, candidate_count, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`;
+  const gameOddsSql = `INSERT INTO market_context_probe_game_odds (probe_row_id, batch_id, slate_window_key, official_date, game_pk, source_key, source_event_id, source_commence_time_utc, source_home_team, source_away_team, bookmaker_key, bookmaker_title, market_key, market_last_update, outcome_name, outcome_side, price_american, point, mapping_status, mapping_confidence, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`;
+  const eventMapBinds = [];
+  const gameOddsBinds = [];
+  for (const ev of (Array.isArray(oddsEvents) ? oddsEvents : [])) {
     const mapping = matchEvent(ev || {});
     eventRows += 1;
+    eventMapBinds.push([
+      rid("mcp_event"), batchId, slateWindowKey, mapping.official_date, mapping.game_pk, ODDS_API_SOURCE_KEY,
+      ev.id || null, ev.commence_time || null, ev.home_team || null, ev.away_team || null,
+      mapping.status, mapping.confidence, mapping.reason, mapping.candidate_count,
+      safeJson({ id: ev.id, commence_time: ev.commence_time, home_team: ev.home_team, away_team: ev.away_team }, 3000)
+    ]);
     if (mapping.status === "mapped") {
       mappedEvents += 1;
       mappedGameSet.add(String(mapping.game_pk));
       mappedEventsList.push({ ev, mapping });
+    } else {
+      continue;
     }
-    await run(env.MARKET_DB, `INSERT INTO market_context_probe_event_map (probe_row_id, batch_id, slate_window_key, official_date, game_pk, source_key, source_event_id, source_commence_time_utc, source_home_team, source_away_team, mapping_status, mapping_confidence, mapping_reason, candidate_count, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-      rid("mcp_event"), batchId, slateWindowKey, mapping.official_date, mapping.game_pk, ODDS_API_SOURCE_KEY, ev.id || null, ev.commence_time || null, ev.home_team || null, ev.away_team || null, mapping.status, mapping.confidence, mapping.reason, mapping.candidate_count, safeJson({ id: ev.id, commence_time: ev.commence_time, home_team: ev.home_team, away_team: ev.away_team }, 3000));
-    if (mapping.status !== "mapped") continue;
     const bookmakers = Array.isArray(ev.bookmakers) ? ev.bookmakers : [];
     for (const book of bookmakers) {
       const markets = Array.isArray(book.markets) ? book.markets : [];
@@ -732,16 +761,42 @@ async function writeOddsApiEvidence(env, batchId, slateWindowKey, oddsEvents, ma
         if (!FEATURED_GAME_MARKET_KEYS.includes(key)) continue;
         const outcomes = Array.isArray(market.outcomes) ? market.outcomes : [];
         for (const out of outcomes) {
-          const normalizedRow = { official_date: mapping.official_date, game_pk: mapping.game_pk, source_event_id: ev.id || null, source_commence_time_utc: ev.commence_time || null, source_home_team: ev.home_team || null, source_away_team: ev.away_team || null, bookmaker_key: book.key || null, bookmaker_title: book.title || null, market_key: key, market_last_update: market.last_update || null, outcome_name: out.name || null, outcome_side: outcomeSide(key, out.name, out.point, out.description, ev.home_team, ev.away_team), price_american: Number.isFinite(Number(out.price)) ? Number(out.price) : null, point: Number.isFinite(Number(out.point)) ? Number(out.point) : null, mapping_status: mapping.status, mapping_confidence: mapping.confidence };
+          const normalizedRow = {
+            official_date: mapping.official_date,
+            game_pk: mapping.game_pk,
+            source_event_id: ev.id || null,
+            source_commence_time_utc: ev.commence_time || null,
+            source_home_team: ev.home_team || null,
+            source_away_team: ev.away_team || null,
+            bookmaker_key: book.key || null,
+            bookmaker_title: book.title || null,
+            market_key: key,
+            market_last_update: market.last_update || null,
+            outcome_name: out.name || null,
+            outcome_side: outcomeSide(key, out.name, out.point, out.description, ev.home_team, ev.away_team),
+            price_american: Number.isFinite(Number(out.price)) ? Number(out.price) : null,
+            point: Number.isFinite(Number(out.point)) ? Number(out.point) : null,
+            mapping_status: mapping.status,
+            mapping_confidence: mapping.confidence
+          };
           normalizedRows.push(normalizedRow);
-          await run(env.MARKET_DB, `INSERT INTO market_context_probe_game_odds (probe_row_id, batch_id, slate_window_key, official_date, game_pk, source_key, source_event_id, source_commence_time_utc, source_home_team, source_away_team, bookmaker_key, bookmaker_title, market_key, market_last_update, outcome_name, outcome_side, price_american, point, mapping_status, mapping_confidence, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-            rid("mcp_game_odds"), batchId, slateWindowKey, mapping.official_date, mapping.game_pk, ODDS_API_SOURCE_KEY, ev.id || null, ev.commence_time || null, ev.home_team || null, ev.away_team || null, book.key || null, book.title || null, key, market.last_update || null, out.description ? `${out.description} ${out.name || ""}`.trim() : (out.name || null), outcomeSide(key, out.name, out.point, out.description, ev.home_team, ev.away_team), Number.isFinite(Number(out.price)) ? Number(out.price) : null, Number.isFinite(Number(out.point)) ? Number(out.point) : null, mapping.status, mapping.confidence, safeJson({ endpoint_scope:"featured_bulk_odds", bookmaker_key: book.key, bookmaker_title: book.title, market_key: key, last_update: market.last_update, outcome: out }, 3000));
+          gameOddsBinds.push([
+            rid("mcp_game_odds"), batchId, slateWindowKey, mapping.official_date, mapping.game_pk, ODDS_API_SOURCE_KEY,
+            ev.id || null, ev.commence_time || null, ev.home_team || null, ev.away_team || null,
+            book.key || null, book.title || null, key, market.last_update || null,
+            out.description ? `${out.description} ${out.name || ""}`.trim() : (out.name || null),
+            normalizedRow.outcome_side, normalizedRow.price_american, normalizedRow.point,
+            mapping.status, mapping.confidence,
+            safeJson({ endpoint_scope:"featured_bulk_odds", bookmaker_key: book.key, bookmaker_title: book.title, market_key: key, last_update: market.last_update, outcome: out }, 3000)
+          ]);
           gameOddsRows += 1;
         }
       }
     }
   }
-  return { eventRows, mappedEvents, gameOddsRows, mappedGameSet, normalizedRows, mappedEventsList };
+  const eventMapBatch = await batchRun(env.MARKET_DB, eventMapSql, eventMapBinds, 75);
+  const gameOddsBatch = await batchRun(env.MARKET_DB, gameOddsSql, gameOddsBinds, 75);
+  return { eventRows, mappedEvents, gameOddsRows, mappedGameSet, normalizedRows, mappedEventsList, batched_evidence_writes: true, batch_stats: { event_map: eventMapBatch, game_odds: gameOddsBatch } };
 }
 
 
@@ -839,10 +894,10 @@ async function fetchOddsApiEventMarket(env, eventId, marketKey, bookmakerList) {
   }
 }
 
-async function probeExpandedGameTeamMarkets(env, batchId, slateWindowKey, mappedEventsList, bookmakerTargets) {
+async function probeExpandedGameTeamMarkets(env, batchId, slateWindowKey, mappedEventsList, bookmakerTargets, options = {}) {
   const marketKeys = expandedGameTeamMarketKeys(env);
   const bookmakerList = String(bookmakerTargets || "").replace(/\s+/g, "");
-  const maxEvents = Math.max(0, Number(env.ODDS_API_EXPANDED_MAX_EVENTS || 40));
+  const maxEvents = marketTeamsExpandedMaxEvents(env);
   const mapped = (mappedEventsList || []).slice(0, maxEvents || mappedEventsList.length);
   const normalizedRows = [];
   let externalCalls = 0;
@@ -851,7 +906,10 @@ async function probeExpandedGameTeamMarkets(env, batchId, slateWindowKey, mapped
   const byMarket = {};
   for (const k of marketKeys) byMarket[k] = { events_probed:0, events_supported:0, normalized_rows_written:0, http_errors:0, json_errors:0, fetch_errors:0 };
   if (!sourceHas(env, "ODDS_API_KEY") || !mapped.length || !marketKeys.length) {
-    return { externalCalls, expansionRows, expandedGameOddsRows, normalizedRows, marketKeys, byMarket, skipped:true, batched_evidence_writes:true };
+    return { externalCalls, expansionRows, expandedGameOddsRows, normalizedRows, marketKeys, byMarket, skipped:true, skipped_reason: !sourceHas(env, "ODDS_API_KEY") ? "missing_odds_api_key" : (!mapped.length ? "no_mapped_events" : "no_expanded_market_keys"), batched_evidence_writes:true };
+  }
+  if (!hasRemainingBudget(options.deadlineMs, MARKET_TEAMS_EXPANDED_MIN_REMAINING_MS)) {
+    return { externalCalls, expansionRows, expandedGameOddsRows, normalizedRows, marketKeys, byMarket, skipped:true, skipped_reason:"worker_time_budget_before_expanded_markets", remaining_ms: remainingBudgetMs(options.deadlineMs), batched_evidence_writes:true };
   }
 
   const fetchTasks = [];
@@ -864,8 +922,13 @@ async function probeExpandedGameTeamMarkets(env, batchId, slateWindowKey, mapped
     }
   }
 
-  const concurrency = Math.max(1, Math.min(10, Number(env.ODDS_API_EXPANDED_CONCURRENCY || 6)));
-  const fetchedTasks = await mapLimit(fetchTasks, concurrency, async (task) => {
+  const concurrency = Math.max(1, Math.min(4, Number(env.ODDS_API_EXPANDED_CONCURRENCY || MARKET_TEAMS_EXPANDED_DEFAULT_CONCURRENCY)));
+  const boundedFetchTasks = [];
+  for (const task of fetchTasks) {
+    if (!hasRemainingBudget(options.deadlineMs, fetchTimeoutMs(env) + 6000)) break;
+    boundedFetchTasks.push(task);
+  }
+  const fetchedTasks = await mapLimit(boundedFetchTasks, concurrency, async (task) => {
     const fetched = await fetchOddsApiEventMarket(env, task.evBase.id, task.marketKey, bookmakerList);
     return { ...task, fetched };
   });
@@ -1113,6 +1176,7 @@ async function writeCoverage(env, batchId, slateWindowKey, preparedRows, oddsMap
 
 async function runMarketSourceProbe(env, input = {}) {
   const startedMs = Date.now();
+  const deadlineMs = startedMs + marketTeamsWorkerBudgetMs(env);
   const requestId = input.request_id || null;
   const runId = input.run_id || null;
   const today = ptDate(0);
@@ -1174,6 +1238,8 @@ async function runMarketSourceProbe(env, input = {}) {
     await writeIssue(env, batchId, slateWindowKey, today, odds.missing_key ? "BLOCKER" : "WARNING", odds.missing_key ? "ODDS_API_KEY_MISSING" : "ODDS_API_GAME_ODDS_FETCH_FAILED", null, null, ODDS_API_SOURCE_KEY, odds.error || "Odds API game odds fetch failed", odds);
   }
   const oddsWrite = odds.ok ? await writeOddsApiEvidence(env, batchId, slateWindowKey, odds.events, matcher) : { eventRows: 0, mappedEvents: 0, gameOddsRows: 0, mappedGameSet: new Set(), normalizedRows: [], mappedEventsList: [] };
+  await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status='running_featured_game_odds_evidence_written', odds_api_events_seen=?, odds_api_events_mapped=?, odds_api_game_odds_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", oddsWrite.eventRows || 0, oddsWrite.mappedEvents || 0, oddsWrite.gameOddsRows || 0, batchId);
+  await controlHeartbeat(env, requestId, runId, 'running_featured_game_odds_evidence_written', { batch_id: batchId, odds_api_events_seen: oddsWrite.eventRows || 0, odds_api_events_mapped: oddsWrite.mappedEvents || 0, odds_api_game_odds_rows: oddsWrite.gameOddsRows || 0, batched_evidence_writes: true });
   if (odds.ok && oddsWrite.mappedEvents === 0) {
     blockerCount += 1;
     await writeIssue(env, batchId, slateWindowKey, today, "BLOCKER", "ODDS_API_EVENTS_UNMAPPED", null, null, ODDS_API_SOURCE_KEY, "Odds API returned events but none mapped to prepared game_pk values", { odds_api_events_seen: oddsWrite.eventRows, prepared_game_pks: gamePks });
@@ -1185,7 +1251,13 @@ async function runMarketSourceProbe(env, input = {}) {
 
   await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status='running_expanded_game_team_markets', odds_api_events_mapped=?, odds_api_game_odds_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", oddsWrite.mappedEvents || 0, oddsWrite.gameOddsRows || 0, batchId);
   await controlHeartbeat(env, requestId, runId, 'running_expanded_game_team_markets', { batch_id: batchId, odds_api_events_mapped: oddsWrite.mappedEvents || 0, odds_api_game_odds_rows: oddsWrite.gameOddsRows || 0 });
-  const expanded = odds.ok ? await probeExpandedGameTeamMarkets(env, batchId, slateWindowKey, oddsWrite.mappedEventsList || [], odds.bookmaker_targets || "") : { externalCalls: 0, expansionRows: 0, expandedGameOddsRows: 0, normalizedRows: [], marketKeys: [], byMarket: {}, expansionFailures: [], skipped: true };
+  const expanded = (odds.ok && oddsWrite.mappedEvents > 0 && hasRemainingBudget(deadlineMs, MARKET_TEAMS_EXPANDED_MIN_REMAINING_MS))
+    ? await probeExpandedGameTeamMarkets(env, batchId, slateWindowKey, oddsWrite.mappedEventsList || [], odds.bookmaker_targets || "", { deadlineMs, requestId, runId })
+    : { externalCalls: 0, expansionRows: 0, expandedGameOddsRows: 0, normalizedRows: [], marketKeys: expandedGameTeamMarketKeys(env), byMarket: {}, expansionFailures: [], skipped: true, skipped_reason: odds.ok && oddsWrite.mappedEvents > 0 ? "worker_time_budget_or_no_room_for_expanded_markets" : "no_featured_mapping_for_expanded_markets", remaining_ms: remainingBudgetMs(deadlineMs) };
+  if (expanded.skipped && expanded.skipped_reason && odds.ok && oddsWrite.mappedEvents > 0) {
+    warningCount += 1;
+    await writeIssue(env, batchId, slateWindowKey, today, "WARNING", "ODDS_API_EXPANDED_GAME_TEAM_MARKETS_SKIPPED_FOR_TIME_BUDGET", null, null, ODDS_API_SOURCE_KEY, "Expanded game/team markets were skipped or capped to keep Market Teams terminal-safe inside the full-run service-binding budget", { skipped_reason: expanded.skipped_reason, remaining_ms: expanded.remaining_ms || null, featured_game_odds_rows: oddsWrite.gameOddsRows || 0, mapped_events: oddsWrite.mappedEvents || 0 });
+  }
   externalCalls += expanded.externalCalls || 0;
   const expansionFailures = Array.isArray(expanded.expansionFailures) ? expanded.expansionFailures : [];
   for (const f of expansionFailures) {
@@ -1225,7 +1297,8 @@ async function runMarketSourceProbe(env, input = {}) {
     board_sources: { sleeper_used: false, prizepicks_used: false, parlay_api_called: false, purpose: "excluded_from_market_context_reference", reason: "Teams odds context uses strong sportsbook reference books from Odds API only; board sources are not reference books." },
     coverage,
     boundaries: { market_current_lines_writes: 0, score_board_prepared_current_mutation: false, scoring: false, ranking: false, final_board: false, matrix_builder: false },
-    external_lane_split_next: "Teams complete before separate Hitters and Pitchers external prop-line workers; no player props in this worker"
+    external_lane_split_next: "Teams complete before separate Hitters and Pitchers external prop-line workers; no player props in this worker",
+    terminal_safety: { bounded_evidence_writes_v0_1_11: true, worker_budget_ms: marketTeamsWorkerBudgetMs(env), remaining_ms_at_output: remainingBudgetMs(deadlineMs), expanded_markets_skipped: !!expanded.skipped, expanded_skipped_reason: expanded.skipped_reason || null }
   };
 
   await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_context_probe_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, slate_window_key, window_start_date, window_end_date, status, prepared_rows_read, prepared_games_checked, prepared_players_checked, prepared_prop_keys_checked, odds_api_config_present, odds_api_events_seen, odds_api_events_mapped, odds_api_game_odds_rows, parlay_inventory_rows_seen, parlay_props_mapped_to_prepared, parlay_coverage_grade, warning_count, blocker_count, certification_status, certification_grade, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
@@ -1259,6 +1332,11 @@ async function runMarketSourceProbe(env, input = {}) {
     odds_api_expanded_game_team_support_by_market: expanded.byMarket || {},
     odds_api_book_market_status_rows: normalizedMining.statusRows,
     odds_api_game_market_summary_rows: normalizedMining.summaryRows,
+    bounded_evidence_writes_v0_1_11: true,
+    worker_budget_ms: marketTeamsWorkerBudgetMs(env),
+    remaining_ms_at_output: remainingBudgetMs(deadlineMs),
+    expanded_markets_skipped: !!expanded.skipped,
+    expanded_skipped_reason: expanded.skipped_reason || null,
     parlay_inventory_rows_seen: 0,
     parlay_props_mapped_to_prepared: 0,
     parlay_source_rows_mapped_to_prepared_safe: 0,
