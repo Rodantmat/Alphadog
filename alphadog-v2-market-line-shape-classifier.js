@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-line-shape-classifier";
-const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.18-backend-timebox-normalized-cap";
+const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.19-backend-fast-terminal-market-full-safe";
 const JOB_KEY = "market-line-shape-classifier";
 const MODE_HITTER = "market_hitter_prop_line_context";
 const MODE_PITCHER = "market_pitcher_prop_line_context";
@@ -1230,6 +1230,124 @@ async function findRecoverablePlayerPropBatch(env, requestId, config, slateWindo
     LIMIT 1`, requestId, config.mode, slateWindowKey);
   return rows[0] || null;
 }
+
+async function runBackendFastTerminalPlayerPropContext(env, input, config, preparedRows, today, tomorrow, slateWindowKey, retention, requestId, runId, batchId, startedMs) {
+  const prune = await prunePlayerPropRows(env, today, tomorrow, slateWindowKey, config);
+  const gamePks = [...new Set((preparedRows || []).map(r => Number(r.official_game_pk)).filter(Number.isFinite))];
+  const playerIds = [...new Set((preparedRows || []).map(r => Number(r.resolved_mlb_player_id)).filter(Number.isFinite))];
+  const propKeys = [...new Set((preparedRows || []).map(r => String(r.canonical_prop_key || "")).filter(Boolean))];
+  const preparedCount = Array.isArray(preparedRows) ? preparedRows.length : 0;
+  const oddsApiPresent = sourceHas(env, "ODDS_API_KEY") ? 1 : 0;
+  if (!preparedCount) {
+    const blockerOutput = {
+      ok: false,
+      data_ok: false,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      request_id: requestId,
+      run_id: runId,
+      batch_id: batchId,
+      mode: config.mode,
+      prop_family: config.prop_family,
+      status: "blocked_no_prepared_safe_player_prop_rows",
+      certification: "MARKET_PLAYER_PROP_CONTEXT_NO_PREPARED_SAFE_ROWS",
+      certification_grade: "BLOCKED",
+      rows_read: 0,
+      rows_written: 1,
+      external_calls_performed: 0,
+      backend_fast_terminal_market_full_safe: true,
+      backend_fast_terminal_reason: "no_prepared_safe_rows",
+      retention,
+      prune,
+      timestamp_utc: nowUtc()
+    };
+    await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_context_probe_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, slate_window_key, window_start_date, window_end_date, status, prepared_rows_read, prepared_games_checked, prepared_players_checked, prepared_prop_keys_checked, odds_api_config_present, parlay_inventory_rows_seen, parlay_props_mapped_to_prepared, parlay_coverage_grade, warning_count, blocker_count, certification_status, certification_grade, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, runId, WORKER_NAME, VERSION, config.mode, slateWindowKey, today, tomorrow, "blocked_no_prepared_safe_player_prop_rows", 0, 0, 0, 0, oddsApiPresent, 0, 0, "NO_PREPARED_ROWS", 0, 1, "MARKET_PLAYER_PROP_CONTEXT_NO_PREPARED_SAFE_ROWS", "BLOCKED", safeJson(blockerOutput, 9000));
+    return blockerOutput;
+  }
+
+  const issueType = `${config.issue_prefix}_BACKEND_MARKET_FULL_FAST_TERMINAL_NO_LIVE_PARLAY_FETCH`;
+  const issueReason = `${config.prop_family} player-prop live vendor fetch intentionally skipped inside backend full-run service-binding path; stage is certified with warning so scoring can continue, and manual Market > ${config.prop_family === "hitter" ? "Hitters" : "Pitchers"} may be used for deeper market evidence.`;
+  const issueJson = {
+    mode: config.mode,
+    prop_family: config.prop_family,
+    backend_chain_only: input.backend_chain_only === true,
+    backend_scheduled_continuation: input.backend_scheduled_continuation === true,
+    source: input.source || null,
+    service_binding_timeout_guard: true,
+    no_live_parlay_fetch_in_backend_full_run: true,
+    force_parlay_live_fetch_available_for_manual_debug: true,
+    prepared_rows_read: preparedCount,
+    prepared_games_checked: gamePks.length,
+    prepared_players_checked: playerIds.length,
+    prepared_prop_keys_checked: propKeys.length
+  };
+  await run(env.MARKET_DB, `INSERT INTO market_context_probe_issues (issue_id, batch_id, slate_window_key, official_date, severity, issue_type, game_pk, prepared_row_id, source_key, reason, details_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, rid(`issue_${config.prop_family}_prop`), batchId, slateWindowKey, today, "WARNING", issueType, null, null, PARLAY_SOURCE_KEY, issueReason, safeJson(issueJson, 4000));
+
+  const warningCount = 1;
+  const blockerCount = 0;
+  const coverageGrade = "BACKEND_FAST_TERMINAL_MARKET_PROP_CONTEXT_WARNING_ONLY";
+  const certification = "MARKET_PLAYER_PROP_CONTEXT_EVIDENCE_WRITTEN";
+  const certificationGrade = "PASS_WITH_WARNINGS";
+  const status = "completed_player_prop_context_backend_fast_terminal_warning_only";
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    request_id: requestId,
+    run_id: runId,
+    batch_id: batchId,
+    mode: config.mode,
+    prop_family: config.prop_family,
+    status,
+    certification,
+    certification_grade: certificationGrade,
+    rows_read: preparedCount,
+    rows_written: 2,
+    external_calls_performed: 0,
+    prepared_rows_read: preparedCount,
+    prepared_games_checked: gamePks.length,
+    prepared_players_checked: playerIds.length,
+    prepared_prop_keys_checked: propKeys.length,
+    parlay_inventory_rows_seen: 0,
+    parlay_props_mapped_to_prepared: 0,
+    persisted_player_prop_rows: 0,
+    normalized_player_prop_rows_used_for_mapping: 0,
+    normalized_player_prop_rows_seen_before_backend_cap: 0,
+    normalized_rows_truncated_for_backend_timebox: false,
+    backend_fetch_budget_ms: 0,
+    backend_fetch_timeout_ms: 0,
+    backend_fast_terminal_market_full_safe: true,
+    backend_fast_terminal_reason: "market_full_run_service_binding_timeout_guard_no_live_vendor_fetch",
+    live_parlay_fetch_allowed: false,
+    market_context_warning_only_stage: true,
+    coverage_write_skipped_for_backend_fast_terminal: true,
+    issue_type: issueType,
+    parlay_coverage_grade: coverageGrade,
+    warning_count: warningCount,
+    blocker_count: blockerCount,
+    retention,
+    prune,
+    boundaries: {
+      no_teams_game_odds: true,
+      opposite_prop_family_not_in_this_run: true,
+      no_market_current_lines: true,
+      no_prepared_board_mutation: true,
+      no_score_db_mutation: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_matrix: true,
+      no_final_board: true,
+      no_old_production_touch: true
+    },
+    elapsed_ms: Date.now() - startedMs,
+    timestamp_utc: nowUtc()
+  };
+  await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_context_probe_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, slate_window_key, window_start_date, window_end_date, status, prepared_rows_read, prepared_games_checked, prepared_players_checked, prepared_prop_keys_checked, odds_api_config_present, odds_api_events_seen, odds_api_events_mapped, odds_api_game_odds_rows, parlay_inventory_rows_seen, parlay_props_mapped_to_prepared, parlay_coverage_grade, warning_count, blocker_count, certification_status, certification_grade, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, runId, WORKER_NAME, VERSION, config.mode, slateWindowKey, today, tomorrow, status, preparedCount, gamePks.length, playerIds.length, propKeys.length, oddsApiPresent, 0, 0, 0, 0, 0, coverageGrade, warningCount, blockerCount, certification, certificationGrade, safeJson(output, 9000));
+  return output;
+}
 async function finalizePlayerPropBatchFromEvidence(env, input, config, batch, preparedRows, today, tomorrow, slateWindowKey, retention, prune, reason = "evidence_finalizer") {
   if (!batch || !batch.batch_id) return null;
   const batchId = batch.batch_id;
@@ -1278,6 +1396,10 @@ async function runPlayerPropContext(env, input = {}) {
   if (missingDb.length) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, run_id: runId, mode: config.mode, status: "blocked_missing_db_bindings", certification: `MARKET_${config.issue_prefix}_CONTEXT_BLOCKED_MISSING_DB_BINDINGS`, certification_grade: "BLOCKED", missing_db_bindings: missingDb, rows_read: 0, rows_written: 0, external_calls_performed: 0, retention, timestamp_utc: nowUtc() };
   await ensureSchema(env);
   const preparedRows = await loadPreparedRows(env, today, tomorrow, config);
+  const backendSequence = isBackendMarketSequence(input);
+  if (backendSequence && input.force_parlay_live_fetch !== true && input.allow_parlay_live_fetch !== true && String(input.parlay_live_fetch || "").toLowerCase() !== "true" && input.full_market_prop_evidence_scan !== true) {
+    return await runBackendFastTerminalPlayerPropContext(env, input, config, preparedRows, today, tomorrow, slateWindowKey, retention, requestId, runId, batchId, startedMs);
+  }
   const existingRunningBatch = await findRecoverablePlayerPropBatch(env, requestId, config, slateWindowKey);
   if (existingRunningBatch) {
     const recovered = await finalizePlayerPropBatchFromEvidence(env, input, config, existingRunningBatch, preparedRows, today, tomorrow, slateWindowKey, retention, { skipped_current_window_prune_for_existing_running_batch: true }, "resume_existing_running_batch_with_written_evidence");
@@ -1315,7 +1437,6 @@ async function runPlayerPropContext(env, input = {}) {
     }
   }
   const externalCalls = parlay.external_calls || 0;
-  const backendSequence = isBackendMarketSequence(input);
   let normalizedRowsForMapping = parlay.normalized || [];
   let normalizedRowsTruncatedForBackendTimebox = false;
   const normalizedRowsSeenBeforeBackendCap = normalizedRowsForMapping.length;
