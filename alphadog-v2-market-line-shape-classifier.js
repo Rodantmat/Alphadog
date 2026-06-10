@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-market-line-shape-classifier";
-const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.19-backend-fast-terminal-market-full-safe";
+const VERSION = "alphadog-v2-market-line-shape-classifier-v0.2.20-backend-chain-nested-input-gate-fix";
 const JOB_KEY = "market-line-shape-classifier";
 const MODE_HITTER = "market_hitter_prop_line_context";
 const MODE_PITCHER = "market_pitcher_prop_line_context";
@@ -306,14 +306,43 @@ function americanToDecimal(american) {
   if (n === null || n === 0) return null;
   return n > 0 ? Number((1 + n / 100).toFixed(4)) : Number((1 + 100 / Math.abs(n)).toFixed(4));
 }
-function shouldAttemptLiveParlayFetch(input = {}) {
-  const backendChain = input && (input.backend_chain_only === true || input.backend_scheduled_continuation === true || input.source === "market_scoring_full_run_parent");
-  const forcedLive = input && (input.force_parlay_live_fetch === true || input.allow_parlay_live_fetch === true || String(input.parlay_live_fetch || "").toLowerCase() === "true");
-  if (backendChain && !forcedLive) return false;
-  return PARLAY_BACKEND_CHAIN_LIVE_FETCH_DEFAULT || !backendChain || forcedLive;
+function nestedInputJson(input = {}) {
+  const nested = input && input.input_json;
+  if (nested && typeof nested === "object" && !Array.isArray(nested)) return nested;
+  if (typeof nested === "string") {
+    try {
+      const parsed = JSON.parse(nested);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+    } catch (_) {}
+  }
+  return {};
+}
+function inputValue(input = {}, key) {
+  if (input && Object.prototype.hasOwnProperty.call(input, key)) return input[key];
+  const nested = nestedInputJson(input);
+  return nested ? nested[key] : undefined;
+}
+function inputFlag(input = {}, key) {
+  const value = inputValue(input, key);
+  if (value === true || value === 1) return true;
+  if (typeof value === "string") return value.toLowerCase() === "true" || value === "1";
+  return false;
 }
 function isBackendMarketSequence(input = {}) {
-  return !!(input && (input.backend_chain_only === true || input.backend_scheduled_continuation === true || input.source === "market_scoring_full_run_parent" || input.parent_request_id));
+  const source = String(inputValue(input, "source") || "");
+  const parentRequestId = inputValue(input, "parent_request_id") || inputValue(input, "parentRequestId");
+  return !!(input && (
+    inputFlag(input, "backend_chain_only") ||
+    inputFlag(input, "backend_scheduled_continuation") ||
+    source === "market_scoring_full_run_parent" ||
+    !!parentRequestId
+  ));
+}
+function shouldAttemptLiveParlayFetch(input = {}) {
+  const backendChain = isBackendMarketSequence(input);
+  const forcedLive = inputFlag(input, "force_parlay_live_fetch") || inputFlag(input, "allow_parlay_live_fetch") || inputFlag(input, "parlay_live_fetch") || inputFlag(input, "full_market_prop_evidence_scan");
+  if (backendChain && !forcedLive) return false;
+  return PARLAY_BACKEND_CHAIN_LIVE_FETCH_DEFAULT || !backendChain || forcedLive;
 }
 function marketFullSoftDeadlineExceeded(startedMs, reserveMs = 0) {
   return Date.now() - Number(startedMs || Date.now()) >= Math.max(1000, MARKET_FULL_WORKER_SOFT_DEADLINE_MS - Number(reserveMs || 0));
@@ -1233,6 +1262,18 @@ async function findRecoverablePlayerPropBatch(env, requestId, config, slateWindo
 
 async function runBackendFastTerminalPlayerPropContext(env, input, config, preparedRows, today, tomorrow, slateWindowKey, retention, requestId, runId, batchId, startedMs) {
   const prune = await prunePlayerPropRows(env, today, tomorrow, slateWindowKey, config);
+  await run(env.MARKET_DB,
+    `UPDATE market_context_probe_batches
+        SET status='replaced_stale_running_by_backend_fast_terminal',
+            certification_status='REPLACED_STALE_RUNNING_BY_BACKEND_FAST_TERMINAL',
+            certification_grade='REPLACED_BY_RETRY',
+            updated_at=CURRENT_TIMESTAMP
+      WHERE mode=?
+        AND slate_window_key=?
+        AND status LIKE 'running_%'
+        AND request_id<>?`,
+    config.mode, slateWindowKey, requestId
+  );
   const gamePks = [...new Set((preparedRows || []).map(r => Number(r.official_game_pk)).filter(Number.isFinite))];
   const playerIds = [...new Set((preparedRows || []).map(r => Number(r.resolved_mlb_player_id)).filter(Number.isFinite))];
   const propKeys = [...new Set((preparedRows || []).map(r => String(r.canonical_prop_key || "")).filter(Boolean))];
@@ -1271,9 +1312,9 @@ async function runBackendFastTerminalPlayerPropContext(env, input, config, prepa
   const issueJson = {
     mode: config.mode,
     prop_family: config.prop_family,
-    backend_chain_only: input.backend_chain_only === true,
-    backend_scheduled_continuation: input.backend_scheduled_continuation === true,
-    source: input.source || null,
+    backend_chain_only: inputFlag(input, "backend_chain_only"),
+    backend_scheduled_continuation: inputFlag(input, "backend_scheduled_continuation"),
+    source: inputValue(input, "source") || null,
     service_binding_timeout_guard: true,
     no_live_parlay_fetch_in_backend_full_run: true,
     force_parlay_live_fetch_available_for_manual_debug: true,
@@ -1321,6 +1362,8 @@ async function runBackendFastTerminalPlayerPropContext(env, input, config, prepa
     backend_fetch_timeout_ms: 0,
     backend_fast_terminal_market_full_safe: true,
     backend_fast_terminal_reason: "market_full_run_service_binding_timeout_guard_no_live_vendor_fetch",
+    backend_chain_nested_input_gate_fix: true,
+    backend_chain_detected: isBackendMarketSequence(input),
     live_parlay_fetch_allowed: false,
     market_context_warning_only_stage: true,
     coverage_write_skipped_for_backend_fast_terminal: true,
@@ -1425,7 +1468,7 @@ async function runPlayerPropContext(env, input = {}) {
   }
 
   const liveParlayFetchAllowed = shouldAttemptLiveParlayFetch(input);
-  await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status=?, certification_status=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", `running_${config.prop_family}_parlay_prop_fetch`, `MARKET_${config.issue_prefix}_CONTEXT_RUNNING_PARLAY_FETCH`, safeJson({ retention, request_id: requestId, run_id: runId, prop_family: config.prop_family, phase: "parlay_fetch_gate", live_parlay_fetch_allowed: liveParlayFetchAllowed, backend_chain_only: input.backend_chain_only === true, backend_scheduled_continuation: input.backend_scheduled_continuation === true }, 4000), batchId);
+  await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status=?, certification_status=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", `running_${config.prop_family}_parlay_prop_fetch`, `MARKET_${config.issue_prefix}_CONTEXT_RUNNING_PARLAY_FETCH`, safeJson({ retention, request_id: requestId, run_id: runId, prop_family: config.prop_family, phase: "parlay_fetch_gate", live_parlay_fetch_allowed: liveParlayFetchAllowed, backend_chain_only: inputFlag(input, "backend_chain_only"), backend_scheduled_continuation: input.backend_scheduled_continuation === true }, 4000), batchId);
   let parlay;
   if (!liveParlayFetchAllowed) {
     parlay = syntheticParlaySkippedForBackendChain(input, config);

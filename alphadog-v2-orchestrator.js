@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.218-atomic-dispatch-claim-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.219-market-prop-backend-flag-forwarder";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -3694,10 +3694,24 @@ async function processMarketHitterPropContextJob(env, row, runId, trigger) {
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
+    parent_chain_id: rowInput.parent_chain_id || rowInput.parentChainId || row.chain_id || null,
+    parent_request_id: rowInput.parent_request_id || rowInput.parentRequestId || row.parent_request_id || null,
     run_id: runId,
     job_key: row.job_key,
     worker_name: row.worker_name,
     trigger,
+    source: rowInput.source || "orchestrator_exact_market_line_shape_dispatch",
+    visible_button: rowInput.visible_button || (isPitcherMode ? "MARKET > Pitchers" : "MARKET > Hitters"),
+    stage_key: rowInput.stage_key || (isPitcherMode ? "market_context_pitchers" : "market_context_hitters"),
+    stage_index: rowInput.stage_index ?? null,
+    stage_count: rowInput.stage_count ?? null,
+    retry_count: rowInput.retry_count ?? 0,
+    approved_chain_order: rowInput.approved_chain_order || null,
+    stop_on_first_failed_stage: rowInput.stop_on_first_failed_stage === true,
+    backend_chain_only: rowInput.backend_chain_only === true,
+    no_browser_loop: rowInput.no_browser_loop === true,
+    backend_scheduled_continuation: rowInput.backend_scheduled_continuation === true,
+    no_generic_dispatch: rowInput.no_generic_dispatch === true,
     mode: selectedMode,
     input_json: rowInput,
     exact_worker_only: true,
@@ -3712,12 +3726,17 @@ async function processMarketHitterPropContextJob(env, row, runId, trigger) {
     evidence_tables_only: true,
     no_market_current_lines_writes: true,
     no_prepared_board_mutation: true,
+    no_source_board_mutation: rowInput.no_source_board_mutation === true,
     no_score_db_mutation: true,
     no_scoring: true,
     no_ranking: true,
     no_final_board: true,
     no_matrix_builder: true,
-    no_old_production_touch: true
+    no_old_production_touch: true,
+    force_parlay_live_fetch: rowInput.force_parlay_live_fetch === true,
+    allow_parlay_live_fetch: rowInput.allow_parlay_live_fetch === true,
+    parlay_live_fetch: rowInput.parlay_live_fetch === true || String(rowInput.parlay_live_fetch || "").toLowerCase() === "true",
+    full_market_prop_evidence_scan: rowInput.full_market_prop_evidence_scan === true
   };
   const started = Date.now();
   let output;
@@ -3740,7 +3759,7 @@ async function processMarketHitterPropContextJob(env, row, runId, trigger) {
   const runStatus = ok ? "completed" : "failed";
   const errorCode = ok ? null : `market_${propFamily}_prop_context_worker_failed`;
   const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || `Market ${propFamily} Prop Context worker failed`).slice(0,900);
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, selected_worker_slot:"alphadog-v2-market-line-shape-classifier", player_props_mode_specific_only:true, prop_family:propFamily, no_teams_game_odds:true, opposite_prop_family_not_in_this_run:true, today_tomorrow_retention_only:true, no_market_current_lines_writes:true, no_prepared_board_mutation:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_final_board_write:true, no_matrix_builder:true, no_old_production_touch:true } };
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, selected_worker_slot:"alphadog-v2-market-line-shape-classifier", market_prop_backend_flags_forwarded:true, player_props_mode_specific_only:true, prop_family:propFamily, no_teams_game_odds:true, opposite_prop_family_not_in_this_run:true, today_tomorrow_retention_only:true, no_market_current_lines_writes:true, no_prepared_board_mutation:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_final_board_write:true, no_matrix_builder:true, no_old_production_touch:true } };
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
   await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'market_player_prop_context_dispatch_completed', 'Orchestrator completed exact Market Player Prop Context dispatch', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, dispatch: cappedOutput.orchestrator_dispatch }));
