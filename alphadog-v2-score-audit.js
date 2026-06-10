@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.22-hp-first-timeout-safe-continuation";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.23-score-sharpen-hp-tiebreak";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -605,7 +605,7 @@ function sqlCaseFromMap(expression, map, fallback) {
 
 function simulationFormulaMetadata() {
   return {
-    formula_key: "SCORING_SIMULATION_V0_3_7_LIVE_PLAYABLE_MARKET_CONTEXT_GATE",
+    formula_key: "SCORING_SIMULATION_V0_4_23_SCORE_SHARPEN_HP_TIEBREAK",
     worker_version: VERSION,
     simulation_only: true,
     active_values_source: "SCORE_DB.scoring_engine_simulation_profile_configs.config_json",
@@ -940,7 +940,7 @@ async function profileConstants(env, profileKey) {
     LIMIT 1
   `, profileKey);
   if (!row) throw new Error(`missing_active_simulation_profile_config:${profileKey}`);
-  const cfg = JSON.parse(row.config_json || "{}");
+  const cfg = applyScoreSharpeningConfig(JSON.parse(row.config_json || "{}"));
   const metadata = JSON.parse(row.formula_metadata_json || "{}");
   return {
     profileKey,
@@ -1038,6 +1038,156 @@ function adjustment(map, key, fallback = 0) {
   if (Object.prototype.hasOwnProperty.call(m, key == null ? '__null__' : String(key))) return finiteNumber(m[key == null ? '__null__' : String(key)], fallback);
   if (Object.prototype.hasOwnProperty.call(m, 'default')) return finiteNumber(m.default, fallback);
   return fallback;
+}
+
+function mergeConfigMap(base, patch) {
+  return { ...(base || {}), ...(patch || {}) };
+}
+
+function applyScoreSharpeningConfig(rawCfg) {
+  const cfg = { ...(rawCfg || {}) };
+  // Runtime sharpen overlay: preserve DB-config architecture, but prevent broad warning/partial-context drag
+  // from compressing valid, fully factor-covered rows into the 30s/40s after the HP-first board repair.
+  // This does not lower HP gates and does not turn HP into score; it only restores score headroom.
+  cfg.score_sharpening_overlay = 'v0.4.23-score-headroom-warning-drag-rebalance';
+  cfg.base_raw_packet_ready = Math.max(finiteNumber(cfg.base_raw_packet_ready, 82), 84);
+  cfg.base_raw_packet_partial = Math.max(finiteNumber(cfg.base_raw_packet_partial, 76), 80);
+  cfg.market_raw_adjustments = mergeConfigMap(cfg.market_raw_adjustments, {
+    market_prop_context_present: 4,
+    market_prop_context_not_found: -1,
+    market_prop_context_missing: -2,
+    default: 0
+  });
+  cfg.market_direct_evidence_raw_adjustments = mergeConfigMap(cfg.market_direct_evidence_raw_adjustments, {
+    direct_prop_evidence_rows_gte_5: 3,
+    direct_prop_evidence_rows_2_to_4: 2,
+    direct_prop_evidence_rows_1: 1,
+    direct_prop_evidence_rows_0_with_coverage: 0,
+    direct_prop_evidence_rows_0_no_coverage: -1,
+    default: 0
+  });
+  cfg.market_evidence_score_caps = mergeConfigMap(cfg.market_evidence_score_caps, {
+    direct_prop_evidence_rows_gte_5: 99,
+    direct_prop_evidence_rows_2_to_4: 96,
+    direct_prop_evidence_rows_1: 92,
+    direct_prop_evidence_rows_0_with_coverage: 88,
+    direct_prop_evidence_rows_0_no_coverage: 84,
+    default: 94
+  });
+  cfg.context_score_caps = mergeConfigMap(cfg.context_score_caps, {
+    matrix_full_context: 100,
+    matrix_partial_context_warning_0_2: 98,
+    matrix_partial_context_warning_3_5: 96,
+    matrix_partial_context_warning_6_8: 94,
+    matrix_partial_context_warning_9_plus: 90
+  });
+  cfg.effective_warning_rules = mergeConfigMap(cfg.effective_warning_rules, {
+    enabled: true,
+    soft_partial_context_effective_warning_count: 3,
+    soft_partial_context_requires_blocker_count_lte: 0,
+    soft_partial_context_requires_direct_prop_evidence_rows_gte: 0,
+    soft_partial_context_factor_statuses: ['packet_partial', 'packet_ready'],
+    soft_partial_context_daily_statuses: ['missing_current_readiness', 'partial_enrichment', 'ready_with_warnings', 'ready'],
+    soft_partial_context_market_prop_statuses: ['market_prop_context_present', 'market_prop_context_not_found', 'market_prop_context_missing']
+  });
+  cfg.daily_raw_adjustments = mergeConfigMap(cfg.daily_raw_adjustments, {
+    ready: 2,
+    ready_with_warnings: 2,
+    partial_enrichment: -1,
+    missing_current_readiness: -1,
+    default: 1
+  });
+  cfg.source_raw_adjustments = mergeConfigMap(cfg.source_raw_adjustments, { sleeper: 0, prizepicks: 0, default: 0 });
+  cfg.odds_raw_adjustments = mergeConfigMap(cfg.odds_raw_adjustments, { standard: 0, goblin: -1, demon: -3, default: 0 });
+  cfg.prop_raw_adjustments = mergeConfigMap(cfg.prop_raw_adjustments, {
+    hits: 4,
+    total_bases: 2,
+    hits_runs_rbis: 2,
+    singles: 2,
+    doubles: 0,
+    rbis: 1,
+    runs: 1,
+    walks: 0,
+    home_runs: -2,
+    stolen_bases: -2,
+    pitcher_strikeouts: 4,
+    hits_allowed: 3,
+    walks_allowed: 2,
+    earned_runs: 2,
+    earned_runs_allowed: 2,
+    pitcher_outs: 3,
+    pitching_outs: 3,
+    default: 0
+  });
+  cfg.prop_less_raw_adjustments = mergeConfigMap(cfg.prop_less_raw_adjustments, {
+    hits: 1,
+    total_bases: 3,
+    hits_runs_rbis: 3,
+    singles: 2,
+    doubles: 3,
+    rbis: 3,
+    runs: 2,
+    walks: 2,
+    home_runs: 4,
+    stolen_bases: 4,
+    pitcher_strikeouts: -1,
+    hits_allowed: -1,
+    walks_allowed: -1,
+    earned_runs: -1,
+    earned_runs_allowed: -1,
+    pitcher_outs: -1,
+    pitching_outs: -1,
+    default: 0
+  });
+  cfg.score_penalty_market_not_found = Math.min(finiteNumber(cfg.score_penalty_market_not_found, 4), 2);
+  cfg.score_penalty_market_missing = Math.min(finiteNumber(cfg.score_penalty_market_missing, 6), 3);
+  cfg.score_penalty_complete_market_blindness = Math.min(finiteNumber(cfg.score_penalty_complete_market_blindness, 10), 6);
+  cfg.score_penalty_packet_partial = Math.min(finiteNumber(cfg.score_penalty_packet_partial, 3), 1);
+  cfg.score_penalty_partial_enrichment = Math.min(finiteNumber(cfg.score_penalty_partial_enrichment, 4), 1);
+  cfg.confidence_cap_market_not_found = Math.max(finiteNumber(cfg.confidence_cap_market_not_found, 65), 74);
+  cfg.confidence_cap_market_missing = Math.max(finiteNumber(cfg.confidence_cap_market_missing, 54), 68);
+  cfg.confidence_cap_complete_market_blindness = Math.max(finiteNumber(cfg.confidence_cap_complete_market_blindness, 45), 62);
+  cfg.confidence_cap_warning_9_plus = Math.max(finiteNumber(cfg.confidence_cap_warning_9_plus, 50), 70);
+  cfg.confidence_penalty_packet_partial = Math.min(finiteNumber(cfg.confidence_penalty_packet_partial, 10), 5);
+  cfg.confidence_penalty_partial_enrichment = Math.min(finiteNumber(cfg.confidence_penalty_partial_enrichment, 15), 6);
+  cfg.confidence_penalty_warning_6_8 = Math.min(finiteNumber(cfg.confidence_penalty_warning_6_8, 8), 4);
+  cfg.confidence_penalty_warning_3_5 = Math.min(finiteNumber(cfg.confidence_penalty_warning_3_5, 4), 2);
+  cfg.confidence_penalty_warning_9_plus = Math.min(finiteNumber(cfg.confidence_penalty_warning_9_plus, 20), 8);
+  cfg.source_payout_fairness = mergeConfigMap(cfg.source_payout_fairness, {
+    enabled: true,
+    prizepicks_standard_adjustment: 10,
+    prizepicks_standard_cap: 90,
+    prizepicks_goblin_adjustment: 12,
+    prizepicks_goblin_cap: 88,
+    prizepicks_demon_adjustment: 8,
+    prizepicks_demon_cap: 84,
+    prizepicks_low_line_temper_adjustment: 8,
+    prizepicks_low_line_temper_cap: 86
+  });
+  return cfg;
+}
+
+function hpStableTieHash(row) {
+  const player = Number(row && row.mlb_player_id || 0);
+  const game = Number(row && row.game_pk || 0);
+  const line = Math.trunc((Number(row && row.line_value || 0) || 0) * 100);
+  const prop = String(row && row.canonical_prop_key || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return Math.abs((player * 31 + game * 17 + line * 13 + prop * 7) % 997) / 997.0;
+}
+
+function hpBoardTieBreakAdjustment(row) {
+  const conf = Math.min(100, Math.max(0, hpNum(row && row.probability_confidence_0_100, 0))) / 100;
+  const sample = Math.min(40, Math.max(0, hpNum(row && (row.non_push_sample != null ? row.non_push_sample : row.sample_size), 0))) / 40;
+  const reliability = Math.min(1, Math.max(0, hpNum(row && row.reliability_0_1, 0)));
+  const pushRisk = Math.min(1, Math.max(0, hpNum(row && row.push_risk_0_1, 0)));
+  const source = String(row && row.source_key || '').toLowerCase();
+  const prop = String(row && row.canonical_prop_key || '').toLowerCase();
+  const sourceLine = String(row && row.source_line_id || '').toLowerCase();
+  const variant = sourceLine.includes('|demon|') ? 'demon' : (sourceLine.includes('|goblin|') ? 'goblin' : 'regular');
+  const sourceAdj = source === 'prizepicks' ? 0.018 : (source === 'sleeper' ? 0.014 : 0);
+  const variantAdj = variant === 'regular' ? 0.014 : (variant === 'goblin' ? 0.010 : 0.006);
+  const propAdj = ['hits','total_bases','hits_runs_rbis','pitcher_strikeouts','hits_allowed'].includes(prop) ? 0.010 : 0;
+  return (conf * 0.035) + (sample * 0.025) + (reliability * 0.020) - (pushRisk * 0.030) + sourceAdj + variantAdj + propAdj + (hpStableTieHash(row) * 0.009);
 }
 
 function directEvidenceInfo(details) {
@@ -1405,6 +1555,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     true_probability_enabled: 0,
     no_true_hit_probability_claims: 1,
     score_sort_policy: 'score_sort_0_100_only; positive_micro_lt_0_0001; never used for archive/live/bins',
+    score_sharpening_overlay: cfg.score_sharpening_overlay || null,
     effective_market_prop_context_status: effectiveMarketPropContextStatus,
     direct_prop_evidence_row_count: evidenceInfo.rowCount,
     direct_prop_evidence_bucket: evidenceInfo.bucket,
@@ -2884,7 +3035,7 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.22-hp-first-timeout-safe-continuation-board";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.23-score-sharpen-hp-tiebreak-board";
 const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_1_6_STOLEN_BASES_ROUTE_LOCK";
 const HP_MAX_ROWS_PER_RUN = 12000;
 const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 180;
@@ -3422,7 +3573,7 @@ async function runHpBoardCurrent(env, input = {}){
       ...r,
       hp_lane: lane,
       lane_reason: hpBoardLaneReason(lane),
-      hp_sort_0_100: hpRound((0.72 * hp) + (0.28 * score), 3),
+      hp_sort_0_100: hpRound((0.72 * hp) + (0.28 * score) + hpBoardTieBreakAdjustment(r), 6),
       hp_primary_playable: primary ? 1 : 0,
       hp_review_playable: review ? 1 : 0,
       hp_fade_flag: hp < 60 ? 1 : 0,
@@ -3569,7 +3720,8 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
     calibration_type:'hp_first_trust_score_fast_terminal',
     hp_reality_gate:'hp_under_60_killed_not_playable',
     score_meaning:'system_trust_support_quality_preserved_from_scoring_engine',
-    board_sort_formula:'0.72*hit_probability + 0.28*score',
+    board_sort_formula:'0.72*hit_probability + 0.28*score + deterministic_factor_tiebreak_lt_0.15',
+    hp_board_tiebreak_phase:'v0.4.23 post-HP deterministic factor/source/sample/reliability tiebreak; display HP preserved',
     score_is_not_translated_from_hp:true,
     caps_do_not_mutate_score:true,
     true_calibration_blocked_reason:'No settled outcome/backtest/settlement table exists in SCORE_DB.',
@@ -3610,7 +3762,19 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
         SELECT c.*,
           COALESCE(c.estimated_hit_probability_0_100,0) AS hp,
           COALESCE(c.score_0_100,0) AS score,
-          ROUND((0.72 * COALESCE(c.estimated_hit_probability_0_100,0)) + (0.28 * COALESCE(c.score_0_100,0)), 3) AS hp_sort_0_100,
+          ROUND(
+            (0.72 * COALESCE(c.estimated_hit_probability_0_100,0))
+            + (0.28 * COALESCE(c.score_0_100,0))
+            + (0.035 * (MIN(100, MAX(0, COALESCE(c.probability_confidence_0_100,0))) / 100.0))
+            + (0.025 * (MIN(40, MAX(0, COALESCE(c.non_push_sample, c.sample_size,0))) / 40.0))
+            + (0.020 * MIN(1, MAX(0, COALESCE(c.reliability_0_1,0))))
+            - (0.030 * MIN(1, MAX(0, COALESCE(c.push_risk_0_1,0))))
+            + CASE COALESCE(c.source_key,'') WHEN 'prizepicks' THEN 0.018 WHEN 'sleeper' THEN 0.014 ELSE 0 END
+            + CASE WHEN COALESCE(c.source_line_id,'') LIKE '%|demon|%' THEN 0.006 WHEN COALESCE(c.source_line_id,'') LIKE '%|goblin|%' THEN 0.010 ELSE 0.014 END
+            + CASE WHEN COALESCE(c.canonical_prop_key,'') IN ('hits','total_bases','hits_runs_rbis','pitcher_strikeouts','hits_allowed') THEN 0.010 ELSE 0 END
+            + ((ABS((COALESCE(c.mlb_player_id,0) * 31) + (COALESCE(c.game_pk,0) * 17) + (CAST(COALESCE(c.line_value,0) * 100 AS INTEGER) * 13)) % 997) / 997.0) * 0.009),
+            6
+          ) AS hp_sort_0_100,
           CASE
             WHEN COALESCE(c.score_0_100,0) >= 92 THEN 'BIN_ELITE'
             WHEN COALESCE(c.score_0_100,0) >= 82 THEN 'BIN_STRONG'

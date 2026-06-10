@@ -1,13 +1,13 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-main-ui-v0.1.2-moon-habanero";
+const VERSION = "alphadog-v2-main-ui-v0.1.3-source-filter-app-type-label";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
 
-const UI_VERSION_LABEL = "v0.1.2 - Moon Habanero";
+const UI_VERSION_LABEL = "v0.1.3 - Source Filter + App Type Label";
 
 const DOCUMENTED_PROP_OPTIONS = [
   { prop_family: "hitter", canonical_prop_key: "hits", label: "Hits" },
@@ -145,18 +145,40 @@ function clampLimit(value) {
 
 function normalizeLineType(row) {
   const source = String(row.source_key || "").toLowerCase();
-  const odds = String(row.odds_type || row.payout_variant || "").toLowerCase();
+  const payout = String(row.payout_variant || "").toLowerCase();
+  const odds = String(row.odds_type || "").toLowerCase();
   const sideMode = String(row.side_mode || "").toLowerCase();
+  const isGoblin = Number(row.is_goblin || 0) === 1;
+  const isDemon = Number(row.is_demon || 0) === 1;
+  const isStandard = Number(row.is_standard || 0) === 1;
   if (source === "prizepicks") {
-    if (odds === "goblin") return "goblin";
-    if (odds === "demon") return "demon";
+    // PrizePicks source_line_type is often the generic text "Single Stat".
+    // The real board type is payout_variant / prepared flags. Prefer those before odds_type.
+    if (payout === "demon" || isDemon) return "demon";
+    if (payout === "goblin" || isGoblin) return "goblin";
+    if (payout === "standard" || odds === "standard" || isStandard) return "regular";
     return "regular";
   }
   if (source === "sleeper") {
-    if (sideMode === "more_only" || odds === "more_only") return "more_only";
+    if (sideMode === "more_only" || odds === "more_only" || payout === "more_only") return "more_only";
     return "regular";
   }
-  return odds || sideMode || "regular";
+  return payout || odds || sideMode || "regular";
+}
+
+function displaySourceLabel(sourceKey) {
+  const source = String(sourceKey || "").toLowerCase();
+  if (source === "prizepicks") return "PrizePicks";
+  if (source === "sleeper") return "Sleeper";
+  return String(sourceKey || "Unknown").replace(/_/g, " ").replace(/\w/g, c => c.toUpperCase());
+}
+
+function displayLineTypeLabel(row) {
+  const lineType = typeof row === "string" ? row : normalizeLineType(row || {});
+  if (lineType === "goblin") return "Goblin";
+  if (lineType === "demon") return "Demon";
+  if (lineType === "more_only") return "More Only";
+  return "Regular";
 }
 
 function displayPropLabel(key) {
@@ -191,6 +213,7 @@ function rowToApi(row) {
     source_engine_batch_id: row.source_engine_batch_id,
     rank_order: row.rank_order,
     source_key: row.source_key,
+    source_display_label: displaySourceLabel(row.source_key),
     game_pk: row.game_pk,
     official_date: row.official_date,
     official_game_time_utc: row.official_game_time_utc,
@@ -212,6 +235,8 @@ function rowToApi(row) {
     odds_type: row.odds_type,
     payout_variant: row.payout_variant,
     line_type: lineType,
+    line_type_label: displayLineTypeLabel(lineType),
+    app_line_label: `${displaySourceLabel(row.source_key)} • ${displayLineTypeLabel(lineType)}`,
     source_line_type: row.source_line_type,
     projection_type: row.projection_type,
     is_goblin: Number(row.is_goblin || 0),
@@ -270,9 +295,9 @@ function buildCurrentSql(url) {
   if (lineTypes.length) {
     const clauses = [];
     for (const lt of lineTypes.map(v => v.toLowerCase())) {
-      if (lt === "regular" || lt === "standard") clauses.push("(odds_type = 'standard' OR payout_variant = 'standard' OR json_extract(matrix_payload_json_snapshot, '$.prepared.is_standard') = 1)");
-      else if (lt === "goblin") clauses.push("(odds_type = 'goblin' OR payout_variant = 'goblin' OR json_extract(matrix_payload_json_snapshot, '$.prepared.is_goblin') = 1)");
-      else if (lt === "demon") clauses.push("(odds_type = 'demon' OR payout_variant = 'demon' OR json_extract(matrix_payload_json_snapshot, '$.prepared.is_demon') = 1)");
+      if (lt === "regular" || lt === "standard") clauses.push("((source_key = 'prizepicks' AND COALESCE(payout_variant, 'standard') NOT IN ('goblin','demon') AND COALESCE(json_extract(matrix_payload_json_snapshot, '$.prepared.is_goblin'),0) <> 1 AND COALESCE(json_extract(matrix_payload_json_snapshot, '$.prepared.is_demon'),0) <> 1) OR (source_key <> 'prizepicks' AND COALESCE(side_mode,'two_sided') <> 'more_only'))");
+      else if (lt === "goblin") clauses.push("(source_key = 'prizepicks' AND (payout_variant = 'goblin' OR json_extract(matrix_payload_json_snapshot, '$.prepared.is_goblin') = 1))");
+      else if (lt === "demon") clauses.push("(source_key = 'prizepicks' AND (payout_variant = 'demon' OR json_extract(matrix_payload_json_snapshot, '$.prepared.is_demon') = 1))");
       else if (lt === "more_only") clauses.push("side_mode = 'more_only'");
     }
     if (clauses.length) where.push(`(${clauses.join(" OR ")})`);
@@ -453,6 +478,8 @@ async function apiFilters(env) {
     if (!sourceMap.has(sourceId)) sourceMap.set(sourceId, {
       source_key: source,
       line_type: lineType,
+    line_type_label: displayLineTypeLabel(lineType),
+    app_line_label: `${displaySourceLabel(row.source_key)} • ${displayLineTypeLabel(lineType)}`,
       odds_type: row.odds_type,
       payout_variant: row.payout_variant,
       side_mode: row.side_mode,
@@ -601,12 +628,14 @@ const MAIN_HTML = `<!doctype html>
 </div>
 <script>
 (()=>{
-const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.1.2 - Moon Habanero';let rows=[],filters=null,health=null;
+const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.1.3 - Source Filter + App Type Label';let rows=[],filters=null,health=null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0)+'%':'—'}
 function num(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0):'—'}
 function cap(s){return String(s||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}
 function lineLabel(t){return t==='goblin'?'Goblin':t==='demon'?'Demon':t==='more_only'?'More Only':'Regular'}
+function appLabel(s){s=String(s||'').toLowerCase();return s==='prizepicks'?'PrizePicks':s==='sleeper'?'Sleeper':cap(s||'Unknown')}
+function appTypeLabel(r){return (r.app_line_label||appLabel(r.source_key)+' • '+lineLabel(r.line_type||'regular'))}
 function fmtDate(s){if(!s)return '';try{const d=new Date(s);if(isNaN(d))return s;return d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}catch{return s}}
 function setScreen(id){$('boardScreen').classList.toggle('hidden',id!=='board');$('healthScreen').classList.toggle('hidden',id!=='health');$('mainMenu').classList.add('hidden')}
 function checkbox(id,value,label,checked=true,rows=1){const zero=Number(rows||0)<=0;return '<label class="check '+(zero?'zero':'')+'"><input type="checkbox" data-value="'+esc(value)+'" '+(checked?'checked':'')+'> <span>'+esc(label)+'</span></label>'}
@@ -616,7 +645,7 @@ function rowSourceTypeKey(r){return (r.source_key||'unknown')+':'+(r.line_type||
 function renderThresholdOptions(id,label,thresholds,maxValue,suffix){const sel=$(id);const max=Number(maxValue||0);const opts=['<option value="0">All '+label+'</option>'];thresholds.forEach(t=>{if(max>=t)opts.push('<option value="'+t+'">'+t+suffix+'</option>')});sel.innerHTML=opts.join('')}
 function renderFilters(data){const hitter=data.prop_groups?.hitter||[], pitcher=data.prop_groups?.pitcher||[], pp=data.source_groups?.prizepicks||[], sl=data.source_groups?.sleeper||[];const summary=data.summary||{};filters={props:new Set([...hitter,...pitcher].map(p=>p.canonical_prop_key)),types:new Set([...pp,...sl].map(t=>sourceTypeKey(t))),hp:0,score:0};$('hitterProps').innerHTML=hitter.length?hitter.map(p=>checkbox('',p.canonical_prop_key,p.label+' ('+p.rows+')',true,p.rows)).join(''):'<span class="small">No hitter options</span>';$('pitcherProps').innerHTML=pitcher.length?pitcher.map(p=>checkbox('',p.canonical_prop_key,p.label+' ('+p.rows+')',true,p.rows)).join(''):'<span class="small">No pitcher options</span>';$('ppTypes').innerHTML=pp.length?pp.map(t=>checkbox('',sourceTypeKey(t),lineLabel(t.line_type)+' ('+t.rows+')',true,t.rows)).join(''):'<span class="small">No PrizePicks options</span>';$('sleeperTypes').innerHTML=sl.length?sl.map(t=>checkbox('',sourceTypeKey(t),lineLabel(t.line_type)+' ('+t.rows+')',true,t.rows)).join(''):'<span class="small">No Sleeper options</span>';bindGroup('hitterGroup','hitterProps',filters.props);bindGroup('pitcherGroup','pitcherProps',filters.props);bindGroup('ppGroup','ppTypes',filters.types);bindGroup('sleeperGroup','sleeperTypes',filters.types);renderThresholdOptions('hpFilter','HP',[60,65,70,80,90],summary.max_hp||0,'%+');renderThresholdOptions('scoreFilter','Scores',[40,50,60,70,80],summary.max_score||0,'+');$('hpFilter').onchange=e=>{filters.hp=Number(e.target.value||0);render()};$('scoreFilter').onchange=e=>{filters.score=Number(e.target.value||0);render()}}
 function passes(r){return filters.props.has(r.canonical_prop_key)&&filters.types.has(rowSourceTypeKey(r))&&Number(r.estimated_hit_probability_0_100||0)>=filters.hp&&Number(r.score_0_100||0)>=filters.score}
-function card(r){const lt=r.line_type||'regular';const match=(r.away_team_name&&r.home_team_name)?r.away_team_name+' @ '+r.home_team_name:'Game '+(r.game_pk||'');return '<article class="card"><div class="top"><div><div class="player">'+esc(r.player_name)+'</div><div class="small">'+esc(match)+' • '+esc(fmtDate(r.official_game_time_utc))+'</div></div><div class="badges"><span class="badge '+esc(lt)+'">'+esc(lineLabel(lt))+'</span><span class="badge review">'+esc(r.board_tier||'Review')+'</span></div></div><div class="numbers"><div><div class="numLbl">Hit Probability</div><div class="hpNum">'+pct(r.estimated_hit_probability_0_100)+'</div></div><div><div class="numLbl">Score</div><div class="scoreNum">'+num(r.score_0_100)+'</div></div></div><div class="lineBox"><span>'+esc(r.prop_label||cap(r.canonical_prop_key))+'</span><span class="side">'+esc(r.selected_side)+'</span><span>'+esc(r.line_value)+'</span></div><div class="meta">'+esc(cap(r.source_key))+' • '+esc(r.source_line_type||'Line')+' • '+esc(r.venue_name||'')+'<br>HP '+esc(r.probability_grade||'')+' • '+esc(r.probability_band||'')+' • '+esc(r.daily_readiness_status||'')+'</div><div class="reason">'+esc(r.hp_source_lane_reason||'Review Board candidate.')+'</div></article>'}
+function card(r){const lt=r.line_type||'regular';const app=appLabel(r.source_key);const match=(r.away_team_name&&r.home_team_name)?r.away_team_name+' @ '+r.home_team_name:'Game '+(r.game_pk||'');return '<article class="card"><div class="top"><div><div class="player">'+esc(r.player_name)+'</div><div class="small">'+esc(match)+' • '+esc(fmtDate(r.official_game_time_utc))+'</div></div><div class="badges"><span class="badge source">'+esc(app)+'</span><span class="badge '+esc(lt)+'">'+esc(lineLabel(lt))+'</span><span class="badge review">'+esc(r.board_tier||'Review')+'</span></div></div><div class="numbers"><div><div class="numLbl">Hit Probability</div><div class="hpNum">'+pct(r.estimated_hit_probability_0_100)+'</div></div><div><div class="numLbl">Score</div><div class="scoreNum">'+num(r.score_0_100)+'</div></div></div><div class="lineBox"><span>'+esc(r.prop_label||cap(r.canonical_prop_key))+'</span><span class="side">'+esc(r.selected_side)+'</span><span>'+esc(r.line_value)+'</span></div><div class="meta">'+esc(appTypeLabel(r))+' • '+esc(r.venue_name||'')+'<br>HP '+esc(r.probability_grade||'')+' • '+esc(r.probability_band||'')+' • '+esc(r.daily_readiness_status||'')+'</div><div class="reason">'+esc(r.hp_source_lane_reason||'Review Board candidate.')+'</div></article>'}
 function render(){if(!filters)return;const shown=rows.filter(passes);$('status').textContent=shown.length+' shown / '+rows.length+' loaded • Review Board candidates • '+UI_VERSION_LABEL;$('cards').innerHTML=shown.length?shown.map(card).join(''):'<div class="empty" style="grid-column:1/-1">No candidates match these filters.</div>'}
 function renderHealth(){const c=health?.current_board||{}, f=health?.final_board_batch||{}, h=health?.hp_board_batch||{};$('healthStatus').textContent='Read-only health loaded • '+(health?.version||'');const items=[['Current Rows',c.current_rows],['Review Rows',c.review_rows],['Live Rows',c.live_rows],['HP Range',num(c.min_hp)+'–'+num(c.max_hp)],['Score Range',num(c.min_score)+'–'+num(c.max_score)],['Final Grade',f.certification_grade||'—'],['HP Source Rows',h.source_rows_read||'—'],['HP Fade Rows',h.fade_rows||'—'],['True Probability Claims',Number(h.no_true_probability_claims||0)?'No':'Check']];$('healthCards').innerHTML=items.map(x=>'<div class="healthCard"><div class="small">'+esc(x[0])+'</div><div class="metric">'+esc(x[1]??'—')+'</div></div>').join('')+'<div class="healthCard" style="grid-column:1/-1"><div class="small">Final Batch</div><div>'+esc(f.final_board_batch_id||'—')+'</div><div class="small">'+esc(f.status||'')+'</div></div>'}
 async function load(){try{$('status').textContent='Loading filters...';const fj=await (await fetch('/api/main-board/filters?t='+Date.now(),{cache:'no-store'})).json();if(!fj.ok)throw Error(fj.error||'filters failed');renderFilters(fj);$('status').textContent='Loading board...';const j=await (await fetch('/api/main-board/current?limit=1000&t='+Date.now(),{cache:'no-store'})).json();if(!j.ok)throw Error(j.error||'board failed');rows=Array.isArray(j.rows)?j.rows:[];render()}catch(e){$('status').innerHTML='<span class="err">Board load failed: '+esc(e.message||e)+'</span>';$('cards').innerHTML='<div class="empty err" style="grid-column:1/-1">Could not load Review Board.</div>'}}

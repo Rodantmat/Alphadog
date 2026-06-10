@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.30-hp-first-insert-shape-finalizer";
+const VERSION = "alphadog-v2-score-final-board-v0.1.31-hp-tiebreak-source-display";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_HP_FIRST_TRUST_V4_1"; // fallback only; runtime resolves the active profile_key from the terminal scoring_engine_current / hp_board_current batch
 
@@ -1063,7 +1063,7 @@ async function fetchHpFinalBoardCandidateRows(env, sourceEngineBatchId, pageSize
         AND h.source_key IS NOT NULL
         AND h.mlb_player_id IS NOT NULL
         AND (COALESCE(h.hp_review_playable,0) = 1 OR COALESCE(h.hp_primary_playable,0) = 1)
-      ORDER BY h.estimated_hit_probability_0_100 DESC, h.score_0_100 DESC, h.probability_confidence_0_100 DESC, h.hp_rank ASC, h.hp_board_row_id ASC
+      ORDER BY h.hp_rank ASC, h.hp_sort_0_100 DESC, h.estimated_hit_probability_0_100 DESC, h.score_0_100 DESC, h.probability_confidence_0_100 DESC, h.hp_board_row_id ASC
       LIMIT ${limit} OFFSET ${offset}
     `, hpSource.hp_board_batch_id, sourceEngineBatchId);
     pages += 1;
@@ -1079,6 +1079,8 @@ async function fetchHpFinalBoardCandidateRows(env, sourceEngineBatchId, pageSize
 function finalBoardSortFromHp(row) {
   const hp = num(row.estimated_hit_probability_0_100, 0);
   const score = num(row.score_0_100, 0);
+  const hpSort = num(row.hp_sort_0_100, null);
+  if (hpSort != null) return Math.round(hpSort * 1000000) / 1000000;
   return Math.round((0.72 * hp + 0.28 * score) * 100) / 100;
 }
 
@@ -1107,7 +1109,7 @@ function mapHpCurrentRowToFinalBoardRow(rawRow, activeProfileKey) {
       hp_sort_0_100: rawRow.hp_sort_0_100 == null ? null : Number(rawRow.hp_sort_0_100),
       score_is_trust_score: true,
       score_0_100: score,
-      board_sort_formula: "0.72*estimated_hit_probability_0_100 + 0.28*score_0_100",
+      board_sort_formula: "HP Board hp_sort_0_100; 0.72*HP + 0.28*score + deterministic factor/source/sample/reliability tiebreak",
       board_sort_0_100: boardSort,
       eligibility_rule: "HP >= 60, no HP blocker, visible in HP board. HP < 60 is excluded from Final Board even if score is high.",
       score_policy: "Preserve Engine score as system-trust/support score; do not translate HP into score."
@@ -1131,7 +1133,7 @@ function mapHpCurrentRowToFinalBoardRow(rawRow, activeProfileKey) {
     hp_source_board_tier: rawRow.hp_source_board_tier || null,
     hp_source_lane_reason: rawRow.hp_source_lane_reason || null,
     hp_calibration_json: hpCal,
-    note: "Final Board consumes locked HP Board output. HP is the reality gate; score remains Engine trust/support score."
+    note: "Final Board consumes locked HP Board output. HP is the reality gate; score remains Engine trust/support score. Rank order follows HP Board deterministic tie-break."
   };
   return {
     ...rawRow,
@@ -1724,11 +1726,12 @@ async function generateFinalBoard(env, input) {
     current_rows_written: rows.length,
     table_for_final_ui: "SCORE_DB.score_final_board_current",
     history_table: "SCORE_DB.score_final_board_history",
-    final_ui_contract: "Read estimated_hit_probability_0_100 as the reality thermometer, score_0_100 as the Engine trust/support score, and score_sort_0_100 as HP-first board sort. Final Board source is hp_board_current for the same Engine batch. HP < 60 is excluded; HP >= 60 is visible as PRIMARY/REVIEW according to HP board playability.",
+    final_ui_contract: "Read estimated_hit_probability_0_100 as the reality thermometer, score_0_100 as the Engine trust/support score, and score_sort_0_100 as HP Board sort with deterministic tiebreak. Final Board source is hp_board_current for the same Engine batch. HP < 60 is excluded; HP >= 60 is visible as PRIMARY/REVIEW according to HP board playability.",
     no_external_calls: true,
     no_source_board_mutation: true,
     no_simulation_shadow_mutation: true,
     calibration_active: true,
+    hp_board_tiebreak_sort_active: true,
     final_plus_calibration_active: true,
     cutoff_volatility_trim_active: true,
     cutoff_volatility_trim_policy: "narrow fragile-pitcher cutoff trim only; no source quota, no forced balance, no broad cluster penalty",
