@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.31-hp-tiebreak-source-display";
+const VERSION = "alphadog-v2-score-final-board-v0.1.32-hp-tiebreak-source-display-hotfix";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_HP_FIRST_TRUST_V4_1"; // fallback only; runtime resolves the active profile_key from the terminal scoring_engine_current / hp_board_current batch
 
