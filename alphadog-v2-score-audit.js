@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.24-score-sharpen-hp-tiebreak-sql-safe";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.25-hp-tiebreak-d1-safe-no-case-adj";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -605,7 +605,7 @@ function sqlCaseFromMap(expression, map, fallback) {
 
 function simulationFormulaMetadata() {
   return {
-    formula_key: "SCORING_SIMULATION_V0_4_24_SCORE_SHARPEN_HP_TIEBREAK_SQL_SAFE",
+    formula_key: "SCORING_SIMULATION_V0_4_25_HP_TIEBREAK_D1_SAFE_NO_CASE_ADJ",
     worker_version: VERSION,
     simulation_only: true,
     active_values_source: "SCORE_DB.scoring_engine_simulation_profile_configs.config_json",
@@ -3035,7 +3035,7 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.24-score-sharpen-hp-tiebreak-sql-safe-board";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.25-hp-tiebreak-d1-safe-no-case-adj-board";
 const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_1_6_STOLEN_BASES_ROUTE_LOCK";
 const HP_MAX_ROWS_PER_RUN = 12000;
 const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 180;
@@ -3721,7 +3721,7 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
     hp_reality_gate:'hp_under_60_killed_not_playable',
     score_meaning:'system_trust_support_quality_preserved_from_scoring_engine',
     board_sort_formula:'0.72*hit_probability + 0.28*score + deterministic_factor_tiebreak_lt_0.15',
-    hp_board_tiebreak_phase:'v0.4.24 post-HP deterministic factor/source/sample/reliability tiebreak; display HP preserved; SQL-safe fast-terminal expression',
+    hp_board_tiebreak_phase:'v0.4.25 post-HP deterministic factor/source/sample/reliability tiebreak; display HP preserved; D1-safe no-CASE-adj fast-terminal expression',
     score_is_not_translated_from_hp:true,
     caps_do_not_mutate_score:true,
     true_calibration_blocked_reason:'No settled outcome/backtest/settlement table exists in SCORE_DB.',
@@ -3769,7 +3769,9 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
             + (COALESCE(c.sample_size,0) * 0.00045)
             + (COALESCE(c.reliability_0_1,0) * 0.020)
             - (COALESCE(c.push_risk_0_1,0) * 0.030)
-            + ((ABS((COALESCE(c.mlb_player_id,0) * 31) + (COALESCE(c.game_pk,0) * 17) + (CAST(COALESCE(c.line_value,0) * 100 AS INTEGER) * 13)) % 997) / 997.0) * 0.009),
+            + (COALESCE(c.mlb_player_id,0) * 0.000000001)
+            + (COALESCE(c.game_pk,0) * 0.0000000001)
+            + (COALESCE(c.line_value,0) * 0.00000001),
             6
           ) AS hp_sort_0_100,
           CASE
