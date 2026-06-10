@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.219-market-prop-backend-flag-forwarder";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.220-prop-factor-hitter-coverage-continuation-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -8073,6 +8073,32 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
 }
 
 
+
+async function countExpectedPropFactorCoverageRows(env, dates, family) {
+  if (!env || !env.SCORE_DB || !Array.isArray(dates) || dates.length < 2) return 0;
+  const hitterKeys = ["hits","total_bases","runs","rbis","singles","doubles","home_runs","walks","hitter_strikeouts","hits_runs_rbis","stolen_bases","fantasy","fantasy_score"];
+  const pitcherKeys = ["pitcher_strikeouts","pitcher_outs","pitching_outs","earned_runs","earned_runs_allowed","hits_allowed","walks_allowed","rfi_nrfi","pitcher_strikeouts_combo"];
+  const keys = family === "pitcher" ? pitcherKeys : hitterKeys;
+  const placeholders = keys.map(() => "?").join(",");
+  const row = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows
+    FROM score_board_prepared_current
+    WHERE official_date IN (?, ?)
+      AND pickable_safe=1
+      AND matchup_status='calendar_matched'
+      AND player_match_status='matched'
+      AND official_game_pk IS NOT NULL
+      AND official_game_time_utc IS NOT NULL
+      AND canonical_prop_key IN (${placeholders})`, dates[0], dates[1], ...keys);
+  return Number(row && row.rows || 0);
+}
+async function countPropFactorCoverageRows(env, batchId, family) {
+  if (!env || !env.SCORE_DB || !batchId) return 0;
+  const row = await first(env.SCORE_DB, `SELECT COUNT(DISTINCT prepared_row_id) AS rows
+    FROM prop_factor_coverage_current
+    WHERE latest_batch_id=? AND factor_family=?`, batchId, family);
+  return Number(row && row.rows || 0);
+}
+
 async function rescuePropFactorMinerTerminalEvidence(env, row, runId, input, selectedMode, trigger, timeoutError) {
   if (!env || !env.SCORE_DB) return null;
   const family = selectedMode === "pitcher_prop_factor_mining" ? "pitcher" : "hitter";
@@ -8099,6 +8125,67 @@ async function rescuePropFactorMinerTerminalEvidence(env, row, runId, input, sel
     WHERE batch_id=?`, batchRow.batch_id);
   const packets = Number(packetSummary && packetSummary.packets || 0);
   if (!packets) return null;
+
+  const dates = [batchRow.window_start, batchRow.window_end].filter(Boolean);
+  const expectedCoverageRows = dates.length >= 2 ? await countExpectedPropFactorCoverageRows(env, dates, family) : 0;
+  const actualCoverageRows = await countPropFactorCoverageRows(env, batchRow.batch_id, family);
+  if (expectedCoverageRows > 0 && actualCoverageRows < expectedCoverageRows) {
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"partial_continue_prop_factor_timeout_coverage_incomplete",
+      certification:"PROP_FACTOR_PACKETS_PARTIAL_CONTINUE_COVERAGE_INCOMPLETE",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:batchRow.batch_id,
+      prepared_rows_read:Number(batchRow.prepared_rows_read || expectedCoverageRows || 0),
+      expected_factor_rows:expectedCoverageRows,
+      coverage_prepared_rows:actualCoverageRows,
+      coverage_missing_rows:Math.max(0, expectedCoverageRows - actualCoverageRows),
+      eligible_rows:Number(packetSummary.prepared_rows || 0),
+      packets_written:packets,
+      rows_read:Number(batchRow.prepared_rows_read || expectedCoverageRows || 0),
+      rows_written:packets,
+      blocked_rows:Number(packetSummary.blocked_rows || 0),
+      warning_rows:Number(packetSummary.warning_rows || 0),
+      missing_factor_rows:Number(packetSummary.missing_factor_rows || 0),
+      games:Number(packetSummary.games || 0),
+      players:Number(packetSummary.players || 0),
+      prop_keys:Number(packetSummary.prop_keys || 0),
+      timeout_error:String(timeoutError || "prop_factor_miner_service_binding_timeout_after_75000ms"),
+      terminal_rescue:false,
+      timeout_rescue_requeued_due_incomplete_coverage:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:batchRow.batch_id,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    await run(env.SCORE_DB, `UPDATE prop_factor_batches
+      SET status='partial_continue_factor_packets_chunk_written', prepared_rows_read=CASE WHEN COALESCE(prepared_rows_read,0)=0 THEN ? ELSE prepared_rows_read END,
+          eligible_rows=?, packets_written=?, blocked_rows=?, warning_rows=?, missing_factor_rows=?,
+          certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP
+      WHERE batch_id=?`, output.prepared_rows_read, output.eligible_rows, output.packets_written, output.blocked_rows, output.warning_rows, output.missing_factor_rows, output.certification, output.certification_grade, JSON.stringify(output), batchRow.batch_id);
+    if (env.CONTROL_DB) {
+      await run(env.CONTROL_DB, `INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at)
+        VALUES (?, ?, ?, ?, 'WARN', 'prop_factor_timeout_coverage_incomplete_requeued', 'Prop Factor timeout evidence was incomplete; requeued instead of terminal PASS', ?, CURRENT_TIMESTAMP)`,
+        row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:batchRow.batch_id, family, expectedCoverageRows, actualCoverageRows, packets }).slice(0, 9000));
+    }
+    return output;
+  }
 
   const issueSummary = await first(env.SCORE_DB, `SELECT COUNT(*) AS issue_rows FROM prop_factor_issues WHERE batch_id=?`, batchRow.batch_id);
   const issueRows = Number(issueSummary && issueSummary.issue_rows || 0);
