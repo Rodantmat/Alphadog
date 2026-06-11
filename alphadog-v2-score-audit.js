@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.29-cautious-payout-value-nudge";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.30-evidence-confidence-calibration";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -3023,8 +3023,8 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.28-hp-variance-calibration-tiebreak-board";
-const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_1_7_VARIANCE_CALIBRATION";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.30-evidence-confidence-calibration-board";
+const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_1_8_EVIDENCE_CONFIDENCE";
 const HP_MAX_ROWS_PER_RUN = 12000;
 const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 180;
 const HP_CURRENT_CHUNK_MAX_MILLIS = 32000;
@@ -3032,7 +3032,7 @@ const HP_PLAYER_CHUNK_SIZE = 50;
 const HP_BOARD_MODE = "hp_board_current_build";
 const HP_BOARD_JOB_KEY = "hp-board";
 const HP_BOARD_PROFILE_KEY = "HP_BOARD_RECENT_FORM_PROFILE";
-const HP_BOARD_PROFILE_VERSION = "HP_BOARD_HP_FIRST_TRUST_SCORE_V0_1_6_VARIANCE_CALIBRATION";
+const HP_BOARD_PROFILE_VERSION = "HP_BOARD_HP_FIRST_TRUST_SCORE_V0_1_7_EVIDENCE_CONFIDENCE";
 const HP_BOARD_CHUNK_ROWS_PER_INVOCATION = 140;
 const HP_BOARD_LANE_ORDER = {
   HP_PREMIUM_TRUSTED: 1,
@@ -3188,6 +3188,79 @@ function hpFactorAlignment(row){
   return hpClamp(factor, 20, 85);
 }
 function hpAdjustmentReason(reasons){ return reasons.length ? reasons.join('|') : 'NONE'; }
+function hpEvidenceTarget(profile, side){
+  if(!profile) return 60;
+  if(profile.family === 'pitcher') return 32;
+  const key=String(profile.profile||'').toUpperCase();
+  const stat=String(profile.stat||'').toLowerCase();
+  if(key === 'HITTER_HIGH_FREQ') return side === 'less' ? 70 : 60;
+  if(key === 'HITTER_MED_FREQ') return side === 'less' ? 80 : 75;
+  if(stat === 'home_runs' || stat === 'stolen_bases') return side === 'less' ? 95 : 130;
+  if(stat === 'doubles' || stat === 'rbis') return side === 'less' ? 90 : 115;
+  return side === 'less' ? 85 : 105;
+}
+function hpOutcomeVolatilityPenalty(profile, side){
+  if(!profile) return 0;
+  if(profile.family === 'pitcher') return 2.0;
+  const key=String(profile.profile||'').toUpperCase();
+  const stat=String(profile.stat||'').toLowerCase();
+  if(key === 'HITTER_HIGH_FREQ') return side === 'less' ? 1.5 : 1.0;
+  if(key === 'HITTER_MED_FREQ') return side === 'less' ? 2.5 : 3.5;
+  if(stat === 'home_runs' || stat === 'stolen_bases') return side === 'less' ? 4.0 : 8.0;
+  if(stat === 'doubles' || stat === 'rbis') return side === 'less' ? 3.0 : 6.0;
+  return side === 'less' ? 3.0 : 5.0;
+}
+function hpWindowStabilityScore(summaries){
+  const vals=(summaries||[]).map(w => w && w.raw_hit_rate_0_100).filter(v => Number.isFinite(Number(v))).map(Number);
+  if(vals.length < 2) return { score:0, range:null, stdev:null };
+  const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+  const variance=vals.reduce((a,b)=>a+Math.pow(b-mean,2),0)/vals.length;
+  const stdev=Math.sqrt(variance);
+  const range=Math.max(...vals)-Math.min(...vals);
+  const score=hpClamp(10 - (stdev*0.28) - (range*0.06), -10, 10);
+  return { score:hpRound(score,2), range:hpRound(range,2), stdev:hpRound(stdev,2) };
+}
+function hpEvidenceConfidenceScore(args){
+  const profile=args.profile;
+  const side=args.side;
+  const nonPush=hpNum(args.nonPush,0);
+  const pushRisk=hpNum(args.pushRisk,0);
+  const displayed=hpNum(args.displayed,50);
+  const rawRate=hpClamp(hpNum(args.rawWeightedNew100, displayed),0,100) / 100;
+  const factorScore=hpNum(args.factorScore,50);
+  const target=hpEvidenceTarget(profile, side);
+  const sampleRatio=hpClamp(nonPush / Math.max(1,target),0,1);
+  const sampleBase=44 + (40 * Math.sqrt(sampleRatio));
+  const stability=hpWindowStabilityScore(args.summaries||[]);
+  const binomialSe = nonPush > 0 ? Math.sqrt(Math.max(0.0001, rawRate*(1-rawRate)) / nonPush) * 100 : 20;
+  const sePenalty = hpClamp(binomialSe * 0.75, 0, 9);
+  const volatilityPenalty = hpOutcomeVolatilityPenalty(profile, side);
+  const factorSupport = hpClamp((factorScore - 50) * 0.035, -2.5, 2.5);
+  const lowSamplePenalty = nonPush < 20 ? (20 - nonPush) * 0.55 : 0;
+  const pushPenalty = hpClamp(pushRisk * 18, 0, 8);
+  let confidence = sampleBase + stability.score + factorSupport - sePenalty - volatilityPenalty - lowSamplePenalty - pushPenalty;
+  if(nonPush >= 40 && stability.score > 4 && binomialSe < 5) confidence += 2;
+  if(nonPush < 10) confidence = Math.min(confidence, 58);
+  else if(nonPush < 20) confidence = Math.min(confidence, 72);
+  const hardCeil = profile && profile.family === 'pitcher' ? 76 : 92;
+  confidence=hpClamp(confidence, 35, hardCeil);
+  return {
+    confidence_0_100: hpRound(confidence,1),
+    evidence_target_sample: hpRound(target,1),
+    evidence_sample_ratio: hpRound(sampleRatio,3),
+    evidence_sample_base_0_100: hpRound(sampleBase,2),
+    evidence_window_stability_score_0_100: stability.score,
+    evidence_window_range_0_100: stability.range,
+    evidence_window_stdev_0_100: stability.stdev,
+    evidence_binomial_se_0_100: hpRound(binomialSe,2),
+    evidence_binomial_se_penalty_0_100: hpRound(sePenalty,2),
+    evidence_prop_volatility_penalty_0_100: hpRound(volatilityPenalty,2),
+    evidence_factor_support_0_100: hpRound(factorSupport,2),
+    evidence_low_sample_penalty_0_100: hpRound(lowSamplePenalty,2),
+    evidence_push_penalty_0_100: hpRound(pushPenalty,2),
+    evidence_confidence_policy:'confidence reflects evidence quality/sample/stability/volatility only; estimated HP is not capped or penalized because it looks high or low'
+  };
+}
 function hpConfigFromRow(row){ const out={}; for(const k of Object.keys(HP_DEFAULT_CONFIG_BASE)) out[k]=row[k] == null ? HP_DEFAULT_CONFIG_BASE[k] : row[k]; out.profile_key=row.profile_key; out.player_type=row.player_type; out.prop_family=row.prop_family; out.selected_side=row.selected_side; out.source_key_scope=row.source_key_scope || 'all'; out.window_weights=hpJsonParse(row.window_weights_json, [0.30,0.30,0.25,0.15]); return out; }
 function hpDefaultConfigByKey(key){ const row=HP_DEFAULT_PROFILE_CONFIGS.find(c=>c.profile_key===key) || HP_DEFAULT_PROFILE_CONFIGS[0]; return hpConfigFromRow({...HP_DEFAULT_CONFIG_BASE, ...row}); }
 
@@ -3239,10 +3312,12 @@ function hpEstimate(games,line,side,profile,config,row){
     reasons.push('SIGNAL_VARIANCE_TIEBREAK');
   }
   display=hpClamp(display, hpNum(config.global_floor,5), hpNum(config.global_cap,95));
-  const sampleReliability=hpRound(Math.max(0, Math.min(100, (reliability*100) - (pushRisk*12))),1);
   const displayed=hpRound(display,1);
   const rawNew100=hpRound(rawWeightedNew*100,1);
   const rawOld100=hpRound(rawWeightedOld*100,1);
+  const evidenceConfidence = hpEvidenceConfidenceScore({ profile, side, nonPush, pushRisk, displayed, rawWeightedNew100: rawNew100, summaries, factorScore, row });
+  const sampleReliability=evidenceConfidence.confidence_0_100;
+  if(sampleReliability < 80){ flags.push('HP_EVIDENCE_CONFIDENCE_REDUCED'); reasons.push('EVIDENCE_CONFIDENCE_CALIBRATION'); }
   const scoreGap=Number.isFinite(hpNum(row && row.score_0_100, NaN)) ? hpRound(hpNum(row.score_0_100)-displayed,1) : null;
   const rankHint=hpRound((0.70*displayed)+(0.20*sampleReliability)+(0.10*factorScore),1);
   const divergence = hpNum(row && row.score_0_100,0) >= hpNum(config.divergence_score_threshold,82) && displayed < hpNum(config.divergence_hp_threshold,55) && sampleReliability >= hpNum(config.divergence_reliability_threshold,90) && nonPush >= 20;
@@ -3263,6 +3338,7 @@ function hpEstimate(games,line,side,profile,config,row){
       factor_adjustment_0_100: hpRound(factorAdjustment,2),
       variance_adjustment_0_100: hpRound(varianceAdjustment,3),
       variance_adjustment_inputs:'line_margin+short_long_trend+factor_alignment+push_risk+deterministic_identity_tiebreak',
+      evidence_confidence_calibration:evidenceConfidence,
       applied_reasons:hpUnique(reasons)
     },
     raw_empirical_hit_rate_0_1: full.raw_hit_rate !== null ? hpRound(full.raw_hit_rate,4) : null,
@@ -3281,6 +3357,7 @@ function hpEstimate(games,line,side,profile,config,row){
     variance_adjustment_0_100: hpRound(varianceAdjustment,3),
     score_recent_form_gap_0_100: scoreGap,
     recent_form_rank_hint_0_100: rankHint,
+    evidence_confidence_calibration: evidenceConfidence,
     probability_band: hpLegacyBand(displayed, isLowSample),
     probability_confidence_0_100: sampleReliability,
     estimated_hit_probability_0_100: displayed,
@@ -4017,7 +4094,7 @@ async function runHitProbabilityCurrent(env, input = {}){
     if(warningFlags.includes('HP_LOW_FREQUENCY_LESS_BASE_RATE')) lowFreqLessRowsThisInvocation++;
     if(warningFlags.includes('HP_PITCHER_SAMPLE_VOLATILITY')) pitcherVolatilityRowsThisInvocation++;
     const profileKey=[configKey, r.canonical_prop_key, hpLineBucket(r.line_value), r.selected_side].join('__').toUpperCase();
-    await run(env.SCORE_DB, `INSERT INTO hit_probability_current (probability_row_id,batch_id,source_table,final_board_row_id,score_row_id,prepared_row_id,matrix_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,canonical_prop_key,line_value,selected_side,prop_family,prop_line_profile_key,probability_model_version,probability_status,probability_grade,estimated_hit_probability_0_100,probability_confidence_0_100,probability_band,empirical_hit_rate_0_1,reliability_0_1,sample_size,non_push_sample,hit_count,miss_count,push_count,push_risk_0_1,score_0_100,score_grade,board_tier,live_playable,review_playable,warning_count,blocker_count,model_notes_json,window_summary_json,source_snapshot_json,raw_empirical_hit_rate_0_1,raw_weighted_empirical_rate_v0_1_2_0_100,raw_weighted_empirical_rate_v0_1_3_0_100,estimated_recent_form_hit_rate_0_100,sample_reliability_score_0_100,recent_form_band,recent_form_grade,display_adjustment_reason,display_warning_flags_json,display_notes_json,factor_alignment_score_0_100,factor_adjustment_0_100,score_recent_form_gap_0_100,recent_form_rank_hint_0_100,profile_config_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, probabilityRowId,batchId,source.source_table,r.final_board_row_id||null,r.score_row_id||null,r.prepared_row_id||null,r.matrix_id||null,r.source_line_id||null,r.source_key||null,r.game_pk||null,r.official_date||null,r.official_game_time_utc||null,r.mlb_player_id||null,r.player_name||null,r.canonical_prop_key||null,r.line_value||null,r.selected_side,profile.family,profileKey,HP_PROFILE_VERSION,status,grade,est.estimated_hit_probability_0_100,est.probability_confidence_0_100,est.probability_band,est.empirical_hit_rate_0_1,est.reliability_0_1,est.sample_size,est.non_push_sample,est.hit_count,est.miss_count,est.push_count,est.push_risk_0_1,r.score_0_100||null,r.score_grade||null,r.board_tier||null,r.live_playable||0,r.review_playable||0,warningCount,status==='blocked_no_history'?1:0,hpSafeJson({estimated_not_true_probability:true,display_metric_label:'Estimated Recent-Form Hit Rate',method:'profiled_recent_form_weighted_empirical_with_signal_variance_calibration_tiebreak_v0_1_8_chunked',same_deployed_worker_slot:'alphadog-v2-score-audit',no_score_mutation:true,no_final_board_mutation:true,no_ranking:true,profile_label:profile.label,profile_config_key:configKey,hp_current_chunked:true},4000),hpSafeJson(est.windows,6000),hpSafeJson({source_final_board_batch_id:source.final_board_batch_id, source_engine_batch_id:source.engine_batch_id},3000),est.raw_empirical_hit_rate_0_1,est.raw_weighted_empirical_rate_v0_1_2_0_100,est.raw_weighted_empirical_rate_v0_1_3_0_100,est.estimated_recent_form_hit_rate_0_100,est.sample_reliability_score_0_100,est.recent_form_band,est.recent_form_grade,est.display_adjustment_reason,hpSafeJson(warningFlags,2000),hpSafeJson(est.display_notes,5000),est.factor_alignment_score_0_100,est.factor_adjustment_0_100,est.score_recent_form_gap_0_100,est.recent_form_rank_hint_0_100,hpSafeJson(config,6000));
+    await run(env.SCORE_DB, `INSERT INTO hit_probability_current (probability_row_id,batch_id,source_table,final_board_row_id,score_row_id,prepared_row_id,matrix_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,canonical_prop_key,line_value,selected_side,prop_family,prop_line_profile_key,probability_model_version,probability_status,probability_grade,estimated_hit_probability_0_100,probability_confidence_0_100,probability_band,empirical_hit_rate_0_1,reliability_0_1,sample_size,non_push_sample,hit_count,miss_count,push_count,push_risk_0_1,score_0_100,score_grade,board_tier,live_playable,review_playable,warning_count,blocker_count,model_notes_json,window_summary_json,source_snapshot_json,raw_empirical_hit_rate_0_1,raw_weighted_empirical_rate_v0_1_2_0_100,raw_weighted_empirical_rate_v0_1_3_0_100,estimated_recent_form_hit_rate_0_100,sample_reliability_score_0_100,recent_form_band,recent_form_grade,display_adjustment_reason,display_warning_flags_json,display_notes_json,factor_alignment_score_0_100,factor_adjustment_0_100,score_recent_form_gap_0_100,recent_form_rank_hint_0_100,profile_config_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, probabilityRowId,batchId,source.source_table,r.final_board_row_id||null,r.score_row_id||null,r.prepared_row_id||null,r.matrix_id||null,r.source_line_id||null,r.source_key||null,r.game_pk||null,r.official_date||null,r.official_game_time_utc||null,r.mlb_player_id||null,r.player_name||null,r.canonical_prop_key||null,r.line_value||null,r.selected_side,profile.family,profileKey,HP_PROFILE_VERSION,status,grade,est.estimated_hit_probability_0_100,est.probability_confidence_0_100,est.probability_band,est.empirical_hit_rate_0_1,est.reliability_0_1,est.sample_size,est.non_push_sample,est.hit_count,est.miss_count,est.push_count,est.push_risk_0_1,r.score_0_100||null,r.score_grade||null,r.board_tier||null,r.live_playable||0,r.review_playable||0,warningCount,status==='blocked_no_history'?1:0,hpSafeJson({estimated_not_true_probability:true,display_metric_label:'Estimated Recent-Form Hit Rate',method:'profiled_recent_form_weighted_empirical_with_signal_variance_and_evidence_confidence_v0_1_9_chunked',same_deployed_worker_slot:'alphadog-v2-score-audit',no_score_mutation:true,no_final_board_mutation:true,no_ranking:true,profile_label:profile.label,profile_config_key:configKey,hp_current_chunked:true},4000),hpSafeJson(est.windows,6000),hpSafeJson({source_final_board_batch_id:source.final_board_batch_id, source_engine_batch_id:source.engine_batch_id},3000),est.raw_empirical_hit_rate_0_1,est.raw_weighted_empirical_rate_v0_1_2_0_100,est.raw_weighted_empirical_rate_v0_1_3_0_100,est.estimated_recent_form_hit_rate_0_100,est.sample_reliability_score_0_100,est.recent_form_band,est.recent_form_grade,est.display_adjustment_reason,hpSafeJson(warningFlags,2000),hpSafeJson(est.display_notes,5000),est.factor_alignment_score_0_100,est.factor_adjustment_0_100,est.score_recent_form_gap_0_100,est.recent_form_rank_hint_0_100,hpSafeJson(config,6000));
     writtenThisInvocation++;
     if(est.is_low_sample){ issuesThisInvocation++; lowSampleIssuesThisInvocation++; await hpWriteIssue(env,batchId,r,probabilityRowId,'warning','HP_LOW_SAMPLE','Recent-form sample below configured threshold; display value compressed but row preserved.',{sample_size:est.sample_size,non_push_sample:est.non_push_sample,prop_line_profile_key:profileKey,display_value:est.estimated_recent_form_hit_rate_0_100,raw_v0_1_3:est.raw_weighted_empirical_rate_v0_1_3_0_100,config_key:configKey,hp_current_chunked:true}); }
     if(est.is_divergence){ issuesThisInvocation++; divergenceIssuesThisInvocation++; await hpWriteIssue(env,batchId,r,probabilityRowId,'info','SCORE_RECENT_FORM_DIVERGENCE','High structural score with weak recent-form hit rate; non-blocking audit signal only.',{score_0_100:r.score_0_100,estimated_recent_form_hit_rate_0_100:est.estimated_recent_form_hit_rate_0_100,sample_reliability_score_0_100:est.sample_reliability_score_0_100,non_push_sample:est.non_push_sample,score_recent_form_gap_0_100:est.score_recent_form_gap_0_100,hp_current_chunked:true}); }
