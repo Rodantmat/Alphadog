@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.221-market-scoring-no-cut-probability-ledger";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.222-daily-lineups-sidecar-timeout-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -7193,13 +7193,99 @@ async function cleanupDailyContextOrphanChildSidecars(env, stage, child, cleanup
   return result;
 }
 
+
+async function buildDailyLineupsSidecarRecoveryOutput(env, requestId, stage) {
+  if (!env || !env.DAILY_DB || !requestId) return null;
+  let batch = null;
+  try {
+    batch = await first(env.DAILY_DB,
+      "SELECT * FROM daily_lineups_batches WHERE json_extract(output_json, '$.request_id')=? ORDER BY datetime(created_at) DESC LIMIT 1",
+      requestId
+    );
+  } catch (err) {
+    try {
+      const likeNeedle = `%${String(requestId).replace(/[%_]/g, "")}%`;
+      batch = await first(env.DAILY_DB,
+        "SELECT * FROM daily_lineups_batches WHERE output_json LIKE ? ORDER BY datetime(created_at) DESC LIMIT 1",
+        likeNeedle
+      );
+    } catch (_) {
+      batch = null;
+    }
+  }
+  if (!batch || !batch.batch_id) return null;
+
+  const certification = String(batch.certification_status || "");
+  const grade = String(batch.certification_grade || "");
+  const rowsWritten = Number(batch.rows_written || 0);
+  const writesPerformed = Number(batch.writes_performed || 0);
+  const productionWrites = Number(batch.production_lineup_writes_enabled || 0);
+  if (!certification.startsWith("PASS_") || rowsWritten <= 0 || writesPerformed <= 0 || productionWrites !== 1) return null;
+
+  const current = await first(env.DAILY_DB, "SELECT COUNT(*) AS rows, COUNT(DISTINCT game_pk) AS games, COUNT(DISTINCT team_id) AS teams, COUNT(DISTINCT player_id) AS players FROM daily_lineups_current WHERE batch_id=?", batch.batch_id);
+  const dup = await first(env.DAILY_DB, "SELECT COUNT(*) AS n FROM (SELECT official_date, game_pk, team_side, team_id, lineup_slot, COUNT(*) AS c FROM daily_lineups_current WHERE batch_id=? GROUP BY official_date, game_pk, team_side, team_id, lineup_slot HAVING COUNT(*) > 1)", batch.batch_id);
+  const currentRows = Number(current && current.rows || 0);
+  const currentGames = Number(current && current.games || 0);
+  const currentTeams = Number(current && current.teams || 0);
+  const duplicateIdentityRows = Number(dup && dup.n || 0);
+  if (currentRows <= 0 || currentGames <= 0 || duplicateIdentityRows !== 0) return null;
+
+  const parsedOutput = parseJsonSafeText(batch.output_json || "{}", {});
+  return {
+    ok: true,
+    data_ok: true,
+    version: String(batch.worker_version || SYSTEM_VERSION),
+    worker_name: String(stage && stage.worker_name || "alphadog-v2-daily-lineups"),
+    job_key: String(stage && stage.job_key || "daily-lineups"),
+    mode: "source_probe",
+    status: "COMPLETED_SOURCE_PROBE_RECOVERED_FROM_SIDECAR",
+    certification,
+    certification_status: certification,
+    certification_grade: grade || "PASS",
+    request_id: requestId,
+    batch_id: batch.batch_id,
+    sidecar_recovery: true,
+    recovered_from_service_binding_timeout: true,
+    recovered_from_lineups_sidecar_batch: true,
+    recovery_policy: "verified_daily_lineups_batch_and_current_rows_no_duplicate_identity",
+    write_gate_status: batch.write_gate_status || null,
+    source_probe_lane: batch.source_probe_lane || null,
+    games_checked: Number(batch.games_checked || currentGames),
+    lineup_write_ready_games: Number(batch.lineup_write_ready_games || currentGames),
+    prepared_rows_read: Number(parsedOutput.prepared_rows_read || 0),
+    rows_read: Number(parsedOutput.prepared_rows_read || 0),
+    rows_written: rowsWritten,
+    writes_performed: writesPerformed,
+    current_rows_verified: currentRows,
+    current_games_verified: currentGames,
+    current_teams_verified: currentTeams,
+    current_players_verified: Number(current && current.players || 0),
+    duplicate_identity_rows: duplicateIdentityRows,
+    external_calls: Number(parsedOutput.external_calls || parsedOutput.external_calls_performed || 0),
+    no_calendar_rebuild: true,
+    no_daily_game_status_duplication: true,
+    no_board_mutation: true,
+    no_market_odds: true,
+    no_score_db_mutation: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_old_production_touch: true
+  };
+}
+
 async function recoverDailyContextStaleChildFromSidecar(env, parentRow, stage, child, report, runId) {
   if (!stage || !child || !child.request_id) return null;
   const requestId = child.request_id;
   let batch = null, output = null, rowsRead = 0, rowsWritten = 0, externalCalls = 0;
 
   try {
-    if (stage.job_key === "daily-player-availability") {
+    if (stage.job_key === "daily-lineups") {
+      output = await buildDailyLineupsSidecarRecoveryOutput(env, requestId, stage);
+      if (output && output.batch_id) {
+        batch = { batch_id: output.batch_id, prepared_rows_read: output.prepared_rows_read || 0, external_calls: output.external_calls || 0 };
+      }
+    } else if (stage.job_key === "daily-player-availability") {
       batch = await first(env.DAILY_DB, "SELECT * FROM daily_player_availability_batches_v1 WHERE request_id=? ORDER BY datetime(created_at) DESC LIMIT 1", requestId);
       if (batch && String(batch.status || "") === "completed" && batch.output_json) output = parseJsonSafeText(batch.output_json, {});
       if (batch && !output) {
@@ -7299,7 +7385,7 @@ function dailyContextStageForChildRow(row) {
 
 function dailyContextStageSupportsSidecarRescue(stage) {
   const key = String(stage && stage.job_key || "");
-  return key === "daily-player-availability" || key === "daily-weather" || key === "daily-bullpen-availability" || key === "daily-team-schedule-spot" || key === "daily-umpire-context";
+  return key === "daily-lineups" || key === "daily-player-availability" || key === "daily-weather" || key === "daily-bullpen-availability" || key === "daily-team-schedule-spot" || key === "daily-umpire-context";
 }
 
 function dailyContextFullRunStageStaleSeconds(stage) {
@@ -7732,6 +7818,11 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
     }
 
     if (!validation.pass) {
+      const failedChildRecovered = await recoverDailyContextStaleChildFromSidecar(env, row, stage, child, report, runId);
+      if (failedChildRecovered && failedChildRecovered.report) {
+        stageReports.push(failedChildRecovered.report);
+        continue;
+      }
       if (dailyContextFullRunChildTransientRetryAllowed(stage, child, validation, childOutput)) {
         const retryCount = dailyContextFullRunChildInputRetryCount(child) + 1;
         await run(env.CONTROL_DB,
@@ -7859,6 +7950,22 @@ async function processDailyLineupsJob(env, row, runId, trigger) {
     }
   } catch (err) {
     output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+  }
+
+  if (!(output && output.ok === true) && env.DAILY_DB) {
+    const timeoutText = String((output && (output.error || output.status || output.certification || output.error_message)) || "");
+    if (isServiceBindingTimeoutLike(timeoutText)) {
+      const rescued = await buildDailyLineupsSidecarRecoveryOutput(env, row.request_id, dailyContextStageForChildRow(row) || { job_key: "daily-lineups", worker_name: row.worker_name, stage_key: "daily_lineups" });
+      if (rescued && rescued.ok === true) {
+        output = {
+          ...rescued,
+          status: "COMPLETED_SOURCE_PROBE_RESCUED_AFTER_SERVICE_BINDING_TIMEOUT",
+          original_dispatch_error: timeoutText.slice(0, 300),
+          no_false_failure_after_verified_sidecar: true
+        };
+        httpStatus = 200;
+      }
+    }
   }
 
   const ok = !!(output && output.ok);
