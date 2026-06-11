@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.223-daily-certifier-sidecar-terminal-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.224-prop-factor-stale-resume-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1608,6 +1608,69 @@ async function rescueMarketScoringFullRunTerminalEvidenceChild(env, trigger) {
 }
 
 
+
+function parseControlTimestampMs(value) {
+  if (!value) return 0;
+  const text = String(value);
+  const normalized = text.includes("T") ? text : text.replace(" ", "T") + "Z";
+  const ms = Date.parse(normalized);
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+async function rescheduleStalePropFactorChildForResume(env, stageKey, child, latestRun, trigger = "prop_factor_stale_resume_guard") {
+  if (!env || !env.CONTROL_DB || !env.SCORE_DB || !child || !child.request_id) return { rescheduled:false, reason:"missing_env_or_child" };
+  if (!(stageKey === "prop_factor_hitters" || stageKey === "prop_factor_pitchers")) return { rescheduled:false, reason:"not_prop_factor_stage" };
+  if (String(child.status || "") !== "running" || child.finished_at) return { rescheduled:false, reason:"child_not_running" };
+  const updatedMs = parseControlTimestampMs(child.updated_at || child.started_at || child.created_at);
+  const quietMs = updatedMs ? Date.now() - updatedMs : 0;
+  if (quietMs > 0 && quietMs < 180000) return { rescheduled:false, reason:"child_not_quiet_enough", quiet_ms:quietMs };
+  const family = stageKey === "prop_factor_pitchers" ? "pitcher" : "hitter";
+  const batch = await first(env.SCORE_DB, `SELECT batch_id, request_id, run_id, status, factor_family, prepared_rows_read, eligible_rows, packets_written, certification_status, certification_grade, output_json, updated_at, created_at
+       FROM prop_factor_batches
+       WHERE request_id=? AND factor_family=? AND status='running'
+       ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC
+       LIMIT 1`, child.request_id, family);
+  if (!batch || !batch.batch_id) return { rescheduled:false, reason:"no_running_prop_factor_batch" };
+  const packetTable = family === "pitcher" ? "prop_factor_pitcher_packets" : "prop_factor_hitter_packets";
+  const packetSummary = await first(env.SCORE_DB, `SELECT COUNT(*) AS packets, COUNT(DISTINCT prepared_row_id) AS prepared_rows, MAX(updated_at) AS last_packet_update_at, MAX(created_at) AS last_packet_at FROM ${packetTable} WHERE batch_id=?`, batch.batch_id);
+  const packets = Number(packetSummary && packetSummary.packets || 0);
+  if (packets <= 0) return { rescheduled:false, reason:"no_packet_evidence_to_resume", batch_id:batch.batch_id, quiet_ms:quietMs };
+  const out = parseJsonSafeText(batch.output_json || "{}", {});
+  const expected = Number(out.expected_factor_rows || out.remaining_rows && (packets + Number(out.remaining_rows || 0)) || batch.prepared_rows_read || 0) || 0;
+  const resumeOutput = {
+    ok:true,
+    data_ok:true,
+    version:SYSTEM_VERSION,
+    worker_name:child.worker_name,
+    job_key:child.job_key,
+    request_id:child.request_id,
+    chain_id:child.chain_id || null,
+    status:"PENDING_PROP_FACTOR_STALE_CHILD_RESUME",
+    certification:"PROP_FACTOR_STALE_CHILD_RESUME_ENQUEUED",
+    certification_grade:"PARTIAL",
+    stage_key:stageKey,
+    factor_family:family,
+    batch_id:batch.batch_id,
+    packets_written:packets,
+    expected_factor_rows:expected || null,
+    remaining_rows:expected ? Math.max(0, expected - packets) : null,
+    quiet_ms:quietMs,
+    last_packet_at:packetSummary && (packetSummary.last_packet_update_at || packetSummary.last_packet_at) || null,
+    resume_reason:"running_child_quiet_with_partial_packet_evidence_no_false_terminal",
+    trigger,
+    latest_run:latestRun || null
+  };
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status='pending', finished_at=NULL, run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status='running'",
+    JSON.stringify(resumeOutput), child.request_id
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'prop_factor_stale_child_rescheduled_for_resume', 'Rescheduled stale running Prop Factor child to pending so worker can resume missing rows from existing packet/coverage evidence', ?, CURRENT_TIMESTAMP)",
+    child.request_id, latestRun && latestRun.run_id ? latestRun.run_id : null, WORKER_NAME, child.job_key, JSON.stringify(resumeOutput)
+  );
+  return { rescheduled:true, output:resumeOutput };
+}
+
 async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, trigger = "market_scoring_full_run_reconcile") {
   if (!child || String(child.status || "") !== "running" || child.finished_at) return { reconciled: false, reason: "child_not_running" };
   const stageKey = String(stage && stage.stage_key || marketScoringFullRunStageKeyFromChild(child) || "");
@@ -1734,7 +1797,11 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
     }
   }
 
-  if (!proof) return { reconciled: false, reason: "no_terminal_child_proof_found", latest_run: latestRun || null };
+  if (!proof) {
+    const resume = await rescheduleStalePropFactorChildForResume(env, stageKey, child, latestRun, trigger);
+    if (resume && resume.rescheduled === true) return { reconciled:false, rescheduled:true, reason:"prop_factor_child_rescheduled_for_resume", output:resume.output, latest_run:latestRun || null };
+    return { reconciled: false, reason: "no_terminal_child_proof_found", latest_run: latestRun || null };
+  }
   const outputFromProof = parseJsonSafeText(proof.output_json || "{}", {});
   const cert = String(proof.certification_status || proof.certification || outputFromProof.certification || outputFromProof.certification_status || "MARKET_SCORING_CHILD_RECONCILED_FROM_PROOF").slice(0, 120);
   const grade = String(proof.certification_grade || outputFromProof.certification_grade || "PASS");

@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.10-hitter-chunk-resume-coverage-guard";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.10-hitter-chunk-resume-coverage-guard";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.11-partial-lifecycle-resume-finalizer";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.11-partial-lifecycle-resume-finalizer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -1112,11 +1112,7 @@ export default {
       try {
         const response = await runFactorMining(request, env);
         const output = await responseToOutputObject(response);
-        if (output && (output.continuation_required === true || output.orchestrator_should_self_continue === true)) {
-          output.control_lifecycle = { ok:true, skipped_worker_self_finalize:true, reason:"partial_continue_owned_by_orchestrator" };
-        } else {
-          output.control_lifecycle = await controlLifecycleFinalize(env, inputForLifecycle, output, output.ok !== false && output.data_ok !== false ? "completed" : "failed");
-        }
+        output.control_lifecycle = await controlLifecycleFinalize(env, inputForLifecycle, output, output.ok !== false && output.data_ok !== false ? "completed" : "failed");
         return jsonResponse(output, response.status || (output.ok !== false ? 200 : 500));
       }
       catch (err) {
