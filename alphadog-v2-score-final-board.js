@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.32-primary-first-review-ledger-rank";
+const VERSION = "alphadog-v2-score-final-board-v0.1.33-quota-reserve-variance-rank";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_HP_FIRST_TRUST_V4_1"; // fallback only; runtime resolves the active profile_key from the terminal scoring_engine_current / hp_board_current batch
 
@@ -29,6 +29,11 @@ const PRIMARY_SANITY_MIN_HP_CONFIDENCE = 80;
 const PRIMARY_SANITY_MIN_NON_PUSH_SAMPLE = 25;
 const FINAL_BOARD_MAX_ROWS_PER_PLAYER_TOTAL = 7;
 const FINAL_BOARD_DEDUPE_SOURCE_MARKET_CLUSTER = true;
+const FINAL_BOARD_PROP_FLOOR_PER_PROP = 5;
+const FINAL_BOARD_SOURCE_FLOOR_PER_APP = 20;
+const FINAL_BOARD_VARIANT_FLOORS = { demon: 10, regular: 20, goblin: 20 };
+const FINAL_BOARD_QUOTA_RESERVE_MIN_HP = 45;
+const FINAL_BOARD_QUOTA_RESERVE_MIN_SCORE = 50;
 function directEvidenceInfoFromBoardRow(row) {
   const calc = parseJsonObject(row.calculation_json);
   if (calc && calc.direct_prop_evidence_bucket) {
@@ -1057,7 +1062,6 @@ async function fetchHpFinalBoardCandidateRows(env, sourceEngineBatchId, pageSize
        AND e.source_line_id = h.source_line_id
       WHERE h.hp_board_batch_id = ?
         AND h.source_engine_batch_id = ?
-        AND h.estimated_hit_probability_0_100 >= 60
         AND COALESCE(h.blocker_count, 0) = 0
         AND h.score_0_100 IS NOT NULL
         AND h.selected_side IS NOT NULL
@@ -1066,8 +1070,8 @@ async function fetchHpFinalBoardCandidateRows(env, sourceEngineBatchId, pageSize
         AND h.canonical_prop_key IS NOT NULL
         AND h.source_key IS NOT NULL
         AND h.mlb_player_id IS NOT NULL
-        AND (COALESCE(h.hp_review_playable,0) = 1 OR COALESCE(h.hp_primary_playable,0) = 1)
-      ORDER BY h.estimated_hit_probability_0_100 DESC, h.score_0_100 DESC, h.probability_confidence_0_100 DESC, h.hp_rank ASC, h.hp_board_row_id ASC
+      ORDER BY COALESCE(h.hp_sort_0_100, (0.72 * COALESCE(h.estimated_hit_probability_0_100,0)) + (0.28 * COALESCE(h.score_0_100,0))) DESC,
+               h.estimated_hit_probability_0_100 DESC, h.score_0_100 DESC, h.probability_confidence_0_100 DESC, h.hp_rank ASC, h.hp_board_row_id ASC
       LIMIT ${limit} OFFSET ${offset}
     `, hpSource.hp_board_batch_id, sourceEngineBatchId);
     pages += 1;
@@ -1077,13 +1081,25 @@ async function fetchHpFinalBoardCandidateRows(env, sourceEngineBatchId, pageSize
     offset += limit;
     if (pages > 1000) throw new Error("score_final_board_hp_current_pagination_guard_exceeded");
   }
-  return { rows, pages, page_size: limit, pagination_mode:"hp_current_limit_offset_hp_sort", hp_source:hpSource };
+  return { rows, pages, page_size: limit, pagination_mode:"hp_current_limit_offset_all_nonblocked_hp_sort_for_quota_reserve", hp_source:hpSource };
+}
+
+function finalBoardStableTieHash(row) {
+  const key = [row && row.prepared_row_id, row && row.source_line_id, row && row.source_key, row && row.player_name, row && row.canonical_prop_key, row && row.line_value, row && row.selected_side].map(v => String(v == null ? "" : v)).join("|");
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 1000) / 1000000;
 }
 
 function finalBoardSortFromHp(row) {
+  const hpSort = num(row && row.hp_sort_0_100, NaN);
+  if (Number.isFinite(hpSort)) return Math.round((hpSort + finalBoardStableTieHash(row)) * 1000000) / 1000000;
   const hp = num(row.estimated_hit_probability_0_100, 0);
   const score = num(row.score_0_100, 0);
-  return Math.round((0.72 * hp + 0.28 * score) * 100) / 100;
+  return Math.round(((0.72 * hp + 0.28 * score) + finalBoardStableTieHash(row)) * 1000000) / 1000000;
 }
 
 function mapHpCurrentRowToFinalBoardRow(rawRow, activeProfileKey) {
@@ -1113,7 +1129,7 @@ function mapHpCurrentRowToFinalBoardRow(rawRow, activeProfileKey) {
       score_0_100: score,
       board_sort_formula: "0.72*estimated_hit_probability_0_100 + 0.28*score_0_100",
       board_sort_0_100: boardSort,
-      eligibility_rule: "HP >= 60, no HP blocker, visible in HP board. HP < 60 is excluded from Final Board even if score is high.",
+      eligibility_rule: "Base visibility is HP >= 60, no HP blocker, visible in HP board. Quota reserve can include lower-HP rows as REVIEW only when needed to preserve prop/source/payout-variant representation; HP is never inflated.",
       score_policy: "Preserve Engine score as system-trust/support score; do not translate HP into score."
     }
   };
@@ -1135,7 +1151,7 @@ function mapHpCurrentRowToFinalBoardRow(rawRow, activeProfileKey) {
     hp_source_board_tier: rawRow.hp_source_board_tier || null,
     hp_source_lane_reason: rawRow.hp_source_lane_reason || null,
     hp_calibration_json: hpCal,
-    note: "Final Board consumes locked HP Board output. HP is the reality gate; score remains Engine trust/support score."
+    note: "Final Board consumes locked HP Board output. HP is the reality gate; score remains Engine trust/support score. Quota reserve rows preserve visibility only and stay REVIEW unless HP board marked them PRIMARY."
   };
   return {
     ...rawRow,
@@ -1303,11 +1319,12 @@ function finalBoardDisplayComparator(a, b) {
 }
 
 function sourceMarketClusterKey(row) {
+  const source = String(row.source_key || "UNKNOWN_SOURCE").toLowerCase();
   const player = String(row.mlb_player_id || row.player_name || "UNKNOWN_PLAYER");
   const prop = String(row.canonical_prop_key || "UNKNOWN_PROP").toLowerCase();
   const line = row.line_value == null ? "NULL_LINE" : String(Number(row.line_value));
   const side = String(row.selected_side || "UNKNOWN_SIDE").toLowerCase();
-  return `${player}|${prop}|${line}|${side}`;
+  return `${source}|${player}|${prop}|${line}|${side}`;
 }
 
 function playerExposureKey(row) {
@@ -1350,7 +1367,7 @@ function dedupeSourceMarketClusters(rows) {
         cluster_rows_seen: clusterRows.length,
         cluster_sources: sources,
         dropped_cluster_rows: losers.length,
-        policy: "Keep one Final Board row per player + prop + line + side across sources; use the highest HP-first/score/trust sort row."
+        policy: "Keep one Final Board row per app/source + player + prop + line + side; cross-app mirrors are preserved when present so app floors are not falsely cut."
       });
       kept.push(winner);
     }
@@ -1380,6 +1397,8 @@ function dedupeSourceMarketClusters(rows) {
 }
 
 function applyGlobalPlayerExposureCap(rows, maxRowsPerPlayer = FINAL_BOARD_MAX_ROWS_PER_PLAYER_TOTAL) {
+  // v0.1.33: exposure is a transparent variance/diversification rank only.
+  // It must not cut rows from the Final Board because the board now has explicit prop/app/variant floors.
   const byPlayer = new Map();
   for (const row of rows || []) {
     const key = playerExposureKey(row);
@@ -1388,49 +1407,138 @@ function applyGlobalPlayerExposureCap(rows, maxRowsPerPlayer = FINAL_BOARD_MAX_R
   }
 
   const kept = [];
-  const dropped = [];
+  const overCapRows = [];
   let cappedPlayerCount = 0;
 
   for (const [playerKey, playerRows] of byPlayer.entries()) {
     const primary = playerRows.filter(r => String(r.board_tier || "REVIEW") === "PRIMARY").sort(finalBoardCandidateComparator);
     const review = playerRows.filter(r => String(r.board_tier || "REVIEW") !== "PRIMARY").sort(finalBoardCandidateComparator);
-    const orderedForCap = [...primary, ...review];
-    if (orderedForCap.length > maxRowsPerPlayer) cappedPlayerCount += 1;
+    const orderedForExposure = [...primary, ...review];
+    if (orderedForExposure.length > maxRowsPerPlayer) cappedPlayerCount += 1;
 
-    orderedForCap.forEach((row, idx) => {
+    orderedForExposure.forEach((row, idx) => {
       const playerFinalBoardRank = idx + 1;
-      if (idx < maxRowsPerPlayer) {
-        appendFinalBoardPolicyAdjustment(row, {
-          key: "player_global_exposure_cap_kept",
-          player_key: playerKey,
-          player_final_board_rank: playerFinalBoardRank,
-          max_total_rows_per_player: maxRowsPerPlayer,
-          primary_priority_applied: true,
-          policy: "PRIMARY rows are admitted first; REVIEW rows only fill remaining player exposure slots."
-        });
-        kept.push(row);
-      } else {
-        appendFinalBoardPolicyAdjustment(row, {
-          key: "player_global_exposure_cap_dropped",
-          player_key: playerKey,
-          player_final_board_rank: playerFinalBoardRank,
-          max_total_rows_per_player: maxRowsPerPlayer,
-          board_tier_before_drop: row.board_tier || null,
-          policy: "Dropped from Final Board only to prevent one player from flooding PRIMARY + REVIEW combined. Source/prepared/scoring/HP rows remain untouched."
-        });
-        dropped.push(row);
-      }
+      const overSoftCap = idx >= maxRowsPerPlayer;
+      appendFinalBoardPolicyAdjustment(row, {
+        key: overSoftCap ? "player_global_exposure_soft_cap_overflow_kept" : "player_global_exposure_soft_cap_kept",
+        player_key: playerKey,
+        player_final_board_rank: playerFinalBoardRank,
+        soft_cap_reference_rows_per_player: maxRowsPerPlayer,
+        cut_applied: false,
+        policy: "Exposure cap is only a late tiebreaker/ledger warning. Rows are not removed merely because one player has many good legs."
+      });
+      if (overSoftCap) overCapRows.push(row);
+      kept.push(row);
     });
   }
 
   return {
     rows: kept.sort(finalBoardDisplayComparator),
-    droppedRows: dropped,
+    droppedRows: [],
+    overCapRows,
     rowsBeforePlayerCap: rows.length,
     rowsAfterPlayerCap: kept.length,
-    droppedByPlayerCap: dropped.length,
+    droppedByPlayerCap: 0,
     cappedPlayerCount,
     maxTotalRowsPerPlayer: maxRowsPerPlayer
+  };
+}
+
+function finalBoardRowKey(row) {
+  return String(row.prepared_row_id || row.source_line_id || row.matrix_id || row.hp_board_row_id || row.probability_row_id || [row.source_key,row.mlb_player_id,row.canonical_prop_key,row.line_value,row.selected_side].join('|'));
+}
+
+function finalBoardVariant(row) {
+  const p = norm(row && row.payout_variant);
+  const line = norm(row && row.source_line_id);
+  const odds = norm(row && row.odds_type);
+  if (p.includes('demon') || line.includes('demon') || odds.includes('demon')) return 'demon';
+  if (p.includes('goblin') || line.includes('goblin') || odds.includes('goblin')) return 'goblin';
+  return 'regular';
+}
+
+function forceReviewQuotaReserveRow(row, reasonKey) {
+  row.board_tier = "REVIEW";
+  row.live_playable = 0;
+  row.review_playable = 1;
+  row.source_candidate_tier = "HP_FIRST_QUOTA_RESERVE_REVIEW";
+  appendFinalBoardPolicyAdjustment(row, {
+    key: "quota_reserve_review_included",
+    quota_reason: reasonKey,
+    cut_applied: false,
+    hp_preserved: row.estimated_hit_probability_0_100 == null ? null : Number(row.estimated_hit_probability_0_100),
+    policy: "Quota reserve preserves representation for prop/app/payout variant floors. It never inflates HP, never promotes to PRIMARY, and remains REVIEW unless independently qualified by HP board."
+  });
+  return row;
+}
+
+function addQuotaReserveRows(mappedRows, baseRows) {
+  const selected = new Map();
+  const addedRows = [];
+  for (const row of baseRows || []) selected.set(finalBoardRowKey(row), row);
+
+  const pool = (mappedRows || [])
+    .filter(r => !selected.has(finalBoardRowKey(r)))
+    .filter(r => num(r.estimated_hit_probability_0_100, 0) >= FINAL_BOARD_QUOTA_RESERVE_MIN_HP)
+    .filter(r => num(r.score_0_100, 0) >= FINAL_BOARD_QUOTA_RESERVE_MIN_SCORE)
+    .sort(finalBoardCandidateComparator);
+
+  const addBest = (predicate, needed, reasonKey) => {
+    let added = 0;
+    if (needed <= 0) return 0;
+    for (const row of pool) {
+      if (added >= needed) break;
+      const key = finalBoardRowKey(row);
+      if (selected.has(key)) continue;
+      if (!predicate(row)) continue;
+      const reserve = forceReviewQuotaReserveRow(row, reasonKey);
+      selected.set(key, reserve);
+      addedRows.push(reserve);
+      added += 1;
+    }
+    return added;
+  };
+
+  const diagnostics = [];
+  const countSelected = (predicate) => Array.from(selected.values()).filter(predicate).length;
+  const countAvailable = (predicate) => (mappedRows || []).filter(predicate).length;
+
+  const props = [...new Set((mappedRows || []).map(r => String(r.canonical_prop_key || '')).filter(Boolean))].sort();
+  for (const prop of props) {
+    const predicate = r => String(r.canonical_prop_key || '') === prop;
+    const available = countAvailable(predicate);
+    const target = Math.min(FINAL_BOARD_PROP_FLOOR_PER_PROP, available);
+    const before = countSelected(predicate);
+    const added = addBest(predicate, Math.max(0, target - before), `prop_floor:${prop}`);
+    diagnostics.push({ floor_type:'prop', key:prop, target, available, before, added, after:countSelected(predicate) });
+  }
+
+  const sources = [...new Set((mappedRows || []).map(r => String(r.source_key || '')).filter(Boolean))].sort();
+  for (const source of sources) {
+    const predicate = r => String(r.source_key || '') === source;
+    const available = countAvailable(predicate);
+    const target = Math.min(FINAL_BOARD_SOURCE_FLOOR_PER_APP, available);
+    const before = countSelected(predicate);
+    const added = addBest(predicate, Math.max(0, target - before), `source_floor:${source}`);
+    diagnostics.push({ floor_type:'source', key:source, target, available, before, added, after:countSelected(predicate) });
+  }
+
+  for (const [variant, floor] of Object.entries(FINAL_BOARD_VARIANT_FLOORS)) {
+    const predicate = r => finalBoardVariant(r) === variant;
+    const available = countAvailable(predicate);
+    const target = Math.min(floor, available);
+    const before = countSelected(predicate);
+    const added = addBest(predicate, Math.max(0, target - before), `variant_floor:${variant}`);
+    diagnostics.push({ floor_type:'variant', key:variant, target, available, before, added, after:countSelected(predicate) });
+  }
+
+  return {
+    rows: Array.from(selected.values()).sort(finalBoardDisplayComparator),
+    addedRows,
+    rowsBeforeQuota: (baseRows || []).length,
+    rowsAfterQuota: selected.size,
+    quotaRowsAdded: addedRows.length,
+    diagnostics
   };
 }
 
@@ -1608,7 +1716,7 @@ async function reconcileStaleRunningFinalBoard(env, input, engine, started) {
         OR score_0_100 IS NULL
         OR confidence_0_100 IS NULL
         OR estimated_hit_probability_0_100 IS NULL
-        OR estimated_hit_probability_0_100 < 60
+        OR (estimated_hit_probability_0_100 < 45 AND board_tier = 'PRIMARY')
         OR board_tier NOT IN ('PRIMARY','REVIEW')
         OR review_playable NOT IN (0,1)
         OR (board_tier = 'PRIMARY' AND live_playable <> 1)
@@ -1727,9 +1835,14 @@ async function generateFinalBoard(env, input) {
     return output;
   }
 
-  const hpEligibleRaw = hpRead.rows;
-  const mappedRows = annotateCorrelation(hpEligibleRaw.map(r => mapHpCurrentRowToFinalBoardRow(r, activeProfileKey)));
-  const sourceMarketClusterResult = dedupeSourceMarketClusters(mappedRows);
+  const hpAllRaw = hpRead.rows;
+  const mappedRows = annotateCorrelation(hpAllRaw.map(r => mapHpCurrentRowToFinalBoardRow(r, activeProfileKey)));
+  const baseVisibleRows = mappedRows.filter(r =>
+    num(r.estimated_hit_probability_0_100, 0) >= 60
+    && (Number(r.hp_review_playable || 0) === 1 || Number(r.hp_primary_playable || 0) === 1 || String(r.board_tier || "") === "PRIMARY" || String(r.board_tier || "") === "REVIEW")
+  ).sort(finalBoardDisplayComparator);
+  const quotaReserveResult = addQuotaReserveRows(mappedRows, baseVisibleRows);
+  const sourceMarketClusterResult = dedupeSourceMarketClusters(quotaReserveResult.rows);
   const playerExposureCapResult = applyGlobalPlayerExposureCap(sourceMarketClusterResult.rows, FINAL_BOARD_MAX_ROWS_PER_PLAYER_TOTAL);
   const rows = playerExposureCapResult.rows;
   const primaryRows = rows.filter(r => r.board_tier === "PRIMARY");
@@ -1794,7 +1907,7 @@ async function generateFinalBoard(env, input) {
         OR score_0_100 IS NULL
         OR confidence_0_100 IS NULL
         OR estimated_hit_probability_0_100 IS NULL
-        OR estimated_hit_probability_0_100 < 60
+        OR (estimated_hit_probability_0_100 < 45 AND board_tier = 'PRIMARY')
         OR board_tier NOT IN ('PRIMARY','REVIEW')
         OR review_playable NOT IN (0,1)
         OR (board_tier = 'PRIMARY' AND live_playable <> 1)
@@ -1887,7 +2000,7 @@ async function generateFinalBoard(env, input) {
     source_scoring_worker_version: engine.worker_version,
     source_hp_board_batch_id: hpSource && hpSource.hp_board_batch_id || null,
     source_hp_batch_id: hpSource && hpSource.source_hp_batch_id || null,
-    hp_current_rows_read: hpEligibleRaw.length,
+    hp_current_rows_read: hpAllRaw.length,
     hp_current_read_pages: hpRead.pages,
     hp_current_page_size: hpRead.page_size,
     hp_current_pagination_mode: hpRead.pagination_mode,
@@ -1908,19 +2021,27 @@ async function generateFinalBoard(env, input) {
     initially_calibrated_candidates_read: initiallyCalibratedCandidates.length,
     calibrated_candidates_written: calibratedCandidates.length,
     hp_source_batch_id: hpSource && hpSource.hp_board_batch_id || null,
-    hp_source_rows_read: hpEligibleRaw.length,
+    hp_source_rows_read: hpAllRaw.length,
     hp_source_candidate_rows_seen: mappedRows.length,
+    base_visible_rows_before_quota: baseVisibleRows.length,
+    quota_reserve_active: true,
+    quota_reserve_min_hp: FINAL_BOARD_QUOTA_RESERVE_MIN_HP,
+    quota_reserve_min_score: FINAL_BOARD_QUOTA_RESERVE_MIN_SCORE,
+    quota_reserve_rows_added: quotaReserveResult.quotaRowsAdded,
+    quota_reserve_diagnostics: quotaReserveResult.diagnostics,
     hp_source_rows_after_source_market_dedupe: sourceMarketClusterResult.rowsAfterDedupe,
     hp_source_rows_after_player_exposure_cap: playerExposureCapResult.rowsAfterPlayerCap,
     hp_source_review_rows: reviewRows.length,
     hp_source_primary_rows: primaryRows.length,
     source_market_cluster_dedupe_active: FINAL_BOARD_DEDUPE_SOURCE_MARKET_CLUSTER,
+    quota_reserve_rows_after_quota: quotaReserveResult.rowsAfterQuota,
     source_market_cluster_rows_before_dedupe: sourceMarketClusterResult.rowsBeforeDedupe,
     source_market_cluster_rows_after_dedupe: sourceMarketClusterResult.rowsAfterDedupe,
     source_market_cluster_dropped_rows: sourceMarketClusterResult.droppedBySourceMarketCluster,
     source_market_cluster_duplicate_clusters: sourceMarketClusterResult.duplicateClusterCount,
     source_market_cluster_cross_source_duplicate_clusters: sourceMarketClusterResult.crossSourceDuplicateClusterCount,
-    player_global_exposure_cap_active: true,
+    player_global_exposure_cap_active: false,
+    player_global_exposure_soft_tiebreaker_active: true,
     player_global_exposure_cap_max_total_rows_per_player: playerExposureCapResult.maxTotalRowsPerPlayer,
     player_global_exposure_rows_before_cap: playerExposureCapResult.rowsBeforePlayerCap,
     player_global_exposure_rows_after_cap: playerExposureCapResult.rowsAfterPlayerCap,
@@ -1942,7 +2063,7 @@ async function generateFinalBoard(env, input) {
     current_rows_written: rows.length,
     table_for_final_ui: "SCORE_DB.score_final_board_current",
     history_table: "SCORE_DB.score_final_board_history",
-    final_ui_contract: "Read estimated_hit_probability_0_100 as the reality thermometer, score_0_100 as the Engine trust/support score, and score_sort_0_100 as HP-first board sort. Final Board source is hp_board_current for the same Engine batch. HP < 60 is excluded; HP >= 60 is visible as PRIMARY/REVIEW according to HP board playability, then source-market clusters are deduped and each player is capped across PRIMARY + REVIEW combined. Rank order is tier-first: PRIMARY rows are ranked before REVIEW rows; each tier remains HP-first using hp_sort_0_100.",
+    final_ui_contract: "Read estimated_hit_probability_0_100 as the reality thermometer, score_0_100 as the Engine trust/support score, and score_sort_0_100 as HP-first board sort. Final Board source is hp_board_current for the same Engine batch. HP >= 60 is base-visible as PRIMARY/REVIEW according to HP board playability. Quota reserve can add lower-HP rows as REVIEW only to satisfy prop/app/payout-variant representation; HP is preserved, not inflated. Source-market dedupe is same-app only, player exposure is a soft tiebreaker only, and rank order is tier-first with HP-sort variance inside each tier.",
     no_external_calls: true,
     no_source_board_mutation: true,
     no_simulation_shadow_mutation: true,
@@ -1958,7 +2079,7 @@ async function generateFinalBoard(env, input) {
     primary_threshold_score: PRIMARY_THRESHOLD_SCORE,
     primary_threshold_confidence: PRIMARY_THRESHOLD_CONFIDENCE,
     primary_cluster_cap_active: false,
-    primary_diversification_policy: "Replaced by global player exposure cap. PRIMARY rows are admitted first; REVIEW rows only fill remaining player slots. Overflow rows are dropped from Final Board only, not from HP/scoring/prepared data.",
+    primary_diversification_policy: "Global player exposure is now a soft tiebreaker/ledger warning only. Rows are not cut merely because one player, prop, app, or payout variant has many candidates.",
     max_primary_rows_per_player: maxPrimaryRowsPerPlayer,
     max_total_rows_per_player: maxTotalRowsPerPlayer,
     by_tier_source: byTierSource,
@@ -1969,11 +2090,11 @@ async function generateFinalBoard(env, input) {
 
   await writeIssue(env, batchId, simBatchId, "LIVE_INVARIANT_FAILURE", "INFO", 0, { note: "No live row invariant failures detected before final board write." });
   await writeIssue(env, batchId, simBatchId, "REVIEW_TIER_INCLUDED", "WARNING", reviewRows.length, { note: "Review tier rows are intentionally included as safe soft rows. They are not strict PRIMARY rows.", review_rows_written: reviewRows.length });
-  await writeIssue(env, batchId, simBatchId, "HP_FIRST_SOURCE_INCLUDED", "INFO", rows.length, { note: "Final Board v0.1.31 writes HP >= 60 rows from hp_board_current after source-market dedupe and global player exposure cap. BIN_ARCHIVE/BIN_REJECT score grades can remain visible as REVIEW because score is trust/support, not the probability gate.", hp_board_batch_id: hpSource && hpSource.hp_board_batch_id || null, hp_rows_read: hpEligibleRaw.length, rows_after_source_market_dedupe: sourceMarketClusterResult.rowsAfterDedupe, rows_after_player_cap: playerExposureCapResult.rowsAfterPlayerCap });
-  await writeIssue(env, batchId, simBatchId, "SOURCE_MARKET_CLUSTER_DEDUPE_APPLIED", sourceMarketClusterResult.droppedBySourceMarketCluster ? "WARNING" : "INFO", sourceMarketClusterResult.droppedBySourceMarketCluster, { note: "Final Board keeps one row per player + prop + line + side across sources to prevent PrizePicks/Sleeper mirror markets from consuming multiple board slots.", rows_before_dedupe: sourceMarketClusterResult.rowsBeforeDedupe, rows_after_dedupe: sourceMarketClusterResult.rowsAfterDedupe, dropped_rows: sourceMarketClusterResult.droppedBySourceMarketCluster, duplicate_clusters: sourceMarketClusterResult.duplicateClusterCount, cross_source_duplicate_clusters: sourceMarketClusterResult.crossSourceDuplicateClusterCount });
-  await writeIssue(env, batchId, simBatchId, "PLAYER_GLOBAL_EXPOSURE_CAP_APPLIED", playerExposureCapResult.droppedByPlayerCap ? "WARNING" : "INFO", playerExposureCapResult.droppedByPlayerCap, { note: "Final Board caps each player across PRIMARY + REVIEW combined. PRIMARY rows are selected first; REVIEW fills remaining exposure slots. Dropped rows remain available upstream in HP/scoring artifacts.", max_total_rows_per_player: playerExposureCapResult.maxTotalRowsPerPlayer, rows_before_cap: playerExposureCapResult.rowsBeforePlayerCap, rows_after_cap: playerExposureCapResult.rowsAfterPlayerCap, dropped_rows: playerExposureCapResult.droppedByPlayerCap, capped_players: playerExposureCapResult.cappedPlayerCount });
+  await writeIssue(env, batchId, simBatchId, "HP_FIRST_SOURCE_INCLUDED", "INFO", rows.length, { note: "Final Board v0.1.33 writes base HP >= 60 rows from hp_board_current, then adds REVIEW-only quota reserve rows when needed for prop/app/payout-variant floors. HP is preserved and never inflated; score remains trust/support.", hp_board_batch_id: hpSource && hpSource.hp_board_batch_id || null, hp_rows_read: hpAllRaw.length, rows_after_source_market_dedupe: sourceMarketClusterResult.rowsAfterDedupe, rows_after_player_cap: playerExposureCapResult.rowsAfterPlayerCap });
+  await writeIssue(env, batchId, simBatchId, "SOURCE_MARKET_CLUSTER_DEDUPE_APPLIED", sourceMarketClusterResult.droppedBySourceMarketCluster ? "WARNING" : "INFO", sourceMarketClusterResult.droppedBySourceMarketCluster, { note: "Final Board keeps one row per app/source + player + prop + line + side. Cross-app mirrors are no longer removed because app floor coverage is required.", rows_before_dedupe: sourceMarketClusterResult.rowsBeforeDedupe, rows_after_dedupe: sourceMarketClusterResult.rowsAfterDedupe, dropped_rows: sourceMarketClusterResult.droppedBySourceMarketCluster, duplicate_clusters: sourceMarketClusterResult.duplicateClusterCount, cross_source_duplicate_clusters: sourceMarketClusterResult.crossSourceDuplicateClusterCount });
+  await writeIssue(env, batchId, simBatchId, "PLAYER_GLOBAL_EXPOSURE_CAP_APPLIED", playerExposureCapResult.droppedByPlayerCap ? "WARNING" : "INFO", playerExposureCapResult.droppedByPlayerCap, { note: "Final Board no longer cuts rows by player exposure. Exposure is a soft tiebreaker/ledger warning only; rows remain visible when they qualify or are needed by quota reserve.", max_total_rows_per_player: playerExposureCapResult.maxTotalRowsPerPlayer, rows_before_cap: playerExposureCapResult.rowsBeforePlayerCap, rows_after_cap: playerExposureCapResult.rowsAfterPlayerCap, dropped_rows: playerExposureCapResult.droppedByPlayerCap, capped_players: playerExposureCapResult.cappedPlayerCount });
   await writeIssue(env, batchId, simBatchId, "PRIMARY_CLUSTER_CAP_APPLIED", clusterCapResult.demotedRows.length ? "WARNING" : "INFO", clusterCapResult.demotedRows.length, { note: "PRIMARY is capped at one row per player/game slate cluster key; overflow rows are demoted to REVIEW, not deleted. This is a diversification/correlation safety rail, not a quality killer or source quota.", max_primary_rows_per_player: clusterCapResult.maxPrimaryRowsPerPlayer, primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap, primary_rows_after_cluster_cap: clusterCapResult.primaryRowsAfterClusterCap, demoted_rows: clusterCapResult.demotedRows.length });
-  await writeIssue(env, batchId, simBatchId, "HP_FIRST_SOURCE_LOCKED", "INFO", rows.length, { note: "Final Board v0.1.31 consumes locked hp_board_current directly, then applies source-market dedupe and global player exposure caps. Legacy HP advisory/rescue/demotion variables are not used in the HP-first path.", hp_board_batch_id: hpSource && hpSource.hp_board_batch_id || null, hp_rows_read: hpEligibleRaw.length, final_rows_written: rows.length, primary_rows_written: primaryRows.length, review_rows_written: reviewRows.length });
+  await writeIssue(env, batchId, simBatchId, "HP_FIRST_SOURCE_LOCKED", "INFO", rows.length, { note: "Final Board v0.1.33 consumes locked hp_board_current directly, applies same-app dedupe, adds quota reserve review rows, and uses player exposure only as soft tiebreaker. Legacy HP advisory/rescue/demotion variables are not used in the HP-first path.", hp_board_batch_id: hpSource && hpSource.hp_board_batch_id || null, hp_rows_read: hpAllRaw.length, final_rows_written: rows.length, primary_rows_written: primaryRows.length, review_rows_written: reviewRows.length });
   await run(env.SCORE_DB, `
     UPDATE score_final_board_batches
     SET status=?, certification=?, certification_grade=?, matrix_rows_read=?, live_rows_read=?, final_rows_written=?, current_rows_written=?, finished_at=CURRENT_TIMESTAMP, output_json=?
