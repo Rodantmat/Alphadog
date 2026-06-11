@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.25-hp-tiebreak-d1-safe-no-case-adj";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.27-no-cut-all-legs-probability-ledger";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -1388,21 +1388,17 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
 
   const sourceKey = row.source_key;
   const prop = row.canonical_prop_key;
-  const modelDeferred = (sourceKey === 'sleeper' && prop === 'rfi_nrfi') || (sourceKey === 'prizepicks' && prop === 'triples') ? 1 : 0;
-  const modelDeferredReason = sourceKey === 'sleeper' && prop === 'rfi_nrfi'
-    ? 'model_deferred_rfi_nrfi'
-    : (sourceKey === 'prizepicks' && prop === 'triples' ? 'model_deferred_low_event_prop' : null);
+  // v0.4.27 no-cut ledger: the scoring phase no longer defers prop models.
+  // Unsupported/specialized models are allowed to receive a trust row and move to HP/model-status handling later.
+  const modelDeferred = 0;
+  const modelDeferredReason = null;
   const missingSideContext = !sideMode;
   const missingVariationKey = !variationKey;
   const impossiblePrizePicksSideShape = sourceKey === 'prizepicks' && ['goblin','demon'].includes(String(oddsType || '').toLowerCase()) && sideMode !== 'more_only';
-  const hardBlocked = !modelDeferred && (
-    row.matrix_status === 'matrix_deferred' ||
-    row.factor_status === 'blocked' ||
-    missingSideContext ||
-    missingVariationKey ||
-    impossiblePrizePicksSideShape
-  ) ? 1 : 0;
-  const matrixSoftBlocked = !hardBlocked && !modelDeferred && Number(row.blocking_for_scoring || 0) === 1 ? 1 : 0;
+  // v0.4.27 no-cut ledger: matrix/factor blocking no longer prevents a leg from receiving score/trust.
+  // Only impossible identity/side-shape rows remain hard-blocked; all other structural gaps become penalties/warnings.
+  const hardBlocked = (missingSideContext || missingVariationKey || impossiblePrizePicksSideShape) ? 1 : 0;
+  const matrixSoftBlocked = !hardBlocked && (row.matrix_status === 'matrix_deferred' || row.factor_status === 'blocked' || Number(row.blocking_for_scoring || 0) === 1) ? 1 : 0;
   const completeMarketBlind = ['market_prop_context_missing','market_prop_context_not_found'].includes(row.market_prop_context_status)
     && ['', 'market_game_context_missing','market_game_context_not_found','market_game_context_absent'].includes(String(row.market_game_context_status || '')) ? 1 : 0;
 
@@ -1514,7 +1510,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
   const lessAlt = rawLess == null ? null : round0(capScoreWithReasons(Math.min(p.maxScoreCap, clamp(rawLess - scorePenalty + bonus)), hardCaps).score);
   const lessFinal = sideMode === 'more_only' ? null : (selectedSide === 'less' ? scoreInteger : (selectedSide === 'more' ? lessAlt : null));
 
-  const scoreStatus = modelDeferred ? 'model_deferred' : (hardBlocked ? 'simulation_hard_blocked' : (!selectedSide ? 'simulation_side_tie_unresolved' : 'simulated_profile_locked'));
+  const scoreStatus = modelDeferred ? 'model_deferred' : (hardBlocked ? 'simulation_hard_blocked' : (!selectedSide ? 'simulation_side_tie_unresolved' : 'simulated_profile_locked')); // no-cut: matrix/factor gaps are not hard blockers
   let scoreGrade = 'BIN_REJECT';
   if (modelDeferred) scoreGrade = 'BIN_MODEL_DEFERRED';
   else if (hardBlocked) scoreGrade = 'BIN_HARD_BLOCK';
@@ -2437,6 +2433,7 @@ async function runScoringEngineCurrent(env, input) {
       certification_grade: 'PARTIAL',
       framework_only: false,
       production_scoring_current: true,
+    no_cut_all_legs_scoring_ledger: true,
       profile_key: PRODUCTION_PROFILE_KEY,
       profile_version: profile.version,
       matrix_rows_read: matrixRows,
@@ -2530,7 +2527,7 @@ async function runScoringEngineCurrent(env, input) {
     scoring_summary: summary,
     score_current_table: 'SCORE_DB.scoring_engine_current',
     profile_table: 'SCORE_DB.scoring_engine_profiles_current',
-    selected_side_policy: 'STRICT_C_REALISTIC_V3_2 current scoring uses the proven simulation side-selection path; Goblin/Demon remain more-only; no ranking/final-board write here.',
+    selected_side_policy: 'v0.4.27 no-cut ledger: scoring current writes every matrix row; matrix/factor gaps no longer remove rows before HP; Goblin/Demon remain more-only; filtering occurs after HP/trust ledger.',
     chunked_current_scoring: true,
     resumed_existing_batch: resumedExistingBatch,
     elapsed_ms: Date.now() - started
@@ -3035,8 +3032,8 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.25-hp-tiebreak-d1-safe-no-case-adj-board";
-const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_1_6_STOLEN_BASES_ROUTE_LOCK";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.27-no-cut-all-legs-probability-ledger-board";
+const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_1_7_NO_CUT_ALL_ROWS";
 const HP_MAX_ROWS_PER_RUN = 12000;
 const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 180;
 const HP_CURRENT_CHUNK_MAX_MILLIS = 32000;
@@ -3044,7 +3041,7 @@ const HP_PLAYER_CHUNK_SIZE = 50;
 const HP_BOARD_MODE = "hp_board_current_build";
 const HP_BOARD_JOB_KEY = "hp-board";
 const HP_BOARD_PROFILE_KEY = "HP_BOARD_RECENT_FORM_PROFILE";
-const HP_BOARD_PROFILE_VERSION = "HP_BOARD_HP_FIRST_TRUST_SCORE_V0_1_4_TIMEOUT_SAFE";
+const HP_BOARD_PROFILE_VERSION = "HP_BOARD_HP_FIRST_TRUST_SCORE_V0_1_6_NO_CUT_LEDGER";
 const HP_BOARD_CHUNK_ROWS_PER_INVOCATION = 140;
 const HP_BOARD_LANE_ORDER = {
   HP_PREMIUM_TRUSTED: 1,
@@ -3055,6 +3052,7 @@ const HP_BOARD_LANE_ORDER = {
   HP_EDGE_LOW_TRUST_REVIEW: 6,
   HP_THIN_EDGE_REVIEW: 7,
   HP_LOW_SAMPLE_REVIEW: 8,
+  HP_MODEL_PENDING_REVIEW: 9,
   HP_KILLED_LOW_PROBABILITY: 98,
   HP_UNSUPPORTED: 99,
   HP_PRIMARY_ELITE: 1,
@@ -3076,14 +3074,18 @@ const HP_HITTER_PROP_PROFILES = {
   rbis: { family:"hitter", stat:"rbi", label:"RBIs", windows:[5,10,20,40], profile:"HITTER_LOW_FREQ" },
   walks: { family:"hitter", stat:"walks", label:"Walks", windows:[5,10,20,40], profile:"HITTER_MED_FREQ" },
   stolen_bases: { family:"hitter", stat:"stolen_bases", label:"Stolen Bases", windows:[5,10,20,40], profile:"HITTER_LOW_FREQ" },
+  triples: { family:"hitter", stat:"triples", label:"Triples", windows:[5,10,20,40], profile:"HITTER_LOW_FREQ" },
+  hitter_strikeouts: { family:"hitter", stat:"strikeouts", label:"Hitter Strikeouts", windows:[5,10,20,40], profile:"HITTER_MED_FREQ" },
   hits_runs_rbis: { family:"hitter", stat:"hits_runs_rbis", label:"Hits+Runs+RBIs", windows:[5,10,20,40], profile:"HITTER_HIGH_FREQ" }
 };
 
 const HP_PITCHER_PROP_PROFILES = {
   pitcher_strikeouts: { family:"pitcher", stat:"strikeouts", label:"Pitcher Strikeouts", windows:[3,5,10,20], profile:"PITCHER_VOLUME" },
   pitcher_outs: { family:"pitcher", stat:"outs_recorded", label:"Pitcher Outs", windows:[3,5,10,20], profile:"PITCHER_VOLUME" },
+  pitching_outs: { family:"pitcher", stat:"outs_recorded", label:"Pitching Outs", windows:[3,5,10,20], profile:"PITCHER_VOLUME" },
   hits_allowed: { family:"pitcher", stat:"hits_allowed", label:"Hits Allowed", windows:[3,5,10,20], profile:"PITCHER_DAMAGE" },
   earned_runs: { family:"pitcher", stat:"earned_runs", label:"Earned Runs", windows:[3,5,10,20], profile:"PITCHER_DAMAGE" },
+  earned_runs_allowed: { family:"pitcher", stat:"earned_runs", label:"Earned Runs Allowed", windows:[3,5,10,20], profile:"PITCHER_DAMAGE" },
   walks_allowed: { family:"pitcher", stat:"walks_allowed", label:"Walks Allowed", windows:[3,5,10,20], profile:"PITCHER_CONTROL" },
   runs_allowed: { family:"pitcher", stat:"runs_allowed", label:"Runs Allowed", windows:[3,5,10,20], profile:"PITCHER_DAMAGE" }
 };
@@ -3328,11 +3330,11 @@ async function hpSourceRows(env, input = {}){
     const scoreRows = await all(env.SCORE_DB, `
       SELECT *
       FROM scoring_engine_current
-      WHERE score_0_100 IS NOT NULL
-        AND selected_side IS NOT NULL
-        AND COALESCE(blocker_count, 0) = 0
-        AND score_status IN ('scored_current','simulated_profile_locked')
-      ORDER BY score_0_100 DESC, confidence_0_100 DESC
+      ORDER BY
+        COALESCE(score_0_100, 0) DESC,
+        COALESCE(confidence_0_100, 0) DESC,
+        COALESCE(player_name, ''),
+        COALESCE(canonical_prop_key, '')
       LIMIT ${HP_MAX_ROWS_PER_RUN}`);
     if(scoreRows.length){
       return { source_table:"scoring_engine_current", rows:scoreRows, final_board_batch_id:null, engine_batch_id:scoreRows[0].batch_id || null };
@@ -3342,7 +3344,7 @@ async function hpSourceRows(env, input = {}){
   if(finalRows.length){ return { source_table:"score_final_board_current", rows:finalRows, final_board_batch_id:finalRows[0].final_board_batch_id || null, engine_batch_id:finalRows[0].source_engine_batch_id || null }; }
   return { source_table:"scoring_engine_current", rows:[], final_board_batch_id:null, engine_batch_id:null };
 }
-async function hpFetchHitterLogs(env, playerIds, maxDate){ const map=new Map(); for(const c of hpChunks(playerIds, HP_PLAYER_CHUNK_SIZE)){ if(!c.length) continue; const q=`SELECT player_id, game_pk, game_date, hits, singles, doubles, home_runs, total_bases, runs, rbi, walks, stolen_bases FROM hitter_game_logs WHERE player_id IN (${c.map(()=>'?').join(',')}) AND game_date < ? ORDER BY player_id, game_date DESC`; const rows=await all(env.STATS_HITTER_DB, q, ...c, maxDate); for(const r of rows){ const k=String(r.player_id); if(!map.has(k)) map.set(k,[]); map.get(k).push(r); } } return map; }
+async function hpFetchHitterLogs(env, playerIds, maxDate){ const map=new Map(); for(const c of hpChunks(playerIds, HP_PLAYER_CHUNK_SIZE)){ if(!c.length) continue; const q=`SELECT player_id, game_pk, game_date, hits, singles, doubles, triples, home_runs, total_bases, runs, rbi, walks, strikeouts, stolen_bases FROM hitter_game_logs WHERE player_id IN (${c.map(()=>'?').join(',')}) AND game_date < ? ORDER BY player_id, game_date DESC`; const rows=await all(env.STATS_HITTER_DB, q, ...c, maxDate); for(const r of rows){ const k=String(r.player_id); if(!map.has(k)) map.set(k,[]); map.get(k).push(r); } } return map; }
 async function hpFetchPitcherLogs(env, playerIds, maxDate){ const map=new Map(); for(const c of hpChunks(playerIds, HP_PLAYER_CHUNK_SIZE)){ if(!c.length) continue; const q=`SELECT player_id, game_pk, game_date, outs_recorded, innings_pitched_decimal, hits_allowed, runs_allowed, earned_runs, walks_allowed, strikeouts FROM pitcher_game_logs WHERE player_id IN (${c.map(()=>'?').join(',')}) AND game_date < ? ORDER BY player_id, game_date DESC`; const rows=await all(env.STATS_PITCHER_DB, q, ...c, maxDate); for(const r of rows){ const k=String(r.player_id); if(!map.has(k)) map.set(k,[]); map.get(k).push(r); } } return map; }
 async function hpWriteIssue(env,batchId,src,probabilityRowId,severity,issueType,reason,details={}){ await run(env.SCORE_DB, `INSERT INTO hit_probability_issues (issue_id,batch_id,probability_row_id,final_board_row_id,score_row_id,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,selected_side,severity,issue_type,reason,details_json,official_date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, hpUid('hp_issue'), batchId, probabilityRowId || null, src.final_board_row_id || null, src.score_row_id || null, src.prepared_row_id || null, src.game_pk || null, src.mlb_player_id || null, src.canonical_prop_key || null, src.selected_side || null, severity, issueType, reason, hpSafeJson(details,4000), src.official_date || null); }
 
@@ -3371,13 +3373,14 @@ function hpBoardLane(row){
   const conf=hpNum(row.probability_confidence_0_100, 0);
   const sample=hpNum(row.sample_size, 0);
   const score=hpNum(row.score_0_100, 0);
+  if(String(row.probability_status || '') === 'model_pending_no_cut') return 'HP_MODEL_PENDING_REVIEW';
   if(hp < 60) return 'HP_KILLED_LOW_PROBABILITY';
-  if(sample < 15) return 'HP_LOW_SAMPLE_REVIEW';
+  if(sample < 20) return 'HP_LOW_SAMPLE_REVIEW';
   if(hp >= 85 && score >= 82 && conf >= 70) return 'HP_PREMIUM_TRUSTED';
   if(hp >= 85) return 'HP_PREMIUM_LOW_TRUST_REVIEW';
-  if(hp >= 75 && score >= 80 && conf >= 65) return 'HP_STRONG_TRUSTED';
+  if(hp >= 75 && score >= 82 && conf >= 80) return 'HP_STRONG_TRUSTED';
   if(hp >= 75) return 'HP_STRONG_LOW_TRUST_REVIEW';
-  if(hp >= 65 && score >= 75) return 'HP_EDGE_TRUSTED_REVIEW';
+  if(hp >= 65 && score >= 82 && conf >= 70) return 'HP_EDGE_TRUSTED_REVIEW';
   if(hp >= 65) return 'HP_EDGE_LOW_TRUST_REVIEW';
   if(hp >= 60) return 'HP_THIN_EDGE_REVIEW';
   return 'HP_UNSUPPORTED';
@@ -3391,8 +3394,9 @@ function hpBoardLaneReason(lane){
   if(lane === 'HP_EDGE_TRUSTED_REVIEW') return 'HP is 65+ and trust score is supportive; edge review candidate.';
   if(lane === 'HP_EDGE_LOW_TRUST_REVIEW') return 'HP is 65+ but trust score/context is thin; low-trust edge review.';
   if(lane === 'HP_THIN_EDGE_REVIEW') return 'HP is 60–64.9; thin edge, review only.';
-  if(lane === 'HP_LOW_SAMPLE_REVIEW') return 'HP is 60+ but sample is below threshold; keep as review only and do not promote live.';
-  if(lane === 'HP_KILLED_LOW_PROBABILITY') return 'HP is below 60%; not useful for testing/final consideration regardless of trust score.';
+  if(lane === 'HP_LOW_SAMPLE_REVIEW') return 'HP is 60+ but sample is below the 20 non-push/live-gate threshold; keep as review only and do not promote live.';
+  if(lane === 'HP_MODEL_PENDING_REVIEW') return 'Probability model is pending; row is preserved and must be filtered after ledger calculation/model status.';
+  if(lane === 'HP_KILLED_LOW_PROBABILITY') return 'HP is below 60%; filtered after probability calculation, not before.';
   if(lane === 'HP_UNSUPPORTED') return 'HP/trust support is incomplete or unsupported.';
   if(lane === 'HP_PRIMARY_ELITE') return 'Legacy alias: premium HP and strong trust.';
   if(lane === 'HP_PRIMARY_STRONG') return 'Legacy alias: strong HP and strong trust.';
@@ -3476,8 +3480,8 @@ function hpBoardCalibrationJson(row, bucketCalibration){
     ranks_preserved: true,
     true_calibration_blocked_reason: 'No settled outcome/backtest/settlement table exists in SCORE_DB; this is internal recent-form display calibration only.',
     note: 'Use calibrated_display_hp_0_100 only as display compression/lift for current recent-form HP buckets. Do not treat as true modeled hit probability.',
-    primary_elite: 'hp>=70 confidence>=95 sample>=20 score>=84',
-    primary_strong: 'hp>=62 confidence>=90 sample>=20 score>=84',
+    primary_elite: 'hp>=85 confidence>=70 sample>=20 score>=82',
+    primary_strong: 'hp>=75 confidence>=80 sample>=20 score>=82',
     supported_review: 'hp>=55 confidence>=70 sample>=15 score>=76',
     divergence_review: 'score>=84 hp<45 sample>=15',
     low_sample_review: 'sample<15',
@@ -3782,45 +3786,59 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
             ELSE 'BIN_REJECT'
           END AS trust_score_grade,
           CASE
+            WHEN c.probability_status = 'model_pending_no_cut' THEN 'HP_MODEL_PENDING_REVIEW'
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 60 THEN 'HP_KILLED_LOW_PROBABILITY'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 THEN 'HP_PREMIUM_TRUSTED'
+            WHEN COALESCE(c.sample_size,0) < 20 THEN 'HP_LOW_SAMPLE_REVIEW'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 AND COALESCE(c.score_0_100,0) >= 82 AND COALESCE(c.probability_confidence_0_100,0) >= 70 THEN 'HP_PREMIUM_TRUSTED'
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 THEN 'HP_PREMIUM_LOW_TRUST_REVIEW'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 THEN 'HP_STRONG_TRUSTED'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 82 AND COALESCE(c.probability_confidence_0_100,0) >= 80 THEN 'HP_STRONG_TRUSTED'
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 THEN 'HP_STRONG_LOW_TRUST_REVIEW'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 AND COALESCE(c.score_0_100,0) >= 75 THEN 'HP_EDGE_TRUSTED_REVIEW'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 AND COALESCE(c.score_0_100,0) >= 82 AND COALESCE(c.probability_confidence_0_100,0) >= 70 THEN 'HP_EDGE_TRUSTED_REVIEW'
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 THEN 'HP_EDGE_LOW_TRUST_REVIEW'
             ELSE 'HP_THIN_EDGE_REVIEW'
           END AS hp_lane,
           CASE
+            WHEN c.probability_status = 'model_pending_no_cut' THEN 9
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 60 THEN 98
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 THEN 1
+            WHEN COALESCE(c.sample_size,0) < 20 THEN 8
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 AND COALESCE(c.score_0_100,0) >= 82 AND COALESCE(c.probability_confidence_0_100,0) >= 70 THEN 1
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 THEN 2
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 THEN 3
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 82 AND COALESCE(c.probability_confidence_0_100,0) >= 80 THEN 3
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 THEN 4
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 AND COALESCE(c.score_0_100,0) >= 75 THEN 5
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 AND COALESCE(c.score_0_100,0) >= 82 AND COALESCE(c.probability_confidence_0_100,0) >= 70 THEN 5
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 THEN 6
             ELSE 7
           END AS lane_order,
           CASE
+            WHEN c.probability_status = 'model_pending_no_cut' THEN 'REVIEW'
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 60 THEN 'KILLED_LOW_HP'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 THEN 'PRIMARY'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 AND COALESCE(c.score_0_100,0) >= 82 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 20 THEN 'PRIMARY'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 82 AND COALESCE(c.probability_confidence_0_100,0) >= 80 AND COALESCE(c.sample_size,0) >= 20 THEN 'PRIMARY'
             ELSE 'REVIEW'
           END AS hp_board_tier,
           CASE
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15 AND COALESCE(c.blocker_count,0)=0 THEN 1
+            WHEN c.probability_status = 'model_pending_no_cut' THEN 0
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 AND COALESCE(c.score_0_100,0) >= 82 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.blocker_count,0)=0 THEN 1
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 82 AND COALESCE(c.probability_confidence_0_100,0) >= 80 AND COALESCE(c.sample_size,0) >= 20 AND COALESCE(c.blocker_count,0)=0 THEN 1
             ELSE 0
           END AS hp_live_playable,
           CASE
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 60 AND NOT (COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 80 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 15) AND COALESCE(c.blocker_count,0)=0 THEN 1
+            WHEN c.probability_status = 'model_pending_no_cut' THEN 1
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 60 AND NOT (
+              (COALESCE(c.estimated_hit_probability_0_100,0) >= 85 AND COALESCE(c.score_0_100,0) >= 82 AND COALESCE(c.probability_confidence_0_100,0) >= 70 AND COALESCE(c.sample_size,0) >= 20)
+              OR (COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 82 AND COALESCE(c.probability_confidence_0_100,0) >= 80 AND COALESCE(c.sample_size,0) >= 20)
+            ) AND COALESCE(c.blocker_count,0)=0 THEN 1
             ELSE 0
           END AS hp_review_playable,
           CASE
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 60 THEN 'Hit probability is below 60%; killed from useful board/testing consideration regardless of score.'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 AND COALESCE(c.score_0_100,0) >= 80 THEN 'Premium HP with trusted system support.'
+            WHEN c.probability_status = 'model_pending_no_cut' THEN 'Probability model is pending, but the row is preserved in the HP ledger; filter after calculation/model status, not before.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) < 60 THEN 'Hit probability is below 60%; filtered after HP calculation, not before.'
+            WHEN COALESCE(c.sample_size,0) < 20 THEN 'HP survives but sample is below the 20 non-push/live-gate threshold; review only.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 AND COALESCE(c.score_0_100,0) >= 82 THEN 'Premium HP with strong trust support.'
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 85 THEN 'Premium HP survives; score says lower system trust, review only.'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 80 THEN 'Strong HP with trusted system support.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 AND COALESCE(c.score_0_100,0) >= 82 THEN 'Strong HP with strong trust support.'
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 75 THEN 'Strong HP survives; score says lower system trust, review only.'
-            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 AND COALESCE(c.score_0_100,0) >= 75 THEN 'Positive HP edge with useful system trust.'
+            WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 AND COALESCE(c.score_0_100,0) >= 82 THEN 'Positive HP edge with strong trust support; review only.'
             WHEN COALESCE(c.estimated_hit_probability_0_100,0) >= 65 THEN 'Positive HP edge with lower system trust; review only.'
             ELSE 'Thin HP edge above 60%; review only.'
           END AS lane_reason
@@ -3845,10 +3863,12 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
   const lowHpPlayableRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND COALESCE(estimated_hit_probability_0_100,0) < 60 AND (COALESCE(hp_primary_playable,0)=1 OR COALESCE(live_playable,0)=1 OR board_tier='PRIMARY') AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
   const eligibleMissingScoreRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND COALESCE(estimated_hit_probability_0_100,0) >= 60 AND score_0_100 IS NULL AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
   const eligibleNotVisibleRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND COALESCE(estimated_hit_probability_0_100,0) >= 60 AND COALESCE(hp_review_playable,0)=0 AND COALESCE(hp_primary_playable,0)=0 AND COALESCE(blocker_count,0)=0`, hpBoardBatchId) || {};
+  const weakPrimaryRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND COALESCE(hp_primary_playable,0)=1 AND (COALESCE(score_0_100,0) < 82 OR COALESCE(sample_size,0) < 20 OR COALESCE(probability_confidence_0_100,0) < 70 OR COALESCE(blocker_count,0) > 0)`, hpBoardBatchId) || {};
+  const lowSamplePrimaryRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hp_board_current WHERE hp_board_batch_id=? AND COALESCE(hp_primary_playable,0)=1 AND COALESCE(sample_size,0) < 20`, hpBoardBatchId) || {};
   const boardRows = Number(qa.rows || 0);
   const finalLinkOk = sourceFinalBoardBatchId ? (Number(qa.null_final_rows || 0) === 0) : true;
   const integrityOk = boardRows === hpRows && boardRows === Number(qa.hp_rows || 0) && boardRows === Number(qa.ranks || 0) && Number(qa.min_rank || 0) === 1 && Number(qa.max_rank || 0) === boardRows && finalLinkOk && Number(qa.null_prepared_rows || 0) === 0 && Number(qa.missing_calibration_rows || 0) === 0;
-  const hpFirstOk = Number(lowHpPlayableRow.rows || 0) === 0 && Number(eligibleMissingScoreRow.rows || 0) === 0 && Number(eligibleNotVisibleRow.rows || 0) === 0;
+  const hpFirstOk = Number(lowHpPlayableRow.rows || 0) === 0 && Number(eligibleMissingScoreRow.rows || 0) === 0 && Number(eligibleNotVisibleRow.rows || 0) === 0 && Number(weakPrimaryRow.rows || 0) === 0 && Number(lowSamplePrimaryRow.rows || 0) === 0;
   const ok = integrityOk && hpFirstOk;
   const status = ok ? 'completed_hp_board_current_hp_first_trust_score_fast_terminal' : 'failed_hp_board_hp_first_trust_guard';
   const cert = ok ? 'HP_BOARD_HP_FIRST_TRUST_SCORE_CERTIFIED_TIMEOUT_SAFE' : 'HP_BOARD_HP_FIRST_TRUST_SCORE_GUARD_FAILED';
@@ -3861,7 +3881,7 @@ async function runHpBoardCurrentFastTerminal(env, input = {}, hpBatch = null){
     source_table:'hit_probability_current', source_rows_read:hpRows, rows_read:hpRows, supported_rows:hpRows,
     probability_rows_written:hpRows, recent_form_rows_written:hpRows, hp_board_current_written:boardRows, board_rows_written:boardRows, history_rows_written:boardRows, rows_written:boardRows,
     issue_rows_written:Number(issueCountRow.rows || 0), primary_rows:Number(primaryRow.rows || 0), review_rows:Number(reviewRow.rows || 0), fade_rows:Number(fadeRow.rows || 0),
-    low_hp_playable_rows:Number(lowHpPlayableRow.rows || 0), eligible_hp_missing_score_rows:Number(eligibleMissingScoreRow.rows || 0), eligible_hp_not_visible_rows:Number(eligibleNotVisibleRow.rows || 0),
+    low_hp_playable_rows:Number(lowHpPlayableRow.rows || 0), eligible_hp_missing_score_rows:Number(eligibleMissingScoreRow.rows || 0), eligible_hp_not_visible_rows:Number(eligibleNotVisibleRow.rows || 0), weak_primary_rows:Number(weakPrimaryRow.rows || 0), low_sample_primary_rows:Number(lowSamplePrimaryRow.rows || 0), hp_live_min_score:82, hp_live_min_sample:20,
     avg_score:qa.avg_score, avg_hp:qa.avg_hp, row_parity_ok:boardRows === hpRows, rank_integrity_ok:Number(qa.ranks || 0) === boardRows, hp_first_gate_ok:hpFirstOk,
     true_calibration_blocked_reason:'No settled outcome/backtest/settlement table exists in SCORE_DB.', raw_hp_preserved:true, score_preserved_as_trust_metric:true, no_true_hit_probability_claims:true, no_true_probability_claims:true,
     no_score_mutation:true, no_scoring_engine_current_mutation:true, no_final_board_mutation:true, no_prepared_board_mutation:true, no_source_board_mutation:true, hp_board_ranking:true, no_candidate_board_write:true,
@@ -3893,7 +3913,7 @@ async function runHitProbabilityCurrent(env, input = {}){
     const written=Number(writtenRow.rows||0);
     const unsupported=Number(unsupportedRow.rows||0);
     const issues=Number(issueRow.rows||0);
-    const rowParityOk=sourceRows === (written + unsupported);
+    const rowParityOk=sourceRows === written;
     if(!rowParityOk){
       const output=baseIdentity({
         ok:false,data_ok:false,version:HP_VERSION,worker_name:WORKER_NAME,logical_worker_name:'alphadog-v2-hit-probability',deployed_worker_slot:'alphadog-v2-score-audit',job_key:HP_JOB_KEY,
@@ -3949,7 +3969,7 @@ async function runHitProbabilityCurrent(env, input = {}){
 
   const currentRow=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hit_probability_current WHERE batch_id=?`, batchId) || {};
   const unsupportedRow=await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM hit_probability_issues WHERE batch_id=? AND issue_type='HIT_PROBABILITY_ROW_UNSUPPORTED'`, batchId) || {};
-  const processedOffset=Number(currentRow.rows||0)+Number(unsupportedRow.rows||0);
+  const processedOffset=Number(currentRow.rows||0);
   const sourceRowsTotal=source.rows.length;
   const slice=source.rows.slice(processedOffset, processedOffset + HP_CURRENT_CHUNK_ROWS_PER_INVOCATION);
   const configs=await hpLoadProfileConfigs(env);
@@ -3964,7 +3984,17 @@ async function runHitProbabilityCurrent(env, input = {}){
   const pitcherLogs=await hpFetchPitcherLogs(env,pitcherIds,maxDate);
 
   let writtenThisInvocation=0, issuesThisInvocation=0, blockedThisInvocation=0, warningRowsThisInvocation=0, lowSampleIssuesThisInvocation=0, divergenceIssuesThisInvocation=0, cappedRowsThisInvocation=0, lowFreqLessRowsThisInvocation=0, pitcherVolatilityRowsThisInvocation=0;
-  for(const src of unsupported){ issuesThisInvocation++; blockedThisInvocation++; await hpWriteIssue(env,batchId,src.row,null,'blocker','HIT_PROBABILITY_ROW_UNSUPPORTED',src.reason,{isolated_same_scoring_worker_slot:true,no_score_mutation:true,hp_current_chunked:true}); }
+  for(const src of unsupported){
+    if((Date.now()-started) >= HP_CURRENT_CHUNK_MAX_MILLIS) break;
+    const r = src.row;
+    const probabilityRowId = hpUid('hp_row');
+    const side = hpSide(r.selected_side || r.prop_side) || String(r.selected_side || r.prop_side || 'unknown').toLowerCase() || 'unknown';
+    const pendingHp = 50.0;
+    await run(env.SCORE_DB, `INSERT INTO hit_probability_current (probability_row_id,batch_id,source_table,final_board_row_id,score_row_id,prepared_row_id,matrix_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,canonical_prop_key,line_value,selected_side,prop_family,prop_line_profile_key,probability_model_version,probability_status,probability_grade,estimated_hit_probability_0_100,probability_confidence_0_100,probability_band,empirical_hit_rate_0_1,reliability_0_1,sample_size,non_push_sample,hit_count,miss_count,push_count,push_risk_0_1,score_0_100,score_grade,board_tier,live_playable,review_playable,warning_count,blocker_count,model_notes_json,window_summary_json,source_snapshot_json,raw_empirical_hit_rate_0_1,raw_weighted_empirical_rate_v0_1_2_0_100,raw_weighted_empirical_rate_v0_1_3_0_100,estimated_recent_form_hit_rate_0_100,sample_reliability_score_0_100,recent_form_band,recent_form_grade,display_adjustment_reason,display_warning_flags_json,display_notes_json,factor_alignment_score_0_100,factor_adjustment_0_100,score_recent_form_gap_0_100,recent_form_rank_hint_0_100,profile_config_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, probabilityRowId,batchId,source.source_table,r.final_board_row_id||null,r.score_row_id||null,r.prepared_row_id||null,r.matrix_id||null,r.source_line_id||null,r.source_key||null,r.game_pk||null,r.official_date||null,r.official_game_time_utc||null,r.mlb_player_id||null,r.player_name||null,r.canonical_prop_key||null,r.line_value||null,side,'model_pending','MODEL_PENDING__'+String(r.canonical_prop_key||'unknown').toUpperCase(),HP_PROFILE_VERSION,'model_pending_no_cut', 'MODEL_PENDING', pendingHp,0,'HP_MODEL_PENDING',null,0,0,0,0,0,0,0,r.score_0_100||null,r.score_grade||null,r.board_tier||null,r.live_playable||0,r.review_playable||0,1,0,hpSafeJson({estimated_not_true_probability:true, no_cut_ledger:true, reason:src.reason, note:'No supported probability profile yet; row is preserved for post-calculation filtering and future model work, not cut before HP ledger.'},4000),hpSafeJson({windows:[], model_pending:true},3000),hpSafeJson({source_final_board_batch_id:source.final_board_batch_id, source_engine_batch_id:source.engine_batch_id},3000),null,null,null,pendingHp,0,'HP_MODEL_PENDING','MODEL_PENDING','MODEL_PENDING_NO_CUT',hpSafeJson(['HP_MODEL_PENDING'],1000),hpSafeJson({model_pending:true, no_cut_ledger:true},2000),0,0,null,0,hpSafeJson({model_pending:true, no_cut_ledger:true},2000));
+    writtenThisInvocation++;
+    issuesThisInvocation++;
+    await hpWriteIssue(env,batchId,r,probabilityRowId,'warning','HIT_PROBABILITY_MODEL_PENDING_NO_CUT',src.reason,{isolated_same_scoring_worker_slot:true,no_score_mutation:true,hp_current_chunked:true,no_cut_ledger:true});
+  }
   for(const r of supported){
     if((Date.now()-started) >= HP_CURRENT_CHUNK_MAX_MILLIS) break;
     const profile=r._profile;
@@ -3999,7 +4029,7 @@ async function runHitProbabilityCurrent(env, input = {}){
   const writtenTotal=Number(writtenRow2.rows||0);
   const unsupportedTotal=Number(unsupportedRow2.rows||0);
   const issuesTotal=Number(issueRow2.rows||0);
-  const processedTotal=writtenTotal + unsupportedTotal;
+  const processedTotal=writtenTotal;
   const remainingRows=Math.max(0, sourceRowsTotal - processedTotal);
   const currentComplete=remainingRows <= 0;
 

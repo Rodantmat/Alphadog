@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.220-prop-factor-hitter-coverage-continuation-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.221-market-scoring-no-cut-probability-ledger";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -966,8 +966,8 @@ const MARKET_SCORING_FULL_RUN_STAGES = [
   { stage_key: "prop_factor_hitters", job_key: "prop-factor-miner", worker_name: "alphadog-v2-phase2b-recent-form", display_name: "Prop Factor Miner Hitters", visible_button: "FACTORS > Hitters", mode: "hitter_prop_factor_mining", worker_group: "10 Factors", phase_key: "factors", priority: 6, factor_family: "hitter" },
   { stage_key: "prop_factor_pitchers", job_key: "prop-factor-miner", worker_name: "alphadog-v2-phase2b-recent-form", display_name: "Prop Factor Miner Pitchers", visible_button: "FACTORS > Pitchers", mode: "pitcher_prop_factor_mining", worker_group: "10 Factors", phase_key: "factors", priority: 6, factor_family: "pitcher" },
   { stage_key: "prop_matrix_build", job_key: "prop-matrix-builder", worker_name: "alphadog-v2-phase2b-certifier", display_name: "Prop Matrix Build", visible_button: "MATRIX > Build", mode: "prop_matrix_build", worker_group: "10 Matrix", phase_key: "matrix", priority: 6 },
-  { stage_key: "scoring_engine", job_key: "scoring-engine", worker_name: "alphadog-v2-score-audit", display_name: "Scoring Engine Current", visible_button: "SCORING > Engine", mode: "scoring_engine_current_hp_first_trust_v4_1", worker_group: "11 Scoring", phase_key: "scoring", priority: 6 },
-  { stage_key: "hit_probability", job_key: "hit-probability", worker_name: "alphadog-v2-score-audit", display_name: "Hit Probability + HP Board", visible_button: "SCORING > Hit Prob", mode: "hit_probability_current_estimate", worker_group: "11 Scoring", phase_key: "scoring", priority: 7 },
+  { stage_key: "scoring_engine", job_key: "scoring-engine", worker_name: "alphadog-v2-score-audit", display_name: "No-Cut Leg Trust Ledger", visible_button: "SCORING > Engine", mode: "scoring_engine_current_no_cut_all_legs_probability_ledger", worker_group: "11 Scoring", phase_key: "scoring", priority: 6 },
+  { stage_key: "hit_probability", job_key: "hit-probability", worker_name: "alphadog-v2-score-audit", display_name: "All-Legs Probability Ledger + HP Board", visible_button: "SCORING > Hit Prob", mode: "hit_probability_current_estimate_no_cut_all_rows", worker_group: "11 Scoring", phase_key: "scoring", priority: 7 },
   { stage_key: "score_final_board", job_key: "score-final-board", worker_name: "alphadog-v2-score-final-board", display_name: "Score Final Board", visible_button: "SCORING > Final Board", mode: "score_final_board_generate_current_from_hp_current", worker_group: "11 Scoring", phase_key: "scoring", priority: 8 }
 ];
 
@@ -1009,10 +1009,10 @@ function marketScoringFullRunChildInput(parentRow, stage, stepIndex, retryCount 
     return { ...base, logical_worker_name: "alphadog-v2-prop-matrix-builder", deployed_worker_slot: "alphadog-v2-phase2b-certifier", exact_worker_only: true, internal_only: true, no_external_api_calls: true, no_mlb_api_calls: true, no_odds_api_calls: true, no_parlay_api_calls: true, no_gemini_calls: true, reads_score_prepared_board: true, reads_prop_factor_packets: true, reads_market_context_evidence: true, reads_daily_context_readiness: true, writes_score_matrix_only: true, one_row_per_safe_prepared_row: true, preserve_blocked_and_deferred_rows: true, retention_policy: "today_tomorrow_only", no_score_probability: true, no_confidence_score: true, no_edge: true, no_value_rating: true, no_qualified_flag: true, no_rank: true, no_pick_recommendation: true, no_scoring: true, no_ranking: true, no_final_board: true };
   }
   if (stage.job_key === "scoring-engine") {
-    return { ...base, logical_worker_name: "alphadog-v2-scoring-engine", deployed_worker_slot: "alphadog-v2-score-audit", exact_worker_only: true, framework_only: false, production_scoring_current: true, primary_profile: "STRICT_C_HP_FIRST_TRUST_V4_1", worker_owned_schema_creation: true, writes_score_db_scoring_engine_only: true, no_simulation_shadow_mutation: true, no_archive_mutation: false, thresholds_locked: false, scoring_enabled: true, true_probability_enabled: false, no_true_hit_probability_claims: true, regular_lines_two_sided: true, goblin_demon_more_only: true, goblin_demon_under_blocker: "GOBLIN_DEMON_UNDER_NOT_SELECTABLE", no_candidate_board_write: true, no_old_prop_scores_write: true, no_ranking: true, no_final_board: true, hp_first_trust_score_profile: true };
+    return { ...base, logical_worker_name: "alphadog-v2-scoring-engine", deployed_worker_slot: "alphadog-v2-score-audit", exact_worker_only: true, framework_only: false, production_scoring_current: true, primary_profile: "NO_CUT_ALL_LEGS_PROBABILITY_LEDGER_V1", worker_owned_schema_creation: true, writes_score_db_scoring_engine_only: true, no_simulation_shadow_mutation: true, no_archive_mutation: false, thresholds_locked: false, scoring_enabled: true, trust_ledger_enabled: true, no_cut_all_legs_probability_ledger: true, preserve_all_matrix_rows_for_hp: true, score_every_matrix_row_before_filtering: true, no_pre_hp_leg_cut: true, model_pending_no_cut_rows_allowed: true, true_probability_enabled: false, no_true_hit_probability_claims: true, regular_lines_two_sided: true, goblin_demon_more_only: true, goblin_demon_under_blocker: "GOBLIN_DEMON_UNDER_NOT_SELECTABLE", no_candidate_board_write: true, no_old_prop_scores_write: true, no_ranking: true, no_final_board: true, hp_first_trust_score_profile: true };
   }
   if (stage.job_key === "hit-probability") {
-    return { ...base, logical_worker_name: "alphadog-v2-hit-probability", deployed_worker_slot: "alphadog-v2-score-audit", exact_worker_only: true, worker_owned_schema_creation: true, estimated_hit_probability_phase: true, estimated_not_true_probability: true, hit_probability_only: true, hp_board_required: true, hp_board_same_worker: true, hp_board_display_calibration_required: false, writes_hit_probability_tables_only: true, writes_hp_board_tables_only: true, reads_score_final_board_current_first: false, reads_scoring_engine_current_direct: true, fallback_reads_scoring_engine_current: true, source_engine_batch_required_from_same_chain: true, true_probability_enabled: false, no_true_hit_probability_claims: true, framework_only: true, no_score_mutation: true, no_scoring_engine_current_mutation: true, no_final_board_mutation: true, no_prepared_board_mutation: true, no_source_board_mutation: true, no_candidate_board_write: true, no_ranking: true, no_pick_recommendation: true, no_live_playable_mutation: true, no_review_playable_mutation: true, d1_limit_safe_chunking_required: true, service_binding_timeout_reconcile_from_tables: true, hp_first_board_before_final_board: true };
+    return { ...base, logical_worker_name: "alphadog-v2-hit-probability", deployed_worker_slot: "alphadog-v2-score-audit", exact_worker_only: true, worker_owned_schema_creation: true, estimated_hit_probability_phase: true, estimated_not_true_probability: true, hit_probability_only: true, hp_board_required: true, hp_board_same_worker: true, hp_board_display_calibration_required: false, writes_hit_probability_tables_only: true, writes_hp_board_tables_only: true, reads_score_final_board_current_first: false, reads_scoring_engine_current_direct: true, fallback_reads_scoring_engine_current: true, source_engine_batch_required_from_same_chain: true, read_all_scoring_rows_no_pre_filter: true, probability_row_for_every_scoring_row: true, no_cut_all_legs_probability_ledger: true, model_pending_no_cut_rows_allowed: true, unsupported_props_become_model_pending_no_cut: true, true_probability_enabled: false, no_true_hit_probability_claims: true, framework_only: true, no_score_mutation: true, no_scoring_engine_current_mutation: true, no_final_board_mutation: true, no_prepared_board_mutation: true, no_source_board_mutation: true, no_candidate_board_write: true, no_ranking: true, no_pick_recommendation: true, no_live_playable_mutation: true, no_review_playable_mutation: true, d1_limit_safe_chunking_required: true, service_binding_timeout_reconcile_from_tables: true, hp_first_board_before_final_board: true };
   }
   if (stage.job_key === "score-final-board") {
     return { ...base, exact_worker_only: true, deployed_worker_slot: "alphadog-v2-score-final-board", service_binding_name: "SCORE_FINAL_BOARD_WORKER", profile_key: "STRICT_C_HP_FIRST_TRUST_V4_1", source_engine_batch_policy: "market_full_requires_explicit_same_chain_completed_scoring_batch", source_hp_board_policy: "market_full_requires_explicit_same_chain_completed_hp_board_batch", writes_score_final_board_current: true, writes_score_final_board_history: true, no_external_calls: true, no_source_board_mutation: true, no_simulation_shadow_mutation: true, requires_real_engine_scoring_batch: true, requires_hp_board_current_source: true, hp_first_final_board_source_active: true, must_run_after_hit_probability: true };
@@ -1292,7 +1292,7 @@ async function synthesizeScoringEngineCurrentTerminalProofFromEvidence(env, requ
     run_id: null,
     worker_name: 'alphadog-v2-scoring-engine',
     worker_version: batch.worker_version || null,
-    mode: 'scoring_engine_current_strict_c_realistic_v3_2',
+    mode: 'scoring_engine_current_no_cut_all_legs_probability_ledger',
     status,
     prepared_rows_read: matrixRows,
     rows_written: currentRows,
@@ -1379,7 +1379,7 @@ async function synthesizeHitProbabilityTerminalProofFromEvidence(env, requestId,
     job_key: "hit-probability",
     request_id: requestId,
     chain_id: child && child.chain_id || null,
-    mode: "hit_probability_current_estimate",
+    mode: "hit_probability_current_estimate_no_cut_all_rows",
     status,
     certification: cert,
     certification_status: cert,
@@ -1439,7 +1439,7 @@ async function synthesizeHitProbabilityTerminalProofFromEvidence(env, requestId,
     run_id: hpBatch.run_id || null,
     worker_name: "alphadog-v2-score-audit",
     worker_version: boardBatch.worker_version || hpBatch.worker_version || null,
-    mode: "hit_probability_current_estimate",
+    mode: "hit_probability_current_estimate_no_cut_all_rows",
     status,
     prepared_rows_read: Number(hpBatch.source_rows_read || hpRows),
     rows_written: boardRows,
@@ -1677,7 +1677,7 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
     proofSource = "SCORE_DB.prop_matrix_batches";
   } else if (stageKey === "scoring_engine" && env.SCORE_DB) {
     proof = await first(env.SCORE_DB,
-      `SELECT batch_id, NULL AS request_id, NULL AS run_id, 'alphadog-v2-scoring-engine' AS worker_name, worker_version, 'scoring_engine_current_strict_c_realistic_v3_2' AS mode, status, matrix_rows_read AS prepared_rows_read, score_rows_written AS rows_written, certification AS certification_status, certification_grade, output_json, finished_at AS updated_at, started_at AS created_at
+      `SELECT batch_id, NULL AS request_id, NULL AS run_id, 'alphadog-v2-scoring-engine' AS worker_name, worker_version, 'scoring_engine_current_no_cut_all_legs_probability_ledger' AS mode, status, matrix_rows_read AS prepared_rows_read, score_rows_written AS rows_written, certification AS certification_status, certification_grade, output_json, finished_at AS updated_at, started_at AS created_at
        FROM scoring_engine_batches
        WHERE status='completed_scoring_current_rows_written'
          AND certification='SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS'
@@ -1890,6 +1890,10 @@ async function processMarketScoringFullRunJob(env, row, runId, trigger) {
         extraChildInput.service_binding_timeout_reconcile_from_tables = true;
         extraChildInput.hp_first_board_before_final_board = true;
         extraChildInput.no_final_board_source_dependency = true;
+        extraChildInput.no_cut_all_legs_probability_ledger = true;
+        extraChildInput.read_all_scoring_rows_no_pre_filter = true;
+        extraChildInput.probability_row_for_every_scoring_row = true;
+        extraChildInput.model_pending_no_cut_rows_allowed = true;
       }
       if (stage.stage_key === "score_final_board") {
         const scoringReport = stageReports.find(r => r.stage_key === "scoring_engine" && r.batch_id);
@@ -1907,6 +1911,8 @@ async function processMarketScoringFullRunJob(env, row, runId, trigger) {
         extraChildInput.hp_first_final_board_source_active = true;
         extraChildInput.requires_hp_board_current_source = true;
         extraChildInput.must_run_after_hit_probability = true;
+        extraChildInput.filter_after_probability_ledger_only = true;
+        extraChildInput.no_pre_hp_leg_cut = true;
       }
       const enqueued = await enqueueMarketScoringFullRunChild(env, row, stage, i, 0, extraChildInput);
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_scoring_full_run", status: "PARTIAL_CONTINUE_MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED", certification: "MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: MARKET_SCORING_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, hard_child_request_boundary: true, child_run_after_delay_seconds: MARKET_SCORING_FULL_RUN_CHILD_RUN_AFTER_SECONDS, parent_recheck_delay_seconds: MARKET_SCORING_FULL_RUN_PARENT_RECHECK_SECONDS, lock_held: true, approved_chain_order: MARKET_SCORING_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports };
