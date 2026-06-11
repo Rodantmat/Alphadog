@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.28-hp-variance-calibration-tiebreak";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.29-cautious-payout-value-nudge";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -1098,7 +1098,7 @@ function applyScoreSharpeningConfig(rawCfg) {
     default: 1
   });
   cfg.source_raw_adjustments = mergeConfigMap(cfg.source_raw_adjustments, { sleeper: 0, prizepicks: 0, default: 0 });
-  cfg.odds_raw_adjustments = mergeConfigMap(cfg.odds_raw_adjustments, { standard: 0, goblin: -1, demon: -3, default: 0 });
+  cfg.odds_raw_adjustments = mergeConfigMap(cfg.odds_raw_adjustments, { standard: 0, goblin: -0.5, demon: 0.5, default: 0 });
   cfg.prop_raw_adjustments = mergeConfigMap(cfg.prop_raw_adjustments, {
     hits: 4,
     total_bases: 2,
@@ -1155,14 +1155,19 @@ function applyScoreSharpeningConfig(rawCfg) {
   cfg.confidence_penalty_warning_9_plus = Math.min(finiteNumber(cfg.confidence_penalty_warning_9_plus, 20), 8);
   cfg.source_payout_fairness = mergeConfigMap(cfg.source_payout_fairness, {
     enabled: true,
-    prizepicks_standard_adjustment: 10,
-    prizepicks_standard_cap: 90,
-    prizepicks_goblin_adjustment: 12,
-    prizepicks_goblin_cap: 88,
-    prizepicks_demon_adjustment: 8,
-    prizepicks_demon_cap: 84,
-    prizepicks_low_line_temper_adjustment: 8,
-    prizepicks_low_line_temper_cap: 86
+    policy: 'cautious_payout_value_nudge_v1',
+    max_abs_score_adjustment: 1,
+    prizepicks_standard_adjustment: 0,
+    prizepicks_standard_cap: 100,
+    prizepicks_goblin_adjustment: -1,
+    prizepicks_goblin_cap: 100,
+    prizepicks_demon_adjustment: 1,
+    prizepicks_demon_cap: 100,
+    prizepicks_low_line_temper_adjustment: 0,
+    prizepicks_low_line_temper_cap: 100,
+    score_sort_goblin_nudge: -0.25,
+    score_sort_demon_nudge: 0.25,
+    score_sort_standard_nudge: 0
   });
   return cfg;
 }
@@ -1267,72 +1272,50 @@ function americanPressure(price, scale) {
 
 function sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, lineValue, selectedSide, scoreBefore, context = {}) {
   const fairCfg = (context && context.source_payout_fairness_config) || {};
-  if (fairCfg.enabled === false) return { adjusted_score: scoreBefore, adjustment: 0, cap: null, reason: 'source_payout_fairness_disabled_by_db_config' };
-  if (scoreBefore == null) return { adjusted_score: null, adjustment: 0, cap: null, reason: 'no_selected_score' };
-  const source = String(sourceKey || '').toLowerCase();
-  if (source !== 'prizepicks') return { adjusted_score: scoreBefore, adjustment: 0, cap: null, reason: 'non_prizepicks_no_adjustment' };
-
-  const odds = String(oddsType || payoutVariant || '').toLowerCase();
-  const propKey = String(prop || '').toLowerCase();
-  const line = numOrNull(lineValue);
-  let adjustment = 0;
-  let cap = null;
-  let reason = 'prizepicks_no_source_payout_adjustment';
-
-  // Grounded calibration from same player/game/prop/side/line audits:
-  // v0.4.10 left PP standard about 15-16 points behind Sleeper, and PP goblin/demon
-  // more-only about 27-29 points behind Sleeper, even when prepared/matrix context matched.
-  // This layer is intentionally source-fair, not recommendation/ranking logic: it reduces the
-  // artificial source/payout discount while preserving a payout risk ceiling below elite.
-  if (odds === 'standard') {
-    const effectiveMarket = String(context.effective_market_prop_context_status || '').toLowerCase();
-    const rawMarket = String(context.raw_market_prop_context_status || effectiveMarket || '').toLowerCase();
-
-    // v0.4.14 root-cause fix:
-    // v0.4.13 still keyed the PP-standard restore off effectiveMarket/direct prop row count.
-    // For rows where the persisted row-level market status was market_prop_context_present but
-    // details.market_context.prop_evidence.row_count was absent/0, effectiveMarket was downgraded
-    // to not_found/missing before this layer. That made the restore branch unreachable for the
-    // exact market-present same-line rows that SQL simulations targeted, leaving the -15/-16 gap.
-    // Use the persisted row market status for this source-fair payout restore gate. Raw not_found /
-    // missing rows remain guarded and unrecentered, preserving the v0.4.12 blind-row fix.
-    const rowMarketBlind = rawMarket === 'market_prop_context_not_found' || rawMarket === 'market_prop_context_missing' || rawMarket === '';
-    if (rowMarketBlind) {
-      adjustment = 0;
-      cap = null;
-      reason = 'prizepicks_standard_raw_market_blind_no_recenter_same_line_guard';
-    } else if (rawMarket === 'market_prop_context_present') {
-      adjustment = finiteNumber(fairCfg.prizepicks_standard_adjustment, 8);
-      cap = finiteNumber(fairCfg.prizepicks_standard_cap, 82);
-      reason = 'prizepicks_standard_raw_market_present_fairness_restore_db_config';
-    } else {
-      adjustment = 0;
-      cap = null;
-      reason = 'prizepicks_standard_unknown_market_status_no_recenter_guard';
-    }
-  } else if (odds === 'goblin') {
-    adjustment = finiteNumber(fairCfg.prizepicks_goblin_adjustment, 6);
-    cap = finiteNumber(fairCfg.prizepicks_goblin_cap, 76);
-    reason = 'prizepicks_goblin_more_only_tempered_db_config_cap';
-    if (['total_bases','hits_runs_rbis','rbis','runs','singles','walks'].includes(propKey) && line != null && line <= 0.5) {
-      adjustment = finiteNumber(fairCfg.prizepicks_low_line_temper_adjustment, 3);
-      cap = finiteNumber(fairCfg.prizepicks_low_line_temper_cap, 74);
-      reason = 'prizepicks_goblin_low_line_tempered_db_config_cap';
-    }
-  } else if (odds === 'demon') {
-    adjustment = finiteNumber(fairCfg.prizepicks_demon_adjustment, 4);
-    cap = finiteNumber(fairCfg.prizepicks_demon_cap, 74);
-    reason = 'prizepicks_demon_more_only_tempered_db_config_cap';
-    if (['home_runs','stolen_bases','doubles'].includes(propKey)) {
-      adjustment = finiteNumber(fairCfg.prizepicks_low_line_temper_adjustment, 3);
-      cap = finiteNumber(fairCfg.prizepicks_low_line_temper_cap, 74);
-      reason = 'prizepicks_demon_low_frequency_tempered_db_config_cap';
-    }
+  if (fairCfg.enabled === false) {
+    return { adjusted_score: scoreBefore, adjustment: 0, cap: null, sort_nudge: 0, reason: 'source_payout_value_nudge_disabled_by_db_config', policy: 'disabled' };
+  }
+  if (scoreBefore == null) {
+    return { adjusted_score: null, adjustment: 0, cap: null, sort_nudge: 0, reason: 'no_selected_score', policy: 'cautious_payout_value_nudge_v1' };
   }
 
-  if (!adjustment || cap == null) return { adjusted_score: scoreBefore, adjustment: 0, cap: null, reason };
-  const adjusted = Math.min(cap, clamp(scoreBefore + adjustment));
-  return { adjusted_score: adjusted, adjustment: adjusted - scoreBefore, cap, reason };
+  const source = String(sourceKey || '').toLowerCase();
+  const odds = String(oddsType || payoutVariant || '').toLowerCase();
+  const policy = String(fairCfg.policy || 'cautious_payout_value_nudge_v1');
+  const maxAbs = Math.max(0, Math.min(1, Math.abs(finiteNumber(fairCfg.max_abs_score_adjustment, 1))));
+
+  // v0.4.29: payout is a small value/risk nudge, not a proxy for line difficulty.
+  // Goblin can be easy but pays less: apply only a tiny caution penalty.
+  // Demon can be hard but pays more: apply only a tiny value bonus.
+  // The real difficulty stays in line pressure, side selection, factors, and HP. This layer must never
+  // fake probability, never create big source re-centers, and never override caps/context quality.
+  if (source !== 'prizepicks') {
+    return { adjusted_score: scoreBefore, adjustment: 0, cap: null, sort_nudge: 0, reason: 'regular_source_neutral_no_payout_value_nudge', policy };
+  }
+
+  let requested = 0;
+  let sortNudge = 0;
+  let reason = 'prizepicks_standard_neutral_no_payout_value_nudge';
+  if (odds === 'goblin') {
+    requested = -Math.abs(finiteNumber(fairCfg.prizepicks_goblin_adjustment, -1));
+    sortNudge = -Math.abs(finiteNumber(fairCfg.score_sort_goblin_nudge, -0.25));
+    reason = 'prizepicks_goblin_tiny_payout_caution_penalty';
+  } else if (odds === 'demon') {
+    requested = Math.abs(finiteNumber(fairCfg.prizepicks_demon_adjustment, 1));
+    sortNudge = Math.abs(finiteNumber(fairCfg.score_sort_demon_nudge, 0.25));
+    reason = 'prizepicks_demon_tiny_multiplier_value_bonus';
+  } else if (odds === 'standard') {
+    requested = finiteNumber(fairCfg.prizepicks_standard_adjustment, 0);
+    sortNudge = finiteNumber(fairCfg.score_sort_standard_nudge, 0);
+  }
+
+  const adjustment = Math.max(-maxAbs, Math.min(maxAbs, requested));
+  const boundedSortNudge = Math.max(-0.49, Math.min(0.49, sortNudge));
+  if (!adjustment && !boundedSortNudge) {
+    return { adjusted_score: scoreBefore, adjustment: 0, cap: null, sort_nudge: 0, reason, policy };
+  }
+  const adjusted = clamp(scoreBefore + adjustment);
+  return { adjusted_score: adjusted, adjustment: adjusted - scoreBefore, cap: null, sort_nudge: boundedSortNudge, reason, policy };
 }
 
 function linePressure(canonicalPropKey, lineValue, side) {
@@ -1478,6 +1461,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
   }
 
   let scoreInteger = null;
+  let payoutValueNudge = { adjusted_score: null, adjustment: 0, cap: null, sort_nudge: 0, reason: 'not_evaluated', policy: 'cautious_payout_value_nudge_v1' };
   let selectedCapResult = { applied: [] };
   if (!hardBlocked && !modelDeferred && selectedSide) {
     const selectedRaw = selectedSide === 'more' ? rawMore : rawLess;
@@ -1485,31 +1469,34 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     selectedCapResult = capScoreWithReasons(uncappedSelected, hardCaps);
     const preFairnessScore = round0(selectedCapResult.score);
     const fairness = sourcePayoutFairnessCalibration(sourceKey, oddsType, payoutVariant, sideMode, prop, row.board_line_value, selectedSide, preFairnessScore, { raw_market_prop_context_status: row.market_prop_context_status, effective_market_prop_context_status: effectiveMarketPropContextStatus, direct_prop_evidence_row_count: evidenceInfo.rowCount, direct_prop_evidence_bucket: evidenceInfo.bucket, source_payout_fairness_config: cfg.source_payout_fairness || {} });
+    payoutValueNudge = fairness;
     scoreInteger = round0(fairness.adjusted_score);
-    if (fairness.adjustment !== 0 || fairness.reason === 'prizepicks_standard_market_blind_no_recenter_same_line_guard') {
-      selectedCapResult.applied = [
-        ...(selectedCapResult.applied || []),
-        {
-          key: 'source_payout_fairness_calibration',
-          source_key: sourceKey,
-          odds_type: oddsType,
-          payout_variant: payoutVariant,
-          selected_side: selectedSide,
-          score_before: preFairnessScore,
-          adjustment: fairness.adjustment,
-          cap: fairness.cap,
-          score_after: scoreInteger,
-          reason: fairness.reason
-        }
-      ];
-    }
+    selectedCapResult.applied = [
+      ...(selectedCapResult.applied || []),
+      {
+        key: 'cautious_payout_value_nudge',
+        source_key: sourceKey,
+        odds_type: oddsType,
+        payout_variant: payoutVariant,
+        selected_side: selectedSide,
+        score_before: preFairnessScore,
+        score_adjustment: fairness.adjustment,
+        score_sort_nudge: fairness.sort_nudge,
+        cap: fairness.cap,
+        score_after: scoreInteger,
+        reason: fairness.reason,
+        policy: fairness.policy,
+        probability_not_mutated: true
+      }
+    ];
   }
   const sideGap = Math.abs((rawMore ?? 0) - (rawLess ?? rawMore ?? 0));
   const confidence = (!hardBlocked && !modelDeferred && selectedSide)
     ? round0(Math.min(confidenceCap, clamp(p.baseConfidence - confidencePenalty + Math.min(6, sideGap * 1.15) + (effectiveMarketPropContextStatus === 'market_prop_context_present' ? 3 : 0) + ((overPrice != null || underPrice != null) ? 2 : 0))))
     : null;
   const sortMicro = Math.abs(((Number(row.mlb_player_id || 0) * 31 + Number(row.game_pk || 0) * 17 + Math.trunc((Number(row.board_line_value || 0) || 0) * 100) * 13) % 999)) * p.microScale / 999.0;
-  const scoreSort = scoreInteger == null ? null : scoreInteger + sortMicro;
+  const payoutSortNudge = Number(payoutValueNudge && payoutValueNudge.sort_nudge || 0);
+  const scoreSort = scoreInteger == null ? null : clamp(scoreInteger + payoutSortNudge + sortMicro);
   const moreFinal = selectedSide === 'more' ? scoreInteger : null;
   const lessAlt = rawLess == null ? null : round0(capScoreWithReasons(Math.min(p.maxScoreCap, clamp(rawLess - scorePenalty + bonus)), hardCaps).score);
   const lessFinal = sideMode === 'more_only' ? null : (selectedSide === 'less' ? scoreInteger : (selectedSide === 'more' ? lessAlt : null));
@@ -1554,7 +1541,7 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     scoring_enabled: 0,
     true_probability_enabled: 0,
     no_true_hit_probability_claims: 1,
-    score_sort_policy: 'score_sort_0_100_only; positive_micro_lt_0_0001; never used for archive/live/bins',
+    score_sort_policy: 'score_sort_0_100_only; includes bounded payout value nudge <=0.49 plus deterministic micro; never used for archive/live/bins',
     score_sharpening_overlay: cfg.score_sharpening_overlay || null,
     effective_market_prop_context_status: effectiveMarketPropContextStatus,
     direct_prop_evidence_row_count: evidenceInfo.rowCount,
@@ -1569,7 +1556,8 @@ function buildSimulationShadowRow(batchId, profileKey, p, row) {
     effective_warning_policy: 'raw_warning_count_preserved_but_soft_partial_missing_current_readiness_with_direct_evidence_uses_effective_warning_tier',
     score_caps_applied: selectedCapResult.applied,
     source_payout_fairness_calibration_enabled: 1,
-    source_payout_fairness_policy: 'db_configured_source_payout_fairness; no_sleeper_boost; no_final_board_mutation',
+    source_payout_fairness_policy: 'cautious_payout_value_nudge_v1; goblin_tiny_penalty; demon_tiny_bonus; no_hp_mutation; no_final_board_mutation',
+    source_payout_value_nudge: payoutValueNudge,
     source_payout_fairness_config_snapshot: cfg.source_payout_fairness || {},
     side_symmetry_risk: sideSymmetryRisk,
     goblin_demon_less_score_policy: 'NULL_NOT_ZERO',
@@ -1749,8 +1737,8 @@ async function summarizeSimulationProfile(env, batchId, profileKey) {
       SUM(CASE WHEN side_mode = 'two_sided' AND raw_more_score IS NOT NULL AND raw_less_score IS NOT NULL AND ABS(raw_more_score - raw_less_score) < 0.50 AND selected_side IS NULL AND model_deferred = 0 AND score_status <> 'simulation_hard_blocked' AND COALESCE(blocking_for_scoring,0) = 0 THEN 1 ELSE 0 END) AS true_micro_tie_null_side,
       SUM(CASE WHEN source_key = 'sleeper' AND canonical_prop_key = 'rfi_nrfi' AND score_status <> 'model_deferred' THEN 1 ELSE 0 END) AS sleeper_rfi_not_deferred,
       SUM(CASE WHEN source_key = 'prizepicks' AND canonical_prop_key = 'triples' AND score_status <> 'model_deferred' THEN 1 ELSE 0 END) AS prizepicks_triples_not_deferred,
-      SUM(CASE WHEN score_sort_0_100 IS NOT NULL AND ABS(score_sort_0_100 - score_integer_0_100) >= 0.0001 THEN 1 ELSE 0 END) AS score_sort_micro_out_of_bounds,
-      SUM(CASE WHEN score_sort_0_100 IS NOT NULL AND (score_sort_0_100 < score_integer_0_100 OR score_sort_0_100 >= score_integer_0_100 + 1) THEN 1 ELSE 0 END) AS score_sort_integer_boundary_cross
+      SUM(CASE WHEN score_sort_0_100 IS NOT NULL AND ABS(score_sort_0_100 - score_integer_0_100) > 0.5001 THEN 1 ELSE 0 END) AS score_sort_nudge_out_of_bounds,
+      SUM(CASE WHEN score_sort_0_100 IS NOT NULL AND (score_sort_0_100 < 0 OR score_sort_0_100 > 100) THEN 1 ELSE 0 END) AS score_sort_range_violation
     FROM scoring_engine_simulation_shadow
     WHERE simulation_batch_id=? AND profile_key=?
   `, batchId, profileKey);
@@ -1890,8 +1878,8 @@ async function recordSimulationInvariants(env, batchId, profileKey, summary, exp
     ["RAW_DELTA_SELECTABLE_BUT_NULL_SIDE", summary.raw_delta_selectable_but_null_side, "BLOCKER", "Two-sided non-blocked rows with raw side delta >= 0.50 must select a side before cap/compression; hard-blocked/matrix_source_missing rows are excluded."],
     ["SLEEPER_RFI_NOT_DEFERRED", summary.sleeper_rfi_not_deferred, "BLOCKER", "Sleeper rfi_nrfi inventory must route to model_deferred."],
     ["PRIZEPICKS_TRIPLES_NOT_DEFERRED", summary.prizepicks_triples_not_deferred, "BLOCKER", "PrizePicks triples inventory must route to model_deferred_low_event_prop."],
-    ["SCORE_SORT_MICRO_OUT_OF_BOUNDS", summary.score_sort_micro_out_of_bounds, "BLOCKER", "score_sort_0_100 micro adjustment must stay below 0.0001 from score_integer_0_100."],
-    ["SCORE_SORT_INTEGER_BOUNDARY_CROSS", summary.score_sort_integer_boundary_cross, "BLOCKER", "score_sort_0_100 must never cross an integer boundary."],
+    ["SCORE_SORT_NUDGE_OUT_OF_BOUNDS", summary.score_sort_nudge_out_of_bounds, "BLOCKER", "score_sort_0_100 payout/tiebreak nudge must stay within +/-0.5001 from score_integer_0_100."],
+    ["SCORE_SORT_RANGE_VIOLATION", summary.score_sort_range_violation, "BLOCKER", "score_sort_0_100 must remain inside 0..100."],
     ["MODEL_DEFERRED_COUNT_MISMATCH", deferredMismatch ? actualDeferred : 0, "BLOCKER", `Expected model_deferred rows to equal current matrix deferred rows. expected=${expectedDeferred}; actual=${actualDeferred}.`],
     ["TRUE_MICRO_TIE_REVIEW", summary.true_micro_tie_null_side, "WARNING", "True raw side ties should be very rare on non-blocked rows and require deterministic tie-breaker review if present; hard-blocked rows are excluded."]
   ];
