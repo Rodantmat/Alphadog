@@ -1,13 +1,13 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-main-ui-v0.1.7-compact-future-only-context-composer";
+const VERSION = "alphadog-v2-main-ui-v0.1.8-context-insight-database";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
 
-const UI_VERSION_LABEL = "v0.1.5 - Grouped Legs + Gold/Silver/Bronze";
+const UI_VERSION_LABEL = "v0.1.8 - Context Insight Database";
 
 const DOCUMENTED_PROP_OPTIONS = [
   { prop_family: "hitter", canonical_prop_key: "hits", label: "Hits" },
@@ -203,6 +203,233 @@ function displayPropLabel(key) {
   return labels[key] || String(key || "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 
+
+function uiFinite(v, d = null) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+}
+function uiText(v) { return String(v == null ? "" : v).trim(); }
+function uiFirstReal(values) {
+  for (const v of values || []) {
+    const s = uiText(v);
+    if (s && s.toLowerCase() !== "null" && s.toLowerCase() !== "undefined") return s;
+  }
+  return "";
+}
+function uiHashPick(seed, arr) {
+  if (!arr || !arr.length) return "";
+  let h = 2166136261;
+  for (const ch of String(seed || "")) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return arr[(h >>> 0) % arr.length];
+}
+function uiOrdinal(n) {
+  const x = Math.trunc(uiFinite(n, 0));
+  if (!x) return "";
+  const s = ["th","st","nd","rd"], v = x % 100;
+  return x + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+function uiPitcherLabel(row) {
+  const name = uiFirstReal([row.opposing_pitcher_name, row.probable_pitcher_name]);
+  const hand = uiFirstReal([row.opposing_pitcher_hand, row.probable_pitcher_hand]);
+  if (!name) return "";
+  return name + (hand ? ` (${hand})` : "");
+}
+function uiMetricBits(row) {
+  const bits = [];
+  const era = uiFinite(row.opposing_pitcher_era);
+  const whip = uiFinite(row.opposing_pitcher_whip);
+  const fip = uiFinite(row.opposing_pitcher_fip);
+  const k9 = uiFinite(row.opposing_pitcher_k9);
+  const bb9 = uiFinite(row.opposing_pitcher_bb9);
+  if (era != null) bits.push(`ERA ${era.toFixed(2)}`);
+  if (whip != null) bits.push(`WHIP ${whip.toFixed(2)}`);
+  if (fip != null) bits.push(`FIP ${fip.toFixed(2)}`);
+  if (k9 != null) bits.push(`${k9.toFixed(1)} K/9`);
+  if (bb9 != null) bits.push(`${bb9.toFixed(1)} BB/9`);
+  return bits;
+}
+function uiConfidenceWord(row) {
+  const c = uiFinite(row.probability_confidence_0_100, 0);
+  if (c >= 82) return "high-confidence";
+  if (c >= 75) return "well-supported";
+  if (c >= 68) return "usable but review-sensitive";
+  if (c >= 58) return "thin-evidence";
+  return "volatile";
+}
+function uiLineupSentence(row) {
+  const order = uiFinite(row.batting_order);
+  const status = uiText(row.lineup_status).toLowerCase();
+  const prop = uiText(row.canonical_prop_key).toLowerCase();
+  const side = uiText(row.selected_side).toLowerCase();
+  const seed = [row.player_name, row.canonical_prop_key, row.line_value, row.selected_side, row.game_pk, 'lineup'].join('|');
+  if (order) {
+    const ord = uiOrdinal(order);
+    if (order <= 2) return uiHashPick(seed, [
+      `The ${ord} lineup slot gives him early plate-appearance volume and a clean path to beat low contact/production thresholds.`,
+      `Batting ${ord} keeps the volume profile strong, especially for reach-base and HRRBI legs that can cash before the order turns over.`,
+      `From the ${ord} spot, the path is volume-driven: more trips, more contact chances, and more conversion room behind him.`
+    ]);
+    if (order <= 5) return uiHashPick(seed, [
+      `The ${ord} lineup slot keeps him in the traffic/production pocket, which matters most for runs, RBIs, and HRRBI.`,
+      `Hitting ${ord} gives this leg real lineup support without needing a bottom-order volume miracle.`,
+      `The ${ord} spot is a useful middle-order context point: enough plate volume with better teammate conversion around him.`
+    ]);
+    if (side === 'less') return uiHashPick(seed, [
+      `Batting ${ord} trims volume and naturally supports a lower-event read, especially on RBI/run-dependent props.`,
+      `The ${ord} slot keeps the opportunity count capped, so the under path is helped by lineup position as much as matchup.`,
+      `From the ${ord} spot, he needs the board to create traffic for him; that lower volume is a real under-friendly detail.`
+    ]);
+    return `Batting ${ord} lowers the plate-appearance cushion, so the leg needs cleaner contact quality to justify the over.`;
+  }
+  if (status) return `Lineup status is ${status}; without a confirmed slot, the board keeps confidence separate from the HP number.`;
+  return "";
+}
+function uiPitcherSentence(row) {
+  const p = uiPitcherLabel(row);
+  const prop = uiText(row.canonical_prop_key).toLowerCase();
+  const side = uiText(row.selected_side).toLowerCase();
+  const line = uiFinite(row.line_value, 0);
+  const hand = uiFirstReal([row.opposing_pitcher_hand, row.probable_pitcher_hand]).toLowerCase();
+  const bits = uiMetricBits(row);
+  const era = uiFinite(row.opposing_pitcher_era);
+  const whip = uiFinite(row.opposing_pitcher_whip);
+  const k9 = uiFinite(row.opposing_pitcher_k9);
+  const bb9 = uiFinite(row.opposing_pitcher_bb9);
+  const seed = [row.player_name, prop, side, line, p, row.game_pk, 'pitcher'].join('|');
+  if (!p) return "";
+  const stat = bits.length ? ` (${bits.slice(0, 3).join(', ')})` : "";
+  if (prop === 'walks') {
+    if (side === 'less') {
+      if (bb9 != null && bb9 <= 2.2) return `${p}${stat} profiles as a strike-zone attacker, so the walk-under path is backed by pitcher control instead of just hitter outcome history.`;
+      return uiHashPick(seed, [`Against ${p}${stat}, the walk read depends on whether he attacks early counts; this leg improves when he forces contact before deep counts.`, `${p}${stat} keeps the focus on count leverage: if he is in the zone, the free-pass path is narrow.`]);
+    }
+    return `${p}${stat} has to be evaluated through patience and zone pressure; walks-over needs nibble, umpire help, or clear control leakage.`;
+  }
+  if (prop === 'hits' || prop === 'singles') {
+    if (k9 != null && k9 < 7.5) return `${p}${stat} is more contact-oriented than overpowering, which gives a bat-to-ball leg a practical path if the hitter owns the zone.`;
+    if (k9 != null && k9 >= 9) return `${p}${stat} brings swing-and-miss pressure, so this contact leg needs the hitter’s recent bat control to carry the read.`;
+    return uiHashPick(seed, [`The matchup with ${p}${stat} is a contact-quality read: one clean ball in play can clear the line, but whiff pressure still matters.`, `${p}${stat} keeps this from being a generic form play; the contact path is the central question.`]);
+  }
+  if (prop === 'hits_runs_rbis') {
+    if (side === 'more' && line <= 0.5) return `${p}${stat} gives this HRRBI leg multiple escape routes — a hit, a run, or an RBI — so pitcher traffic and lineup conversion both matter.`;
+    return `${p}${stat} matters because HRRBI needs stacked involvement; if he keeps traffic clean, multi-event production gets harder fast.`;
+  }
+  if (prop === 'total_bases' || prop === 'doubles' || prop === 'home_runs') {
+    if (era != null && era >= 4.75) return `${p}${stat} has enough run-prevention leakage to keep damage paths live, but this prop still needs quality contact rather than simple reach-base form.`;
+    return `${p}${stat} makes the read more about damage quality than contact volume; the pitcher profile has to support carry, gaps, or extra-base contact.`;
+  }
+  if (prop === 'rbis') return `${p}${stat} puts the focus on base traffic in front of the hitter; RBI legs need opportunity, not just a good swing.`;
+  if (prop === 'runs') return `${p}${stat} matters through reach-base prevention and conversion behind the hitter; the run path is partly teammate-driven.`;
+  return `The pitcher matchup is logged against ${p}${stat}, so this card uses matchup context instead of treating recent form as the whole story.`;
+}
+function uiWeatherSentence(row) {
+  const wx = uiText(row.weather_summary);
+  const wind = uiText(row.wind_summary);
+  const roof = uiText(row.roof_status);
+  const temp = uiFinite(row.weather_temp_f);
+  const prop = uiText(row.canonical_prop_key).toLowerCase();
+  const side = uiText(row.selected_side).toLowerCase();
+  const seed = [row.player_name, row.canonical_prop_key, row.line_value, row.selected_side, row.venue_name, wx, wind, temp, 'weather'].join('|');
+  const notes = [];
+  if (temp != null) {
+    if (temp <= 55) notes.push(prop === 'total_bases' || prop === 'home_runs' || prop === 'doubles' ? 'cool air can suppress carry and make damage props less forgiving' : 'cooler air can turn this into a cleaner contact-and-ground-ball environment');
+    else if (temp >= 82) notes.push('warm air can be more forgiving for carry and hard contact');
+    else notes.push('temperature is not an extreme weather driver');
+  }
+  if (wind) {
+    const w = wind.toLowerCase();
+    if (w.includes('out')) notes.push('wind direction is carry-positive');
+    else if (w.includes('in')) notes.push('wind direction is carry-negative');
+    else notes.push(`wind is logged as ${wind}`);
+  }
+  if (roof) notes.push(`roof status: ${roof}`);
+  if (wx && notes.length < 2) notes.push(wx);
+  if (!notes.length) return "";
+  if (side === 'less') return uiHashPick(seed, [`Game environment note: ${notes.slice(0,2).join('; ')}. That helps explain why the under path can survive even when the player is live.`, `Weather/park context is part of the lean: ${notes.slice(0,2).join('; ')}.`]);
+  return uiHashPick(seed, [`Game environment note: ${notes.slice(0,2).join('; ')}. That separates simple contact paths from power/damage paths.`, `Weather/park context is live on this row: ${notes.slice(0,2).join('; ')}.`]);
+}
+function uiVenueSentence(row) {
+  const venue = uiText(row.venue_name);
+  const v = venue.toLowerCase();
+  const prop = uiText(row.canonical_prop_key).toLowerCase();
+  const side = uiText(row.selected_side).toLowerCase();
+  if (!venue) return "";
+  const seed = [row.player_name, venue, prop, side, 'venue'].join('|');
+  const map = {
+    'rate field': ['Rate Field can reward pulled carry, but on simple hits the cleaner edge is still contact volume and infield/outfield placement.', 'Rate Field keeps power paths interesting, while contact props still need one clean ball to find grass.'],
+    'pnc park': ['PNC Park can add friction to easy power, making hits-only and HRRBI reads separate more cleanly from total-base upside.', 'PNC is not an automatic damage boost, so production legs need matchup/lineup help rather than park alone.'],
+    'oracle park': ['Oracle asks for real gap quality; that makes extra-base legs more fragile than basic contact reads.', 'Oracle can mute cheap power, so the board should reward contact paths more than pure damage paths here.'],
+    'coors field': ['Coors expands the batted-ball reward zone, but the board still separates contact probability from teammate-driven production.', 'Coors increases batted-ball forgiveness, making context and lineup conversion especially important.'],
+    'fenway park': ['Fenway can turn certain contact into unusual base outcomes, so total-base legs need batted-ball shape more than raw hit rate.', 'Fenway’s wall/angle profile makes damage paths playable only when contact quality agrees.'],
+    'wrigley field': ['Wrigley is weather-sensitive, so wind/temperature should carry more weight than a generic park label.', 'At Wrigley, the park read changes with wind; power and total-base paths need that weather confirmation.'],
+    'yankee stadium': ['Yankee Stadium can reward the right pull-air profile, but it should not inflate simple contact legs by itself.', 'Yankee Stadium adds power context, while hits and walks still need matchup discipline.']
+  };
+  for (const key of Object.keys(map)) if (v.includes(key)) return uiHashPick(seed, map[key]);
+  return `${venue} is accounted for as the venue context; the comment avoids creating a park edge without a matching weather or batted-ball signal.`;
+}
+function uiPropPathSentence(row) {
+  const prop = uiText(row.canonical_prop_key).toLowerCase();
+  const side = uiText(row.selected_side).toLowerCase();
+  const line = uiFinite(row.line_value, 0);
+  const seed = [row.player_name, prop, side, line, 'propPath'].join('|');
+  if (prop === 'hits_runs_rbis') {
+    if (side === 'more' && line <= 0.5) return uiHashPick(seed, [
+      'This is statistically broader than hits-only: one hit, one run, or one RBI can clear it, so lineup slot and teammate conversion matter as much as contact.',
+      'HRRBI 0.5 gives three paths to cash, which is why it can outrank hits-only when batting order and matchup both cooperate.',
+      'Because the leg can win through contact or run involvement, it deserves a wider probability lens than a plain hits prop.'
+    ]);
+    if (side === 'less') return 'HRRBI under needs the player to avoid both contact and run involvement, so pitcher traffic control and lineup slot are the key details.';
+    return 'HRRBI requires multiple offensive events at this line, so the model checks contact, lineup position, and conversion together.';
+  }
+  if (prop === 'hits') return line <= 0.5 ? uiHashPick(seed, [
+    'Hits 0.5 is the cleanest contact threshold: narrower than HRRBI, but less dependent on teammate conversion.',
+    'This is a one-knock path, so the key is bat-to-ball plus plate volume rather than power or RBI context.',
+    'The hit leg is simpler than total bases and less teammate-dependent than HRRBI, but it has only one scoring channel.'
+  ]) : 'Multi-hit lines need both volume and contact repetition, so they carry a sharper difficulty curve than the 0.5 version.';
+  if (prop === 'total_bases') return side === 'more' ? 'Total bases needs damage or multiple singles; it should not be treated as equal to a simple hit unless the contact-quality signals agree.' : 'Total-base under can survive a single, so it leans on damage suppression rather than complete offensive silence.';
+  if (prop === 'rbis') return side === 'more' ? 'RBI over is opportunity-sensitive: traffic in front and lineup position are the real swing factors.' : 'RBI under is often a traffic bet; it can win even if the hitter reaches base without a runner to convert.';
+  if (prop === 'runs') return side === 'more' ? 'Runs over needs reach-base plus conversion behind him, making lineup depth and game environment critical.' : 'Runs under leans on muted conversion behind the hitter, not only the hitter’s own bat.';
+  if (prop === 'walks') return side === 'more' ? 'Walks over needs patience, pitcher nibble, and zone context; raw hit form is not enough.' : 'Walks under improves when the pitcher attacks and the hitter is forced into contact before deep counts.';
+  if (prop === 'singles') return 'Singles are contact-specific and lose credit for extra-base contact, so they deserve more caution than generic hits.';
+  if (prop === 'doubles') return 'Doubles need gap shape and carry; this is a damage-quality leg, not a simple contact leg.';
+  if (prop === 'home_runs') return 'Home runs are rare-event outcomes; the board needs power, pitch shape, park, and weather to agree before trusting them.';
+  return 'The prop path is evaluated separately from the player name, so line value, side, and context decide how usable it is.';
+}
+function uiUmpireBullpenSentence(row) {
+  const ump = uiFirstReal([row.umpire_context_summary, row.umpire_name]);
+  const pen = uiText(row.bullpen_context_summary);
+  const sched = uiText(row.schedule_context_summary);
+  if (ump) return `Umpire context is logged: ${ump}.`;
+  if (pen) return `Bullpen context is logged: ${pen}.`;
+  if (sched) return `Schedule context is logged: ${sched}.`;
+  return "";
+}
+function composeLegInsight(row) {
+  const seed = [row.player_name, row.canonical_prop_key, row.line_value, row.selected_side, row.source_key, row.game_pk].join('|');
+  const opening = uiHashPick(seed, [
+    `${uiConfidenceWord(row)} read:`,
+    `Leg-specific read:`,
+    `Context-weighted angle:`,
+    `Usable board note:`
+  ]);
+  const primary = uiPropPathSentence(row);
+  const pitcher = uiPitcherSentence(row);
+  const lineup = uiLineupSentence(row);
+  const weather = uiWeatherSentence(row);
+  const venue = uiVenueSentence(row);
+  const ump = uiUmpireBullpenSentence(row);
+  const parts = [primary, pitcher, lineup, weather || venue, ump].filter(Boolean);
+  const selected = [];
+  for (const part of parts) {
+    if (!selected.includes(part) && selected.join(' ').length < 430) selected.push(part);
+  }
+  const conf = uiFinite(row.probability_confidence_0_100);
+  const sample = uiFinite(row.hp_non_push_sample || row.hp_sample_size);
+  const evidence = sample ? `Evidence quality: ${sample} non-push sample${conf != null ? `, ${conf.toFixed(conf % 1 ? 1 : 0)}% confidence` : ''}.` : (conf != null ? `Evidence quality: ${conf.toFixed(conf % 1 ? 1 : 0)}% confidence.` : 'Evidence quality is tracked separately from the HP number.');
+  const comment = `${opening} ${selected.join(' ')} ${evidence}`.replace(/\s+/g, ' ').trim();
+  return comment.length > 720 ? comment.slice(0, 717).replace(/\s+\S*$/, '') + '…' : comment;
+}
+
 function rowToApi(row) {
   const lineType = normalizeLineType(row);
   return {
@@ -263,6 +490,11 @@ function rowToApi(row) {
     probable_pitcher_hand: row.probable_pitcher_hand,
     opposing_pitcher_name: row.opposing_pitcher_name,
     opposing_pitcher_hand: row.opposing_pitcher_hand,
+    opposing_pitcher_era: row.opposing_pitcher_era,
+    opposing_pitcher_whip: row.opposing_pitcher_whip,
+    opposing_pitcher_fip: row.opposing_pitcher_fip,
+    opposing_pitcher_k9: row.opposing_pitcher_k9,
+    opposing_pitcher_bb9: row.opposing_pitcher_bb9,
     lineup_status: row.lineup_status,
     batting_order: row.batting_order,
     weather_summary: row.weather_summary,
@@ -283,6 +515,7 @@ function rowToApi(row) {
     hp_reliability_0_1: row.hp_reliability_0_1,
     hp_sample_reliability_score_0_100: row.hp_sample_reliability_score_0_100,
     hp_display_notes_preview: row.hp_display_notes_preview,
+    leg_insight_comment: composeLegInsight(row),
     created_at: row.created_at,
     updated_at: row.updated_at
   };
@@ -390,6 +623,12 @@ function buildCurrentSql(url) {
       COALESCE(json_extract(f.details_json_snapshot, '$.daily_context.probable_pitcher.hand'), json_extract(f.details_json_snapshot, '$.daily_context.starter.hand'), json_extract(f.details_json_snapshot, '$.probable_pitcher.hand'), json_extract(f.details_json_snapshot, '$.starter_context.pitcher_hand')) AS probable_pitcher_hand,
       COALESCE(json_extract(f.details_json_snapshot, '$.matchup_context.opposing_pitcher_name'), json_extract(f.details_json_snapshot, '$.daily_context.opposing_pitcher.name'), json_extract(f.details_json_snapshot, '$.starter_context.opposing_pitcher_name')) AS opposing_pitcher_name,
       COALESCE(json_extract(f.details_json_snapshot, '$.matchup_context.opposing_pitcher_hand'), json_extract(f.details_json_snapshot, '$.daily_context.opposing_pitcher.hand'), json_extract(f.details_json_snapshot, '$.starter_context.opposing_pitcher_hand')) AS opposing_pitcher_hand,
+
+      COALESCE(json_extract(f.details_json_snapshot, '$.daily_context.probable_pitcher.era'), json_extract(f.details_json_snapshot, '$.starter_context.era'), json_extract(f.details_json_snapshot, '$.matchup_context.opposing_pitcher_era')) AS opposing_pitcher_era,
+      COALESCE(json_extract(f.details_json_snapshot, '$.daily_context.probable_pitcher.whip'), json_extract(f.details_json_snapshot, '$.starter_context.whip'), json_extract(f.details_json_snapshot, '$.matchup_context.opposing_pitcher_whip')) AS opposing_pitcher_whip,
+      COALESCE(json_extract(f.details_json_snapshot, '$.daily_context.probable_pitcher.fip'), json_extract(f.details_json_snapshot, '$.starter_context.fip'), json_extract(f.details_json_snapshot, '$.matchup_context.opposing_pitcher_fip')) AS opposing_pitcher_fip,
+      COALESCE(json_extract(f.details_json_snapshot, '$.daily_context.probable_pitcher.k_per_9'), json_extract(f.details_json_snapshot, '$.starter_context.k_per_9'), json_extract(f.details_json_snapshot, '$.matchup_context.opposing_pitcher_k9')) AS opposing_pitcher_k9,
+      COALESCE(json_extract(f.details_json_snapshot, '$.daily_context.probable_pitcher.bb_per_9'), json_extract(f.details_json_snapshot, '$.starter_context.bb_per_9'), json_extract(f.details_json_snapshot, '$.matchup_context.opposing_pitcher_bb9')) AS opposing_pitcher_bb9,
       COALESCE(json_extract(f.details_json_snapshot, '$.daily_context.lineup_status'), json_extract(f.details_json_snapshot, '$.lineup_context.status'), json_extract(f.matrix_payload_json_snapshot, '$.daily_context.lineup_status')) AS lineup_status,
       COALESCE(json_extract(f.details_json_snapshot, '$.daily_context.batting_order'), json_extract(f.details_json_snapshot, '$.lineup_context.batting_order')) AS batting_order,
       COALESCE(json_extract(f.details_json_snapshot, '$.daily_context.weather.summary'), json_extract(f.details_json_snapshot, '$.weather_context.summary'), json_extract(f.details_json_snapshot, '$.park_context.weather_summary')) AS weather_summary,
@@ -746,7 +985,7 @@ function propEaseText(r){const k=String(r.canonical_prop_key||''), side=String(r
 function appInsight(g){if(g.rows.length<2)return '';const labels=g.rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key)).map(x=>appLabel(x.source_key));return 'Same leg is grouped across '+labels.join(' + ')+', with app scores kept separate instead of duplicating the card.'}
 function contextStatus(r){const items=[];const p=pitcherInsight(r);const w=weatherInsight(r);const park=parkInsight(r);const lineup=firstReal([r.lineup_status]);const order=firstReal([r.batting_order]);const ump=firstReal([r.umpire_name,r.umpire_context_summary]);if(p)items.push(p);if(lineup||order)items.push('Lineup detail: '+[lineup,order?'slot '+order:''].filter(Boolean).join(', ')+'.');if(w)items.push('Weather/roof: '+w+'.');if(park)items.push('Park note: '+park);if(ump)items.push('Umpire note is present: '+ump+'.');return items}
 function varianceTone(r){const hp=Number(r.estimated_hit_probability_0_100||0), conf=Number(r.probability_confidence_0_100||0), score=Number(r.score_0_100||0), n=Number(r.hp_non_push_sample||r.hp_sample_size||0);const seeds=[r.player_name,r.canonical_prop_key,r.line_value,r.selected_side,r.source_key].join('|');if(n>0&&n<20)return hashPick(seeds,['Attractive HP, but the sample is still thin enough to keep this in review mode.','The probability is interesting, but evidence depth is the limiter here.','This is a high-upside read with sample-size caution still attached.']);if(hp>=85&&conf>=75&&score>=84)return hashPick(seeds,['Strong probability with enough evidence support to treat the leg seriously.','Premium HP is supported by confidence and the trust layer, not just a raw sample spike.','This clears the main quality checks: probability, confidence, and support are all aligned.']);if(hp>=85&&score<80)return hashPick(seeds,['Big HP, but the trust score is telling you to review the setup before playing it.','The model likes the probability, while the support layer is asking for caution.','This is not rejected, but the support score is the reason it stays below Gold.']);if(hp>=80&&conf<70)return hashPick(seeds,['High HP with thinner evidence; useful, but not a clean primary read.','Probability is strong, confidence is the drag, so this should be reviewed against context.','This is an edge candidate, not a finished play, because the evidence base is softer.']);if(hp>=75&&score>=86)return hashPick(seeds,['Good HP with a strong support score; worth comparing against similar props.','The support layer likes the setup, but HP still decides whether it moves up.']);return hashPick(seeds,['Usable board candidate, but not a blind play.','This leg needs the context notes to agree before it deserves action.'])}
-function evidenceReason(g){const r=g.best;const ctx=contextStatus(r);const parts=[varianceTone(r),propEaseText(r)];if(ctx.length)parts.push(ctx.slice(0,2).join(' '));else parts.push('Context sidecars are thin on this row, so the comment stays honest instead of inventing pitcher/weather/umpire certainty.');const app=appInsight(g);if(app)parts.push(app);return parts.join(' ')}
+function evidenceReason(g){const r=g.best;const base=firstReal([r.leg_insight_comment]);const app=appInsight(g);if(base)return [base,app].filter(Boolean).join(' ');const ctx=contextStatus(r);const parts=[varianceTone(r),propEaseText(r)];if(ctx.length)parts.push(ctx.slice(0,2).join(' '));const a=appInsight(g);if(a)parts.push(a);return parts.join(' ')}
 function confidenceMeta(g){const rows=g.rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key));const vals=rows.map(r=>({app:sourceShort(r.source_key),conf:Number(r.probability_confidence_0_100||0)}));const unique=[...new Set(vals.map(v=>Math.round(v.conf*10)/10))];const grade=friendlyGrade(g.best.probability_grade);if(rows.length>1&&unique.length>1)return 'Confidence '+vals.map(v=>v.app+' '+pct1(v.conf)).join(' • ')+' • '+esc(grade);return 'Confidence '+pct1(g.best.probability_confidence_0_100)+' • '+esc(grade)}
 function card(g){const r=g.best;const match=(r.away_team_name&&r.home_team_name)?r.away_team_name+' @ '+r.home_team_name:'Game '+(r.game_pk||'');const when=[fmtDate(r.official_game_time_utc),r.venue_name].filter(Boolean).join(' • ');return '<article class="card"><div class="top"><div><div class="player">'+esc(r.player_name)+'</div><div class="small">'+esc(match)+' • '+esc(when)+'</div></div>'+badges(g)+'</div><div class="numbers"><div><div class="numLbl">Hit Probability</div><div class="hpNum">'+pct(r.estimated_hit_probability_0_100)+'</div></div><div class="scoreBlock"><div class="numLbl">Score</div>'+scoreCards(g.rows)+'</div></div><div class="lineBox"><span>'+esc(r.prop_label||cap(r.canonical_prop_key))+'</span><span class="side">'+esc(r.selected_side)+'</span><span>'+esc(r.line_value)+'</span></div><div class="meta">'+confidenceMeta(g)+'</div><div class="reason">'+esc(evidenceReason(g))+'</div></article>'}
 function render(){if(!filters)return;const totalGroups=groupRows(rows).length;const shownGroups=groupRows(rows.filter(passes));$('status').textContent='Showing '+shownGroups.length+' of '+totalGroups+' qualified legs';$('cards').innerHTML=shownGroups.length?shownGroups.map(card).join(''):'<div class="empty" style="grid-column:1/-1">No qualified legs match these filters.</div>'}
