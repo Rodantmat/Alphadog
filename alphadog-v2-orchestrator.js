@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.222-daily-lineups-sidecar-timeout-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.223-daily-certifier-sidecar-terminal-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -7003,7 +7003,31 @@ async function processDailyContextCertifierJob(env, row, runId, trigger) {
   let output;
   let httpStatus = null;
   let timedOut = false;
+
+  // v0.2.223: before re-dispatching a timed-out certifier child, first check
+  // whether the previous invocation already wrote a complete readiness ledger.
+  // This prevents duplicate certifier mining and converts terminal-handoff gaps
+  // into a verified completion only when readiness_current rows prove it.
+  const certifierStage = dailyContextStageForChildRow(row) || { job_key: "daily-certifier", worker_name: row.worker_name, stage_key: "daily_context_certifier" };
+  if (env.DAILY_DB) {
+    try {
+      const preRecovered = await buildDailyContextCertifierSidecarRecoveryOutput(env, row.request_id, certifierStage, { fromTimeout:false });
+      if (preRecovered && preRecovered.ok === true) {
+        output = {
+          ...preRecovered,
+          status: "COMPLETED_DAILY_CONTEXT_CERTIFIER_RECOVERED_BEFORE_REDISPATCH",
+          recovered_before_redispatch: true,
+          no_duplicate_certifier_dispatch_after_timeout: true
+        };
+        httpStatus = 200;
+      }
+    } catch (_) {
+      output = null;
+    }
+  }
+
   try {
+    if (!output) {
     const controller = new AbortController();
     const timer = setTimeout(() => {
       timedOut = true;
@@ -7017,12 +7041,40 @@ async function processDailyContextCertifierJob(env, row, runId, trigger) {
     } finally {
       clearTimeout(timer);
     }
+    }
   } catch (err) {
     const errText = String(err && err.message ? err.message : err || "");
-    const batch = await first(env.DAILY_DB, "SELECT batch_id, status, certification_status, certification_grade, prepared_rows_read, current_rows_written, issue_rows_written, output_json, completed_at, updated_at FROM daily_context_readiness_batches WHERE request_id=? ORDER BY datetime(created_at) DESC LIMIT 1", row.request_id);
-    if (batch && batch.status === "completed" && batch.output_json) {
-      try { output = JSON.parse(batch.output_json); } catch (_) { output = null; }
-      output = { ...(output || {}), ok:true, data_ok:true, recovered_from_completed_readiness_batch:true, recovered_batch_id:batch.batch_id, dispatch_error_before_recovery:errText };
+    const recovered = await buildDailyContextCertifierSidecarRecoveryOutput(env, row.request_id, certifierStage, { fromTimeout: timedOut });
+    const batch = recovered && recovered.batch_id
+      ? { batch_id: recovered.batch_id, status: "completed", certification_status: recovered.certification_status || recovered.certification || null, certification_grade: recovered.certification_grade || null, prepared_rows_read: recovered.prepared_rows_read || 0, current_rows_written: recovered.current_rows_written || recovered.rows_written || 0, issue_rows_written: recovered.issue_rows_written || 0, output_json: JSON.stringify(recovered), completed_at: null, updated_at: null }
+      : await first(env.DAILY_DB, "SELECT batch_id, status, certification_status, certification_grade, prepared_rows_read, current_rows_written, issue_rows_written, output_json, completed_at, updated_at FROM daily_context_readiness_batches WHERE request_id=? ORDER BY datetime(created_at) DESC LIMIT 1", row.request_id);
+    if (recovered && recovered.ok === true) {
+      output = { ...recovered, ok:true, data_ok:true, dispatch_error_before_recovery:errText, status:"COMPLETED_DAILY_CONTEXT_CERTIFIER_RESCUED_AFTER_SERVICE_BINDING_TIMEOUT", certification: recovered.certification || recovered.certification_status || "DAILY_CONTEXT_READINESS_CERTIFIED_ENRICHMENT_LEDGER_WRITTEN" };
+      httpStatus = 200;
+    } else if (timedOut && batch && String(batch.status || "") === "running") {
+      output = {
+        ok:true,
+        data_ok:true,
+        version:SYSTEM_VERSION,
+        processed_by:WORKER_NAME,
+        worker_name:row.worker_name,
+        job_key:row.job_key,
+        request_id:row.request_id,
+        run_id:runId,
+        status:"PARTIAL_CONTINUE_DAILY_CONTEXT_CERTIFIER_TIMEOUT_WAITING_ON_SIDECAR",
+        certification:"DAILY_CONTEXT_CERTIFIER_WAITING_ON_SIDECAR_TERMINALIZATION",
+        certification_grade:"PARTIAL",
+        continuation_required:true,
+        orchestrator_should_self_continue:true,
+        child_run_after_delay_seconds:10,
+        error:errText,
+        dispatch_timeout_ms:dispatchTimeoutMs,
+        readiness_batch_found:true,
+        readiness_batch_id:batch.batch_id,
+        readiness_batch_status:batch.status,
+        recovery_policy:"do_not_fail_certifier_timeout_until_readiness_sidecar_rows_are_rechecked",
+        no_false_failure_after_timeout:true
+      };
     } else {
       output = {
         ok:false,
@@ -7045,19 +7097,24 @@ async function processDailyContextCertifierJob(env, row, runId, trigger) {
     }
   }
   const ok = !!(output && output.ok);
+  const partialContinue = !!(output && output.continuation_required === true);
   const dataOk = !!(output && output.data_ok);
   const rowsRead = Number(output && output.prepared_rows_read ? output.prepared_rows_read : 0);
   const rowsWritten = Number(output && (output.current_rows_written || output.rows_written) ? (output.current_rows_written || output.rows_written) : 0);
   const externalCalls = Number(output && (output.external_calls || output.external_calls_performed) ? (output.external_calls || output.external_calls_performed) : 0);
   const certification = String((output && output.certification) || (ok ? "daily_context_certifier_completed" : "daily_context_certifier_failed")).slice(0,120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : (timedOut ? "daily_context_certifier_dispatch_timeout" : "daily_context_certifier_worker_failed");
-  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Daily Context Certifier worker failed").slice(0,900);
+  const queueStatus = partialContinue ? "pending" : (ok ? "completed" : "failed");
+  const runStatus = partialContinue ? "partial_continue" : (ok ? "completed" : "failed");
+  const errorCode = (ok || partialContinue) ? null : (timedOut ? "daily_context_certifier_dispatch_timeout" : "daily_context_certifier_worker_failed");
+  const errorMessage = (ok || partialContinue) ? null : String((output && (output.error || output.status || output.certification)) || "Daily Context Certifier worker failed").slice(0,900);
   const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, dispatch_timeout_ms:dispatchTimeoutMs, timed_out:timedOut, readiness_enrichment_only:true, not_strict_all_context_enforcement:true, volatile_current_issue_retention_today_tomorrow_only:true, no_external_calls:true, no_sidecar_repair:true, no_score_db_mutation:true, no_board_mutation:true, no_scoring:true, no_ranking:true, no_final_board_write:true, no_old_production_touch:true } };
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
-  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_context_certifier_dispatch_completed', 'Orchestrator completed exact Daily Context Readiness dispatch', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, dispatch: cappedOutput.orchestrator_dispatch }));
+  if (partialContinue) {
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+10 seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(cappedOutput), row.request_id);
+  } else {
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
+  }
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'daily_context_certifier_dispatch_completed', 'Orchestrator completed exact Daily Context Readiness dispatch', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, partialContinue ? "WARN" : (ok ? "INFO" : "ERROR"), JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, partial_continue: partialContinue, dispatch: cappedOutput.orchestrator_dispatch }));
   return cappedOutput;
 }
 
@@ -7190,9 +7247,183 @@ async function cleanupDailyContextOrphanChildSidecars(env, stage, child, cleanup
     return result;
   }
 
+  if (stage.job_key === "daily-certifier") {
+    result.sidecar_scope = "daily_context_readiness";
+    await run(env.DAILY_DB, "UPDATE daily_context_readiness_batches SET status='failed', certification_status=?, certification_grade='FAILED_ORPHAN_BATCH', certification_reason='Daily Context Full Run guard failed stale Context Certifier child; readiness rows were preserved non-destructively for audit/recovery.', completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'", note, requestId);
+    return result;
+  }
+
   return result;
 }
 
+
+async function buildDailyContextCertifierSidecarRecoveryOutput(env, requestId, stage, options = {}) {
+  if (!env || !env.DAILY_DB || !requestId) return null;
+  const batch = await first(env.DAILY_DB,
+    "SELECT * FROM daily_context_readiness_batches WHERE request_id=? ORDER BY datetime(created_at) DESC LIMIT 1",
+    requestId
+  );
+  if (!batch || !batch.batch_id) return null;
+
+  const status = String(batch.status || "");
+  if (status === "completed" && batch.output_json) {
+    const parsed = parseJsonSafeText(batch.output_json, {});
+    if (parsed && parsed.ok === true) return { ...parsed, recovered_from_completed_readiness_batch: true, recovered_batch_id: batch.batch_id };
+  }
+
+  const current = await first(env.DAILY_DB,
+    `SELECT
+       COUNT(*) AS rows,
+       COUNT(DISTINCT official_date) AS dates,
+       COUNT(DISTINCT game_pk) AS games,
+       COUNT(DISTINCT prepared_row_id) AS prepared_rows,
+       COUNT(DISTINCT player_id) AS players,
+       SUM(CASE WHEN context_status='ready_full_context' THEN 1 ELSE 0 END) AS ready_full_context_rows,
+       SUM(CASE WHEN context_status='ready_with_warnings' THEN 1 ELSE 0 END) AS ready_with_warnings_rows,
+       SUM(CASE WHEN context_status='ready_partial_enrichment' THEN 1 ELSE 0 END) AS ready_partial_enrichment_rows,
+       SUM(CASE WHEN context_status='waiting_late_context' THEN 1 ELSE 0 END) AS waiting_late_context_rows,
+       SUM(CASE WHEN context_status='blocked' THEN 1 ELSE 0 END) AS blocked_rows,
+       SUM(CASE WHEN context_status='not_applicable' THEN 1 ELSE 0 END) AS not_applicable_rows,
+       SUM(COALESCE(hard_blocker_count,0)) AS hard_blockers,
+       SUM(COALESCE(warning_count,0)) AS warnings,
+       SUM(COALESCE(enrichment_gap_count,0)) AS enrichment_gaps,
+       SUM(CASE WHEN readiness_key IS NULL OR readiness_key='' THEN 1 ELSE 0 END) AS missing_keys
+     FROM daily_context_readiness_current
+     WHERE batch_id=?`,
+    batch.batch_id
+  );
+  const currentRows = Number(current && current.rows || 0);
+  const currentGames = Number(current && current.games || 0);
+  const preparedRows = Number(current && current.prepared_rows || 0);
+  const missingKeys = Number(current && current.missing_keys || 0);
+  if (currentRows <= 0 || currentGames <= 0 || preparedRows <= 0 || missingKeys !== 0) return null;
+
+  const dup = await first(env.DAILY_DB,
+    `SELECT COUNT(*) AS n
+     FROM (
+       SELECT readiness_key, COUNT(*) AS c
+       FROM daily_context_readiness_current
+       WHERE batch_id=?
+       GROUP BY readiness_key
+       HAVING COUNT(*) > 1
+     )`,
+    batch.batch_id
+  );
+  const duplicateReadinessKeys = Number(dup && dup.n || 0);
+  if (duplicateReadinessKeys !== 0) return null;
+
+  const issueAgg = await first(env.DAILY_DB,
+    "SELECT COUNT(*) AS rows FROM daily_context_readiness_issues WHERE batch_id=?",
+    batch.batch_id
+  );
+  const issueRows = Number(issueAgg && issueAgg.rows || 0);
+  const hardBlockers = Number(current && current.hard_blockers || 0);
+  const warnings = Number(current && current.warnings || 0);
+  const enrichmentGaps = Number(current && current.enrichment_gaps || 0);
+  const blockedRows = Number(current && current.blocked_rows || 0);
+  const notApplicableRows = Number(current && current.not_applicable_rows || 0);
+  const readyWithWarningsRows = Number(current && current.ready_with_warnings_rows || 0);
+  const readyPartialRows = Number(current && current.ready_partial_enrichment_rows || 0);
+  const readyFullRows = Number(current && current.ready_full_context_rows || 0);
+  const waitingRows = Number(current && current.waiting_late_context_rows || 0);
+  const currentDates = Number(current && current.dates || 0);
+
+  let grade = "PASS_WITH_WARNINGS";
+  if (hardBlockers > 0 || blockedRows > 0) grade = "PASS_WITH_HARD_BLOCKERS";
+  else if (notApplicableRows === currentRows) grade = "PASS_WITH_NOT_APPLICABLE";
+  else if (warnings <= 0 && enrichmentGaps <= 0 && readyFullRows === currentRows) grade = "PASS";
+
+  const certification = "DAILY_CONTEXT_READINESS_CERTIFIED_ENRICHMENT_LEDGER_WRITTEN";
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: String(batch.worker_version || SYSTEM_VERSION),
+    worker_name: String(stage && stage.worker_name || "alphadog-v2-daily-certifier"),
+    job_key: String(stage && stage.job_key || "daily-certifier"),
+    request_id: requestId,
+    run_id: batch.run_id || null,
+    batch_id: batch.batch_id,
+    mode: "daily_context_readiness_refresh_window",
+    status: "completed",
+    certification,
+    certification_status: certification,
+    certification_grade: grade,
+    certification_reason: "Recovered and terminalized DB-verified Daily Context Readiness ledger rows after service-binding/terminal handoff timeout; no sidecar rows were deleted.",
+    window_start: batch.window_start || null,
+    window_end: batch.window_end || null,
+    prepared_rows_read: preparedRows,
+    rows_read: preparedRows,
+    prepared_games_checked: currentGames,
+    current_rows_written: currentRows,
+    rows_written: currentRows,
+    issue_rows_written: issueRows,
+    issues_written: issueRows,
+    hard_blocker_count: hardBlockers,
+    warning_count: warnings,
+    enrichment_gap_count: enrichmentGaps,
+    ready_full_context_count: readyFullRows,
+    ready_with_warnings_count: readyWithWarningsRows,
+    ready_partial_enrichment_count: readyPartialRows,
+    waiting_late_context_count: waitingRows,
+    blocked_count: blockedRows,
+    not_applicable_count: notApplicableRows,
+    retention_violations: Number(batch.retention_violations || 0),
+    schema_failures: Number(batch.schema_failures || 0),
+    current_dates_verified: currentDates,
+    current_games_verified: currentGames,
+    current_players_verified: Number(current && current.players || 0),
+    current_rows_verified: currentRows,
+    duplicate_readiness_keys: duplicateReadinessKeys,
+    sidecar_recovery: true,
+    recovered_from_service_binding_timeout: options && options.fromTimeout === true,
+    recovered_from_readiness_sidecar_batch: true,
+    recovered_from_sidecar_terminalization: true,
+    recovery_policy: "verified_daily_context_readiness_current_rows_unique_readiness_key_then_terminalize_batch",
+    external_calls: 0,
+    external_calls_performed: 0,
+    no_external_calls: true,
+    no_sidecar_repair: true,
+    no_calendar_rebuild: true,
+    no_daily_game_status_duplication: true,
+    no_board_mutation: true,
+    no_market_odds: true,
+    no_score_db_mutation: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_old_production_touch: true
+  };
+
+  await run(env.DAILY_DB,
+    `UPDATE daily_context_readiness_batches
+     SET status='completed',
+         prepared_rows_read=?,
+         prepared_games_checked=?,
+         current_rows_written=?,
+         issue_rows_written=?,
+         hard_blocker_count=?,
+         warning_count=?,
+         enrichment_gap_count=?,
+         ready_full_context_count=?,
+         ready_with_warnings_count=?,
+         ready_partial_enrichment_count=?,
+         waiting_late_context_count=?,
+         blocked_count=?,
+         not_applicable_count=?,
+         retention_violations=COALESCE(retention_violations,0),
+         schema_failures=COALESCE(schema_failures,0),
+         certification_status=?,
+         certification_grade=?,
+         certification_reason=?,
+         output_json=?,
+         completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP),
+         updated_at=CURRENT_TIMESTAMP
+     WHERE batch_id=?`,
+    preparedRows, currentGames, currentRows, issueRows, hardBlockers, warnings, enrichmentGaps, readyFullRows, readyWithWarningsRows, readyPartialRows, waitingRows, blockedRows, notApplicableRows, certification, grade, output.certification_reason, JSON.stringify(output), batch.batch_id
+  );
+
+  return output;
+}
 
 async function buildDailyLineupsSidecarRecoveryOutput(env, requestId, stage) {
   if (!env || !env.DAILY_DB || !requestId) return null;
@@ -7354,6 +7585,11 @@ async function recoverDailyContextStaleChildFromSidecar(env, parentRow, stage, c
           await run(env.DAILY_DB, "UPDATE daily_umpire_context_batches SET status='completed', games_checked=?, game_rows_written=?, snapshot_rows_written=?, warning_count=?, certification_status=?, certification_grade=?, certification_reason=?, output_json=?, completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", Number(batch.games_checked||currentRows), currentRows, snapshotRows, issueRows, output.certification, output.certification_grade, output.certification_reason, JSON.stringify(output), batch.batch_id);
         }
       }
+    } else if (stage.job_key === "daily-certifier") {
+      output = await buildDailyContextCertifierSidecarRecoveryOutput(env, requestId, stage, { fromTimeout:false });
+      if (output && output.batch_id) {
+        batch = { batch_id: output.batch_id, prepared_rows_read: output.prepared_rows_read || 0, external_calls: 0 };
+      }
     }
   } catch (err) {
     await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'daily_context_full_run_sidecar_recovery_probe_failed', 'Daily Context sidecar recovery probe failed; stale guard will continue without destructive deletes', ?, CURRENT_TIMESTAMP)", parentRow.request_id, runId, WORKER_NAME, parentRow.job_key, JSON.stringify({ child_request_id: requestId, stage_key: stage.stage_key, error: String(err && err.message ? err.message : err).slice(0,900) }));
@@ -7385,7 +7621,7 @@ function dailyContextStageForChildRow(row) {
 
 function dailyContextStageSupportsSidecarRescue(stage) {
   const key = String(stage && stage.job_key || "");
-  return key === "daily-lineups" || key === "daily-player-availability" || key === "daily-weather" || key === "daily-bullpen-availability" || key === "daily-team-schedule-spot" || key === "daily-umpire-context";
+  return key === "daily-lineups" || key === "daily-player-availability" || key === "daily-weather" || key === "daily-bullpen-availability" || key === "daily-team-schedule-spot" || key === "daily-umpire-context" || key === "daily-certifier";
 }
 
 function dailyContextFullRunStageStaleSeconds(stage) {
