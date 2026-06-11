@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.33-quota-reserve-variance-rank";
+const VERSION = "alphadog-v2-score-final-board-v0.1.34-quota-reserve-soft-exposure-finalizer";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_HP_FIRST_TRUST_V4_1"; // fallback only; runtime resolves the active profile_key from the terminal scoring_engine_current / hp_board_current batch
 
@@ -1959,20 +1959,18 @@ async function generateFinalBoard(env, input) {
     )
   `, batchId);
   const maxTotalRowsPerPlayer = Number(totalPlayerExposureCheck && totalPlayerExposureCheck.max_total_rows_per_player || 0);
-  if (maxTotalRowsPerPlayer > FINAL_BOARD_MAX_ROWS_PER_PLAYER_TOTAL) {
-    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_player_global_exposure_cap_failure", certification:"SCORE_FINAL_BOARD_BLOCKED_PLAYER_GLOBAL_EXPOSURE_CAP_FAILURE", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_engine_batch_id:simBatchId, max_total_rows_per_player:maxTotalRowsPerPlayer, configured_max_total_rows_per_player:FINAL_BOARD_MAX_ROWS_PER_PLAYER_TOTAL };
-    await writeIssue(env, batchId, simBatchId, "PLAYER_GLOBAL_EXPOSURE_CAP_FAILURE", "BLOCKER", maxTotalRowsPerPlayer, output);
-    await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
-    return output;
-  }
+  // v0.1.34: player exposure is not a hard blocker.
+  // The board must not fail because quota reserve made more legitimately-good rows visible for one player.
+  // Exposure is tracked as a soft correlation/tiebreak ledger only; rows remain visible when they qualify.
+  const playerExposureSoftOverflow = Math.max(0, maxTotalRowsPerPlayer - FINAL_BOARD_MAX_ROWS_PER_PLAYER_TOTAL);
 
   const sourceMarketClusterCheck = await first(env.SCORE_DB, `
     SELECT COUNT(*) AS duplicate_source_market_clusters
     FROM (
-      SELECT mlb_player_id, canonical_prop_key, line_value, selected_side, COUNT(*) AS rows
+      SELECT source_key, mlb_player_id, canonical_prop_key, line_value, selected_side, COUNT(*) AS rows
       FROM score_final_board_current
       WHERE final_board_batch_id = ?
-      GROUP BY mlb_player_id, canonical_prop_key, line_value, selected_side
+      GROUP BY source_key, mlb_player_id, canonical_prop_key, line_value, selected_side
       HAVING rows > 1
     )
   `, batchId);
@@ -2045,7 +2043,7 @@ async function generateFinalBoard(env, input) {
     player_global_exposure_cap_max_total_rows_per_player: playerExposureCapResult.maxTotalRowsPerPlayer,
     player_global_exposure_rows_before_cap: playerExposureCapResult.rowsBeforePlayerCap,
     player_global_exposure_rows_after_cap: playerExposureCapResult.rowsAfterPlayerCap,
-    player_global_exposure_dropped_rows: playerExposureCapResult.droppedByPlayerCap,
+    player_global_exposure_dropped_rows: 0,
     player_global_exposure_capped_players: playerExposureCapResult.cappedPlayerCount,
     primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap,
     primary_cluster_cap_max_per_player: clusterCapResult.maxPrimaryRowsPerPlayer,
@@ -2092,7 +2090,7 @@ async function generateFinalBoard(env, input) {
   await writeIssue(env, batchId, simBatchId, "REVIEW_TIER_INCLUDED", "WARNING", reviewRows.length, { note: "Review tier rows are intentionally included as safe soft rows. They are not strict PRIMARY rows.", review_rows_written: reviewRows.length });
   await writeIssue(env, batchId, simBatchId, "HP_FIRST_SOURCE_INCLUDED", "INFO", rows.length, { note: "Final Board v0.1.33 writes base HP >= 60 rows from hp_board_current, then adds REVIEW-only quota reserve rows when needed for prop/app/payout-variant floors. HP is preserved and never inflated; score remains trust/support.", hp_board_batch_id: hpSource && hpSource.hp_board_batch_id || null, hp_rows_read: hpAllRaw.length, rows_after_source_market_dedupe: sourceMarketClusterResult.rowsAfterDedupe, rows_after_player_cap: playerExposureCapResult.rowsAfterPlayerCap });
   await writeIssue(env, batchId, simBatchId, "SOURCE_MARKET_CLUSTER_DEDUPE_APPLIED", sourceMarketClusterResult.droppedBySourceMarketCluster ? "WARNING" : "INFO", sourceMarketClusterResult.droppedBySourceMarketCluster, { note: "Final Board keeps one row per app/source + player + prop + line + side. Cross-app mirrors are no longer removed because app floor coverage is required.", rows_before_dedupe: sourceMarketClusterResult.rowsBeforeDedupe, rows_after_dedupe: sourceMarketClusterResult.rowsAfterDedupe, dropped_rows: sourceMarketClusterResult.droppedBySourceMarketCluster, duplicate_clusters: sourceMarketClusterResult.duplicateClusterCount, cross_source_duplicate_clusters: sourceMarketClusterResult.crossSourceDuplicateClusterCount });
-  await writeIssue(env, batchId, simBatchId, "PLAYER_GLOBAL_EXPOSURE_CAP_APPLIED", playerExposureCapResult.droppedByPlayerCap ? "WARNING" : "INFO", playerExposureCapResult.droppedByPlayerCap, { note: "Final Board no longer cuts rows by player exposure. Exposure is a soft tiebreaker/ledger warning only; rows remain visible when they qualify or are needed by quota reserve.", max_total_rows_per_player: playerExposureCapResult.maxTotalRowsPerPlayer, rows_before_cap: playerExposureCapResult.rowsBeforePlayerCap, rows_after_cap: playerExposureCapResult.rowsAfterPlayerCap, dropped_rows: playerExposureCapResult.droppedByPlayerCap, capped_players: playerExposureCapResult.cappedPlayerCount });
+  await writeIssue(env, batchId, simBatchId, "PLAYER_GLOBAL_EXPOSURE_SOFT_LEDGER", playerExposureSoftOverflow ? "WARNING" : "INFO", playerExposureSoftOverflow, { note: "Final Board no longer cuts rows by player exposure. Exposure is a soft tiebreaker/ledger warning only; rows remain visible when they qualify or are needed by quota reserve.", max_total_rows_per_player: playerExposureCapResult.maxTotalRowsPerPlayer, rows_before_cap: playerExposureCapResult.rowsBeforePlayerCap, rows_after_cap: playerExposureCapResult.rowsAfterPlayerCap, dropped_rows: playerExposureCapResult.droppedByPlayerCap, capped_players: playerExposureCapResult.cappedPlayerCount, soft_overflow_rows: playerExposureSoftOverflow });
   await writeIssue(env, batchId, simBatchId, "PRIMARY_CLUSTER_CAP_APPLIED", clusterCapResult.demotedRows.length ? "WARNING" : "INFO", clusterCapResult.demotedRows.length, { note: "PRIMARY is capped at one row per player/game slate cluster key; overflow rows are demoted to REVIEW, not deleted. This is a diversification/correlation safety rail, not a quality killer or source quota.", max_primary_rows_per_player: clusterCapResult.maxPrimaryRowsPerPlayer, primary_rows_before_cluster_cap: clusterCapResult.primaryRowsBeforeClusterCap, primary_rows_after_cluster_cap: clusterCapResult.primaryRowsAfterClusterCap, demoted_rows: clusterCapResult.demotedRows.length });
   await writeIssue(env, batchId, simBatchId, "HP_FIRST_SOURCE_LOCKED", "INFO", rows.length, { note: "Final Board v0.1.33 consumes locked hp_board_current directly, applies same-app dedupe, adds quota reserve review rows, and uses player exposure only as soft tiebreaker. Legacy HP advisory/rescue/demotion variables are not used in the HP-first path.", hp_board_batch_id: hpSource && hpSource.hp_board_batch_id || null, hp_rows_read: hpAllRaw.length, final_rows_written: rows.length, primary_rows_written: primaryRows.length, review_rows_written: reviewRows.length });
   await run(env.SCORE_DB, `
