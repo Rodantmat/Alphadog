@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-final-board";
-const VERSION = "alphadog-v2-score-final-board-v0.1.31-player-exposure-dedupe-finalizer";
+const VERSION = "alphadog-v2-score-final-board-v0.1.32-primary-first-review-ledger-rank";
 const JOB_KEY = "score-final-board";
 const PRIMARY_PROFILE = "STRICT_C_HP_FIRST_TRUST_V4_1"; // fallback only; runtime resolves the active profile_key from the terminal scoring_engine_current / hp_board_current batch
 
@@ -1283,13 +1283,18 @@ function finalBoardCandidateComparator(a, b) {
 }
 
 function finalBoardDisplayComparator(a, b) {
+  // v0.1.32: display/rank contract is tier-first, then HP-first inside each tier.
+  // PRIMARY rows are live/primary candidates and must never be interleaved behind REVIEW rows.
+  // REVIEW remains a candidate ledger, sorted by the same HP-first quality sort after PRIMARY is exhausted.
+  const tierA = String(a.board_tier || "REVIEW") === "PRIMARY" ? 0 : 1;
+  const tierB = String(b.board_tier || "REVIEW") === "PRIMARY" ? 0 : 1;
   const hpSortA = num(a.hp_sort_0_100, num(a.score_sort_0_100, finalBoardSortFromHp(a)));
   const hpSortB = num(b.hp_sort_0_100, num(b.score_sort_0_100, finalBoardSortFromHp(b)));
-  return (hpSortB - hpSortA) ||
+  return (tierA - tierB) ||
+    (hpSortB - hpSortA) ||
     (num(b.estimated_hit_probability_0_100, 0) - num(a.estimated_hit_probability_0_100, 0)) ||
     (num(b.score_0_100, 0) - num(a.score_0_100, 0)) ||
     (num(b.probability_confidence_0_100, num(b.confidence_0_100, 0)) - num(a.probability_confidence_0_100, num(a.confidence_0_100, 0))) ||
-    (String(a.board_tier || "REVIEW") === "PRIMARY" ? -1 : 1) - (String(b.board_tier || "REVIEW") === "PRIMARY" ? -1 : 1) ||
     (num(a.hp_rank, 999999) - num(b.hp_rank, 999999)) ||
     String(a.player_name || "").localeCompare(String(b.player_name || "")) ||
     String(a.canonical_prop_key || "").localeCompare(String(b.canonical_prop_key || "")) ||
@@ -1937,7 +1942,7 @@ async function generateFinalBoard(env, input) {
     current_rows_written: rows.length,
     table_for_final_ui: "SCORE_DB.score_final_board_current",
     history_table: "SCORE_DB.score_final_board_history",
-    final_ui_contract: "Read estimated_hit_probability_0_100 as the reality thermometer, score_0_100 as the Engine trust/support score, and score_sort_0_100 as HP-first board sort. Final Board source is hp_board_current for the same Engine batch. HP < 60 is excluded; HP >= 60 is visible as PRIMARY/REVIEW according to HP board playability, then source-market clusters are deduped and each player is capped across PRIMARY + REVIEW combined.",
+    final_ui_contract: "Read estimated_hit_probability_0_100 as the reality thermometer, score_0_100 as the Engine trust/support score, and score_sort_0_100 as HP-first board sort. Final Board source is hp_board_current for the same Engine batch. HP < 60 is excluded; HP >= 60 is visible as PRIMARY/REVIEW according to HP board playability, then source-market clusters are deduped and each player is capped across PRIMARY + REVIEW combined. Rank order is tier-first: PRIMARY rows are ranked before REVIEW rows; each tier remains HP-first using hp_sort_0_100.",
     no_external_calls: true,
     no_source_board_mutation: true,
     no_simulation_shadow_mutation: true,
