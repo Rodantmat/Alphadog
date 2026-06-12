@@ -1,7 +1,8 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.9-current-window-prepared-retention";
+const VERSION = "alphadog-v2-score-prep-v0.2.10-prizepicks-alias-source-key-fallback";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
+const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
 const SOURCE_SLEEPER = "sleeper";
 const INSERT_CHUNK_SIZE = 75;
 
@@ -209,7 +210,33 @@ function sourceKeyForRow(source, row) {
   return safeStr(row.source_line_id || row.current_row_id || row.player_name);
 }
 
-function propKeyPrizePicks(statType) {
+function propAliasLookupKeys(sourceKey, marketName) {
+  const n = normalizeName(marketName);
+  if (!sourceKey || !n) return [];
+  const sourceKeys = [sourceKey];
+
+  // v0.2.10: Prepared rows intentionally emit source_key=prizepicks, but
+  // REF_DB.ref_prop_aliases stores PrizePicks prop aliases under
+  // source_key=prizepicks_github. Use this only for alias lookup; do not
+  // change the emitted prepared source_key.
+  if (sourceKey === SOURCE_PRIZEPICKS) sourceKeys.push(SOURCE_PRIZEPICKS_ALIAS_FALLBACK);
+
+  return sourceKeys.map(src => `${src}|${n}`);
+}
+
+function lookupPropAlias(ref, sourceKey, marketName) {
+  if (!ref || !ref.propAliasMap) return null;
+  for (const key of propAliasLookupKeys(sourceKey, marketName)) {
+    const propKey = ref.propAliasMap.get(key);
+    if (propKey) return propKey;
+  }
+  return null;
+}
+
+function propKeyPrizePicks(statType, ref = null) {
+  const aliasKey = lookupPropAlias(ref, SOURCE_PRIZEPICKS, statType);
+  if (aliasKey) return aliasKey;
+
   const n = normalizeName(statType);
   const map = new Map([
     ["hits", "hits"],
@@ -325,12 +352,13 @@ CREATE TABLE IF NOT EXISTS score_board_prepared_current (
 }
 
 async function loadReference(env) {
-  const [teams, teamAliases, players, rosters, aliases] = await Promise.all([
+  const [teams, teamAliases, players, rosters, aliases, propAliases] = await Promise.all([
     allRows(env.REF_DB, "SELECT team_id, mlb_team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code, active FROM ref_teams WHERE active=1"),
     allRows(env.REF_DB, "SELECT alias_value, alias_normalized, team_id, mlb_team_id, alias_type, confidence, active FROM ref_team_aliases WHERE active=1"),
     allRows(env.REF_DB, "SELECT player_id, mlb_player_id, full_name, player_name, current_team_id, current_mlb_team_id, primary_position, active FROM ref_players WHERE active=1"),
     allRows(env.REF_DB, "SELECT player_id, mlb_team_id, team_id, player_name, position_abbreviation, roster_status, role, active, updated_at FROM ref_rosters WHERE active=1"),
-    allRows(env.REF_DB, "SELECT alias_name, alias_normalized, player_id, confidence, alias_type, team_id, mlb_team_id, active FROM ref_player_aliases WHERE active=1")
+    allRows(env.REF_DB, "SELECT alias_name, alias_normalized, player_id, confidence, alias_type, team_id, mlb_team_id, active FROM ref_player_aliases WHERE active=1"),
+    allRows(env.REF_DB, "SELECT prop_key, source_key, source_market_name, normalized_market_name FROM ref_prop_aliases")
   ]);
 
   const teamByMlbId = new Map();
@@ -414,7 +442,18 @@ async function loadReference(env) {
     addAlias(a.alias_normalized, a.player_id);
   }
 
-  return { teams, teamAliases, players, aliases, teamByMlbId, teamByAbbr, teamByFull, playerById, aliasMap, suffixAliasMap };
+  const propAliasMap = new Map();
+  for (const a of propAliases) {
+    const propKey = safeStr(a.prop_key);
+    const sourceKey = safeStr(a.source_key);
+    if (!propKey || !sourceKey) continue;
+    for (const name of [a.source_market_name, a.normalized_market_name]) {
+      const n = normalizeName(name);
+      if (n) propAliasMap.set(`${sourceKey}|${n}`, propKey);
+    }
+  }
+
+  return { teams, teamAliases, players, aliases, propAliases, propAliasMap, teamByMlbId, teamByAbbr, teamByFull, playerById, aliasMap, suffixAliasMap };
 }
 
 async function loadCalendar(env, dateSet, ref) {
@@ -771,7 +810,7 @@ function preparePrizePicksRows(rows, ref, calendar, batchId, now) {
   for (const r of rows) {
     const sourceRowId = sourceKeyForRow(SOURCE_PRIZEPICKS, r);
     const playerName = safeStr(r.player_name);
-    const propKey = propKeyPrizePicks(r.stat_type);
+    const propKey = propKeyPrizePicks(r.stat_type, ref);
     const comboMarket = isComboMarketRow({ playerName, propKey, payloadJson: r.row_payload_json, rawJson: r.raw_projection_json });
     const officialDate = dateOnlyFromAnyTime(r.start_time);
     const teamAbbr = safeStr(r.team);
@@ -1260,6 +1299,7 @@ LIMIT 20`, [batchId]);
     blocked_samples: blockedSamples,
     calendar_rows_loaded: calendar.rows.length,
     ref_alias_rows_loaded: ref.aliases.length,
+    ref_prop_alias_rows_loaded: ref.propAliases.length,
     ref_player_rows_loaded: ref.players.length,
     output_tables: ["SCORE_DB.score_board_prep_batches", "SCORE_DB.score_board_prepared_current"],
     no_market_board_mutation: true,
