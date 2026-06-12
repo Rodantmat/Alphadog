@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.225-prop-factor-parent-yield-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.226-prop-factor-partial-terminal-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -6198,7 +6198,7 @@ async function processDailyProbablePitchersJob(env, row, runId, trigger) {
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {
@@ -6355,7 +6355,7 @@ async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {
@@ -6516,7 +6516,7 @@ async function processDailyWeatherJob(env, row, runId, trigger) {
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {
@@ -6722,7 +6722,7 @@ async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {
@@ -6883,7 +6883,7 @@ async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {
@@ -7055,7 +7055,7 @@ async function processDailyUmpireContextJob(env, row, runId, trigger) {
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {
@@ -8340,7 +8340,7 @@ async function processDailyLineupsJob(env, row, runId, trigger) {
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {
@@ -8488,7 +8488,7 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {
@@ -8835,17 +8835,20 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
     "SELECT request_id, status, finished_at, parent_request_id, error_code, error_message FROM control_job_queue WHERE request_id=? LIMIT 1",
     row.request_id
   );
-  if (!currentQueueRow || !isActiveControlQueueStatus(currentQueueRow.status) || currentQueueRow.finished_at) {
+  const currentQueueStatus = String(currentQueueRow && currentQueueRow.status ? currentQueueRow.status : "");
+  const currentQueueCompletedPartial = currentQueueStatus === "completed" && partial;
+  const currentQueueActiveOrCorrectable = !!currentQueueRow && (isActiveControlQueueStatus(currentQueueStatus) || currentQueueCompletedPartial) && (!currentQueueRow.finished_at || currentQueueCompletedPartial);
+  if (!currentQueueActiveOrCorrectable) {
     const guardedOutput = {
       ...cappedOutput,
       queue_update_skipped_terminal_row: true,
       current_queue_status: currentQueueRow ? currentQueueRow.status : "missing",
       current_queue_finished_at: currentQueueRow ? currentQueueRow.finished_at : null,
+      returning_output_partial_continue: partial,
       certification: "PROP_FACTOR_DISPATCH_RESULT_IGNORED_TERMINAL_QUEUE_ROW",
       certification_grade: "IGNORED_TERMINAL_QUEUE_ROW"
     };
-    const terminalStatus = String(currentQueueRow && currentQueueRow.status ? currentQueueRow.status : "");
-    if (["failed", "cancelled"].includes(terminalStatus) && output && (output.batch_id || output.factor_batch_id)) {
+    if (["failed", "cancelled"].includes(currentQueueStatus) && output && (output.batch_id || output.factor_batch_id)) {
       await run(env.SCORE_DB,
         "UPDATE prop_factor_batches SET status='cancelled_orphan_after_terminal_queue_guard', certification_status='PROP_FACTOR_BATCH_CANCELLED_AFTER_TERMINAL_QUEUE_GUARD', certification_grade='CANCELLED_ORPHAN', updated_at=CURRENT_TIMESTAMP WHERE batch_id=? AND request_id=? AND status IN ('running','partial_continue','partial_continue_factor_packets_chunk_written')",
         output.batch_id || output.factor_batch_id, row.request_id
@@ -8872,7 +8875,7 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {
@@ -9031,7 +9034,7 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {
@@ -9215,7 +9218,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       continuation_certification: certification
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {
@@ -9338,7 +9341,7 @@ async function processScoreFinalBoardJob(env, row, runId, trigger) {
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {
@@ -9470,7 +9473,7 @@ async function processScorePrepJob(env, row, runId, trigger) {
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {
@@ -9660,7 +9663,7 @@ async function processDeltaCertifierJob(env, row, runId, trigger) {
       continuation_from_request_id: row.request_id
     };
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
       JSON.stringify(nextInput), JSON.stringify(cappedOutput), row.request_id
     );
   } else {

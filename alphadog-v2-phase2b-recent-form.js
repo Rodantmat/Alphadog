@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.11-partial-lifecycle-resume-finalizer";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.11-partial-lifecycle-resume-finalizer";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.12-partial-lifecycle-pending-resume";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.12-partial-lifecycle-pending-resume";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -149,6 +149,52 @@ async function controlLifecycleHeartbeat(env, input = {}, statusText = "running"
     return { ok:true };
   } catch (err) {
     return { ok:false, error:controlSafeText(err && err.message ? err.message : err, 700) };
+  }
+}
+function isPropFactorPartialOutput(output = {}) {
+  const status = String(output.status || "").toLowerCase();
+  const cert = String(output.certification || output.certification_status || "").toLowerCase();
+  const grade = String(output.certification_grade || "").toLowerCase();
+  return !!(output && output.ok === true && (
+    output.continuation_required === true ||
+    output.orchestrator_should_self_continue === true ||
+    output.factor_resume === true ||
+    status === "partial_continue" ||
+    status.startsWith("partial_continue_") ||
+    cert.includes("partial_continue") ||
+    grade === "partial_continue"
+  ));
+}
+async function controlLifecyclePartialContinue(env, input = {}, output = {}) {
+  const requestId = output.request_id || input.request_id || null;
+  if (!env || !env.CONTROL_DB || !requestId) return { ok:false, skipped:"missing_control_db_or_request_id" };
+  const runId = output.run_id || input.run_id || null;
+  const jobKey = output.job_key || controlJobKey(input);
+  const resumeBatchId = output.resume_batch_id || output.factor_batch_id || output.batch_id || input.resume_batch_id || input.factor_batch_id || null;
+  const nextInput = {
+    ...input,
+    factor_batch_id: resumeBatchId,
+    resume_batch_id: resumeBatchId,
+    factor_resume: true,
+    continuation_from_request_id: requestId
+  };
+  const cert = output.certification || output.certification_status || `${String(jobKey).toUpperCase().replace(/[^A-Z0-9]+/g,"_")}_PARTIAL_CONTINUE`;
+  const rowsRead = Number(output.rows_read ?? output.prepared_rows_read ?? 0) || 0;
+  const rowsWritten = Number(output.rows_written ?? output.packets_written ?? 0) || 0;
+  const externalCalls = Number(output.external_calls_performed ?? output.external_calls ?? 0) || 0;
+  const elapsed = Number(output.elapsed_ms || 0) || null;
+  const partialJson = controlSafeJson({ ...output, request_id:requestId, run_id:runId, control_lifecycle_partial_continue:true, control_lifecycle_partial_at:(typeof nowUtc === "function" ? nowUtc() : (typeof nowIso === "function" ? nowIso() : new Date().toISOString())) }, 9000);
+  try {
+    await run(env.CONTROL_DB, `UPDATE control_job_queue
+      SET status='pending', finished_at=NULL, run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL
+      WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')`, JSON.stringify(nextInput), partialJson, requestId);
+    const runSql = `UPDATE control_job_runs
+      SET status='partial_continue', data_ok=1, certification_status=?, rows_read=?, rows_written=?, external_calls=?, finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), elapsed_ms=COALESCE(elapsed_ms, ?), output_json=?, error_code=NULL, error_message=NULL
+      WHERE ${runId ? 'run_id=?' : 'request_id=?'} AND finished_at IS NULL`;
+    await run(env.CONTROL_DB, runSql, cert, rowsRead, rowsWritten, externalCalls, elapsed, partialJson, runId || requestId);
+    return { ok:true, queue_status:"pending", run_status:"partial_continue", certification:cert, resume_batch_id:resumeBatchId };
+  } catch (err) {
+    return { ok:false, error:controlSafeText(err && err.message ? err.message : err, 900) };
   }
 }
 async function controlLifecycleFinalize(env, input = {}, output = {}, terminalHint = null) {
@@ -1112,7 +1158,11 @@ export default {
       try {
         const response = await runFactorMining(request, env);
         const output = await responseToOutputObject(response);
-        output.control_lifecycle = await controlLifecycleFinalize(env, inputForLifecycle, output, output.ok !== false && output.data_ok !== false ? "completed" : "failed");
+        if (isPropFactorPartialOutput(output)) {
+          output.control_lifecycle = await controlLifecyclePartialContinue(env, inputForLifecycle, output);
+        } else {
+          output.control_lifecycle = await controlLifecycleFinalize(env, inputForLifecycle, output, output.ok !== false && output.data_ok !== false ? "completed" : "failed");
+        }
         return jsonResponse(output, response.status || (output.ok !== false ? 200 : 500));
       }
       catch (err) {
