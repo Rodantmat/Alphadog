@@ -1,13 +1,13 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-main-ui-v0.2.5-rich-user-dossier";
+const VERSION = "alphadog-v2-main-ui-v0.2.6-dossier-prop-label-hotfix";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
 
-const UI_VERSION_LABEL = "v0.2.5 - Rich Leg Dossier";
+const UI_VERSION_LABEL = "v0.2.6 - Rich Leg Dossier";
 
 const DOCUMENTED_PROP_OPTIONS = [
   { prop_family: "hitter", canonical_prop_key: "hits", label: "Hits" },
@@ -1429,7 +1429,7 @@ const MAIN_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>AlphaDog — v0.2.1 Leg Dossier Board</title>
+<title>AlphaDog — v0.2.6 Rich Leg Dossier</title>
 <link rel="icon" type="image/png" href="/main_alphadog_favicon.png" />
 <link rel="apple-touch-icon" href="/main_alphadog_apple_touch_icon.png" />
 <style>
@@ -1440,7 +1440,7 @@ const MAIN_HTML = `<!doctype html>
 <body>
 <div class="wrap">
   <header class="hero">
-    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.1 - Leg Dossier Board</div></div></div>
+    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.6 - Rich Leg Dossier</div></div></div>
     <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Main Board</button><button id="menuHealth">Health</button></div></div>
   </header>
   <section id="boardScreen">
@@ -1466,11 +1466,12 @@ const MAIN_HTML = `<!doctype html>
 </div>
 <script>
 (()=>{
-const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.4 - Player Dossier';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null;
+const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.6 - Rich Leg Dossier';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0)+'%':'—'}
 function num(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0):'—'}
 function cap(s){return String(s||'').replace(/_/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase())}
+function displayPropLabel(key){const labels={hits:'Hits',total_bases:'Total Bases',runs:'Runs',rbis:'RBIs',singles:'Singles',doubles:'Doubles',triples:'Triples',home_runs:'Home Runs',walks:'Walks',hitter_strikeouts:'Hitter Strikeouts',hits_runs_rbis:'Hits + Runs + RBIs',pitcher_strikeouts:'Pitcher Strikeouts',pitcher_outs:'Pitcher Outs',earned_runs:'Earned Runs',hits_allowed:'Hits Allowed',walks_allowed:'Walks Allowed',rfi_nrfi:'RFI / NRFI'};return labels[String(key||'').toLowerCase()]||cap(key)}
 function lineLabel(t){return t==='goblin'?'Goblin':t==='demon'?'Demon':t==='more_only'?'More Only':'Regular'}
 function appLabel(s){s=String(s||'').toLowerCase();return s==='prizepicks'?'PrizePicks':s==='sleeper'?'Sleeper':cap(s||'Unknown')}
 function appTypeLabel(r){return (r.app_line_label||appLabel(r.source_key)+' • '+lineLabel(r.line_type||'regular'))}
