@@ -1,13 +1,13 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-main-ui-v0.1.9-polished-insight-card-hotfix";
+const VERSION = "alphadog-v2-main-ui-v0.2.0-final-insight-board";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
 
-const UI_VERSION_LABEL = "v0.1.9 - Polished Insight Cards";
+const UI_VERSION_LABEL = "v0.2.0 - Final Insight Board";
 
 const DOCUMENTED_PROP_OPTIONS = [
   { prop_family: "hitter", canonical_prop_key: "hits", label: "Hits" },
@@ -413,35 +413,153 @@ function uiUmpireBullpenSentence(row) {
   if (sched) bits.push(`Schedule context is logged: ${sched}.`);
   return bits[0] || "";
 }
-function composeLegInsight(row) {
-  const seed = [row.player_name, row.canonical_prop_key, row.line_value, row.selected_side, row.source_key, row.game_pk, 'composer-v2'].join('|');
-  const opening = uiHashPick(seed, [
-    `Board read:`,
-    `Leg read:`,
-    `Context angle:`,
-    `Usable edge note:`
-  ]);
-  const parts = [
-    uiPropPathSentence(row),
-    uiPitcherSentence(row),
-    uiPlayerRolePhrase(row),
-    uiWeatherSentence(row) || uiVenueSentence(row),
-    uiUmpireBullpenSentence(row)
-  ].filter(Boolean);
-  const selected = [];
-  for (const part of parts) {
-    if (!selected.includes(part) && selected.join(' ').length < 520) selected.push(part);
+function uiLineupRoleForComment(row) {
+  const order = uiFinite(row.batting_order);
+  if (!order) return "";
+  const ord = uiOrdinal(order);
+  if (order <= 1) return `working from the leadoff spot, where the extra plate-appearance equity matters`;
+  if (order <= 2) return `hitting ${ord}, close enough to the top to keep volume firmly in play`;
+  if (order <= 5) return `sitting in the ${ord} slot, where traffic and conversion chances are both realistic`;
+  if (order <= 7) return `batting ${ord}, with a thinner volume cushion than the top of the order`;
+  return `down in the ${ord} slot, where opportunity is naturally capped`;
+}
+function uiPitcherProfileForComment(row) {
+  const p = uiPitcherLabel(row);
+  if (!p) return "";
+  const hand = uiFirstReal([row.opposing_pitcher_hand, row.probable_pitcher_hand]);
+  const era = uiFinite(row.opposing_pitcher_era);
+  const whip = uiFinite(row.opposing_pitcher_whip);
+  const fip = uiFinite(row.opposing_pitcher_fip);
+  const k9 = uiFinite(row.opposing_pitcher_k9);
+  const bb9 = uiFinite(row.opposing_pitcher_bb9);
+  const stats = [];
+  if (era != null) stats.push(`${era.toFixed(2)} ERA`);
+  if (whip != null) stats.push(`${whip.toFixed(2)} WHIP`);
+  if (fip != null) stats.push(`${fip.toFixed(2)} FIP`);
+  if (k9 != null) stats.push(`${k9.toFixed(1)} K/9`);
+  if (bb9 != null) stats.push(`${bb9.toFixed(1)} BB/9`);
+  const handPhrase = hand ? `${hand.toLowerCase()}-handed ` : "";
+  const statPhrase = stats.length ? ` (${stats.slice(0, 3).join(', ')})` : "";
+  if (k9 != null && k9 < 7.5) return `The opposing starter profile is ${handPhrase}${p}${statPhrase}, a more contact-oriented shape that gives batted-ball legs a cleaner path.`;
+  if (k9 != null && k9 >= 9) return `${handPhrase}${p}${statPhrase} brings real swing-and-miss risk, so this read needs the hitter's bat control and count quality to do the heavy lifting.`;
+  if (whip != null && whip >= 1.35) return `${handPhrase}${p}${statPhrase} has allowed enough traffic to make production paths more live than a pure batter-only read.`;
+  if (whip != null && whip <= 1.15) return `${handPhrase}${p}${statPhrase} has kept traffic tight, which matters most for RBI, run, and HRRBI stacking.`;
+  return `The matchup is tied to ${handPhrase}${p}${statPhrase}, keeping the note anchored to the actual starter context instead of only recent form.`;
+}
+function uiEnvironmentForComment(row) {
+  const venue = uiText(row.venue_name);
+  const wx = uiText(row.weather_summary);
+  const roof = uiText(row.roof_status);
+  const wind = uiText(row.wind_summary);
+  const temp = uiFinite(row.weather_temp_f);
+  const prop = uiText(row.canonical_prop_key).toLowerCase();
+  const pieces = [];
+  if (venue) {
+    const v = venue.toLowerCase();
+    if (v.includes('fenway')) pieces.push('Fenway can turn the right contact shape into unusual base outcomes, so batted-ball direction matters');
+    else if (v.includes('great american')) pieces.push('Great American Ball Park is friendly to lifted damage, separating total-base upside from simple contact');
+    else if (v.includes('american family')) pieces.push('American Family Field is more controlled than open-air parks, so roof and lineup context carry extra weight');
+    else if (v.includes('progressive')) pieces.push('Progressive Field is not an automatic power boost, keeping the edge more contact-and-volume driven');
+    else if (v.includes('camden')) pieces.push('Camden Yards is less automatic for cheap pull power than its old reputation, so hard contact still has to be earned');
+    else if (v.includes('oracle')) pieces.push('Oracle Park asks for real gap quality, making extra-base legs more fragile than basic contact reads');
+    else if (v.includes('coors')) pieces.push('Coors Field expands the reward zone for balls in play, though lineup context still matters');
+    else pieces.push(`${venue} is part of the run-environment read`);
   }
+  if (temp != null && temp > -20 && temp < 125) {
+    if (temp <= 55) pieces.push(prop === 'total_bases' || prop === 'home_runs' || prop === 'doubles' ? 'cooler air is less forgiving for carry and gap damage' : 'cooler air can help lower-trajectory contact play cleaner than pure carry');
+    else if (temp >= 82) pieces.push('warmer air gives hard contact a little more carry');
+  }
+  if (wind) {
+    const w = wind.toLowerCase();
+    if (w.includes('out')) pieces.push('wind is logged as carry-positive');
+    else if (w.includes('in')) pieces.push('wind is logged as carry-negative');
+    else pieces.push(`wind note: ${wind}`);
+  }
+  if (roof && !roof.toLowerCase().includes('unknown')) pieces.push(`roof status: ${roof}`);
+  if (wx && pieces.length < 2) pieces.push(`weather note: ${wx}`);
+  if (!pieces.length) return "";
+  return pieces.slice(0, 2).join('; ') + '.';
+}
+function uiPropScoutingSentence(row) {
+  const prop = uiText(row.canonical_prop_key).toLowerCase();
+  const side = uiText(row.selected_side).toLowerCase();
+  const line = uiFinite(row.line_value, 0);
+  const name = uiText(row.player_name) || 'This hitter';
+  const role = uiLineupRoleForComment(row);
+  const roleTail = role ? ` With ${name} ${role},` : ` For ${name},`;
+  if (prop === 'hits_runs_rbis') {
+    if (side === 'more' && line <= 0.5) return `${roleTail} this HRRBI line has the widest low-threshold path: a clean hit, a run scored, or one RBI can all finish the leg.`;
+    if (side === 'less') return `${roleTail} the under is a bet against stacked box-score involvement, not just against one swing; traffic, lineup slot, and run environment all have to cooperate for the over.`;
+    return `${roleTail} HRRBI asks for combined production, so the read is more about opportunity flow than one isolated skill.`;
+  }
+  if (prop === 'hits') {
+    if (side === 'more' && line <= 0.5) return `${roleTail} Hits 0.5 is a clean one-knock read: narrower than HRRBI, but less dependent on teammate conversion or extra-base damage.`;
+    if (side === 'less') return `${roleTail} the hits under needs either limited volume, swing-and-miss pressure, or contact finding gloves; it is not the same as fading overall offense.`;
+    return `${roleTail} multi-hit lines demand repeated contact and plate volume, which makes the curve much sharper than a single-hit prop.`;
+  }
+  if (prop === 'total_bases') {
+    if (side === 'more' && line <= 0.5) return `${roleTail} Total Bases 0.5 can still cash with a single, but the model separates it from Hits because batted-ball quality and source pricing matter.`;
+    if (side === 'less') return `${roleTail} the total-bases under can survive a single at higher lines, so the read leans on damage suppression rather than complete offensive silence.`;
+    return `${roleTail} total bases is a damage-quality prop, not just a reach-base prop.`;
+  }
+  if (prop === 'singles') return `${roleTail} Singles are contact-specific and can lose to extra-base contact, which gives the leg a different risk shape than a normal hit prop.`;
+  if (prop === 'doubles') return `${roleTail} doubles need true gap quality and park shape; this is a batted-ball geometry leg, not just a hot-bat leg.`;
+  if (prop === 'home_runs') return `${roleTail} home runs are rare launch events, so park, pitcher mistake profile, and carry conditions need to agree before trusting the number.`;
+  if (prop === 'walks') {
+    if (side === 'less') return `${roleTail} the walk-under path improves when the pitcher attacks the zone and the hitter is forced to swing before count leverage builds.`;
+    return `${roleTail} walks-over needs patience plus pitcher nibble or umpire help; recent hitting form alone is not enough.`;
+  }
+  if (prop === 'rbis') {
+    if (side === 'less') return `${roleTail} the RBI under is mostly about suppressing traffic ahead of him; a good swing can still miss the cash path if nobody is on.`;
+    return `${roleTail} an RBI over needs lineup traffic before the swing, so opportunity matters as much as the hitter's own quality.`;
+  }
+  if (prop === 'runs') {
+    if (side === 'less') return `${roleTail} the runs under leans on reach-base prevention and weaker conversion behind him.`;
+    return `${roleTail} the run path needs him to reach and then get moved in, making lineup support a core part of the read.`;
+  }
+  if (prop.includes('pitcher')) return `This pitcher leg is being treated through role length, opponent approach, umpire zone, and bullpen risk rather than one raw stat bucket.`;
+  return `${roleTail} the line value, side, app type, and available context are blended before the card earns its tier.`;
+}
+function uiEvidenceSentence(row) {
   const conf = uiFinite(row.probability_confidence_0_100);
   const sample = uiFinite(row.hp_non_push_sample || row.hp_sample_size);
   const hits = uiFinite(row.hp_hit_count);
   const misses = uiFinite(row.hp_miss_count);
-  let evidence = '';
-  if (sample && hits != null && misses != null) evidence = `Evidence: ${hits} hit / ${misses} miss across ${sample} non-push samples${conf != null ? `; confidence ${conf.toFixed(conf % 1 ? 1 : 0)}%` : ''}.`;
-  else if (sample) evidence = `Evidence depth: ${sample} non-push samples${conf != null ? `; confidence ${conf.toFixed(conf % 1 ? 1 : 0)}%` : ''}.`;
-  else if (conf != null) evidence = `Confidence is ${conf.toFixed(conf % 1 ? 1 : 0)}%, kept separate from HP because context and evidence quality are not the same thing.`;
-  const comment = `${opening} ${selected.join(' ')} ${evidence}`.replace(/\s+/g, ' ').trim();
-  return comment.length > 780 ? comment.slice(0, 777).replace(/\s+\S*$/, '') + '…' : comment;
+  const hp = uiFinite(row.estimated_hit_probability_0_100);
+  const score = uiFinite(row.score_0_100);
+  const evidence = [];
+  if (sample && hits != null && misses != null) evidence.push(`${hits}-${misses} over ${sample} non-push samples`);
+  else if (sample) evidence.push(`${sample} non-push samples`);
+  if (conf != null) evidence.push(`${conf.toFixed(conf % 1 ? 1 : 0)}% confidence`);
+  if (hp != null && score != null) {
+    if (hp >= 80 && score >= 84) evidence.push('HP and support score both agree');
+    else if (hp >= 80 && score < 80) evidence.push('HP is ahead of the support score, so this stays more review-sensitive');
+  }
+  return evidence.length ? `Evidence check: ${evidence.join('; ')}.` : "";
+}
+function composeLegInsight(row) {
+  const seed = [row.player_name, row.canonical_prop_key, row.line_value, row.selected_side, row.source_key, row.game_pk, 'final-insight-v3'].join('|');
+  const opener = uiHashPick(seed, [
+    'Scouting read:',
+    'Leg thesis:',
+    'Board angle:',
+    'Matchup read:',
+    'Market-style note:'
+  ]);
+  const core = uiPropScoutingSentence(row);
+  const pitcher = uiPitcherProfileForComment(row);
+  const env = uiEnvironmentForComment(row);
+  const extras = [];
+  const ump = uiFirstReal([row.umpire_name, row.umpire_context_summary]);
+  const pen = uiText(row.bullpen_context_summary);
+  const sched = uiText(row.schedule_context_summary);
+  if (ump && /walk|strikeout|pitcher/i.test(String(row.canonical_prop_key || ''))) extras.push(`Umpire context is logged (${ump}), which matters for zone-sensitive paths.`);
+  if (pen && /runs|rbis|hits_runs_rbis/i.test(String(row.canonical_prop_key || ''))) extras.push(`Bullpen note is active: ${pen}.`);
+  if (sched) extras.push(`Schedule note: ${sched}.`);
+  const evidence = uiEvidenceSentence(row);
+  const selected = [core, pitcher, env, extras[0], evidence].filter(Boolean);
+  const comment = `${opener} ${selected.join(' ')}`.replace(/\s+/g, ' ').trim();
+  return comment.length > 840 ? comment.slice(0, 837).replace(/\s+\S*$/, '') + '…' : comment;
 }
 function rowToApi(row) {
   const lineType = normalizeLineType(row);
@@ -902,19 +1020,19 @@ const MAIN_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>AlphaDog — v0.1.7 Future Board</title>
+<title>AlphaDog — v0.2.0 Final Insight Board</title>
 <link rel="icon" type="image/png" href="/main_alphadog_favicon.png" />
 <link rel="apple-touch-icon" href="/main_alphadog_apple_touch_icon.png" />
 <style>
 :root{--bg:#071426;--panel:#0e2038;--panel2:#102744;--line:#254261;--text:#eef7ff;--muted:#93a9bd;--gold:#f4c95d;--silver:#d7e2ee;--bronze:#d99b57;--blue:#5ed2ff;--good:#7ef0aa;--warn:#f7d774;--bad:#ff8a8a;--chip:#173352;--shadow:0 22px 70px rgba(0,0,0,.35);}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top left,#173957 0,#071426 38%,#030912 100%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}.wrap{max-width:1180px;margin:0 auto;padding:16px 14px 44px}.hero{display:flex;align-items:center;gap:14px;justify-content:space-between;margin-bottom:12px}.brand{display:flex;gap:12px;align-items:center}.logo{width:52px;height:52px;border-radius:16px;box-shadow:0 8px 24px rgba(244,201,93,.18)}h1{font-size:30px;line-height:1;margin:0}.sub{color:#d9e8f6;font-size:13px;margin-top:4px;font-weight:850;letter-spacing:.02em}.menuBtn,.btn{border:1px solid var(--line);background:rgba(16,39,68,.86);color:var(--text);border-radius:14px;padding:10px 13px;font-weight:850;cursor:pointer}.menuWrap{position:relative}.menu{position:absolute;right:0;top:44px;background:#07192d;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);min-width:170px;overflow:hidden;z-index:10}.menu.hidden{display:none}.menu button{display:block;width:100%;background:transparent;border:0;color:var(--text);padding:12px 14px;text-align:left;font-weight:750}.menu button:hover{background:#102744}.panel{background:linear-gradient(180deg,rgba(16,39,68,.92),rgba(8,21,38,.92));border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:11px;margin-bottom:13px}.filters{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,.9fr);gap:8px;align-items:stretch}.filterCol{display:grid;gap:7px}.filterCol.left{grid-template-columns:1fr}.filterCol.right{grid-template-rows:auto auto}.filterBox{background:rgba(5,14,26,.28);border:1px solid rgba(75,115,150,.42);border-radius:16px;padding:6px 8px}.filterBox.tight{padding:7px}.filterTitle{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:950;margin-bottom:4px;display:flex;gap:6px;align-items:center}.filterTitle.selectTitle{justify-content:center;text-align:center}.filterTitle input{accent-color:#3f8cff}.checkGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px 6px}.checkGrid.source{grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:0 4px}.check{display:flex;align-items:center;gap:4px;padding:0;font-size:11.5px;color:#dbefff;white-space:nowrap;line-height:1}.check input{accent-color:#5ed2ff;width:15px;height:15px;flex:0 0 auto}.check .zero{color:#758ba1}.duo{display:grid;grid-template-columns:1fr 1fr;gap:7px}.refreshMini{margin-left:auto;padding:4px 9px;border-radius:10px;font-size:10px;line-height:1.1}.select{width:100%;border:1px solid var(--line);background:#07192d;color:var(--text);border-radius:12px;padding:8px 9px;font-weight:800}.status{color:var(--muted);font-size:13px;margin:10px 0 10px;text-align:center;display:flex;align-items:center;justify-content:center;min-height:28px;width:100%}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:linear-gradient(180deg,#102844,#08182b);border:1px solid rgba(94,210,255,.18);border-radius:22px;padding:14px;box-shadow:0 14px 40px rgba(0,0,0,.27);position:relative}.top{display:block;min-height:56px;padding-right:178px}.player{font-size:21px;font-weight:950;letter-spacing:-.02em}.badgeStack{position:absolute;right:14px;top:14px;display:grid;gap:4px;justify-items:center;min-width:166px;text-align:center}.badgePairs{display:flex;gap:6px;flex-wrap:nowrap;justify-content:center;align-items:start;width:100%}.badgePair{display:grid;gap:4px;justify-items:center;align-items:start;min-width:70px}.badgeLine{display:flex;gap:5px;flex-wrap:nowrap;justify-content:center;width:100%}.badge{font-size:9.8px;font-weight:950;border-radius:999px;padding:5px 7px;text-transform:uppercase;background:#183554;color:#cbe7ff;border:1px solid rgba(94,210,255,.22);line-height:1;white-space:nowrap;text-align:center}.badge.source{background:#173a5d;color:#d8eeff}.badge.goblin{background:#123d30;color:#b8ffd6}.badge.demon{background:#461a2a;color:#ffc2d2}.badge.regular,.badge.more_only{background:#322d14;color:#ffe49a}.badge.gold{background:#4a3911;color:#ffd96a;border-color:rgba(255,217,106,.5)}.badge.silver{background:#2c3d52;color:#e7f2ff;border-color:rgba(215,226,238,.45)}.badge.bronze{background:#492d18;color:#ffc28a;border-color:rgba(217,155,87,.48)}.numbers{display:grid;grid-template-columns:minmax(120px,.82fr) minmax(150px,1fr);align-items:end;gap:14px;margin:8px 0 9px}.hpNum{font-size:48px;line-height:.9;font-weight:1000;color:var(--gold);letter-spacing:-.05em}.scoreBlock{text-align:center;min-width:0}.scoreGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:2px}.scoreGrid.single{grid-template-columns:minmax(95px,145px);justify-content:center}.scorePill{display:flex;align-items:center;justify-content:space-between;gap:7px;border:1px solid rgba(94,210,255,.16);background:rgba(7,20,38,.48);border-radius:10px;padding:4px 7px}.scoreApp{font-size:10px;color:#b6cde4;font-weight:900}.scoreNum{font-size:22px;font-weight:950;color:var(--blue)}.lineBox{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border:1px solid rgba(94,210,255,.14);background:rgba(7,20,38,.55);border-radius:15px;padding:9px 10px;font-weight:850}.side{text-transform:uppercase;color:var(--good)}.meta{margin-top:8px;color:#bed2e6;font-size:12.5px;line-height:1.3}.reason{margin-top:8px;color:#b4c6d8;font-size:12px;line-height:1.34}.empty{padding:20px;border:1px dashed var(--line);border-radius:18px;color:var(--muted);text-align:center}.healthGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.healthCard{background:rgba(5,14,26,.32);border:1px solid var(--line);border-radius:16px;padding:12px}.metric{font-size:25px;font-weight:950;color:var(--gold)}.small{font-size:12px;color:var(--muted);line-height:1.35}.hidden{display:none!important}.err{color:var(--bad)}.good{color:var(--good)}@media(max-width:860px){.filters{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.hero{align-items:flex-start}.healthGrid{grid-template-columns:1fr 1fr}.hpNum{font-size:43px}.checkGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.wrap{padding:12px 10px 34px}.logo{width:46px;height:46px}h1{font-size:25px}.card{padding:13px}.healthGrid{grid-template-columns:1fr}.filters{gap:7px}.check{font-size:11px}.player{font-size:19px}.duo{grid-template-columns:1fr 1fr}.checkGrid{gap:1px 5px}.badgeStack{right:13px;top:13px;min-width:158px}.top{min-height:52px;padding-right:166px}.badge{font-size:9.2px;padding:4.5px 6px}.numbers{grid-template-columns:minmax(108px,.78fr) minmax(145px,1fr);gap:10px}.hpNum{font-size:42px}.scoreNum{font-size:20px}.lineBox{padding:8px 10px}.meta{font-size:12px}.reason{font-size:12px}}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top left,#173957 0,#071426 38%,#030912 100%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}.wrap{max-width:1180px;margin:0 auto;padding:16px 14px 44px}.hero{display:flex;align-items:center;gap:14px;justify-content:space-between;margin-bottom:12px}.brand{display:flex;gap:12px;align-items:center}.logo{width:52px;height:52px;border-radius:16px;box-shadow:0 8px 24px rgba(244,201,93,.18)}h1{font-size:30px;line-height:1;margin:0}.sub{color:#d9e8f6;font-size:13px;margin-top:4px;font-weight:850;letter-spacing:.02em}.menuBtn,.btn{border:1px solid var(--line);background:rgba(16,39,68,.86);color:var(--text);border-radius:14px;padding:10px 13px;font-weight:850;cursor:pointer}.menuWrap{position:relative}.menu{position:absolute;right:0;top:44px;background:#07192d;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);min-width:170px;overflow:hidden;z-index:10}.menu.hidden{display:none}.menu button{display:block;width:100%;background:transparent;border:0;color:var(--text);padding:12px 14px;text-align:left;font-weight:750}.menu button:hover{background:#102744}.panel{background:linear-gradient(180deg,rgba(16,39,68,.92),rgba(8,21,38,.92));border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:11px;margin-bottom:13px}.filters{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,.9fr);gap:8px;align-items:stretch}.filterCol{display:grid;gap:7px}.filterCol.left{grid-template-columns:1fr}.filterCol.right{grid-template-rows:auto auto}.filterBox{background:rgba(5,14,26,.28);border:1px solid rgba(75,115,150,.42);border-radius:16px;padding:6px 8px}.filterBox.tight{padding:7px}.filterTitle{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:950;margin-bottom:4px;display:flex;gap:6px;align-items:center}.filterTitle.selectTitle{justify-content:center;text-align:center}.filterTitle input{accent-color:#3f8cff}.checkGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px 6px}.checkGrid.source{grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:0 4px}.check{display:flex;align-items:center;gap:4px;padding:0;font-size:11.5px;color:#dbefff;white-space:nowrap;line-height:1}.check input{accent-color:#5ed2ff;width:15px;height:15px;flex:0 0 auto}.check .zero{color:#758ba1}.duo{display:grid;grid-template-columns:1fr 1fr;gap:7px}.refreshMini{margin-left:auto;padding:4px 9px;border-radius:10px;font-size:10px;line-height:1.1}.select{width:100%;border:1px solid var(--line);background:#07192d;color:var(--text);border-radius:12px;padding:8px 9px;font-weight:800}.status{color:var(--muted);font-size:13px;margin:10px 0 10px;text-align:center;display:flex;align-items:center;justify-content:center;min-height:28px;width:100%}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:linear-gradient(180deg,#102844,#08182b);border:1px solid rgba(94,210,255,.18);border-radius:22px;padding:14px;box-shadow:0 14px 40px rgba(0,0,0,.27);position:relative}.top{display:block;min-height:56px;padding-right:178px}.player{font-size:21px;font-weight:950;letter-spacing:-.02em}.badgeStack{position:absolute;right:14px;top:14px;display:grid;gap:4px;justify-items:center;min-width:166px;text-align:center}.badgePairs{display:flex;gap:6px;flex-wrap:nowrap;justify-content:center;align-items:start;width:100%}.badgePair{display:grid;gap:4px;justify-items:center;align-items:start;min-width:70px}.badgeLine{display:flex;gap:5px;flex-wrap:nowrap;justify-content:center;width:100%}.badge{font-size:9.8px;font-weight:950;border-radius:999px;padding:5px 7px;text-transform:uppercase;background:#183554;color:#cbe7ff;border:1px solid rgba(94,210,255,.22);line-height:1;white-space:nowrap;text-align:center}.badge.source{background:#173a5d;color:#d8eeff}.badge.goblin{background:#123d30;color:#b8ffd6}.badge.demon{background:#461a2a;color:#ffc2d2}.badge.regular,.badge.more_only{background:#322d14;color:#ffe49a}.badge.gold{background:#4a3911;color:#ffd96a;border-color:rgba(255,217,106,.5)}.badge.silver{background:#2c3d52;color:#e7f2ff;border-color:rgba(215,226,238,.45)}.badge.bronze{background:#492d18;color:#ffc28a;border-color:rgba(217,155,87,.48)}.numbers{display:grid;grid-template-columns:minmax(120px,.82fr) minmax(150px,1fr);align-items:end;gap:14px;margin:8px 0 9px}.hpNum{font-size:48px;line-height:.9;font-weight:1000;color:var(--gold);letter-spacing:-.05em}.scoreBlock{text-align:center;min-width:0}.scoreGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:2px}.scoreGrid.single{grid-template-columns:minmax(95px,145px);justify-content:center}.scorePill{display:flex;align-items:center;justify-content:space-between;gap:7px;border:1px solid rgba(94,210,255,.16);background:rgba(7,20,38,.48);border-radius:10px;padding:4px 7px}.scoreApp{font-size:10px;color:#b6cde4;font-weight:900}.scoreNum{font-size:22px;font-weight:950;color:var(--blue)}.lineBox{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border:1px solid rgba(94,210,255,.14);background:rgba(7,20,38,.55);border-radius:15px;padding:9px 10px;font-weight:850}.side{text-transform:uppercase;color:var(--good)}.meta{margin-top:8px;color:#bed2e6;font-size:12.5px;line-height:1.3}.reason{margin-top:9px;color:#d4e3f2;font-size:12.4px;line-height:1.42;background:rgba(5,14,26,.34);border:1px solid rgba(94,210,255,.12);border-left:3px solid rgba(244,201,93,.55);border-radius:14px;padding:9px 10px}.empty{padding:20px;border:1px dashed var(--line);border-radius:18px;color:var(--muted);text-align:center}.healthGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.healthCard{background:rgba(5,14,26,.32);border:1px solid var(--line);border-radius:16px;padding:12px}.metric{font-size:25px;font-weight:950;color:var(--gold)}.small{font-size:12px;color:var(--muted);line-height:1.35}.hidden{display:none!important}.err{color:var(--bad)}.good{color:var(--good)}@media(max-width:860px){.filters{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.hero{align-items:flex-start}.healthGrid{grid-template-columns:1fr 1fr}.hpNum{font-size:43px}.checkGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.wrap{padding:12px 10px 34px}.logo{width:46px;height:46px}h1{font-size:25px}.card{padding:13px}.healthGrid{grid-template-columns:1fr}.filters{gap:7px}.check{font-size:11px}.player{font-size:19px}.duo{grid-template-columns:1fr 1fr}.checkGrid{gap:1px 5px}.badgeStack{right:13px;top:13px;min-width:158px}.top{min-height:52px;padding-right:166px}.badge{font-size:9.2px;padding:4.5px 6px}.numbers{grid-template-columns:minmax(108px,.78fr) minmax(145px,1fr);gap:10px}.hpNum{font-size:42px}.scoreNum{font-size:20px}.lineBox{padding:8px 10px}.meta{font-size:12px}.reason{font-size:12px;line-height:1.38;padding:8px 9px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="hero">
-    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.1.2 - Moon Habanero</div></div></div>
-    <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Review Board</button><button id="menuHealth">Health</button></div></div>
+    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.0 - Final Insight Board</div></div></div>
+    <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Main Board</button><button id="menuHealth">Health</button></div></div>
   </header>
   <section id="boardScreen">
     <div class="panel filters">
@@ -938,11 +1056,11 @@ const MAIN_HTML = `<!doctype html>
 </div>
 <script>
 (()=>{
-const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.1.9 - Polished Insight Cards';let rows=[],filters=null,health=null;
+const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.0 - Final Insight Board';let rows=[],filters=null,health=null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0)+'%':'—'}
 function num(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0):'—'}
-function cap(s){return String(s||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}
+function cap(s){return String(s||'').replace(/_/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase())}
 function lineLabel(t){return t==='goblin'?'Goblin':t==='demon'?'Demon':t==='more_only'?'More Only':'Regular'}
 function appLabel(s){s=String(s||'').toLowerCase();return s==='prizepicks'?'PrizePicks':s==='sleeper'?'Sleeper':cap(s||'Unknown')}
 function appTypeLabel(r){return (r.app_line_label||appLabel(r.source_key)+' • '+lineLabel(r.line_type||'regular'))}
@@ -965,14 +1083,14 @@ function contextLabel(s){const x=String(s||'').toLowerCase();if(x.includes('read
 function sourceWeight(k){const x=String(k||'').toLowerCase();if(x==='prizepicks')return 1;if(x==='sleeper')return 2;return 9}
 function sourceShort(k){const x=String(k||'').toLowerCase();return x==='prizepicks'?'PP':(x==='sleeper'?'Sleeper':appLabel(k))}
 function appLabel(k){const x=String(k||'').toLowerCase();return x==='prizepicks'?'PrizePicks':(x==='sleeper'?'Sleeper':cap(k))}
-function lineLabel(t){return String(t||'regular').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}
+function lineLabel(t){return String(t||'regular').replace(/_/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase())}
 function qLabel(r){const t=String(r.board_tier||'').toUpperCase();if(t==='PRIMARY')return 'Gold';const hp=Number(r.estimated_hit_probability_0_100||0), conf=Number(r.probability_confidence_0_100||0);if(hp>=70&&conf>=65)return 'Silver';return 'Bronze'}
 function qClass(q){return String(q).toLowerCase()}
 function groupKey(r){return [r.game_pk,r.mlb_player_id,r.canonical_prop_key,r.line_value,r.selected_side].map(x=>String(x??'')).join('|')}
 function groupRows(input){const m=new Map();for(const r of input){const k=groupKey(r);if(!m.has(k))m.set(k,[]);m.get(k).push(r)}return Array.from(m.values()).map(rs=>{rs.sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key)||String(a.source_key).localeCompare(String(b.source_key)));const best=rs.slice().sort((a,b)=>Number(a.rank_order||99999)-Number(b.rank_order||99999))[0]||rs[0];return{rows:rs,best}}).sort((a,b)=>Number(a.best.rank_order||99999)-Number(b.best.rank_order||99999))}
 function scoreCards(rows){const sorted=rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key)||String(a.source_key).localeCompare(String(b.source_key)));const cls='scoreGrid '+(sorted.length<2?'single':'');return '<div class="'+cls+'">'+sorted.map(r=>'<div class="scorePill"><span class="scoreApp">'+esc(sourceShort(r.source_key))+'</span><span class="scoreNum">'+num(r.score_0_100)+'</span></div>').join('')+'</div>'}
 function badges(g){const rows=g.rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key)||String(a.source_key).localeCompare(String(b.source_key)));const seen=new Set();const pairs=[];for(const r of rows){const k=String(r.source_key||'');if(seen.has(k))continue;seen.add(k);const t=r.line_type||'regular';pairs.push('<div class="badgePair"><span class="badge source">'+esc(appLabel(r.source_key))+'</span><span class="badge '+esc(t)+'">'+esc(lineLabel(t))+'</span></div>')}const q=qLabel(g.best);return '<div class="badgeStack"><div class="badgePairs">'+pairs.join('')+'</div><div class="badgeLine"><span class="badge '+qClass(q)+'">'+esc(q)+'</span></div></div>'}
-function cleanText(v){return String(v||'').replace(/[{}\[\]"]/g,'').replace(/_/g,' ').replace(/\s+/g,' ').trim()}
+function cleanText(v){return String(v||'').replace(/[{}"]/g,'').replace(/\\[/g,'').replace(/\\]/g,'').replace(/_/g,' ').replace(/\\s+/g,' ').trim()}
 function firstReal(vals){for(const v of vals){const x=cleanText(v);if(x&&x!=='null'&&x!=='undefined'&&x!=='0')return x}return ''}
 function hashPick(seed,arr){if(!arr.length)return '';let h=0;for(const ch of String(seed||''))h=(h*31+ch.charCodeAt(0))>>>0;return arr[h%arr.length]}
 function pct1(v){const n=Number(v);return Number.isFinite(n)?(Number.isInteger(n)?String(n):n.toFixed(1))+'%':'—'}
@@ -998,7 +1116,7 @@ function propEaseText(r){const k=String(r.canonical_prop_key||''), side=String(r
 function appInsight(g){if(g.rows.length<2)return '';const labels=g.rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key)).map(x=>appLabel(x.source_key));return 'Same leg is grouped across '+labels.join(' + ')+', with app scores kept separate instead of duplicating the card.'}
 function contextStatus(r){const items=[];const p=pitcherInsight(r);const w=weatherInsight(r);const park=parkInsight(r);const lineup=firstReal([r.lineup_status]);const order=firstReal([r.batting_order]);const ump=firstReal([r.umpire_name,r.umpire_context_summary]);if(p)items.push(p);if(lineup||order)items.push('Lineup detail: '+[lineup,order?'slot '+order:''].filter(Boolean).join(', ')+'.');if(w)items.push('Weather/roof: '+w+'.');if(park)items.push('Park note: '+park);if(ump)items.push('Umpire note is present: '+ump+'.');return items}
 function varianceTone(r){const hp=Number(r.estimated_hit_probability_0_100||0), conf=Number(r.probability_confidence_0_100||0), score=Number(r.score_0_100||0), n=Number(r.hp_non_push_sample||r.hp_sample_size||0);const seeds=[r.player_name,r.canonical_prop_key,r.line_value,r.selected_side,r.source_key].join('|');if(n>0&&n<20)return hashPick(seeds,['Attractive HP, but the evidence depth keeps it in review mode.','Probability is interesting, but sample depth is the limiter.','High-upside read with sample-size caution still attached.']);if(hp>=85&&conf>=75&&score>=84)return hashPick(seeds,['Premium probability is backed by evidence confidence and the support score.','The main quality checks line up: HP, confidence, and support are all aligned.','This is one of the cleaner reads because probability and support agree.']);if(hp>=85&&score<80)return hashPick(seeds,['Big HP, but the support score asks for review before treating it as Gold.','The probability is attractive while the trust layer is more cautious.','Not rejected, but the support score is the reason it stays below Gold.']);if(hp>=80&&conf<70)return hashPick(seeds,['High HP with softer evidence; useful, but not clean enough for Gold.','Probability is strong while confidence is the drag.','Edge candidate, not a finished play, because the evidence base is thinner.']);if(hp>=75&&score>=86)return hashPick(seeds,['Good HP with a strong support score; compare it against similar props.','The support layer likes the setup, but HP still decides the tier.']);return hashPick(seeds,['Usable candidate, not a blind play.','This leg needs context and price discipline before action.'])}
-function evidenceReason(g){const r=g.best;const base=firstReal([r.leg_insight_comment]);const app=appInsight(g);if(base)return [base,app].filter(Boolean).join(' ');const ctx=contextStatus(r);const parts=[varianceTone(r),propEaseText(r)];if(ctx.length)parts.push(ctx.slice(0,2).join(' '));const a=appInsight(g);if(a)parts.push(a);return parts.join(' ')}
+function evidenceReason(g){const r=g.best;const raw=String(r.leg_insight_comment||'').trim();const app=appInsight(g);if(raw)return [raw,app].filter(Boolean).join(' ');const ctx=contextStatus(r);const parts=[varianceTone(r),propEaseText(r)];if(ctx.length)parts.push(ctx.slice(0,2).join(' '));const a=appInsight(g);if(a)parts.push(a);return parts.join(' ')}
 function confidenceMeta(g){const rows=g.rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key));const vals=rows.map(r=>({app:sourceShort(r.source_key),conf:Number(r.probability_confidence_0_100||0)}));const unique=[...new Set(vals.map(v=>Math.round(v.conf*10)/10))];const grade=friendlyGrade(g.best.probability_grade);if(rows.length>1&&unique.length>1)return 'Confidence '+vals.map(v=>v.app+' '+pct1(v.conf)).join(' • ')+' • '+esc(grade);return 'Confidence '+pct1(g.best.probability_confidence_0_100)+' • '+esc(grade)}
 function card(g){const r=g.best;const match=(r.away_team_name&&r.home_team_name)?r.away_team_name+' @ '+r.home_team_name:'Game '+(r.game_pk||'');const when=[fmtDate(r.official_game_time_utc),r.venue_name].filter(Boolean).join(' • ');return '<article class="card"><div class="top"><div><div class="player">'+esc(r.player_name)+'</div><div class="small">'+esc(match)+' • '+esc(when)+'</div></div>'+badges(g)+'</div><div class="numbers"><div><div class="numLbl">Hit Probability</div><div class="hpNum">'+pct(r.estimated_hit_probability_0_100)+'</div></div><div class="scoreBlock"><div class="numLbl">Score</div>'+scoreCards(g.rows)+'</div></div><div class="lineBox"><span>'+esc(r.prop_label||cap(r.canonical_prop_key))+'</span><span class="side">'+esc(r.selected_side)+'</span><span>'+esc(r.line_value)+'</span></div><div class="meta">'+confidenceMeta(g)+'</div><div class="reason">'+esc(evidenceReason(g))+'</div></article>'}
 function render(){if(!filters)return;const totalGroups=groupRows(rows).length;const shownGroups=groupRows(rows.filter(passes));$('status').textContent='Showing '+shownGroups.length+' of '+totalGroups+' qualified legs';$('cards').innerHTML=shownGroups.length?shownGroups.map(card).join(''):'<div class="empty" style="grid-column:1/-1">No qualified legs match these filters.</div>'}
