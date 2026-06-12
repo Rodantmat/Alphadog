@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.13-hitter-timebox-progress-finalizer";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.13-hitter-timebox-progress-finalizer";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.14-factor-resume-index-accelerator";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.14-factor-resume-index-accelerator";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -362,8 +362,12 @@ async function ensureSchema(env) {
     `CREATE INDEX IF NOT EXISTS idx_prop_factor_hitter_game_player ON prop_factor_hitter_packets(game_pk, mlb_player_id, canonical_prop_key)`,
     `CREATE INDEX IF NOT EXISTS idx_prop_factor_pitcher_prepared ON prop_factor_pitcher_packets(prepared_row_id, official_date)`,
     `CREATE INDEX IF NOT EXISTS idx_prop_factor_pitcher_game_player ON prop_factor_pitcher_packets(game_pk, mlb_player_id, canonical_prop_key)`,
+    `CREATE INDEX IF NOT EXISTS idx_prop_factor_hitter_batch ON prop_factor_hitter_packets(batch_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_prop_factor_pitcher_batch ON prop_factor_pitcher_packets(batch_id)`,
     `CREATE INDEX IF NOT EXISTS idx_prop_factor_issues_batch ON prop_factor_issues(batch_id, severity, issue_type)`,
-    `CREATE INDEX IF NOT EXISTS idx_prop_factor_coverage_date ON prop_factor_coverage_current(official_date, factor_family, factor_status)`
+    `CREATE INDEX IF NOT EXISTS idx_prop_factor_coverage_date ON prop_factor_coverage_current(official_date, factor_family, factor_status)`,
+    `CREATE INDEX IF NOT EXISTS idx_prop_factor_coverage_batch_family ON prop_factor_coverage_current(latest_batch_id, factor_family)`,
+    `CREATE INDEX IF NOT EXISTS idx_prop_factor_coverage_batch_prepared ON prop_factor_coverage_current(latest_batch_id, prepared_row_id)`
   ];
   await batch(env.SCORE_DB, ddl.map(sql => env.SCORE_DB.prepare(sql)), 10);
 }
