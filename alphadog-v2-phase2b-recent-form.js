@@ -1,15 +1,17 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.12-partial-lifecycle-pending-resume";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.12-partial-lifecycle-pending-resume";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.13-hitter-timebox-progress-finalizer";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.13-hitter-timebox-progress-finalizer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
 const HITTER_PACKET_FLUSH_SIZE = 100;
 const PITCHER_PACKET_FLUSH_SIZE = 250;
-const HITTER_MAX_FACTOR_ROWS_PER_INVOCATION = 420;
+const HITTER_MAX_FACTOR_ROWS_PER_INVOCATION = 180;
 const PITCHER_MAX_FACTOR_ROWS_PER_INVOCATION = 900;
+const HITTER_SOFT_TIMEBOX_MS = 12000;
+const PITCHER_SOFT_TIMEBOX_MS = 12000;
 
 const HITTER_PROPS = new Set([
   "hits", "total_bases", "runs", "rbis", "singles", "doubles", "home_runs", "walks",
@@ -498,7 +500,7 @@ async function summarizeFactorBatch(env, batchId, family) {
     issue_rows:Number(issueSummary && issueSummary.issue_rows || 0)
   };
 }
-function buildPropFactorOutput({ input, family, mode, batchId, runId, dates, status, certification, grade, prepared, expectedRows, summary, processedThisInvocation, remainingRows, preparedDiagnostics, ctx, partial }) {
+function buildPropFactorOutput({ input, family, mode, batchId, runId, dates, status, certification, grade, prepared, expectedRows, summary, processedThisInvocation, remainingRows, preparedDiagnostics, ctx, partial, timeboxBreak = false, invocationElapsedMs = null }) {
   return {
     ok:true,
     data_ok:true,
@@ -537,6 +539,9 @@ function buildPropFactorOutput({ input, family, mode, batchId, runId, dates, sta
     chunked_memory_mode: family === "hitter",
     packet_flush_size: family === "hitter" ? HITTER_PACKET_FLUSH_SIZE : PITCHER_PACKET_FLUSH_SIZE,
     max_factor_rows_per_invocation: family === "hitter" ? HITTER_MAX_FACTOR_ROWS_PER_INVOCATION : PITCHER_MAX_FACTOR_ROWS_PER_INVOCATION,
+    soft_timebox_ms: family === "hitter" ? HITTER_SOFT_TIMEBOX_MS : PITCHER_SOFT_TIMEBOX_MS,
+    timebox_break: !!timeboxBreak,
+    invocation_elapsed_ms: invocationElapsedMs,
     continuation_required: !!partial,
     orchestrator_should_self_continue: !!partial,
     factor_resume: !!partial,
@@ -1070,6 +1075,9 @@ async function runFactorMining(request, env) {
     let coverageRowsWritten = 0;
     let processedThisInvocation = 0;
     const maxRowsThisInvocation = family === "hitter" ? HITTER_MAX_FACTOR_ROWS_PER_INVOCATION : PITCHER_MAX_FACTOR_ROWS_PER_INVOCATION;
+    const softTimeboxMs = family === "hitter" ? HITTER_SOFT_TIMEBOX_MS : PITCHER_SOFT_TIMEBOX_MS;
+    const invocationStartedMs = Date.now();
+    let timeboxBreak = false;
 
     for (const row of prepared) {
       const classification = classifyProp(row.canonical_prop_key, row.source_prop_name);
@@ -1079,6 +1087,7 @@ async function runFactorMining(request, env) {
       if (!shouldConsider) continue;
       if (alreadyCovered.has(String(row.prepared_row_id || ""))) continue;
       if (processedThisInvocation >= maxRowsThisInvocation) break;
+      if (processedThisInvocation > 0 && Date.now() - invocationStartedMs >= softTimeboxMs) { timeboxBreak = true; break; }
       processedThisInvocation++;
 
       if (lastGamePk !== row.official_game_pk) {
@@ -1115,6 +1124,7 @@ async function runFactorMining(request, env) {
       if (packetChunk.length >= flushSize || issueChunk.length >= flushSize) {
         await flushFactorChunks(env, family, batchId, packetChunk, issueChunk, coverageRows);
       }
+      if (processedThisInvocation > 0 && Date.now() - invocationStartedMs >= softTimeboxMs) { timeboxBreak = true; break; }
     }
     if (lastGamePk !== null) gamesProcessed++;
     await flushFactorChunks(env, family, batchId, packetChunk, issueChunk, coverageRows);
@@ -1126,7 +1136,8 @@ async function runFactorMining(request, env) {
     const status = partial ? "partial_continue_factor_packets_chunk_written" : (noEligible ? "completed_no_eligible_factor_rows" : (summary.blocked_rows > 0 || summary.warning_rows > 0 ? "completed_with_warnings" : "completed"));
     const certification = partial ? "PROP_FACTOR_PACKETS_PARTIAL_CONTINUE_COVERAGE_INCOMPLETE" : (noEligible ? "PROP_FACTOR_PACKETS_NO_ELIGIBLE_ROWS" : (summary.blocked_rows > 0 || summary.warning_rows > 0 ? "PROP_FACTOR_PACKETS_CERTIFIED_WITH_WARNINGS" : "PROP_FACTOR_PACKETS_CERTIFIED"));
     const grade = partial ? "PARTIAL_CONTINUE" : (noEligible ? "NO_DATA_PASS" : (summary.blocked_rows > 0 ? "PASS_WITH_BLOCKED_ROWS" : (summary.warning_rows > 0 ? "PASS_WITH_WARNINGS" : "PASS")));
-    const output = buildPropFactorOutput({ input, family, mode, batchId, runId, dates, status, certification, grade, prepared, expectedRows, summary, processedThisInvocation, remainingRows, preparedDiagnostics, ctx, partial });
+    const invocationElapsedMs = Date.now() - invocationStartedMs;
+    const output = buildPropFactorOutput({ input, family, mode, batchId, runId, dates, status, certification, grade, prepared, expectedRows, summary, processedThisInvocation, remainingRows, preparedDiagnostics, ctx, partial, timeboxBreak, invocationElapsedMs });
     await run(env.SCORE_DB, `UPDATE prop_factor_batches SET status=?, prepared_rows_read=?, eligible_rows=?, packets_written=?, blocked_rows=?, warning_rows=?, issue_rows=?, missing_factor_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
       status, prepared.length, summary.packet_prepared_rows, summary.packets, summary.blocked_rows, summary.warning_rows, summary.issue_rows, summary.missing_factor_rows, certification, grade, JSON.stringify(output), batchId);
     return jsonResponse(output);
