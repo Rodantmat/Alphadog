@@ -1,13 +1,13 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-main-ui-v0.2.4-user-profile-dossier";
+const VERSION = "alphadog-v2-main-ui-v0.2.5-rich-user-dossier";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
 
-const UI_VERSION_LABEL = "v0.2.1 - Leg Dossier Board";
+const UI_VERSION_LABEL = "v0.2.5 - Rich Leg Dossier";
 
 const DOCUMENTED_PROP_OPTIONS = [
   { prop_family: "hitter", canonical_prop_key: "hits", label: "Hits" },
@@ -617,6 +617,10 @@ function rowToApi(row) {
     home_team_name: row.home_team_name,
     away_team_name: row.away_team_name,
     venue_name: row.venue_name,
+    venue_id: row.venue_id,
+    home_team_id: row.home_team_id,
+    away_team_id: row.away_team_id,
+    game_status_code: row.game_status_code,
     probable_pitcher_name: row.probable_pitcher_name,
     probable_pitcher_hand: row.probable_pitcher_hand,
     opposing_pitcher_name: row.opposing_pitcher_name,
@@ -750,6 +754,10 @@ function buildCurrentSql(url) {
       json_extract(f.details_json_snapshot, '$.game_context.home_team_name') AS home_team_name,
       json_extract(f.details_json_snapshot, '$.game_context.away_team_name') AS away_team_name,
       json_extract(f.details_json_snapshot, '$.game_context.venue_name') AS venue_name,
+      json_extract(f.details_json_snapshot, '$.game_context.venue_id') AS venue_id,
+      json_extract(f.details_json_snapshot, '$.game_context.home_team_id') AS home_team_id,
+      json_extract(f.details_json_snapshot, '$.game_context.away_team_id') AS away_team_id,
+      json_extract(f.details_json_snapshot, '$.game_context.status_code') AS game_status_code,
       COALESCE(json_extract(f.details_json_snapshot, '$.daily_context.probable_pitcher.name'), json_extract(f.details_json_snapshot, '$.daily_context.starter.name'), json_extract(f.details_json_snapshot, '$.probable_pitcher.name'), json_extract(f.details_json_snapshot, '$.starter_context.pitcher_name'), json_extract(f.matrix_payload_json_snapshot, '$.daily_context.probable_pitcher.name')) AS probable_pitcher_name,
       COALESCE(json_extract(f.details_json_snapshot, '$.daily_context.probable_pitcher.hand'), json_extract(f.details_json_snapshot, '$.daily_context.starter.hand'), json_extract(f.details_json_snapshot, '$.probable_pitcher.hand'), json_extract(f.details_json_snapshot, '$.starter_context.pitcher_hand')) AS probable_pitcher_hand,
       COALESCE(json_extract(f.details_json_snapshot, '$.matchup_context.opposing_pitcher_name'), json_extract(f.details_json_snapshot, '$.daily_context.opposing_pitcher.name'), json_extract(f.details_json_snapshot, '$.starter_context.opposing_pitcher_name')) AS opposing_pitcher_name,
@@ -784,7 +792,7 @@ function buildCurrentSql(url) {
       hp.empirical_hit_rate_0_1 AS hp_empirical_hit_rate_0_1,
       hp.reliability_0_1 AS hp_reliability_0_1,
       hp.sample_reliability_score_0_100 AS hp_sample_reliability_score_0_100,
-      substr(hp.display_notes_json, 1, 1200) AS hp_display_notes_preview,
+      substr(hp.window_summary_json, 1, 1200) AS hp_display_notes_preview,
       f.created_at,
       f.updated_at
     FROM score_final_board_current f
@@ -804,6 +812,24 @@ async function queryAll(db, sql, params = []) {
   const bound = params.length ? stmt.bind(...params) : stmt;
   const result = await bound.all();
   return result && Array.isArray(result.results) ? result.results : [];
+}
+
+async function optionalQueryAll(db, sql, params = []) {
+  if (!db) return [];
+  try { return await queryAll(db, sql, params); }
+  catch (e) { return [{ _query_error: String(e && e.message ? e.message : e).slice(0, 260) }]; }
+}
+function usefulRows(rows) { return Array.isArray(rows) ? rows.filter(r => !r || !r._query_error ? true : false) : []; }
+function firstUseful(rows) { return (Array.isArray(rows) ? rows.find(r => r && !r._query_error) : null) || null; }
+function likeNameParam(name) { return `%${String(name || '').replace(/[%_]/g, '')}%`; }
+function compactDossierRows(rows, max = 80) { return Array.isArray(rows) ? rows.slice(0, max) : []; }
+function extractStarterIds(rows) {
+  const ids = [];
+  for (const r of rows || []) {
+    const v = r && r.starter_player_id;
+    if (v != null && String(v).trim() !== '' && !ids.includes(Number(v))) ids.push(Number(v));
+  }
+  return ids.slice(0, 4);
 }
 
 
@@ -827,12 +853,17 @@ async function apiDossier(env, url) {
   if (!env.SCORE_DB) return jsonResponse({ ok: false, error: "SCORE_DB binding missing", version: VERSION }, 500);
   const finalId = url.searchParams.get("final_board_row_id");
   if (!finalId) return jsonResponse({ ok: false, error: "final_board_row_id required", version: VERSION }, 400);
+
   const selectedRows = await queryAll(env.SCORE_DB, `
     SELECT
       f.*,
       json_extract(f.details_json_snapshot, '$.game_context.home_team_name') AS home_team_name,
       json_extract(f.details_json_snapshot, '$.game_context.away_team_name') AS away_team_name,
       json_extract(f.details_json_snapshot, '$.game_context.venue_name') AS venue_name,
+      json_extract(f.details_json_snapshot, '$.game_context.venue_id') AS venue_id,
+      json_extract(f.details_json_snapshot, '$.game_context.home_team_id') AS home_team_id,
+      json_extract(f.details_json_snapshot, '$.game_context.away_team_id') AS away_team_id,
+      json_extract(f.details_json_snapshot, '$.game_context.status_code') AS game_status_code,
       COALESCE(json_extract(f.details_json_snapshot, '$.daily_context.probable_pitcher.name'), json_extract(f.details_json_snapshot, '$.daily_context.starter.name'), json_extract(f.details_json_snapshot, '$.probable_pitcher.name'), json_extract(f.details_json_snapshot, '$.starter_context.pitcher_name'), json_extract(f.matrix_payload_json_snapshot, '$.daily_context.probable_pitcher.name')) AS probable_pitcher_name,
       COALESCE(json_extract(f.details_json_snapshot, '$.daily_context.probable_pitcher.hand'), json_extract(f.details_json_snapshot, '$.daily_context.starter.hand'), json_extract(f.details_json_snapshot, '$.probable_pitcher.hand'), json_extract(f.details_json_snapshot, '$.starter_context.pitcher_hand')) AS probable_pitcher_hand,
       COALESCE(json_extract(f.details_json_snapshot, '$.matchup_context.opposing_pitcher_name'), json_extract(f.details_json_snapshot, '$.daily_context.opposing_pitcher.name'), json_extract(f.details_json_snapshot, '$.starter_context.opposing_pitcher_name')) AS opposing_pitcher_name,
@@ -861,7 +892,10 @@ async function apiDossier(env, url) {
       hp.empirical_hit_rate_0_1 AS hp_empirical_hit_rate_0_1,
       hp.reliability_0_1 AS hp_reliability_0_1,
       hp.sample_reliability_score_0_100 AS hp_sample_reliability_score_0_100,
-      hp.display_notes_json AS hp_display_notes_json
+      hp.window_summary_json AS hp_window_summary_json,
+      hp.model_notes_json AS hp_model_notes_json,
+      hp.source_snapshot_json AS hp_source_snapshot_json,
+      hp.window_summary_json AS hp_display_notes_json
     FROM score_final_board_current f
     LEFT JOIN hit_probability_current hp
       ON hp.batch_id = f.source_hp_batch_id
@@ -874,6 +908,9 @@ async function apiDossier(env, url) {
   const selectedRaw = selectedRows[0];
   const playerId = selectedRaw.mlb_player_id;
   const playerName = selectedRaw.player_name;
+  const gamePk = selectedRaw.game_pk;
+  const venueId = selectedRaw.venue_id;
+
   const legParams = [];
   let legWhere = "f.official_game_time_utc IS NOT NULL AND datetime(replace(replace(f.official_game_time_utc, 'T', ' '), 'Z', '')) > datetime('now', '+1 minute')";
   if (playerId != null && String(playerId) !== "") { legWhere += " AND f.mlb_player_id = ?"; legParams.push(playerId); }
@@ -916,6 +953,9 @@ async function apiDossier(env, url) {
       json_extract(f.details_json_snapshot, '$.game_context.home_team_name') AS home_team_name,
       json_extract(f.details_json_snapshot, '$.game_context.away_team_name') AS away_team_name,
       json_extract(f.details_json_snapshot, '$.game_context.venue_name') AS venue_name,
+      json_extract(f.details_json_snapshot, '$.game_context.venue_id') AS venue_id,
+      json_extract(f.details_json_snapshot, '$.game_context.home_team_id') AS home_team_id,
+      json_extract(f.details_json_snapshot, '$.game_context.away_team_id') AS away_team_id,
       json_extract(f.matrix_payload_json_snapshot, '$.prepared.source_line_type') AS source_line_type,
       json_extract(f.matrix_payload_json_snapshot, '$.prepared.projection_type') AS projection_type,
       json_extract(f.matrix_payload_json_snapshot, '$.prepared.is_goblin') AS is_goblin,
@@ -924,8 +964,208 @@ async function apiDossier(env, url) {
     FROM score_final_board_current f
     WHERE ${legWhere}
     ORDER BY f.estimated_hit_probability_0_100 DESC, f.score_0_100 DESC, f.rank_order ASC
-    LIMIT 80
+    LIMIT 100
   `, legParams);
+
+  const hpLines = await optionalQueryAll(env.SCORE_DB, `
+    SELECT source_key, canonical_prop_key, selected_side, line_value, probability_grade,
+           estimated_hit_probability_0_100, probability_confidence_0_100, probability_band,
+           sample_size, non_push_sample, hit_count, miss_count, push_count, empirical_hit_rate_0_1,
+           substr(window_summary_json, 1, 1600) AS window_summary_preview
+    FROM hit_probability_current
+    WHERE mlb_player_id = ? AND game_pk = ?
+    ORDER BY estimated_hit_probability_0_100 DESC
+    LIMIT 60
+  `, [playerId, gamePk]);
+
+  const matrixLines = await optionalQueryAll(env.SCORE_DB, `
+    SELECT source_key, canonical_prop_key, board_line_value, prop_side, factor_status,
+           market_game_context_status, market_prop_context_status, daily_readiness_status,
+           matrix_status, matrix_grade, warning_count, blocker_count,
+           substr(details_json, 1, 2200) AS details_preview
+    FROM prop_matrix_current
+    WHERE mlb_player_id = ? AND game_pk = ?
+    ORDER BY source_key, canonical_prop_key, board_line_value
+    LIMIT 80
+  `, [playerId, gamePk]);
+
+  const preparedLines = await optionalQueryAll(env.SCORE_DB, `
+    SELECT source_key, source_row_id, player_name, canonical_prop_key, source_prop_name, line_value,
+           team, opponent, source_pickable, pickable_safe, prep_status, block_reason, updated_at
+    FROM score_board_prepared_current
+    WHERE resolved_mlb_player_id = ? AND official_game_pk = ?
+    ORDER BY source_key, canonical_prop_key, line_value
+    LIMIT 80
+  `, [playerId, gamePk]);
+
+  const playerProfile = await optionalQueryAll(env.REF_DB, `
+    SELECT player_id, mlb_player_id, player_name, full_name, current_team_id, current_mlb_team_id,
+           primary_position, primary_role, bats, throws, bat_side, throw_side, active, updated_at
+    FROM ref_players
+    WHERE mlb_player_id = ? OR player_id = ?
+    LIMIT 1
+  `, [playerId, playerId]);
+
+  const recentForm = await optionalQueryAll(env.STATS_HITTER_DB, `
+    SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, triples_sum,
+           home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum,
+           total_bases_derived_sum, batting_average, slugging_percentage, strikeout_rate, walk_rate, sample_size_label
+    FROM hitter_metric_snapshots
+    WHERE player_id = ?
+    ORDER BY CASE metric_window WHEN 'season_to_date' THEN 1 WHEN 'last_20_games' THEN 2 WHEN 'last_10_games' THEN 3 WHEN 'last_5_games' THEN 4 WHEN 'last_3_games' THEN 5 ELSE 9 END
+  `, [playerId]);
+
+  const hitterSplits = await optionalQueryAll(env.STATS_HITTER_DB, `
+    SELECT split_key, split_description, pa, ab, hits, doubles, triples, home_runs, rbi, walks,
+           strikeouts, avg, obp, slg, ops, babip, source_snapshot_date
+    FROM hitter_splits
+    WHERE player_id = ?
+    ORDER BY split_key
+  `, [playerId]);
+
+  const recentGames = await optionalQueryAll(env.STATS_HITTER_DB, `
+    SELECT game_date, game_pk, team_id, opponent_team_id, is_home, batting_order, pa, ab,
+           hits, singles, doubles, triples, home_runs, runs, rbi, walks, strikeouts, stolen_bases, total_bases
+    FROM hitter_game_logs
+    WHERE player_id = ?
+    ORDER BY game_date DESC, game_pk DESC
+    LIMIT 12
+  `, [playerId]);
+
+  const starters = await optionalQueryAll(env.DAILY_DB, `
+    SELECT official_date, game_pk, team_id, team_name, opponent_team_id, opponent_team_name, is_home,
+           starter_player_id, starter_name, starter_hand, starter_status, starter_confidence, game_status, detailed_state
+    FROM daily_starters_current
+    WHERE game_pk = ?
+    ORDER BY is_home DESC, team_id
+  `, [gamePk]);
+  const starterIds = extractStarterIds(starters);
+  let pitcherProfiles = [];
+  let pitcherForm = [];
+  let pitcherSplits = [];
+  let pitcherRecentGames = [];
+  if (starterIds.length) {
+    const ph = starterIds.map(() => '?').join(',');
+    pitcherProfiles = await optionalQueryAll(env.REF_DB, `
+      SELECT player_id, mlb_player_id, player_name, full_name, current_mlb_team_id, primary_position, primary_role, throws, throw_side, active, updated_at
+      FROM ref_players
+      WHERE mlb_player_id IN (${ph}) OR player_id IN (${ph})
+      LIMIT 10
+    `, [...starterIds, ...starterIds]);
+    pitcherForm = await optionalQueryAll(env.STATS_PITCHER_DB, `
+      SELECT player_id, metric_window, games_count, innings_pitched_sum, batters_faced_sum,
+             hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum,
+             era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated, hr_rate_calculated, sample_size_label
+      FROM pitcher_metric_snapshots
+      WHERE player_id IN (${ph})
+      ORDER BY player_id, CASE metric_window WHEN 'season_to_date' THEN 1 WHEN 'last_20_games' THEN 2 WHEN 'last_10_games' THEN 3 WHEN 'last_5_games' THEN 4 WHEN 'last_3_games' THEN 5 ELSE 9 END
+    `, starterIds);
+    pitcherSplits = await optionalQueryAll(env.STATS_PITCHER_DB, `
+      SELECT player_id, split_key, split_description, innings_pitched, batters_faced, hits_allowed,
+             walks_allowed, strikeouts, home_runs_allowed, avg_against, obp_against, slg_against, ops_against, source_snapshot_date
+      FROM pitcher_splits
+      WHERE player_id IN (${ph})
+      ORDER BY player_id, split_key
+    `, starterIds);
+    pitcherRecentGames = await optionalQueryAll(env.STATS_PITCHER_DB, `
+      SELECT player_id, game_date, game_pk, team_id, opponent_team_id, is_home, role, innings_pitched,
+             batters_faced, hits_allowed, earned_runs, walks_allowed, strikeouts, home_runs_allowed, pitches, strikes
+      FROM pitcher_game_logs
+      WHERE player_id IN (${ph})
+      ORDER BY player_id, game_date DESC, game_pk DESC
+      LIMIT 24
+    `, starterIds);
+  }
+
+  const weather = await optionalQueryAll(env.DAILY_DB, `
+    SELECT venue_id, venue_name, weather_status, weather_confidence, temperature_f, feels_like_f,
+           humidity_pct, wind_speed_mph, wind_gust_mph, wind_direction_cardinal, precipitation_probability_pct,
+           rain_risk_flag, delay_risk_flag, roof_type, roof_status, park_weather_notes
+    FROM daily_game_weather_current
+    WHERE game_pk = ?
+    LIMIT 1
+  `, [gamePk]);
+  const bullpen = await optionalQueryAll(env.DAILY_DB, `
+    SELECT team_id, team_name, opponent_team_id, opponent_team_name, is_home, bullpen_status,
+           bullpen_confidence, availability_grade, bullpen_pitchers_used_last_3_days,
+           bullpen_pitches_last_3_days, rested_reliever_count, high_usage_reliever_count,
+           likely_unavailable_reliever_count, bullpen_fatigue_score, bullpen_risk_level
+    FROM daily_bullpen_availability_current
+    WHERE game_pk = ?
+    ORDER BY is_home DESC, team_id
+  `, [gamePk]);
+  const scheduleSpot = await optionalQueryAll(env.DAILY_DB, `
+    SELECT team_name, is_home, schedule_spot_status, days_rest, games_last_3_days, games_last_5_days,
+           three_in_four_flag, four_in_six_flag, travel_required_flag, travel_distance_miles,
+           travel_distance_bucket, schedule_fatigue_score, schedule_risk_level
+    FROM daily_team_schedule_spot_current
+    WHERE game_pk = ?
+    ORDER BY is_home DESC, team_id
+  `, [gamePk]);
+  const umpire = await optionalQueryAll(env.DAILY_DB, `
+    SELECT umpire_context_status, umpire_context_confidence, home_plate_umpire_name,
+           umpire_assignment_status, assignment_confirmed_flag, assignment_pending_flag,
+           unknown_umpire_flag, umpire_tendency_status, strike_zone_context_status,
+           run_environment_context_status, walk_context_status, strikeout_context_status
+    FROM daily_umpire_context_current
+    WHERE game_pk = ?
+    LIMIT 1
+  `, [gamePk]);
+
+  const stadium = venueId != null ? await optionalQueryAll(env.REF_DB, `
+    SELECT stadium_id, team_id, stadium_name, city, state, latitude, longitude, roof_type, turf_type,
+           mlb_venue_id, timezone, active, updated_at
+    FROM ref_stadiums
+    WHERE mlb_venue_id = ?
+    LIMIT 1
+  `, [venueId]) : [];
+  const parkFactors = venueId != null ? await optionalQueryAll(env.REF_DB, `
+    SELECT park_name, season_year, run_factor, hr_factor, lhb_run_factor, rhb_run_factor,
+           lhb_hr_factor, rhb_hr_factor, factor_scale, source_name, source_confidence, updated_at
+    FROM ref_park_factors
+    WHERE mlb_venue_id = ? AND active = 1
+    ORDER BY season_year DESC
+    LIMIT 1
+  `, [venueId]) : [];
+
+  const marketSummary = await optionalQueryAll(env.MARKET_DB, `
+    SELECT official_date, game_pk, home_team, away_team, book_available_count, book_target_count,
+           book_coverage_grade, freshness_status, oldest_market_update, newest_market_update,
+           h2h_book_count, home_ml_consensus, away_ml_consensus, home_ml_best, away_ml_best,
+           moneyline_favorite_team, moneyline_favorite_price, moneyline_underdog_team, moneyline_underdog_price,
+           runline_book_count, home_runline_point, home_runline_consensus_price, away_runline_point,
+           away_runline_consensus_price, total_book_count, total_consensus_line, over_consensus_price,
+           under_consensus_price, derived_home_implied_runs, derived_away_implied_runs,
+           implied_runs_method, implied_runs_confidence, warning_flags, created_at
+    FROM market_context_probe_game_market_summary
+    WHERE game_pk = ?
+    LIMIT 1
+  `, [gamePk]);
+  const marketOdds = await optionalQueryAll(env.MARKET_DB, `
+    SELECT bookmaker_title, market_key, outcome_name, outcome_side, price_american, point, market_last_update
+    FROM market_context_probe_game_odds
+    WHERE game_pk = ?
+    ORDER BY market_key, bookmaker_title, outcome_side, outcome_name
+    LIMIT 40
+  `, [gamePk]);
+  const ppLines = await optionalQueryAll(env.MARKET_DB, `
+    SELECT current_row_id, slate_date, projection_id, player_name, team, opponent, stat_type, line_score,
+           description, start_time, status, projection_type, odds_type, source_line_type,
+           payout_variant, is_goblin, is_demon, is_standard, pickable_flag, updated_at
+    FROM prizepicks_board_current
+    WHERE player_name LIKE ? AND pickable_flag = 1
+    ORDER BY stat_type, line_score
+    LIMIT 80
+  `, [likeNameParam(playerName)]);
+  const sleeperLines = await optionalQueryAll(env.MARKET_DB, `
+    SELECT source_event_id, source_line_id, player_name, source_stat_name, canonical_prop_key, line_value,
+           team, opponent, side, price, decimal_price, is_pickable, start_time, updated_at
+    FROM sleeper_board_current
+    WHERE player_name LIKE ?
+    ORDER BY canonical_prop_key, line_value
+    LIMIT 80
+  `, [likeNameParam(playerName)]);
+
   const rawDetails = trimSnapshot(selectedRaw.details_json_snapshot || "");
   const rawMatrix = trimSnapshot(selectedRaw.matrix_payload_json_snapshot || "");
   const rawHp = trimSnapshot(selectedRaw.hp_display_notes_json || "");
@@ -944,7 +1184,31 @@ async function apiDossier(env, url) {
       matrix_payload_json_snapshot: safeJsonParse(rawMatrix),
       hp_display_notes_json: safeJsonParse(rawHp)
     },
-    dossier_sections: ["leg_identity", "probability_score", "player_recent_history", "matchup_game", "pitching_matchup", "weather_park_context", "daily_context", "market_context", "scouting_note", "other_player_legs", "system_audit_trail"],
+    dossier_context: {
+      player_profile: firstUseful(playerProfile),
+      recent_form: compactDossierRows(recentForm),
+      hitter_splits: compactDossierRows(hitterSplits),
+      recent_games: compactDossierRows(recentGames),
+      hp_lines: compactDossierRows(hpLines),
+      matrix_lines: compactDossierRows(matrixLines),
+      prepared_lines: compactDossierRows(preparedLines),
+      starters: compactDossierRows(starters),
+      pitcher_profiles: compactDossierRows(pitcherProfiles),
+      pitcher_form: compactDossierRows(pitcherForm),
+      pitcher_splits: compactDossierRows(pitcherSplits),
+      pitcher_recent_games: compactDossierRows(pitcherRecentGames),
+      weather: firstUseful(weather),
+      bullpen: compactDossierRows(bullpen),
+      schedule_spot: compactDossierRows(scheduleSpot),
+      umpire: firstUseful(umpire),
+      stadium: firstUseful(stadium),
+      park_factors: firstUseful(parkFactors),
+      market_summary: firstUseful(marketSummary),
+      market_odds: compactDossierRows(marketOdds),
+      prizepicks_lines: compactDossierRows(ppLines),
+      sleeper_lines: compactDossierRows(sleeperLines)
+    },
+    dossier_sections: ["leg_identity", "probability_score", "player_profile", "season_recent_form", "recent_games", "splits", "pitching_matchup", "weather_park", "bullpen_schedule_umpire", "market_odds", "source_lines", "other_player_legs"],
     writes_performed: 0,
     external_calls_performed: 0,
     timestamp_utc: nowUtc()
@@ -1300,16 +1564,29 @@ function extractLastGames(raw){const leaves=allUserLeaves(raw);const games=[];co
 }
 for(const v of Object.values(by)){if(Object.keys(v).length>1)games.push(v)}return games.slice(0,8)}
 function publicRows(pairs,raw,extraWords,limit=18){const out=[];pairs.forEach(x=>pushInfo(out,x[0],x[1]));findLeaves(raw,extraWords,limit).forEach(x=>pushInfo(out,x[0],x[1]));return out}
-function renderDossier(d){const s=d.selected||{}, raw=d.raw_context||{}, legs=d.other_player_legs||[];const match=(s.away_team_name&&s.home_team_name)?s.away_team_name+' @ '+s.home_team_name:'Game '+(s.game_pk||'');const title=esc(s.player_name||'Player Dossier');const line=[s.prop_label||cap(s.canonical_prop_key),String(s.selected_side||'').toUpperCase(),s.line_value].filter(Boolean).join(' • ');const season=extractSeasonStats(raw);const splits=extractSplitTables(raw);const lastGames=extractLastGames(raw);
-const profile=publicRows([['Player',s.player_name],['MLB Player ID',s.mlb_player_id],['Team',s.team_name],['Bats / Throws',pickLeaf(raw,['bat_side','throws','bats','throw_hand'])],['Position',pickLeaf(raw,['position','primary_position'])],['Lineup Slot',s.batting_order],['Lineup Status',s.lineup_status]],raw,['bio','birth','born','height','weight','draft','college','debut','nickname','position','bat','throw'],18);
-const propForm=publicRows([['Prop',s.prop_label||cap(s.canonical_prop_key)],['Side / Line',String(s.selected_side||'').toUpperCase()+' '+s.line_value],['Current Hit Prob',pct(s.estimated_hit_probability_0_100)],['Confidence',pct(s.probability_confidence_0_100)],['App Score',num(s.score_0_100)]],raw,['recent','last','split','form','rolling','average','rate','hit_rate','actual','line_value','stat_value'],20);
-const game=publicRows([['Game',match],['Date / Time',fmtDate(s.official_game_time_utc)],['Venue',s.venue_name],['Home Team',s.home_team_name],['Away Team',s.away_team_name]],raw,['game','team','opponent','venue','stadium','park','date','time'],16);
-const pitch=publicRows([['Probable Pitcher',s.probable_pitcher_name],['Pitcher Hand',s.probable_pitcher_hand],['Opposing Pitcher',s.opposing_pitcher_name],['Opposing Hand',s.opposing_pitcher_hand],['ERA',s.opposing_pitcher_era],['WHIP',s.opposing_pitcher_whip],['FIP',s.opposing_pitcher_fip],['K/9',s.opposing_pitcher_k9],['BB/9',s.opposing_pitcher_bb9]],raw,['pitcher','starter','opposing','hand','era','whip','fip','k9','bb9','strikeout','walk_rate','ground','fly','contact'],22);
-const env=publicRows([['Weather',s.weather_summary],['Temperature',s.weather_temp_f?s.weather_temp_f+'°F':''],['Wind',s.wind_summary],['Roof',s.roof_status],['Park',s.venue_name]],raw,['weather','temperature','temp','wind','roof','humidity','precip','park_factor','run_environment','carry'],18);
-const market=publicRows([['Source',appLabel(s.source_key)],['Line Type',lineLabel(s.line_type)],['Market Note',s.market_context_summary],['Odds Type',s.odds_type],['Projection Type',s.projection_type]],raw,['market','odds','book','price','consensus','line','projection','payout','goblin','demon','sleeper','prizepicks'],20);
-const other=legs.filter(l=>l.final_board_row_id!==s.final_board_row_id).map(l=>'<button class="legBtn" data-leg-id="'+esc(l.final_board_row_id)+'"><b>'+esc(l.prop_label||cap(l.canonical_prop_key))+'</b><br>'+esc(String(l.selected_side||'').toUpperCase()+' '+l.line_value)+' · HP '+pct(l.estimated_hit_probability_0_100)+' · Score '+num(l.score_0_100)+'</button>').join('')||'<div class="small">No other current board legs for this player.</div>';
-let statHtml='';for(const [k,v] of Object.entries(season)){statHtml+=statBlock(k,v)}if(!statHtml)statHtml='<div class="dSection wide"><h3>Season / Career Stats</h3><div class="small">Season and career stat lines are not exposed in this board packet yet.</div></div>';
-$('dossierBody').innerHTML='<div class="dossierHero"><div class="dossierTitle">'+title+'</div><div class="dossierSub">'+esc(match)+' • '+esc(fmtDate(s.official_game_time_utc))+' • '+esc(s.venue_name||'')+'</div><div class="dossierSub">'+esc(line)+'</div><div class="dossierMetrics">'+metric('Hit Prob',pct(s.estimated_hit_probability_0_100))+metric('Score',num(s.score_0_100))+metric('Confidence',pct(s.probability_confidence_0_100))+metric('Tier',qLabel(s))+'</div></div><div class="dossierGrid">'+statHtml+section('Player Profile',profile,'Public-facing player identity and bio fields available in the packet.')+section('Prop Form',propForm,'Real prop-level recent form and line context, cleaned for the selected leg.')+sectionWide('Recent Splits',table(splits.headers,splits.rows),'Last 5/10/20/30 style splits when exposed by the factor packets.')+sectionWide('Recent Games',table(['Date','Opp','AB','PA','R','H','HR','RBI','BB','SO','SB','TB'],lastGames),'Individual recent game rows when exposed by the logs/factor packet.')+section('Matchup & Game',game,'Game, team and venue information tied to this leg.')+section('Pitching Matchup',pitch,'Opponent starter and pitcher profile fields available for this matchup.')+section('Weather / Park',env,'Real environment and venue context when available.')+section('Market / Odds',market,'Book/app line and market context, without internal scoring thresholds.')+sectionWide('Scouting Note','<div class="dossierNote">'+esc(s.leg_insight_comment||evidenceReason({best:s,rows:[s]}))+'</div>','Clean synthesis for the selected leg.')+sectionWide('Other Current Legs For Player','<div class="pillRow">'+other+'</div>','Tap another leg to open its player/leg dossier.')+'</div>';
+function yesNo(v){return Number(v||0)?'Yes':'No'}
+function pctNum(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10)+'%':'—'}
+function avgFmt(v){const n=Number(v);return Number.isFinite(n)?(n<1?n.toFixed(3).replace(/^0/,''):String(Math.round(n*1000)/1000)):cleanVal(v)}
+function lineSide(r){return [String(r.selected_side||r.prop_side||'').toUpperCase(),r.line_value??r.board_line_value].filter(x=>x!==''&&x!==undefined&&x!==null).join(' ')}
+function pitcherNameFor(ctx,id){const p=(ctx.pitcher_profiles||[]).find(x=>String(x.player_id)==String(id)||String(x.mlb_player_id)==String(id));return p?(p.full_name||p.player_name||id):id}
+function rowsForRecentForm(ctx){return (ctx.recent_form||[]).map(r=>({'Window':cleanLabel(r.metric_window),'G':r.games_count,'PA':r.pa_sum,'AB':r.ab_sum,'H':r.hits_sum,'2B':r.doubles_sum,'HR':r.home_runs_sum,'R':r.runs_sum,'RBI':r.rbi_sum,'BB':r.walks_sum,'SO':r.strikeouts_sum,'SB':r.stolen_bases_sum,'TB':r.total_bases_derived_sum,'AVG':avgFmt(r.batting_average),'SLG':avgFmt(r.slugging_percentage)}))}
+function rowsForHpLines(ctx){return (ctx.hp_lines||[]).map(r=>({'Source':appLabel(r.source_key),'Prop':displayPropLabel(r.canonical_prop_key),'Side':String(r.selected_side||'').toUpperCase(),'Line':r.line_value,'HP':pctNum(r.estimated_hit_probability_0_100),'Conf':pctNum(r.probability_confidence_0_100),'Grade':friendlyGrade(r.probability_grade),'Sample':r.sample_size,'Hit-Miss':(r.hit_count??'—')+'-'+(r.miss_count??'—')}))}
+function rowsForSplits(ctx){return (ctx.hitter_splits||[]).map(r=>({'Split':String(r.split_key||'').replace('vs_','vs ').toUpperCase(),'PA':r.pa,'AB':r.ab,'H':r.hits,'2B':r.doubles,'3B':r.triples,'HR':r.home_runs,'RBI':r.rbi,'BB':r.walks,'SO':r.strikeouts,'AVG':r.avg,'OBP':r.obp,'SLG':r.slg,'OPS':r.ops,'BABIP':r.babip}))}
+function rowsForRecentGames(ctx){return (ctx.recent_games||[]).map(r=>({'Date':r.game_date,'Opp':r.opponent_team_id,'Order':r.batting_order,'PA':r.pa,'AB':r.ab,'R':r.runs,'H':r.hits,'1B':r.singles,'2B':r.doubles,'3B':r.triples,'HR':r.home_runs,'RBI':r.rbi,'BB':r.walks,'SO':r.strikeouts,'SB':r.stolen_bases,'TB':r.total_bases}))}
+function rowsForPitcherForm(ctx){return (ctx.pitcher_form||[]).map(r=>({'Pitcher':pitcherNameFor(ctx,r.player_id),'Window':cleanLabel(r.metric_window),'G':r.games_count,'IP':avgFmt(r.innings_pitched_sum),'BF':r.batters_faced_sum,'H':r.hits_allowed_sum,'ER':r.earned_runs_sum,'BB':r.walks_allowed_sum,'K':r.strikeouts_sum,'HR':r.home_runs_allowed_sum,'ERA':avgFmt(r.era_calculated),'WHIP':avgFmt(r.whip_calculated),'K%':pctNum(Number(r.k_rate_calculated)*100),'BB%':pctNum(Number(r.bb_rate_calculated)*100)}))}
+function rowsForPitcherSplits(ctx){return (ctx.pitcher_splits||[]).map(r=>({'Pitcher':pitcherNameFor(ctx,r.player_id),'Split':String(r.split_key||'').replace('vs_','vs ').toUpperCase(),'IP':avgFmt(r.innings_pitched),'BF':r.batters_faced,'H':r.hits_allowed,'BB':r.walks_allowed,'K':r.strikeouts,'HR':r.home_runs_allowed,'AVG':r.avg_against,'OBP':r.obp_against,'SLG':r.slg_against,'OPS':r.ops_against}))}
+function rowsForStarters(ctx){return (ctx.starters||[]).map(r=>({'Team':r.team_name,'Home':yesNo(r.is_home),'Starter':r.starter_name,'Hand':r.starter_hand,'Status':r.starter_status,'Confidence':r.starter_confidence}))}
+function rowsForBullpen(ctx){return (ctx.bullpen||[]).map(r=>({'Team':r.team_name,'Status':r.bullpen_status,'Risk':r.bullpen_risk_level,'Fatigue':r.bullpen_fatigue_score,'Pitches 3d':r.bullpen_pitches_last_3_days,'Used 3d':r.bullpen_pitchers_used_last_3_days,'Rested':r.rested_reliever_count,'Unavailable':r.likely_unavailable_reliever_count}))}
+function rowsForSchedule(ctx){return (ctx.schedule_spot||[]).map(r=>({'Team':r.team_name,'Spot':r.schedule_spot_status,'Rest':r.days_rest,'G 3d':r.games_last_3_days,'G 5d':r.games_last_5_days,'3-in-4':yesNo(r.three_in_four_flag),'4-in-6':yesNo(r.four_in_six_flag),'Travel':yesNo(r.travel_required_flag),'Miles':r.travel_distance_miles,'Risk':r.schedule_risk_level}))}
+function rowsForSourceLines(ctx){const pp=(ctx.prizepicks_lines||[]).map(r=>({'Source':'PrizePicks','Prop':displayPropLabel(r.stat_type),'Line':r.line_score,'Type':r.payout_variant||r.odds_type||r.source_line_type,'Status':r.status,'Pickable':yesNo(r.pickable_flag),'Start':fmtDate(r.start_time)}));const sl=(ctx.sleeper_lines||[]).map(r=>({'Source':'Sleeper','Prop':displayPropLabel(r.canonical_prop_key),'Line':r.line_value,'Type':r.side||'regular','Status':r.is_pickable?'pickable':'not pickable','Pickable':yesNo(r.is_pickable),'Start':fmtDate(r.start_time)}));const prep=(ctx.prepared_lines||[]).map(r=>({'Source':appLabel(r.source_key),'Prop':displayPropLabel(r.canonical_prop_key),'Line':r.line_value,'Type':r.source_prop_name||'prepared','Status':r.prep_status,'Pickable':yesNo(r.pickable_safe),'Start':''}));return (pp.length||sl.length)?pp.concat(sl):prep}
+function marketRows(ctx){const m=ctx.market_summary||{};return [['Books',isUsefulValue(m.book_available_count)?m.book_available_count+' / '+m.book_target_count:''],['Coverage',m.book_coverage_grade],['Freshness',m.freshness_status],['Moneyline',m.home_team+' '+m.home_ml_consensus+' / '+m.away_team+' '+m.away_ml_consensus],['Best ML',m.home_team+' '+m.home_ml_best+' / '+m.away_team+' '+m.away_ml_best],['Total',isUsefulValue(m.total_consensus_line)?m.total_consensus_line+' · O '+m.over_consensus_price+' / U '+m.under_consensus_price:''],['Run Line',isUsefulValue(m.home_runline_point)?m.home_team+' '+m.home_runline_point+' / '+m.away_team+' '+m.away_runline_point:''],['Implied Runs',isUsefulValue(m.derived_home_implied_runs)?m.home_team+' '+avgFmt(m.derived_home_implied_runs)+' / '+m.away_team+' '+avgFmt(m.derived_away_implied_runs):'']]}
+function weatherRows(ctx){const w=ctx.weather||{}, st=ctx.stadium||{}, pf=ctx.park_factors||{};return [['Venue',w.venue_name||st.stadium_name],['Location',[st.city,st.state].filter(Boolean).join(', ')],['Surface / Roof',[st.turf_type,w.roof_type||st.roof_type,w.roof_status].filter(Boolean).join(' / ')],['Temperature',isUsefulValue(w.temperature_f)?w.temperature_f+'°F':''],['Feels Like',isUsefulValue(w.feels_like_f)?w.feels_like_f+'°F':''],['Humidity',isUsefulValue(w.humidity_pct)?w.humidity_pct+'%':''],['Wind',[w.wind_direction_cardinal,w.wind_speed_mph? w.wind_speed_mph+' mph':'',w.wind_gust_mph?'gust '+w.wind_gust_mph:''].filter(Boolean).join(' ')],['Rain / Delay Risk',[yesNo(w.rain_risk_flag),yesNo(w.delay_risk_flag)].join(' / ')],['Park Run / HR',isUsefulValue(pf.run_factor)?pf.run_factor+' / '+pf.hr_factor:''],['LHB Run / HR',isUsefulValue(pf.lhb_run_factor)?pf.lhb_run_factor+' / '+pf.lhb_hr_factor:''],['RHB Run / HR',isUsefulValue(pf.rhb_run_factor)?pf.rhb_run_factor+' / '+pf.rhb_hr_factor:'']]}
+function umpireRows(ctx){const u=ctx.umpire||{};return [['Status',u.umpire_context_status],['Plate Umpire',u.home_plate_umpire_name||'Pending'],['Assignment',u.umpire_assignment_status],['Zone Context',u.strike_zone_context_status],['Run Context',u.run_environment_context_status],['Walk Context',u.walk_context_status],['K Context',u.strikeout_context_status],['Confidence',u.umpire_context_confidence]]}
+function renderDossier(d){const s=d.selected||{}, raw=d.raw_context||{}, legs=d.other_player_legs||[], ctx=d.dossier_context||{};const match=(s.away_team_name&&s.home_team_name)?s.away_team_name+' @ '+s.home_team_name:'Game '+(s.game_pk||'');const title=esc(s.player_name||'Player Dossier');const line=[s.prop_label||cap(s.canonical_prop_key),String(s.selected_side||'').toUpperCase(),s.line_value].filter(Boolean).join(' • ');const prof=ctx.player_profile||{};
+const profile=publicRows([['Player',prof.full_name||s.player_name],['MLB Player ID',s.mlb_player_id],['Team',prof.current_mlb_team_id||s.team_name],['Position',prof.primary_position],['Role',prof.primary_role],['Bats / Throws',[prof.bat_side||prof.bats,prof.throw_side||prof.throws].filter(Boolean).join(' / ')],['Active',isUsefulValue(prof.active)?yesNo(prof.active):''],['Lineup Status',s.lineup_status||'Pending / not posted'],['Lineup Slot',s.batting_order]],raw,['bio','birth','height','weight','position','bat','throw'],8);
+const selectedLeg=publicRows([['Source',appLabel(s.source_key)],['Line Type',lineLabel(s.line_type)],['Prop',s.prop_label||cap(s.canonical_prop_key)],['Side / Line',String(s.selected_side||'').toUpperCase()+' '+s.line_value],['Hit Probability',pct(s.estimated_hit_probability_0_100)],['HP Confidence',pct(s.probability_confidence_0_100)],['HP Grade',friendlyGrade(s.probability_grade)],['Score',num(s.score_0_100)],['Board Tier',qLabel(s)],['Playable',s.live_playable?'Live':(s.review_playable?'Review':'No')],['Daily Context',s.daily_readiness_status?String(s.daily_readiness_status).replace(/_/g,' '):''],['Player Prop Market',s.market_prop_context_status?String(s.market_prop_context_status).replace(/_/g,' '):'']],raw,['recent','form','line_value'],4);
+const other=legs.filter(l=>l.final_board_row_id!==s.final_board_row_id).slice(0,30).map(l=>'<button class="legBtn" data-leg-id="'+esc(l.final_board_row_id)+'"><b>'+esc(l.prop_label||cap(l.canonical_prop_key))+'</b><br>'+esc(appLabel(l.source_key)+' · '+String(l.selected_side||'').toUpperCase()+' '+l.line_value)+'<br>HP '+pct(l.estimated_hit_probability_0_100)+' · Score '+num(l.score_0_100)+'</button>').join('')||'<div class="small">No other current board legs for this player.</div>';
+$('dossierBody').innerHTML='<div class="dossierHero"><div class="dossierTitle">'+title+'</div><div class="dossierSub">'+esc(match)+' • '+esc(fmtDate(s.official_game_time_utc))+' • '+esc(s.venue_name||((ctx.stadium||{}).stadium_name)||'')+'</div><div class="dossierSub">'+esc(line)+'</div><div class="dossierMetrics">'+metric('Hit Prob',pct(s.estimated_hit_probability_0_100))+metric('Score',num(s.score_0_100))+metric('Confidence',pct(s.probability_confidence_0_100))+metric('Tier',qLabel(s))+'</div></div><div class="dossierGrid">'+section('Selected Leg',selectedLeg,'Clean display of this exact board leg.')+section('Player Profile',profile,'Static player identity plus current lineup availability when posted.')+sectionWide('Hit Probability By Available Line',table(['Source','Prop','Side','Line','HP','Conf','Grade','Sample','Hit-Miss'],rowsForHpLines(ctx)),'All current probability rows for this player/game, including alternate lines and both apps.')+sectionWide('Season / Recent Form',table(['Window','G','PA','AB','H','2B','HR','R','RBI','BB','SO','SB','TB','AVG','SLG'],rowsForRecentForm(ctx)),'Season, last 20, last 10, last 5 and last 3 where mined.')+sectionWide('Recent Game Log',table(['Date','Opp','Order','PA','AB','R','H','1B','2B','3B','HR','RBI','BB','SO','SB','TB'],rowsForRecentGames(ctx)),'Most recent individual games behind the probability windows.')+sectionWide('Platoon Splits',table(['Split','PA','AB','H','2B','3B','HR','RBI','BB','SO','AVG','OBP','SLG','OPS','BABIP'],rowsForSplits(ctx)),'Current season vs-left and vs-right splits when available.')+sectionWide('Probable Starters',table(['Team','Home','Starter','Hand','Status','Confidence'],rowsForStarters(ctx)),'Official probable starter context for both teams.')+sectionWide('Pitcher Matchup Form',table(['Pitcher','Window','G','IP','BF','H','ER','BB','K','HR','ERA','WHIP','K%','BB%'],rowsForPitcherForm(ctx)),'Recent and season pitcher profile for the probable starters.')+sectionWide('Pitcher Platoon Splits',table(['Pitcher','Split','IP','BF','H','BB','K','HR','AVG','OBP','SLG','OPS'],rowsForPitcherSplits(ctx)),'Opponent handedness context when available.')+section('Weather / Park',weatherRows(ctx),'Forecast, roof/surface, and park-factor context.')+section('Bullpen',rowsForBullpen(ctx).flatMap(r=>Object.entries(r).map(([k,v])=>[r.Team+' '+k,v])),'Team bullpen workload and risk context.')+sectionWide('Schedule Spot',table(['Team','Spot','Rest','G 3d','G 5d','3-in-4','4-in-6','Travel','Miles','Risk'],rowsForSchedule(ctx)),'Travel, rest, and fatigue context for both clubs.')+section('Umpire',umpireRows(ctx),'Displayed as pending when no verified official pregame source exists.')+section('Game Market',marketRows(ctx),'Book coverage, moneyline, total, runline, and implied runs.')+sectionWide('Source Lines / Current Board Inventory',table(['Source','Prop','Line','Type','Status','Pickable','Start'],rowsForSourceLines(ctx)),'User-facing current source line inventory for this player when exposed by the source boards.')+sectionWide('Scouting Note','<div class="dossierNote">'+esc(s.leg_insight_comment||evidenceReason({best:s,rows:[s]}))+'</div>','Clean synthesis for the selected leg.')+sectionWide('Other Current Legs For Player','<div class="pillRow">'+other+'</div>','Tap another leg to open its player/leg dossier.')+'</div>';
 document.querySelectorAll('.legBtn[data-leg-id]').forEach(b=>b.onclick=()=>openDossier(b.getAttribute('data-leg-id')))}
 async function openDossier(id){if(!id)return;setScreen('dossier');$('dossierBody').innerHTML='<div class="empty">Loading dossier...</div>';try{const j=await (await fetch('/api/main-board/dossier?final_board_row_id='+encodeURIComponent(id)+'&t='+Date.now(),{cache:'no-store'})).json();if(!j.ok)throw Error(j.error||'dossier failed');currentDossier=j;renderDossier(j);window.scrollTo({top:0,behavior:'smooth'})}catch(e){$('dossierBody').innerHTML='<div class="empty err">Dossier load failed: '+esc(e.message||e)+'</div>'}}
 function renderHealth(){const c=health?.current_board||{}, f=health?.final_board_batch||{}, h=health?.hp_board_batch||{};$('healthStatus').textContent='Read-only health loaded • '+(health?.version||'');const items=[['Current Rows',c.current_rows],['Review Rows',c.review_rows],['Live Rows',c.live_rows],['HP Range',num(c.min_hp)+'–'+num(c.max_hp)],['Score Range',num(c.min_score)+'–'+num(c.max_score)],['Final Grade',f.certification_grade||'—'],['HP Source Rows',h.source_rows_read||'—'],['HP Fade Rows',h.fade_rows||'—'],['True Probability Claims',Number(h.no_true_probability_claims||0)?'No':'Check']];$('healthCards').innerHTML=items.map(x=>'<div class="healthCard"><div class="small">'+esc(x[0])+'</div><div class="metric">'+esc(x[1]??'—')+'</div></div>').join('')+'<div class="healthCard" style="grid-column:1/-1"><div class="small">Final Batch</div><div>'+esc(f.final_board_batch_id||'—')+'</div><div class="small">'+esc(f.status||'')+'</div></div>'}
