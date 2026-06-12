@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.224-prop-factor-stale-resume-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.225-prop-factor-parent-yield-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -958,6 +958,22 @@ async function processBoardFullRunJob(env, row, runId, trigger) {
 const MARKET_SCORING_FULL_RUN_LOCK_KEY = "MARKET_SCORING_FULL_RUN";
 const MARKET_SCORING_FULL_RUN_CHILD_RUN_AFTER_SECONDS = 0;
 const MARKET_SCORING_FULL_RUN_PARENT_RECHECK_SECONDS = 6;
+const MARKET_SCORING_FULL_RUN_PROP_FACTOR_PARENT_YIELD_SECONDS = 45;
+
+function isMarketScoringFullRunPropFactorStage(stage) {
+  const key = String(stage && stage.stage_key ? stage.stage_key : "");
+  return key === "prop_factor_hitters" || key === "prop_factor_pitchers";
+}
+
+function marketScoringFullRunParentRecheckSeconds(stage) {
+  return isMarketScoringFullRunPropFactorStage(stage)
+    ? MARKET_SCORING_FULL_RUN_PROP_FACTOR_PARENT_YIELD_SECONDS
+    : MARKET_SCORING_FULL_RUN_PARENT_RECHECK_SECONDS;
+}
+
+function isActiveControlQueueStatus(status) {
+  return ["pending", "running", "partial_continue"].includes(String(status || ""));
+}
 
 const MARKET_SCORING_FULL_RUN_STAGES = [
   { stage_key: "market_context_teams", job_key: "market-normalizer", worker_name: "alphadog-v2-market-normalizer", display_name: "Market Context Teams Game Odds", visible_button: "MARKET > Teams", mode: "market_teams_game_odds", worker_group: "09 Market", phase_key: "market_context", priority: 5 },
@@ -1982,9 +1998,10 @@ async function processMarketScoringFullRunJob(env, row, runId, trigger) {
         extraChildInput.no_pre_hp_leg_cut = true;
       }
       const enqueued = await enqueueMarketScoringFullRunChild(env, row, stage, i, 0, extraChildInput);
-      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_scoring_full_run", status: "PARTIAL_CONTINUE_MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED", certification: "MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: MARKET_SCORING_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, hard_child_request_boundary: true, child_run_after_delay_seconds: MARKET_SCORING_FULL_RUN_CHILD_RUN_AFTER_SECONDS, parent_recheck_delay_seconds: MARKET_SCORING_FULL_RUN_PARENT_RECHECK_SECONDS, lock_held: true, approved_chain_order: MARKET_SCORING_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports };
+      const parentRecheckSeconds = marketScoringFullRunParentRecheckSeconds(stage);
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_scoring_full_run", status: "PARTIAL_CONTINUE_MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED", certification: "MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: MARKET_SCORING_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, hard_child_request_boundary: true, child_run_after_delay_seconds: MARKET_SCORING_FULL_RUN_CHILD_RUN_AFTER_SECONDS, parent_recheck_delay_seconds: parentRecheckSeconds, parent_yielding_to_prop_factor_child: isMarketScoringFullRunPropFactorStage(stage), lock_held: true, approved_chain_order: MARKET_SCORING_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports };
       await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'MARKET_SCORING_FULL_RUN_CHILD_ENQUEUED', ?, 1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+6 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now', ?), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", `+${parentRecheckSeconds} seconds`, JSON.stringify(output), row.request_id);
       return output;
     }
     if (String(child.status || "") === "running" && !child.finished_at) {
@@ -2006,9 +2023,10 @@ async function processMarketScoringFullRunJob(env, row, runId, trigger) {
         child.status = "pending";
         child.finished_at = null;
       }
-      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_scoring_full_run", status: "PARTIAL_CONTINUE_MARKET_SCORING_FULL_RUN_WAITING_ON_CHILD", certification: "MARKET_SCORING_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, waiting_reason: validation.reason || null, completed_stage_count: stageReports.length, total_stage_count: MARKET_SCORING_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
+      const parentRecheckSeconds = marketScoringFullRunParentRecheckSeconds(stage);
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_scoring_full_run", status: "PARTIAL_CONTINUE_MARKET_SCORING_FULL_RUN_WAITING_ON_CHILD", certification: "MARKET_SCORING_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, waiting_reason: validation.reason || null, completed_stage_count: stageReports.length, total_stage_count: MARKET_SCORING_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, parent_recheck_delay_seconds: parentRecheckSeconds, parent_yielding_to_prop_factor_child: isMarketScoringFullRunPropFactorStage(stage), lock_held: true };
       await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'MARKET_SCORING_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+6 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now', ?), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", `+${parentRecheckSeconds} seconds`, JSON.stringify(output), row.request_id);
       return output;
     }
     if (!validation.pass) {
@@ -8728,6 +8746,30 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
     no_old_production_touch: true
   };
 
+  const parentRequestId = String(rowInput.parent_request_id || rowInput.parentRequestId || "");
+  if (parentRequestId) {
+    const parentRow = await first(env.CONTROL_DB,
+      "SELECT request_id, status, finished_at, error_code, error_message FROM control_job_queue WHERE request_id=? LIMIT 1",
+      parentRequestId
+    );
+    if (!parentRow || !isActiveControlQueueStatus(parentRow.status) || parentRow.finished_at) {
+      const orphanOutput = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, logical_worker_name: "alphadog-v2-prop-factor-miner", job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, parent_request_id: parentRequestId, mode: selectedMode, status: "cancelled_prop_factor_child_parent_not_active", certification: "PROP_FACTOR_CHILD_CANCELLED_PARENT_NOT_ACTIVE", certification_grade: "CANCELLED_ORPHAN", parent_status: parentRow ? parentRow.status : "missing", parent_finished_at: parentRow ? parentRow.finished_at : null, no_packet_write_attempted: true, no_scoring: true, no_matrix_builder: true, no_final_board: true };
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='cancelled', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='prop_factor_parent_not_active', error_message='Prop Factor child cancelled because parent Market Full row is terminal or missing' WHERE request_id=? AND status IN ('pending','running','partial_continue') AND finished_at IS NULL",
+        JSON.stringify(orphanOutput), row.request_id
+      );
+      await run(env.SCORE_DB,
+        "UPDATE prop_factor_batches SET status='cancelled_orphan_parent_not_active', certification_status='PROP_FACTOR_BATCH_CANCELLED_ORPHAN_PARENT_NOT_ACTIVE', certification_grade='CANCELLED_ORPHAN', updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND factor_family=? AND status IN ('running','partial_continue','partial_continue_factor_packets_chunk_written')",
+        row.request_id, isPitcherMode ? "pitcher" : "hitter"
+      );
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'prop_factor_child_cancelled_parent_not_active', 'Prop Factor child dispatch skipped because parent Market Full row is terminal or missing', ?, CURRENT_TIMESTAMP)",
+        row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(orphanOutput)
+      );
+      return orphanOutput;
+    }
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -8788,6 +8830,33 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
       no_old_production_touch: true
     }
   };
+
+  const currentQueueRow = await first(env.CONTROL_DB,
+    "SELECT request_id, status, finished_at, parent_request_id, error_code, error_message FROM control_job_queue WHERE request_id=? LIMIT 1",
+    row.request_id
+  );
+  if (!currentQueueRow || !isActiveControlQueueStatus(currentQueueRow.status) || currentQueueRow.finished_at) {
+    const guardedOutput = {
+      ...cappedOutput,
+      queue_update_skipped_terminal_row: true,
+      current_queue_status: currentQueueRow ? currentQueueRow.status : "missing",
+      current_queue_finished_at: currentQueueRow ? currentQueueRow.finished_at : null,
+      certification: "PROP_FACTOR_DISPATCH_RESULT_IGNORED_TERMINAL_QUEUE_ROW",
+      certification_grade: "IGNORED_TERMINAL_QUEUE_ROW"
+    };
+    const terminalStatus = String(currentQueueRow && currentQueueRow.status ? currentQueueRow.status : "");
+    if (["failed", "cancelled"].includes(terminalStatus) && output && (output.batch_id || output.factor_batch_id)) {
+      await run(env.SCORE_DB,
+        "UPDATE prop_factor_batches SET status='cancelled_orphan_after_terminal_queue_guard', certification_status='PROP_FACTOR_BATCH_CANCELLED_AFTER_TERMINAL_QUEUE_GUARD', certification_grade='CANCELLED_ORPHAN', updated_at=CURRENT_TIMESTAMP WHERE batch_id=? AND request_id=? AND status IN ('running','partial_continue','partial_continue_factor_packets_chunk_written')",
+        output.batch_id || output.factor_batch_id, row.request_id
+      );
+    }
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'prop_factor_miner_dispatch_result_ignored_terminal_queue_row', 'Ignored Prop Factor worker output because queue row became terminal during service-binding dispatch', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(guardedOutput)
+    );
+    return guardedOutput;
+  }
 
   await run(env.CONTROL_DB,
     "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
