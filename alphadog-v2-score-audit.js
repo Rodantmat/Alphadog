@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.32-hitter-prop-soft-tiebreak";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.33-heavy-stage-timebox";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -2375,7 +2375,7 @@ async function runScoringEngineCurrent(env, input) {
     return output;
   }
 
-  const chunk = await insertEngineCurrentProfileChunk(env, batchId, PRODUCTION_PROFILE_KEY, { readChunkSize: 70, writeBatchSize: 10, maxRowsThisInvocation: 560, maxMillis: 56000 });
+  const chunk = await insertEngineCurrentProfileChunk(env, batchId, PRODUCTION_PROFILE_KEY, { readChunkSize: 50, writeBatchSize: 10, maxRowsThisInvocation: 180, maxMillis: 12000 });
   await run(env.SCORE_DB, `
     UPDATE scoring_engine_batches
     SET status=?, certification=?, certification_grade=?, matrix_rows_read=?, score_rows_written=?, output_json=?
@@ -2407,6 +2407,9 @@ async function runScoringEngineCurrent(env, input) {
       continuation_required: chunk.remaining_rows > 0,
       orchestrator_should_self_continue: chunk.remaining_rows > 0,
       chunked_current_scoring: true,
+      scoring_soft_timebox_ms: 12000,
+      max_rows_this_invocation: 180,
+      limit_policy: "heavy_market_stage_90pct_cloudflare_d1_service_binding_budget",
       no_ranking: true,
       no_final_board: true,
       elapsed_ms: Date.now() - started
@@ -3023,11 +3026,11 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.32-hitter-prop-soft-tiebreak-board";
-const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_2_0_HITTER_PROP_SOFT_TIEBREAK";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.33-heavy-stage-timebox-board";
+const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_2_1_HEAVY_STAGE_TIMEBOX";
 const HP_MAX_ROWS_PER_RUN = 12000;
-const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 180;
-const HP_CURRENT_CHUNK_MAX_MILLIS = 32000;
+const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 160;
+const HP_CURRENT_CHUNK_MAX_MILLIS = 12000;
 const HP_PLAYER_CHUNK_SIZE = 50;
 const HP_BOARD_MODE = "hp_board_current_build";
 const HP_BOARD_JOB_KEY = "hp-board";
@@ -4320,6 +4323,8 @@ async function runHitProbabilityCurrent(env, input = {}){
     pitcher_players_checked:Number(pitcherTotalRow.rows||0),
     hp_current_chunked:true,
     hp_current_chunk_rows_per_invocation:HP_CURRENT_CHUNK_ROWS_PER_INVOCATION,
+    hp_current_chunk_max_millis:HP_CURRENT_CHUNK_MAX_MILLIS,
+    limit_policy:"heavy_market_stage_90pct_cloudflare_d1_service_binding_budget",
     hp_board_step_separated:true,
     continuation_required:true,
     orchestrator_should_self_continue:true,
