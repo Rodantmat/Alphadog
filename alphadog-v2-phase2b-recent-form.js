@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.16-existing-batch-resume-fast-path";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.16-existing-batch-resume-fast-path";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.17-stable-timebox-index-resume";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.17-stable-timebox-index-resume";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -1036,13 +1036,7 @@ async function runFactorMining(request, env) {
   if (!allTrue(dbPresence)) return jsonResponse({ ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, status:"blocked_missing_db_binding", missing_bindings:Object.entries(dbPresence).filter(([,v])=>!v).map(([k])=>k) }, 500);
 
   const requestedResumeBatchId = input.resume_batch_id || input.factor_batch_id || null;
-  let preflightExistingRunning = null;
-  try {
-    if (input.request_id) preflightExistingRunning = await findRunningPropFactorBatch(env, input.request_id || null, family);
-  } catch (resumeProbeErr) {
-    preflightExistingRunning = null;
-  }
-  const resumeFastPath = input.factor_resume === true || !!requestedResumeBatchId || !!(preflightExistingRunning && preflightExistingRunning.batch_id);
+  const resumeFastPath = input.factor_resume === true || !!requestedResumeBatchId;
   if (!resumeFastPath) await ensureSchema(env);
 
   try {
@@ -1051,7 +1045,7 @@ async function runFactorMining(request, env) {
       : await getPreparedSourceDiagnostics(env, dates);
     const prepared = await getPreparedRows(env, dates);
     const expectedRows = expectedFactorPreparedRows(prepared, family);
-    let existingRunning = preflightExistingRunning || await findRunningPropFactorBatch(env, input.request_id || null, family);
+    let existingRunning = await findRunningPropFactorBatch(env, input.request_id || null, family);
     if (requestedResumeBatchId && (!existingRunning || existingRunning.batch_id !== requestedResumeBatchId)) {
       const requested = await first(env.SCORE_DB, `SELECT batch_id, request_id, run_id, worker_version, mode, factor_family, status, window_start, window_end, prepared_rows_read, eligible_rows, packets_written
         FROM prop_factor_batches

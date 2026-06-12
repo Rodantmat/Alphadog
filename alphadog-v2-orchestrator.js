@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.226-prop-factor-partial-terminal-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.227-prop-factor-service-binding-cooldown";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -959,6 +959,7 @@ const MARKET_SCORING_FULL_RUN_LOCK_KEY = "MARKET_SCORING_FULL_RUN";
 const MARKET_SCORING_FULL_RUN_CHILD_RUN_AFTER_SECONDS = 0;
 const MARKET_SCORING_FULL_RUN_PARENT_RECHECK_SECONDS = 6;
 const MARKET_SCORING_FULL_RUN_PROP_FACTOR_PARENT_YIELD_SECONDS = 45;
+const PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS = 2;
 
 function isMarketScoringFullRunPropFactorStage(stage) {
   const key = String(stage && stage.stage_key ? stage.stage_key : "");
@@ -3610,6 +3611,88 @@ async function processStaticPropTaxonomyJob(env, row, runId, trigger) {
     input_json: (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })()
   };
 
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -3744,6 +3827,88 @@ async function processMarketContextSourceProbeJob(env, row, runId, trigger) {
     no_matrix_builder: true,
     no_old_production_touch: true
   };
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -3829,6 +3994,88 @@ async function processMarketHitterPropContextJob(env, row, runId, trigger) {
     parlay_live_fetch: rowInput.parlay_live_fetch === true || String(rowInput.parlay_live_fetch || "").toLowerCase() === "true",
     full_market_prop_evidence_scan: rowInput.full_market_prop_evidence_scan === true
   };
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -3897,6 +4144,88 @@ async function processOddsApiHitterPropContextJob(env, row, runId, trigger) {
     no_matrix_builder: true,
     no_old_production_touch: true
   };
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -3962,6 +4291,88 @@ async function processMarketSourceHealthJob(env, row, runId, trigger) {
     mode: "orchestrator_exact_market_source_health_dispatch",
     input_json: (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })()
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -4088,6 +4499,88 @@ async function processPrizePicksGithubBoardJob(env, row, runId, trigger) {
     mode: "orchestrator_exact_prizepicks_github_board_dispatch",
     input_json: (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })()
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -4223,6 +4716,88 @@ async function processParlaySleeperBoardJob(env, row, runId, trigger) {
     mode: "orchestrator_exact_parlay_sleeper_board_source_probe_dispatch",
     input_json: (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })()
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -4371,6 +4946,88 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
     mode: normalizedWorkerMode,
     input_json: normalizedRowInput
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -4523,6 +5180,88 @@ async function processBaseHitterSplitsJob(env, row, runId, trigger) {
     mode: rowInput.mode === "delta_update" ? "orchestrator_exact_delta_hitter_splits_noop_restore_gate_dispatch" : "orchestrator_exact_base_hitter_splits_promotion_dispatch",
     input_json: rowInput
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -4875,6 +5614,88 @@ async function processBasePitcherSplitsJob(env, row, runId, trigger) {
     mode: rowInput.mode || "orchestrator_exact_base_pitcher_splits_promote_certified_stage",
     input_json: rowInput
   };
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -5003,6 +5824,88 @@ async function processBasePitcherGameLogsJob(env, row, runId, trigger) {
     mode: normalizedWorkerMode,
     input_json: normalizedRowInput
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -5149,6 +6052,88 @@ async function processBaseTeamGameLogsJob(env, row, runId, trigger) {
     mode: "orchestrator_exact_base_team_game_logs_dispatch",
     input_json: normalizedInputJson
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -5435,6 +6420,88 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
     }
   };
 
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -5577,6 +6644,88 @@ async function processStaticTeamsJob(env, row, runId, trigger) {
     input_json: (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })()
   };
 
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -5706,6 +6855,88 @@ async function processStaticStadiumsJob(env, row, runId, trigger) {
     mode: "orchestrator_exact_static_stadiums_dispatch",
     input_json: (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })()
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -5838,6 +7069,88 @@ async function processStaticParkFactorsJob(env, row, runId, trigger) {
     input_json: (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })()
   };
 
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -5969,6 +7282,88 @@ async function processStaticPlayersJob(env, row, runId, trigger) {
     mode: "orchestrator_exact_static_players_dispatch",
     input_json: (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })()
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -6120,6 +7515,88 @@ async function processDailyProbablePitchersJob(env, row, runId, trigger) {
     no_ranking: true,
     no_final_board: true
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -6274,6 +7751,88 @@ async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
     no_final_board: true,
     no_old_production_touch: true
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -6433,6 +7992,88 @@ async function processDailyWeatherJob(env, row, runId, trigger) {
     no_final_board: true,
     no_old_production_touch: true
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -6644,6 +8285,88 @@ async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
     no_old_production_touch: true
   };
 
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -6799,6 +8522,88 @@ async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
     no_final_board: true,
     no_old_production_touch: true
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -6966,6 +8771,88 @@ async function processDailyUmpireContextJob(env, row, runId, trigger) {
     no_final_board: true,
     no_old_production_touch: true
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -8244,6 +10131,88 @@ async function processDailyLineupsJob(env, row, runId, trigger) {
     probe_feed_live: rowInput.probe_feed_live === true
   };
 
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -8409,6 +10378,88 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
     no_ranking: true,
     no_final_board: true
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -8770,6 +10821,88 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
     }
   }
 
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -8959,6 +11092,88 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
     no_old_production_touch: true
   };
 
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -9133,6 +11348,88 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     no_old_production_touch: true
   };
 
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -9282,6 +11579,88 @@ async function processScoreFinalBoardJob(env, row, runId, trigger) {
     no_simulation_shadow_mutation: true
   };
 
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
+
   const started = Date.now();
   let output;
   let httpStatus = null;
@@ -9409,6 +11788,88 @@ async function processScorePrepJob(env, row, runId, trigger) {
     no_final_board: true,
     preserve_all_source_rows: true
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
@@ -9557,6 +12018,88 @@ async function processDeltaCertifierJob(env, row, runId, trigger) {
     no_board_mutation: true,
     no_daily_context_mutation: true
   };
+
+  const recentPartial = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recentPartial && recentPartial.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recentPartial && recentPartial.seconds_since_last_partial !== null && recentPartial.seconds_since_last_partial !== undefined ? Number(recentPartial.seconds_since_last_partial) : 999999;
+  if (partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS) {
+    const family = isPitcherMode ? "pitcher" : "hitter";
+    const batchRow = env.SCORE_DB ? await first(env.SCORE_DB, `SELECT batch_id, prepared_rows_read, eligible_rows, packets_written, blocked_rows, warning_rows, issue_rows, missing_factor_rows, status, certification_status, certification_grade
+      FROM prop_factor_batches
+      WHERE request_id=? AND factor_family=?
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`, row.request_id, family) : null;
+    const resumeBatchId = batchRow && batchRow.batch_id ? batchRow.batch_id : (rowInput.resume_batch_id || rowInput.factor_batch_id || null);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      processed_by:WORKER_NAME,
+      worker_name:"alphadog-v2-prop-factor-miner",
+      deployed_worker_slot:"alphadog-v2-phase2b-recent-form",
+      job_key:row.job_key,
+      request_id:row.request_id,
+      chain_id:row.chain_id,
+      run_id:runId,
+      mode:selectedMode,
+      factor_family:family,
+      status:"PARTIAL_CONTINUE_PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification:"PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD",
+      certification_grade:"PARTIAL_CONTINUE",
+      batch_id:resumeBatchId,
+      prepared_rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      eligible_rows:Number(batchRow && batchRow.eligible_rows || 0),
+      packets_written:Number(batchRow && batchRow.packets_written || 0),
+      rows_read:Number(batchRow && batchRow.prepared_rows_read || 0),
+      rows_written:Number(batchRow && batchRow.packets_written || 0),
+      blocked_rows:Number(batchRow && batchRow.blocked_rows || 0),
+      warning_rows:Number(batchRow && batchRow.warning_rows || 0),
+      issue_rows:Number(batchRow && batchRow.issue_rows || 0),
+      missing_factor_rows:Number(batchRow && batchRow.missing_factor_rows || 0),
+      partial_continue_runs_seen:partialRunCount,
+      seconds_since_last_partial:secondsSinceLastPartial,
+      prop_factor_service_binding_cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS,
+      service_binding_limit_policy:"one_heavy_prop_factor_dispatch_per_fresh_orchestrator_continuation",
+      official_service_binding_invocation_limit:32,
+      official_service_binding_90pct_budget:28,
+      alphadog_observed_heavy_dispatch_limit_override:true,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      factor_resume:true,
+      resume_batch_id:resumeBatchId,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_ranking:true,
+      no_matrix_builder:true,
+      no_final_board:true
+    };
+    const nextInput = {
+      ...rowInput,
+      factor_batch_id: resumeBatchId,
+      resume_batch_id: resumeBatchId,
+      factor_resume: true,
+      continuation_from_request_id: row.request_id,
+      service_binding_cooldown_yield: true
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PROP_FACTOR_SERVICE_BINDING_COOLDOWN_YIELD', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, output.rows_read, output.rows_written, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+      PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prop_factor_service_binding_cooldown_yield', 'Yielded Prop Factor child instead of starting another immediate heavy service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:resumeBatchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds:PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS, version:SYSTEM_VERSION }).slice(0, 9000));
+    return output;
+  }
 
   const started = Date.now();
   let output;
