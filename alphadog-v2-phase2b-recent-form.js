@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.14-factor-resume-index-accelerator";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.14-factor-resume-index-accelerator";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.15-resume-fast-path";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.15-resume-fast-path";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -504,7 +504,7 @@ async function summarizeFactorBatch(env, batchId, family) {
     issue_rows:Number(issueSummary && issueSummary.issue_rows || 0)
   };
 }
-function buildPropFactorOutput({ input, family, mode, batchId, runId, dates, status, certification, grade, prepared, expectedRows, summary, processedThisInvocation, remainingRows, preparedDiagnostics, ctx, partial, timeboxBreak = false, invocationElapsedMs = null }) {
+function buildPropFactorOutput({ input, family, mode, batchId, runId, dates, status, certification, grade, prepared, expectedRows, summary, processedThisInvocation, remainingRows, preparedDiagnostics, ctx, partial, timeboxBreak = false, invocationElapsedMs = null, resumeFastPath = false }) {
   return {
     ok:true,
     data_ok:true,
@@ -552,6 +552,7 @@ function buildPropFactorOutput({ input, family, mode, batchId, runId, dates, sta
     resume_batch_id: partial ? batchId : null,
     coverage_reconciliation_guard_enabled:true,
     stale_running_batches_marked_before_run: !input.factor_resume,
+    resume_fast_path: !!resumeFastPath,
     coverage_current_written_incrementally:true,
     retention_policy:"today_tomorrow_only_packets_issues_coverage_and_batches",
     daily_readiness_dates_available:ctx && ctx.readinessDatesAvailable || [],
@@ -1034,13 +1035,16 @@ async function runFactorMining(request, env) {
   const dbPresence = reqDb(env);
   if (!allTrue(dbPresence)) return jsonResponse({ ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, status:"blocked_missing_db_binding", missing_bindings:Object.entries(dbPresence).filter(([,v])=>!v).map(([k])=>k) }, 500);
 
-  await ensureSchema(env);
+  const requestedResumeBatchId = input.resume_batch_id || input.factor_batch_id || null;
+  const resumeFastPath = input.factor_resume === true || !!requestedResumeBatchId;
+  if (!resumeFastPath) await ensureSchema(env);
 
   try {
-    const preparedDiagnostics = await getPreparedSourceDiagnostics(env, dates);
+    const preparedDiagnostics = resumeFastPath
+      ? { skipped_on_resume_fast_path:true, reason:"static source diagnostics skipped during Prop Factor resume chunk to avoid repeated full diagnostic scans", window_dates:dates }
+      : await getPreparedSourceDiagnostics(env, dates);
     const prepared = await getPreparedRows(env, dates);
     const expectedRows = expectedFactorPreparedRows(prepared, family);
-    const requestedResumeBatchId = input.resume_batch_id || input.factor_batch_id || null;
     let existingRunning = await findRunningPropFactorBatch(env, input.request_id || null, family);
     if (requestedResumeBatchId && (!existingRunning || existingRunning.batch_id !== requestedResumeBatchId)) {
       const requested = await first(env.SCORE_DB, `SELECT batch_id, request_id, run_id, worker_version, mode, factor_family, status, window_start, window_end, prepared_rows_read, eligible_rows, packets_written
@@ -1141,7 +1145,7 @@ async function runFactorMining(request, env) {
     const certification = partial ? "PROP_FACTOR_PACKETS_PARTIAL_CONTINUE_COVERAGE_INCOMPLETE" : (noEligible ? "PROP_FACTOR_PACKETS_NO_ELIGIBLE_ROWS" : (summary.blocked_rows > 0 || summary.warning_rows > 0 ? "PROP_FACTOR_PACKETS_CERTIFIED_WITH_WARNINGS" : "PROP_FACTOR_PACKETS_CERTIFIED"));
     const grade = partial ? "PARTIAL_CONTINUE" : (noEligible ? "NO_DATA_PASS" : (summary.blocked_rows > 0 ? "PASS_WITH_BLOCKED_ROWS" : (summary.warning_rows > 0 ? "PASS_WITH_WARNINGS" : "PASS")));
     const invocationElapsedMs = Date.now() - invocationStartedMs;
-    const output = buildPropFactorOutput({ input, family, mode, batchId, runId, dates, status, certification, grade, prepared, expectedRows, summary, processedThisInvocation, remainingRows, preparedDiagnostics, ctx, partial, timeboxBreak, invocationElapsedMs });
+    const output = buildPropFactorOutput({ input, family, mode, batchId, runId, dates, status, certification, grade, prepared, expectedRows, summary, processedThisInvocation, remainingRows, preparedDiagnostics, ctx, partial, timeboxBreak, invocationElapsedMs, resumeFastPath });
     await run(env.SCORE_DB, `UPDATE prop_factor_batches SET status=?, prepared_rows_read=?, eligible_rows=?, packets_written=?, blocked_rows=?, warning_rows=?, issue_rows=?, missing_factor_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
       status, prepared.length, summary.packet_prepared_rows, summary.packets, summary.blocked_rows, summary.warning_rows, summary.issue_rows, summary.missing_factor_rows, certification, grade, JSON.stringify(output), batchId);
     return jsonResponse(output);
