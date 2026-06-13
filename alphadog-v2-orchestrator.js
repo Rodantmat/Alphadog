@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.231-scoring-fast-stale-resume";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.232-player-baseline-sanity-dispatch";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -203,6 +203,7 @@ function base(env, extra = {}) {
       MARKET_LINE_SHAPE_CLASSIFIER_WORKER: !!env.MARKET_LINE_SHAPE_CLASSIFIER_WORKER,
       ODDSAPI_REFERENCE_WORKER: !!env.ODDSAPI_REFERENCE_WORKER,
       PHASE2B_RECENT_FORM_WORKER: !!env.PHASE2B_RECENT_FORM_WORKER,
+      PHASE2B_PITCHER_ROLE_WORKER: !!env.PHASE2B_PITCHER_ROLE_WORKER,
       SCORE_AUDIT_WORKER: !!env.SCORE_AUDIT_WORKER
     },
     ...extra
@@ -577,6 +578,12 @@ function isScoreFinalBoardJob(row) {
   const job = String(row && row.job_key || "");
   const worker = String(row && row.worker_name || "");
   return job === "score-final-board" && worker === "alphadog-v2-score-final-board";
+}
+
+function isPlayerBaselineSanityJob(row) {
+  const job = String(row && row.job_key || "");
+  const worker = String(row && row.worker_name || "");
+  return job === "player-baseline-sanity" && worker === "alphadog-v2-phase2b-pitcher-role";
 }
 
 const BOARD_FULL_RUN_LOCK_KEY = "BOARD_FULL_RUN";
@@ -10902,6 +10909,110 @@ async function rescuePropFactorMinerTerminalEvidence(env, row, runId, input, sel
   return output;
 }
 
+
+async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
+  const input = parseInput(row.input_json);
+  input.request_id = row.request_id;
+  input.chain_id = row.chain_id;
+  input.run_id = runId;
+  input.job_key = row.job_key;
+  input.worker_name = row.worker_name;
+  input.mode = input.mode || "history_only_layer_1_sanity_baseline";
+  input.trigger = trigger;
+  input.logical_worker_name = "alphadog-v2-player-baseline-sanity";
+  input.deployed_worker_slot = "alphadog-v2-phase2b-pitcher-role";
+  input.history_only = true;
+  input.no_daily_live_context = true;
+  input.no_market_context = true;
+  input.no_external_api_calls = true;
+  input.no_scoring = true;
+  input.no_final_board = true;
+  input.no_prepared_board_mutation = true;
+
+  if (!env.PHASE2B_PITCHER_ROLE_WORKER || typeof env.PHASE2B_PITCHER_ROLE_WORKER.fetch !== "function") {
+    const output = {
+      ok: false,
+      data_ok: false,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      logical_worker_name: "alphadog-v2-player-baseline-sanity",
+      deployed_worker_slot: "alphadog-v2-phase2b-pitcher-role",
+      job_key: row.job_key,
+      request_id: row.request_id,
+      run_id: runId,
+      status: "PLAYER_BASELINE_SANITY_MISSING_SERVICE_BINDING",
+      error: "PHASE2B_PITCHER_ROLE_WORKER service binding is missing",
+      required_binding: "PHASE2B_PITCHER_ROLE_WORKER"
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'PLAYER_BASELINE_SANITY_MISSING_SERVICE_BINDING', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_player_baseline_sanity_service_binding', 'PHASE2B_PITCHER_ROLE_WORKER service binding is missing')",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(input), JSON.stringify(output));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_player_baseline_sanity_service_binding', error_message='PHASE2B_PITCHER_ROLE_WORKER service binding is missing' WHERE request_id=?",
+      JSON.stringify(output), row.request_id);
+    return output;
+  }
+
+  const started = Date.now();
+  let output;
+  let httpStatus = null;
+  try {
+    const resp = await serviceBindingFetch(env.PHASE2B_PITCHER_ROLE_WORKER, "https://internal.alphadog-v2-phase2b-pitcher-role/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input)
+    }, "player_baseline_sanity", 75000);
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); }
+    catch (_) {
+      output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) };
+    }
+  } catch (err) {
+    output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) };
+  }
+
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const rowsRead = Number((output && (output.hitter_log_rows_read || 0)) || 0) + Number((output && (output.pitcher_log_rows_read || 0)) || 0);
+  const rowsWritten = Number(output && (output.rows_written || output.rows_promoted || 0));
+  const certification = String((output && output.certification) || (ok ? "PLAYER_BASELINE_SANITY_COMPLETED" : "PLAYER_BASELINE_SANITY_FAILED")).slice(0, 120);
+  const queueStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "player_baseline_sanity_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Player Baseline Sanity worker failed").slice(0, 900);
+  const cappedOutput = {
+    ...output,
+    orchestrator_dispatch: {
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      exact_worker_only: true,
+      trigger,
+      http_status: httpStatus,
+      elapsed_ms: Date.now() - started,
+      logical_worker_name: "alphadog-v2-player-baseline-sanity",
+      deployed_worker_slot: "alphadog-v2-phase2b-pitcher-role",
+      history_only: true,
+      no_daily_live_context: true,
+      no_market_context: true,
+      no_external_api_calls: true,
+      no_scoring: true,
+      no_final_board_write: true,
+      no_prepared_board_mutation: true
+    }
+  };
+  await run(env.CONTROL_DB,
+    "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, certification_grade, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, queueStatus, dataOk ? 1 : 0, certification, String((output && output.certification_grade) || (ok ? "PASS" : "FAIL")).slice(0, 80), rowsRead, rowsWritten, Date.now() - started, JSON.stringify(input), safeStringifyD1(cappedOutput), errorCode, errorMessage);
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status=?, started_at=COALESCE(started_at, CURRENT_TIMESTAMP), finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+    queueStatus, safeStringifyD1(cappedOutput), errorCode, errorMessage, row.request_id);
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'player_baseline_sanity_dispatch_completed', 'Orchestrator completed Layer 1 history-only Player Baseline Sanity dispatch', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id:row.request_id, run_id:runId, ok, data_ok:dataOk, rows_read:rowsRead, rows_written:rowsWritten, certification, version:SYSTEM_VERSION }).slice(0, 9000));
+  return cappedOutput;
+}
+
 async function processPropFactorMinerJob(env, row, runId, trigger) {
   if (!env.PHASE2B_RECENT_FORM_WORKER || typeof env.PHASE2B_RECENT_FORM_WORKER.fetch !== "function") {
     const output = {
@@ -13327,6 +13438,16 @@ async function processOneUnlocked(env, trigger) {
       ? "partial_continue_daily_context_full_run_job"
       : (output && output.ok ? "completed_one_daily_context_full_run_job" : "failed_one_daily_context_full_run_job");
     return { status, request_id: row.request_id, run_id: runId, output };
+  }
+
+  if (isPlayerBaselineSanityJob(row)) {
+    const output = await processPlayerBaselineSanityJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_player_baseline_sanity_job" : "failed_one_player_baseline_sanity_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
   }
 
   if (isPropFactorMinerJob(row)) {
