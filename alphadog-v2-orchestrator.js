@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.229-scoring-proof-profile-agnostic-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.230-prop-factor-fast-stale-resume";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1746,7 +1746,7 @@ async function rescheduleStalePropFactorChildForResume(env, stageKey, child, lat
   if (String(child.status || "") !== "running" || child.finished_at) return { rescheduled:false, reason:"child_not_running" };
   const updatedMs = parseControlTimestampMs(child.updated_at || child.started_at || child.created_at);
   const quietMs = updatedMs ? Date.now() - updatedMs : 0;
-  if (quietMs > 0 && quietMs < 180000) return { rescheduled:false, reason:"child_not_quiet_enough", quiet_ms:quietMs };
+  if (quietMs > 0 && quietMs < 45000) return { rescheduled:false, reason:"child_not_quiet_enough", quiet_ms:quietMs, fast_stale_resume_threshold_ms:45000 };
   const family = stageKey === "prop_factor_pitchers" ? "pitcher" : "hitter";
   const batch = await first(env.SCORE_DB, `SELECT batch_id, request_id, run_id, status, factor_family, prepared_rows_read, eligible_rows, packets_written, certification_status, certification_grade, output_json, updated_at, created_at
        FROM prop_factor_batches
@@ -1779,7 +1779,8 @@ async function rescheduleStalePropFactorChildForResume(env, stageKey, child, lat
     remaining_rows:expected ? Math.max(0, expected - packets) : null,
     quiet_ms:quietMs,
     last_packet_at:packetSummary && (packetSummary.last_packet_update_at || packetSummary.last_packet_at) || null,
-    resume_reason:"running_child_quiet_with_partial_packet_evidence_no_false_terminal",
+    resume_reason:"running_child_quiet_45s_with_partial_packet_evidence_no_false_terminal",
+    fast_stale_resume_threshold_ms:45000,
     trigger,
     latest_run:latestRun || null
   };
