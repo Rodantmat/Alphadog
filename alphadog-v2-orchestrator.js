@@ -10911,7 +10911,7 @@ async function rescuePropFactorMinerTerminalEvidence(env, row, runId, input, sel
 
 
 async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
-  const input = parseInput(row.input_json);
+  const input = parseJsonSafeText(row.input_json || "{}", {});
   input.request_id = row.request_id;
   input.chain_id = row.chain_id;
   input.run_id = runId;
