@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.230-prop-factor-fast-stale-resume";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.231-scoring-fast-stale-resume";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1740,6 +1740,63 @@ function parseControlTimestampMs(value) {
   return Number.isFinite(ms) ? ms : 0;
 }
 
+
+async function rescheduleStaleScoringEngineChildForResume(env, stageKey, child, latestRun, trigger = "scoring_engine_stale_resume_guard") {
+  if (!env || !env.CONTROL_DB || !env.SCORE_DB || !child || !child.request_id) return { rescheduled:false, reason:"missing_env_or_child" };
+  if (stageKey !== "scoring_engine") return { rescheduled:false, reason:"not_scoring_engine_stage" };
+  if (String(child.status || "") !== "running" || child.finished_at) return { rescheduled:false, reason:"child_not_running" };
+  const updatedMs = parseControlTimestampMs(child.updated_at || child.started_at || child.created_at);
+  const quietMs = updatedMs ? Date.now() - updatedMs : 0;
+  if (quietMs > 0 && quietMs < 45000) return { rescheduled:false, reason:"child_not_quiet_enough", quiet_ms:quietMs, fast_stale_resume_threshold_ms:45000 };
+  const batch = await first(env.SCORE_DB, `SELECT batch_id, profile_key, profile_version, worker_version, job_key, status, certification, certification_grade, matrix_rows_read, score_rows_written, archive_rows_written, output_json, started_at, finished_at
+       FROM scoring_engine_batches
+       WHERE output_json LIKE '%' || ? || '%'
+         AND status IN ('partial_continue_scoring_current','running_finalizing_scoring_current','running')
+       ORDER BY datetime(started_at) DESC
+       LIMIT 1`, child.request_id);
+  if (!batch || !batch.batch_id) return { rescheduled:false, reason:"no_running_or_partial_scoring_batch", quiet_ms:quietMs };
+  const rowsWritten = Number(batch.score_rows_written || 0);
+  const rowsRead = Number(batch.matrix_rows_read || 0);
+  const out = parseJsonSafeText(batch.output_json || "{}", {});
+  const resumeOutput = {
+    ok:true,
+    data_ok:true,
+    version:SYSTEM_VERSION,
+    worker_name:child.worker_name,
+    job_key:child.job_key,
+    request_id:child.request_id,
+    chain_id:child.chain_id || null,
+    status:"PENDING_SCORING_ENGINE_STALE_CHILD_RESUME",
+    certification:"SCORING_ENGINE_STALE_CHILD_RESUME_ENQUEUED",
+    certification_grade:"PARTIAL",
+    stage_key:stageKey,
+    batch_id:batch.batch_id,
+    matrix_rows_read:rowsRead,
+    score_rows_written:rowsWritten,
+    remaining_rows:out.remaining_rows || (rowsRead ? Math.max(0, rowsRead - rowsWritten) : null),
+    quiet_ms:quietMs,
+    fast_stale_resume_threshold_ms:45000,
+    resume_reason:"running_scoring_child_quiet_45s_with_partial_batch_evidence_no_false_terminal",
+    trigger,
+    latest_run:latestRun || null
+  };
+  const nextInput = parseJsonSafeText(child.input_json || "{}", {});
+  nextInput.scoring_engine_resume = true;
+  nextInput.resume_batch_id = batch.batch_id;
+  nextInput.scoring_engine_batch_id = batch.batch_id;
+  nextInput.continuation_from_request_id = child.request_id;
+  nextInput.scoring_engine_stale_resume = true;
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status='pending', finished_at=NULL, run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status='running'",
+    JSON.stringify(nextInput), JSON.stringify(resumeOutput), child.request_id
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'scoring_engine_stale_child_rescheduled_for_resume', 'Rescheduled stale running Scoring Engine child to pending so worker can resume from existing scoring batch evidence', ?, CURRENT_TIMESTAMP)",
+    child.request_id, latestRun && latestRun.run_id ? latestRun.run_id : null, WORKER_NAME, child.job_key, JSON.stringify(resumeOutput)
+  );
+  return { rescheduled:true, output:resumeOutput };
+}
+
 async function rescheduleStalePropFactorChildForResume(env, stageKey, child, latestRun, trigger = "prop_factor_stale_resume_guard") {
   if (!env || !env.CONTROL_DB || !env.SCORE_DB || !child || !child.request_id) return { rescheduled:false, reason:"missing_env_or_child" };
   if (!(stageKey === "prop_factor_hitters" || stageKey === "prop_factor_pitchers")) return { rescheduled:false, reason:"not_prop_factor_stage" };
@@ -1922,6 +1979,8 @@ async function reconcileMarketScoringFullRunChildFromProof(env, stage, child, tr
   }
 
   if (!proof) {
+    const scoringResume = await rescheduleStaleScoringEngineChildForResume(env, stageKey, child, latestRun, trigger);
+    if (scoringResume && scoringResume.rescheduled === true) return { reconciled:false, rescheduled:true, reason:"scoring_engine_child_rescheduled_for_resume", output:scoringResume.output, latest_run:latestRun || null };
     const resume = await rescheduleStalePropFactorChildForResume(env, stageKey, child, latestRun, trigger);
     if (resume && resume.rescheduled === true) return { reconciled:false, rescheduled:true, reason:"prop_factor_child_rescheduled_for_resume", output:resume.output, latest_run:latestRun || null };
     return { reconciled: false, reason: "no_terminal_child_proof_found", latest_run: latestRun || null };
