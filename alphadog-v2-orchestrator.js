@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.233-player-baseline-sanity-schema-safe-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.234-player-baseline-sanity-partial-continue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -10971,6 +10971,47 @@ async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
     }
   } catch (err) {
     output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) };
+  }
+
+  const continuationRequired = !!(output && output.continuation_required);
+  const continuationInput = (output && output.next_input && typeof output.next_input === "object") ? output.next_input : null;
+  if (continuationRequired && continuationInput) {
+    const rowsReadPartial = Number((output && (output.hitter_log_rows_read || 0)) || 0) + Number((output && (output.pitcher_log_rows_read || 0)) || 0);
+    const rowsWrittenPartial = Number(output && (output.rows_written || output.rows_staged || output.rows_promoted || 0));
+    const certPartial = String((output && output.certification) || "PLAYER_BASELINE_SANITY_PARTIAL_CONTINUE").slice(0, 120);
+    const runAfterSeconds = Math.max(1, Math.min(30, Number(output.run_after_delay_seconds || 2)));
+    const cappedPartialOutput = {
+      ...output,
+      orchestrator_dispatch: {
+        version: SYSTEM_VERSION,
+        processed_by: WORKER_NAME,
+        exact_worker_only: true,
+        trigger,
+        http_status: httpStatus,
+        elapsed_ms: Date.now() - started,
+        partial_continue: true,
+        run_after_seconds: runAfterSeconds,
+        logical_worker_name: "alphadog-v2-player-baseline-sanity",
+        deployed_worker_slot: "alphadog-v2-phase2b-pitcher-role",
+        history_only: true,
+        no_daily_live_context: true,
+        no_market_context: true,
+        no_external_api_calls: true,
+        no_scoring: true,
+        no_final_board_write: true,
+        no_prepared_board_mutation: true
+      }
+    };
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, certPartial, rowsReadPartial, rowsWrittenPartial, Date.now() - started, JSON.stringify(input), safeStringifyD1(cappedPartialOutput));
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      runAfterSeconds, safeStringifyD1(continuationInput), safeStringifyD1(cappedPartialOutput), row.request_id);
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'player_baseline_sanity_partial_continue', 'Orchestrator scheduled Player Baseline Sanity partial continuation', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, run_id:runId, certification:certPartial, next_mode:continuationInput.next_mode || continuationInput.mode || null, batch_id:continuationInput.batch_id || null, run_after_seconds:runAfterSeconds, version:SYSTEM_VERSION }).slice(0, 9000));
+    return cappedPartialOutput;
   }
 
   const ok = !!(output && output.ok);

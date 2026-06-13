@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase2b-pitcher-role";
 const LOGICAL_WORKER_NAME = "alphadog-v2-player-baseline-sanity";
-const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.1-d1-microchunk-batch-finalizer";
+const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.2-lifecycle-partial-continue";
 const JOB_KEY = "player-baseline-sanity";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "SCORE_DB"];
@@ -416,106 +416,179 @@ async function insertStageRows(env, rows) {
   }
 }
 
+async function countRows(db, table, whereSql = "", ...binds) {
+  const row = await first(db, `SELECT COUNT(*) AS n FROM ${table} ${whereSql}`, ...binds);
+  return Number(row && row.n || 0);
+}
+
+function progressOutput(base, extra = {}) {
+  return {
+    ok: true,
+    data_ok: true,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    logical_worker_name: LOGICAL_WORKER_NAME,
+    deployed_worker_slot: WORKER_NAME,
+    job_key: JOB_KEY,
+    history_only: true,
+    no_daily_live_context: true,
+    no_market_context: true,
+    no_external_api_calls: true,
+    no_scoring: true,
+    no_final_board: true,
+    no_prepared_board_mutation: true,
+    ...base,
+    ...extra
+  };
+}
+
+function makeContinuationInput(input, patch) {
+  return {
+    ...input,
+    ...patch,
+    mode: patch.next_mode || patch.mode || input.mode || "stage_hitters_chunk",
+    continuation_from_worker: WORKER_NAME,
+    continuation_updated_at: nowUtc()
+  };
+}
+
+async function loadAllProfiles(env) {
+  const hitterRows = await fetchPaged(env.STATS_HITTER_DB, `SELECT player_id, game_pk, pa, hits, singles, doubles, triples, home_runs, runs, rbi, walks, strikeouts, stolen_bases, total_bases FROM hitter_game_logs`);
+  const pitcherRows = await fetchPaged(env.STATS_PITCHER_DB, `SELECT player_id, player_name, game_pk, outs_recorded, batters_faced, hits_allowed, earned_runs, walks_allowed, strikeouts, pitches FROM pitcher_game_logs`);
+  const built = buildPlayerProfiles(hitterRows, pitcherRows);
+  const hitterPrior = buildPriorRates(built.hitterProfiles, built.hitterByPlayer, HITTER_PROPS, "hitter");
+  const pitcherPrior = buildPriorRates(built.pitcherProfiles, built.pitcherByPlayer, PITCHER_PROPS, "pitcher");
+  return { ...built, hitterRows, pitcherRows, hitterPrior, pitcherPrior };
+}
+
+async function updateBatchProgress(env, batchId, fields = {}) {
+  const stageRows = await countRows(env.SCORE_DB, "player_baseline_sanity_stage", "WHERE batch_id=?", batchId);
+  const issueRows = await countRows(env.SCORE_DB, "player_baseline_sanity_issues", "WHERE batch_id=?", batchId);
+  const outputJson = fields.output_json || null;
+  await run(env.SCORE_DB,
+    `UPDATE player_baseline_sanity_batches
+     SET rows_staged=?, issue_rows=?, output_json=COALESCE(?, output_json), updated_at=CURRENT_TIMESTAMP
+     WHERE batch_id=?`,
+    stageRows, issueRows, outputJson, batchId);
+  return { stageRows, issueRows };
+}
+
 async function runLayer1(env, input = {}) {
   const requestId = input.request_id || rid("player_baseline_sanity");
   const runId = input.run_id || rid("run_player_baseline_sanity");
-  const batchId = input.batch_id || rid("player_baseline_sanity_batch");
+  const modeIn = input.mode || input.next_mode || "init";
+  const mode = modeIn === "history_only_layer_1_sanity_baseline" ? "init" : modeIn;
+  let batchId = input.batch_id || null;
   await ensureSchema(env);
-  const staleOutput = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, status:"PLAYER_BASELINE_SANITY_STALE_RUNNING_CLEANED", reason:"Previous running batch had no finished_at before a new run started" };
-  await run(env.SCORE_DB,
-    "UPDATE player_baseline_sanity_batches SET status='failed_stale', finished_at=CURRENT_TIMESTAMP, certification='PLAYER_BASELINE_SANITY_STALE_RUNNING_CLEANED', certification_grade='FAIL_STALE', output_json=COALESCE(output_json, ?), updated_at=CURRENT_TIMESTAMP WHERE status='running' AND finished_at IS NULL",
-    safeJson(staleOutput));
-  await run(env.SCORE_DB, `INSERT INTO player_baseline_sanity_batches (batch_id, request_id, run_id, mode, status, worker_version, started_at, created_at, updated_at)
-    VALUES (?, ?, ?, ?, 'running', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, runId, input.mode || "history_only_layer_1_sanity_baseline", VERSION);
-  await run(env.SCORE_DB, "DELETE FROM player_baseline_sanity_stage WHERE batch_id=?", batchId);
+
+  if (mode === "init" || !batchId) {
+    batchId = input.batch_id || rid("player_baseline_sanity_batch");
+    const staleOutput = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, status:"PLAYER_BASELINE_SANITY_STALE_RUNNING_CLEANED", reason:"Previous running batch had no finished_at before a new run started", cleaned_at:nowUtc() };
+    await run(env.SCORE_DB,
+      "UPDATE player_baseline_sanity_batches SET status='failed_stale', finished_at=CURRENT_TIMESTAMP, certification='PLAYER_BASELINE_SANITY_STALE_RUNNING_CLEANED', certification_grade='FAIL_STALE', output_json=COALESCE(output_json, ?), updated_at=CURRENT_TIMESTAMP WHERE status='running' AND finished_at IS NULL AND COALESCE(request_id,'') <> ?",
+      safeJson(staleOutput), requestId);
+    await run(env.SCORE_DB, "DELETE FROM player_baseline_sanity_stage WHERE batch_id IN (SELECT batch_id FROM player_baseline_sanity_batches WHERE status IN ('failed','failed_stale') AND COALESCE(rows_promoted,0)=0)");
+    await run(env.SCORE_DB, `INSERT OR REPLACE INTO player_baseline_sanity_batches (batch_id, request_id, run_id, mode, status, worker_version, started_at, created_at, updated_at)
+      VALUES (?, ?, ?, 'history_only_layer_1_sanity_baseline', 'running', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, runId, VERSION);
+    await run(env.SCORE_DB, "DELETE FROM player_baseline_sanity_stage WHERE batch_id=?", batchId);
+    const nextInput = makeContinuationInput(input, { batch_id: batchId, next_mode: "stage_hitters_chunk", last_player_id: 0 });
+    const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode:"init", status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_INIT", certification:"PLAYER_BASELINE_SANITY_INIT_READY", certification_grade:"PARTIAL", continuation_required:true, next_mode:"stage_hitters_chunk", next_input:nextInput, run_after_delay_seconds:3 });
+    await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
+    return output;
+  }
 
   try {
-  const hitterRows = await fetchPaged(env.STATS_HITTER_DB, `SELECT player_id, game_pk, pa, hits, singles, doubles, triples, home_runs, runs, rbi, walks, strikeouts, stolen_bases, total_bases FROM hitter_game_logs`);
-  const pitcherRows = await fetchPaged(env.STATS_PITCHER_DB, `SELECT player_id, player_name, game_pk, outs_recorded, batters_faced, hits_allowed, earned_runs, walks_allowed, strikeouts, pitches FROM pitcher_game_logs`);
-  const { hitterProfiles, pitcherProfiles, hitterByPlayer, pitcherByPlayer } = buildPlayerProfiles(hitterRows, pitcherRows);
-  const hitterPrior = buildPriorRates(hitterProfiles, hitterByPlayer, HITTER_PROPS, "hitter");
-  const pitcherPrior = buildPriorRates(pitcherProfiles, pitcherByPlayer, PITCHER_PROPS, "pitcher");
-  const hitterBaselineRows = makeBaselineRows({ profiles:hitterProfiles, byPlayer:hitterByPlayer, props:HITTER_PROPS, priorRates:hitterPrior, playerType:"hitter", batchId });
-  const pitcherBaselineRows = makeBaselineRows({ profiles:pitcherProfiles, byPlayer:pitcherByPlayer, props:PITCHER_PROPS, priorRates:pitcherPrior, playerType:"pitcher", batchId });
-  const rows = hitterBaselineRows.concat(pitcherBaselineRows);
-  await insertStageRows(env, rows);
-  await run(env.SCORE_DB, "DELETE FROM player_baseline_sanity_current");
-  await run(env.SCORE_DB, `INSERT INTO player_baseline_sanity_current SELECT * FROM player_baseline_sanity_stage WHERE batch_id=?`, batchId);
-  await run(env.SCORE_DB, `INSERT INTO player_baseline_sanity_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM player_baseline_sanity_stage WHERE batch_id=?`, batchId);
+    if (mode === "stage_hitters_chunk") {
+      const loaded = await loadAllProfiles(env);
+      const lastId = Number(input.last_player_id || 0);
+      const chunkSize = Number(input.player_chunk_size || 30);
+      const allProfiles = loaded.hitterProfiles.slice().sort((a,b)=>a.player_id-b.player_id);
+      const chunkProfiles = allProfiles.filter(p => Number(p.player_id) > lastId).slice(0, chunkSize);
+      const selectedIds = new Set(chunkProfiles.map(p => Number(p.player_id)));
+      const selectedByPlayer = new Map();
+      for (const id of selectedIds) selectedByPlayer.set(String(id), loaded.hitterByPlayer.get(String(id)) || []);
+      const rows = makeBaselineRows({ profiles:chunkProfiles, byPlayer:selectedByPlayer, props:HITTER_PROPS, priorRates:loaded.hitterPrior, playerType:"hitter", batchId });
+      await insertStageRows(env, rows);
+      const newLastId = chunkProfiles.length ? Number(chunkProfiles[chunkProfiles.length - 1].player_id) : lastId;
+      const done = chunkProfiles.length === 0 || newLastId >= Number(allProfiles[allProfiles.length - 1]?.player_id || 0);
+      const progress = await updateBatchProgress(env, batchId);
+      if (!done) {
+        const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"stage_hitters_chunk", last_player_id:newLastId });
+        const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_HITTERS", certification:"PLAYER_BASELINE_SANITY_HITTER_CHUNK_WRITTEN", certification_grade:"PARTIAL", continuation_required:true, next_mode:"stage_hitters_chunk", next_input:nextInput, run_after_delay_seconds:2, players_processed_this_chunk:chunkProfiles.length, rows_written_this_chunk:rows.length, rows_staged:progress.stageRows, last_player_id:newLastId });
+        await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
+        return output;
+      }
+      const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"stage_pitchers_chunk", last_player_id:0 });
+      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_HITTERS_COMPLETE", certification:"PLAYER_BASELINE_SANITY_HITTERS_STAGED", certification_grade:"PARTIAL", continuation_required:true, next_mode:"stage_pitchers_chunk", next_input:nextInput, run_after_delay_seconds:2, players_processed_this_chunk:chunkProfiles.length, rows_written_this_chunk:rows.length, rows_staged:progress.stageRows });
+      await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
+      return output;
+    }
 
-  const roleSummary = pitcherProfiles.reduce((a,p)=>{ a[p.role_profile]=(a[p.role_profile]||0)+1; return a; }, {});
-  const sanitySummary = rows.reduce((a,r)=>{ a[r.sanity_profile_key]=(a[r.sanity_profile_key]||0)+1; return a; }, {});
-  const volatilitySummary = rows.reduce((a,r)=>{ a[r.volatility_profile]=(a[r.volatility_profile]||0)+1; return a; }, {});
-  const output = {
-    ok:true,
-    data_ok:true,
-    version:VERSION,
-    worker_name:WORKER_NAME,
-    logical_worker_name:LOGICAL_WORKER_NAME,
-    deployed_worker_slot:WORKER_NAME,
-    job_key:JOB_KEY,
-    request_id:requestId,
-    run_id:runId,
-    batch_id:batchId,
-    mode:input.mode || "history_only_layer_1_sanity_baseline",
-    status:"PLAYER_BASELINE_SANITY_CERTIFIED_HISTORY_ONLY_BASELINE_WRITTEN",
-    certification:"PLAYER_BASELINE_SANITY_CERTIFIED_HISTORY_ONLY_BASELINE_WRITTEN",
-    certification_grade:"PASS",
-    hitter_players:hitterProfiles.length,
-    pitcher_players:pitcherProfiles.length,
-    hitter_log_rows_read:hitterRows.length,
-    pitcher_log_rows_read:pitcherRows.length,
-    rows_staged:rows.length,
-    rows_written:rows.length,
-    rows_promoted:rows.length,
-    role_summary:roleSummary,
-    sanity_profile_summary:sanitySummary,
-    volatility_summary:volatilitySummary,
-    history_only:true,
-    no_daily_live_context:true,
-    no_market_context:true,
-    no_external_api_calls:true,
-    no_scoring:true,
-    no_final_board:true,
-    no_prepared_board_mutation:true,
-    layer_1_modules:["historical_sanity_classification","history_based_baseline_calculation"],
-    notes:[
-      "Layer 1 is history-only. Daily/live data is intentionally excluded and belongs to later enrichment layers.",
-      "Rows are player+prop records with all configured line/side variations inside line_baseline_json.",
-      "Formula is a skeleton empirical-Bayes blend: raw player rate + prior pool rate. Weights are transparent placeholders for calibration, not final locked probability weights.",
-      "No rows are cut. Low sample becomes shrinkage/confidence/variance metadata, not automatic HP punishment."
-    ]
-  };
-  await run(env.SCORE_DB, `UPDATE player_baseline_sanity_batches SET status='completed', finished_at=CURRENT_TIMESTAMP, hitter_players=?, pitcher_players=?, rows_staged=?, rows_promoted=?, issue_rows=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    hitterProfiles.length, pitcherProfiles.length, rows.length, rows.length, output.certification, output.certification_grade, safeJson(output), batchId);
-  return output;
+    if (mode === "stage_pitchers_chunk") {
+      const loaded = await loadAllProfiles(env);
+      const lastId = Number(input.last_player_id || 0);
+      const chunkSize = Number(input.player_chunk_size || 30);
+      const allProfiles = loaded.pitcherProfiles.slice().sort((a,b)=>a.player_id-b.player_id);
+      const chunkProfiles = allProfiles.filter(p => Number(p.player_id) > lastId).slice(0, chunkSize);
+      const selectedIds = new Set(chunkProfiles.map(p => Number(p.player_id)));
+      const selectedByPlayer = new Map();
+      for (const id of selectedIds) selectedByPlayer.set(String(id), loaded.pitcherByPlayer.get(String(id)) || []);
+      const rows = makeBaselineRows({ profiles:chunkProfiles, byPlayer:selectedByPlayer, props:PITCHER_PROPS, priorRates:loaded.pitcherPrior, playerType:"pitcher", batchId });
+      await insertStageRows(env, rows);
+      const newLastId = chunkProfiles.length ? Number(chunkProfiles[chunkProfiles.length - 1].player_id) : lastId;
+      const done = chunkProfiles.length === 0 || newLastId >= Number(allProfiles[allProfiles.length - 1]?.player_id || 0);
+      const progress = await updateBatchProgress(env, batchId);
+      if (!done) {
+        const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"stage_pitchers_chunk", last_player_id:newLastId });
+        const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_PITCHERS", certification:"PLAYER_BASELINE_SANITY_PITCHER_CHUNK_WRITTEN", certification_grade:"PARTIAL", continuation_required:true, next_mode:"stage_pitchers_chunk", next_input:nextInput, run_after_delay_seconds:2, players_processed_this_chunk:chunkProfiles.length, rows_written_this_chunk:rows.length, rows_staged:progress.stageRows, last_player_id:newLastId });
+        await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
+        return output;
+      }
+      const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"promote_current" });
+      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_PITCHERS_COMPLETE", certification:"PLAYER_BASELINE_SANITY_PITCHERS_STAGED", certification_grade:"PARTIAL", continuation_required:true, next_mode:"promote_current", next_input:nextInput, run_after_delay_seconds:2, players_processed_this_chunk:chunkProfiles.length, rows_written_this_chunk:rows.length, rows_staged:progress.stageRows });
+      await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
+      return output;
+    }
+
+    if (mode === "promote_current") {
+      await run(env.SCORE_DB, "DELETE FROM player_baseline_sanity_current");
+      await run(env.SCORE_DB, `INSERT INTO player_baseline_sanity_current SELECT * FROM player_baseline_sanity_stage WHERE batch_id=?`, batchId);
+      const promoted = await countRows(env.SCORE_DB, "player_baseline_sanity_current");
+      await run(env.SCORE_DB, "UPDATE player_baseline_sanity_batches SET rows_promoted=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", promoted, batchId);
+      const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"write_history" });
+      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_CURRENT_PROMOTED", certification:"PLAYER_BASELINE_SANITY_CURRENT_PROMOTED", certification_grade:"PARTIAL", continuation_required:true, next_mode:"write_history", next_input:nextInput, run_after_delay_seconds:2, rows_promoted:promoted });
+      await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
+      return output;
+    }
+
+    if (mode === "write_history") {
+      await run(env.SCORE_DB, `INSERT INTO player_baseline_sanity_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM player_baseline_sanity_stage WHERE batch_id=?`, batchId);
+      const historyRows = await countRows(env.SCORE_DB, "player_baseline_sanity_history", "WHERE batch_id=?", batchId);
+      const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"finalize" });
+      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_HISTORY_WRITTEN", certification:"PLAYER_BASELINE_SANITY_HISTORY_WRITTEN", certification_grade:"PARTIAL", continuation_required:true, next_mode:"finalize", next_input:nextInput, run_after_delay_seconds:2, history_rows:historyRows });
+      await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
+      return output;
+    }
+
+    if (mode === "finalize") {
+      const stageRows = await countRows(env.SCORE_DB, "player_baseline_sanity_stage", "WHERE batch_id=?", batchId);
+      const currentRows = await countRows(env.SCORE_DB, "player_baseline_sanity_current");
+      const historyRows = await countRows(env.SCORE_DB, "player_baseline_sanity_history", "WHERE batch_id=?", batchId);
+      const hitterPlayers = Number((await first(env.SCORE_DB, "SELECT COUNT(DISTINCT player_id) AS n FROM player_baseline_sanity_stage WHERE batch_id=? AND player_type='hitter'", batchId))?.n || 0);
+      const pitcherPlayers = Number((await first(env.SCORE_DB, "SELECT COUNT(DISTINCT player_id) AS n FROM player_baseline_sanity_stage WHERE batch_id=? AND player_type='pitcher'", batchId))?.n || 0);
+      const roleRows = await all(env.SCORE_DB, "SELECT role_profile, COUNT(*) AS rows FROM player_baseline_sanity_stage WHERE batch_id=? GROUP BY role_profile ORDER BY rows DESC", batchId);
+      const sanityRows = await all(env.SCORE_DB, "SELECT sanity_profile_key, COUNT(*) AS rows FROM player_baseline_sanity_stage WHERE batch_id=? GROUP BY sanity_profile_key ORDER BY rows DESC", batchId);
+      const volatilityRows = await all(env.SCORE_DB, "SELECT volatility_profile, COUNT(*) AS rows FROM player_baseline_sanity_stage WHERE batch_id=? GROUP BY volatility_profile ORDER BY rows DESC", batchId);
+      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PLAYER_BASELINE_SANITY_CERTIFIED_HISTORY_ONLY_BASELINE_WRITTEN", certification:"PLAYER_BASELINE_SANITY_CERTIFIED_HISTORY_ONLY_BASELINE_WRITTEN", certification_grade:"PASS", continuation_required:false, hitter_players:hitterPlayers, pitcher_players:pitcherPlayers, rows_staged:stageRows, rows_promoted:currentRows, history_rows:historyRows, role_summary:roleRows, sanity_profile_summary:sanityRows, volatility_summary:volatilityRows, notes:["Layer 1 is history-only. Daily/live data is intentionally excluded and belongs to later enrichment layers.","Rows are player+prop records with configured line/side variations inside line_baseline_json.","No rows are cut. Low sample becomes shrinkage/confidence/variance metadata, not automatic HP punishment."] });
+      await run(env.SCORE_DB, `UPDATE player_baseline_sanity_batches SET status='completed', finished_at=CURRENT_TIMESTAMP, hitter_players=?, pitcher_players=?, rows_staged=?, rows_promoted=?, issue_rows=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+        hitterPlayers, pitcherPlayers, stageRows, currentRows, output.certification, output.certification_grade, safeJson(output), batchId);
+      return output;
+    }
+
+    throw new Error(`Unsupported Player Baseline Sanity mode: ${mode}`);
   } catch (err) {
     const msg = String(err && err.message ? err.message : err).slice(0, 900);
-    const output = {
-      ok:false,
-      data_ok:false,
-      version:VERSION,
-      worker_name:WORKER_NAME,
-      logical_worker_name:LOGICAL_WORKER_NAME,
-      deployed_worker_slot:WORKER_NAME,
-      job_key:JOB_KEY,
-      request_id:requestId,
-      run_id:runId,
-      batch_id:batchId,
-      mode:input.mode || "history_only_layer_1_sanity_baseline",
-      status:"PLAYER_BASELINE_SANITY_FAILED",
-      certification:"PLAYER_BASELINE_SANITY_FAILED",
-      certification_grade:"FAIL",
-      error:msg,
-      history_only:true,
-      no_daily_live_context:true,
-      no_market_context:true,
-      no_external_api_calls:true,
-      no_scoring:true,
-      no_final_board:true,
-      no_prepared_board_mutation:true,
-      timestamp_utc:nowUtc()
-    };
+    const output = progressOutput({ ok:false, data_ok:false, request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PLAYER_BASELINE_SANITY_FAILED", certification:"PLAYER_BASELINE_SANITY_FAILED", certification_grade:"FAIL", error:msg, timestamp_utc:nowUtc() });
     await run(env.SCORE_DB, `UPDATE player_baseline_sanity_batches SET status='failed', finished_at=CURRENT_TIMESTAMP, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
       output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
