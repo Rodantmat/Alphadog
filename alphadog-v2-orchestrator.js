@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.236-player-baseline-sanity-auto-pump";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.237-player-baseline-hp-same-worker";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -583,7 +583,7 @@ function isScoreFinalBoardJob(row) {
 function isPlayerBaselineSanityJob(row) {
   const job = String(row && row.job_key || "");
   const worker = String(row && row.worker_name || "");
-  return job === "player-baseline-sanity" && worker === "alphadog-v2-phase2b-pitcher-role";
+  return (job === "player-baseline-sanity" || job === "player-baseline-hp") && worker === "alphadog-v2-phase2b-pitcher-role";
 }
 
 const BOARD_FULL_RUN_LOCK_KEY = "BOARD_FULL_RUN";
@@ -10917,7 +10917,7 @@ async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
   input.run_id = runId;
   input.job_key = row.job_key;
   input.worker_name = row.worker_name;
-  input.mode = input.mode || "history_only_layer_1_sanity_baseline";
+  input.mode = input.mode || (row.job_key === "player-baseline-hp" ? "history_only_baseline_hp_enrichment" : "history_only_layer_1_sanity_baseline");
   input.trigger = trigger;
   input.logical_worker_name = "alphadog-v2-player-baseline-sanity";
   input.deployed_worker_slot = "alphadog-v2-phase2b-pitcher-role";
@@ -13932,7 +13932,7 @@ async function countDueStaticPlayers(env) {
 
 async function countDuePlayerBaselineSanity(env) {
   const row = await first(env.CONTROL_DB,
-    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key='player-baseline-sanity' AND worker_name='alphadog-v2-phase2b-pitcher-role' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL"
+    "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key IN ('player-baseline-sanity','player-baseline-hp') AND worker_name='alphadog-v2-phase2b-pitcher-role' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL"
   );
   return Number(row && row.c ? row.c : 0);
 }
