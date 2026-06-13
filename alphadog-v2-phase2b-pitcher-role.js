@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase2b-pitcher-role";
 const LOGICAL_WORKER_NAME = "alphadog-v2-player-baseline-sanity";
-const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.3-hot-continuation-delay-zero";
+const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.4-history-chunk-finalizer";
 const JOB_KEY = "player-baseline-sanity";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "SCORE_DB"];
@@ -421,6 +421,12 @@ async function countRows(db, table, whereSql = "", ...binds) {
   return Number(row && row.n || 0);
 }
 
+async function historyChunkIds(env, batchId, lastRowId, limit) {
+  return await all(env.SCORE_DB,
+    "SELECT baseline_row_id FROM player_baseline_sanity_stage WHERE batch_id=? AND baseline_row_id > ? ORDER BY baseline_row_id LIMIT ?",
+    batchId, String(lastRowId || ""), Number(limit || 500));
+}
+
 function progressOutput(base, extra = {}) {
   return {
     ok: true,
@@ -477,7 +483,8 @@ async function runLayer1(env, input = {}) {
   const requestId = input.request_id || rid("player_baseline_sanity");
   const runId = input.run_id || rid("run_player_baseline_sanity");
   const modeIn = input.mode || input.next_mode || "init";
-  const mode = modeIn === "history_only_layer_1_sanity_baseline" ? "init" : modeIn;
+  const normalizedMode = modeIn === "history_only_layer_1_sanity_baseline" ? "init" : modeIn;
+  const mode = normalizedMode === "write_history" ? "write_history_chunk" : normalizedMode;
   let batchId = input.batch_id || null;
   await ensureSchema(env);
 
@@ -555,17 +562,39 @@ async function runLayer1(env, input = {}) {
       await run(env.SCORE_DB, `INSERT INTO player_baseline_sanity_current SELECT * FROM player_baseline_sanity_stage WHERE batch_id=?`, batchId);
       const promoted = await countRows(env.SCORE_DB, "player_baseline_sanity_current");
       await run(env.SCORE_DB, "UPDATE player_baseline_sanity_batches SET rows_promoted=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", promoted, batchId);
-      const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"write_history" });
-      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_CURRENT_PROMOTED", certification:"PLAYER_BASELINE_SANITY_CURRENT_PROMOTED", certification_grade:"PARTIAL", continuation_required:true, next_mode:"write_history", next_input:nextInput, run_after_delay_seconds:0, rows_promoted:promoted });
+      const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"write_history_chunk", last_history_row_id:"" });
+      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_CURRENT_PROMOTED", certification:"PLAYER_BASELINE_SANITY_CURRENT_PROMOTED", certification_grade:"PARTIAL", continuation_required:true, next_mode:"write_history_chunk", next_input:nextInput, run_after_delay_seconds:0, rows_promoted:promoted });
       await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
       return output;
     }
 
-    if (mode === "write_history") {
-      await run(env.SCORE_DB, `INSERT INTO player_baseline_sanity_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM player_baseline_sanity_stage WHERE batch_id=?`, batchId);
+    if (mode === "write_history_chunk") {
+      const stageRows = await countRows(env.SCORE_DB, "player_baseline_sanity_stage", "WHERE batch_id=?", batchId);
+      const currentRows = await countRows(env.SCORE_DB, "player_baseline_sanity_current");
+      const lastHistoryRowId = String(input.last_history_row_id || "");
+      const chunkLimit = Math.max(100, Math.min(Number(input.history_chunk_size || 500), 1000));
+      const ids = await historyChunkIds(env, batchId, lastHistoryRowId, chunkLimit);
+      if (ids.length > 0) {
+        const nextLast = String(ids[ids.length - 1].baseline_row_id || "");
+        await run(env.SCORE_DB,
+          `INSERT OR REPLACE INTO player_baseline_sanity_history
+           SELECT *, CURRENT_TIMESTAMP AS archived_at
+           FROM player_baseline_sanity_stage
+           WHERE batch_id=? AND baseline_row_id > ? AND baseline_row_id <= ?
+           ORDER BY baseline_row_id`,
+          batchId, lastHistoryRowId, nextLast);
+      }
       const historyRows = await countRows(env.SCORE_DB, "player_baseline_sanity_history", "WHERE batch_id=?", batchId);
+      const complete = historyRows >= stageRows && stageRows > 0 && currentRows >= stageRows;
+      if (!complete) {
+        const nextLast = ids.length > 0 ? String(ids[ids.length - 1].baseline_row_id || lastHistoryRowId) : lastHistoryRowId;
+        const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"write_history_chunk", last_history_row_id:nextLast, history_chunk_size:chunkLimit });
+        const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_HISTORY_CHUNK_WRITTEN", certification:"PLAYER_BASELINE_SANITY_HISTORY_CHUNK_WRITTEN", certification_grade:"PARTIAL", continuation_required:true, next_mode:"write_history_chunk", next_input:nextInput, run_after_delay_seconds:0, history_rows:historyRows, stage_rows:stageRows, current_rows:currentRows, last_history_row_id:nextLast, history_rows_written_this_chunk:ids.length });
+        await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
+        return output;
+      }
       const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"finalize" });
-      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_HISTORY_WRITTEN", certification:"PLAYER_BASELINE_SANITY_HISTORY_WRITTEN", certification_grade:"PARTIAL", continuation_required:true, next_mode:"finalize", next_input:nextInput, run_after_delay_seconds:0, history_rows:historyRows });
+      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_HISTORY_WRITTEN", certification:"PLAYER_BASELINE_SANITY_HISTORY_WRITTEN", certification_grade:"PARTIAL", continuation_required:true, next_mode:"finalize", next_input:nextInput, run_after_delay_seconds:0, history_rows:historyRows, stage_rows:stageRows, current_rows:currentRows });
       await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
       return output;
     }
