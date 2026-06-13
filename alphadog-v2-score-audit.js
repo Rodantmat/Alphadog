@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.34-hp-90pct-timebox-rebalance";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.35-engine-sweet-spot-rescue-ready";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -2375,7 +2375,7 @@ async function runScoringEngineCurrent(env, input) {
     return output;
   }
 
-  const chunk = await insertEngineCurrentProfileChunk(env, batchId, PRODUCTION_PROFILE_KEY, { readChunkSize: 50, writeBatchSize: 10, maxRowsThisInvocation: 180, maxMillis: 12000 });
+  const chunk = await insertEngineCurrentProfileChunk(env, batchId, PRODUCTION_PROFILE_KEY, { readChunkSize: 60, writeBatchSize: 12, maxRowsThisInvocation: 240, maxMillis: 27000 });
   await run(env.SCORE_DB, `
     UPDATE scoring_engine_batches
     SET status=?, certification=?, certification_grade=?, matrix_rows_read=?, score_rows_written=?, output_json=?
@@ -2407,8 +2407,8 @@ async function runScoringEngineCurrent(env, input) {
       continuation_required: chunk.remaining_rows > 0,
       orchestrator_should_self_continue: chunk.remaining_rows > 0,
       chunked_current_scoring: true,
-      scoring_soft_timebox_ms: 12000,
-      max_rows_this_invocation: 180,
+      scoring_soft_timebox_ms: 27000,
+      max_rows_this_invocation: 240,
       limit_policy: "heavy_market_stage_90pct_cloudflare_d1_service_binding_budget",
       no_ranking: true,
       no_final_board: true,
@@ -3026,8 +3026,8 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.34-hp-90pct-timebox-rebalance-board";
-const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_2_2_90PCT_TIMEBOX_REBALANCE";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.35-engine-sweet-spot-rescue-ready-board";
+const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_2_3_ENGINE_SWEET_SPOT_RESCUE_READY";
 const HP_MAX_ROWS_PER_RUN = 12000;
 const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 80;
 const HP_CURRENT_CHUNK_MAX_MILLIS = 27000;

@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.228-heavy-stage-service-binding-cooldown";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.229-scoring-proof-profile-agnostic-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1318,15 +1318,18 @@ async function synthesizeScoringEngineCurrentTerminalProofFromEvidence(env, requ
   if (!env.SCORE_DB) return null;
   const childStartedAt = child && (child.started_at || child.created_at) ? String(child.started_at || child.created_at) : null;
   const batch = await first(env.SCORE_DB,
-    `SELECT batch_id, worker_version, job_key, status, certification, certification_grade,
+    `SELECT batch_id, profile_key, profile_version, worker_version, job_key, status, certification, certification_grade,
             matrix_rows_read, score_rows_written, archive_rows_written, started_at, finished_at, output_json
        FROM scoring_engine_batches
-       WHERE profile_key='STRICT_C_REALISTIC_V3_2'
+       WHERE job_key='scoring-engine'
          AND (status LIKE 'running%' OR certification='SCORING_ENGINE_CURRENT_STARTED' OR certification IS NULL OR finished_at IS NULL)
          AND (? IS NULL OR datetime(started_at) >= datetime(?, '-5 minutes'))
+         AND (? IS NULL OR output_json LIKE '%' || ? || '%' OR batch_id IN (
+           SELECT batch_id FROM scoring_engine_current WHERE batch_id=scoring_engine_batches.batch_id LIMIT 1
+         ))
        ORDER BY datetime(started_at) DESC, batch_id DESC
        LIMIT 1`,
-    childStartedAt, childStartedAt
+    childStartedAt, childStartedAt, requestId, requestId
   );
   if (!batch || !batch.batch_id) return null;
 
@@ -1381,7 +1384,8 @@ async function synthesizeScoringEngineCurrentTerminalProofFromEvidence(env, requ
     certification_status: cert,
     certification_grade: grade,
     production_scoring_current: true,
-    profile_key: 'STRICT_C_REALISTIC_V3_2',
+    profile_key: batch.profile_key || null,
+    profile_version: batch.profile_version || null,
     matrix_rows_read: matrixRows,
     score_rows_written: currentRows,
     rows_read: matrixRows,
