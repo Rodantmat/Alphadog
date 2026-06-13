@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.232-player-baseline-sanity-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.233-player-baseline-sanity-schema-safe-dispatch";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -11002,8 +11002,8 @@ async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
     }
   };
   await run(env.CONTROL_DB,
-    "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, certification_grade, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
-    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, queueStatus, dataOk ? 1 : 0, certification, String((output && output.certification_grade) || (ok ? "PASS" : "FAIL")).slice(0, 80), rowsRead, rowsWritten, Date.now() - started, JSON.stringify(input), safeStringifyD1(cappedOutput), errorCode, errorMessage);
+    "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, queueStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, Date.now() - started, JSON.stringify(input), safeStringifyD1(cappedOutput), errorCode, errorMessage);
   await run(env.CONTROL_DB,
     "UPDATE control_job_queue SET status=?, started_at=COALESCE(started_at, CURRENT_TIMESTAMP), finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
     queueStatus, safeStringifyD1(cappedOutput), errorCode, errorMessage, row.request_id);
