@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.36-fast-hp-engine-tune";
+const VERSION = "alphadog-v2-scoring-engine-v0.4.37-restore-v032-hp-fast-path";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -3026,11 +3026,11 @@ async function runScoringFinalBoard(env, input) {
 // source boards, score fields, ranking, or live/review gates.
 const HP_JOB_KEY = "hit-probability";
 const HP_MODE = "hit_probability_current_estimate";
-const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.36-fast-hp-engine-tune-board";
-const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_2_4_FAST_HP_ENGINE_TUNE";
+const HP_VERSION = "alphadog-v2-scoring-engine-v0.4.37-restore-v032-hp-fast-path-board";
+const HP_PROFILE_VERSION = "HP_RECENT_FORM_V0_2_0_HITTER_PROP_SOFT_TIEBREAK";
 const HP_MAX_ROWS_PER_RUN = 12000;
-const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 160;
-const HP_CURRENT_CHUNK_MAX_MILLIS = 43000;
+const HP_CURRENT_CHUNK_ROWS_PER_INVOCATION = 180;
+const HP_CURRENT_CHUNK_MAX_MILLIS = 32000;
 const HP_PLAYER_CHUNK_SIZE = 50;
 const HP_BOARD_MODE = "hp_board_current_build";
 const HP_BOARD_JOB_KEY = "hp-board";
