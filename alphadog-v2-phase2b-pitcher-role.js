@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase2b-pitcher-role";
 const LOGICAL_WORKER_NAME = "alphadog-v2-player-baseline-sanity";
-const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.0-player-baseline-sanity-skeleton";
+const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.1-d1-microchunk-batch-finalizer";
 const JOB_KEY = "player-baseline-sanity";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "SCORE_DB"];
@@ -398,7 +398,7 @@ async function insertStageRows(env, rows) {
     "confidence_drag_profile","variance_profile","games_sample","events_sample","baseline_confidence_0_100","line_baseline_json",
     "distribution_shape_json","notes_json"
   ];
-  const chunkSize = 20;
+  const chunkSize = 4;
   for (let i = 0; i < rows.length; i += chunkSize) {
     const chunk = rows.slice(i, i + chunkSize);
     const placeholders = chunk.map(() => `(${cols.map(() => "?").join(",")},CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).join(",");
@@ -421,10 +421,15 @@ async function runLayer1(env, input = {}) {
   const runId = input.run_id || rid("run_player_baseline_sanity");
   const batchId = input.batch_id || rid("player_baseline_sanity_batch");
   await ensureSchema(env);
+  const staleOutput = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, status:"PLAYER_BASELINE_SANITY_STALE_RUNNING_CLEANED", reason:"Previous running batch had no finished_at before a new run started" };
+  await run(env.SCORE_DB,
+    "UPDATE player_baseline_sanity_batches SET status='failed_stale', finished_at=CURRENT_TIMESTAMP, certification='PLAYER_BASELINE_SANITY_STALE_RUNNING_CLEANED', certification_grade='FAIL_STALE', output_json=COALESCE(output_json, ?), updated_at=CURRENT_TIMESTAMP WHERE status='running' AND finished_at IS NULL",
+    safeJson(staleOutput));
   await run(env.SCORE_DB, `INSERT INTO player_baseline_sanity_batches (batch_id, request_id, run_id, mode, status, worker_version, started_at, created_at, updated_at)
     VALUES (?, ?, ?, ?, 'running', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, runId, input.mode || "history_only_layer_1_sanity_baseline", VERSION);
   await run(env.SCORE_DB, "DELETE FROM player_baseline_sanity_stage WHERE batch_id=?", batchId);
 
+  try {
   const hitterRows = await fetchPaged(env.STATS_HITTER_DB, `SELECT player_id, game_pk, pa, hits, singles, doubles, triples, home_runs, runs, rbi, walks, strikeouts, stolen_bases, total_bases FROM hitter_game_logs`);
   const pitcherRows = await fetchPaged(env.STATS_PITCHER_DB, `SELECT player_id, player_name, game_pk, outs_recorded, batters_faced, hits_allowed, earned_runs, walks_allowed, strikeouts, pitches FROM pitcher_game_logs`);
   const { hitterProfiles, pitcherProfiles, hitterByPlayer, pitcherByPlayer } = buildPlayerProfiles(hitterRows, pitcherRows);
@@ -484,6 +489,37 @@ async function runLayer1(env, input = {}) {
   await run(env.SCORE_DB, `UPDATE player_baseline_sanity_batches SET status='completed', finished_at=CURRENT_TIMESTAMP, hitter_players=?, pitcher_players=?, rows_staged=?, rows_promoted=?, issue_rows=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
     hitterProfiles.length, pitcherProfiles.length, rows.length, rows.length, output.certification, output.certification_grade, safeJson(output), batchId);
   return output;
+  } catch (err) {
+    const msg = String(err && err.message ? err.message : err).slice(0, 900);
+    const output = {
+      ok:false,
+      data_ok:false,
+      version:VERSION,
+      worker_name:WORKER_NAME,
+      logical_worker_name:LOGICAL_WORKER_NAME,
+      deployed_worker_slot:WORKER_NAME,
+      job_key:JOB_KEY,
+      request_id:requestId,
+      run_id:runId,
+      batch_id:batchId,
+      mode:input.mode || "history_only_layer_1_sanity_baseline",
+      status:"PLAYER_BASELINE_SANITY_FAILED",
+      certification:"PLAYER_BASELINE_SANITY_FAILED",
+      certification_grade:"FAIL",
+      error:msg,
+      history_only:true,
+      no_daily_live_context:true,
+      no_market_context:true,
+      no_external_api_calls:true,
+      no_scoring:true,
+      no_final_board:true,
+      no_prepared_board_mutation:true,
+      timestamp_utc:nowUtc()
+    };
+    await run(env.SCORE_DB, `UPDATE player_baseline_sanity_batches SET status='failed', finished_at=CURRENT_TIMESTAMP, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+      output.certification, output.certification_grade, safeJson(output), batchId);
+    return output;
+  }
 }
 
 export default {
