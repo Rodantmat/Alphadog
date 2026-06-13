@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.234-player-baseline-sanity-partial-continue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.235-player-baseline-sanity-hot-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -10979,7 +10979,7 @@ async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
     const rowsReadPartial = Number((output && (output.hitter_log_rows_read || 0)) || 0) + Number((output && (output.pitcher_log_rows_read || 0)) || 0);
     const rowsWrittenPartial = Number(output && (output.rows_written || output.rows_staged || output.rows_promoted || 0));
     const certPartial = String((output && output.certification) || "PLAYER_BASELINE_SANITY_PARTIAL_CONTINUE").slice(0, 120);
-    const runAfterSeconds = Math.max(1, Math.min(30, Number(output.run_after_delay_seconds || 2)));
+    const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
     const cappedPartialOutput = {
       ...output,
       orchestrator_dispatch: {
