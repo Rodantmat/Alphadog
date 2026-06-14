@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-score-audit-v0.4.45-enrichment-v1-blocker-pressure-zero";
+const VERSION = "alphadog-v2-score-audit-v0.4.46-enrichment-v1-no-anchor-pressure-zero";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -4339,7 +4339,7 @@ async function runHitProbabilityCurrent(env, input = {}){
 
 const ENRICHMENT_V1_JOB_KEY = "score-enrichment-v1";
 const ENRICHMENT_V1_MODE = "score_enrichment_v1_side_expanded";
-const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.5-blocker-pressure-zero";
+const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.6-no-anchor-pressure-zero";
 const ENRICHMENT_V1_CHUNK_ROWS = 500;
 
 function clampNum(v, lo, hi) {
@@ -4820,18 +4820,19 @@ async function runScoreEnrichmentV1(env, input = {}) {
     const grade = enrichmentGrade(status);
     const factorPayload = safeParseJsonText(row.factor_payload_json);
     const rowBlocked = status === "enrichment_blocked" || Number(row.blocking_for_scoring || 0) === 1 || Number(row.blocker_count || 0) > 0 || confidenceCap === 0;
-    const packetLayer = rowBlocked ? 0 : packetLayerFromPayload(factorPayload, profileKey, row.selected_side);
-    const dailyLayer = rowBlocked ? 0 : dailyLayerFromPayload(factorPayload, profileKey, row.selected_side);
-    const marketLayer = rowBlocked ? 0 : marketLayerFromPayload(factorPayload, profileKey, row.selected_side);
+    const noHpAnchor = rowBlocked || !baselineAvailable;
+    const packetLayer = noHpAnchor ? 0 : packetLayerFromPayload(factorPayload, profileKey, row.selected_side);
+    const dailyLayer = noHpAnchor ? 0 : dailyLayerFromPayload(factorPayload, profileKey, row.selected_side);
+    const marketLayer = noHpAnchor ? 0 : marketLayerFromPayload(factorPayload, profileKey, row.selected_side);
     const matrixLayer = rowBlocked ? -3 : 0;
     const factorLayers = [
       layerObj("baseline_anchor", weights.baseline || weights.sp_first_inning || 0, baselineLayer, baselineAvailable ? Math.min(1, baselineConfRaw / 100) : 0, baselineAvailable ? "confirmed_baseline_anchor" : "missing", { anchor_only:true, hp_weight_pressure:0, note:"Baseline HP is the anchor. Do not add this pressure again in HP V2." }),
-      layerObj("factor_packet_context", rowBlocked ? 0 : contextLayerWeight(profileKey, weights, "factor_packet"), packetLayer, factorQuality, factorQuality >= 1 ? "confirmed_mined_directional" : (factorQuality > 0 ? "partial_mined_directional" : "missing"), { suppressed_by_blocker: rowBlocked }),
-      layerObj("daily_game_context", rowBlocked ? 0 : contextLayerWeight(profileKey, weights, "daily_context"), dailyLayer, dailyQuality, dailyQuality >= 1 ? "confirmed_daily_directional" : "partial_daily_directional", { suppressed_by_blocker: rowBlocked }),
-      layerObj("market_context", rowBlocked ? 0 : contextLayerWeight(profileKey, weights, "market_context"), marketLayer, marketQuality, marketQuality >= 1 ? "confirmed_market_directional" : (marketQuality > 0 ? "game_market_only" : "missing"), { suppressed_by_blocker: rowBlocked }),
+      layerObj("factor_packet_context", noHpAnchor ? 0 : contextLayerWeight(profileKey, weights, "factor_packet"), packetLayer, factorQuality, factorQuality >= 1 ? "confirmed_mined_directional" : (factorQuality > 0 ? "partial_mined_directional" : "missing"), { suppressed_by_blocker: rowBlocked, suppressed_by_missing_baseline_anchor: !baselineAvailable }),
+      layerObj("daily_game_context", noHpAnchor ? 0 : contextLayerWeight(profileKey, weights, "daily_context"), dailyLayer, dailyQuality, dailyQuality >= 1 ? "confirmed_daily_directional" : "partial_daily_directional", { suppressed_by_blocker: rowBlocked, suppressed_by_missing_baseline_anchor: !baselineAvailable }),
+      layerObj("market_context", noHpAnchor ? 0 : contextLayerWeight(profileKey, weights, "market_context"), marketLayer, marketQuality, marketQuality >= 1 ? "confirmed_market_directional" : (marketQuality > 0 ? "game_market_only" : "missing"), { suppressed_by_blocker: rowBlocked, suppressed_by_missing_baseline_anchor: !baselineAvailable }),
       layerObj("matrix_quality", 0, matrixLayer, matrixQuality, matrixQuality >= 1 ? "complete_matrix" : "partial_matrix", { blocker_only:true, suppressed_by_blocker: rowBlocked })
     ];
-    const factorPressure = rowBlocked ? 0 : Math.round(factorLayers.filter(x => !x.anchor_only).reduce((a, x) => a + Number(x.hp_weight_pressure || 0), 0) * 100) / 100;
+    const factorPressure = noHpAnchor ? 0 : Math.round(factorLayers.filter(x => !x.anchor_only).reduce((a, x) => a + Number(x.hp_weight_pressure || 0), 0) * 100) / 100;
     const enrichmentRowId = `${row.matrix_id}|${row.selected_side}`;
     const payload = {
       version: ENRICHMENT_V1_VERSION,
@@ -4867,7 +4868,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
   const remaining = Math.max(0, expectedRows - (offset + rows.length));
   const complete = remaining <= 0;
   const output = baseIdentity({
-    ok:true,data_ok:true,version:ENRICHMENT_V1_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v1",deployed_worker_slot:"alphadog-v2-score-audit",job_key:ENRICHMENT_V1_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:ENRICHMENT_V1_MODE,status:complete?"completed_score_enrichment_v1_side_expanded":"partial_continue_score_enrichment_v1_side_expanded",certification:complete?"SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED":"SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE",certification_grade:complete?"PASS_WITH_REVIEW_WARNINGS_ALLOWED":"PARTIAL",batch_id:batchId,enrichment_batch_id:batchId,source_matrix_batch_id:sourceMatrixBatchId,matrix_rows_read:Math.ceil(expectedRows/2),expected_enrichment_rows:expectedRows,enrichment_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:written,baseline_matched_rows:Number(totals && totals.matched || 0),baseline_missing_rows:Number(totals && totals.missing || 0),blocked_rows:Number(totals && totals.blocked || 0),warning_rows:Number(totals && totals.warn || 0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,resume_mismatch_reset:resumeMismatchReset,version_reset:versionReset,requested_batch_id:requestedBatchId,batched_compact_writes:true,compact_snapshots:true,directional_context_layers:true,baseline_anchor_not_double_counted:true,clean_source_matrix_batch_ownership:true,conservative_context_pressure:true,blocked_rows_zero_context_pressure:true,side_expanded:true,baseline_confidence_cap_60:true,enrichment_confidence_max_40:true,no_hp_v2:true,no_current_scoring_mutation:true,no_final_score:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
+    ok:true,data_ok:true,version:ENRICHMENT_V1_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v1",deployed_worker_slot:"alphadog-v2-score-audit",job_key:ENRICHMENT_V1_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:ENRICHMENT_V1_MODE,status:complete?"completed_score_enrichment_v1_side_expanded":"partial_continue_score_enrichment_v1_side_expanded",certification:complete?"SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED":"SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE",certification_grade:complete?"PASS_WITH_REVIEW_WARNINGS_ALLOWED":"PARTIAL",batch_id:batchId,enrichment_batch_id:batchId,source_matrix_batch_id:sourceMatrixBatchId,matrix_rows_read:Math.ceil(expectedRows/2),expected_enrichment_rows:expectedRows,enrichment_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:written,baseline_matched_rows:Number(totals && totals.matched || 0),baseline_missing_rows:Number(totals && totals.missing || 0),blocked_rows:Number(totals && totals.blocked || 0),warning_rows:Number(totals && totals.warn || 0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,resume_mismatch_reset:resumeMismatchReset,version_reset:versionReset,requested_batch_id:requestedBatchId,batched_compact_writes:true,compact_snapshots:true,directional_context_layers:true,baseline_anchor_not_double_counted:true,clean_source_matrix_batch_ownership:true,conservative_context_pressure:true,blocked_rows_zero_context_pressure:true,baseline_missing_rows_zero_context_pressure:true,side_expanded:true,baseline_confidence_cap_60:true,enrichment_confidence_max_40:true,no_hp_v2:true,no_current_scoring_mutation:true,no_final_score:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE score_enrichment_batches SET status=?, matrix_rows_read=?, expected_enrichment_rows=?, enrichment_rows_written=?, baseline_matched_rows=?, baseline_missing_rows=?, blocked_rows=?, warning_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", Math.ceil(expectedRows/2), expectedRows, writtenTotal, output.baseline_matched_rows, output.baseline_missing_rows, output.blocked_rows, output.warning_rows, output.certification, output.certification_grade, scoreJson(output,14000), batchId);
   return output;
 }
