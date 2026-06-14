@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-score-audit-v0.4.42-enrichment-v1-batched-compact";
+const VERSION = "alphadog-v2-score-audit-v0.4.43-enrichment-v1-directional-context";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -4339,7 +4339,7 @@ async function runHitProbabilityCurrent(env, input = {}){
 
 const ENRICHMENT_V1_JOB_KEY = "score-enrichment-v1";
 const ENRICHMENT_V1_MODE = "score_enrichment_v1_side_expanded";
-const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.2-batched-compact-writes";
+const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.3-directional-context-layers";
 const ENRICHMENT_V1_CHUNK_ROWS = 500;
 
 function clampNum(v, lo, hi) {
@@ -4405,6 +4405,159 @@ function directionLabel(layer) {
 function weightPressure(weight, layer) {
   const mult = ({ "3":1, "2":0.66, "1":0.33, "0":0, "-1":-0.33, "-2":-0.66, "-3":-1 })[String(layer)] ?? 0;
   return Math.round(Number(weight || 0) * mult * 100) / 100;
+}
+
+function safeParseJsonText(text) {
+  if (!text || typeof text !== "string") return {};
+  try { return JSON.parse(text); } catch (_) { return {}; }
+}
+function asNumMaybe(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function deepGetAny(obj, keys) {
+  const stack = [obj];
+  const keySet = new Set(keys.map(k => String(k).toLowerCase()));
+  let guard = 0;
+  while (stack.length && guard++ < 3500) {
+    const cur = stack.pop();
+    if (!cur || typeof cur !== "object") continue;
+    if (Array.isArray(cur)) { for (const x of cur) stack.push(x); continue; }
+    for (const [k, v] of Object.entries(cur)) {
+      const lk = String(k).toLowerCase();
+      if (keySet.has(lk)) return v;
+      if (v && typeof v === "object") stack.push(v);
+    }
+  }
+  return null;
+}
+function firstText(obj, keys) {
+  const v = deepGetAny(obj, keys);
+  return v == null ? "" : String(v).toLowerCase();
+}
+function firstNum(obj, keys) {
+  const v = deepGetAny(obj, keys);
+  return asNumMaybe(v);
+}
+function layerFromSignedScore(score) {
+  const n = Number(score || 0);
+  if (n >= 2.25) return 3;
+  if (n >= 1.25) return 2;
+  if (n >= 0.35) return 1;
+  if (n <= -2.25) return -3;
+  if (n <= -1.25) return -2;
+  if (n <= -0.35) return -1;
+  return 0;
+}
+function invertLayer(layer) { return -Number(layer || 0); }
+function isLessSide(side) { return lowerText(side) === "less" || lowerText(side) === "under"; }
+function profileDirectionalWeight(weights, keys, fallback) {
+  let total = 0;
+  for (const k of keys) total += Number(weights[k] || 0);
+  return total || fallback || 0;
+}
+function marketLayerFromPayload(packet, profileKey, selectedSide) {
+  const market = packet.market_context || {};
+  const evidence = Array.isArray(market.player_prop_evidence) ? market.player_prop_evidence : [];
+  const side = lowerText(selectedSide);
+  let sameSidePrices = [];
+  for (const e of evidence) {
+    const os = lowerText(e.outcome_side || e.side || e.market_side);
+    const pa = asNumMaybe(e.price_american);
+    if (pa != null && (!os || os === side || (side === "more" && os === "over") || (side === "less" && os === "under"))) sameSidePrices.push(pa);
+  }
+  if (!sameSidePrices.length) return 0;
+  const avg = sameSidePrices.reduce((a,b)=>a+b,0) / sameSidePrices.length;
+  // Negative American prices imply market support for that side. Keep this conservative.
+  if (avg <= -170) return 2;
+  if (avg <= -125) return 1;
+  if (avg >= 170) return -2;
+  if (avg >= 125) return -1;
+  return 0;
+}
+function dailyLayerFromPayload(packet, profileKey, selectedSide) {
+  const daily = packet.daily_context || {};
+  const lineupSlot = asNumMaybe(daily.lineup && daily.lineup.lineup_slot);
+  const availability = firstText(daily, ["availability_status", "player_availability_status", "roster_status"]);
+  const starterStatus = firstText(daily, ["starter_status", "starter_context_status", "source_status"]);
+  const openerFlag = firstNum(daily, ["opener_flag"]);
+  const bulkFlag = firstNum(daily, ["bulk_pitcher_flag"]);
+  const weatherTemp = firstNum(daily, ["temperature_f"]);
+  const windContext = firstText(daily, ["wind_context", "park_weather_notes", "wind_direction_cardinal"]);
+  const bullpenRisk = firstText(daily, ["bullpen_risk_level", "availability_grade", "bullpen_status"]);
+  let score = 0;
+  if (availability.includes("unavailable") || availability.includes("injured") || availability.includes("inactive")) score -= 3;
+  if (profileKey.startsWith("hitter") || profileKey.startsWith("stolen")) {
+    if (lineupSlot != null) {
+      if (lineupSlot >= 1 && lineupSlot <= 3) score += 1.0;
+      else if (lineupSlot >= 7) score -= 0.7;
+    }
+    if (profileKey === "hitter_power" || profileKey === "hitter_run_rbi" || profileKey === "hitter_contact") {
+      if (windContext.includes("out") || windContext.includes("boost") || windContext.includes("carry")) score += 0.8;
+      if (windContext.includes("in") || windContext.includes("suppress")) score -= 0.8;
+      if (weatherTemp != null && weatherTemp >= 78) score += 0.4;
+      if (weatherTemp != null && weatherTemp <= 50) score -= 0.4;
+      if (bullpenRisk.includes("high") || bullpenRisk.includes("fatigue") || bullpenRisk.includes("thin")) score += 0.7;
+    }
+  } else if (profileKey.startsWith("pitcher")) {
+    if (starterStatus.includes("confirmed") || starterStatus.includes("probable")) score += 0.6;
+    if (openerFlag === 1 || bulkFlag === 1) score -= (profileKey === "pitcher_outs" ? 2.0 : 0.7);
+    if (profileKey === "pitcher_outs" && (bullpenRisk.includes("high") || bullpenRisk.includes("fatigue"))) score += 0.5;
+    if ((profileKey === "pitcher_hits_allowed" || profileKey === "pitcher_earned_runs_allowed") && (windContext.includes("out") || windContext.includes("boost") || windContext.includes("carry"))) score += isLessSide(selectedSide) ? -0.8 : 0.8;
+  }
+  let layer = layerFromSignedScore(score);
+  // For LESS side, hitter volume/power context usually inverts. Pitcher allowed profiles already handle side in the score where needed.
+  if (isLessSide(selectedSide) && (profileKey.startsWith("hitter") || profileKey.startsWith("stolen"))) layer = invertLayer(layer);
+  return layer;
+}
+function packetLayerFromPayload(packet, profileKey, selectedSide) {
+  const missing = Array.isArray(packet.missing_factors) ? packet.missing_factors.length : 0;
+  const warnings = Array.isArray(packet.warning_flags) ? packet.warning_flags.length : 0;
+  const factorStatus = lowerText(packet.factor_status || packet.factor_grade || "");
+  let score = 0;
+  if (factorStatus.includes("ready")) score += 0.4;
+  if (missing >= 3) score -= 1.2;
+  else if (missing > 0) score -= 0.5;
+  if (warnings >= 4) score -= 0.6;
+  // Use baseline-neutral raw packet evidence only when clear fields exist.
+  const lineupSlot = firstNum(packet, ["lineup_slot"]);
+  const sprint = firstNum(packet, ["sprint_speed", "sprint_speed_ft_per_sec"]);
+  const fatigue = firstNum(packet, ["bullpen_fatigue_score", "schedule_fatigue_score"]);
+  if (profileKey === "stolen_base_attempt" || profileKey === "stolen_base_success") {
+    if (sprint != null && sprint >= 28) score += 1.2;
+    if (sprint != null && sprint <= 26) score -= 0.8;
+  }
+  if (profileKey === "hitter_run_rbi" && lineupSlot != null) {
+    if (lineupSlot <= 4) score += 0.8;
+    else if (lineupSlot >= 7) score -= 0.6;
+  }
+  if ((profileKey.startsWith("hitter") || profileKey.startsWith("stolen")) && fatigue != null && fatigue >= 65) score += 0.5;
+  if (profileKey === "pitcher_outs" && fatigue != null && fatigue >= 65) score += 0.4;
+  let layer = layerFromSignedScore(score);
+  if (isLessSide(selectedSide) && (profileKey.startsWith("hitter") || profileKey.startsWith("stolen"))) layer = invertLayer(layer);
+  return layer;
+}
+function contextLayerWeight(profileKey, weights, layerKey) {
+  if (layerKey === "factor_packet") {
+    if (profileKey === "hitter_contact") return profileDirectionalWeight(weights, ["recent_form","direct_matchup","split_fit","opponent_defense"], 25);
+    if (profileKey === "hitter_power") return profileDirectionalWeight(weights, ["recent_form","direct_matchup","split_fit","park_environment","bullpen"], 35);
+    if (profileKey === "hitter_run_rbi") return profileDirectionalWeight(weights, ["recent_form","direct_matchup","split_fit","lineup_role","bullpen","run_strategy"], 35);
+    if (profileKey === "hitter_strikeout") return profileDirectionalWeight(weights, ["recent_discipline","pitcher_k_whiff","pitch_mix_split","bullpen_k"], 35);
+    if (profileKey === "hitter_walk_obp") return profileDirectionalWeight(weights, ["recent_discipline","pitcher_control","pitch_mix_zone","umpire"], 35);
+    if (profileKey.startsWith("stolen")) return profileDirectionalWeight(weights, ["runner_attempt_history","runner_speed","pitcher_hold","catcher_pop_throw"], 45);
+    if (profileKey.startsWith("pitcher")) return profileDirectionalWeight(weights, ["pitcher_k_whiff","pitcher_contact_prevention","pitcher_run_prevention","pitcher_control","opponent_k_profile","opponent_pressure","opponent_contact","opponent_run_quality","workload","starter_workload"], 35);
+    return 25;
+  }
+  if (layerKey === "daily_context") {
+    return profileDirectionalWeight(weights, ["lineup_pa","lineup_role","lineup_status","park_environment","park_weather","bullpen","bullpen_availability","rest_pitch_count","starter_confirmation","umpire","game_state_strategy"], 15);
+  }
+  if (layerKey === "market_context") return Number(weights.market || weights.market_game_total || weights.source_line_quality || weights.market_implied_runs || 0);
+  if (layerKey === "matrix_quality") return 0;
+  return 0;
+}
+function layerObj(factor_key, weight, layer, quality, sourceClass, extra = {}) {
+  return { factor_key, profile_weight: weight, hp_direction_layer: layer, hp_direction_label: directionLabel(layer), hp_weight_pressure: weightPressure(weight, layer), confidence_quality_multiplier: quality, data_source_class: sourceClass, missing: quality === 0, ...extra };
 }
 function qualityForStatus(status, grade) {
   const s = lowerText(status); const g = lowerText(grade);
@@ -4560,6 +4713,16 @@ async function runScoreEnrichmentV1(env, input = {}) {
   const expectedRows = Number(totalRow && totalRow.rows || 0);
   await run(env.SCORE_DB, `INSERT OR IGNORE INTO score_enrichment_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, status, source_matrix_batch_id, expected_enrichment_rows, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, runId, WORKER_NAME, ENRICHMENT_V1_VERSION, ENRICHMENT_V1_MODE, sourceMatrixBatchId, expectedRows);
+  let versionReset = false;
+  const batchVersionRow = await first(env.SCORE_DB, `SELECT worker_version FROM score_enrichment_batches WHERE batch_id=?`, batchId);
+  if (batchVersionRow && batchVersionRow.worker_version && String(batchVersionRow.worker_version) !== ENRICHMENT_V1_VERSION) {
+    versionReset = true;
+    resumeMismatchReset = true;
+    offset = 0;
+    await run(env.SCORE_DB, `DELETE FROM score_enrichment_current WHERE batch_id=?`, batchId);
+    await run(env.SCORE_DB, `DELETE FROM score_enrichment_issues WHERE batch_id=?`, batchId);
+    await run(env.SCORE_DB, `UPDATE score_enrichment_batches SET status='running_version_reset', worker_version=?, certification_status='SCORE_ENRICHMENT_V1_VERSION_RESET_DIRECTIONAL_CONTEXT', certification_grade='RESET', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, ENRICHMENT_V1_VERSION, batchId);
+  }
   if (requestedBatchId && offset > 0) {
     const existingForBatch = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM score_enrichment_current WHERE batch_id=?`, batchId);
     const existingRows = Number(existingForBatch && existingForBatch.rows || 0);
@@ -4637,14 +4800,19 @@ async function runScoreEnrichmentV1(env, input = {}) {
     const dataQuality = Math.round(((factorQuality * 0.30) + (dailyQuality * 0.30) + (marketQuality * 0.20) + (matrixQuality * 0.20)) * 1000) / 10;
     const status = enrichmentStatus(row, baselineAvailable);
     const grade = enrichmentGrade(status);
+    const factorPayload = safeParseJsonText(row.factor_payload_json);
+    const packetLayer = packetLayerFromPayload(factorPayload, profileKey, row.selected_side);
+    const dailyLayer = dailyLayerFromPayload(factorPayload, profileKey, row.selected_side);
+    const marketLayer = marketLayerFromPayload(factorPayload, profileKey, row.selected_side);
+    const matrixLayer = Number(row.blocking_for_scoring || 0) === 1 ? -3 : 0;
     const factorLayers = [
-      { factor_key:"baseline_prior", profile_weight:weights.baseline || weights.sp_first_inning || 0, hp_direction_layer:baselineLayer, hp_direction_label:directionLabel(baselineLayer), hp_weight_pressure:weightPressure(weights.baseline || weights.sp_first_inning || 0, baselineLayer), confidence_quality_multiplier: baselineAvailable ? Math.min(1, baselineConfRaw / 100) : 0, data_source_class: baselineAvailable ? "confirmed_baseline" : "missing", missing:!baselineAvailable },
-      { factor_key:"factor_packet", profile_weight:0, hp_direction_layer:0, hp_direction_label:"neutral", hp_weight_pressure:0, confidence_quality_multiplier:factorQuality, data_source_class:factorQuality >= 1 ? "confirmed_mined" : (factorQuality > 0 ? "partial_mined" : "missing"), missing:factorQuality === 0 },
-      { factor_key:"daily_readiness", profile_weight:0, hp_direction_layer:0, hp_direction_label:"neutral", hp_weight_pressure:0, confidence_quality_multiplier:dailyQuality, data_source_class:dailyQuality >= 1 ? "confirmed_mined" : "partial_or_missing", missing:dailyQuality === 0 },
-      { factor_key:"market_context", profile_weight:weights.market || weights.market_game_total || weights.source_line_quality || 0, hp_direction_layer:0, hp_direction_label:"neutral", hp_weight_pressure:0, confidence_quality_multiplier:marketQuality, data_source_class:marketQuality >= 1 ? "confirmed_market" : (marketQuality > 0 ? "game_market_only" : "missing"), missing:marketQuality === 0 },
-      { factor_key:"matrix_quality", profile_weight:0, hp_direction_layer:0, hp_direction_label:"neutral", hp_weight_pressure:0, confidence_quality_multiplier:matrixQuality, data_source_class:matrixQuality >= 1 ? "complete_matrix" : "partial_matrix", missing:false }
+      layerObj("baseline_anchor", weights.baseline || weights.sp_first_inning || 0, baselineLayer, baselineAvailable ? Math.min(1, baselineConfRaw / 100) : 0, baselineAvailable ? "confirmed_baseline_anchor" : "missing", { anchor_only:true, hp_weight_pressure:0, note:"Baseline HP is the anchor. Do not add this pressure again in HP V2." }),
+      layerObj("factor_packet_context", contextLayerWeight(profileKey, weights, "factor_packet"), packetLayer, factorQuality, factorQuality >= 1 ? "confirmed_mined_directional" : (factorQuality > 0 ? "partial_mined_directional" : "missing")),
+      layerObj("daily_game_context", contextLayerWeight(profileKey, weights, "daily_context"), dailyLayer, dailyQuality, dailyQuality >= 1 ? "confirmed_daily_directional" : "partial_daily_directional"),
+      layerObj("market_context", contextLayerWeight(profileKey, weights, "market_context"), marketLayer, marketQuality, marketQuality >= 1 ? "confirmed_market_directional" : (marketQuality > 0 ? "game_market_only" : "missing")),
+      layerObj("matrix_quality", contextLayerWeight(profileKey, weights, "matrix_quality"), matrixLayer, matrixQuality, matrixQuality >= 1 ? "complete_matrix" : "partial_matrix")
     ];
-    const factorPressure = Math.round(factorLayers.reduce((a, x) => a + Number(x.hp_weight_pressure || 0), 0) * 100) / 100;
+    const factorPressure = Math.round(factorLayers.filter(x => !x.anchor_only).reduce((a, x) => a + Number(x.hp_weight_pressure || 0), 0) * 100) / 100;
     const enrichmentRowId = `${row.matrix_id}|${row.selected_side}`;
     const payload = {
       version: ENRICHMENT_V1_VERSION,
@@ -4680,7 +4848,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
   const remaining = Math.max(0, expectedRows - (offset + rows.length));
   const complete = remaining <= 0;
   const output = baseIdentity({
-    ok:true,data_ok:true,version:ENRICHMENT_V1_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v1",deployed_worker_slot:"alphadog-v2-score-audit",job_key:ENRICHMENT_V1_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:ENRICHMENT_V1_MODE,status:complete?"completed_score_enrichment_v1_side_expanded":"partial_continue_score_enrichment_v1_side_expanded",certification:complete?"SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED":"SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE",certification_grade:complete?"PASS_WITH_REVIEW_WARNINGS_ALLOWED":"PARTIAL",batch_id:batchId,enrichment_batch_id:batchId,source_matrix_batch_id:sourceMatrixBatchId,matrix_rows_read:Math.ceil(expectedRows/2),expected_enrichment_rows:expectedRows,enrichment_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:written,baseline_matched_rows:Number(totals && totals.matched || 0),baseline_missing_rows:Number(totals && totals.missing || 0),blocked_rows:Number(totals && totals.blocked || 0),warning_rows:Number(totals && totals.warn || 0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,resume_mismatch_reset:resumeMismatchReset,requested_batch_id:requestedBatchId,batched_compact_writes:true,compact_snapshots:true,side_expanded:true,baseline_confidence_cap_60:true,enrichment_confidence_max_40:true,no_hp_v2:true,no_current_scoring_mutation:true,no_final_score:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
+    ok:true,data_ok:true,version:ENRICHMENT_V1_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v1",deployed_worker_slot:"alphadog-v2-score-audit",job_key:ENRICHMENT_V1_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:ENRICHMENT_V1_MODE,status:complete?"completed_score_enrichment_v1_side_expanded":"partial_continue_score_enrichment_v1_side_expanded",certification:complete?"SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED":"SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE",certification_grade:complete?"PASS_WITH_REVIEW_WARNINGS_ALLOWED":"PARTIAL",batch_id:batchId,enrichment_batch_id:batchId,source_matrix_batch_id:sourceMatrixBatchId,matrix_rows_read:Math.ceil(expectedRows/2),expected_enrichment_rows:expectedRows,enrichment_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:written,baseline_matched_rows:Number(totals && totals.matched || 0),baseline_missing_rows:Number(totals && totals.missing || 0),blocked_rows:Number(totals && totals.blocked || 0),warning_rows:Number(totals && totals.warn || 0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,resume_mismatch_reset:resumeMismatchReset,version_reset:versionReset,requested_batch_id:requestedBatchId,batched_compact_writes:true,compact_snapshots:true,directional_context_layers:true,baseline_anchor_not_double_counted:true,side_expanded:true,baseline_confidence_cap_60:true,enrichment_confidence_max_40:true,no_hp_v2:true,no_current_scoring_mutation:true,no_final_score:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE score_enrichment_batches SET status=?, matrix_rows_read=?, expected_enrichment_rows=?, enrichment_rows_written=?, baseline_matched_rows=?, baseline_missing_rows=?, blocked_rows=?, warning_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", Math.ceil(expectedRows/2), expectedRows, writtenTotal, output.baseline_matched_rows, output.baseline_missing_rows, output.blocked_rows, output.warning_rows, output.certification, output.certification_grade, scoreJson(output,14000), batchId);
   return output;
 }
