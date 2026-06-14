@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.15-proxyscrape-wait-and-preserve-proof";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.16-github-json-poll-continuation";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
@@ -13,6 +13,8 @@ const SOURCE_REFRESH_WAIT_NO_CURRENT_CERT = "PRIZEPICKS_SOURCE_REFRESH_WAIT_EXHA
 const SOURCE_REFRESH_WAIT_MAX_MS = 110000;
 const SOURCE_REFRESH_WORKER_BUDGET_MS = 125000;
 const SOURCE_REFRESH_POLL_INTERVAL_MS = 10000;
+const SOURCE_REFRESH_POLL_CONTINUE_SECONDS = 30;
+const SOURCE_REFRESH_MAX_POLL_ATTEMPTS = 12;
 const MAX_RAW_JSON_CHARS = 180000;
 const MAX_HEALTH_JSON_CHARS = 7000;
 const MAX_OUTPUT_PREVIEW_CHARS = 900;
@@ -1385,6 +1387,76 @@ async function fetchGithubJsonBySha(source, env) {
   };
 }
 
+
+function buildPrizePicksFreshJsonPollContinuation(input, source, sourceFetch, sourceRefreshDispatch, pollAttempt, started, reason = "prizepicks_github_json_not_fresh_yet") {
+  const selected = sourceFetch && sourceFetch.selected_candidate ? sourceFetch.selected_candidate : null;
+  const nextAttempt = Number(pollAttempt || 0) + 1;
+  const nextInput = {
+    ...(input || {}),
+    prizepicks_refresh_poll_attempt: nextAttempt,
+    prizepicks_refresh_poll_started_at: input && input.prizepicks_refresh_poll_started_at ? input.prizepicks_refresh_poll_started_at : nowUtc(),
+    prizepicks_refresh_dispatch_attempted: true,
+    prizepicks_refresh_dispatch_ok: sourceRefreshDispatch ? sourceRefreshDispatch.ok === true : Boolean(input && input.prizepicks_refresh_dispatch_ok),
+    prizepicks_refresh_dispatch_summary: sourceRefreshDispatch ? {
+      attempted: sourceRefreshDispatch.attempted === true,
+      ok: sourceRefreshDispatch.ok === true,
+      event_type: sourceRefreshDispatch.event_type || null,
+      http_status: sourceRefreshDispatch.http_status || null,
+      reason: sourceRefreshDispatch.reason || null,
+      error: sourceRefreshDispatch.error || null
+    } : (input && input.prizepicks_refresh_dispatch_summary ? input.prizepicks_refresh_dispatch_summary : null),
+    backend_scheduled_continuation: true,
+    source_refresh_poll_continuation: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true
+  };
+  return {
+    ok: true,
+    data_ok: true,
+    version: VERSION,
+    worker_name: WORKER_NAME,
+    job_key: JOB_KEY,
+    request_id: input && input.request_id ? input.request_id : null,
+    chain_id: input && input.chain_id ? input.chain_id : null,
+    source_key: SOURCE_KEY,
+    mode: input && input.mode ? input.mode : "board_full_run_prizepicks_refresh",
+    status: "partial_continue",
+    certification: "PRIZEPICKS_SOURCE_REFRESH_WAITING_FOR_FRESH_JSON",
+    certification_grade: "PARTIAL",
+    reason,
+    rows_read: selected ? Number(selected.row_count || 0) : 0,
+    rows_staged: 0,
+    rows_promoted: 0,
+    future_pickable_rows: selected ? Number(selected.future_pickable_rows || 0) : 0,
+    expired_or_started_rows: selected ? Number(selected.expired_or_started_rows || 0) : 0,
+    external_calls_performed: sourceFetch && sourceFetch.external_calls_performed ? sourceFetch.external_calls_performed : 0,
+    elapsed_ms: Date.now() - started,
+    continuation_required: true,
+    orchestrator_should_self_continue: true,
+    run_after_seconds: SOURCE_REFRESH_POLL_CONTINUE_SECONDS,
+    poll_attempt: Number(pollAttempt || 0),
+    next_poll_attempt: nextAttempt,
+    max_poll_attempts: SOURCE_REFRESH_MAX_POLL_ATTEMPTS,
+    selected_source_candidate: selected,
+    source_fetch_candidates: sourceFetch && sourceFetch.candidates ? sourceFetch.candidates : [],
+    source_refresh_dispatch: sourceRefreshDispatch || (input && input.prizepicks_refresh_dispatch_summary ? input.prizepicks_refresh_dispatch_summary : null),
+    next_input: nextInput,
+    github_json_freshness_gate: {
+      required_before_parse_and_promotion: true,
+      required_future_pickable_rows_gt_0: true,
+      stale_json_not_parsed_or_promoted: true,
+      inline_sleep_removed: true,
+      reason: "GitHub producer is asynchronous; consumer yields and polls instead of sleeping inside one service-binding invocation."
+    },
+    no_market_current_lines_write: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board_write: true,
+    timestamp_utc: nowUtc()
+  };
+}
+
 async function runBoardParseStageCertify(env, input = {}) {
   const started = Date.now();
   const requestId = input.request_id || null;
@@ -1404,19 +1476,37 @@ async function runBoardParseStageCertify(env, input = {}) {
   try {
     sourceFetch = await fetchGithubJsonBySha(source, env);
     if (sourceFetchHasRowsButNoFuturePickable(sourceFetch)) {
-      sourceRefreshDispatch = await triggerPrizePicksSourceRefresh(
-        env,
-        source,
-        { ...input, request_id: requestId, chain_id: chainId, slate_date: currentPtDate() },
-        "initial_github_json_had_no_future_pickable_rows_before_stage_or_clear"
-      );
-      sourceRefreshWait = await waitForFilledPrizePicksJsonAfterRefresh(env, source, input, sourceFetch, sourceRefreshDispatch, started);
-      if (sourceRefreshWait && sourceRefreshWait.ok && sourceRefreshWait.fresh_source_fetch) {
-        sourceFetch = sourceRefreshWait.fresh_source_fetch;
-        fetchStarted = nowUtc();
-      } else {
-        sourceRefreshWaitPreservedCurrent = true;
+      const pollAttempt = Number(input && input.prizepicks_refresh_poll_attempt || 0);
+      const dispatchAlreadyAttempted = Boolean(input && input.prizepicks_refresh_dispatch_attempted);
+      if (!dispatchAlreadyAttempted) {
+        sourceRefreshDispatch = await triggerPrizePicksSourceRefresh(
+          env,
+          source,
+          { ...input, request_id: requestId, chain_id: chainId, slate_date: currentPtDate() },
+          "initial_github_json_had_no_future_pickable_rows_before_stage_or_clear"
+        );
       }
+      if (pollAttempt < SOURCE_REFRESH_MAX_POLL_ATTEMPTS) {
+        return buildPrizePicksFreshJsonPollContinuation(
+          input,
+          source,
+          sourceFetch,
+          sourceRefreshDispatch,
+          pollAttempt,
+          started,
+          dispatchAlreadyAttempted ? "prizepicks_github_json_still_has_no_future_pickable_rows" : "prizepicks_github_refresh_dispatched_waiting_for_fresh_json"
+        );
+      }
+      sourceRefreshWaitPreservedCurrent = true;
+      sourceRefreshWait = {
+        ok: false,
+        waited_ms: 0,
+        attempts: [],
+        reason: "prizepicks_source_refresh_poll_attempts_exhausted_without_future_pickable_rows",
+        max_poll_attempts: SOURCE_REFRESH_MAX_POLL_ATTEMPTS,
+        best_observed_candidate: sourceFetch && sourceFetch.selected_candidate ? sourceFetch.selected_candidate : null,
+        completed_at: nowUtc()
+      };
     }
     text = sourceFetch.text || "";
   } catch (err) {
@@ -1606,7 +1696,7 @@ async function runBoardParseStageCertify(env, input = {}) {
       github_source_refresh_dispatch_enabled: true,
       manual_buttons: ["BOARD > PrizePicks", "ORCHESTRATOR > Wake"]
     },
-    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, or final board. v0.1.15 compares GitHub metadata/download/raw/blob surfaces, dispatches the producer on no-future source, waits/polls for a proxied producer refresh, and preserves existing current inventory only when MARKET_DB proves rows actually exist.",
+    output_cap_note: "Response contains promotion/certification only. Full raw JSON stays in GitHub. Active PrizePicks board is held in prizepicks_board_current behind prizepicks_board_active_batches. No market_current_lines, scoring, ranking, or final board. v0.1.16 compares GitHub metadata/download/raw/blob surfaces, dispatches the producer on no-future source, yields partial continuation while polling for fresh JSON, and preserves existing current inventory only after bounded poll exhaustion when MARKET_DB proves rows actually exist.",
     timestamp_utc: nowUtc()
   };
 }

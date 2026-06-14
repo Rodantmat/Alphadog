@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.258-baseline-hp-stale-promote-preselect";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.255-score-enrichment-timeout-evidence-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -2417,36 +2417,6 @@ const INCREMENTAL_MORNING_FULL_RUN_LOCK_KEY = "INCREMENTAL_MORNING_FULL_RUN";
 const INCREMENTAL_MORNING_FULL_RUN_STALE_MINUTES = 60;
 const INCREMENTAL_MORNING_FULL_RUN_MAX_RETRIES_PER_STAGE = 2;
 
-function incrementalMorningFullRunStageStaleSeconds(stage = {}) {
-  const key = String(stage.stage_key || "");
-  if (key === "calendar_tally_precheck" || key === "calendar_tally_final_check") return 900;
-  if (key.includes("hitter_game_logs") || key.includes("pitcher_game_logs")) return 900;
-  if (key.includes("metrics") || key.includes("splits")) return 600;
-  if (key.includes("starter_history") || key.includes("bullpen_history") || key.includes("team_game_logs")) return 600;
-  return 300;
-}
-
-function secondsSinceDbTimestamp(ts) {
-  if (!ts) return 0;
-  const ms = Date.parse(String(ts).replace(" ", "T") + "Z");
-  if (!Number.isFinite(ms)) return 0;
-  return Math.max(0, Math.floor((Date.now() - ms) / 1000));
-}
-
-function applyIncrementalStageStalePolicy(child, stage) {
-  if (!child) return child;
-  const status = String(child.status || "");
-  const active = ["pending", "running", "partial_continue"].includes(status) && !child.finished_at;
-  const threshold = incrementalMorningFullRunStageStaleSeconds(stage);
-  const secondsSinceUpdate = secondsSinceDbTimestamp(child.updated_at);
-  return {
-    ...child,
-    is_stale: active && secondsSinceUpdate >= threshold ? 1 : 0,
-    stage_stale_guard_seconds: threshold,
-    seconds_since_update: secondsSinceUpdate
-  };
-}
-
 const INCREMENTAL_MORNING_FULL_RUN_SCHEDULE_WINDOW_MINUTES = 15;
 const BOARD_FULL_RUN_SCHEDULE_WINDOW_MINUTES = 5;
 
@@ -3704,7 +3674,6 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     const attempts = childRows.filter(c => incrementalFullRunStageKeyFromChild(c) === stage.stage_key || (!incrementalFullRunStageKeyFromChild(c) && c.job_key === stage.job_key));
     let child = attempts.length ? attempts[attempts.length - 1] : null;
     if (child) {
-      child = applyIncrementalStageStalePolicy(child, stage);
       child = await reconcileIncrementalCalendarTallyChildFromBatches(env, row, stage, child);
       const lifecycleReconcile = await reconcileIncrementalFullRunChildLifecycle(env, child, trigger);
       child = lifecycleReconcile.child || child;
@@ -3739,11 +3708,10 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, rows_read: childOutput.rows_read || 0, rows_written: childOutput.rows_written || 0, rows_promoted: childOutput.rows_promoted || 0, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0, attempts: attempts.length };
 
     if (validation.wait) {
-      const parentRecheckDelaySeconds = (stage.job_key === "player-baseline-sanity" || stage.job_key === "player-baseline-hp") ? 2 : 8;
-      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_CHILD", certification: "INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true, child_hot_lane_active: stage.job_key === "player-baseline-sanity" || stage.job_key === "player-baseline-hp", parent_recheck_delay_seconds: parentRecheckDelaySeconds };
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_CHILD", certification: "INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
       await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+' || ? || ' seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", parentRecheckDelaySeconds, JSON.stringify(output), row.request_id);
-      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_parent_deferred_while_child_active', 'Parent deferred briefly so the active child hot-continuation row can own the next backend tick', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: child.request_id, child_status: child.status, stage_key: stage.stage_key, parent_run_after_delay_seconds: parentRecheckDelaySeconds, child_hot_lane_active: stage.job_key === "player-baseline-sanity" || stage.job_key === "player-baseline-hp", full_run_hot_continuation_v0_2_257: true }));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+8 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_parent_deferred_while_child_active', 'Parent deferred briefly so the active child hot-continuation row can own the next backend tick', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: child.request_id, child_status: child.status, stage_key: stage.stage_key, parent_run_after_delay_seconds: 8, full_run_hot_continuation_v0_2_95: true }));
       return output;
     }
 
@@ -3777,7 +3745,7 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
           );
           await run(env.CONTROL_DB,
             "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'incremental_morning_full_run_stale_child_closed_for_retry', 'Closed stale Delta Full Run child before enqueueing same-stage retry', ?, CURRENT_TIMESTAMP)",
-            child.request_id, runId, WORKER_NAME, child.job_key, JSON.stringify({ parent_request_id: row.request_id, stage_key: stage.stage_key, previous_status: child.status, previous_updated_at: child.updated_at, retry_attempt_index: attempts.length, stale_guard_seconds: child.stage_stale_guard_seconds || incrementalMorningFullRunStageStaleSeconds(stage), seconds_since_update: child.seconds_since_update || null, version: SYSTEM_VERSION })
+            child.request_id, runId, WORKER_NAME, child.job_key, JSON.stringify({ parent_request_id: row.request_id, stage_key: stage.stage_key, previous_status: child.status, previous_updated_at: child.updated_at, retry_attempt_index: attempts.length, stale_threshold_minutes: 2, version: SYSTEM_VERSION })
           );
         }
         const enqueued = await enqueueIncrementalMorningFullRunChild(env, row, stage, i, attempts.length);
@@ -4976,11 +4944,11 @@ async function processPrizePicksGithubBoardJob(env, row, runId, trigger) {
   const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
   const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
   const certification = String((output && output.certification) || (ok ? "prizepicks_github_board_completed" : "prizepicks_github_board_failed")).slice(0, 120);
-  const partialContinue = false;
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "prizepicks_github_board_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "PrizePicks GitHub board worker failed").slice(0, 900);
+  const partialContinue = !!(output && (output.continuation_required === true || output.status === "partial_continue" || certification === "PRIZEPICKS_SOURCE_REFRESH_WAITING_FOR_FRESH_JSON"));
+  const queueStatus = partialContinue ? "pending" : (ok ? "completed" : "failed");
+  const runStatus = partialContinue ? "partial_continue" : (ok ? "completed" : "failed");
+  const errorCode = (ok || partialContinue) ? null : "prizepicks_github_board_worker_failed";
+  const errorMessage = (ok || partialContinue) ? null : String((output && (output.error || output.status)) || "PrizePicks GitHub board worker failed").slice(0, 900);
 
   const cappedOutput = compactPrizePicksOutputForD1({
     ...output,
@@ -5006,9 +4974,11 @@ async function processPrizePicksGithubBoardJob(env, row, runId, trigger) {
   );
 
   if (partialContinue) {
+    const nextInput = output && output.next_input ? output.next_input : input;
+    const delaySeconds = Math.max(5, Math.min(300, Number(output && output.run_after_seconds || 30)));
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
-      cappedOutputJson, row.request_id
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      delaySeconds, JSON.stringify(nextInput), cappedOutputJson, row.request_id
     );
   } else {
     await run(env.CONTROL_DB,
@@ -13565,18 +13535,13 @@ async function processOneUnlocked(env, trigger) {
   await cancelPlayerBaselineHpQueuesWithTerminalBatch(env, trigger);
   await recoverStaleScoreEnrichmentV1Jobs(env, `${trigger || "tick"}_preselect`);
 
-  // v0.2.258: rescue stale Player Baseline running rows before the Incremental parent
-  // can win the selector and repeatedly report WAITING_ON_CHILD. This is critical
-  // for Baseline HP promote/history transitions: a service-binding timeout leaves
-  // the child row running while the safe next_input is already persisted.
-  let row = await rescueStalePlayerBaselineRunningJobForResume(env, `${trigger || "tick"}_preselect`);
-
   // v0.2.160: Delta Full Run owns its own backend continuation path.
   // Prefer due same-chain Delta Full Run children, then the parent, before generic
-  // queue work. Running children are not blindly redispatched; the preselect
-  // Player Baseline stale-running rescue above handles trusted baseline resumes
-  // before the parent can consume the tick.
-  if (!row) row = await first(env.CONTROL_DB,
+  // queue work. Running children are not blindly redispatched; the parent owns
+  // stale-running detection, trusted Calendar/Tally batch recovery, and retry
+  // replacement for all 11 Delta Full Run child stages. The 5-minute cron remains
+  // a starter/backup, not the normal stage pump.
+  let row = await first(env.CONTROL_DB,
     `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
      FROM control_job_queue p
      JOIN control_job_queue c ON c.parent_request_id = p.request_id AND c.chain_id = p.chain_id
@@ -13793,37 +13758,6 @@ async function processOneUnlocked(env, trigger) {
        ORDER BY datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) ASC, datetime(created_at) ASC
        LIMIT 1`
     );
-  }
-
-  // v0.2.257: Hot-drain Incremental Morning Full Run active children before the parent/generic
-  // selector. Without this, the older parent row can win the generic queue order, observe
-  // the child as merely pending, and spend a tick writing WAITING_ON_CHILD instead of
-  // dispatching the child's next continuation mode. This is especially visible for
-  // player-baseline-hp stage -> promote -> history -> finalize transitions.
-  if (!row) {
-    row = await first(env.CONTROL_DB,
-      `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
-       FROM control_job_queue p
-       JOIN control_job_queue c ON c.parent_request_id = p.request_id AND c.chain_id = p.chain_id
-       WHERE p.job_key='incremental-morning-full-run'
-         AND p.worker_name='alphadog-v2-orchestrator'
-         AND p.status IN ('pending','running','partial_continue')
-         AND p.finished_at IS NULL
-         AND c.status IN ('pending','partial_continue')
-         AND c.finished_at IS NULL
-         AND datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
-       ORDER BY
-         CASE WHEN c.job_key IN ('player-baseline-sanity','player-baseline-hp') THEN 0 ELSE 1 END,
-         datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) ASC,
-         datetime(c.updated_at) ASC,
-         datetime(c.created_at) ASC
-       LIMIT 1`
-    );
-    if (row) {
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'incremental_morning_full_run_child_hot_lane_selected', 'Selected active Incremental Morning Full Run child before parent/generic queue to reduce pending continuation gaps', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, chain_id: row.chain_id, job_key: row.job_key, previous_status: row.status, trigger, child_hot_lane_v0_2_257: true }).slice(0, 9000));
-    }
   }
 
   // v0.2.239: If a Baseline HP service-binding dispatch failed from a transient D1 reset
@@ -15181,14 +15115,13 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   // cron or manual Wake for the next stage/final parent closeout. Treat the
   // active Daily Context chain like Market Scoring: continue after a short delay
   // when due work remains.
-  const incrementalMorningFullRunLockBusyContinuation = sawLockBusy && !sawHardStop && dueIncrementalMorningFullRun > 0;
   const dailyFullRunLockBusyContinuation = sawLockBusy && !sawHardStop && dueDailyFullRun > 0;
   const dailyContextLockBusyContinuation = sawLockBusy && !sawHardStop && dueDailyContextFullRun > 0;
   const playerBaselineSanityLockBusyContinuation = sawLockBusy && !sawHardStop && duePlayerBaselineSanity > 0;
   const propFactorLockBusyContinuation = sawLockBusy && !sawHardStop && duePropFactorMinerHot > 0;
   const propMatrixLockBusyContinuation = sawLockBusy && !sawHardStop && duePropMatrixBuilderHot > 0;
   const scoreEnrichmentLockBusyContinuation = sawLockBusy && !sawHardStop && dueScoreEnrichmentV1Hot > 0;
-  const lockBusyHotContinuation = incrementalMorningFullRunLockBusyContinuation || marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation || propMatrixLockBusyContinuation || scoreEnrichmentLockBusyContinuation;
+  const lockBusyHotContinuation = marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation || propMatrixLockBusyContinuation || scoreEnrichmentLockBusyContinuation;
   const shouldSelfContinue = (continuationAllowedByLastCycle || lockBusyHotContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
@@ -15280,7 +15213,6 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         self_continue_delay_ms: hotContinuationDelayMs,
         full_run_hot_continuation_v0_2_95: true,
         continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
-        incremental_morning_full_run_lock_busy_continuation: !!incrementalMorningFullRunLockBusyContinuation,
         market_scoring_lock_busy_continuation: !!marketScoringLockBusyContinuation,
         daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
         daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
