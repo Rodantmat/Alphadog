@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase2b-pitcher-role";
 const LOGICAL_WORKER_NAME = "alphadog-v2-player-baseline-sanity";
-const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.12-baseline-hp-larger-history-chunks";
+const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.13-baseline-hp-null-safe-source-rates";
 const JOB_KEY = "player-baseline-sanity";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "SCORE_DB"];
@@ -10,6 +10,7 @@ function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
 function round(n, d = 2) { const x = Number(n || 0); const p = Math.pow(10, d); return Math.round(x * p) / p; }
+function finiteNumberOrNull(v) { if (v === null || v === undefined || v === "") return null; const n = Number(v); return Number.isFinite(n) ? n : null; }
 function pct(n) { return round(Number(n || 0) * 100, 2); }
 function safeJson(v) { try { return JSON.stringify(v == null ? null : v); } catch (_) { return JSON.stringify({ json_error: true }); } }
 
@@ -652,10 +653,10 @@ function buildBaselineHpRowsFromSanityRow(sourceRow, batchId) {
         });
         continue;
       }
-      const baselineHp = Number(side.baseline_pre_context_0_100);
-      const rawRate = Number(side.raw_rate_0_100);
-      const tierPriorRate = Number(side.tier_prior_rate_0_100);
-      const nonPushSample = Number(side.non_push_sample || 0);
+      const baselineHp = finiteNumberOrNull(side.baseline_pre_context_0_100);
+      const rawRate = finiteNumberOrNull(side.raw_rate_0_100);
+      const tierPriorRate = finiteNumberOrNull(side.tier_prior_rate_0_100);
+      const nonPushSample = finiteNumberOrNull(side.non_push_sample) || 0;
       if (!Number.isFinite(baselineHp)) {
         out.issues.push({
           source_baseline_row_id: sourceRow.baseline_row_id,
