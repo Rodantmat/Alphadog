@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.10-prizepicks-alias-source-key-fallback";
+const VERSION = "alphadog-v2-score-prep-v0.2.11-sleeper-pitcher-walks-role-remap";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
@@ -862,6 +862,25 @@ function preparePrizePicksRows(rows, ref, calendar, batchId, now) {
   return out;
 }
 
+function isPitcherPrimaryPosition(player) {
+  const pos = normalizeName(player && player.primary_position);
+  return pos === "p" || pos === "pitcher" || pos.includes("pitcher");
+}
+
+function sleeperPreparedPropKeyForResolvedPlayer({ rawPropKey, sourcePropName, rawMarketKey, player }) {
+  const prop = safeStr(rawPropKey);
+  const source = safeStr(sourcePropName || rawMarketKey);
+  const sourceNorm = source.toLowerCase();
+
+  // Sleeper/Parlay can emit pitcher walk props as generic player_walks/walks.
+  // Hitter walk props are source-distinct as player_bat_walks and must remain walks.
+  // Once the player is resolved as a pitcher, player_walks is pitcher walks allowed.
+  if (prop === "walks" && sourceNorm === "player_walks" && isPitcherPrimaryPosition(player)) {
+    return "walks_allowed";
+  }
+  return prop;
+}
+
 function prepareSleeperRows(rows, ref, calendar, batchId, now) {
   const out = [];
   for (const r of rows) {
@@ -911,6 +930,24 @@ function prepareSleeperRows(rows, ref, calendar, batchId, now) {
       }
     };
 
+    const sleeperSourcePropName = safeStr(r.source_stat_name || raw.market_key || raw.market);
+    const sleeperPropKey = sleeperPreparedPropKeyForResolvedPlayer({
+      rawPropKey: safeStr(r.canonical_prop_key || raw.market),
+      sourcePropName: sleeperSourcePropName,
+      rawMarketKey: raw.market_key,
+      player: playerRes.player
+    });
+
+    if (sleeperPropKey !== safeStr(r.canonical_prop_key || raw.market)) {
+      mergedPayload.canonical_prop_role_remap = {
+        from: safeStr(r.canonical_prop_key || raw.market),
+        to: sleeperPropKey,
+        reason: "sleeper_player_walks_resolved_pitcher_to_walks_allowed",
+        source_market_key: sleeperSourcePropName,
+        resolved_player_primary_position: playerRes.player ? playerRes.player.primary_position : null
+      };
+    }
+
     out.push(preparedRowBase({
       batchId,
       sourceKey: SOURCE_SLEEPER,
@@ -918,8 +955,8 @@ function prepareSleeperRows(rows, ref, calendar, batchId, now) {
       sourceEventId: safeStr(r.source_event_id || raw.event_id),
       projectionId: null,
       playerName,
-      propKey: safeStr(r.canonical_prop_key || raw.market),
-      sourcePropName: safeStr(r.source_stat_name || raw.market_key || raw.market),
+      propKey: sleeperPropKey,
+      sourcePropName: sleeperSourcePropName,
       lineValue: r.line_value ?? raw.line,
       sourceStartTime: rawCommence || safeStr(r.start_time),
       sourcePickable: 1,
