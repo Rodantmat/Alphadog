@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.239-player-baseline-hp-failed-d1-reset-resume";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.240-player-baseline-hp-single-flight-terminal-align";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -11043,6 +11043,94 @@ async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
   input.no_final_board = true;
   input.no_prepared_board_mutation = true;
 
+  if (row.job_key === "player-baseline-hp" && env.SCORE_DB) {
+    const targetBatchId = String(input.batch_id || "");
+    if (targetBatchId) {
+      const targetBatch = await first(env.SCORE_DB,
+        "SELECT batch_id, request_id, status, rows_staged, rows_promoted, history_rows, issue_rows FROM player_baseline_hp_batches WHERE batch_id=? LIMIT 1",
+        targetBatchId
+      );
+      if (targetBatch && String(targetBatch.status || "") !== "running") {
+        const output = {
+          ok: true,
+          data_ok: true,
+          version: SYSTEM_VERSION,
+          processed_by: WORKER_NAME,
+          worker_name: row.worker_name,
+          logical_worker_name: "alphadog-v2-player-baseline-sanity",
+          deployed_worker_slot: "alphadog-v2-phase2b-pitcher-role",
+          job_key: row.job_key,
+          request_id: row.request_id,
+          run_id: runId,
+          batch_id: targetBatchId,
+          status: "PLAYER_BASELINE_HP_QUEUE_CANCELLED_TARGET_BATCH_TERMINAL",
+          certification: "PLAYER_BASELINE_HP_QUEUE_CANCELLED_TARGET_BATCH_TERMINAL",
+          certification_grade: "CANCELLED_TERMINAL_BATCH_ALIGNMENT",
+          target_batch_status: targetBatch.status || null,
+          target_batch_rows_staged: Number(targetBatch.rows_staged || 0),
+          target_batch_issue_rows: Number(targetBatch.issue_rows || 0),
+          no_new_batch_created: true,
+          no_hp_math_change: true,
+          terminal_batch_queue_alignment: true
+        };
+        await run(env.CONTROL_DB,
+          "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'cancelled', 1, 'PLAYER_BASELINE_HP_QUEUE_CANCELLED_TARGET_BATCH_TERMINAL', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'player_baseline_hp_target_batch_terminal_cancelled', 'Baseline HP queue row cancelled because target HP batch is terminal/non-running.')",
+          runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(input), safeStringifyD1(output));
+        await run(env.CONTROL_DB,
+          "UPDATE control_job_queue SET status='cancelled', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='player_baseline_hp_target_batch_terminal_cancelled', error_message='Baseline HP queue row cancelled because target HP batch is terminal/non-running.' WHERE request_id=?",
+          safeStringifyD1(output), row.request_id);
+        return output;
+      }
+    }
+
+    const normalizedMode = String(input.mode || input.next_mode || "history_only_baseline_hp_enrichment");
+    const isBeginMode = !targetBatchId && (normalizedMode === "history_only_baseline_hp_enrichment" || normalizedMode === "player_baseline_hp_enrichment" || normalizedMode === "baseline_hp_begin");
+    if (isBeginMode) {
+      const activeOther = await first(env.SCORE_DB,
+        `SELECT batch_id, request_id, status, rows_staged, issue_rows, updated_at
+           FROM player_baseline_hp_batches
+          WHERE status='running'
+            AND COALESCE(request_id,'') <> ?
+          ORDER BY rows_staged DESC, datetime(updated_at) DESC
+          LIMIT 1`,
+        row.request_id
+      );
+      if (activeOther && activeOther.batch_id) {
+        const output = {
+          ok: true,
+          data_ok: true,
+          version: SYSTEM_VERSION,
+          processed_by: WORKER_NAME,
+          worker_name: row.worker_name,
+          logical_worker_name: "alphadog-v2-player-baseline-sanity",
+          deployed_worker_slot: "alphadog-v2-phase2b-pitcher-role",
+          job_key: row.job_key,
+          request_id: row.request_id,
+          run_id: runId,
+          status: "PLAYER_BASELINE_HP_DUPLICATE_BEGIN_BLOCKED_ACTIVE_BATCH_EXISTS",
+          certification: "PLAYER_BASELINE_HP_DUPLICATE_BEGIN_BLOCKED_ACTIVE_BATCH_EXISTS",
+          certification_grade: "CANCELLED_DUPLICATE_ACTIVE_BATCH",
+          active_batch_id: activeOther.batch_id,
+          active_request_id: activeOther.request_id,
+          active_rows_staged: Number(activeOther.rows_staged || 0),
+          single_flight_guard: true,
+          no_new_batch_created: true,
+          no_hp_math_change: true
+        };
+        await run(env.CONTROL_DB,
+          "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'cancelled', 1, 'PLAYER_BASELINE_HP_DUPLICATE_BEGIN_BLOCKED_ACTIVE_BATCH_EXISTS', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'player_baseline_hp_duplicate_active_batch_blocked', 'Baseline HP begin was cancelled because another running HP batch already exists.')",
+          runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(input), safeStringifyD1(output));
+        await run(env.CONTROL_DB,
+          "UPDATE control_job_queue SET status='cancelled', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='player_baseline_hp_duplicate_active_batch_blocked', error_message='Baseline HP begin cancelled because another running HP batch already exists.' WHERE request_id=?",
+          safeStringifyD1(output), row.request_id);
+        await run(env.CONTROL_DB,
+          "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'player_baseline_hp_duplicate_begin_blocked_active_batch_exists', 'Blocked duplicate Baseline HP begin while another HP batch is running', ?, CURRENT_TIMESTAMP)",
+          row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output).slice(0, 9000));
+        return output;
+      }
+    }
+  }
+
   if (!env.PHASE2B_PITCHER_ROLE_WORKER || typeof env.PHASE2B_PITCHER_ROLE_WORKER.fetch !== "function") {
     const output = {
       ok: false,
@@ -12708,6 +12796,100 @@ async function claimSelectedQueueRowForDispatch(env, row, trigger) {
 }
 
 
+function extractPlayerBaselineHpBatchIdFromQueueRow(row) {
+  const input = parseJsonSafeText((row && row.input_json) || "{}", {});
+  const output = parseJsonSafeText((row && row.output_json) || "{}", {});
+  return String(
+    (input && input.batch_id) ||
+    (input && input.next_input && input.next_input.batch_id) ||
+    (output && output.batch_id) ||
+    (output && output.next_input && output.next_input.batch_id) ||
+    ""
+  );
+}
+
+async function cancelPlayerBaselineHpQueuesWithTerminalBatch(env, trigger) {
+  if (!env || !env.CONTROL_DB || !env.SCORE_DB) return { cancelled: 0 };
+  const rows = await all(env.CONTROL_DB,
+    `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json, output_json, started_at, updated_at
+       FROM control_job_queue
+      WHERE job_key='player-baseline-hp'
+        AND worker_name='alphadog-v2-phase2b-pitcher-role'
+        AND status IN ('pending','running','partial_continue')
+        AND finished_at IS NULL
+      ORDER BY datetime(created_at) ASC
+      LIMIT 20`
+  );
+  let cancelled = 0;
+  for (const row of rows) {
+    const batchId = extractPlayerBaselineHpBatchIdFromQueueRow(row);
+    if (!batchId) continue;
+    const batchRow = await first(env.SCORE_DB,
+      "SELECT batch_id, request_id, status, rows_staged, rows_promoted, history_rows, issue_rows, updated_at FROM player_baseline_hp_batches WHERE batch_id=? LIMIT 1",
+      batchId
+    );
+    if (!batchRow || String(batchRow.status || "") === "running") continue;
+    const output = {
+      ok: true,
+      data_ok: true,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      request_id: row.request_id,
+      chain_id: row.chain_id,
+      batch_id: batchId,
+      status: "PLAYER_BASELINE_HP_QUEUE_CANCELLED_TARGET_BATCH_TERMINAL",
+      certification: "PLAYER_BASELINE_HP_QUEUE_CANCELLED_TARGET_BATCH_TERMINAL",
+      certification_grade: "CANCELLED_TERMINAL_BATCH_ALIGNMENT",
+      target_batch_status: batchRow.status || null,
+      target_batch_rows_staged: Number(batchRow.rows_staged || 0),
+      target_batch_issue_rows: Number(batchRow.issue_rows || 0),
+      terminal_batch_queue_alignment: true,
+      no_new_batch_created: true,
+      no_hp_math_change: true,
+      trigger
+    };
+    await run(env.CONTROL_DB,
+      `UPDATE control_job_runs
+          SET status='failed_terminal_batch_cancelled',
+              data_ok=0,
+              certification_status='PLAYER_BASELINE_HP_QUEUE_CANCELLED_TARGET_BATCH_TERMINAL',
+              finished_at=CURRENT_TIMESTAMP,
+              elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END,
+              output_json=?,
+              error_code='player_baseline_hp_target_batch_terminal_cancelled',
+              error_message='Baseline HP queue row was cancelled because its target HP batch is terminal/non-running.'
+        WHERE request_id=?
+          AND job_key='player-baseline-hp'
+          AND status='running'
+          AND finished_at IS NULL`,
+      safeStringifyD1(output), row.request_id
+    );
+    await run(env.CONTROL_DB,
+      `UPDATE control_job_queue
+          SET status='cancelled',
+              finished_at=CURRENT_TIMESTAMP,
+              updated_at=CURRENT_TIMESTAMP,
+              output_json=?,
+              error_code='player_baseline_hp_target_batch_terminal_cancelled',
+              error_message='Baseline HP queue row cancelled because target HP batch is terminal/non-running.'
+        WHERE request_id=?
+          AND job_key='player-baseline-hp'
+          AND worker_name='alphadog-v2-phase2b-pitcher-role'
+          AND status IN ('pending','running','partial_continue')
+          AND finished_at IS NULL`,
+      safeStringifyD1(output), row.request_id
+    );
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'player-baseline-hp', 'WARN', 'player_baseline_hp_queue_cancelled_target_batch_terminal', 'Cancelled active Baseline HP queue row whose target HP batch is terminal/non-running', ?, CURRENT_TIMESTAMP)",
+      row.request_id, WORKER_NAME, JSON.stringify(output).slice(0, 9000)
+    );
+    cancelled += 1;
+  }
+  return { cancelled };
+}
+
 async function rescueFailedPlayerBaselineHpQueueFromCleanBatch(env, trigger) {
   if (!env || !env.CONTROL_DB || !env.SCORE_DB) return null;
   const row = await first(env.CONTROL_DB,
@@ -12982,6 +13164,11 @@ async function rescueStalePlayerBaselineRunningJobForResume(env, trigger) {
 
 
 async function processOneUnlocked(env, trigger) {
+  // v0.2.240: Keep Baseline HP queue/batch lifecycle aligned before selecting work.
+  // If a queue row points at a terminal/non-running HP batch, cancel the queue row
+  // instead of letting stale continuations keep writing against a failed_stale batch.
+  await cancelPlayerBaselineHpQueuesWithTerminalBatch(env, trigger);
+
   // v0.2.160: Delta Full Run owns its own backend continuation path.
   // Prefer due same-chain Delta Full Run children, then the parent, before generic
   // queue work. Running children are not blindly redispatched; the parent owns
