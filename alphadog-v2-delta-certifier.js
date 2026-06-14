@@ -1,6 +1,8 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.2.7-postponed-rescheduled-direct-refresh";
+const VERSION = "alphadog-v2-delta-certifier-v0.2.8-bounded-full-run-heartbeat";
 const JOB_KEY = "delta-certifier";
+const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
+const FULL_RUN_LOOKAHEAD_DAYS = 6;
 
 const ACTIVE_COVERAGE_LAYER_KEYS = [
   "hitter_game_logs",
@@ -620,6 +622,54 @@ function officialDateIsPast(officialDate, currentOfficialDate) {
   return Boolean(official && current && official < current);
 }
 
+function addDaysYmd(ymd, days) {
+  const d = parseDateSafe(ymd, ymd);
+  d.setUTCDate(d.getUTCDate() + Number(days || 0));
+  return dateOnlyUtc(d);
+}
+
+function parentFullRunGapContractActive(input = {}, nested = {}) {
+  return nested.full_run_gap_contract === true
+    || input.full_run_gap_contract === true
+    || input.parent_full_run === true
+    || nested.parent_full_run === true
+    || nested.source === "incremental_morning_full_run_parent"
+    || input.source === "incremental_morning_full_run_parent";
+}
+
+function resolveCoverageWindowForMode(input = {}, nested = {}, season = 2026) {
+  const fullRunGapContract = parentFullRunGapContractActive(input, nested);
+  const currentPtDate = dateOnlyForTimeZone(new Date(), "America/Los_Angeles");
+  const explicitStart = nested.coverage_window_start || input.coverage_window_start || nested.start_date || input.start_date || nested.delta_start_date || input.delta_start_date || null;
+  const explicitEnd = nested.coverage_window_end || input.coverage_window_end || nested.end_date || input.end_date || nested.delta_end_date || input.delta_end_date || null;
+  if (fullRunGapContract) {
+    return {
+      start_date: String(explicitStart || DEFAULT_DELTA_RESERVED_START_DATE).slice(0, 10),
+      end_date: String(explicitEnd || addDaysYmd(currentPtDate, FULL_RUN_LOOKAHEAD_DAYS)).slice(0, 10),
+      bounded_full_run_gap_window: true,
+      window_reason: explicitStart || explicitEnd ? "explicit_parent_window_or_delta_window" : "default_delta_reserved_start_to_pt_today_plus_lookahead",
+      current_official_date_pt: currentPtDate,
+      full_run_lookahead_days: FULL_RUN_LOOKAHEAD_DAYS
+    };
+  }
+  return {
+    start_date: String(nested.season_start_date || nested.start_date || input.start_date || `${season}-03-01`).slice(0, 10),
+    end_date: String(nested.season_end_date || nested.end_date || input.end_date || `${season}-11-30`).slice(0, 10),
+    bounded_full_run_gap_window: false,
+    window_reason: "legacy_mode_window"
+  };
+}
+
+async function touchControlJobHeartbeat(env, requestId, details = {}) {
+  if (!requestId || !env || !env.CONTROL_DB) return { ok: false, reason: "missing_request_or_control_db" };
+  try {
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status IN ('pending','running','partial_continue') AND finished_at IS NULL", requestId);
+    return { ok: true, request_id: requestId, details };
+  } catch (err) {
+    return { ok: false, request_id: requestId, error: String(err && err.message ? err.message : err).slice(0, 300) };
+  }
+}
+
 function shouldWaitForNonFinalCalendarGame(g, currentOfficialDate) {
   const officialDate = String(g.official_date || "").slice(0, 10);
   // Past dates are never allowed to remain nonblocking simply because the local calendar mirror is stale.
@@ -1104,6 +1154,7 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
     if (coverageStatements.length >= 80) {
       await batchPrepared(env.TEAM_DB, coverageStatements.splice(0), 40);
       await batchPrepared(env.TEAM_DB, gapStatements.splice(0), 40);
+      await touchControlJobHeartbeat(env, requestId, { phase: "rebuildCoverage", processed_game_pk: gamePk, coverage_rows: coverageRows, blocking_gaps: blockingGaps, heartbeat_v0_2_8: true });
     }
   }
   await batchPrepared(env.TEAM_DB, coverageStatements, 40);
@@ -1266,8 +1317,9 @@ async function handleFullCalendarSeed(input, env) {
   const requestId = input.request_id || null;
   const nested = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
   const season = Number(nested.season || input.season || 2026);
-  const startDate = String(nested.season_start_date || nested.start_date || input.start_date || `${season}-03-01`).slice(0, 10);
-  const endDate = String(nested.season_end_date || nested.end_date || input.end_date || `${season}-11-30`).slice(0, 10);
+  const coverageWindow = resolveCoverageWindowForMode(input, nested, season);
+  const startDate = coverageWindow.start_date;
+  const endDate = coverageWindow.end_date;
   const gameTypes = String(nested.game_types || input.game_types || "R,P");
   const hydrate = String(nested.hydrate || input.hydrate || "team,venue,probablePitcher(note)");
 
@@ -1459,8 +1511,9 @@ async function handleFullRunGapContractCheck(input, env) {
   const requestId = input.request_id || null;
   const nested = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
   const season = Number(nested.season || input.season || 2026);
-  const startDate = String(nested.season_start_date || nested.start_date || input.start_date || `${season}-03-01`).slice(0, 10);
-  const endDate = String(nested.season_end_date || nested.end_date || input.end_date || `${season}-11-30`).slice(0, 10);
+  const coverageWindow = resolveCoverageWindowForMode(input, nested, season);
+  const startDate = coverageWindow.start_date;
+  const endDate = coverageWindow.end_date;
   const calendarTallyStage = String(nested.calendar_tally_stage || input.calendar_tally_stage || "");
   const requireZeroBlockingGaps = nested.require_zero_blocking_gaps === true || input.require_zero_blocking_gaps === true;
 
@@ -1468,6 +1521,7 @@ async function handleFullRunGapContractCheck(input, env) {
 
   // v0.2.7: refresh stale past-date non-final games from MLB live source before final coverage decisions.
   const stalePastGameRefresh = await refreshStalePastNonFinalGamesFromLiveFeed(env, startDate, endDate);
+  await touchControlJobHeartbeat(env, requestId, { phase: "stalePastGameRefresh_completed", startDate, endDate, heartbeat_v0_2_8: true });
 
   // v0.2.5: Final full-run gate must rebuild the coverage matrix from current live tables
   // before reading blockers. Otherwise old precheck rows can survive after children have mined/promoted.
@@ -1520,6 +1574,8 @@ async function handleFullRunGapContractCheck(input, env) {
     full_run_fast_gap_contract_v0_2_3: true,
     full_run_fast_gap_contract_v0_2_4_past_date_guard: true,
     full_run_gap_contract: true,
+    bounded_full_run_gap_window_v0_2_8: coverageWindow.bounded_full_run_gap_window,
+    coverage_window_reason: coverageWindow.window_reason,
     full_run_gap_contract_rebuild_before_read_v0_2_5: true,
     calendar_tally_stage: calendarTallyStage || null,
     require_zero_blocking_gaps: requireZeroBlockingGaps,

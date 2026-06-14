@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.255-score-enrichment-timeout-evidence-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.256-delta-full-run-bounded-heartbeat-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -2417,6 +2417,36 @@ const INCREMENTAL_MORNING_FULL_RUN_LOCK_KEY = "INCREMENTAL_MORNING_FULL_RUN";
 const INCREMENTAL_MORNING_FULL_RUN_STALE_MINUTES = 60;
 const INCREMENTAL_MORNING_FULL_RUN_MAX_RETRIES_PER_STAGE = 2;
 
+function incrementalMorningFullRunStageStaleSeconds(stage = {}) {
+  const key = String(stage.stage_key || "");
+  if (key === "calendar_tally_precheck" || key === "calendar_tally_final_check") return 900;
+  if (key.includes("hitter_game_logs") || key.includes("pitcher_game_logs")) return 900;
+  if (key.includes("metrics") || key.includes("splits")) return 600;
+  if (key.includes("starter_history") || key.includes("bullpen_history") || key.includes("team_game_logs")) return 600;
+  return 300;
+}
+
+function secondsSinceDbTimestamp(ts) {
+  if (!ts) return 0;
+  const ms = Date.parse(String(ts).replace(" ", "T") + "Z");
+  if (!Number.isFinite(ms)) return 0;
+  return Math.max(0, Math.floor((Date.now() - ms) / 1000));
+}
+
+function applyIncrementalStageStalePolicy(child, stage) {
+  if (!child) return child;
+  const status = String(child.status || "");
+  const active = ["pending", "running", "partial_continue"].includes(status) && !child.finished_at;
+  const threshold = incrementalMorningFullRunStageStaleSeconds(stage);
+  const secondsSinceUpdate = secondsSinceDbTimestamp(child.updated_at);
+  return {
+    ...child,
+    is_stale: active && secondsSinceUpdate >= threshold ? 1 : 0,
+    stage_stale_guard_seconds: threshold,
+    seconds_since_update: secondsSinceUpdate
+  };
+}
+
 const INCREMENTAL_MORNING_FULL_RUN_SCHEDULE_WINDOW_MINUTES = 15;
 const BOARD_FULL_RUN_SCHEDULE_WINDOW_MINUTES = 5;
 
@@ -3674,6 +3704,7 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     const attempts = childRows.filter(c => incrementalFullRunStageKeyFromChild(c) === stage.stage_key || (!incrementalFullRunStageKeyFromChild(c) && c.job_key === stage.job_key));
     let child = attempts.length ? attempts[attempts.length - 1] : null;
     if (child) {
+      child = applyIncrementalStageStalePolicy(child, stage);
       child = await reconcileIncrementalCalendarTallyChildFromBatches(env, row, stage, child);
       const lifecycleReconcile = await reconcileIncrementalFullRunChildLifecycle(env, child, trigger);
       child = lifecycleReconcile.child || child;
@@ -3745,7 +3776,7 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
           );
           await run(env.CONTROL_DB,
             "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'incremental_morning_full_run_stale_child_closed_for_retry', 'Closed stale Delta Full Run child before enqueueing same-stage retry', ?, CURRENT_TIMESTAMP)",
-            child.request_id, runId, WORKER_NAME, child.job_key, JSON.stringify({ parent_request_id: row.request_id, stage_key: stage.stage_key, previous_status: child.status, previous_updated_at: child.updated_at, retry_attempt_index: attempts.length, stale_threshold_minutes: 2, version: SYSTEM_VERSION })
+            child.request_id, runId, WORKER_NAME, child.job_key, JSON.stringify({ parent_request_id: row.request_id, stage_key: stage.stage_key, previous_status: child.status, previous_updated_at: child.updated_at, retry_attempt_index: attempts.length, stale_guard_seconds: child.stage_stale_guard_seconds || incrementalMorningFullRunStageStaleSeconds(stage), seconds_since_update: child.seconds_since_update || null, version: SYSTEM_VERSION })
           );
         }
         const enqueued = await enqueueIncrementalMorningFullRunChild(env, row, stage, i, attempts.length);
@@ -15113,13 +15144,14 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   // cron or manual Wake for the next stage/final parent closeout. Treat the
   // active Daily Context chain like Market Scoring: continue after a short delay
   // when due work remains.
+  const incrementalMorningFullRunLockBusyContinuation = sawLockBusy && !sawHardStop && dueIncrementalMorningFullRun > 0;
   const dailyFullRunLockBusyContinuation = sawLockBusy && !sawHardStop && dueDailyFullRun > 0;
   const dailyContextLockBusyContinuation = sawLockBusy && !sawHardStop && dueDailyContextFullRun > 0;
   const playerBaselineSanityLockBusyContinuation = sawLockBusy && !sawHardStop && duePlayerBaselineSanity > 0;
   const propFactorLockBusyContinuation = sawLockBusy && !sawHardStop && duePropFactorMinerHot > 0;
   const propMatrixLockBusyContinuation = sawLockBusy && !sawHardStop && duePropMatrixBuilderHot > 0;
   const scoreEnrichmentLockBusyContinuation = sawLockBusy && !sawHardStop && dueScoreEnrichmentV1Hot > 0;
-  const lockBusyHotContinuation = marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation || propMatrixLockBusyContinuation || scoreEnrichmentLockBusyContinuation;
+  const lockBusyHotContinuation = incrementalMorningFullRunLockBusyContinuation || marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation || propMatrixLockBusyContinuation || scoreEnrichmentLockBusyContinuation;
   const shouldSelfContinue = (continuationAllowedByLastCycle || lockBusyHotContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
@@ -15211,6 +15243,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         self_continue_delay_ms: hotContinuationDelayMs,
         full_run_hot_continuation_v0_2_95: true,
         continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
+        incremental_morning_full_run_lock_busy_continuation: !!incrementalMorningFullRunLockBusyContinuation,
         market_scoring_lock_busy_continuation: !!marketScoringLockBusyContinuation,
         daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
         daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
