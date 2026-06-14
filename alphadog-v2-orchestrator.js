@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.241-morning-delta-player-baseline-chain";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.242-prop-factor-cooldown-hot-pump";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -14556,6 +14556,22 @@ async function countDuePlayerBaselineSanity(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
+async function countDuePropFactorMinerHot(env) {
+  // Prop Factor intentionally alternates real packet chunks with short cooldown-yield rows.
+  // Count near-due active rows so waitUntil keeps the backend alive through the cooldown
+  // instead of requiring manual Wake/cron between every few ticks.
+  const row = await first(env.CONTROL_DB,
+    `SELECT COUNT(*) AS c
+       FROM control_job_queue
+      WHERE job_key='prop-factor-miner'
+        AND worker_name='alphadog-v2-phase2b-recent-form'
+        AND status IN ('pending','running','partial_continue')
+        AND finished_at IS NULL
+        AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP, '+8 seconds')`
+  );
+  return Number(row && row.c ? row.c : 0);
+}
+
 async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle = 1, maxMs = 65000, ctx = null, requestUrl = null, pumpDepth = 0, maxPumpChains = 12) {
   const started = Date.now();
   const cycles = [];
@@ -14595,6 +14611,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const dueMarketScoringFullRun = await countDueMarketScoringFullRun(env);
   const dueStaticPlayers = await countDueStaticPlayers(env);
   const duePlayerBaselineSanity = await countDuePlayerBaselineSanity(env);
+  const duePropFactorMinerHot = await countDuePropFactorMinerHot(env);
   const dueBaseHitterGameLogs = await countDueBaseHitterGameLogs(env);
   const dueBaseHitterSplits = await countDueBaseHitterSplits(env);
   const dueBaseHitterMetrics = await countDueBaseHitterMetrics(env);
@@ -14616,7 +14633,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const sawLockBusy = terminalStatuses.includes("lock_busy");
   const sawHardStop = terminalStatuses.some(s => s === "blocked" || s === "error");
   const continuationAllowedByLastCycle = !sawLockBusy && !sawHardStop;
-  const dueAnyHotChain = (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || duePlayerBaselineSanity > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0);
+  const dueAnyHotChain = (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || duePlayerBaselineSanity > 0 || duePropFactorMinerHot > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0);
   // v0.2.175: Market Scoring Full Run contains long external-market/scoring stages.
   // A bounded pump can legitimately observe GLOBAL_ORCHESTRATOR busy while a prior
   // service-binding fetch is still running or while its 5-minute owner lock is waiting
@@ -14634,11 +14651,12 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const dailyFullRunLockBusyContinuation = sawLockBusy && !sawHardStop && dueDailyFullRun > 0;
   const dailyContextLockBusyContinuation = sawLockBusy && !sawHardStop && dueDailyContextFullRun > 0;
   const playerBaselineSanityLockBusyContinuation = sawLockBusy && !sawHardStop && duePlayerBaselineSanity > 0;
-  const lockBusyHotContinuation = marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation;
+  const propFactorLockBusyContinuation = sawLockBusy && !sawHardStop && duePropFactorMinerHot > 0;
+  const lockBusyHotContinuation = marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation;
   const shouldSelfContinue = (continuationAllowedByLastCycle || lockBusyHotContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
-  const hotContinuationDelayMs = shouldSelfContinue && (lastStatus === "no_due_jobs" || lockBusyHotContinuation) ? 6500 : 0;
+  const hotContinuationDelayMs = shouldSelfContinue && duePropFactorMinerHot > 0 && (lastStatus === "no_due_jobs" || propFactorLockBusyContinuation) ? 2500 : (shouldSelfContinue && (lastStatus === "no_due_jobs" || lockBusyHotContinuation) ? 6500 : 0);
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -14655,6 +14673,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       due_market_scoring_full_run_after_pump: dueMarketScoringFullRun,
       due_static_players_after_pump: dueStaticPlayers,
       due_player_baseline_sanity_after_pump: duePlayerBaselineSanity,
+      due_prop_factor_miner_hot_after_pump: duePropFactorMinerHot,
       due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
       due_base_hitter_splits_after_pump: dueBaseHitterSplits,
       due_base_hitter_metrics_after_pump: dueBaseHitterMetrics,
@@ -14678,6 +14697,8 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       lock_busy_hot_continuation: !!lockBusyHotContinuation,
       daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true,
       player_baseline_sanity_lock_busy_continuation: !!playerBaselineSanityLockBusyContinuation,
+      prop_factor_lock_busy_continuation: !!propFactorLockBusyContinuation,
+      prop_factor_cooldown_hot_pump_v0_2_242: true,
       hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
       cron_is_rescue_only_for_base_hitter: true, cron_is_rescue_only_for_base_hitter_splits: true, base_hitter_splits_hot_continuation_v0_2_32: true, base_pitcher_splits_hot_continuation_v0_2_35: true,
       version: SYSTEM_VERSION
@@ -14698,6 +14719,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         due_market_scoring_full_run_after_pump: dueMarketScoringFullRun,
         due_static_players_after_pump: dueStaticPlayers,
         due_player_baseline_sanity_after_pump: duePlayerBaselineSanity,
+        due_prop_factor_miner_hot_after_pump: duePropFactorMinerHot,
         due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
         due_base_hitter_splits_after_pump: dueBaseHitterSplits,
         due_base_hitter_metrics_after_pump: dueBaseHitterMetrics,
@@ -14720,7 +14742,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
         daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
         lock_busy_hot_continuation: !!lockBusyHotContinuation,
-        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true,
+        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true, prop_factor_cooldown_hot_pump_v0_2_242: true,
       player_baseline_sanity_lock_busy_continuation: !!playerBaselineSanityLockBusyContinuation,
         self_continue_suppressed_due_to_lock_busy: !!(sawLockBusy && !lockBusyHotContinuation),
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
