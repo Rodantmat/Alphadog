@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-score-audit-v0.4.43-enrichment-v1-directional-context";
+const VERSION = "alphadog-v2-score-audit-v0.4.44-enrichment-v1-clean-conservative-context";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -4339,7 +4339,7 @@ async function runHitProbabilityCurrent(env, input = {}){
 
 const ENRICHMENT_V1_JOB_KEY = "score-enrichment-v1";
 const ENRICHMENT_V1_MODE = "score_enrichment_v1_side_expanded";
-const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.3-directional-context-layers";
+const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.4-clean-conservative-context";
 const ENRICHMENT_V1_CHUNK_ROWS = 500;
 
 function clampNum(v, lo, hi) {
@@ -4539,20 +4539,24 @@ function packetLayerFromPayload(packet, profileKey, selectedSide) {
   return layer;
 }
 function contextLayerWeight(profileKey, weights, layerKey) {
+  // These are context-pressure weights, not full profile weights. Keep them conservative so HP V2 can apply calibrated damping.
   if (layerKey === "factor_packet") {
-    if (profileKey === "hitter_contact") return profileDirectionalWeight(weights, ["recent_form","direct_matchup","split_fit","opponent_defense"], 25);
-    if (profileKey === "hitter_power") return profileDirectionalWeight(weights, ["recent_form","direct_matchup","split_fit","park_environment","bullpen"], 35);
-    if (profileKey === "hitter_run_rbi") return profileDirectionalWeight(weights, ["recent_form","direct_matchup","split_fit","lineup_role","bullpen","run_strategy"], 35);
-    if (profileKey === "hitter_strikeout") return profileDirectionalWeight(weights, ["recent_discipline","pitcher_k_whiff","pitch_mix_split","bullpen_k"], 35);
-    if (profileKey === "hitter_walk_obp") return profileDirectionalWeight(weights, ["recent_discipline","pitcher_control","pitch_mix_zone","umpire"], 35);
-    if (profileKey.startsWith("stolen")) return profileDirectionalWeight(weights, ["runner_attempt_history","runner_speed","pitcher_hold","catcher_pop_throw"], 45);
-    if (profileKey.startsWith("pitcher")) return profileDirectionalWeight(weights, ["pitcher_k_whiff","pitcher_contact_prevention","pitcher_run_prevention","pitcher_control","opponent_k_profile","opponent_pressure","opponent_contact","opponent_run_quality","workload","starter_workload"], 35);
-    return 25;
+    if (profileKey === "hitter_contact") return 8;
+    if (profileKey === "hitter_power") return 10;
+    if (profileKey === "hitter_run_rbi") return 10;
+    if (profileKey === "hitter_strikeout") return 10;
+    if (profileKey === "hitter_walk_obp") return 8;
+    if (profileKey.startsWith("stolen")) return 10;
+    if (profileKey.startsWith("pitcher")) return 12;
+    return 8;
   }
   if (layerKey === "daily_context") {
-    return profileDirectionalWeight(weights, ["lineup_pa","lineup_role","lineup_status","park_environment","park_weather","bullpen","bullpen_availability","rest_pitch_count","starter_confirmation","umpire","game_state_strategy"], 15);
+    if (profileKey === "hitter_run_rbi" || profileKey === "stolen_base_attempt" || profileKey === "pitcher_outs") return 8;
+    if (profileKey.startsWith("pitcher")) return 7;
+    if (profileKey === "hitter_power") return 7;
+    return 6;
   }
-  if (layerKey === "market_context") return Number(weights.market || weights.market_game_total || weights.source_line_quality || weights.market_implied_runs || 0);
+  if (layerKey === "market_context") return Math.min(Number(weights.market || weights.market_game_total || weights.source_line_quality || weights.market_implied_runs || 0), 7);
   if (layerKey === "matrix_quality") return 0;
   return 0;
 }
@@ -4719,9 +4723,23 @@ async function runScoreEnrichmentV1(env, input = {}) {
     versionReset = true;
     resumeMismatchReset = true;
     offset = 0;
-    await run(env.SCORE_DB, `DELETE FROM score_enrichment_current WHERE batch_id=?`, batchId);
-    await run(env.SCORE_DB, `DELETE FROM score_enrichment_issues WHERE batch_id=?`, batchId);
-    await run(env.SCORE_DB, `UPDATE score_enrichment_batches SET status='running_version_reset', worker_version=?, certification_status='SCORE_ENRICHMENT_V1_VERSION_RESET_DIRECTIONAL_CONTEXT', certification_grade='RESET', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, ENRICHMENT_V1_VERSION, batchId);
+  }
+  const mixedCurrentRows = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM score_enrichment_current WHERE batch_id IN (SELECT batch_id FROM score_enrichment_batches WHERE source_matrix_batch_id=?) AND batch_id<>?`, sourceMatrixBatchId, batchId);
+  if (Number(mixedCurrentRows && mixedCurrentRows.rows || 0) > 0) {
+    versionReset = true;
+    resumeMismatchReset = true;
+    offset = 0;
+  }
+  if (versionReset) {
+    const sameMatrixBatches = await all(env.SCORE_DB, `SELECT batch_id FROM score_enrichment_batches WHERE source_matrix_batch_id=?`, sourceMatrixBatchId);
+    for (const b of sameMatrixBatches) {
+      await run(env.SCORE_DB, `DELETE FROM score_enrichment_current WHERE batch_id=?`, b.batch_id);
+      await run(env.SCORE_DB, `DELETE FROM score_enrichment_issues WHERE batch_id=?`, b.batch_id);
+      if (b.batch_id !== batchId) {
+        await run(env.SCORE_DB, `UPDATE score_enrichment_batches SET status='cancelled_version_superseded', certification_status='SCORE_ENRICHMENT_V1_CANCELLED_VERSION_SUPERSEDED', certification_grade='CANCELLED', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, b.batch_id);
+      }
+    }
+    await run(env.SCORE_DB, `UPDATE score_enrichment_batches SET status='running_version_reset', worker_version=?, certification_status='SCORE_ENRICHMENT_V1_VERSION_RESET_CLEAN_CONTEXT', certification_grade='RESET', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, ENRICHMENT_V1_VERSION, batchId);
   }
   if (requestedBatchId && offset > 0) {
     const existingForBatch = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM score_enrichment_current WHERE batch_id=?`, batchId);
@@ -4848,7 +4866,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
   const remaining = Math.max(0, expectedRows - (offset + rows.length));
   const complete = remaining <= 0;
   const output = baseIdentity({
-    ok:true,data_ok:true,version:ENRICHMENT_V1_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v1",deployed_worker_slot:"alphadog-v2-score-audit",job_key:ENRICHMENT_V1_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:ENRICHMENT_V1_MODE,status:complete?"completed_score_enrichment_v1_side_expanded":"partial_continue_score_enrichment_v1_side_expanded",certification:complete?"SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED":"SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE",certification_grade:complete?"PASS_WITH_REVIEW_WARNINGS_ALLOWED":"PARTIAL",batch_id:batchId,enrichment_batch_id:batchId,source_matrix_batch_id:sourceMatrixBatchId,matrix_rows_read:Math.ceil(expectedRows/2),expected_enrichment_rows:expectedRows,enrichment_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:written,baseline_matched_rows:Number(totals && totals.matched || 0),baseline_missing_rows:Number(totals && totals.missing || 0),blocked_rows:Number(totals && totals.blocked || 0),warning_rows:Number(totals && totals.warn || 0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,resume_mismatch_reset:resumeMismatchReset,version_reset:versionReset,requested_batch_id:requestedBatchId,batched_compact_writes:true,compact_snapshots:true,directional_context_layers:true,baseline_anchor_not_double_counted:true,side_expanded:true,baseline_confidence_cap_60:true,enrichment_confidence_max_40:true,no_hp_v2:true,no_current_scoring_mutation:true,no_final_score:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
+    ok:true,data_ok:true,version:ENRICHMENT_V1_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v1",deployed_worker_slot:"alphadog-v2-score-audit",job_key:ENRICHMENT_V1_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:ENRICHMENT_V1_MODE,status:complete?"completed_score_enrichment_v1_side_expanded":"partial_continue_score_enrichment_v1_side_expanded",certification:complete?"SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED":"SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE",certification_grade:complete?"PASS_WITH_REVIEW_WARNINGS_ALLOWED":"PARTIAL",batch_id:batchId,enrichment_batch_id:batchId,source_matrix_batch_id:sourceMatrixBatchId,matrix_rows_read:Math.ceil(expectedRows/2),expected_enrichment_rows:expectedRows,enrichment_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:written,baseline_matched_rows:Number(totals && totals.matched || 0),baseline_missing_rows:Number(totals && totals.missing || 0),blocked_rows:Number(totals && totals.blocked || 0),warning_rows:Number(totals && totals.warn || 0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,resume_mismatch_reset:resumeMismatchReset,version_reset:versionReset,requested_batch_id:requestedBatchId,batched_compact_writes:true,compact_snapshots:true,directional_context_layers:true,baseline_anchor_not_double_counted:true,clean_source_matrix_batch_ownership:true,conservative_context_pressure:true,side_expanded:true,baseline_confidence_cap_60:true,enrichment_confidence_max_40:true,no_hp_v2:true,no_current_scoring_mutation:true,no_final_score:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE score_enrichment_batches SET status=?, matrix_rows_read=?, expected_enrichment_rows=?, enrichment_rows_written=?, baseline_matched_rows=?, baseline_missing_rows=?, blocked_rows=?, warning_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", Math.ceil(expectedRows/2), expectedRows, writtenTotal, output.baseline_matched_rows, output.baseline_missing_rows, output.blocked_rows, output.warning_rows, output.certification, output.certification_grade, scoreJson(output,14000), batchId);
   return output;
 }
