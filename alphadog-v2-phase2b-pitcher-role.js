@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase2b-pitcher-role";
 const LOGICAL_WORKER_NAME = "alphadog-v2-player-baseline-sanity";
-const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.11-baseline-hp-chunked-promote";
+const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.12-baseline-hp-larger-history-chunks";
 const JOB_KEY = "player-baseline-sanity";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "SCORE_DB"];
@@ -520,8 +520,8 @@ async function updateBatchProgress(env, batchId, fields = {}) {
 
 
 const BASELINE_HP_STAGE_CHUNK_ROWS = 80;
-const BASELINE_HP_HISTORY_CHUNK_ROWS = 750;
-const BASELINE_HP_PROMOTE_CHUNK_ROWS = 1500;
+const BASELINE_HP_HISTORY_CHUNK_ROWS = 3000;
+const BASELINE_HP_PROMOTE_CHUNK_ROWS = 3000;
 const BASELINE_HP_INSERT_BATCH_SIZE = 25;
 const BASELINE_HP_CONFIDENCE_FORMULA_VERSION = "baseline_hp_confidence_v0.1.6_anchor_only_soft_profile";
 const BASELINE_HP_FORMULA_VERSION = "baseline_hp_v0.1.6_exact_layer1_side_line_anchor_no_hard_clamp";
@@ -871,7 +871,8 @@ async function runBaselineHp(env, input = {}) {
     if (mode === "baseline_hp_promote_current") {
       const stageRows = await countRows(env.SCORE_DB, "player_baseline_hp_stage", "WHERE batch_id=?", batchId);
       const lastPromoteRowId = String(input.last_promote_row_id || "");
-      const chunkLimit = Math.max(250, Math.min(Number(input.promote_chunk_size || BASELINE_HP_PROMOTE_CHUNK_ROWS), 2500));
+      const requestedPromoteChunk = Number(input.promote_chunk_size || 0);
+      const chunkLimit = Math.max(500, Math.min(Math.max(requestedPromoteChunk, BASELINE_HP_PROMOTE_CHUNK_ROWS), 3000));
       if (!lastPromoteRowId) {
         await run(env.SCORE_DB, "DELETE FROM player_baseline_hp_current");
       }
@@ -906,7 +907,8 @@ async function runBaselineHp(env, input = {}) {
       const stageRows = await countRows(env.SCORE_DB, "player_baseline_hp_stage", "WHERE batch_id=?", batchId);
       const currentRows = await countRows(env.SCORE_DB, "player_baseline_hp_current");
       const lastHistoryRowId = String(input.last_history_row_id || "");
-      const chunkLimit = Math.max(100, Math.min(Number(input.history_chunk_size || BASELINE_HP_HISTORY_CHUNK_ROWS), 1200));
+      const requestedHistoryChunk = Number(input.history_chunk_size || 0);
+      const chunkLimit = Math.max(500, Math.min(Math.max(requestedHistoryChunk, BASELINE_HP_HISTORY_CHUNK_ROWS), 3000));
       const ids = await baselineHpHistoryChunkIds(env, batchId, lastHistoryRowId, chunkLimit);
       if (ids.length > 0) {
         const nextLast = String(ids[ids.length - 1].baseline_hp_row_id || "");
