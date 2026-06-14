@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.252-score-enrichment-v1-no-anchor-pressure-zero";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.253-score-enrichment-stale-preselect-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12109,7 +12109,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
-    deployed_slot_version: isEnrichmentJob ? "alphadog-v2-score-audit-v0.4.46-enrichment-v1-no-anchor-pressure-zero" : (isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock"),
+    deployed_slot_version: isEnrichmentJob ? "alphadog-v2-score-audit-v0.4.47-enrichment-v1-250x25-resume-safe" : (isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock"),
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
@@ -13444,6 +13444,7 @@ async function processOneUnlocked(env, trigger) {
   // If a queue row points at a terminal/non-running HP batch, cancel the queue row
   // instead of letting stale continuations keep writing against a failed_stale batch.
   await cancelPlayerBaselineHpQueuesWithTerminalBatch(env, trigger);
+  await recoverStaleScoreEnrichmentV1Jobs(env, `${trigger || "tick"}_preselect`);
 
   // v0.2.160: Delta Full Run owns its own backend continuation path.
   // Prefer due same-chain Delta Full Run children, then the parent, before generic
@@ -14822,7 +14823,7 @@ async function recoverStaleScoreEnrichmentV1Jobs(env, trigger = "manual") {
         AND worker_name='alphadog-v2-score-audit'
         AND status='running'
         AND finished_at IS NULL
-        AND datetime(updated_at) <= datetime('now','-60 seconds')
+        AND datetime(updated_at) <= datetime('now','-30 seconds')
       ORDER BY datetime(updated_at) ASC
       LIMIT 3`
   );
@@ -14889,6 +14890,7 @@ async function recoverStaleScoreEnrichmentV1Jobs(env, trigger = "manual") {
 }
 
 async function countDueScoreEnrichmentV1Hot(env) {
+  await recoverStaleScoreEnrichmentV1Jobs(env, "count_due_score_enrichment_v1_hot");
   const row = await first(env.CONTROL_DB,
     `SELECT COUNT(*) AS c
        FROM control_job_queue
