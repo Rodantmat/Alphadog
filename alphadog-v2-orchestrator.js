@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.244-prop-matrix-always-hot-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.245-prop-matrix-stale-running-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -11573,6 +11573,233 @@ async function processPropFactorMinerJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
+
+async function getPropMatrixBuilderEvidence(env, requestId) {
+  const batch = await first(env.SCORE_DB,
+    `SELECT batch_id, request_id, run_id, worker_name, worker_version, deployed_worker_slot, deployed_slot_version,
+            mode, status, window_start, window_end, prepared_rows_read, eligible_rows, matrix_rows_written,
+            matrix_ready_rows, matrix_ready_with_warnings_rows, matrix_partial_context_rows, matrix_blocked_rows,
+            matrix_deferred_rows, issue_rows, warning_rows, blocker_rows, missing_component_rows, created_at, updated_at
+       FROM prop_matrix_batches
+      WHERE request_id=?
+      ORDER BY datetime(updated_at) DESC, datetime(created_at) DESC
+      LIMIT 1`,
+    requestId
+  );
+  if (!batch || !batch.batch_id) return null;
+
+  const current = await first(env.SCORE_DB,
+    `SELECT COUNT(*) AS current_rows,
+            COUNT(DISTINCT prepared_row_id) AS distinct_prepared_rows,
+            COUNT(DISTINCT game_pk) AS games,
+            COUNT(DISTINCT mlb_player_id) AS players,
+            COUNT(DISTINCT canonical_prop_key) AS prop_keys,
+            COALESCE(SUM(CASE WHEN blocking_for_scoring=1 THEN 1 ELSE 0 END),0) AS blocking_for_scoring_rows,
+            COALESCE(SUM(warning_count),0) AS warning_count_sum,
+            COALESCE(SUM(blocker_count),0) AS blocker_count_sum,
+            COALESCE(SUM(missing_component_count),0) AS missing_component_count_sum
+       FROM prop_matrix_current
+      WHERE batch_id=?`,
+    batch.batch_id
+  );
+
+  const eligibleRows = Number(batch.eligible_rows || batch.prepared_rows_read || 0);
+  const currentRows = Number(current && current.current_rows ? current.current_rows : 0);
+  const distinctPreparedRows = Number(current && current.distinct_prepared_rows ? current.distinct_prepared_rows : 0);
+  const duplicatePreparedRows = Math.max(0, currentRows - distinctPreparedRows);
+
+  return {
+    batch,
+    current: current || {},
+    batch_id: batch.batch_id,
+    eligible_rows: eligibleRows,
+    prepared_rows_read: Number(batch.prepared_rows_read || eligibleRows || 0),
+    matrix_rows_written: currentRows,
+    distinct_prepared_rows: distinctPreparedRows,
+    duplicate_prepared_row_rows: duplicatePreparedRows,
+    remaining_rows: Math.max(0, eligibleRows - currentRows),
+    issue_rows: Number(batch.issue_rows || 0),
+    warning_rows: Number(batch.warning_rows || 0),
+    blocker_rows: Number(batch.blocker_rows || 0),
+    missing_component_rows: Number(batch.missing_component_rows || 0),
+    matrix_blocked_rows: Number(batch.matrix_blocked_rows || 0),
+    matrix_deferred_rows: Number(batch.matrix_deferred_rows || 0),
+    matrix_partial_context_rows: Number(batch.matrix_partial_context_rows || 0),
+    blocking_for_scoring_rows: Number(current && current.blocking_for_scoring_rows ? current.blocking_for_scoring_rows : 0),
+    games: Number(current && current.games ? current.games : 0),
+    players: Number(current && current.players ? current.players : 0),
+    prop_keys: Number(current && current.prop_keys ? current.prop_keys : 0)
+  };
+}
+
+function buildPropMatrixEvidenceOutput(row, runId, trigger, evidence, rescueReason) {
+  const terminal = evidence.eligible_rows > 0 && evidence.matrix_rows_written >= evidence.eligible_rows;
+  const hasBlockers = evidence.blocker_rows > 0 || evidence.matrix_blocked_rows > 0 || evidence.missing_component_rows > 0 || evidence.blocking_for_scoring_rows > 0;
+  const hasWarnings = hasBlockers || evidence.warning_rows > 0 || evidence.issue_rows > 0 || evidence.matrix_partial_context_rows > 0 || evidence.matrix_deferred_rows > 0;
+  const certification = terminal
+    ? (hasWarnings ? "PROP_MATRIX_BUILDER_CERTIFIED_WITH_WARNINGS" : "PROP_MATRIX_BUILDER_CERTIFIED")
+    : "PROP_MATRIX_BUILDER_PARTIAL_CONTINUE_STALE_RUNNING_RESCUED";
+  const grade = terminal
+    ? (hasBlockers ? "PASS_WITH_BLOCKERS" : (hasWarnings ? "PASS_WITH_WARNINGS" : "PASS"))
+    : "PARTIAL";
+
+  return {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    worker_name: "alphadog-v2-prop-matrix-builder",
+    deployed_worker_slot: "alphadog-v2-phase2b-certifier",
+    job_key: row.job_key,
+    request_id: row.request_id,
+    chain_id: row.chain_id || null,
+    run_id: runId,
+    mode: "prop_matrix_build",
+    status: terminal ? (hasWarnings ? "completed_with_warnings" : "completed") : "partial_continue_prop_matrix_stale_running_rescued",
+    certification,
+    certification_grade: grade,
+    batch_id: evidence.batch_id,
+    matrix_batch_id: evidence.batch_id,
+    prepared_rows_read: evidence.prepared_rows_read,
+    eligible_rows: evidence.eligible_rows,
+    matrix_rows_written: evidence.matrix_rows_written,
+    remaining_rows: evidence.remaining_rows,
+    distinct_prepared_rows: evidence.distinct_prepared_rows,
+    duplicate_prepared_row_rows: evidence.duplicate_prepared_row_rows,
+    matrix_partial_context_rows: evidence.matrix_partial_context_rows,
+    matrix_blocked_rows: evidence.matrix_blocked_rows,
+    matrix_deferred_rows: evidence.matrix_deferred_rows,
+    issue_rows: evidence.issue_rows,
+    warning_rows: evidence.warning_rows,
+    blocker_rows: evidence.blocker_rows,
+    missing_component_rows: evidence.missing_component_rows,
+    blocking_for_scoring_rows: evidence.blocking_for_scoring_rows,
+    games: evidence.games,
+    players: evidence.players,
+    prop_keys: evidence.prop_keys,
+    stale_running_rescue: true,
+    rescue_reason: rescueReason,
+    matrix_resume: !terminal,
+    resume_batch_id: terminal ? null : evidence.batch_id,
+    continuation_required: !terminal,
+    orchestrator_should_self_continue: !terminal,
+    no_matrix_math_change: true,
+    baseline_not_modified: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true
+  };
+}
+
+async function persistPropMatrixEvidenceRescue(env, output) {
+  if (!output || !output.batch_id) return;
+  const terminal = !output.continuation_required;
+  await run(env.SCORE_DB,
+    `UPDATE prop_matrix_batches
+        SET status=?,
+            matrix_rows_written=?,
+            certification_status=?,
+            certification_grade=?,
+            output_json=?,
+            updated_at=CURRENT_TIMESTAMP
+      WHERE batch_id=?`,
+    terminal ? output.status : "running_chunked",
+    Number(output.matrix_rows_written || 0),
+    output.certification,
+    output.certification_grade,
+    JSON.stringify(output),
+    output.batch_id
+  );
+}
+
+async function recoverStalePropMatrixBuilderJobs(env, trigger = "manual") {
+  const rows = await all(env.CONTROL_DB,
+    `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json, output_json, started_at, updated_at
+       FROM control_job_queue
+      WHERE job_key='prop-matrix-builder'
+        AND worker_name='alphadog-v2-phase2b-certifier'
+        AND status='running'
+        AND finished_at IS NULL
+        AND datetime(updated_at) <= datetime('now','-120 seconds')
+      ORDER BY datetime(updated_at) ASC
+      LIMIT 3`
+  );
+
+  let recovered = 0;
+  const reports = [];
+  for (const row of rows) {
+    const runId = rid("run");
+    const evidence = await getPropMatrixBuilderEvidence(env, row.request_id);
+    if (!evidence || evidence.matrix_rows_written <= 0) {
+      reports.push({ request_id: row.request_id, recovered: false, reason: "no_matrix_evidence" });
+      continue;
+    }
+    const output = buildPropMatrixEvidenceOutput(row, runId, trigger, evidence, "stale_running_queue_row");
+    await persistPropMatrixEvidenceRescue(env, output);
+
+    const oldInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+    const nextInput = {
+      ...oldInput,
+      matrix_batch_id: output.batch_id,
+      resume_batch_id: output.batch_id,
+      matrix_resume: !!output.continuation_required,
+      continuation_from_request_id: row.request_id,
+      stale_running_recovered_by_orchestrator: true
+    };
+
+    const queueStatus = output.continuation_required ? "pending" : "completed";
+    await run(env.CONTROL_DB,
+      `UPDATE control_job_queue
+          SET status=?,
+              run_after=CURRENT_TIMESTAMP,
+              finished_at=CASE WHEN ?='completed' THEN CURRENT_TIMESTAMP ELSE NULL END,
+              updated_at=CURRENT_TIMESTAMP,
+              input_json=?,
+              output_json=?,
+              error_code=NULL,
+              error_message=NULL
+        WHERE request_id=?
+          AND status='running'`,
+      queueStatus,
+      queueStatus,
+      JSON.stringify(nextInput),
+      JSON.stringify(output),
+      row.request_id
+    );
+
+    await run(env.CONTROL_DB,
+      `UPDATE control_job_runs
+          SET status=?,
+              data_ok=1,
+              certification_status=?,
+              rows_read=?,
+              rows_written=?,
+              finished_at=CURRENT_TIMESTAMP,
+              output_json=?,
+              error_code=NULL,
+              error_message=NULL
+        WHERE request_id=?
+          AND status='running'
+          AND finished_at IS NULL`,
+      output.continuation_required ? "partial_continue" : "completed",
+      output.certification,
+      Number(output.prepared_rows_read || 0),
+      Number(output.matrix_rows_written || 0),
+      JSON.stringify(output),
+      row.request_id
+    );
+
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'prop_matrix_builder_stale_running_auto_recovered', 'Recovered stale running Prop Matrix Builder row from matrix batch evidence', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output)
+    );
+
+    recovered += 1;
+    reports.push({ request_id: row.request_id, recovered: true, queue_status: queueStatus, matrix_rows_written: output.matrix_rows_written, eligible_rows: output.eligible_rows, remaining_rows: output.remaining_rows, certification: output.certification });
+  }
+
+  return { recovered, reports, version: SYSTEM_VERSION };
+}
+
 async function processPropMatrixBuilderJob(env, row, runId, trigger) {
   if (!env.PHASE2B_CERTIFIER_WORKER || typeof env.PHASE2B_CERTIFIER_WORKER.fetch !== "function") {
     const output = {
@@ -11662,7 +11889,18 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
       output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
     }
   } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+    const rawError = String(err && err.message ? err.message : err);
+    const evidence = await getPropMatrixBuilderEvidence(env, row.request_id);
+    if (evidence && evidence.matrix_rows_written > 0) {
+      output = buildPropMatrixEvidenceOutput(row, runId, trigger, evidence, `service_binding_dispatch_exception:${rawError.slice(0, 240)}`);
+      await persistPropMatrixEvidenceRescue(env, output);
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'prop_matrix_builder_dispatch_exception_rescued_from_batch_evidence', 'Rescued Prop Matrix Builder service-binding exception from matrix batch evidence', ?, CURRENT_TIMESTAMP)",
+        row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output)
+      );
+    } else {
+      output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: rawError };
+    }
   }
 
   const partial = isPartialContinueOutput(output);
@@ -14307,6 +14545,11 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       processed.push({ status: "stale_daily_context_certifier_recovered", recovered_count: dailyContextCertifierStaleRecovery.recovered });
     }
 
+    const propMatrixStaleRecovery = await recoverStalePropMatrixBuilderJobs(env, trigger);
+    if (propMatrixStaleRecovery.recovered > 0) {
+      processed.push({ status: "stale_prop_matrix_builder_recovered", recovered_count: propMatrixStaleRecovery.recovered, reports: propMatrixStaleRecovery.reports });
+    }
+
     const limit = Math.max(1, Math.min(Number(maxJobs || 3), 10));
 
     for (let i = 0; i < limit; i++) {
@@ -14717,7 +14960,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true,
       player_baseline_sanity_lock_busy_continuation: !!playerBaselineSanityLockBusyContinuation,
       prop_factor_lock_busy_continuation: !!propFactorLockBusyContinuation,
-      prop_factor_cooldown_hot_pump_v0_2_242: true, prop_factor_always_hot_continuation_v0_2_243: true, prop_factor_always_hot_continuation_v0_2_243: true,
+      prop_factor_cooldown_hot_pump_v0_2_242: true, prop_factor_always_hot_continuation_v0_2_243: true, prop_matrix_always_hot_continuation_v0_2_244: true, prop_matrix_stale_running_rescue_v0_2_245: true,
       hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
       cron_is_rescue_only_for_base_hitter: true, cron_is_rescue_only_for_base_hitter_splits: true, base_hitter_splits_hot_continuation_v0_2_32: true, base_pitcher_splits_hot_continuation_v0_2_35: true,
       version: SYSTEM_VERSION
@@ -14762,7 +15005,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
         daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
         lock_busy_hot_continuation: !!lockBusyHotContinuation,
-        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true, prop_factor_cooldown_hot_pump_v0_2_242: true, prop_factor_always_hot_continuation_v0_2_243: true, prop_factor_always_hot_continuation_v0_2_243: true,
+        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true, prop_factor_cooldown_hot_pump_v0_2_242: true, prop_factor_always_hot_continuation_v0_2_243: true, prop_matrix_always_hot_continuation_v0_2_244: true, prop_matrix_stale_running_rescue_v0_2_245: true,
       player_baseline_sanity_lock_busy_continuation: !!playerBaselineSanityLockBusyContinuation,
         self_continue_suppressed_due_to_lock_busy: !!(sawLockBusy && !lockBusyHotContinuation),
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
