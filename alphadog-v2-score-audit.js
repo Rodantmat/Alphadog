@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-score-audit-v0.4.41-enrichment-v1-resume-fix";
+const VERSION = "alphadog-v2-score-audit-v0.4.42-enrichment-v1-batched-compact";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -4339,8 +4339,8 @@ async function runHitProbabilityCurrent(env, input = {}){
 
 const ENRICHMENT_V1_JOB_KEY = "score-enrichment-v1";
 const ENRICHMENT_V1_MODE = "score_enrichment_v1_side_expanded";
-const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.1-resume-fix-microchunk";
-const ENRICHMENT_V1_CHUNK_ROWS = 250;
+const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.2-batched-compact-writes";
+const ENRICHMENT_V1_CHUNK_ROWS = 500;
 
 function clampNum(v, lo, hi) {
   const n = Number(v);
@@ -4549,7 +4549,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
   const sourceMatrixBatchId = input.source_matrix_batch_id || nestedInput.source_matrix_batch_id || await latestMatrixBatchIdForEnrichment(env);
   if (!sourceMatrixBatchId) throw new Error("No prop_matrix_current batch found for Enrichment V1");
   let offset = Number(input.enrichment_offset ?? input.offset ?? nestedInput.enrichment_offset ?? nestedInput.offset ?? 0) || 0;
-  const limit = Math.max(50, Math.min(Number(input.chunk_rows || nestedInput.chunk_rows || ENRICHMENT_V1_CHUNK_ROWS), 350));
+  const limit = Math.max(50, Math.min(Number(input.chunk_rows || nestedInput.chunk_rows || ENRICHMENT_V1_CHUNK_ROWS), 750));
   let resumeMismatchReset = false;
 
   const totalRow = await first(env.SCORE_DB, `WITH side_expanded AS (
@@ -4609,6 +4609,13 @@ async function runScoreEnrichmentV1(env, input = {}) {
   LIMIT ? OFFSET ?`, sourceMatrixBatchId, sourceMatrixBatchId, limit, offset);
 
   let written = 0, baselineMatched = 0, baselineMissing = 0, blocked = 0, warnings = 0, issues = 0;
+  const currentStatements = [];
+  const issueStatements = [];
+  const flushD1Batch = async (stmts, size = 50) => {
+    for (let i = 0; i < stmts.length; i += size) {
+      await env.SCORE_DB.batch(stmts.slice(i, i + size));
+    }
+  };
   for (const row of rows) {
     const baselineAvailable = !!row.baseline_hp_row_id;
     if (baselineAvailable) baselineMatched++; else baselineMissing++;
@@ -4656,22 +4663,24 @@ async function runScoreEnrichmentV1(env, input = {}) {
       variance_profile: row.variance_profile || null,
       line_difficulty_profile: row.line_difficulty_profile || null
     };
-    await run(env.SCORE_DB, `INSERT OR REPLACE INTO score_enrichment_current (
+    currentStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO score_enrichment_current (
       enrichment_row_id,batch_id,matrix_id,prepared_row_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,team_id,opponent_team_id,canonical_prop_key,board_line_value,selected_side,factor_family,factor_packet_id,profile_key,baseline_hp_row_id,baseline_hp_available,baseline_hp_0_100,baseline_confidence_raw_0_100,baseline_confidence_v2_0_60,baseline_sample_size,baseline_hit_count,baseline_miss_count,profile_weight_json,factor_layer_json,factor_hp_pressure,enrichment_confidence_add_available_0_40,confidence_cap_0_100,data_quality_score_0_100,enrichment_status,enrichment_grade,matrix_status,matrix_grade,factor_status,factor_grade,market_game_context_status,market_prop_context_status,daily_readiness_status,blocking_for_scoring,warning_count,blocker_count,missing_component_count,baseline_missing,hp_v2_ready,final_score_ready,enrichment_payload_json,matrix_payload_json_snapshot,details_json_snapshot,updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
-      enrichmentRowId,batchId,row.matrix_id,row.prepared_row_id,row.source_line_id,row.source_key,row.game_pk,row.official_date,row.official_game_time_utc,row.mlb_player_id,row.player_name,row.team_id,row.opponent_team_id,row.canonical_prop_key,row.board_line_value,row.selected_side,row.factor_family,row.factor_packet_id,profileKey,row.baseline_hp_row_id || null,baselineAvailable ? 1 : 0,baselineHp,baselineConfRaw,baselineConfV2,Number(row.non_push_sample || 0),Number(row.hit_count || 0),Number(row.miss_count || 0),scoreJson(weights,3000),scoreJson(factorLayers,6000),factorPressure,confAddClamped,confidenceCap,dataQuality,status,grade,row.matrix_status,row.matrix_grade,row.factor_status,row.factor_grade || null,row.market_game_context_status,row.market_prop_context_status,row.daily_readiness_status,Number(row.blocking_for_scoring || 0),Number(row.warning_count || 0),Number(row.blocker_count || 0),Number(row.missing_component_count || 0),baselineAvailable ? 0 : 1,(baselineAvailable && status !== "enrichment_blocked") ? 1 : 0,(baselineAvailable && status === "enrichment_ready") ? 1 : 0,scoreJson(payload,6000),row.matrix_payload_json || null,row.details_json || null);
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      enrichmentRowId,batchId,row.matrix_id,row.prepared_row_id,row.source_line_id,row.source_key,row.game_pk,row.official_date,row.official_game_time_utc,row.mlb_player_id,row.player_name,row.team_id,row.opponent_team_id,row.canonical_prop_key,row.board_line_value,row.selected_side,row.factor_family,row.factor_packet_id,profileKey,row.baseline_hp_row_id || null,baselineAvailable ? 1 : 0,baselineHp,baselineConfRaw,baselineConfV2,Number(row.non_push_sample || 0),Number(row.hit_count || 0),Number(row.miss_count || 0),scoreJson(weights,3000),scoreJson(factorLayers,6000),factorPressure,confAddClamped,confidenceCap,dataQuality,status,grade,row.matrix_status,row.matrix_grade,row.factor_status,row.factor_grade || null,row.market_game_context_status,row.market_prop_context_status,row.daily_readiness_status,Number(row.blocking_for_scoring || 0),Number(row.warning_count || 0),Number(row.blocker_count || 0),Number(row.missing_component_count || 0),baselineAvailable ? 0 : 1,(baselineAvailable && status !== "enrichment_blocked") ? 1 : 0,(baselineAvailable && status === "enrichment_ready") ? 1 : 0,scoreJson(payload,6000),null,null));
     if (!baselineAvailable || status === "enrichment_blocked") {
       issues++;
-      await run(env.SCORE_DB, `INSERT OR REPLACE INTO score_enrichment_issues (issue_id,batch_id,enrichment_row_id,prepared_row_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, `${batchId}|${enrichmentRowId}|${baselineAvailable ? "blocked" : "baseline_missing"}`, batchId, enrichmentRowId, row.prepared_row_id, baselineAvailable ? "BLOCKER" : "WARNING", baselineAvailable ? "ENRICHMENT_BLOCKED" : "BASELINE_HP_MISSING", baselineAvailable ? "Matrix row blocks scoring/enrichment" : "No matching side-specific baseline HP row", scoreJson({ profile_key: profileKey, canonical_prop_key: row.canonical_prop_key, selected_side: row.selected_side }, 3000));
+      issueStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO score_enrichment_issues (issue_id,batch_id,enrichment_row_id,prepared_row_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`${batchId}|${enrichmentRowId}|${baselineAvailable ? "blocked" : "baseline_missing"}`, batchId, enrichmentRowId, row.prepared_row_id, baselineAvailable ? "BLOCKER" : "WARNING", baselineAvailable ? "ENRICHMENT_BLOCKED" : "BASELINE_HP_MISSING", baselineAvailable ? "Matrix row blocks scoring/enrichment" : "No matching side-specific baseline HP row", scoreJson({ profile_key: profileKey, canonical_prop_key: row.canonical_prop_key, selected_side: row.selected_side }, 3000)));
     }
     written++;
   }
+  await flushD1Batch(currentStatements, 50);
+  await flushD1Batch(issueStatements, 50);
   const totals = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, SUM(CASE WHEN baseline_hp_available=1 THEN 1 ELSE 0 END) AS matched, SUM(CASE WHEN baseline_hp_available=0 THEN 1 ELSE 0 END) AS missing, SUM(CASE WHEN enrichment_status='enrichment_blocked' THEN 1 ELSE 0 END) AS blocked, SUM(CASE WHEN enrichment_status LIKE '%warnings%' THEN 1 ELSE 0 END) AS warn FROM score_enrichment_current WHERE batch_id=?`, batchId);
   const writtenTotal = Number(totals && totals.rows || 0);
   const remaining = Math.max(0, expectedRows - (offset + rows.length));
   const complete = remaining <= 0;
   const output = baseIdentity({
-    ok:true,data_ok:true,version:ENRICHMENT_V1_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v1",deployed_worker_slot:"alphadog-v2-score-audit",job_key:ENRICHMENT_V1_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:ENRICHMENT_V1_MODE,status:complete?"completed_score_enrichment_v1_side_expanded":"partial_continue_score_enrichment_v1_side_expanded",certification:complete?"SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED":"SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE",certification_grade:complete?"PASS_WITH_REVIEW_WARNINGS_ALLOWED":"PARTIAL",batch_id:batchId,enrichment_batch_id:batchId,source_matrix_batch_id:sourceMatrixBatchId,matrix_rows_read:Math.ceil(expectedRows/2),expected_enrichment_rows:expectedRows,enrichment_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:written,baseline_matched_rows:Number(totals && totals.matched || 0),baseline_missing_rows:Number(totals && totals.missing || 0),blocked_rows:Number(totals && totals.blocked || 0),warning_rows:Number(totals && totals.warn || 0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,resume_mismatch_reset:resumeMismatchReset,requested_batch_id:requestedBatchId,side_expanded:true,baseline_confidence_cap_60:true,enrichment_confidence_max_40:true,no_hp_v2:true,no_current_scoring_mutation:true,no_final_score:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
+    ok:true,data_ok:true,version:ENRICHMENT_V1_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v1",deployed_worker_slot:"alphadog-v2-score-audit",job_key:ENRICHMENT_V1_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:ENRICHMENT_V1_MODE,status:complete?"completed_score_enrichment_v1_side_expanded":"partial_continue_score_enrichment_v1_side_expanded",certification:complete?"SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED":"SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE",certification_grade:complete?"PASS_WITH_REVIEW_WARNINGS_ALLOWED":"PARTIAL",batch_id:batchId,enrichment_batch_id:batchId,source_matrix_batch_id:sourceMatrixBatchId,matrix_rows_read:Math.ceil(expectedRows/2),expected_enrichment_rows:expectedRows,enrichment_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:written,baseline_matched_rows:Number(totals && totals.matched || 0),baseline_missing_rows:Number(totals && totals.missing || 0),blocked_rows:Number(totals && totals.blocked || 0),warning_rows:Number(totals && totals.warn || 0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,resume_mismatch_reset:resumeMismatchReset,requested_batch_id:requestedBatchId,batched_compact_writes:true,compact_snapshots:true,side_expanded:true,baseline_confidence_cap_60:true,enrichment_confidence_max_40:true,no_hp_v2:true,no_current_scoring_mutation:true,no_final_score:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE score_enrichment_batches SET status=?, matrix_rows_read=?, expected_enrichment_rows=?, enrichment_rows_written=?, baseline_matched_rows=?, baseline_missing_rows=?, blocked_rows=?, warning_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", Math.ceil(expectedRows/2), expectedRows, writtenTotal, output.baseline_matched_rows, output.baseline_missing_rows, output.blocked_rows, output.warning_rows, output.certification, output.certification_grade, scoreJson(output,14000), batchId);
   return output;
 }
