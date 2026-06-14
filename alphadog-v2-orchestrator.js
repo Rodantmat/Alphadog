@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.253-score-enrichment-stale-preselect-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.254-score-enrichment-no-count-side-effect";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -13689,6 +13689,21 @@ async function processOneUnlocked(env, trigger) {
     row = await rescueStalePlayerBaselineRunningJobForResume(env, trigger);
   }
 
+  // Prefer due Score Enrichment V1 after its stale-running rescue has re-pended it.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+         FROM control_job_queue
+        WHERE job_key='score-enrichment-v1'
+          AND worker_name='alphadog-v2-score-audit'
+          AND status IN ('pending','partial_continue')
+          AND finished_at IS NULL
+          AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+        ORDER BY datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) ASC, datetime(created_at) ASC
+        LIMIT 1`
+    );
+  }
+
   if (!row) {
     row = await first(env.CONTROL_DB,
       "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json FROM control_job_queue WHERE status='pending' AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP) ORDER BY priority ASC, datetime(created_at) ASC LIMIT 1"
@@ -14890,7 +14905,8 @@ async function recoverStaleScoreEnrichmentV1Jobs(env, trigger = "manual") {
 }
 
 async function countDueScoreEnrichmentV1Hot(env) {
-  await recoverStaleScoreEnrichmentV1Jobs(env, "count_due_score_enrichment_v1_hot");
+  // Count only. Do not mutate queue/locks from a due-count helper.
+  // Stale recovery is performed inside the locked orchestrator pump/preselect path.
   const row = await first(env.CONTROL_DB,
     `SELECT COUNT(*) AS c
        FROM control_job_queue
