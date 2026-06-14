@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.242-prop-factor-cooldown-hot-pump";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.243-prop-factor-always-hot-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -14557,17 +14557,16 @@ async function countDuePlayerBaselineSanity(env) {
 }
 
 async function countDuePropFactorMinerHot(env) {
-  // Prop Factor intentionally alternates real packet chunks with short cooldown-yield rows.
-  // Count near-due active rows so waitUntil keeps the backend alive through the cooldown
-  // instead of requiring manual Wake/cron between every few ticks.
+  // Prop Factor intentionally alternates long service-binding packet chunks with short
+  // cooldown/yield states. Count every active Prop Factor row, not only currently-due
+  // rows, so waitUntil owns the whole lifecycle instead of falling back to manual Wake.
   const row = await first(env.CONTROL_DB,
     `SELECT COUNT(*) AS c
        FROM control_job_queue
       WHERE job_key='prop-factor-miner'
         AND worker_name='alphadog-v2-phase2b-recent-form'
         AND status IN ('pending','running','partial_continue')
-        AND finished_at IS NULL
-        AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP, '+8 seconds')`
+        AND finished_at IS NULL`
   );
   return Number(row && row.c ? row.c : 0);
 }
@@ -14656,7 +14655,9 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const shouldSelfContinue = (continuationAllowedByLastCycle || lockBusyHotContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
-  const hotContinuationDelayMs = shouldSelfContinue && duePropFactorMinerHot > 0 && (lastStatus === "no_due_jobs" || propFactorLockBusyContinuation) ? 2500 : (shouldSelfContinue && (lastStatus === "no_due_jobs" || lockBusyHotContinuation) ? 6500 : 0);
+  const hotContinuationDelayMs = shouldSelfContinue && duePropFactorMinerHot > 0
+    ? (lastStatus === "no_due_jobs" ? 2500 : 0)
+    : (shouldSelfContinue && (lastStatus === "no_due_jobs" || lockBusyHotContinuation) ? 6500 : 0);
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -14698,7 +14699,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true,
       player_baseline_sanity_lock_busy_continuation: !!playerBaselineSanityLockBusyContinuation,
       prop_factor_lock_busy_continuation: !!propFactorLockBusyContinuation,
-      prop_factor_cooldown_hot_pump_v0_2_242: true,
+      prop_factor_cooldown_hot_pump_v0_2_242: true, prop_factor_always_hot_continuation_v0_2_243: true, prop_factor_always_hot_continuation_v0_2_243: true,
       hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
       cron_is_rescue_only_for_base_hitter: true, cron_is_rescue_only_for_base_hitter_splits: true, base_hitter_splits_hot_continuation_v0_2_32: true, base_pitcher_splits_hot_continuation_v0_2_35: true,
       version: SYSTEM_VERSION
@@ -14742,7 +14743,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
         daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
         lock_busy_hot_continuation: !!lockBusyHotContinuation,
-        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true, prop_factor_cooldown_hot_pump_v0_2_242: true,
+        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true, prop_factor_cooldown_hot_pump_v0_2_242: true, prop_factor_always_hot_continuation_v0_2_243: true, prop_factor_always_hot_continuation_v0_2_243: true,
       player_baseline_sanity_lock_busy_continuation: !!playerBaselineSanityLockBusyContinuation,
         self_continue_suppressed_due_to_lock_busy: !!(sawLockBusy && !lockBusyHotContinuation),
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
