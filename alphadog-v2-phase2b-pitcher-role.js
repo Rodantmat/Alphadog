@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase2b-pitcher-role";
 const LOGICAL_WORKER_NAME = "alphadog-v2-player-baseline-sanity";
-const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.6-exact-hp-anchor-no-hard-clamp";
+const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.7-idempotent-sanity-stage-resume";
 const JOB_KEY = "player-baseline-sanity";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "SCORE_DB"];
@@ -447,7 +447,7 @@ async function insertStageRows(env, rows) {
   for (let i = 0; i < rows.length; i += chunkSize) {
     const chunk = rows.slice(i, i + chunkSize);
     const placeholders = chunk.map(() => `(${cols.map(() => "?").join(",")},CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).join(",");
-    const sql = `INSERT INTO player_baseline_sanity_stage (${cols.join(",")},created_at,updated_at) VALUES ${placeholders}`;
+    const sql = `INSERT OR REPLACE INTO player_baseline_sanity_stage (${cols.join(",")},created_at,updated_at) VALUES ${placeholders}`;
     const binds = [];
     for (const r of chunk) {
       binds.push(
