@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase2b-pitcher-role";
 const LOGICAL_WORKER_NAME = "alphadog-v2-player-baseline-sanity";
-const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.7-idempotent-sanity-stage-resume";
+const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.8-sanity-stage-d1-safe-microbatch";
 const JOB_KEY = "player-baseline-sanity";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "SCORE_DB"];
@@ -443,7 +443,7 @@ async function insertStageRows(env, rows) {
     "confidence_drag_profile","variance_profile","games_sample","events_sample","baseline_confidence_0_100","line_baseline_json",
     "distribution_shape_json","notes_json"
   ];
-  const chunkSize = 4;
+  const chunkSize = Math.max(10, Math.min(25, Number(env.BASELINE_SANITY_INSERT_BATCH_SIZE || 25)));
   for (let i = 0; i < rows.length; i += chunkSize) {
     const chunk = rows.slice(i, i + chunkSize);
     const placeholders = chunk.map(() => `(${cols.map(() => "?").join(",")},CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).join(",");
@@ -975,7 +975,7 @@ async function runLayer1(env, input = {}) {
     if (mode === "stage_hitters_chunk") {
       const loaded = await loadAllProfiles(env);
       const lastId = Number(input.last_player_id || 0);
-      const chunkSize = Number(input.player_chunk_size || 30);
+      const chunkSize = Math.max(5, Math.min(15, Number(input.player_chunk_size || 15)));
       const allProfiles = loaded.hitterProfiles.slice().sort((a,b)=>a.player_id-b.player_id);
       const chunkProfiles = allProfiles.filter(p => Number(p.player_id) > lastId).slice(0, chunkSize);
       const selectedIds = new Set(chunkProfiles.map(p => Number(p.player_id)));
@@ -988,12 +988,12 @@ async function runLayer1(env, input = {}) {
       const progress = await updateBatchProgress(env, batchId);
       if (!done) {
         const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"stage_hitters_chunk", last_player_id:newLastId });
-        const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_HITTERS", certification:"PLAYER_BASELINE_SANITY_HITTER_CHUNK_WRITTEN", certification_grade:"PARTIAL", continuation_required:true, next_mode:"stage_hitters_chunk", next_input:nextInput, run_after_delay_seconds:0, players_processed_this_chunk:chunkProfiles.length, rows_written_this_chunk:rows.length, rows_staged:progress.stageRows, last_player_id:newLastId });
+        const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_HITTERS", certification:"PLAYER_BASELINE_SANITY_HITTER_CHUNK_WRITTEN", certification_grade:"PARTIAL", continuation_required:true, next_mode:"stage_hitters_chunk", next_input:nextInput, run_after_delay_seconds:0, players_processed_this_chunk:chunkProfiles.length, rows_written_this_chunk:rows.length, insert_batch_size:Math.max(10, Math.min(25, Number(env.BASELINE_SANITY_INSERT_BATCH_SIZE || 25))), player_chunk_size:chunkSize, d1_safe_microbatch:true, rows_staged:progress.stageRows, last_player_id:newLastId });
         await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
         return output;
       }
       const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"stage_pitchers_chunk", last_player_id:0 });
-      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_HITTERS_COMPLETE", certification:"PLAYER_BASELINE_SANITY_HITTERS_STAGED", certification_grade:"PARTIAL", continuation_required:true, next_mode:"stage_pitchers_chunk", next_input:nextInput, run_after_delay_seconds:0, players_processed_this_chunk:chunkProfiles.length, rows_written_this_chunk:rows.length, rows_staged:progress.stageRows });
+      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_HITTERS_COMPLETE", certification:"PLAYER_BASELINE_SANITY_HITTERS_STAGED", certification_grade:"PARTIAL", continuation_required:true, next_mode:"stage_pitchers_chunk", next_input:nextInput, run_after_delay_seconds:0, players_processed_this_chunk:chunkProfiles.length, rows_written_this_chunk:rows.length, insert_batch_size:Math.max(10, Math.min(25, Number(env.BASELINE_SANITY_INSERT_BATCH_SIZE || 25))), player_chunk_size:chunkSize, d1_safe_microbatch:true, rows_staged:progress.stageRows });
       await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
       return output;
     }
@@ -1001,7 +1001,7 @@ async function runLayer1(env, input = {}) {
     if (mode === "stage_pitchers_chunk") {
       const loaded = await loadAllProfiles(env);
       const lastId = Number(input.last_player_id || 0);
-      const chunkSize = Number(input.player_chunk_size || 30);
+      const chunkSize = Math.max(5, Math.min(15, Number(input.player_chunk_size || 15)));
       const allProfiles = loaded.pitcherProfiles.slice().sort((a,b)=>a.player_id-b.player_id);
       const chunkProfiles = allProfiles.filter(p => Number(p.player_id) > lastId).slice(0, chunkSize);
       const selectedIds = new Set(chunkProfiles.map(p => Number(p.player_id)));
@@ -1014,12 +1014,12 @@ async function runLayer1(env, input = {}) {
       const progress = await updateBatchProgress(env, batchId);
       if (!done) {
         const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"stage_pitchers_chunk", last_player_id:newLastId });
-        const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_PITCHERS", certification:"PLAYER_BASELINE_SANITY_PITCHER_CHUNK_WRITTEN", certification_grade:"PARTIAL", continuation_required:true, next_mode:"stage_pitchers_chunk", next_input:nextInput, run_after_delay_seconds:0, players_processed_this_chunk:chunkProfiles.length, rows_written_this_chunk:rows.length, rows_staged:progress.stageRows, last_player_id:newLastId });
+        const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_PITCHERS", certification:"PLAYER_BASELINE_SANITY_PITCHER_CHUNK_WRITTEN", certification_grade:"PARTIAL", continuation_required:true, next_mode:"stage_pitchers_chunk", next_input:nextInput, run_after_delay_seconds:0, players_processed_this_chunk:chunkProfiles.length, rows_written_this_chunk:rows.length, insert_batch_size:Math.max(10, Math.min(25, Number(env.BASELINE_SANITY_INSERT_BATCH_SIZE || 25))), player_chunk_size:chunkSize, d1_safe_microbatch:true, rows_staged:progress.stageRows, last_player_id:newLastId });
         await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
         return output;
       }
       const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"promote_current" });
-      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_PITCHERS_COMPLETE", certification:"PLAYER_BASELINE_SANITY_PITCHERS_STAGED", certification_grade:"PARTIAL", continuation_required:true, next_mode:"promote_current", next_input:nextInput, run_after_delay_seconds:0, players_processed_this_chunk:chunkProfiles.length, rows_written_this_chunk:rows.length, rows_staged:progress.stageRows });
+      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_PLAYER_BASELINE_SANITY_PITCHERS_COMPLETE", certification:"PLAYER_BASELINE_SANITY_PITCHERS_STAGED", certification_grade:"PARTIAL", continuation_required:true, next_mode:"promote_current", next_input:nextInput, run_after_delay_seconds:0, players_processed_this_chunk:chunkProfiles.length, rows_written_this_chunk:rows.length, insert_batch_size:Math.max(10, Math.min(25, Number(env.BASELINE_SANITY_INSERT_BATCH_SIZE || 25))), player_chunk_size:chunkSize, d1_safe_microbatch:true, rows_staged:progress.stageRows });
       await updateBatchProgress(env, batchId, { output_json: safeJson(output) });
       return output;
     }
