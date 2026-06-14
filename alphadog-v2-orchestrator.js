@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.246-score-enrichment-v1-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.247-score-enrichment-v1-stale-resume";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12109,7 +12109,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
-    deployed_slot_version: isEnrichmentJob ? "alphadog-v2-score-audit-v0.4.40-enrichment-v1-side-expanded" : (isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock"),
+    deployed_slot_version: isEnrichmentJob ? "alphadog-v2-score-audit-v0.4.41-enrichment-v1-resume-fix" : (isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock"),
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
@@ -14559,6 +14559,7 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
     }
 
     const propMatrixStaleRecovery = await recoverStalePropMatrixBuilderJobs(env, trigger);
+  await recoverStaleScoreEnrichmentV1Jobs(env, trigger);
     if (propMatrixStaleRecovery.recovered > 0) {
       processed.push({ status: "stale_prop_matrix_builder_recovered", recovered_count: propMatrixStaleRecovery.recovered, reports: propMatrixStaleRecovery.reports });
     }
@@ -14810,6 +14811,81 @@ async function countDuePlayerBaselineSanity(env) {
     "SELECT COUNT(*) AS c FROM control_job_queue WHERE job_key IN ('player-baseline-sanity','player-baseline-hp') AND worker_name='alphadog-v2-phase2b-pitcher-role' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL"
   );
   return Number(row && row.c ? row.c : 0);
+}
+
+
+async function recoverStaleScoreEnrichmentV1Jobs(env, trigger = "manual") {
+  const rows = await all(env.CONTROL_DB,
+    `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json, output_json, started_at, updated_at
+       FROM control_job_queue
+      WHERE job_key='score-enrichment-v1'
+        AND worker_name='alphadog-v2-score-audit'
+        AND status='running'
+        AND finished_at IS NULL
+        AND datetime(updated_at) <= datetime('now','-60 seconds')
+      ORDER BY datetime(updated_at) ASC
+      LIMIT 3`
+  );
+  let recovered = 0;
+  for (const row of rows) {
+    let input = {};
+    try { input = JSON.parse(row.input_json || '{}'); } catch (_) { input = {}; }
+    const batchId = input.enrichment_batch_id || input.resume_batch_id || null;
+    const current = batchId && env.SCORE_DB ? await first(env.SCORE_DB,
+      `SELECT COUNT(*) AS rows,
+              SUM(CASE WHEN baseline_hp_available=1 THEN 1 ELSE 0 END) AS matched,
+              SUM(CASE WHEN baseline_hp_available=0 THEN 1 ELSE 0 END) AS missing
+         FROM score_enrichment_current
+        WHERE batch_id=?`, batchId) : null;
+    const currentRows = Number(current && current.rows || 0);
+    const nextOffset = Math.max(Number(input.enrichment_offset || 0), currentRows);
+    const output = {
+      ok:true,
+      data_ok:true,
+      version:SYSTEM_VERSION,
+      worker_name:'alphadog-v2-orchestrator',
+      job_key:'score-enrichment-v1',
+      request_id:row.request_id,
+      chain_id:row.chain_id || null,
+      status:'partial_continue_score_enrichment_v1_stale_running_rescued',
+      certification:'SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE_STALE_RUNNING_RESCUED',
+      certification_grade:'PARTIAL',
+      batch_id:batchId,
+      enrichment_batch_id:batchId,
+      enrichment_rows_written:currentRows,
+      baseline_matched_rows:Number(current && current.matched || 0),
+      baseline_missing_rows:Number(current && current.missing || 0),
+      next_offset:nextOffset,
+      enrichment_offset:nextOffset,
+      continuation_required:true,
+      orchestrator_should_self_continue:true,
+      stale_running_rescue:true,
+      no_hp_v2:true,
+      no_current_scoring_mutation:true,
+      no_final_board:true,
+      trigger
+    };
+    const nextInput = { ...input, enrichment_batch_id: batchId, resume_batch_id: batchId, enrichment_offset: nextOffset, score_enrichment_resume: true, stale_running_recovered_by_orchestrator: true };
+    await run(env.CONTROL_DB,
+      `UPDATE control_job_queue
+          SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL
+        WHERE request_id=? AND status='running'`,
+      JSON.stringify(nextInput), JSON.stringify(output), row.request_id
+    );
+    await run(env.CONTROL_DB,
+      `UPDATE control_job_runs
+          SET status='partial_continue', data_ok=1, certification_status='SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE_STALE_RUNNING_RESCUED', finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), output_json=?
+        WHERE request_id=? AND job_key='score-enrichment-v1' AND status='running' AND finished_at IS NULL`,
+      JSON.stringify(output), row.request_id
+    );
+    await run(env.CONTROL_DB,
+      `INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at)
+       VALUES (?, ?, 'score-enrichment-v1', 'WARN', 'score_enrichment_v1_stale_running_auto_recovered', 'Recovered stale running Score Enrichment V1 row from enrichment current evidence', ?, CURRENT_TIMESTAMP)`,
+      row.request_id, WORKER_NAME, JSON.stringify(output)
+    );
+    recovered++;
+  }
+  return { recovered };
 }
 
 async function countDueScoreEnrichmentV1Hot(env) {

@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-score-audit-v0.4.40-enrichment-v1-side-expanded";
+const VERSION = "alphadog-v2-score-audit-v0.4.41-enrichment-v1-resume-fix";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -4339,8 +4339,8 @@ async function runHitProbabilityCurrent(env, input = {}){
 
 const ENRICHMENT_V1_JOB_KEY = "score-enrichment-v1";
 const ENRICHMENT_V1_MODE = "score_enrichment_v1_side_expanded";
-const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.0-side-expanded-baseline-confidence";
-const ENRICHMENT_V1_CHUNK_ROWS = 650;
+const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.1-resume-fix-microchunk";
+const ENRICHMENT_V1_CHUNK_ROWS = 250;
 
 function clampNum(v, lo, hi) {
   const n = Number(v);
@@ -4543,11 +4543,14 @@ async function runScoreEnrichmentV1(env, input = {}) {
   const requestId = input.request_id || `score_enrichment_v1_${Date.now().toString(36)}`;
   const runId = input.run_id || null;
   const chainId = input.chain_id || null;
-  const batchId = input.batch_id || input.enrichment_batch_id || `score_enrichment_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
-  const sourceMatrixBatchId = input.source_matrix_batch_id || await latestMatrixBatchIdForEnrichment(env);
+  const nestedInput = (input && input.input_json && typeof input.input_json === "object") ? input.input_json : {};
+  const requestedBatchId = input.batch_id || input.enrichment_batch_id || input.resume_batch_id || nestedInput.batch_id || nestedInput.enrichment_batch_id || nestedInput.resume_batch_id || null;
+  const batchId = requestedBatchId || `score_enrichment_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
+  const sourceMatrixBatchId = input.source_matrix_batch_id || nestedInput.source_matrix_batch_id || await latestMatrixBatchIdForEnrichment(env);
   if (!sourceMatrixBatchId) throw new Error("No prop_matrix_current batch found for Enrichment V1");
-  const offset = Number(input.enrichment_offset || input.offset || 0) || 0;
-  const limit = Math.max(50, Math.min(Number(input.chunk_rows || ENRICHMENT_V1_CHUNK_ROWS), 1000));
+  let offset = Number(input.enrichment_offset ?? input.offset ?? nestedInput.enrichment_offset ?? nestedInput.offset ?? 0) || 0;
+  const limit = Math.max(50, Math.min(Number(input.chunk_rows || nestedInput.chunk_rows || ENRICHMENT_V1_CHUNK_ROWS), 350));
+  let resumeMismatchReset = false;
 
   const totalRow = await first(env.SCORE_DB, `WITH side_expanded AS (
     SELECT matrix_id FROM prop_matrix_current WHERE batch_id=?
@@ -4557,10 +4560,27 @@ async function runScoreEnrichmentV1(env, input = {}) {
   const expectedRows = Number(totalRow && totalRow.rows || 0);
   await run(env.SCORE_DB, `INSERT OR IGNORE INTO score_enrichment_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, status, source_matrix_batch_id, expected_enrichment_rows, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, runId, WORKER_NAME, ENRICHMENT_V1_VERSION, ENRICHMENT_V1_MODE, sourceMatrixBatchId, expectedRows);
+  if (requestedBatchId && offset > 0) {
+    const existingForBatch = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM score_enrichment_current WHERE batch_id=?`, batchId);
+    const existingRows = Number(existingForBatch && existingForBatch.rows || 0);
+    if (existingRows + 5 < offset) {
+      resumeMismatchReset = true;
+      offset = 0;
+      const priorBatches = await all(env.SCORE_DB, `SELECT batch_id FROM score_enrichment_batches WHERE request_id=?`, requestId);
+      for (const b of priorBatches) {
+        await run(env.SCORE_DB, `DELETE FROM score_enrichment_current WHERE batch_id=?`, b.batch_id);
+        await run(env.SCORE_DB, `DELETE FROM score_enrichment_issues WHERE batch_id=?`, b.batch_id);
+        if (b.batch_id !== batchId) {
+          await run(env.SCORE_DB, `UPDATE score_enrichment_batches SET status='cancelled_resume_mismatch_reset', certification_status='SCORE_ENRICHMENT_V1_CANCELLED_RESUME_MISMATCH_RESET', certification_grade='CANCELLED', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, b.batch_id);
+        }
+      }
+    }
+  }
   if (offset === 0) {
     await run(env.SCORE_DB, `DELETE FROM score_enrichment_current WHERE batch_id=?`, batchId);
     await run(env.SCORE_DB, `DELETE FROM score_enrichment_issues WHERE batch_id=?`, batchId);
   }
+  await run(env.SCORE_DB, `UPDATE score_enrichment_batches SET status='running', run_id=?, worker_version=?, expected_enrichment_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, runId, ENRICHMENT_V1_VERSION, expectedRows, batchId);
 
   const rows = await all(env.SCORE_DB, `WITH side_expanded AS (
     SELECT m.*, CASE WHEN m.prop_side IS NULL OR m.prop_side='' THEN 'more' ELSE lower(m.prop_side) END AS selected_side
@@ -4651,7 +4671,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
   const remaining = Math.max(0, expectedRows - (offset + rows.length));
   const complete = remaining <= 0;
   const output = baseIdentity({
-    ok:true,data_ok:true,version:ENRICHMENT_V1_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v1",deployed_worker_slot:"alphadog-v2-score-audit",job_key:ENRICHMENT_V1_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:ENRICHMENT_V1_MODE,status:complete?"completed_score_enrichment_v1_side_expanded":"partial_continue_score_enrichment_v1_side_expanded",certification:complete?"SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED":"SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE",certification_grade:complete?"PASS_WITH_REVIEW_WARNINGS_ALLOWED":"PARTIAL",batch_id:batchId,enrichment_batch_id:batchId,source_matrix_batch_id:sourceMatrixBatchId,matrix_rows_read:Math.ceil(expectedRows/2),expected_enrichment_rows:expectedRows,enrichment_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:written,baseline_matched_rows:Number(totals && totals.matched || 0),baseline_missing_rows:Number(totals && totals.missing || 0),blocked_rows:Number(totals && totals.blocked || 0),warning_rows:Number(totals && totals.warn || 0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,side_expanded:true,baseline_confidence_cap_60:true,enrichment_confidence_max_40:true,no_hp_v2:true,no_current_scoring_mutation:true,no_final_score:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
+    ok:true,data_ok:true,version:ENRICHMENT_V1_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v1",deployed_worker_slot:"alphadog-v2-score-audit",job_key:ENRICHMENT_V1_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:ENRICHMENT_V1_MODE,status:complete?"completed_score_enrichment_v1_side_expanded":"partial_continue_score_enrichment_v1_side_expanded",certification:complete?"SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED":"SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE",certification_grade:complete?"PASS_WITH_REVIEW_WARNINGS_ALLOWED":"PARTIAL",batch_id:batchId,enrichment_batch_id:batchId,source_matrix_batch_id:sourceMatrixBatchId,matrix_rows_read:Math.ceil(expectedRows/2),expected_enrichment_rows:expectedRows,enrichment_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:written,baseline_matched_rows:Number(totals && totals.matched || 0),baseline_missing_rows:Number(totals && totals.missing || 0),blocked_rows:Number(totals && totals.blocked || 0),warning_rows:Number(totals && totals.warn || 0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,resume_mismatch_reset:resumeMismatchReset,requested_batch_id:requestedBatchId,side_expanded:true,baseline_confidence_cap_60:true,enrichment_confidence_max_40:true,no_hp_v2:true,no_current_scoring_mutation:true,no_final_score:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE score_enrichment_batches SET status=?, matrix_rows_read=?, expected_enrichment_rows=?, enrichment_rows_written=?, baseline_matched_rows=?, baseline_missing_rows=?, blocked_rows=?, warning_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", Math.ceil(expectedRows/2), expectedRows, writtenTotal, output.baseline_matched_rows, output.baseline_missing_rows, output.blocked_rows, output.warning_rows, output.certification, output.certification_grade, scoreJson(output,14000), batchId);
   return output;
 }
