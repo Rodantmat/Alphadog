@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.243-prop-factor-always-hot-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.244-prop-matrix-always-hot-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -14571,6 +14571,21 @@ async function countDuePropFactorMinerHot(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
+async function countDuePropMatrixBuilderHot(env) {
+  // Prop Matrix Builder is also a chunked heavy service-binding stage. Treat any
+  // active matrix row as hot-continuation work so pending between chunks does not
+  // require manual Wake or cron rescue.
+  const row = await first(env.CONTROL_DB,
+    `SELECT COUNT(*) AS c
+       FROM control_job_queue
+      WHERE job_key='prop-matrix-builder'
+        AND worker_name='alphadog-v2-phase2b-certifier'
+        AND status IN ('pending','running','partial_continue')
+        AND finished_at IS NULL`
+  );
+  return Number(row && row.c ? row.c : 0);
+}
+
 async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle = 1, maxMs = 65000, ctx = null, requestUrl = null, pumpDepth = 0, maxPumpChains = 12) {
   const started = Date.now();
   const cycles = [];
@@ -14611,6 +14626,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const dueStaticPlayers = await countDueStaticPlayers(env);
   const duePlayerBaselineSanity = await countDuePlayerBaselineSanity(env);
   const duePropFactorMinerHot = await countDuePropFactorMinerHot(env);
+  const duePropMatrixBuilderHot = await countDuePropMatrixBuilderHot(env);
   const dueBaseHitterGameLogs = await countDueBaseHitterGameLogs(env);
   const dueBaseHitterSplits = await countDueBaseHitterSplits(env);
   const dueBaseHitterMetrics = await countDueBaseHitterMetrics(env);
@@ -14632,7 +14648,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const sawLockBusy = terminalStatuses.includes("lock_busy");
   const sawHardStop = terminalStatuses.some(s => s === "blocked" || s === "error");
   const continuationAllowedByLastCycle = !sawLockBusy && !sawHardStop;
-  const dueAnyHotChain = (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || duePlayerBaselineSanity > 0 || duePropFactorMinerHot > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0);
+  const dueAnyHotChain = (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || duePlayerBaselineSanity > 0 || duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0);
   // v0.2.175: Market Scoring Full Run contains long external-market/scoring stages.
   // A bounded pump can legitimately observe GLOBAL_ORCHESTRATOR busy while a prior
   // service-binding fetch is still running or while its 5-minute owner lock is waiting
@@ -14651,11 +14667,12 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const dailyContextLockBusyContinuation = sawLockBusy && !sawHardStop && dueDailyContextFullRun > 0;
   const playerBaselineSanityLockBusyContinuation = sawLockBusy && !sawHardStop && duePlayerBaselineSanity > 0;
   const propFactorLockBusyContinuation = sawLockBusy && !sawHardStop && duePropFactorMinerHot > 0;
-  const lockBusyHotContinuation = marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation;
+  const propMatrixLockBusyContinuation = sawLockBusy && !sawHardStop && duePropMatrixBuilderHot > 0;
+  const lockBusyHotContinuation = marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation || propMatrixLockBusyContinuation;
   const shouldSelfContinue = (continuationAllowedByLastCycle || lockBusyHotContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
-  const hotContinuationDelayMs = shouldSelfContinue && duePropFactorMinerHot > 0
+  const hotContinuationDelayMs = shouldSelfContinue && (duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0)
     ? (lastStatus === "no_due_jobs" ? 2500 : 0)
     : (shouldSelfContinue && (lastStatus === "no_due_jobs" || lockBusyHotContinuation) ? 6500 : 0);
 
@@ -14675,6 +14692,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       due_static_players_after_pump: dueStaticPlayers,
       due_player_baseline_sanity_after_pump: duePlayerBaselineSanity,
       due_prop_factor_miner_hot_after_pump: duePropFactorMinerHot,
+      due_prop_matrix_builder_hot_after_pump: duePropMatrixBuilderHot,
       due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
       due_base_hitter_splits_after_pump: dueBaseHitterSplits,
       due_base_hitter_metrics_after_pump: dueBaseHitterMetrics,
@@ -14721,6 +14739,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         due_static_players_after_pump: dueStaticPlayers,
         due_player_baseline_sanity_after_pump: duePlayerBaselineSanity,
         due_prop_factor_miner_hot_after_pump: duePropFactorMinerHot,
+        due_prop_matrix_builder_hot_after_pump: duePropMatrixBuilderHot,
         due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
         due_base_hitter_splits_after_pump: dueBaseHitterSplits,
         due_base_hitter_metrics_after_pump: dueBaseHitterMetrics,
