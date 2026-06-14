@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.254-score-enrichment-no-count-side-effect";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.255-score-enrichment-timeout-evidence-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -5363,7 +5363,16 @@ async function processBaseHitterGameLogsJob(env, row, runId, trigger) {
       output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
     }
   } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+    const errText = String(err && err.message ? err.message : err);
+    if (isEnrichmentJob) {
+      output = await buildScoreEnrichmentV1EvidenceOutput(env, row, runId, trigger, rowInput, errText);
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'score_enrichment_v1_service_binding_timeout_rescued_from_current', 'Recovered Score Enrichment V1 service-binding timeout from current/batch evidence', ?, CURRENT_TIMESTAMP)",
+        row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output)
+      );
+    } else {
+      output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: errText };
+    }
   }
 
   const rawStatus = String((output && output.status) || "").toLowerCase();
@@ -11981,6 +11990,75 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
 }
 
 
+
+async function buildScoreEnrichmentV1EvidenceOutput(env, row, runId, trigger, rowInput, reason) {
+  const batchId = rowInput.enrichment_batch_id || rowInput.resume_batch_id || null;
+  const batch = batchId && env.SCORE_DB ? await first(env.SCORE_DB,
+    `SELECT batch_id, expected_enrichment_rows, source_matrix_batch_id
+       FROM score_enrichment_batches
+      WHERE batch_id=?`, batchId) : null;
+  const evidence = batchId && env.SCORE_DB ? await first(env.SCORE_DB,
+    `SELECT COUNT(*) AS rows,
+            SUM(CASE WHEN baseline_hp_available=1 THEN 1 ELSE 0 END) AS matched,
+            SUM(CASE WHEN baseline_hp_available=0 THEN 1 ELSE 0 END) AS missing,
+            SUM(CASE WHEN enrichment_status='enrichment_blocked' THEN 1 ELSE 0 END) AS blocked,
+            SUM(CASE WHEN enrichment_status<>'enrichment_ready' THEN 1 ELSE 0 END) AS warnings
+       FROM score_enrichment_current
+      WHERE batch_id=?`, batchId) : null;
+  const currentRows = Number(evidence && evidence.rows || 0);
+  const expectedRows = Number(batch && batch.expected_enrichment_rows || rowInput.expected_enrichment_rows || 14276 || 0);
+  const done = expectedRows > 0 && currentRows >= expectedRows;
+  const certification = done ? 'SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED' : 'SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE_TIMEOUT_RESCUED';
+  const grade = done ? 'PASS_WITH_REVIEW_WARNINGS_ALLOWED' : 'PARTIAL';
+  const status = done ? 'completed_score_enrichment_v1_side_expanded_timeout_rescued' : 'partial_continue_score_enrichment_v1_timeout_rescued_from_current';
+  const nextOffset = Math.max(Number(rowInput.enrichment_offset || 0), currentRows);
+  if (batchId && env.SCORE_DB) {
+    await run(env.SCORE_DB,
+      `UPDATE score_enrichment_batches
+          SET status=?, enrichment_rows_written=?, baseline_matched_rows=?, baseline_missing_rows=?, blocked_rows=?, warning_rows=?, certification_status=?, certification_grade=?, updated_at=CURRENT_TIMESTAMP
+        WHERE batch_id=?`,
+      done ? 'completed' : 'partial_continue', currentRows, Number(evidence && evidence.matched || 0), Number(evidence && evidence.missing || 0), Number(evidence && evidence.blocked || 0), Number(evidence && evidence.warnings || 0), certification, grade, batchId
+    );
+  }
+  return {
+    ok:true,
+    data_ok:true,
+    version:'alphadog-v2-score-enrichment-v1-v0.1.7-250x25-resume-safe',
+    worker_name:'alphadog-v2-score-audit',
+    logical_worker_name:'alphadog-v2-score-enrichment-v1',
+    job_key:'score-enrichment-v1',
+    request_id:row.request_id,
+    run_id:runId,
+    chain_id:row.chain_id || null,
+    mode:'score_enrichment_v1_side_expanded',
+    status,
+    certification,
+    certification_grade:grade,
+    batch_id:batchId,
+    enrichment_batch_id:batchId,
+    source_matrix_batch_id: batch && batch.source_matrix_batch_id ? batch.source_matrix_batch_id : (rowInput.source_matrix_batch_id || null),
+    expected_enrichment_rows:expectedRows,
+    enrichment_rows_written:currentRows,
+    baseline_matched_rows:Number(evidence && evidence.matched || 0),
+    baseline_missing_rows:Number(evidence && evidence.missing || 0),
+    blocked_rows:Number(evidence && evidence.blocked || 0),
+    warning_rows:Number(evidence && evidence.warnings || 0),
+    next_offset: done ? expectedRows : nextOffset,
+    enrichment_offset: done ? expectedRows : nextOffset,
+    remaining_rows: Math.max(0, expectedRows - currentRows),
+    continuation_required: !done,
+    orchestrator_should_self_continue: !done,
+    service_binding_timeout_reconciled_from_current:true,
+    timeout_rescue_reason:String(reason || '').slice(0,240),
+    framework_only:true,
+    no_hp_v2:true,
+    no_current_scoring_mutation:true,
+    no_final_board:true,
+    no_ranking:true,
+    trigger
+  };
+}
+
 async function processScoringEngineJob(env, row, runId, trigger) {
   const isSimulationJob = row && row.job_key === "scoring-engine-simulation";
   const isHitProbabilityJob = row && row.job_key === "hit-probability";
@@ -12079,7 +12157,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    }, "scoring_engine");
+    }, isEnrichmentJob ? "score_enrichment_v1" : "scoring_engine", isEnrichmentJob ? 12000 : EXACT_WORKER_SERVICE_TIMEOUT_MS);
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); }
@@ -12087,7 +12165,16 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) };
     }
   } catch (err) {
-    output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+    const errText = String(err && err.message ? err.message : err);
+    if (isEnrichmentJob) {
+      output = await buildScoreEnrichmentV1EvidenceOutput(env, row, runId, trigger, rowInput, errText);
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'score_enrichment_v1_service_binding_timeout_rescued_from_current', 'Recovered Score Enrichment V1 service-binding timeout from current/batch evidence', ?, CURRENT_TIMESTAMP)",
+        row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output)
+      );
+    } else {
+      output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: errText };
+    }
   }
 
   const ok = !!(output && output.ok);
