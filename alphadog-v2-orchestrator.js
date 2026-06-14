@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.240-player-baseline-hp-single-flight-terminal-align";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.241-morning-delta-player-baseline-chain";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -3055,7 +3055,9 @@ const INCREMENTAL_MORNING_FULL_RUN_STAGES = [
   { stage_key: "pitcher_splits_delta", job_key: "base-pitcher-splits", worker_name: "alphadog-v2-base-pitcher-splits", display_name: "Pitcher Splits Delta", visible_button: "DELTA > Pitcher Splits", mode: "delta_update", layer_key: "pitcher_splits", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "hitter_metrics_affected_delta", job_key: "base-hitter-metrics", worker_name: "alphadog-v2-base-hitter-metrics", display_name: "Hitter Metrics Affected Delta", visible_button: "DELTA > Hitter Metrics", mode: "delta_recalculate_affected_players", layer_key: "hitter_metrics", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_metrics_affected_delta", job_key: "base-pitcher-metrics", worker_name: "alphadog-v2-base-pitcher-metrics", display_name: "Pitcher Metrics Affected Delta", visible_button: "DELTA > Pitcher Metrics", mode: "delta_recalculate_affected_players", layer_key: "pitcher_metrics", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
-  { stage_key: "calendar_tally_final_check", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Final Check", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "final_check", require_zero_blocking_gaps: true }
+  { stage_key: "calendar_tally_final_check", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Final Check", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "final_check", require_zero_blocking_gaps: true },
+  { stage_key: "player_baseline_sanity", job_key: "player-baseline-sanity", worker_name: "alphadog-v2-phase2b-pitcher-role", display_name: "Player Baseline Sanity", visible_button: "PLAYER BASELINE > Sanity", mode: "history_only_layer_1_sanity_baseline", worker_group: "Delta", phase_key: "player_baseline", priority: 4, player_baseline_stage: "sanity", require_completed_final_calendar_tally: true },
+  { stage_key: "player_baseline_hp", job_key: "player-baseline-hp", worker_name: "alphadog-v2-phase2b-pitcher-role", display_name: "Player Baseline HP", visible_button: "PLAYER BASELINE > HP", mode: "history_only_baseline_hp_enrichment", worker_group: "Delta", phase_key: "player_baseline", priority: 4, player_baseline_stage: "baseline_hp", require_completed_player_baseline_sanity: true }
 ];
 
 const STATIC_FULL_RUN_STAGES = [
@@ -3323,6 +3325,27 @@ function childPassedIncrementalMorningFullRun(stage, child) {
   if (stage.mode === "delta_update" && hay.includes("base_backfill")) return { pass: false, reason: "base_backfill_certification_returned_during_delta_stage", certification: cert, status };
   if (stage.mode === "delta_recalculate_affected_players" && String(output.mode || "") !== "delta_recalculate_affected_players") return { pass: false, reason: "metrics_stage_wrong_mode", output_mode: output.mode };
   if (Number(output.duplicate_count || output.duplicate_live_keys || 0) > 0) return { pass: false, reason: "duplicate_count_positive", duplicate_count: output.duplicate_count || output.duplicate_live_keys };
+  if (stage.job_key === "player-baseline-sanity") {
+    if (!cert.includes("PLAYER_BASELINE_SANITY_CERTIFIED") || String(output.certification_grade || "") !== "PASS") {
+      return { pass: false, reason: "player_baseline_sanity_not_certified_pass", certification: cert, certification_grade: output.certification_grade || null, status };
+    }
+    const rowProof = Number(output.rows_promoted || output.promoted_rows || output.current_rows || output.history_rows || output.rows_written || 0);
+    if (rowProof <= 0) return { pass: false, reason: "player_baseline_sanity_no_rows_promoted_or_written", output_rows_promoted: output.rows_promoted || null, output_history_rows: output.history_rows || null };
+    if (Number(output.issue_rows || 0) > 0) return { pass: false, reason: "player_baseline_sanity_issue_rows_positive", issue_rows: output.issue_rows };
+    return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.rows_read || 0, rows_written: rowProof, rows_promoted: output.rows_promoted || output.promoted_rows || 0, external_calls: 0, output, player_baseline_stage_validated: true };
+  }
+  if (stage.job_key === "player-baseline-hp") {
+    if (!cert.includes("PLAYER_BASELINE_HP_CERTIFIED") || String(output.certification_grade || "") !== "PASS") {
+      return { pass: false, reason: "player_baseline_hp_not_certified_pass", certification: cert, certification_grade: output.certification_grade || null, status };
+    }
+    const rowsPromoted = Number(output.rows_promoted || output.promoted_rows || 0);
+    const historyRows = Number(output.history_rows || 0);
+    const rowsStaged = Number(output.rows_staged || 0);
+    if (rowsStaged <= 0 || rowsPromoted <= 0 || historyRows <= 0) return { pass: false, reason: "player_baseline_hp_missing_stage_promote_history_counts", rows_staged: rowsStaged, rows_promoted: rowsPromoted, history_rows: historyRows };
+    if (!(rowsStaged === rowsPromoted && rowsPromoted === historyRows)) return { pass: false, reason: "player_baseline_hp_stage_promote_history_parity_failed", rows_staged: rowsStaged, rows_promoted: rowsPromoted, history_rows: historyRows };
+    if (Number(output.issue_rows || 0) > 0) return { pass: false, reason: "player_baseline_hp_issue_rows_positive", issue_rows: output.issue_rows };
+    return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.source_rows_read || output.rows_read || 0, rows_written: rowsPromoted, rows_promoted: rowsPromoted, external_calls: 0, output, player_baseline_stage_validated: true };
+  }
   const unsafeTrueKeys = ["source_table_mutation_performed", "scoring_performed", "ranking_performed", "final_board_write_performed", "final_board_write", "scoring_write_performed"];
   for (const k of unsafeTrueKeys) {
     if (Object.prototype.hasOwnProperty.call(output, k) && output[k] === true) return { pass: false, reason: `unsafe_output_${k}_true` };
@@ -3363,7 +3386,10 @@ function incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryC
     no_final_board: true,
     no_old_production_touch: true,
     calendar_tally_precheck_first: INCREMENTAL_MORNING_FULL_RUN_STAGES[0] && INCREMENTAL_MORNING_FULL_RUN_STAGES[0].stage_key === "calendar_tally_precheck",
-    calendar_tally_final_check_last: INCREMENTAL_MORNING_FULL_RUN_STAGES[INCREMENTAL_MORNING_FULL_RUN_STAGES.length - 1] && INCREMENTAL_MORNING_FULL_RUN_STAGES[INCREMENTAL_MORNING_FULL_RUN_STAGES.length - 1].stage_key === "calendar_tally_final_check",
+    calendar_tally_final_check_in_chain: INCREMENTAL_MORNING_FULL_RUN_STAGES.some(s => s.stage_key === "calendar_tally_final_check"),
+    calendar_tally_final_check_before_player_baseline: true,
+    player_baseline_sanity_included_after_delta: INCREMENTAL_MORNING_FULL_RUN_STAGES.some(s => s.stage_key === "player_baseline_sanity"),
+    player_baseline_hp_included_after_sanity: INCREMENTAL_MORNING_FULL_RUN_STAGES.some(s => s.stage_key === "player_baseline_hp"),
     created_at: nowIso()
   };
 }
@@ -3737,11 +3763,11 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     stageReports.push(report);
   }
 
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_AND_ALL_BASE_DELTAS_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_final_check_last: true, final_calendar_tally_blocking_gap_count: 0, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_BASE_DELTAS_AND_PLAYER_BASELINE_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_final_check_in_chain: true, calendar_tally_final_check_before_player_baseline: true, player_baseline_sanity_included: true, player_baseline_hp_included: true, final_calendar_tally_blocking_gap_count: 0, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
   await releaseIncrementalMorningFullRunLock(env, row);
-  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_BASE_DELTAS_AND_PLAYER_BASELINE', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_completed', 'Incremental Morning Full Run certified all incremental base/delta stages', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_completed', 'Incremental Morning Full Run certified all incremental base/delta stages and Player Baseline Sanity/HP refresh', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
   return output;
 }
 
