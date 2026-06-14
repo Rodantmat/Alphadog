@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.238-player-baseline-stale-running-auto-resume";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.239-player-baseline-hp-failed-d1-reset-resume";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -3903,6 +3903,120 @@ async function processStaticPropTaxonomyJob(env, row, runId, trigger) {
       status: "worker_dispatch_exception",
       error: String(err && err.message ? err.message : err)
     };
+  }
+
+  if (row.job_key === "player-baseline-hp" && output && output.ok !== true) {
+    const workerErrorText = String((output && (output.error || output.status || output.error_message)) || "");
+    const transientD1Reset = /D1 DB exceeded its CPU time limit|D1_ERROR/i.test(workerErrorText);
+    if (transientD1Reset && env.SCORE_DB) {
+      try {
+        const hpBatch = await first(env.SCORE_DB,
+          `SELECT batch_id, request_id, status, rows_staged, rows_promoted, history_rows, issue_rows, output_json, updated_at
+             FROM player_baseline_hp_batches
+            WHERE request_id=?
+              AND status='running'
+            ORDER BY datetime(updated_at) DESC
+            LIMIT 1`,
+          row.request_id
+        );
+        if (hpBatch && hpBatch.batch_id && hpBatch.output_json) {
+          const stageTruth = await first(env.SCORE_DB,
+            `SELECT COUNT(*) AS actual_stage_rows,
+                    COUNT(DISTINCT source_baseline_row_id) AS source_rows_seen,
+                    SUM(CASE WHEN player_id IS NULL OR canonical_prop_key IS NULL OR line_value IS NULL OR selected_side IS NULL OR baseline_hp_0_100 IS NULL THEN 1 ELSE 0 END) AS null_critical_rows
+               FROM player_baseline_hp_stage
+              WHERE batch_id=?`,
+            hpBatch.batch_id
+          );
+          const batchOutput = parseJsonSafeText(hpBatch.output_json || "{}", {});
+          const nextInputFromBatch = batchOutput && batchOutput.next_input && typeof batchOutput.next_input === "object" ? { ...batchOutput.next_input } : null;
+          const stageRows = Number(stageTruth && stageTruth.actual_stage_rows || 0);
+          const batchRows = Number(hpBatch.rows_staged || 0);
+          const issueRows = Number(hpBatch.issue_rows || 0);
+          const nullCriticalRows = Number(stageTruth && stageTruth.null_critical_rows || 0);
+          if (nextInputFromBatch && batchRows > 0 && stageRows === batchRows && issueRows === 0 && nullCriticalRows === 0) {
+            nextInputFromBatch.mode = nextInputFromBatch.mode || nextInputFromBatch.next_mode || "baseline_hp_stage_chunk";
+            nextInputFromBatch.request_id = row.request_id;
+            nextInputFromBatch.chain_id = row.chain_id;
+            nextInputFromBatch.job_key = row.job_key;
+            nextInputFromBatch.worker_name = row.worker_name;
+            nextInputFromBatch.logical_worker_name = "alphadog-v2-player-baseline-sanity";
+            nextInputFromBatch.deployed_worker_slot = "alphadog-v2-phase2b-pitcher-role";
+            nextInputFromBatch.history_only = true;
+            nextInputFromBatch.no_daily_live_context = true;
+            nextInputFromBatch.no_market_context = true;
+            nextInputFromBatch.no_external_api_calls = true;
+            nextInputFromBatch.no_scoring = true;
+            nextInputFromBatch.no_final_board = true;
+            nextInputFromBatch.no_prepared_board_mutation = true;
+            nextInputFromBatch.failed_d1_reset_auto_resume = true;
+            nextInputFromBatch.failed_d1_reset_auto_resume_version = SYSTEM_VERSION;
+            nextInputFromBatch.failed_d1_reset_auto_resume_trigger = trigger;
+            nextInputFromBatch.failed_d1_reset_auto_resume_at = new Date().toISOString();
+            nextInputFromBatch.resume_from_failed_run_id = runId;
+
+            const recoveryOutput = {
+              ok: true,
+              data_ok: true,
+              version: SYSTEM_VERSION,
+              processed_by: WORKER_NAME,
+              worker_name: row.worker_name,
+              logical_worker_name: "alphadog-v2-player-baseline-sanity",
+              deployed_worker_slot: "alphadog-v2-phase2b-pitcher-role",
+              job_key: row.job_key,
+              request_id: row.request_id,
+              run_id: runId,
+              batch_id: hpBatch.batch_id,
+              status: "PLAYER_BASELINE_HP_FAILED_D1_RESET_AUTO_RESUMED",
+              certification: "PLAYER_BASELINE_HP_FAILED_D1_RESET_AUTO_RESUMED",
+              certification_grade: "RECOVERED_PARTIAL_CONTINUE",
+              continuation_required: true,
+              next_mode: nextInputFromBatch.next_mode || nextInputFromBatch.mode,
+              next_input: nextInputFromBatch,
+              run_after_delay_seconds: 0,
+              failed_d1_reset_auto_resume: true,
+              failed_worker_error: workerErrorText.slice(0, 900),
+              batch_rows_staged: batchRows,
+              actual_stage_rows: stageRows,
+              source_rows_seen: Number(stageTruth && stageTruth.source_rows_seen || 0),
+              issue_rows: issueRows,
+              null_critical_rows: nullCriticalRows,
+              resume_last_baseline_row_id: nextInputFromBatch.last_baseline_row_id || null,
+              root_cause_guard: "resume_existing_clean_hp_batch_after_transient_d1_reset_no_new_batch",
+              no_formula_change: true,
+              no_hp_math_change: true,
+              no_schema_change: true,
+              orchestrator_dispatch: {
+                version: SYSTEM_VERSION,
+                processed_by: WORKER_NAME,
+                exact_worker_only: true,
+                trigger,
+                http_status: httpStatus,
+                elapsed_ms: Date.now() - started,
+                failed_d1_reset_auto_resume: true,
+                logical_worker_name: "alphadog-v2-player-baseline-sanity",
+                deployed_worker_slot: "alphadog-v2-phase2b-pitcher-role"
+              }
+            };
+
+            await run(env.CONTROL_DB,
+              "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PLAYER_BASELINE_HP_FAILED_D1_RESET_AUTO_RESUMED', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, NULL, NULL)",
+              runId, row.request_id, row.chain_id, row.job_key, row.worker_name, Number(stageTruth && stageTruth.source_rows_seen || 0), batchRows, Date.now() - started, JSON.stringify(input), safeStringifyD1(recoveryOutput));
+            await run(env.CONTROL_DB,
+              "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+              safeStringifyD1(nextInputFromBatch), safeStringifyD1(recoveryOutput), row.request_id);
+            await run(env.CONTROL_DB,
+              "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'player_baseline_hp_failed_d1_reset_auto_resumed', 'Recovered failed Baseline HP dispatch from clean running batch output_json continuation; no new batch was created', ?, CURRENT_TIMESTAMP)",
+              row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, batch_id: hpBatch.batch_id, batch_rows_staged: batchRows, actual_stage_rows: stageRows, source_rows_seen: Number(stageTruth && stageTruth.source_rows_seen || 0), resume_mode: nextInputFromBatch.mode, resume_last_baseline_row_id: nextInputFromBatch.last_baseline_row_id || null, failed_error: workerErrorText, version: SYSTEM_VERSION }).slice(0, 9000));
+            return recoveryOutput;
+          }
+        }
+      } catch (recoveryErr) {
+        await run(env.CONTROL_DB,
+          "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'ERROR', 'player_baseline_hp_failed_d1_reset_auto_resume_guard_error', 'Baseline HP failed-D1 recovery guard errored; falling through to terminal worker failure handling', ?, CURRENT_TIMESTAMP)",
+          row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, error: String(recoveryErr && recoveryErr.message ? recoveryErr.message : recoveryErr), version: SYSTEM_VERSION }).slice(0, 9000));
+      }
+    }
   }
 
   const ok = !!(output && output.ok);
@@ -12594,6 +12708,133 @@ async function claimSelectedQueueRowForDispatch(env, row, trigger) {
 }
 
 
+async function rescueFailedPlayerBaselineHpQueueFromCleanBatch(env, trigger) {
+  if (!env || !env.CONTROL_DB || !env.SCORE_DB) return null;
+  const row = await first(env.CONTROL_DB,
+    `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json, output_json, error_code, error_message, updated_at, started_at, finished_at
+       FROM control_job_queue
+      WHERE job_key='player-baseline-hp'
+        AND worker_name='alphadog-v2-phase2b-pitcher-role'
+        AND status='failed'
+        AND finished_at IS NOT NULL
+        AND (COALESCE(error_message,'') LIKE '%D1 DB exceeded its CPU time limit%' OR COALESCE(error_message,'') LIKE '%D1_ERROR%')
+      ORDER BY datetime(finished_at) DESC
+      LIMIT 1`
+  );
+  if (!row || !row.request_id) return null;
+
+  const hpBatch = await first(env.SCORE_DB,
+    `SELECT batch_id, request_id, status, rows_staged, rows_promoted, history_rows, issue_rows, output_json, updated_at
+       FROM player_baseline_hp_batches
+      WHERE request_id=?
+        AND status='running'
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1`,
+    row.request_id
+  );
+  if (!hpBatch || !hpBatch.batch_id || !hpBatch.output_json) return null;
+
+  const stageTruth = await first(env.SCORE_DB,
+    `SELECT COUNT(*) AS actual_stage_rows,
+            COUNT(DISTINCT source_baseline_row_id) AS source_rows_seen,
+            SUM(CASE WHEN player_id IS NULL OR canonical_prop_key IS NULL OR line_value IS NULL OR selected_side IS NULL OR baseline_hp_0_100 IS NULL THEN 1 ELSE 0 END) AS null_critical_rows
+       FROM player_baseline_hp_stage
+      WHERE batch_id=?`,
+    hpBatch.batch_id
+  );
+  const batchOutput = parseJsonSafeText(hpBatch.output_json || "{}", {});
+  const nextInput = batchOutput && batchOutput.next_input && typeof batchOutput.next_input === "object" ? { ...batchOutput.next_input } : null;
+  const stageRows = Number(stageTruth && stageTruth.actual_stage_rows || 0);
+  const batchRows = Number(hpBatch.rows_staged || 0);
+  const issueRows = Number(hpBatch.issue_rows || 0);
+  const nullCriticalRows = Number(stageTruth && stageTruth.null_critical_rows || 0);
+  if (!nextInput || batchRows <= 0 || stageRows !== batchRows || issueRows !== 0 || nullCriticalRows !== 0) return null;
+
+  nextInput.mode = nextInput.mode || nextInput.next_mode || "baseline_hp_stage_chunk";
+  nextInput.request_id = row.request_id;
+  nextInput.chain_id = row.chain_id;
+  nextInput.job_key = row.job_key;
+  nextInput.worker_name = row.worker_name;
+  nextInput.logical_worker_name = "alphadog-v2-player-baseline-sanity";
+  nextInput.deployed_worker_slot = "alphadog-v2-phase2b-pitcher-role";
+  nextInput.history_only = true;
+  nextInput.no_daily_live_context = true;
+  nextInput.no_market_context = true;
+  nextInput.no_external_api_calls = true;
+  nextInput.no_scoring = true;
+  nextInput.no_final_board = true;
+  nextInput.no_prepared_board_mutation = true;
+  nextInput.failed_queue_clean_batch_auto_resume = true;
+  nextInput.failed_queue_clean_batch_auto_resume_version = SYSTEM_VERSION;
+  nextInput.failed_queue_clean_batch_auto_resume_trigger = trigger;
+  nextInput.failed_queue_clean_batch_auto_resume_at = new Date().toISOString();
+
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    processed_by: WORKER_NAME,
+    worker_name: row.worker_name,
+    logical_worker_name: "alphadog-v2-player-baseline-sanity",
+    deployed_worker_slot: "alphadog-v2-phase2b-pitcher-role",
+    job_key: row.job_key,
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    batch_id: hpBatch.batch_id,
+    status: "PLAYER_BASELINE_HP_FAILED_QUEUE_CLEAN_BATCH_AUTO_RESUMED",
+    certification: "PLAYER_BASELINE_HP_FAILED_QUEUE_CLEAN_BATCH_AUTO_RESUMED",
+    certification_grade: "RECOVERED_PARTIAL_CONTINUE",
+    failed_queue_clean_batch_auto_resume: true,
+    previous_status: row.status,
+    previous_finished_at: row.finished_at,
+    previous_error_code: row.error_code || null,
+    previous_error_message: row.error_message || null,
+    batch_rows_staged: batchRows,
+    actual_stage_rows: stageRows,
+    source_rows_seen: Number(stageTruth && stageTruth.source_rows_seen || 0),
+    issue_rows: issueRows,
+    null_critical_rows: nullCriticalRows,
+    resume_mode: nextInput.mode || null,
+    resume_batch_id: nextInput.batch_id || hpBatch.batch_id,
+    resume_last_baseline_row_id: nextInput.last_baseline_row_id || null,
+    no_new_batch_created: true,
+    no_formula_change: true,
+    no_hp_math_change: true,
+    no_schema_change: true
+  };
+
+  await run(env.CONTROL_DB,
+    `UPDATE control_job_queue
+        SET status='pending',
+            run_after=CURRENT_TIMESTAMP,
+            finished_at=NULL,
+            updated_at=CURRENT_TIMESTAMP,
+            input_json=?,
+            output_json=?,
+            error_code=NULL,
+            error_message=NULL
+      WHERE request_id=?
+        AND job_key='player-baseline-hp'
+        AND worker_name='alphadog-v2-phase2b-pitcher-role'
+        AND status='failed'`,
+    safeStringifyD1(nextInput), safeStringifyD1(output), row.request_id
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'player_baseline_hp_failed_queue_clean_batch_auto_resumed', 'Recovered failed Baseline HP queue row from clean running HP batch continuation evidence; no new batch was created', ?, CURRENT_TIMESTAMP)",
+    row.request_id, WORKER_NAME, row.job_key, JSON.stringify(output).slice(0, 9000)
+  );
+
+  return {
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    status: 'pending',
+    tick_count: row.tick_count,
+    input_json: safeStringifyD1(nextInput)
+  };
+}
+
 async function rescueStalePlayerBaselineRunningJobForResume(env, trigger) {
   if (!env || !env.CONTROL_DB) return null;
   const row = await first(env.CONTROL_DB,
@@ -12964,6 +13205,15 @@ async function processOneUnlocked(env, trigger) {
        ORDER BY datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) ASC, datetime(created_at) ASC
        LIMIT 1`
     );
+  }
+
+  // v0.2.239: If a Baseline HP service-binding dispatch failed from a transient D1 reset
+  // after a clean running HP batch had already persisted a safe next_input cursor, recover
+  // the failed queue row back to pending and resume the same batch. This covers the same
+  // recovery class as the Sanity stale-running guard, but for terminal failed rows caused
+  // by D1 CPU reset / debug-query collision. No new HP batch is created.
+  if (!row) {
+    row = await rescueFailedPlayerBaselineHpQueueFromCleanBatch(env, trigger);
   }
 
   // v0.2.238: Player Baseline Sanity / Baseline HP are daily/scheduled, self-continuing, history-only
