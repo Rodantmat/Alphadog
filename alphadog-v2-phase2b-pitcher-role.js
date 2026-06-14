@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase2b-pitcher-role";
 const LOGICAL_WORKER_NAME = "alphadog-v2-player-baseline-sanity";
-const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.5-baseline-hp-enrichment";
+const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.6-exact-hp-anchor-no-hard-clamp";
 const JOB_KEY = "player-baseline-sanity";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "SCORE_DB"];
@@ -528,8 +528,8 @@ async function updateBatchProgress(env, batchId, fields = {}) {
 const BASELINE_HP_STAGE_CHUNK_ROWS = 80;
 const BASELINE_HP_HISTORY_CHUNK_ROWS = 750;
 const BASELINE_HP_INSERT_BATCH_SIZE = 25;
-const BASELINE_HP_CONFIDENCE_FORMULA_VERSION = "baseline_hp_confidence_v0.1.5_anchor_only_soft_profile";
-const BASELINE_HP_FORMULA_VERSION = "baseline_hp_v0.1.5_exact_layer1_side_line_anchor";
+const BASELINE_HP_CONFIDENCE_FORMULA_VERSION = "baseline_hp_confidence_v0.1.6_anchor_only_soft_profile";
+const BASELINE_HP_FORMULA_VERSION = "baseline_hp_v0.1.6_exact_layer1_side_line_anchor_no_hard_clamp";
 
 function isBaselineHpMode(mode) {
   return [
@@ -703,7 +703,7 @@ function buildBaselineHpRowsFromSanityRow(sourceRow, batchId) {
         prop_family: propFamily,
         line_value: lineValue,
         selected_side: selectedSide,
-        baseline_hp_0_100: round(clamp(baselineHp, 1, 99), 2),
+        baseline_hp_0_100: round(clamp(baselineHp, 0, 100), 2),
         hp_adjustment_0_100: 0,
         raw_rate_0_100: Number.isFinite(rawRate) ? round(rawRate, 2) : null,
         tier_prior_rate_0_100: Number.isFinite(tierPriorRate) ? round(tierPriorRate, 2) : null,
