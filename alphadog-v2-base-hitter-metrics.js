@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-metrics";
-const VERSION = "alphadog-v2-base-hitter-metrics-v0.5.1-calendar-tally-gap-scoped-recalc";
+const VERSION = "alphadog-v2-base-hitter-metrics-v0.5.2-parent-gap-input-date-guard";
 const JOB_KEY = "base-hitter-metrics";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "TEAM_DB"];
@@ -1396,6 +1396,42 @@ async function buildMetricStageRowsForHitters(env, playerIds, config, season, ba
   return { rows: stageRows, row_errors: rowErrors };
 }
 
+function parentFullRunMetricGapContractActive(inputJson = {}, input = {}) {
+  return inputJson.full_run_gap_contract === true
+    || inputJson.parent_full_run === true
+    || inputJson.full_run_stage_key === "hitter_metrics_affected_delta"
+    || inputJson.source === "incremental_morning_full_run_parent"
+    || input.source === "incremental_morning_full_run_parent";
+}
+
+async function getParentFullRunHitterMetricInputDateGuard(env, input, affected) {
+  const inputJson = (input && input.input_json) || {};
+  if (!parentFullRunMetricGapContractActive(inputJson, input || {})) return { ok: true, active: false, reason: "not_parent_full_run_gap_contract" };
+  if (!env || !env.TEAM_DB) return { ok: true, active: true, reason: "team_db_binding_unavailable" };
+  const latestGameDate = affected && affected.latest_game_date ? String(affected.latest_game_date) : null;
+  const row = await queryFirst(env.TEAM_DB, `SELECT
+      COUNT(*) AS blocking_rows,
+      COUNT(DISTINCT game_pk) AS blocking_games,
+      MIN(official_date) AS min_blocking_official_date,
+      MAX(official_date) AS max_blocking_official_date
+    FROM mlb_game_data_coverage
+    WHERE layer_key='hitter_metrics'
+      AND blocking_for_full_run=1
+      AND coverage_status='missing'
+      AND (? IS NULL OR official_date > ?)`, [latestGameDate, latestGameDate]);
+  const blockingRows = Number(row && row.blocking_rows || 0);
+  return {
+    ok: blockingRows <= 0,
+    active: true,
+    reason: blockingRows > 0 ? "PARENT_FULL_RUN_HITTER_METRICS_INPUT_DATE_BEHIND_BLOCKING_COVERAGE" : "parent_full_run_metric_input_date_current",
+    latest_game_date: latestGameDate,
+    blocking_rows: blockingRows,
+    blocking_games: Number(row && row.blocking_games || 0),
+    min_blocking_official_date: row && row.min_blocking_official_date ? String(row.min_blocking_official_date) : null,
+    max_blocking_official_date: row && row.max_blocking_official_date ? String(row.max_blocking_official_date) : null
+  };
+}
+
 async function runDeltaRecalculateAffectedHitters(env, input) {
   const runId = input.run_id || rid("run_hitter_metrics_delta_recalc");
   const requestId = input.request_id || input.chain_id || runId;
@@ -1419,6 +1455,11 @@ async function runDeltaRecalculateAffectedHitters(env, input) {
 
   if (blockers.length) {
     return { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:input.job_key||JOB_KEY, request_id:input.request_id||null, chain_id:input.chain_id||null, run_id:runId, batch_id:batchId, mode:"delta_recalculate_affected_players", status:"BLOCKED_DELTA_HITTER_METRICS_AFFECTED_RECALC", certification:"DELTA_HITTER_METRICS_AFFECTED_RECALC_BLOCKED", certification_grade:"DELTA_RECALC_BLOCKED", blockers, affected_error:affected.error||null, rows_written:0, rows_promoted:0, external_calls_performed:0 };
+  }
+
+  const parentInputDateGuard = await getParentFullRunHitterMetricInputDateGuard(env, input, affected);
+  if (parentInputDateGuard.active && !parentInputDateGuard.ok) {
+    return { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:input.job_key||JOB_KEY, request_id:input.request_id||null, chain_id:input.chain_id||null, run_id:runId, batch_id:batchId, mode:"delta_recalculate_affected_players", status:"DELTA_HITTER_METRICS_BLOCKED_INPUT_DATE_BEHIND_PARENT_COVERAGE", certification:"DELTA_HITTER_METRICS_BLOCKED_UPSTREAM_HITTER_GAME_LOGS_NOT_CURRENT", certification_grade:"BLOCKED_UPSTREAM_INPUT_DATE_LAG", baseline_game_date:affected.baseline_game_date, baseline_split_snapshot_date:affected.baseline_split_snapshot_date, latest_game_date:affected.latest_game_date, latest_split_snapshot_date:affected.latest_split_snapshot_date, missing_metric_game_dates:affected.missing_metric_game_dates||[], forced_by_calendar_tally_gap:!!affected.forced_by_calendar_tally_gap, parent_input_date_guard:parentInputDateGuard, rows_read:0, rows_written:0, rows_promoted:0, external_calls_performed:0, continuation_required:false, orchestrator_should_self_continue:false, no_full_rebuild:true, no_external_mlb_calls:true, no_source_mutation:true };
   }
 
   const allPlayers = affected.affected_player_ids || [];

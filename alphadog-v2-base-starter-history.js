@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-starter-history";
-const VERSION = "alphadog-v2-base-starter-history-v0.5.0-gap-ledger-full-run-contract";
+const VERSION = "alphadog-v2-base-starter-history-v0.5.1-parent-gap-contract-complete-repair";
 const JOB_KEY = "base-starter-history";
 
 const DEFAULT_SAMPLE_DATE = "2026-05-18";
@@ -1821,7 +1821,11 @@ async function runCoverageGapScopedRepair(env, input) {
   const rowInput = input.input_json || {};
   const startDate = ymd(rowInput.coverage_window_start || rowInput.delta_start_date || rowInput.delta_reserved_start_date || input.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE);
   const endDate = ymd(rowInput.coverage_window_end || rowInput.delta_end_date || input.delta_end_date || new Date().toISOString().slice(0, 10));
-  const targetLimit = Math.max(1, Math.min(24, Number(rowInput.coverage_gap_repair_limit || input.coverage_gap_repair_limit || 18) || 18));
+  const parentGapContract = rowInput.full_run_gap_contract === true || rowInput.parent_full_run === true || rowInput.source === 'incremental_morning_full_run_parent';
+  const requestedCoverageGapLimit = Number(rowInput.coverage_gap_repair_limit || input.coverage_gap_repair_limit || 0);
+  const targetLimit = parentGapContract
+    ? Math.max(1, Math.min(60, Number.isFinite(requestedCoverageGapLimit) && requestedCoverageGapLimit > 0 ? requestedCoverageGapLimit : 60))
+    : Math.max(1, Math.min(24, Number.isFinite(requestedCoverageGapLimit) && requestedCoverageGapLimit > 0 ? requestedCoverageGapLimit : 18));
   const batchId = rid('starter_coverage_gap_batch');
   const season = seasonFromDate(endDate);
 
@@ -1837,6 +1841,7 @@ async function runCoverageGapScopedRepair(env, input) {
     safeJson({ created_for: 'delta_coverage_gap_scoped_repair', coverage_window_start: startDate, coverage_window_end: endDate, stage_retained: true, no_delta_stage_cleanup: true })
   );
 
+  const targetOrderSql = parentGapContract ? 'ORDER BY c.official_date DESC, c.game_pk' : 'ORDER BY c.official_date, c.game_pk';
   const targets = await all(env.TEAM_DB, `SELECT
       c.official_date,
       c.game_pk,
@@ -1861,7 +1866,7 @@ async function runCoverageGapScopedRepair(env, input) {
     WHERE c.layer_key = 'starter_history'
       AND c.blocking_for_full_run = 1
       AND c.official_date BETWEEN ? AND ?
-    ORDER BY c.official_date, c.game_pk
+    ${targetOrderSql}
     LIMIT ?`, startDate, endDate, targetLimit);
 
   let externalCalls = 0;

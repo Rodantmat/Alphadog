@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.19-mining-only-no-tally-writes";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.20-parent-gap-contract-date-guard";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -2254,6 +2254,41 @@ async function stageDeltaRowsFromScopedGamePks(env, batchId, runId, sourceSeason
   };
 }
 
+function parentFullRunGapContractActive(inputJson = {}) {
+  return inputJson.full_run_gap_contract === true
+    || inputJson.parent_full_run === true
+    || inputJson.full_run_stage_key === "hitter_game_logs_delta"
+    || inputJson.source === "incremental_morning_full_run_parent";
+}
+
+async function getParentFullRunHitterGameLogGapPressure(env, inputJson = {}, retainedMaxGameDate = null) {
+  if (!parentFullRunGapContractActive(inputJson)) return { active: false, force_increment: false, reason: "not_parent_full_run_gap_contract" };
+  if (!env || !env.TEAM_DB) return { active: true, force_increment: false, reason: "team_db_binding_unavailable" };
+  const retainedMax = asText(retainedMaxGameDate, null);
+  const row = await first(env.TEAM_DB, `SELECT
+      COUNT(*) AS blocking_rows,
+      COUNT(DISTINCT game_pk) AS blocking_games,
+      MIN(official_date) AS min_blocking_official_date,
+      MAX(official_date) AS max_blocking_official_date
+    FROM mlb_game_data_coverage
+    WHERE layer_key='hitter_game_logs'
+      AND blocking_for_full_run=1
+      AND coverage_status='missing'
+      AND official_date >= ?
+      AND (? IS NULL OR official_date > ?)`, DEFAULT_DELTA_RESERVED_START_DATE, retainedMax, retainedMax);
+  const blockingRows = asInt(row && row.blocking_rows, 0);
+  return {
+    active: true,
+    force_increment: blockingRows > 0,
+    reason: blockingRows > 0 ? "PARENT_FULL_RUN_BLOCKING_HITTER_GAME_LOG_GAPS_BEYOND_RETAINED_MAX" : "no_parent_blocking_gaps_beyond_retained_max",
+    retained_max_game_date: retainedMax,
+    blocking_rows: blockingRows,
+    blocking_games: asInt(row && row.blocking_games, 0),
+    min_blocking_official_date: row && row.min_blocking_official_date ? String(row.min_blocking_official_date) : null,
+    max_blocking_official_date: row && row.max_blocking_official_date ? String(row.max_blocking_official_date) : null
+  };
+}
+
 async function runCalendarTallyScopedHitterRepairIfNeeded(env, input, inputJson, baseGate) {
   return null;
 }
@@ -2463,19 +2498,31 @@ async function shouldBypassHitterAnchorNoopForNewFinalDate(env, latestGuard, inp
     asText(latest.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE, DEFAULT_DELTA_RESERVED_START_DATE),
     timeoutMs
   );
+  const parentGapPressure = await getParentFullRunHitterGameLogGapPressure(env, inputJson || {}, retainedMax);
+  if (parentGapPressure.force_increment && parentGapPressure.max_blocking_official_date) {
+    return {
+      bypass: true,
+      reason: "PARENT_FULL_RUN_BLOCKING_GAP_BYPASS_REPAIR_ANCHOR_NOOP",
+      retained_max_game_date: retainedMax,
+      source_final_date_check: sourceWindow,
+      parent_gap_pressure: parentGapPressure
+    };
+  }
   if (sourceWindow && sourceWindow.ok && sourceWindow.latest_complete_game_date > retainedMax) {
     return {
       bypass: true,
       reason: "NEW_FINAL_DATE_AVAILABLE_BYPASS_REPAIR_ANCHOR_NOOP",
       retained_max_game_date: retainedMax,
-      source_final_date_check: sourceWindow
+      source_final_date_check: sourceWindow,
+      parent_gap_pressure: parentGapPressure
     };
   }
   return {
     bypass: false,
     reason: sourceWindow && sourceWindow.ok ? "NO_NEW_FINAL_DATE" : "SOURCE_FINAL_DATE_CHECK_UNAVAILABLE_NO_MUTATION_FROM_ANCHOR_GATE",
     retained_max_game_date: retainedMax,
-    source_final_date_check: sourceWindow
+    source_final_date_check: sourceWindow,
+    parent_gap_pressure: parentGapPressure
   };
 }
 
@@ -2580,6 +2627,15 @@ async function runDeltaUpdateTick(env, input, inputJson) {
     if (calendarScopedRepair) return calendarScopedRepair;
   }
   if (!allowRepeatFullRefresh) {
+    const retainedGapGuard = await getCompletedRetainedDeltaGuard(env);
+    const retainedMax = retainedGapGuard && retainedGapGuard.pass
+      ? [retainedGapGuard.stage_max_game_date, retainedGapGuard.live_max_game_date].map(v => asText(v, null)).filter(Boolean).sort().pop()
+      : null;
+    const parentGapPressure = await getParentFullRunHitterGameLogGapPressure(env, inputJson || {}, retainedMax);
+    if (retainedGapGuard && retainedGapGuard.pass && parentGapPressure.force_increment && parentGapPressure.max_blocking_official_date) {
+      const gapIncrement = await runRetainedDeltaNewFinalDateIncrement(env, retainedGapGuard, parentGapPressure.max_blocking_official_date, input, { ...(inputJson || {}), parent_gap_pressure: parentGapPressure, force_parent_gap_increment: true }, baseGate);
+      return { ...gapIncrement, parent_full_run_gap_contract_increment_guard_v1_6_20: true, parent_gap_pressure: parentGapPressure };
+    }
     const closeoutCandidate = await getRetainedDeltaCloseoutCandidate(env);
     if (closeoutCandidate.found) {
       const latest = closeoutCandidate.latest_delta;
