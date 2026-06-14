@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase2b-pitcher-role";
 const LOGICAL_WORKER_NAME = "alphadog-v2-player-baseline-sanity";
-const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.10-hitter-name-hydration";
+const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.11-baseline-hp-chunked-promote";
 const JOB_KEY = "player-baseline-sanity";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "SCORE_DB"];
@@ -521,6 +521,7 @@ async function updateBatchProgress(env, batchId, fields = {}) {
 
 const BASELINE_HP_STAGE_CHUNK_ROWS = 80;
 const BASELINE_HP_HISTORY_CHUNK_ROWS = 750;
+const BASELINE_HP_PROMOTE_CHUNK_ROWS = 1500;
 const BASELINE_HP_INSERT_BATCH_SIZE = 25;
 const BASELINE_HP_CONFIDENCE_FORMULA_VERSION = "baseline_hp_confidence_v0.1.6_anchor_only_soft_profile";
 const BASELINE_HP_FORMULA_VERSION = "baseline_hp_v0.1.6_exact_layer1_side_line_anchor_no_hard_clamp";
@@ -868,12 +869,35 @@ async function runBaselineHp(env, input = {}) {
     }
 
     if (mode === "baseline_hp_promote_current") {
-      await run(env.SCORE_DB, "DELETE FROM player_baseline_hp_current");
-      await run(env.SCORE_DB, `INSERT INTO player_baseline_hp_current SELECT * FROM player_baseline_hp_stage WHERE batch_id=?`, batchId);
-      const promoted = await countRows(env.SCORE_DB, "player_baseline_hp_current");
+      const stageRows = await countRows(env.SCORE_DB, "player_baseline_hp_stage", "WHERE batch_id=?", batchId);
+      const lastPromoteRowId = String(input.last_promote_row_id || "");
+      const chunkLimit = Math.max(250, Math.min(Number(input.promote_chunk_size || BASELINE_HP_PROMOTE_CHUNK_ROWS), 2500));
+      if (!lastPromoteRowId) {
+        await run(env.SCORE_DB, "DELETE FROM player_baseline_hp_current");
+      }
+      const ids = await baselineHpHistoryChunkIds(env, batchId, lastPromoteRowId, chunkLimit);
+      if (ids.length > 0) {
+        const nextLast = String(ids[ids.length - 1].baseline_hp_row_id || "");
+        await run(env.SCORE_DB,
+          `INSERT OR REPLACE INTO player_baseline_hp_current
+           SELECT *
+           FROM player_baseline_hp_stage
+           WHERE batch_id=? AND baseline_hp_row_id > ? AND baseline_hp_row_id <= ?
+           ORDER BY baseline_hp_row_id`,
+          batchId, lastPromoteRowId, nextLast);
+        const promoted = await countRows(env.SCORE_DB, "player_baseline_hp_current", "WHERE batch_id=?", batchId);
+        await run(env.SCORE_DB, "UPDATE player_baseline_hp_batches SET rows_promoted=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", promoted, batchId);
+        if (promoted < stageRows) {
+          const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"baseline_hp_promote_current", last_promote_row_id:nextLast, promote_chunk_size:chunkLimit });
+          const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_BASELINE_HP_CURRENT_PROMOTE_CHUNK", certification:"PLAYER_BASELINE_HP_CURRENT_PROMOTE_CHUNK_WRITTEN", certification_grade:"PARTIAL", continuation_required:true, next_mode:"baseline_hp_promote_current", next_input:nextInput, run_after_delay_seconds:cooldownSeconds, rows_promoted:promoted, stage_rows:stageRows, promote_rows_written_this_chunk:ids.length, last_promote_row_id:nextLast, promote_chunk_size:chunkLimit, d1_chunked:true, cooldown_safe:true });
+          await updateBaselineHpBatchProgress(env, batchId, { output_json: safeJson(output) });
+          return output;
+        }
+      }
+      const promoted = await countRows(env.SCORE_DB, "player_baseline_hp_current", "WHERE batch_id=?", batchId);
       await run(env.SCORE_DB, "UPDATE player_baseline_hp_batches SET rows_promoted=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", promoted, batchId);
       const nextInput = makeContinuationInput(input, { batch_id:batchId, next_mode:"baseline_hp_write_history_chunk", last_history_row_id:"" });
-      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_BASELINE_HP_CURRENT_PROMOTED", certification:"PLAYER_BASELINE_HP_CURRENT_PROMOTED", certification_grade:"PARTIAL", continuation_required:true, next_mode:"baseline_hp_write_history_chunk", next_input:nextInput, run_after_delay_seconds:cooldownSeconds, rows_promoted:promoted });
+      const output = progressOutput({ request_id:requestId, run_id:runId, batch_id:batchId, mode, status:"PARTIAL_CONTINUE_BASELINE_HP_CURRENT_PROMOTED", certification:"PLAYER_BASELINE_HP_CURRENT_PROMOTED", certification_grade:"PARTIAL", continuation_required:true, next_mode:"baseline_hp_write_history_chunk", next_input:nextInput, run_after_delay_seconds:cooldownSeconds, rows_promoted:promoted, stage_rows:stageRows, d1_chunked_promote:true });
       await updateBaselineHpBatchProgress(env, batchId, { output_json: safeJson(output) });
       return output;
     }

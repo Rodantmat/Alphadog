@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.257-incremental-child-hot-lane";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.258-baseline-hp-stale-promote-preselect";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -13565,13 +13565,18 @@ async function processOneUnlocked(env, trigger) {
   await cancelPlayerBaselineHpQueuesWithTerminalBatch(env, trigger);
   await recoverStaleScoreEnrichmentV1Jobs(env, `${trigger || "tick"}_preselect`);
 
+  // v0.2.258: rescue stale Player Baseline running rows before the Incremental parent
+  // can win the selector and repeatedly report WAITING_ON_CHILD. This is critical
+  // for Baseline HP promote/history transitions: a service-binding timeout leaves
+  // the child row running while the safe next_input is already persisted.
+  let row = await rescueStalePlayerBaselineRunningJobForResume(env, `${trigger || "tick"}_preselect`);
+
   // v0.2.160: Delta Full Run owns its own backend continuation path.
   // Prefer due same-chain Delta Full Run children, then the parent, before generic
-  // queue work. Running children are not blindly redispatched; the parent owns
-  // stale-running detection, trusted Calendar/Tally batch recovery, and retry
-  // replacement for all 11 Delta Full Run child stages. The 5-minute cron remains
-  // a starter/backup, not the normal stage pump.
-  let row = await first(env.CONTROL_DB,
+  // queue work. Running children are not blindly redispatched; the preselect
+  // Player Baseline stale-running rescue above handles trusted baseline resumes
+  // before the parent can consume the tick.
+  if (!row) row = await first(env.CONTROL_DB,
     `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
      FROM control_job_queue p
      JOIN control_job_queue c ON c.parent_request_id = p.request_id AND c.chain_id = p.chain_id
