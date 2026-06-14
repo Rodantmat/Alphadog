@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase2b-pitcher-role";
 const LOGICAL_WORKER_NAME = "alphadog-v2-player-baseline-sanity";
-const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.8-sanity-stage-d1-safe-microbatch";
+const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.9-sanity-stage-prepared-batch";
 const JOB_KEY = "player-baseline-sanity";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "SCORE_DB"];
@@ -443,22 +443,15 @@ async function insertStageRows(env, rows) {
     "confidence_drag_profile","variance_profile","games_sample","events_sample","baseline_confidence_0_100","line_baseline_json",
     "distribution_shape_json","notes_json"
   ];
-  const chunkSize = Math.max(10, Math.min(25, Number(env.BASELINE_SANITY_INSERT_BATCH_SIZE || 25)));
-  for (let i = 0; i < rows.length; i += chunkSize) {
-    const chunk = rows.slice(i, i + chunkSize);
-    const placeholders = chunk.map(() => `(${cols.map(() => "?").join(",")},CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).join(",");
-    const sql = `INSERT OR REPLACE INTO player_baseline_sanity_stage (${cols.join(",")},created_at,updated_at) VALUES ${placeholders}`;
-    const binds = [];
-    for (const r of chunk) {
-      binds.push(
-        r.baseline_row_id,r.batch_id,r.player_type,r.player_id,r.player_name,r.canonical_prop_key,r.role_profile,r.prior_pool_key,
-        r.sanity_profile_key,r.sample_profile,r.usage_profile,r.line_difficulty_profile,r.volatility_profile,r.baseline_drag_profile,
-        r.confidence_drag_profile,r.variance_profile,r.games_sample,r.events_sample,r.baseline_confidence_0_100,r.line_baseline_json,
-        r.distribution_shape_json,r.notes_json
-      );
-    }
-    await db.prepare(sql).bind(...binds).run();
-  }
+  const batchSize = Math.max(10, Math.min(25, Number(env.BASELINE_SANITY_INSERT_BATCH_SIZE || 25)));
+  const sql = `INSERT OR REPLACE INTO player_baseline_sanity_stage (${cols.join(",")},created_at,updated_at) VALUES (${cols.map(() => "?").join(",")},CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
+  const stmts = rows.map(r => db.prepare(sql).bind(
+    r.baseline_row_id,r.batch_id,r.player_type,r.player_id,r.player_name,r.canonical_prop_key,r.role_profile,r.prior_pool_key,
+    r.sanity_profile_key,r.sample_profile,r.usage_profile,r.line_difficulty_profile,r.volatility_profile,r.baseline_drag_profile,
+    r.confidence_drag_profile,r.variance_profile,r.games_sample,r.events_sample,r.baseline_confidence_0_100,r.line_baseline_json,
+    r.distribution_shape_json,r.notes_json
+  ));
+  await batch(db, stmts, batchSize);
 }
 
 async function countRows(db, table, whereSql = "", ...binds) {
