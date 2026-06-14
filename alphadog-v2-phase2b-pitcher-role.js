@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase2b-pitcher-role";
 const LOGICAL_WORKER_NAME = "alphadog-v2-player-baseline-sanity";
-const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.9-sanity-stage-prepared-batch";
+const VERSION = "alphadog-v2-phase2b-pitcher-role-v0.1.10-hitter-name-hydration";
 const JOB_KEY = "player-baseline-sanity";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "SCORE_DB"];
@@ -308,7 +308,8 @@ function buildPlayerProfiles(hitterRows, pitcherRows) {
     const games = rows.length;
     const sums = rows.reduce((a,r)=>{ a.pa+=num(r.pa); a.hits+=num(r.hits); a.tb+=num(r.total_bases); a.hrr+=num(r.hits)+num(r.runs)+num(r.rbi); return a; }, {pa:0,hits:0,tb:0,hrr:0});
     const avgPa = games ? sums.pa/games : 0;
-    hitterProfiles.push({ player_id:Number(id), player_name:null, games, avg_pa:avgPa, hits_pg:sums.hits/games, tb_pg:sums.tb/games, hrr_pg:sums.hrr/games, usage_profile: avgPa < 2.25 ? "LOW_USAGE_HITTER" : (avgPa < 3.25 ? "MEDIUM_USAGE_HITTER" : "REGULAR_USAGE_HITTER") });
+    const name = rows.find(r => r.player_name)?.player_name || null;
+    hitterProfiles.push({ player_id:Number(id), player_name:name, games, avg_pa:avgPa, hits_pg:sums.hits/games, tb_pg:sums.tb/games, hrr_pg:sums.hrr/games, usage_profile: avgPa < 2.25 ? "LOW_USAGE_HITTER" : (avgPa < 3.25 ? "MEDIUM_USAGE_HITTER" : "REGULAR_USAGE_HITTER") });
   }
   assignTiers(hitterProfiles, p => (p.games*.15)+(p.avg_pa*8)+(p.hits_pg*18)+(p.tb_pg*10)+(p.hrr_pg*6), "HITTER_TIER");
 
