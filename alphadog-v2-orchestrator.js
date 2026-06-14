@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.245-prop-matrix-stale-running-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.246-score-enrichment-v1-dispatch";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -571,7 +571,7 @@ function isPropMatrixBuilderJob(row) {
 function isScoringEngineJob(row) {
   const job = String(row && row.job_key || "");
   const worker = String(row && row.worker_name || "");
-  return (job === "scoring-engine" || job === "scoring-engine-simulation" || job === "hit-probability") && worker === "alphadog-v2-score-audit";
+  return (job === "scoring-engine" || job === "scoring-engine-simulation" || job === "hit-probability" || job === "score-enrichment-v1") && worker === "alphadog-v2-score-audit";
 }
 
 function isScoreFinalBoardJob(row) {
@@ -1139,6 +1139,9 @@ function marketScoringFullRunChildInput(parentRow, stage, stepIndex, retryCount 
   }
   if (stage.job_key === "hit-probability") {
     return { ...base, logical_worker_name: "alphadog-v2-hit-probability", deployed_worker_slot: "alphadog-v2-score-audit", exact_worker_only: true, worker_owned_schema_creation: true, estimated_hit_probability_phase: true, estimated_not_true_probability: true, hit_probability_only: true, hp_board_required: true, hp_board_same_worker: true, hp_board_display_calibration_required: false, writes_hit_probability_tables_only: true, writes_hp_board_tables_only: true, reads_score_final_board_current_first: false, reads_scoring_engine_current_direct: true, fallback_reads_scoring_engine_current: true, source_engine_batch_required_from_same_chain: true, read_all_scoring_rows_no_pre_filter: true, probability_row_for_every_scoring_row: true, no_cut_all_legs_probability_ledger: true, model_pending_no_cut_rows_allowed: true, unsupported_props_become_model_pending_no_cut: true, true_probability_enabled: false, no_true_hit_probability_claims: true, framework_only: true, no_score_mutation: true, no_scoring_engine_current_mutation: true, no_final_board_mutation: true, no_prepared_board_mutation: true, no_source_board_mutation: true, no_candidate_board_write: true, no_ranking: true, no_pick_recommendation: true, no_live_playable_mutation: true, no_review_playable_mutation: true, d1_limit_safe_chunking_required: true, service_binding_timeout_reconcile_from_tables: true, hp_first_board_before_final_board: true };
+  }
+  if (stage.job_key === "score-enrichment-v1") {
+    return { ...base, logical_worker_name: "alphadog-v2-score-enrichment-v1", deployed_worker_slot: "alphadog-v2-score-audit", exact_worker_only: true, worker_owned_schema_creation: true, mode: "score_enrichment_v1_side_expanded", score_enrichment_v1: true, side_expanded: true, reads_prop_matrix_current: true, reads_player_baseline_hp_current: true, reads_prop_factor_packets: true, writes_score_enrichment_tables_only: true, baseline_confidence_cap_60: true, enrichment_confidence_max_40: true, no_hp_v2: true, no_current_scoring_mutation: true, no_scoring_engine_current_mutation: true, no_hit_probability_mutation: true, no_final_score: true, no_final_board: true, no_ranking: true, no_pick_recommendation: true, d1_limit_safe_chunking_required: true };
   }
   if (stage.job_key === "score-final-board") {
     return { ...base, exact_worker_only: true, deployed_worker_slot: "alphadog-v2-score-final-board", service_binding_name: "SCORE_FINAL_BOARD_WORKER", profile_key: "STRICT_C_HP_FIRST_TRUST_V4_1", source_engine_batch_policy: "market_full_requires_explicit_same_chain_completed_scoring_batch", source_hp_board_policy: "market_full_requires_explicit_same_chain_completed_hp_board_batch", writes_score_final_board_current: true, writes_score_final_board_history: true, no_external_calls: true, no_source_board_mutation: true, no_simulation_shadow_mutation: true, requires_real_engine_scoring_batch: true, requires_hp_board_current_source: true, hp_first_final_board_source_active: true, must_run_after_hit_probability: true };
@@ -11981,6 +11984,7 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
 async function processScoringEngineJob(env, row, runId, trigger) {
   const isSimulationJob = row && row.job_key === "scoring-engine-simulation";
   const isHitProbabilityJob = row && row.job_key === "hit-probability";
+  const isEnrichmentJob = row && row.job_key === "score-enrichment-v1";
   if (!env.SCORE_AUDIT_WORKER || typeof env.SCORE_AUDIT_WORKER.fetch !== "function") {
     const output = {
       ok: false,
@@ -11988,7 +11992,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
       worker_name: row.worker_name,
-      logical_worker_name: isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"),
+      logical_worker_name: isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine")),
       job_key: row.job_key,
       status: "blocked_missing_service_binding",
       certification: "SCORING_ENGINE_SERVICE_BINDING_MISSING",
@@ -12014,43 +12018,45 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     run_id: runId,
     job_key: row.job_key,
     worker_name: row.worker_name,
-    logical_worker_name: isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"),
+    logical_worker_name: isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine")),
     deployed_worker_slot: "alphadog-v2-score-audit",
     trigger,
-    mode: isHitProbabilityJob ? "hit_probability_current_estimate" : (isSimulationJob ? "scoring_engine_simulation_shadow_strict_b" : "scoring_engine_current_strict_c_realistic_v3_2"),
+    mode: isEnrichmentJob ? "score_enrichment_v1_side_expanded" : (isHitProbabilityJob ? "hit_probability_current_estimate" : (isSimulationJob ? "scoring_engine_simulation_shadow_strict_b" : "scoring_engine_current_strict_c_realistic_v3_2")),
     input_json: rowInput,
     exact_worker_only: true,
     framework_only: false,
-    production_scoring_current: (!isSimulationJob && !isHitProbabilityJob),
+    production_scoring_current: (!isSimulationJob && !isHitProbabilityJob && !isEnrichmentJob),
     simulation_only: isSimulationJob,
-      hit_probability_only: isHitProbabilityJob,
     hit_probability_only: isHitProbabilityJob,
-    primary_simulation_profile: isHitProbabilityJob ? "HP_EMPIRICAL_V0_1_1_SAME_SCORE_AUDIT_SLOT" : (isSimulationJob ? "STRICT_B" : "STRICT_C_REALISTIC_V3_2"),
+    score_enrichment_v1: isEnrichmentJob,
+    primary_simulation_profile: isHitProbabilityJob ? "HP_EMPIRICAL_V0_1_1_SAME_SCORE_AUDIT_SLOT" : (isSimulationJob ? "STRICT_B" : (isEnrichmentJob ? "ENRICHMENT_V1_SIDE_EXPANDED" : "STRICT_C_REALISTIC_V3_2")),
     comparison_profile: isSimulationJob ? "HYBRID_CONTROL" : null,
     writes_shadow_table_only: isSimulationJob,
     thresholds_locked: false,
-    scoring_enabled: (!isSimulationJob && !isHitProbabilityJob),
+    scoring_enabled: (!isSimulationJob && !isHitProbabilityJob && !isEnrichmentJob),
     archive_score_threshold_locked: 70,
     final_qualification_threshold_locked: false,
     no_true_hit_probability_claims: true,
     side_aware_required: true,
     source_line_type_aware_required: true,
     variation_aware_required: true,
-    one_score_row_per_matrix_row: true,
+    one_score_row_per_matrix_row: !isEnrichmentJob,
+    one_enrichment_row_per_matrix_side: isEnrichmentJob,
     no_variation_collapse: true,
     regular_lines_two_sided: true,
     goblin_demon_more_only: true,
     goblin_demon_under_blocker: "GOBLIN_DEMON_UNDER_NOT_SELECTABLE",
     dedupe_deferred_to_ranking_final_board: true,
-    writes_score_db_scoring_engine_only: (!isSimulationJob && !isHitProbabilityJob),
+    writes_score_db_scoring_engine_only: (!isSimulationJob && !isHitProbabilityJob && !isEnrichmentJob),
     writes_score_db_simulation_shadow_only: isSimulationJob,
     writes_score_db_hit_probability_only: isHitProbabilityJob,
+    writes_score_enrichment_tables_only: isEnrichmentJob,
     writes_hp_board_tables_only: isHitProbabilityJob,
     hp_board_required: isHitProbabilityJob,
     hp_board_same_worker: isHitProbabilityJob,
     hp_board_display_calibration_required: isHitProbabilityJob,
-    service_binding_timeout_reconcile_from_tables: isHitProbabilityJob,
-    writes_archive_db_snapshot_table_schema_only: (!isSimulationJob && !isHitProbabilityJob),
+    service_binding_timeout_reconcile_from_tables: isHitProbabilityJob || isEnrichmentJob,
+    writes_archive_db_snapshot_table_schema_only: (!isSimulationJob && !isHitProbabilityJob && !isEnrichmentJob),
     no_candidate_board_write: true,
     no_old_prop_scores_write: true,
     no_ranking: true,
@@ -12059,7 +12065,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   };
 
   const cooldownYield = await maybeYieldHeavyMarketChildCooldown(env, row, runId, input, rowInput, {
-    logical_worker_name: isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"),
+    logical_worker_name: isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine")),
     deployed_worker_slot: "alphadog-v2-score-audit",
     mode: input.mode
   });
@@ -12103,24 +12109,26 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
-    deployed_slot_version: isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock",
+    deployed_slot_version: isEnrichmentJob ? "alphadog-v2-score-audit-v0.4.40-enrichment-v1-side-expanded" : (isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock"),
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
       exact_worker_only: true,
-      logical_worker_name: isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"),
+      logical_worker_name: isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine")),
       deployed_worker_slot: "alphadog-v2-score-audit",
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
       framework_only: false,
-      production_scoring_current: (!isSimulationJob && !isHitProbabilityJob),
+      production_scoring_current: (!isSimulationJob && !isHitProbabilityJob && !isEnrichmentJob),
       simulation_only: isSimulationJob,
       thresholds_locked: false,
-      scoring_enabled: (!isSimulationJob && !isHitProbabilityJob),
+      scoring_enabled: (!isSimulationJob && !isHitProbabilityJob && !isEnrichmentJob),
       archive_score_threshold_locked: 70,
       no_true_hit_probability_claims: true,
       estimated_hit_probability_phase: isHitProbabilityJob,
+      score_enrichment_v1: isEnrichmentJob,
+      writes_score_enrichment_tables_only: isEnrichmentJob,
       hp_board_required: isHitProbabilityJob,
       hp_board_display_calibration_required: isHitProbabilityJob,
       side_aware_required: true,
@@ -12145,7 +12153,11 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     const nextInput = {
       ...rowInput,
       resume_batch_id: output && output.batch_id ? output.batch_id : rowInput.resume_batch_id || null,
-      scoring_engine_resume: true,
+      enrichment_batch_id: isEnrichmentJob && output && (output.enrichment_batch_id || output.batch_id) ? (output.enrichment_batch_id || output.batch_id) : rowInput.enrichment_batch_id || null,
+      enrichment_offset: isEnrichmentJob && output && output.next_offset !== undefined ? output.next_offset : (rowInput.enrichment_offset || 0),
+      source_matrix_batch_id: isEnrichmentJob && output && output.source_matrix_batch_id ? output.source_matrix_batch_id : rowInput.source_matrix_batch_id || null,
+      scoring_engine_resume: !isEnrichmentJob,
+      score_enrichment_resume: isEnrichmentJob,
       continuation_from_request_id: row.request_id,
       continuation_certification: certification
     };
@@ -14372,8 +14384,9 @@ async function processOneUnlocked(env, trigger) {
 
   if (isScoringEngineJob(row)) {
     const output = await processScoringEngineJob(env, row, runId, trigger);
+    const partial = isPartialContinueOutput(output);
     return {
-      status: output && output.ok ? "completed_one_scoring_engine_job" : "failed_one_scoring_engine_job",
+      status: partial ? "partial_continue_score_audit_job" : (output && output.ok ? "completed_one_scoring_engine_job" : "failed_one_scoring_engine_job"),
       request_id: row.request_id,
       run_id: runId,
       output
@@ -14564,7 +14577,7 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
     await releaseLock(env, owner, "IDLE");
 
     const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_market_teams_game_odds_job" || x.status === "completed_one_market_hitter_prop_context_job" || x.status === "completed_one_market_pitcher_prop_context_job" || x.status === "completed_one_oddsapi_hitter_prop_context_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_delta_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job" || x.status === "completed_one_daily_weather_job" || x.status === "completed_one_daily_bullpen_availability_job" || x.status === "completed_one_daily_team_schedule_spot_job" || x.status === "completed_one_daily_starters_job" || x.status === "completed_one_daily_player_availability_job" || x.status === "completed_one_daily_lineups_source_probe_job" || x.status === "completed_one_daily_game_status_job" || x.status === "completed_one_daily_context_certifier_job" || x.status === "completed_one_daily_context_full_run_job" || x.status === "completed_one_prop_factor_miner_job" || x.status === "completed_one_prop_matrix_builder_job" || x.status === "completed_one_scoring_engine_job" || x.status === "completed_one_score_final_board_job" || x.status === "completed_one_market_scoring_full_run_job" || x.status === "completed_one_daily_full_run_job").length;
-    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job" || x.status === "partial_continue_daily_context_full_run_job" || x.status === "partial_continue_market_scoring_full_run_job" || x.status === "partial_continue_daily_full_run_job" || x.status === "partial_continue_prop_matrix_builder_job").length;
+    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job" || x.status === "partial_continue_daily_context_full_run_job" || x.status === "partial_continue_market_scoring_full_run_job" || x.status === "partial_continue_daily_full_run_job" || x.status === "partial_continue_prop_matrix_builder_job" || x.status === "partial_continue_score_audit_job").length;
     const blocked = processed.filter(x => x.status === "failed_one_dispatch_exception_contained" || x.status === "blocked_unsupported_job" || x.status === "failed_one_market_teams_game_odds_job" || x.status === "failed_one_market_hitter_prop_context_job" || x.status === "failed_one_market_pitcher_prop_context_job" || x.status === "failed_one_oddsapi_hitter_prop_context_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_delta_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job" || x.status === "failed_one_daily_weather_job" || x.status === "failed_one_daily_bullpen_availability_job" || x.status === "failed_one_daily_team_schedule_spot_job" || x.status === "failed_one_daily_starters_job" || x.status === "failed_one_daily_player_availability_job" || x.status === "failed_one_daily_lineups_source_probe_job" || x.status === "failed_one_daily_game_status_job" || x.status === "failed_one_daily_context_certifier_job" || x.status === "failed_one_daily_context_full_run_job" || x.status === "failed_one_prop_factor_miner_job" || x.status === "failed_one_prop_matrix_builder_job" || x.status === "failed_one_scoring_engine_job" || x.status === "failed_one_score_final_board_job" || x.status === "failed_one_market_scoring_full_run_job" || x.status === "failed_one_daily_full_run_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
 
@@ -14799,6 +14812,18 @@ async function countDuePlayerBaselineSanity(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
+async function countDueScoreEnrichmentV1Hot(env) {
+  const row = await first(env.CONTROL_DB,
+    `SELECT COUNT(*) AS c
+       FROM control_job_queue
+      WHERE job_key='score-enrichment-v1'
+        AND worker_name='alphadog-v2-score-audit'
+        AND status IN ('pending','running','partial_continue')
+        AND finished_at IS NULL`
+  );
+  return Number(row && row.c ? row.c : 0);
+}
+
 async function countDuePropFactorMinerHot(env) {
   // Prop Factor intentionally alternates long service-binding packet chunks with short
   // cooldown/yield states. Count every active Prop Factor row, not only currently-due
@@ -14870,6 +14895,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const duePlayerBaselineSanity = await countDuePlayerBaselineSanity(env);
   const duePropFactorMinerHot = await countDuePropFactorMinerHot(env);
   const duePropMatrixBuilderHot = await countDuePropMatrixBuilderHot(env);
+  const dueScoreEnrichmentV1Hot = await countDueScoreEnrichmentV1Hot(env);
   const dueBaseHitterGameLogs = await countDueBaseHitterGameLogs(env);
   const dueBaseHitterSplits = await countDueBaseHitterSplits(env);
   const dueBaseHitterMetrics = await countDueBaseHitterMetrics(env);
@@ -14891,7 +14917,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const sawLockBusy = terminalStatuses.includes("lock_busy");
   const sawHardStop = terminalStatuses.some(s => s === "blocked" || s === "error");
   const continuationAllowedByLastCycle = !sawLockBusy && !sawHardStop;
-  const dueAnyHotChain = (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || duePlayerBaselineSanity > 0 || duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0);
+  const dueAnyHotChain = (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || duePlayerBaselineSanity > 0 || duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueScoreEnrichmentV1Hot > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0);
   // v0.2.175: Market Scoring Full Run contains long external-market/scoring stages.
   // A bounded pump can legitimately observe GLOBAL_ORCHESTRATOR busy while a prior
   // service-binding fetch is still running or while its 5-minute owner lock is waiting
@@ -14911,11 +14937,12 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const playerBaselineSanityLockBusyContinuation = sawLockBusy && !sawHardStop && duePlayerBaselineSanity > 0;
   const propFactorLockBusyContinuation = sawLockBusy && !sawHardStop && duePropFactorMinerHot > 0;
   const propMatrixLockBusyContinuation = sawLockBusy && !sawHardStop && duePropMatrixBuilderHot > 0;
-  const lockBusyHotContinuation = marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation || propMatrixLockBusyContinuation;
+  const scoreEnrichmentLockBusyContinuation = sawLockBusy && !sawHardStop && dueScoreEnrichmentV1Hot > 0;
+  const lockBusyHotContinuation = marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation || propMatrixLockBusyContinuation || scoreEnrichmentLockBusyContinuation;
   const shouldSelfContinue = (continuationAllowedByLastCycle || lockBusyHotContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
-  const hotContinuationDelayMs = shouldSelfContinue && (duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0)
+  const hotContinuationDelayMs = shouldSelfContinue && (duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueScoreEnrichmentV1Hot > 0)
     ? (lastStatus === "no_due_jobs" ? 2500 : 0)
     : (shouldSelfContinue && (lastStatus === "no_due_jobs" || lockBusyHotContinuation) ? 6500 : 0);
 
@@ -14936,6 +14963,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       due_player_baseline_sanity_after_pump: duePlayerBaselineSanity,
       due_prop_factor_miner_hot_after_pump: duePropFactorMinerHot,
       due_prop_matrix_builder_hot_after_pump: duePropMatrixBuilderHot,
+      due_score_enrichment_v1_hot_after_pump: dueScoreEnrichmentV1Hot,
       due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
       due_base_hitter_splits_after_pump: dueBaseHitterSplits,
       due_base_hitter_metrics_after_pump: dueBaseHitterMetrics,
@@ -14983,6 +15011,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         due_player_baseline_sanity_after_pump: duePlayerBaselineSanity,
         due_prop_factor_miner_hot_after_pump: duePropFactorMinerHot,
         due_prop_matrix_builder_hot_after_pump: duePropMatrixBuilderHot,
+      due_score_enrichment_v1_hot_after_pump: dueScoreEnrichmentV1Hot,
         due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
         due_base_hitter_splits_after_pump: dueBaseHitterSplits,
         due_base_hitter_metrics_after_pump: dueBaseHitterMetrics,

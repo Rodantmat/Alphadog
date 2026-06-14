@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-scoring-engine-v0.4.38-full-v032-fast-restore";
+const VERSION = "alphadog-v2-score-audit-v0.4.40-enrichment-v1-side-expanded";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -4337,6 +4337,326 @@ async function runHitProbabilityCurrent(env, input = {}){
 }
 
 
+const ENRICHMENT_V1_JOB_KEY = "score-enrichment-v1";
+const ENRICHMENT_V1_MODE = "score_enrichment_v1_side_expanded";
+const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.0-side-expanded-baseline-confidence";
+const ENRICHMENT_V1_CHUNK_ROWS = 650;
+
+function clampNum(v, lo, hi) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return lo;
+  return Math.max(lo, Math.min(hi, n));
+}
+function lowerText(v) { return String(v == null ? "" : v).toLowerCase(); }
+function scoreJson(value, max = 14000) {
+  let text = "{}";
+  try { text = JSON.stringify(value == null ? {} : value); } catch (_) { text = JSON.stringify({ serialization_error: true }); }
+  return text.length > max ? text.slice(0, max) : text;
+}
+function enrichmentProfileFor(prop, family) {
+  const p = lowerText(prop);
+  const f = lowerText(family);
+  if (p === "hitter_strikeouts") return "hitter_strikeout";
+  if (p === "walks") return "hitter_walk_obp";
+  if (p === "stolen_bases") return "stolen_base_attempt";
+  if (["home_runs", "total_bases", "doubles", "triples"].includes(p)) return "hitter_power";
+  if (["hits", "singles"].includes(p)) return "hitter_contact";
+  if (["runs", "rbis", "hits_runs_rbis"].includes(p)) return "hitter_run_rbi";
+  if (p === "fantasy_score") return "fantasy_score_deferred";
+  if (p === "pitcher_strikeouts") return "pitcher_strikeout";
+  if (p === "pitcher_outs") return "pitcher_outs";
+  if (p === "hits_allowed") return "pitcher_hits_allowed";
+  if (["earned_runs", "runs_allowed"].includes(p)) return "pitcher_earned_runs_allowed";
+  if (p === "walks_allowed") return "pitcher_walks";
+  if (p === "rfi_nrfi") return "rfi_nrfi";
+  return f === "pitcher" ? "pitcher_generic" : "hitter_contact";
+}
+const ENRICHMENT_PROFILE_WEIGHTS = {
+  hitter_contact: { baseline:40, recent_form:10, direct_matchup:13, split_fit:10, lineup_pa:8, market:3, park_environment:7, bullpen:3, lineup_status:3, opponent_defense:3 },
+  hitter_power: { baseline:35, recent_form:15, direct_matchup:12, split_fit:10, lineup_opportunity:3, market:3, park_environment:12, bullpen:5, lineup_status:5 },
+  hitter_run_rbi: { baseline:28, recent_form:10, direct_matchup:11, split_fit:8, lineup_role:15, market:6, park_environment:6, bullpen:8, lineup_status:4, run_strategy:4 },
+  hitter_strikeout: { baseline:35, recent_discipline:18, pitcher_k_whiff:14, pitch_mix_split:13, lineup_pa:5, market:3, bullpen_k:5, lineup_status:4, umpire:3 },
+  hitter_walk_obp: { baseline:34, recent_discipline:18, pitcher_control:16, pitch_mix_zone:10, umpire:7, lineup_pa:5, market:4, lineup_status:6 },
+  stolen_base_attempt: { baseline:30, runner_attempt_history:20, runner_speed:10, pitcher_hold:15, catcher_pop_throw:10, game_state_strategy:12, market:3 },
+  stolen_base_success: { baseline:25, runner_speed:20, catcher_pop_throw:20, pitcher_hold:18, jump_route_context:7, game_state_strategy:5, market:5 },
+  pitcher_strikeout: { baseline:35, pitcher_k_whiff:20, opponent_k_profile:13, pitch_mix_fit:14, workload_pitch_count:6, umpire:5, market:4, park_weather:3 },
+  pitcher_outs: { baseline:35, starter_workload:18, opponent_pressure:12, bullpen_availability:14, rest_pitch_count:10, market:4, park_weather:4, starter_confirmation:3 },
+  pitcher_hits_allowed: { baseline:30, pitcher_contact_prevention:17, opponent_contact:14, pitch_mix_split:10, defense_framing:10, market:5, park_weather:10, workload:4 },
+  pitcher_earned_runs_allowed: { baseline:30, pitcher_run_prevention:17, opponent_run_quality:14, pitch_mix_split:8, bullpen_inherited_runner_risk:10, market_implied_runs:7, park_weather:10, workload:4 },
+  pitcher_walks: { baseline:35, pitcher_control:18, opponent_walk_chase:13, pitch_mix_split:8, umpire:10, catcher_framing:5, workload:6, market:5 },
+  rfi_nrfi: { sp_first_inning:24, top_order_matchup:18, team_first_inning:11, market_game_total:12, park_weather:12, umpire:8, opener_bulk_risk:10, source_line_quality:5 },
+  fantasy_score_deferred: { baseline:0, model_deferred:100 },
+  pitcher_generic: { baseline:35, recent_form:15, matchup:15, market:5, daily_context:15, factor_packet:15 }
+};
+function directionLayerFromHp(hp, selectedSide) {
+  if (hp == null || !Number.isFinite(Number(hp))) return 0;
+  const n = Number(hp);
+  if (n >= 85) return 3;
+  if (n >= 75) return 2;
+  if (n >= 60) return 1;
+  if (n > 40) return 0;
+  if (n > 25) return -1;
+  if (n > 15) return -2;
+  return -3;
+}
+function directionLabel(layer) {
+  return ({ "3":"extremely_favorable", "2":"strongly_favorable", "1":"moderately_favorable", "0":"neutral", "-1":"moderately_unfavorable", "-2":"strongly_unfavorable", "-3":"extremely_unfavorable" })[String(layer)] || "neutral";
+}
+function weightPressure(weight, layer) {
+  const mult = ({ "3":1, "2":0.66, "1":0.33, "0":0, "-1":-0.33, "-2":-0.66, "-3":-1 })[String(layer)] ?? 0;
+  return Math.round(Number(weight || 0) * mult * 100) / 100;
+}
+function qualityForStatus(status, grade) {
+  const s = lowerText(status); const g = lowerText(grade);
+  if (s.includes("ready") || g === "ready") return 1.0;
+  if (s.includes("partial") || g.includes("warning")) return 0.65;
+  if (s.includes("missing") || s.includes("not_found") || s.includes("blocked")) return 0.0;
+  return 0.75;
+}
+function confidenceCapForRow(row, baselineAvailable) {
+  if (Number(row.blocking_for_scoring || 0) === 1 || Number(row.blocker_count || 0) > 0) return 0;
+  if (!baselineAvailable) return 40;
+  let cap = 100;
+  const daily = lowerText(row.daily_readiness_status);
+  const factor = lowerText(row.factor_status);
+  const marketProp = lowerText(row.market_prop_context_status);
+  if (!daily || daily.includes("missing") || daily.includes("not_found")) cap = Math.min(cap, 60);
+  if (daily.includes("partial")) cap = Math.min(cap, 85);
+  if (!factor || factor.includes("missing") || factor.includes("not_found")) cap = Math.min(cap, 65);
+  if (marketProp.includes("not_found") || marketProp.includes("missing")) cap = Math.min(cap, 75);
+  return cap;
+}
+function enrichmentStatus(row, baselineAvailable) {
+  if (Number(row.blocking_for_scoring || 0) === 1 || Number(row.blocker_count || 0) > 0) return "enrichment_blocked";
+  if (!baselineAvailable) return "baseline_missing";
+  if (Number(row.warning_count || 0) > 0 || lowerText(row.matrix_status).includes("partial") || lowerText(row.factor_status).includes("partial") || lowerText(row.daily_readiness_status).includes("partial")) return "enrichment_ready_with_warnings";
+  return "enrichment_ready";
+}
+function enrichmentGrade(status) {
+  if (status === "enrichment_ready") return "READY";
+  if (status === "enrichment_ready_with_warnings") return "READY_WITH_WARNINGS";
+  if (status === "baseline_missing") return "DEFERRED_BASELINE_MISSING";
+  if (status === "enrichment_blocked") return "BLOCKED";
+  return "REVIEW";
+}
+async function ensureScoreEnrichmentV1Schema(env) {
+  await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS score_enrichment_batches (
+    batch_id TEXT PRIMARY KEY,
+    request_id TEXT,
+    run_id TEXT,
+    worker_name TEXT,
+    worker_version TEXT,
+    mode TEXT,
+    status TEXT,
+    source_matrix_batch_id TEXT,
+    matrix_rows_read INTEGER DEFAULT 0,
+    expected_enrichment_rows INTEGER DEFAULT 0,
+    enrichment_rows_written INTEGER DEFAULT 0,
+    baseline_matched_rows INTEGER DEFAULT 0,
+    baseline_missing_rows INTEGER DEFAULT 0,
+    blocked_rows INTEGER DEFAULT 0,
+    warning_rows INTEGER DEFAULT 0,
+    certification_status TEXT,
+    certification_grade TEXT,
+    output_json TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS score_enrichment_current (
+    enrichment_row_id TEXT PRIMARY KEY,
+    batch_id TEXT,
+    matrix_id TEXT,
+    prepared_row_id TEXT,
+    source_line_id TEXT,
+    source_key TEXT,
+    game_pk INTEGER,
+    official_date TEXT,
+    official_game_time_utc TEXT,
+    mlb_player_id INTEGER,
+    player_name TEXT,
+    team_id TEXT,
+    opponent_team_id TEXT,
+    canonical_prop_key TEXT,
+    board_line_value REAL,
+    selected_side TEXT,
+    factor_family TEXT,
+    factor_packet_id TEXT,
+    profile_key TEXT,
+    baseline_hp_row_id TEXT,
+    baseline_hp_available INTEGER DEFAULT 0,
+    baseline_hp_0_100 REAL,
+    baseline_confidence_raw_0_100 REAL,
+    baseline_confidence_v2_0_60 REAL,
+    baseline_sample_size INTEGER,
+    baseline_hit_count INTEGER,
+    baseline_miss_count INTEGER,
+    profile_weight_json TEXT,
+    factor_layer_json TEXT,
+    factor_hp_pressure REAL DEFAULT 0,
+    enrichment_confidence_add_available_0_40 REAL DEFAULT 0,
+    confidence_cap_0_100 REAL DEFAULT 100,
+    data_quality_score_0_100 REAL DEFAULT 0,
+    enrichment_status TEXT,
+    enrichment_grade TEXT,
+    matrix_status TEXT,
+    matrix_grade TEXT,
+    factor_status TEXT,
+    factor_grade TEXT,
+    market_game_context_status TEXT,
+    market_prop_context_status TEXT,
+    daily_readiness_status TEXT,
+    blocking_for_scoring INTEGER DEFAULT 0,
+    warning_count INTEGER DEFAULT 0,
+    blocker_count INTEGER DEFAULT 0,
+    missing_component_count INTEGER DEFAULT 0,
+    baseline_missing INTEGER DEFAULT 0,
+    hp_v2_ready INTEGER DEFAULT 0,
+    final_score_ready INTEGER DEFAULT 0,
+    enrichment_payload_json TEXT,
+    matrix_payload_json_snapshot TEXT,
+    details_json_snapshot TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS score_enrichment_issues (
+    issue_id TEXT PRIMARY KEY,
+    batch_id TEXT,
+    enrichment_row_id TEXT,
+    prepared_row_id TEXT,
+    severity TEXT,
+    issue_code TEXT,
+    issue_message TEXT,
+    details_json TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_enrichment_current_batch ON score_enrichment_current(batch_id)`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_enrichment_current_prepared ON score_enrichment_current(prepared_row_id)`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_score_enrichment_current_profile ON score_enrichment_current(profile_key, selected_side)`);
+}
+async function latestMatrixBatchIdForEnrichment(env) {
+  const row = await first(env.SCORE_DB, `SELECT batch_id, COUNT(*) AS rows FROM prop_matrix_current GROUP BY batch_id ORDER BY COUNT(*) DESC LIMIT 1`);
+  return row && row.batch_id ? String(row.batch_id) : null;
+}
+async function runScoreEnrichmentV1(env, input = {}) {
+  const started = Date.now();
+  await ensureScoreEnrichmentV1Schema(env);
+  const requestId = input.request_id || `score_enrichment_v1_${Date.now().toString(36)}`;
+  const runId = input.run_id || null;
+  const chainId = input.chain_id || null;
+  const batchId = input.batch_id || input.enrichment_batch_id || `score_enrichment_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
+  const sourceMatrixBatchId = input.source_matrix_batch_id || await latestMatrixBatchIdForEnrichment(env);
+  if (!sourceMatrixBatchId) throw new Error("No prop_matrix_current batch found for Enrichment V1");
+  const offset = Number(input.enrichment_offset || input.offset || 0) || 0;
+  const limit = Math.max(50, Math.min(Number(input.chunk_rows || ENRICHMENT_V1_CHUNK_ROWS), 1000));
+
+  const totalRow = await first(env.SCORE_DB, `WITH side_expanded AS (
+    SELECT matrix_id FROM prop_matrix_current WHERE batch_id=?
+    UNION ALL
+    SELECT matrix_id FROM prop_matrix_current WHERE batch_id=? AND (prop_side IS NULL OR prop_side='')
+  ) SELECT COUNT(*) AS rows FROM side_expanded`, sourceMatrixBatchId, sourceMatrixBatchId);
+  const expectedRows = Number(totalRow && totalRow.rows || 0);
+  await run(env.SCORE_DB, `INSERT OR IGNORE INTO score_enrichment_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, status, source_matrix_batch_id, expected_enrichment_rows, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, runId, WORKER_NAME, ENRICHMENT_V1_VERSION, ENRICHMENT_V1_MODE, sourceMatrixBatchId, expectedRows);
+  if (offset === 0) {
+    await run(env.SCORE_DB, `DELETE FROM score_enrichment_current WHERE batch_id=?`, batchId);
+    await run(env.SCORE_DB, `DELETE FROM score_enrichment_issues WHERE batch_id=?`, batchId);
+  }
+
+  const rows = await all(env.SCORE_DB, `WITH side_expanded AS (
+    SELECT m.*, CASE WHEN m.prop_side IS NULL OR m.prop_side='' THEN 'more' ELSE lower(m.prop_side) END AS selected_side
+    FROM prop_matrix_current m WHERE m.batch_id=?
+    UNION ALL
+    SELECT m.*, 'less' AS selected_side
+    FROM prop_matrix_current m WHERE m.batch_id=? AND (m.prop_side IS NULL OR m.prop_side='')
+  )
+  SELECT s.matrix_id, s.batch_id AS matrix_batch_id, s.prepared_row_id, s.source_line_id, s.source_key, s.game_pk,
+         s.official_date, s.official_game_time_utc, s.mlb_player_id, s.player_name, s.team_id, s.opponent_team_id,
+         s.canonical_prop_key, s.board_line_value, s.selected_side, s.factor_family, s.factor_packet_id, s.factor_status,
+         s.market_game_context_status, s.market_prop_context_status, s.daily_readiness_status, s.matrix_status,
+         s.matrix_grade, s.blocking_for_scoring, s.warning_count, s.blocker_count, s.missing_component_count,
+         s.matrix_payload_json, s.details_json,
+         hp.baseline_hp_row_id, hp.baseline_hp_0_100, hp.baseline_confidence_0_100, hp.non_push_sample, hp.hit_count, hp.miss_count,
+         hp.sample_profile, hp.role_profile, hp.volatility_profile, hp.variance_profile, hp.line_difficulty_profile,
+         COALESCE(h.factor_grade, p.factor_grade) AS factor_grade,
+         COALESCE(h.factor_payload_json, p.factor_payload_json) AS factor_payload_json,
+         COALESCE(h.details_json, p.details_json) AS factor_details_json
+  FROM side_expanded s
+  LEFT JOIN player_baseline_hp_current hp
+    ON hp.player_id=s.mlb_player_id AND hp.canonical_prop_key=s.canonical_prop_key AND hp.line_value=s.board_line_value AND lower(hp.selected_side)=s.selected_side
+  LEFT JOIN prop_factor_hitter_packets h ON h.packet_id=s.factor_packet_id
+  LEFT JOIN prop_factor_pitcher_packets p ON p.packet_id=s.factor_packet_id
+  ORDER BY s.matrix_id, s.selected_side
+  LIMIT ? OFFSET ?`, sourceMatrixBatchId, sourceMatrixBatchId, limit, offset);
+
+  let written = 0, baselineMatched = 0, baselineMissing = 0, blocked = 0, warnings = 0, issues = 0;
+  for (const row of rows) {
+    const baselineAvailable = !!row.baseline_hp_row_id;
+    if (baselineAvailable) baselineMatched++; else baselineMissing++;
+    if (Number(row.blocking_for_scoring || 0) === 1 || Number(row.blocker_count || 0) > 0) blocked++;
+    if (Number(row.warning_count || 0) > 0 || !baselineAvailable) warnings++;
+    const profileKey = enrichmentProfileFor(row.canonical_prop_key, row.factor_family);
+    const weights = ENRICHMENT_PROFILE_WEIGHTS[profileKey] || ENRICHMENT_PROFILE_WEIGHTS.hitter_contact;
+    const baselineHp = baselineAvailable ? Number(row.baseline_hp_0_100) : null;
+    const baselineConfRaw = baselineAvailable ? Number(row.baseline_confidence_0_100 || 0) : 0;
+    const baselineConfV2 = baselineAvailable ? Math.round(clampNum(baselineConfRaw * 0.60, 0, 60) * 10) / 10 : 0;
+    const baselineLayer = directionLayerFromHp(baselineHp, row.selected_side);
+    const factorQuality = qualityForStatus(row.factor_status, row.factor_grade);
+    const dailyQuality = lowerText(row.daily_readiness_status).includes("partial") ? 0.5 : (lowerText(row.daily_readiness_status).includes("ready") ? 1 : 0.35);
+    const marketQuality = lowerText(row.market_prop_context_status).includes("present") ? 1 : (lowerText(row.market_game_context_status).includes("present") ? 0.55 : 0);
+    const matrixQuality = Number(row.blocking_for_scoring || 0) === 1 ? 0 : (Number(row.warning_count || 0) > 0 ? 0.65 : 1);
+    const confAdd = Math.round((baselineAvailable ? 5 : 0) + (10 * factorQuality) + (12 * dailyQuality) + (8 * marketQuality) + (5 * matrixQuality));
+    const confAddClamped = clampNum(confAdd, 0, 40);
+    const confidenceCap = confidenceCapForRow(row, baselineAvailable);
+    const dataQuality = Math.round(((factorQuality * 0.30) + (dailyQuality * 0.30) + (marketQuality * 0.20) + (matrixQuality * 0.20)) * 1000) / 10;
+    const status = enrichmentStatus(row, baselineAvailable);
+    const grade = enrichmentGrade(status);
+    const factorLayers = [
+      { factor_key:"baseline_prior", profile_weight:weights.baseline || weights.sp_first_inning || 0, hp_direction_layer:baselineLayer, hp_direction_label:directionLabel(baselineLayer), hp_weight_pressure:weightPressure(weights.baseline || weights.sp_first_inning || 0, baselineLayer), confidence_quality_multiplier: baselineAvailable ? Math.min(1, baselineConfRaw / 100) : 0, data_source_class: baselineAvailable ? "confirmed_baseline" : "missing", missing:!baselineAvailable },
+      { factor_key:"factor_packet", profile_weight:0, hp_direction_layer:0, hp_direction_label:"neutral", hp_weight_pressure:0, confidence_quality_multiplier:factorQuality, data_source_class:factorQuality >= 1 ? "confirmed_mined" : (factorQuality > 0 ? "partial_mined" : "missing"), missing:factorQuality === 0 },
+      { factor_key:"daily_readiness", profile_weight:0, hp_direction_layer:0, hp_direction_label:"neutral", hp_weight_pressure:0, confidence_quality_multiplier:dailyQuality, data_source_class:dailyQuality >= 1 ? "confirmed_mined" : "partial_or_missing", missing:dailyQuality === 0 },
+      { factor_key:"market_context", profile_weight:weights.market || weights.market_game_total || weights.source_line_quality || 0, hp_direction_layer:0, hp_direction_label:"neutral", hp_weight_pressure:0, confidence_quality_multiplier:marketQuality, data_source_class:marketQuality >= 1 ? "confirmed_market" : (marketQuality > 0 ? "game_market_only" : "missing"), missing:marketQuality === 0 },
+      { factor_key:"matrix_quality", profile_weight:0, hp_direction_layer:0, hp_direction_label:"neutral", hp_weight_pressure:0, confidence_quality_multiplier:matrixQuality, data_source_class:matrixQuality >= 1 ? "complete_matrix" : "partial_matrix", missing:false }
+    ];
+    const factorPressure = Math.round(factorLayers.reduce((a, x) => a + Number(x.hp_weight_pressure || 0), 0) * 100) / 100;
+    const enrichmentRowId = `${row.matrix_id}|${row.selected_side}`;
+    const payload = {
+      version: ENRICHMENT_V1_VERSION,
+      profile_key: profileKey,
+      side_expanded: true,
+      selected_side: row.selected_side,
+      baseline_confidence_cap_60: true,
+      enrichment_confidence_max_40: true,
+      confidence_definition: "strength_and_completeness_of_data_conditions_not_probability",
+      hit_probability_definition: "realism_based_probability_from_baseline_to_be_enriched_by_hit_prob_v2_later",
+      hp_v2_not_calculated_in_this_phase: true,
+      final_score_not_calculated_in_this_phase: true,
+      sample_profile: row.sample_profile || null,
+      role_profile: row.role_profile || null,
+      volatility_profile: row.volatility_profile || null,
+      variance_profile: row.variance_profile || null,
+      line_difficulty_profile: row.line_difficulty_profile || null
+    };
+    await run(env.SCORE_DB, `INSERT OR REPLACE INTO score_enrichment_current (
+      enrichment_row_id,batch_id,matrix_id,prepared_row_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,team_id,opponent_team_id,canonical_prop_key,board_line_value,selected_side,factor_family,factor_packet_id,profile_key,baseline_hp_row_id,baseline_hp_available,baseline_hp_0_100,baseline_confidence_raw_0_100,baseline_confidence_v2_0_60,baseline_sample_size,baseline_hit_count,baseline_miss_count,profile_weight_json,factor_layer_json,factor_hp_pressure,enrichment_confidence_add_available_0_40,confidence_cap_0_100,data_quality_score_0_100,enrichment_status,enrichment_grade,matrix_status,matrix_grade,factor_status,factor_grade,market_game_context_status,market_prop_context_status,daily_readiness_status,blocking_for_scoring,warning_count,blocker_count,missing_component_count,baseline_missing,hp_v2_ready,final_score_ready,enrichment_payload_json,matrix_payload_json_snapshot,details_json_snapshot,updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
+      enrichmentRowId,batchId,row.matrix_id,row.prepared_row_id,row.source_line_id,row.source_key,row.game_pk,row.official_date,row.official_game_time_utc,row.mlb_player_id,row.player_name,row.team_id,row.opponent_team_id,row.canonical_prop_key,row.board_line_value,row.selected_side,row.factor_family,row.factor_packet_id,profileKey,row.baseline_hp_row_id || null,baselineAvailable ? 1 : 0,baselineHp,baselineConfRaw,baselineConfV2,Number(row.non_push_sample || 0),Number(row.hit_count || 0),Number(row.miss_count || 0),scoreJson(weights,3000),scoreJson(factorLayers,6000),factorPressure,confAddClamped,confidenceCap,dataQuality,status,grade,row.matrix_status,row.matrix_grade,row.factor_status,row.factor_grade || null,row.market_game_context_status,row.market_prop_context_status,row.daily_readiness_status,Number(row.blocking_for_scoring || 0),Number(row.warning_count || 0),Number(row.blocker_count || 0),Number(row.missing_component_count || 0),baselineAvailable ? 0 : 1,(baselineAvailable && status !== "enrichment_blocked") ? 1 : 0,(baselineAvailable && status === "enrichment_ready") ? 1 : 0,scoreJson(payload,6000),row.matrix_payload_json || null,row.details_json || null);
+    if (!baselineAvailable || status === "enrichment_blocked") {
+      issues++;
+      await run(env.SCORE_DB, `INSERT OR REPLACE INTO score_enrichment_issues (issue_id,batch_id,enrichment_row_id,prepared_row_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`, `${batchId}|${enrichmentRowId}|${baselineAvailable ? "blocked" : "baseline_missing"}`, batchId, enrichmentRowId, row.prepared_row_id, baselineAvailable ? "BLOCKER" : "WARNING", baselineAvailable ? "ENRICHMENT_BLOCKED" : "BASELINE_HP_MISSING", baselineAvailable ? "Matrix row blocks scoring/enrichment" : "No matching side-specific baseline HP row", scoreJson({ profile_key: profileKey, canonical_prop_key: row.canonical_prop_key, selected_side: row.selected_side }, 3000));
+    }
+    written++;
+  }
+  const totals = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, SUM(CASE WHEN baseline_hp_available=1 THEN 1 ELSE 0 END) AS matched, SUM(CASE WHEN baseline_hp_available=0 THEN 1 ELSE 0 END) AS missing, SUM(CASE WHEN enrichment_status='enrichment_blocked' THEN 1 ELSE 0 END) AS blocked, SUM(CASE WHEN enrichment_status LIKE '%warnings%' THEN 1 ELSE 0 END) AS warn FROM score_enrichment_current WHERE batch_id=?`, batchId);
+  const writtenTotal = Number(totals && totals.rows || 0);
+  const remaining = Math.max(0, expectedRows - (offset + rows.length));
+  const complete = remaining <= 0;
+  const output = baseIdentity({
+    ok:true,data_ok:true,version:ENRICHMENT_V1_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v1",deployed_worker_slot:"alphadog-v2-score-audit",job_key:ENRICHMENT_V1_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:ENRICHMENT_V1_MODE,status:complete?"completed_score_enrichment_v1_side_expanded":"partial_continue_score_enrichment_v1_side_expanded",certification:complete?"SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED":"SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE",certification_grade:complete?"PASS_WITH_REVIEW_WARNINGS_ALLOWED":"PARTIAL",batch_id:batchId,enrichment_batch_id:batchId,source_matrix_batch_id:sourceMatrixBatchId,matrix_rows_read:Math.ceil(expectedRows/2),expected_enrichment_rows:expectedRows,enrichment_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:written,baseline_matched_rows:Number(totals && totals.matched || 0),baseline_missing_rows:Number(totals && totals.missing || 0),blocked_rows:Number(totals && totals.blocked || 0),warning_rows:Number(totals && totals.warn || 0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,side_expanded:true,baseline_confidence_cap_60:true,enrichment_confidence_max_40:true,no_hp_v2:true,no_current_scoring_mutation:true,no_final_score:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
+  await run(env.SCORE_DB, `UPDATE score_enrichment_batches SET status=?, matrix_rows_read=?, expected_enrichment_rows=?, enrichment_rows_written=?, baseline_matched_rows=?, baseline_missing_rows=?, blocked_rows=?, warning_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", Math.ceil(expectedRows/2), expectedRows, writtenTotal, output.baseline_matched_rows, output.baseline_missing_rows, output.blocked_rows, output.warning_rows, output.certification, output.certification_grade, scoreJson(output,14000), batchId);
+  return output;
+}
+
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -4373,14 +4693,17 @@ export default {
       const input = await readJsonSafe(request);
       try {
         const isFinalBoard = input && (input.mode === "scoring_final_board_generate" || input.job_key === "scoring-final-board");
+        const isEnrichmentV1 = input && (input.mode === ENRICHMENT_V1_MODE || input.job_key === ENRICHMENT_V1_JOB_KEY);
         const isSimulation = input && (input.mode === "scoring_engine_simulation_shadow_strict_b" || input.job_key === "scoring-engine-simulation");
         const isHitProbabilityEstimate = input && (input.mode === "hit_probability_current_estimate" || input.job_key === "hit-probability");
         const isHpBoard = input && (input.mode === HP_BOARD_MODE || input.job_key === HP_BOARD_JOB_KEY);
         const isHitProbability = isHitProbabilityEstimate || isHpBoard;
-        await controlLifecycleHeartbeat(env, input, isHitProbability ? "running_hit_probability_worker_started" : (isSimulation ? "running_scoring_engine_simulation_worker_started" : (isFinalBoard ? "running_scoring_final_board_worker_started" : "running_scoring_engine_worker_started")), { selected_mode: input.mode || null });
+        await controlLifecycleHeartbeat(env, input, isEnrichmentV1 ? "running_score_enrichment_v1_worker_started" : (isHitProbability ? "running_hit_probability_worker_started" : (isSimulation ? "running_scoring_engine_simulation_worker_started" : (isFinalBoard ? "running_scoring_final_board_worker_started" : "running_scoring_engine_worker_started"))), { selected_mode: input.mode || null });
         const isFrameworkGate = input && input.mode === "scoring_engine_framework_profile_gate" && input.framework_only === true && input.real_scoring_enabled !== true;
         let output;
-        if (isHpBoard) {
+        if (isEnrichmentV1) {
+          output = await runScoreEnrichmentV1(env, input);
+        } else if (isHpBoard) {
           output = await runHpBoardCurrent(env, input);
         } else if (isHitProbabilityEstimate) {
           output = await runHitProbabilityCurrent(env, input);
