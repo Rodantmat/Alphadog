@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.237-player-baseline-hp-same-worker";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.238-player-baseline-stale-running-auto-resume";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12593,6 +12593,153 @@ async function claimSelectedQueueRowForDispatch(env, row, trigger) {
   return { claimed: false, reason: "non_runnable_status", latest };
 }
 
+
+async function rescueStalePlayerBaselineRunningJobForResume(env, trigger) {
+  if (!env || !env.CONTROL_DB) return null;
+  const row = await first(env.CONTROL_DB,
+    `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json, output_json, updated_at, started_at, run_after
+     FROM control_job_queue
+     WHERE job_key IN ('player-baseline-sanity','player-baseline-hp')
+       AND worker_name='alphadog-v2-phase2b-pitcher-role'
+       AND status='running'
+       AND finished_at IS NULL
+       AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-90 seconds')
+       AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+     ORDER BY datetime(COALESCE(updated_at, started_at, created_at)) ASC
+     LIMIT 1`
+  );
+  if (!row || !row.request_id) return null;
+
+  const latestPartial = await first(env.CONTROL_DB,
+    `SELECT run_id, finished_at, output_json
+     FROM control_job_runs
+     WHERE request_id=?
+       AND job_key=?
+       AND status='partial_continue'
+       AND finished_at IS NOT NULL
+     ORDER BY datetime(finished_at) DESC
+     LIMIT 1`,
+    row.request_id, row.job_key
+  );
+  const staleRuns = await all(env.CONTROL_DB,
+    `SELECT run_id, started_at
+     FROM control_job_runs
+     WHERE request_id=?
+       AND job_key=?
+       AND status='running'
+       AND finished_at IS NULL
+       AND datetime(started_at) <= datetime(CURRENT_TIMESTAMP, '-90 seconds')
+     ORDER BY datetime(started_at) DESC
+     LIMIT 20`,
+    row.request_id, row.job_key
+  );
+
+  let nextInput = parseJsonSafeText(row.input_json || '{}', {});
+  if (!nextInput || typeof nextInput !== 'object') nextInput = {};
+  const partialOutput = latestPartial && latestPartial.output_json ? parseJsonSafeText(latestPartial.output_json, {}) : {};
+  if ((!nextInput.mode && !nextInput.next_mode) && partialOutput && partialOutput.next_input && typeof partialOutput.next_input === 'object') {
+    nextInput = { ...partialOutput.next_input };
+  }
+  if (row.job_key === 'player-baseline-hp') {
+    nextInput.mode = nextInput.mode || nextInput.next_mode || 'history_only_baseline_hp_enrichment';
+  } else {
+    nextInput.mode = nextInput.mode || nextInput.next_mode || 'history_only_layer_1_sanity_baseline';
+  }
+  nextInput.request_id = row.request_id;
+  nextInput.chain_id = row.chain_id;
+  nextInput.job_key = row.job_key;
+  nextInput.worker_name = row.worker_name;
+  nextInput.stale_running_auto_resume = true;
+  nextInput.stale_running_auto_resume_version = SYSTEM_VERSION;
+  nextInput.stale_running_auto_resume_trigger = trigger;
+  nextInput.stale_running_auto_resume_at = new Date().toISOString();
+  if (latestPartial && latestPartial.run_id) nextInput.resume_from_partial_run_id = latestPartial.run_id;
+
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    processed_by: WORKER_NAME,
+    worker_name: row.worker_name,
+    job_key: row.job_key,
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    status: 'PLAYER_BASELINE_STALE_RUNNING_DISPATCH_AUTO_RESUMED',
+    certification: 'PLAYER_BASELINE_STALE_RUNNING_DISPATCH_AUTO_RESUMED',
+    certification_grade: 'RECOVERED_PARTIAL_CONTINUE',
+    stale_running_auto_resume: true,
+    stale_threshold_seconds: 90,
+    previous_status: row.status,
+    previous_updated_at: row.updated_at,
+    previous_run_after: row.run_after,
+    latest_partial_run_id: latestPartial && latestPartial.run_id || null,
+    latest_partial_finished_at: latestPartial && latestPartial.finished_at || null,
+    stale_running_run_ids: staleRuns.map(r => r.run_id),
+    resume_mode: nextInput.mode || null,
+    resume_batch_id: nextInput.batch_id || null,
+    resume_last_player_id: nextInput.last_player_id || null,
+    history_only: true,
+    no_daily_live_context: true,
+    no_market_context: true,
+    no_external_api_calls: true,
+    no_scoring: true,
+    no_final_board: true,
+    no_prepared_board_mutation: true
+  };
+
+  await run(env.CONTROL_DB,
+    `UPDATE control_job_runs
+        SET status='failed_stale_auto_recovered',
+            data_ok=0,
+            certification_status='PLAYER_BASELINE_STALE_RUNNING_DISPATCH_AUTO_RESUMED',
+            finished_at=CURRENT_TIMESTAMP,
+            elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END,
+            output_json=?,
+            error_code='player_baseline_stale_running_dispatch_auto_resumed',
+            error_message='Stale running Player Baseline dispatch was auto-closed so same queue row can resume from last safe continuation input.'
+      WHERE request_id=?
+        AND job_key=?
+        AND status='running'
+        AND finished_at IS NULL
+        AND datetime(started_at) <= datetime(CURRENT_TIMESTAMP, '-90 seconds')`,
+    safeStringifyD1(output), row.request_id, row.job_key
+  );
+
+  await run(env.CONTROL_DB,
+    `UPDATE control_job_queue
+        SET status='pending',
+            run_after=CURRENT_TIMESTAMP,
+            finished_at=NULL,
+            updated_at=CURRENT_TIMESTAMP,
+            input_json=?,
+            output_json=?,
+            error_code=NULL,
+            error_message=NULL
+      WHERE request_id=?
+        AND job_key IN ('player-baseline-sanity','player-baseline-hp')
+        AND worker_name='alphadog-v2-phase2b-pitcher-role'
+        AND status='running'
+        AND finished_at IS NULL`,
+    safeStringifyD1(nextInput), safeStringifyD1(output), row.request_id
+  );
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'player_baseline_stale_running_dispatch_auto_resumed', 'Auto-recovered stale running Player Baseline queue row back to pending from last safe continuation input; no manual SQL rescue required', ?, CURRENT_TIMESTAMP)",
+    row.request_id, WORKER_NAME, row.job_key, JSON.stringify(output).slice(0, 9000)
+  );
+
+  return {
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    status: 'pending',
+    tick_count: row.tick_count,
+    input_json: safeStringifyD1(nextInput)
+  };
+}
+
+
 async function processOneUnlocked(env, trigger) {
   // v0.2.160: Delta Full Run owns its own backend continuation path.
   // Prefer due same-chain Delta Full Run children, then the parent, before generic
@@ -12817,6 +12964,15 @@ async function processOneUnlocked(env, trigger) {
        ORDER BY datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) ASC, datetime(created_at) ASC
        LIMIT 1`
     );
+  }
+
+  // v0.2.238: Player Baseline Sanity / Baseline HP are daily/scheduled, self-continuing, history-only
+  // workers. If a service-binding dispatch is interrupted after the queue row is marked
+  // running, automatically close the stale ORCHESTRATOR_DISPATCH_STARTED run and return
+  // the same queue row to pending from its last safe continuation input. This is the
+  // permanent no-band-aid version of the manual stale-running rescue.
+  if (!row) {
+    row = await rescueStalePlayerBaselineRunningJobForResume(env, trigger);
   }
 
   if (!row) {
