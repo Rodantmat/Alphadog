@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-weather";
-const VERSION = "alphadog-v2-daily-weather-v0.1.4-roof-missing-warning-full-run-safe";
+const VERSION = "alphadog-v2-daily-weather-v0.1.5-batched-compact-weather-writes";
 const JOB_KEY = "daily-weather";
 const MLB_SOURCE_KEY = "official_mlb_statsapi_live_feed_weather";
 const OPEN_METEO_SOURCE_KEY = "open_meteo_no_key_forecast";
@@ -527,34 +527,99 @@ function classifyWeather(row, calendar, stadium, parkFactor, mlbResult, external
     park_weather_notes: parkFactor ? `Park factors ${parkFactor.season_year}: run ${parkFactor.run_factor}, HR ${parkFactor.hr_factor}, scale ${parkFactor.factor_scale}` : null
   };
 }
-async function writeGame(env, batchId, record) {
-  const old = await first(env.DAILY_DB, `SELECT weather_key, raw_json FROM daily_game_weather_current WHERE game_pk=?`, record.game_pk);
-  const rawText = safeJson(record.raw_json, 14000);
-  const changedAt = !old || old.raw_json !== rawText ? nowUtc() : null;
-  const weatherKey = `dgw_${record.official_date}_${record.game_pk}`;
-  await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_game_weather_current (
-    weather_key, batch_id, game_pk, official_date, game_time_utc, venue_id, venue_name, home_team_id, away_team_id,
-    prepared_board_relevant, prepared_board_pickable_rows, weather_status, weather_confidence, source_key, source_endpoint, source_snapshot_at,
-    forecast_time_utc, forecast_offset_minutes, temperature_f, feels_like_f, humidity_pct, pressure_mb, wind_speed_mph, wind_gust_mph,
-    wind_direction_degrees, wind_direction_cardinal, wind_context, precipitation_probability_pct, precipitation_type, rain_risk_flag, delay_risk_flag,
-    roof_type, roof_status, roof_confidence, indoor_flag, retractable_roof_flag, weather_applicable_flag, park_weather_notes,
-    first_seen_at, last_seen_at, changed_at, raw_json, created_at, updated_at
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT first_seen_at FROM daily_game_weather_current WHERE game_pk=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, COALESCE(?, (SELECT changed_at FROM daily_game_weather_current WHERE game_pk=?)), ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-    weatherKey, batchId, record.game_pk, record.official_date, record.game_time_utc, record.venue_id, record.venue_name, record.home_team_id, record.away_team_id,
-    record.prepared_board_relevant, record.prepared_board_pickable_rows, record.weather_status, record.weather_confidence, record.source_key, record.source_endpoint, record.source_snapshot_at,
-    record.forecast_time_utc, record.forecast_offset_minutes, record.temperature_f, record.feels_like_f, record.humidity_pct, record.pressure_mb, record.wind_speed_mph, record.wind_gust_mph,
-    record.wind_direction_degrees, record.wind_direction_cardinal, record.wind_context, record.precipitation_probability_pct, record.precipitation_type, record.rain_risk_flag, record.delay_risk_flag,
-    record.roof_type, record.roof_status, record.roof_confidence, record.indoor_flag, record.retractable_roof_flag, record.weather_applicable_flag, record.park_weather_notes,
-    record.game_pk, changedAt, record.game_pk, rawText
-  );
-  await run(env.DAILY_DB, `INSERT INTO daily_game_weather_snapshots (snapshot_id, batch_id, game_pk, official_date, venue_id, source_key, source_snapshot_at, forecast_time_utc, temperature_f, wind_speed_mph, wind_direction_degrees, precipitation_probability_pct, roof_status, weather_status, raw_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    rid("dgw_snap"), batchId, record.game_pk, record.official_date, record.venue_id, record.source_key, record.source_snapshot_at, record.forecast_time_utc, record.temperature_f, record.wind_speed_mph, record.wind_direction_degrees, record.precipitation_probability_pct, record.roof_status, record.weather_status, rawText
-  );
-  for (const issue of record.issues) {
-    await run(env.DAILY_DB, `INSERT INTO daily_game_weather_issues (issue_id, batch_id, game_pk, official_date, venue_id, issue_status, issue_type, severity, reason, details_json) VALUES (?, ?, ?, ?, ?, 'open', ?, ?, ?, ?)`,
-      rid("dgw_issue"), batchId, record.game_pk, record.official_date, record.venue_id, issue.issue_type, issue.severity, issue.reason, safeJson({ game_pk: record.game_pk, venue_id: record.venue_id, roof_type: record.roof_type, source_key: record.source_key, weather_status: record.weather_status }, 5000)
-    );
+function compactRawWeatherAudit(record) {
+  const raw = record && record.raw_json ? record.raw_json : {};
+  return {
+    compact_weather_audit_v0_1_5: true,
+    game_pk: record.game_pk,
+    official_date: record.official_date,
+    game_time_utc: record.game_time_utc,
+    venue_id: record.venue_id,
+    venue_name: record.venue_name,
+    prepared_board_pickable_rows: record.prepared_board_pickable_rows,
+    weather_status: record.weather_status,
+    weather_confidence: record.weather_confidence,
+    roof_type: record.roof_type,
+    roof_status: record.roof_status,
+    roof_confidence: record.roof_confidence,
+    source_key: record.source_key,
+    source_endpoint: record.source_endpoint,
+    source_snapshot_at: record.source_snapshot_at,
+    forecast_time_utc: record.forecast_time_utc,
+    forecast_offset_minutes: record.forecast_offset_minutes,
+    temperature_f: record.temperature_f,
+    feels_like_f: record.feels_like_f,
+    humidity_pct: record.humidity_pct,
+    pressure_mb: record.pressure_mb,
+    wind_speed_mph: record.wind_speed_mph,
+    wind_gust_mph: record.wind_gust_mph,
+    wind_direction_degrees: record.wind_direction_degrees,
+    wind_direction_cardinal: record.wind_direction_cardinal,
+    precipitation_probability_pct: record.precipitation_probability_pct,
+    precipitation_type: record.precipitation_type,
+    rain_risk_flag: record.rain_risk_flag,
+    delay_risk_flag: record.delay_risk_flag,
+    indoor_flag: record.indoor_flag,
+    retractable_roof_flag: record.retractable_roof_flag,
+    weather_applicable_flag: record.weather_applicable_flag,
+    park_weather_notes: record.park_weather_notes,
+    issues: record.issues || [],
+    source_summaries: {
+      mlb_weather: raw.mlb_weather ? { ok: raw.mlb_weather.ok, source_key: raw.mlb_weather.source_key, weather: raw.mlb_weather.weather || null } : null,
+      external_weather: raw.external_weather || null,
+      merged_weather: raw.merged_weather || null,
+      classification: raw.classification || null
+    },
+    note: "v0.1.5 stores compact audit JSON in current/snapshot rows; full scoring fields remain first-class columns."
+  };
+}
+
+function weatherScalarChanged(old, record) {
+  if (!old) return true;
+  const keys = [
+    "weather_status", "weather_confidence", "source_key", "forecast_time_utc", "temperature_f",
+    "wind_speed_mph", "wind_direction_degrees", "precipitation_probability_pct", "roof_status",
+    "rain_risk_flag", "delay_risk_flag"
+  ];
+  for (const key of keys) {
+    const oldValue = old[key] === undefined || old[key] === null ? null : String(old[key]);
+    const newValue = record[key] === undefined || record[key] === null ? null : String(record[key]);
+    if (oldValue !== newValue) return true;
   }
+  return false;
+}
+
+async function writeGame(env, batchId, record) {
+  const old = await first(env.DAILY_DB, `SELECT weather_status, weather_confidence, source_key, forecast_time_utc, temperature_f, wind_speed_mph, wind_direction_degrees, precipitation_probability_pct, roof_status, rain_risk_flag, delay_risk_flag FROM daily_game_weather_current WHERE game_pk=?`, record.game_pk);
+  const rawText = safeJson(compactRawWeatherAudit(record), 6000);
+  const changedAt = weatherScalarChanged(old, record) ? nowUtc() : null;
+  const weatherKey = `dgw_${record.official_date}_${record.game_pk}`;
+  const statements = [
+    env.DAILY_DB.prepare(`INSERT OR REPLACE INTO daily_game_weather_current (
+      weather_key, batch_id, game_pk, official_date, game_time_utc, venue_id, venue_name, home_team_id, away_team_id,
+      prepared_board_relevant, prepared_board_pickable_rows, weather_status, weather_confidence, source_key, source_endpoint, source_snapshot_at,
+      forecast_time_utc, forecast_offset_minutes, temperature_f, feels_like_f, humidity_pct, pressure_mb, wind_speed_mph, wind_gust_mph,
+      wind_direction_degrees, wind_direction_cardinal, wind_context, precipitation_probability_pct, precipitation_type, rain_risk_flag, delay_risk_flag,
+      roof_type, roof_status, roof_confidence, indoor_flag, retractable_roof_flag, weather_applicable_flag, park_weather_notes,
+      first_seen_at, last_seen_at, changed_at, raw_json, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT first_seen_at FROM daily_game_weather_current WHERE game_pk=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, COALESCE(?, (SELECT changed_at FROM daily_game_weather_current WHERE game_pk=?)), ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`).bind(
+      weatherKey, batchId, record.game_pk, record.official_date, record.game_time_utc, record.venue_id, record.venue_name, record.home_team_id, record.away_team_id,
+      record.prepared_board_relevant, record.prepared_board_pickable_rows, record.weather_status, record.weather_confidence, record.source_key, record.source_endpoint, record.source_snapshot_at,
+      record.forecast_time_utc, record.forecast_offset_minutes, record.temperature_f, record.feels_like_f, record.humidity_pct, record.pressure_mb, record.wind_speed_mph, record.wind_gust_mph,
+      record.wind_direction_degrees, record.wind_direction_cardinal, record.wind_context, record.precipitation_probability_pct, record.precipitation_type, record.rain_risk_flag, record.delay_risk_flag,
+      record.roof_type, record.roof_status, record.roof_confidence, record.indoor_flag, record.retractable_roof_flag, record.weather_applicable_flag, record.park_weather_notes,
+      record.game_pk, changedAt, record.game_pk, rawText
+    ),
+    env.DAILY_DB.prepare(`INSERT INTO daily_game_weather_snapshots (snapshot_id, batch_id, game_pk, official_date, venue_id, source_key, source_snapshot_at, forecast_time_utc, temperature_f, wind_speed_mph, wind_direction_degrees, precipitation_probability_pct, roof_status, weather_status, raw_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(
+      rid("dgw_snap"), batchId, record.game_pk, record.official_date, record.venue_id, record.source_key, record.source_snapshot_at, record.forecast_time_utc, record.temperature_f, record.wind_speed_mph, record.wind_direction_degrees, record.precipitation_probability_pct, record.roof_status, record.weather_status, rawText
+    )
+  ];
+  for (const issue of record.issues) {
+    statements.push(env.DAILY_DB.prepare(`INSERT INTO daily_game_weather_issues (issue_id, batch_id, game_pk, official_date, venue_id, issue_status, issue_type, severity, reason, details_json) VALUES (?, ?, ?, ?, ?, 'open', ?, ?, ?, ?)`).bind(
+      rid("dgw_issue"), batchId, record.game_pk, record.official_date, record.venue_id, issue.issue_type, issue.severity, issue.reason, safeJson({ game_pk: record.game_pk, venue_id: record.venue_id, roof_type: record.roof_type, source_key: record.source_key, weather_status: record.weather_status }, 3000)
+    ));
+  }
+  await env.DAILY_DB.batch(statements);
   return { current_written: 1, snapshot_written: 1, issues_written: record.issues.length };
 }
 
@@ -831,11 +896,9 @@ async function runWeather(env, input) {
       currentWritten += w.current_written;
       snapshotWritten += w.snapshot_written;
       issuesWritten += w.issues_written;
-      if (i === records.length - 1 || (i + 1) % 4 === 0) {
-        await markWeatherBatch(env, batchId, { weather_rows_written: currentWritten, snapshot_rows_written: snapshotWritten, certification_status: "DAILY_WEATHER_STEP_WRITING_CONTEXT" });
-        await heartbeatWeather(env, requestId, batchId, "writing_context", { written_games: i + 1, total_games: records.length, weather_rows_written: currentWritten, snapshot_rows_written: snapshotWritten, issues_written: issuesWritten });
-        assertWeatherBudget(startedMs, "writing_context");
-      }
+      await markWeatherBatch(env, batchId, { weather_rows_written: currentWritten, snapshot_rows_written: snapshotWritten, certification_status: "DAILY_WEATHER_STEP_WRITING_CONTEXT" });
+      await heartbeatWeather(env, requestId, batchId, "writing_context", { written_games: i + 1, total_games: records.length, weather_rows_written: currentWritten, snapshot_rows_written: snapshotWritten, issues_written: issuesWritten, d1_write_mode: "batched_per_game_compact_raw_v0_1_5" });
+      assertWeatherBudget(startedMs, "writing_context");
     }
 
     const replacementCleanup = await finalizeWeatherWindowReplacement(env, retention, batchId);
@@ -894,7 +957,7 @@ async function runWeather(env, input) {
       retention_post_prune: postRetentionPrune,
       source_fetch_timeout_ms: FETCH_TIMEOUT_MS,
       source_fetch_concurrency: WEATHER_FETCH_CONCURRENCY,
-      lifecycle_fix: "bounded_parallel_fetch_heartbeat_progress_terminal_failure_non_destructive_current",
+      lifecycle_fix: "bounded_parallel_fetch_batched_compact_d1_writes_per_game_heartbeat",
       sidecar_tables: ["daily_game_weather_current", "daily_game_weather_snapshots", "daily_game_weather_batches", "daily_game_weather_issues"],
       legacy_tables_untouched: ["daily_weather", "daily_roof_status"],
       static_reference_tables_read_only: ["REF_DB.ref_stadiums", "REF_DB.ref_stadium_aliases", "REF_DB.ref_park_factors"],
