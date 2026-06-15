@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.260-prop-factor-hot-drain-no-cooldown";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.261-hit-probability-v2-dispatch";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -571,7 +571,7 @@ function isPropMatrixBuilderJob(row) {
 function isScoringEngineJob(row) {
   const job = String(row && row.job_key || "");
   const worker = String(row && row.worker_name || "");
-  return (job === "scoring-engine" || job === "scoring-engine-simulation" || job === "hit-probability" || job === "score-enrichment-v1") && worker === "alphadog-v2-score-audit";
+  return (job === "scoring-engine" || job === "scoring-engine-simulation" || job === "hit-probability" || job === "hit-probability-v2" || job === "score-enrichment-v1") && worker === "alphadog-v2-score-audit";
 }
 
 function isScoreFinalBoardJob(row) {
@@ -12062,6 +12062,7 @@ async function buildScoreEnrichmentV1EvidenceOutput(env, row, runId, trigger, ro
 async function processScoringEngineJob(env, row, runId, trigger) {
   const isSimulationJob = row && row.job_key === "scoring-engine-simulation";
   const isHitProbabilityJob = row && row.job_key === "hit-probability";
+  const isHitProbabilityV2Job = row && row.job_key === "hit-probability-v2";
   const isEnrichmentJob = row && row.job_key === "score-enrichment-v1";
   if (!env.SCORE_AUDIT_WORKER || typeof env.SCORE_AUDIT_WORKER.fetch !== "function") {
     const output = {
@@ -12070,7 +12071,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
       worker_name: row.worker_name,
-      logical_worker_name: isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine")),
+      logical_worker_name: isHitProbabilityV2Job ? "alphadog-v2-hit-probability-v2" : (isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"))),
       job_key: row.job_key,
       status: "blocked_missing_service_binding",
       certification: "SCORING_ENGINE_SERVICE_BINDING_MISSING",
@@ -12096,22 +12097,23 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     run_id: runId,
     job_key: row.job_key,
     worker_name: row.worker_name,
-    logical_worker_name: isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine")),
+    logical_worker_name: isHitProbabilityV2Job ? "alphadog-v2-hit-probability-v2" : (isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"))),
     deployed_worker_slot: "alphadog-v2-score-audit",
     trigger,
-    mode: isEnrichmentJob ? "score_enrichment_v1_side_expanded" : (isHitProbabilityJob ? "hit_probability_current_estimate" : (isSimulationJob ? "scoring_engine_simulation_shadow_strict_b" : "scoring_engine_current_strict_c_realistic_v3_2")),
+    mode: isHitProbabilityV2Job ? "hit_probability_v2_current" : (isEnrichmentJob ? "score_enrichment_v1_side_expanded" : (isHitProbabilityJob ? "hit_probability_current_estimate" : (isSimulationJob ? "scoring_engine_simulation_shadow_strict_b" : "scoring_engine_current_strict_c_realistic_v3_2"))),
     input_json: rowInput,
     exact_worker_only: true,
     framework_only: false,
-    production_scoring_current: (!isSimulationJob && !isHitProbabilityJob && !isEnrichmentJob),
+    production_scoring_current: (!isSimulationJob && !isHitProbabilityJob && !isHitProbabilityV2Job && !isEnrichmentJob),
     simulation_only: isSimulationJob,
     hit_probability_only: isHitProbabilityJob,
+    hit_probability_v2_only: isHitProbabilityV2Job,
     score_enrichment_v1: isEnrichmentJob,
-    primary_simulation_profile: isHitProbabilityJob ? "HP_EMPIRICAL_V0_1_1_SAME_SCORE_AUDIT_SLOT" : (isSimulationJob ? "STRICT_B" : (isEnrichmentJob ? "ENRICHMENT_V1_SIDE_EXPANDED" : "STRICT_C_REALISTIC_V3_2")),
+    primary_simulation_profile: isHitProbabilityV2Job ? "HP_V2_BASELINE_ENRICHMENT_CONTEXT_V0_1_1" : (isHitProbabilityJob ? "HP_EMPIRICAL_V0_1_1_SAME_SCORE_AUDIT_SLOT" : (isSimulationJob ? "STRICT_B" : (isEnrichmentJob ? "ENRICHMENT_V1_SIDE_EXPANDED" : "STRICT_C_REALISTIC_V3_2"))),
     comparison_profile: isSimulationJob ? "HYBRID_CONTROL" : null,
     writes_shadow_table_only: isSimulationJob,
     thresholds_locked: false,
-    scoring_enabled: (!isSimulationJob && !isHitProbabilityJob && !isEnrichmentJob),
+    scoring_enabled: (!isSimulationJob && !isHitProbabilityJob && !isHitProbabilityV2Job && !isEnrichmentJob),
     archive_score_threshold_locked: 70,
     final_qualification_threshold_locked: false,
     no_true_hit_probability_claims: true,
@@ -12125,15 +12127,17 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     goblin_demon_more_only: true,
     goblin_demon_under_blocker: "GOBLIN_DEMON_UNDER_NOT_SELECTABLE",
     dedupe_deferred_to_ranking_final_board: true,
-    writes_score_db_scoring_engine_only: (!isSimulationJob && !isHitProbabilityJob && !isEnrichmentJob),
+    writes_score_db_scoring_engine_only: (!isSimulationJob && !isHitProbabilityJob && !isHitProbabilityV2Job && !isEnrichmentJob),
     writes_score_db_simulation_shadow_only: isSimulationJob,
     writes_score_db_hit_probability_only: isHitProbabilityJob,
+    writes_score_db_hit_probability_v2_only: isHitProbabilityV2Job,
+    hit_probability_v2_only: isHitProbabilityV2Job,
     writes_score_enrichment_tables_only: isEnrichmentJob,
     writes_hp_board_tables_only: isHitProbabilityJob,
     hp_board_required: isHitProbabilityJob,
     hp_board_same_worker: isHitProbabilityJob,
     hp_board_display_calibration_required: isHitProbabilityJob,
-    service_binding_timeout_reconcile_from_tables: isHitProbabilityJob || isEnrichmentJob,
+    service_binding_timeout_reconcile_from_tables: isHitProbabilityJob || isHitProbabilityV2Job || isEnrichmentJob,
     writes_archive_db_snapshot_table_schema_only: (!isSimulationJob && !isHitProbabilityJob && !isEnrichmentJob),
     no_candidate_board_write: true,
     no_old_prop_scores_write: true,
@@ -12143,7 +12147,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   };
 
   const cooldownYield = await maybeYieldHeavyMarketChildCooldown(env, row, runId, input, rowInput, {
-    logical_worker_name: isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine")),
+    logical_worker_name: isHitProbabilityV2Job ? "alphadog-v2-hit-probability-v2" : (isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"))),
     deployed_worker_slot: "alphadog-v2-score-audit",
     mode: input.mode
   });
@@ -12180,7 +12184,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
   const rowsRead = Number(output && (output.matrix_rows_read || output.source_rows_read || output.rows_read) ? (output.matrix_rows_read || output.source_rows_read || output.rows_read) : 0);
-  const rowsWritten = Number(output && (output.score_rows_written || output.simulation_rows_written || output.probability_rows_written || output.rows_written) ? (output.score_rows_written || output.simulation_rows_written || output.probability_rows_written || output.rows_written) : 0);
+  const rowsWritten = Number(output && (output.score_rows_written || output.simulation_rows_written || output.probability_rows_written || output.hp_rows_written || output.rows_written) ? (output.score_rows_written || output.simulation_rows_written || output.probability_rows_written || output.rows_written) : 0);
   const archiveRowsWritten = Number(output && output.archive_rows_written ? output.archive_rows_written : 0);
   const certification = String((output && output.certification) || (ok ? "scoring_engine_framework_completed" : "scoring_engine_framework_failed")).slice(0, 120);
   const partial = !!(ok && output && (
@@ -12196,24 +12200,25 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
-    deployed_slot_version: isEnrichmentJob ? "alphadog-v2-score-audit-v0.4.47-enrichment-v1-250x25-resume-safe" : (isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock"),
+    deployed_slot_version: isHitProbabilityV2Job ? "alphadog-v2-score-audit-v0.4.48-hit-probability-v2-current" : (isEnrichmentJob ? "alphadog-v2-score-audit-v0.4.47-enrichment-v1-250x25-resume-safe" : (isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock")),
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
       exact_worker_only: true,
-      logical_worker_name: isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine")),
+      logical_worker_name: isHitProbabilityV2Job ? "alphadog-v2-hit-probability-v2" : (isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"))),
       deployed_worker_slot: "alphadog-v2-score-audit",
       trigger,
       http_status: httpStatus,
       elapsed_ms: Date.now() - started,
       framework_only: false,
-      production_scoring_current: (!isSimulationJob && !isHitProbabilityJob && !isEnrichmentJob),
+      production_scoring_current: (!isSimulationJob && !isHitProbabilityJob && !isHitProbabilityV2Job && !isEnrichmentJob),
       simulation_only: isSimulationJob,
       thresholds_locked: false,
-      scoring_enabled: (!isSimulationJob && !isHitProbabilityJob && !isEnrichmentJob),
+      scoring_enabled: (!isSimulationJob && !isHitProbabilityJob && !isHitProbabilityV2Job && !isEnrichmentJob),
       archive_score_threshold_locked: 70,
       no_true_hit_probability_claims: true,
-      estimated_hit_probability_phase: isHitProbabilityJob,
+      estimated_hit_probability_phase: isHitProbabilityJob || isHitProbabilityV2Job,
+      hit_probability_v2: isHitProbabilityV2Job,
       score_enrichment_v1: isEnrichmentJob,
       writes_score_enrichment_tables_only: isEnrichmentJob,
       hp_board_required: isHitProbabilityJob,
@@ -12227,6 +12232,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       no_final_board_write: true,
       writes_shadow_table_only: isSimulationJob,
       writes_hit_probability_tables_only: isHitProbabilityJob,
+      writes_hit_probability_v2_tables_only: isHitProbabilityV2Job,
       no_old_production_touch: true
     }
   };
@@ -12242,9 +12248,13 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       resume_batch_id: output && output.batch_id ? output.batch_id : rowInput.resume_batch_id || null,
       enrichment_batch_id: isEnrichmentJob && output && (output.enrichment_batch_id || output.batch_id) ? (output.enrichment_batch_id || output.batch_id) : rowInput.enrichment_batch_id || null,
       enrichment_offset: isEnrichmentJob && output && output.next_offset !== undefined ? output.next_offset : (rowInput.enrichment_offset || 0),
-      source_matrix_batch_id: isEnrichmentJob && output && output.source_matrix_batch_id ? output.source_matrix_batch_id : rowInput.source_matrix_batch_id || null,
-      scoring_engine_resume: !isEnrichmentJob,
+      hp_v2_batch_id: isHitProbabilityV2Job && output && (output.hp_v2_batch_id || output.batch_id) ? (output.hp_v2_batch_id || output.batch_id) : rowInput.hp_v2_batch_id || null,
+      hp_v2_offset: isHitProbabilityV2Job && output && output.next_offset !== undefined ? output.next_offset : (rowInput.hp_v2_offset || 0),
+      source_enrichment_batch_id: isHitProbabilityV2Job && output && output.source_enrichment_batch_id ? output.source_enrichment_batch_id : rowInput.source_enrichment_batch_id || null,
+      source_matrix_batch_id: (isEnrichmentJob || isHitProbabilityV2Job) && output && output.source_matrix_batch_id ? output.source_matrix_batch_id : rowInput.source_matrix_batch_id || null,
+      scoring_engine_resume: !(isEnrichmentJob || isHitProbabilityV2Job),
       score_enrichment_resume: isEnrichmentJob,
+      hit_probability_v2_resume: isHitProbabilityV2Job,
       continuation_from_request_id: row.request_id,
       continuation_certification: certification
     };

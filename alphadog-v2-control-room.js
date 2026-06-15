@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.178-score-enrichment-v1-button";
+const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.179-hit-probability-v2-button";
 function nowIso() { return new Date().toISOString(); }
 
 const DB_BINDINGS = [
@@ -927,6 +927,7 @@ async function runJob(request, env, ctx) {
       "orchestrator_enqueue_scoring_engine",
       "orchestrator_enqueue_score_enrichment_v1",
       "orchestrator_enqueue_hit_probability",
+      "orchestrator_enqueue_hit_probability_v2",
       "orchestrator_enqueue_score_final_board",
       "orchestrator_enqueue_market_scoring_full_run",
       "orchestrator_enqueue_daily_full_run",
@@ -2174,6 +2175,87 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
   }
 
 
+
+
+  if (job === "orchestrator_enqueue_hit_probability_v2") {
+    const existing = await env.CONTROL_DB.prepare(
+      "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key = 'hit-probability-v2' AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
+    ).first();
+
+    if (existing) {
+      return jsonResponse({
+        ok: true,
+        data_ok: true,
+        version,
+        job,
+        status: "already_queued",
+        request_id: existing.request_id,
+        existing,
+        visible_button: "SCORING > HP V2",
+        note: "Existing Hit Probability V2 queue row found. Use ORCHESTRATOR > Wake / Logs to continue or inspect."
+      });
+    }
+
+    await env.CONTROL_DB.prepare(
+      "INSERT OR REPLACE INTO control_worker_registry (worker_name, job_key, worker_group, phase_key, display_name, enabled, endpoint_url, service_binding_name, safe_mode, notes, updated_at) VALUES ('alphadog-v2-score-audit','hit-probability-v2','11 Scoring','scoring','Hit Probability V2 Current Estimator',1,'https://alphadog-v2-score-audit.rodolfoaamattos.workers.dev','SCORE_AUDIT_WORKER',1,'Same deployed score-audit slot runs isolated Hit Probability V2. Reads SCORE_DB.score_enrichment_current and writes only SCORE_DB.hit_probability_v2_* tables. Does not mutate scoring, enrichment, HP board, final board, prepared board, source boards, ranks, or live/review gates.',CURRENT_TIMESTAMP)"
+    ).run();
+
+    const requestId = "hit_probability_v2_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+    const chainId = "chain_hit_probability_v2_" + Date.now().toString(36);
+    const input = {
+      source: "control_room",
+      visible_button: "SCORING > HP V2",
+      mode: "hit_probability_v2_current",
+      created_at: now,
+      logical_worker_name: "alphadog-v2-hit-probability-v2",
+      deployed_worker_slot: "alphadog-v2-score-audit",
+      exact_worker_only: true,
+      worker_owned_schema_creation: true,
+      reads_score_enrichment_current: true,
+      reads_baseline_hp_from_enrichment: true,
+      writes_score_db_hit_probability_v2_only: true,
+      no_score_enrichment_mutation: true,
+      no_scoring_engine_current_mutation: true,
+      no_score_final_board_mutation: true,
+      no_prepared_board_mutation: true,
+      no_source_board_mutation: true,
+      no_archive_mutation: true,
+      no_score_mutation: true,
+      no_live_review_gate_mutation: true,
+      no_candidate_board_write: true,
+      no_ranking: true,
+      no_final_board: true,
+      no_true_hit_probability_claims: true,
+      no_old_production_touch: true
+    };
+
+    await env.CONTROL_DB.prepare(
+      "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'hit-probability-v2', 'alphadog-v2-score-audit', '11 Scoring', 'scoring', 'Hit Probability V2 Current Estimator', 'pending', 7, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+    ).bind(requestId, chainId, JSON.stringify(input)).run();
+
+    await env.CONTROL_DB.prepare(
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'alphadog-v2-control-room', ?, 'INFO', 'queued_hit_probability_v2', 'Queued exact Hit Probability V2 job through score-audit slot', ?, CURRENT_TIMESTAMP)"
+    ).bind(requestId, job, JSON.stringify({request_id:requestId, chain_id:chainId, visible_button:"SCORING > HP V2", queued_job_key:"hit-probability-v2", queued_worker_name:"alphadog-v2-score-audit", logical_worker_name:"alphadog-v2-hit-probability-v2", no_score_mutation:true, no_final_board_mutation:true})).run();
+
+    return jsonResponse({
+      ok: true,
+      data_ok: true,
+      version,
+      job,
+      status: "queued",
+      request_id: requestId,
+      chain_id: chainId,
+      visible_button: "SCORING > HP V2",
+      queued_job_key: "hit-probability-v2",
+      queued_worker_name: "alphadog-v2-score-audit",
+      logical_worker_name: "alphadog-v2-hit-probability-v2",
+      mode: "hit_probability_v2_current",
+      writes_score_db_hit_probability_v2_only: true,
+      no_score_mutation: true,
+      no_final_board_mutation: true,
+      note: "Queued Hit Probability V2 in the existing score-audit worker slot. It reads Score Enrichment V1 and writes only hit_probability_v2_* tables. Tap ORCHESTRATOR > Wake."
+    });
+  }
 
 
   if (job === "orchestrator_enqueue_scoring_engine") {
