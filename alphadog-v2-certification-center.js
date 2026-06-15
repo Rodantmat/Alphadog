@@ -1,13 +1,13 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-main-ui-v0.2.10-final-board-v2-default";
+const VERSION = "alphadog-v2-main-ui-v0.2.11-final-board-v2-compact-current";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
 
-const UI_VERSION_LABEL = "v0.2.10 - Final Board V2 Default";
+const UI_VERSION_LABEL = "v0.2.11 - Final Board V2 Compact";
 
 const DOCUMENTED_PROP_OPTIONS = [
   { prop_family: "hitter", canonical_prop_key: "hits", label: "Hits" },
@@ -780,32 +780,7 @@ function buildCurrentSql(url) {
       json_extract(f.details_json, '$.game_context.home_team_name') AS home_team_name,
       json_extract(f.details_json, '$.game_context.away_team_name') AS away_team_name,
       json_extract(f.details_json, '$.game_context.venue_name') AS venue_name,
-      json_extract(f.details_json, '$.game_context.venue_id') AS venue_id,
-      f.team_id AS home_team_id,
-      f.opponent_team_id AS away_team_id,
-      json_extract(f.details_json, '$.game_context.status_code') AS game_status_code,
-      json_extract(f.details_json, '$.daily_context.probable_pitcher.name') AS probable_pitcher_name,
-      json_extract(f.details_json, '$.daily_context.probable_pitcher.hand') AS probable_pitcher_hand,
-      json_extract(f.details_json, '$.matchup_context.opposing_pitcher_name') AS opposing_pitcher_name,
-      json_extract(f.details_json, '$.matchup_context.opposing_pitcher_hand') AS opposing_pitcher_hand,
-      NULL AS opposing_pitcher_era,
-      NULL AS opposing_pitcher_whip,
-      NULL AS opposing_pitcher_fip,
-      NULL AS opposing_pitcher_k9,
-      NULL AS opposing_pitcher_bb9,
-      json_extract(f.details_json, '$.daily_context.lineup_status') AS lineup_status,
-      json_extract(f.details_json, '$.daily_context.batting_order') AS batting_order,
-      json_extract(f.details_json, '$.daily_context.weather.summary') AS weather_summary,
-      json_extract(f.details_json, '$.daily_context.weather.temp_f') AS weather_temp_f,
-      json_extract(f.details_json, '$.daily_context.weather.wind_summary') AS wind_summary,
-      json_extract(f.details_json, '$.daily_context.weather.roof_status') AS roof_status,
-      json_extract(f.details_json, '$.daily_context.umpire.name') AS umpire_name,
-      json_extract(f.details_json, '$.daily_context.umpire.summary') AS umpire_context_summary,
-      json_extract(f.details_json, '$.daily_context.bullpen.summary') AS bullpen_context_summary,
-      json_extract(f.details_json, '$.daily_context.schedule.summary') AS schedule_context_summary,
-      json_extract(f.details_json, '$.market_context.summary') AS market_context_summary,
       COALESCE(json_extract(f.details_json, '$.prepared.source_line_type'), 'regular') AS source_line_type,
-      json_extract(f.details_json, '$.prepared.projection_type') AS projection_type,
       COALESCE(json_extract(f.details_json, '$.prepared.is_goblin'),0) AS is_goblin,
       COALESCE(json_extract(f.details_json, '$.prepared.is_demon'),0) AS is_demon,
       COALESCE(json_extract(f.details_json, '$.prepared.is_standard'),1) AS is_standard,
@@ -813,11 +788,11 @@ function buildCurrentSql(url) {
       NULL AS hp_non_push_sample,
       NULL AS hp_hit_count,
       NULL AS hp_miss_count,
-      0 AS hp_push_count,
+      NULL AS hp_push_count,
       NULL AS hp_empirical_hit_rate_0_1,
       f.certainty_0_100 / 100.0 AS hp_reliability_0_1,
       f.certainty_0_100 AS hp_sample_reliability_score_0_100,
-      substr(f.details_json, 1, 1200) AS hp_display_notes_preview,
+      NULL AS hp_display_notes_preview,
       f.default_board_rank,
       f.default_board_visible,
       f.default_suppression_reason,
@@ -838,7 +813,6 @@ function buildCurrentSql(url) {
       f.source_score_enrichment_batch_id,
       f.created_at,
       f.updated_at
-
     FROM score_final_board_v2_current f
     ${where.length ? "WHERE " + where.join(" AND ") : ""}
     ORDER BY f.default_board_rank ASC
@@ -944,32 +918,7 @@ async function apiDossier(env, url) {
       json_extract(f.details_json, '$.game_context.home_team_name') AS home_team_name,
       json_extract(f.details_json, '$.game_context.away_team_name') AS away_team_name,
       json_extract(f.details_json, '$.game_context.venue_name') AS venue_name,
-      json_extract(f.details_json, '$.game_context.venue_id') AS venue_id,
-      f.team_id AS home_team_id,
-      f.opponent_team_id AS away_team_id,
-      json_extract(f.details_json, '$.game_context.status_code') AS game_status_code,
-      json_extract(f.details_json, '$.daily_context.probable_pitcher.name') AS probable_pitcher_name,
-      json_extract(f.details_json, '$.daily_context.probable_pitcher.hand') AS probable_pitcher_hand,
-      json_extract(f.details_json, '$.matchup_context.opposing_pitcher_name') AS opposing_pitcher_name,
-      json_extract(f.details_json, '$.matchup_context.opposing_pitcher_hand') AS opposing_pitcher_hand,
-      NULL AS opposing_pitcher_era,
-      NULL AS opposing_pitcher_whip,
-      NULL AS opposing_pitcher_fip,
-      NULL AS opposing_pitcher_k9,
-      NULL AS opposing_pitcher_bb9,
-      json_extract(f.details_json, '$.daily_context.lineup_status') AS lineup_status,
-      json_extract(f.details_json, '$.daily_context.batting_order') AS batting_order,
-      json_extract(f.details_json, '$.daily_context.weather.summary') AS weather_summary,
-      json_extract(f.details_json, '$.daily_context.weather.temp_f') AS weather_temp_f,
-      json_extract(f.details_json, '$.daily_context.weather.wind_summary') AS wind_summary,
-      json_extract(f.details_json, '$.daily_context.weather.roof_status') AS roof_status,
-      json_extract(f.details_json, '$.daily_context.umpire.name') AS umpire_name,
-      json_extract(f.details_json, '$.daily_context.umpire.summary') AS umpire_context_summary,
-      json_extract(f.details_json, '$.daily_context.bullpen.summary') AS bullpen_context_summary,
-      json_extract(f.details_json, '$.daily_context.schedule.summary') AS schedule_context_summary,
-      json_extract(f.details_json, '$.market_context.summary') AS market_context_summary,
       COALESCE(json_extract(f.details_json, '$.prepared.source_line_type'), 'regular') AS source_line_type,
-      json_extract(f.details_json, '$.prepared.projection_type') AS projection_type,
       COALESCE(json_extract(f.details_json, '$.prepared.is_goblin'),0) AS is_goblin,
       COALESCE(json_extract(f.details_json, '$.prepared.is_demon'),0) AS is_demon,
       COALESCE(json_extract(f.details_json, '$.prepared.is_standard'),1) AS is_standard,
@@ -977,11 +926,11 @@ async function apiDossier(env, url) {
       NULL AS hp_non_push_sample,
       NULL AS hp_hit_count,
       NULL AS hp_miss_count,
-      0 AS hp_push_count,
+      NULL AS hp_push_count,
       NULL AS hp_empirical_hit_rate_0_1,
       f.certainty_0_100 / 100.0 AS hp_reliability_0_1,
       f.certainty_0_100 AS hp_sample_reliability_score_0_100,
-      substr(f.details_json, 1, 1200) AS hp_display_notes_preview,
+      NULL AS hp_display_notes_preview,
       f.default_board_rank,
       f.default_board_visible,
       f.default_suppression_reason,
@@ -1002,7 +951,6 @@ async function apiDossier(env, url) {
       f.source_score_enrichment_batch_id,
       f.created_at,
       f.updated_at
-
     FROM score_final_board_v2_current f
     WHERE f.board_row_id = ?
     LIMIT 1
@@ -1060,32 +1008,7 @@ async function apiDossier(env, url) {
       json_extract(f.details_json, '$.game_context.home_team_name') AS home_team_name,
       json_extract(f.details_json, '$.game_context.away_team_name') AS away_team_name,
       json_extract(f.details_json, '$.game_context.venue_name') AS venue_name,
-      json_extract(f.details_json, '$.game_context.venue_id') AS venue_id,
-      f.team_id AS home_team_id,
-      f.opponent_team_id AS away_team_id,
-      json_extract(f.details_json, '$.game_context.status_code') AS game_status_code,
-      json_extract(f.details_json, '$.daily_context.probable_pitcher.name') AS probable_pitcher_name,
-      json_extract(f.details_json, '$.daily_context.probable_pitcher.hand') AS probable_pitcher_hand,
-      json_extract(f.details_json, '$.matchup_context.opposing_pitcher_name') AS opposing_pitcher_name,
-      json_extract(f.details_json, '$.matchup_context.opposing_pitcher_hand') AS opposing_pitcher_hand,
-      NULL AS opposing_pitcher_era,
-      NULL AS opposing_pitcher_whip,
-      NULL AS opposing_pitcher_fip,
-      NULL AS opposing_pitcher_k9,
-      NULL AS opposing_pitcher_bb9,
-      json_extract(f.details_json, '$.daily_context.lineup_status') AS lineup_status,
-      json_extract(f.details_json, '$.daily_context.batting_order') AS batting_order,
-      json_extract(f.details_json, '$.daily_context.weather.summary') AS weather_summary,
-      json_extract(f.details_json, '$.daily_context.weather.temp_f') AS weather_temp_f,
-      json_extract(f.details_json, '$.daily_context.weather.wind_summary') AS wind_summary,
-      json_extract(f.details_json, '$.daily_context.weather.roof_status') AS roof_status,
-      json_extract(f.details_json, '$.daily_context.umpire.name') AS umpire_name,
-      json_extract(f.details_json, '$.daily_context.umpire.summary') AS umpire_context_summary,
-      json_extract(f.details_json, '$.daily_context.bullpen.summary') AS bullpen_context_summary,
-      json_extract(f.details_json, '$.daily_context.schedule.summary') AS schedule_context_summary,
-      json_extract(f.details_json, '$.market_context.summary') AS market_context_summary,
       COALESCE(json_extract(f.details_json, '$.prepared.source_line_type'), 'regular') AS source_line_type,
-      json_extract(f.details_json, '$.prepared.projection_type') AS projection_type,
       COALESCE(json_extract(f.details_json, '$.prepared.is_goblin'),0) AS is_goblin,
       COALESCE(json_extract(f.details_json, '$.prepared.is_demon'),0) AS is_demon,
       COALESCE(json_extract(f.details_json, '$.prepared.is_standard'),1) AS is_standard,
@@ -1093,11 +1016,11 @@ async function apiDossier(env, url) {
       NULL AS hp_non_push_sample,
       NULL AS hp_hit_count,
       NULL AS hp_miss_count,
-      0 AS hp_push_count,
+      NULL AS hp_push_count,
       NULL AS hp_empirical_hit_rate_0_1,
       f.certainty_0_100 / 100.0 AS hp_reliability_0_1,
       f.certainty_0_100 AS hp_sample_reliability_score_0_100,
-      substr(f.details_json, 1, 1200) AS hp_display_notes_preview,
+      NULL AS hp_display_notes_preview,
       f.default_board_rank,
       f.default_board_visible,
       f.default_suppression_reason,
@@ -1118,7 +1041,6 @@ async function apiDossier(env, url) {
       f.source_score_enrichment_batch_id,
       f.created_at,
       f.updated_at
-
     FROM score_final_board_v2_current f
     WHERE f.batch_id = ?
       AND f.game_pk = ?
@@ -1427,7 +1349,7 @@ const MAIN_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>AlphaDog — Final Board V2 Default</title>
+<title>AlphaDog — Final Board V2 Compact</title>
 <link rel="icon" type="image/png" href="/main_alphadog_favicon.png" />
 <link rel="apple-touch-icon" href="/main_alphadog_apple_touch_icon.png" />
 <style>
@@ -1438,7 +1360,7 @@ const MAIN_HTML = `<!doctype html>
 <body>
 <div class="wrap">
   <header class="hero">
-    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.10 - Final Board V2 Default</div></div></div>
+    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.11 - Final Board V2 Compact</div></div></div>
     <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Main Board</button><button id="menuHealth">Health</button></div></div>
   </header>
   <section id="boardScreen">
