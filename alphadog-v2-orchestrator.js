@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.267-final-score-v1-cumulative-issue-count";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.268-final-score-v1-hp-dominant-overall";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12179,9 +12179,9 @@ async function processHitProbabilityV2DirectJob(env,row,runId,trigger){
 // final_score_v1_* tables. It does not mutate old scoring_engine_current,
 // hit_probability_v2_current, score_final_board_current, prepared/source boards,
 // ranks, or live/review gates outside its own output columns.
-const ORCH_FINAL_SCORE_V1_VERSION = "alphadog-v2-final-score-v1-v0.1.1-cumulative-issue-count";
+const ORCH_FINAL_SCORE_V1_VERSION = "alphadog-v2-final-score-v1-v0.1.2-hp-dominant-overall";
 const ORCH_FINAL_SCORE_V1_MODE = "final_score_v1_current";
-const ORCH_FINAL_SCORE_V1_PROFILE_VERSION = "FINAL_SCORE_V1_HP_V2_TRUST_READINESS_V0_1_0";
+const ORCH_FINAL_SCORE_V1_PROFILE_VERSION = "FINAL_SCORE_V1_HP_DOMINANT_OVERALL_V0_1_2";
 const ORCH_FINAL_SCORE_V1_CHUNK_ROWS = 650;
 function ofsNum(v,d=0){ const n=Number(v); return Number.isFinite(n)?n:d; }
 function ofsClamp(v,lo,hi){ return Math.max(lo, Math.min(hi, ofsNum(v,lo))); }
@@ -12217,13 +12217,13 @@ function ofsGrade(score,status,hp,conf){
 function ofsReason(row, score, tier){
   if(String(row.hp_v2_status||'')==='hp_v2_blocked'||ofsNum(row.blocker_count,0)>0||ofsNum(row.blocking_for_scoring,0)===1)return 'BLOCKED_BY_HP_V2_OR_ENRICHMENT';
   if(ofsNum(row.hp_v2_0_100,0)<60)return 'LOW_HP_BELOW_FINAL_BOARD_GATE';
-  if(ofsNum(row.hp_v2_confidence_0_100,0)<40)return 'LOW_CONFIDENCE_DEEP_REVIEW';
-  if(tier==='TIER_D_LOW_SAMPLE_OR_LOW_CONF')return 'LOW_SAMPLE_OR_LOW_CONFIDENCE_CAPPED';
+  if(ofsNum(row.hp_v2_confidence_0_100,0)<40)return 'LOW_CERTAINTY_DEEP_REVIEW';
+  if(tier==='TIER_D_LOW_SAMPLE_OR_LOW_CONF')return 'LOW_SAMPLE_OR_LOW_CERTAINTY_CAPPED';
   if(ofsNum(row.missing_component_count,0)>0)return 'PARTIAL_CONTEXT_CAPPED';
-  if(score>=85)return 'PREMIUM_TRUST_READINESS';
-  if(score>=75)return 'STRONG_TRUST_READINESS';
-  if(score>=60)return 'STANDARD_TRUST_READINESS';
-  return 'LOW_TRUST_READINESS';
+  if(score>=85)return 'PREMIUM_OVERALL_SCORE';
+  if(score>=75)return 'STRONG_OVERALL_SCORE';
+  if(score>=60)return 'STANDARD_OVERALL_SCORE';
+  return 'LOW_OVERALL_SCORE';
 }
 function ofsModel(row){
   const hp=ofsClamp(row.hp_v2_0_100,0,100);
@@ -12239,34 +12239,45 @@ function ofsModel(row){
   let contextScore=ofsClamp(100 - warnings*2.0 - missing*12, 35, 100);
   if(String(row.hp_v2_status||'')==='hp_v2_ready_partial_context')contextScore=Math.min(contextScore,74);
   const profileStability=tier==='TIER_A_ESTABLISHED_HIGH_CONF'?92:tier==='TIER_B_STABLE'?82:tier==='TIER_C_USABLE'?68:tier==='TIER_D_LOW_SAMPLE_OR_LOW_CONF'?45:0;
-  const hpSupport=ofsClamp(50 + (hp-60)*0.45, 25, 82);
   const factorAdj=ofsNum(row.factor_adjustment_0_100,0);
   const factorSupport=ofsClamp(70 + Math.min(14,Math.abs(factorAdj)*4) + (hp>=60&&factorAdj>0?3:0) - (hp>=60&&factorAdj<0?3:0), 45, 90);
-  let score = hpConf*0.32 + sampleScore*0.18 + contextScore*0.18 + dataQ*0.12 + profileStability*0.10 + factorSupport*0.05 + hpSupport*0.05;
+  let trust = hpConf*0.32 + sampleScore*0.18 + contextScore*0.18 + dataQ*0.12 + profileStability*0.10 + factorSupport*0.05 + ofsClamp(50 + (hp-60)*0.45,25,82)*0.05;
   const penalties = (warnings>=10?3:0) + (warnings>=14?3:0) + missing*4 + (hpConf<55?4:0) + (hpConf<40?8:0);
-  score -= penalties;
-  let cap=100;
-  if(tier==='TIER_D_LOW_SAMPLE_OR_LOW_CONF')cap=Math.min(cap,64);
-  if(hpConf<40)cap=Math.min(cap,54);
-  else if(hpConf<55)cap=Math.min(cap,64);
-  if(missing>0)cap=Math.min(cap,74);
-  if(String(row.hp_v2_status||'')==='hp_v2_ready_partial_context')cap=Math.min(cap,78);
+  trust -= penalties;
+  let trustCap=100;
+  if(tier==='TIER_D_LOW_SAMPLE_OR_LOW_CONF')trustCap=Math.min(trustCap,64);
+  if(hpConf<40)trustCap=Math.min(trustCap,54);
+  else if(hpConf<55)trustCap=Math.min(trustCap,64);
+  if(missing>0)trustCap=Math.min(trustCap,74);
+  if(String(row.hp_v2_status||'')==='hp_v2_ready_partial_context')trustCap=Math.min(trustCap,78);
+  if(blocked){ trust=0; trustCap=0; }
+  trust=ofsRound(ofsClamp(trust,0,trustCap),2);
+  let certainty=blocked?0:ofsRound(hpConf,1);
+  let score=hp*0.60 + certainty*0.25 + trust*0.15;
+  let cap=94;
+  if(hp<60)cap=Math.min(cap,59);
+  else if(hp<70)cap=Math.min(cap,74);
+  else if(hp<80)cap=Math.min(cap,84);
+  if(certainty<40)cap=Math.min(cap,49);
+  else if(certainty<60)cap=Math.min(cap,69);
+  if(tier==='TIER_D_LOW_SAMPLE_OR_LOW_CONF')cap=Math.min(cap,(hp>=85&&certainty>=70)?64:59);
+  if(missing>0)cap=Math.min(cap,69);
+  if(String(row.hp_v2_status||'')==='hp_v2_ready_partial_context')cap=Math.min(cap,74);
   if(blocked){ score=0; cap=0; }
   score=ofsRound(ofsClamp(score,0,cap),2);
-  let finalConf=ofsRound(ofsClamp(hpConf*0.56 + dataQ*0.22 + contextScore*0.22,0,100),1);
-  if(tier==='TIER_D_LOW_SAMPLE_OR_LOW_CONF')finalConf=Math.min(finalConf,64);
-  if(missing>0)finalConf=Math.min(finalConf,74);
-  if(blocked)finalConf=0;
+  const finalConf=certainty;
   const lane=ofsLane(score,blocked?'final_score_blocked':'final_score_ready',hp,finalConf);
   const grade=ofsGrade(score,blocked?'final_score_blocked':'final_score_ready',hp,finalConf);
-  const status=blocked?'final_score_blocked':(hp<60?'final_score_archived_low_hp':(score<45?'final_score_archived_low_score':(finalConf<40?'final_score_deep_review_low_confidence':'final_score_ready')));
+  const status=blocked?'final_score_blocked':(hp<60?'final_score_archived_low_hp':(finalConf<40?'final_score_deep_review_low_confidence':(score<45?'final_score_archived_low_score':'final_score_ready')));
   const eligible=(!blocked && hp>=60 && score>=45 && finalConf>=40)?1:0;
   const review=eligible;
-  return {score, finalConf, status, grade, lane, reason:ofsReason(row,score,tier), tier, sampleScore:ofsRound(sampleScore,1), contextScore:ofsRound(contextScore,1), dataQ:ofsRound(dataQ,1), profileStability, factorSupport:ofsRound(factorSupport,1), hpSupport:ofsRound(hpSupport,1), cap, eligible, review, live:0, penalties:ofsRound(penalties,2)};
+  return {score, finalConf, certainty, trustReadiness:trust, status, grade, lane, reason:ofsReason(row,score,tier), tier, sampleScore:ofsRound(sampleScore,1), contextScore:ofsRound(contextScore,1), dataQ:ofsRound(dataQ,1), profileStability, factorSupport:ofsRound(factorSupport,1), hpSupport:ofsRound(hp,1), cap, trustCap, eligible, review, live:0, penalties:ofsRound(penalties,2)};
 }
 async function ensureOrchFinalScoreV1Schema(env){
   await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS final_score_v1_batches (batch_id TEXT PRIMARY KEY, request_id TEXT, run_id TEXT, worker_name TEXT, worker_version TEXT, profile_version TEXT, mode TEXT, status TEXT, source_score_enrichment_batch_id TEXT, source_hp_v2_batch_id TEXT, hp_v2_rows_read INTEGER DEFAULT 0, enrichment_rows_read INTEGER DEFAULT 0, expected_final_score_rows INTEGER DEFAULT 0, final_score_rows_written INTEGER DEFAULT 0, blocked_rows INTEGER DEFAULT 0, warning_rows INTEGER DEFAULT 0, issue_rows_written INTEGER DEFAULT 0, eligible_rows INTEGER DEFAULT 0, review_playable_rows INTEGER DEFAULT 0, live_playable_rows INTEGER DEFAULT 0, low_hp_rows INTEGER DEFAULT 0, low_score_rows INTEGER DEFAULT 0, certification_status TEXT, certification_grade TEXT, output_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
-  await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS final_score_v1_current (final_score_row_id TEXT PRIMARY KEY, batch_id TEXT, source_score_enrichment_batch_id TEXT, source_hp_v2_batch_id TEXT, hp_v2_row_id TEXT, enrichment_row_id TEXT, prepared_row_id TEXT, matrix_id TEXT, source_line_id TEXT, source_key TEXT, game_pk INTEGER, official_date TEXT, official_game_time_utc TEXT, player_id INTEGER, player_name TEXT, team_id INTEGER, opponent_team_id INTEGER, canonical_prop_key TEXT, line_value REAL, selected_side TEXT, odds_type TEXT, payout_variant TEXT, side_mode TEXT, hp_v2_0_100 REAL, hp_v2_confidence_0_100 REAL, hp_v2_status TEXT, hp_v2_band TEXT, hp_v2_grade TEXT, final_score_0_100 REAL, final_score_confidence_0_100 REAL, final_score_grade TEXT, final_score_lane TEXT, final_score_reason_code TEXT, final_score_components_json TEXT, sample_tier TEXT, player_baseline_tier TEXT, context_completeness_score REAL, market_support_score REAL, factor_support_score REAL, warning_count INTEGER DEFAULT 0, blocker_count INTEGER DEFAULT 0, partial_context_count INTEGER DEFAULT 0, missing_component_count INTEGER DEFAULT 0, final_score_status TEXT, blocked_reason TEXT, archive_reason TEXT, review_playable INTEGER DEFAULT 0, live_playable INTEGER DEFAULT 0, eligible_for_final_board INTEGER DEFAULT 0, details_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+  await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS final_score_v1_current (final_score_row_id TEXT PRIMARY KEY, batch_id TEXT, source_score_enrichment_batch_id TEXT, source_hp_v2_batch_id TEXT, hp_v2_row_id TEXT, enrichment_row_id TEXT, prepared_row_id TEXT, matrix_id TEXT, source_line_id TEXT, source_key TEXT, game_pk INTEGER, official_date TEXT, official_game_time_utc TEXT, player_id INTEGER, player_name TEXT, team_id INTEGER, opponent_team_id INTEGER, canonical_prop_key TEXT, line_value REAL, selected_side TEXT, odds_type TEXT, payout_variant TEXT, side_mode TEXT, hp_v2_0_100 REAL, hp_v2_confidence_0_100 REAL, hp_v2_status TEXT, hp_v2_band TEXT, hp_v2_grade TEXT, final_score_0_100 REAL, final_score_confidence_0_100 REAL, certainty_0_100 REAL, trust_readiness_score_0_100 REAL, final_score_grade TEXT, final_score_lane TEXT, final_score_reason_code TEXT, final_score_components_json TEXT, sample_tier TEXT, player_baseline_tier TEXT, context_completeness_score REAL, market_support_score REAL, factor_support_score REAL, warning_count INTEGER DEFAULT 0, blocker_count INTEGER DEFAULT 0, partial_context_count INTEGER DEFAULT 0, missing_component_count INTEGER DEFAULT 0, final_score_status TEXT, blocked_reason TEXT, archive_reason TEXT, review_playable INTEGER DEFAULT 0, live_playable INTEGER DEFAULT 0, eligible_for_final_board INTEGER DEFAULT 0, details_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+  try { await run(env.SCORE_DB, `ALTER TABLE final_score_v1_current ADD COLUMN certainty_0_100 REAL`); } catch (_) {}
+  try { await run(env.SCORE_DB, `ALTER TABLE final_score_v1_current ADD COLUMN trust_readiness_score_0_100 REAL`); } catch (_) {}
   await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS final_score_v1_issues (issue_id TEXT PRIMARY KEY, batch_id TEXT, final_score_row_id TEXT, prepared_row_id TEXT, selected_side TEXT, severity TEXT, issue_family TEXT, issue_code TEXT, issue_message TEXT, source_stage TEXT, details_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_final_score_v1_current_batch ON final_score_v1_current(batch_id)`);
   await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_final_score_v1_current_prepared_side ON final_score_v1_current(prepared_row_id, selected_side)`);
@@ -12304,8 +12315,8 @@ async function processFinalScoreV1DirectJob(env,row,runId,trigger){
   for(const r of rows){
     const model=ofsModel(r); const finalRowId=`${batchId}|${r.hp_v2_row_id||r.prepared_row_id+'|'+r.selected_side}`;
     const blockedReason=model.status==='final_score_blocked'?model.reason:null; const archiveReason=(model.status==='final_score_archived_low_hp'||model.status==='final_score_archived_low_score')?model.reason:null;
-    const components={profile_version:ORCH_FINAL_SCORE_V1_PROFILE_VERSION,hp_v2_0_100:ofsRound(r.hp_v2_0_100,2),hp_v2_confidence_0_100:ofsRound(r.hp_v2_confidence_0_100,1),sample_score:model.sampleScore,context_completeness_score:model.contextScore,data_quality_score:model.dataQ,profile_stability_score:model.profileStability,factor_support_score:model.factorSupport,hp_support_score:model.hpSupport,penalties:model.penalties,cap:model.cap,player_tier:model.tier,baseline_sample_profile:r.baseline_sample_profile||null,baseline_role_profile:r.baseline_role_profile||null,baseline_volatility_profile:r.baseline_volatility_profile||null,baseline_variance_profile:r.baseline_variance_profile||null,baseline_line_difficulty_profile:r.baseline_line_difficulty_profile||null};
-    cur.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO final_score_v1_current (final_score_row_id,batch_id,source_score_enrichment_batch_id,source_hp_v2_batch_id,hp_v2_row_id,enrichment_row_id,prepared_row_id,matrix_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,player_id,player_name,team_id,opponent_team_id,canonical_prop_key,line_value,selected_side,odds_type,payout_variant,side_mode,hp_v2_0_100,hp_v2_confidence_0_100,hp_v2_status,hp_v2_band,hp_v2_grade,final_score_0_100,final_score_confidence_0_100,final_score_grade,final_score_lane,final_score_reason_code,final_score_components_json,sample_tier,player_baseline_tier,context_completeness_score,market_support_score,factor_support_score,warning_count,blocker_count,partial_context_count,missing_component_count,final_score_status,blocked_reason,archive_reason,review_playable,live_playable,eligible_for_final_board,details_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(finalRowId,batchId,sourceEnrichmentBatchId,sourceHpV2BatchId,r.hp_v2_row_id,r.enrichment_row_id,r.prepared_row_id,r.matrix_id,r.source_line_id,r.source_key,r.game_pk,r.official_date,r.official_game_time_utc,r.mlb_player_id,r.player_name,r.team_id,r.opponent_team_id,r.canonical_prop_key,r.board_line_value,r.selected_side,null,null,null,r.hp_v2_0_100,r.hp_v2_confidence_0_100,r.hp_v2_status,r.hp_v2_band,r.hp_v2_grade,model.score,model.finalConf,model.grade,model.lane,model.reason,JSON.stringify(components),model.tier,r.baseline_sample_profile||model.tier,model.contextScore,70,model.factorSupport,r.warning_count,r.blocker_count,Number(r.missing_component_count||0)>0?1:0,r.missing_component_count,model.status,blockedReason,archiveReason,model.review,model.live,model.eligible,JSON.stringify({baseline_role_profile:r.baseline_role_profile||null,baseline_volatility_profile:r.baseline_volatility_profile||null,baseline_variance_profile:r.baseline_variance_profile||null,baseline_line_difficulty_profile:r.baseline_line_difficulty_profile||null})));
+    const components={profile_version:ORCH_FINAL_SCORE_V1_PROFILE_VERSION,hp_v2_0_100:ofsRound(r.hp_v2_0_100,2),hp_v2_confidence_0_100:ofsRound(r.hp_v2_confidence_0_100,1),sample_score:model.sampleScore,context_completeness_score:model.contextScore,data_quality_score:model.dataQ,profile_stability_score:model.profileStability,factor_support_score:model.factorSupport,hp_support_score:model.hpSupport,certainty_0_100:model.certainty,trust_readiness_score_0_100:model.trustReadiness,overall_formula:"0.60*hp_v2_0_100 + 0.25*certainty_0_100 + 0.15*trust_readiness_score_0_100, then caps",penalties:model.penalties,cap:model.cap,trust_cap:model.trustCap,player_tier:model.tier,baseline_sample_profile:r.baseline_sample_profile||null,baseline_role_profile:r.baseline_role_profile||null,baseline_volatility_profile:r.baseline_volatility_profile||null,baseline_variance_profile:r.baseline_variance_profile||null,baseline_line_difficulty_profile:r.baseline_line_difficulty_profile||null};
+    cur.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO final_score_v1_current (final_score_row_id,batch_id,source_score_enrichment_batch_id,source_hp_v2_batch_id,hp_v2_row_id,enrichment_row_id,prepared_row_id,matrix_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,player_id,player_name,team_id,opponent_team_id,canonical_prop_key,line_value,selected_side,odds_type,payout_variant,side_mode,hp_v2_0_100,hp_v2_confidence_0_100,hp_v2_status,hp_v2_band,hp_v2_grade,final_score_0_100,final_score_confidence_0_100,certainty_0_100,trust_readiness_score_0_100,final_score_grade,final_score_lane,final_score_reason_code,final_score_components_json,sample_tier,player_baseline_tier,context_completeness_score,market_support_score,factor_support_score,warning_count,blocker_count,partial_context_count,missing_component_count,final_score_status,blocked_reason,archive_reason,review_playable,live_playable,eligible_for_final_board,details_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(finalRowId,batchId,sourceEnrichmentBatchId,sourceHpV2BatchId,r.hp_v2_row_id,r.enrichment_row_id,r.prepared_row_id,r.matrix_id,r.source_line_id,r.source_key,r.game_pk,r.official_date,r.official_game_time_utc,r.mlb_player_id,r.player_name,r.team_id,r.opponent_team_id,r.canonical_prop_key,r.board_line_value,r.selected_side,null,null,null,r.hp_v2_0_100,r.hp_v2_confidence_0_100,r.hp_v2_status,r.hp_v2_band,r.hp_v2_grade,model.score,model.finalConf,model.certainty,model.trustReadiness,model.grade,model.lane,model.reason,JSON.stringify(components),model.tier,r.baseline_sample_profile||model.tier,model.contextScore,70,model.factorSupport,r.warning_count,r.blocker_count,Number(r.missing_component_count||0)>0?1:0,r.missing_component_count,model.status,blockedReason,archiveReason,model.review,model.live,model.eligible,JSON.stringify({baseline_role_profile:r.baseline_role_profile||null,baseline_volatility_profile:r.baseline_volatility_profile||null,baseline_variance_profile:r.baseline_variance_profile||null,baseline_line_difficulty_profile:r.baseline_line_difficulty_profile||null})));
     if(model.status==='final_score_blocked'||Number(r.missing_component_count||0)>0||ofsNum(r.hp_v2_confidence_0_100,0)<40){
       const sev=model.status==='final_score_blocked'?'BLOCKER':'WARNING'; const code=model.status==='final_score_blocked'?'FINAL_SCORE_V1_BLOCKED_BY_HP_OR_ENRICHMENT':(Number(r.missing_component_count||0)>0?'FINAL_SCORE_V1_PARTIAL_CONTEXT_CAPPED':'FINAL_SCORE_V1_LOW_CONFIDENCE_CAPPED'); const msg=model.status==='final_score_blocked'?'HP V2 or enrichment blocker preserved in Final Score V1.':(Number(r.missing_component_count||0)>0?'Partial context capped Final Score readiness.':'Low confidence capped Final Score readiness.');
       iss.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO final_score_v1_issues (issue_id,batch_id,final_score_row_id,prepared_row_id,selected_side,severity,issue_family,issue_code,issue_message,source_stage,details_json,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`${finalRowId}|${code}`,batchId,finalRowId,r.prepared_row_id,r.selected_side,sev,'FINAL_SCORE_V1_TRUST_READINESS',code,msg,model.status==='final_score_blocked'?'hp_v2_or_score_enrichment':'final_score_v1',JSON.stringify({hp_v2_status:r.hp_v2_status,hp_v2_0_100:r.hp_v2_0_100,hp_v2_confidence_0_100:r.hp_v2_confidence_0_100,final_score_0_100:model.score,missing_component_count:r.missing_component_count,warning_count:r.warning_count,blocker_count:r.blocker_count})));
