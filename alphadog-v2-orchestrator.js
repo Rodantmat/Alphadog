@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.255-score-enrichment-timeout-evidence-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.260-prop-factor-hot-drain-no-cooldown";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -968,7 +968,7 @@ const MARKET_SCORING_FULL_RUN_PARENT_RECHECK_SECONDS = 6;
 const MARKET_SCORING_FULL_RUN_PROP_FACTOR_PARENT_YIELD_SECONDS = 45;
 const MARKET_SCORING_FULL_RUN_HEAVY_STAGE_PARENT_YIELD_SECONDS = 20;
 const HEAVY_MARKET_SERVICE_BINDING_COOLDOWN_SECONDS = 2;
-const PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS = HEAVY_MARKET_SERVICE_BINDING_COOLDOWN_SECONDS;
+const PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS = 0; // v0.2.260: Prop Factor chunks are bounded and must hot-drain; cooldown yield stranded due pending rows.
 
 function isMarketScoringFullRunPropFactorStage(stage) {
   const key = String(stage && stage.stage_key ? stage.stage_key : "");
@@ -4944,11 +4944,11 @@ async function processPrizePicksGithubBoardJob(env, row, runId, trigger) {
   const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
   const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
   const certification = String((output && output.certification) || (ok ? "prizepicks_github_board_completed" : "prizepicks_github_board_failed")).slice(0, 120);
-  const partialContinue = !!(output && (output.continuation_required === true || output.status === "partial_continue" || certification === "PRIZEPICKS_SOURCE_REFRESH_WAITING_FOR_FRESH_JSON"));
-  const queueStatus = partialContinue ? "pending" : (ok ? "completed" : "failed");
-  const runStatus = partialContinue ? "partial_continue" : (ok ? "completed" : "failed");
-  const errorCode = (ok || partialContinue) ? null : "prizepicks_github_board_worker_failed";
-  const errorMessage = (ok || partialContinue) ? null : String((output && (output.error || output.status)) || "PrizePicks GitHub board worker failed").slice(0, 900);
+  const partialContinue = false;
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "prizepicks_github_board_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "PrizePicks GitHub board worker failed").slice(0, 900);
 
   const cappedOutput = compactPrizePicksOutputForD1({
     ...output,
@@ -4974,11 +4974,9 @@ async function processPrizePicksGithubBoardJob(env, row, runId, trigger) {
   );
 
   if (partialContinue) {
-    const nextInput = output && output.next_input ? output.next_input : input;
-    const delaySeconds = Math.max(5, Math.min(300, Number(output && output.run_after_seconds || 30)));
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
-      delaySeconds, JSON.stringify(nextInput), cappedOutputJson, row.request_id
+      "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+      cappedOutputJson, row.request_id
     );
   } else {
     await run(env.CONTROL_DB,
