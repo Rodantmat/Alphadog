@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.269-final-board-v2-hp-first";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.270-final-board-v2-safe-json-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12352,7 +12352,7 @@ async function ensureOrchFinalBoardV2Schema(env){
 function fbv2HpBandRank(hp){ hp=ofsNum(hp,0); return hp>=90?5:hp>=80?4:hp>=70?3:hp>=60?2:1; }
 async function processFinalBoardV2DirectJob(env,row,runId,trigger){
   const started=Date.now();
-  const input=safeJson(row.input_json||"{}",{});
+  const input=parseJsonSafeText(row.input_json||"{}",{});
   await ensureOrchFinalBoardV2Schema(env);
   let batchId=input.resume_batch_id||input.final_board_v2_batch_id||null;
   let offset=Number(input.final_board_v2_offset||0);
