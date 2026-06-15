@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.265-hit-probability-v2-direct-branch-placement";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.266-final-score-v1-trust-layer";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -571,7 +571,7 @@ function isPropMatrixBuilderJob(row) {
 function isScoringEngineJob(row) {
   const job = String(row && row.job_key || "");
   const worker = String(row && row.worker_name || "");
-  return (job === "scoring-engine" || job === "scoring-engine-simulation" || job === "hit-probability" || job === "hit-probability-v2" || job === "score-enrichment-v1") && worker === "alphadog-v2-score-audit";
+  return (job === "scoring-engine" || job === "scoring-engine-simulation" || job === "hit-probability" || job === "hit-probability-v2" || job === "final-score-v1" || job === "score-enrichment-v1") && worker === "alphadog-v2-score-audit";
 }
 
 function isScoreFinalBoardJob(row) {
@@ -12170,10 +12170,168 @@ async function processHitProbabilityV2DirectJob(env,row,runId,trigger){
   return output;
 }
 
+
+// ============================================================
+// Final Score V1 direct orchestrator trust/readiness layer v0.2.266
+// ============================================================
+// Final Score V1 is not probability. HP V2 answers likelihood; Final Score V1
+// answers trust/readiness/exposure support. It is side-expanded and writes only
+// final_score_v1_* tables. It does not mutate old scoring_engine_current,
+// hit_probability_v2_current, score_final_board_current, prepared/source boards,
+// ranks, or live/review gates outside its own output columns.
+const ORCH_FINAL_SCORE_V1_VERSION = "alphadog-v2-final-score-v1-v0.1.0-trust-readiness-current";
+const ORCH_FINAL_SCORE_V1_MODE = "final_score_v1_current";
+const ORCH_FINAL_SCORE_V1_PROFILE_VERSION = "FINAL_SCORE_V1_HP_V2_TRUST_READINESS_V0_1_0";
+const ORCH_FINAL_SCORE_V1_CHUNK_ROWS = 650;
+function ofsNum(v,d=0){ const n=Number(v); return Number.isFinite(n)?n:d; }
+function ofsClamp(v,lo,hi){ return Math.max(lo, Math.min(hi, ofsNum(v,lo))); }
+function ofsRound(v,d=2){ const m=Math.pow(10,d); return Math.round(ofsNum(v)*m)/m; }
+function ofsTier(row){
+  const hpConf=ofsNum(row.hp_v2_confidence_0_100,0), sample=ofsNum(row.baseline_sample_size,0), missing=ofsNum(row.missing_component_count,0);
+  if(String(row.hp_v2_status||'')==='hp_v2_blocked'||ofsNum(row.blocker_count,0)>0||ofsNum(row.blocking_for_scoring,0)===1)return 'BLOCKED';
+  if(sample>=50 && hpConf>=75 && missing===0)return 'TIER_A_ESTABLISHED_HIGH_CONF';
+  if(sample>=25 && hpConf>=65 && missing===0)return 'TIER_B_STABLE';
+  if(sample>=10 && hpConf>=55)return 'TIER_C_USABLE';
+  return 'TIER_D_LOW_SAMPLE_OR_LOW_CONF';
+}
+function ofsLane(score,status,hp,conf){
+  if(String(status||'').includes('blocked'))return 'BLOCKED';
+  if(ofsNum(hp,0)<60)return 'ARCHIVE_LOW_HP';
+  if(ofsNum(conf,0)<40)return 'DEEP_REVIEW_LOW_CONFIDENCE';
+  if(score<45)return 'ARCHIVE_LOW_FINAL_SCORE';
+  if(score<60)return 'FRINGE_REVIEW';
+  if(score<75)return 'STANDARD_REVIEW';
+  if(score<85)return 'STRONG_REVIEW';
+  return 'PREMIUM_REVIEW';
+}
+function ofsGrade(score,status,hp,conf){
+  if(String(status||'').includes('blocked'))return 'BLOCKED';
+  if(ofsNum(hp,0)<60)return 'ARCHIVE_LOW_HP';
+  if(ofsNum(conf,0)<40)return 'DEEP_REVIEW_LOW_CONFIDENCE';
+  if(score<45)return 'ARCHIVE_LOW_FINAL_SCORE';
+  if(score<60)return 'LOW_REVIEW';
+  if(score<75)return 'STANDARD_REVIEW';
+  if(score<85)return 'STRONG_REVIEW';
+  return 'PREMIUM_REVIEW';
+}
+function ofsReason(row, score, tier){
+  if(String(row.hp_v2_status||'')==='hp_v2_blocked'||ofsNum(row.blocker_count,0)>0||ofsNum(row.blocking_for_scoring,0)===1)return 'BLOCKED_BY_HP_V2_OR_ENRICHMENT';
+  if(ofsNum(row.hp_v2_0_100,0)<60)return 'LOW_HP_BELOW_FINAL_BOARD_GATE';
+  if(ofsNum(row.hp_v2_confidence_0_100,0)<40)return 'LOW_CONFIDENCE_DEEP_REVIEW';
+  if(tier==='TIER_D_LOW_SAMPLE_OR_LOW_CONF')return 'LOW_SAMPLE_OR_LOW_CONFIDENCE_CAPPED';
+  if(ofsNum(row.missing_component_count,0)>0)return 'PARTIAL_CONTEXT_CAPPED';
+  if(score>=85)return 'PREMIUM_TRUST_READINESS';
+  if(score>=75)return 'STRONG_TRUST_READINESS';
+  if(score>=60)return 'STANDARD_TRUST_READINESS';
+  return 'LOW_TRUST_READINESS';
+}
+function ofsModel(row){
+  const hp=ofsClamp(row.hp_v2_0_100,0,100);
+  const hpConf=ofsClamp(row.hp_v2_confidence_0_100,0,100);
+  const sample=ofsNum(row.baseline_sample_size,0);
+  const dataQ=ofsClamp(row.data_quality_score_0_100,55,100);
+  const warnings=Math.max(0,Math.round(ofsNum(row.warning_count,0)));
+  const missing=Math.max(0,Math.round(ofsNum(row.missing_component_count,0)));
+  const blockers=Math.max(0,Math.round(ofsNum(row.blocker_count,0)));
+  const blocked=String(row.hp_v2_status||'')==='hp_v2_blocked'||blockers>0||ofsNum(row.blocking_for_scoring,0)===1;
+  const tier=ofsTier(row);
+  let sampleScore=sample>=70?100:sample>=50?95:sample>=35?86:sample>=25?76:sample>=15?66:sample>=10?56:sample>=5?42:25;
+  let contextScore=ofsClamp(100 - warnings*2.0 - missing*12, 35, 100);
+  if(String(row.hp_v2_status||'')==='hp_v2_ready_partial_context')contextScore=Math.min(contextScore,74);
+  const profileStability=tier==='TIER_A_ESTABLISHED_HIGH_CONF'?92:tier==='TIER_B_STABLE'?82:tier==='TIER_C_USABLE'?68:tier==='TIER_D_LOW_SAMPLE_OR_LOW_CONF'?45:0;
+  const hpSupport=ofsClamp(50 + (hp-60)*0.45, 25, 82);
+  const factorAdj=ofsNum(row.factor_adjustment_0_100,0);
+  const factorSupport=ofsClamp(70 + Math.min(14,Math.abs(factorAdj)*4) + (hp>=60&&factorAdj>0?3:0) - (hp>=60&&factorAdj<0?3:0), 45, 90);
+  let score = hpConf*0.32 + sampleScore*0.18 + contextScore*0.18 + dataQ*0.12 + profileStability*0.10 + factorSupport*0.05 + hpSupport*0.05;
+  const penalties = (warnings>=10?3:0) + (warnings>=14?3:0) + missing*4 + (hpConf<55?4:0) + (hpConf<40?8:0);
+  score -= penalties;
+  let cap=100;
+  if(tier==='TIER_D_LOW_SAMPLE_OR_LOW_CONF')cap=Math.min(cap,64);
+  if(hpConf<40)cap=Math.min(cap,54);
+  else if(hpConf<55)cap=Math.min(cap,64);
+  if(missing>0)cap=Math.min(cap,74);
+  if(String(row.hp_v2_status||'')==='hp_v2_ready_partial_context')cap=Math.min(cap,78);
+  if(blocked){ score=0; cap=0; }
+  score=ofsRound(ofsClamp(score,0,cap),2);
+  let finalConf=ofsRound(ofsClamp(hpConf*0.56 + dataQ*0.22 + contextScore*0.22,0,100),1);
+  if(tier==='TIER_D_LOW_SAMPLE_OR_LOW_CONF')finalConf=Math.min(finalConf,64);
+  if(missing>0)finalConf=Math.min(finalConf,74);
+  if(blocked)finalConf=0;
+  const lane=ofsLane(score,blocked?'final_score_blocked':'final_score_ready',hp,finalConf);
+  const grade=ofsGrade(score,blocked?'final_score_blocked':'final_score_ready',hp,finalConf);
+  const status=blocked?'final_score_blocked':(hp<60?'final_score_archived_low_hp':(score<45?'final_score_archived_low_score':(finalConf<40?'final_score_deep_review_low_confidence':'final_score_ready')));
+  const eligible=(!blocked && hp>=60 && score>=45 && finalConf>=40)?1:0;
+  const review=eligible;
+  return {score, finalConf, status, grade, lane, reason:ofsReason(row,score,tier), tier, sampleScore:ofsRound(sampleScore,1), contextScore:ofsRound(contextScore,1), dataQ:ofsRound(dataQ,1), profileStability, factorSupport:ofsRound(factorSupport,1), hpSupport:ofsRound(hpSupport,1), cap, eligible, review, live:0, penalties:ofsRound(penalties,2)};
+}
+async function ensureOrchFinalScoreV1Schema(env){
+  await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS final_score_v1_batches (batch_id TEXT PRIMARY KEY, request_id TEXT, run_id TEXT, worker_name TEXT, worker_version TEXT, profile_version TEXT, mode TEXT, status TEXT, source_score_enrichment_batch_id TEXT, source_hp_v2_batch_id TEXT, hp_v2_rows_read INTEGER DEFAULT 0, enrichment_rows_read INTEGER DEFAULT 0, expected_final_score_rows INTEGER DEFAULT 0, final_score_rows_written INTEGER DEFAULT 0, blocked_rows INTEGER DEFAULT 0, warning_rows INTEGER DEFAULT 0, issue_rows_written INTEGER DEFAULT 0, eligible_rows INTEGER DEFAULT 0, review_playable_rows INTEGER DEFAULT 0, live_playable_rows INTEGER DEFAULT 0, low_hp_rows INTEGER DEFAULT 0, low_score_rows INTEGER DEFAULT 0, certification_status TEXT, certification_grade TEXT, output_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+  await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS final_score_v1_current (final_score_row_id TEXT PRIMARY KEY, batch_id TEXT, source_score_enrichment_batch_id TEXT, source_hp_v2_batch_id TEXT, hp_v2_row_id TEXT, enrichment_row_id TEXT, prepared_row_id TEXT, matrix_id TEXT, source_line_id TEXT, source_key TEXT, game_pk INTEGER, official_date TEXT, official_game_time_utc TEXT, player_id INTEGER, player_name TEXT, team_id INTEGER, opponent_team_id INTEGER, canonical_prop_key TEXT, line_value REAL, selected_side TEXT, odds_type TEXT, payout_variant TEXT, side_mode TEXT, hp_v2_0_100 REAL, hp_v2_confidence_0_100 REAL, hp_v2_status TEXT, hp_v2_band TEXT, hp_v2_grade TEXT, final_score_0_100 REAL, final_score_confidence_0_100 REAL, final_score_grade TEXT, final_score_lane TEXT, final_score_reason_code TEXT, final_score_components_json TEXT, sample_tier TEXT, player_baseline_tier TEXT, context_completeness_score REAL, market_support_score REAL, factor_support_score REAL, warning_count INTEGER DEFAULT 0, blocker_count INTEGER DEFAULT 0, partial_context_count INTEGER DEFAULT 0, missing_component_count INTEGER DEFAULT 0, final_score_status TEXT, blocked_reason TEXT, archive_reason TEXT, review_playable INTEGER DEFAULT 0, live_playable INTEGER DEFAULT 0, eligible_for_final_board INTEGER DEFAULT 0, details_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+  await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS final_score_v1_issues (issue_id TEXT PRIMARY KEY, batch_id TEXT, final_score_row_id TEXT, prepared_row_id TEXT, selected_side TEXT, severity TEXT, issue_family TEXT, issue_code TEXT, issue_message TEXT, source_stage TEXT, details_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_final_score_v1_current_batch ON final_score_v1_current(batch_id)`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_final_score_v1_current_prepared_side ON final_score_v1_current(prepared_row_id, selected_side)`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_final_score_v1_issues_batch ON final_score_v1_issues(batch_id, severity)`);
+}
+async function latestOrchFinalScoreV1HpBatch(env){
+  const row=await first(env.SCORE_DB,`SELECT batch_id, source_enrichment_batch_id FROM hit_probability_v2_batches WHERE status='completed' AND certification_status='HIT_PROBABILITY_V2_CERTIFIED_CURRENT_ESTIMATES' ORDER BY datetime(updated_at) DESC LIMIT 1`);
+  if(row&&row.batch_id)return row;
+  const fallback=await first(env.SCORE_DB,`SELECT batch_id, source_enrichment_batch_id FROM hit_probability_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1`);
+  return fallback||null;
+}
+async function processFinalScoreV1DirectJob(env,row,runId,trigger){
+  const started=Date.now();
+  const rowInput=(()=>{try{return JSON.parse(row.input_json||"{}");}catch(_){return{};}})();
+  await ensureOrchFinalScoreV1Schema(env);
+  const latest=rowInput.source_hp_v2_batch_id?{batch_id:rowInput.source_hp_v2_batch_id, source_enrichment_batch_id:rowInput.source_score_enrichment_batch_id||null}:await latestOrchFinalScoreV1HpBatch(env);
+  if(!latest||!latest.batch_id)throw new Error('No completed hit_probability_v2 batch found for Final Score V1');
+  const sourceHpV2BatchId=String(latest.batch_id);
+  const hpBatch=await first(env.SCORE_DB,`SELECT source_enrichment_batch_id FROM hit_probability_v2_batches WHERE batch_id=?`,sourceHpV2BatchId);
+  const sourceEnrichmentBatchId=rowInput.source_score_enrichment_batch_id||rowInput.source_enrichment_batch_id||(hpBatch&&hpBatch.source_enrichment_batch_id)||latest.source_enrichment_batch_id||null;
+  if(!sourceEnrichmentBatchId)throw new Error('No source_score_enrichment_batch_id available for Final Score V1');
+  const batchId=rowInput.final_score_v1_batch_id || rowInput.batch_id || (rowInput.resume_batch_id&&String(rowInput.resume_batch_id).startsWith('final_score_v1_batch_')?rowInput.resume_batch_id:null) || rid('final_score_v1_batch');
+  const expectedRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows FROM hit_probability_v2_current WHERE batch_id=?`,sourceHpV2BatchId);
+  const expectedRows=Number(expectedRow&&expectedRow.rows||0);
+  const enrRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows FROM score_enrichment_current WHERE batch_id=?`,sourceEnrichmentBatchId);
+  const enrichmentRows=Number(enrRow&&enrRow.rows||0);
+  if(expectedRows<=0)throw new Error('HP V2 source batch has zero rows for Final Score V1');
+  let offset=Number(rowInput.final_score_v1_offset||rowInput.offset||0)||0;
+  const limit=Math.max(100,Math.min(Number(rowInput.chunk_rows||ORCH_FINAL_SCORE_V1_CHUNK_ROWS),900));
+  await run(env.SCORE_DB,`INSERT OR IGNORE INTO final_score_v1_batches (batch_id,request_id,run_id,worker_name,worker_version,profile_version,mode,status,source_score_enrichment_batch_id,source_hp_v2_batch_id,hp_v2_rows_read,enrichment_rows_read,expected_final_score_rows,created_at,updated_at) VALUES (?,?,?,?,?,?,?,'running',?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,row.request_id,runId,WORKER_NAME,ORCH_FINAL_SCORE_V1_VERSION,ORCH_FINAL_SCORE_V1_PROFILE_VERSION,ORCH_FINAL_SCORE_V1_MODE,sourceEnrichmentBatchId,sourceHpV2BatchId,expectedRows,enrichmentRows,expectedRows);
+  if(offset===0){ await run(env.SCORE_DB,`DELETE FROM final_score_v1_current WHERE batch_id=?`,batchId); await run(env.SCORE_DB,`DELETE FROM final_score_v1_issues WHERE batch_id=?`,batchId); }
+  await run(env.SCORE_DB,`UPDATE final_score_v1_batches SET status='running', run_id=?, worker_version=?, profile_version=?, source_score_enrichment_batch_id=?, source_hp_v2_batch_id=?, hp_v2_rows_read=?, enrichment_rows_read=?, expected_final_score_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,runId,ORCH_FINAL_SCORE_V1_VERSION,ORCH_FINAL_SCORE_V1_PROFILE_VERSION,sourceEnrichmentBatchId,sourceHpV2BatchId,expectedRows,enrichmentRows,expectedRows,batchId);
+  const rows=await all(env.SCORE_DB,`SELECT h.*, b.sample_profile AS baseline_sample_profile, b.role_profile AS baseline_role_profile, b.volatility_profile AS baseline_volatility_profile, b.variance_profile AS baseline_variance_profile, b.line_difficulty_profile AS baseline_line_difficulty_profile FROM hit_probability_v2_current h LEFT JOIN player_baseline_hp_current b ON b.baseline_hp_row_id=h.baseline_hp_row_id WHERE h.batch_id=? ORDER BY h.prepared_row_id, h.selected_side LIMIT ? OFFSET ?`,sourceHpV2BatchId,limit,offset);
+  const cur=[], iss=[]; let issues=0;
+  for(const r of rows){
+    const model=ofsModel(r); const finalRowId=`${batchId}|${r.hp_v2_row_id||r.prepared_row_id+'|'+r.selected_side}`;
+    const blockedReason=model.status==='final_score_blocked'?model.reason:null; const archiveReason=(model.status==='final_score_archived_low_hp'||model.status==='final_score_archived_low_score')?model.reason:null;
+    const components={profile_version:ORCH_FINAL_SCORE_V1_PROFILE_VERSION,hp_v2_0_100:ofsRound(r.hp_v2_0_100,2),hp_v2_confidence_0_100:ofsRound(r.hp_v2_confidence_0_100,1),sample_score:model.sampleScore,context_completeness_score:model.contextScore,data_quality_score:model.dataQ,profile_stability_score:model.profileStability,factor_support_score:model.factorSupport,hp_support_score:model.hpSupport,penalties:model.penalties,cap:model.cap,player_tier:model.tier,baseline_sample_profile:r.baseline_sample_profile||null,baseline_role_profile:r.baseline_role_profile||null,baseline_volatility_profile:r.baseline_volatility_profile||null,baseline_variance_profile:r.baseline_variance_profile||null,baseline_line_difficulty_profile:r.baseline_line_difficulty_profile||null};
+    cur.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO final_score_v1_current (final_score_row_id,batch_id,source_score_enrichment_batch_id,source_hp_v2_batch_id,hp_v2_row_id,enrichment_row_id,prepared_row_id,matrix_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,player_id,player_name,team_id,opponent_team_id,canonical_prop_key,line_value,selected_side,odds_type,payout_variant,side_mode,hp_v2_0_100,hp_v2_confidence_0_100,hp_v2_status,hp_v2_band,hp_v2_grade,final_score_0_100,final_score_confidence_0_100,final_score_grade,final_score_lane,final_score_reason_code,final_score_components_json,sample_tier,player_baseline_tier,context_completeness_score,market_support_score,factor_support_score,warning_count,blocker_count,partial_context_count,missing_component_count,final_score_status,blocked_reason,archive_reason,review_playable,live_playable,eligible_for_final_board,details_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(finalRowId,batchId,sourceEnrichmentBatchId,sourceHpV2BatchId,r.hp_v2_row_id,r.enrichment_row_id,r.prepared_row_id,r.matrix_id,r.source_line_id,r.source_key,r.game_pk,r.official_date,r.official_game_time_utc,r.mlb_player_id,r.player_name,r.team_id,r.opponent_team_id,r.canonical_prop_key,r.board_line_value,r.selected_side,null,null,null,r.hp_v2_0_100,r.hp_v2_confidence_0_100,r.hp_v2_status,r.hp_v2_band,r.hp_v2_grade,model.score,model.finalConf,model.grade,model.lane,model.reason,JSON.stringify(components),model.tier,r.baseline_sample_profile||model.tier,model.contextScore,70,model.factorSupport,r.warning_count,r.blocker_count,Number(r.missing_component_count||0)>0?1:0,r.missing_component_count,model.status,blockedReason,archiveReason,model.review,model.live,model.eligible,JSON.stringify({baseline_role_profile:r.baseline_role_profile||null,baseline_volatility_profile:r.baseline_volatility_profile||null,baseline_variance_profile:r.baseline_variance_profile||null,baseline_line_difficulty_profile:r.baseline_line_difficulty_profile||null})));
+    if(model.status==='final_score_blocked'||Number(r.missing_component_count||0)>0||ofsNum(r.hp_v2_confidence_0_100,0)<40){
+      const sev=model.status==='final_score_blocked'?'BLOCKER':'WARNING'; const code=model.status==='final_score_blocked'?'FINAL_SCORE_V1_BLOCKED_BY_HP_OR_ENRICHMENT':(Number(r.missing_component_count||0)>0?'FINAL_SCORE_V1_PARTIAL_CONTEXT_CAPPED':'FINAL_SCORE_V1_LOW_CONFIDENCE_CAPPED'); const msg=model.status==='final_score_blocked'?'HP V2 or enrichment blocker preserved in Final Score V1.':(Number(r.missing_component_count||0)>0?'Partial context capped Final Score readiness.':'Low confidence capped Final Score readiness.');
+      iss.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO final_score_v1_issues (issue_id,batch_id,final_score_row_id,prepared_row_id,selected_side,severity,issue_family,issue_code,issue_message,source_stage,details_json,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`${finalRowId}|${code}`,batchId,finalRowId,r.prepared_row_id,r.selected_side,sev,'FINAL_SCORE_V1_TRUST_READINESS',code,msg,model.status==='final_score_blocked'?'hp_v2_or_score_enrichment':'final_score_v1',JSON.stringify({hp_v2_status:r.hp_v2_status,hp_v2_0_100:r.hp_v2_0_100,hp_v2_confidence_0_100:r.hp_v2_confidence_0_100,final_score_0_100:model.score,missing_component_count:r.missing_component_count,warning_count:r.warning_count,blocker_count:r.blocker_count})));
+      issues++;
+    }
+  }
+  for(let i=0;i<cur.length;i+=25)await env.SCORE_DB.batch(cur.slice(i,i+25));
+  for(let i=0;i<iss.length;i+=25)await env.SCORE_DB.batch(iss.slice(i,i+25));
+  const totals=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, SUM(CASE WHEN final_score_status='final_score_blocked' THEN 1 ELSE 0 END) AS blocked, SUM(CASE WHEN final_score_status IN ('final_score_ready','final_score_deep_review_low_confidence') THEN 1 ELSE 0 END) AS warning_ready, SUM(CASE WHEN eligible_for_final_board=1 THEN 1 ELSE 0 END) AS eligible, SUM(CASE WHEN review_playable=1 THEN 1 ELSE 0 END) AS review_rows, SUM(CASE WHEN live_playable=1 THEN 1 ELSE 0 END) AS live_rows, SUM(CASE WHEN hp_v2_0_100<60 THEN 1 ELSE 0 END) AS low_hp, SUM(CASE WHEN final_score_0_100<45 THEN 1 ELSE 0 END) AS low_score FROM final_score_v1_current WHERE batch_id=?`,batchId);
+  const writtenTotal=Number(totals&&totals.rows||0); const remaining=Math.max(0,expectedRows-(offset+rows.length)); const complete=remaining<=0;
+  const blockedRows=Number(totals&&totals.blocked||0); const eligibleRows=Number(totals&&totals.eligible||0); const reviewRows=Number(totals&&totals.review_rows||0); const liveRows=Number(totals&&totals.live_rows||0); const lowHpRows=Number(totals&&totals.low_hp||0); const lowScoreRows=Number(totals&&totals.low_score||0);
+  const output={ok:true,data_ok:true,version:ORCH_FINAL_SCORE_V1_VERSION,processed_by:WORKER_NAME,worker_name:WORKER_NAME,logical_worker_name:'alphadog-v2-final-score-v1',deployed_worker_slot:'alphadog-v2-orchestrator',job_key:'final-score-v1',request_id:row.request_id,run_id:runId,chain_id:row.chain_id,mode:ORCH_FINAL_SCORE_V1_MODE,status:complete?'completed_final_score_v1_current':'partial_continue_final_score_v1_current',certification:complete?'FINAL_SCORE_V1_CERTIFIED_CURRENT_TRUST_SCORES':'FINAL_SCORE_V1_PARTIAL_CONTINUE',certification_grade:complete?'PASS_WITH_REVIEW_WARNINGS_ALLOWED':'PARTIAL',batch_id:batchId,final_score_v1_batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,source_score_enrichment_batch_id:sourceEnrichmentBatchId,hp_v2_rows_read:expectedRows,enrichment_rows_read:enrichmentRows,expected_final_score_rows:expectedRows,final_score_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:rows.length,blocked_rows:blockedRows,warning_rows:Number(totals&&totals.warning_ready||0),issue_rows_written:issues,eligible_rows:eligibleRows,review_playable_rows:reviewRows,live_playable_rows:liveRows,low_hp_rows:lowHpRows,low_score_rows:lowScoreRows,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,profile_version:ORCH_FINAL_SCORE_V1_PROFILE_VERSION,side_expanded:true,orchestrator_direct_fallback:true,score_audit_service_binding_bypassed:true,reads_hit_probability_v2_current:true,reads_score_enrichment_current:true,writes_final_score_v1_tables_only:true,no_true_hit_probability_claims:true,no_hp_v2_mutation:true,no_score_enrichment_mutation:true,no_scoring_engine_current_mutation:true,no_score_final_board_mutation:true,no_live_playable_activation:true,live_playable_forced_zero:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started};
+  await run(env.SCORE_DB,`UPDATE final_score_v1_batches SET status=?, hp_v2_rows_read=?, enrichment_rows_read=?, expected_final_score_rows=?, final_score_rows_written=?, blocked_rows=?, warning_rows=?, issue_rows_written=?, eligible_rows=?, review_playable_rows=?, live_playable_rows=?, low_hp_rows=?, low_score_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,complete?'completed':'partial_continue',expectedRows,enrichmentRows,expectedRows,writtenTotal,blockedRows,output.warning_rows,output.issue_rows_written,eligibleRows,reviewRows,liveRows,lowHpRows,lowScoreRows,output.certification,output.certification_grade,safeStringifyD1(output,50000),batchId);
+  const runStatus=complete?'completed':'partial_continue';
+  await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, NULL, NULL)",runId,row.request_id,row.chain_id,row.job_key,row.worker_name,runStatus,output.certification,expectedRows,writtenTotal,Date.now()-started,JSON.stringify({request_id:row.request_id,job_key:row.job_key,mode:ORCH_FINAL_SCORE_V1_MODE,input_json:rowInput}),safeStringifyD1(output,60000));
+  if(!complete){ const nextInput={...rowInput,final_score_v1_batch_id:batchId,resume_batch_id:batchId,final_score_v1_offset:offset+rows.length,source_hp_v2_batch_id:sourceHpV2BatchId,source_score_enrichment_batch_id:sourceEnrichmentBatchId,final_score_v1_resume:true,continuation_from_request_id:row.request_id}; await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",JSON.stringify(nextInput),safeStringifyD1(output,60000),row.request_id); }
+  else { await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",safeStringifyD1(output,60000),row.request_id); }
+  await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'final_score_v1_direct_orchestrator_completed', ?, ?, CURRENT_TIMESTAMP)",row.request_id,runId,WORKER_NAME,row.job_key,complete?'Orchestrator completed direct Final Score V1 trust layer':'Orchestrator partial-continued direct Final Score V1 trust layer',safeStringifyD1({request_id:row.request_id,certification:output.certification,rows_written:writtenTotal,eligible_rows:eligibleRows,review_playable_rows:reviewRows,live_playable_rows:liveRows,partial_continue:!complete},6000));
+  return output;
+}
+
 async function processScoringEngineJob(env, row, runId, trigger) {
   const isSimulationJob = row && row.job_key === "scoring-engine-simulation";
   const isHitProbabilityJob = row && row.job_key === "hit-probability";
   const isHitProbabilityV2Job = row && row.job_key === "hit-probability-v2";
+  const isFinalScoreV1Job = row && row.job_key === "final-score-v1";
   const isEnrichmentJob = row && row.job_key === "score-enrichment-v1";
 
   // HP V2 is intentionally isolated and must not fall through into the legacy
@@ -12181,6 +12339,9 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   // orchestrator before any SCORE_AUDIT_WORKER dispatch can happen.
   if (isHitProbabilityV2Job) {
     return await processHitProbabilityV2DirectJob(env, row, runId, trigger);
+  }
+  if (isFinalScoreV1Job) {
+    return await processFinalScoreV1DirectJob(env, row, runId, trigger);
   }
 
   if (!env.SCORE_AUDIT_WORKER || typeof env.SCORE_AUDIT_WORKER.fetch !== "function") {
@@ -12190,7 +12351,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
       worker_name: row.worker_name,
-      logical_worker_name: isHitProbabilityV2Job ? "alphadog-v2-hit-probability-v2" : (isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"))),
+      logical_worker_name: isFinalScoreV1Job ? "alphadog-v2-final-score-v1" : (isHitProbabilityV2Job ? "alphadog-v2-hit-probability-v2" : (isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine")))),
       job_key: row.job_key,
       status: "blocked_missing_service_binding",
       certification: "SCORING_ENGINE_SERVICE_BINDING_MISSING",
@@ -12216,7 +12377,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     run_id: runId,
     job_key: row.job_key,
     worker_name: row.worker_name,
-    logical_worker_name: isHitProbabilityV2Job ? "alphadog-v2-hit-probability-v2" : (isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"))),
+    logical_worker_name: isFinalScoreV1Job ? "alphadog-v2-final-score-v1" : (isHitProbabilityV2Job ? "alphadog-v2-hit-probability-v2" : (isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine")))),
     deployed_worker_slot: "alphadog-v2-score-audit",
     trigger,
     mode: isHitProbabilityV2Job ? "hit_probability_v2_current" : (isEnrichmentJob ? "score_enrichment_v1_side_expanded" : (isHitProbabilityJob ? "hit_probability_current_estimate" : (isSimulationJob ? "scoring_engine_simulation_shadow_strict_b" : "scoring_engine_current_strict_c_realistic_v3_2"))),
@@ -12266,7 +12427,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   };
 
   const cooldownYield = await maybeYieldHeavyMarketChildCooldown(env, row, runId, input, rowInput, {
-    logical_worker_name: isHitProbabilityV2Job ? "alphadog-v2-hit-probability-v2" : (isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"))),
+    logical_worker_name: isFinalScoreV1Job ? "alphadog-v2-final-score-v1" : (isHitProbabilityV2Job ? "alphadog-v2-hit-probability-v2" : (isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine")))),
     deployed_worker_slot: "alphadog-v2-score-audit",
     mode: input.mode
   });
@@ -12324,7 +12485,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
       exact_worker_only: true,
-      logical_worker_name: isHitProbabilityV2Job ? "alphadog-v2-hit-probability-v2" : (isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine"))),
+      logical_worker_name: isFinalScoreV1Job ? "alphadog-v2-final-score-v1" : (isHitProbabilityV2Job ? "alphadog-v2-hit-probability-v2" : (isEnrichmentJob ? "alphadog-v2-score-enrichment-v1" : (isHitProbabilityJob ? "alphadog-v2-hit-probability" : (isSimulationJob ? "alphadog-v2-scoring-engine-simulation" : "alphadog-v2-scoring-engine")))),
       deployed_worker_slot: "alphadog-v2-score-audit",
       trigger,
       http_status: httpStatus,
