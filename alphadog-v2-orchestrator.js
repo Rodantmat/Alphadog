@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.264-hit-probability-v2-direct-orchestrator";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.265-hit-probability-v2-direct-branch-placement";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -11839,9 +11839,6 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  if (isHitProbabilityV2Job) {
-    return await processHitProbabilityV2DirectJob(env, row, runId, trigger);
-  }
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -12070,9 +12067,9 @@ async function buildScoreEnrichmentV1EvidenceOutput(env, row, runId, trigger, ro
 // This exists because score-audit deployments can lag. HP V2 is isolated and writes only
 // hit_probability_v2_* tables from score_enrichment_current. It does not touch old scoring,
 // old HP, HP board, final board, prepared/source boards, ranks, or live/review gates.
-const ORCH_HP_V2_VERSION = "alphadog-v2-hit-probability-v2-v0.1.2-orchestrator-direct-fallback";
+const ORCH_HP_V2_VERSION = "alphadog-v2-hit-probability-v2-v0.1.3-orchestrator-direct-branch-placement";
 const ORCH_HP_V2_MODE = "hit_probability_v2_current";
-const ORCH_HP_V2_PROFILE_VERSION = "HP_V2_BASELINE_ENRICHMENT_CONTEXT_V0_1_2_ORCH_DIRECT";
+const ORCH_HP_V2_PROFILE_VERSION = "HP_V2_BASELINE_ENRICHMENT_CONTEXT_V0_1_3_ORCH_DIRECT";
 const ORCH_HP_V2_CHUNK_ROWS = 300;
 function ohpNum(v,d=0){ const n=Number(v); return Number.isFinite(n)?n:d; }
 function ohpClamp(v,lo,hi){ return Math.max(lo, Math.min(hi, ohpNum(v,lo))); }
@@ -12178,6 +12175,14 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const isHitProbabilityJob = row && row.job_key === "hit-probability";
   const isHitProbabilityV2Job = row && row.job_key === "hit-probability-v2";
   const isEnrichmentJob = row && row.job_key === "score-enrichment-v1";
+
+  // HP V2 is intentionally isolated and must not fall through into the legacy
+  // score-audit/scoring-engine service-binding path. Run it directly in the
+  // orchestrator before any SCORE_AUDIT_WORKER dispatch can happen.
+  if (isHitProbabilityV2Job) {
+    return await processHitProbabilityV2DirectJob(env, row, runId, trigger);
+  }
+
   if (!env.SCORE_AUDIT_WORKER || typeof env.SCORE_AUDIT_WORKER.fetch !== "function") {
     const output = {
       ok: false,
