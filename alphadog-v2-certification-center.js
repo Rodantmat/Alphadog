@@ -1,13 +1,13 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-main-ui-v0.2.11-final-board-v2-compact-current";
+const VERSION = "alphadog-v2-main-ui-v0.2.12-final-board-v2-latest-batch-only";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
 
-const UI_VERSION_LABEL = "v0.2.11 - Final Board V2 Compact";
+const UI_VERSION_LABEL = "v0.2.12 - Final Board V2 Latest Batch";
 
 const DOCUMENTED_PROP_OPTIONS = [
   { prop_family: "hitter", canonical_prop_key: "hits", label: "Hits" },
@@ -676,7 +676,7 @@ function rowToApi(row) {
 }
 
 function buildCurrentSql(url) {
-  const where = ["f.default_board_visible = 1"];
+  const where = ["f.default_board_visible = 1", "f.batch_id = (SELECT batch_id FROM score_final_board_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1)"];
   const params = [];
   const propKeys = splitList(url.searchParams.get("prop_keys"));
   const propFamilies = splitList(url.searchParams.get("prop_families"));
@@ -1172,6 +1172,7 @@ async function apiFilters(env) {
       MAX(overall_score_0_100) AS max_score
     FROM score_final_board_v2_current
     WHERE default_board_visible = 1
+      AND batch_id = (SELECT batch_id FROM score_final_board_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
       AND official_game_time_utc IS NOT NULL
       AND datetime(replace(replace(official_game_time_utc, 'T', ' '), 'Z', '')) > datetime('now', '+1 minute')
     GROUP BY source_key, canonical_prop_key, prop_family, odds_type, payout_variant, side_mode, is_goblin, is_demon, is_standard, probability_band, probability_grade, board_tier, review_playable, live_playable
@@ -1193,6 +1194,7 @@ async function apiFilters(env) {
       MAX(updated_at) AS latest_updated_at
     FROM score_final_board_v2_current
     WHERE default_board_visible = 1
+      AND batch_id = (SELECT batch_id FROM score_final_board_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
       AND official_game_time_utc IS NOT NULL
       AND datetime(replace(replace(official_game_time_utc, 'T', ' '), 'Z', '')) > datetime('now', '+1 minute')
   `);
@@ -1297,6 +1299,7 @@ async function apiHealth(env) {
       MAX(certainty_0_100) AS max_certainty,
       MAX(updated_at) AS latest_updated_at
     FROM score_final_board_v2_current
+    WHERE batch_id = (SELECT batch_id FROM score_final_board_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
     GROUP BY batch_id, source_final_score_batch_id, source_hp_v2_batch_id, source_score_enrichment_batch_id
     ORDER BY latest_updated_at DESC
     LIMIT 1
@@ -1349,7 +1352,7 @@ const MAIN_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>AlphaDog — Final Board V2 Compact</title>
+<title>AlphaDog — Final Board V2 Latest Batch</title>
 <link rel="icon" type="image/png" href="/main_alphadog_favicon.png" />
 <link rel="apple-touch-icon" href="/main_alphadog_apple_touch_icon.png" />
 <style>
@@ -1360,7 +1363,7 @@ const MAIN_HTML = `<!doctype html>
 <body>
 <div class="wrap">
   <header class="hero">
-    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.11 - Final Board V2 Compact</div></div></div>
+    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.12 - Final Board V2 Latest Batch</div></div></div>
     <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Main Board</button><button id="menuHealth">Health</button></div></div>
   </header>
   <section id="boardScreen">
@@ -1386,7 +1389,7 @@ const MAIN_HTML = `<!doctype html>
 </div>
 <script>
 (()=>{
-const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.9 - Font Safe Market Polish';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null;
+const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.12 - Final Board V2 Latest Batch';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0)+'%':'—'}
 function num(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0):'—'}
