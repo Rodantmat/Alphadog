@@ -1,13 +1,13 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-main-ui-v0.2.13-rich-dossier-v2-remap";
+const VERSION = "alphadog-v2-main-ui-v0.2.14-quota-board-rich-dossier";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
 
-const UI_VERSION_LABEL = "v0.2.13 - Rich Dossier V2";
+const UI_VERSION_LABEL = "v0.2.14 - Quota Board + Rich Dossier";
 
 const DOCUMENTED_PROP_OPTIONS = [
   { prop_family: "hitter", canonical_prop_key: "hits", label: "Hits" },
@@ -676,7 +676,12 @@ function rowToApi(row) {
 }
 
 function buildCurrentSql(url) {
-  const where = ["f.default_board_visible = 1", "f.batch_id = (SELECT batch_id FROM score_final_board_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1)"];
+  const where = [
+    "f.batch_id = (SELECT batch_id FROM score_final_board_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1)",
+    "f.review_playable = 1",
+    "COALESCE(f.live_playable,0) = 0",
+    "NOT (LOWER(COALESCE(f.source_key,''))='prizepicks' AND LOWER(COALESCE(f.selected_side,''))='less' AND (f.source_line_id LIKE '%|goblin|%' OR f.source_line_id LIKE '%|demon|%'))"
+  ];
   const params = [];
   const propKeys = splitList(url.searchParams.get("prop_keys"));
   const propFamilies = splitList(url.searchParams.get("prop_families"));
@@ -730,7 +735,131 @@ function buildCurrentSql(url) {
   }
   where.push("f.official_game_time_utc IS NOT NULL AND datetime(replace(replace(f.official_game_time_utc, 'T', ' '), 'Z', '')) > datetime('now', '+1 minute')");
 
-  const sql = `
+  const quotaLineTypeExpr = `CASE
+        WHEN LOWER(COALESCE(f.source_key,''))='prizepicks'
+         AND (LOWER(COALESCE(json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.payout_variant'), ''))='goblin'
+              OR COALESCE(json_extract(p.row_payload_json, '$.is_goblin'), json_extract(f.details_json, '$.prepared.is_goblin'),0)=1) THEN 'goblin'
+        WHEN LOWER(COALESCE(f.source_key,''))='prizepicks'
+         AND (LOWER(COALESCE(json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.payout_variant'), ''))='demon'
+              OR COALESCE(json_extract(p.row_payload_json, '$.is_demon'), json_extract(f.details_json, '$.prepared.is_demon'),0)=1) THEN 'demon'
+        WHEN LOWER(COALESCE(f.source_key,''))='sleeper'
+         AND LOWER(COALESCE(json_extract(p.row_payload_json, '$.side_mode'), json_extract(f.details_json, '$.prepared.side_mode'), ''))='more_only' THEN 'more_only'
+        ELSE 'regular'
+      END`;
+  const quotaEnabled = !url.searchParams.get('no_quotas');
+  const sql = quotaEnabled ? `
+    WITH base AS (
+      SELECT
+
+      f.board_row_id AS final_board_row_id,
+      f.batch_id AS final_board_batch_id,
+      NULL AS hp_board_batch_id,
+      f.source_hp_v2_batch_id AS source_hp_batch_id,
+      f.source_final_score_batch_id AS source_engine_batch_id,
+      f.default_board_rank AS rank_order,
+      f.rank_order AS raw_rank_order,
+      f.source_key,
+      f.game_pk,
+      f.official_date,
+      f.official_game_time_utc,
+      f.prepared_row_id,
+      f.matrix_id,
+      f.source_line_id,
+      f.player_id AS mlb_player_id,
+      f.player_name,
+      f.canonical_prop_key,
+      f.line_value,
+      f.selected_side,
+      f.overall_score_0_100 AS score_0_100,
+      f.certainty_0_100 AS confidence_0_100,
+      f.board_grade AS score_grade,
+      f.overall_score_0_100 AS score_sort_0_100,
+      COALESCE(json_extract(p.row_payload_json, '$.side_mode'), json_extract(f.details_json, '$.prepared.side_mode'), CASE WHEN json_extract(p.row_payload_json, '$.payout_variant') IN ('goblin','demon') THEN 'more_only' ELSE 'two_sided' END) AS side_mode,
+      COALESCE(json_extract(p.row_payload_json, '$.odds_type'), json_extract(f.details_json, '$.prepared.odds_type')) AS odds_type,
+      COALESCE(json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.payout_variant')) AS payout_variant,
+      f.board_lane AS board_tier,
+      f.review_playable,
+      f.live_playable,
+      f.hit_probability_0_100 AS estimated_hit_probability_0_100,
+      f.certainty_0_100 AS probability_confidence_0_100,
+      f.hp_v2_band AS probability_band,
+      f.hp_v2_grade AS probability_grade,
+      f.board_lane AS hp_lane,
+      f.hp_rank_order AS hp_rank,
+      f.hit_probability_0_100 AS hp_sort_0_100,
+      f.final_score_status AS hp_source_lane_reason,
+      f.final_score_status AS factor_status,
+      CASE WHEN f.missing_component_count > 0 THEN 'partial_context' ELSE 'current' END AS market_prop_context_status,
+      f.final_score_status AS daily_readiness_status,
+      CASE
+        WHEN f.canonical_prop_key LIKE 'pitcher_%' OR f.canonical_prop_key IN ('earned_runs','hits_allowed','walks_allowed','pitcher_outs') THEN 'pitcher'
+        ELSE 'hitter'
+      END AS prop_family,
+      COALESCE(json_extract(f.details_json, '$.game_context.home_team_name'), p.team_full_name, p.team) AS home_team_name,
+      COALESCE(json_extract(f.details_json, '$.game_context.away_team_name'), p.opponent_full_name, p.opponent) AS away_team_name,
+      json_extract(f.details_json, '$.game_context.venue_name') AS venue_name,
+      COALESCE(json_extract(p.row_payload_json, '$.source_line_type'), json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.source_line_type'), 'regular') AS source_line_type,
+      COALESCE(json_extract(p.row_payload_json, '$.is_goblin'), json_extract(f.details_json, '$.prepared.is_goblin'),0) AS is_goblin,
+      COALESCE(json_extract(p.row_payload_json, '$.is_demon'), json_extract(f.details_json, '$.prepared.is_demon'),0) AS is_demon,
+      COALESCE(json_extract(p.row_payload_json, '$.is_standard'), json_extract(f.details_json, '$.prepared.is_standard'), CASE WHEN json_extract(p.row_payload_json, '$.payout_variant') IN ('goblin','demon') THEN 0 ELSE 1 END) AS is_standard,
+      NULL AS hp_sample_size,
+      NULL AS hp_non_push_sample,
+      NULL AS hp_hit_count,
+      NULL AS hp_miss_count,
+      NULL AS hp_push_count,
+      NULL AS hp_empirical_hit_rate_0_1,
+      f.certainty_0_100 / 100.0 AS hp_reliability_0_1,
+      f.certainty_0_100 AS hp_sample_reliability_score_0_100,
+      NULL AS hp_display_notes_preview,
+      f.default_board_rank,
+      f.default_board_visible,
+      f.default_suppression_reason,
+      f.player_game_rank,
+      f.player_game_total_legs,
+      f.player_prop_rank,
+      f.correlation_cluster,
+      f.sanity_confidence_0_100,
+      f.trust_readiness_score_0_100,
+      f.overall_score_0_100,
+      f.certainty_0_100,
+      f.hit_probability_0_100,
+      f.warning_count,
+      f.partial_context_count,
+      f.missing_component_count,
+      f.source_final_score_batch_id,
+      f.source_hp_v2_batch_id,
+      f.source_score_enrichment_batch_id,
+      f.created_at,
+      f.updated_at,
+      f.details_json AS details_json_snapshot,
+      p.raw_source_json AS prepared_raw_source_json,
+      p.row_payload_json AS prepared_row_payload_json
+,
+      ${quotaLineTypeExpr} AS quota_line_type
+      FROM score_final_board_v2_current f
+      LEFT JOIN score_board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
+      ${where.length ? "WHERE " + where.join(" AND ") : ""}
+    ), ranked AS (
+      SELECT
+        base.*,
+        ROW_NUMBER() OVER (PARTITION BY canonical_prop_key ORDER BY COALESCE(rank_order,999999), COALESCE(score_0_100,0) DESC, COALESCE(estimated_hit_probability_0_100,0) DESC) AS quota_prop_rank,
+        ROW_NUMBER() OVER (PARTITION BY quota_line_type ORDER BY COALESCE(rank_order,999999), COALESCE(score_0_100,0) DESC, COALESCE(estimated_hit_probability_0_100,0) DESC) AS quota_type_rank,
+        ROW_NUMBER() OVER (PARTITION BY source_key, quota_line_type ORDER BY COALESCE(rank_order,999999), COALESCE(score_0_100,0) DESC, COALESCE(estimated_hit_probability_0_100,0) DESC) AS quota_source_type_rank,
+        ROW_NUMBER() OVER (PARTITION BY selected_side ORDER BY COALESCE(rank_order,999999), COALESCE(score_0_100,0) DESC, COALESCE(estimated_hit_probability_0_100,0) DESC) AS quota_side_rank
+      FROM base
+    )
+    SELECT *
+    FROM ranked
+    WHERE quota_prop_rank <= 5
+       OR (quota_line_type='goblin' AND quota_type_rank <= 20)
+       OR (quota_line_type='demon' AND quota_type_rank <= 10)
+       OR (LOWER(COALESCE(source_key,''))='prizepicks' AND quota_line_type='regular' AND quota_source_type_rank <= 20)
+       OR (LOWER(COALESCE(source_key,''))='sleeper' AND quota_line_type='regular' AND quota_source_type_rank <= 20)
+       OR (LOWER(COALESCE(selected_side,''))='less' AND quota_side_rank <= 15)
+       OR (LOWER(COALESCE(selected_side,''))='more' AND quota_side_rank <= 20)
+    ORDER BY COALESCE(rank_order,999999) ASC
+    LIMIT ${limit}
+  ` : `
     SELECT
 
       f.board_row_id AS final_board_row_id,
@@ -816,6 +945,7 @@ function buildCurrentSql(url) {
       f.details_json AS details_json_snapshot,
       p.raw_source_json AS prepared_raw_source_json,
       p.row_payload_json AS prepared_row_payload_json
+
     FROM score_final_board_v2_current f
     LEFT JOIN score_board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
     ${where.length ? "WHERE " + where.join(" AND ") : ""}
@@ -1608,7 +1738,7 @@ const MAIN_HTML = `<!doctype html>
 <body>
 <div class="wrap">
   <header class="hero">
-    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.13 - Rich Dossier V2</div></div></div>
+    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.14 - Quota Board + Rich Dossier</div></div></div>
     <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Main Board</button><button id="menuHealth">Health</button></div></div>
   </header>
   <section id="boardScreen">
@@ -1634,7 +1764,7 @@ const MAIN_HTML = `<!doctype html>
 </div>
 <script>
 (()=>{
-const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.13 - Rich Dossier V2';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null;
+const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.14 - Quota Board + Rich Dossier';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0)+'%':'—'}
 function num(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0):'—'}
