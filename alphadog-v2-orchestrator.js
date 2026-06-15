@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.274-multiplier-aware-final-score";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.275-final-board-v2-timeout-safe-annotate";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12456,10 +12456,10 @@ async function processFinalScoreV1DirectJob(env,row,runId,trigger){
 }
 
 
-const ORCH_FINAL_BOARD_V2_VERSION = "alphadog-v2-final-board-v2-v0.1.2-goblin-demon-side-contract";
+const ORCH_FINAL_BOARD_V2_VERSION = "alphadog-v2-final-board-v2-v0.1.3-timeout-safe-annotation";
 const ORCH_FINAL_BOARD_V2_MODE = "score_final_board_v2_current";
 const ORCH_FINAL_BOARD_V2_PROFILE_VERSION = "FINAL_BOARD_V2_CLEAN_DEFAULT_RANKING_V0_1_1";
-const ORCH_FINAL_BOARD_V2_CHUNK_ROWS = 500;
+const ORCH_FINAL_BOARD_V2_CHUNK_ROWS = 300;
 async function ensureOrchFinalBoardV2Schema(env){
   await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS score_final_board_v2_batches (batch_id TEXT PRIMARY KEY, request_id TEXT, run_id TEXT, worker_name TEXT, worker_version TEXT, profile_version TEXT, mode TEXT, status TEXT, source_final_score_batch_id TEXT, source_hp_v2_batch_id TEXT, source_score_enrichment_batch_id TEXT, source_rows_read INTEGER DEFAULT 0, eligible_rows_read INTEGER DEFAULT 0, final_rows_written INTEGER DEFAULT 0, blocked_rows INTEGER DEFAULT 0, archived_low_hp_rows INTEGER DEFAULT 0, archived_low_score_rows INTEGER DEFAULT 0, low_certainty_rows INTEGER DEFAULT 0, issue_rows_written INTEGER DEFAULT 0, live_playable_rows INTEGER DEFAULT 0, default_board_rows INTEGER DEFAULT 0, correlated_duplicate_rows INTEGER DEFAULT 0, low_sanity_primary_rows INTEGER DEFAULT 0, rare_more_primary_rows INTEGER DEFAULT 0, certification_status TEXT, certification_grade TEXT, output_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
   await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS score_final_board_v2_current (board_row_id TEXT PRIMARY KEY, batch_id TEXT, source_final_score_batch_id TEXT, source_hp_v2_batch_id TEXT, source_score_enrichment_batch_id TEXT, final_score_row_id TEXT, prepared_row_id TEXT, matrix_id TEXT, source_line_id TEXT, source_key TEXT, rank_order INTEGER, hp_rank_order INTEGER, game_pk INTEGER, official_date TEXT, official_game_time_utc TEXT, player_id INTEGER, player_name TEXT, team_id INTEGER, opponent_team_id INTEGER, canonical_prop_key TEXT, line_value REAL, selected_side TEXT, hit_probability_0_100 REAL, certainty_0_100 REAL, trust_readiness_score_0_100 REAL, overall_score_0_100 REAL, hp_v2_status TEXT, hp_v2_band TEXT, hp_v2_grade TEXT, final_score_status TEXT, final_score_grade TEXT, final_score_lane TEXT, board_status TEXT, board_grade TEXT, board_lane TEXT, sample_tier TEXT, context_completeness_score REAL, market_support_score REAL, factor_support_score REAL, warning_count INTEGER DEFAULT 0, partial_context_count INTEGER DEFAULT 0, missing_component_count INTEGER DEFAULT 0, review_playable INTEGER DEFAULT 1, live_playable INTEGER DEFAULT 0, sort_tuple_json TEXT, details_json TEXT, player_game_rank INTEGER, player_game_total_legs INTEGER, player_prop_rank INTEGER, correlation_cluster TEXT, default_board_visible INTEGER DEFAULT 0, default_board_rank INTEGER, default_suppression_reason TEXT, sanity_confidence_0_100 REAL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
@@ -12482,26 +12482,52 @@ async function ensureOrchFinalBoardV2Schema(env){
 }
 function fbv2HpBandRank(hp){ hp=ofsNum(hp,0); return hp>=90?5:hp>=80?4:hp>=70?3:hp>=60?2:1; }
 async function annotateFinalBoardV2CleanDefault(env,batchId,sourceHpV2BatchId){
-  await run(env.SCORE_DB, `UPDATE score_final_board_v2_current AS b SET
-    player_game_rank = (SELECT COUNT(*) FROM score_final_board_v2_current x WHERE x.batch_id=b.batch_id AND x.game_pk=b.game_pk AND x.player_id=b.player_id AND x.rank_order<=b.rank_order),
-    player_game_total_legs = (SELECT COUNT(*) FROM score_final_board_v2_current x WHERE x.batch_id=b.batch_id AND x.game_pk=b.game_pk AND x.player_id=b.player_id),
-    player_prop_rank = (SELECT COUNT(*) FROM score_final_board_v2_current x WHERE x.batch_id=b.batch_id AND x.game_pk=b.game_pk AND x.player_id=b.player_id AND x.canonical_prop_key=b.canonical_prop_key AND x.rank_order<=b.rank_order),
+  // v0.1.3: timeout-safe annotation. The previous implementation used several
+  // row-by-row correlated COUNT subqueries and could exceed D1 storage timeout
+  // once the review pool grew past ~600 rows. Window-function CTEs compute ranks
+  // once and update by primary key.
+  await run(env.SCORE_DB, `WITH ranked AS (
+    SELECT
+      board_row_id,
+      ROW_NUMBER() OVER (PARTITION BY batch_id, game_pk, player_id ORDER BY rank_order ASC) AS player_game_rank_new,
+      COUNT(*) OVER (PARTITION BY batch_id, game_pk, player_id) AS player_game_total_new,
+      ROW_NUMBER() OVER (PARTITION BY batch_id, game_pk, player_id, canonical_prop_key ORDER BY rank_order ASC) AS player_prop_rank_new
+    FROM score_final_board_v2_current
+    WHERE batch_id=?
+  )
+  UPDATE score_final_board_v2_current
+  SET
+    player_game_rank = (SELECT player_game_rank_new FROM ranked WHERE ranked.board_row_id=score_final_board_v2_current.board_row_id),
+    player_game_total_legs = (SELECT player_game_total_new FROM ranked WHERE ranked.board_row_id=score_final_board_v2_current.board_row_id),
+    player_prop_rank = (SELECT player_prop_rank_new FROM ranked WHERE ranked.board_row_id=score_final_board_v2_current.board_row_id),
     correlation_cluster = CASE
-      WHEN b.canonical_prop_key IN ('hits','singles','doubles','home_runs','total_bases','hits_runs_rbis','rbis','runs') THEN 'HITTER_PRODUCTION_CLUSTER'
-      WHEN b.canonical_prop_key IN ('walks','hitter_strikeouts') THEN 'HITTER_PLATE_DISCIPLINE_CLUSTER'
-      WHEN b.canonical_prop_key IN ('stolen_bases') THEN 'HITTER_SPEED_CLUSTER'
-      WHEN b.canonical_prop_key IN ('pitcher_strikeouts','walks_allowed','hits_allowed','earned_runs','pitcher_outs') THEN 'PITCHER_GAME_CLUSTER'
+      WHEN canonical_prop_key IN ('hits','singles','doubles','home_runs','total_bases','hits_runs_rbis','rbis','runs') THEN 'HITTER_PRODUCTION_CLUSTER'
+      WHEN canonical_prop_key IN ('walks','hitter_strikeouts') THEN 'HITTER_PLATE_DISCIPLINE_CLUSTER'
+      WHEN canonical_prop_key IN ('stolen_bases') THEN 'HITTER_SPEED_CLUSTER'
+      WHEN canonical_prop_key IN ('pitcher_strikeouts','walks_allowed','hits_allowed','earned_runs','pitcher_outs') THEN 'PITCHER_GAME_CLUSTER'
       ELSE 'OTHER_CLUSTER'
     END
-  WHERE b.batch_id=?`, batchId);
-  await run(env.SCORE_DB, `UPDATE score_final_board_v2_current AS b SET sanity_confidence_0_100 = (
-    SELECT s.baseline_confidence_0_100
-    FROM hit_probability_v2_current h
-    LEFT JOIN player_baseline_hp_current p ON p.baseline_hp_row_id=h.baseline_hp_row_id
-    LEFT JOIN player_baseline_sanity_current s ON s.baseline_row_id=p.source_baseline_row_id
-    WHERE h.batch_id=? AND h.prepared_row_id=b.prepared_row_id AND h.selected_side=b.selected_side
-    LIMIT 1
-  ) WHERE b.batch_id=?`, sourceHpV2BatchId, batchId);
+  WHERE batch_id=? AND board_row_id IN (SELECT board_row_id FROM ranked)`, batchId, batchId);
+
+  await run(env.SCORE_DB, `WITH sanity AS (
+    SELECT
+      b.board_row_id,
+      s.baseline_confidence_0_100 AS sanity_confidence
+    FROM score_final_board_v2_current b
+    LEFT JOIN hit_probability_v2_current h
+      ON h.batch_id=?
+     AND h.prepared_row_id=b.prepared_row_id
+     AND h.selected_side=b.selected_side
+    LEFT JOIN player_baseline_hp_current p
+      ON p.baseline_hp_row_id=h.baseline_hp_row_id
+    LEFT JOIN player_baseline_sanity_current s
+      ON s.baseline_row_id=p.source_baseline_row_id
+    WHERE b.batch_id=?
+  )
+  UPDATE score_final_board_v2_current
+  SET sanity_confidence_0_100 = (SELECT sanity_confidence FROM sanity WHERE sanity.board_row_id=score_final_board_v2_current.board_row_id)
+  WHERE batch_id=? AND board_row_id IN (SELECT board_row_id FROM sanity)`, sourceHpV2BatchId, batchId, batchId);
+
   await run(env.SCORE_DB, `UPDATE score_final_board_v2_current SET default_suppression_reason = CASE
     WHEN player_game_rank > 1 THEN 'SUPPRESS_CORRELATED_DUPLICATE'
     WHEN board_grade IN ('PREMIUM_REVIEW','STRONG_REVIEW') AND COALESCE(sanity_confidence_0_100,0) < 55 THEN 'SUPPRESS_LOW_SANITY_STRONG'
@@ -12515,9 +12541,24 @@ async function annotateFinalBoardV2CleanDefault(env,batchId,sourceHpV2BatchId){
     ) THEN 'SUPPRESS_RARE_MORE'
     ELSE NULL END
   WHERE batch_id=?`, batchId);
-  await run(env.SCORE_DB, `UPDATE score_final_board_v2_current SET default_board_visible = CASE WHEN default_suppression_reason IS NULL THEN 1 ELSE 0 END WHERE batch_id=?`, batchId);
-  await run(env.SCORE_DB, `UPDATE score_final_board_v2_current AS b SET default_board_rank = CASE WHEN b.default_board_visible=1 THEN (SELECT COUNT(*) FROM score_final_board_v2_current x WHERE x.batch_id=b.batch_id AND x.default_board_visible=1 AND x.rank_order<=b.rank_order) ELSE NULL END WHERE b.batch_id=?`, batchId);
+
+  await run(env.SCORE_DB, `UPDATE score_final_board_v2_current
+    SET default_board_visible = CASE WHEN default_suppression_reason IS NULL THEN 1 ELSE 0 END,
+        default_board_rank = NULL
+    WHERE batch_id=?`, batchId);
+
+  await run(env.SCORE_DB, `WITH visible AS (
+    SELECT
+      board_row_id,
+      ROW_NUMBER() OVER (ORDER BY rank_order ASC) AS default_rank_new
+    FROM score_final_board_v2_current
+    WHERE batch_id=? AND default_board_visible=1
+  )
+  UPDATE score_final_board_v2_current
+  SET default_board_rank = (SELECT default_rank_new FROM visible WHERE visible.board_row_id=score_final_board_v2_current.board_row_id)
+  WHERE batch_id=? AND board_row_id IN (SELECT board_row_id FROM visible)`, batchId, batchId);
 }
+
 async function processFinalBoardV2DirectJob(env,row,runId,trigger){
   const started=Date.now();
   const input=parseJsonSafeText(row.input_json||"{}",{});
@@ -12575,7 +12616,7 @@ async function processFinalBoardV2DirectJob(env,row,runId,trigger){
   const cert=complete?(cumulativeIssueRows===0?'SCORE_FINAL_BOARD_V2_CERTIFIED_HP_FIRST_REVIEW_BOARD':'SCORE_FINAL_BOARD_V2_CERTIFICATION_FAILED'):'SCORE_FINAL_BOARD_V2_PARTIAL_CONTINUE';
   const grade=complete?(cumulativeIssueRows===0?'PASS_WITH_REVIEW_WARNINGS_ALLOWED':'FAILED'):'PARTIAL';
   await run(env.SCORE_DB, `UPDATE score_final_board_v2_batches SET status=?, source_rows_read=?, eligible_rows_read=?, final_rows_written=?, blocked_rows=?, archived_low_hp_rows=?, archived_low_score_rows=?, low_certainty_rows=?, live_playable_rows=?, issue_rows_written=?, default_board_rows=?, correlated_duplicate_rows=?, low_sanity_primary_rows=?, rare_more_primary_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, status,sourceRows,eligibleRows,writtenRows,Number(counts&&counts.blocked_rows||0),Number(counts&&counts.low_hp_rows||0),Number(counts&&counts.low_score_rows||0),Number(counts&&counts.low_certainty_rows||0),Number(counts&&counts.live_rows||0),cumulativeIssueRows,defaultBoardRows,correlatedDuplicateRows,lowSanityPrimaryRows,rareMorePrimaryRows,cert,grade,JSON.stringify({source_final_score_batch_id:sourceFinalScoreBatchId,source_hp_v2_batch_id:sourceHpV2BatchId,source_score_enrichment_batch_id:sourceEnrichmentBatchId}),batchId);
-  const output={ok:cumulativeIssueRows===0,data_ok:cumulativeIssueRows===0,version:ORCH_FINAL_BOARD_V2_VERSION,processed_by:WORKER_NAME,worker_name:WORKER_NAME,logical_worker_name:'alphadog-v2-final-board-v2',deployed_worker_slot:'alphadog-v2-orchestrator',job_key:'final-board-v2',request_id:row.request_id,run_id:runId,chain_id:row.chain_id,mode:ORCH_FINAL_BOARD_V2_MODE,status:complete?'completed_score_final_board_v2_current':'partial_continue_score_final_board_v2_current',certification:cert,certification_grade:grade,batch_id:batchId,score_final_board_v2_batch_id:batchId,source_final_score_batch_id:sourceFinalScoreBatchId,source_hp_v2_batch_id:sourceHpV2BatchId,source_score_enrichment_batch_id:sourceEnrichmentBatchId,source_rows_read:sourceRows,eligible_rows_read:eligibleRows,final_rows_written:writtenRows,rows_read:sourceRows,rows_written:writtenRows,inserted_this_invocation:rows.length,blocked_rows:Number(counts&&counts.blocked_rows||0),archived_low_hp_rows:Number(counts&&counts.low_hp_rows||0),archived_low_score_rows:Number(counts&&counts.low_score_rows||0),low_certainty_rows:Number(counts&&counts.low_certainty_rows||0),issue_rows_written:cumulativeIssueRows,default_board_rows:defaultBoardRows,correlated_duplicate_rows:correlatedDuplicateRows,low_sanity_primary_rows:lowSanityPrimaryRows,rare_more_primary_rows:rareMorePrimaryRows,live_playable_rows:Number(counts&&counts.live_rows||0),offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,profile_version:ORCH_FINAL_BOARD_V2_PROFILE_VERSION,hp_first_sort:true,review_board_only:true,clean_default_ranking:true,goblin_demon_less_excluded:true,raw_candidate_pool_preserved:true,live_playable_forced_zero:true,writes_score_final_board_v2_tables_only:true,no_legacy_final_board_mutation:true,no_score_final_board_current_mutation:true,no_true_hit_probability_claims:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started};
+  const output={ok:cumulativeIssueRows===0,data_ok:cumulativeIssueRows===0,version:ORCH_FINAL_BOARD_V2_VERSION,processed_by:WORKER_NAME,worker_name:WORKER_NAME,logical_worker_name:'alphadog-v2-final-board-v2',deployed_worker_slot:'alphadog-v2-orchestrator',job_key:'final-board-v2',request_id:row.request_id,run_id:runId,chain_id:row.chain_id,mode:ORCH_FINAL_BOARD_V2_MODE,status:complete?'completed_score_final_board_v2_current':'partial_continue_score_final_board_v2_current',certification:cert,certification_grade:grade,batch_id:batchId,score_final_board_v2_batch_id:batchId,source_final_score_batch_id:sourceFinalScoreBatchId,source_hp_v2_batch_id:sourceHpV2BatchId,source_score_enrichment_batch_id:sourceEnrichmentBatchId,source_rows_read:sourceRows,eligible_rows_read:eligibleRows,final_rows_written:writtenRows,rows_read:sourceRows,rows_written:writtenRows,inserted_this_invocation:rows.length,blocked_rows:Number(counts&&counts.blocked_rows||0),archived_low_hp_rows:Number(counts&&counts.low_hp_rows||0),archived_low_score_rows:Number(counts&&counts.low_score_rows||0),low_certainty_rows:Number(counts&&counts.low_certainty_rows||0),issue_rows_written:cumulativeIssueRows,default_board_rows:defaultBoardRows,correlated_duplicate_rows:correlatedDuplicateRows,low_sanity_primary_rows:lowSanityPrimaryRows,rare_more_primary_rows:rareMorePrimaryRows,live_playable_rows:Number(counts&&counts.live_rows||0),offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,profile_version:ORCH_FINAL_BOARD_V2_PROFILE_VERSION,hp_first_sort:true,review_board_only:true,clean_default_ranking:true,timeout_safe_annotation:true,final_board_v2_chunk_rows:300,goblin_demon_less_excluded:true,raw_candidate_pool_preserved:true,live_playable_forced_zero:true,writes_score_final_board_v2_tables_only:true,no_legacy_final_board_mutation:true,no_score_final_board_current_mutation:true,no_true_hit_probability_claims:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started};
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,complete?'completed':'partial_continue',output.data_ok?1:0,cert,sourceRows,writtenRows,Date.now()-started,JSON.stringify(input),JSON.stringify(output),output.ok?null:'final_board_v2_certification_failed',output.ok?null:'Final Board V2 certification failed');
   if(!complete){
     const nextInput={...input,resume_batch_id:batchId,final_board_v2_batch_id:batchId,final_board_v2_offset:offset+rows.length,source_final_score_batch_id:sourceFinalScoreBatchId,continuation_from_request_id:row.request_id,continuation_certification:cert};
