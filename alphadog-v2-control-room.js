@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.179-hit-probability-v2-button";
+const SYSTEM_VERSION = "alphadog-v2-control-room-v1.6.180-hp-v2-visible-route-parity";
 function nowIso() { return new Date().toISOString(); }
 
 const DB_BINDINGS = [
