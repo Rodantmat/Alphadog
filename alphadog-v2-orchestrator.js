@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.263-hit-probability-v2-ui-proof";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.264-hit-probability-v2-direct-orchestrator";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -11839,6 +11839,9 @@ async function processPropMatrixBuilderJob(env, row, runId, trigger) {
   }
 
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  if (isHitProbabilityV2Job) {
+    return await processHitProbabilityV2DirectJob(env, row, runId, trigger);
+  }
   const input = {
     request_id: row.request_id,
     chain_id: row.chain_id,
@@ -12057,6 +12060,117 @@ async function buildScoreEnrichmentV1EvidenceOutput(env, row, runId, trigger, ro
     no_ranking:true,
     trigger
   };
+}
+
+
+
+// ============================================================
+// HP V2 direct orchestrator fallback v0.2.264
+// ============================================================
+// This exists because score-audit deployments can lag. HP V2 is isolated and writes only
+// hit_probability_v2_* tables from score_enrichment_current. It does not touch old scoring,
+// old HP, HP board, final board, prepared/source boards, ranks, or live/review gates.
+const ORCH_HP_V2_VERSION = "alphadog-v2-hit-probability-v2-v0.1.2-orchestrator-direct-fallback";
+const ORCH_HP_V2_MODE = "hit_probability_v2_current";
+const ORCH_HP_V2_PROFILE_VERSION = "HP_V2_BASELINE_ENRICHMENT_CONTEXT_V0_1_2_ORCH_DIRECT";
+const ORCH_HP_V2_CHUNK_ROWS = 300;
+function ohpNum(v,d=0){ const n=Number(v); return Number.isFinite(n)?n:d; }
+function ohpClamp(v,lo,hi){ return Math.max(lo, Math.min(hi, ohpNum(v,lo))); }
+function ohpRound(v,d=2){ const m=Math.pow(10,d); return Math.round(ohpNum(v)*m)/m; }
+function ohpBand(hp){ const x=ohpNum(hp,50); if(x>=90)return"HP_V2_90_PLUS"; if(x>=80)return"HP_V2_80_89"; if(x>=70)return"HP_V2_70_79"; if(x>=60)return"HP_V2_60_69"; if(x>=50)return"HP_V2_50_59"; if(x>=40)return"HP_V2_40_49"; return"HP_V2_UNDER_40"; }
+function ohpSoftBounds(sample, conf){ const s=ohpNum(sample,0), c=ohpNum(conf,0); if(s>=30&&c>=50)return[0.5,99.5]; if(s>=15&&c>=35)return[1,99]; if(s>=8)return[5,95]; if(s>=3)return[10,90]; return[20,80]; }
+function ohpModel(row){
+  const blocked=Number(row.blocking_for_scoring||0)===1||Number(row.blocker_count||0)>0;
+  const base=ohpClamp(row.baseline_hp_0_100,0,100);
+  const baseConf=ohpClamp(row.baseline_confidence_v2_0_60,0,60);
+  const confAdd=ohpClamp(row.enrichment_confidence_add_available_0_40,0,40);
+  const cap=ohpClamp(row.confidence_cap_0_100,0,100);
+  const dataQ=ohpClamp(row.data_quality_score_0_100,0,100);
+  const sample=Math.max(0,Math.round(ohpNum(row.baseline_sample_size,0)));
+  const missing=Math.max(0,Math.round(ohpNum(row.missing_component_count,0)));
+  const warnings=Math.max(0,Math.round(ohpNum(row.warning_count,0)));
+  const pressure=ohpClamp(row.factor_hp_pressure,-8,8);
+  let pressureReliability=ohpClamp((baseConf/60)*0.65+(dataQ/100)*0.35,0.15,1);
+  if(missing>0)pressureReliability*=0.55;
+  if(warnings>=10)pressureReliability*=0.75;
+  const factorAdjustment=blocked?0:ohpRound(pressure*0.85*pressureReliability,2);
+  let damping=1;
+  if(sample<10)damping*=0.82;
+  if(sample<3)damping*=0.65;
+  if(missing>0)damping*=0.90;
+  if(warnings>=10)damping*=0.94;
+  let hp=50+((base+factorAdjustment)-50)*damping;
+  const [floor,ceil]=ohpSoftBounds(sample,baseConf);
+  hp=blocked?base:ohpClamp(hp,floor,ceil);
+  let conf=Math.min(cap,baseConf+confAdd);
+  if(missing>0)conf-=Math.min(18,missing*4);
+  if(warnings>=10)conf-=5;
+  if(warnings>=14)conf-=3;
+  if(blocked)conf=0;
+  conf=ohpClamp(ohpRound(conf,1),0,100);
+  return {hp:ohpRound(hp,2),conf,factorAdjustment,damping:ohpRound(damping,3),band:ohpBand(hp)};
+}
+function ohpStatusGrade(row, hp, conf){
+  if(Number(row.blocking_for_scoring||0)===1||Number(row.blocker_count||0)>0)return["hp_v2_blocked","BLOCKED"];
+  if(!row.baseline_hp_row_id)return["hp_v2_deferred_baseline_missing","DEFERRED_BASELINE_MISSING"];
+  if(Number(row.missing_component_count||0)>0)return["hp_v2_ready_partial_context","READY_PARTIAL_CONTEXT"];
+  if(Number(row.warning_count||0)>0||ohpNum(conf,0)<55)return["hp_v2_ready_with_warnings","READY_WITH_WARNINGS"];
+  return["hp_v2_ready","READY"];
+}
+async function ensureOrchHpV2Schema(env){
+  await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS hit_probability_v2_batches (batch_id TEXT PRIMARY KEY, request_id TEXT, run_id TEXT, worker_name TEXT, worker_version TEXT, profile_version TEXT, mode TEXT, status TEXT, source_enrichment_batch_id TEXT, source_matrix_batch_id TEXT, enrichment_rows_read INTEGER DEFAULT 0, expected_hp_rows INTEGER DEFAULT 0, hp_rows_written INTEGER DEFAULT 0, baseline_rows INTEGER DEFAULT 0, blocked_rows INTEGER DEFAULT 0, warning_rows INTEGER DEFAULT 0, issue_rows_written INTEGER DEFAULT 0, hp_ready_rows INTEGER DEFAULT 0, hp_blocked_rows INTEGER DEFAULT 0, certification_status TEXT, certification_grade TEXT, output_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+  await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS hit_probability_v2_current (hp_v2_row_id TEXT PRIMARY KEY, batch_id TEXT, source_enrichment_batch_id TEXT, enrichment_row_id TEXT, prepared_row_id TEXT, matrix_id TEXT, source_line_id TEXT, source_key TEXT, game_pk INTEGER, official_date TEXT, official_game_time_utc TEXT, mlb_player_id INTEGER, player_name TEXT, team_id INTEGER, opponent_team_id INTEGER, canonical_prop_key TEXT, board_line_value REAL, selected_side TEXT, factor_family TEXT, baseline_hp_row_id TEXT, baseline_hp_0_100 REAL, baseline_confidence_v2_0_60 REAL, baseline_sample_size INTEGER, baseline_hit_count INTEGER, baseline_miss_count INTEGER, factor_hp_pressure REAL, factor_adjustment_0_100 REAL, context_damping_0_1 REAL, hp_v2_0_100 REAL, hp_v2_confidence_0_100 REAL, hp_v2_band TEXT, hp_v2_status TEXT, hp_v2_grade TEXT, data_quality_score_0_100 REAL, confidence_cap_0_100 REAL, warning_count INTEGER DEFAULT 0, blocker_count INTEGER DEFAULT 0, missing_component_count INTEGER DEFAULT 0, blocking_for_scoring INTEGER DEFAULT 0, model_payload_json TEXT, details_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+  await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS hit_probability_v2_issues (issue_id TEXT PRIMARY KEY, batch_id TEXT, hp_v2_row_id TEXT, enrichment_row_id TEXT, prepared_row_id TEXT, game_pk INTEGER, mlb_player_id INTEGER, canonical_prop_key TEXT, selected_side TEXT, severity TEXT, issue_type TEXT, reason TEXT, details_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_hp_v2_current_batch ON hit_probability_v2_current(batch_id)`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_hp_v2_current_prepared_side ON hit_probability_v2_current(prepared_row_id, selected_side)`);
+  await run(env.SCORE_DB, `CREATE INDEX IF NOT EXISTS idx_hp_v2_issues_batch ON hit_probability_v2_issues(batch_id, severity)`);
+}
+async function latestOrchHpV2EnrichmentBatch(env){
+  const row=await first(env.SCORE_DB,`SELECT batch_id FROM score_enrichment_batches WHERE status='completed' AND certification_status='SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED' ORDER BY datetime(updated_at) DESC LIMIT 1`);
+  if(row&&row.batch_id)return String(row.batch_id);
+  const fallback=await first(env.SCORE_DB,`SELECT batch_id FROM score_enrichment_batches ORDER BY datetime(updated_at) DESC LIMIT 1`);
+  return fallback&&fallback.batch_id?String(fallback.batch_id):null;
+}
+async function processHitProbabilityV2DirectJob(env,row,runId,trigger){
+  const started=Date.now();
+  const rowInput=(()=>{try{return JSON.parse(row.input_json||"{}");}catch(_){return{};}})();
+  await ensureOrchHpV2Schema(env);
+  const batchId = rowInput.hp_v2_batch_id || rowInput.batch_id || (rowInput.resume_batch_id && String(rowInput.resume_batch_id).startsWith('hit_probability_v2_batch_') ? rowInput.resume_batch_id : null);
+  const finalBatchId=batchId||rid('hit_probability_v2_batch');
+  const sourceEnrichmentBatchId=rowInput.source_enrichment_batch_id||await latestOrchHpV2EnrichmentBatch(env);
+  if(!sourceEnrichmentBatchId)throw new Error('No score_enrichment_current batch found for HP V2');
+  const srcBatch=await first(env.SCORE_DB,`SELECT source_matrix_batch_id FROM score_enrichment_batches WHERE batch_id=?`,sourceEnrichmentBatchId);
+  const sourceMatrixBatchId=srcBatch&&srcBatch.source_matrix_batch_id?String(srcBatch.source_matrix_batch_id):null;
+  const expectedRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows FROM score_enrichment_current WHERE batch_id=?`,sourceEnrichmentBatchId);
+  const expectedRows=Number(expectedRow&&expectedRow.rows||0);
+  let offset=Number(rowInput.hp_v2_offset||rowInput.offset||0)||0;
+  const limit=Math.max(50,Math.min(Number(rowInput.chunk_rows||ORCH_HP_V2_CHUNK_ROWS),750));
+  await run(env.SCORE_DB,`INSERT OR IGNORE INTO hit_probability_v2_batches (batch_id,request_id,run_id,worker_name,worker_version,profile_version,mode,status,source_enrichment_batch_id,source_matrix_batch_id,expected_hp_rows,created_at,updated_at) VALUES (?,?,?,?,?,?,?,'running',?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,finalBatchId,row.request_id,runId,WORKER_NAME,ORCH_HP_V2_VERSION,ORCH_HP_V2_PROFILE_VERSION,ORCH_HP_V2_MODE,sourceEnrichmentBatchId,sourceMatrixBatchId,expectedRows);
+  if(offset===0){ await run(env.SCORE_DB,`DELETE FROM hit_probability_v2_current WHERE batch_id=?`,finalBatchId); await run(env.SCORE_DB,`DELETE FROM hit_probability_v2_issues WHERE batch_id=?`,finalBatchId); }
+  await run(env.SCORE_DB,`UPDATE hit_probability_v2_batches SET status='running', run_id=?, worker_version=?, profile_version=?, source_enrichment_batch_id=?, source_matrix_batch_id=?, expected_hp_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,runId,ORCH_HP_V2_VERSION,ORCH_HP_V2_PROFILE_VERSION,sourceEnrichmentBatchId,sourceMatrixBatchId,expectedRows,finalBatchId);
+  const rows=await all(env.SCORE_DB,`SELECT enrichment_row_id, prepared_row_id, matrix_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc, mlb_player_id, player_name, team_id, opponent_team_id, canonical_prop_key, board_line_value, selected_side, factor_family, baseline_hp_row_id, baseline_hp_0_100, baseline_confidence_v2_0_60, baseline_sample_size, baseline_hit_count, baseline_miss_count, factor_hp_pressure, enrichment_confidence_add_available_0_40, confidence_cap_0_100, data_quality_score_0_100, warning_count, blocker_count, missing_component_count, blocking_for_scoring, enrichment_status, enrichment_grade, matrix_status, matrix_grade FROM score_enrichment_current WHERE batch_id=? ORDER BY prepared_row_id, selected_side LIMIT ? OFFSET ?`,sourceEnrichmentBatchId,limit,offset);
+  const models=new Map(), byPrep=new Map();
+  for(const r of rows){ const key=String(r.prepared_row_id||r.enrichment_row_id||''); if(!byPrep.has(key))byPrep.set(key,[]); byPrep.get(key).push(r); models.set(String(r.enrichment_row_id||r.prepared_row_id),ohpModel(r)); }
+  for(const pair of byPrep.values()){ if(pair.length!==2)continue; const a=pair[0],b=pair[1],ma=models.get(String(a.enrichment_row_id||a.prepared_row_id)),mb=models.get(String(b.enrichment_row_id||b.prepared_row_id)); const bad=Number(a.blocking_for_scoring||0)===1||Number(a.blocker_count||0)>0||!a.baseline_hp_row_id||Number(b.blocking_for_scoring||0)===1||Number(b.blocker_count||0)>0||!b.baseline_hp_row_id; if(!ma||!mb||bad)continue; const sum=ohpNum(ma.hp,0)+ohpNum(mb.hp,0); if(sum>0){ const aNorm=ohpRound((ohpNum(ma.hp,0)/sum)*100,2); ma.hp=aNorm; mb.hp=ohpRound(100-aNorm,2); ma.band=ohpBand(ma.hp); mb.band=ohpBand(mb.hp); ma.pairNormalized=true; mb.pairNormalized=true; } }
+  const cur=[],iss=[]; let issues=0;
+  for(const r of rows){
+    const model=models.get(String(r.enrichment_row_id||r.prepared_row_id))||ohpModel(r); const [status,grade]=ohpStatusGrade(r,model.hp,model.conf); const hpRowId=`${finalBatchId}|${r.enrichment_row_id||r.prepared_row_id}|hpv2`;
+    const payload={profile_version:ORCH_HP_V2_PROFILE_VERSION,orchestrator_direct_fallback:true,score_audit_service_binding_bypassed:true,baseline_anchor_0_100:r.baseline_hp_0_100,factor_hp_pressure:r.factor_hp_pressure,factor_adjustment_0_100:model.factorAdjustment,context_damping_0_1:model.damping,pair_normalized_more_less_sum_100:model.pairNormalized===true,no_true_hit_probability_claims:true,no_ranking:true,no_final_board:true};
+    cur.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO hit_probability_v2_current (hp_v2_row_id,batch_id,source_enrichment_batch_id,enrichment_row_id,prepared_row_id,matrix_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,team_id,opponent_team_id,canonical_prop_key,board_line_value,selected_side,factor_family,baseline_hp_row_id,baseline_hp_0_100,baseline_confidence_v2_0_60,baseline_sample_size,baseline_hit_count,baseline_miss_count,factor_hp_pressure,factor_adjustment_0_100,context_damping_0_1,hp_v2_0_100,hp_v2_confidence_0_100,hp_v2_band,hp_v2_status,hp_v2_grade,data_quality_score_0_100,confidence_cap_0_100,warning_count,blocker_count,missing_component_count,blocking_for_scoring,model_payload_json,details_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(hpRowId,finalBatchId,sourceEnrichmentBatchId,r.enrichment_row_id,r.prepared_row_id,r.matrix_id,r.source_line_id,r.source_key,r.game_pk,r.official_date,r.official_game_time_utc,r.mlb_player_id,r.player_name,r.team_id,r.opponent_team_id,r.canonical_prop_key,r.board_line_value,r.selected_side,r.factor_family,r.baseline_hp_row_id,r.baseline_hp_0_100,r.baseline_confidence_v2_0_60,r.baseline_sample_size,r.baseline_hit_count,r.baseline_miss_count,r.factor_hp_pressure,model.factorAdjustment,model.damping,model.hp,model.conf,model.band,status,grade,r.data_quality_score_0_100,r.confidence_cap_0_100,r.warning_count,r.blocker_count,r.missing_component_count,r.blocking_for_scoring,JSON.stringify(payload),JSON.stringify({enrichment_status:r.enrichment_status,enrichment_grade:r.enrichment_grade,matrix_status:r.matrix_status,matrix_grade:r.matrix_grade})));
+    if(status==='hp_v2_blocked'||status==='hp_v2_deferred_baseline_missing'||Number(r.missing_component_count||0)>0){ const severity=status==='hp_v2_blocked'?'BLOCKER':'WARNING'; const issueType=status==='hp_v2_blocked'?'HP_V2_BLOCKED_BY_ENRICHMENT':(status==='hp_v2_deferred_baseline_missing'?'HP_V2_BASELINE_MISSING':'HP_V2_PARTIAL_CONTEXT_MISSING_COMPONENT'); const reason=status==='hp_v2_blocked'?'Source enrichment row is blocked; HP V2 not playable.':(status==='hp_v2_deferred_baseline_missing'?'Missing baseline HP anchor.':'Context components are partial or missing; HP V2 confidence damped.'); iss.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO hit_probability_v2_issues (issue_id,batch_id,hp_v2_row_id,enrichment_row_id,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,selected_side,severity,issue_type,reason,details_json,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`${hpRowId}|${issueType}`,finalBatchId,hpRowId,r.enrichment_row_id,r.prepared_row_id,r.game_pk,r.mlb_player_id,r.canonical_prop_key,r.selected_side,severity,issueType,reason,JSON.stringify({missing_component_count:r.missing_component_count,warning_count:r.warning_count,blocker_count:r.blocker_count}))); issues++; }
+  }
+  for(let i=0;i<cur.length;i+=25)await env.SCORE_DB.batch(cur.slice(i,i+25));
+  for(let i=0;i<iss.length;i+=25)await env.SCORE_DB.batch(iss.slice(i,i+25));
+  const totals=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, SUM(CASE WHEN hp_v2_status NOT LIKE '%baseline_missing%' THEN 1 ELSE 0 END) AS baseline_rows, SUM(CASE WHEN hp_v2_status='hp_v2_blocked' THEN 1 ELSE 0 END) AS blocked, SUM(CASE WHEN hp_v2_status IN ('hp_v2_ready_with_warnings','hp_v2_ready_partial_context') THEN 1 ELSE 0 END) AS warnings, SUM(CASE WHEN hp_v2_status IN ('hp_v2_ready','hp_v2_ready_with_warnings','hp_v2_ready_partial_context') THEN 1 ELSE 0 END) AS ready FROM hit_probability_v2_current WHERE batch_id=?`,finalBatchId);
+  const writtenTotal=Number(totals&&totals.rows||0); const remaining=Math.max(0,expectedRows-(offset+rows.length)); const complete=remaining<=0;
+  const output={ok:true,data_ok:true,version:ORCH_HP_V2_VERSION,processed_by:WORKER_NAME,worker_name:WORKER_NAME,logical_worker_name:'alphadog-v2-hit-probability-v2',deployed_worker_slot:'alphadog-v2-orchestrator',job_key:'hit-probability-v2',request_id:row.request_id,run_id:runId,chain_id:row.chain_id,mode:ORCH_HP_V2_MODE,status:complete?'completed_hit_probability_v2_current':'partial_continue_hit_probability_v2_current',certification:complete?'HIT_PROBABILITY_V2_CERTIFIED_CURRENT_ESTIMATES':'HIT_PROBABILITY_V2_PARTIAL_CONTINUE',certification_grade:complete?'PASS_WITH_REVIEW_WARNINGS_ALLOWED':'PARTIAL',batch_id:finalBatchId,hp_v2_batch_id:finalBatchId,source_enrichment_batch_id:sourceEnrichmentBatchId,source_matrix_batch_id:sourceMatrixBatchId,enrichment_rows_read:expectedRows,expected_hp_rows:expectedRows,hp_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:rows.length,baseline_rows:Number(totals&&totals.baseline_rows||0),blocked_rows:Number(totals&&totals.blocked||0),warning_rows:Number(totals&&totals.warnings||0),hp_ready_rows:Number(totals&&totals.ready||0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,profile_version:ORCH_HP_V2_PROFILE_VERSION,side_expanded:true,orchestrator_direct_fallback:true,score_audit_service_binding_bypassed:true,reads_score_enrichment_current:true,writes_hit_probability_v2_tables_only:true,no_true_hit_probability_claims:true,no_current_scoring_mutation:true,no_score_enrichment_mutation:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started};
+  await run(env.SCORE_DB,`UPDATE hit_probability_v2_batches SET status=?, enrichment_rows_read=?, expected_hp_rows=?, hp_rows_written=?, baseline_rows=?, blocked_rows=?, warning_rows=?, issue_rows_written=?, hp_ready_rows=?, hp_blocked_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,complete?'completed':'partial_continue',expectedRows,expectedRows,writtenTotal,output.baseline_rows,output.blocked_rows,output.warning_rows,output.issue_rows_written,output.hp_ready_rows,output.blocked_rows,output.certification,output.certification_grade,safeStringifyD1(output,50000),finalBatchId);
+  const runStatus=complete?'completed':'partial_continue'; const queueStatus=complete?'completed':'pending';
+  await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, NULL, NULL)",runId,row.request_id,row.chain_id,row.job_key,row.worker_name,runStatus,output.certification,expectedRows,writtenTotal,Date.now()-started,JSON.stringify({request_id:row.request_id,job_key:row.job_key,mode:ORCH_HP_V2_MODE,input_json:rowInput}),safeStringifyD1(output,60000));
+  if(!complete){ const nextInput={...rowInput,hp_v2_batch_id:finalBatchId,resume_batch_id:finalBatchId,hp_v2_offset:offset+rows.length,source_enrichment_batch_id:sourceEnrichmentBatchId,source_matrix_batch_id:sourceMatrixBatchId,hit_probability_v2_resume:true,continuation_from_request_id:row.request_id}; await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",JSON.stringify(nextInput),safeStringifyD1(output,60000),row.request_id); }
+  else { await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",safeStringifyD1(output,60000),row.request_id); }
+  await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'hit_probability_v2_direct_orchestrator_completed', ?, ?, CURRENT_TIMESTAMP)",row.request_id,runId,WORKER_NAME,row.job_key,complete?'Orchestrator completed direct HP V2 fallback':'Orchestrator partial-continued direct HP V2 fallback',safeStringifyD1({request_id:row.request_id,certification:output.certification,rows_written:writtenTotal,partial_continue:!complete},6000));
+  return output;
 }
 
 async function processScoringEngineJob(env, row, runId, trigger) {
