@@ -1,13 +1,13 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-main-ui-v0.2.14-quota-board-rich-dossier";
+const VERSION = "alphadog-v2-main-ui-v0.2.15-quota-filter-counts";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
 
-const UI_VERSION_LABEL = "v0.2.14 - Quota Board + Rich Dossier";
+const UI_VERSION_LABEL = "v0.2.15 - Quota Counts + Rich Dossier";
 
 const DOCUMENTED_PROP_OPTIONS = [
   { prop_family: "hitter", canonical_prop_key: "hits", label: "Hits" },
@@ -1521,7 +1521,53 @@ async function apiCurrent(env, url) {
 
 async function apiFilters(env) {
   if (!env.SCORE_DB) return jsonResponse({ ok: false, error: "SCORE_DB binding missing", version: VERSION }, 500);
-  const rows = await queryAll(env.SCORE_DB, `
+  const quotaBase = `
+    WITH base AS (
+      SELECT
+        f.*,
+        CASE
+          WHEN LOWER(COALESCE(f.source_key,''))='prizepicks'
+           AND (LOWER(COALESCE(json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.payout_variant'), ''))='goblin'
+                OR COALESCE(json_extract(p.row_payload_json, '$.is_goblin'), json_extract(f.details_json, '$.prepared.is_goblin'),0)=1) THEN 'goblin'
+          WHEN LOWER(COALESCE(f.source_key,''))='prizepicks'
+           AND (LOWER(COALESCE(json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.payout_variant'), ''))='demon'
+                OR COALESCE(json_extract(p.row_payload_json, '$.is_demon'), json_extract(f.details_json, '$.prepared.is_demon'),0)=1) THEN 'demon'
+          WHEN LOWER(COALESCE(f.source_key,''))='sleeper'
+           AND LOWER(COALESCE(json_extract(p.row_payload_json, '$.side_mode'), json_extract(f.details_json, '$.prepared.side_mode'), ''))='more_only' THEN 'more_only'
+          ELSE 'regular'
+        END AS quota_line_type,
+        COALESCE(json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.payout_variant')) AS prepared_payout_variant,
+        COALESCE(json_extract(p.row_payload_json, '$.odds_type'), json_extract(f.details_json, '$.prepared.odds_type')) AS prepared_odds_type,
+        COALESCE(json_extract(p.row_payload_json, '$.side_mode'), json_extract(f.details_json, '$.prepared.side_mode'), 'two_sided') AS prepared_side_mode
+      FROM score_final_board_v2_current f
+      LEFT JOIN score_board_prepared_current p ON p.prepared_row_id=f.prepared_row_id
+      WHERE f.batch_id = (SELECT batch_id FROM score_final_board_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
+        AND f.review_playable = 1
+        AND COALESCE(f.live_playable,0)=0
+        AND f.official_game_time_utc IS NOT NULL
+        AND datetime(replace(replace(f.official_game_time_utc, 'T', ' '), 'Z', '')) > datetime('now', '+1 minute')
+        AND NOT (LOWER(COALESCE(f.source_key,''))='prizepicks' AND LOWER(COALESCE(f.selected_side,''))='less' AND (f.source_line_id LIKE '%|goblin|%' OR f.source_line_id LIKE '%|demon|%'))
+    ), ranked AS (
+      SELECT
+        base.*,
+        ROW_NUMBER() OVER (PARTITION BY canonical_prop_key ORDER BY COALESCE(default_board_rank,rank_order,999999), COALESCE(overall_score_0_100,0) DESC, COALESCE(hit_probability_0_100,0) DESC) AS quota_prop_rank,
+        ROW_NUMBER() OVER (PARTITION BY quota_line_type ORDER BY COALESCE(default_board_rank,rank_order,999999), COALESCE(overall_score_0_100,0) DESC, COALESCE(hit_probability_0_100,0) DESC) AS quota_type_rank,
+        ROW_NUMBER() OVER (PARTITION BY source_key, quota_line_type ORDER BY COALESCE(default_board_rank,rank_order,999999), COALESCE(overall_score_0_100,0) DESC, COALESCE(hit_probability_0_100,0) DESC) AS quota_source_type_rank,
+        ROW_NUMBER() OVER (PARTITION BY selected_side ORDER BY COALESCE(default_board_rank,rank_order,999999), COALESCE(overall_score_0_100,0) DESC, COALESCE(hit_probability_0_100,0) DESC) AS quota_side_rank
+      FROM base
+    ), selected AS (
+      SELECT *
+      FROM ranked
+      WHERE quota_prop_rank <= 5
+         OR (quota_line_type='goblin' AND quota_type_rank <= 20)
+         OR (quota_line_type='demon' AND quota_type_rank <= 10)
+         OR (LOWER(COALESCE(source_key,''))='prizepicks' AND quota_line_type='regular' AND quota_source_type_rank <= 20)
+         OR (LOWER(COALESCE(source_key,''))='sleeper' AND quota_line_type='regular' AND quota_source_type_rank <= 20)
+         OR (LOWER(COALESCE(selected_side,''))='less' AND quota_side_rank <= 15)
+         OR (LOWER(COALESCE(selected_side,''))='more' AND quota_side_rank <= 20)
+    )`;
+
+  const rows = await queryAll(env.SCORE_DB, `${quotaBase}
     SELECT
       source_key,
       canonical_prop_key,
@@ -1529,12 +1575,12 @@ async function apiFilters(env) {
         WHEN canonical_prop_key LIKE 'pitcher_%' OR canonical_prop_key IN ('earned_runs','hits_allowed','walks_allowed','pitcher_outs') THEN 'pitcher'
         ELSE 'hitter'
       END AS prop_family,
-      json_extract(details_json, '$.prepared.odds_type') AS odds_type,
-      json_extract(details_json, '$.prepared.payout_variant') AS payout_variant,
-      COALESCE(json_extract(details_json, '$.prepared.side_mode'), 'two_sided') AS side_mode,
-      COALESCE(json_extract(details_json, '$.prepared.is_goblin'),0) AS is_goblin,
-      COALESCE(json_extract(details_json, '$.prepared.is_demon'),0) AS is_demon,
-      COALESCE(json_extract(details_json, '$.prepared.is_standard'),1) AS is_standard,
+      CASE WHEN quota_line_type IN ('goblin','demon') THEN quota_line_type ELSE prepared_odds_type END AS odds_type,
+      CASE WHEN quota_line_type IN ('goblin','demon') THEN quota_line_type ELSE prepared_payout_variant END AS payout_variant,
+      CASE WHEN quota_line_type='more_only' THEN 'more_only' ELSE prepared_side_mode END AS side_mode,
+      CASE WHEN quota_line_type='goblin' THEN 1 ELSE 0 END AS is_goblin,
+      CASE WHEN quota_line_type='demon' THEN 1 ELSE 0 END AS is_demon,
+      CASE WHEN quota_line_type='regular' THEN 1 ELSE 0 END AS is_standard,
       hp_v2_band AS probability_band,
       hp_v2_grade AS probability_grade,
       board_lane AS board_tier,
@@ -1545,19 +1591,15 @@ async function apiFilters(env) {
       MAX(hit_probability_0_100) AS max_hp,
       MIN(overall_score_0_100) AS min_score,
       MAX(overall_score_0_100) AS max_score
-    FROM score_final_board_v2_current
-    WHERE default_board_visible = 1
-      AND batch_id = (SELECT batch_id FROM score_final_board_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
-      AND official_game_time_utc IS NOT NULL
-      AND datetime(replace(replace(official_game_time_utc, 'T', ' '), 'Z', '')) > datetime('now', '+1 minute')
+    FROM selected
     GROUP BY source_key, canonical_prop_key, prop_family, odds_type, payout_variant, side_mode, is_goblin, is_demon, is_standard, probability_band, probability_grade, board_tier, review_playable, live_playable
     ORDER BY source_key, prop_family, canonical_prop_key, odds_type, payout_variant
   `);
 
-  const summaryRows = await queryAll(env.SCORE_DB, `
+  const summaryRows = await queryAll(env.SCORE_DB, `${quotaBase}
     SELECT
       COUNT(*) AS total_rows,
-      SUM(CASE WHEN default_board_visible = 1 THEN 1 ELSE 0 END) AS default_rows,
+      COUNT(*) AS default_rows,
       SUM(CASE WHEN review_playable = 1 THEN 1 ELSE 0 END) AS review_rows,
       SUM(CASE WHEN live_playable = 1 THEN 1 ELSE 0 END) AS live_rows,
       MIN(hit_probability_0_100) AS min_hp,
@@ -1566,12 +1608,15 @@ async function apiFilters(env) {
       MAX(overall_score_0_100) AS max_score,
       MIN(certainty_0_100) AS min_certainty,
       MAX(certainty_0_100) AS max_certainty,
-      MAX(updated_at) AS latest_updated_at
-    FROM score_final_board_v2_current
-    WHERE default_board_visible = 1
-      AND batch_id = (SELECT batch_id FROM score_final_board_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
-      AND official_game_time_utc IS NOT NULL
-      AND datetime(replace(replace(official_game_time_utc, 'T', ' '), 'Z', '')) > datetime('now', '+1 minute')
+      MAX(updated_at) AS latest_updated_at,
+      SUM(CASE WHEN quota_prop_rank <= 5 THEN 1 ELSE 0 END) AS quota_prop_rows,
+      SUM(CASE WHEN quota_line_type='goblin' AND quota_type_rank <= 20 THEN 1 ELSE 0 END) AS quota_goblin_rows,
+      SUM(CASE WHEN quota_line_type='demon' AND quota_type_rank <= 10 THEN 1 ELSE 0 END) AS quota_demon_rows,
+      SUM(CASE WHEN LOWER(COALESCE(source_key,''))='prizepicks' AND quota_line_type='regular' AND quota_source_type_rank <= 20 THEN 1 ELSE 0 END) AS quota_pp_regular_rows,
+      SUM(CASE WHEN LOWER(COALESCE(source_key,''))='sleeper' AND quota_line_type='regular' AND quota_source_type_rank <= 20 THEN 1 ELSE 0 END) AS quota_sleeper_regular_rows,
+      SUM(CASE WHEN LOWER(COALESCE(selected_side,''))='less' AND quota_side_rank <= 15 THEN 1 ELSE 0 END) AS quota_less_rows,
+      SUM(CASE WHEN LOWER(COALESCE(selected_side,''))='more' AND quota_side_rank <= 20 THEN 1 ELSE 0 END) AS quota_more_rows
+    FROM selected
   `);
 
   const sourceMap = new Map();
@@ -1634,6 +1679,18 @@ async function apiFilters(env) {
     worker_name: WORKER_NAME,
     logical_app: LOGICAL_APP,
     route: "/api/main-board/filters",
+    quota_contract: {
+      enabled: true,
+      min_per_prop_line: 5,
+      min_goblin: 20,
+      min_demon: 10,
+      min_prizepicks_regular: 20,
+      min_sleeper_regular: 20,
+      min_less: 15,
+      min_more: 20,
+      legs_can_satisfy_multiple_quotas: true,
+      availability_based: true
+    },
     summary,
     prop_groups: {
       hitter: props.filter(p => p.prop_family === "hitter"),
@@ -1738,7 +1795,7 @@ const MAIN_HTML = `<!doctype html>
 <body>
 <div class="wrap">
   <header class="hero">
-    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.14 - Quota Board + Rich Dossier</div></div></div>
+    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.15 - Quota Counts + Rich Dossier</div></div></div>
     <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Main Board</button><button id="menuHealth">Health</button></div></div>
   </header>
   <section id="boardScreen">
@@ -1764,7 +1821,7 @@ const MAIN_HTML = `<!doctype html>
 </div>
 <script>
 (()=>{
-const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.14 - Quota Board + Rich Dossier';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null;
+const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.15 - Quota Counts + Rich Dossier';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0)+'%':'—'}
 function num(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0):'—'}
