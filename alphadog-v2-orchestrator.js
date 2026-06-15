@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.275-final-board-v2-timeout-safe-annotate";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.276-delta-certifier-fast-date-move-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -3318,7 +3318,8 @@ async function reconcileRunningDeltaFullRunChildrenFromOutput(env, trigger) {
   // It handles queue output_json and latest finished control_job_runs output, not only one worker family.
   const rows = await all(env.CONTROL_DB,
     `SELECT c.request_id, c.parent_request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.output_json, c.updated_at,
-            CASE WHEN c.status IN ('pending','running','partial_continue') AND c.finished_at IS NULL AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds') THEN 1 ELSE 0 END AS is_stale
+            CASE WHEN c.status IN ('pending','running','partial_continue') AND c.finished_at IS NULL AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-20 seconds') THEN 1 ELSE 0 END AS is_stale,
+            ROUND((strftime('%s','now') - strftime('%s',c.updated_at)) / 60.0, 2) AS minutes_since_update
      FROM control_job_queue c
      JOIN control_job_queue p ON p.request_id = c.parent_request_id AND p.chain_id = c.chain_id
      WHERE p.job_key='incremental-morning-full-run'
@@ -3334,13 +3335,60 @@ async function reconcileRunningDeltaFullRunChildrenFromOutput(env, trigger) {
   let reconciled_pending = 0;
   let reconciled_completed = 0;
   let ignored = 0;
+  let stale_failed_for_retry = 0;
   for (const row of rows) {
+    const minutesSinceUpdate = Number(row.minutes_since_update || 0);
+    if (String(row.job_key || '') === 'delta-certifier'
+        && String(row.status || '') === 'running'
+        && !row.output_json
+        && minutesSinceUpdate >= 5) {
+      const replacedOutput = {
+        ok: false,
+        data_ok: false,
+        version: SYSTEM_VERSION,
+        worker_name: row.worker_name,
+        job_key: row.job_key,
+        request_id: row.request_id,
+        chain_id: row.chain_id,
+        parent_request_id: row.parent_request_id,
+        status: 'INCREMENTAL_FULL_RUN_STALE_DELTA_CERTIFIER_REPLACED_BY_RETRY',
+        certification: 'INCREMENTAL_FULL_RUN_STALE_DELTA_CERTIFIER_REPLACED_BY_RETRY',
+        certification_grade: 'RETRY_REPLACED',
+        previous_status: row.status,
+        previous_updated_at: row.updated_at,
+        minutes_since_update: minutesSinceUpdate,
+        no_output_json: true,
+        no_board_refresh: true,
+        no_market_context: true,
+        no_scoring: true,
+        no_final_board: true,
+        stale_delta_certifier_recovery_v0_2_276: true
+      };
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='incremental_full_run_stale_delta_certifier_replaced_by_retry', error_message='Timeout/stale running delta-certifier with no output was closed for same-stage retry.' WHERE request_id=? AND status='running' AND finished_at IS NULL",
+        JSON.stringify(replacedOutput), row.request_id
+      );
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_runs SET status='failed', data_ok=0, certification_status='INCREMENTAL_FULL_RUN_STALE_DELTA_CERTIFIER_REPLACED_BY_RETRY', finished_at=CURRENT_TIMESTAMP, elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE elapsed_ms END, output_json=COALESCE(output_json, ?), error_code='incremental_full_run_stale_delta_certifier_replaced_by_retry', error_message='Timeout/stale running delta-certifier with no output was closed for same-stage retry.' WHERE request_id=? AND status='running'",
+        JSON.stringify(replacedOutput), row.request_id
+      );
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status IN ('pending','running','partial_continue') AND finished_at IS NULL",
+        row.parent_request_id
+      );
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'incremental_full_run_stale_delta_certifier_closed_for_retry', 'Closed stale running Calendar/Tally certifier with no output so parent can retry safely', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify(replacedOutput)
+      );
+      stale_failed_for_retry += 1;
+      continue;
+    }
     const result = await reconcileIncrementalFullRunChildLifecycle(env, row, trigger);
     if (result.changed && result.child && result.child.status === 'completed') reconciled_completed += 1;
     else if (result.changed) reconciled_pending += 1;
     else ignored += 1;
   }
-  return { reconciled_pending, reconciled_completed, ignored, scanned: rows.length };
+  return { reconciled_pending, reconciled_completed, stale_failed_for_retry, ignored, scanned: rows.length };
 }
 
 function childPassedStaticFullRun(stage, child) {
@@ -3535,6 +3583,185 @@ async function enqueueIncrementalMorningFullRunChild(env, parentRow, stage, step
     childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input)
   );
   return { child_request_id: childRequestId, input };
+}
+
+
+async function reconcileCalendarCoverageDateMoves(env, trigger = "unknown") {
+  // v0.2.276: Prevent moved/rescheduled games from leaving stale past-date blocking coverage rows.
+  // Invariant: mlb_game_data_coverage.official_date must match mlb_game_calendar.official_date for the same game_pk.
+  // If a moved game is now future/not-final, park coverage as WAITING_NOT_FINAL and non-blocking.
+  if (!env.TEAM_DB) return { ok: false, reason: "TEAM_DB_missing" };
+  const started = Date.now();
+  try {
+    const mismatchBefore = await first(env.TEAM_DB,
+      `SELECT COUNT(*) AS rows
+       FROM mlb_game_data_coverage cov
+       JOIN mlb_game_calendar cal ON cal.game_pk=cov.game_pk
+       WHERE cov.official_date IS NOT NULL
+         AND cal.official_date IS NOT NULL
+         AND cov.official_date <> cal.official_date`
+    );
+    const mismatchRows = Number(mismatchBefore && mismatchBefore.rows || 0);
+    if (mismatchRows <= 0) {
+      return { ok: true, changed: false, mismatch_rows_before: 0, elapsed_ms: Date.now() - started, version: SYSTEM_VERSION };
+    }
+
+    const updateRes = await run(env.TEAM_DB,
+      `UPDATE mlb_game_data_coverage
+       SET
+         official_date = (SELECT c.official_date FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_data_coverage.game_pk),
+         season = (SELECT c.season FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_data_coverage.game_pk),
+         coverage_status = CASE
+           WHEN COALESCE((SELECT c.is_available_for_stats FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_data_coverage.game_pk),0)=1
+             OR COALESCE((SELECT c.is_final FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_data_coverage.game_pk),0)=1
+           THEN coverage_status
+           ELSE 'scheduled_not_ready'
+         END,
+         coverage_grade = CASE
+           WHEN COALESCE((SELECT c.is_available_for_stats FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_data_coverage.game_pk),0)=1
+             OR COALESCE((SELECT c.is_final FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_data_coverage.game_pk),0)=1
+           THEN coverage_grade
+           ELSE 'WAITING_NOT_FINAL'
+         END,
+         blocking_for_full_run = CASE
+           WHEN COALESCE((SELECT c.is_available_for_stats FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_data_coverage.game_pk),0)=1
+             OR COALESCE((SELECT c.is_final FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_data_coverage.game_pk),0)=1
+           THEN blocking_for_full_run
+           ELSE 0
+         END,
+         missing_reason = CASE
+           WHEN COALESCE((SELECT c.is_available_for_stats FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_data_coverage.game_pk),0)=1
+             OR COALESCE((SELECT c.is_final FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_data_coverage.game_pk),0)=1
+           THEN missing_reason
+           ELSE NULL
+         END,
+         exception_reason = CASE
+           WHEN COALESCE((SELECT c.is_available_for_stats FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_data_coverage.game_pk),0)=1
+             OR COALESCE((SELECT c.is_final FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_data_coverage.game_pk),0)=1
+           THEN COALESCE(exception_reason, 'RECONCILED_GAME_OFFICIAL_DATE_CHANGED')
+           ELSE 'RECONCILED_GAME_OFFICIAL_DATE_MOVED_TO_FUTURE'
+         END,
+         updated_at = CURRENT_TIMESTAMP
+       WHERE game_pk IN (SELECT game_pk FROM mlb_game_calendar)
+         AND official_date <> (SELECT c.official_date FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_data_coverage.game_pk)`
+    );
+
+    let gapDeleteRes = null;
+    try {
+      gapDeleteRes = await run(env.TEAM_DB,
+        `DELETE FROM mlb_game_coverage_gaps
+         WHERE game_pk IN (SELECT game_pk FROM mlb_game_calendar)
+           AND official_date <> (SELECT c.official_date FROM mlb_game_calendar c WHERE c.game_pk=mlb_game_coverage_gaps.game_pk)`
+      );
+    } catch (gapErr) {
+      gapDeleteRes = { ok: false, error: String(gapErr && gapErr.message ? gapErr.message : gapErr).slice(0, 900) };
+    }
+
+    const mismatchAfter = await first(env.TEAM_DB,
+      `SELECT COUNT(*) AS rows
+       FROM mlb_game_data_coverage cov
+       JOIN mlb_game_calendar cal ON cal.game_pk=cov.game_pk
+       WHERE cov.official_date IS NOT NULL
+         AND cal.official_date IS NOT NULL
+         AND cov.official_date <> cal.official_date`
+    );
+    const output = {
+      ok: true,
+      changed: true,
+      mismatch_rows_before: mismatchRows,
+      mismatch_rows_after: Number(mismatchAfter && mismatchAfter.rows || 0),
+      coverage_rows_changed: updateRes && updateRes.meta && typeof updateRes.meta.changes === 'number' ? updateRes.meta.changes : null,
+      stale_gap_rows_deleted: gapDeleteRes && gapDeleteRes.meta && typeof gapDeleteRes.meta.changes === 'number' ? gapDeleteRes.meta.changes : null,
+      gap_delete_ok: !gapDeleteRes || gapDeleteRes.ok !== false,
+      trigger,
+      elapsed_ms: Date.now() - started,
+      official_date_move_guard_v0_2_276: true,
+      version: SYSTEM_VERSION
+    };
+    try {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'WARN', 'calendar_coverage_date_moves_reconciled', 'Reconciled coverage rows whose official_date no longer matched mlb_game_calendar', ?, CURRENT_TIMESTAMP)",
+        WORKER_NAME, JSON.stringify(output)
+      );
+    } catch (_) {}
+    return output;
+  } catch (err) {
+    const output = { ok: false, changed: false, error: String(err && err.message ? err.message : err).slice(0, 900), trigger, elapsed_ms: Date.now() - started, version: SYSTEM_VERSION };
+    try {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'ERROR', 'calendar_coverage_date_move_reconcile_failed', 'Calendar coverage official_date reconciliation failed', ?, CURRENT_TIMESTAMP)",
+        WORKER_NAME, JSON.stringify(output)
+      );
+    } catch (_) {}
+    return output;
+  }
+}
+
+async function getIncrementalCalendarTallyPrecheckFastNoopProof(env, trigger = "unknown") {
+  // v0.2.276: Safe fast path for Calendar/Tally precheck only.
+  // It skips the heavy delta-certifier when coverage is already fresh, non-blocking, and date-move reconciled.
+  if (!env.TEAM_DB) return { ok: false, noop_safe: false, reason: "TEAM_DB_missing" };
+  try {
+    const reconcile = await reconcileCalendarCoverageDateMoves(env, `${trigger}:precheck_fast_noop_probe`);
+    if (reconcile.ok === false) return { ok: false, noop_safe: false, reason: "date_move_reconcile_failed", reconcile };
+    const proof = await first(env.TEAM_DB,
+      `WITH bounds AS (
+         SELECT date('now','-1 day') AS start_date, date('now','+1 day') AS end_date
+       ), cov AS (
+         SELECT
+           COUNT(*) AS coverage_rows,
+           SUM(CASE WHEN COALESCE(blocking_for_full_run,0)=1 THEN 1 ELSE 0 END) AS blocking_rows,
+           SUM(CASE WHEN coverage_status='scheduled_not_ready' AND coverage_grade='MISSING_PAST_DATE_BLOCKER' THEN 1 ELSE 0 END) AS past_blocker_rows,
+           MAX(updated_at) AS coverage_max_updated_at
+         FROM mlb_game_data_coverage, bounds
+         WHERE official_date BETWEEN bounds.start_date AND bounds.end_date
+       ), cal AS (
+         SELECT COUNT(*) AS calendar_games, MAX(updated_at) AS calendar_max_updated_at
+         FROM mlb_game_calendar, bounds
+         WHERE official_date BETWEEN bounds.start_date AND bounds.end_date
+       ), mismatch AS (
+         SELECT COUNT(*) AS mismatch_rows
+         FROM mlb_game_data_coverage cov2
+         JOIN mlb_game_calendar cal2 ON cal2.game_pk=cov2.game_pk
+         WHERE cov2.official_date <> cal2.official_date
+       )
+       SELECT
+         bounds.start_date,
+         bounds.end_date,
+         cov.coverage_rows,
+         cov.blocking_rows,
+         cov.past_blocker_rows,
+         cov.coverage_max_updated_at,
+         cal.calendar_games,
+         cal.calendar_max_updated_at,
+         mismatch.mismatch_rows
+       FROM bounds, cov, cal, mismatch`
+    );
+    const coverageRows = Number(proof && proof.coverage_rows || 0);
+    const blockingRows = Number(proof && proof.blocking_rows || 0);
+    const pastBlockers = Number(proof && proof.past_blocker_rows || 0);
+    const mismatchRows = Number(proof && proof.mismatch_rows || 0);
+    const calendarGames = Number(proof && proof.calendar_games || 0);
+    const coverageFreshEnough = !!(proof && proof.coverage_max_updated_at && proof.calendar_max_updated_at && String(proof.coverage_max_updated_at) >= String(proof.calendar_max_updated_at));
+    const noopSafe = coverageRows > 0 && calendarGames > 0 && blockingRows === 0 && pastBlockers === 0 && mismatchRows === 0 && coverageFreshEnough;
+    return {
+      ok: true,
+      noop_safe: noopSafe,
+      reason: noopSafe ? "coverage_fresh_no_blockers_no_date_mismatches" : "coverage_not_safe_for_fast_noop",
+      ...proof,
+      coverage_rows: coverageRows,
+      blocking_rows: blockingRows,
+      past_blocker_rows: pastBlockers,
+      mismatch_rows: mismatchRows,
+      calendar_games: calendarGames,
+      coverage_fresh_enough: coverageFreshEnough,
+      reconcile,
+      calendar_tally_precheck_fast_noop_v0_2_276: true,
+      version: SYSTEM_VERSION
+    };
+  } catch (err) {
+    return { ok: false, noop_safe: false, reason: String(err && err.message ? err.message : err).slice(0, 900), version: SYSTEM_VERSION };
+  }
 }
 
 async function getIncrementalFullRunLayerBlockingGapCount(env, layerKey) {
@@ -3783,7 +4010,64 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
       let childStatusForReport = "pending";
       let childPassForReport = null;
       let childNoopProof = null;
-      if (stage.layer_key) {
+      if (stage.stage_key === 'calendar_tally_precheck' && stage.job_key === 'delta-certifier') {
+        const precheckProof = await getIncrementalCalendarTallyPrecheckFastNoopProof(env, trigger);
+        if (precheckProof.ok && precheckProof.noop_safe === true) {
+          const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
+          const input = incrementalMorningFullRunChildInput(row, stage, i, 0);
+          const output = {
+            ok: true,
+            data_ok: true,
+            version: SYSTEM_VERSION,
+            worker_name: stage.worker_name,
+            job_key: stage.job_key,
+            request_id: childRequestId,
+            chain_id: row.chain_id,
+            parent_request_id: row.request_id,
+            mode: 'game_calendar_differential_check_update',
+            status: 'GAME_CALENDAR_DIFFERENTIAL_PRECHECK_FAST_NOOP_FRESH_COVERAGE',
+            certification: 'GAME_CALENDAR_DIFFERENTIAL_PRECHECK_FAST_NOOP_FRESH_COVERAGE',
+            certification_grade: 'DIFF_PRECHECK_FAST_NOOP_PASS',
+            calendar_tally_stage: 'precheck',
+            require_zero_blocking_gaps: false,
+            coverage_rows_written: Number(precheckProof.coverage_rows || 0),
+            blocking_gap_count: 0,
+            missing_game_layer_count: 0,
+            source_game_count: Number(precheckProof.calendar_games || 0),
+            rows_read: Number(precheckProof.coverage_rows || 0),
+            rows_written: 0,
+            external_calls_performed: 0,
+            fast_noop_reason: precheckProof.reason,
+            fast_noop_proof: precheckProof,
+            continuation_required: false,
+            orchestrator_should_self_continue: false,
+            no_board_refresh: true,
+            no_market_context: true,
+            no_scoring: true,
+            no_ranking: true,
+            no_final_board: true,
+            calendar_tally_precheck_fast_noop_v0_2_276: true,
+            timestamp_utc: nowIso()
+          };
+          await run(env.CONTROL_DB,
+            "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, output_json, run_after, created_at, started_at, finished_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'completed', ?, 0, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+            childRequestId, row.chain_id, row.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input), JSON.stringify(output)
+          );
+          await run(env.CONTROL_DB,
+            "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'GAME_CALENDAR_DIFFERENTIAL_PRECHECK_FAST_NOOP_FRESH_COVERAGE', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+            `${runId}_${stage.stage_key}_fast_noop`, childRequestId, row.chain_id, stage.job_key, stage.worker_name, Number(precheckProof.coverage_rows || 0), JSON.stringify(input), JSON.stringify(output)
+          );
+          await run(env.CONTROL_DB,
+            "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_calendar_tally_precheck_fast_noop_completed', 'Calendar/Tally precheck completed as fast no-op because coverage is fresh, non-blocking, and date-move reconciled', ?, CURRENT_TIMESTAMP)",
+            childRequestId, runId, WORKER_NAME, stage.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: childRequestId, stage_key: stage.stage_key, precheckProof, version: SYSTEM_VERSION })
+          );
+          enqueued = { child_request_id: childRequestId, input, output, completed_fast_noop: true };
+          childStatusForReport = "completed";
+          childPassForReport = true;
+          childNoopProof = precheckProof;
+        }
+      }
+      if (!enqueued && stage.layer_key) {
         const gapProof = await getIncrementalFullRunLayerBlockingGapCount(env, stage.layer_key);
         if (gapProof.ok && gapProof.noop_safe === true) {
           enqueued = await completeIncrementalFullRunNoGapLayerChild(env, row, stage, i, runId, trigger, gapProof);
@@ -15198,6 +15482,12 @@ async function processOneUnlocked(env, trigger) {
 
 async function tick(env, trigger = "manual", maxJobs = 3) {
   let prelockDailyContextRecovery = null;
+  let prelockCoverageDateMoveReconcile = null;
+  try {
+    prelockCoverageDateMoveReconcile = await reconcileCalendarCoverageDateMoves(env, `${trigger || 'tick'}:prelock`);
+  } catch (err) {
+    prelockCoverageDateMoveReconcile = { ok: false, error: String(err && err.message ? err.message : err).slice(0, 900) };
+  }
   try {
     prelockDailyContextRecovery = await recoverDailyContextRunningChildrenFromCompleteSidecarsPreLock(env, trigger);
   } catch (err) {
@@ -15215,14 +15505,19 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       status: "lock_busy",
       trigger,
       lock,
-      prelock_daily_context_recovery: prelockDailyContextRecovery
+      prelock_daily_context_recovery: prelockDailyContextRecovery,
+      prelock_coverage_date_move_reconcile: prelockCoverageDateMoveReconcile
     });
   }
 
   const processed = [];
   try {
+    if (prelockCoverageDateMoveReconcile && prelockCoverageDateMoveReconcile.changed) {
+      processed.push({ status: 'calendar_coverage_date_moves_reconciled', ...prelockCoverageDateMoveReconcile });
+    }
+
     const deltaChildReconcile = await reconcileRunningDeltaFullRunChildrenFromOutput(env, trigger);
-    if (deltaChildReconcile.reconciled_pending > 0 || deltaChildReconcile.reconciled_completed > 0) {
+    if (deltaChildReconcile.reconciled_pending > 0 || deltaChildReconcile.reconciled_completed > 0 || deltaChildReconcile.stale_failed_for_retry > 0) {
       processed.push({ status: "delta_full_run_child_output_reconciled", ...deltaChildReconcile });
     }
 
