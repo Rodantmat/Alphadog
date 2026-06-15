@@ -1,13 +1,13 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-main-ui-v0.2.12-final-board-v2-latest-batch-only";
+const VERSION = "alphadog-v2-main-ui-v0.2.13-rich-dossier-v2-remap";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
 
-const UI_VERSION_LABEL = "v0.2.12 - Final Board V2 Latest Batch";
+const UI_VERSION_LABEL = "v0.2.13 - Rich Dossier V2";
 
 const DOCUMENTED_PROP_OPTIONS = [
   { prop_family: "hitter", canonical_prop_key: "hits", label: "Hits" },
@@ -710,10 +710,10 @@ function buildCurrentSql(url) {
   if (lineTypes.length) {
     const wanted = lineTypes.map(v => String(v).toLowerCase());
     const clauses = [];
-    if (wanted.includes("regular") || wanted.includes("standard")) clauses.push("1=1");
-    if (wanted.includes("more_only")) clauses.push("COALESCE(json_extract(f.details_json, '$.prepared.side_mode'), '') = 'more_only'");
-    if (wanted.includes("goblin")) clauses.push("COALESCE(json_extract(f.details_json, '$.prepared.payout_variant'), '') = 'goblin' OR COALESCE(json_extract(f.details_json, '$.prepared.is_goblin'),0)=1");
-    if (wanted.includes("demon")) clauses.push("COALESCE(json_extract(f.details_json, '$.prepared.payout_variant'), '') = 'demon' OR COALESCE(json_extract(f.details_json, '$.prepared.is_demon'),0)=1");
+    if (wanted.includes("regular") || wanted.includes("standard")) clauses.push("COALESCE(json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.payout_variant'), 'standard') NOT IN ('goblin','demon')");
+    if (wanted.includes("more_only")) clauses.push("COALESCE(json_extract(p.row_payload_json, '$.side_mode'), json_extract(f.details_json, '$.prepared.side_mode'), '') = 'more_only'");
+    if (wanted.includes("goblin")) clauses.push("COALESCE(json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.payout_variant'), '') = 'goblin' OR COALESCE(json_extract(p.row_payload_json, '$.is_goblin'), json_extract(f.details_json, '$.prepared.is_goblin'),0)=1");
+    if (wanted.includes("demon")) clauses.push("COALESCE(json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.payout_variant'), '') = 'demon' OR COALESCE(json_extract(p.row_payload_json, '$.is_demon'), json_extract(f.details_json, '$.prepared.is_demon'),0)=1");
     if (clauses.length) where.push(`(${clauses.join(" OR ")})`);
   }
   if (minHp !== null && minHp !== "") {
@@ -756,9 +756,9 @@ function buildCurrentSql(url) {
       f.certainty_0_100 AS confidence_0_100,
       f.board_grade AS score_grade,
       f.overall_score_0_100 AS score_sort_0_100,
-      COALESCE(json_extract(f.details_json, '$.prepared.side_mode'), 'two_sided') AS side_mode,
-      json_extract(f.details_json, '$.prepared.odds_type') AS odds_type,
-      json_extract(f.details_json, '$.prepared.payout_variant') AS payout_variant,
+      COALESCE(json_extract(p.row_payload_json, '$.side_mode'), json_extract(f.details_json, '$.prepared.side_mode'), CASE WHEN json_extract(p.row_payload_json, '$.payout_variant') IN ('goblin','demon') THEN 'more_only' ELSE 'two_sided' END) AS side_mode,
+      COALESCE(json_extract(p.row_payload_json, '$.odds_type'), json_extract(f.details_json, '$.prepared.odds_type')) AS odds_type,
+      COALESCE(json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.payout_variant')) AS payout_variant,
       f.board_lane AS board_tier,
       f.review_playable,
       f.live_playable,
@@ -777,13 +777,13 @@ function buildCurrentSql(url) {
         WHEN f.canonical_prop_key LIKE 'pitcher_%' OR f.canonical_prop_key IN ('earned_runs','hits_allowed','walks_allowed','pitcher_outs') THEN 'pitcher'
         ELSE 'hitter'
       END AS prop_family,
-      json_extract(f.details_json, '$.game_context.home_team_name') AS home_team_name,
-      json_extract(f.details_json, '$.game_context.away_team_name') AS away_team_name,
+      COALESCE(json_extract(f.details_json, '$.game_context.home_team_name'), p.team_full_name, p.team) AS home_team_name,
+      COALESCE(json_extract(f.details_json, '$.game_context.away_team_name'), p.opponent_full_name, p.opponent) AS away_team_name,
       json_extract(f.details_json, '$.game_context.venue_name') AS venue_name,
-      COALESCE(json_extract(f.details_json, '$.prepared.source_line_type'), 'regular') AS source_line_type,
-      COALESCE(json_extract(f.details_json, '$.prepared.is_goblin'),0) AS is_goblin,
-      COALESCE(json_extract(f.details_json, '$.prepared.is_demon'),0) AS is_demon,
-      COALESCE(json_extract(f.details_json, '$.prepared.is_standard'),1) AS is_standard,
+      COALESCE(json_extract(p.row_payload_json, '$.source_line_type'), json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.source_line_type'), 'regular') AS source_line_type,
+      COALESCE(json_extract(p.row_payload_json, '$.is_goblin'), json_extract(f.details_json, '$.prepared.is_goblin'),0) AS is_goblin,
+      COALESCE(json_extract(p.row_payload_json, '$.is_demon'), json_extract(f.details_json, '$.prepared.is_demon'),0) AS is_demon,
+      COALESCE(json_extract(p.row_payload_json, '$.is_standard'), json_extract(f.details_json, '$.prepared.is_standard'), CASE WHEN json_extract(p.row_payload_json, '$.payout_variant') IN ('goblin','demon') THEN 0 ELSE 1 END) AS is_standard,
       NULL AS hp_sample_size,
       NULL AS hp_non_push_sample,
       NULL AS hp_hit_count,
@@ -812,8 +812,12 @@ function buildCurrentSql(url) {
       f.source_hp_v2_batch_id,
       f.source_score_enrichment_batch_id,
       f.created_at,
-      f.updated_at
+      f.updated_at,
+      f.details_json AS details_json_snapshot,
+      p.raw_source_json AS prepared_raw_source_json,
+      p.row_payload_json AS prepared_row_payload_json
     FROM score_final_board_v2_current f
+    LEFT JOIN score_board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
     ${where.length ? "WHERE " + where.join(" AND ") : ""}
     ORDER BY f.default_board_rank ASC
     LIMIT ${limit}
@@ -894,9 +898,9 @@ async function apiDossier(env, url) {
       f.certainty_0_100 AS confidence_0_100,
       f.board_grade AS score_grade,
       f.overall_score_0_100 AS score_sort_0_100,
-      COALESCE(json_extract(f.details_json, '$.prepared.side_mode'), 'two_sided') AS side_mode,
-      json_extract(f.details_json, '$.prepared.odds_type') AS odds_type,
-      json_extract(f.details_json, '$.prepared.payout_variant') AS payout_variant,
+      COALESCE(json_extract(p.row_payload_json, '$.side_mode'), json_extract(f.details_json, '$.prepared.side_mode'), CASE WHEN json_extract(p.row_payload_json, '$.payout_variant') IN ('goblin','demon') THEN 'more_only' ELSE 'two_sided' END) AS side_mode,
+      COALESCE(json_extract(p.row_payload_json, '$.odds_type'), json_extract(f.details_json, '$.prepared.odds_type')) AS odds_type,
+      COALESCE(json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.payout_variant')) AS payout_variant,
       f.board_lane AS board_tier,
       f.review_playable,
       f.live_playable,
@@ -915,13 +919,13 @@ async function apiDossier(env, url) {
         WHEN f.canonical_prop_key LIKE 'pitcher_%' OR f.canonical_prop_key IN ('earned_runs','hits_allowed','walks_allowed','pitcher_outs') THEN 'pitcher'
         ELSE 'hitter'
       END AS prop_family,
-      json_extract(f.details_json, '$.game_context.home_team_name') AS home_team_name,
-      json_extract(f.details_json, '$.game_context.away_team_name') AS away_team_name,
+      COALESCE(json_extract(f.details_json, '$.game_context.home_team_name'), p.team_full_name, p.team) AS home_team_name,
+      COALESCE(json_extract(f.details_json, '$.game_context.away_team_name'), p.opponent_full_name, p.opponent) AS away_team_name,
       json_extract(f.details_json, '$.game_context.venue_name') AS venue_name,
-      COALESCE(json_extract(f.details_json, '$.prepared.source_line_type'), 'regular') AS source_line_type,
-      COALESCE(json_extract(f.details_json, '$.prepared.is_goblin'),0) AS is_goblin,
-      COALESCE(json_extract(f.details_json, '$.prepared.is_demon'),0) AS is_demon,
-      COALESCE(json_extract(f.details_json, '$.prepared.is_standard'),1) AS is_standard,
+      COALESCE(json_extract(p.row_payload_json, '$.source_line_type'), json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.source_line_type'), 'regular') AS source_line_type,
+      COALESCE(json_extract(p.row_payload_json, '$.is_goblin'), json_extract(f.details_json, '$.prepared.is_goblin'),0) AS is_goblin,
+      COALESCE(json_extract(p.row_payload_json, '$.is_demon'), json_extract(f.details_json, '$.prepared.is_demon'),0) AS is_demon,
+      COALESCE(json_extract(p.row_payload_json, '$.is_standard'), json_extract(f.details_json, '$.prepared.is_standard'), CASE WHEN json_extract(p.row_payload_json, '$.payout_variant') IN ('goblin','demon') THEN 0 ELSE 1 END) AS is_standard,
       NULL AS hp_sample_size,
       NULL AS hp_non_push_sample,
       NULL AS hp_hit_count,
@@ -950,8 +954,12 @@ async function apiDossier(env, url) {
       f.source_hp_v2_batch_id,
       f.source_score_enrichment_batch_id,
       f.created_at,
-      f.updated_at
+      f.updated_at,
+      f.details_json AS details_json_snapshot,
+      p.raw_source_json AS prepared_raw_source_json,
+      p.row_payload_json AS prepared_row_payload_json
     FROM score_final_board_v2_current f
+    LEFT JOIN score_board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
     WHERE f.board_row_id = ?
     LIMIT 1
   `, [finalId]);
@@ -984,9 +992,9 @@ async function apiDossier(env, url) {
       f.certainty_0_100 AS confidence_0_100,
       f.board_grade AS score_grade,
       f.overall_score_0_100 AS score_sort_0_100,
-      COALESCE(json_extract(f.details_json, '$.prepared.side_mode'), 'two_sided') AS side_mode,
-      json_extract(f.details_json, '$.prepared.odds_type') AS odds_type,
-      json_extract(f.details_json, '$.prepared.payout_variant') AS payout_variant,
+      COALESCE(json_extract(p.row_payload_json, '$.side_mode'), json_extract(f.details_json, '$.prepared.side_mode'), CASE WHEN json_extract(p.row_payload_json, '$.payout_variant') IN ('goblin','demon') THEN 'more_only' ELSE 'two_sided' END) AS side_mode,
+      COALESCE(json_extract(p.row_payload_json, '$.odds_type'), json_extract(f.details_json, '$.prepared.odds_type')) AS odds_type,
+      COALESCE(json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.payout_variant')) AS payout_variant,
       f.board_lane AS board_tier,
       f.review_playable,
       f.live_playable,
@@ -1005,13 +1013,13 @@ async function apiDossier(env, url) {
         WHEN f.canonical_prop_key LIKE 'pitcher_%' OR f.canonical_prop_key IN ('earned_runs','hits_allowed','walks_allowed','pitcher_outs') THEN 'pitcher'
         ELSE 'hitter'
       END AS prop_family,
-      json_extract(f.details_json, '$.game_context.home_team_name') AS home_team_name,
-      json_extract(f.details_json, '$.game_context.away_team_name') AS away_team_name,
+      COALESCE(json_extract(f.details_json, '$.game_context.home_team_name'), p.team_full_name, p.team) AS home_team_name,
+      COALESCE(json_extract(f.details_json, '$.game_context.away_team_name'), p.opponent_full_name, p.opponent) AS away_team_name,
       json_extract(f.details_json, '$.game_context.venue_name') AS venue_name,
-      COALESCE(json_extract(f.details_json, '$.prepared.source_line_type'), 'regular') AS source_line_type,
-      COALESCE(json_extract(f.details_json, '$.prepared.is_goblin'),0) AS is_goblin,
-      COALESCE(json_extract(f.details_json, '$.prepared.is_demon'),0) AS is_demon,
-      COALESCE(json_extract(f.details_json, '$.prepared.is_standard'),1) AS is_standard,
+      COALESCE(json_extract(p.row_payload_json, '$.source_line_type'), json_extract(p.row_payload_json, '$.payout_variant'), json_extract(f.details_json, '$.prepared.source_line_type'), 'regular') AS source_line_type,
+      COALESCE(json_extract(p.row_payload_json, '$.is_goblin'), json_extract(f.details_json, '$.prepared.is_goblin'),0) AS is_goblin,
+      COALESCE(json_extract(p.row_payload_json, '$.is_demon'), json_extract(f.details_json, '$.prepared.is_demon'),0) AS is_demon,
+      COALESCE(json_extract(p.row_payload_json, '$.is_standard'), json_extract(f.details_json, '$.prepared.is_standard'), CASE WHEN json_extract(p.row_payload_json, '$.payout_variant') IN ('goblin','demon') THEN 0 ELSE 1 END) AS is_standard,
       NULL AS hp_sample_size,
       NULL AS hp_non_push_sample,
       NULL AS hp_hit_count,
@@ -1040,8 +1048,12 @@ async function apiDossier(env, url) {
       f.source_hp_v2_batch_id,
       f.source_score_enrichment_batch_id,
       f.created_at,
-      f.updated_at
+      f.updated_at,
+      f.details_json AS details_json_snapshot,
+      p.raw_source_json AS prepared_raw_source_json,
+      p.row_payload_json AS prepared_row_payload_json
     FROM score_final_board_v2_current f
+    LEFT JOIN score_board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
     WHERE f.batch_id = ?
       AND f.game_pk = ?
       AND f.player_id = ?
@@ -1049,25 +1061,252 @@ async function apiDossier(env, url) {
     LIMIT 80
   `, [selectedRaw.final_board_batch_id, selectedRaw.game_pk, selectedRaw.mlb_player_id]);
 
-  const hpLines = await queryAll(env.SCORE_DB, `
+  const playerId = selectedRaw.mlb_player_id;
+  const playerName = selectedRaw.player_name;
+  const gamePk = selectedRaw.game_pk;
+  const venueId = selectedRaw.venue_id || null;
+  const hpBatchId = selectedRaw.source_hp_v2_batch_id || selectedRaw.source_hp_batch_id;
+
+  const hpLines = await optionalQueryAll(env.SCORE_DB, `
     SELECT
       source_key,
       canonical_prop_key,
       selected_side,
-      line_value,
-      hit_probability_0_100 AS estimated_hit_probability_0_100,
-      certainty_0_100 AS probability_confidence_0_100,
+      board_line_value AS line_value,
+      hp_v2_0_100 AS estimated_hit_probability_0_100,
+      hp_v2_confidence_0_100 AS probability_confidence_0_100,
       hp_v2_grade AS probability_grade,
-      NULL AS sample_size,
-      NULL AS hit_count,
-      NULL AS miss_count
-    FROM score_final_board_v2_current
+      baseline_sample_size AS sample_size,
+      baseline_hit_count AS hit_count,
+      baseline_miss_count AS miss_count,
+      NULL AS push_count,
+      CASE WHEN baseline_sample_size > 0 THEN CAST(baseline_hit_count AS REAL) / baseline_sample_size ELSE NULL END AS empirical_hit_rate_0_1,
+      sample_tier,
+      player_baseline_tier,
+      hp_v2_status,
+      details_json
+    FROM hit_probability_v2_current
     WHERE batch_id = ?
       AND game_pk = ?
-      AND player_id = ?
-    ORDER BY canonical_prop_key, line_value, selected_side
+      AND mlb_player_id = ?
+    ORDER BY canonical_prop_key, board_line_value, selected_side, source_key
+    LIMIT 160
+  `, [hpBatchId, gamePk, playerId]);
+
+  const preparedLines = await optionalQueryAll(env.SCORE_DB, `
+    SELECT source_key, source_row_id, projection_id, player_name, canonical_prop_key, source_prop_name, line_value,
+           team, opponent, team_full_name, opponent_full_name, source_pickable, pickable_safe, prep_status, block_reason,
+           json_extract(row_payload_json,'$.source_line_type') AS source_line_type,
+           json_extract(row_payload_json,'$.payout_variant') AS payout_variant,
+           json_extract(row_payload_json,'$.is_goblin') AS is_goblin,
+           json_extract(row_payload_json,'$.is_demon') AS is_demon,
+           json_extract(row_payload_json,'$.is_standard') AS is_standard,
+           source_start_time, updated_at
+    FROM score_board_prepared_current
+    WHERE resolved_mlb_player_id = ? AND official_game_pk = ?
+    ORDER BY source_key, canonical_prop_key, line_value
+    LIMIT 140
+  `, [playerId, gamePk]);
+
+  const matrixLines = await optionalQueryAll(env.SCORE_DB, `
+    SELECT *
+    FROM prop_matrix_current
+    WHERE (mlb_player_id = ? OR player_id = ? OR resolved_mlb_player_id = ?)
+      AND game_pk = ?
     LIMIT 120
-  `, [selectedRaw.final_board_batch_id, selectedRaw.game_pk, selectedRaw.mlb_player_id]);
+  `, [playerId, playerId, playerId, gamePk]);
+
+  const playerProfile = await optionalQueryAll(env.REF_DB, `
+    SELECT player_id, mlb_player_id, player_name, full_name, current_team_id, current_mlb_team_id,
+           primary_position, primary_role, bats, throws, bat_side, throw_side, active, updated_at
+    FROM ref_players
+    WHERE mlb_player_id = ? OR player_id = ?
+    LIMIT 1
+  `, [playerId, playerId]);
+
+  const recentForm = await optionalQueryAll(env.STATS_HITTER_DB, `
+    SELECT metric_window, games_count, pa_sum, ab_sum, hits_sum, doubles_sum, triples_sum,
+           home_runs_sum, runs_sum, rbi_sum, walks_sum, strikeouts_sum, stolen_bases_sum,
+           total_bases_derived_sum, batting_average, slugging_percentage, strikeout_rate, walk_rate, sample_size_label
+    FROM hitter_metric_snapshots
+    WHERE player_id = ?
+    ORDER BY CASE metric_window WHEN 'season_to_date' THEN 1 WHEN 'last_20_games' THEN 2 WHEN 'last_10_games' THEN 3 WHEN 'last_5_games' THEN 4 WHEN 'last_3_games' THEN 5 ELSE 9 END
+  `, [playerId]);
+
+  const hitterSplits = await optionalQueryAll(env.STATS_HITTER_DB, `
+    SELECT split_key, split_description, pa, ab, hits, doubles, triples, home_runs, rbi, walks,
+           strikeouts, avg, obp, slg, ops, babip, source_snapshot_date
+    FROM hitter_splits
+    WHERE player_id = ?
+    ORDER BY split_key
+  `, [playerId]);
+
+  const recentGames = await optionalQueryAll(env.STATS_HITTER_DB, `
+    SELECT game_date, game_pk, team_id, opponent_team_id, is_home, batting_order, pa, ab,
+           hits, singles, doubles, triples, home_runs, runs, rbi, walks, strikeouts, stolen_bases, total_bases
+    FROM hitter_game_logs
+    WHERE player_id = ?
+    ORDER BY game_date DESC, game_pk DESC
+    LIMIT 18
+  `, [playerId]);
+
+  const starters = await optionalQueryAll(env.DAILY_DB, `
+    SELECT official_date, game_pk, team_id, team_name, opponent_team_id, opponent_team_name, is_home,
+           starter_player_id, starter_name, starter_hand, starter_status, starter_confidence, game_status, detailed_state
+    FROM daily_starters_current
+    WHERE game_pk = ?
+    ORDER BY is_home DESC, team_id
+  `, [gamePk]);
+  const starterIds = extractStarterIds(starters);
+  let pitcherProfiles = [];
+  let pitcherForm = [];
+  let pitcherSplits = [];
+  let pitcherRecentGames = [];
+  if (starterIds.length) {
+    const ph = starterIds.map(() => '?').join(',');
+    pitcherProfiles = await optionalQueryAll(env.REF_DB, `
+      SELECT player_id, mlb_player_id, player_name, full_name, current_mlb_team_id, primary_position, primary_role, throws, throw_side, active, updated_at
+      FROM ref_players
+      WHERE mlb_player_id IN (${ph}) OR player_id IN (${ph})
+      LIMIT 10
+    `, [...starterIds, ...starterIds]);
+    pitcherForm = await optionalQueryAll(env.STATS_PITCHER_DB, `
+      SELECT player_id, metric_window, games_count, innings_pitched_sum, batters_faced_sum,
+             hits_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum,
+             era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated, hr_rate_calculated, sample_size_label
+      FROM pitcher_metric_snapshots
+      WHERE player_id IN (${ph})
+      ORDER BY player_id, CASE metric_window WHEN 'season_to_date' THEN 1 WHEN 'last_20_games' THEN 2 WHEN 'last_10_games' THEN 3 WHEN 'last_5_games' THEN 4 WHEN 'last_3_games' THEN 5 ELSE 9 END
+    `, starterIds);
+    pitcherSplits = await optionalQueryAll(env.STATS_PITCHER_DB, `
+      SELECT player_id, split_key, split_description, innings_pitched, batters_faced, hits_allowed,
+             walks_allowed, strikeouts, home_runs_allowed, avg_against, obp_against, slg_against, ops_against, source_snapshot_date
+      FROM pitcher_splits
+      WHERE player_id IN (${ph})
+      ORDER BY player_id, split_key
+    `, starterIds);
+    pitcherRecentGames = await optionalQueryAll(env.STATS_PITCHER_DB, `
+      SELECT player_id, game_date, game_pk, team_id, opponent_team_id, is_home, role, innings_pitched,
+             batters_faced, hits_allowed, earned_runs, walks_allowed, strikeouts, home_runs_allowed, pitches, strikes
+      FROM pitcher_game_logs
+      WHERE player_id IN (${ph})
+      ORDER BY player_id, game_date DESC, game_pk DESC
+      LIMIT 30
+    `, starterIds);
+  }
+
+  const weather = await optionalQueryAll(env.DAILY_DB, `
+    SELECT venue_id, venue_name, weather_status, weather_confidence, temperature_f, feels_like_f,
+           humidity_pct, wind_speed_mph, wind_gust_mph, wind_direction_cardinal, precipitation_probability_pct,
+           rain_risk_flag, delay_risk_flag, roof_type, roof_status, park_weather_notes
+    FROM daily_game_weather_current
+    WHERE game_pk = ?
+    LIMIT 1
+  `, [gamePk]);
+  const bullpen = await optionalQueryAll(env.DAILY_DB, `
+    SELECT team_id, team_name, opponent_team_id, opponent_team_name, is_home, bullpen_status,
+           bullpen_confidence, availability_grade, bullpen_pitchers_used_last_3_days,
+           bullpen_pitches_last_3_days, rested_reliever_count, high_usage_reliever_count,
+           likely_unavailable_reliever_count, bullpen_fatigue_score, bullpen_risk_level
+    FROM daily_bullpen_availability_current
+    WHERE game_pk = ?
+    ORDER BY is_home DESC, team_id
+  `, [gamePk]);
+  const scheduleSpot = await optionalQueryAll(env.DAILY_DB, `
+    SELECT team_name, is_home, schedule_spot_status, days_rest, games_last_3_days, games_last_5_days,
+           three_in_four_flag, four_in_six_flag, travel_required_flag, travel_distance_miles,
+           travel_distance_bucket, schedule_fatigue_score, schedule_risk_level
+    FROM daily_team_schedule_spot_current
+    WHERE game_pk = ?
+    ORDER BY is_home DESC, team_id
+  `, [gamePk]);
+  const umpire = await optionalQueryAll(env.DAILY_DB, `
+    SELECT umpire_context_status, umpire_context_confidence, home_plate_umpire_name,
+           umpire_assignment_status, assignment_confirmed_flag, assignment_pending_flag,
+           unknown_umpire_flag, umpire_tendency_status, strike_zone_context_status,
+           run_environment_context_status, walk_context_status, strikeout_context_status
+    FROM daily_umpire_context_current
+    WHERE game_pk = ?
+    LIMIT 1
+  `, [gamePk]);
+
+  const stadium = venueId != null ? await optionalQueryAll(env.REF_DB, `
+    SELECT stadium_id, team_id, stadium_name, city, state, latitude, longitude, roof_type, turf_type,
+           mlb_venue_id, timezone, active, updated_at
+    FROM ref_stadiums
+    WHERE mlb_venue_id = ?
+    LIMIT 1
+  `, [venueId]) : [];
+  const parkFactors = venueId != null ? await optionalQueryAll(env.REF_DB, `
+    SELECT park_name, season_year, run_factor, hr_factor, lhb_run_factor, rhb_run_factor,
+           lhb_hr_factor, rhb_hr_factor, factor_scale, source_name, source_confidence, updated_at
+    FROM ref_park_factors
+    WHERE mlb_venue_id = ? AND active = 1
+    ORDER BY season_year DESC
+    LIMIT 1
+  `, [venueId]) : [];
+
+  const marketSummary = await optionalQueryAll(env.MARKET_DB, `
+    SELECT official_date, game_pk, home_team, away_team, book_available_count, book_target_count,
+           book_coverage_grade, freshness_status, oldest_market_update, newest_market_update,
+           h2h_book_count, home_ml_consensus, away_ml_consensus, home_ml_best, away_ml_best,
+           moneyline_favorite_team, moneyline_favorite_price, moneyline_underdog_team, moneyline_underdog_price,
+           runline_book_count, home_runline_point, home_runline_consensus_price, away_runline_point,
+           away_runline_consensus_price, total_book_count, total_consensus_line, over_consensus_price,
+           under_consensus_price, derived_home_implied_runs, derived_away_implied_runs,
+           implied_runs_method, implied_runs_confidence, warning_flags, created_at
+    FROM market_context_probe_game_market_summary
+    WHERE game_pk = ?
+    LIMIT 1
+  `, [gamePk]);
+  const marketOdds = await optionalQueryAll(env.MARKET_DB, `
+    SELECT bookmaker_key, bookmaker_title, market_key, outcome_name, outcome_side, price_american, point, market_last_update
+    FROM market_context_probe_game_odds
+    WHERE game_pk = ?
+      AND market_key IN ('h2h','spreads','totals')
+    ORDER BY market_key, bookmaker_title, outcome_side, outcome_name
+    LIMIT 160
+  `, [gamePk]);
+  const playerPropCurrentLines = await optionalQueryAll(env.MARKET_DB, `
+    SELECT source_key, book_key, market_name, prop_key, side, line_value, over_price, under_price,
+           player_name, team_id, opponent_team_id, source_line_type, pickable_flag, verified_at, last_update
+    FROM market_current_lines
+    WHERE (player_id = ? OR player_name LIKE ?)
+      AND (game_key = ? OR game_key = CAST(? AS TEXT) OR event_id LIKE ?)
+    ORDER BY book_key, prop_key, side, line_value
+    LIMIT 160
+  `, [playerId, likeNameParam(playerName), gamePk, gamePk, '%' + String(gamePk || '') + '%']);
+  const playerPropEvidence = await optionalQueryAll(env.MARKET_DB, `
+    SELECT *
+    FROM market_context_probe_player_props
+    WHERE game_pk = ?
+      AND (
+        CAST(resolved_mlb_player_id AS TEXT) = CAST(? AS TEXT)
+        OR source_player_name LIKE ?
+        OR CAST(raw_json AS TEXT) LIKE ?
+      )
+    LIMIT 160
+  `, [gamePk, playerId, likeNameParam(playerName), likeNameParam(playerName)]);
+
+  const ppLines = await optionalQueryAll(env.MARKET_DB, `
+    SELECT current_row_id, slate_date, projection_id, player_name, team, opponent, stat_type, line_score,
+           description, start_time, status, projection_type, odds_type, source_line_type,
+           payout_variant, is_goblin, is_demon, is_standard, pickable_flag, updated_at
+    FROM prizepicks_board_current
+    WHERE player_name LIKE ? AND pickable_flag = 1
+    ORDER BY stat_type, line_score
+    LIMIT 100
+  `, [likeNameParam(playerName)]);
+  const sleeperLines = await optionalQueryAll(env.MARKET_DB, `
+    SELECT source_event_id, source_line_id, player_name, source_stat_name, canonical_prop_key, line_value,
+           team, opponent, side, price, decimal_price, is_pickable, start_time, updated_at
+    FROM sleeper_board_current
+    WHERE player_name LIKE ?
+    ORDER BY canonical_prop_key, line_value
+    LIMIT 100
+  `, [likeNameParam(playerName)]);
+
+  const rawDetails = trimSnapshot(selectedRaw.details_json_snapshot || '');
 
   return jsonResponse({
     ok: true,
@@ -1080,37 +1319,43 @@ async function apiDossier(env, url) {
     selected: dossierRowToApi(selectedRaw),
     other_player_legs: legRows.map(rowToApi),
     raw_context: {
-      details_json_snapshot: null,
+      details_json_snapshot: safeJsonParse(rawDetails),
+      prepared_row_payload_json: safeJsonParse(selectedRaw.prepared_row_payload_json),
+      prepared_raw_source_json: safeJsonParse(selectedRaw.prepared_raw_source_json),
       matrix_payload_json_snapshot: null,
       hp_display_notes_json: null
     },
     dossier_context: {
-      player_profile: null,
-      recent_form: [],
-      hitter_splits: [],
-      recent_games: [],
-      hp_lines: compactDossierRows(hpLines),
-      matrix_lines: [],
-      prepared_lines: [],
-      starters: [],
-      pitcher_profiles: [],
-      pitcher_form: [],
-      pitcher_splits: [],
-      pitcher_recent_games: [],
-      weather: null,
-      bullpen: [],
-      schedule_spot: [],
-      umpire: null,
-      stadium: null,
-      park_factors: null,
-      market_summary: null,
-      market_odds: [],
-      prop_market_current_lines: [],
-      prop_market_evidence: [],
-      prizepicks_lines: [],
-      sleeper_lines: []
+      player_profile: firstUseful(playerProfile),
+      recent_form: compactDossierRows(recentForm, 12),
+      hitter_splits: compactDossierRows(hitterSplits, 24),
+      recent_games: compactDossierRows(recentGames, 18),
+      hp_lines: compactDossierRows(hpLines, 160),
+      matrix_lines: compactDossierRows(matrixLines, 120),
+      prepared_lines: compactDossierRows(preparedLines, 140),
+      starters: compactDossierRows(starters, 10),
+      pitcher_profiles: compactDossierRows(pitcherProfiles, 10),
+      pitcher_form: compactDossierRows(pitcherForm, 30),
+      pitcher_splits: compactDossierRows(pitcherSplits, 30),
+      pitcher_recent_games: compactDossierRows(pitcherRecentGames, 30),
+      weather: firstUseful(weather),
+      bullpen: compactDossierRows(bullpen, 10),
+      schedule_spot: compactDossierRows(scheduleSpot, 10),
+      umpire: firstUseful(umpire),
+      stadium: firstUseful(stadium),
+      park_factors: firstUseful(parkFactors),
+      market_summary: firstUseful(marketSummary),
+      market_odds: compactDossierRows(marketOdds, 160),
+      prop_market_current_lines: compactDossierRows(playerPropCurrentLines, 160),
+      prop_market_evidence: compactDossierRows(playerPropEvidence, 160),
+      prizepicks_lines: compactDossierRows(ppLines, 100),
+      sleeper_lines: compactDossierRows(sleeperLines, 100)
     },
-    dossier_sections: ["leg_identity", "probability_score", "hit_probability_v2_lines", "other_player_legs"],
+    dossier_sections: [
+      "leg_identity", "player_profile", "hit_probability_v2_lines", "season_recent_form",
+      "recent_game_log", "platoon_splits", "probable_starters", "pitcher_matchup",
+      "weather_park", "bullpen", "schedule_spot", "umpire", "market", "source_lines", "other_player_legs"
+    ],
     writes_performed: 0,
     external_calls_performed: 0,
     timestamp_utc: nowUtc()
@@ -1357,13 +1602,13 @@ const MAIN_HTML = `<!doctype html>
 <link rel="apple-touch-icon" href="/main_alphadog_apple_touch_icon.png" />
 <style>
 :root{--bg:#071426;--panel:#0e2038;--panel2:#102744;--line:#254261;--text:#eef7ff;--muted:#93a9bd;--gold:#f4c95d;--silver:#d7e2ee;--bronze:#d99b57;--blue:#5ed2ff;--good:#7ef0aa;--warn:#f7d774;--bad:#ff8a8a;--chip:#173352;--shadow:0 22px 70px rgba(0,0,0,.35);}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top left,#173957 0,#071426 38%,#030912 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh}button,input,select,textarea{font:inherit}.wrap{max-width:1180px;margin:0 auto;padding:16px 14px 44px}.hero{display:flex;align-items:center;gap:14px;justify-content:space-between;margin-bottom:12px}.brand{display:flex;gap:12px;align-items:center}.logo{width:52px;height:52px;border-radius:16px;box-shadow:0 8px 24px rgba(244,201,93,.18)}h1{font-size:30px;line-height:1;margin:0}.sub{color:#d9e8f6;font-size:13px;margin-top:4px;font-weight:850;letter-spacing:.02em}.menuBtn,.btn{border:1px solid var(--line);background:rgba(16,39,68,.86);color:var(--text);border-radius:14px;padding:10px 13px;font-weight:850;cursor:pointer}.menuWrap{position:relative}.menu{position:absolute;right:0;top:44px;background:#07192d;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);min-width:170px;overflow:hidden;z-index:10}.menu.hidden{display:none}.menu button{display:block;width:100%;background:transparent;border:0;color:var(--text);padding:12px 14px;text-align:left;font-weight:750}.menu button:hover{background:#102744}.panel{background:linear-gradient(180deg,rgba(16,39,68,.92),rgba(8,21,38,.92));border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:11px;margin-bottom:13px}.filters{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,.9fr);gap:8px;align-items:stretch}.filterCol{display:grid;gap:7px}.filterCol.left{grid-template-columns:1fr}.filterCol.right{grid-template-rows:auto auto}.filterBox{background:rgba(5,14,26,.28);border:1px solid rgba(75,115,150,.42);border-radius:16px;padding:6px 8px}.filterBox.tight{padding:7px}.filterTitle{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:950;margin-bottom:4px;display:flex;gap:6px;align-items:center}.filterTitle.selectTitle{justify-content:center;text-align:center}.filterTitle input{accent-color:#3f8cff}.checkGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px 6px}.checkGrid.source{grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:0 4px}.check{display:flex;align-items:center;gap:4px;padding:0;font-size:11.5px;color:#dbefff;white-space:nowrap;line-height:1}.check input{accent-color:#5ed2ff;width:15px;height:15px;flex:0 0 auto}.check .zero{color:#758ba1}.duo{display:grid;grid-template-columns:1fr 1fr;gap:7px}.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.refreshMini{margin-left:auto;padding:4px 9px;border-radius:10px;font-size:10px;line-height:1.1}.select{width:100%;min-width:0;border:1px solid var(--line);background:#07192d;color:var(--text);border-radius:12px;padding:7px 8px;font-weight:800;font-size:12.2px;line-height:1.15}.select option{font-size:12px}.status{color:var(--muted);font-size:13px;margin:10px 0 10px;text-align:center;display:flex;align-items:center;justify-content:center;min-height:28px;width:100%}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:linear-gradient(180deg,#102844,#08182b);border:1px solid rgba(94,210,255,.18);border-radius:22px;padding:14px;box-shadow:0 14px 40px rgba(0,0,0,.27);position:relative}.top{display:block;min-height:56px;padding-right:178px}.player{font-size:21px;font-weight:950;letter-spacing:-.02em}.badgeStack{position:absolute;right:14px;top:14px;display:grid;gap:4px;justify-items:center;min-width:166px;text-align:center}.badgePairs{display:flex;gap:6px;flex-wrap:nowrap;justify-content:center;align-items:start;width:100%}.badgePair{display:grid;gap:4px;justify-items:center;align-items:start;min-width:70px}.badgeLine{display:flex;gap:5px;flex-wrap:nowrap;justify-content:center;width:100%}.badge{font-size:9.8px;font-weight:950;border-radius:999px;padding:5px 7px;text-transform:uppercase;background:#183554;color:#cbe7ff;border:1px solid rgba(94,210,255,.22);line-height:1;white-space:nowrap;text-align:center}.badge.source{background:#173a5d;color:#d8eeff}.badge.goblin{background:#123d30;color:#b8ffd6}.badge.demon{background:#461a2a;color:#ffc2d2}.badge.regular,.badge.more_only{background:#322d14;color:#ffe49a}.badge.gold{background:#4a3911;color:#ffd96a;border-color:rgba(255,217,106,.5)}.badge.silver{background:#2c3d52;color:#e7f2ff;border-color:rgba(215,226,238,.45)}.badge.bronze{background:#492d18;color:#ffc28a;border-color:rgba(217,155,87,.48)}.numbers{display:grid;grid-template-columns:minmax(120px,.82fr) minmax(150px,1fr);align-items:end;gap:14px;margin:8px 0 9px}.hpNum{font-size:48px;line-height:.9;font-weight:1000;color:var(--gold);letter-spacing:-.05em}.scoreBlock{text-align:center;min-width:0}.scoreGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:2px}.scoreGrid.single{grid-template-columns:minmax(95px,145px);justify-content:center}.scorePill{display:flex;align-items:center;justify-content:space-between;gap:7px;border:1px solid rgba(94,210,255,.16);background:rgba(7,20,38,.48);border-radius:10px;padding:4px 7px}.scoreApp{font-size:10px;color:#b6cde4;font-weight:900}.scoreNum{font-size:22px;font-weight:950;color:var(--blue)}.lineBox{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border:1px solid rgba(94,210,255,.14);background:rgba(7,20,38,.55);border-radius:15px;padding:9px 10px;font-weight:850}.side{text-transform:uppercase;color:var(--good)}.meta{margin-top:8px;color:#bed2e6;font-size:12.5px;line-height:1.3}.reason{margin-top:9px;color:#d4e3f2;font-size:12.4px;line-height:1.42;background:rgba(5,14,26,.34);border:1px solid rgba(94,210,255,.12);border-left:3px solid rgba(244,201,93,.55);border-radius:14px;padding:9px 10px}.empty{padding:20px;border:1px dashed var(--line);border-radius:18px;color:var(--muted);text-align:center}.healthGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.healthCard{background:rgba(5,14,26,.32);border:1px solid var(--line);border-radius:16px;padding:12px}.metric{font-size:25px;font-weight:950;color:var(--gold)}.small{font-size:12px;color:var(--muted);line-height:1.35}.hidden{display:none!important}.err{color:var(--bad)}.good{color:var(--good)}.sortBox{margin-top:7px}.card{cursor:pointer;transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease}.card:hover{transform:translateY(-1px);border-color:rgba(94,210,255,.42);box-shadow:0 18px 46px rgba(0,0,0,.34)}.dossierTop{display:flex;gap:8px;padding:0;margin:0 0 8px;background:transparent;width:max-content;position:relative;z-index:3}.iconBtn{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:rgba(16,39,68,.92);color:var(--text);font-size:25px;font-weight:950;line-height:1;display:grid;place-items:center}.dossierBody{display:grid;gap:12px}.dossierBody,.dossierBody *{font-family:Arial,"Helvetica Neue",Helvetica,sans-serif!important;font-variant-ligatures:none;text-rendering:auto;-webkit-font-smoothing:antialiased}.dossierTitle{font-weight:900}.dossierSub,.infoVal,.dossierTable td,.sectionHint,.small{font-weight:500}.dossierTable{width:100%;border-collapse:separate;border-spacing:0 6px}.dossierTable th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:left;padding:0 6px 2px}.dossierTable td{background:rgba(5,14,26,.32);border-top:1px solid rgba(94,210,255,.1);border-bottom:1px solid rgba(94,210,255,.1);padding:7px 6px;font-size:12px}.dossierTable td:first-child{border-left:1px solid rgba(94,210,255,.1);border-radius:10px 0 0 10px}.dossierTable td:last-child{border-right:1px solid rgba(94,210,255,.1);border-radius:0 10px 10px 0}.statGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}.statCell{background:rgba(5,14,26,.34);border:1px solid rgba(94,210,255,.12);border-radius:13px;padding:8px;text-align:center}.statCell .k{font-size:10px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.07em}.statCell .v{font-size:19px;color:var(--gold);font-weight:1000;margin-top:2px}.miniCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:7px}.dossierHero{background:linear-gradient(180deg,#102844,#08182b);border:1px solid rgba(94,210,255,.2);border-radius:24px;padding:16px;box-shadow:var(--shadow)}.dossierTitle{font-size:28px;font-weight:1000;letter-spacing:-.03em}.dossierSub{color:var(--muted);font-size:13px;line-height:1.35;margin-top:4px}.dossierMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.dMetric{border:1px solid rgba(94,210,255,.14);background:rgba(5,14,26,.34);border-radius:14px;padding:10px}.dMetric .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:950}.dMetric .v{font-size:22px;font-weight:1000;color:var(--gold);margin-top:2px}.dossierGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.dSection{background:rgba(8,21,38,.82);border:1px solid rgba(94,210,255,.15);border-radius:20px;padding:13px}.dSection h3{margin:0 0 9px;font-size:13px;letter-spacing:.11em;text-transform:uppercase;color:#d9e8f6}.kv{display:grid;grid-template-columns:minmax(110px,.45fr) 1fr;gap:6px 9px;font-size:12.3px;line-height:1.3}.kv .key{color:var(--muted);font-weight:850}.kv .val{color:var(--text);word-break:break-word}.pillRow{display:flex;flex-wrap:wrap;gap:7px}.legBtn{border:1px solid rgba(94,210,255,.18);background:#07192d;color:var(--text);border-radius:14px;padding:8px 9px;text-align:left;font-weight:850;min-width:142px}.legBtn b{color:var(--gold)}.jsonBox{max-height:260px;overflow:auto;background:#030912;border:1px solid rgba(94,210,255,.14);border-radius:14px;padding:10px;font-size:10.8px;color:#cde0f2;white-space:pre-wrap;word-break:break-word}.refinedRows{display:grid;gap:7px}.infoRow{display:grid;grid-template-columns:minmax(122px,.42fr) 1fr;gap:8px;align-items:start;border-bottom:1px solid rgba(94,210,255,.07);padding:5px 0}.infoRow:last-child{border-bottom:0}.infoKey{color:var(--muted);font-weight:900;font-size:12px}.infoVal{color:var(--text);font-size:12.4px;line-height:1.35;word-break:break-word}.sectionHint{margin-top:-4px;margin-bottom:8px;color:var(--muted);font-size:11.5px;line-height:1.35}.dossierNote{background:rgba(244,201,93,.08);border:1px solid rgba(244,201,93,.18);border-left:3px solid rgba(244,201,93,.65);border-radius:14px;padding:10px;color:#e6f0fb;font-size:12.5px;line-height:1.42}.wide{grid-column:1/-1}@media(max-width:860px){.filters{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.hero{align-items:flex-start}.healthGrid{grid-template-columns:1fr 1fr}.hpNum{font-size:43px}.checkGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.dossierGrid{grid-template-columns:1fr}.dossierMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.select{font-size:11.4px;padding:6px 7px}.filterTitle.selectTitle{font-size:9.4px;letter-spacing:.09em}.wrap{padding:12px 10px 34px}.logo{width:46px;height:46px}h1{font-size:25px}.card{padding:13px}.healthGrid{grid-template-columns:1fr}.filters{gap:7px}.check{font-size:11px}.player{font-size:19px}.duo{grid-template-columns:1fr 1fr}.trio{grid-template-columns:repeat(3,minmax(0,1fr))}.checkGrid{gap:1px 5px}.badgeStack{right:13px;top:13px;min-width:158px}.top{min-height:52px;padding-right:166px}.badge{font-size:9.2px;padding:4.5px 6px}.numbers{grid-template-columns:minmax(108px,.78fr) minmax(145px,1fr);gap:10px}.hpNum{font-size:42px}.scoreNum{font-size:20px}.lineBox{padding:8px 10px}.meta{font-size:12px}.reason{font-size:12px;line-height:1.38;padding:8px 9px}}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top left,#173957 0,#071426 38%,#030912 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh}button,input,select,textarea{font:inherit}.wrap{max-width:1180px;margin:0 auto;padding:16px 14px 44px}.hero{display:flex;align-items:center;gap:14px;justify-content:space-between;margin-bottom:12px}.brand{display:flex;gap:12px;align-items:center}.logo{width:52px;height:52px;border-radius:16px;box-shadow:0 8px 24px rgba(244,201,93,.18)}h1{font-size:30px;line-height:1;margin:0}.sub{color:#d9e8f6;font-size:13px;margin-top:4px;font-weight:850;letter-spacing:.02em}.menuBtn,.btn{border:1px solid var(--line);background:rgba(16,39,68,.86);color:var(--text);border-radius:14px;padding:10px 13px;font-weight:850;cursor:pointer}.menuWrap{position:relative}.menu{position:absolute;right:0;top:44px;background:#07192d;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);min-width:170px;overflow:hidden;z-index:10}.menu.hidden{display:none}.menu button{display:block;width:100%;background:transparent;border:0;color:var(--text);padding:12px 14px;text-align:left;font-weight:750}.menu button:hover{background:#102744}.panel{background:linear-gradient(180deg,rgba(16,39,68,.92),rgba(8,21,38,.92));border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:11px;margin-bottom:13px}.filters{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,.9fr);gap:8px;align-items:stretch}.filterCol{display:grid;gap:7px}.filterCol.left{grid-template-columns:1fr}.filterCol.right{grid-template-rows:auto auto}.filterBox{background:rgba(5,14,26,.28);border:1px solid rgba(75,115,150,.42);border-radius:16px;padding:6px 8px}.filterBox.tight{padding:7px}.filterTitle{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:950;margin-bottom:4px;display:flex;gap:6px;align-items:center}.filterTitle.selectTitle{justify-content:center;text-align:center}.filterTitle input{accent-color:#3f8cff}.checkGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px 6px}.checkGrid.source{grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:0 4px}.check{display:flex;align-items:center;gap:4px;padding:0;font-size:11.5px;color:#dbefff;white-space:nowrap;line-height:1}.check input{accent-color:#5ed2ff;width:15px;height:15px;flex:0 0 auto}.check .zero{color:#758ba1}.duo{display:grid;grid-template-columns:1fr 1fr;gap:7px}.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.refreshMini{margin-left:auto;padding:4px 9px;border-radius:10px;font-size:10px;line-height:1.1}.select{width:100%;min-width:0;border:1px solid var(--line);background:#07192d;color:var(--text);border-radius:12px;padding:7px 8px;font-weight:800;font-size:12.2px;line-height:1.15}.select option{font-size:12px}.status{color:var(--muted);font-size:13px;margin:10px 0 10px;text-align:center;display:flex;align-items:center;justify-content:center;min-height:28px;width:100%}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:linear-gradient(180deg,#102844,#08182b);border:1px solid rgba(94,210,255,.18);border-radius:22px;padding:14px;box-shadow:0 14px 40px rgba(0,0,0,.27);position:relative}.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-height:56px;padding-right:0}.player{font-size:21px;font-weight:950;letter-spacing:-.02em}.badgeStack{position:static;display:grid;gap:4px;justify-items:center;min-width:166px;text-align:center;flex:0 0 auto}.badgePairs{display:flex;gap:6px;flex-wrap:nowrap;justify-content:center;align-items:start;width:100%}.badgePair{display:grid;gap:4px;justify-items:center;align-items:start;min-width:70px}.badgeLine{display:flex;gap:5px;flex-wrap:nowrap;justify-content:center;width:100%}.badge{font-size:9.8px;font-weight:950;border-radius:999px;padding:5px 7px;text-transform:uppercase;background:#183554;color:#cbe7ff;border:1px solid rgba(94,210,255,.22);line-height:1;white-space:nowrap;text-align:center}.badge.source{background:#173a5d;color:#d8eeff}.badge.goblin{background:#123d30;color:#b8ffd6}.badge.demon{background:#461a2a;color:#ffc2d2}.badge.regular,.badge.more_only{background:#322d14;color:#ffe49a}.badge.gold{background:#4a3911;color:#ffd96a;border-color:rgba(255,217,106,.5)}.badge.silver{background:#2c3d52;color:#e7f2ff;border-color:rgba(215,226,238,.45)}.badge.bronze{background:#492d18;color:#ffc28a;border-color:rgba(217,155,87,.48)}.numbers{display:grid;grid-template-columns:minmax(120px,.82fr) minmax(150px,1fr);align-items:end;gap:14px;margin:8px 0 9px}.hpNum{font-size:48px;line-height:.9;font-weight:1000;color:var(--gold);letter-spacing:-.05em}.scoreBlock{text-align:center;min-width:0}.scoreGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:2px}.scoreGrid.single{grid-template-columns:minmax(95px,145px);justify-content:center}.scorePill{display:flex;align-items:center;justify-content:space-between;gap:7px;border:1px solid rgba(94,210,255,.16);background:rgba(7,20,38,.48);border-radius:10px;padding:4px 7px}.scoreApp{font-size:10px;color:#b6cde4;font-weight:900}.scoreNum{font-size:22px;font-weight:950;color:var(--blue)}.lineBox{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border:1px solid rgba(94,210,255,.14);background:rgba(7,20,38,.55);border-radius:15px;padding:9px 10px;font-weight:850}.side{text-transform:uppercase;color:var(--good)}.meta{margin-top:8px;color:#bed2e6;font-size:12.5px;line-height:1.3}.reason{margin-top:9px;color:#d4e3f2;font-size:12.4px;line-height:1.42;background:rgba(5,14,26,.34);border:1px solid rgba(94,210,255,.12);border-left:3px solid rgba(244,201,93,.55);border-radius:14px;padding:9px 10px}.empty{padding:20px;border:1px dashed var(--line);border-radius:18px;color:var(--muted);text-align:center}.healthGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.healthCard{background:rgba(5,14,26,.32);border:1px solid var(--line);border-radius:16px;padding:12px}.metric{font-size:25px;font-weight:950;color:var(--gold)}.small{font-size:12px;color:var(--muted);line-height:1.35}.hidden{display:none!important}.err{color:var(--bad)}.good{color:var(--good)}.sortBox{margin-top:7px}.card{cursor:pointer;transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease}.card:hover{transform:translateY(-1px);border-color:rgba(94,210,255,.42);box-shadow:0 18px 46px rgba(0,0,0,.34)}.dossierTop{display:flex;gap:8px;padding:0;margin:0 0 8px;background:transparent;width:max-content;position:relative;z-index:3}.iconBtn{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:rgba(16,39,68,.92);color:var(--text);font-size:25px;font-weight:950;line-height:1;display:grid;place-items:center}.dossierBody{display:grid;gap:12px}.dossierBody,.dossierBody *{font-family:Arial,"Helvetica Neue",Helvetica,sans-serif!important;font-variant-ligatures:none;text-rendering:auto;-webkit-font-smoothing:antialiased}.dossierTitle{font-weight:900}.dossierSub,.infoVal,.dossierTable td,.sectionHint,.small{font-weight:500}.dossierTable{width:100%;border-collapse:separate;border-spacing:0 6px}.dossierTable th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:left;padding:0 6px 2px}.dossierTable td{background:rgba(5,14,26,.32);border-top:1px solid rgba(94,210,255,.1);border-bottom:1px solid rgba(94,210,255,.1);padding:7px 6px;font-size:12px}.dossierTable td:first-child{border-left:1px solid rgba(94,210,255,.1);border-radius:10px 0 0 10px}.dossierTable td:last-child{border-right:1px solid rgba(94,210,255,.1);border-radius:0 10px 10px 0}.statGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}.statCell{background:rgba(5,14,26,.34);border:1px solid rgba(94,210,255,.12);border-radius:13px;padding:8px;text-align:center}.statCell .k{font-size:10px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.07em}.statCell .v{font-size:19px;color:var(--gold);font-weight:1000;margin-top:2px}.miniCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:7px}.dossierHero{background:linear-gradient(180deg,#102844,#08182b);border:1px solid rgba(94,210,255,.2);border-radius:24px;padding:16px;box-shadow:var(--shadow)}.dossierTitle{font-size:28px;font-weight:1000;letter-spacing:-.03em}.dossierSub{color:var(--muted);font-size:13px;line-height:1.35;margin-top:4px}.dossierMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.dMetric{border:1px solid rgba(94,210,255,.14);background:rgba(5,14,26,.34);border-radius:14px;padding:10px}.dMetric .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:950}.dMetric .v{font-size:22px;font-weight:1000;color:var(--gold);margin-top:2px}.dossierGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.dSection{background:rgba(8,21,38,.82);border:1px solid rgba(94,210,255,.15);border-radius:20px;padding:13px}.dSection h3{margin:0 0 9px;font-size:13px;letter-spacing:.11em;text-transform:uppercase;color:#d9e8f6}.kv{display:grid;grid-template-columns:minmax(110px,.45fr) 1fr;gap:6px 9px;font-size:12.3px;line-height:1.3}.kv .key{color:var(--muted);font-weight:850}.kv .val{color:var(--text);word-break:break-word}.pillRow{display:flex;flex-wrap:wrap;gap:7px}.legBtn{border:1px solid rgba(94,210,255,.18);background:#07192d;color:var(--text);border-radius:14px;padding:8px 9px;text-align:left;font-weight:850;min-width:142px}.legBtn b{color:var(--gold)}.jsonBox{max-height:260px;overflow:auto;background:#030912;border:1px solid rgba(94,210,255,.14);border-radius:14px;padding:10px;font-size:10.8px;color:#cde0f2;white-space:pre-wrap;word-break:break-word}.refinedRows{display:grid;gap:7px}.infoRow{display:grid;grid-template-columns:minmax(122px,.42fr) 1fr;gap:8px;align-items:start;border-bottom:1px solid rgba(94,210,255,.07);padding:5px 0}.infoRow:last-child{border-bottom:0}.infoKey{color:var(--muted);font-weight:900;font-size:12px}.infoVal{color:var(--text);font-size:12.4px;line-height:1.35;word-break:break-word}.sectionHint{margin-top:-4px;margin-bottom:8px;color:var(--muted);font-size:11.5px;line-height:1.35}.dossierNote{background:rgba(244,201,93,.08);border:1px solid rgba(244,201,93,.18);border-left:3px solid rgba(244,201,93,.65);border-radius:14px;padding:10px;color:#e6f0fb;font-size:12.5px;line-height:1.42}.wide{grid-column:1/-1}@media(max-width:860px){.filters{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.hero{align-items:flex-start}.healthGrid{grid-template-columns:1fr 1fr}.hpNum{font-size:43px}.checkGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.dossierGrid{grid-template-columns:1fr}.dossierMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.select{font-size:11.4px;padding:6px 7px}.filterTitle.selectTitle{font-size:9.4px;letter-spacing:.09em}.wrap{padding:12px 10px 34px}.logo{width:46px;height:46px}h1{font-size:25px}.card{padding:13px}.healthGrid{grid-template-columns:1fr}.filters{gap:7px}.check{font-size:11px}.player{font-size:19px}.duo{grid-template-columns:1fr 1fr}.trio{grid-template-columns:repeat(3,minmax(0,1fr))}.checkGrid{gap:1px 5px}.badgeStack{min-width:150px}.top{min-height:52px;padding-right:0}.badge{font-size:9.2px;padding:4.5px 6px}.numbers{grid-template-columns:minmax(108px,.78fr) minmax(145px,1fr);gap:10px}.hpNum{font-size:42px}.scoreNum{font-size:20px}.lineBox{padding:8px 10px}.meta{font-size:12px}.reason{font-size:12px;line-height:1.38;padding:8px 9px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="hero">
-    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.12 - Final Board V2 Latest Batch</div></div></div>
+    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.13 - Rich Dossier V2</div></div></div>
     <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Main Board</button><button id="menuHealth">Health</button></div></div>
   </header>
   <section id="boardScreen">
@@ -1389,7 +1634,7 @@ const MAIN_HTML = `<!doctype html>
 </div>
 <script>
 (()=>{
-const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.12 - Final Board V2 Latest Batch';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null;
+const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.13 - Rich Dossier V2';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0)+'%':'—'}
 function num(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0):'—'}
@@ -1409,16 +1654,17 @@ function renderFilters(data){const hitter=data.prop_groups?.hitter||[], pitcher=
 function passes(r){return filters.props.has(r.canonical_prop_key)&&filters.types.has(rowSourceTypeKey(r))&&Number(r.estimated_hit_probability_0_100||0)>=filters.hp&&Number(r.score_0_100||0)>=filters.score}
 function legKey(r){return [r.game_pk||'',r.mlb_player_id||r.player_name||'',r.canonical_prop_key||'',String(r.line_value??''),String(r.selected_side||'').toLowerCase()].join('|')}
 function groupRows(list){const m=new Map();for(const r of list){const k=legKey(r);if(!m.has(k))m.set(k,{rows:[],best:r});const g=m.get(k);g.rows.push(r);if(Number(r.rank_order||999999)<Number(g.best.rank_order||999999))g.best=r;}return [...m.values()].sort((a,b)=>Number(a.best.rank_order||999999)-Number(b.best.rank_order||999999))}
-function qLabel(r){if(String(r.board_tier||'').toUpperCase()==='PRIMARY')return 'Primary Review';const hp=Number(r.estimated_hit_probability_0_100||0), conf=Number(r.probability_confidence_0_100||0), score=Number(r.score_0_100||0);return (hp>=70&&conf>=65&&score>=80)?'Strong Review':'Standard Review'}
+function qLabel(r){const hp=Number(r.estimated_hit_probability_0_100||0),conf=Number(r.probability_confidence_0_100||0),score=Number(r.score_0_100||0);if(hp>=88&&conf>=68&&score>=82)return 'Gold';if(hp>=78&&conf>=58&&score>=72)return 'Silver';return 'Bronze'}
 function qClass(label){return String(label||'bronze').toLowerCase()}
 function friendlyGrade(g){return String(g||'').replace('A_PLUS','A+').replace(/_/g,' ')}
+function qualityLetter(r){const hp=Number(r.estimated_hit_probability_0_100||0),conf=Number(r.probability_confidence_0_100||0),score=Number(r.score_0_100||0);if(hp>=92&&conf>=72&&score>=84)return 'A+';if(hp>=85&&conf>=68&&score>=78)return 'A';if(hp>=78&&conf>=58&&score>=72)return 'B+';if(hp>=70&&conf>=50)return 'B';return 'C'}
 function friendlyBand(b){const x=String(b||'').toUpperCase();if(x.includes('70'))return '70%+ HP lane';if(x.includes('60'))return '60%+ HP lane';return String(b||'HP lane').replace(/_/g,' ')}
 function contextLabel(s){const x=String(s||'').toLowerCase();if(x.includes('ready')&&!x.includes('warning'))return 'context ready';if(x.includes('warning'))return 'context warnings';if(x.includes('partial'))return 'partial context';return x?x.replace(/_/g,' '):'context available'}
 function sourceWeight(k){const x=String(k||'').toLowerCase();if(x==='prizepicks')return 1;if(x==='sleeper')return 2;return 9}
 function sourceShort(k){const x=String(k||'').toLowerCase();return x==='prizepicks'?'PP':(x==='sleeper'?'Sleeper':appLabel(k))}
 function appLabel(k){const x=String(k||'').toLowerCase();return x==='prizepicks'?'PrizePicks':(x==='sleeper'?'Sleeper':cap(k))}
 function lineLabel(t){return String(t||'regular').replace(/_/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase())}
-function qLabel(r){const t=String(r.board_tier||'').toUpperCase();if(t==='PRIMARY')return 'Primary Review';const hp=Number(r.estimated_hit_probability_0_100||0), conf=Number(r.probability_confidence_0_100||0);if(hp>=70&&conf>=65)return 'Strong Review';return 'Standard Review'}
+function qLabel(r){const hp=Number(r.estimated_hit_probability_0_100||0),conf=Number(r.probability_confidence_0_100||0),score=Number(r.score_0_100||0);if(hp>=88&&conf>=68&&score>=82)return 'Gold';if(hp>=78&&conf>=58&&score>=72)return 'Silver';return 'Bronze'}
 function qClass(q){return String(q).toLowerCase()}
 function groupKey(r){return [r.game_pk,r.mlb_player_id,r.canonical_prop_key,r.line_value,r.selected_side].map(x=>String(x??'')).join('|')}
 function overallSort(r){const hp=Number(r.estimated_hit_probability_0_100||0),sc=Number(r.score_0_100||0),ss=Number(r.score_sort_0_100||0);return ss>0?ss:(hp*.72+sc*.28)}
@@ -1453,8 +1699,8 @@ function appInsight(g){if(g.rows.length<2)return '';const labels=g.rows.slice().
 function contextStatus(r){const items=[];const p=pitcherInsight(r);const w=weatherInsight(r);const park=parkInsight(r);const lineup=firstReal([r.lineup_status]);const order=firstReal([r.batting_order]);const ump=firstReal([r.umpire_name,r.umpire_context_summary]);if(p)items.push(p);if(lineup||order)items.push('Lineup detail: '+[lineup,order?'slot '+order:''].filter(Boolean).join(', ')+'.');if(w)items.push('Weather/roof: '+w+'.');if(park)items.push('Park note: '+park);if(ump)items.push('Umpire note is present: '+ump+'.');return items}
 function varianceTone(r){const hp=Number(r.estimated_hit_probability_0_100||0), conf=Number(r.probability_confidence_0_100||0), score=Number(r.score_0_100||0), n=Number(r.hp_non_push_sample||r.hp_sample_size||0);const seeds=[r.player_name,r.canonical_prop_key,r.line_value,r.selected_side,r.source_key].join('|');if(n>0&&n<20)return hashPick(seeds,['Attractive HP, but the evidence depth keeps it in review mode.','Probability is interesting, but sample depth is the limiter.','High-upside read with sample-size caution still attached.']);if(hp>=85&&conf>=75&&score>=84)return hashPick(seeds,['Premium probability is backed by evidence confidence and the support score.','The main quality checks line up: HP, confidence, and support are all aligned.','This is one of the cleaner reads because probability and support agree.']);if(hp>=85&&score<80)return hashPick(seeds,['Big HP, but the support score asks for review before treating it as the strongest review lane.','The probability is attractive while the trust layer is more cautious.','Not rejected, but the support score is the reason it stays below the strongest review lane.']);if(hp>=80&&conf<70)return hashPick(seeds,['High HP with softer evidence; useful, but not clean enough for the strongest review lane.','Probability is strong while confidence is the drag.','Edge candidate, not a finished play, because the evidence base is thinner.']);if(hp>=75&&score>=86)return hashPick(seeds,['Good HP with a strong support score; compare it against similar props.','The support layer likes the setup, but HP still decides the tier.']);return hashPick(seeds,['Usable candidate, not a blind play.','This leg needs context and price discipline before action.'])}
 function evidenceReason(g){const r=g.best;const raw=String(r.leg_insight_comment||'').trim();const app=appInsight(g);if(raw)return [raw,app].filter(Boolean).join(' ');const ctx=contextStatus(r);const parts=[varianceTone(r),propEaseText(r)];if(ctx.length)parts.push(ctx.slice(0,2).join(' '));const a=appInsight(g);if(a)parts.push(a);return parts.join(' ')}
-function confidenceMeta(g){const rows=g.rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key));const vals=rows.map(r=>({app:sourceShort(r.source_key),conf:Number(r.probability_confidence_0_100||0)}));const unique=[...new Set(vals.map(v=>Math.round(v.conf*10)/10))];const grade=friendlyGrade(g.best.probability_grade);if(rows.length>1&&unique.length>1)return 'Confidence '+vals.map(v=>v.app+' '+pct1(v.conf)).join(' • ')+' • '+esc(grade);return 'Confidence '+pct1(g.best.probability_confidence_0_100)+' • '+esc(grade)}
-function card(g){const r=g.best;const match=(r.away_team_name&&r.home_team_name)?r.away_team_name+' @ '+r.home_team_name:'Game '+(r.game_pk||'');const when=[fmtDate(r.official_game_time_utc),r.venue_name].filter(Boolean).join(' • ');return '<article class="card" role="button" tabindex="0" data-row-id="'+esc(r.final_board_row_id)+'"><div class="top"><div><div class="player">'+esc(r.player_name)+'</div><div class="small">'+esc(match)+' • '+esc(when)+'</div></div>'+badges(g)+'</div><div class="numbers"><div><div class="numLbl">Hit Prob</div><div class="hpNum">'+pct(r.estimated_hit_probability_0_100)+'</div></div><div class="scoreBlock"><div class="numLbl">Overall</div>'+scoreCards(g.rows)+'</div></div><div class="lineBox"><span>'+esc(r.prop_label||cap(r.canonical_prop_key))+'</span><span class="side">'+esc(r.selected_side)+'</span><span>'+esc(r.line_value)+'</span></div><div class="meta">'+confidenceMeta(g)+'</div><div class="reason">'+esc(evidenceReason(g))+'</div></article>'}
+function confidenceMeta(g){const rows=g.rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key));const vals=rows.map(r=>({app:sourceShort(r.source_key),conf:Number(r.probability_confidence_0_100||0)}));const unique=[...new Set(vals.map(v=>Math.round(v.conf*10)/10))];const q='Quality '+qualityLetter(g.best);if(rows.length>1&&unique.length>1)return 'Confidence '+vals.map(v=>v.app+' '+pct1(v.conf)).join(' • ')+' • '+q;return 'Confidence '+pct1(g.best.probability_confidence_0_100)+' • '+q}
+function card(g){const r=g.best;const match=(r.away_team_name&&r.home_team_name)?r.away_team_name+' @ '+r.home_team_name:(r.home_team_name||r.away_team_name||'Game '+(r.game_pk||''));const when=[fmtDate(r.official_game_time_utc),r.venue_name].filter(Boolean).join(' • ');return '<article class="card" role="button" tabindex="0" data-row-id="'+esc(r.final_board_row_id)+'"><div class="top"><div><div class="player">'+esc(r.player_name)+'</div><div class="small">'+esc(match)+' • '+esc(when)+'</div></div>'+badges(g)+'</div><div class="numbers"><div><div class="numLbl">Hit Prob</div><div class="hpNum">'+pct(r.estimated_hit_probability_0_100)+'</div></div><div class="scoreBlock"><div class="numLbl">Overall</div>'+scoreCards(g.rows)+'</div></div><div class="lineBox"><span>'+esc(r.prop_label||cap(r.canonical_prop_key))+'</span><span class="side">'+esc(r.selected_side)+'</span><span>'+esc(r.line_value)+'</span></div><div class="meta">'+confidenceMeta(g)+'</div><div class="reason">'+esc(evidenceReason(g))+'</div></article>'}
 function bindCards(){document.querySelectorAll('.card[data-row-id]').forEach(el=>{el.onclick=()=>openDossier(el.getAttribute('data-row-id'));el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openDossier(el.getAttribute('data-row-id'))}}})}
 function render(){if(!filters)return;const totalGroups=groupRows(rows).length;const shownGroups=groupRows(rows.filter(passes));$('status').textContent='Showing '+shownGroups.length+' of '+totalGroups+' qualified legs';$('cards').innerHTML=shownGroups.length?shownGroups.map(card).join(''):'<div class="empty" style="grid-column:1/-1">No qualified legs match these filters.</div>';bindCards()}
 function kv(items){return '<div class="kv">'+items.filter(x=>x[1]!==undefined&&x[1]!==null&&String(x[1]).trim()!=='').map(x=>'<div class="key">'+esc(x[0])+'</div><div class="val">'+esc(x[1])+'</div>').join('')+'</div>'}
@@ -1494,7 +1740,7 @@ function avgFmt(v){const n=Number(v);return Number.isFinite(n)?(n<1?n.toFixed(3)
 function lineSide(r){return [String(r.selected_side||r.prop_side||'').toUpperCase(),r.line_value??r.board_line_value].filter(x=>x!==''&&x!==undefined&&x!==null).join(' ')}
 function pitcherNameFor(ctx,id){const p=(ctx.pitcher_profiles||[]).find(x=>String(x.player_id)==String(id)||String(x.mlb_player_id)==String(id));return p?(p.full_name||p.player_name||id):id}
 function rowsForRecentForm(ctx){return (ctx.recent_form||[]).map(r=>({'Window':cleanLabel(r.metric_window),'G':r.games_count,'PA':r.pa_sum,'AB':r.ab_sum,'H':r.hits_sum,'2B':r.doubles_sum,'HR':r.home_runs_sum,'R':r.runs_sum,'RBI':r.rbi_sum,'BB':r.walks_sum,'SO':r.strikeouts_sum,'SB':r.stolen_bases_sum,'TB':r.total_bases_derived_sum,'AVG':avgFmt(r.batting_average),'SLG':avgFmt(r.slugging_percentage)}))}
-function rowsForHpLines(ctx){return (ctx.hp_lines||[]).map(r=>({'Source':appLabel(r.source_key),'Prop':displayPropLabel(r.canonical_prop_key),'Side':String(r.selected_side||'').toUpperCase(),'Line':r.line_value,'HP':pctNum(r.estimated_hit_probability_0_100),'Conf':pctNum(r.probability_confidence_0_100),'Grade':friendlyGrade(r.probability_grade),'Sample':r.sample_size,'Hit-Miss':(r.hit_count??'—')+'-'+(r.miss_count??'—')}))}
+function rowsForHpLines(ctx){return (ctx.hp_lines||[]).map(r=>({'Source':appLabel(r.source_key),'Prop':displayPropLabel(r.canonical_prop_key),'Side':String(r.selected_side||'').toUpperCase(),'Line':r.line_value,'HP':pctNum(r.estimated_hit_probability_0_100),'Conf':pctNum(r.probability_confidence_0_100),'Grade':(r.probability_grade?friendlyGrade(r.probability_grade):'—'),'Sample':r.sample_size,'Hit-Miss':(r.hit_count??'—')+'-'+(r.miss_count??'—')}))}
 function rowsForSplits(ctx){return (ctx.hitter_splits||[]).map(r=>({'Split':String(r.split_key||'').replace('vs_','vs ').toUpperCase(),'PA':r.pa,'AB':r.ab,'H':r.hits,'2B':r.doubles,'3B':r.triples,'HR':r.home_runs,'RBI':r.rbi,'BB':r.walks,'SO':r.strikeouts,'AVG':r.avg,'OBP':r.obp,'SLG':r.slg,'OPS':r.ops,'BABIP':r.babip}))}
 function rowsForRecentGames(ctx){return (ctx.recent_games||[]).map(r=>({'Date':r.game_date,'Opp':r.opponent_team_id,'Order':r.batting_order,'PA':r.pa,'AB':r.ab,'R':r.runs,'H':r.hits,'1B':r.singles,'2B':r.doubles,'3B':r.triples,'HR':r.home_runs,'RBI':r.rbi,'BB':r.walks,'SO':r.strikeouts,'SB':r.stolen_bases,'TB':r.total_bases}))}
 function rowsForPitcherForm(ctx){return (ctx.pitcher_form||[]).map(r=>({'Pitcher':pitcherNameFor(ctx,r.player_id),'Window':cleanLabel(r.metric_window),'G':r.games_count,'IP':avgFmt(r.innings_pitched_sum),'BF':r.batters_faced_sum,'H':r.hits_allowed_sum,'ER':r.earned_runs_sum,'BB':r.walks_allowed_sum,'K':r.strikeouts_sum,'HR':r.home_runs_allowed_sum,'ERA':avgFmt(r.era_calculated),'WHIP':avgFmt(r.whip_calculated),'K%':pctNum(Number(r.k_rate_calculated)*100),'BB%':pctNum(Number(r.bb_rate_calculated)*100)}))}
@@ -1517,9 +1763,9 @@ function propMarketSummaryText(ctx){const a=(ctx.prop_market_current_lines||[]).
 function marketRows(ctx){const m=ctx.market_summary||{};return [['Books',isUsefulValue(m.book_available_count)?m.book_available_count+' / '+m.book_target_count:''],['Coverage',m.book_coverage_grade],['Freshness',m.freshness_status],['Moneyline',m.home_team+' '+m.home_ml_consensus+' / '+m.away_team+' '+m.away_ml_consensus],['Best ML',m.home_team+' '+m.home_ml_best+' / '+m.away_team+' '+m.away_ml_best],['Total',isUsefulValue(m.total_consensus_line)?m.total_consensus_line+' · O '+m.over_consensus_price+' / U '+m.under_consensus_price:''],['Run Line',isUsefulValue(m.home_runline_point)?m.home_team+' '+m.home_runline_point+' / '+m.away_team+' '+m.away_runline_point:''],['Implied Runs',isUsefulValue(m.derived_home_implied_runs)?m.home_team+' '+avgFmt(m.derived_home_implied_runs)+' / '+m.away_team+' '+avgFmt(m.derived_away_implied_runs):'']]}
 function weatherRows(ctx){const w=ctx.weather||{}, st=ctx.stadium||{}, pf=ctx.park_factors||{};return [['Venue',w.venue_name||st.stadium_name],['Location',[st.city,st.state].filter(Boolean).join(', ')],['Surface / Roof',[st.turf_type,w.roof_type||st.roof_type,w.roof_status].filter(Boolean).join(' / ')],['Temperature',isUsefulValue(w.temperature_f)?w.temperature_f+'°F':''],['Feels Like',isUsefulValue(w.feels_like_f)?w.feels_like_f+'°F':''],['Humidity',isUsefulValue(w.humidity_pct)?w.humidity_pct+'%':''],['Wind',[w.wind_direction_cardinal,w.wind_speed_mph? w.wind_speed_mph+' mph':'',w.wind_gust_mph?'gust '+w.wind_gust_mph:''].filter(Boolean).join(' ')],['Rain / Delay Risk',[yesNo(w.rain_risk_flag),yesNo(w.delay_risk_flag)].join(' / ')],['Park Run / HR',isUsefulValue(pf.run_factor)?pf.run_factor+' / '+pf.hr_factor:''],['LHB Run / HR',isUsefulValue(pf.lhb_run_factor)?pf.lhb_run_factor+' / '+pf.lhb_hr_factor:''],['RHB Run / HR',isUsefulValue(pf.rhb_run_factor)?pf.rhb_run_factor+' / '+pf.rhb_hr_factor:'']]}
 function umpireRows(ctx){const u=ctx.umpire||{};return [['Status',u.umpire_context_status],['Plate Umpire',u.home_plate_umpire_name||'Pending'],['Assignment',u.umpire_assignment_status],['Zone Context',u.strike_zone_context_status],['Run Context',u.run_environment_context_status],['Walk Context',u.walk_context_status],['K Context',u.strikeout_context_status],['Confidence',u.umpire_context_confidence]]}
-function renderDossier(d){const s=d.selected||{}, raw=d.raw_context||{}, legs=d.other_player_legs||[], ctx=d.dossier_context||{};const match=(s.away_team_name&&s.home_team_name)?s.away_team_name+' @ '+s.home_team_name:'Game '+(s.game_pk||'');const title=esc(s.player_name||'Player Dossier');const line=[s.prop_label||cap(s.canonical_prop_key),String(s.selected_side||'').toUpperCase(),s.line_value].filter(Boolean).join(' • ');const prof=ctx.player_profile||{};
+function renderDossier(d){const s=d.selected||{}, raw=d.raw_context||{}, legs=d.other_player_legs||[], ctx=d.dossier_context||{};const match=(s.away_team_name&&s.home_team_name)?s.away_team_name+' @ '+s.home_team_name:(s.home_team_name||s.away_team_name||'Game '+(s.game_pk||''));const title=esc(s.player_name||'Player Dossier');const line=[s.prop_label||cap(s.canonical_prop_key),String(s.selected_side||'').toUpperCase(),s.line_value].filter(Boolean).join(' • ');const prof=ctx.player_profile||{};
 const profile=publicRows([['Player',prof.full_name||s.player_name],['MLB Player ID',s.mlb_player_id],['Team',prof.current_mlb_team_id||s.team_name],['Position',prof.primary_position],['Role',prof.primary_role],['Bats / Throws',[prof.bat_side||prof.bats,prof.throw_side||prof.throws].filter(Boolean).join(' / ')],['Active',isUsefulValue(prof.active)?yesNo(prof.active):''],['Lineup Status',s.lineup_status||'Pending / not posted'],['Lineup Slot',s.batting_order]],raw,['bio','birth','height','weight','position','bat','throw'],8);
-const selectedLeg=[['Source',appLabel(s.source_key)],['Source Line Type',selectedSourceLineType(ctx,s)],['Prop',s.prop_label||cap(s.canonical_prop_key)],['Modeled Side / Line',String(s.selected_side||'').toUpperCase()+' '+s.line_value],['Hit Probability',pct(s.estimated_hit_probability_0_100)],['HP Confidence',pct(s.probability_confidence_0_100)],['HP Grade',friendlyGrade(s.probability_grade)],['Overall Score',num(s.score_0_100)],['Board Tier',qLabel(s)],['Playable',s.live_playable?'Live':(s.review_playable?'Review':'No')],['Daily Context',humanStatus(s.daily_readiness_status)],['Player Prop Market',humanStatus(s.market_prop_context_status)]];
+const selectedLeg=[['Source',appLabel(s.source_key)],['Source Line Type',selectedSourceLineType(ctx,s)],['Prop',s.prop_label||cap(s.canonical_prop_key)],['Modeled Side / Line',String(s.selected_side||'').toUpperCase()+' '+s.line_value],['Hit Probability',pct(s.estimated_hit_probability_0_100)],['HP Confidence',pct(s.probability_confidence_0_100)],['Quality Grade',qualityLetter(s)],['Overall Score',num(s.score_0_100)],['Board Tier',qLabel(s)],['Playable',s.live_playable?'Live':(s.review_playable?'Review':'No')],['Daily Context',humanStatus(s.daily_readiness_status)],['Player Prop Market',humanStatus(s.market_prop_context_status)]];
 const other=legs.filter(l=>l.final_board_row_id!==s.final_board_row_id).slice(0,30).map(l=>'<button class="legBtn" data-leg-id="'+esc(l.final_board_row_id)+'"><b>'+esc(l.prop_label||cap(l.canonical_prop_key))+'</b><br>'+esc(appLabel(l.source_key)+' · '+String(l.selected_side||'').toUpperCase()+' '+l.line_value)+'<br>HP '+pct(l.estimated_hit_probability_0_100)+' · Overall '+num(l.score_0_100)+'</button>').join('')||'<div class="small">No other current board legs for this player.</div>';
 $('dossierBody').innerHTML='<div class="dossierHero"><div class="dossierTitle">'+title+'</div><div class="dossierSub">'+esc(match)+' • '+esc(fmtDate(s.official_game_time_utc))+' • '+esc(s.venue_name||((ctx.stadium||{}).stadium_name)||'')+'</div><div class="dossierSub">'+esc(line)+'</div><div class="dossierMetrics">'+metric('Hit Prob',pct(s.estimated_hit_probability_0_100))+metric('Overall Score',num(s.score_0_100))+metric('Confidence',pct(s.probability_confidence_0_100))+metric('Tier',qLabel(s))+'</div></div><div class="dossierGrid">'+section('Selected Leg',selectedLeg,'Clean display of this exact board leg.')+section('Player Profile',profile,'Static player identity plus current lineup availability when posted.')+sectionWide('Hit Probability By Available Line',table(['Source','Prop','Side','Line','HP','Conf','Grade','Sample','Hit-Miss'],rowsForHpLines(ctx)),'All current probability rows for this player/game, including alternate lines and both apps.')+sectionWide('Season / Recent Form',table(['Window','G','PA','AB','H','2B','HR','R','RBI','BB','SO','SB','TB','AVG','SLG'],rowsForRecentForm(ctx)),'Season, last 20, last 10, last 5 and last 3 where mined.')+sectionWide('Recent Game Log',table(['Date','Opp','Order','PA','AB','R','H','1B','2B','3B','HR','RBI','BB','SO','SB','TB'],rowsForRecentGames(ctx)),'Most recent individual games behind the probability windows.')+sectionWide('Platoon Splits',table(['Split','PA','AB','H','2B','3B','HR','RBI','BB','SO','AVG','OBP','SLG','OPS','BABIP'],rowsForSplits(ctx)),'Current season vs-left and vs-right splits when available.')+sectionWide('Probable Starters',table(['Team','Home','Starter','Hand','Status','Confidence'],rowsForStarters(ctx)),'Official probable starter context for both teams.')+sectionWide('Pitcher Matchup Form',table(['Pitcher','Window','G','IP','BF','H','ER','BB','K','HR','ERA','WHIP','K%','BB%'],rowsForPitcherForm(ctx)),'Recent and season pitcher profile for the probable starters.')+sectionWide('Pitcher Platoon Splits',table(['Pitcher','Split','IP','BF','H','BB','K','HR','AVG','OBP','SLG','OPS'],rowsForPitcherSplits(ctx)),'Opponent handedness context when available.')+section('Weather / Park',weatherRows(ctx),'Forecast, roof/surface, and park-factor context.')+section('Bullpen',rowsForBullpen(ctx).flatMap(r=>Object.entries(r).map(([k,v])=>[r.Team+' '+k,v])),'Team bullpen workload and risk context.')+sectionWide('Schedule Spot',table(['Team','Spot','Rest','G 3d','G 5d','3-in-4','4-in-6','Travel','Miles','Risk'],rowsForSchedule(ctx)),'Travel, rest, and fatigue context for both clubs.')+section('Umpire',umpireRows(ctx),'Displayed as pending when no verified official pregame source exists.')+section('Game Market',marketRows(ctx),'Book coverage, moneyline, total, runline, and implied runs.')+sectionWide('All Available Game Books',table(['Book','Market','Team / Side','Line','Price','Updated'],rowsForBookOdds(ctx)),'Every mined book row for moneyline, runline/spread, and total.')+sectionWide('Player Prop Line Market',propMarketFallback(ctx),'External sportsbook/player-prop rows when mined. App source inventory is always shown below.')+sectionWide('Source Lines / Current Board Inventory',table(['Source','Prop','Line','Type','Status','Pickable','Start'],rowsForSourceLines(ctx)),'User-facing current source line inventory for this player when exposed by the source boards.')+sectionWide('Scouting Note','<div class="dossierNote">'+esc(s.leg_insight_comment||evidenceReason({best:s,rows:[s]}))+'</div>','Clean synthesis for the selected leg.')+sectionWide('Other Current Legs For Player','<div class="pillRow">'+other+'</div>','Tap another leg to open its player/leg dossier.')+'</div>';
 document.querySelectorAll('.legBtn[data-leg-id]').forEach(b=>b.onclick=()=>openDossier(b.getAttribute('data-leg-id')))}
