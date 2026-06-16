@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.277-delta-daily-repairable-cascade";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.278-daily-softfail-delta-repair-loop";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -10823,14 +10823,18 @@ function dailyContextFullRunChildPassed(stage, child) {
 
 
 function dailyContextFullRunStageCanContinueAfterFailure(stage, child, validation, output) {
-  if (!stage || stage.job_key === "daily-certifier") {
-    // v0.2.277: even readiness certifier is allowed to be nonfatal when it is a transient/binding failure;
-    // structural/dummy/unsupported remains hard.
+  if (!stage) return false;
+  const actualHay = String(`${stage.stage_key || ""} ${stage.job_key || ""} ${child && child.status || ""} ${child && child.error_code || ""} ${child && child.error_message || ""} ${output && output.status || ""} ${output && output.error || ""} ${output && output.certification || ""} ${output && output.certification_status || ""} ${output && output.certification_grade || ""} ${output && output.certification_reason || ""}`).toLowerCase();
+  const validationHay = String(`${validation && validation.reason || ""}`).toLowerCase();
+  // v0.2.278: validation.reason may be the generic phrase "missing_dummy_unsupported_or_failed_certification".
+  // Do not treat that generic reason as an actual dummy/unsupported deployment blocker. Only hard-stop on
+  // real child output/error text that explicitly says dummy/unsupported/missing_service_binding.
+  if (actualHay.includes("missing_service_binding") || actualHay.includes("unsupported_worker") || actualHay.includes("dummy_worker") || actualHay.includes("dummy_response")) return false;
+  if (actualHay.includes("service_binding_timeout") || actualHay.includes("worker_dispatch_exception") || actualHay.includes("timeout_after_") || actualHay.includes("aborterror") || actualHay.includes("network") || actualHay.includes("temporar") || validationHay.includes("child_not_completed")) return true;
+  if (stage.job_key !== "daily-certifier") {
+    if (actualHay.includes("failed") || actualHay.includes("fail_") || actualHay.includes("blocker") || actualHay.includes("warning") || actualHay.includes("warn") || actualHay.includes("retention_verification") || validationHay.includes("missing_dummy_unsupported_or_failed_certification")) return true;
   }
-  const hay = String(`${stage && stage.stage_key || ""} ${stage && stage.job_key || ""} ${validation && validation.reason || ""} ${child && child.status || ""} ${child && child.error_code || ""} ${child && child.error_message || ""} ${output && output.status || ""} ${output && output.error || ""} ${output && output.certification || ""} ${output && output.certification_grade || ""}`).toLowerCase();
-  if (hay.includes("dummy") || hay.includes("unsupported") || hay.includes("missing_service_binding")) return false;
-  if (hay.includes("service_binding_timeout") || hay.includes("worker_dispatch_exception") || hay.includes("timeout_after_") || hay.includes("aborterror") || hay.includes("network") || hay.includes("temporar") || hay.includes("child_not_completed")) return true;
-  if (stage && stage.job_key !== "daily-certifier" && (hay.includes("blocker") || hay.includes("warning") || hay.includes("failed"))) return true;
+  if (stage.job_key === "daily-certifier" && (actualHay.includes("service_binding_timeout") || actualHay.includes("worker_dispatch_exception") || actualHay.includes("timeout"))) return true;
   return false;
 }
 
@@ -10923,11 +10927,11 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
         return output;
       }
       if (dailyContextFullRunStageCanContinueAfterFailure(stage, child, validation, childOutput)) {
-        const softReport = { ...report, pass:true, wait:false, child_nonfatal_warning:true, reason:`${validation.reason || "child_failed"}_continued_nonfatal_v0_2_277`, nonfatal_cascade_continue:true };
+        const softReport = { ...report, pass:true, wait:false, child_nonfatal_warning:true, reason:`${validation.reason || "child_failed"}_continued_nonfatal_v0_2_278`, nonfatal_cascade_continue:true };
         stageReports.push(softReport);
         await run(env.CONTROL_DB,
           "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'daily_context_full_run_child_failure_continued_nonfatal', 'Daily Context child failed after retry but cascade continued with warning instead of failing parent', ?, CURRENT_TIMESTAMP)",
-          row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ stage_key:stage.stage_key, child_request_id:child.request_id, child_status:child.status, child_error_code:child.error_code || null, child_error_message:child.error_message || null, validation, output_status:childOutput && childOutput.status || null, output_error:childOutput && childOutput.error || null, nonfatal_cascade_continue_v0_2_277:true, version:SYSTEM_VERSION })
+          row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ stage_key:stage.stage_key, child_request_id:child.request_id, child_status:child.status, child_error_code:child.error_code || null, child_error_message:child.error_message || null, validation, output_status:childOutput && childOutput.status || null, output_error:childOutput && childOutput.error || null, nonfatal_cascade_continue_v0_2_278:true, version:SYSTEM_VERSION })
         );
         continue;
       }
