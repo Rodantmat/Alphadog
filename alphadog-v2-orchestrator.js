@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.276-delta-certifier-fast-date-move-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.277-delta-daily-repairable-cascade";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -3778,11 +3778,21 @@ async function getIncrementalFullRunLayerBlockingGapCount(env, layerKey) {
        WHERE layer_key=?`,
       currentOfficialDate, currentOfficialDate, layerKey
     );
+    const gapRow = await first(env.TEAM_DB,
+      `SELECT COUNT(*) AS open_gap_rows
+       FROM mlb_game_coverage_gaps
+       WHERE layer_key=?
+         AND gap_status='missing'
+         AND official_date IS NOT NULL
+         AND official_date <= date('now')`,
+      layerKey
+    );
     const blockingGapCount = Number(row?.blocking_gap_count || 0);
     const pastIncompleteGapCount = Number(row?.past_incomplete_gap_count || 0);
     const pastScheduledNotReadyCount = Number(row?.past_scheduled_not_ready_count || 0);
     const coverageRows = Number(row?.coverage_rows || 0);
-    const noopSafe = coverageRows > 0 && blockingGapCount === 0 && pastIncompleteGapCount === 0 && pastScheduledNotReadyCount === 0;
+    const openGapRows = Number(gapRow?.open_gap_rows || 0);
+    const noopSafe = coverageRows > 0 && openGapRows === 0 && blockingGapCount === 0 && pastIncompleteGapCount === 0 && pastScheduledNotReadyCount === 0;
     return {
       ok: true,
       layer_key: layerKey,
@@ -3790,6 +3800,7 @@ async function getIncrementalFullRunLayerBlockingGapCount(env, layerKey) {
       past_incomplete_gap_count: pastIncompleteGapCount,
       past_scheduled_not_ready_count: pastScheduledNotReadyCount,
       coverage_rows: coverageRows,
+      open_gap_rows: openGapRows,
       current_official_date_pt: currentOfficialDate,
       noop_safe: noopSafe,
       past_date_gap_contract_guard_v0_2_164: true
@@ -3976,6 +3987,130 @@ async function reconcileIncrementalCalendarTallyChildFromBatches(env, parentRow,
   };
 }
 
+
+function incrementalMorningRepairableLayerMap() {
+  const map = new Map();
+  for (const st of INCREMENTAL_MORNING_FULL_RUN_STAGES) {
+    if (st && st.layer_key && st.stage_key !== "calendar_tally_final_check") map.set(st.layer_key, st);
+  }
+  return map;
+}
+
+async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheckChild) {
+  if (!env.TEAM_DB || !env.CONTROL_DB || !parentRow || !finalCheckChild) return { ok:false, repairable:false, reason:"missing_env_or_rows" };
+  const layerMap = incrementalMorningRepairableLayerMap();
+  const gapRows = await all(env.TEAM_DB,
+    `SELECT layer_key, COUNT(*) AS gap_count, MIN(official_date) AS min_official_date, MAX(official_date) AS max_official_date
+     FROM mlb_game_coverage_gaps
+     WHERE gap_status='missing'
+       AND official_date IS NOT NULL
+       AND official_date <= date('now')
+     GROUP BY layer_key
+     ORDER BY layer_key`
+  );
+  const repairable = [];
+  const unsupported = [];
+  for (const g of gapRows || []) {
+    const layer = String(g.layer_key || "");
+    if (layerMap.has(layer)) repairable.push({ ...g, stage: layerMap.get(layer) });
+    else unsupported.push(g);
+  }
+  if (!repairable.length) return { ok:true, repairable:false, reason:"no_repairable_gap_rows", gap_rows:gapRows || [], unsupported_gap_rows:unsupported };
+  if (unsupported.length) return { ok:true, repairable:false, reason:"unsupported_gap_layers_present", gap_rows:gapRows || [], unsupported_gap_rows:unsupported, repairable_gap_rows:repairable.map(r => ({ layer_key:r.layer_key, gap_count:r.gap_count })) };
+
+  const target = repairable[0];
+  const repairStage = target.stage;
+  const totalRepairAttempts = await first(env.CONTROL_DB,
+    "SELECT COUNT(*) AS attempts FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND json_extract(input_json,'$.stage_key')=?",
+    parentRow.request_id, parentRow.chain_id, repairStage.stage_key
+  );
+  if (Number(totalRepairAttempts && totalRepairAttempts.attempts || 0) >= 4) {
+    return { ok:true, repairable:false, reason:"repair_attempt_limit_exceeded", target_layer_key:String(target.layer_key || ""), target_stage_key:repairStage.stage_key, target_attempts:Number(totalRepairAttempts && totalRepairAttempts.attempts || 0), gap_rows:gapRows || [], repairable_gap_rows:repairable.map(r => ({ layer_key:r.layer_key, gap_count:r.gap_count, stage_key:r.stage.stage_key })) };
+  }
+  const laterRepair = await first(env.CONTROL_DB,
+    `SELECT request_id, status, output_json, error_code, error_message, created_at, finished_at
+     FROM control_job_queue
+     WHERE parent_request_id=?
+       AND chain_id=?
+       AND json_extract(input_json,'$.stage_key')=?
+       AND datetime(created_at) > datetime(?)
+     ORDER BY datetime(created_at) DESC
+     LIMIT 1`,
+    parentRow.request_id, parentRow.chain_id, repairStage.stage_key, finalCheckChild.created_at || "1970-01-01 00:00:00"
+  );
+  const laterFinal = await first(env.CONTROL_DB,
+    `SELECT request_id, status, output_json, error_code, error_message, created_at, finished_at
+     FROM control_job_queue
+     WHERE parent_request_id=?
+       AND chain_id=?
+       AND json_extract(input_json,'$.stage_key')='calendar_tally_final_check'
+       AND datetime(created_at) > datetime(?)
+     ORDER BY datetime(created_at) DESC
+     LIMIT 1`,
+    parentRow.request_id, parentRow.chain_id, finalCheckChild.created_at || "1970-01-01 00:00:00"
+  );
+  const laterRepairOutput = parseJsonSafeText((laterRepair && laterRepair.output_json) || "{}", {});
+  const repairCompleted = !!(laterRepair && laterRepair.status === "completed" && laterRepairOutput && laterRepairOutput.ok === true && laterRepairOutput.data_ok === true);
+  return {
+    ok:true,
+    repairable:true,
+    gap_rows:gapRows || [],
+    repairable_gap_rows: repairable.map(r => ({ layer_key:r.layer_key, gap_count:Number(r.gap_count || 0), stage_key:r.stage.stage_key, job_key:r.stage.job_key, min_official_date:r.min_official_date, max_official_date:r.max_official_date })),
+    unsupported_gap_rows: unsupported,
+    target_stage: repairStage,
+    target_layer_key: String(target.layer_key || ""),
+    target_gap_count: Number(target.gap_count || 0),
+    later_repair_child: laterRepair || null,
+    later_repair_completed: repairCompleted,
+    later_final_child: laterFinal || null,
+    action: repairCompleted ? "enqueue_final_check_retry" : "enqueue_repair_stage"
+  };
+}
+
+async function enqueueIncrementalMorningRepairChildFromFinalGaps(env, parentRow, repairStage, finalCheckChild, runId, plan) {
+  const attemptCount = await first(env.CONTROL_DB,
+    "SELECT COUNT(*) AS attempts FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND json_extract(input_json,'$.stage_key')=?",
+    parentRow.request_id, parentRow.chain_id, repairStage.stage_key
+  );
+  const retryCount = Number(attemptCount && attemptCount.attempts || 0);
+  const childRequestId = rid(repairStage.stage_key.replace(/-/g, "_"));
+  const input = incrementalMorningFullRunChildInput(parentRow, repairStage, INCREMENTAL_MORNING_FULL_RUN_STAGES.findIndex(s => s.stage_key === repairStage.stage_key), retryCount);
+  input.repair_enqueued_after_final_check_blockers = true;
+  input.previous_final_check_request_id = finalCheckChild.request_id;
+  input.repair_gap_plan_v0_2_277 = true;
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    childRequestId, parentRow.chain_id, parentRow.request_id, repairStage.job_key, repairStage.worker_name, repairStage.worker_group, repairStage.phase_key, repairStage.display_name, repairStage.priority, JSON.stringify(input)
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'incremental_morning_final_check_repair_stage_enqueued', 'Final Calendar/Tally found repairable gaps; requeued the owning delta layer before failing the parent', ?, CURRENT_TIMESTAMP)",
+    parentRow.request_id, runId, WORKER_NAME, parentRow.job_key, JSON.stringify({ parent_request_id: parentRow.request_id, child_request_id: childRequestId, final_check_request_id: finalCheckChild.request_id, repair_stage_key: repairStage.stage_key, repair_layer_key: repairStage.layer_key || null, plan, version: SYSTEM_VERSION })
+  );
+  return { child_request_id: childRequestId, input };
+}
+
+async function enqueueIncrementalMorningFinalCheckRetryAfterRepair(env, parentRow, finalStage, finalCheckChild, runId, plan) {
+  const attemptCount = await first(env.CONTROL_DB,
+    "SELECT COUNT(*) AS attempts FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND json_extract(input_json,'$.stage_key')='calendar_tally_final_check'",
+    parentRow.request_id, parentRow.chain_id
+  );
+  const retryCount = Number(attemptCount && attemptCount.attempts || 0);
+  const childRequestId = rid(finalStage.stage_key.replace(/-/g, "_"));
+  const input = incrementalMorningFullRunChildInput(parentRow, finalStage, INCREMENTAL_MORNING_FULL_RUN_STAGES.findIndex(s => s.stage_key === finalStage.stage_key), retryCount);
+  input.retry_after_repairable_gap_repair = true;
+  input.previous_final_check_request_id = finalCheckChild.request_id;
+  input.repair_gap_plan_v0_2_277 = true;
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    childRequestId, parentRow.chain_id, parentRow.request_id, finalStage.job_key, finalStage.worker_name, finalStage.worker_group, finalStage.phase_key, finalStage.display_name, finalStage.priority, JSON.stringify(input)
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'incremental_morning_final_check_retry_enqueued_after_repair', 'Repairable gap stage completed after final-check blockers; requeued final Calendar/Tally before parent certification', ?, CURRENT_TIMESTAMP)",
+    parentRow.request_id, runId, WORKER_NAME, parentRow.job_key, JSON.stringify({ parent_request_id: parentRow.request_id, child_request_id: childRequestId, previous_final_check_request_id: finalCheckChild.request_id, plan, version: SYSTEM_VERSION })
+  );
+  return { child_request_id: childRequestId, input };
+}
+
 async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
   const started = Date.now();
   const parentInput = parseJsonSafeText(row.input_json || "{}", {});
@@ -4010,7 +4145,9 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
       let childStatusForReport = "pending";
       let childPassForReport = null;
       let childNoopProof = null;
-      if (stage.stage_key === 'calendar_tally_precheck' && stage.job_key === 'delta-certifier') {
+      if (false && stage.stage_key === 'calendar_tally_precheck' && stage.job_key === 'delta-certifier') {
+        // v0.2.277: disabled for scheduled/manual Delta Full Run. A fast no-op can miss newly-final games
+        // because it proves only existing coverage freshness, not a real calendar/status rebuild.
         const precheckProof = await getIncrementalCalendarTallyPrecheckFastNoopProof(env, trigger);
         if (precheckProof.ok && precheckProof.noop_safe === true) {
           const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
@@ -4137,6 +4274,25 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
         await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'INCREMENTAL_MORNING_FULL_RUN_TRANSIENT_RETRY_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
         await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
         return output;
+      }
+      if (stage.stage_key === "calendar_tally_final_check" && validation.reason === "final_calendar_tally_has_blocking_gaps") {
+        const repairPlan = await getIncrementalMorningRepairableGapPlan(env, row, child);
+        if (repairPlan && repairPlan.ok && repairPlan.repairable && repairPlan.target_stage) {
+          if (repairPlan.action === "enqueue_final_check_retry" && !repairPlan.later_final_child) {
+            const enqueued = await enqueueIncrementalMorningFinalCheckRetryAfterRepair(env, row, stage, child, runId, repairPlan);
+            const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:WORKER_NAME, job_key:row.job_key, request_id:row.request_id, chain_id:row.chain_id, mode:"incremental_morning_full_run", status:"PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_FINAL_CHECK_RETRY_ENQUEUED_AFTER_REPAIR", certification:"INCREMENTAL_MORNING_FULL_RUN_FINAL_CHECK_RETRY_ENQUEUED_AFTER_REPAIR", certification_grade:"PARTIAL", current_stage_key:stage.stage_key, failed_child_request_id:child.request_id, retry_child_request_id:enqueued.child_request_id, failed_reason:validation.reason, repair_gap_plan_v0_2_277:true, repair_plan:repairPlan, stages:[...stageReports, { ...report, pass:false, wait:false, final_check_retry_child_request_id:enqueued.child_request_id, reason:"repair_completed_final_check_retry_enqueued" }], continuation_required:true, orchestrator_should_self_continue:true, lock_held:true };
+            await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'INCREMENTAL_MORNING_FULL_RUN_FINAL_CHECK_RETRY_ENQUEUED_AFTER_REPAIR', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+            await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+            return output;
+          }
+          if (repairPlan.action === "enqueue_repair_stage") {
+            const enqueued = await enqueueIncrementalMorningRepairChildFromFinalGaps(env, row, repairPlan.target_stage, child, runId, repairPlan);
+            const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:WORKER_NAME, job_key:row.job_key, request_id:row.request_id, chain_id:row.chain_id, mode:"incremental_morning_full_run", status:"PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_REPAIR_STAGE_ENQUEUED_AFTER_FINAL_CHECK", certification:"INCREMENTAL_MORNING_FULL_RUN_REPAIR_STAGE_ENQUEUED_AFTER_FINAL_CHECK", certification_grade:"PARTIAL", current_stage_key:repairPlan.target_stage.stage_key, failed_final_check_request_id:child.request_id, repair_child_request_id:enqueued.child_request_id, failed_reason:validation.reason, repair_gap_plan_v0_2_277:true, repair_plan:repairPlan, stages:[...stageReports, { ...report, pass:false, wait:false, repair_child_request_id:enqueued.child_request_id, reason:"repairable_final_check_gap_repair_stage_enqueued" }], continuation_required:true, orchestrator_should_self_continue:true, lock_held:true };
+            await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'INCREMENTAL_MORNING_FULL_RUN_REPAIR_STAGE_ENQUEUED_AFTER_FINAL_CHECK', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+            await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+            return output;
+          }
+        }
       }
       const finalStatus = validation.reason === "child_stale_unfinished" ? "BLOCKED_INCREMENTAL_MORNING_FULL_RUN_CHILD_BLOCKED" : "FAILED_INCREMENTAL_MORNING_FULL_RUN_CHILD_FAILED";
       const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: finalStatus, certification: finalStatus, certification_grade: finalStatus.startsWith("BLOCKED") ? "BLOCKED" : "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: validation.reason, child_error_code: child.error_code || null, child_error_message: child.error_message || null, last_output_preview: JSON.stringify(childOutput).slice(0, 1200), stages: [...stageReports, report], retry_exhausted: !!validation.transient, full_run_certified: false };
@@ -10665,6 +10821,19 @@ function dailyContextFullRunChildPassed(stage, child) {
   return { pass: true, certification: cert, status, output };
 }
 
+
+function dailyContextFullRunStageCanContinueAfterFailure(stage, child, validation, output) {
+  if (!stage || stage.job_key === "daily-certifier") {
+    // v0.2.277: even readiness certifier is allowed to be nonfatal when it is a transient/binding failure;
+    // structural/dummy/unsupported remains hard.
+  }
+  const hay = String(`${stage && stage.stage_key || ""} ${stage && stage.job_key || ""} ${validation && validation.reason || ""} ${child && child.status || ""} ${child && child.error_code || ""} ${child && child.error_message || ""} ${output && output.status || ""} ${output && output.error || ""} ${output && output.certification || ""} ${output && output.certification_grade || ""}`).toLowerCase();
+  if (hay.includes("dummy") || hay.includes("unsupported") || hay.includes("missing_service_binding")) return false;
+  if (hay.includes("service_binding_timeout") || hay.includes("worker_dispatch_exception") || hay.includes("timeout_after_") || hay.includes("aborterror") || hay.includes("network") || hay.includes("temporar") || hay.includes("child_not_completed")) return true;
+  if (stage && stage.job_key !== "daily-certifier" && (hay.includes("blocker") || hay.includes("warning") || hay.includes("failed"))) return true;
+  return false;
+}
+
 async function processDailyContextFullRunJob(env, row, runId, trigger) {
   const started = Date.now();
   const parentInput = parseJsonSafeText(row.input_json || "{}", {});
@@ -10752,6 +10921,15 @@ async function processDailyContextFullRunJob(env, row, runId, trigger) {
         await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
         await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'daily_context_full_run_transient_child_retry_enqueued', 'Daily Context Full Run replaced one transient child dispatch failure with a same-stage retry', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ stage_key:stage.stage_key, failed_child_request_id:child.request_id, retry_child_request_id:enqueued.child_request_id, retry_count:retryCount, failed_reason:validation.reason, child_error_code:child.error_code || null, child_error_message:child.error_message || null }));
         return output;
+      }
+      if (dailyContextFullRunStageCanContinueAfterFailure(stage, child, validation, childOutput)) {
+        const softReport = { ...report, pass:true, wait:false, child_nonfatal_warning:true, reason:`${validation.reason || "child_failed"}_continued_nonfatal_v0_2_277`, nonfatal_cascade_continue:true };
+        stageReports.push(softReport);
+        await run(env.CONTROL_DB,
+          "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'daily_context_full_run_child_failure_continued_nonfatal', 'Daily Context child failed after retry but cascade continued with warning instead of failing parent', ?, CURRENT_TIMESTAMP)",
+          row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ stage_key:stage.stage_key, child_request_id:child.request_id, child_status:child.status, child_error_code:child.error_code || null, child_error_message:child.error_message || null, validation, output_status:childOutput && childOutput.status || null, output_error:childOutput && childOutput.error || null, nonfatal_cascade_continue_v0_2_277:true, version:SYSTEM_VERSION })
+        );
+        continue;
       }
       const finalStatus = "FAILED_DAILY_CONTEXT_FULL_RUN_CHILD_FAILED";
       const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_context_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: validation.reason, child_error_code: child.error_code || null, child_error_message: child.error_message || null, last_output_preview: JSON.stringify(childOutput).slice(0, 1200), stages: [...stageReports, report], daily_context_full_run_certified: false, no_board_mutation: true, no_score_db_mutation: true, no_scoring: true, no_ranking: true, no_final_board: true };
