@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.278-daily-softfail-delta-repair-loop";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.279-board-prizepicks-poll-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -674,6 +674,33 @@ async function enqueueBoardFullRunChild(env, parentRow, stage, stepIndex, retryC
   return { child_request_id: childRequestId, input };
 }
 
+
+async function enqueueBoardFullRunContinuationChild(env, parentRow, stage, stepIndex, previousChild, previousOutput, runId) {
+  const nextPollAttempt = Number(previousOutput && (previousOutput.next_poll_attempt ?? previousOutput.poll_attempt ?? 0));
+  const maxPollAttempts = Number(previousOutput && previousOutput.max_poll_attempts || 12);
+  const runAfterSeconds = Math.max(5, Math.min(60, Number(previousOutput && previousOutput.run_after_seconds || 30)));
+  if (nextPollAttempt >= maxPollAttempts) {
+    return { ok:false, reason:"board_prizepicks_poll_attempt_limit_reached", next_poll_attempt:nextPollAttempt, max_poll_attempts:maxPollAttempts };
+  }
+  const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
+  const input = boardFullRunChildInput(parentRow, stage, stepIndex, nextPollAttempt);
+  input.poll_attempt = nextPollAttempt;
+  input.max_poll_attempts = maxPollAttempts;
+  input.previous_poll_child_request_id = previousChild && previousChild.request_id || null;
+  input.previous_poll_certification = previousOutput && previousOutput.certification || null;
+  input.previous_poll_status = previousOutput && previousOutput.status || null;
+  input.board_prizepicks_poll_continuation_v0_2_279 = true;
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, datetime('now','+' || ? || ' seconds'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input), runAfterSeconds
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'board_full_run_prizepicks_poll_continuation_child_enqueued', 'PrizePicks board worker returned partial_continue; Board Full Run enqueued the next poll child instead of failing the cascade', ?, CURRENT_TIMESTAMP)",
+    parentRow.request_id, runId, WORKER_NAME, parentRow.job_key, JSON.stringify({ parent_request_id:parentRow.request_id, previous_child_request_id:previousChild && previousChild.request_id || null, continuation_child_request_id:childRequestId, next_poll_attempt:nextPollAttempt, max_poll_attempts:maxPollAttempts, run_after_seconds:runAfterSeconds, previous_certification:previousOutput && previousOutput.certification || null, previous_status:previousOutput && previousOutput.status || null, version:SYSTEM_VERSION })
+  );
+  return { ok:true, child_request_id: childRequestId, input, run_after_seconds: runAfterSeconds };
+}
+
 function boardFullRunStageKeyFromChild(child) {
   const input = parseJsonSafeText(child && child.input_json || "{}", {});
   return String(input.stage_key || "");
@@ -918,6 +945,16 @@ async function processBoardFullRunJob(env, row, runId, trigger) {
     const validation = childPassedBoardFullRun(stage, child, stageReports);
     const childOutput = parseJsonSafeText(child.output_json || "{}", {});
     const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || null, child_data_ok: childOutput.data_ok === true, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, prizepicks_stale_cleared: validation.prizepicks_stale_cleared === true, prizepicks_nonfatal_warning: validation.prizepicks_nonfatal_warning === true, prizepicks_stage_nonfatal: validation.prizepicks_stage_nonfatal === true, source_refresh_dispatch_ok: validation.source_refresh_dispatch_ok === true, source_refresh_dispatch_error: validation.source_refresh_dispatch_error || null, rows_read: childOutput.rows_read || 0, rows_written: childOutput.rows_written || 0, rows_promoted: childOutput.rows_promoted || childOutput.promoted_rows_written || 0, future_pickable_rows: childOutput.future_pickable_rows || 0, expired_or_started_rows: childOutput.expired_or_started_rows || 0, prepared_rows: childOutput.prepared_rows || 0, prizepicks_rows: childOutput.prizepicks_rows || 0, sleeper_rows: childOutput.sleeper_rows || 0, all_source_rows_seen_before_window_filter: childOutput.all_source_rows_seen_before_window_filter || 0, current_window_dates: childOutput.current_window_dates || null, pickable_safe_rows: childOutput.pickable_safe_rows || 0, blocked_rows: childOutput.blocked_rows || 0, matchup_unresolved_rows: childOutput.matchup_unresolved_rows || 0, unresolved_player_rows: childOutput.unresolved_player_rows || 0, final_db_truth: childOutput.final_db_truth === true, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0, attempts: stageAttempts.length };
+
+    if (stage.job_key === "prizepicks-github-board" && child.status === "completed" && (childOutput.continuation_required === true || isPartialContinueOutput(childOutput))) {
+      const enqueued = await enqueueBoardFullRunContinuationChild(env, row, stage, i, child, childOutput, runId);
+      if (enqueued && enqueued.ok) {
+        const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:WORKER_NAME, job_key:row.job_key, request_id:row.request_id, chain_id:row.chain_id, mode:"board_full_run", status:"PARTIAL_CONTINUE_BOARD_FULL_RUN_PRIZEPICKS_POLL_CONTINUATION_ENQUEUED", certification:"BOARD_FULL_RUN_PRIZEPICKS_POLL_CONTINUATION_ENQUEUED", certification_grade:"PARTIAL", current_stage_key:stage.stage_key, current_stage_index:i, previous_child_request_id:child.request_id, continuation_child_request_id:enqueued.child_request_id, run_after_seconds:enqueued.run_after_seconds, completed_stage_count:stageReports.length, total_stage_count:BOARD_FULL_RUN_STAGES.length, stages:[...stageReports, { ...report, pass:false, wait:true, continuation_child_request_id:enqueued.child_request_id, reason:"prizepicks_partial_continue_poll_child_enqueued" }], continuation_required:true, orchestrator_should_self_continue:true, lock_held:true, board_prizepicks_poll_continuation_v0_2_279:true, no_delta_full_run:true, no_scoring:true, no_ranking:true, no_final_board:true };
+        await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'BOARD_FULL_RUN_PRIZEPICKS_POLL_CONTINUATION_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+' || ? || ' seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", enqueued.run_after_seconds, JSON.stringify(output), row.request_id);
+        return output;
+      }
+    }
 
     if (validation.wait) {
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "PARTIAL_CONTINUE_BOARD_FULL_RUN_WAITING_ON_CHILD", certification: "BOARD_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
