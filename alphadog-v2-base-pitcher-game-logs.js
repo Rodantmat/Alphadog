@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-game-logs";
-const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.4.6-delta-continuation-before-promotion";
+const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.4.7-delta-suspended-exception-date-gate";
 const JOB_KEY = "base-pitcher-game-logs";
 const GROUP_TYPE = "pitching";
 const SOURCE_KEY = "mlb_statsapi_pitcher_game_logs_v0_2_0";
@@ -1068,6 +1068,20 @@ function isFinalMlbGame(game) {
   const coded = String(status.codedGameState || "").toUpperCase();
   return abstractState === "final" || coded === "F" || detailed === "final" || detailed === "game over" || detailed === "completed early";
 }
+function isNoStatsExpectedMlbGame(game) {
+  const status = game && game.status ? game.status : {};
+  const detailed = String(status.detailedState || "").toLowerCase();
+  const coded = String(status.codedGameState || "").toUpperCase();
+  const abstractState = String(status.abstractGameState || "").toLowerCase();
+  return coded === "UR"
+    || coded === "S"
+    || coded === "D"
+    || detailed.includes("suspended")
+    || detailed.includes("postponed")
+    || detailed.includes("cancelled")
+    || detailed.includes("canceled")
+    || abstractState.includes("postponed");
+}
 async function fetchJsonEndpoint(env, endpoint) {
   const resp = await fetch(endpoint, { headers: env.MLB_API_USER_AGENT ? { "user-agent": String(env.MLB_API_USER_AGENT) } : {} });
   const text = await resp.text();
@@ -1085,10 +1099,12 @@ async function determineLatestCompleteGameDate(env, deltaFloorDate) {
     const dateStr = String((d && d.date) || "");
     const games = Array.isArray(d && d.games) ? d.games : [];
     if (!dateStr || games.length === 0) continue;
-    if (games.every(isFinalMlbGame) && (!latest || dateStr > latest)) latest = dateStr;
+    const finalGames = games.filter(isFinalMlbGame);
+    const blockingOpenGames = games.filter(g => !isFinalMlbGame(g) && !isNoStatsExpectedMlbGame(g));
+    if (finalGames.length > 0 && blockingOpenGames.length === 0 && (!latest || dateStr > latest)) latest = dateStr;
   }
-  if (!latest) return { ok: false, endpoint, error: "NO_COMPLETE_FINAL_MLB_GAME_DATE_IN_DELTA_RANGE", today_utc: today };
-  return { ok: true, endpoint, latest_complete_game_date: latest, today_utc: today };
+  if (!latest) return { ok: false, endpoint, error: "NO_COMPLETE_OR_EXCEPTION_SAFE_FINAL_MLB_GAME_DATE_IN_DELTA_RANGE", today_utc: today, suspended_exception_date_gate_v0_4_7: true };
+  return { ok: true, endpoint, latest_complete_game_date: latest, today_utc: today, suspended_exception_date_gate_v0_4_7: true };
 }
 async function completedGamesInWindow(env, startDate, endDate) {
   const endpoint = `${mlbBaseUrl(env)}/schedule?sportId=1&gameTypes=R&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
