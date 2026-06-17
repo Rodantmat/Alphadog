@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.280-daily-full-board-before-context";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.281-incremental-repair-noop-livelock-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -4037,6 +4037,52 @@ function incrementalMorningRepairableLayerMap() {
   return map;
 }
 
+
+function incrementalMorningIsoDate(value) {
+  const text = String(value || "").slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : "";
+}
+
+function incrementalMorningDateBefore(left, right) {
+  const a = incrementalMorningIsoDate(left);
+  const b = incrementalMorningIsoDate(right);
+  return !!(a && b && a < b);
+}
+
+function incrementalMorningRepairChildTerminalNoop(repairOutput, targetGap) {
+  const output = repairOutput && typeof repairOutput === "object" ? repairOutput : {};
+  const status = String(output.status || "").toLowerCase();
+  const cert = String(output.certification || output.certification_status || "").toLowerCase();
+  const hay = `${status} ${cert}`;
+  const noopLike = hay.includes("noop") || hay.includes("already_current") || hay.includes("repeat_full_refresh_blocked") || hay.includes("no_new") || output.no_new_batch === true;
+  const rowsRead = Number(output.rows_read || output.rowsRead || 0);
+  const rowsWritten = Number(output.rows_written || output.rowsWritten || 0);
+  const rowsPromoted = Number(output.rows_promoted || output.rowsPromoted || 0);
+  const rowsStaged = Number(output.rows_staged || output.rowsStaged || 0);
+  const advancedRows = rowsWritten + rowsPromoted + rowsStaged;
+  const targetMaxDate = incrementalMorningIsoDate(targetGap && targetGap.max_official_date);
+  const retainedMaxDate = incrementalMorningIsoDate(output.retained_max_game_date || output.latest_game_date || output.max_game_date);
+  const latestCompleteDate = incrementalMorningIsoDate(output.source_final_date_check && output.source_final_date_check.latest_complete_game_date || output.latest_complete_game_date);
+  const staleAgainstTarget = !!(targetMaxDate && (incrementalMorningDateBefore(retainedMaxDate, targetMaxDate) || incrementalMorningDateBefore(latestCompleteDate, targetMaxDate)));
+  if (noopLike && advancedRows <= 0 && (rowsRead <= 0 || staleAgainstTarget) && staleAgainstTarget) {
+    return {
+      terminal: true,
+      reason: "repair_child_noop_before_gap_date",
+      target_max_official_date: targetMaxDate || null,
+      retained_max_game_date: retainedMaxDate || null,
+      latest_complete_game_date: latestCompleteDate || null,
+      rows_read: rowsRead,
+      rows_written: rowsWritten,
+      rows_promoted: rowsPromoted,
+      rows_staged: rowsStaged,
+      output_status: output.status || null,
+      output_certification: output.certification || output.certification_status || null,
+      no_new_batch: output.no_new_batch === true
+    };
+  }
+  return { terminal: false };
+}
+
 async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheckChild) {
   if (!env.TEAM_DB || !env.CONTROL_DB || !parentRow || !finalCheckChild) return { ok:false, repairable:false, reason:"missing_env_or_rows" };
   const layerMap = incrementalMorningRepairableLayerMap();
@@ -4062,8 +4108,8 @@ async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheck
   const target = repairable[0];
   const repairStage = target.stage;
   const totalRepairAttempts = await first(env.CONTROL_DB,
-    "SELECT COUNT(*) AS attempts FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND json_extract(input_json,'$.stage_key')=?",
-    parentRow.request_id, parentRow.chain_id, repairStage.stage_key
+    "SELECT COUNT(*) AS attempts FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND job_key=? AND worker_name=?",
+    parentRow.request_id, parentRow.chain_id, repairStage.job_key, repairStage.worker_name
   );
   if (Number(totalRepairAttempts && totalRepairAttempts.attempts || 0) >= 4) {
     return { ok:true, repairable:false, reason:"repair_attempt_limit_exceeded", target_layer_key:String(target.layer_key || ""), target_stage_key:repairStage.stage_key, target_attempts:Number(totalRepairAttempts && totalRepairAttempts.attempts || 0), gap_rows:gapRows || [], repairable_gap_rows:repairable.map(r => ({ layer_key:r.layer_key, gap_count:r.gap_count, stage_key:r.stage.stage_key })) };
@@ -4073,11 +4119,12 @@ async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheck
      FROM control_job_queue
      WHERE parent_request_id=?
        AND chain_id=?
-       AND json_extract(input_json,'$.stage_key')=?
+       AND job_key=?
+       AND worker_name=?
        AND datetime(created_at) > datetime(?)
      ORDER BY datetime(created_at) DESC
      LIMIT 1`,
-    parentRow.request_id, parentRow.chain_id, repairStage.stage_key, finalCheckChild.created_at || "1970-01-01 00:00:00"
+    parentRow.request_id, parentRow.chain_id, repairStage.job_key, repairStage.worker_name, finalCheckChild.created_at || "1970-01-01 00:00:00"
   );
   const laterFinal = await first(env.CONTROL_DB,
     `SELECT request_id, status, output_json, error_code, error_message, created_at, finished_at
@@ -4092,6 +4139,10 @@ async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheck
   );
   const laterRepairOutput = parseJsonSafeText((laterRepair && laterRepair.output_json) || "{}", {});
   const repairCompleted = !!(laterRepair && laterRepair.status === "completed" && laterRepairOutput && laterRepairOutput.ok === true && laterRepairOutput.data_ok === true);
+  const terminalNoop = repairCompleted ? incrementalMorningRepairChildTerminalNoop(laterRepairOutput, target) : { terminal:false };
+  if (terminalNoop && terminalNoop.terminal) {
+    return { ok:true, repairable:false, reason:"repair_child_noop_did_not_advance_gap_layer", terminal_noop_livelock_guard_v0_2_281:true, target_layer_key:String(target.layer_key || ""), target_stage_key:repairStage.stage_key, target_job_key:repairStage.job_key, target_worker_name:repairStage.worker_name, target_gap_count:Number(target.gap_count || 0), gap_rows:gapRows || [], repairable_gap_rows:repairable.map(r => ({ layer_key:r.layer_key, gap_count:Number(r.gap_count || 0), stage_key:r.stage.stage_key, job_key:r.stage.job_key, min_official_date:r.min_official_date, max_official_date:r.max_official_date })), later_repair_child:laterRepair || null, later_repair_terminal_noop:terminalNoop };
+  }
   return {
     ok:true,
     repairable:true,
@@ -4110,8 +4161,8 @@ async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheck
 
 async function enqueueIncrementalMorningRepairChildFromFinalGaps(env, parentRow, repairStage, finalCheckChild, runId, plan) {
   const attemptCount = await first(env.CONTROL_DB,
-    "SELECT COUNT(*) AS attempts FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND json_extract(input_json,'$.stage_key')=?",
-    parentRow.request_id, parentRow.chain_id, repairStage.stage_key
+    "SELECT COUNT(*) AS attempts FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND job_key=? AND worker_name=?",
+    parentRow.request_id, parentRow.chain_id, repairStage.job_key, repairStage.worker_name
   );
   const retryCount = Number(attemptCount && attemptCount.attempts || 0);
   const childRequestId = rid(repairStage.stage_key.replace(/-/g, "_"));
@@ -4318,6 +4369,15 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
       }
       if (stage.stage_key === "calendar_tally_final_check" && validation.reason === "final_calendar_tally_has_blocking_gaps") {
         const repairPlan = await getIncrementalMorningRepairableGapPlan(env, row, child);
+        if (repairPlan && repairPlan.ok && repairPlan.repairable === false && (repairPlan.reason === "repair_child_noop_did_not_advance_gap_layer" || repairPlan.reason === "repair_attempt_limit_exceeded")) {
+          const finalStatus = repairPlan.reason === "repair_attempt_limit_exceeded" ? "BLOCKED_INCREMENTAL_MORNING_FULL_RUN_REPAIR_ATTEMPT_LIMIT" : "BLOCKED_INCREMENTAL_MORNING_FULL_RUN_REPAIR_NOOP_STALE_SOURCE";
+          const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:WORKER_NAME, job_key:row.job_key, request_id:row.request_id, chain_id:row.chain_id, mode:"incremental_morning_full_run", status:finalStatus, certification:finalStatus, certification_grade:"BLOCKED", failed_stage_key:stage.stage_key, failed_request_id:child.request_id, failed_reason:repairPlan.reason, original_failed_reason:validation.reason, repair_gap_plan_v0_2_281:true, repair_plan:repairPlan, stages:[...stageReports, { ...report, pass:false, wait:false, reason:repairPlan.reason }], full_run_certified:false, continuation_required:false, orchestrator_should_self_continue:false, lock_held:false };
+          await releaseIncrementalMorningFullRunLock(env, row);
+          await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), String(repairPlan.reason || "incremental repair livelock blocked").slice(0, 900));
+          await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", JSON.stringify(output), finalStatus.toLowerCase(), String(repairPlan.reason || "incremental repair livelock blocked").slice(0, 900), row.request_id);
+          await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'ERROR', 'incremental_morning_repair_noop_livelock_guard_blocked', 'Incremental Morning repair loop stopped because the repair child returned terminal NOOP/stale-source proof', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+          return output;
+        }
         if (repairPlan && repairPlan.ok && repairPlan.repairable && repairPlan.target_stage) {
           if (repairPlan.action === "enqueue_final_check_retry" && !repairPlan.later_final_child) {
             const enqueued = await enqueueIncrementalMorningFinalCheckRetryAfterRepair(env, row, stage, child, runId, repairPlan);
