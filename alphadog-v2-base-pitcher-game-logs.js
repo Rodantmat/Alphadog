@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-game-logs";
-const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.4.7-delta-suspended-exception-date-gate";
+const VERSION = "alphadog-v2-base-pitcher-game-logs-v0.4.8-safe-16-call-delta-chunks";
 const JOB_KEY = "base-pitcher-game-logs";
 const GROUP_TYPE = "pitching";
 const SOURCE_KEY = "mlb_statsapi_pitcher_game_logs_v0_2_0";
@@ -10,8 +10,8 @@ const DEFAULT_SEASON = 2026;
 const DEFAULT_BASE_CUTOFF = "2026-05-18";
 const DEFAULT_DELTA_START = "2026-05-19";
 const NO_DATA_PROBE_SEASON = 1901;
-const DEFAULT_MAX_API_CALLS_PER_TICK = 8;
-const DEFAULT_MAX_STAGE_ROWS_PER_TICK = 1000;
+const DEFAULT_MAX_API_CALLS_PER_TICK = 16;
+const DEFAULT_MAX_STAGE_ROWS_PER_TICK = 1500;
 const DEFAULT_MAX_PROMOTE_ROWS_PER_TICK = 500;
 const DEFAULT_DELTA_LOOKBACK_DAYS = 7;
 const BASE_LIVE_DATA_FEED_KEY = "mlb_statsapi_pitcher_game_logs_2026_base_v0_3_1_promoted";
