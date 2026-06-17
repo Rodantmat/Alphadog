@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-pitcher-splits";
-const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.12-pt-past-date-only-refresh";
+const VERSION = "alphadog-v2-base-pitcher-splits-v0.5.13-gap-forced-pgl-date-refresh";
 const JOB_KEY = "base-pitcher-splits";
 
 const SOURCE_SEASON = 2026;
@@ -1476,6 +1476,21 @@ async function runDeltaNoopRestoreScopedRepairGate(env, input) {
     return await refreshDailyAffectedPitcherSplits(env, baseBatch, input, liveChecks, pendingThroughDate || coveredGameDate || todayUtc(), cj.covered_game_date_before || coveredGameDate);
   }
   const latestCompleteCheck = await fetchLatestCompleteGameDate(env, addDays(coveredGameDate || liveChecks.max_source_snapshot_date || baseBatch.source_snapshot_date || todayUtc(), 1));
+
+  // v0.5.13: Full-run gap repair must not falsely no-op when the already-promoted
+  // pitcher game logs have advanced beyond the pitcher_splits live snapshot. The
+  // final certifier's blocker is keyed to game-date coverage, so use the local
+  // pitcher_game_logs max game_date as the authoritative repair target before
+  // falling back to schedule discovery. This fixes the 2026-06-16 loop where
+  // pitcher_splits repeatedly returned NOOP with max_source_snapshot_date=2026-06-15
+  // while TEAM_DB still had pitcher_splits MISSING_BLOCKER rows for 2026-06-16.
+  const pglMax = await first(env.STATS_PITCHER_DB, `SELECT MAX(game_date) AS max_game_date FROM pitcher_game_logs WHERE game_date IS NOT NULL`);
+  const pglTargetDate = dateOnlyUtc(pglMax && pglMax.max_game_date);
+  const coveredForPglRepair = dateOnlyUtc(coveredGameDate) || dateOnlyUtc(liveChecks.max_source_snapshot_date) || dateOnlyUtc(baseBatch.source_snapshot_date);
+  if (baseComplete && pglTargetDate && coveredForPglRepair && pglTargetDate > coveredForPglRepair) {
+    return await refreshDailyAffectedPitcherSplits(env, baseBatch, input, liveChecks, pglTargetDate, coveredForPglRepair);
+  }
+
   if (baseComplete && latestCompleteCheck.ok && latestCompleteCheck.latest_complete_game_date && latestCompleteCheck.latest_complete_game_date > (coveredGameDate || '0000-00-00')) {
     return await refreshDailyAffectedPitcherSplits(env, baseBatch, input, liveChecks, latestCompleteCheck.latest_complete_game_date, coveredGameDate);
   }
