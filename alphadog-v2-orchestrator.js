@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.281-incremental-repair-noop-livelock-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.282-incremental-lockbusy-hot-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -16279,6 +16279,11 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   // parent/child rows are chain-scoped, lock-guarded, and counted by countDueMarketScoringFullRun(),
   // so continuing after lock_busy is safe and prevents manual Wake from becoming required.
   const marketScoringLockBusyContinuation = sawLockBusy && !sawHardStop && dueMarketScoringFullRun > 0;
+  // v0.2.282: Incremental Morning Full Run is also a lock-guarded backend cascade.
+  // Child service-binding dispatch can make a parallel pump observe lock_busy while
+  // the parent row remains due for the next stage. Treat due incremental parent/child
+  // rows as hot-continuation work on lock_busy so the chain does not wait for cron/manual Wake.
+  const incrementalMorningLockBusyContinuation = sawLockBusy && !sawHardStop && dueIncrementalMorningFullRun > 0;
   // v0.2.204: Daily Context Full Run is also a lock-guarded backend cascade.
   // A child service-binding fetch can hold GLOBAL_ORCHESTRATOR long enough for a
   // parallel hot pump/manual wake/cron pump to see lock_busy. Suppressing all
@@ -16292,7 +16297,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const propFactorLockBusyContinuation = sawLockBusy && !sawHardStop && duePropFactorMinerHot > 0;
   const propMatrixLockBusyContinuation = sawLockBusy && !sawHardStop && duePropMatrixBuilderHot > 0;
   const scoreEnrichmentLockBusyContinuation = sawLockBusy && !sawHardStop && dueScoreEnrichmentV1Hot > 0;
-  const lockBusyHotContinuation = marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation || propMatrixLockBusyContinuation || scoreEnrichmentLockBusyContinuation;
+  const lockBusyHotContinuation = incrementalMorningLockBusyContinuation || marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation || propMatrixLockBusyContinuation || scoreEnrichmentLockBusyContinuation;
   const shouldSelfContinue = (continuationAllowedByLastCycle || lockBusyHotContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
@@ -16335,6 +16340,8 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       self_continue_suppressed_due_to_lock_busy: !!(sawLockBusy && !lockBusyHotContinuation),
       self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
       continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
+      incremental_morning_lock_busy_continuation: !!incrementalMorningLockBusyContinuation,
+      incremental_morning_lockbusy_hot_continuation_v0_2_282: true,
       market_scoring_lock_busy_continuation: !!marketScoringLockBusyContinuation,
       daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
       daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
@@ -16384,6 +16391,8 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         self_continue_delay_ms: hotContinuationDelayMs,
         full_run_hot_continuation_v0_2_95: true,
         continuation_allowed_by_last_cycle: !!continuationAllowedByLastCycle,
+        incremental_morning_lock_busy_continuation: !!incrementalMorningLockBusyContinuation,
+        incremental_morning_lockbusy_hot_continuation_v0_2_282: true,
         market_scoring_lock_busy_continuation: !!marketScoringLockBusyContinuation,
         daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
         daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
