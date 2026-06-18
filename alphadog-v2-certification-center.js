@@ -1,13 +1,13 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-main-ui-v0.2.16-visible-vs-available-inventory";
+const VERSION = "alphadog-v2-main-ui-v0.2.17-layout-restored-full-api-path";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
 
-const UI_VERSION_LABEL = "v0.2.16 - Visible + Available Inventory";
+const UI_VERSION_LABEL = "v0.2.17 - Quota Counts + Rich Dossier";
 
 const DOCUMENTED_PROP_OPTIONS = [
   { prop_family: "hitter", canonical_prop_key: "hits", label: "Hits" },
@@ -1510,7 +1510,7 @@ async function apiCurrent(env, url) {
       main_number: "hit_probability_0_100",
       secondary_number: "certainty_0_100",
       tertiary_number: "overall_score_0_100",
-      rows_are: "Final Board V2 Review Board rows. By default this endpoint returns the quota-selected visible board; pass no_quotas=1 to audit the full eligible inventory.",
+      rows_are: "Final Board V2 quota-selected Review Board candidates by default; add no_quotas=1 with the same query filters for full eligible inventory access.",
       score_meaning: "Overall Score is HP-dominant, certainty-supported, and trust/context-adjusted; it is not a second probability model."
     },
     writes_performed: 0,
@@ -1619,36 +1619,6 @@ async function apiFilters(env) {
     FROM selected
   `);
 
-
-  const inventoryRows = await queryAll(env.SCORE_DB, `${quotaBase}
-    SELECT
-      source_key,
-      canonical_prop_key,
-      CASE
-        WHEN canonical_prop_key LIKE 'pitcher_%' OR canonical_prop_key IN ('earned_runs','hits_allowed','walks_allowed','pitcher_outs') THEN 'pitcher'
-        ELSE 'hitter'
-      END AS prop_family,
-      quota_line_type AS line_type,
-      COUNT(*) AS available_rows,
-      MIN(hit_probability_0_100) AS min_available_hp,
-      MAX(hit_probability_0_100) AS max_available_hp,
-      MIN(overall_score_0_100) AS min_available_score,
-      MAX(overall_score_0_100) AS max_available_score
-    FROM base
-    GROUP BY source_key, canonical_prop_key, prop_family, quota_line_type
-    ORDER BY source_key, prop_family, canonical_prop_key, quota_line_type
-  `);
-
-  const inventorySummaryRows = await queryAll(env.SCORE_DB, `${quotaBase}
-    SELECT
-      COUNT(*) AS available_total_rows,
-      MIN(hit_probability_0_100) AS available_min_hp,
-      MAX(hit_probability_0_100) AS available_max_hp,
-      MIN(overall_score_0_100) AS available_min_score,
-      MAX(overall_score_0_100) AS available_max_score
-    FROM base
-  `);
-
   const sourceMap = new Map();
   const propMap = new Map();
   const bands = new Map();
@@ -1657,19 +1627,19 @@ async function apiFilters(env) {
 
   for (const opt of DOCUMENTED_PROP_OPTIONS) {
     const propId = `${opt.prop_family}|${opt.canonical_prop_key}`;
-    propMap.set(propId, { prop_family: opt.prop_family, canonical_prop_key: opt.canonical_prop_key, label: opt.label || displayPropLabel(opt.canonical_prop_key), rows: 0, available_rows: 0, documented: true });
+    propMap.set(propId, { prop_family: opt.prop_family, canonical_prop_key: opt.canonical_prop_key, label: opt.label || displayPropLabel(opt.canonical_prop_key), rows: 0, documented: true });
   }
 
   for (const opt of DOCUMENTED_SOURCE_LINE_OPTIONS) {
     const sourceId = `${opt.source_key}|${opt.line_type}`;
-    sourceMap.set(sourceId, { source_key: opt.source_key, line_type: opt.line_type, label: opt.label, rows: 0, available_rows: 0, documented: true });
+    sourceMap.set(sourceId, { source_key: opt.source_key, line_type: opt.line_type, label: opt.label, rows: 0, documented: true });
   }
 
   for (const row of rows) {
     const propKey = row.canonical_prop_key || "unknown";
     const family = row.prop_family || "unknown";
     const propId = `${family}|${propKey}`;
-    if (!propMap.has(propId)) propMap.set(propId, { prop_family: family, canonical_prop_key: propKey, label: displayPropLabel(propKey), rows: 0, available_rows: 0, documented: false });
+    if (!propMap.has(propId)) propMap.set(propId, { prop_family: family, canonical_prop_key: propKey, label: displayPropLabel(propKey), rows: 0, documented: false });
     propMap.get(propId).rows += Number(row.rows || 0);
 
     const source = row.source_key || "unknown";
@@ -1685,7 +1655,6 @@ async function apiFilters(env) {
       side_mode: row.side_mode,
       label: lineType === "goblin" ? "Goblin" : lineType === "demon" ? "Demon" : lineType === "more_only" ? "More Only" : "Regular",
       rows: 0,
-      available_rows: 0,
       documented: false
     });
     const sourceEntry = sourceMap.get(sourceId);
@@ -1699,49 +1668,9 @@ async function apiFilters(env) {
     if (row.board_tier) tiers.set(row.board_tier, (tiers.get(row.board_tier) || 0) + Number(row.rows || 0));
   }
 
-  for (const row of inventoryRows) {
-    const propKey = row.canonical_prop_key || "unknown";
-    const family = row.prop_family || "unknown";
-    const propId = `${family}|${propKey}`;
-    if (!propMap.has(propId)) propMap.set(propId, { prop_family: family, canonical_prop_key: propKey, label: displayPropLabel(propKey), rows: 0, available_rows: 0, documented: false });
-    propMap.get(propId).available_rows += Number(row.available_rows || 0);
-    propMap.get(propId).min_available_hp = row.min_available_hp;
-    propMap.get(propId).max_available_hp = row.max_available_hp;
-    propMap.get(propId).min_available_score = row.min_available_score;
-    propMap.get(propId).max_available_score = row.max_available_score;
-
-    const source = row.source_key || "unknown";
-    const lineType = row.line_type || "regular";
-    const sourceId = `${source}|${lineType}`;
-    if (!sourceMap.has(sourceId)) sourceMap.set(sourceId, {
-      source_key: source,
-      line_type: lineType,
-      line_type_label: displayLineTypeLabel(lineType),
-      app_line_label: `${displaySourceLabel(source)} • ${displayLineTypeLabel(lineType)}`,
-      label: lineType === "goblin" ? "Goblin" : lineType === "demon" ? "Demon" : lineType === "more_only" ? "More Only" : "Regular",
-      rows: 0,
-      available_rows: 0,
-      documented: false
-    });
-    const sourceEntry = sourceMap.get(sourceId);
-    sourceEntry.available_rows += Number(row.available_rows || 0);
-    sourceEntry.min_available_hp = row.min_available_hp;
-    sourceEntry.max_available_hp = row.max_available_hp;
-    sourceEntry.min_available_score = row.min_available_score;
-    sourceEntry.max_available_score = row.max_available_score;
-  }
-
   const props = Array.from(propMap.values()).sort((a, b) => String(a.prop_family).localeCompare(String(b.prop_family)) || String(a.label).localeCompare(String(b.label)));
   const lineTypes = Array.from(sourceMap.values()).sort((a, b) => String(a.source_key).localeCompare(String(b.source_key)) || String(a.label).localeCompare(String(b.label)));
   const summary = summaryRows[0] || {};
-  const inventorySummary = inventorySummaryRows[0] || {};
-  summary.visible_total_rows = Number(summary.total_rows || 0);
-  summary.available_total_rows = Number(inventorySummary.available_total_rows || summary.total_rows || 0);
-  summary.full_board_available_rows = summary.available_total_rows;
-  summary.available_min_hp = inventorySummary.available_min_hp;
-  summary.available_max_hp = inventorySummary.available_max_hp;
-  summary.available_min_score = inventorySummary.available_min_score;
-  summary.available_max_score = inventorySummary.available_max_score;
 
   return jsonResponse({
     ok: true,
@@ -1866,7 +1795,7 @@ const MAIN_HTML = `<!doctype html>
 <body>
 <div class="wrap">
   <header class="hero">
-    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.16 - Visible + Available Inventory</div></div></div>
+    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.15 - Quota Counts + Rich Dossier</div></div></div>
     <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Main Board</button><button id="menuHealth">Health</button></div></div>
   </header>
   <section id="boardScreen">
@@ -1892,7 +1821,7 @@ const MAIN_HTML = `<!doctype html>
 </div>
 <script>
 (()=>{
-const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.16 - Visible + Available Inventory';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null;
+const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.17 - Quota Counts + Rich Dossier';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0)+'%':'—'}
 function num(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0):'—'}
@@ -1908,10 +1837,7 @@ function bindGroup(groupId,boxId,set){const g=$(groupId),box=$(boxId);function u
 function sourceTypeKey(t){return (t.source_key||'unknown')+':'+(t.line_type||'regular')}
 function rowSourceTypeKey(r){return (r.source_key||'unknown')+':'+(r.line_type||'regular')}
 function renderThresholdOptions(id,label,thresholds,maxValue,suffix){const sel=$(id);const max=Number(maxValue||0);const opts=['<option value="0">All '+label+'</option>'];thresholds.forEach(t=>{if(max>=t)opts.push('<option value="'+t+'">'+t+suffix+'</option>')});sel.innerHTML=opts.join('')}
-function visibleAvailableLabel(label,visible,available){const v=Number(visible||0),a=Number(available||0);return a>v?label+' ('+v+' visible / '+a+' available)':label+' ('+v+')'}
-function optionCountLabel(o){return visibleAvailableLabel(o.label||displayPropLabel(o.canonical_prop_key),o.rows,o.available_rows)}
-function typeCountLabel(t){return visibleAvailableLabel(lineLabel(t.line_type),t.rows,t.available_rows)}
-function renderFilters(data){const hitter=data.prop_groups?.hitter||[], pitcher=data.prop_groups?.pitcher||[], pp=data.source_groups?.prizepicks||[], sl=data.source_groups?.sleeper||[];const summary=data.summary||{};filters={props:new Set([...hitter,...pitcher].map(p=>p.canonical_prop_key)),types:new Set([...pp,...sl].map(t=>sourceTypeKey(t))),hp:0,score:0,availableTotal:Number(summary.available_total_rows||summary.full_board_available_rows||0),visibleTotal:Number(summary.total_rows||0)};$('hitterProps').innerHTML=hitter.length?hitter.map(p=>checkbox('',p.canonical_prop_key,optionCountLabel(p),true,p.rows)).join(''):'<span class="small">No hitter options</span>';$('pitcherProps').innerHTML=pitcher.length?pitcher.map(p=>checkbox('',p.canonical_prop_key,optionCountLabel(p),true,p.rows)).join(''):'<span class="small">No pitcher options</span>';$('ppTypes').innerHTML=pp.length?pp.map(t=>checkbox('',sourceTypeKey(t),typeCountLabel(t),true,t.rows)).join(''):'<span class="small">No PrizePicks options</span>';$('sleeperTypes').innerHTML=sl.length?sl.map(t=>checkbox('',sourceTypeKey(t),typeCountLabel(t),true,t.rows)).join(''):'<span class="small">No Sleeper options</span>';bindGroup('hitterGroup','hitterProps',filters.props);bindGroup('pitcherGroup','pitcherProps',filters.props);bindGroup('ppGroup','ppTypes',filters.types);bindGroup('sleeperGroup','sleeperTypes',filters.types);renderThresholdOptions('hpFilter','HP',[60,65,70,80,90],summary.max_hp||0,'%+');renderThresholdOptions('scoreFilter','Overall',[40,50,60,70,80],summary.max_score||0,'+');$('hpFilter').onchange=e=>{filters.hp=Number(e.target.value||0);render()};$('scoreFilter').onchange=e=>{filters.score=Number(e.target.value||0);render()};$('sortMode').onchange=e=>{sortMode=e.target.value||'overall';render()}}
+function renderFilters(data){const hitter=data.prop_groups?.hitter||[], pitcher=data.prop_groups?.pitcher||[], pp=data.source_groups?.prizepicks||[], sl=data.source_groups?.sleeper||[];const summary=data.summary||{};filters={props:new Set([...hitter,...pitcher].map(p=>p.canonical_prop_key)),types:new Set([...pp,...sl].map(t=>sourceTypeKey(t))),hp:0,score:0};$('hitterProps').innerHTML=hitter.length?hitter.map(p=>checkbox('',p.canonical_prop_key,p.label+' ('+p.rows+')',true,p.rows)).join(''):'<span class="small">No hitter options</span>';$('pitcherProps').innerHTML=pitcher.length?pitcher.map(p=>checkbox('',p.canonical_prop_key,p.label+' ('+p.rows+')',true,p.rows)).join(''):'<span class="small">No pitcher options</span>';$('ppTypes').innerHTML=pp.length?pp.map(t=>checkbox('',sourceTypeKey(t),lineLabel(t.line_type)+' ('+t.rows+')',true,t.rows)).join(''):'<span class="small">No PrizePicks options</span>';$('sleeperTypes').innerHTML=sl.length?sl.map(t=>checkbox('',sourceTypeKey(t),lineLabel(t.line_type)+' ('+t.rows+')',true,t.rows)).join(''):'<span class="small">No Sleeper options</span>';bindGroup('hitterGroup','hitterProps',filters.props);bindGroup('pitcherGroup','pitcherProps',filters.props);bindGroup('ppGroup','ppTypes',filters.types);bindGroup('sleeperGroup','sleeperTypes',filters.types);renderThresholdOptions('hpFilter','HP',[60,65,70,80,90],summary.max_hp||0,'%+');renderThresholdOptions('scoreFilter','Overall',[40,50,60,70,80],summary.max_score||0,'+');$('hpFilter').onchange=e=>{filters.hp=Number(e.target.value||0);render()};$('scoreFilter').onchange=e=>{filters.score=Number(e.target.value||0);render()};$('sortMode').onchange=e=>{sortMode=e.target.value||'overall';render()}}
 function passes(r){return filters.props.has(r.canonical_prop_key)&&filters.types.has(rowSourceTypeKey(r))&&Number(r.estimated_hit_probability_0_100||0)>=filters.hp&&Number(r.score_0_100||0)>=filters.score}
 function legKey(r){return [r.game_pk||'',r.mlb_player_id||r.player_name||'',r.canonical_prop_key||'',String(r.line_value??''),String(r.selected_side||'').toLowerCase()].join('|')}
 function groupRows(list){const m=new Map();for(const r of list){const k=legKey(r);if(!m.has(k))m.set(k,{rows:[],best:r});const g=m.get(k);g.rows.push(r);if(Number(r.rank_order||999999)<Number(g.best.rank_order||999999))g.best=r;}return [...m.values()].sort((a,b)=>Number(a.best.rank_order||999999)-Number(b.best.rank_order||999999))}
@@ -1963,7 +1889,7 @@ function evidenceReason(g){const r=g.best;const raw=String(r.leg_insight_comment
 function confidenceMeta(g){const rows=g.rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key));const vals=rows.map(r=>({app:sourceShort(r.source_key),conf:Number(r.probability_confidence_0_100||0)}));const unique=[...new Set(vals.map(v=>Math.round(v.conf*10)/10))];const q='Quality '+qualityLetter(g.best);if(rows.length>1&&unique.length>1)return 'Confidence '+vals.map(v=>v.app+' '+pct1(v.conf)).join(' • ')+' • '+q;return 'Confidence '+pct1(g.best.probability_confidence_0_100)+' • '+q}
 function card(g){const r=g.best;const match=(r.away_team_name&&r.home_team_name)?r.away_team_name+' @ '+r.home_team_name:(r.home_team_name||r.away_team_name||'Game '+(r.game_pk||''));const when=[fmtDate(r.official_game_time_utc),r.venue_name].filter(Boolean).join(' • ');return '<article class="card" role="button" tabindex="0" data-row-id="'+esc(r.final_board_row_id)+'"><div class="top"><div><div class="player">'+esc(r.player_name)+'</div><div class="small">'+esc(match)+' • '+esc(when)+'</div></div>'+badges(g)+'</div><div class="numbers"><div><div class="numLbl">Hit Prob</div><div class="hpNum">'+pct(r.estimated_hit_probability_0_100)+'</div></div><div class="scoreBlock"><div class="numLbl">Overall</div>'+scoreCards(g.rows)+'</div></div><div class="lineBox"><span>'+esc(r.prop_label||cap(r.canonical_prop_key))+'</span><span class="side">'+esc(r.selected_side)+'</span><span>'+esc(r.line_value)+'</span></div><div class="meta">'+confidenceMeta(g)+'</div><div class="reason">'+esc(evidenceReason(g))+'</div></article>'}
 function bindCards(){document.querySelectorAll('.card[data-row-id]').forEach(el=>{el.onclick=()=>openDossier(el.getAttribute('data-row-id'));el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openDossier(el.getAttribute('data-row-id'))}}})}
-function render(){if(!filters)return;const totalGroups=groupRows(rows).length;const shownGroups=groupRows(rows.filter(passes));const avail=Number(filters.availableTotal||0);$('status').textContent='Showing '+shownGroups.length+' of '+totalGroups+' visible quota legs'+(avail>totalGroups?' • '+avail+' full-board rows available':'');$('cards').innerHTML=shownGroups.length?shownGroups.map(card).join(''):'<div class="empty" style="grid-column:1/-1">No qualified legs match these filters.</div>';bindCards()}
+function render(){if(!filters)return;const totalGroups=groupRows(rows).length;const shownGroups=groupRows(rows.filter(passes));$('status').textContent='Showing '+shownGroups.length+' of '+totalGroups+' qualified legs';$('cards').innerHTML=shownGroups.length?shownGroups.map(card).join(''):'<div class="empty" style="grid-column:1/-1">No qualified legs match these filters.</div>';bindCards()}
 function kv(items){return '<div class="kv">'+items.filter(x=>x[1]!==undefined&&x[1]!==null&&String(x[1]).trim()!=='').map(x=>'<div class="key">'+esc(x[0])+'</div><div class="val">'+esc(x[1])+'</div>').join('')+'</div>'}
 function jsonView(obj){try{return esc(JSON.stringify(obj||{},null,2))}catch(e){return esc(String(obj||''))}}
 function metric(k,v){return '<div class="dMetric"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v??'—')+'</div></div>'}
