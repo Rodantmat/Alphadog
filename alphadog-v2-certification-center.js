@@ -1,13 +1,13 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-main-ui-v0.2.17-layout-restored-full-api-path";
+const VERSION = "alphadog-v2-main-ui-v0.2.18-slip-builder-profile-alpha";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "WORKER_SAFE_MODE", "DEBUG_MODE"];
 const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
 
-const UI_VERSION_LABEL = "v0.2.17 - Quota Counts + Rich Dossier";
+const UI_VERSION_LABEL = "v0.2.18 - Slip Builder + Player Profile Alpha";
 
 const DOCUMENTED_PROP_OPTIONS = [
   { prop_family: "hitter", canonical_prop_key: "hits", label: "Hits" },
@@ -1779,6 +1779,316 @@ async function apiHealth(env) {
   });
 }
 
+
+function makeUiId(prefix = "id") {
+  const a = new Uint8Array(8);
+  crypto.getRandomValues(a);
+  return `${prefix}_${Date.now().toString(36)}_${Array.from(a).map(x => x.toString(36).padStart(2,"0")).join("")}`;
+}
+
+async function execRun(db, sql, params = []) {
+  const stmt = db.prepare(sql);
+  const bound = params.length ? stmt.bind(...params) : stmt;
+  return await bound.run();
+}
+
+async function ensureArchiveSlipSchema(env) {
+  if (!env.ARCHIVE_DB) throw new Error("ARCHIVE_DB binding missing");
+  const ddl = [
+    `CREATE TABLE IF NOT EXISTS archive_slip_entries (
+      slip_id TEXT PRIMARY KEY,
+      source_key TEXT,
+      slip_type TEXT,
+      slip_size INTEGER,
+      structure_label TEXT,
+      selected_leg_count INTEGER,
+      estimated_hit_probability_0_100 REAL,
+      estimated_multiplier REAL,
+      estimated_payout_note TEXT,
+      strategy_grade TEXT,
+      strategy_notes TEXT,
+      status TEXT DEFAULT 'saved_pending',
+      entry_amount REAL,
+      saved_by TEXT,
+      slip_json TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS archive_slip_legs (
+      slip_leg_id TEXT PRIMARY KEY,
+      slip_id TEXT,
+      leg_index INTEGER,
+      board_row_id TEXT,
+      final_board_batch_id TEXT,
+      prepared_row_id TEXT,
+      source_line_id TEXT,
+      source_key TEXT,
+      game_pk INTEGER,
+      official_date TEXT,
+      official_game_time_utc TEXT,
+      player_id INTEGER,
+      player_name TEXT,
+      team_id INTEGER,
+      opponent_team_id INTEGER,
+      canonical_prop_key TEXT,
+      line_value REAL,
+      selected_side TEXT,
+      hit_probability_0_100 REAL,
+      certainty_0_100 REAL,
+      overall_score_0_100 REAL,
+      board_grade TEXT,
+      result_status TEXT DEFAULT 'pending',
+      actual_value REAL,
+      hit_flag INTEGER,
+      result_json TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_archive_slip_entries_created ON archive_slip_entries(created_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_archive_slip_entries_status ON archive_slip_entries(status)`,
+    `CREATE INDEX IF NOT EXISTS idx_archive_slip_legs_slip ON archive_slip_legs(slip_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_archive_slip_legs_game_player ON archive_slip_legs(game_pk, player_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_archive_slip_legs_board_row ON archive_slip_legs(board_row_id)`
+  ];
+  for (const sql of ddl) await execRun(env.ARCHIVE_DB, sql);
+}
+
+function slipProb(legs) {
+  let p = 1;
+  for (const l of legs || []) p *= Math.max(0, Math.min(100, Number(l.hit_probability_0_100 || l.estimated_hit_probability_0_100 || 0))) / 100;
+  return Math.round(p * 10000) / 100;
+}
+function comboCount(n, k) {
+  n = Math.floor(Number(n || 0)); k = Math.floor(Number(k || 0));
+  if (k < 0 || n < 0 || k > n) return 0;
+  if (k === 0 || k === n) return 1;
+  k = Math.min(k, n - k);
+  let out = 1;
+  for (let i = 1; i <= k; i++) out = out * (n - k + i) / i;
+  return Math.max(0, Math.floor(out));
+}
+function legScoreForBuild(l) {
+  return Number(l.hit_probability_0_100 || 0) * 1.6 + Number(l.overall_score_0_100 || 0) + Number(l.certainty_0_100 || 0) * 0.35 - Number(l.rank_order || 999) * 0.03;
+}
+function slipWarnings(legs) {
+  const warnings = [];
+  const teams = new Set(legs.map(l => String(l.team_id || "")).filter(Boolean));
+  const games = new Map();
+  const players = new Map();
+  for (const l of legs) {
+    const g = String(l.game_pk || ""); if (g) games.set(g, (games.get(g) || 0) + 1);
+    const p = String(l.player_id || l.player_name || ""); if (p) players.set(p, (players.get(p) || 0) + 1);
+  }
+  if (teams.size < 2) warnings.push("Needs at least two teams for app eligibility.");
+  for (const [g,c] of games) if (c > 2) warnings.push(`High same-game exposure: ${c} legs in game ${g}.`);
+  for (const [p,c] of players) if (c > 1) warnings.push(`Same-player stack: ${c} legs on ${p}.`);
+  return warnings;
+}
+function validSlip(legs, sourceKey) {
+  if (!legs || legs.length < 2) return false;
+  if (!legs.every(l => String(l.source_key || "").toLowerCase() === String(sourceKey || "").toLowerCase())) return false;
+  const teams = new Set(legs.map(l => String(l.team_id || "")).filter(Boolean));
+  return teams.size >= 2;
+}
+function chooseSlip(pool, size, used = new Set()) {
+  const sorted = [...pool].sort((a,b)=>legScoreForBuild(b)-legScoreForBuild(a));
+  const picked = [];
+  const teamCounts = new Map(), gameCounts = new Map(), playerCounts = new Map();
+  const pass = (strict) => {
+    for (const l of sorted) {
+      if (picked.length >= size) break;
+      const id = l.board_row_id;
+      if (used.has(id) && strict) continue;
+      const team = String(l.team_id || "");
+      const game = String(l.game_pk || "");
+      const player = String(l.player_id || l.player_name || "");
+      if (strict && player && (playerCounts.get(player) || 0) > 0) continue;
+      if (strict && game && (gameCounts.get(game) || 0) >= 2) continue;
+      picked.push(l);
+      if (team) teamCounts.set(team, (teamCounts.get(team) || 0) + 1);
+      if (game) gameCounts.set(game, (gameCounts.get(game) || 0) + 1);
+      if (player) playerCounts.set(player, (playerCounts.get(player) || 0) + 1);
+    }
+  };
+  pass(true);
+  if (picked.length < size) {
+    for (const l of sorted) {
+      if (picked.length >= size) break;
+      if (!picked.some(x => x.board_row_id === l.board_row_id)) picked.push(l);
+    }
+  }
+  const teams = new Set(picked.map(l => String(l.team_id || "")).filter(Boolean));
+  if (picked.length === size && teams.size < 2) {
+    const alt = sorted.find(l => !picked.some(x => x.board_row_id === l.board_row_id) && String(l.team_id || "") !== String(picked[0]?.team_id || ""));
+    if (alt) picked[picked.length - 1] = alt;
+  }
+  return picked.length === size ? picked : [];
+}
+async function fetchBoardRowsByIds(env, ids) {
+  const clean = [...new Set((ids || []).map(String).filter(Boolean))].slice(0, 80);
+  if (!clean.length) return [];
+  const qs = clean.map(()=>"?").join(",");
+  return await queryAll(env.SCORE_DB, `
+    SELECT
+      f.board_row_id,
+      f.batch_id,
+      f.prepared_row_id,
+      f.source_line_id,
+      f.source_key,
+      f.rank_order,
+      f.game_pk,
+      f.official_date,
+      f.official_game_time_utc,
+      f.player_id,
+      f.player_name,
+      f.team_id,
+      f.opponent_team_id,
+      f.canonical_prop_key,
+      f.line_value,
+      f.selected_side,
+      f.hit_probability_0_100,
+      f.certainty_0_100,
+      f.overall_score_0_100,
+      f.board_grade,
+      p.team,
+      p.opponent,
+      p.team_full_name,
+      p.opponent_full_name,
+      p.source_prop_name
+    FROM score_final_board_v2_current f
+    LEFT JOIN score_board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
+    WHERE f.batch_id = (SELECT batch_id FROM score_final_board_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
+      AND f.board_row_id IN (${qs})
+    ORDER BY f.rank_order ASC
+  `, clean);
+}
+function buildGeneratedSlips(legs, structures, mode = "recommended") {
+  const bySource = new Map();
+  for (const l of legs || []) {
+    const k = String(l.source_key || "unknown").toLowerCase();
+    if (!bySource.has(k)) bySource.set(k, []);
+    bySource.get(k).push(l);
+  }
+  const requested = Array.isArray(structures) && structures.length ? structures : null;
+  const out = [];
+  for (const [source, poolRaw] of bySource.entries()) {
+    const pool = [...poolRaw].sort((a,b)=>legScoreForBuild(b)-legScoreForBuild(a));
+    const n = pool.length;
+    let plans = requested || (n >= 6 ? [{amount:2, slip_type:3},{amount:1, slip_type:4}] : n >= 5 ? [{amount:1, slip_type:3},{amount:1, slip_type:2}] : n >= 4 ? [{amount:1, slip_type:3},{amount:1, slip_type:2}] : n >= 3 ? [{amount:1, slip_type:3},{amount:1, slip_type:2}] : n >= 2 ? [{amount:1, slip_type:2}] : []);
+    const used = new Set();
+    for (const plan of plans) {
+      const size = Math.floor(Number(plan.slip_type || plan.size || 0));
+      const maxAmount = Math.min(20, comboCount(n, size));
+      const amount = Math.max(0, Math.min(maxAmount, Math.floor(Number(plan.amount || 1))));
+      if (size < 2 || size > 6 || size > n) continue;
+      for (let i = 0; i < amount; i++) {
+        const picked = chooseSlip(pool, size, used);
+        if (!picked.length || !validSlip(picked, source)) continue;
+        picked.forEach(l=>used.add(l.board_row_id));
+        const p = slipProb(picked);
+        const warnings = slipWarnings(picked);
+        out.push({
+          client_slip_id: makeUiId("gen_slip"),
+          source_key: source,
+          slip_type: `${size}-pick`,
+          slip_size: size,
+          structure_label: `${amount}x ${size}-pick`,
+          estimated_hit_probability_0_100: p,
+          estimated_multiplier: null,
+          estimated_payout_note: "Multiplier varies by app, entry type, Goblin/Demon, promos, and displayed app terms; store actual app multiplier at placement.",
+          strategy_grade: warnings.length ? "REVIEW" : (p >= 55 ? "STRONG" : "STANDARD"),
+          strategy_notes: ["Independent probability estimate before correlation adjustment.", ...warnings].join(" "),
+          legs: picked
+        });
+      }
+    }
+  }
+  return out.sort((a,b)=>Number(b.estimated_hit_probability_0_100||0)-Number(a.estimated_hit_probability_0_100||0));
+}
+async function apiGenerateSlips(env, request) {
+  if (!env.SCORE_DB) return jsonResponse({ ok:false, error:"SCORE_DB binding missing", version:VERSION }, 500);
+  const input = await readJsonSafe(request);
+  const rows = await fetchBoardRowsByIds(env, input.leg_ids || input.board_row_ids || []);
+  const slips = buildGeneratedSlips(rows, input.structures || null, input.mode || "recommended");
+  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/generate", selected_leg_count: rows.length, source_counts: rows.reduce((a,r)=>{const k=String(r.source_key||"unknown").toLowerCase();a[k]=(a[k]||0)+1;return a;},{}), generated_slips: slips, notes:["Phase 1 uses independent leg probability product and flags exposure/correlation warnings; it does not claim a fully calibrated parlay probability yet."] });
+}
+async function apiSaveSlips(env, request) {
+  await ensureArchiveSlipSchema(env);
+  const input = await readJsonSafe(request);
+  const slips = Array.isArray(input.slips) ? input.slips : [];
+  const saved = [];
+  for (const s of slips.slice(0, 50)) {
+    const slipId = makeUiId("slip");
+    const legs = Array.isArray(s.legs) ? s.legs : [];
+    await execRun(env.ARCHIVE_DB, `INSERT INTO archive_slip_entries
+      (slip_id, source_key, slip_type, slip_size, structure_label, selected_leg_count, estimated_hit_probability_0_100, estimated_multiplier, estimated_payout_note, strategy_grade, strategy_notes, status, entry_amount, saved_by, slip_json, created_at, updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+      [slipId, s.source_key || null, s.slip_type || null, Number(s.slip_size || legs.length || 0), s.structure_label || null, Number(input.selected_leg_count || legs.length || 0), Number(s.estimated_hit_probability_0_100 || 0), s.estimated_multiplier == null ? null : Number(s.estimated_multiplier), s.estimated_payout_note || null, s.strategy_grade || null, s.strategy_notes || null, "saved_pending", s.entry_amount == null ? null : Number(s.entry_amount), input.saved_by || "main_ui", JSON.stringify({ client_slip_id: s.client_slip_id || null, saved_from_version: VERSION })]);
+    let idx = 1;
+    for (const l of legs) {
+      await execRun(env.ARCHIVE_DB, `INSERT INTO archive_slip_legs
+        (slip_leg_id, slip_id, leg_index, board_row_id, final_board_batch_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc, player_id, player_name, team_id, opponent_team_id, canonical_prop_key, line_value, selected_side, hit_probability_0_100, certainty_0_100, overall_score_0_100, board_grade, result_status, result_json, created_at, updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, ?, CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+        [makeUiId("slip_leg"), slipId, idx++, l.board_row_id || l.final_board_row_id || null, l.batch_id || l.final_board_batch_id || null, l.prepared_row_id || null, l.source_line_id || null, l.source_key || null, l.game_pk == null ? null : Number(l.game_pk), l.official_date || null, l.official_game_time_utc || null, l.player_id == null ? null : Number(l.player_id), l.player_name || null, l.team_id == null ? null : Number(l.team_id), l.opponent_team_id == null ? null : Number(l.opponent_team_id), l.canonical_prop_key || null, l.line_value == null ? null : Number(l.line_value), l.selected_side || null, l.hit_probability_0_100 == null ? null : Number(l.hit_probability_0_100), l.certainty_0_100 == null ? null : Number(l.certainty_0_100), l.overall_score_0_100 == null ? null : Number(l.overall_score_0_100), l.board_grade || null, "pending", JSON.stringify({ snapshot_note: "pending grading" })]);
+    }
+    saved.push({ slip_id: slipId, leg_count: legs.length });
+  }
+  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/save", saved_count:saved.length, saved_slips:saved });
+}
+async function apiSlipsRecent(env, url) {
+  await ensureArchiveSlipSchema(env);
+  const limit = Math.max(1, Math.min(50, Number(url.searchParams.get("limit") || 50)));
+  const entries = await queryAll(env.ARCHIVE_DB, `SELECT * FROM archive_slip_entries ORDER BY datetime(created_at) DESC LIMIT ${limit}`);
+  const ids = entries.map(e=>e.slip_id).filter(Boolean);
+  let legs = [];
+  if (ids.length) legs = await queryAll(env.ARCHIVE_DB, `SELECT * FROM archive_slip_legs WHERE slip_id IN (${ids.map(()=>"?").join(",")}) ORDER BY slip_id, leg_index`, ids);
+  const by = new Map();
+  for (const l of legs) { if (!by.has(l.slip_id)) by.set(l.slip_id, []); by.get(l.slip_id).push(l); }
+  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/slips/recent", slips: entries.map(e=>({ ...e, legs: by.get(e.slip_id) || [] })) });
+}
+async function apiPlayerSearch(env, url) {
+  const q = String(url.searchParams.get("q") || "").trim();
+  if (q.length < 3) return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/player-search", rows:[] });
+  const like = `%${q.replace(/[%_]/g, "")}%`;
+  const rows = await queryAll(env.REF_DB, `
+    SELECT player_id, mlb_player_id, COALESCE(full_name, player_name) AS player_name, current_mlb_team_id, primary_position, bat_side, throw_side, 'player' AS match_type
+    FROM ref_players
+    WHERE active = 1 AND (LOWER(COALESCE(full_name, player_name, '')) LIKE LOWER(?) OR LOWER(COALESCE(first_name,'')) LIKE LOWER(?) OR LOWER(COALESCE(last_name,'')) LIKE LOWER(?))
+    UNION
+    SELECT p.player_id, p.mlb_player_id, COALESCE(p.full_name, p.player_name) AS player_name, p.current_mlb_team_id, p.primary_position, p.bat_side, p.throw_side, 'alias' AS match_type
+    FROM ref_player_aliases a
+    JOIN ref_players p ON p.player_id = a.player_id
+    WHERE a.active = 1 AND (LOWER(COALESCE(a.alias_name,'')) LIKE LOWER(?) OR LOWER(COALESCE(a.alias_normalized,'')) LIKE LOWER(?))
+    ORDER BY player_name
+    LIMIT 20
+  `, [like, like, like, like, like]);
+  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/player-search", rows });
+}
+async function apiPlayerProfile(env, url) {
+  const playerId = Number(url.searchParams.get("player_id") || 0);
+  if (!playerId) return jsonResponse({ ok:false, error:"player_id required", version:VERSION }, 400);
+  const p = firstUseful(await optionalQueryAll(env.REF_DB, `SELECT * FROM ref_players WHERE player_id = ? OR mlb_player_id = ? LIMIT 1`, [playerId, playerId]));
+  if (!p) return jsonResponse({ ok:false, error:"player not found", version:VERSION }, 404);
+  const ids = [p.player_id, p.mlb_player_id].filter(v=>v!=null && String(v)!=="");
+  const q = ids.map(()=>"?").join(",");
+  const legs = q ? await optionalQueryAll(env.SCORE_DB, `
+    SELECT board_row_id AS final_board_row_id, source_key, rank_order, game_pk, official_date, official_game_time_utc, player_id, player_name, team_id, opponent_team_id, canonical_prop_key, line_value, selected_side, hit_probability_0_100 AS estimated_hit_probability_0_100, certainty_0_100 AS probability_confidence_0_100, overall_score_0_100 AS score_0_100, board_grade, board_lane
+    FROM score_final_board_v2_current
+    WHERE batch_id = (SELECT batch_id FROM score_final_board_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
+      AND player_id IN (${q})
+    ORDER BY rank_order ASC
+    LIMIT 80
+  `, ids) : [];
+  const lineup = q ? await optionalQueryAll(env.DAILY_DB, `
+    SELECT game_pk, official_date, game_time_utc, team_name, lineup_slot, batting_order_code, bat_side, active_position, lineup_status, confidence_label, fetched_at_utc
+    FROM daily_lineups_current
+    WHERE player_id IN (${q})
+    ORDER BY datetime(updated_at) DESC
+    LIMIT 20
+  `, ids) : [];
+  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/player-profile", player:p, current_legs:usefulRows(legs), lineup_rows:usefulRows(lineup), note:"Player profile alpha uses static identity, current board legs, and current lineup rows only; deeper stat-table profile will be added after stat schemas are verified." });
+}
+
 const MAIN_HTML = `<!doctype html>
 <html lang="en">
 <head>
@@ -1790,13 +2100,15 @@ const MAIN_HTML = `<!doctype html>
 <style>
 :root{--bg:#071426;--panel:#0e2038;--panel2:#102744;--line:#254261;--text:#eef7ff;--muted:#93a9bd;--gold:#f4c95d;--silver:#d7e2ee;--bronze:#d99b57;--blue:#5ed2ff;--good:#7ef0aa;--warn:#f7d774;--bad:#ff8a8a;--chip:#173352;--shadow:0 22px 70px rgba(0,0,0,.35);}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top left,#173957 0,#071426 38%,#030912 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh}button,input,select,textarea{font:inherit}.wrap{max-width:1180px;margin:0 auto;padding:16px 14px 44px}.hero{display:flex;align-items:center;gap:14px;justify-content:space-between;margin-bottom:12px}.brand{display:flex;gap:12px;align-items:center}.logo{width:52px;height:52px;border-radius:16px;box-shadow:0 8px 24px rgba(244,201,93,.18)}h1{font-size:30px;line-height:1;margin:0}.sub{color:#d9e8f6;font-size:13px;margin-top:4px;font-weight:850;letter-spacing:.02em}.menuBtn,.btn{border:1px solid var(--line);background:rgba(16,39,68,.86);color:var(--text);border-radius:14px;padding:10px 13px;font-weight:850;cursor:pointer}.menuWrap{position:relative}.menu{position:absolute;right:0;top:44px;background:#07192d;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);min-width:170px;overflow:hidden;z-index:10}.menu.hidden{display:none}.menu button{display:block;width:100%;background:transparent;border:0;color:var(--text);padding:12px 14px;text-align:left;font-weight:750}.menu button:hover{background:#102744}.panel{background:linear-gradient(180deg,rgba(16,39,68,.92),rgba(8,21,38,.92));border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:11px;margin-bottom:13px}.filters{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,.9fr);gap:8px;align-items:stretch}.filterCol{display:grid;gap:7px}.filterCol.left{grid-template-columns:1fr}.filterCol.right{grid-template-rows:auto auto}.filterBox{background:rgba(5,14,26,.28);border:1px solid rgba(75,115,150,.42);border-radius:16px;padding:6px 8px}.filterBox.tight{padding:7px}.filterTitle{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:950;margin-bottom:4px;display:flex;gap:6px;align-items:center}.filterTitle.selectTitle{justify-content:center;text-align:center}.filterTitle input{accent-color:#3f8cff}.checkGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px 6px}.checkGrid.source{grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:0 4px}.check{display:flex;align-items:center;gap:4px;padding:0;font-size:11.5px;color:#dbefff;white-space:nowrap;line-height:1}.check input{accent-color:#5ed2ff;width:15px;height:15px;flex:0 0 auto}.check .zero{color:#758ba1}.duo{display:grid;grid-template-columns:1fr 1fr;gap:7px}.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.refreshMini{margin-left:auto;padding:4px 9px;border-radius:10px;font-size:10px;line-height:1.1}.select{width:100%;min-width:0;border:1px solid var(--line);background:#07192d;color:var(--text);border-radius:12px;padding:7px 8px;font-weight:800;font-size:12.2px;line-height:1.15}.select option{font-size:12px}.status{color:var(--muted);font-size:13px;margin:10px 0 10px;text-align:center;display:flex;align-items:center;justify-content:center;min-height:28px;width:100%}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:linear-gradient(180deg,#102844,#08182b);border:1px solid rgba(94,210,255,.18);border-radius:22px;padding:14px;box-shadow:0 14px 40px rgba(0,0,0,.27);position:relative}.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-height:56px;padding-right:0}.player{font-size:21px;font-weight:950;letter-spacing:-.02em}.badgeStack{position:static;display:grid;gap:4px;justify-items:center;min-width:166px;text-align:center;flex:0 0 auto}.badgePairs{display:flex;gap:6px;flex-wrap:nowrap;justify-content:center;align-items:start;width:100%}.badgePair{display:grid;gap:4px;justify-items:center;align-items:start;min-width:70px}.badgeLine{display:flex;gap:5px;flex-wrap:nowrap;justify-content:center;width:100%}.badge{font-size:9.8px;font-weight:950;border-radius:999px;padding:5px 7px;text-transform:uppercase;background:#183554;color:#cbe7ff;border:1px solid rgba(94,210,255,.22);line-height:1;white-space:nowrap;text-align:center}.badge.source{background:#173a5d;color:#d8eeff}.badge.goblin{background:#123d30;color:#b8ffd6}.badge.demon{background:#461a2a;color:#ffc2d2}.badge.regular,.badge.more_only{background:#322d14;color:#ffe49a}.badge.gold{background:#4a3911;color:#ffd96a;border-color:rgba(255,217,106,.5)}.badge.silver{background:#2c3d52;color:#e7f2ff;border-color:rgba(215,226,238,.45)}.badge.bronze{background:#492d18;color:#ffc28a;border-color:rgba(217,155,87,.48)}.numbers{display:grid;grid-template-columns:minmax(120px,.82fr) minmax(150px,1fr);align-items:end;gap:14px;margin:8px 0 9px}.hpNum{font-size:48px;line-height:.9;font-weight:1000;color:var(--gold);letter-spacing:-.05em}.scoreBlock{text-align:center;min-width:0}.scoreGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:2px}.scoreGrid.single{grid-template-columns:minmax(95px,145px);justify-content:center}.scorePill{display:flex;align-items:center;justify-content:space-between;gap:7px;border:1px solid rgba(94,210,255,.16);background:rgba(7,20,38,.48);border-radius:10px;padding:4px 7px}.scoreApp{font-size:10px;color:#b6cde4;font-weight:900}.scoreNum{font-size:22px;font-weight:950;color:var(--blue)}.lineBox{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border:1px solid rgba(94,210,255,.14);background:rgba(7,20,38,.55);border-radius:15px;padding:9px 10px;font-weight:850}.side{text-transform:uppercase;color:var(--good)}.meta{margin-top:8px;color:#bed2e6;font-size:12.5px;line-height:1.3}.reason{margin-top:9px;color:#d4e3f2;font-size:12.4px;line-height:1.42;background:rgba(5,14,26,.34);border:1px solid rgba(94,210,255,.12);border-left:3px solid rgba(244,201,93,.55);border-radius:14px;padding:9px 10px}.empty{padding:20px;border:1px dashed var(--line);border-radius:18px;color:var(--muted);text-align:center}.healthGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.healthCard{background:rgba(5,14,26,.32);border:1px solid var(--line);border-radius:16px;padding:12px}.metric{font-size:25px;font-weight:950;color:var(--gold)}.small{font-size:12px;color:var(--muted);line-height:1.35}.hidden{display:none!important}.err{color:var(--bad)}.good{color:var(--good)}.sortBox{margin-top:7px}.card{cursor:pointer;transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease}.card:hover{transform:translateY(-1px);border-color:rgba(94,210,255,.42);box-shadow:0 18px 46px rgba(0,0,0,.34)}.dossierTop{display:flex;gap:8px;padding:0;margin:0 0 8px;background:transparent;width:max-content;position:relative;z-index:3}.iconBtn{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:rgba(16,39,68,.92);color:var(--text);font-size:25px;font-weight:950;line-height:1;display:grid;place-items:center}.dossierBody{display:grid;gap:12px}.dossierBody,.dossierBody *{font-family:Arial,"Helvetica Neue",Helvetica,sans-serif!important;font-variant-ligatures:none;text-rendering:auto;-webkit-font-smoothing:antialiased}.dossierTitle{font-weight:900}.dossierSub,.infoVal,.dossierTable td,.sectionHint,.small{font-weight:500}.dossierTable{width:100%;border-collapse:separate;border-spacing:0 6px}.dossierTable th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:left;padding:0 6px 2px}.dossierTable td{background:rgba(5,14,26,.32);border-top:1px solid rgba(94,210,255,.1);border-bottom:1px solid rgba(94,210,255,.1);padding:7px 6px;font-size:12px}.dossierTable td:first-child{border-left:1px solid rgba(94,210,255,.1);border-radius:10px 0 0 10px}.dossierTable td:last-child{border-right:1px solid rgba(94,210,255,.1);border-radius:0 10px 10px 0}.statGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}.statCell{background:rgba(5,14,26,.34);border:1px solid rgba(94,210,255,.12);border-radius:13px;padding:8px;text-align:center}.statCell .k{font-size:10px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.07em}.statCell .v{font-size:19px;color:var(--gold);font-weight:1000;margin-top:2px}.miniCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:7px}.dossierHero{background:linear-gradient(180deg,#102844,#08182b);border:1px solid rgba(94,210,255,.2);border-radius:24px;padding:16px;box-shadow:var(--shadow)}.dossierTitle{font-size:28px;font-weight:1000;letter-spacing:-.03em}.dossierSub{color:var(--muted);font-size:13px;line-height:1.35;margin-top:4px}.dossierMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.dMetric{border:1px solid rgba(94,210,255,.14);background:rgba(5,14,26,.34);border-radius:14px;padding:10px}.dMetric .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:950}.dMetric .v{font-size:22px;font-weight:1000;color:var(--gold);margin-top:2px}.dossierGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.dSection{background:rgba(8,21,38,.82);border:1px solid rgba(94,210,255,.15);border-radius:20px;padding:13px}.dSection h3{margin:0 0 9px;font-size:13px;letter-spacing:.11em;text-transform:uppercase;color:#d9e8f6}.kv{display:grid;grid-template-columns:minmax(110px,.45fr) 1fr;gap:6px 9px;font-size:12.3px;line-height:1.3}.kv .key{color:var(--muted);font-weight:850}.kv .val{color:var(--text);word-break:break-word}.pillRow{display:flex;flex-wrap:wrap;gap:7px}.legBtn{border:1px solid rgba(94,210,255,.18);background:#07192d;color:var(--text);border-radius:14px;padding:8px 9px;text-align:left;font-weight:850;min-width:142px}.legBtn b{color:var(--gold)}.jsonBox{max-height:260px;overflow:auto;background:#030912;border:1px solid rgba(94,210,255,.14);border-radius:14px;padding:10px;font-size:10.8px;color:#cde0f2;white-space:pre-wrap;word-break:break-word}.refinedRows{display:grid;gap:7px}.infoRow{display:grid;grid-template-columns:minmax(122px,.42fr) 1fr;gap:8px;align-items:start;border-bottom:1px solid rgba(94,210,255,.07);padding:5px 0}.infoRow:last-child{border-bottom:0}.infoKey{color:var(--muted);font-weight:900;font-size:12px}.infoVal{color:var(--text);font-size:12.4px;line-height:1.35;word-break:break-word}.sectionHint{margin-top:-4px;margin-bottom:8px;color:var(--muted);font-size:11.5px;line-height:1.35}.dossierNote{background:rgba(244,201,93,.08);border:1px solid rgba(244,201,93,.18);border-left:3px solid rgba(244,201,93,.65);border-radius:14px;padding:10px;color:#e6f0fb;font-size:12.5px;line-height:1.42}.wide{grid-column:1/-1}@media(max-width:860px){.filters{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.hero{align-items:flex-start}.healthGrid{grid-template-columns:1fr 1fr}.hpNum{font-size:43px}.checkGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.dossierGrid{grid-template-columns:1fr}.dossierMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.select{font-size:11.4px;padding:6px 7px}.filterTitle.selectTitle{font-size:9.4px;letter-spacing:.09em}.wrap{padding:12px 10px 34px}.logo{width:46px;height:46px}h1{font-size:25px}.card{padding:13px}.healthGrid{grid-template-columns:1fr}.filters{gap:7px}.check{font-size:11px}.player{font-size:19px}.duo{grid-template-columns:1fr 1fr}.trio{grid-template-columns:repeat(3,minmax(0,1fr))}.checkGrid{gap:1px 5px}.badgeStack{min-width:150px}.top{min-height:52px;padding-right:0}.badge{font-size:9.2px;padding:4.5px 6px}.numbers{grid-template-columns:minmax(108px,.78fr) minmax(145px,1fr);gap:10px}.hpNum{font-size:42px}.scoreNum{font-size:20px}.lineBox{padding:8px 10px}.meta{font-size:12px}.reason{font-size:12px;line-height:1.38;padding:8px 9px}}
+.pickBox{position:absolute;left:12px;top:12px;width:20px;height:20px;accent-color:var(--gold);z-index:4}.card.hasPick{border-color:rgba(244,201,93,.7);box-shadow:0 18px 46px rgba(244,201,93,.12)}.card .top{padding-left:26px}.slipFloat{position:fixed;right:0;top:48%;transform:translateY(-50%);z-index:80;background:linear-gradient(180deg,rgba(16,39,68,.96),rgba(7,20,38,.96));border:1px solid rgba(94,210,255,.25);border-right:0;border-radius:999px 0 0 999px;box-shadow:var(--shadow);padding:13px 10px 13px 18px;min-width:112px;font-size:12px;color:#d9e8f6}.slipFloat b{color:var(--gold)}.slipFloat button{margin-top:7px;border:1px solid rgba(244,201,93,.45);background:#3d2f11;color:#ffe7a3;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:950}.builderGrid{display:grid;gap:10px}.legMini,.slipCard,.profileCard{border:1px solid rgba(94,210,255,.15);background:rgba(5,14,26,.34);border-radius:16px;padding:10px}.legMini{display:flex;gap:8px;justify-content:space-between;align-items:center}.slipHead{display:flex;gap:10px;justify-content:space-between;align-items:flex-start}.structureRow{display:grid;grid-template-columns:minmax(86px,110px) minmax(120px,160px) 44px;gap:8px;align-items:center;margin:7px 0}.tinyBtn{border:1px solid var(--line);background:#102744;color:var(--text);border-radius:12px;padding:8px 10px;font-weight:950}.slipLegs{display:grid;gap:6px;margin-top:8px}.resultHit{background:rgba(126,240,170,.12);border-color:rgba(126,240,170,.35)}.resultMiss{background:rgba(255,138,138,.12);border-color:rgba(255,138,138,.35)}.resultVoid{background:rgba(147,169,189,.12);border-color:rgba(147,169,189,.35)}.dateGroup summary{cursor:pointer;font-weight:950;color:var(--gold);padding:9px 0}.searchResult{border:1px solid rgba(94,210,255,.18);background:#07192d;color:var(--text);border-radius:14px;padding:8px 10px;font-weight:850}.profileHero{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.profileName{font-size:25px;font-weight:1000;color:var(--gold)}@media(max-width:720px){.slipFloat{top:auto;bottom:18px;right:0;transform:none}.structureRow{grid-template-columns:1fr 1fr 42px}}
+
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="hero">
-    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.15 - Quota Counts + Rich Dossier</div></div></div>
-    <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Main Board</button><button id="menuHealth">Health</button></div></div>
+    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.18 - Slip Builder + Player Profile Alpha</div></div></div>
+    <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Main Board</button><button id="menuSlips">Slips</button><button id="menuPlayerProfile">Player Profile</button><button id="menuHealth">Health</button></div></div>
   </header>
   <section id="boardScreen">
     <div class="panel filters">
@@ -1817,11 +2129,15 @@ const MAIN_HTML = `<!doctype html>
     <div id="cards" class="cards"></div>
   </section>
   <section id="dossierScreen" class="hidden"><div class="dossierTop"><button id="dossierBack" class="iconBtn" aria-label="Back">‹</button><button id="dossierHome" class="iconBtn" aria-label="Main board">⌂</button></div><div id="dossierBody" class="dossierBody"><div class="empty">Loading dossier...</div></div></section>
+  <section id="buildScreen" class="hidden"><div class="panel"><button id="buildBack" class="btn">← Main Board</button><h2>Slip Builder</h2><div id="buildBody" class="dossierBody"></div></div></section>
+  <section id="slipsScreen" class="hidden"><div class="panel"><button id="slipsBack" class="btn">← Main Board</button><h2>Saved Slips</h2><div id="slipsBody" class="dossierBody"><div class="empty">Loading slips...</div></div></div></section>
+  <section id="playerProfileScreen" class="hidden"><div class="panel"><button id="profileBack" class="btn">← Main Board</button><h2>Player Profile</h2><input id="playerSearch" class="select" placeholder="Search player name, last name, alias..." autocomplete="off"><div id="playerSearchResults" class="pillRow" style="margin-top:10px"></div><div id="playerProfileBody" class="dossierBody" style="margin-top:12px"><div class="empty">Type at least 3 letters.</div></div></div></section>
+  <div id="slipFloat" class="slipFloat hidden"><div><b id="slipFloatTotal">0</b> legs</div><div>Sleeper: <b id="slipFloatSleeper">0</b></div><div>PP: <b id="slipFloatPP">0</b></div><button id="slipFloatBuild">Build</button></div>
   <section id="healthScreen" class="hidden"><div class="panel"><button id="backBoard" class="btn">← Review Board</button><h2>Board Health</h2><div id="healthStatus" class="status">Loading health...</div><div id="healthCards" class="healthGrid"></div></div></section>
 </div>
 <script>
 (()=>{
-const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.17 - Quota Counts + Rich Dossier';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null;
+const $=id=>document.getElementById(id);const UI_VERSION_LABEL='v0.2.18 - Slip Builder + Player Profile Alpha';let rows=[],filters=null,health=null,sortMode='overall',currentDossier=null,selectedLegIds=new Set(),lastGeneratedSlips=[],customStructures=[];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pct(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0)+'%':'—'}
 function num(v){const n=Number(v);return Number.isFinite(n)?(Math.round(n*10)/10).toFixed(n%1?1:0):'—'}
@@ -1831,7 +2147,7 @@ function lineLabel(t){return t==='goblin'?'Goblin':t==='demon'?'Demon':t==='more
 function appLabel(s){s=String(s||'').toLowerCase();return s==='prizepicks'?'PrizePicks':s==='sleeper'?'Sleeper':cap(s||'Unknown')}
 function appTypeLabel(r){return (r.app_line_label||appLabel(r.source_key)+' • '+lineLabel(r.line_type||'regular'))}
 function fmtDate(s){if(!s)return '';try{const d=new Date(s);if(isNaN(d))return s;return d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}catch{return s}}
-function setScreen(id){$('boardScreen').classList.toggle('hidden',id!=='board');$('healthScreen').classList.toggle('hidden',id!=='health');$('dossierScreen').classList.toggle('hidden',id!=='dossier');$('mainMenu').classList.add('hidden')}
+function setScreen(id){['board','health','dossier','build','slips','playerProfile'].forEach(x=>{const el=$(x+'Screen');if(el)el.classList.toggle('hidden',id!==x)});$('mainMenu').classList.add('hidden');updateSlipFloat()}
 function checkbox(id,value,label,checked=true,rows=1){const zero=Number(rows||0)<=0;return '<label class="check '+(zero?'zero':'')+'"><input type="checkbox" data-value="'+esc(value)+'" '+(checked?'checked':'')+'> <span>'+esc(label)+'</span></label>'}
 function bindGroup(groupId,boxId,set){const g=$(groupId),box=$(boxId);function update(){const inputs=[...box.querySelectorAll('input')];const checked=inputs.filter(i=>i.checked).length;g.checked=inputs.length>0&&checked===inputs.length;g.indeterminate=checked>0&&checked<inputs.length}box.addEventListener('change',e=>{if(e.target.matches('input')){e.target.checked?set.add(e.target.dataset.value):set.delete(e.target.dataset.value);update();render();}});g.addEventListener('change',()=>{[...box.querySelectorAll('input')].forEach(i=>{i.checked=g.checked;g.checked?set.add(i.dataset.value):set.delete(i.dataset.value)});update();render();});update()}
 function sourceTypeKey(t){return (t.source_key||'unknown')+':'+(t.line_type||'regular')}
@@ -1887,8 +2203,8 @@ function contextStatus(r){const items=[];const p=pitcherInsight(r);const w=weath
 function varianceTone(r){const hp=Number(r.estimated_hit_probability_0_100||0), conf=Number(r.probability_confidence_0_100||0), score=Number(r.score_0_100||0), n=Number(r.hp_non_push_sample||r.hp_sample_size||0);const seeds=[r.player_name,r.canonical_prop_key,r.line_value,r.selected_side,r.source_key].join('|');if(n>0&&n<20)return hashPick(seeds,['Attractive HP, but the evidence depth keeps it in review mode.','Probability is interesting, but sample depth is the limiter.','High-upside read with sample-size caution still attached.']);if(hp>=85&&conf>=75&&score>=84)return hashPick(seeds,['Premium probability is backed by evidence confidence and the support score.','The main quality checks line up: HP, confidence, and support are all aligned.','This is one of the cleaner reads because probability and support agree.']);if(hp>=85&&score<80)return hashPick(seeds,['Big HP, but the support score asks for review before treating it as the strongest review lane.','The probability is attractive while the trust layer is more cautious.','Not rejected, but the support score is the reason it stays below the strongest review lane.']);if(hp>=80&&conf<70)return hashPick(seeds,['High HP with softer evidence; useful, but not clean enough for the strongest review lane.','Probability is strong while confidence is the drag.','Edge candidate, not a finished play, because the evidence base is thinner.']);if(hp>=75&&score>=86)return hashPick(seeds,['Good HP with a strong support score; compare it against similar props.','The support layer likes the setup, but HP still decides the tier.']);return hashPick(seeds,['Usable candidate, not a blind play.','This leg needs context and price discipline before action.'])}
 function evidenceReason(g){const r=g.best;const raw=String(r.leg_insight_comment||'').trim();const app=appInsight(g);if(raw)return [raw,app].filter(Boolean).join(' ');const ctx=contextStatus(r);const parts=[varianceTone(r),propEaseText(r)];if(ctx.length)parts.push(ctx.slice(0,2).join(' '));const a=appInsight(g);if(a)parts.push(a);return parts.join(' ')}
 function confidenceMeta(g){const rows=g.rows.slice().sort((a,b)=>sourceWeight(a.source_key)-sourceWeight(b.source_key));const vals=rows.map(r=>({app:sourceShort(r.source_key),conf:Number(r.probability_confidence_0_100||0)}));const unique=[...new Set(vals.map(v=>Math.round(v.conf*10)/10))];const q='Quality '+qualityLetter(g.best);if(rows.length>1&&unique.length>1)return 'Confidence '+vals.map(v=>v.app+' '+pct1(v.conf)).join(' • ')+' • '+q;return 'Confidence '+pct1(g.best.probability_confidence_0_100)+' • '+q}
-function card(g){const r=g.best;const match=(r.away_team_name&&r.home_team_name)?r.away_team_name+' @ '+r.home_team_name:(r.home_team_name||r.away_team_name||'Game '+(r.game_pk||''));const when=[fmtDate(r.official_game_time_utc),r.venue_name].filter(Boolean).join(' • ');return '<article class="card" role="button" tabindex="0" data-row-id="'+esc(r.final_board_row_id)+'"><div class="top"><div><div class="player">'+esc(r.player_name)+'</div><div class="small">'+esc(match)+' • '+esc(when)+'</div></div>'+badges(g)+'</div><div class="numbers"><div><div class="numLbl">Hit Prob</div><div class="hpNum">'+pct(r.estimated_hit_probability_0_100)+'</div></div><div class="scoreBlock"><div class="numLbl">Overall</div>'+scoreCards(g.rows)+'</div></div><div class="lineBox"><span>'+esc(r.prop_label||cap(r.canonical_prop_key))+'</span><span class="side">'+esc(r.selected_side)+'</span><span>'+esc(r.line_value)+'</span></div><div class="meta">'+confidenceMeta(g)+'</div><div class="reason">'+esc(evidenceReason(g))+'</div></article>'}
-function bindCards(){document.querySelectorAll('.card[data-row-id]').forEach(el=>{el.onclick=()=>openDossier(el.getAttribute('data-row-id'));el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openDossier(el.getAttribute('data-row-id'))}}})}
+function card(g){const r=g.best;const id=String(r.final_board_row_id||'');const checked=selectedLegIds.has(id);const match=(r.away_team_name&&r.home_team_name)?r.away_team_name+' @ '+r.home_team_name:(r.home_team_name||r.away_team_name||'Game '+(r.game_pk||''));const when=[fmtDate(r.official_game_time_utc),r.venue_name].filter(Boolean).join(' • ');return '<article class="card '+(checked?'hasPick':'')+'" role="button" tabindex="0" data-row-id="'+esc(id)+'"><input class="pickBox" type="checkbox" data-pick-id="'+esc(id)+'" '+(checked?'checked':'')+' aria-label="Select leg"><div class="top"><div><div class="player">'+esc(r.player_name)+'</div><div class="small">'+esc(match)+' • '+esc(when)+'</div></div>'+badges(g)+'</div><div class="numbers"><div><div class="numLbl">Hit Prob</div><div class="hpNum">'+pct(r.estimated_hit_probability_0_100)+'</div></div><div class="scoreBlock"><div class="numLbl">Overall</div>'+scoreCards(g.rows)+'</div></div><div class="lineBox"><span>'+esc(r.prop_label||cap(r.canonical_prop_key))+'</span><span class="side">'+esc(r.selected_side)+'</span><span>'+esc(r.line_value)+'</span></div><div class="meta">'+confidenceMeta(g)+'</div><div class="reason">'+esc(evidenceReason(g))+'</div></article>'}
+function bindCards(){document.querySelectorAll('.pickBox[data-pick-id]').forEach(cb=>{cb.onclick=e=>{e.stopPropagation();const id=String(cb.getAttribute('data-pick-id')||'');if(cb.checked)selectedLegIds.add(id);else selectedLegIds.delete(id);render();updateSlipFloat()}});document.querySelectorAll('.card[data-row-id]').forEach(el=>{el.onclick=e=>{if(e.target&&e.target.classList&&e.target.classList.contains('pickBox'))return;openDossier(el.getAttribute('data-row-id'))};el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openDossier(el.getAttribute('data-row-id'))}}})}
 function render(){if(!filters)return;const totalGroups=groupRows(rows).length;const shownGroups=groupRows(rows.filter(passes));$('status').textContent='Showing '+shownGroups.length+' of '+totalGroups+' qualified legs';$('cards').innerHTML=shownGroups.length?shownGroups.map(card).join(''):'<div class="empty" style="grid-column:1/-1">No qualified legs match these filters.</div>';bindCards()}
 function kv(items){return '<div class="kv">'+items.filter(x=>x[1]!==undefined&&x[1]!==null&&String(x[1]).trim()!=='').map(x=>'<div class="key">'+esc(x[0])+'</div><div class="val">'+esc(x[1])+'</div>').join('')+'</div>'}
 function jsonView(obj){try{return esc(JSON.stringify(obj||{},null,2))}catch(e){return esc(String(obj||''))}}
@@ -1957,10 +2273,29 @@ const other=legs.filter(l=>l.final_board_row_id!==s.final_board_row_id).slice(0,
 $('dossierBody').innerHTML='<div class="dossierHero"><div class="dossierTitle">'+title+'</div><div class="dossierSub">'+esc(match)+' • '+esc(fmtDate(s.official_game_time_utc))+' • '+esc(s.venue_name||((ctx.stadium||{}).stadium_name)||'')+'</div><div class="dossierSub">'+esc(line)+'</div><div class="dossierMetrics">'+metric('Hit Prob',pct(s.estimated_hit_probability_0_100))+metric('Overall Score',num(s.score_0_100))+metric('Confidence',pct(s.probability_confidence_0_100))+metric('Tier',qLabel(s))+'</div></div><div class="dossierGrid">'+section('Selected Leg',selectedLeg,'Clean display of this exact board leg.')+section('Player Profile',profile,'Static player identity plus current lineup availability when posted.')+sectionWide('Hit Probability By Available Line',table(['Source','Prop','Side','Line','HP','Conf','Grade','Sample','Hit-Miss'],rowsForHpLines(ctx)),'All current probability rows for this player/game, including alternate lines and both apps.')+sectionWide('Season / Recent Form',table(['Window','G','PA','AB','H','2B','HR','R','RBI','BB','SO','SB','TB','AVG','SLG'],rowsForRecentForm(ctx)),'Season, last 20, last 10, last 5 and last 3 where mined.')+sectionWide('Recent Game Log',table(['Date','Opp','Order','PA','AB','R','H','1B','2B','3B','HR','RBI','BB','SO','SB','TB'],rowsForRecentGames(ctx)),'Most recent individual games behind the probability windows.')+sectionWide('Platoon Splits',table(['Split','PA','AB','H','2B','3B','HR','RBI','BB','SO','AVG','OBP','SLG','OPS','BABIP'],rowsForSplits(ctx)),'Current season vs-left and vs-right splits when available.')+sectionWide('Probable Starters',table(['Team','Home','Starter','Hand','Status','Confidence'],rowsForStarters(ctx)),'Official probable starter context for both teams.')+sectionWide('Pitcher Matchup Form',table(['Pitcher','Window','G','IP','BF','H','ER','BB','K','HR','ERA','WHIP','K%','BB%'],rowsForPitcherForm(ctx)),'Recent and season pitcher profile for the probable starters.')+sectionWide('Pitcher Platoon Splits',table(['Pitcher','Split','IP','BF','H','BB','K','HR','AVG','OBP','SLG','OPS'],rowsForPitcherSplits(ctx)),'Opponent handedness context when available.')+section('Weather / Park',weatherRows(ctx),'Forecast, roof/surface, and park-factor context.')+section('Bullpen',rowsForBullpen(ctx).flatMap(r=>Object.entries(r).map(([k,v])=>[r.Team+' '+k,v])),'Team bullpen workload and risk context.')+sectionWide('Schedule Spot',table(['Team','Spot','Rest','G 3d','G 5d','3-in-4','4-in-6','Travel','Miles','Risk'],rowsForSchedule(ctx)),'Travel, rest, and fatigue context for both clubs.')+section('Umpire',umpireRows(ctx),'Displayed as pending when no verified official pregame source exists.')+section('Game Market',marketRows(ctx),'Book coverage, moneyline, total, runline, and implied runs.')+sectionWide('All Available Game Books',table(['Book','Market','Team / Side','Line','Price','Updated'],rowsForBookOdds(ctx)),'Every mined book row for moneyline, runline/spread, and total.')+sectionWide('Player Prop Line Market',propMarketFallback(ctx),'External sportsbook/player-prop rows when mined. App source inventory is always shown below.')+sectionWide('Source Lines / Current Board Inventory',table(['Source','Prop','Line','Type','Status','Pickable','Start'],rowsForSourceLines(ctx)),'User-facing current source line inventory for this player when exposed by the source boards.')+sectionWide('Scouting Note','<div class="dossierNote">'+esc(s.leg_insight_comment||evidenceReason({best:s,rows:[s]}))+'</div>','Clean synthesis for the selected leg.')+sectionWide('Other Current Legs For Player','<div class="pillRow">'+other+'</div>','Tap another leg to open its player/leg dossier.')+'</div>';
 document.querySelectorAll('.legBtn[data-leg-id]').forEach(b=>b.onclick=()=>openDossier(b.getAttribute('data-leg-id')))}
 async function openDossier(id){if(!id)return;setScreen('dossier');$('dossierBody').innerHTML='<div class="empty">Loading dossier...</div>';try{const j=await (await fetch('/api/main-board/dossier?final_board_row_id='+encodeURIComponent(id)+'&t='+Date.now(),{cache:'no-store'})).json();if(!j.ok)throw Error(j.error||'dossier failed');currentDossier=j;renderDossier(j);window.scrollTo({top:0,behavior:'smooth'})}catch(e){$('dossierBody').innerHTML='<div class="empty err">Dossier load failed: '+esc(e.message||e)+'</div>'}}
+
+function selectedRows(){const ids=[...selectedLegIds];return rows.filter(r=>ids.includes(String(r.final_board_row_id||'')))}
+function updateSlipFloat(){const box=$('slipFloat');if(!box)return;const sr=selectedRows();const pp=sr.filter(r=>String(r.source_key).toLowerCase()==='prizepicks').length;const sl=sr.filter(r=>String(r.source_key).toLowerCase()==='sleeper').length;$('slipFloatTotal').textContent=sr.length;$('slipFloatPP').textContent=pp;$('slipFloatSleeper').textContent=sl;box.classList.toggle('hidden',sr.length===0)}
+function nChooseK(n,k){if(k>n||k<0)return 0;k=Math.min(k,n-k);let o=1;for(let i=1;i<=k;i++)o=o*(n-k+i)/i;return Math.floor(o)}
+function validTypes(n){const m=Math.min(6,n);let a=[];for(let i=2;i<=m;i++)a.push(i);return a}
+function defaultStructures(n){return n>=6?[{amount:2,slip_type:3},{amount:1,slip_type:4}]:n>=5?[{amount:1,slip_type:3},{amount:1,slip_type:2}]:n>=4?[{amount:1,slip_type:3},{amount:1,slip_type:2}]:n>=3?[{amount:1,slip_type:3},{amount:1,slip_type:2}]:n>=2?[{amount:1,slip_type:2}]:[]}
+function legTitle(r){return esc((r.player_name||'')+' • '+cap(r.canonical_prop_key)+' '+String(r.selected_side||'').toUpperCase()+' '+(r.line_value??''))}
+function renderStructureRows(){const n=selectedRows().length;if(!customStructures.length)customStructures=defaultStructures(n);const used=new Set(customStructures.map(x=>Number(x.slip_type)));return '<div><h3>Create my own</h3>'+customStructures.map((s,i)=>{const types=validTypes(n).filter(t=>t===Number(s.slip_type)||!used.has(t));const max=Math.min(20,nChooseK(n,Number(s.slip_type||types[0]||2)));if(!s.amount)s.amount=max||1;return '<div class="structureRow"><select class="select structAmt" data-i="'+i+'">'+Array.from({length:Math.max(1,max)},(_,j)=>j+1).map(v=>'<option value="'+v+'" '+(Number(s.amount)===v?'selected':'')+'>'+v+'x</option>').join('')+'</select><select class="select structType" data-i="'+i+'">'+types.map(t=>'<option value="'+t+'" '+(Number(s.slip_type)===t?'selected':'')+'>'+t+'-pick</option>').join('')+'</select><button class="tinyBtn structAdd" data-i="'+i+'">'+(i===customStructures.length-1?'+':'')+'</button></div>'}).join('')+'</div>'}
+function renderBuild(){const sr=selectedRows();if(!sr.length){$('buildBody').innerHTML='<div class="empty">Select legs first.</div>';return}const counts=sr.reduce((a,r)=>{const k=String(r.source_key||'unknown').toLowerCase();a[k]=(a[k]||0)+1;return a},{});const rec=defaultStructures(sr.length).map(s=>s.amount+'x '+s.slip_type+'-pick').join(' + ');$('buildBody').innerHTML='<div class="builderGrid"><div class="dossierNote">Selected '+sr.length+' legs • Sleeper '+(counts.sleeper||0)+' • PP '+(counts.prizepicks||0)+'<br>Recommended structure: <b>'+esc(rec||'Need at least 2 legs')+'</b></div><div>'+sr.map(r=>'<div class="legMini"><span>'+legTitle(r)+'</span><b>'+pct(r.estimated_hit_probability_0_100)+'</b></div>').join('')+'</div><div id="structureBox">'+renderStructureRows()+'</div><button id="generateSlips" class="btn">Generate</button><div id="generatedSlips"></div><button id="saveSlips" class="btn hidden">Save selected slips</button></div>';bindBuildControls()}
+function bindBuildControls(){document.querySelectorAll('.structType').forEach(el=>el.onchange=()=>{const i=Number(el.dataset.i);customStructures[i].slip_type=Number(el.value);customStructures[i].amount=Math.min(20,nChooseK(selectedRows().length,customStructures[i].slip_type));renderBuild()});document.querySelectorAll('.structAmt').forEach(el=>el.onchange=()=>{customStructures[Number(el.dataset.i)].amount=Number(el.value)});document.querySelectorAll('.structAdd').forEach(b=>b.onclick=()=>{const n=selectedRows().length;const used=new Set(customStructures.map(x=>Number(x.slip_type)));const t=validTypes(n).find(x=>!used.has(x));if(t)customStructures.push({amount:Math.min(20,nChooseK(n,t)),slip_type:t});renderBuild()});$('generateSlips').onclick=generateSlips;const save=$('saveSlips');if(save)save.onclick=saveGeneratedSlips}
+function openBuild(){customStructures=defaultStructures(selectedRows().length);setScreen('build');renderBuild();window.scrollTo({top:0,behavior:'smooth'})}
+function renderGenerated(){const el=$('generatedSlips');if(!lastGeneratedSlips.length){el.innerHTML='<div class="empty">No valid slips generated. Check same-team/source constraints.</div>';$('saveSlips').classList.add('hidden');return}el.innerHTML='<h3>Generated Slips</h3>'+lastGeneratedSlips.map((s,i)=>'<div class="slipCard"><div class="slipHead"><label><input type="checkbox" class="genSlipPick" data-i="'+i+'" checked> '+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.slip_type)+'</label><b>'+pct(s.estimated_hit_probability_0_100)+'</b></div><div class="small">'+esc(s.strategy_grade||'')+' • '+esc(s.strategy_notes||'')+'</div><div class="slipLegs">'+(s.legs||[]).map(leg=>'<div class="legMini"><span>'+legTitle(leg)+'</span><b>'+pct(leg.hit_probability_0_100)+'</b></div>').join('')+'</div></div>').join('');$('saveSlips').classList.remove('hidden')}
+async function generateSlips(){const ids=[...selectedLegIds];$('generatedSlips').innerHTML='<div class="empty">Generating...</div>';const j=await (await fetch('/api/slips/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({leg_ids:ids,structures:customStructures})})).json();if(!j.ok){$('generatedSlips').innerHTML='<div class="empty err">Generate failed: '+esc(j.error||'unknown')+'</div>';return}lastGeneratedSlips=j.generated_slips||[];renderGenerated()}
+async function saveGeneratedSlips(){const picks=[...document.querySelectorAll('.genSlipPick')].filter(x=>x.checked).map(x=>lastGeneratedSlips[Number(x.dataset.i)]).filter(Boolean);if(!picks.length)return;const j=await (await fetch('/api/slips/save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({selected_leg_count:selectedRows().length,slips:picks})})).json();$('generatedSlips').insertAdjacentHTML('afterbegin',j.ok?'<div class="dossierNote">Saved '+j.saved_count+' slips.</div>':'<div class="empty err">Save failed: '+esc(j.error||'unknown')+'</div>')}
+async function loadSlips(){setScreen('slips');$('slipsBody').innerHTML='<div class="empty">Loading slips...</div>';const j=await (await fetch('/api/slips/recent?limit=50&t='+Date.now(),{cache:'no-store'})).json();if(!j.ok){$('slipsBody').innerHTML='<div class="empty err">Slips load failed: '+esc(j.error||'unknown')+'</div>';return}const slips=j.slips||[];const groups={};slips.forEach(s=>{const d=String(s.created_at||'').slice(0,10)||'Unknown';(groups[d]=groups[d]||[]).push(s)});const dates=Object.keys(groups).sort().reverse();$('slipsBody').innerHTML=dates.length?dates.map((d,i)=>'<details class="dateGroup" '+(i===0?'open':'')+'><summary>'+esc(d)+' • '+groups[d].length+' slips</summary>'+groups[d].map(s=>'<div class="slipCard"><div class="slipHead"><b>'+esc(String(s.source_key||'').toUpperCase())+' '+esc(s.slip_type||'')+'</b><span>'+pct(s.estimated_hit_probability_0_100)+'</span></div><div class="small">'+esc(s.status||'')+' • '+esc(s.strategy_notes||'')+'</div><div class="slipLegs">'+(s.legs||[]).map(l=>{const cls=l.result_status==='hit'?'resultHit':l.result_status==='miss'?'resultMiss':(l.result_status&&l.result_status!=='pending'?'resultVoid':'');return '<div class="legMini '+cls+'"><span>'+esc(l.player_name)+' • '+esc(cap(l.canonical_prop_key))+' '+esc(String(l.selected_side||'').toUpperCase())+' '+esc(l.line_value)+'</span><b>'+esc(l.result_status||'pending')+'</b></div>'}).join('')+'</div></div>').join('')+'</details>').join(''):'<div class="empty">No saved slips yet.</div>'}
+function openPlayerProfile(){setScreen('playerProfile');$('playerProfileBody').innerHTML='<div class="empty">Type at least 3 letters.</div>';$('playerSearch').focus()}
+async function searchPlayers(){const q=$('playerSearch').value.trim();if(q.length<3){$('playerSearchResults').innerHTML='';return}const j=await (await fetch('/api/player-search?q='+encodeURIComponent(q)+'&t='+Date.now(),{cache:'no-store'})).json();$('playerSearchResults').innerHTML=(j.rows||[]).map(r=>'<button class="searchResult" data-player-id="'+esc(r.player_id)+'">'+esc(r.player_name)+' <span class="small">'+esc(r.primary_position||'')+'</span></button>').join('')||'<div class="small">No matches.</div>';document.querySelectorAll('.searchResult[data-player-id]').forEach(b=>b.onclick=()=>loadPlayerProfile(b.dataset.playerId))}
+async function loadPlayerProfile(id){$('playerProfileBody').innerHTML='<div class="empty">Loading player profile...</div>';const j=await (await fetch('/api/player-profile?player_id='+encodeURIComponent(id)+'&t='+Date.now(),{cache:'no-store'})).json();if(!j.ok){$('playerProfileBody').innerHTML='<div class="empty err">Profile failed: '+esc(j.error||'unknown')+'</div>';return}const p=j.player||{};const legs=j.current_legs||[];const lineup=j.lineup_rows||[];$('playerProfileBody').innerHTML='<div class="profileCard profileHero"><div><div class="profileName">'+esc(p.full_name||p.player_name)+'</div><div class="small">Team '+esc(p.current_mlb_team_id||p.current_team_id||'—')+' • '+esc(p.primary_position||p.primary_role||'—')+' • Bats '+esc(p.bat_side||p.bats||'—')+' • Throws '+esc(p.throw_side||p.throws||'—')+'</div></div></div><div class="dSection wide"><h3>Available Legs</h3><div class="pillRow">'+(legs.length?legs.map(l=>'<button class="legBtn" data-leg-id="'+esc(l.final_board_row_id)+'"><b>'+pct(l.estimated_hit_probability_0_100)+'</b><br>'+esc(l.source_key)+' • '+esc(cap(l.canonical_prop_key))+' '+esc(String(l.selected_side||'').toUpperCase())+' '+esc(l.line_value)+'</button>').join(''):'<div class="small">No current board legs.</div>')+'</div></div><div class="dSection wide"><h3>Lineup Rows</h3>'+table(['Date','Team','Slot','Pos','Status','Conf'],lineup.map(x=>[x.official_date,x.team_name,x.lineup_slot,x.active_position,x.lineup_status,x.confidence_label]))+'</div>';document.querySelectorAll('.legBtn[data-leg-id]').forEach(b=>b.onclick=()=>openDossier(b.dataset.legId))}
+
 function renderHealth(){const c=health?.current_board||{}, f=health?.final_board_batch||{}, h=health?.hp_board_batch||{};$('healthStatus').textContent='Read-only V2 health loaded • '+(health?.version||'');const items=[['Raw Rows',c.current_rows],['Default Rows',c.default_rows],['Review Rows',c.review_rows],['Live Rows',c.live_rows],['HP Range',num(c.min_hp)+'–'+num(c.max_hp)],['Certainty Range',num(c.min_certainty)+'–'+num(c.max_certainty)],['Overall Range',num(c.min_score)+'–'+num(c.max_score)],['Final Grade',f.certification_grade||'—'],['HP V2 Rows',h.hp_rows_written||'—']];$('healthCards').innerHTML=items.map(x=>'<div class="healthCard"><div class="small">'+esc(x[0])+'</div><div class="metric">'+esc(x[1]??'—')+'</div></div>').join('')+'<div class="healthCard" style="grid-column:1/-1"><div class="small">Final Board V2 Batch</div><div>'+esc(f.batch_id||c.final_board_batch_id||'—')+'</div><div class="small">'+esc((f.status||'')+' • '+(f.worker_version||''))+'</div></div>'}
 async function load(){try{$('status').textContent='Loading filters...';const fj=await (await fetch('/api/main-board/filters?t='+Date.now(),{cache:'no-store'})).json();if(!fj.ok)throw Error(fj.error||'filters failed');renderFilters(fj);$('status').textContent='Loading board...';const j=await (await fetch('/api/main-board/current?limit=1000&t='+Date.now(),{cache:'no-store'})).json();if(!j.ok)throw Error(j.error||'board failed');rows=Array.isArray(j.rows)?j.rows:[];render()}catch(e){$('status').innerHTML='<span class="err">Board load failed: '+esc(e.message||e)+'</span>';$('cards').innerHTML='<div class="empty err" style="grid-column:1/-1">Could not load Review Board.</div>'}}
 async function loadHealth(){try{$('healthStatus').textContent='Loading health...';const j=await (await fetch('/api/main-board/health?t='+Date.now(),{cache:'no-store'})).json();if(!j.ok)throw Error(j.error||'health failed');health=j;renderHealth()}catch(e){$('healthStatus').innerHTML='<span class="err">Health load failed: '+esc(e.message||e)+'</span>'}}
-function boot(){$('menuOpen').onclick=e=>{e.stopPropagation();$('mainMenu').classList.toggle('hidden')};document.addEventListener('click',()=>$('mainMenu').classList.add('hidden'));$('menuBoard').onclick=()=>{setScreen('board');render()};$('menuHealth').onclick=()=>{setScreen('health');loadHealth()};$('backBoard').onclick=()=>setScreen('board');$('dossierBack').onclick=()=>setScreen('board');$('dossierHome').onclick=()=>setScreen('board');$('refresh').onclick=load;load()}
+function boot(){$('menuOpen').onclick=e=>{e.stopPropagation();$('mainMenu').classList.toggle('hidden')};document.addEventListener('click',()=>$('mainMenu').classList.add('hidden'));$('menuBoard').onclick=()=>{setScreen('board');render()};$('menuHealth').onclick=()=>{setScreen('health');loadHealth()};$('menuSlips').onclick=loadSlips;$('menuPlayerProfile').onclick=openPlayerProfile;$('backBoard').onclick=()=>setScreen('board');$('buildBack').onclick=()=>setScreen('board');$('slipsBack').onclick=()=>setScreen('board');$('profileBack').onclick=()=>setScreen('board');$('slipFloatBuild').onclick=openBuild;$('playerSearch').oninput=()=>{clearTimeout(window.__playerSearchTimer);window.__playerSearchTimer=setTimeout(searchPlayers,220)};$('dossierBack').onclick=()=>setScreen('board');$('dossierHome').onclick=()=>setScreen('board');$('refresh').onclick=load;load()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
@@ -1987,6 +2322,11 @@ export default {
       if (method === "GET" && path === "/api/main-board/dossier") return await apiDossier(env, url);
       if (method === "GET" && path === "/api/main-board/filters") return await apiFilters(env);
       if (method === "GET" && path === "/api/main-board/health") return await apiHealth(env);
+      if (method === "GET" && path === "/api/player-search") return await apiPlayerSearch(env, url);
+      if (method === "GET" && path === "/api/player-profile") return await apiPlayerProfile(env, url);
+      if (method === "GET" && path === "/api/slips/recent") return await apiSlipsRecent(env, url);
+      if (method === "POST" && path === "/api/slips/generate") return await apiGenerateSlips(env, request);
+      if (method === "POST" && path === "/api/slips/save") return await apiSaveSlips(env, request);
       if (method === "POST" && path === "/diagnostic") {
         const input = await readJsonSafe(request);
         const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
@@ -1998,7 +2338,7 @@ export default {
         const input = await readJsonSafe(request);
         return jsonResponse({ ...baseIdentity(env), route: "/run", request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || JOB_KEY, status: "MAIN_UI_READ_ONLY_NOOP", certification: "MAIN_UI_READ_ONLY_NOOP", rows_read: 0, rows_written: 0, output_json: { noop: true, logical_app: LOGICAL_APP, message: "Main UI worker slot is read-only and does not run pipeline jobs." } });
       }
-      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, logical_app: LOGICAL_APP, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /index.html", "GET /health", "POST /run", "POST /diagnostic", "GET /api/main-board/current", "GET /api/main-board/dossier", "GET /api/main-board/filters", "GET /api/main-board/health", "GET /main_alphadog_logo.png", "GET /main_alphadog_favicon.png", "GET /main_alphadog_apple_touch_icon.png"], timestamp_utc: nowUtc() }, 404);
+      return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, logical_app: LOGICAL_APP, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /index.html", "GET /health", "POST /run", "POST /diagnostic", "GET /api/main-board/current", "GET /api/main-board/dossier", "GET /api/main-board/filters", "GET /api/main-board/health", "GET /api/player-search", "GET /api/player-profile", "GET /api/slips/recent", "POST /api/slips/generate", "POST /api/slips/save", "GET /main_alphadog_logo.png", "GET /main_alphadog_favicon.png", "GET /main_alphadog_apple_touch_icon.png"], timestamp_utc: nowUtc() }, 404);
     } catch (error) {
       return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, logical_app: LOGICAL_APP, error: String(error && error.message ? error.message : error), stack: String(error && error.stack ? error.stack : "").slice(0, 1200), writes_performed: 0, external_calls_performed: 0, queue_calls_performed: 0, timestamp_utc: nowUtc() }, 500);
     }
