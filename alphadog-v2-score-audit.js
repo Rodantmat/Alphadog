@@ -4339,7 +4339,7 @@ async function runHitProbabilityCurrent(env, input = {}){
 
 const ENRICHMENT_V1_JOB_KEY = "score-enrichment-v1";
 const ENRICHMENT_V1_MODE = "score_enrichment_v1_side_expanded";
-const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.8-goblin-demon-side-contract";
+const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.9-soft-calibration-pressure";
 const ENRICHMENT_V1_CHUNK_ROWS = 250;
 
 function clampNum(v, lo, hi) {
@@ -4452,6 +4452,90 @@ function layerFromSignedScore(score) {
 }
 function invertLayer(layer) { return -Number(layer || 0); }
 function isLessSide(side) { return lowerText(side) === "less" || lowerText(side) === "under"; }
+function sideApplyMoreScore(scoreForMore, selectedSide) {
+  return isLessSide(selectedSide) ? -Number(scoreForMore || 0) : Number(scoreForMore || 0);
+}
+function firstMarketObj(packet) {
+  const market = packet && packet.market_context ? packet.market_context : {};
+  const raw = market.game_market_summary || market.market_game_summary || market.game_summary || null;
+  if (Array.isArray(raw)) return raw[0] || {};
+  if (raw && typeof raw === "object") return raw;
+  if (typeof raw === "string" && raw.trim()) {
+    try { const parsed = JSON.parse(raw); return Array.isArray(parsed) ? (parsed[0] || {}) : (parsed || {}); } catch (_) {}
+  }
+  const found = deepGetAny(packet, ["derived_home_implied_runs", "total_consensus_line", "home_ml_consensus"]);
+  return found == null ? {} : packet;
+}
+function marketGameNums(packet) {
+  const m = firstMarketObj(packet);
+  const total = firstNum(m, ["total_consensus_line", "game_total", "total_line"]);
+  const homeImp = firstNum(m, ["derived_home_implied_runs", "home_implied_runs"]);
+  const awayImp = firstNum(m, ["derived_away_implied_runs", "away_implied_runs"]);
+  const maxImp = Math.max(homeImp == null ? 0 : homeImp, awayImp == null ? 0 : awayImp);
+  const minImp = Math.min(homeImp == null ? 99 : homeImp, awayImp == null ? 99 : awayImp);
+  return { total, homeImp, awayImp, maxImp: maxImp || null, minImp: minImp === 99 ? null : minImp };
+}
+function pitcherMetricNums(packet) {
+  return {
+    era: firstNum(packet, ["era_calculated", "era"]),
+    whip: firstNum(packet, ["whip_calculated", "whip"]),
+    kRate: firstNum(packet, ["k_rate_calculated", "k_rate"]),
+    bbRate: firstNum(packet, ["bb_rate_calculated", "bb_rate"]),
+    hrRate: firstNum(packet, ["hr_rate_calculated", "hr_rate"]),
+    ipPerApp: firstNum(packet, ["innings_per_appearance_calculated", "ip_per_appearance"]),
+    pitchesPerOut: firstNum(packet, ["pitches_per_out_calculated", "pitches_per_out"]),
+    strikesPerPitch: firstNum(packet, ["strikes_per_pitch_calculated", "strike_rate"]),
+    bf: firstNum(packet, ["batters_faced_sum", "batters_faced"]),
+    hitsAllowed: firstNum(packet, ["hits_allowed_sum", "hits_allowed"]),
+    walksAllowed: firstNum(packet, ["walks_allowed_sum", "walks_allowed"]),
+    earnedRuns: firstNum(packet, ["earned_runs_sum", "earned_runs"]),
+    starts: firstNum(packet, ["starts_count", "starts"]),
+    apps: firstNum(packet, ["appearances_count", "appearances_count"])
+  };
+}
+function pitcherPacketScore(packet, profileKey, selectedSide) {
+  if (!profileKey || !profileKey.startsWith("pitcher")) return 0;
+  const m = pitcherMetricNums(packet || {});
+  const g = marketGameNums(packet || {});
+  let more = 0;
+  if (profileKey === "pitcher_strikeout") {
+    if (m.kRate != null) { if (m.kRate >= 0.27) more += 1.8; else if (m.kRate >= 0.235) more += 0.9; else if (m.kRate <= 0.18) more -= 1.4; else if (m.kRate <= 0.205) more -= 0.7; }
+    if (m.ipPerApp != null) { if (m.ipPerApp >= 5.7) more += 0.6; else if (m.ipPerApp <= 4.6) more -= 0.6; }
+    if (m.strikesPerPitch != null) { if (m.strikesPerPitch >= 0.66) more += 0.4; else if (m.strikesPerPitch <= 0.61) more -= 0.4; }
+  } else if (profileKey === "pitcher_walks") {
+    if (m.bbRate != null) { if (m.bbRate >= 0.10) more += 1.6; else if (m.bbRate >= 0.085) more += 0.8; else if (m.bbRate <= 0.055) more -= 1.2; else if (m.bbRate <= 0.070) more -= 0.6; }
+    if (m.strikesPerPitch != null) { if (m.strikesPerPitch <= 0.61) more += 0.5; else if (m.strikesPerPitch >= 0.67) more -= 0.5; }
+  } else if (profileKey === "pitcher_hits_allowed") {
+    if (m.whip != null) { if (m.whip >= 1.38) more += 1.4; else if (m.whip >= 1.24) more += 0.8; else if (m.whip <= 1.05) more -= 1.0; }
+    if (m.ipPerApp != null) { if (m.ipPerApp >= 5.2) more += 0.5; else if (m.ipPerApp <= 4.5) more -= 0.5; }
+    if (g.maxImp != null) { if (g.maxImp >= 5.0) more += 0.8; else if (g.maxImp <= 3.8) more -= 0.4; }
+  } else if (profileKey === "pitcher_earned_runs_allowed") {
+    if (m.era != null) { if (m.era >= 4.70) more += 1.4; else if (m.era >= 4.10) more += 0.8; else if (m.era <= 3.20) more -= 0.9; }
+    if (m.whip != null) { if (m.whip >= 1.38) more += 0.8; else if (m.whip <= 1.10) more -= 0.5; }
+    if (m.hrRate != null) { if (m.hrRate >= 0.040) more += 0.7; else if (m.hrRate <= 0.012) more -= 0.3; }
+    if (g.maxImp != null) { if (g.maxImp >= 5.0) more += 1.0; else if (g.maxImp <= 3.8) more -= 0.4; }
+  } else if (profileKey === "pitcher_outs") {
+    if (m.ipPerApp != null) { if (m.ipPerApp >= 5.8) more += 1.5; else if (m.ipPerApp >= 5.3) more += 0.7; else if (m.ipPerApp <= 5.0) more -= 0.9; }
+    if (m.pitchesPerOut != null) { if (m.pitchesPerOut >= 5.55) more -= 0.9; else if (m.pitchesPerOut <= 5.0) more += 0.6; }
+    if (m.whip != null) { if (m.whip >= 1.40) more -= 0.8; else if (m.whip <= 1.10) more += 0.5; }
+    if (g.total != null) { if (g.total >= 9.5) more -= 0.5; else if (g.total <= 7.5) more += 0.3; }
+  }
+  return sideApplyMoreScore(more, selectedSide);
+}
+function pitcherMarketScore(packet, profileKey, selectedSide) {
+  if (!profileKey || !profileKey.startsWith("pitcher")) return 0;
+  const g = marketGameNums(packet || {});
+  let more = 0;
+  if (profileKey === "pitcher_outs") {
+    if (g.total != null) { if (g.total >= 9.5) more -= 0.6; else if (g.total <= 7.5) more += 0.4; }
+  } else if (profileKey === "pitcher_hits_allowed" || profileKey === "pitcher_earned_runs_allowed" || profileKey === "pitcher_walks") {
+    if (g.maxImp != null) { if (g.maxImp >= 5.0) more += 0.8; else if (g.maxImp <= 3.8) more -= 0.4; }
+    if (g.total != null) { if (g.total >= 9.5) more += 0.4; else if (g.total <= 7.5) more -= 0.3; }
+  } else if (profileKey === "pitcher_strikeout") {
+    if (g.total != null) { if (g.total >= 9.5) more -= 0.4; else if (g.total <= 7.5) more += 0.3; }
+  }
+  return sideApplyMoreScore(more, selectedSide);
+}
 function profileDirectionalWeight(weights, keys, fallback) {
   let total = 0;
   for (const k of keys) total += Number(weights[k] || 0);
@@ -4467,7 +4551,7 @@ function marketLayerFromPayload(packet, profileKey, selectedSide) {
     const pa = asNumMaybe(e.price_american);
     if (pa != null && (!os || os === side || (side === "more" && os === "over") || (side === "less" && os === "under"))) sameSidePrices.push(pa);
   }
-  if (!sameSidePrices.length) return 0;
+  if (!sameSidePrices.length) return layerFromSignedScore(pitcherMarketScore(packet, profileKey, selectedSide));
   const avg = sameSidePrices.reduce((a,b)=>a+b,0) / sameSidePrices.length;
   // Negative American prices imply market support for that side. Keep this conservative.
   if (avg <= -170) return 2;
@@ -4534,6 +4618,7 @@ function packetLayerFromPayload(packet, profileKey, selectedSide) {
   }
   if ((profileKey.startsWith("hitter") || profileKey.startsWith("stolen")) && fatigue != null && fatigue >= 65) score += 0.5;
   if (profileKey === "pitcher_outs" && fatigue != null && fatigue >= 65) score += 0.4;
+  score += pitcherPacketScore(packet, profileKey, selectedSide);
   let layer = layerFromSignedScore(score);
   if (isLessSide(selectedSide) && (profileKey.startsWith("hitter") || profileKey.startsWith("stolen"))) layer = invertLayer(layer);
   return layer;
@@ -4580,7 +4665,9 @@ function confidenceCapForRow(row, baselineAvailable) {
   if (!daily || daily.includes("missing") || daily.includes("not_found")) cap = Math.min(cap, 60);
   if (daily.includes("partial")) cap = Math.min(cap, 85);
   if (!factor || factor.includes("missing") || factor.includes("not_found")) cap = Math.min(cap, 65);
-  if (marketProp.includes("not_found") || marketProp.includes("missing")) cap = Math.min(cap, 75);
+  if (marketProp.includes("not_found") || marketProp.includes("missing")) {
+    cap = Math.min(cap, lowerText(row.factor_family).includes("pitcher") ? 72 : 75);
+  }
   return cap;
 }
 function enrichmentStatus(row, baselineAvailable) {
