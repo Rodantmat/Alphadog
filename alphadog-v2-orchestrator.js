@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.284-expansion-baseline-partial-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.285-expansion-baseline-hot-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -15017,6 +15017,26 @@ async function processOneUnlocked(env, trigger) {
         ORDER BY datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) ASC, datetime(created_at) ASC
         LIMIT 1`
     );
+  }
+
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+       FROM control_job_queue
+       WHERE job_key LIKE 'expansion-baseline%'
+         AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
+         AND status IN ('pending','partial_continue')
+         AND finished_at IS NULL
+         AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+       ORDER BY priority ASC, datetime(updated_at) ASC
+       LIMIT 1`
+    );
+    if (row) {
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'expansion_baseline_hot_continuation_selected', 'Selected Expansion Baseline pending/partial_continue row for backend hot continuation', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, expansion_baseline_hot_continuation_v0_2_285: true })
+      );
+    }
   }
 
   if (!row) {
