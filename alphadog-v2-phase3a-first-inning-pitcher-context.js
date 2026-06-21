@@ -1,165 +1,519 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
-const VERSION = "alphadog-v2-dummy-workers-v0.1";
-const JOB_KEY = "phase3a-first-inning-pitcher-context";
+const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.0-expansion-baseline-shadow";
+const EXPANSION_JOB_KEYS = new Set([
+  "expansion-baseline-mining",
+  "expansion-baseline-sanity",
+  "expansion-baseline-hp",
+  "expansion-baseline-certifier",
+  "expansion-baseline-full-run"
+]);
 
-const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
-const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
-const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "ODDS_API_BASE_URL", "PARLAY_API_BASE_URL", "MLB_API_BASE_URL", "PRIZEPICKS_SOURCE_MODE", "MAX_TICK_MS", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK", "LOCK_STALE_MINUTES", "WORKER_SAFE_MODE", "DEBUG_MODE", "MANUAL_SQL_ENABLED", "CONFIG_PHASE"];
+const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "CONTEXT_DB", "SCORE_DB"];
+const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "MLB_API_BASE_URL"];
 
-function nowUtc() {
-  return new Date().toISOString();
+const RA_LINES = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5];
+const PFS_LINES = [5.5, 10.5, 15.5, 20.5, 25.5, 30.5];
+const RFI_LINES = [0.5];
+const SIDES = ["more", "less"];
+
+const PRODUCTION_GUARD_TABLES = [
+  "player_baseline_sanity_current",
+  "player_baseline_hp_current",
+  "prop_factor_coverage_current",
+  "prop_factor_pitcher_packets",
+  "prop_matrix_current",
+  "score_enrichment_current",
+  "final_score_v1_current",
+  "score_final_board_current",
+  "score_final_board_v2_current"
+];
+
+function nowUtc(){ return new Date().toISOString(); }
+function rid(prefix){ return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`; }
+function clamp(n,lo,hi){ return Math.max(lo, Math.min(hi, n)); }
+function round(n,d=2){ const x=Number(n||0); const p=Math.pow(10,d); return Math.round(x*p)/p; }
+function num(v){ const n=Number(v); return Number.isFinite(n)?n:0; }
+function safeJson(v){ try { return JSON.stringify(v == null ? null : v); } catch(_){ return JSON.stringify({json_error:true}); } }
+function parseJson(s, fallback={}){ try { return JSON.parse(s || "{}"); } catch(_){ return fallback; } }
+function jsonResponse(body,status=200){ return new Response(JSON.stringify(body,null,2),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}}); }
+async function readJsonSafe(request){ try { return await request.json(); } catch(_){ return {}; } }
+function hasBinding(env,name){ return !!(env && env[name]); }
+function bindingPresence(env,names){ const out={}; for(const n of names) out[n]=hasBinding(env,n); return out; }
+function allTrue(obj){ return Object.values(obj).every(Boolean); }
+async function all(db,sql,...binds){ const stmt=db.prepare(sql); const res=binds.length?await stmt.bind(...binds).all():await stmt.all(); return res.results || []; }
+async function first(db,sql,...binds){ const rows=await all(db,sql,...binds); return rows[0] || null; }
+async function run(db,sql,...binds){ const stmt=db.prepare(sql); return binds.length?await stmt.bind(...binds).run():await stmt.run(); }
+async function batch(db,stmts,size=30){ for(let i=0;i<stmts.length;i+=size) await db.batch(stmts.slice(i,i+size)); }
+
+function assertExpansionTable(table){
+  if(!/^expansion_[a-zA-Z0-9_]+$/.test(String(table||""))) throw new Error(`EXPANSION_WRITE_GUARD_BLOCKED_TABLE:${table}`);
 }
+async function writeRun(db, table, sql, ...binds){ assertExpansionTable(table); return run(db, sql, ...binds); }
+async function writeBatch(db, table, stmts, size=30){ assertExpansionTable(table); return batch(db, stmts, size); }
 
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body, null, 2), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store"
-    }
-  });
-}
-
-function bindingPresence(env, names) {
-  const out = {};
-  for (const name of names) out[name] = Boolean(env && env[name]);
-  return out;
-}
-
-function varPresence(env, names) {
-  const out = {};
-  for (const name of names) out[name] = env && env[name] !== undefined && env[name] !== null && String(env[name]).length > 0;
-  return out;
-}
-
-function allTrue(obj) {
-  return Object.values(obj).every(Boolean);
-}
-
-function baseIdentity(env) {
-  const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-  const vars = varPresence(env, EXPECTED_VARS);
-  const secrets = varPresence(env, REQUIRED_SECRETS);
-
+function baseIdentity(env){
+  const db=bindingPresence(env, REQUIRED_DB_BINDINGS);
+  const vars={}; for(const n of EXPECTED_VARS) vars[n]=env && env[n] !== undefined && env[n] !== null && String(env[n]).length>0;
   return {
-    ok: true,
-    data_ok: true,
-    version: VERSION,
-    worker_name: WORKER_NAME,
-    job_key: JOB_KEY,
-    status: "DUMMY_READY",
-    timestamp_utc: nowUtc(),
-    phase: "alphadog-v2-config-bootstrap",
-    notes: [
-      "Dummy worker only.",
-      "No mining, scoring, external API calls, or production writes.",
-      "Use /health and /diagnostic to verify bindings/secrets/vars."
-    ],
-    binding_summary: {
-      required_db_bindings_present: allTrue(db),
-      expected_vars_present: allTrue(vars),
-      required_secrets_present: allTrue(secrets)
-    }
+    ok:true,data_ok:true,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,
+    status:"EXPANSION_BASELINE_WORKER_READY",timestamp_utc:nowUtc(),
+    expansion_only:true,baseline_only:true,write_whitelist:"^expansion_",
+    no_current_baseline_mutation:true,no_factor_mutation:true,no_matrix_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true,no_scheduler_mutation:true,no_full_run_integration:true,
+    binding_summary:{required_db_bindings_present:allTrue(db),db_bindings:db,vars}
   };
 }
 
-async function readJsonSafe(request) {
-  try {
-    return await request.json();
-  } catch {
-    return {};
+async function tableCount(db, table){ try { const r=await first(db,`SELECT COUNT(*) AS c FROM ${table}`); return Number(r&&r.c||0); } catch(_){ return null; } }
+async function productionCounts(env){
+  const out={};
+  for(const t of PRODUCTION_GUARD_TABLES){
+    const db = t.startsWith("prop_") || t.startsWith("score_") || t.startsWith("final_") || t.startsWith("player_") ? env.SCORE_DB : env.SCORE_DB;
+    out[t]=await tableCount(db,t);
   }
+  return out;
+}
+function changedCounts(before, after){
+  const changed=[];
+  for(const t of Object.keys(before||{})) if(before[t] !== after[t]) changed.push({table:t,before:before[t],after:after[t]});
+  return changed;
+}
+
+async function ensureContextSchema(env){
+  const db=env.CONTEXT_DB;
+  await writeRun(db,"expansion_first_inning_context_batches",`CREATE TABLE IF NOT EXISTS expansion_first_inning_context_batches (
+    batch_id TEXT PRIMARY KEY, request_id TEXT, run_id TEXT, mode TEXT, status TEXT, worker_version TEXT,
+    games_requested INTEGER DEFAULT 0, games_written INTEGER DEFAULT 0, pitcher_rows_written INTEGER DEFAULT 0, issue_rows INTEGER DEFAULT 0,
+    certification TEXT, certification_grade TEXT, output_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await writeRun(db,"expansion_first_inning_game_context_current",`CREATE TABLE IF NOT EXISTS expansion_first_inning_game_context_current (
+    context_row_id TEXT PRIMARY KEY, batch_id TEXT, game_pk INTEGER, game_date TEXT,
+    home_team_id INTEGER, away_team_id INTEGER, home_team_name TEXT, away_team_name TEXT,
+    top_1st_runs INTEGER, bottom_1st_runs INTEGER, first_inning_total_runs INTEGER,
+    yrfi_flag INTEGER, nrfi_flag INTEGER, rfi_pp_more_hit INTEGER, rfi_pp_less_hit INTEGER,
+    source_endpoint TEXT, source_confidence TEXT, source_snapshot_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await writeRun(db,"expansion_first_inning_game_context_history",`CREATE TABLE IF NOT EXISTS expansion_first_inning_game_context_history AS SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_first_inning_game_context_current WHERE 1=0`);
+  await writeRun(db,"expansion_first_inning_pitcher_context_current",`CREATE TABLE IF NOT EXISTS expansion_first_inning_pitcher_context_current (
+    pitcher_context_row_id TEXT PRIMARY KEY, batch_id TEXT, game_pk INTEGER, game_date TEXT,
+    pitcher_id INTEGER, pitcher_name TEXT, team_id INTEGER, opponent_team_id INTEGER, is_home INTEGER, started_game INTEGER,
+    first_frame_half TEXT, first_frame_runs_allowed INTEGER, rfi_sl_more_hit INTEGER, rfi_sl_less_hit INTEGER,
+    source_game_context_row_id TEXT, starter_source_key TEXT, source_confidence TEXT, details_json TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await writeRun(db,"expansion_first_inning_pitcher_context_history",`CREATE TABLE IF NOT EXISTS expansion_first_inning_pitcher_context_history AS SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_first_inning_pitcher_context_current WHERE 1=0`);
+  await writeRun(db,"expansion_first_inning_context_issues",`CREATE TABLE IF NOT EXISTS expansion_first_inning_context_issues (
+    issue_id TEXT PRIMARY KEY, batch_id TEXT, game_pk INTEGER, pitcher_id INTEGER, severity TEXT, issue_code TEXT, issue_message TEXT, details_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await writeRun(db,"expansion_first_inning_game_context_current",`CREATE INDEX IF NOT EXISTS idx_exp_first_game_game_pk ON expansion_first_inning_game_context_current(game_pk)`);
+  await writeRun(db,"expansion_first_inning_pitcher_context_current",`CREATE INDEX IF NOT EXISTS idx_exp_first_pitcher_pitcher ON expansion_first_inning_pitcher_context_current(pitcher_id, game_pk)`);
+}
+
+async function ensureScoreSchema(env){
+  const db=env.SCORE_DB;
+  await writeRun(db,"expansion_player_baseline_sanity_batches",`CREATE TABLE IF NOT EXISTS expansion_player_baseline_sanity_batches (
+    batch_id TEXT PRIMARY KEY, request_id TEXT, run_id TEXT, mode TEXT, status TEXT, worker_version TEXT,
+    started_at TEXT, finished_at TEXT, rows_staged INTEGER DEFAULT 0, rows_promoted INTEGER DEFAULT 0, history_rows INTEGER DEFAULT 0, issue_rows INTEGER DEFAULT 0,
+    certification TEXT, certification_grade TEXT, output_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  const sanityDDL = `(baseline_row_id TEXT PRIMARY KEY, batch_id TEXT, expansion_scope TEXT, profile_namespace TEXT, source_data_family TEXT, source_table TEXT, profile_logic_version TEXT,
+    entity_type TEXT, entity_id TEXT, player_type TEXT, player_id INTEGER, player_name TEXT, canonical_prop_key TEXT,
+    role_profile TEXT, prior_pool_key TEXT, sanity_profile_key TEXT, sample_profile TEXT, usage_profile TEXT, line_difficulty_profile TEXT, volatility_profile TEXT,
+    baseline_drag_profile TEXT, confidence_drag_profile TEXT, variance_profile TEXT, games_sample INTEGER, events_sample INTEGER,
+    baseline_confidence_0_100 REAL, line_baseline_json TEXT, distribution_shape_json TEXT, notes_json TEXT,
+    no_daily_context INTEGER DEFAULT 1, no_market_context INTEGER DEFAULT 1, no_scoring_context INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`;
+  await writeRun(db,"expansion_player_baseline_sanity_stage",`CREATE TABLE IF NOT EXISTS expansion_player_baseline_sanity_stage ${sanityDDL}`);
+  await writeRun(db,"expansion_player_baseline_sanity_current",`CREATE TABLE IF NOT EXISTS expansion_player_baseline_sanity_current ${sanityDDL}`);
+  await writeRun(db,"expansion_player_baseline_sanity_history",`CREATE TABLE IF NOT EXISTS expansion_player_baseline_sanity_history AS SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_player_baseline_sanity_current WHERE 1=0`);
+  await writeRun(db,"expansion_player_baseline_sanity_issues",`CREATE TABLE IF NOT EXISTS expansion_player_baseline_sanity_issues (issue_id TEXT PRIMARY KEY, batch_id TEXT, severity TEXT, issue_code TEXT, issue_message TEXT, issue_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+
+  await writeRun(db,"expansion_player_baseline_hp_batches",`CREATE TABLE IF NOT EXISTS expansion_player_baseline_hp_batches (
+    batch_id TEXT PRIMARY KEY, request_id TEXT, run_id TEXT, mode TEXT, status TEXT, worker_version TEXT, source_sanity_batch_id TEXT,
+    started_at TEXT, finished_at TEXT, source_rows_read INTEGER DEFAULT 0, rows_staged INTEGER DEFAULT 0, rows_promoted INTEGER DEFAULT 0, history_rows INTEGER DEFAULT 0, issue_rows INTEGER DEFAULT 0,
+    certification TEXT, certification_grade TEXT, output_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  const hpDDL = `(baseline_hp_row_id TEXT PRIMARY KEY, batch_id TEXT, source_sanity_batch_id TEXT, source_baseline_row_id TEXT,
+    expansion_scope TEXT, profile_namespace TEXT, source_data_family TEXT, source_table TEXT, source_formula_key TEXT, baseline_formula_version TEXT,
+    entity_type TEXT, entity_id TEXT, player_type TEXT, player_id INTEGER, player_name TEXT, canonical_prop_key TEXT, prop_family TEXT,
+    line_value REAL, selected_side TEXT, baseline_hp_0_100 REAL, hp_adjustment_0_100 REAL DEFAULT 0,
+    raw_rate_0_100 REAL, tier_prior_rate_0_100 REAL, raw_prior_gap_0_100 REAL,
+    baseline_confidence_0_100 REAL, baseline_enriched_confidence_0_100 REAL,
+    consistency_bonus_0_100 REAL, soft_uncertainty_reserve_0_100 REAL,
+    sample_profile TEXT, role_profile TEXT, sanity_profile_key TEXT, volatility_profile TEXT, variance_profile TEXT,
+    line_difficulty_profile TEXT, baseline_hp_profile_key TEXT,
+    non_push_sample INTEGER, hit_count INTEGER, miss_count INTEGER, push_count INTEGER, prior_strength REAL,
+    formula_version TEXT, confidence_formula_version TEXT,
+    no_daily_context INTEGER DEFAULT 1, no_market_context INTEGER DEFAULT 1, no_scoring_context INTEGER DEFAULT 1,
+    profile_notes_json TEXT, source_snapshot_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`;
+  await writeRun(db,"expansion_player_baseline_hp_stage",`CREATE TABLE IF NOT EXISTS expansion_player_baseline_hp_stage ${hpDDL}`);
+  await writeRun(db,"expansion_player_baseline_hp_current",`CREATE TABLE IF NOT EXISTS expansion_player_baseline_hp_current ${hpDDL}`);
+  await writeRun(db,"expansion_player_baseline_hp_history",`CREATE TABLE IF NOT EXISTS expansion_player_baseline_hp_history AS SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_player_baseline_hp_current WHERE 1=0`);
+  await writeRun(db,"expansion_player_baseline_hp_issues",`CREATE TABLE IF NOT EXISTS expansion_player_baseline_hp_issues (issue_id TEXT PRIMARY KEY, batch_id TEXT, source_baseline_row_id TEXT, severity TEXT, issue_code TEXT, issue_message TEXT, issue_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+
+  await writeRun(db,"expansion_player_baseline_sanity_current",`CREATE INDEX IF NOT EXISTS idx_exp_sanity_ns_player ON expansion_player_baseline_sanity_current(profile_namespace, player_id)`);
+  await writeRun(db,"expansion_player_baseline_hp_current",`CREATE INDEX IF NOT EXISTS idx_exp_hp_ns_line_side ON expansion_player_baseline_hp_current(profile_namespace, line_value, selected_side)`);
+}
+async function ensureSchema(env){ await ensureContextSchema(env); await ensureScoreSchema(env); }
+
+async function archiveAndClearCurrent(db, currentTable, historyTable){
+  assertExpansionTable(currentTable);
+  assertExpansionTable(historyTable);
+  await writeRun(db, historyTable, `INSERT INTO ${historyTable} SELECT *, CURRENT_TIMESTAMP AS archived_at FROM ${currentTable}`);
+  await writeRun(db, currentTable, `DELETE FROM ${currentTable}`);
+}
+
+function firstInningFromLinescore(json){
+  const innings = json && json.innings;
+  if(!Array.isArray(innings) || !innings.length) return null;
+  const one = innings[0] || {};
+  const away = one.away || {};
+  const home = one.home || {};
+  const top = Number(away.runs);
+  const bottom = Number(home.runs);
+  if(!Number.isFinite(top) || !Number.isFinite(bottom)) return null;
+  return {
+    top_1st_runs: top,
+    bottom_1st_runs: bottom,
+    first_inning_total_runs: top + bottom,
+    home_team_name: (json.teams && json.teams.home && json.teams.home.team && json.teams.home.team.name) || null,
+    away_team_name: (json.teams && json.teams.away && json.teams.away.team && json.teams.away.team.name) || null
+  };
+}
+
+async function fetchMlbLinescore(env, gamePk){
+  const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/,"");
+  const url = `${base}/game/${gamePk}/linescore`;
+  const resp = await fetch(url, { headers: { "accept":"application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDogExpansionBaseline/0.1") } });
+  const text = await resp.text();
+  if(!resp.ok) throw new Error(`MLB_LINESCORE_HTTP_${resp.status}:${String(text||"").slice(0,180)}`);
+  return { url, json: JSON.parse(text) };
+}
+
+async function mineFirstInningContext(env, input={}){
+  await ensureSchema(env);
+  const requestId = String(input.request_id || rid("expansion_baseline_mining"));
+  const runId = String(input.run_id || rid("run"));
+  const batchId = String(input.batch_id || rid("expansion_first_inning_context_batch"));
+  const limit = Math.max(1, Math.min(Number(input.game_limit || input.max_games || 100), 500));
+  await writeRun(env.CONTEXT_DB,"expansion_first_inning_context_batches",`INSERT OR REPLACE INTO expansion_first_inning_context_batches (batch_id,request_id,run_id,mode,status,worker_version,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, batchId, requestId, runId, "expansion_baseline_mining", "running", VERSION);
+
+  const games = await all(env.TEAM_DB, `SELECT game_pk, MAX(game_date) AS game_date,
+      MAX(CASE WHEN is_home=1 THEN team_id END) AS home_team_id,
+      MAX(CASE WHEN is_home=0 THEN team_id END) AS away_team_id
+    FROM starter_history
+    WHERE started_game=1 AND game_pk IS NOT NULL
+    GROUP BY game_pk
+    ORDER BY date(MAX(game_date)) DESC, game_pk DESC
+    LIMIT ?`, limit);
+
+  await archiveAndClearCurrent(env.CONTEXT_DB,"expansion_first_inning_game_context_current","expansion_first_inning_game_context_history");
+  await archiveAndClearCurrent(env.CONTEXT_DB,"expansion_first_inning_pitcher_context_current","expansion_first_inning_pitcher_context_history");
+
+  let gamesWritten=0, pitcherRows=0, issues=0;
+  const gameStmts=[];
+  const pitcherStmts=[];
+  const issueStmts=[];
+
+  for(const g of games){
+    const gamePk = Number(g.game_pk);
+    if(!gamePk) continue;
+    try{
+      const fetched = await fetchMlbLinescore(env, gamePk);
+      const parsed = firstInningFromLinescore(fetched.json);
+      if(!parsed) throw new Error("MISSING_FIRST_INNING_LINESCORE_RUNS");
+      const contextRowId = `exp_first_game|${gamePk}`;
+      const yrfi = parsed.first_inning_total_runs >= 1 ? 1 : 0;
+      const nrfi = parsed.first_inning_total_runs === 0 ? 1 : 0;
+      gameStmts.push(env.CONTEXT_DB.prepare(`INSERT OR REPLACE INTO expansion_first_inning_game_context_current
+        (context_row_id,batch_id,game_pk,game_date,home_team_id,away_team_id,home_team_name,away_team_name,top_1st_runs,bottom_1st_runs,first_inning_total_runs,yrfi_flag,nrfi_flag,rfi_pp_more_hit,rfi_pp_less_hit,source_endpoint,source_confidence,source_snapshot_json,created_at,updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(contextRowId,batchId,gamePk,g.game_date||null,g.home_team_id||null,g.away_team_id||null,parsed.home_team_name,parsed.away_team_name,parsed.top_1st_runs,parsed.bottom_1st_runs,parsed.first_inning_total_runs,yrfi,nrfi,yrfi,nrfi,fetched.url,"MLB_LINESCORE_FIRST_INNING",safeJson({game_pk:gamePk, first_inning:parsed, source:"MLB_STATS_API_LINESCORE"})));
+      gamesWritten++;
+      const starters = await all(env.TEAM_DB, `SELECT player_id, starter_player_id, starter_name, team_id, opponent_team_id, is_home, started_game, starter_key, game_date
+        FROM starter_history
+        WHERE game_pk=? AND started_game=1`, gamePk);
+      for(const s of starters){
+        const pitcherId = Number(s.player_id || s.starter_player_id || 0) || null;
+        if(!pitcherId){
+          issues++;
+          issueStmts.push(env.CONTEXT_DB.prepare(`INSERT OR REPLACE INTO expansion_first_inning_context_issues (issue_id,batch_id,game_pk,pitcher_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(rid("exp_first_issue"),batchId,gamePk,null,"WARN","MISSING_STARTER_PLAYER_ID","Starter row missing pitcher id",safeJson(s)));
+          continue;
+        }
+        const isHome = Number(s.is_home || 0) === 1 ? 1 : 0;
+        const runsAllowed = isHome ? parsed.top_1st_runs : parsed.bottom_1st_runs;
+        const half = isHome ? "top_1st" : "bottom_1st";
+        pitcherStmts.push(env.CONTEXT_DB.prepare(`INSERT OR REPLACE INTO expansion_first_inning_pitcher_context_current
+          (pitcher_context_row_id,batch_id,game_pk,game_date,pitcher_id,pitcher_name,team_id,opponent_team_id,is_home,started_game,first_frame_half,first_frame_runs_allowed,rfi_sl_more_hit,rfi_sl_less_hit,source_game_context_row_id,starter_source_key,source_confidence,details_json,created_at,updated_at)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(`exp_first_pitcher|${gamePk}|${pitcherId}`,batchId,gamePk,s.game_date||g.game_date||null,pitcherId,s.starter_name||null,s.team_id||null,s.opponent_team_id||null,isHome,1,half,runsAllowed,runsAllowed>=1?1:0,runsAllowed===0?1:0,contextRowId,s.starter_key||null,"MLB_LINESCORE_PLUS_STARTER_HISTORY",safeJson({mapping:isHome?"home_starter_allows_top_1st":"away_starter_allows_bottom_1st", top_1st_runs:parsed.top_1st_runs, bottom_1st_runs:parsed.bottom_1st_runs})));
+        pitcherRows++;
+      }
+    } catch(err){
+      issues++;
+      issueStmts.push(env.CONTEXT_DB.prepare(`INSERT OR REPLACE INTO expansion_first_inning_context_issues (issue_id,batch_id,game_pk,pitcher_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(rid("exp_first_issue"),batchId,gamePk,null,"WARN","MLB_LINESCORE_FETCH_OR_PARSE_FAILED",String(err && err.message ? err.message : err).slice(0,500),safeJson({game_pk:gamePk, game_date:g.game_date||null})));
+    }
+  }
+  if(gameStmts.length) await writeBatch(env.CONTEXT_DB,"expansion_first_inning_game_context_current",gameStmts,25);
+  if(pitcherStmts.length) await writeBatch(env.CONTEXT_DB,"expansion_first_inning_pitcher_context_current",pitcherStmts,25);
+  if(issueStmts.length) await writeBatch(env.CONTEXT_DB,"expansion_first_inning_context_issues",issueStmts,25);
+
+  const output = baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"expansion_baseline_mining",status:"EXPANSION_BASELINE_MINING_COMPLETED",certification:"EXPANSION_FIRST_INNING_CONTEXT_MINED",certification_grade:issues>0?"PASS_WITH_WARNINGS":"PASS",games_requested:games.length,games_written:gamesWritten,pitcher_rows_written:pitcherRows,issue_rows:issues,rows_written:gamesWritten+pitcherRows});
+  await writeRun(env.CONTEXT_DB,"expansion_first_inning_context_batches",`UPDATE expansion_first_inning_context_batches SET status='completed', games_requested=?, games_written=?, pitcher_rows_written=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, games.length,gamesWritten,pitcherRows,issues,output.certification,output.certification_grade,safeJson(output),batchId);
+  return output;
+}
+
+function baseOutput(input, extra){
+  return {ok:true,data_ok:true,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,job_key:String(input.job_key||"expansion-baseline"),timestamp_utc:nowUtc(),expansion_only:true,baseline_only:true,no_current_baseline_mutation:true,no_factor_mutation:true,no_matrix_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true,no_scheduler_mutation:true,no_full_run_integration:true,...extra};
+}
+function sampleProfile(games, ns){
+  if(String(ns||"").startsWith("RFI_")){
+    if(games < 5) return "TINY_SAMPLE";
+    if(games < 15) return "LOW_SAMPLE";
+    if(games < 30) return "MEDIUM_SAMPLE";
+    return "ESTABLISHED_SAMPLE";
+  }
+  if(games < 3) return "TINY_SAMPLE";
+  if(games < 10) return "LOW_SAMPLE";
+  if(games < 25) return "MEDIUM_SAMPLE";
+  return "ESTABLISHED_SAMPLE";
+}
+function confidenceForSample(games, ns, volatility="VOLATILITY_MODERATE"){
+  const target = String(ns||"").startsWith("RFI_") ? 30 : 25;
+  let c = clamp((games/target)*82, 8, 88);
+  const sp = sampleProfile(games, ns);
+  if(sp === "TINY_SAMPLE") c -= 24;
+  else if(sp === "LOW_SAMPLE") c -= 12;
+  else if(sp === "MEDIUM_SAMPLE") c -= 4;
+  if(volatility === "VOLATILITY_EXTREME") c -= 12;
+  else if(volatility === "VOLATILITY_STRONG") c -= 8;
+  return round(clamp(c,5,92),1);
+}
+function dragForSample(profile){ if(profile==="TINY_SAMPLE") return "STRONG"; if(profile==="LOW_SAMPLE") return "MODERATE"; if(profile==="MEDIUM_SAMPLE") return "LIGHT"; return "NONE"; }
+function rates(values, lines){
+  const out={};
+  for(const line of lines){
+    let moreHit=0, lessHit=0, push=0;
+    for(const v0 of values){ const v=num(v0); if(v>line) moreHit++; else if(v<line) lessHit++; else push++; }
+    const nonPush = values.length - push;
+    out[String(line)]={line,more_hit:moreHit,less_hit:lessHit,push,non_push_sample:nonPush,more_rate_0_100:nonPush?round(moreHit*100/nonPush,2):null,less_rate_0_100:nonPush?round(lessHit*100/nonPush,2):null};
+  }
+  return out;
+}
+function valueStats(values){
+  const n=values.length; if(!n) return {avg:0,max:0,zero_rate_0_100:0,high_tail_rate_0_100:0,volatility_profile:"VOLATILITY_UNKNOWN"};
+  const max=Math.max(...values.map(num)); const avg=values.reduce((a,b)=>a+num(b),0)/n; const zero=values.filter(v=>num(v)===0).length/n; const hi=values.filter(v=>num(v)>=Math.max(1, avg+2)).length/n;
+  let vol="VOLATILITY_LOW"; if(zero>=0.65 && hi>=0.10) vol="VOLATILITY_EXTREME"; else if(zero>=0.45 || hi>=0.16) vol="VOLATILITY_STRONG"; else if(zero>=0.25 || hi>=0.08) vol="VOLATILITY_MODERATE";
+  return {avg:round(avg,2),max,zero_rate_0_100:round(zero*100,2),high_tail_rate_0_100:round(hi*100,2),volatility_profile:vol};
+}
+function lineDifficulty(ns,line){
+  if(ns==="RA_" && line>=4.5) return "TAIL_DAMAGE_LINE";
+  if(String(ns).startsWith("PFS_") && line>=25.5) return "ELITE_TAIL_LINE";
+  if(String(ns).startsWith("RFI_")) return "BINARY_FIRST_INNING_LINE";
+  return "NORMAL_LINE";
+}
+function calcHpLine(values,line,side){
+  let hit=0,miss=0,push=0;
+  for(const v0 of values){ const v=num(v0); if(v>line){ if(side==="more") hit++; else miss++; } else if(v<line){ if(side==="less") hit++; else miss++; } else push++; }
+  const nonPush=hit+miss;
+  return {hit,miss,push,non_push_sample:nonPush,raw_rate_0_100:nonPush?round(hit*100/nonPush,2):null};
+}
+function qualityStart(r){ return num(r.outs_recorded)>=18 && num(r.earned_runs)<=3 ? 1 : 0; }
+function pfsPp(r){ return num(r.outs_recorded) + 3*num(r.strikeouts) + 4*qualityStart(r) - 3*num(r.earned_runs); }
+function pfsSl(r){ return num(r.outs_recorded) + 3*num(r.strikeouts) - 3*num(r.earned_runs) - 2*num(r.walks_allowed); }
+function groupBy(rows, keyFn){ const m=new Map(); for(const r of rows){ const k=String(keyFn(r)); if(!m.has(k)) m.set(k,[]); m.get(k).push(r);} return m; }
+
+function raProfile(values, games){ const avg=valueStats(values).avg; if(games<3) return "RA_SAMPLE_THIN"; if(avg<=1.5) return "RA_RUN_SUPPRESSOR"; if(avg<=2.2) return "RA_LOW_RUN_STABLE"; if(avg<=3.0) return "RA_STANDARD_RUN_GRAVITY"; if(avg>=4.2) return "RA_VOLATILE_RUN_DAMAGE"; return "RA_TRAFFIC_RUN_RISK"; }
+function pfsPpProfile(values, rows){ const avg=valueStats(values).avg; const qsRate = rows.length ? rows.filter(qualityStart).length/rows.length : 0; if(rows.length<3) return "PFS_PP_SAMPLE_THIN"; if(avg>=30 || qsRate>=0.50) return "PFS_PP_APEX_WORKLOAD_K_QS"; if(avg>=24) return "PFS_PP_HIGH_SCORE_CORE"; if(avg>=16) return "PFS_PP_STANDARD_SCORE_CORE"; if(avg<8) return "PFS_PP_LOW_SCORE_GRAVITY"; return "PFS_PP_DAMAGE_PENALTY_RISK"; }
+function pfsSlProfile(values, rows){ const avg=valueStats(values).avg; const bbAvg=rows.length?rows.reduce((a,r)=>a+num(r.walks_allowed),0)/rows.length:0; if(rows.length<3) return "PFS_SL_SAMPLE_THIN"; if(avg>=28) return "PFS_SL_APEX_WORKLOAD_K"; if(avg>=22) return "PFS_SL_HIGH_SCORE_CORE"; if(avg>=15) return "PFS_SL_STANDARD_SCORE_CORE"; if(bbAvg>=3.0) return "PFS_SL_COMMAND_PENALTY_RISK"; if(avg<8) return "PFS_SL_LOW_SCORE_GRAVITY"; return "PFS_SL_DAMAGE_PENALTY_RISK"; }
+function rfiSlProfile(values, games){ const rate=values.length?values.filter(v=>num(v)>=1).length/values.length:0; if(games<5) return "RFI_SL_SAMPLE_THIN"; if(rate<=0.20) return "RFI_SL_FIRST_FRAME_SUPPRESSOR"; if(rate<=0.28) return "RFI_SL_LOW_RUN_STABLE"; if(rate<=0.38) return "RFI_SL_STANDARD_GRAVITY"; if(rate>=0.50) return "RFI_SL_TRAFFIC_RISK"; return "RFI_SL_EARLY_COMMAND_VOLATILITY"; }
+function rfiPpProfile(values, games){ const rate=values.length?values.filter(v=>num(v)>=1).length/values.length:0; if(games<5) return "RFI_PP_SAMPLE_THIN"; if(rate<=0.25) return "RFI_PP_BOTH_SUPPRESSORS"; if(rate<=0.40) return "RFI_PP_ONE_SIDE_RISK"; if(rate>=0.60) return "RFI_PP_BOTH_SIDE_RISK"; return "RFI_PP_EARLY_COMMAND_VOLATILITY"; }
+
+function makeSanityRow({batchId, ns, sourceFamily, sourceTable, entityType, entityId, playerType, playerId, playerName, propKey, values, lines, profileKey, sourceFormulaKey, extraNotes={}}){
+  const games=values.length; const stats=valueStats(values); const sp=sampleProfile(games,ns); const conf=confidenceForSample(games,ns,stats.volatility_profile);
+  const lineMap=rates(values,lines);
+  const maxLineDifficulty=lines.map(l=>lineDifficulty(ns,l)).includes("TAIL_DAMAGE_LINE")?"TAIL_DAMAGE_LINE":(String(ns).startsWith("RFI_")?"BINARY_FIRST_INNING_LINE":"NORMAL_LINE");
+  return {
+    baseline_row_id:`exp_sanity|${ns}|${entityId||playerId||"global"}|${propKey}`,
+    batch_id:batchId, expansion_scope:"baseline_only_shadow", profile_namespace:ns, source_data_family:sourceFamily, source_table:sourceTable, profile_logic_version:VERSION,
+    entity_type:entityType, entity_id:String(entityId||playerId||""), player_type:playerType, player_id:playerId||null, player_name:playerName||null, canonical_prop_key:propKey,
+    role_profile:entityType==="game_pair"?"GAME_PAIR_PROFILE":"STARTER_PROFILE", prior_pool_key:`${ns}${sp}`, sanity_profile_key:profileKey,
+    sample_profile:sp, usage_profile:games>=25?"ESTABLISHED_HISTORY":"LIMITED_HISTORY", line_difficulty_profile:maxLineDifficulty,
+    volatility_profile:stats.volatility_profile, baseline_drag_profile:dragForSample(sp), confidence_drag_profile:dragForSample(sp), variance_profile:stats.volatility_profile,
+    games_sample:games, events_sample:games, baseline_confidence_0_100:conf,
+    line_baseline_json:safeJson({namespace:ns,lines,line_rates:lineMap,source_formula_key:sourceFormulaKey}),
+    distribution_shape_json:safeJson({namespace:ns,...stats}),
+    notes_json:safeJson({baseline_only:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,source_formula_key:sourceFormulaKey,...extraNotes})
+  };
+}
+
+async function starterRows(env){
+  return all(env.TEAM_DB, `SELECT COALESCE(player_id, starter_player_id) AS player_id, starter_name, game_pk, game_date, team_id, opponent_team_id, is_home, started_game, outs_recorded, strikeouts, earned_runs, runs_allowed, walks_allowed, hits_allowed, home_runs_allowed, pitches
+    FROM starter_history
+    WHERE started_game=1 AND COALESCE(player_id, starter_player_id) IS NOT NULL AND game_pk IS NOT NULL
+    ORDER BY player_id, game_date`);
+}
+
+async function runSanity(env,input={}){
+  await ensureSchema(env);
+  const requestId=String(input.request_id||rid("expansion_baseline_sanity")); const runId=String(input.run_id||rid("run")); const batchId=String(input.batch_id||rid("expansion_baseline_sanity_batch"));
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_batches",`INSERT OR REPLACE INTO expansion_player_baseline_sanity_batches (batch_id,request_id,run_id,mode,status,worker_version,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"expansion_baseline_sanity","running",VERSION);
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_stage",`DELETE FROM expansion_player_baseline_sanity_stage`);
+  await archiveAndClearCurrent(env.SCORE_DB,"expansion_player_baseline_sanity_current","expansion_player_baseline_sanity_history");
+  const rows=await starterRows(env);
+  const byPitcher=groupBy(rows,r=>r.player_id);
+  const sanityRows=[];
+  for(const [pid,prs] of byPitcher.entries()){
+    const name=prs.find(r=>r.starter_name)?.starter_name||null;
+    const playerId=Number(pid);
+    const raVals=prs.map(r=>num(r.runs_allowed));
+    const ppVals=prs.map(pfsPp);
+    const slVals=prs.map(pfsSl);
+    sanityRows.push(makeSanityRow({batchId,ns:"RA_",sourceFamily:"starter_history_runs_allowed",sourceTable:"TEAM_DB.starter_history",entityType:"pitcher",entityId:playerId,playerType:"pitcher",playerId,playerName:name,propKey:"runs_allowed",values:raVals,lines:RA_LINES,profileKey:raProfile(raVals,prs.length),sourceFormulaKey:"RA_FULL_GAME_TOTAL_RUNS_ALLOWED",extraNotes:{earned_and_unearned_runs_count:true,separate_from_earned_runs:true}}));
+    sanityRows.push(makeSanityRow({batchId,ns:"PFS_PP_",sourceFamily:"starter_history_pitcher_fantasy",sourceTable:"TEAM_DB.starter_history",entityType:"pitcher",entityId:playerId,playerType:"pitcher",playerId,playerName:name,propKey:"pitcher_fantasy_score",values:ppVals,lines:PFS_LINES,profileKey:pfsPpProfile(ppVals,prs),sourceFormulaKey:"PFS_PP_NO_WIN_OUTS_K_QS_ER",extraNotes:{win_excluded:true,win_reserve_only:true,formula:"outs_recorded + 3*K + 4*QS - 3*ER"}}));
+    sanityRows.push(makeSanityRow({batchId,ns:"PFS_SL_",sourceFamily:"starter_history_pitcher_fantasy",sourceTable:"TEAM_DB.starter_history",entityType:"pitcher",entityId:playerId,playerType:"pitcher",playerId,playerName:name,propKey:"pitcher_fantasy_score",values:slVals,lines:PFS_LINES,profileKey:pfsSlProfile(slVals,prs),sourceFormulaKey:"PFS_SL_NO_WIN_OUTS_K_ER_BB",extraNotes:{win_excluded:true,win_reserve_only:true,qs_not_used:true,formula:"outs_recorded + 3*K - 3*ER - 2*BB"}}));
+  }
+  const rfiPitcherRows=await all(env.CONTEXT_DB,`SELECT pitcher_id, pitcher_name, first_frame_runs_allowed FROM expansion_first_inning_pitcher_context_current WHERE pitcher_id IS NOT NULL`);
+  for(const [pid,prs] of groupBy(rfiPitcherRows,r=>r.pitcher_id).entries()){
+    const playerId=Number(pid); const vals=prs.map(r=>num(r.first_frame_runs_allowed)); const name=prs.find(r=>r.pitcher_name)?.pitcher_name||null;
+    sanityRows.push(makeSanityRow({batchId,ns:"RFI_SL_",sourceFamily:"first_inning_pitcher_context",sourceTable:"CONTEXT_DB.expansion_first_inning_pitcher_context_current",entityType:"pitcher",entityId:playerId,playerType:"pitcher",playerId,playerName:name,propKey:"rfi_nrfi",values:vals,lines:RFI_LINES,profileKey:rfiSlProfile(vals,vals.length),sourceFormulaKey:"RFI_SL_PITCHER_SPECIFIC_FIRST_FRAME",extraNotes:{sleeper_specific:true,home_starter_allows_top_1st:true,away_starter_allows_bottom_1st:true,earned_and_unearned_runs_count:true}}));
+  }
+  const rfiGames=await all(env.CONTEXT_DB,`SELECT game_pk, first_inning_total_runs FROM expansion_first_inning_game_context_current WHERE game_pk IS NOT NULL`);
+  const ppVals=rfiGames.map(r=>num(r.first_inning_total_runs));
+  if(ppVals.length){
+    sanityRows.push(makeSanityRow({batchId,ns:"RFI_PP_",sourceFamily:"first_inning_game_context",sourceTable:"CONTEXT_DB.expansion_first_inning_game_context_current",entityType:"game_pair_pool",entityId:"rfi_pp_game_pair_pool",playerType:"game_pair",playerId:null,playerName:"RFI_PP_GAME_PAIR_POOL",propKey:"rfi_nrfi",values:ppVals,lines:RFI_LINES,profileKey:rfiPpProfile(ppVals,ppVals.length),sourceFormulaKey:"RFI_PP_PAIR_GAME_FIRST_INNING_TOTAL",extraNotes:{prizepicks_combo_pair_level:true,earned_and_unearned_runs_count:true}}));
+  }
+
+  const stmts=sanityRows.map(r=>env.SCORE_DB.prepare(`INSERT OR REPLACE INTO expansion_player_baseline_sanity_stage
+    (baseline_row_id,batch_id,expansion_scope,profile_namespace,source_data_family,source_table,profile_logic_version,entity_type,entity_id,player_type,player_id,player_name,canonical_prop_key,role_profile,prior_pool_key,sanity_profile_key,sample_profile,usage_profile,line_difficulty_profile,volatility_profile,baseline_drag_profile,confidence_drag_profile,variance_profile,games_sample,events_sample,baseline_confidence_0_100,line_baseline_json,distribution_shape_json,notes_json,no_daily_context,no_market_context,no_scoring_context,created_at,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(r.baseline_row_id,r.batch_id,r.expansion_scope,r.profile_namespace,r.source_data_family,r.source_table,r.profile_logic_version,r.entity_type,r.entity_id,r.player_type,r.player_id,r.player_name,r.canonical_prop_key,r.role_profile,r.prior_pool_key,r.sanity_profile_key,r.sample_profile,r.usage_profile,r.line_difficulty_profile,r.volatility_profile,r.baseline_drag_profile,r.confidence_drag_profile,r.variance_profile,r.games_sample,r.events_sample,r.baseline_confidence_0_100,r.line_baseline_json,r.distribution_shape_json,r.notes_json));
+  if(stmts.length) await writeBatch(env.SCORE_DB,"expansion_player_baseline_sanity_stage",stmts,35);
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_current",`INSERT OR REPLACE INTO expansion_player_baseline_sanity_current SELECT * FROM expansion_player_baseline_sanity_stage`);
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_history",`INSERT INTO expansion_player_baseline_sanity_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_player_baseline_sanity_stage`);
+  const nsRows=await all(env.SCORE_DB,`SELECT profile_namespace, COUNT(*) AS rows FROM expansion_player_baseline_sanity_current GROUP BY profile_namespace ORDER BY profile_namespace`);
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"expansion_baseline_sanity",status:"EXPANSION_BASELINE_SANITY_COMPLETED",certification:"EXPANSION_BASELINE_SANITY_CERTIFIED_STAGE_PROMOTED",certification_grade:"PASS",rows_staged:sanityRows.length,rows_promoted:sanityRows.length,history_rows:sanityRows.length,namespace_rows:nsRows,rows_written:sanityRows.length});
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_batches",`UPDATE expansion_player_baseline_sanity_batches SET status='completed', finished_at=CURRENT_TIMESTAMP, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,sanityRows.length,sanityRows.length,sanityRows.length,output.certification,output.certification_grade,safeJson(output),batchId);
+  return output;
+}
+
+function formulaKeyFor(ns){ if(ns==="RA_") return "RA_FULL_GAME_TOTAL_RUNS_ALLOWED"; if(ns==="PFS_PP_") return "PFS_PP_NO_WIN_OUTS_K_QS_ER"; if(ns==="PFS_SL_") return "PFS_SL_NO_WIN_OUTS_K_ER_BB"; if(ns==="RFI_PP_") return "RFI_PP_PAIR_GAME_FIRST_INNING_TOTAL"; if(ns==="RFI_SL_") return "RFI_SL_PITCHER_SPECIFIC_FIRST_FRAME"; return "UNKNOWN"; }
+function linesFor(ns){ if(ns==="RA_") return RA_LINES; if(ns==="PFS_PP_"||ns==="PFS_SL_") return PFS_LINES; return RFI_LINES; }
+function propFamilyFor(ns){ if(ns==="RA_") return "EXPANSION_RUNS_ALLOWED"; if(ns.startsWith("PFS_")) return "EXPANSION_PITCHER_FANTASY_SCORE"; if(ns.startsWith("RFI_")) return "EXPANSION_FIRST_INNING_RUNS"; return "EXPANSION_BASELINE"; }
+function valuesFromSanity(row){ const line= parseJson(row.line_baseline_json,{}); return line.line_rates || {}; }
+async function runHp(env,input={}){
+  await ensureSchema(env);
+  const requestId=String(input.request_id||rid("expansion_baseline_hp")); const runId=String(input.run_id||rid("run")); const batchId=String(input.batch_id||rid("expansion_baseline_hp_batch"));
+  const sourceBatchRow=await first(env.SCORE_DB,`SELECT batch_id FROM expansion_player_baseline_sanity_batches WHERE status='completed' ORDER BY datetime(updated_at) DESC LIMIT 1`);
+  const sourceSanityBatchId=String(input.source_sanity_batch_id || (sourceBatchRow && sourceBatchRow.batch_id) || "");
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`INSERT OR REPLACE INTO expansion_player_baseline_hp_batches (batch_id,request_id,run_id,mode,status,worker_version,source_sanity_batch_id,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"expansion_baseline_hp","running",VERSION,sourceSanityBatchId);
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_stage",`DELETE FROM expansion_player_baseline_hp_stage`);
+  await archiveAndClearCurrent(env.SCORE_DB,"expansion_player_baseline_hp_current","expansion_player_baseline_hp_history");
+  const sanity=await all(env.SCORE_DB,`SELECT * FROM expansion_player_baseline_sanity_current`);
+  const hpRows=[];
+  for(const s of sanity){
+    const ns=String(s.profile_namespace||""); const lineRates=valuesFromSanity(s); const lines=linesFor(ns);
+    for(const line of lines){
+      const lr=lineRates[String(line)] || {};
+      for(const side of SIDES){
+        const hit=side==="more"?Number(lr.more_hit||0):Number(lr.less_hit||0);
+        const miss=side==="more"?Number(lr.less_hit||0):Number(lr.more_hit||0);
+        const push=Number(lr.push||0);
+        const nonPush=Number(lr.non_push_sample||0);
+        const raw=side==="more"?lr.more_rate_0_100:lr.less_rate_0_100;
+        const baselineHp=raw==null?null:round(raw,2);
+        const conf=Number(s.baseline_confidence_0_100||0);
+        hpRows.push({
+          baseline_hp_row_id:`exp_hp|${ns}|${s.entity_id||s.player_id||"pool"}|${s.canonical_prop_key}|${String(line).replace('.','p')}|${side}`,
+          batch_id:batchId, source_sanity_batch_id:sourceSanityBatchId, source_baseline_row_id:s.baseline_row_id,
+          expansion_scope:"baseline_only_shadow", profile_namespace:ns, source_data_family:s.source_data_family, source_table:s.source_table, source_formula_key:formulaKeyFor(ns), baseline_formula_version:VERSION,
+          entity_type:s.entity_type, entity_id:s.entity_id, player_type:s.player_type, player_id:s.player_id, player_name:s.player_name, canonical_prop_key:s.canonical_prop_key, prop_family:propFamilyFor(ns),
+          line_value:line, selected_side:side, baseline_hp_0_100:baselineHp, raw_rate_0_100:raw==null?null:round(raw,2), tier_prior_rate_0_100:raw==null?null:round(raw,2), raw_prior_gap_0_100:0,
+          baseline_confidence_0_100:conf, baseline_enriched_confidence_0_100:conf, consistency_bonus_0_100:0, soft_uncertainty_reserve_0_100:round(100-conf,1),
+          sample_profile:s.sample_profile, role_profile:s.role_profile, sanity_profile_key:s.sanity_profile_key, volatility_profile:s.volatility_profile, variance_profile:s.variance_profile, line_difficulty_profile:lineDifficulty(ns,line), baseline_hp_profile_key:`${ns}${String(side).toUpperCase()}_${String(line).replace('.','P')}_${s.sanity_profile_key}`,
+          non_push_sample:nonPush, hit_count:hit, miss_count:miss, push_count:push, prior_strength:0,
+          profile_notes_json:safeJson({baseline_only:true,namespace:ns,formula_key:formulaKeyFor(ns),no_daily_context:true,no_market_context:true,no_scoring_context:true}),
+          source_snapshot_json:safeJson({source_baseline_row_id:s.baseline_row_id,line_rate:lr})
+        });
+      }
+    }
+  }
+  const stmts=hpRows.map(r=>env.SCORE_DB.prepare(`INSERT OR REPLACE INTO expansion_player_baseline_hp_stage
+    (baseline_hp_row_id,batch_id,source_sanity_batch_id,source_baseline_row_id,expansion_scope,profile_namespace,source_data_family,source_table,source_formula_key,baseline_formula_version,entity_type,entity_id,player_type,player_id,player_name,canonical_prop_key,prop_family,line_value,selected_side,baseline_hp_0_100,hp_adjustment_0_100,raw_rate_0_100,tier_prior_rate_0_100,raw_prior_gap_0_100,baseline_confidence_0_100,baseline_enriched_confidence_0_100,consistency_bonus_0_100,soft_uncertainty_reserve_0_100,sample_profile,role_profile,sanity_profile_key,volatility_profile,variance_profile,line_difficulty_profile,baseline_hp_profile_key,non_push_sample,hit_count,miss_count,push_count,prior_strength,formula_version,confidence_formula_version,no_daily_context,no_market_context,no_scoring_context,profile_notes_json,source_snapshot_json,created_at,updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,1,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(r.baseline_hp_row_id,r.batch_id,r.source_sanity_batch_id,r.source_baseline_row_id,r.expansion_scope,r.profile_namespace,r.source_data_family,r.source_table,r.source_formula_key,r.baseline_formula_version,r.entity_type,r.entity_id,r.player_type,r.player_id,r.player_name,r.canonical_prop_key,r.prop_family,r.line_value,r.selected_side,r.baseline_hp_0_100,r.raw_rate_0_100,r.tier_prior_rate_0_100,r.raw_prior_gap_0_100,r.baseline_confidence_0_100,r.baseline_enriched_confidence_0_100,r.consistency_bonus_0_100,r.soft_uncertainty_reserve_0_100,r.sample_profile,r.role_profile,r.sanity_profile_key,r.volatility_profile,r.variance_profile,r.line_difficulty_profile,r.baseline_hp_profile_key,r.non_push_sample,r.hit_count,r.miss_count,r.push_count,r.prior_strength,VERSION,`${VERSION}_confidence`,r.profile_notes_json,r.source_snapshot_json));
+  if(stmts.length) await writeBatch(env.SCORE_DB,"expansion_player_baseline_hp_stage",stmts,30);
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_current",`INSERT OR REPLACE INTO expansion_player_baseline_hp_current SELECT * FROM expansion_player_baseline_hp_stage`);
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_history",`INSERT INTO expansion_player_baseline_hp_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_player_baseline_hp_stage`);
+  const cov=await all(env.SCORE_DB,`SELECT profile_namespace, selected_side, COUNT(*) AS rows, MIN(line_value) AS min_line, MAX(line_value) AS max_line FROM expansion_player_baseline_hp_current GROUP BY profile_namespace, selected_side ORDER BY profile_namespace, selected_side`);
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_sanity_batch_id:sourceSanityBatchId,mode:"expansion_baseline_hp",status:"EXPANSION_BASELINE_HP_COMPLETED",certification:"EXPANSION_BASELINE_HP_CERTIFIED_STAGE_PROMOTED",certification_grade:"PASS",source_rows_read:sanity.length,rows_staged:hpRows.length,rows_promoted:hpRows.length,history_rows:hpRows.length,coverage:cov,rows_written:hpRows.length});
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`UPDATE expansion_player_baseline_hp_batches SET status='completed', finished_at=CURRENT_TIMESTAMP, source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,sanity.length,hpRows.length,hpRows.length,hpRows.length,output.certification,output.certification_grade,safeJson(output),batchId);
+  return output;
+}
+
+async function certifier(env,input={}){
+  await ensureSchema(env);
+  const before = input.production_counts_before || null;
+  const after = await productionCounts(env);
+  const changed = before ? changedCounts(before, after) : [];
+  const gameRows=await tableCount(env.CONTEXT_DB,"expansion_first_inning_game_context_current");
+  const pitcherRows=await tableCount(env.CONTEXT_DB,"expansion_first_inning_pitcher_context_current");
+  const sanityRows=await tableCount(env.SCORE_DB,"expansion_player_baseline_sanity_current");
+  const hpRows=await tableCount(env.SCORE_DB,"expansion_player_baseline_hp_current");
+  const sanityNs=await all(env.SCORE_DB,`SELECT profile_namespace, COUNT(*) AS rows FROM expansion_player_baseline_sanity_current GROUP BY profile_namespace ORDER BY profile_namespace`);
+  const hpNs=await all(env.SCORE_DB,`SELECT profile_namespace, selected_side, COUNT(*) AS rows FROM expansion_player_baseline_hp_current GROUP BY profile_namespace, selected_side ORDER BY profile_namespace, selected_side`);
+  const required=["RA_","PFS_PP_","PFS_SL_","RFI_PP_","RFI_SL_"];
+  const sanitySet=new Set(sanityNs.map(r=>String(r.profile_namespace)));
+  const hpSideSet=new Set(hpNs.map(r=>`${r.profile_namespace}:${r.selected_side}`));
+  const blockers=[]; const warnings=[];
+  for(const ns of required){ if(!sanitySet.has(ns)) blockers.push(`missing_sanity_namespace_${ns}`); if(!hpSideSet.has(`${ns}:more`)) blockers.push(`missing_hp_more_${ns}`); if(!hpSideSet.has(`${ns}:less`)) blockers.push(`missing_hp_less_${ns}`); }
+  if(!gameRows) warnings.push("no_first_inning_game_context_rows_currently_available");
+  if(!pitcherRows) warnings.push("no_first_inning_pitcher_context_rows_currently_available");
+  if(!sanityRows) blockers.push("no_expansion_sanity_rows");
+  if(!hpRows) blockers.push("no_expansion_hp_rows");
+  if(changed.length) blockers.push("production_mutation_guard_failed");
+  const pass = blockers.length===0;
+  const output = baseOutput(input,{mode:"expansion_baseline_certifier",status:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification_grade:pass?(warnings.length?"PASS_WITH_WARNINGS":"PASS"):(changed.length?"FAIL_MUTATION_GUARD":"FAIL_BLOCKED"),current_system_mutated:changed.length>0,rows:{first_inning_game_context_rows:gameRows,first_inning_pitcher_context_rows:pitcherRows,sanity_rows:sanityRows,baseline_hp_rows:hpRows},coverage:{sanity:sanityNs,hp:hpNs},mutation_guard:{passed:changed.length===0,changed_tables:changed,production_counts_after:after},warnings,blockers});
+  output.ok = pass;
+  output.data_ok = pass;
+  return output;
+}
+
+async function fullRun(env,input={}){
+  const before = await productionCounts(env);
+  const mining = await mineFirstInningContext(env,{...input, mode:"expansion_baseline_mining", request_id:input.request_id||rid("expansion_baseline_full"), run_id:input.run_id||rid("run")});
+  const sanity = await runSanity(env,{...input, mode:"expansion_baseline_sanity", request_id:mining.request_id, run_id:mining.run_id});
+  const hp = await runHp(env,{...input, mode:"expansion_baseline_hp", request_id:mining.request_id, run_id:mining.run_id});
+  const cert = await certifier(env,{...input, mode:"expansion_baseline_certifier", request_id:mining.request_id, run_id:mining.run_id, production_counts_before:before});
+  const pass = !!(cert && cert.ok === true);
+  const output = baseOutput(input,{request_id:mining.request_id,run_id:mining.run_id,mode:"expansion_baseline_full_run",status:pass?"EXPANSION_BASELINE_FULL_RUN_COMPLETED":"EXPANSION_BASELINE_FULL_RUN_BLOCKED",certification:cert.certification,certification_grade:cert.certification_grade,stages:{mining,sanity,hp,certifier:cert},rows_written:Number(mining.rows_written||0)+Number(sanity.rows_written||0)+Number(hp.rows_written||0),current_system_mutated:cert.current_system_mutated});
+  output.ok = pass;
+  output.data_ok = pass;
+  return output;
+}
+
+async function runMode(env,input={}){
+  await ensureSchema(env);
+  const mode=String(input.mode || input.expansion_mode || input.job_key || "expansion_baseline_full_run");
+  if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
+  if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
+  if(mode==="expansion_baseline_hp" || mode==="expansion-baseline-hp") return runHp(env,input);
+  if(mode==="expansion_baseline_certifier" || mode==="expansion-baseline-certifier") return certifier(env,input);
+  if(mode==="expansion_baseline_full_run" || mode==="expansion-baseline-full-run") return fullRun(env,input);
+  const jobKey = String(input.job_key || "");
+  if (jobKey === "phase3a-first-inning-pitcher-context" || mode === "phase3a-first-inning-pitcher-context" || mode === "legacy_dummy") {
+    return {ok:true,data_ok:true,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,job_key:jobKey || "phase3a-first-inning-pitcher-context",status:"LEGACY_DUMMY_SLOT_READY_NO_MUTATION",certification:"LEGACY_DUMMY_SLOT_READY_NO_MUTATION",rows_read:0,rows_written:0,writes_performed:0,external_calls_performed:0,expansion_only:false,baseline_only:false,no_current_baseline_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true};
+  }
+  return {ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"UNSUPPORTED_EXPANSION_BASELINE_MODE",mode,allowed_modes:["expansion_baseline_mining","expansion_baseline_sanity","expansion_baseline_hp","expansion_baseline_certifier","expansion_baseline_full_run"]};
 }
 
 export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const path = url.pathname.replace(/\/$/, "") || "/";
-    const method = request.method.toUpperCase();
-
-    if (method === "GET" && path === "/") {
-      return jsonResponse(baseIdentity(env));
+  async fetch(request, env, ctx){
+    const url=new URL(request.url); const path=url.pathname.replace(/\/$/,"")||"/"; const method=request.method.toUpperCase();
+    if(method==="GET" && path==="/") return jsonResponse(baseIdentity(env));
+    if(method==="GET" && path==="/health") return jsonResponse({...baseIdentity(env),route:"/health"});
+    if(method==="POST" && path==="/diagnostic") return jsonResponse({...baseIdentity(env),route:"/diagnostic",input_echo_safe:await readJsonSafe(request)});
+    if(method==="POST" && path==="/run"){
+      const input=await readJsonSafe(request);
+      try { return jsonResponse(await runMode(env,input)); }
+      catch(err){ return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,status:"EXPANSION_BASELINE_WORKER_FAILED",error:String(err&&err.message?err.message:err),expansion_only:true,baseline_only:true,no_current_baseline_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true},500); }
     }
-
-    if (method === "GET" && path === "/health") {
-      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-      const vars = varPresence(env, EXPECTED_VARS);
-      const secrets = varPresence(env, REQUIRED_SECRETS);
-
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/health",
-        checks: {
-          db_bindings: db,
-          vars: vars,
-          secrets_present_only: secrets
-        },
-        safe_secret_note: "Secret values are intentionally never printed."
-      });
-    }
-
-    if (method === "POST" && path === "/diagnostic") {
-      const input = await readJsonSafe(request);
-      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-      const vars = varPresence(env, EXPECTED_VARS);
-      const secrets = varPresence(env, REQUIRED_SECRETS);
-
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/diagnostic",
-        input_echo_safe: {
-          request_id: input.request_id || null,
-          chain_id: input.chain_id || null,
-          job_key: input.job_key || null,
-          mode: input.mode || null
-        },
-        diagnostics: {
-          db_bindings: db,
-          vars: vars,
-          secrets_present_only: secrets
-        },
-        writes_performed: 0,
-        external_calls_performed: 0
-      });
-    }
-
-    if (method === "POST" && path === "/run") {
-      const input = await readJsonSafe(request);
-
-      return jsonResponse({
-        ok: true,
-        data_ok: true,
-        version: VERSION,
-        worker_name: WORKER_NAME,
-        job_key: input.job_key || JOB_KEY,
-        request_id: input.request_id || null,
-        chain_id: input.chain_id || null,
-        status: "DUMMY_READY",
-        certification: "DUMMY_ONLY_NOT_REAL_DATA",
-        rows_read: 0,
-        rows_written: 0,
-        next_action: "ADD_BINDINGS_SECRETS_VARS_AND_VERIFY_HEALTH",
-        block_downstream_reason: null,
-        output_json: {
-          dummy: true,
-          slate_date: input.slate_date || null,
-          mode: input.mode || null,
-          received_input_json: input.input_json || null
-        },
-        timestamp_utc: nowUtc(),
-        writes_performed: 0,
-        external_calls_performed: 0
-      });
-    }
-
-    return jsonResponse({
-      ok: false,
-      data_ok: false,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      status: "NOT_FOUND",
-      allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"],
-      timestamp_utc: nowUtc()
-    }, 404);
+    return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"NOT_FOUND",allowed_routes:["GET /","GET /health","POST /diagnostic","POST /run"]},404);
   }
 };

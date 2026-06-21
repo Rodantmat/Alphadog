@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.282-incremental-lockbusy-hot-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.283-expansion-baseline-slot-route";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -204,6 +204,7 @@ function base(env, extra = {}) {
       ODDSAPI_REFERENCE_WORKER: !!env.ODDSAPI_REFERENCE_WORKER,
       PHASE2B_RECENT_FORM_WORKER: !!env.PHASE2B_RECENT_FORM_WORKER,
       PHASE2B_PITCHER_ROLE_WORKER: !!env.PHASE2B_PITCHER_ROLE_WORKER,
+      PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER: !!env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER,
       SCORE_AUDIT_WORKER: !!env.SCORE_AUDIT_WORKER
     },
     ...extra
@@ -584,6 +585,12 @@ function isPlayerBaselineSanityJob(row) {
   const job = String(row && row.job_key || "");
   const worker = String(row && row.worker_name || "");
   return (job === "player-baseline-sanity" || job === "player-baseline-hp") && worker === "alphadog-v2-phase2b-pitcher-role";
+}
+
+function isExpansionBaselineJob(row) {
+  const job = String(row && row.job_key || "");
+  const worker = String(row && row.worker_name || "");
+  return job.startsWith("expansion-baseline-") && worker === "alphadog-v2-phase3a-first-inning-pitcher-context";
 }
 
 const BOARD_FULL_RUN_LOCK_KEY = "BOARD_FULL_RUN";
@@ -11729,6 +11736,58 @@ async function rescuePropFactorMinerTerminalEvidence(env, row, runId, input, sel
 }
 
 
+async function processExpansionBaselineJob(env, row, runId, trigger) {
+  const rowInput = parseJsonSafeText(row.input_json || "{}", {});
+  const input = {
+    ...rowInput,
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    run_id: runId,
+    trigger,
+    mode: rowInput.mode || rowInput.expansion_mode || String(row.job_key || "").replace(/-/g, "_"),
+    logical_worker_name: "alphadog-v2-expansion-baseline",
+    deployed_worker_slot: "alphadog-v2-phase3a-first-inning-pitcher-context",
+    expansion_only: true,
+    baseline_only: true,
+    writes_expansion_tables_only: true,
+    write_table_whitelist_regex: "^expansion_",
+    no_current_baseline_mutation: true,
+    no_factor_mutation: true,
+    no_matrix_mutation: true,
+    no_scoring_mutation: true,
+    no_final_board_mutation: true,
+    no_scheduler_mutation: true,
+    no_full_run_integration: true
+  };
+  const binding = env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER;
+  if (!binding || typeof binding.fetch !== "function") {
+    const output = {ok:false,data_ok:false,version:SYSTEM_VERSION,processed_by:WORKER_NAME,worker_name:row.worker_name,logical_worker_name:"alphadog-v2-expansion-baseline",deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context",job_key:row.job_key,request_id:row.request_id,run_id:runId,status:"EXPANSION_BASELINE_MISSING_EXISTING_SLOT_BINDING",error:"PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER service binding is missing",required_binding:"PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER",expansion_only:true,baseline_only:true};
+    await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'EXPANSION_BASELINE_MISSING_EXISTING_SLOT_BINDING', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_expansion_baseline_existing_slot_binding', 'PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER service binding is missing')",runId,row.request_id,row.chain_id,row.job_key,row.worker_name,JSON.stringify(input),safeStringifyD1(output));
+    await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_expansion_baseline_existing_slot_binding', error_message='PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER service binding is missing' WHERE request_id=?",safeStringifyD1(output),row.request_id);
+    return output;
+  }
+  const started = Date.now();
+  let output;
+  let httpStatus = null;
+  try {
+    const resp = await serviceBindingFetch(binding,"https://internal.alphadog-v2-phase3a-first-inning-pitcher-context/run",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(input)},"expansion_baseline_existing_slot",75000);
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); }
+    catch(_) { output = {ok:false,data_ok:false,version:SYSTEM_VERSION,processed_by:WORKER_NAME,worker_name:row.worker_name,job_key:row.job_key,status:"worker_non_json_response",http_status:httpStatus,response_preview:String(text||"").slice(0,900),expansion_only:true,baseline_only:true}; }
+  } catch (err) {
+    output = {ok:false,data_ok:false,version:SYSTEM_VERSION,processed_by:WORKER_NAME,worker_name:row.worker_name,job_key:row.job_key,status:"worker_dispatch_exception",error:String(err&&err.message?err.message:err),expansion_only:true,baseline_only:true};
+  }
+  const ok = !!(output && output.ok === true);
+  const rowsWritten = Number(output && (output.rows_written || (output.rows && (output.rows.sanity_rows || output.rows.baseline_hp_rows)) || 0));
+  const cert = String((output && (output.certification || output.status)) || (ok ? "EXPANSION_BASELINE_COMPLETED" : "EXPANSION_BASELINE_FAILED")).slice(0,120);
+  await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",runId,row.request_id,row.chain_id,row.job_key,row.worker_name,ok?"completed":"failed",ok?1:0,cert,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(output||{}),ok?null:"expansion_baseline_worker_failed",ok?null:String((output&&(output.error||output.status))||"Expansion Baseline worker failed").slice(0,500));
+  await run(env.CONTROL_DB,"UPDATE control_job_queue SET status=?, tick_count=COALESCE(tick_count,0)+1, started_at=COALESCE(started_at,CURRENT_TIMESTAMP), finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",ok?"completed":"failed",safeStringifyD1(output||{}),ok?null:"expansion_baseline_worker_failed",ok?null:String((output&&(output.error||output.status))||"Expansion Baseline worker failed").slice(0,500),row.request_id);
+  return output;
+}
+
 async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
   const input = parseJsonSafeText(row.input_json || "{}", {});
   input.request_id = row.request_id;
@@ -12734,51 +12793,13 @@ async function buildScoreEnrichmentV1EvidenceOutput(env, row, runId, trigger, ro
 // This exists because score-audit deployments can lag. HP V2 is isolated and writes only
 // hit_probability_v2_* tables from score_enrichment_current. It does not touch old scoring,
 // old HP, HP board, final board, prepared/source boards, ranks, or live/review gates.
-const ORCH_HP_V2_VERSION = "alphadog-v2-hit-probability-v2-v0.1.9-early-hook-accumulation";
+const ORCH_HP_V2_VERSION = "alphadog-v2-hit-probability-v2-v0.1.4-goblin-demon-side-contract";
 const ORCH_HP_V2_MODE = "hit_probability_v2_current";
-const ORCH_HP_V2_PROFILE_VERSION = "HP_V2_EARLY_HOOK_ACCUMULATION_V0_1_8_ORCH_DIRECT";
+const ORCH_HP_V2_PROFILE_VERSION = "HP_V2_BASELINE_ENRICHMENT_CONTEXT_V0_1_3_ORCH_DIRECT";
 const ORCH_HP_V2_CHUNK_ROWS = 300;
 function ohpNum(v,d=0){ const n=Number(v); return Number.isFinite(n)?n:d; }
 function ohpClamp(v,lo,hi){ return Math.max(lo, Math.min(hi, ohpNum(v,lo))); }
 function ohpRound(v,d=2){ const m=Math.pow(10,d); return Math.round(ohpNum(v)*m)/m; }
-function ohpLower(v){ return String(v==null?'':v).toLowerCase(); }
-function ohpIsPitcher(row){ const p=ohpLower(row.canonical_prop_key); return ohpLower(row.factor_family).includes('pitcher') || ['pitcher_strikeouts','walks_allowed','earned_runs','runs_allowed','hits_allowed','pitcher_outs'].includes(p); }
-function ohpRareLess(row){ const p=ohpLower(row.canonical_prop_key), s=ohpLower(row.selected_side); return ['rbis','walks','home_runs','doubles','stolen_bases'].includes(p) && (s==='less'||s==='under'); }
-function ohpMarketMissing(row){ const m=ohpLower(row.market_prop_context_status); return m.includes('missing') || m.includes('not_found'); }
-function ohpLineValue(row){ return ohpNum(row.board_line_value!=null?row.board_line_value:row.line_value,0); }
-function ohpNoEventBadProfile(row){ const d=ohpLower(row.baseline_line_difficulty_profile), v=ohpLower(row.baseline_volatility_profile); return d==='normal_line' && (v==='volatility_light'||v==='volatility_none'); }
-function ohpEarlyHookOutsSignal(row){ return ohpNum(row.early_hook_outs_less_hp_0_100,0)>=60; }
-function ohpEarlyHookAccumulationRegression(row){
-  const p=ohpLower(row.canonical_prop_key), side=ohpLower(row.selected_side), line=ohpLineValue(row);
-  const sample=ohpNum(row.baseline_sample_size,0), marketMissing=ohpMarketMissing(row), earlyHook=ohpEarlyHookOutsSignal(row);
-  if(!earlyHook||!marketMissing||sample>=20||!(side==='more'||side==='over'))return null;
-  if(p==='walks_allowed' && line===0.5)return {bucket:'K_EARLY_HOOK_WALKS_ALLOWED_0_5_MORE_ACCUMULATION_SUPPRESSOR', hpPenalty:7, confidencePenalty:0, residualScorePenalty:4.0, trustPenalty:4.0};
-  if(p==='walks_allowed' && line>=1.5)return {bucket:'L_EARLY_HOOK_WALKS_ALLOWED_1_5_PLUS_MORE_ACCUMULATION_SUPPRESSOR', hpPenalty:8, confidencePenalty:0, residualScorePenalty:4.0, trustPenalty:4.0};
-  if(p==='pitcher_strikeouts' && line===3.5)return {bucket:'M_EARLY_HOOK_PITCHER_K_3_5_MORE_ACCUMULATION_SUPPRESSOR', hpPenalty:4, confidencePenalty:0, residualScorePenalty:4.0, trustPenalty:4.0};
-  if(p==='pitcher_strikeouts' && line>=4.5)return {bucket:'N_EARLY_HOOK_PITCHER_K_4_5_PLUS_MORE_ACCUMULATION_SUPPRESSOR', hpPenalty:7, confidencePenalty:0, residualScorePenalty:4.0, trustPenalty:4.0};
-  return null;
-}
-function ohpTargetedNoEventRegression(row){
-  const p=ohpLower(row.canonical_prop_key), side=ohpLower(row.selected_side), line=ohpLineValue(row);
-  const sample=ohpNum(row.baseline_sample_size,0), baseline=ohpNum(row.baseline_hp_0_100,0);
-  const marketMissing=ohpMarketMissing(row), noEventSide=(side==='less'||side==='under');
-  const earlyHookAccum=ohpEarlyHookAccumulationRegression(row);
-  if(earlyHookAccum){
-    if(p==='walks_allowed' && line===0.5 && baseline>=85){ return {...earlyHookAccum, hpPenalty:earlyHookAccum.hpPenalty+12, bucket:'K_EARLY_HOOK_PLUS_A_PITCHER_WALKS_0_5_MORE_ACCUMULATION_SUPPRESSOR'}; }
-    return earlyHookAccum;
-  }
-  if(p==='walks_allowed' && line===0.5 && side==='more' && sample<20 && baseline>=85 && marketMissing){ return {bucket:'A_PITCHER_WALKS_0_5_MORE_MEDIUM_SAMPLE_MISSING_MARKET', hpPenalty:12, confidencePenalty:0}; }
-  if(p==='runs' && noEventSide && line===0.5 && ohpNoEventBadProfile(row) && baseline>=80 && marketMissing){ return {bucket:'E_RUNS_LESS_0_5_HIGH_BASELINE_BAD_PROFILE', hpPenalty:6, confidencePenalty:0}; }
-  if(p==='runs' && noEventSide && line===0.5 && ohpNoEventBadProfile(row) && baseline>=75 && marketMissing){ return {bucket:'F_RUNS_LESS_0_5_ELEVATED_BASELINE_BAD_PROFILE', hpPenalty:4, confidencePenalty:0}; }
-  if(['singles','doubles'].includes(p) && noEventSide && line===0.5 && ohpNoEventBadProfile(row) && baseline>=75 && marketMissing){ return {bucket:'G_SINGLES_DOUBLES_LESS_0_5_ELEVATED_BASELINE_BAD_PROFILE', hpPenalty:3, confidencePenalty:0}; }
-  if(p==='total_bases' && noEventSide && line<=1.5 && baseline>=80 && marketMissing){ return {bucket:'H_TOTAL_BASES_LESS_LOW_LINE_HIGH_BASELINE', hpPenalty:6, confidencePenalty:0}; }
-  if(p==='hits_runs_rbis' && noEventSide && line<=1.5 && baseline>=75 && marketMissing){ return {bucket:'I_HRR_LESS_LOW_LINE_ELEVATED_BASELINE', hpPenalty:3, confidencePenalty:0}; }
-  if(p==='earned_runs' && noEventSide && line===0.5 && baseline>=75 && marketMissing){ return {bucket:'J_PITCHER_ER_LESS_0_5_HIGH_BASELINE', hpPenalty:3, confidencePenalty:0}; }
-  if(['rbis','walks'].includes(p) && noEventSide && ohpNoEventBadProfile(row) && baseline>=85 && marketMissing){ return {bucket:'B_RBI_WALKS_LESS_HIGH_BASELINE_BAD_PROFILE', hpPenalty:9, confidencePenalty:0}; }
-  if(['rbis','walks'].includes(p) && noEventSide && ohpNoEventBadProfile(row) && baseline>=80 && marketMissing){ return {bucket:'C_RBI_WALKS_LESS_ELEVATED_BASELINE_BAD_PROFILE', hpPenalty:6, confidencePenalty:0}; }
-  if(['home_runs','doubles','stolen_bases'].includes(p) && noEventSide && baseline>=85 && marketMissing){ return {bucket:'D_RARE_EVENT_LESS_HIGH_BASELINE_MISSING_MARKET', hpPenalty:6, confidencePenalty:0}; }
-  return {bucket:'NOT_TARGETED', hpPenalty:0, confidencePenalty:0};
-}
 function ohpBand(hp){ const x=ohpNum(hp,50); if(x>=90)return"HP_V2_90_PLUS"; if(x>=80)return"HP_V2_80_89"; if(x>=70)return"HP_V2_70_79"; if(x>=60)return"HP_V2_60_69"; if(x>=50)return"HP_V2_50_59"; if(x>=40)return"HP_V2_40_49"; return"HP_V2_UNDER_40"; }
 function ohpSoftBounds(sample, conf){ const s=ohpNum(sample,0), c=ohpNum(conf,0); if(s>=30&&c>=50)return[0.5,99.5]; if(s>=15&&c>=35)return[1,99]; if(s>=8)return[5,95]; if(s>=3)return[10,90]; return[20,80]; }
 function ohpModel(row){
@@ -12792,38 +12813,25 @@ function ohpModel(row){
   const missing=Math.max(0,Math.round(ohpNum(row.missing_component_count,0)));
   const warnings=Math.max(0,Math.round(ohpNum(row.warning_count,0)));
   const pressure=ohpClamp(row.factor_hp_pressure,-8,8);
-  const isPitcher=ohpIsPitcher(row);
-  const rareLess=ohpRareLess(row);
-  const marketMissing=ohpMarketMissing(row);
-  const targetedNoEvent=ohpTargetedNoEventRegression(row);
-  const nearFloor=base>=60 && base<=63;
   let pressureReliability=ohpClamp((baseConf/60)*0.65+(dataQ/100)*0.35,0.15,1);
   if(missing>0)pressureReliability*=0.55;
   if(warnings>=10)pressureReliability*=0.75;
   const factorAdjustment=blocked?0:ohpRound(pressure*0.85*pressureReliability,2);
   let damping=1;
   if(sample<10)damping*=0.82;
-  else if(isPitcher && sample<20)damping*=0.95;
-  if(isPitcher && ['walks_allowed','earned_runs','pitcher_outs'].includes(ohpLower(row.canonical_prop_key)) && sample>=10 && sample<20)damping*=0.98;
-  if(rareLess && base>=70)damping*=0.96;
   if(sample<3)damping*=0.65;
   if(missing>0)damping*=0.90;
   if(warnings>=10)damping*=0.94;
   let hp=50+((base+factorAdjustment)-50)*damping;
   const [floor,ceil]=ohpSoftBounds(sample,baseConf);
   hp=blocked?base:ohpClamp(hp,floor,ceil);
-  if(!blocked && targetedNoEvent.hpPenalty>0)hp=ohpClamp(hp-targetedNoEvent.hpPenalty,0,100);
   let conf=Math.min(cap,baseConf+confAdd);
-  if(marketMissing)conf-=isPitcher?5:(rareLess?4:2);
-  if(isPitcher && sample>=10 && sample<20)conf-=3;
-  if(rareLess && base>=70)conf-=3;
-  if(nearFloor && marketMissing && Math.abs(pressure)<0.01)conf-=5;
   if(missing>0)conf-=Math.min(18,missing*4);
   if(warnings>=10)conf-=5;
   if(warnings>=14)conf-=3;
   if(blocked)conf=0;
   conf=ohpClamp(ohpRound(conf,1),0,100);
-  return {hp:ohpRound(hp,2),conf,factorAdjustment,damping:ohpRound(damping,3),band:ohpBand(hp),targetedNoEventBucket:targetedNoEvent.bucket,targetedNoEventHpPenalty:targetedNoEvent.hpPenalty,targetedNoEventConfidencePenalty:targetedNoEvent.confidencePenalty,earlyHookOutsLessSignal:ohpEarlyHookOutsSignal(row),earlyHookOutsLessHp:ohpNum(row.early_hook_outs_less_hp_0_100,0)};
+  return {hp:ohpRound(hp,2),conf,factorAdjustment,damping:ohpRound(damping,3),band:ohpBand(hp)};
 }
 function ohpStatusGrade(row, hp, conf){
   if(Number(row.blocking_for_scoring||0)===1||Number(row.blocker_count||0)>0)return["hp_v2_blocked","BLOCKED"];
@@ -12863,16 +12871,14 @@ async function processHitProbabilityV2DirectJob(env,row,runId,trigger){
   await run(env.SCORE_DB,`INSERT OR IGNORE INTO hit_probability_v2_batches (batch_id,request_id,run_id,worker_name,worker_version,profile_version,mode,status,source_enrichment_batch_id,source_matrix_batch_id,expected_hp_rows,created_at,updated_at) VALUES (?,?,?,?,?,?,?,'running',?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,finalBatchId,row.request_id,runId,WORKER_NAME,ORCH_HP_V2_VERSION,ORCH_HP_V2_PROFILE_VERSION,ORCH_HP_V2_MODE,sourceEnrichmentBatchId,sourceMatrixBatchId,expectedRows);
   if(offset===0){ await run(env.SCORE_DB,`DELETE FROM hit_probability_v2_current WHERE batch_id=?`,finalBatchId); await run(env.SCORE_DB,`DELETE FROM hit_probability_v2_issues WHERE batch_id=?`,finalBatchId); }
   await run(env.SCORE_DB,`UPDATE hit_probability_v2_batches SET status='running', run_id=?, worker_version=?, profile_version=?, source_enrichment_batch_id=?, source_matrix_batch_id=?, expected_hp_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,runId,ORCH_HP_V2_VERSION,ORCH_HP_V2_PROFILE_VERSION,sourceEnrichmentBatchId,sourceMatrixBatchId,expectedRows,finalBatchId);
-  const earlyHookOutsRows=await all(env.SCORE_DB,`SELECT game_pk, mlb_player_id, MAX(baseline_hp_0_100) AS outs_less_hp FROM score_enrichment_current WHERE batch_id=? AND canonical_prop_key='pitcher_outs' AND lower(COALESCE(selected_side,'')) IN ('less','under') AND COALESCE(board_line_value,0)<=16.5 AND COALESCE(baseline_hp_0_100,0)>=60 GROUP BY game_pk, mlb_player_id`,sourceEnrichmentBatchId);
-  const earlyHookOutsMap=new Map((earlyHookOutsRows||[]).map(x=>[`${x.game_pk||''}|${x.mlb_player_id||''}`,ohpNum(x.outs_less_hp,0)]));
-  const rows=await all(env.SCORE_DB,`SELECT se.enrichment_row_id, se.prepared_row_id, se.matrix_id, se.source_line_id, se.source_key, se.game_pk, se.official_date, se.official_game_time_utc, se.mlb_player_id, se.player_name, se.team_id, se.opponent_team_id, se.canonical_prop_key, se.board_line_value, se.selected_side, se.factor_family, se.profile_key, se.baseline_hp_row_id, se.baseline_hp_0_100, se.baseline_confidence_v2_0_60, se.baseline_sample_size, se.baseline_hit_count, se.baseline_miss_count, se.factor_hp_pressure, se.enrichment_confidence_add_available_0_40, se.confidence_cap_0_100, se.data_quality_score_0_100, se.warning_count, se.blocker_count, se.missing_component_count, se.blocking_for_scoring, se.enrichment_status, se.enrichment_grade, se.matrix_status, se.matrix_grade, se.market_game_context_status, se.market_prop_context_status, se.daily_readiness_status, b.sample_profile AS baseline_sample_profile, b.role_profile AS baseline_role_profile, b.volatility_profile AS baseline_volatility_profile, b.variance_profile AS baseline_variance_profile, b.line_difficulty_profile AS baseline_line_difficulty_profile FROM score_enrichment_current se LEFT JOIN player_baseline_hp_current b ON b.baseline_hp_row_id=se.baseline_hp_row_id WHERE se.batch_id=? AND NOT (lower(COALESCE(se.source_key,''))='prizepicks' AND lower(COALESCE(se.selected_side,''))='less' AND (se.source_line_id LIKE '%|goblin|%' OR se.source_line_id LIKE '%|demon|%')) ORDER BY se.prepared_row_id, se.selected_side LIMIT ? OFFSET ?`,sourceEnrichmentBatchId,limit,offset);
+  const rows=await all(env.SCORE_DB,`SELECT enrichment_row_id, prepared_row_id, matrix_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc, mlb_player_id, player_name, team_id, opponent_team_id, canonical_prop_key, board_line_value, selected_side, factor_family, baseline_hp_row_id, baseline_hp_0_100, baseline_confidence_v2_0_60, baseline_sample_size, baseline_hit_count, baseline_miss_count, factor_hp_pressure, enrichment_confidence_add_available_0_40, confidence_cap_0_100, data_quality_score_0_100, warning_count, blocker_count, missing_component_count, blocking_for_scoring, enrichment_status, enrichment_grade, matrix_status, matrix_grade FROM score_enrichment_current WHERE batch_id=? AND NOT (lower(COALESCE(source_key,''))='prizepicks' AND lower(COALESCE(selected_side,''))='less' AND (source_line_id LIKE '%|goblin|%' OR source_line_id LIKE '%|demon|%')) ORDER BY prepared_row_id, selected_side LIMIT ? OFFSET ?`,sourceEnrichmentBatchId,limit,offset);
   const models=new Map(), byPrep=new Map();
-  for(const r of rows){ r.early_hook_outs_less_hp_0_100=earlyHookOutsMap.get(`${r.game_pk||''}|${r.mlb_player_id||''}`)||0; const key=String(r.prepared_row_id||r.enrichment_row_id||''); if(!byPrep.has(key))byPrep.set(key,[]); byPrep.get(key).push(r); models.set(String(r.enrichment_row_id||r.prepared_row_id),ohpModel(r)); }
-  for(const pair of byPrep.values()){ if(pair.length!==2)continue; const a=pair[0],b=pair[1],ma=models.get(String(a.enrichment_row_id||a.prepared_row_id)),mb=models.get(String(b.enrichment_row_id||b.prepared_row_id)); const bad=Number(a.blocking_for_scoring||0)===1||Number(a.blocker_count||0)>0||!a.baseline_hp_row_id||Number(b.blocking_for_scoring||0)===1||Number(b.blocker_count||0)>0||!b.baseline_hp_row_id; if(!ma||!mb||bad)continue; const sum=ohpNum(ma.hp,0)+ohpNum(mb.hp,0); if(sum>0){ const aNorm=ohpRound((ohpNum(ma.hp,0)/sum)*100,2); ma.hp=aNorm; mb.hp=ohpRound(100-aNorm,2); ma.pairNormalized=true; mb.pairNormalized=true; const aTarget=ohpNum(ma.targetedNoEventHpPenalty,0), bTarget=ohpNum(mb.targetedNoEventHpPenalty,0); if(aTarget>0&&bTarget<=0){ ma.hp=ohpRound(ohpClamp(ma.hp-aTarget,0,100),2); mb.hp=ohpRound(100-ma.hp,2); ma.pairTargetedPenaltyReapplied=true; mb.pairTargetedComplement=true; } else if(bTarget>0&&aTarget<=0){ mb.hp=ohpRound(ohpClamp(mb.hp-bTarget,0,100),2); ma.hp=ohpRound(100-mb.hp,2); mb.pairTargetedPenaltyReapplied=true; ma.pairTargetedComplement=true; } ma.band=ohpBand(ma.hp); mb.band=ohpBand(mb.hp); } }
+  for(const r of rows){ const key=String(r.prepared_row_id||r.enrichment_row_id||''); if(!byPrep.has(key))byPrep.set(key,[]); byPrep.get(key).push(r); models.set(String(r.enrichment_row_id||r.prepared_row_id),ohpModel(r)); }
+  for(const pair of byPrep.values()){ if(pair.length!==2)continue; const a=pair[0],b=pair[1],ma=models.get(String(a.enrichment_row_id||a.prepared_row_id)),mb=models.get(String(b.enrichment_row_id||b.prepared_row_id)); const bad=Number(a.blocking_for_scoring||0)===1||Number(a.blocker_count||0)>0||!a.baseline_hp_row_id||Number(b.blocking_for_scoring||0)===1||Number(b.blocker_count||0)>0||!b.baseline_hp_row_id; if(!ma||!mb||bad)continue; const sum=ohpNum(ma.hp,0)+ohpNum(mb.hp,0); if(sum>0){ const aNorm=ohpRound((ohpNum(ma.hp,0)/sum)*100,2); ma.hp=aNorm; mb.hp=ohpRound(100-aNorm,2); ma.band=ohpBand(ma.hp); mb.band=ohpBand(mb.hp); ma.pairNormalized=true; mb.pairNormalized=true; } }
   const cur=[],iss=[]; let issues=0;
   for(const r of rows){
     const model=models.get(String(r.enrichment_row_id||r.prepared_row_id))||ohpModel(r); const [status,grade]=ohpStatusGrade(r,model.hp,model.conf); const hpRowId=`${finalBatchId}|${r.enrichment_row_id||r.prepared_row_id}|hpv2`;
-    const payload={profile_version:ORCH_HP_V2_PROFILE_VERSION,orchestrator_direct_fallback:true,score_audit_service_binding_bypassed:true,baseline_anchor_0_100:r.baseline_hp_0_100,factor_hp_pressure:r.factor_hp_pressure,factor_adjustment_0_100:model.factorAdjustment,context_damping_0_1:model.damping,targeted_no_event_regression:true,targeted_no_event_pair_safe:true,targeted_no_event_bucket:model.targetedNoEventBucket||'NOT_TARGETED',targeted_no_event_hp_penalty:model.targetedNoEventHpPenalty||0,early_hook_accumulation_suppressor:true,early_hook_outs_less_signal:model.earlyHookOutsLessSignal===true,early_hook_outs_less_hp_0_100:model.earlyHookOutsLessHp||0,pair_targeted_penalty_reapplied:model.pairTargetedPenaltyReapplied===true,pair_targeted_complement:model.pairTargetedComplement===true,soft_calibration_pressure:true,market_prop_context_status:r.market_prop_context_status||null,profile_key:r.profile_key||null,baseline_sample_profile:r.baseline_sample_profile||null,baseline_volatility_profile:r.baseline_volatility_profile||null,baseline_variance_profile:r.baseline_variance_profile||null,baseline_line_difficulty_profile:r.baseline_line_difficulty_profile||null,pair_normalized_more_less_sum_100:model.pairNormalized===true,no_true_hit_probability_claims:true,no_ranking:true,no_final_board:true};
+    const payload={profile_version:ORCH_HP_V2_PROFILE_VERSION,orchestrator_direct_fallback:true,score_audit_service_binding_bypassed:true,baseline_anchor_0_100:r.baseline_hp_0_100,factor_hp_pressure:r.factor_hp_pressure,factor_adjustment_0_100:model.factorAdjustment,context_damping_0_1:model.damping,pair_normalized_more_less_sum_100:model.pairNormalized===true,no_true_hit_probability_claims:true,no_ranking:true,no_final_board:true};
     cur.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO hit_probability_v2_current (hp_v2_row_id,batch_id,source_enrichment_batch_id,enrichment_row_id,prepared_row_id,matrix_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,team_id,opponent_team_id,canonical_prop_key,board_line_value,selected_side,factor_family,baseline_hp_row_id,baseline_hp_0_100,baseline_confidence_v2_0_60,baseline_sample_size,baseline_hit_count,baseline_miss_count,factor_hp_pressure,factor_adjustment_0_100,context_damping_0_1,hp_v2_0_100,hp_v2_confidence_0_100,hp_v2_band,hp_v2_status,hp_v2_grade,data_quality_score_0_100,confidence_cap_0_100,warning_count,blocker_count,missing_component_count,blocking_for_scoring,model_payload_json,details_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(hpRowId,finalBatchId,sourceEnrichmentBatchId,r.enrichment_row_id,r.prepared_row_id,r.matrix_id,r.source_line_id,r.source_key,r.game_pk,r.official_date,r.official_game_time_utc,r.mlb_player_id,r.player_name,r.team_id,r.opponent_team_id,r.canonical_prop_key,r.board_line_value,r.selected_side,r.factor_family,r.baseline_hp_row_id,r.baseline_hp_0_100,r.baseline_confidence_v2_0_60,r.baseline_sample_size,r.baseline_hit_count,r.baseline_miss_count,r.factor_hp_pressure,model.factorAdjustment,model.damping,model.hp,model.conf,model.band,status,grade,r.data_quality_score_0_100,r.confidence_cap_0_100,r.warning_count,r.blocker_count,r.missing_component_count,r.blocking_for_scoring,JSON.stringify(payload),JSON.stringify({enrichment_status:r.enrichment_status,enrichment_grade:r.enrichment_grade,matrix_status:r.matrix_status,matrix_grade:r.matrix_grade})));
     if(status==='hp_v2_blocked'||status==='hp_v2_deferred_baseline_missing'||Number(r.missing_component_count||0)>0){ const severity=status==='hp_v2_blocked'?'BLOCKER':'WARNING'; const issueType=status==='hp_v2_blocked'?'HP_V2_BLOCKED_BY_ENRICHMENT':(status==='hp_v2_deferred_baseline_missing'?'HP_V2_BASELINE_MISSING':'HP_V2_PARTIAL_CONTEXT_MISSING_COMPONENT'); const reason=status==='hp_v2_blocked'?'Source enrichment row is blocked; HP V2 not playable.':(status==='hp_v2_deferred_baseline_missing'?'Missing baseline HP anchor.':'Context components are partial or missing; HP V2 confidence damped.'); iss.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO hit_probability_v2_issues (issue_id,batch_id,hp_v2_row_id,enrichment_row_id,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,selected_side,severity,issue_type,reason,details_json,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`${hpRowId}|${issueType}`,finalBatchId,hpRowId,r.enrichment_row_id,r.prepared_row_id,r.game_pk,r.mlb_player_id,r.canonical_prop_key,r.selected_side,severity,issueType,reason,JSON.stringify({missing_component_count:r.missing_component_count,warning_count:r.warning_count,blocker_count:r.blocker_count}))); issues++; }
   }
@@ -12899,51 +12905,13 @@ async function processHitProbabilityV2DirectJob(env,row,runId,trigger){
 // final_score_v1_* tables. It does not mutate old scoring_engine_current,
 // hit_probability_v2_current, score_final_board_current, prepared/source boards,
 // ranks, or live/review gates outside its own output columns.
-const ORCH_FINAL_SCORE_V1_VERSION = "alphadog-v2-final-score-v1-v0.1.9-early-hook-accumulation";
+const ORCH_FINAL_SCORE_V1_VERSION = "alphadog-v2-final-score-v1-v0.1.4-multiplier-aware-score";
 const ORCH_FINAL_SCORE_V1_MODE = "final_score_v1_current";
-const ORCH_FINAL_SCORE_V1_PROFILE_VERSION = "FINAL_SCORE_V1_EARLY_HOOK_ACCUMULATION_V0_1_8";
+const ORCH_FINAL_SCORE_V1_PROFILE_VERSION = "FINAL_SCORE_V1_HP_DOMINANT_MULTIPLIER_AWARE_V0_1_3";
 const ORCH_FINAL_SCORE_V1_CHUNK_ROWS = 650;
 function ofsNum(v,d=0){ const n=Number(v); return Number.isFinite(n)?n:d; }
 function ofsClamp(v,lo,hi){ return Math.max(lo, Math.min(hi, ofsNum(v,lo))); }
 function ofsRound(v,d=2){ const m=Math.pow(10,d); return Math.round(ofsNum(v)*m)/m; }
-function ofsLower(v){ return String(v==null?'':v).toLowerCase(); }
-function ofsIsPitcher(row){ const p=ofsLower(row.canonical_prop_key); return ofsLower(row.factor_family).includes('pitcher') || ['pitcher_strikeouts','walks_allowed','earned_runs','runs_allowed','hits_allowed','pitcher_outs'].includes(p); }
-function ofsRareLess(row){ const p=ofsLower(row.canonical_prop_key), s=ofsLower(row.selected_side); return ['rbis','walks','home_runs','doubles','stolen_bases'].includes(p) && (s==='less'||s==='under'); }
-function ofsMarketMissing(row){ const m=ofsLower(row.market_prop_context_status); return m.includes('missing') || m.includes('not_found'); }
-function ofsLineValue(row){ return ofsNum(row.board_line_value!=null?row.board_line_value:row.line_value,0); }
-function ofsNoEventBadProfile(row){ const d=ofsLower(row.baseline_line_difficulty_profile), v=ofsLower(row.baseline_volatility_profile); return d==='normal_line' && (v==='volatility_light'||v==='volatility_none'); }
-function ofsEarlyHookOutsSignal(row){ const raw=row.model_payload_json||''; if(typeof raw==='string'&&raw.includes('early_hook_outs_less_signal')){ try{return JSON.parse(raw).early_hook_outs_less_signal===true;}catch(_){return false;} } return false; }
-function ofsEarlyHookAccumulationPenalty(row){
-  const p=ofsLower(row.canonical_prop_key), side=ofsLower(row.selected_side), line=ofsLineValue(row);
-  const sample=ofsNum(row.baseline_sample_size,0), marketMissing=ofsMarketMissing(row), earlyHook=ofsEarlyHookOutsSignal(row);
-  if(!earlyHook||!marketMissing||sample>=20||!(side==='more'||side==='over'))return null;
-  if(p==='walks_allowed' && line===0.5)return {bucket:'K_EARLY_HOOK_WALKS_ALLOWED_0_5_MORE_ACCUMULATION_SUPPRESSOR', residualScorePenalty:4.0, trustPenalty:4.0};
-  if(p==='walks_allowed' && line>=1.5)return {bucket:'L_EARLY_HOOK_WALKS_ALLOWED_1_5_PLUS_MORE_ACCUMULATION_SUPPRESSOR', residualScorePenalty:4.0, trustPenalty:4.0};
-  if(p==='pitcher_strikeouts' && line===3.5)return {bucket:'M_EARLY_HOOK_PITCHER_K_3_5_MORE_ACCUMULATION_SUPPRESSOR', residualScorePenalty:4.0, trustPenalty:4.0};
-  if(p==='pitcher_strikeouts' && line>=4.5)return {bucket:'N_EARLY_HOOK_PITCHER_K_4_5_PLUS_MORE_ACCUMULATION_SUPPRESSOR', residualScorePenalty:4.0, trustPenalty:4.0};
-  return null;
-}
-function ofsTargetedNoEventPenalty(row){
-  const p=ofsLower(row.canonical_prop_key), side=ofsLower(row.selected_side), line=ofsLineValue(row);
-  const sample=ofsNum(row.baseline_sample_size,0), baseline=ofsNum(row.baseline_hp_0_100,0);
-  const marketMissing=ofsMarketMissing(row), noEventSide=(side==='less'||side==='under');
-  const earlyHookAccum=ofsEarlyHookAccumulationPenalty(row);
-  if(earlyHookAccum){
-    if(p==='walks_allowed' && line===0.5 && baseline>=85){ return {bucket:'K_EARLY_HOOK_PLUS_A_PITCHER_WALKS_0_5_MORE_ACCUMULATION_SUPPRESSOR', residualScorePenalty:7.0, trustPenalty:7.0}; }
-    return earlyHookAccum;
-  }
-  if(p==='walks_allowed' && line===0.5 && side==='more' && sample<20 && baseline>=85 && marketMissing){ return {bucket:'A_PITCHER_WALKS_0_5_MORE_MEDIUM_SAMPLE_MISSING_MARKET', residualScorePenalty:3.0, trustPenalty:3.0}; }
-  if(p==='runs' && noEventSide && line===0.5 && ofsNoEventBadProfile(row) && baseline>=80 && marketMissing){ return {bucket:'E_RUNS_LESS_0_5_HIGH_BASELINE_BAD_PROFILE', residualScorePenalty:2.0, trustPenalty:2.0}; }
-  if(p==='runs' && noEventSide && line===0.5 && ofsNoEventBadProfile(row) && baseline>=75 && marketMissing){ return {bucket:'F_RUNS_LESS_0_5_ELEVATED_BASELINE_BAD_PROFILE', residualScorePenalty:1.5, trustPenalty:1.5}; }
-  if(['singles','doubles'].includes(p) && noEventSide && line===0.5 && ofsNoEventBadProfile(row) && baseline>=75 && marketMissing){ return {bucket:'G_SINGLES_DOUBLES_LESS_0_5_ELEVATED_BASELINE_BAD_PROFILE', residualScorePenalty:1.5, trustPenalty:1.5}; }
-  if(p==='total_bases' && noEventSide && line<=1.5 && baseline>=80 && marketMissing){ return {bucket:'H_TOTAL_BASES_LESS_LOW_LINE_HIGH_BASELINE', residualScorePenalty:2.0, trustPenalty:2.0}; }
-  if(p==='hits_runs_rbis' && noEventSide && line<=1.5 && baseline>=75 && marketMissing){ return {bucket:'I_HRR_LESS_LOW_LINE_ELEVATED_BASELINE', residualScorePenalty:1.0, trustPenalty:1.0}; }
-  if(p==='earned_runs' && noEventSide && line===0.5 && baseline>=75 && marketMissing){ return {bucket:'J_PITCHER_ER_LESS_0_5_HIGH_BASELINE', residualScorePenalty:1.0, trustPenalty:1.0}; }
-  if(['rbis','walks'].includes(p) && noEventSide && ofsNoEventBadProfile(row) && baseline>=85 && marketMissing){ return {bucket:'B_RBI_WALKS_LESS_HIGH_BASELINE_BAD_PROFILE', residualScorePenalty:3.0, trustPenalty:3.0}; }
-  if(['rbis','walks'].includes(p) && noEventSide && ofsNoEventBadProfile(row) && baseline>=80 && marketMissing){ return {bucket:'C_RBI_WALKS_LESS_ELEVATED_BASELINE_BAD_PROFILE', residualScorePenalty:1.5, trustPenalty:1.5}; }
-  if(['home_runs','doubles','stolen_bases'].includes(p) && noEventSide && baseline>=85 && marketMissing){ return {bucket:'D_RARE_EVENT_LESS_HIGH_BASELINE_MISSING_MARKET', residualScorePenalty:1.5, trustPenalty:1.5}; }
-  return {bucket:'NOT_TARGETED', residualScorePenalty:0, trustPenalty:0};
-}
 function ofsVariant(row){
   const sid=String(row&&row.source_line_id||'').toLowerCase();
   if(sid.includes('|demon|'))return 'demon';
@@ -13013,16 +12981,9 @@ function ofsModel(row){
   if(String(row.hp_v2_status||'')==='hp_v2_ready_partial_context')contextScore=Math.min(contextScore,74);
   const profileStability=tier==='TIER_A_ESTABLISHED_HIGH_CONF'?92:tier==='TIER_B_STABLE'?82:tier==='TIER_C_USABLE'?68:tier==='TIER_D_LOW_SAMPLE_OR_LOW_CONF'?45:0;
   const factorAdj=ofsNum(row.factor_adjustment_0_100,0);
-  const isPitcher=ofsIsPitcher(row);
-  const rareLess=ofsRareLess(row);
-  const marketMissing=ofsMarketMissing(row);
-  const targetedNoEvent=ofsTargetedNoEventPenalty(row);
-  const nearFloor=hp>=60 && hp<=63;
-  const zeroFactor=Math.abs(factorAdj)<0.01;
   const factorSupport=ofsClamp(70 + Math.min(14,Math.abs(factorAdj)*4) + (hp>=60&&factorAdj>0?3:0) - (hp>=60&&factorAdj<0?3:0), 45, 90);
   let trust = hpConf*0.32 + sampleScore*0.18 + contextScore*0.18 + dataQ*0.12 + profileStability*0.10 + factorSupport*0.05 + ofsClamp(50 + (hp-60)*0.45,25,82)*0.05;
-  const softReliabilityPenalty = (marketMissing?(isPitcher?2.5:(rareLess?2.0:1.0)):0) + (isPitcher&&sample>=10&&sample<20?2.0:0) + (isPitcher&&zeroFactor?1.5:0) + (nearFloor&&marketMissing&&zeroFactor?3.0:0) + (rareLess&&hp>=70?2.0:0) + targetedNoEvent.residualScorePenalty;
-  const penalties = (warnings>=10?3:0) + (warnings>=14?3:0) + missing*4 + (hpConf<55?4:0) + (hpConf<40?8:0) + softReliabilityPenalty;
+  const penalties = (warnings>=10?3:0) + (warnings>=14?3:0) + missing*4 + (hpConf<55?4:0) + (hpConf<40?8:0);
   trust -= penalties;
   trust += contract.trustAdjustment;
   let trustCap=100;
@@ -13035,7 +12996,6 @@ function ofsModel(row){
   trust=ofsRound(ofsClamp(trust,0,trustCap),2);
   let certainty=blocked?0:ofsRound(hpConf,1);
   let score=hp*0.60 + certainty*0.25 + trust*0.15 + contract.scoreAdjustment;
-  score -= softReliabilityPenalty;
   let cap=94;
   if(hp<60)cap=Math.min(cap,59);
   else if(hp<70)cap=Math.min(cap,74);
@@ -13053,7 +13013,7 @@ function ofsModel(row){
   const status=blocked?'final_score_blocked':(hp<60?'final_score_archived_low_hp':(finalConf<40?'final_score_deep_review_low_confidence':(score<45?'final_score_archived_low_score':'final_score_ready')));
   const eligible=(!blocked && hp>=60 && score>=45 && finalConf>=40)?1:0;
   const review=eligible;
-  return {score, finalConf, certainty, trustReadiness:trust, status, grade, lane, reason:ofsReason(row,score,tier), tier, sampleScore:ofsRound(sampleScore,1), contextScore:ofsRound(contextScore,1), dataQ:ofsRound(dataQ,1), profileStability, factorSupport:ofsRound(factorSupport,1), hpSupport:ofsRound(hp,1), cap, trustCap, eligible, review, live:0, penalties:ofsRound(penalties,2), softReliabilityPenalty:ofsRound(softReliabilityPenalty,2), targetedNoEventBucket:targetedNoEvent.bucket, targetedNoEventResidualScorePenalty:ofsRound(targetedNoEvent.residualScorePenalty,2), targetedNoEventTrustPenalty:ofsRound(targetedNoEvent.trustPenalty,2), lineVariant:contract.variant, oddsType:contract.oddsType, payoutVariant:contract.payoutVariant, sideMode:contract.sideMode, multiplierScoreAdjustment:contract.scoreAdjustment, multiplierTrustAdjustment:contract.trustAdjustment, multiplierRule:contract.rule};
+  return {score, finalConf, certainty, trustReadiness:trust, status, grade, lane, reason:ofsReason(row,score,tier), tier, sampleScore:ofsRound(sampleScore,1), contextScore:ofsRound(contextScore,1), dataQ:ofsRound(dataQ,1), profileStability, factorSupport:ofsRound(factorSupport,1), hpSupport:ofsRound(hp,1), cap, trustCap, eligible, review, live:0, penalties:ofsRound(penalties,2), lineVariant:contract.variant, oddsType:contract.oddsType, payoutVariant:contract.payoutVariant, sideMode:contract.sideMode, multiplierScoreAdjustment:contract.scoreAdjustment, multiplierTrustAdjustment:contract.trustAdjustment, multiplierRule:contract.rule};
 }
 async function ensureOrchFinalScoreV1Schema(env){
   await run(env.SCORE_DB, `CREATE TABLE IF NOT EXISTS final_score_v1_batches (batch_id TEXT PRIMARY KEY, request_id TEXT, run_id TEXT, worker_name TEXT, worker_version TEXT, profile_version TEXT, mode TEXT, status TEXT, source_score_enrichment_batch_id TEXT, source_hp_v2_batch_id TEXT, hp_v2_rows_read INTEGER DEFAULT 0, enrichment_rows_read INTEGER DEFAULT 0, expected_final_score_rows INTEGER DEFAULT 0, final_score_rows_written INTEGER DEFAULT 0, blocked_rows INTEGER DEFAULT 0, warning_rows INTEGER DEFAULT 0, issue_rows_written INTEGER DEFAULT 0, eligible_rows INTEGER DEFAULT 0, review_playable_rows INTEGER DEFAULT 0, live_playable_rows INTEGER DEFAULT 0, low_hp_rows INTEGER DEFAULT 0, low_score_rows INTEGER DEFAULT 0, certification_status TEXT, certification_grade TEXT, output_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
@@ -13092,12 +13052,12 @@ async function processFinalScoreV1DirectJob(env,row,runId,trigger){
   await run(env.SCORE_DB,`INSERT OR IGNORE INTO final_score_v1_batches (batch_id,request_id,run_id,worker_name,worker_version,profile_version,mode,status,source_score_enrichment_batch_id,source_hp_v2_batch_id,hp_v2_rows_read,enrichment_rows_read,expected_final_score_rows,created_at,updated_at) VALUES (?,?,?,?,?,?,?,'running',?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,row.request_id,runId,WORKER_NAME,ORCH_FINAL_SCORE_V1_VERSION,ORCH_FINAL_SCORE_V1_PROFILE_VERSION,ORCH_FINAL_SCORE_V1_MODE,sourceEnrichmentBatchId,sourceHpV2BatchId,expectedRows,enrichmentRows,expectedRows);
   if(offset===0){ await run(env.SCORE_DB,`DELETE FROM final_score_v1_current WHERE batch_id=?`,batchId); await run(env.SCORE_DB,`DELETE FROM final_score_v1_issues WHERE batch_id=?`,batchId); }
   await run(env.SCORE_DB,`UPDATE final_score_v1_batches SET status='running', run_id=?, worker_version=?, profile_version=?, source_score_enrichment_batch_id=?, source_hp_v2_batch_id=?, hp_v2_rows_read=?, enrichment_rows_read=?, expected_final_score_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,runId,ORCH_FINAL_SCORE_V1_VERSION,ORCH_FINAL_SCORE_V1_PROFILE_VERSION,sourceEnrichmentBatchId,sourceHpV2BatchId,expectedRows,enrichmentRows,expectedRows,batchId);
-  const rows=await all(env.SCORE_DB,`SELECT h.*, se.market_prop_context_status AS market_prop_context_status, se.market_game_context_status AS market_game_context_status, se.profile_key AS profile_key, b.sample_profile AS baseline_sample_profile, b.role_profile AS baseline_role_profile, b.volatility_profile AS baseline_volatility_profile, b.variance_profile AS baseline_variance_profile, b.line_difficulty_profile AS baseline_line_difficulty_profile FROM hit_probability_v2_current h LEFT JOIN score_enrichment_current se ON se.batch_id=? AND se.prepared_row_id=h.prepared_row_id AND se.matrix_id=h.matrix_id AND se.source_line_id=h.source_line_id AND se.board_line_value=h.board_line_value AND se.selected_side=h.selected_side LEFT JOIN player_baseline_hp_current b ON b.baseline_hp_row_id=h.baseline_hp_row_id WHERE h.batch_id=? AND NOT (lower(COALESCE(h.source_key,''))='prizepicks' AND lower(COALESCE(h.selected_side,''))='less' AND (h.source_line_id LIKE '%|goblin|%' OR h.source_line_id LIKE '%|demon|%')) ORDER BY h.prepared_row_id, h.selected_side LIMIT ? OFFSET ?`,sourceEnrichmentBatchId,sourceHpV2BatchId,limit,offset);
+  const rows=await all(env.SCORE_DB,`SELECT h.*, b.sample_profile AS baseline_sample_profile, b.role_profile AS baseline_role_profile, b.volatility_profile AS baseline_volatility_profile, b.variance_profile AS baseline_variance_profile, b.line_difficulty_profile AS baseline_line_difficulty_profile FROM hit_probability_v2_current h LEFT JOIN player_baseline_hp_current b ON b.baseline_hp_row_id=h.baseline_hp_row_id WHERE h.batch_id=? AND NOT (lower(COALESCE(h.source_key,''))='prizepicks' AND lower(COALESCE(h.selected_side,''))='less' AND (h.source_line_id LIKE '%|goblin|%' OR h.source_line_id LIKE '%|demon|%')) ORDER BY h.prepared_row_id, h.selected_side LIMIT ? OFFSET ?`,sourceHpV2BatchId,limit,offset);
   const cur=[], iss=[]; let issues=0;
   for(const r of rows){
     const model=ofsModel(r); const finalRowId=`${batchId}|${r.hp_v2_row_id||r.prepared_row_id+'|'+r.selected_side}`;
     const blockedReason=model.status==='final_score_blocked'?model.reason:null; const archiveReason=(model.status==='final_score_archived_low_hp'||model.status==='final_score_archived_low_score')?model.reason:null;
-    const components={profile_version:ORCH_FINAL_SCORE_V1_PROFILE_VERSION,hp_v2_0_100:ofsRound(r.hp_v2_0_100,2),hp_v2_confidence_0_100:ofsRound(r.hp_v2_confidence_0_100,1),sample_score:model.sampleScore,context_completeness_score:model.contextScore,data_quality_score:model.dataQ,profile_stability_score:model.profileStability,factor_support_score:model.factorSupport,hp_support_score:model.hpSupport,certainty_0_100:model.certainty,trust_readiness_score_0_100:model.trustReadiness,overall_formula:"0.60*hp_v2_0_100 + 0.25*certainty_0_100 + 0.15*trust_readiness_score_0_100 + multiplier_score_adjustment, then caps",multiplier_variant:model.lineVariant,multiplier_score_adjustment:model.multiplierScoreAdjustment,multiplier_trust_adjustment:model.multiplierTrustAdjustment,multiplier_rule:model.multiplierRule,penalties:model.penalties,soft_reliability_penalty:model.softReliabilityPenalty,targeted_no_event_penalties:true,targeted_no_event_bucket:model.targetedNoEventBucket||'NOT_TARGETED',targeted_no_event_residual_score_penalty:model.targetedNoEventResidualScorePenalty||0,targeted_no_event_trust_penalty:model.targetedNoEventTrustPenalty||0,early_hook_accumulation_suppressor:true,early_hook_outs_less_signal:ofsEarlyHookOutsSignal(r),cap:model.cap,trust_cap:model.trustCap,player_tier:model.tier,baseline_sample_profile:r.baseline_sample_profile||null,baseline_role_profile:r.baseline_role_profile||null,baseline_volatility_profile:r.baseline_volatility_profile||null,baseline_variance_profile:r.baseline_variance_profile||null,baseline_line_difficulty_profile:r.baseline_line_difficulty_profile||null};
+    const components={profile_version:ORCH_FINAL_SCORE_V1_PROFILE_VERSION,hp_v2_0_100:ofsRound(r.hp_v2_0_100,2),hp_v2_confidence_0_100:ofsRound(r.hp_v2_confidence_0_100,1),sample_score:model.sampleScore,context_completeness_score:model.contextScore,data_quality_score:model.dataQ,profile_stability_score:model.profileStability,factor_support_score:model.factorSupport,hp_support_score:model.hpSupport,certainty_0_100:model.certainty,trust_readiness_score_0_100:model.trustReadiness,overall_formula:"0.60*hp_v2_0_100 + 0.25*certainty_0_100 + 0.15*trust_readiness_score_0_100 + multiplier_score_adjustment, then caps",multiplier_variant:model.lineVariant,multiplier_score_adjustment:model.multiplierScoreAdjustment,multiplier_trust_adjustment:model.multiplierTrustAdjustment,multiplier_rule:model.multiplierRule,penalties:model.penalties,cap:model.cap,trust_cap:model.trustCap,player_tier:model.tier,baseline_sample_profile:r.baseline_sample_profile||null,baseline_role_profile:r.baseline_role_profile||null,baseline_volatility_profile:r.baseline_volatility_profile||null,baseline_variance_profile:r.baseline_variance_profile||null,baseline_line_difficulty_profile:r.baseline_line_difficulty_profile||null};
     cur.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO final_score_v1_current (final_score_row_id,batch_id,source_score_enrichment_batch_id,source_hp_v2_batch_id,hp_v2_row_id,enrichment_row_id,prepared_row_id,matrix_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,player_id,player_name,team_id,opponent_team_id,canonical_prop_key,line_value,selected_side,odds_type,payout_variant,side_mode,hp_v2_0_100,hp_v2_confidence_0_100,hp_v2_status,hp_v2_band,hp_v2_grade,final_score_0_100,final_score_confidence_0_100,certainty_0_100,trust_readiness_score_0_100,final_score_grade,final_score_lane,final_score_reason_code,final_score_components_json,sample_tier,player_baseline_tier,context_completeness_score,market_support_score,factor_support_score,warning_count,blocker_count,partial_context_count,missing_component_count,final_score_status,blocked_reason,archive_reason,review_playable,live_playable,eligible_for_final_board,details_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(finalRowId,batchId,sourceEnrichmentBatchId,sourceHpV2BatchId,r.hp_v2_row_id,r.enrichment_row_id,r.prepared_row_id,r.matrix_id,r.source_line_id,r.source_key,r.game_pk,r.official_date,r.official_game_time_utc,r.mlb_player_id,r.player_name,r.team_id,r.opponent_team_id,r.canonical_prop_key,r.board_line_value,r.selected_side,model.oddsType,model.payoutVariant,model.sideMode,r.hp_v2_0_100,r.hp_v2_confidence_0_100,r.hp_v2_status,r.hp_v2_band,r.hp_v2_grade,model.score,model.finalConf,model.certainty,model.trustReadiness,model.grade,model.lane,model.reason,JSON.stringify(components),model.tier,r.baseline_sample_profile||model.tier,model.contextScore,70,model.factorSupport,r.warning_count,r.blocker_count,Number(r.missing_component_count||0)>0?1:0,r.missing_component_count,model.status,blockedReason,archiveReason,model.review,model.live,model.eligible,JSON.stringify({baseline_role_profile:r.baseline_role_profile||null,baseline_volatility_profile:r.baseline_volatility_profile||null,baseline_variance_profile:r.baseline_variance_profile||null,baseline_line_difficulty_profile:r.baseline_line_difficulty_profile||null,payout_variant:model.payoutVariant||null,odds_type:model.oddsType||null,side_mode:model.sideMode||null,multiplier_score_adjustment:model.multiplierScoreAdjustment,multiplier_trust_adjustment:model.multiplierTrustAdjustment,multiplier_rule:model.multiplierRule})));
     if(model.status==='final_score_blocked'||Number(r.missing_component_count||0)>0||ofsNum(r.hp_v2_confidence_0_100,0)<40){
       const sev=model.status==='final_score_blocked'?'BLOCKER':'WARNING'; const code=model.status==='final_score_blocked'?'FINAL_SCORE_V1_BLOCKED_BY_HP_OR_ENRICHMENT':(Number(r.missing_component_count||0)>0?'FINAL_SCORE_V1_PARTIAL_CONTEXT_CAPPED':'FINAL_SCORE_V1_LOW_CONFIDENCE_CAPPED'); const msg=model.status==='final_score_blocked'?'HP V2 or enrichment blocker preserved in Final Score V1.':(Number(r.missing_component_count||0)>0?'Partial context capped Final Score readiness.':'Low confidence capped Final Score readiness.');
@@ -13111,7 +13071,7 @@ async function processFinalScoreV1DirectJob(env,row,runId,trigger){
   const issueTotals=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows FROM final_score_v1_issues WHERE batch_id=?`,batchId);
   const writtenTotal=Number(totals&&totals.rows||0); const remaining=Math.max(0,expectedRows-(offset+rows.length)); const complete=remaining<=0;
   const blockedRows=Number(totals&&totals.blocked||0); const eligibleRows=Number(totals&&totals.eligible||0); const reviewRows=Number(totals&&totals.review_rows||0); const liveRows=Number(totals&&totals.live_rows||0); const lowHpRows=Number(totals&&totals.low_hp||0); const lowScoreRows=Number(totals&&totals.low_score||0); const cumulativeIssueRows=Number(issueTotals&&issueTotals.rows||0);
-  const output={ok:true,data_ok:true,version:ORCH_FINAL_SCORE_V1_VERSION,processed_by:WORKER_NAME,worker_name:WORKER_NAME,logical_worker_name:'alphadog-v2-final-score-v1',deployed_worker_slot:'alphadog-v2-orchestrator',job_key:'final-score-v1',request_id:row.request_id,run_id:runId,chain_id:row.chain_id,mode:ORCH_FINAL_SCORE_V1_MODE,status:complete?'completed_final_score_v1_current':'partial_continue_final_score_v1_current',certification:complete?'FINAL_SCORE_V1_CERTIFIED_HP_DOMINANT_OVERALL_SCORES':'FINAL_SCORE_V1_PARTIAL_CONTINUE',certification_grade:complete?'PASS_WITH_REVIEW_WARNINGS_ALLOWED':'PARTIAL',batch_id:batchId,final_score_v1_batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,source_score_enrichment_batch_id:sourceEnrichmentBatchId,hp_v2_rows_read:expectedRows,enrichment_rows_read:enrichmentRows,expected_final_score_rows:expectedRows,final_score_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:rows.length,issues_inserted_this_invocation:issues,blocked_rows:blockedRows,warning_rows:Number(totals&&totals.warning_ready||0),issue_rows_written:cumulativeIssueRows,eligible_rows:eligibleRows,review_playable_rows:reviewRows,live_playable_rows:liveRows,low_hp_rows:lowHpRows,low_score_rows:lowScoreRows,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,profile_version:ORCH_FINAL_SCORE_V1_PROFILE_VERSION,side_expanded:true,goblin_demon_less_excluded:true,multiplier_aware_final_score:true,targeted_no_event_penalties:true,targeted_no_event_pair_safe:true,broad_no_event_sweep:true,early_hook_accumulation_suppressor:true,demon_score_bump_0_100:2.0,goblin_score_penalty_0_100:-1.25,variant_adjustment_applies_to_score_not_hp:true,orchestrator_direct_fallback:true,score_audit_service_binding_bypassed:true,reads_hit_probability_v2_current:true,reads_score_enrichment_current:true,writes_final_score_v1_tables_only:true,no_true_hit_probability_claims:true,no_hp_v2_mutation:true,no_score_enrichment_mutation:true,no_scoring_engine_current_mutation:true,no_score_final_board_mutation:true,no_live_playable_activation:true,live_playable_forced_zero:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started};
+  const output={ok:true,data_ok:true,version:ORCH_FINAL_SCORE_V1_VERSION,processed_by:WORKER_NAME,worker_name:WORKER_NAME,logical_worker_name:'alphadog-v2-final-score-v1',deployed_worker_slot:'alphadog-v2-orchestrator',job_key:'final-score-v1',request_id:row.request_id,run_id:runId,chain_id:row.chain_id,mode:ORCH_FINAL_SCORE_V1_MODE,status:complete?'completed_final_score_v1_current':'partial_continue_final_score_v1_current',certification:complete?'FINAL_SCORE_V1_CERTIFIED_HP_DOMINANT_OVERALL_SCORES':'FINAL_SCORE_V1_PARTIAL_CONTINUE',certification_grade:complete?'PASS_WITH_REVIEW_WARNINGS_ALLOWED':'PARTIAL',batch_id:batchId,final_score_v1_batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,source_score_enrichment_batch_id:sourceEnrichmentBatchId,hp_v2_rows_read:expectedRows,enrichment_rows_read:enrichmentRows,expected_final_score_rows:expectedRows,final_score_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:rows.length,issues_inserted_this_invocation:issues,blocked_rows:blockedRows,warning_rows:Number(totals&&totals.warning_ready||0),issue_rows_written:cumulativeIssueRows,eligible_rows:eligibleRows,review_playable_rows:reviewRows,live_playable_rows:liveRows,low_hp_rows:lowHpRows,low_score_rows:lowScoreRows,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,profile_version:ORCH_FINAL_SCORE_V1_PROFILE_VERSION,side_expanded:true,goblin_demon_less_excluded:true,multiplier_aware_final_score:true,demon_score_bump_0_100:2.0,goblin_score_penalty_0_100:-1.25,variant_adjustment_applies_to_score_not_hp:true,orchestrator_direct_fallback:true,score_audit_service_binding_bypassed:true,reads_hit_probability_v2_current:true,reads_score_enrichment_current:true,writes_final_score_v1_tables_only:true,no_true_hit_probability_claims:true,no_hp_v2_mutation:true,no_score_enrichment_mutation:true,no_scoring_engine_current_mutation:true,no_score_final_board_mutation:true,no_live_playable_activation:true,live_playable_forced_zero:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started};
   await run(env.SCORE_DB,`UPDATE final_score_v1_batches SET status=?, hp_v2_rows_read=?, enrichment_rows_read=?, expected_final_score_rows=?, final_score_rows_written=?, blocked_rows=?, warning_rows=?, issue_rows_written=?, eligible_rows=?, review_playable_rows=?, live_playable_rows=?, low_hp_rows=?, low_score_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,complete?'completed':'partial_continue',expectedRows,enrichmentRows,expectedRows,writtenTotal,blockedRows,output.warning_rows,output.issue_rows_written,eligibleRows,reviewRows,liveRows,lowHpRows,lowScoreRows,output.certification,output.certification_grade,safeStringifyD1(output,50000),batchId);
   const runStatus=complete?'completed':'partial_continue';
   await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, NULL, NULL)",runId,row.request_id,row.chain_id,row.job_key,row.worker_name,runStatus,output.certification,expectedRows,writtenTotal,Date.now()-started,JSON.stringify({request_id:row.request_id,job_key:row.job_key,mode:ORCH_FINAL_SCORE_V1_MODE,input_json:rowInput}),safeStringifyD1(output,60000));
@@ -15713,6 +15673,11 @@ async function processOneUnlocked(env, trigger) {
       ? "partial_continue_daily_context_full_run_job"
       : (output && output.ok ? "completed_one_daily_context_full_run_job" : "failed_one_daily_context_full_run_job");
     return { status, request_id: row.request_id, run_id: runId, output };
+  }
+
+  if (isExpansionBaselineJob(row)) {
+    const output = await processExpansionBaselineJob(env, row, runId, trigger);
+    return { status: output && output.ok ? "completed_one_expansion_baseline_job" : "failed_one_expansion_baseline_job", request_id: row.request_id, run_id: runId, output };
   }
 
   if (isPlayerBaselineSanityJob(row)) {
