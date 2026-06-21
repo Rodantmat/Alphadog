@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.4-pre-heb-source-prep";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.5-hbp-source-ready";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -436,7 +436,7 @@ function resolveLineInventory(row){
   } else if(source==='prizepicks' && canonical==='rfi_nrfi'){
     profileNamespace='RFI_PP_'; sourceFormulaKey='RFI_PP_GAME_PAIR_0_5'; resolvedFactor='game_pair'; status='SOURCE_READY_RFI_PP'; needs=1; note='PrizePicks RFI/NRFI maps to game-pair expansion profile';
   } else if(source==='prizepicks' && canonical==='fantasy_score'){
-    profileNamespace='HFS_PP_DYNAMIC_'; sourceFormulaKey='HITTER_FANTASY_SCORE_PP_DYNAMIC_LINE_FROM_HITTER_GAME_LOGS_NO_HBP_COLUMN'; resolvedFactor='hitter'; status='SOURCE_READY_HITTER_FANTASY_PP_DYNAMIC'; needs=1; note='Hitter fantasy source exists in hitter_game_logs; HBP is not a current table column and must be carried as documented formula limitation';
+    profileNamespace='HFS_PP_DYNAMIC_'; sourceFormulaKey='HITTER_FANTASY_SCORE_PP_DYNAMIC_LINE_FROM_HITTER_GAME_LOGS_WITH_RAW_JSON_HIT_BY_PITCH'; resolvedFactor='hitter'; status='SOURCE_READY_HITTER_FANTASY_PP_DYNAMIC'; needs=1; note='Hitter fantasy source exists in hitter_game_logs; hitByPitch is available in raw_json and must be parsed by HEB formula even though it is not a top-level column';
   } else if(canonical==='plate_appearances'){
     profileNamespace='HITTER_PLATE_APPEARANCES_DYNAMIC_'; sourceFormulaKey='PLATE_APPEARANCES_FROM_HITTER_GAME_LOGS_PA'; resolvedFactor='hitter'; status='SOURCE_READY_HITTER_PLATE_APPEARANCES'; needs=1; note='Plate appearances source exists as hitter_game_logs.pa';
   } else if(canonical==='pitches_thrown'){
