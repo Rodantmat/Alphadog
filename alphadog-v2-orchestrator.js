@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.291-expansion-v2-hot-autopump-scope-fix";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.292-expansion-v2-front-of-queue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -14763,26 +14763,49 @@ async function processOneUnlocked(env, trigger) {
   await cancelPlayerBaselineHpQueuesWithTerminalBatch(env, trigger);
   await recoverStaleScoreEnrichmentV1Jobs(env, `${trigger || "tick"}_preselect`);
 
+  // v0.2.292: Expansion Baseline V2 HEB is intentionally isolated and user-triggered.
+  // Put it at the absolute front of queue selection. The previous generic/hot-count path
+  // correctly counted due V2 work but could keep self-continuing without selecting it.
+  let row = await first(env.CONTROL_DB,
+    `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+       FROM control_job_queue
+      WHERE job_key='expansion-baseline-v2'
+        AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
+        AND status IN ('pending','partial_continue')
+        AND finished_at IS NULL
+        AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+      ORDER BY datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) ASC, datetime(created_at) ASC
+      LIMIT 1`
+  );
+  if (row) {
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'expansion_baseline_v2_front_queue_selected', 'Selected Expansion Baseline V2 HEB before all generic/full-run queue work', ?, CURRENT_TIMESTAMP)",
+      row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, expansion_v2_front_of_queue_v0_2_292: true, no_manual_wake_required: true, no_current_baseline_mutation: true, version: SYSTEM_VERSION })
+    );
+  }
+
   // v0.2.160: Delta Full Run owns its own backend continuation path.
   // Prefer due same-chain Delta Full Run children, then the parent, before generic
   // queue work. Running children are not blindly redispatched; the parent owns
   // stale-running detection, trusted Calendar/Tally batch recovery, and retry
   // replacement for all 11 Delta Full Run child stages. The 5-minute cron remains
   // a starter/backup, not the normal stage pump.
-  let row = await first(env.CONTROL_DB,
-    `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
-     FROM control_job_queue p
-     JOIN control_job_queue c ON c.parent_request_id = p.request_id AND c.chain_id = p.chain_id
-     WHERE p.job_key='incremental-morning-full-run'
-       AND p.worker_name='alphadog-v2-orchestrator'
-       AND p.status IN ('pending','running','partial_continue')
-       AND p.finished_at IS NULL
-       AND c.status IN ('pending','partial_continue')
-       AND c.finished_at IS NULL
-       AND datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
-     ORDER BY datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) ASC, datetime(c.created_at) ASC
-     LIMIT 1`
-  );
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json
+       FROM control_job_queue p
+       JOIN control_job_queue c ON c.parent_request_id = p.request_id AND c.chain_id = p.chain_id
+       WHERE p.job_key='incremental-morning-full-run'
+         AND p.worker_name='alphadog-v2-orchestrator'
+         AND p.status IN ('pending','running','partial_continue')
+         AND p.finished_at IS NULL
+         AND c.status IN ('pending','partial_continue')
+         AND c.finished_at IS NULL
+         AND datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+       ORDER BY datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) ASC, datetime(c.created_at) ASC
+       LIMIT 1`
+    );
+  }
 
   if (!row) {
     row = await first(env.CONTROL_DB,
@@ -16225,7 +16248,7 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
         AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
         AND status='running'
         AND finished_at IS NULL
-        AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-30 seconds')
+        AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-60 seconds')
       ORDER BY datetime(updated_at) ASC
       LIMIT 1`
   );
@@ -16253,7 +16276,7 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
     certification_grade: 'RECOVERED_PARTIAL_CONTINUE',
     previous_status: row.status,
     previous_updated_at: row.updated_at,
-    stale_threshold_seconds: 30,
+    stale_threshold_seconds: 60,
     continuation_required: true,
     orchestrator_should_self_continue: true,
     next_input_json: nextInput,
