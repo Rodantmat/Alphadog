@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.286-expansion-baseline-direct-hot-loop";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.287-expansion-baseline-prelock-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -11736,6 +11736,117 @@ async function rescuePropFactorMinerTerminalEvidence(env, row, runId, input, sel
 }
 
 
+
+async function recoverExpansionBaselineRunningPreLock(env, trigger) {
+  if (!env || !env.CONTROL_DB) return { recovered: 0 };
+  const row = await first(env.CONTROL_DB,
+    `SELECT request_id, chain_id, job_key, worker_name, status, input_json, output_json, updated_at, started_at, run_after
+       FROM control_job_queue
+      WHERE job_key LIKE 'expansion-baseline%'
+        AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
+        AND status='running'
+        AND finished_at IS NULL
+        AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-75 seconds')
+      ORDER BY datetime(COALESCE(updated_at, started_at, created_at)) ASC
+      LIMIT 1`
+  );
+  if (!row || !row.request_id) return { recovered: 0 };
+
+  const rowInput = parseJsonSafeText(row.input_json || '{}', {});
+  const rowOutput = parseJsonSafeText(row.output_json || '{}', {});
+  const latestPartial = await first(env.CONTROL_DB,
+    `SELECT output_json
+       FROM control_job_runs
+      WHERE request_id=?
+        AND status='partial_continue'
+        AND finished_at IS NOT NULL
+      ORDER BY datetime(finished_at) DESC
+      LIMIT 1`,
+    row.request_id
+  );
+  const latestOutput = parseJsonSafeText((latestPartial && latestPartial.output_json) || '{}', {});
+  const nextInput = latestOutput.next_input_json || rowOutput.next_input_json || rowInput;
+  nextInput.request_id = row.request_id;
+  nextInput.chain_id = row.chain_id;
+  nextInput.job_key = row.job_key;
+  nextInput.worker_name = row.worker_name;
+  nextInput.mode = nextInput.mode || nextInput.expansion_mode || 'expansion_baseline_full_run';
+  nextInput.expansion_baseline_prelock_recovered = true;
+  nextInput.expansion_baseline_prelock_recovered_at = new Date().toISOString();
+  nextInput.expansion_baseline_prelock_recovered_version = SYSTEM_VERSION;
+
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    processed_by: WORKER_NAME,
+    worker_name: row.worker_name,
+    logical_worker_name: 'alphadog-v2-expansion-baseline',
+    job_key: row.job_key,
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    status: 'EXPANSION_BASELINE_PRELOCK_RUNNING_RECOVERED',
+    certification: 'EXPANSION_BASELINE_PRELOCK_RUNNING_RECOVERED',
+    certification_grade: 'RECOVERED_PARTIAL_CONTINUE',
+    previous_status: row.status,
+    previous_updated_at: row.updated_at || null,
+    no_current_baseline_mutation: true,
+    no_factor_mutation: true,
+    no_matrix_mutation: true,
+    no_scoring_mutation: true,
+    no_final_board_mutation: true,
+    writes_expansion_tables_only: true
+  };
+
+  await run(env.CONTROL_DB,
+    `UPDATE control_job_runs
+        SET status='partial_continue',
+            data_ok=1,
+            certification_status='EXPANSION_BASELINE_PRELOCK_RUNNING_RECOVERED',
+            finished_at=CURRENT_TIMESTAMP,
+            elapsed_ms=CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER),
+            output_json=?,
+            error_code=NULL,
+            error_message=NULL
+      WHERE request_id=?
+        AND status='running'
+        AND finished_at IS NULL`,
+    JSON.stringify(output), row.request_id
+  );
+  await run(env.CONTROL_DB,
+    `UPDATE control_job_queue
+        SET status='partial_continue',
+            run_after=CURRENT_TIMESTAMP,
+            finished_at=NULL,
+            updated_at=CURRENT_TIMESTAMP,
+            input_json=?,
+            output_json=?,
+            error_code=NULL,
+            error_message=NULL
+      WHERE request_id=?
+        AND status='running'
+        AND finished_at IS NULL`,
+    JSON.stringify(nextInput), JSON.stringify(output), row.request_id
+  );
+  await run(env.CONTROL_DB,
+    `UPDATE control_locks
+        SET lock_flag=0,
+            owner_request_id=NULL,
+            owner_worker_name=NULL,
+            expires_at=NULL,
+            updated_at=CURRENT_TIMESTAMP
+      WHERE lock_key='GLOBAL_ORCHESTRATOR'
+        AND lock_flag=1
+        AND owner_worker_name=?`,
+    WORKER_NAME
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'expansion_baseline_prelock_running_recovered', 'Recovered stale running Expansion Baseline row before acquiring GLOBAL_ORCHESTRATOR and released stale orchestrator lock', ?, CURRENT_TIMESTAMP)",
+    row.request_id, WORKER_NAME, row.job_key, JSON.stringify(output).slice(0, 9000)
+  );
+  return { recovered: 1, request_id: row.request_id, output };
+}
+
 async function processExpansionBaselineJob(env, row, runId, trigger) {
   const rowInput = parseJsonSafeText(row.input_json || "{}", {});
   const input = {
@@ -15892,6 +16003,7 @@ async function processOneUnlocked(env, trigger) {
 
 async function tick(env, trigger = "manual", maxJobs = 3) {
   let prelockDailyContextRecovery = null;
+  let prelockExpansionBaselineRecovery = null;
   let prelockCoverageDateMoveReconcile = null;
   try {
     prelockCoverageDateMoveReconcile = await reconcileCalendarCoverageDateMoves(env, `${trigger || 'tick'}:prelock`);
@@ -15906,6 +16018,14 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'WARN', 'daily_context_prelock_sidecar_recovery_failed', 'Pre-lock Daily Context sidecar recovery probe failed before acquiring GLOBAL_ORCHESTRATOR', ?, CURRENT_TIMESTAMP)", WORKER_NAME, JSON.stringify({ trigger, error: prelockDailyContextRecovery.error, version: SYSTEM_VERSION }));
     } catch (_) {}
   }
+  try {
+    prelockExpansionBaselineRecovery = await recoverExpansionBaselineRunningPreLock(env, trigger);
+  } catch (err) {
+    prelockExpansionBaselineRecovery = { recovered: 0, error: String(err && err.message ? err.message : err).slice(0, 900) };
+    try {
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'WARN', 'expansion_baseline_prelock_running_recovery_failed', 'Pre-lock Expansion Baseline running recovery probe failed before acquiring GLOBAL_ORCHESTRATOR', ?, CURRENT_TIMESTAMP)", WORKER_NAME, JSON.stringify({ trigger, error: prelockExpansionBaselineRecovery.error, version: SYSTEM_VERSION }));
+    } catch (_) {}
+  }
   const owner = rid("owner");
   const lock = await acquireLock(env, owner);
 
@@ -15916,6 +16036,7 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       trigger,
       lock,
       prelock_daily_context_recovery: prelockDailyContextRecovery,
+      prelock_expansion_baseline_recovery: prelockExpansionBaselineRecovery,
       prelock_coverage_date_move_reconcile: prelockCoverageDateMoveReconcile
     });
   }
@@ -15924,6 +16045,9 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
   try {
     if (prelockCoverageDateMoveReconcile && prelockCoverageDateMoveReconcile.changed) {
       processed.push({ status: 'calendar_coverage_date_moves_reconciled', ...prelockCoverageDateMoveReconcile });
+    }
+    if (prelockExpansionBaselineRecovery && Number(prelockExpansionBaselineRecovery.recovered || 0) > 0) {
+      processed.push({ status: 'expansion_baseline_prelock_running_recovered', ...prelockExpansionBaselineRecovery });
     }
 
     const deltaChildReconcile = await reconcileRunningDeltaFullRunChildrenFromOutput(env, trigger);
@@ -16445,9 +16569,11 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const shouldSelfContinue = (continuationAllowedByLastCycle || lockBusyHotContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
-  const hotContinuationDelayMs = shouldSelfContinue && (duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueExpansionBaselineHot > 0 || dueScoreEnrichmentV1Hot > 0)
-    ? (lastStatus === "no_due_jobs" ? 2500 : 0)
-    : (shouldSelfContinue && (lastStatus === "no_due_jobs" || lockBusyHotContinuation) ? 6500 : 0);
+  const hotContinuationDelayMs = shouldSelfContinue && lockBusyHotContinuation
+    ? 6500
+    : (shouldSelfContinue && (duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueExpansionBaselineHot > 0 || dueScoreEnrichmentV1Hot > 0)
+      ? (lastStatus === "no_due_jobs" ? 2500 : 0)
+      : (shouldSelfContinue && lastStatus === "no_due_jobs" ? 6500 : 0));
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
