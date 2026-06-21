@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.287-expansion-baseline-prelock-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.288-expansion-v2-heb-dispatch";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -204,7 +204,6 @@ function base(env, extra = {}) {
       ODDSAPI_REFERENCE_WORKER: !!env.ODDSAPI_REFERENCE_WORKER,
       PHASE2B_RECENT_FORM_WORKER: !!env.PHASE2B_RECENT_FORM_WORKER,
       PHASE2B_PITCHER_ROLE_WORKER: !!env.PHASE2B_PITCHER_ROLE_WORKER,
-      PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER: !!env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER,
       SCORE_AUDIT_WORKER: !!env.SCORE_AUDIT_WORKER
     },
     ...extra
@@ -587,10 +586,11 @@ function isPlayerBaselineSanityJob(row) {
   return (job === "player-baseline-sanity" || job === "player-baseline-hp") && worker === "alphadog-v2-phase2b-pitcher-role";
 }
 
-function isExpansionBaselineJob(row) {
+
+function isExpansionBaselineV2Job(row) {
   const job = String(row && row.job_key || "");
   const worker = String(row && row.worker_name || "");
-  return job.startsWith("expansion-baseline-") && worker === "alphadog-v2-phase3a-first-inning-pitcher-context";
+  return (job === "expansion-baseline-v2" || job === "expansion-baseline-v2-full-run") && worker === "alphadog-v2-phase3a-first-inning-pitcher-context";
 }
 
 const BOARD_FULL_RUN_LOCK_KEY = "BOARD_FULL_RUN";
@@ -11736,176 +11736,6 @@ async function rescuePropFactorMinerTerminalEvidence(env, row, runId, input, sel
 }
 
 
-
-async function recoverExpansionBaselineRunningPreLock(env, trigger) {
-  if (!env || !env.CONTROL_DB) return { recovered: 0 };
-  const row = await first(env.CONTROL_DB,
-    `SELECT request_id, chain_id, job_key, worker_name, status, input_json, output_json, updated_at, started_at, run_after
-       FROM control_job_queue
-      WHERE job_key LIKE 'expansion-baseline%'
-        AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
-        AND status='running'
-        AND finished_at IS NULL
-        AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-75 seconds')
-      ORDER BY datetime(COALESCE(updated_at, started_at, created_at)) ASC
-      LIMIT 1`
-  );
-  if (!row || !row.request_id) return { recovered: 0 };
-
-  const rowInput = parseJsonSafeText(row.input_json || '{}', {});
-  const rowOutput = parseJsonSafeText(row.output_json || '{}', {});
-  const latestPartial = await first(env.CONTROL_DB,
-    `SELECT output_json
-       FROM control_job_runs
-      WHERE request_id=?
-        AND status='partial_continue'
-        AND finished_at IS NOT NULL
-      ORDER BY datetime(finished_at) DESC
-      LIMIT 1`,
-    row.request_id
-  );
-  const latestOutput = parseJsonSafeText((latestPartial && latestPartial.output_json) || '{}', {});
-  const nextInput = latestOutput.next_input_json || rowOutput.next_input_json || rowInput;
-  nextInput.request_id = row.request_id;
-  nextInput.chain_id = row.chain_id;
-  nextInput.job_key = row.job_key;
-  nextInput.worker_name = row.worker_name;
-  nextInput.mode = nextInput.mode || nextInput.expansion_mode || 'expansion_baseline_full_run';
-  nextInput.expansion_baseline_prelock_recovered = true;
-  nextInput.expansion_baseline_prelock_recovered_at = new Date().toISOString();
-  nextInput.expansion_baseline_prelock_recovered_version = SYSTEM_VERSION;
-
-  const output = {
-    ok: true,
-    data_ok: true,
-    version: SYSTEM_VERSION,
-    processed_by: WORKER_NAME,
-    worker_name: row.worker_name,
-    logical_worker_name: 'alphadog-v2-expansion-baseline',
-    job_key: row.job_key,
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    status: 'EXPANSION_BASELINE_PRELOCK_RUNNING_RECOVERED',
-    certification: 'EXPANSION_BASELINE_PRELOCK_RUNNING_RECOVERED',
-    certification_grade: 'RECOVERED_PARTIAL_CONTINUE',
-    previous_status: row.status,
-    previous_updated_at: row.updated_at || null,
-    no_current_baseline_mutation: true,
-    no_factor_mutation: true,
-    no_matrix_mutation: true,
-    no_scoring_mutation: true,
-    no_final_board_mutation: true,
-    writes_expansion_tables_only: true
-  };
-
-  await run(env.CONTROL_DB,
-    `UPDATE control_job_runs
-        SET status='partial_continue',
-            data_ok=1,
-            certification_status='EXPANSION_BASELINE_PRELOCK_RUNNING_RECOVERED',
-            finished_at=CURRENT_TIMESTAMP,
-            elapsed_ms=CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER),
-            output_json=?,
-            error_code=NULL,
-            error_message=NULL
-      WHERE request_id=?
-        AND status='running'
-        AND finished_at IS NULL`,
-    JSON.stringify(output), row.request_id
-  );
-  await run(env.CONTROL_DB,
-    `UPDATE control_job_queue
-        SET status='partial_continue',
-            run_after=CURRENT_TIMESTAMP,
-            finished_at=NULL,
-            updated_at=CURRENT_TIMESTAMP,
-            input_json=?,
-            output_json=?,
-            error_code=NULL,
-            error_message=NULL
-      WHERE request_id=?
-        AND status='running'
-        AND finished_at IS NULL`,
-    JSON.stringify(nextInput), JSON.stringify(output), row.request_id
-  );
-  await run(env.CONTROL_DB,
-    `UPDATE control_locks
-        SET lock_flag=0,
-            owner_request_id=NULL,
-            owner_worker_name=NULL,
-            expires_at=NULL,
-            updated_at=CURRENT_TIMESTAMP
-      WHERE lock_key='GLOBAL_ORCHESTRATOR'
-        AND lock_flag=1
-        AND owner_worker_name=?`,
-    WORKER_NAME
-  );
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'expansion_baseline_prelock_running_recovered', 'Recovered stale running Expansion Baseline row before acquiring GLOBAL_ORCHESTRATOR and released stale orchestrator lock', ?, CURRENT_TIMESTAMP)",
-    row.request_id, WORKER_NAME, row.job_key, JSON.stringify(output).slice(0, 9000)
-  );
-  return { recovered: 1, request_id: row.request_id, output };
-}
-
-async function processExpansionBaselineJob(env, row, runId, trigger) {
-  const rowInput = parseJsonSafeText(row.input_json || "{}", {});
-  const input = {
-    ...rowInput,
-    request_id: row.request_id,
-    chain_id: row.chain_id,
-    job_key: row.job_key,
-    worker_name: row.worker_name,
-    run_id: runId,
-    trigger,
-    mode: rowInput.mode || rowInput.expansion_mode || String(row.job_key || "").replace(/-/g, "_"),
-    logical_worker_name: "alphadog-v2-expansion-baseline",
-    deployed_worker_slot: "alphadog-v2-phase3a-first-inning-pitcher-context",
-    expansion_only: true,
-    baseline_only: true,
-    writes_expansion_tables_only: true,
-    write_table_whitelist_regex: "^expansion_",
-    no_current_baseline_mutation: true,
-    no_factor_mutation: true,
-    no_matrix_mutation: true,
-    no_scoring_mutation: true,
-    no_final_board_mutation: true,
-    no_scheduler_mutation: true,
-    no_full_run_integration: true
-  };
-  const binding = env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER;
-  if (!binding || typeof binding.fetch !== "function") {
-    const output = {ok:false,data_ok:false,version:SYSTEM_VERSION,processed_by:WORKER_NAME,worker_name:row.worker_name,logical_worker_name:"alphadog-v2-expansion-baseline",deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context",job_key:row.job_key,request_id:row.request_id,run_id:runId,status:"EXPANSION_BASELINE_MISSING_EXISTING_SLOT_BINDING",error:"PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER service binding is missing",required_binding:"PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER",expansion_only:true,baseline_only:true};
-    await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'EXPANSION_BASELINE_MISSING_EXISTING_SLOT_BINDING', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_expansion_baseline_existing_slot_binding', 'PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER service binding is missing')",runId,row.request_id,row.chain_id,row.job_key,row.worker_name,JSON.stringify(input),safeStringifyD1(output));
-    await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_expansion_baseline_existing_slot_binding', error_message='PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER service binding is missing' WHERE request_id=?",safeStringifyD1(output),row.request_id);
-    return output;
-  }
-  const started = Date.now();
-  let output;
-  let httpStatus = null;
-  try {
-    const resp = await serviceBindingFetch(binding,"https://internal.alphadog-v2-phase3a-first-inning-pitcher-context/run",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(input)},"expansion_baseline_existing_slot",75000);
-    httpStatus = resp.status;
-    const text = await resp.text();
-    try { output = JSON.parse(text); }
-    catch(_) { output = {ok:false,data_ok:false,version:SYSTEM_VERSION,processed_by:WORKER_NAME,worker_name:row.worker_name,job_key:row.job_key,status:"worker_non_json_response",http_status:httpStatus,response_preview:String(text||"").slice(0,900),expansion_only:true,baseline_only:true}; }
-  } catch (err) {
-    output = {ok:false,data_ok:false,version:SYSTEM_VERSION,processed_by:WORKER_NAME,worker_name:row.worker_name,job_key:row.job_key,status:"worker_dispatch_exception",error:String(err&&err.message?err.message:err),expansion_only:true,baseline_only:true};
-  }
-  const ok = !!(output && output.ok === true);
-  const partial = !!(output && (output.partial_continue || output.orchestrator_should_self_continue || String(output.status || "").toLowerCase().includes("partial_continue")));
-  const rowsWritten = Number(output && (output.rows_written || (output.rows && (output.rows.sanity_rows || output.rows.baseline_hp_rows)) || 0));
-  const cert = String((output && (output.certification || output.status)) || (ok ? "EXPANSION_BASELINE_COMPLETED" : "EXPANSION_BASELINE_FAILED")).slice(0,120);
-  if (partial && ok) {
-    const nextInput = output.next_input_json || input;
-    await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, ?, 0, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, NULL, NULL)",runId,row.request_id,row.chain_id,row.job_key,row.worker_name,cert,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(output||{}));
-    await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='partial_continue', started_at=COALESCE(started_at,CURRENT_TIMESTAMP), finished_at=NULL, run_after=datetime('now','+1 seconds'), updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",JSON.stringify(nextInput),safeStringifyD1(output||{}),row.request_id);
-    return output;
-  }
-  await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",runId,row.request_id,row.chain_id,row.job_key,row.worker_name,ok?"completed":"failed",ok?1:0,cert,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(output||{}),ok?null:"expansion_baseline_worker_failed",ok?null:String((output&&(output.error||output.status))||"Expansion Baseline worker failed").slice(0,500));
-  await run(env.CONTROL_DB,"UPDATE control_job_queue SET status=?, started_at=COALESCE(started_at,CURRENT_TIMESTAMP), finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",ok?"completed":"failed",safeStringifyD1(output||{}),ok?null:"expansion_baseline_worker_failed",ok?null:String((output&&(output.error||output.status))||"Expansion Baseline worker failed").slice(0,500),row.request_id);
-  return output;
-}
-
 async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
   const input = parseJsonSafeText(row.input_json || "{}", {});
   input.request_id = row.request_id;
@@ -12136,6 +11966,67 @@ async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'player_baseline_sanity_dispatch_completed', 'Orchestrator completed Layer 1 history-only Player Baseline Sanity dispatch', ?, CURRENT_TIMESTAMP)",
     row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id:row.request_id, run_id:runId, ok, data_ok:dataOk, rows_read:rowsRead, rows_written:rowsWritten, certification, version:SYSTEM_VERSION }).slice(0, 9000));
+  return cappedOutput;
+}
+
+
+async function processExpansionBaselineV2Job(env, row, runId, trigger) {
+  const input = parseJsonSafeText(row.input_json || "{}", {});
+  input.request_id = row.request_id;
+  input.chain_id = row.chain_id;
+  input.run_id = runId;
+  input.job_key = row.job_key;
+  input.worker_name = row.worker_name;
+  input.mode = input.mode || input.expansion_mode || "baseline_v2_heb";
+  input.expansion_mode = input.expansion_mode || input.mode;
+  input.trigger = trigger;
+  input.logical_worker_name = "alphadog-v2-expansion-baseline-v2-heb";
+  input.deployed_worker_slot = "alphadog-v2-phase3a-first-inning-pitcher-context";
+  input.parallel_v2_only = true;
+  input.no_current_baseline_mutation = true;
+  input.no_current_sanity_mutation = true;
+  input.no_scoring = true;
+  input.no_final_board = true;
+  input.no_scheduler_mutation = true;
+  input.v2_chunk_size = Math.max(10, Math.min(150, Number(input.v2_chunk_size || 80)));
+
+  if (!env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER || typeof env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER.fetch !== "function") {
+    const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", job_key:row.job_key, request_id:row.request_id, run_id:runId, status:"EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING", certification:"EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING", certification_grade:"BLOCKED", required_binding:"PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER" };
+    await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_expansion_baseline_v2_service_binding', 'PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER service binding is missing')", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,JSON.stringify(input),safeStringifyD1(output));
+    await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_expansion_baseline_v2_service_binding', error_message='PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER service binding is missing' WHERE request_id=?", safeStringifyD1(output), row.request_id);
+    return output;
+  }
+
+  const started = Date.now();
+  let output; let httpStatus = null;
+  try {
+    const resp = await serviceBindingFetch(env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER, "https://internal.alphadog-v2-phase3a-first-inning-pitcher-context/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "expansion_baseline_v2", 75000);
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text||"").slice(0,900) }; }
+  } catch (err) {
+    output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) };
+  }
+
+  const partial = !!(output && (output.partial_continue || output.orchestrator_should_self_continue || output.continuation_required));
+  const nextInput = output && output.next_input_json && typeof output.next_input_json === "object" ? output.next_input_json : (output && output.next_input && typeof output.next_input === "object" ? output.next_input : null);
+  const cert = String((output && output.certification) || (partial ? "BASELINE_V2_HEB_PARTIAL_CONTINUE" : (output && output.ok ? "BASELINE_V2_HEB_COMPLETED" : "BASELINE_V2_HEB_FAILED"))).slice(0,120);
+  const rowsRead = Number(output && (output.source_rows_read || output.rows_read || 0));
+  const rowsWritten = Number(output && (output.rows_written || output.rows_promoted || output.rows_staged || 0));
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true } };
+
+  if (partial && nextInput) {
+    const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
+    await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,cert,rowsRead,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(cappedOutput));
+    await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", runAfterSeconds, safeStringifyD1(nextInput), safeStringifyD1(cappedOutput), row.request_id);
+    await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'expansion_baseline_v2_partial_continue', 'Orchestrator scheduled Expansion Baseline V2 HEB partial continuation', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,JSON.stringify({request_id:row.request_id,run_id:runId,certification:cert,batch_id:nextInput.batch_id||null,v2_cursor_offset:nextInput.v2_cursor_offset||null,run_after_seconds:runAfterSeconds,version:SYSTEM_VERSION}).slice(0,9000));
+    return cappedOutput;
+  }
+
+  const ok = !!(output && output.ok); const dataOk = !!(output && output.data_ok); const queueStatus = ok ? "completed" : "failed"; const errorCode = ok ? null : "expansion_baseline_v2_worker_failed"; const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Expansion Baseline V2 worker failed").slice(0,900);
+  await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,queueStatus,dataOk?1:0,cert,rowsRead,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(cappedOutput),errorCode,errorMessage);
+  await run(env.CONTROL_DB,"UPDATE control_job_queue SET status=?, started_at=COALESCE(started_at, CURRENT_TIMESTAMP), finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus,safeStringifyD1(cappedOutput),errorCode,errorMessage,row.request_id);
+  await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'expansion_baseline_v2_dispatch_completed', 'Orchestrator completed Expansion Baseline V2 HEB dispatch', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,ok?"INFO":"ERROR",JSON.stringify({request_id:row.request_id,run_id:runId,ok,data_ok:dataOk,rows_read:rowsRead,rows_written:rowsWritten,certification:cert,version:SYSTEM_VERSION}).slice(0,9000));
   return cappedOutput;
 }
 
@@ -15130,60 +15021,6 @@ async function processOneUnlocked(env, trigger) {
     );
   }
 
-  // v0.2.286: Expansion Baseline is a chunked baseline build. If a service-binding
-  // chunk is interrupted after the queue row is marked running, recover the same row
-  // as hot work from its persisted expansion_* batch/stage cursor instead of waiting
-  // for manual Wake or the 5-minute cron. This mirrors the proven hot-loop behavior
-  // used by other long chunked workers, while keeping writes isolated to expansion_*.
-  if (!row) {
-    row = await first(env.CONTROL_DB,
-      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
-       FROM control_job_queue
-       WHERE job_key LIKE 'expansion-baseline%'
-         AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
-         AND status='running'
-         AND finished_at IS NULL
-         AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-25 seconds')
-       ORDER BY priority ASC, datetime(COALESCE(updated_at, started_at, created_at)) ASC
-       LIMIT 1`
-    );
-    if (row) {
-      await run(env.CONTROL_DB,
-        "UPDATE control_job_queue SET status='partial_continue', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'",
-        row.request_id
-      );
-      await run(env.CONTROL_DB,
-        "UPDATE control_job_runs SET status='partial_continue', data_ok=1, certification_status='EXPANSION_BASELINE_RUNNING_HOT_RECOVERED', finished_at=CURRENT_TIMESTAMP, elapsed_ms=CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER), updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running' AND finished_at IS NULL",
-        row.request_id
-      );
-      row.status = 'partial_continue';
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'expansion_baseline_running_hot_recovered', 'Recovered stale running Expansion Baseline row for direct hot continuation', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, trigger, expansion_baseline_direct_hot_loop_v0_2_286: true })
-      );
-    }
-  }
-
-  if (!row) {
-    row = await first(env.CONTROL_DB,
-      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
-       FROM control_job_queue
-       WHERE job_key LIKE 'expansion-baseline%'
-         AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
-         AND status IN ('pending','partial_continue')
-         AND finished_at IS NULL
-         AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
-       ORDER BY priority ASC, datetime(updated_at) ASC
-       LIMIT 1`
-    );
-    if (row) {
-      await run(env.CONTROL_DB,
-        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'expansion_baseline_hot_continuation_selected', 'Selected Expansion Baseline pending/partial_continue row for backend hot continuation', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, expansion_baseline_hot_continuation_v0_2_285: true, expansion_baseline_direct_hot_loop_v0_2_286: true })
-      );
-    }
-  }
-
   if (!row) {
     row = await first(env.CONTROL_DB,
       "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json FROM control_job_queue WHERE status='pending' AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP) ORDER BY priority ASC, datetime(created_at) ASC LIMIT 1"
@@ -15847,11 +15684,15 @@ async function processOneUnlocked(env, trigger) {
     return { status, request_id: row.request_id, run_id: runId, output };
   }
 
-  if (isExpansionBaselineJob(row)) {
-    const output = await processExpansionBaselineJob(env, row, runId, trigger);
-    const rawStatus = String((output && output.status) || "").toLowerCase();
-    const partial = !!(output && (output.partial_continue || output.orchestrator_should_self_continue || rawStatus.includes("partial_continue")));
-    return { status: partial ? "partial_continue_expansion_baseline_job" : (output && output.ok ? "completed_one_expansion_baseline_job" : "failed_one_expansion_baseline_job"), request_id: row.request_id, run_id: runId, output };
+  if (isExpansionBaselineV2Job(row)) {
+    const output = await processExpansionBaselineV2Job(env, row, runId, trigger);
+    const partial = isPartialContinueOutput(output) || !!(output && (output.partial_continue || output.orchestrator_should_self_continue));
+    return {
+      status: partial ? "partial_continue_expansion_baseline_v2_job" : (output && output.ok ? "completed_one_expansion_baseline_v2_job" : "failed_one_expansion_baseline_v2_job"),
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
   }
 
   if (isPlayerBaselineSanityJob(row)) {
@@ -16003,7 +15844,6 @@ async function processOneUnlocked(env, trigger) {
 
 async function tick(env, trigger = "manual", maxJobs = 3) {
   let prelockDailyContextRecovery = null;
-  let prelockExpansionBaselineRecovery = null;
   let prelockCoverageDateMoveReconcile = null;
   try {
     prelockCoverageDateMoveReconcile = await reconcileCalendarCoverageDateMoves(env, `${trigger || 'tick'}:prelock`);
@@ -16018,14 +15858,6 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'WARN', 'daily_context_prelock_sidecar_recovery_failed', 'Pre-lock Daily Context sidecar recovery probe failed before acquiring GLOBAL_ORCHESTRATOR', ?, CURRENT_TIMESTAMP)", WORKER_NAME, JSON.stringify({ trigger, error: prelockDailyContextRecovery.error, version: SYSTEM_VERSION }));
     } catch (_) {}
   }
-  try {
-    prelockExpansionBaselineRecovery = await recoverExpansionBaselineRunningPreLock(env, trigger);
-  } catch (err) {
-    prelockExpansionBaselineRecovery = { recovered: 0, error: String(err && err.message ? err.message : err).slice(0, 900) };
-    try {
-      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'WARN', 'expansion_baseline_prelock_running_recovery_failed', 'Pre-lock Expansion Baseline running recovery probe failed before acquiring GLOBAL_ORCHESTRATOR', ?, CURRENT_TIMESTAMP)", WORKER_NAME, JSON.stringify({ trigger, error: prelockExpansionBaselineRecovery.error, version: SYSTEM_VERSION }));
-    } catch (_) {}
-  }
   const owner = rid("owner");
   const lock = await acquireLock(env, owner);
 
@@ -16036,7 +15868,6 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       trigger,
       lock,
       prelock_daily_context_recovery: prelockDailyContextRecovery,
-      prelock_expansion_baseline_recovery: prelockExpansionBaselineRecovery,
       prelock_coverage_date_move_reconcile: prelockCoverageDateMoveReconcile
     });
   }
@@ -16045,9 +15876,6 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
   try {
     if (prelockCoverageDateMoveReconcile && prelockCoverageDateMoveReconcile.changed) {
       processed.push({ status: 'calendar_coverage_date_moves_reconciled', ...prelockCoverageDateMoveReconcile });
-    }
-    if (prelockExpansionBaselineRecovery && Number(prelockExpansionBaselineRecovery.recovered || 0) > 0) {
-      processed.push({ status: 'expansion_baseline_prelock_running_recovered', ...prelockExpansionBaselineRecovery });
     }
 
     const deltaChildReconcile = await reconcileRunningDeltaFullRunChildrenFromOutput(env, trigger);
@@ -16459,21 +16287,6 @@ async function countDuePropMatrixBuilderHot(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
-async function countDueExpansionBaselineHot(env) {
-  // Expansion Baseline must be owned by the direct backend hot loop, not cron/manual Wake.
-  // Count active pending, running, and partial_continue rows so pump self-continuation
-  // remains scheduled across chunk boundaries and stale in-flight service-binding exits.
-  const row = await first(env.CONTROL_DB,
-    `SELECT COUNT(*) AS c
-       FROM control_job_queue
-      WHERE job_key LIKE 'expansion-baseline%'
-        AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
-        AND status IN ('pending','running','partial_continue')
-        AND finished_at IS NULL`
-  );
-  return Number(row && row.c ? row.c : 0);
-}
-
 async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle = 1, maxMs = 65000, ctx = null, requestUrl = null, pumpDepth = 0, maxPumpChains = 12) {
   const started = Date.now();
   const cycles = [];
@@ -16515,7 +16328,6 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const duePlayerBaselineSanity = await countDuePlayerBaselineSanity(env);
   const duePropFactorMinerHot = await countDuePropFactorMinerHot(env);
   const duePropMatrixBuilderHot = await countDuePropMatrixBuilderHot(env);
-  const dueExpansionBaselineHot = await countDueExpansionBaselineHot(env);
   const dueScoreEnrichmentV1Hot = await countDueScoreEnrichmentV1Hot(env);
   const dueBaseHitterGameLogs = await countDueBaseHitterGameLogs(env);
   const dueBaseHitterSplits = await countDueBaseHitterSplits(env);
@@ -16538,7 +16350,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const sawLockBusy = terminalStatuses.includes("lock_busy");
   const sawHardStop = terminalStatuses.some(s => s === "blocked" || s === "error");
   const continuationAllowedByLastCycle = !sawLockBusy && !sawHardStop;
-  const dueAnyHotChain = (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || duePlayerBaselineSanity > 0 || duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueExpansionBaselineHot > 0 || dueScoreEnrichmentV1Hot > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0);
+  const dueAnyHotChain = (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || duePlayerBaselineSanity > 0 || duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueScoreEnrichmentV1Hot > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0);
   // v0.2.175: Market Scoring Full Run contains long external-market/scoring stages.
   // A bounded pump can legitimately observe GLOBAL_ORCHESTRATOR busy while a prior
   // service-binding fetch is still running or while its 5-minute owner lock is waiting
@@ -16564,16 +16376,13 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const propFactorLockBusyContinuation = sawLockBusy && !sawHardStop && duePropFactorMinerHot > 0;
   const propMatrixLockBusyContinuation = sawLockBusy && !sawHardStop && duePropMatrixBuilderHot > 0;
   const scoreEnrichmentLockBusyContinuation = sawLockBusy && !sawHardStop && dueScoreEnrichmentV1Hot > 0;
-  const expansionBaselineLockBusyContinuation = sawLockBusy && !sawHardStop && dueExpansionBaselineHot > 0;
-  const lockBusyHotContinuation = incrementalMorningLockBusyContinuation || marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation || propMatrixLockBusyContinuation || scoreEnrichmentLockBusyContinuation || expansionBaselineLockBusyContinuation;
+  const lockBusyHotContinuation = incrementalMorningLockBusyContinuation || marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation || propMatrixLockBusyContinuation || scoreEnrichmentLockBusyContinuation;
   const shouldSelfContinue = (continuationAllowedByLastCycle || lockBusyHotContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
-  const hotContinuationDelayMs = shouldSelfContinue && lockBusyHotContinuation
-    ? 6500
-    : (shouldSelfContinue && (duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueExpansionBaselineHot > 0 || dueScoreEnrichmentV1Hot > 0)
-      ? (lastStatus === "no_due_jobs" ? 2500 : 0)
-      : (shouldSelfContinue && lastStatus === "no_due_jobs" ? 6500 : 0));
+  const hotContinuationDelayMs = shouldSelfContinue && (duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueScoreEnrichmentV1Hot > 0)
+    ? (lastStatus === "no_due_jobs" ? 2500 : 0)
+    : (shouldSelfContinue && (lastStatus === "no_due_jobs" || lockBusyHotContinuation) ? 6500 : 0);
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -16592,7 +16401,6 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       due_player_baseline_sanity_after_pump: duePlayerBaselineSanity,
       due_prop_factor_miner_hot_after_pump: duePropFactorMinerHot,
       due_prop_matrix_builder_hot_after_pump: duePropMatrixBuilderHot,
-      due_expansion_baseline_hot_after_pump: dueExpansionBaselineHot,
       due_score_enrichment_v1_hot_after_pump: dueScoreEnrichmentV1Hot,
       due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
       due_base_hitter_splits_after_pump: dueBaseHitterSplits,
@@ -16620,8 +16428,6 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true,
       player_baseline_sanity_lock_busy_continuation: !!playerBaselineSanityLockBusyContinuation,
       prop_factor_lock_busy_continuation: !!propFactorLockBusyContinuation,
-      expansion_baseline_lock_busy_continuation: !!expansionBaselineLockBusyContinuation,
-      expansion_baseline_direct_hot_loop_v0_2_286: true,
       prop_factor_cooldown_hot_pump_v0_2_242: true, prop_factor_always_hot_continuation_v0_2_243: true, prop_matrix_always_hot_continuation_v0_2_244: true, prop_matrix_stale_running_rescue_v0_2_245: true,
       hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
       cron_is_rescue_only_for_base_hitter: true, cron_is_rescue_only_for_base_hitter_splits: true, base_hitter_splits_hot_continuation_v0_2_32: true, base_pitcher_splits_hot_continuation_v0_2_35: true,
@@ -16645,7 +16451,6 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         due_player_baseline_sanity_after_pump: duePlayerBaselineSanity,
         due_prop_factor_miner_hot_after_pump: duePropFactorMinerHot,
         due_prop_matrix_builder_hot_after_pump: duePropMatrixBuilderHot,
-      due_expansion_baseline_hot_after_pump: dueExpansionBaselineHot,
       due_score_enrichment_v1_hot_after_pump: dueScoreEnrichmentV1Hot,
         due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
         due_base_hitter_splits_after_pump: dueBaseHitterSplits,
@@ -16671,7 +16476,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
         daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
         lock_busy_hot_continuation: !!lockBusyHotContinuation,
-        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true, expansion_baseline_direct_hot_loop_v0_2_286: true, expansion_baseline_lock_busy_continuation: !!expansionBaselineLockBusyContinuation, prop_factor_cooldown_hot_pump_v0_2_242: true, prop_factor_always_hot_continuation_v0_2_243: true, prop_matrix_always_hot_continuation_v0_2_244: true, prop_matrix_stale_running_rescue_v0_2_245: true,
+        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true, prop_factor_cooldown_hot_pump_v0_2_242: true, prop_factor_always_hot_continuation_v0_2_243: true, prop_matrix_always_hot_continuation_v0_2_244: true, prop_matrix_stale_running_rescue_v0_2_245: true,
       player_baseline_sanity_lock_busy_continuation: !!playerBaselineSanityLockBusyContinuation,
         self_continue_suppressed_due_to_lock_busy: !!(sawLockBusy && !lockBusyHotContinuation),
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
@@ -16712,7 +16517,6 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
     due_daily_context_full_run_after_pump: dueDailyContextFullRun,
     due_static_players_after_pump: dueStaticPlayers,
     due_player_baseline_sanity_after_pump: duePlayerBaselineSanity,
-    due_expansion_baseline_hot_after_pump: dueExpansionBaselineHot,
     due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
     due_base_hitter_splits_after_pump: dueBaseHitterSplits,
     due_base_hitter_metrics_after_pump: dueBaseHitterMetrics,
