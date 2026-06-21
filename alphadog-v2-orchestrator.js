@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.290-expansion-v2-hot-autopump";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.291-expansion-v2-hot-autopump-scope-fix";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -14762,7 +14762,6 @@ async function processOneUnlocked(env, trigger) {
   // instead of letting stale continuations keep writing against a failed_stale batch.
   await cancelPlayerBaselineHpQueuesWithTerminalBatch(env, trigger);
   await recoverStaleScoreEnrichmentV1Jobs(env, `${trigger || "tick"}_preselect`);
-  const expansionBaselineV2StaleRecovery = await rescueStaleExpansionBaselineV2Job(env, `${trigger || "tick"}_preselect`);
 
   // v0.2.160: Delta Full Run owns its own backend continuation path.
   // Prefer due same-chain Delta Full Run children, then the parent, before generic
@@ -15868,6 +15867,7 @@ async function processOneUnlocked(env, trigger) {
 async function tick(env, trigger = "manual", maxJobs = 3) {
   let prelockDailyContextRecovery = null;
   let prelockCoverageDateMoveReconcile = null;
+  let expansionBaselineV2StaleRecovery = { recovered: 0 };
   try {
     prelockCoverageDateMoveReconcile = await reconcileCalendarCoverageDateMoves(env, `${trigger || 'tick'}:prelock`);
   } catch (err) {
@@ -15881,6 +15881,15 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'WARN', 'daily_context_prelock_sidecar_recovery_failed', 'Pre-lock Daily Context sidecar recovery probe failed before acquiring GLOBAL_ORCHESTRATOR', ?, CURRENT_TIMESTAMP)", WORKER_NAME, JSON.stringify({ trigger, error: prelockDailyContextRecovery.error, version: SYSTEM_VERSION }));
     } catch (_) {}
   }
+  try {
+    expansionBaselineV2StaleRecovery = await rescueStaleExpansionBaselineV2Job(env, `${trigger || "tick"}_preselect`);
+  } catch (err) {
+    expansionBaselineV2StaleRecovery = { recovered: 0, error: String(err && err.message ? err.message : err).slice(0, 900) };
+    try {
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'WARN', 'expansion_baseline_v2_stale_recovery_failed_prelock', 'Pre-lock Expansion V2 stale recovery probe failed before acquiring GLOBAL_ORCHESTRATOR', ?, CURRENT_TIMESTAMP)", WORKER_NAME, JSON.stringify({ trigger, error: expansionBaselineV2StaleRecovery.error, version: SYSTEM_VERSION }));
+    } catch (_) {}
+  }
+
   const owner = rid("owner");
   const lock = await acquireLock(env, owner);
 
