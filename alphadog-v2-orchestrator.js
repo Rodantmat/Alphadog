@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.283-expansion-baseline-slot-route";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.284-expansion-baseline-partial-continuation";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -11781,10 +11781,17 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
     output = {ok:false,data_ok:false,version:SYSTEM_VERSION,processed_by:WORKER_NAME,worker_name:row.worker_name,job_key:row.job_key,status:"worker_dispatch_exception",error:String(err&&err.message?err.message:err),expansion_only:true,baseline_only:true};
   }
   const ok = !!(output && output.ok === true);
+  const partial = !!(output && (output.partial_continue || output.orchestrator_should_self_continue || String(output.status || "").toLowerCase().includes("partial_continue")));
   const rowsWritten = Number(output && (output.rows_written || (output.rows && (output.rows.sanity_rows || output.rows.baseline_hp_rows)) || 0));
   const cert = String((output && (output.certification || output.status)) || (ok ? "EXPANSION_BASELINE_COMPLETED" : "EXPANSION_BASELINE_FAILED")).slice(0,120);
+  if (partial && ok) {
+    const nextInput = output.next_input_json || input;
+    await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, ?, 0, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, NULL, NULL)",runId,row.request_id,row.chain_id,row.job_key,row.worker_name,cert,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(output||{}));
+    await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='partial_continue', started_at=COALESCE(started_at,CURRENT_TIMESTAMP), finished_at=NULL, run_after=datetime('now','+1 seconds'), updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",JSON.stringify(nextInput),safeStringifyD1(output||{}),row.request_id);
+    return output;
+  }
   await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",runId,row.request_id,row.chain_id,row.job_key,row.worker_name,ok?"completed":"failed",ok?1:0,cert,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(output||{}),ok?null:"expansion_baseline_worker_failed",ok?null:String((output&&(output.error||output.status))||"Expansion Baseline worker failed").slice(0,500));
-  await run(env.CONTROL_DB,"UPDATE control_job_queue SET status=?, tick_count=COALESCE(tick_count,0)+1, started_at=COALESCE(started_at,CURRENT_TIMESTAMP), finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",ok?"completed":"failed",safeStringifyD1(output||{}),ok?null:"expansion_baseline_worker_failed",ok?null:String((output&&(output.error||output.status))||"Expansion Baseline worker failed").slice(0,500),row.request_id);
+  await run(env.CONTROL_DB,"UPDATE control_job_queue SET status=?, started_at=COALESCE(started_at,CURRENT_TIMESTAMP), finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",ok?"completed":"failed",safeStringifyD1(output||{}),ok?null:"expansion_baseline_worker_failed",ok?null:String((output&&(output.error||output.status))||"Expansion Baseline worker failed").slice(0,500),row.request_id);
   return output;
 }
 
@@ -15677,7 +15684,9 @@ async function processOneUnlocked(env, trigger) {
 
   if (isExpansionBaselineJob(row)) {
     const output = await processExpansionBaselineJob(env, row, runId, trigger);
-    return { status: output && output.ok ? "completed_one_expansion_baseline_job" : "failed_one_expansion_baseline_job", request_id: row.request_id, run_id: runId, output };
+    const rawStatus = String((output && output.status) || "").toLowerCase();
+    const partial = !!(output && (output.partial_continue || output.orchestrator_should_self_continue || rawStatus.includes("partial_continue")));
+    return { status: partial ? "partial_continue_expansion_baseline_job" : (output && output.ok ? "completed_one_expansion_baseline_job" : "failed_one_expansion_baseline_job"), request_id: row.request_id, run_id: runId, output };
   }
 
   if (isPlayerBaselineSanityJob(row)) {

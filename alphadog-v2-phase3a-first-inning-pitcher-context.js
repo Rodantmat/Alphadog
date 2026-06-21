@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.0-expansion-baseline-shadow";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.1-expansion-hp-chunked";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -398,18 +398,12 @@ function formulaKeyFor(ns){ if(ns==="RA_") return "RA_FULL_GAME_TOTAL_RUNS_ALLOW
 function linesFor(ns){ if(ns==="RA_") return RA_LINES; if(ns==="PFS_PP_"||ns==="PFS_SL_") return PFS_LINES; return RFI_LINES; }
 function propFamilyFor(ns){ if(ns==="RA_") return "EXPANSION_RUNS_ALLOWED"; if(ns.startsWith("PFS_")) return "EXPANSION_PITCHER_FANTASY_SCORE"; if(ns.startsWith("RFI_")) return "EXPANSION_FIRST_INNING_RUNS"; return "EXPANSION_BASELINE"; }
 function valuesFromSanity(row){ const line= parseJson(row.line_baseline_json,{}); return line.line_rates || {}; }
-async function runHp(env,input={}){
-  await ensureSchema(env);
-  const requestId=String(input.request_id||rid("expansion_baseline_hp")); const runId=String(input.run_id||rid("run")); const batchId=String(input.batch_id||rid("expansion_baseline_hp_batch"));
-  const sourceBatchRow=await first(env.SCORE_DB,`SELECT batch_id FROM expansion_player_baseline_sanity_batches WHERE status='completed' ORDER BY datetime(updated_at) DESC LIMIT 1`);
-  const sourceSanityBatchId=String(input.source_sanity_batch_id || (sourceBatchRow && sourceBatchRow.batch_id) || "");
-  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`INSERT OR REPLACE INTO expansion_player_baseline_hp_batches (batch_id,request_id,run_id,mode,status,worker_version,source_sanity_batch_id,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"expansion_baseline_hp","running",VERSION,sourceSanityBatchId);
-  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_stage",`DELETE FROM expansion_player_baseline_hp_stage`);
-  await archiveAndClearCurrent(env.SCORE_DB,"expansion_player_baseline_hp_current","expansion_player_baseline_hp_history");
-  const sanity=await all(env.SCORE_DB,`SELECT * FROM expansion_player_baseline_sanity_current`);
+function buildHpRowsForSanityRows(sanityRows, batchId, sourceSanityBatchId){
   const hpRows=[];
-  for(const s of sanity){
-    const ns=String(s.profile_namespace||""); const lineRates=valuesFromSanity(s); const lines=linesFor(ns);
+  for(const s of sanityRows){
+    const ns=String(s.profile_namespace||"");
+    const lineRates=valuesFromSanity(s);
+    const lines=linesFor(ns);
     for(const line of lines){
       const lr=lineRates[String(line)] || {};
       for(const side of SIDES){
@@ -435,15 +429,61 @@ async function runHp(env,input={}){
       }
     }
   }
+  return hpRows;
+}
+
+async function insertHpRows(env, hpRows){
   const stmts=hpRows.map(r=>env.SCORE_DB.prepare(`INSERT OR REPLACE INTO expansion_player_baseline_hp_stage
     (baseline_hp_row_id,batch_id,source_sanity_batch_id,source_baseline_row_id,expansion_scope,profile_namespace,source_data_family,source_table,source_formula_key,baseline_formula_version,entity_type,entity_id,player_type,player_id,player_name,canonical_prop_key,prop_family,line_value,selected_side,baseline_hp_0_100,hp_adjustment_0_100,raw_rate_0_100,tier_prior_rate_0_100,raw_prior_gap_0_100,baseline_confidence_0_100,baseline_enriched_confidence_0_100,consistency_bonus_0_100,soft_uncertainty_reserve_0_100,sample_profile,role_profile,sanity_profile_key,volatility_profile,variance_profile,line_difficulty_profile,baseline_hp_profile_key,non_push_sample,hit_count,miss_count,push_count,prior_strength,formula_version,confidence_formula_version,no_daily_context,no_market_context,no_scoring_context,profile_notes_json,source_snapshot_json,created_at,updated_at)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,1,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(r.baseline_hp_row_id,r.batch_id,r.source_sanity_batch_id,r.source_baseline_row_id,r.expansion_scope,r.profile_namespace,r.source_data_family,r.source_table,r.source_formula_key,r.baseline_formula_version,r.entity_type,r.entity_id,r.player_type,r.player_id,r.player_name,r.canonical_prop_key,r.prop_family,r.line_value,r.selected_side,r.baseline_hp_0_100,r.raw_rate_0_100,r.tier_prior_rate_0_100,r.raw_prior_gap_0_100,r.baseline_confidence_0_100,r.baseline_enriched_confidence_0_100,r.consistency_bonus_0_100,r.soft_uncertainty_reserve_0_100,r.sample_profile,r.role_profile,r.sanity_profile_key,r.volatility_profile,r.variance_profile,r.line_difficulty_profile,r.baseline_hp_profile_key,r.non_push_sample,r.hit_count,r.miss_count,r.push_count,r.prior_strength,VERSION,`${VERSION}_confidence`,r.profile_notes_json,r.source_snapshot_json));
-  if(stmts.length) await writeBatch(env.SCORE_DB,"expansion_player_baseline_hp_stage",stmts,30);
+  if(stmts.length) await writeBatch(env.SCORE_DB,"expansion_player_baseline_hp_stage",stmts,20);
+}
+
+async function runHp(env,input={}){
+  await ensureSchema(env);
+  const requestId=String(input.request_id||rid("expansion_baseline_hp"));
+  const runId=String(input.run_id||rid("run"));
+  const requestedBatchId=String(input.batch_id||input.hp_batch_id||"");
+  const existingBatch=requestedBatchId ? await first(env.SCORE_DB,`SELECT * FROM expansion_player_baseline_hp_batches WHERE batch_id=? LIMIT 1`,requestedBatchId) : null;
+  const batchId=String(requestedBatchId || rid("expansion_baseline_hp_batch"));
+  const sourceBatchRow=await first(env.SCORE_DB,`SELECT batch_id FROM expansion_player_baseline_sanity_batches WHERE status='completed' ORDER BY datetime(updated_at) DESC LIMIT 1`);
+  const sourceSanityBatchId=String(input.source_sanity_batch_id || input.source_sanity_batch_id_for_hp || (existingBatch && existingBatch.source_sanity_batch_id) || (sourceBatchRow && sourceBatchRow.batch_id) || "");
+  const sanityTotalRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM expansion_player_baseline_sanity_current`);
+  const totalSanityRows=Number(sanityTotalRow && sanityTotalRow.c || 0);
+  const chunkSize=clamp(Number(input.hp_source_chunk_size || input.source_chunk_rows || 60),10,80);
+  let cursor=Number(input.hp_cursor_offset || input.cursor_offset || 0);
+  const freshStart=!existingBatch || String(existingBatch.status||"") !== "running" || cursor===0 && Number(existingBatch.source_rows_read||0)===0 && Number(existingBatch.rows_staged||0)===0;
+
+  if(freshStart){
+    await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`INSERT OR REPLACE INTO expansion_player_baseline_hp_batches (batch_id,request_id,run_id,mode,status,worker_version,source_sanity_batch_id,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"expansion_baseline_hp","running",VERSION,sourceSanityBatchId);
+    await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_stage",`DELETE FROM expansion_player_baseline_hp_stage`);
+    await archiveAndClearCurrent(env.SCORE_DB,"expansion_player_baseline_hp_current","expansion_player_baseline_hp_history");
+    cursor=0;
+  } else {
+    cursor=Number(existingBatch.source_rows_read || cursor || 0);
+  }
+
+  const sanity=await all(env.SCORE_DB,`SELECT * FROM expansion_player_baseline_sanity_current ORDER BY profile_namespace, COALESCE(entity_id,''), COALESCE(player_id,0), canonical_prop_key LIMIT ? OFFSET ?`,chunkSize,cursor);
+  const hpRows=buildHpRowsForSanityRows(sanity,batchId,sourceSanityBatchId);
+  await insertHpRows(env,hpRows);
+  const nextCursor=cursor + sanity.length;
+  const stagedCountRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM expansion_player_baseline_hp_stage`);
+  const stagedCount=Number(stagedCountRow && stagedCountRow.c || 0);
+
+  if(nextCursor < totalSanityRows){
+    const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_sanity_batch_id:sourceSanityBatchId,mode:"expansion_baseline_hp",status:"EXPANSION_BASELINE_HP_PARTIAL_CONTINUE",certification:"EXPANSION_BASELINE_HP_PARTIAL_CONTINUE",certification_grade:"PARTIAL_CONTINUE",source_rows_read:nextCursor,source_rows_total:totalSanityRows,rows_staged:stagedCount,rows_written:hpRows.length,hp_cursor_offset:nextCursor,hp_source_chunk_size:chunkSize,partial_continue:true,orchestrator_should_self_continue:true,next_mode:"expansion_baseline_hp",next_input_json:{...input,mode:"expansion_baseline_hp",batch_id:batchId,hp_batch_id:batchId,source_sanity_batch_id:sourceSanityBatchId,hp_cursor_offset:nextCursor,hp_source_chunk_size:chunkSize}});
+    await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`UPDATE expansion_player_baseline_hp_batches SET status='running', source_rows_read=?, rows_staged=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,nextCursor,stagedCount,output.certification,output.certification_grade,safeJson(output),batchId);
+    return output;
+  }
+
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_current",`DELETE FROM expansion_player_baseline_hp_current`);
   await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_current",`INSERT OR REPLACE INTO expansion_player_baseline_hp_current SELECT * FROM expansion_player_baseline_hp_stage`);
   await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_history",`INSERT INTO expansion_player_baseline_hp_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_player_baseline_hp_stage`);
   const cov=await all(env.SCORE_DB,`SELECT profile_namespace, selected_side, COUNT(*) AS rows, MIN(line_value) AS min_line, MAX(line_value) AS max_line FROM expansion_player_baseline_hp_current GROUP BY profile_namespace, selected_side ORDER BY profile_namespace, selected_side`);
-  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_sanity_batch_id:sourceSanityBatchId,mode:"expansion_baseline_hp",status:"EXPANSION_BASELINE_HP_COMPLETED",certification:"EXPANSION_BASELINE_HP_CERTIFIED_STAGE_PROMOTED",certification_grade:"PASS",source_rows_read:sanity.length,rows_staged:hpRows.length,rows_promoted:hpRows.length,history_rows:hpRows.length,coverage:cov,rows_written:hpRows.length});
-  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`UPDATE expansion_player_baseline_hp_batches SET status='completed', finished_at=CURRENT_TIMESTAMP, source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,sanity.length,hpRows.length,hpRows.length,hpRows.length,output.certification,output.certification_grade,safeJson(output),batchId);
+  const currentCountRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM expansion_player_baseline_hp_current`);
+  const currentCount=Number(currentCountRow && currentCountRow.c || 0);
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_sanity_batch_id:sourceSanityBatchId,mode:"expansion_baseline_hp",status:"EXPANSION_BASELINE_HP_COMPLETED",certification:"EXPANSION_BASELINE_HP_CERTIFIED_STAGE_PROMOTED",certification_grade:"PASS",source_rows_read:totalSanityRows,rows_staged:stagedCount,rows_promoted:currentCount,history_rows:stagedCount,coverage:cov,rows_written:hpRows.length});
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`UPDATE expansion_player_baseline_hp_batches SET status='completed', finished_at=CURRENT_TIMESTAMP, source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,totalSanityRows,stagedCount,currentCount,stagedCount,output.certification,output.certification_grade,safeJson(output),batchId);
   return output;
 }
 
@@ -476,13 +516,29 @@ async function certifier(env,input={}){
 }
 
 async function fullRun(env,input={}){
-  const before = await productionCounts(env);
-  const mining = await mineFirstInningContext(env,{...input, mode:"expansion_baseline_mining", request_id:input.request_id||rid("expansion_baseline_full"), run_id:input.run_id||rid("run")});
-  const sanity = await runSanity(env,{...input, mode:"expansion_baseline_sanity", request_id:mining.request_id, run_id:mining.run_id});
-  const hp = await runHp(env,{...input, mode:"expansion_baseline_hp", request_id:mining.request_id, run_id:mining.run_id});
-  const cert = await certifier(env,{...input, mode:"expansion_baseline_certifier", request_id:mining.request_id, run_id:mining.run_id, production_counts_before:before});
+  const requestId=String(input.request_id||rid("expansion_baseline_full"));
+  const runId=String(input.run_id||rid("run"));
+  const state=input.expansion_full_run_state || {};
+  const before=input.production_counts_before || state.production_counts_before || await productionCounts(env);
+  let mining=null, sanity=null, hp=null;
+  let sourceSanityBatchId=input.source_sanity_batch_id || state.source_sanity_batch_id || null;
+
+  if(!state.mining_completed){
+    mining = await mineFirstInningContext(env,{...input, mode:"expansion_baseline_mining", request_id:requestId, run_id:runId});
+    sanity = await runSanity(env,{...input, mode:"expansion_baseline_sanity", request_id:requestId, run_id:runId});
+    sourceSanityBatchId = sanity.batch_id;
+  }
+
+  hp = await runHp(env,{...input, mode:"expansion_baseline_hp", request_id:requestId, run_id:runId, source_sanity_batch_id:sourceSanityBatchId, batch_id:input.hp_batch_id || input.batch_id || null, hp_cursor_offset:input.hp_cursor_offset || 0, hp_source_chunk_size:input.hp_source_chunk_size || 60});
+  if(hp && hp.partial_continue){
+    const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, source_sanity_batch_id:sourceSanityBatchId, hp_batch_id:hp.batch_id, hp_cursor_offset:hp.hp_cursor_offset, hp_source_chunk_size:hp.hp_source_chunk_size || 60, expansion_full_run_state:{mining_completed:true,sanity_completed:true,source_sanity_batch_id:sourceSanityBatchId,production_counts_before:before}};
+    const output=baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_HP",certification:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_HP",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,next_input_json:nextInput,hp,rows_written:Number(hp.rows_written||0),current_system_mutated:false});
+    return output;
+  }
+
+  const cert = await certifier(env,{...input, mode:"expansion_baseline_certifier", request_id:requestId, run_id:runId, production_counts_before:before});
   const pass = !!(cert && cert.ok === true);
-  const output = baseOutput(input,{request_id:mining.request_id,run_id:mining.run_id,mode:"expansion_baseline_full_run",status:pass?"EXPANSION_BASELINE_FULL_RUN_COMPLETED":"EXPANSION_BASELINE_FULL_RUN_BLOCKED",certification:cert.certification,certification_grade:cert.certification_grade,stages:{mining,sanity,hp,certifier:cert},rows_written:Number(mining.rows_written||0)+Number(sanity.rows_written||0)+Number(hp.rows_written||0),current_system_mutated:cert.current_system_mutated});
+  const output = baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:pass?"EXPANSION_BASELINE_FULL_RUN_COMPLETED":"EXPANSION_BASELINE_FULL_RUN_BLOCKED",certification:cert.certification,certification_grade:cert.certification_grade,stages:{mining: mining || "previous_call_completed", sanity: sanity || "previous_call_completed", hp, certifier:cert},rows_written:Number(hp&&hp.rows_written||0),current_system_mutated:cert.current_system_mutated});
   output.ok = pass;
   output.data_ok = pass;
   return output;
