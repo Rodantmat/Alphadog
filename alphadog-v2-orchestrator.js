@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.288-expansion-v2-heb-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.289-expansion-baseline-v2-chunk-safe";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -587,10 +587,10 @@ function isPlayerBaselineSanityJob(row) {
 }
 
 
-function isExpansionBaselineV2Job(row) {
+function isExpansionBaselineJob(row) {
   const job = String(row && row.job_key || "");
   const worker = String(row && row.worker_name || "");
-  return (job === "expansion-baseline-v2" || job === "expansion-baseline-v2-full-run") && worker === "alphadog-v2-phase3a-first-inning-pitcher-context";
+  return (job === "expansion-baseline-full-run" || job === "expansion-baseline-line-inventory" || job === "expansion-baseline-sanity" || job === "expansion-baseline-hp" || job === "expansion-baseline-v2" || job === "expansion-baseline-v2-full-run") && worker === "alphadog-v2-phase3a-first-inning-pitcher-context";
 }
 
 const BOARD_FULL_RUN_LOCK_KEY = "BOARD_FULL_RUN";
@@ -11970,14 +11970,14 @@ async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
 }
 
 
-async function processExpansionBaselineV2Job(env, row, runId, trigger) {
+async function processExpansionBaselineJob(env, row, runId, trigger) {
   const input = parseJsonSafeText(row.input_json || "{}", {});
   input.request_id = row.request_id;
   input.chain_id = row.chain_id;
   input.run_id = runId;
   input.job_key = row.job_key;
   input.worker_name = row.worker_name;
-  input.mode = input.mode || input.expansion_mode || "baseline_v2_heb";
+  input.mode = input.mode || input.expansion_mode || (row.job_key === "expansion-baseline-v2" ? "baseline_v2_heb" : (row.job_key === "expansion-baseline-line-inventory" ? "expansion_line_inventory" : (row.job_key === "expansion-baseline-sanity" ? "expansion_baseline_sanity" : (row.job_key === "expansion-baseline-hp" ? "expansion_baseline_hp" : "expansion_baseline_full_run"))));
   input.expansion_mode = input.expansion_mode || input.mode;
   input.trigger = trigger;
   input.logical_worker_name = "alphadog-v2-expansion-baseline-v2-heb";
@@ -15684,11 +15684,11 @@ async function processOneUnlocked(env, trigger) {
     return { status, request_id: row.request_id, run_id: runId, output };
   }
 
-  if (isExpansionBaselineV2Job(row)) {
-    const output = await processExpansionBaselineV2Job(env, row, runId, trigger);
+  if (isExpansionBaselineJob(row)) {
+    const output = await processExpansionBaselineJob(env, row, runId, trigger);
     const partial = isPartialContinueOutput(output) || !!(output && (output.partial_continue || output.orchestrator_should_self_continue));
     return {
-      status: partial ? "partial_continue_expansion_baseline_v2_job" : (output && output.ok ? "completed_one_expansion_baseline_v2_job" : "failed_one_expansion_baseline_v2_job"),
+      status: partial ? "partial_continue_expansion_baseline_job" : (output && output.ok ? "completed_one_expansion_baseline_job" : "failed_one_expansion_baseline_job"),
       request_id: row.request_id,
       run_id: runId,
       output
