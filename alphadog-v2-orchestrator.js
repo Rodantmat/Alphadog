@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.285-expansion-baseline-hot-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.286-expansion-baseline-direct-hot-loop";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -15019,6 +15019,40 @@ async function processOneUnlocked(env, trigger) {
     );
   }
 
+  // v0.2.286: Expansion Baseline is a chunked baseline build. If a service-binding
+  // chunk is interrupted after the queue row is marked running, recover the same row
+  // as hot work from its persisted expansion_* batch/stage cursor instead of waiting
+  // for manual Wake or the 5-minute cron. This mirrors the proven hot-loop behavior
+  // used by other long chunked workers, while keeping writes isolated to expansion_*.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
+       FROM control_job_queue
+       WHERE job_key LIKE 'expansion-baseline%'
+         AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
+         AND status='running'
+         AND finished_at IS NULL
+         AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-25 seconds')
+       ORDER BY priority ASC, datetime(COALESCE(updated_at, started_at, created_at)) ASC
+       LIMIT 1`
+    );
+    if (row) {
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_queue SET status='partial_continue', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'",
+        row.request_id
+      );
+      await run(env.CONTROL_DB,
+        "UPDATE control_job_runs SET status='partial_continue', data_ok=1, certification_status='EXPANSION_BASELINE_RUNNING_HOT_RECOVERED', finished_at=CURRENT_TIMESTAMP, elapsed_ms=CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER), updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running' AND finished_at IS NULL",
+        row.request_id
+      );
+      row.status = 'partial_continue';
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'WARN', 'expansion_baseline_running_hot_recovered', 'Recovered stale running Expansion Baseline row for direct hot continuation', ?, CURRENT_TIMESTAMP)",
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, trigger, expansion_baseline_direct_hot_loop_v0_2_286: true })
+      );
+    }
+  }
+
   if (!row) {
     row = await first(env.CONTROL_DB,
       `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
@@ -15034,7 +15068,7 @@ async function processOneUnlocked(env, trigger) {
     if (row) {
       await run(env.CONTROL_DB,
         "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'expansion_baseline_hot_continuation_selected', 'Selected Expansion Baseline pending/partial_continue row for backend hot continuation', ?, CURRENT_TIMESTAMP)",
-        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, expansion_baseline_hot_continuation_v0_2_285: true })
+        row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, expansion_baseline_hot_continuation_v0_2_285: true, expansion_baseline_direct_hot_loop_v0_2_286: true })
       );
     }
   }
@@ -16301,6 +16335,21 @@ async function countDuePropMatrixBuilderHot(env) {
   return Number(row && row.c ? row.c : 0);
 }
 
+async function countDueExpansionBaselineHot(env) {
+  // Expansion Baseline must be owned by the direct backend hot loop, not cron/manual Wake.
+  // Count active pending, running, and partial_continue rows so pump self-continuation
+  // remains scheduled across chunk boundaries and stale in-flight service-binding exits.
+  const row = await first(env.CONTROL_DB,
+    `SELECT COUNT(*) AS c
+       FROM control_job_queue
+      WHERE job_key LIKE 'expansion-baseline%'
+        AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
+        AND status IN ('pending','running','partial_continue')
+        AND finished_at IS NULL`
+  );
+  return Number(row && row.c ? row.c : 0);
+}
+
 async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle = 1, maxMs = 65000, ctx = null, requestUrl = null, pumpDepth = 0, maxPumpChains = 12) {
   const started = Date.now();
   const cycles = [];
@@ -16342,6 +16391,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const duePlayerBaselineSanity = await countDuePlayerBaselineSanity(env);
   const duePropFactorMinerHot = await countDuePropFactorMinerHot(env);
   const duePropMatrixBuilderHot = await countDuePropMatrixBuilderHot(env);
+  const dueExpansionBaselineHot = await countDueExpansionBaselineHot(env);
   const dueScoreEnrichmentV1Hot = await countDueScoreEnrichmentV1Hot(env);
   const dueBaseHitterGameLogs = await countDueBaseHitterGameLogs(env);
   const dueBaseHitterSplits = await countDueBaseHitterSplits(env);
@@ -16364,7 +16414,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const sawLockBusy = terminalStatuses.includes("lock_busy");
   const sawHardStop = terminalStatuses.some(s => s === "blocked" || s === "error");
   const continuationAllowedByLastCycle = !sawLockBusy && !sawHardStop;
-  const dueAnyHotChain = (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || duePlayerBaselineSanity > 0 || duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueScoreEnrichmentV1Hot > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0);
+  const dueAnyHotChain = (dueIncrementalMorningFullRun > 0 || dueBoardFullRun > 0 || dueDailyFullRun > 0 || dueDailyContextFullRun > 0 || dueMarketScoringFullRun > 0 || dueStaticPlayers > 0 || duePlayerBaselineSanity > 0 || duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueExpansionBaselineHot > 0 || dueScoreEnrichmentV1Hot > 0 || dueBaseHitterGameLogs > 0 || dueBaseHitterSplits > 0 || dueBaseHitterMetrics > 0 || dueBasePitcherMetrics > 0 || dueBasePitcherGameLogs > 0 || dueBaseTeamGameLogs > 0 || dueBasePitcherSplits > 0 || dueBaseStarterHistory > 0 || dueBaseBullpenHistory > 0);
   // v0.2.175: Market Scoring Full Run contains long external-market/scoring stages.
   // A bounded pump can legitimately observe GLOBAL_ORCHESTRATOR busy while a prior
   // service-binding fetch is still running or while its 5-minute owner lock is waiting
@@ -16390,11 +16440,12 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const propFactorLockBusyContinuation = sawLockBusy && !sawHardStop && duePropFactorMinerHot > 0;
   const propMatrixLockBusyContinuation = sawLockBusy && !sawHardStop && duePropMatrixBuilderHot > 0;
   const scoreEnrichmentLockBusyContinuation = sawLockBusy && !sawHardStop && dueScoreEnrichmentV1Hot > 0;
-  const lockBusyHotContinuation = incrementalMorningLockBusyContinuation || marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation || propMatrixLockBusyContinuation || scoreEnrichmentLockBusyContinuation;
+  const expansionBaselineLockBusyContinuation = sawLockBusy && !sawHardStop && dueExpansionBaselineHot > 0;
+  const lockBusyHotContinuation = incrementalMorningLockBusyContinuation || marketScoringLockBusyContinuation || dailyContextLockBusyContinuation || dailyFullRunLockBusyContinuation || playerBaselineSanityLockBusyContinuation || propFactorLockBusyContinuation || propMatrixLockBusyContinuation || scoreEnrichmentLockBusyContinuation || expansionBaselineLockBusyContinuation;
   const shouldSelfContinue = (continuationAllowedByLastCycle || lockBusyHotContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
-  const hotContinuationDelayMs = shouldSelfContinue && (duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueScoreEnrichmentV1Hot > 0)
+  const hotContinuationDelayMs = shouldSelfContinue && (duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueExpansionBaselineHot > 0 || dueScoreEnrichmentV1Hot > 0)
     ? (lastStatus === "no_due_jobs" ? 2500 : 0)
     : (shouldSelfContinue && (lastStatus === "no_due_jobs" || lockBusyHotContinuation) ? 6500 : 0);
 
@@ -16415,6 +16466,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       due_player_baseline_sanity_after_pump: duePlayerBaselineSanity,
       due_prop_factor_miner_hot_after_pump: duePropFactorMinerHot,
       due_prop_matrix_builder_hot_after_pump: duePropMatrixBuilderHot,
+      due_expansion_baseline_hot_after_pump: dueExpansionBaselineHot,
       due_score_enrichment_v1_hot_after_pump: dueScoreEnrichmentV1Hot,
       due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
       due_base_hitter_splits_after_pump: dueBaseHitterSplits,
@@ -16442,6 +16494,8 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
       daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true,
       player_baseline_sanity_lock_busy_continuation: !!playerBaselineSanityLockBusyContinuation,
       prop_factor_lock_busy_continuation: !!propFactorLockBusyContinuation,
+      expansion_baseline_lock_busy_continuation: !!expansionBaselineLockBusyContinuation,
+      expansion_baseline_direct_hot_loop_v0_2_286: true,
       prop_factor_cooldown_hot_pump_v0_2_242: true, prop_factor_always_hot_continuation_v0_2_243: true, prop_matrix_always_hot_continuation_v0_2_244: true, prop_matrix_stale_running_rescue_v0_2_245: true,
       hot_continuation_loop_v0_2_5: true, watchdog_hot_loop_v0_2_6: true,
       cron_is_rescue_only_for_base_hitter: true, cron_is_rescue_only_for_base_hitter_splits: true, base_hitter_splits_hot_continuation_v0_2_32: true, base_pitcher_splits_hot_continuation_v0_2_35: true,
@@ -16465,6 +16519,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         due_player_baseline_sanity_after_pump: duePlayerBaselineSanity,
         due_prop_factor_miner_hot_after_pump: duePropFactorMinerHot,
         due_prop_matrix_builder_hot_after_pump: duePropMatrixBuilderHot,
+      due_expansion_baseline_hot_after_pump: dueExpansionBaselineHot,
       due_score_enrichment_v1_hot_after_pump: dueScoreEnrichmentV1Hot,
         due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
         due_base_hitter_splits_after_pump: dueBaseHitterSplits,
@@ -16490,7 +16545,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
         daily_full_run_lock_busy_continuation: !!dailyFullRunLockBusyContinuation,
         daily_context_lock_busy_continuation: !!dailyContextLockBusyContinuation,
         lock_busy_hot_continuation: !!lockBusyHotContinuation,
-        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true, prop_factor_cooldown_hot_pump_v0_2_242: true, prop_factor_always_hot_continuation_v0_2_243: true, prop_matrix_always_hot_continuation_v0_2_244: true, prop_matrix_stale_running_rescue_v0_2_245: true,
+        daily_context_lockbusy_hot_continuation_v0_2_204: true, daily_context_zero_delay_hot_drain_v0_2_206: true, daily_full_run_grandchild_hot_priority_v0_2_208: true, player_baseline_sanity_auto_pump_v0_2_236: true, expansion_baseline_direct_hot_loop_v0_2_286: true, expansion_baseline_lock_busy_continuation: !!expansionBaselineLockBusyContinuation, prop_factor_cooldown_hot_pump_v0_2_242: true, prop_factor_always_hot_continuation_v0_2_243: true, prop_matrix_always_hot_continuation_v0_2_244: true, prop_matrix_stale_running_rescue_v0_2_245: true,
       player_baseline_sanity_lock_busy_continuation: !!playerBaselineSanityLockBusyContinuation,
         self_continue_suppressed_due_to_lock_busy: !!(sawLockBusy && !lockBusyHotContinuation),
         self_continue_suppressed_due_to_hard_stop: !!sawHardStop,
@@ -16531,6 +16586,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
     due_daily_context_full_run_after_pump: dueDailyContextFullRun,
     due_static_players_after_pump: dueStaticPlayers,
     due_player_baseline_sanity_after_pump: duePlayerBaselineSanity,
+    due_expansion_baseline_hot_after_pump: dueExpansionBaselineHot,
     due_base_hitter_game_logs_after_pump: dueBaseHitterGameLogs,
     due_base_hitter_splits_after_pump: dueBaseHitterSplits,
     due_base_hitter_metrics_after_pump: dueBaseHitterMetrics,
