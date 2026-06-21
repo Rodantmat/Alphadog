@@ -1,10 +1,11 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.2-expansion-full-depth-base";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.3-dynamic-line-inventory";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
   "expansion-baseline-hp",
+  "expansion-baseline-line-inventory",
   "expansion-baseline-certifier",
   "expansion-baseline-full-run"
 ]);
@@ -153,6 +154,22 @@ async function ensureScoreSchema(env){
 
   await writeRun(db,"expansion_player_baseline_sanity_current",`CREATE INDEX IF NOT EXISTS idx_exp_sanity_ns_player ON expansion_player_baseline_sanity_current(profile_namespace, player_id)`);
   await writeRun(db,"expansion_player_baseline_hp_current",`CREATE INDEX IF NOT EXISTS idx_exp_hp_ns_line_side ON expansion_player_baseline_hp_current(profile_namespace, line_value, selected_side)`);
+
+  await writeRun(db,"expansion_line_inventory_batches",`CREATE TABLE IF NOT EXISTS expansion_line_inventory_batches (
+    batch_id TEXT PRIMARY KEY, request_id TEXT, run_id TEXT, mode TEXT, status TEXT, worker_version TEXT,
+    inventory_rows INTEGER DEFAULT 0, missing_baseline_rows INTEGER DEFAULT 0, dynamic_supported_rows INTEGER DEFAULT 0, unsupported_missing_rows INTEGER DEFAULT 0, issue_rows INTEGER DEFAULT 0,
+    certification TEXT, certification_grade TEXT, output_json TEXT, started_at TEXT, finished_at TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await writeRun(db,"expansion_line_inventory_current",`CREATE TABLE IF NOT EXISTS expansion_line_inventory_current (
+    inventory_row_id TEXT PRIMARY KEY, batch_id TEXT, source_key TEXT, canonical_prop_key TEXT, factor_family TEXT, resolved_factor_family TEXT,
+    selected_side TEXT, line_value REAL, source_rows INTEGER, players INTEGER, standard_rows INTEGER, goblin_rows INTEGER, demon_rows INTEGER, missing_baseline_rows INTEGER,
+    profile_namespace TEXT, source_formula_key TEXT, line_threshold_bucket TEXT, line_inventory_status TEXT, needs_dynamic_generation INTEGER DEFAULT 0,
+    factor_family_mismatch INTEGER DEFAULT 0, role_resolution_note TEXT, notes_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await writeRun(db,"expansion_line_inventory_history",`CREATE TABLE IF NOT EXISTS expansion_line_inventory_history AS SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_line_inventory_current WHERE 1=0`);
+  await writeRun(db,"expansion_line_inventory_issues",`CREATE TABLE IF NOT EXISTS expansion_line_inventory_issues (issue_id TEXT PRIMARY KEY, batch_id TEXT, severity TEXT, issue_code TEXT, issue_message TEXT, issue_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+  await writeRun(db,"expansion_line_inventory_current",`CREATE INDEX IF NOT EXISTS idx_exp_line_inventory_key ON expansion_line_inventory_current(source_key, canonical_prop_key, selected_side, line_value)`);
+  await writeRun(db,"expansion_line_inventory_current",`CREATE INDEX IF NOT EXISTS idx_exp_line_inventory_status ON expansion_line_inventory_current(line_inventory_status, missing_baseline_rows)`);
 }
 async function ensureSchema(env){ await ensureContextSchema(env); await ensureScoreSchema(env); }
 
@@ -379,6 +396,90 @@ async function starterRows(env){
     ORDER BY player_id, game_date`);
 }
 
+
+function lineThresholdBucketForInventory(canonical, line){
+  const p=String(canonical||''); const l=Number(line);
+  if(p==='rfi_nrfi') return 'BINARY_0_5';
+  if(p==='fantasy' || p==='pitcher_fantasy_score'){
+    if(l < 15.5) return 'LOW_FANTASY_LINE';
+    if(l <= 25.5) return 'STANDARD_FANTASY_LINE';
+    if(l <= 35.5) return 'HIGH_FANTASY_LINE';
+    return 'EXTREME_FANTASY_LINE';
+  }
+  if(p==='fantasy_score'){
+    if(l < 4.5) return 'LOW_HITTER_FANTASY_LINE';
+    if(l <= 8.5) return 'STANDARD_HITTER_FANTASY_LINE';
+    return 'HIGH_HITTER_FANTASY_LINE';
+  }
+  if(p==='pitches_thrown'){
+    if(l < 85.5) return 'LOW_PITCH_COUNT_LINE';
+    if(l <= 96.5) return 'STANDARD_PITCH_COUNT_LINE';
+    return 'HIGH_PITCH_COUNT_LINE';
+  }
+  if(l <= 1.5) return 'LOW_LINE';
+  if(l <= 4.5) return 'STANDARD_LINE';
+  return 'HIGH_LINE';
+}
+function resolveLineInventory(row){
+  const canonical=String(row.canonical_prop_key||'');
+  const source=String(row.source_key||'');
+  const factor=String(row.factor_family||'');
+  const side=String(row.selected_side||'');
+  let profileNamespace=null, sourceFormulaKey=null, resolvedFactor=factor||'unknown', status='INVENTORY_ONLY_UNMAPPED', needs=0, note='inventory observed; no expansion profile mapping yet';
+  if(source==='prizepicks' && canonical==='fantasy'){
+    profileNamespace='PFS_PP_DYNAMIC_'; sourceFormulaKey='PFS_PP_BOARD_DYNAMIC_LINE'; resolvedFactor='pitcher'; status='DYNAMIC_BASELINE_REQUIRED_PITCHER_FANTASY_PP'; needs=1; note='PrizePicks fantasy rows are pitcher names despite factor_family=hitter; resolve by canonical/source/formula, not factor_family';
+  } else if(source==='sleeper' && canonical==='rfi_nrfi'){
+    profileNamespace='RFI_SL_'; sourceFormulaKey='RFI_SL_PITCHER_SPECIFIC_0_5'; resolvedFactor='pitcher'; status='COVERED_BY_EXPANSION_RFI_SL'; needs=0; note='Sleeper RFI/NRFI maps to pitcher-specific first-frame expansion profile';
+  } else if(source==='prizepicks' && canonical==='rfi_nrfi'){
+    profileNamespace='RFI_PP_'; sourceFormulaKey='RFI_PP_GAME_PAIR_0_5'; resolvedFactor='game_pair'; status='COVERED_BY_EXPANSION_RFI_PP'; needs=0; note='PrizePicks RFI/NRFI maps to game-pair expansion profile';
+  } else if(source==='prizepicks' && canonical==='pitches_thrown'){
+    profileNamespace='PITCH_COUNT_PP_PENDING_'; sourceFormulaKey='PITCH_COUNT_PP_DYNAMIC_LINE'; resolvedFactor='pitcher'; status='PENDING_FUTURE_EXPANSION_SOURCE'; needs=1; note='Pitches thrown has missing production baseline rows and needs a future dynamic source/profile';
+  } else if(source==='prizepicks' && canonical==='fantasy_score'){
+    profileNamespace='HITTER_FANTASY_PP_PENDING_'; sourceFormulaKey='HITTER_FANTASY_SCORE_PP_DYNAMIC_LINE'; resolvedFactor='hitter'; status='PENDING_HITTER_FANTASY_SOURCE'; needs=1; note='Do not map to pitcher fantasy; this is separate hitter fantasy-style board inventory until raw formula/source is proven';
+  }
+  const mismatch = (factor && resolvedFactor && factor !== resolvedFactor) ? 1 : 0;
+  return {profileNamespace, sourceFormulaKey, resolvedFactor, status, needs, mismatch, note, lineBucket:lineThresholdBucketForInventory(canonical,row.line_value)};
+}
+async function runLineInventory(env,input={}){
+  await ensureSchema(env);
+  const requestId=String(input.request_id||rid('expansion_line_inventory'));
+  const runId=String(input.run_id||rid('run'));
+  const batchId=String(input.batch_id||input.line_inventory_batch_id||rid('expansion_line_inventory_batch'));
+  await writeRun(env.SCORE_DB,'expansion_line_inventory_batches',`INSERT OR REPLACE INTO expansion_line_inventory_batches (batch_id,request_id,run_id,mode,status,worker_version,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,'expansion_line_inventory','running',VERSION);
+  await archiveAndClearCurrent(env.SCORE_DB,'expansion_line_inventory_current','expansion_line_inventory_history');
+  await writeRun(env.SCORE_DB,'expansion_line_inventory_issues',`DELETE FROM expansion_line_inventory_issues WHERE batch_id=?`,batchId);
+  const inv=await all(env.SCORE_DB,`SELECT canonical_prop_key, source_key, COALESCE(factor_family,'unknown') AS factor_family, selected_side, board_line_value AS line_value,
+      COUNT(*) AS source_rows, COUNT(DISTINCT mlb_player_id) AS players,
+      SUM(CASE WHEN source_line_id LIKE '%|standard|%' THEN 1 ELSE 0 END) AS standard_rows,
+      SUM(CASE WHEN source_line_id LIKE '%|goblin|%' THEN 1 ELSE 0 END) AS goblin_rows,
+      SUM(CASE WHEN source_line_id LIKE '%|demon|%' THEN 1 ELSE 0 END) AS demon_rows,
+      SUM(CASE WHEN baseline_hp_row_id IS NULL THEN 1 ELSE 0 END) AS missing_baseline_rows
+    FROM hit_probability_v2_current
+    WHERE board_line_value IS NOT NULL AND canonical_prop_key IS NOT NULL AND selected_side IS NOT NULL
+    GROUP BY canonical_prop_key, source_key, COALESCE(factor_family,'unknown'), selected_side, board_line_value
+    ORDER BY canonical_prop_key, source_key, selected_side, board_line_value`);
+  const stmts=[]; const issues=[];
+  let missing=0,dynamicSupported=0,unsupportedMissing=0;
+  for(const r of inv){
+    const resolved=resolveLineInventory(r);
+    missing += Number(r.missing_baseline_rows||0);
+    if(Number(r.missing_baseline_rows||0)>0 && resolved.needs) dynamicSupported += Number(r.missing_baseline_rows||0);
+    if(Number(r.missing_baseline_rows||0)>0 && !resolved.profileNamespace) unsupportedMissing += Number(r.missing_baseline_rows||0);
+    const id=`exp_line_inv|${r.source_key||'source'}|${r.canonical_prop_key}|${r.factor_family||'unknown'}|${r.selected_side}|${String(r.line_value).replace('.','p')}`;
+    const notes={baseline_only:true,observed_from:'hit_probability_v2_current',respects_exact_line_value:true,respects_selected_side:true,respects_source_key:true,role_resolution_note:resolved.note};
+    stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO expansion_line_inventory_current (inventory_row_id,batch_id,source_key,canonical_prop_key,factor_family,resolved_factor_family,selected_side,line_value,source_rows,players,standard_rows,goblin_rows,demon_rows,missing_baseline_rows,profile_namespace,source_formula_key,line_threshold_bucket,line_inventory_status,needs_dynamic_generation,factor_family_mismatch,role_resolution_note,notes_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(id,batchId,r.source_key||null,r.canonical_prop_key||null,r.factor_family||null,resolved.resolvedFactor||null,r.selected_side||null,Number(r.line_value),Number(r.source_rows||0),Number(r.players||0),Number(r.standard_rows||0),Number(r.goblin_rows||0),Number(r.demon_rows||0),Number(r.missing_baseline_rows||0),resolved.profileNamespace,resolved.sourceFormulaKey,resolved.lineBucket,resolved.status,Number(resolved.needs||0),Number(resolved.mismatch||0),resolved.note,safeJson(notes)));
+    if(Number(r.missing_baseline_rows||0)>0 && resolved.mismatch){ issues.push({severity:'WARN',issue_code:'FACTOR_FAMILY_MISMATCH',issue_message:`${r.canonical_prop_key}/${r.source_key} ${r.selected_side} ${r.line_value} factor_family=${r.factor_family} resolved=${resolved.resolvedFactor}`,row:r,resolved}); }
+    if(Number(r.missing_baseline_rows||0)>0 && !resolved.profileNamespace){ issues.push({severity:'WARN',issue_code:'UNMAPPED_MISSING_BASELINE_LINE',issue_message:`Missing baseline line not mapped to expansion profile: ${r.canonical_prop_key}/${r.source_key}/${r.selected_side}/${r.line_value}`,row:r,resolved}); }
+  }
+  if(stmts.length) await writeBatch(env.SCORE_DB,'expansion_line_inventory_current',stmts,40);
+  const issueStmts=issues.map(x=>env.SCORE_DB.prepare(`INSERT OR REPLACE INTO expansion_line_inventory_issues (issue_id,batch_id,severity,issue_code,issue_message,issue_json,created_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(rid('exp_line_issue'),batchId,x.severity,x.issue_code,String(x.issue_message||'').slice(0,900),safeJson(x)));
+  if(issueStmts.length) await writeBatch(env.SCORE_DB,'expansion_line_inventory_issues',issueStmts,30);
+  const byStatus=await all(env.SCORE_DB,`SELECT line_inventory_status, COUNT(*) AS inventory_rows, SUM(missing_baseline_rows) AS missing_baseline_rows FROM expansion_line_inventory_current WHERE batch_id=? GROUP BY line_inventory_status ORDER BY missing_baseline_rows DESC`,batchId);
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:'expansion_line_inventory',status:'EXPANSION_LINE_INVENTORY_COMPLETED',certification:'EXPANSION_LINE_INVENTORY_CERTIFIED_DYNAMIC_THRESHOLD_GRID_WRITTEN',certification_grade:issues.length?'PASS_WITH_WARNINGS':'PASS',inventory_rows:inv.length,missing_baseline_rows:missing,dynamic_supported_rows:dynamicSupported,unsupported_missing_rows:unsupportedMissing,issue_rows:issues.length,status_summary:byStatus,pre_sanity_stage:true,pre_heb_stage:true,hardcoded_line_lists_rejected:true,current_system_mutated:false,rows_written:inv.length});
+  await writeRun(env.SCORE_DB,'expansion_line_inventory_batches',`UPDATE expansion_line_inventory_batches SET status='completed', finished_at=CURRENT_TIMESTAMP, inventory_rows=?, missing_baseline_rows=?, dynamic_supported_rows=?, unsupported_missing_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,inv.length,missing,dynamicSupported,unsupportedMissing,issues.length,output.certification,output.certification_grade,safeJson(output),batchId);
+  return output;
+}
+
 async function runSanity(env,input={}){
   await ensureSchema(env);
   const requestId=String(input.request_id||rid("expansion_baseline_sanity")); const runId=String(input.run_id||rid("run")); const batchId=String(input.batch_id||rid("expansion_baseline_sanity_batch"));
@@ -521,6 +622,8 @@ async function certifier(env,input={}){
   const changed = before ? changedCounts(before, after) : [];
   const gameRows=await tableCount(env.CONTEXT_DB,"expansion_first_inning_game_context_current");
   const pitcherRows=await tableCount(env.CONTEXT_DB,"expansion_first_inning_pitcher_context_current");
+  const lineInventoryRows=await tableCount(env.SCORE_DB,"expansion_line_inventory_current");
+  const lineInventoryIssues=await tableCount(env.SCORE_DB,"expansion_line_inventory_issues");
   const sanityRows=await tableCount(env.SCORE_DB,"expansion_player_baseline_sanity_current");
   const hpRows=await tableCount(env.SCORE_DB,"expansion_player_baseline_hp_current");
   const sanityNs=await all(env.SCORE_DB,`SELECT profile_namespace, COUNT(*) AS rows FROM expansion_player_baseline_sanity_current GROUP BY profile_namespace ORDER BY profile_namespace`);
@@ -532,11 +635,12 @@ async function certifier(env,input={}){
   for(const ns of required){ if(!sanitySet.has(ns)) blockers.push(`missing_sanity_namespace_${ns}`); if(!hpSideSet.has(`${ns}:more`)) blockers.push(`missing_hp_more_${ns}`); if(!hpSideSet.has(`${ns}:less`)) blockers.push(`missing_hp_less_${ns}`); }
   if(!gameRows) warnings.push("no_first_inning_game_context_rows_currently_available");
   if(!pitcherRows) warnings.push("no_first_inning_pitcher_context_rows_currently_available");
+  if(!lineInventoryRows) warnings.push("no_expansion_line_inventory_rows_currently_available");
   if(!sanityRows) blockers.push("no_expansion_sanity_rows");
   if(!hpRows) blockers.push("no_expansion_hp_rows");
   if(changed.length) blockers.push("production_mutation_guard_failed");
   const pass = blockers.length===0;
-  const output = baseOutput(input,{mode:"expansion_baseline_certifier",status:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification_grade:pass?(warnings.length?"PASS_WITH_WARNINGS":"PASS"):(changed.length?"FAIL_MUTATION_GUARD":"FAIL_BLOCKED"),current_system_mutated:changed.length>0,rows:{first_inning_game_context_rows:gameRows,first_inning_pitcher_context_rows:pitcherRows,sanity_rows:sanityRows,baseline_hp_rows:hpRows},coverage:{sanity:sanityNs,hp:hpNs},mutation_guard:{passed:changed.length===0,changed_tables:changed,production_counts_after:after},warnings,blockers});
+  const output = baseOutput(input,{mode:"expansion_baseline_certifier",status:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification_grade:pass?(warnings.length?"PASS_WITH_WARNINGS":"PASS"):(changed.length?"FAIL_MUTATION_GUARD":"FAIL_BLOCKED"),current_system_mutated:changed.length>0,rows:{first_inning_game_context_rows:gameRows,first_inning_pitcher_context_rows:pitcherRows,line_inventory_rows:lineInventoryRows,line_inventory_issue_rows:lineInventoryIssues,sanity_rows:sanityRows,baseline_hp_rows:hpRows},coverage:{sanity:sanityNs,hp:hpNs},mutation_guard:{passed:changed.length===0,changed_tables:changed,production_counts_after:after},warnings,blockers});
   output.ok = pass;
   output.data_ok = pass;
   return output;
@@ -547,29 +651,32 @@ async function fullRun(env,input={}){
   const runId=String(input.run_id||rid("run"));
   const state=input.expansion_full_run_state || {};
   const before=input.production_counts_before || state.production_counts_before || await productionCounts(env);
-  let mining=null, sanity=null, hp=null;
+  let mining=null, lineInventory=null, sanity=null, hp=null;
   let sourceSanityBatchId=input.source_sanity_batch_id || state.source_sanity_batch_id || null;
 
   if(!state.mining_completed){
     mining = await mineFirstInningContext(env,{...input, mode:"expansion_baseline_mining", request_id:requestId, run_id:runId, mining_batch_id:input.mining_batch_id || state.mining_batch_id || null, mining_cursor_offset:input.mining_cursor_offset || state.mining_cursor_offset || 0, mining_game_chunk_size:input.mining_game_chunk_size || state.mining_game_chunk_size || 60});
     if(mining && mining.partial_continue){
-      const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, mining_batch_id:mining.batch_id, mining_cursor_offset:mining.mining_cursor_offset, mining_game_chunk_size:mining.mining_game_chunk_size || 60, game_limit:mining.source_games_total || input.game_limit || input.max_games || 2500, full_depth_base:true, expansion_full_run_state:{mining_completed:false,mining_batch_id:mining.batch_id,mining_cursor_offset:mining.mining_cursor_offset,mining_game_chunk_size:mining.mining_game_chunk_size || 60,production_counts_before:before}};
+      const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, mining_batch_id:mining.batch_id, mining_cursor_offset:mining.mining_cursor_offset, mining_game_chunk_size:mining.mining_game_chunk_size || 60, game_limit:mining.source_games_total || input.game_limit || input.max_games || 2500, full_depth_base:true, expansion_full_run_state:{mining_completed:false,line_inventory_completed:false,mining_batch_id:mining.batch_id,mining_cursor_offset:mining.mining_cursor_offset,mining_game_chunk_size:mining.mining_game_chunk_size || 60,production_counts_before:before}};
       return baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_MINING",certification:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_MINING",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,next_input_json:nextInput,mining,rows_written:Number(mining.rows_written||0),current_system_mutated:false,full_depth_base:true});
     }
+    lineInventory = await runLineInventory(env,{...input, mode:"expansion_line_inventory", request_id:requestId, run_id:runId});
     sanity = await runSanity(env,{...input, mode:"expansion_baseline_sanity", request_id:requestId, run_id:runId});
     sourceSanityBatchId = sanity.batch_id;
+  } else if(!state.line_inventory_completed) {
+    lineInventory = await runLineInventory(env,{...input, mode:"expansion_line_inventory", request_id:requestId, run_id:runId});
   }
 
   hp = await runHp(env,{...input, mode:"expansion_baseline_hp", request_id:requestId, run_id:runId, source_sanity_batch_id:sourceSanityBatchId, batch_id:input.hp_batch_id || input.batch_id || null, hp_cursor_offset:input.hp_cursor_offset || 0, hp_source_chunk_size:input.hp_source_chunk_size || 60});
   if(hp && hp.partial_continue){
-    const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, source_sanity_batch_id:sourceSanityBatchId, hp_batch_id:hp.batch_id, hp_cursor_offset:hp.hp_cursor_offset, hp_source_chunk_size:hp.hp_source_chunk_size || 60, expansion_full_run_state:{mining_completed:true,sanity_completed:true,source_sanity_batch_id:sourceSanityBatchId,production_counts_before:before}};
+    const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, source_sanity_batch_id:sourceSanityBatchId, hp_batch_id:hp.batch_id, hp_cursor_offset:hp.hp_cursor_offset, hp_source_chunk_size:hp.hp_source_chunk_size || 60, expansion_full_run_state:{mining_completed:true,line_inventory_completed:true,sanity_completed:true,source_sanity_batch_id:sourceSanityBatchId,production_counts_before:before}};
     const output=baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_HP",certification:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_HP",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,next_input_json:nextInput,hp,rows_written:Number(hp.rows_written||0),current_system_mutated:false});
     return output;
   }
 
   const cert = await certifier(env,{...input, mode:"expansion_baseline_certifier", request_id:requestId, run_id:runId, production_counts_before:before});
   const pass = !!(cert && cert.ok === true);
-  const output = baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:pass?"EXPANSION_BASELINE_FULL_RUN_COMPLETED":"EXPANSION_BASELINE_FULL_RUN_BLOCKED",certification:cert.certification,certification_grade:cert.certification_grade,stages:{mining: mining || "previous_call_completed", sanity: sanity || "previous_call_completed", hp, certifier:cert},rows_written:Number(hp&&hp.rows_written||0),current_system_mutated:cert.current_system_mutated});
+  const output = baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:pass?"EXPANSION_BASELINE_FULL_RUN_COMPLETED":"EXPANSION_BASELINE_FULL_RUN_BLOCKED",certification:cert.certification,certification_grade:cert.certification_grade,stages:{mining: mining || "previous_call_completed", line_inventory: lineInventory || "previous_call_completed", sanity: sanity || "previous_call_completed", hp, certifier:cert},rows_written:Number(hp&&hp.rows_written||0),current_system_mutated:cert.current_system_mutated});
   output.ok = pass;
   output.data_ok = pass;
   return output;
@@ -581,13 +688,14 @@ async function runMode(env,input={}){
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
   if(mode==="expansion_baseline_hp" || mode==="expansion-baseline-hp") return runHp(env,input);
+  if(mode==="expansion_line_inventory" || mode==="expansion-baseline-line-inventory") return runLineInventory(env,input);
   if(mode==="expansion_baseline_certifier" || mode==="expansion-baseline-certifier") return certifier(env,input);
   if(mode==="expansion_baseline_full_run" || mode==="expansion-baseline-full-run") return fullRun(env,input);
   const jobKey = String(input.job_key || "");
   if (jobKey === "phase3a-first-inning-pitcher-context" || mode === "phase3a-first-inning-pitcher-context" || mode === "legacy_dummy") {
     return {ok:true,data_ok:true,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,job_key:jobKey || "phase3a-first-inning-pitcher-context",status:"LEGACY_DUMMY_SLOT_READY_NO_MUTATION",certification:"LEGACY_DUMMY_SLOT_READY_NO_MUTATION",rows_read:0,rows_written:0,writes_performed:0,external_calls_performed:0,expansion_only:false,baseline_only:false,no_current_baseline_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true};
   }
-  return {ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"UNSUPPORTED_EXPANSION_BASELINE_MODE",mode,allowed_modes:["expansion_baseline_mining","expansion_baseline_sanity","expansion_baseline_hp","expansion_baseline_certifier","expansion_baseline_full_run"]};
+  return {ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"UNSUPPORTED_EXPANSION_BASELINE_MODE",mode,allowed_modes:["expansion_baseline_mining","expansion_line_inventory","expansion_baseline_sanity","expansion_baseline_hp","expansion_baseline_certifier","expansion_baseline_full_run"]};
 }
 
 export default {
