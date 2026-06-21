@@ -934,6 +934,11 @@ async function runJob(request, env, ctx) {
       "orchestrator_enqueue_score_final_board",
       "orchestrator_enqueue_market_scoring_full_run",
       "orchestrator_enqueue_daily_full_run",
+      "orchestrator_enqueue_expansion_baseline_mining",
+      "orchestrator_enqueue_expansion_baseline_sanity",
+      "orchestrator_enqueue_expansion_baseline_hp",
+      "orchestrator_enqueue_expansion_baseline_certifier",
+      "orchestrator_enqueue_expansion_baseline_full_run",
       "orchestrator_tick",
       "orchestrator_logs"
     ].includes(job)) {
