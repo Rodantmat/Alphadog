@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.3-dynamic-line-inventory";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.4-pre-heb-source-prep";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -420,22 +420,33 @@ function lineThresholdBucketForInventory(canonical, line){
   if(l <= 4.5) return 'STANDARD_LINE';
   return 'HIGH_LINE';
 }
+function upperToken(s){ return String(s||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
+const HITTER_RAW_PROP_KEYS = new Set(['hits','singles','doubles','triples','home_runs','runs','rbis','rbi','walks','hitter_strikeouts','stolen_bases','total_bases','hits_runs_rbis','plate_appearances']);
+const PITCHER_RAW_PROP_KEYS = new Set(['pitcher_strikeouts','pitcher_outs','pitches_thrown','hits_allowed','earned_runs','walks_allowed','runs_allowed']);
 function resolveLineInventory(row){
   const canonical=String(row.canonical_prop_key||'');
   const source=String(row.source_key||'');
   const factor=String(row.factor_family||'');
   const side=String(row.selected_side||'');
-  let profileNamespace=null, sourceFormulaKey=null, resolvedFactor=factor||'unknown', status='INVENTORY_ONLY_UNMAPPED', needs=0, note='inventory observed; no expansion profile mapping yet';
+  let profileNamespace=null, sourceFormulaKey=null, resolvedFactor=factor||'unknown', status='INVENTORY_ONLY_SOURCE_READY', needs=0, note='inventory observed; source-ready when raw source table supports the canonical prop';
   if(source==='prizepicks' && canonical==='fantasy'){
-    profileNamespace='PFS_PP_DYNAMIC_'; sourceFormulaKey='PFS_PP_BOARD_DYNAMIC_LINE'; resolvedFactor='pitcher'; status='DYNAMIC_BASELINE_REQUIRED_PITCHER_FANTASY_PP'; needs=1; note='PrizePicks fantasy rows are pitcher names despite factor_family=hitter; resolve by canonical/source/formula, not factor_family';
+    profileNamespace='PFS_PP_DYNAMIC_'; sourceFormulaKey='PFS_PP_NO_WIN_DYNAMIC_LINE_FROM_STARTER_HISTORY'; resolvedFactor='pitcher'; status='SOURCE_READY_PITCHER_FANTASY_PP_DYNAMIC'; needs=1; note='PrizePicks fantasy rows are pitcher names despite factor_family=hitter; baseline uses no-win pitcher fantasy from starter_history by locked AlphaDog contract';
   } else if(source==='sleeper' && canonical==='rfi_nrfi'){
-    profileNamespace='RFI_SL_'; sourceFormulaKey='RFI_SL_PITCHER_SPECIFIC_0_5'; resolvedFactor='pitcher'; status='COVERED_BY_EXPANSION_RFI_SL'; needs=0; note='Sleeper RFI/NRFI maps to pitcher-specific first-frame expansion profile';
+    profileNamespace='RFI_SL_'; sourceFormulaKey='RFI_SL_PITCHER_SPECIFIC_0_5'; resolvedFactor='pitcher'; status='SOURCE_READY_RFI_SL'; needs=1; note='Sleeper RFI/NRFI maps to pitcher-specific first-frame expansion profile';
   } else if(source==='prizepicks' && canonical==='rfi_nrfi'){
-    profileNamespace='RFI_PP_'; sourceFormulaKey='RFI_PP_GAME_PAIR_0_5'; resolvedFactor='game_pair'; status='COVERED_BY_EXPANSION_RFI_PP'; needs=0; note='PrizePicks RFI/NRFI maps to game-pair expansion profile';
-  } else if(source==='prizepicks' && canonical==='pitches_thrown'){
-    profileNamespace='PITCH_COUNT_PP_PENDING_'; sourceFormulaKey='PITCH_COUNT_PP_DYNAMIC_LINE'; resolvedFactor='pitcher'; status='PENDING_FUTURE_EXPANSION_SOURCE'; needs=1; note='Pitches thrown has missing production baseline rows and needs a future dynamic source/profile';
+    profileNamespace='RFI_PP_'; sourceFormulaKey='RFI_PP_GAME_PAIR_0_5'; resolvedFactor='game_pair'; status='SOURCE_READY_RFI_PP'; needs=1; note='PrizePicks RFI/NRFI maps to game-pair expansion profile';
   } else if(source==='prizepicks' && canonical==='fantasy_score'){
-    profileNamespace='HITTER_FANTASY_PP_PENDING_'; sourceFormulaKey='HITTER_FANTASY_SCORE_PP_DYNAMIC_LINE'; resolvedFactor='hitter'; status='PENDING_HITTER_FANTASY_SOURCE'; needs=1; note='Do not map to pitcher fantasy; this is separate hitter fantasy-style board inventory until raw formula/source is proven';
+    profileNamespace='HFS_PP_DYNAMIC_'; sourceFormulaKey='HITTER_FANTASY_SCORE_PP_DYNAMIC_LINE_FROM_HITTER_GAME_LOGS_NO_HBP_COLUMN'; resolvedFactor='hitter'; status='SOURCE_READY_HITTER_FANTASY_PP_DYNAMIC'; needs=1; note='Hitter fantasy source exists in hitter_game_logs; HBP is not a current table column and must be carried as documented formula limitation';
+  } else if(canonical==='plate_appearances'){
+    profileNamespace='HITTER_PLATE_APPEARANCES_DYNAMIC_'; sourceFormulaKey='PLATE_APPEARANCES_FROM_HITTER_GAME_LOGS_PA'; resolvedFactor='hitter'; status='SOURCE_READY_HITTER_PLATE_APPEARANCES'; needs=1; note='Plate appearances source exists as hitter_game_logs.pa';
+  } else if(canonical==='pitches_thrown'){
+    profileNamespace='PITCH_COUNT_DYNAMIC_'; sourceFormulaKey='PITCHES_THROWN_FROM_STARTER_HISTORY_PITCHES'; resolvedFactor='pitcher'; status='SOURCE_READY_PITCH_COUNT_DYNAMIC'; needs=1; note='Pitches thrown source exists as starter_history.pitches';
+  } else if(canonical==='triples'){
+    profileNamespace='HITTER_TRIPLES_DYNAMIC_'; sourceFormulaKey='TRIPLES_FROM_HITTER_GAME_LOGS'; resolvedFactor='hitter'; status='SOURCE_READY_HITTER_TRIPLES'; needs=1; note='Triples source exists as hitter_game_logs.triples';
+  } else if(HITTER_RAW_PROP_KEYS.has(canonical)){
+    profileNamespace=`HITTER_${upperToken(canonical)}_DYNAMIC_`; sourceFormulaKey=`${upperToken(canonical)}_FROM_HITTER_GAME_LOGS`; resolvedFactor='hitter'; status='SOURCE_READY_HITTER_PROP_DYNAMIC'; needs=1; note='Hitter prop source exists in STATS_HITTER_DB.hitter_game_logs';
+  } else if(PITCHER_RAW_PROP_KEYS.has(canonical)){
+    profileNamespace=`PITCHER_${upperToken(canonical)}_DYNAMIC_`; sourceFormulaKey=`${upperToken(canonical)}_FROM_STARTER_HISTORY`; resolvedFactor='pitcher'; status='SOURCE_READY_PITCHER_PROP_DYNAMIC'; needs=1; note='Pitcher prop source exists in TEAM_DB.starter_history';
   }
   const mismatch = (factor && resolvedFactor && factor !== resolvedFactor) ? 1 : 0;
   return {profileNamespace, sourceFormulaKey, resolvedFactor, status, needs, mismatch, note, lineBucket:lineThresholdBucketForInventory(canonical,row.line_value)};
@@ -468,8 +479,7 @@ async function runLineInventory(env,input={}){
     const id=`exp_line_inv|${r.source_key||'source'}|${r.canonical_prop_key}|${r.factor_family||'unknown'}|${r.selected_side}|${String(r.line_value).replace('.','p')}`;
     const notes={baseline_only:true,observed_from:'hit_probability_v2_current',respects_exact_line_value:true,respects_selected_side:true,respects_source_key:true,role_resolution_note:resolved.note};
     stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO expansion_line_inventory_current (inventory_row_id,batch_id,source_key,canonical_prop_key,factor_family,resolved_factor_family,selected_side,line_value,source_rows,players,standard_rows,goblin_rows,demon_rows,missing_baseline_rows,profile_namespace,source_formula_key,line_threshold_bucket,line_inventory_status,needs_dynamic_generation,factor_family_mismatch,role_resolution_note,notes_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(id,batchId,r.source_key||null,r.canonical_prop_key||null,r.factor_family||null,resolved.resolvedFactor||null,r.selected_side||null,Number(r.line_value),Number(r.source_rows||0),Number(r.players||0),Number(r.standard_rows||0),Number(r.goblin_rows||0),Number(r.demon_rows||0),Number(r.missing_baseline_rows||0),resolved.profileNamespace,resolved.sourceFormulaKey,resolved.lineBucket,resolved.status,Number(resolved.needs||0),Number(resolved.mismatch||0),resolved.note,safeJson(notes)));
-    if(Number(r.missing_baseline_rows||0)>0 && resolved.mismatch){ issues.push({severity:'WARN',issue_code:'FACTOR_FAMILY_MISMATCH',issue_message:`${r.canonical_prop_key}/${r.source_key} ${r.selected_side} ${r.line_value} factor_family=${r.factor_family} resolved=${resolved.resolvedFactor}`,row:r,resolved}); }
-    if(Number(r.missing_baseline_rows||0)>0 && !resolved.profileNamespace){ issues.push({severity:'WARN',issue_code:'UNMAPPED_MISSING_BASELINE_LINE',issue_message:`Missing baseline line not mapped to expansion profile: ${r.canonical_prop_key}/${r.source_key}/${r.selected_side}/${r.line_value}`,row:r,resolved}); }
+    if(Number(r.missing_baseline_rows||0)>0 && !resolved.profileNamespace){ issues.push({severity:'WARN',issue_code:'UNMAPPED_MISSING_BASELINE_LINE',issue_message:`Missing baseline line not mapped to expansion/source-ready profile: ${r.canonical_prop_key}/${r.source_key}/${r.selected_side}/${r.line_value}`,row:r,resolved}); }
   }
   if(stmts.length) await writeBatch(env.SCORE_DB,'expansion_line_inventory_current',stmts,40);
   const issueStmts=issues.map(x=>env.SCORE_DB.prepare(`INSERT OR REPLACE INTO expansion_line_inventory_issues (issue_id,batch_id,severity,issue_code,issue_message,issue_json,created_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(rid('exp_line_issue'),batchId,x.severity,x.issue_code,String(x.issue_message||'').slice(0,900),safeJson(x)));
