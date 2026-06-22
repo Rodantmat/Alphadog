@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.8-parallel-v2-heb-hot-yield";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.9-parallel-v2-heb-direct-dominance";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -708,6 +708,16 @@ function boundedNeighborBias(values, line, side, directRate){
   return {neighbor_rate_0_100:round(nr,2), neighbor_bias_0_100:round(bias,2), neighbor_sample:values.length};
 }
 function posteriorHeb(hit, miss, push, priorPct, m){ const n=hit+miss; if(n===0) return null; const p=clamp(Number(priorPct)/100,0.01,0.99); return round(100*((hit + p*m)/(n+m)),2); }
+function effectiveHebM(hit, miss, priorPct, baseM){
+  const n=hit+miss;
+  if(n<=0) return baseM;
+  const raw=100*hit/n;
+  const gap=Math.abs(raw-Number(priorPct||50));
+  // Locked HEB contract: when n>=20 and direct raw rate differs from prior by >15 points,
+  // direct evidence must carry at least 75% weight. That means M <= n/3.
+  if(n>=20 && gap>15) return Math.min(baseM, Math.max(1, n/3));
+  return baseM;
+}
 
 async function loadHitterValues(env, playerId, prop){
   const key=`hitter|${playerId}|${prop}`; if(V2_ENTITY_VALUE_CACHE.has(key)) return V2_ENTITY_VALUE_CACHE.get(key);
@@ -772,16 +782,21 @@ async function runBaselineV2(env,input={}){
     await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_hp_v2_batches (batch_id,request_id,run_id,mode,status,worker_version,source_sanity_batch_id,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"baseline_v2_heb","running",VERSION,batchId);
     await run(env.SCORE_DB,`DELETE FROM player_baseline_sanity_v2_stage`); await run(env.SCORE_DB,`DELETE FROM player_baseline_hp_v2_stage`);
   }
-  const totalRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM hit_probability_v2_current WHERE baseline_hp_row_id IS NULL AND board_line_value IS NOT NULL AND canonical_prop_key IS NOT NULL AND selected_side IS NOT NULL`);
+  const sourceBatchRow=await first(env.SCORE_DB,`SELECT batch_id FROM hit_probability_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1`);
+  const sourceHpV2BatchId=String(input.source_hp_v2_batch_id||input.hp_v2_batch_id||(sourceBatchRow&&sourceBatchRow.batch_id)||"");
+  const targetWhere=`baseline_hp_row_id IS NULL AND board_line_value IS NOT NULL AND canonical_prop_key IS NOT NULL AND selected_side IS NOT NULL AND batch_id=?`;
+  const totalRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM (SELECT MAX(hp_v2_row_id) AS hp_v2_row_id FROM hit_probability_v2_current WHERE ${targetWhere} GROUP BY source_key, game_pk, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side, COALESCE(factor_family,'unknown'))`,sourceHpV2BatchId);
   const total=Number(totalRow&&totalRow.c||0);
-  const rows=await all(env.SCORE_DB,`SELECT hp_v2_row_id, source_key, game_pk, official_date, mlb_player_id, player_name, canonical_prop_key, board_line_value, selected_side, COALESCE(factor_family,'unknown') AS factor_family FROM hit_probability_v2_current WHERE baseline_hp_row_id IS NULL AND board_line_value IS NOT NULL AND canonical_prop_key IS NOT NULL AND selected_side IS NOT NULL ORDER BY hp_v2_row_id LIMIT ? OFFSET ?`,chunkSize,cursor);
+  const rows=await all(env.SCORE_DB,`SELECT MAX(hp_v2_row_id) AS hp_v2_row_id, source_key, game_pk, MAX(official_date) AS official_date, COALESCE(mlb_player_id,0) AS mlb_player_id, MAX(player_name) AS player_name, canonical_prop_key, board_line_value, selected_side, COALESCE(factor_family,'unknown') AS factor_family FROM hit_probability_v2_current WHERE ${targetWhere} GROUP BY source_key, game_pk, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side, COALESCE(factor_family,'unknown') ORDER BY hp_v2_row_id LIMIT ? OFFSET ?`,sourceHpV2BatchId,chunkSize,cursor);
   let written=0, issues=0, processed=0;
   for(const r of rows){
     if(processed>0 && Date.now()-startedMs>=softYieldMs) break;
     processed++;
     const line=Number(r.board_line_value); const side=String(r.selected_side); const values=await loadValuesForHpRow(env,r); const hs=hitStatsFor(values,line,side);
-    const prior=await profilePriorFor(env,r,line,side); const sampleTier=sampleTierV2(hs.non_push_sample); const m=mForProp(r.canonical_prop_key);
+    const prior=await profilePriorFor(env,r,line,side); const sampleTier=sampleTierV2(hs.non_push_sample); const baseM=mForProp(r.canonical_prop_key);
     const nb=boundedNeighborBias(values,line,side,hs.raw_rate_0_100); const adjPrior=clamp(Number(prior.prior_rate_0_100||50)+Number(nb.neighbor_bias_0_100||0),1,99);
+    const m=effectiveHebM(hs.hit,hs.miss,adjPrior,baseM);
+    const directWeight=hs.non_push_sample>0?round(100*hs.non_push_sample/(hs.non_push_sample+m),2):0;
     const post=posteriorHeb(hs.hit,hs.miss,hs.push,adjPrior,m);
     const entityType=String(r.canonical_prop_key)==="rfi_nrfi" && String(r.source_key)==="prizepicks" ? "game_pair" : ((String(r.factor_family)==="pitcher"||String(r.canonical_prop_key)==="fantasy"||String(r.canonical_prop_key)==="pitches_thrown")?"pitcher":"hitter");
     const profileNsRow=await first(env.SCORE_DB,`SELECT profile_namespace, source_formula_key, line_threshold_bucket FROM expansion_line_inventory_current WHERE source_key=? AND canonical_prop_key=? AND factor_family=? AND selected_side=? AND line_value=? LIMIT 1`,r.source_key,r.canonical_prop_key,r.factor_family,side,line);
@@ -790,7 +805,7 @@ async function runBaselineV2(env,input={}){
     const roleProfile=entityType==="pitcher"?"V2_PITCHER_ENTITY":(entityType==="game_pair"?"V2_GAME_PAIR_ENTITY":"V2_HITTER_ENTITY");
     const sanityId=`pbs_v2|${r.hp_v2_row_id}`; const hpId=`pbhp_v2|${r.hp_v2_row_id}`;
     const confidence=round(clamp((hs.non_push_sample/(hs.non_push_sample+m))*85 + Math.min(prior.support,100)/100*10,5,95),2);
-    const trace={source_key:r.source_key,source_formula_key:formulaKey,profile_namespace:profileNamespace,entity_type:entityType,exact_line_value:line,selected_side:side,direct:{...hs},profile_prior_rate_0_100:prior.prior_rate_0_100,global_prior_rate_0_100:prior.prior_rate_0_100,adjusted_prior_rate_0_100:round(adjPrior,2),neighbor:nb,M:m,sample_tier:sampleTier,profile_support_rows:prior.support,hbp_parse_source:String(r.canonical_prop_key)==="fantasy_score"?"raw_json.hitByPitch":null,no_daily_context:true,no_market_context:true,no_scoring_context:true};
+    const trace={source_key:r.source_key,source_formula_key:formulaKey,profile_namespace:profileNamespace,entity_type:entityType,exact_line_value:line,selected_side:side,direct:{...hs},profile_prior_rate_0_100:prior.prior_rate_0_100,global_prior_rate_0_100:prior.prior_rate_0_100,adjusted_prior_rate_0_100:round(adjPrior,2),neighbor:nb,M:m,base_M:baseM,direct_weight_pct:directWeight,direct_dominance_applied:(m<baseM),sample_tier:sampleTier,profile_support_rows:prior.support,hbp_parse_source:String(r.canonical_prop_key)==="fantasy_score"?"raw_json.hitByPitch":null,no_daily_context:true,no_market_context:true,no_scoring_context:true};
     if(post==null){ issues++; await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_hp_v2_issues (issue_id,batch_id,source_baseline_row_id,severity,issue_code,issue_message,issue_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,rid("pbhp_v2_issue"),batchId,sanityId,"BLOCK","V2_NO_DIRECT_OR_PRIOR","No valid direct sample for v2 HEB row",safeJson({row:r,trace})); continue; }
     await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_sanity_v2_stage (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,role_profile,prior_pool_key,sanity_profile_key,sample_profile,usage_profile,line_difficulty_profile,volatility_profile,baseline_drag_profile,confidence_drag_profile,variance_profile,games_sample,events_sample,baseline_confidence_0_100,line_baseline_json,distribution_shape_json,notes_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,sanityId,batchId,entityType,Number(r.mlb_player_id)||null,r.player_name,r.canonical_prop_key,roleProfile,`${profileNamespace}|${side}|${profileNsRow&&profileNsRow.line_threshold_bucket||lineThresholdBucketForInventory(r.canonical_prop_key,line)}|${sampleTier}`,`${profileNamespace}${sampleTier}`,sampleTier,hs.non_push_sample>=20?"ESTABLISHED_HISTORY":"LIMITED_HISTORY",lineDifficulty(profileNamespace,line),valueStats(values).volatility_profile,"NONE","NONE",valueStats(values).volatility_profile,values.length,values.length,confidence,safeJson({line,line_rates:{[String(line)]:hs},trace}),safeJson(valueStats(values)),safeJson(trace));
     await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_hp_v2_stage (baseline_hp_row_id,batch_id,source_sanity_batch_id,source_baseline_row_id,player_type,player_id,player_name,canonical_prop_key,prop_family,line_value,selected_side,baseline_hp_0_100,hp_adjustment_0_100,raw_rate_0_100,tier_prior_rate_0_100,raw_prior_gap_0_100,baseline_confidence_0_100,baseline_enriched_confidence_0_100,consistency_bonus_0_100,soft_uncertainty_reserve_0_100,sample_profile,role_profile,sanity_profile_key,volatility_profile,variance_profile,line_difficulty_profile,baseline_hp_profile_key,non_push_sample,hit_count,miss_count,push_count,prior_strength,formula_version,confidence_formula_version,no_daily_context,no_market_context,no_scoring_context,profile_notes_json,source_snapshot_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,1,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,hpId,batchId,batchId,sanityId,entityType,Number(r.mlb_player_id)||null,r.player_name,r.canonical_prop_key,propFamilyV2(r.canonical_prop_key,entityType),line,side,post,0,hs.raw_rate_0_100,round(adjPrior,2),hs.raw_rate_0_100==null?null:round(hs.raw_rate_0_100-adjPrior,2),confidence,confidence,0,round(100-confidence,2),sampleTier,roleProfile,`${profileNamespace}${sampleTier}`,valueStats(values).volatility_profile,valueStats(values).volatility_profile,lineDifficulty(profileNamespace,line),`${profileNamespace}HEB_${sampleTier}`,hs.non_push_sample,hs.hit,hs.miss,hs.push,m,BASELINE_V2_FORMULA_VERSION,BASELINE_V2_CONFIDENCE_VERSION,safeJson(trace),safeJson({source_rows:values.length,source_formula_key:formulaKey,profile_namespace:profileNamespace}));
@@ -801,7 +816,7 @@ async function runBaselineV2(env,input={}){
   if(next<total){
     await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET rows_staged=?, issue_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,staged,issues,batchId);
     await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_batches SET source_rows_read=?, rows_staged=?, issue_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,next,staged,issues,batchId);
-    return baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v2_heb",status:"BASELINE_V2_HEB_PARTIAL_CONTINUE",certification:"BASELINE_V2_HEB_PARTIAL_CONTINUE",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,v2_cursor_offset:next,v2_chunk_size:chunkSize,rows_written:written,rows_staged:staged,processed_rows:processed,soft_yield_ms:softYieldMs,elapsed_ms:Date.now()-startedMs,next_input_json:{...input,mode:"baseline_v2_heb",batch_id:batchId,v2_cursor_offset:next,v2_chunk_size:chunkSize}});
+    return baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:"BASELINE_V2_HEB_PARTIAL_CONTINUE",certification:"BASELINE_V2_HEB_PARTIAL_CONTINUE",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,v2_cursor_offset:next,v2_chunk_size:chunkSize,rows_written:written,rows_staged:staged,processed_rows:processed,soft_yield_ms:softYieldMs,elapsed_ms:Date.now()-startedMs,next_input_json:{...input,mode:"baseline_v2_heb",batch_id:batchId,v2_cursor_offset:next,v2_chunk_size:chunkSize}});
   }
   await run(env.SCORE_DB,`DELETE FROM player_baseline_sanity_v2_current`); await run(env.SCORE_DB,`DELETE FROM player_baseline_hp_v2_current`);
   await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_sanity_v2_current SELECT * FROM player_baseline_sanity_v2_stage WHERE batch_id=?`,batchId);
@@ -810,7 +825,7 @@ async function runBaselineV2(env,input={}){
   await run(env.SCORE_DB,`INSERT INTO player_baseline_hp_v2_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM player_baseline_hp_v2_stage WHERE batch_id=?`,batchId);
   const after=await productionCounts(env); const changed=changedCounts(before,after); const grade=changed.length?"FAIL_MUTATION_GUARD":(issues?"PASS_WITH_WARNINGS":"PASS");
   const cert=changed.length?"BASELINE_V2_HEB_BLOCKED_PRODUCTION_MUTATION":"BASELINE_V2_HEB_CERTIFIED_PARALLEL_READY";
-  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v2_heb",status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:issues,mutation_guard:{changed_tables:changed},formula_version:BASELINE_V2_FORMULA_VERSION});
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,source_hp_v2_batch_id:sourceHpV2BatchId,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:issues,mutation_guard:{changed_tables:changed},formula_version:BASELINE_V2_FORMULA_VERSION});
   await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",staged,staged,staged,issues,cert,grade,safeJson(output),batchId);
   await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",total,staged,staged,staged,issues,cert,grade,safeJson(output),batchId);
   output.ok=!changed.length; output.data_ok=!changed.length; return output;
