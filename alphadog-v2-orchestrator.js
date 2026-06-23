@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.294-score-prep-chunked-resume";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.295-score-prep-single-pass-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -8639,7 +8639,7 @@ async function processDailyProbablePitchersJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  if (scorePrepPartial) {
+  if (typeof scorePrepPartial !== "undefined" && scorePrepPartial) {
     const nextInput = {
       ...rowInput,
       prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
@@ -8879,7 +8879,7 @@ async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  if (scorePrepPartial) {
+  if (typeof scorePrepPartial !== "undefined" && scorePrepPartial) {
     const nextInput = {
       ...rowInput,
       prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
@@ -9123,7 +9123,7 @@ async function processDailyWeatherJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  if (scorePrepPartial) {
+  if (typeof scorePrepPartial !== "undefined" && scorePrepPartial) {
     const nextInput = {
       ...rowInput,
       prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
@@ -9412,7 +9412,7 @@ async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  if (scorePrepPartial) {
+  if (typeof scorePrepPartial !== "undefined" && scorePrepPartial) {
     const nextInput = {
       ...rowInput,
       prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
@@ -9656,7 +9656,7 @@ async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  if (scorePrepPartial) {
+  if (typeof scorePrepPartial !== "undefined" && scorePrepPartial) {
     const nextInput = {
       ...rowInput,
       prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
@@ -9911,7 +9911,7 @@ async function processDailyUmpireContextJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  if (scorePrepPartial) {
+  if (typeof scorePrepPartial !== "undefined" && scorePrepPartial) {
     const nextInput = {
       ...rowInput,
       prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
@@ -11305,7 +11305,7 @@ async function processDailyLineupsJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  if (scorePrepPartial) {
+  if (typeof scorePrepPartial !== "undefined" && scorePrepPartial) {
     const nextInput = {
       ...rowInput,
       prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
@@ -11536,7 +11536,7 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  if (scorePrepPartial) {
+  if (typeof scorePrepPartial !== "undefined" && scorePrepPartial) {
     const nextInput = {
       ...rowInput,
       prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
@@ -13608,7 +13608,7 @@ async function processScoreFinalBoardJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  if (scorePrepPartial) {
+  if (typeof scorePrepPartial !== "undefined" && scorePrepPartial) {
     const nextInput = {
       ...rowInput,
       prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
@@ -13818,7 +13818,8 @@ async function processScorePrepJob(env, row, runId, trigger) {
       no_old_production_touch: true,
       service_binding_timeout_ms: SCORE_PREP_SERVICE_TIMEOUT_MS,
       score_prep_timeout_guard_v0_2_293: true,
-      score_prep_chunked_resume_v0_2_294: true
+      score_prep_chunked_resume_v0_2_294: true,
+      score_prep_single_pass_guard_v0_2_295: true
     }
   };
 
@@ -13827,7 +13828,7 @@ async function processScorePrepJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  if (scorePrepPartial) {
+  if (typeof scorePrepPartial !== "undefined" && scorePrepPartial) {
     const nextInput = {
       ...rowInput,
       prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
@@ -14100,7 +14101,7 @@ async function processDeltaCertifierJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  if (scorePrepPartial) {
+  if (typeof scorePrepPartial !== "undefined" && scorePrepPartial) {
     const nextInput = {
       ...rowInput,
       prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,

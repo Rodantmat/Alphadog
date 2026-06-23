@@ -1,11 +1,11 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.18-resume-batch-recovery";
+const VERSION = "alphadog-v2-score-prep-v0.2.19-single-pass-stage-swap";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
 const SOURCE_SLEEPER = "sleeper";
 const INSERT_CHUNK_SIZE = 75;
-const WRITE_ROWS_PER_INVOCATION = 700;
+const WRITE_ROWS_PER_INVOCATION = 20000; // v0.2.19: Score Prep is proven to finish ~5-8k rows inside service-binding budget; disable chunk resume race.
 
 function nowIso() {
   return new Date().toISOString();
@@ -1543,6 +1543,7 @@ async function runBoardPrep(env, input) {
       score_prep_complete_count_guard: true,
       score_prep_stage_table_write: true,
       score_prep_resume_batch_recovery: true,
+      score_prep_single_pass_stage_swap_v0_2_19: true,
       current_table_retention_policy: "partial_new_batch_rows_may_coexist_with_previous_current_until_final_verify_cleanup",
       by_source: bySource,
       timing_ms: { ...timing, total_ms: Date.now() - wallStart },
@@ -1603,6 +1604,7 @@ LIMIT 20`, [batchId]);
     score_prep_complete_count_guard: true,
     score_prep_stage_table_write: true,
     score_prep_resume_batch_recovery: true,
+      score_prep_single_pass_stage_swap_v0_2_19: true,
     current_table_retention_policy: "score_board_prepared_current_current_pt_today_tomorrow_only_insert_verify_then_cleanup_old_batches",
     by_source: bySource,
     sleeper_event_resolution: writeResult.sleeperEvents,
