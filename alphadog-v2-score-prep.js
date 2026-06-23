@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.16-complete-count-guard";
+const VERSION = "alphadog-v2-score-prep-v0.2.17-stage-table-chunked-swap";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
@@ -414,6 +414,49 @@ CREATE TABLE IF NOT EXISTS score_board_prepared_current (
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 )`).run();
+
+  await env.SCORE_DB.prepare(`
+CREATE TABLE IF NOT EXISTS score_board_prepared_stage (
+  stage_row_id TEXT PRIMARY KEY,
+  prepared_row_id TEXT NOT NULL,
+  prep_batch_id TEXT NOT NULL,
+  source_key TEXT NOT NULL,
+  source_row_id TEXT,
+  source_event_id TEXT,
+  projection_id TEXT,
+  player_name TEXT,
+  player_name_normalized TEXT,
+  resolved_player_id INTEGER,
+  resolved_mlb_player_id INTEGER,
+  player_match_status TEXT,
+  player_match_confidence TEXT,
+  team TEXT,
+  opponent TEXT,
+  team_full_name TEXT,
+  opponent_full_name TEXT,
+  canonical_prop_key TEXT,
+  source_prop_name TEXT,
+  line_value REAL,
+  official_game_pk INTEGER,
+  official_game_time_utc TEXT,
+  official_date TEXT,
+  source_start_time TEXT,
+  source_time_status TEXT,
+  start_time_confidence TEXT,
+  matchup_status TEXT,
+  matchup_confidence TEXT,
+  source_pickable INTEGER,
+  pickable_safe INTEGER,
+  prep_status TEXT,
+  block_reason TEXT,
+  raw_source_json TEXT,
+  row_payload_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+)`).run();
+
+  await env.SCORE_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_score_board_prepared_stage_batch ON score_board_prepared_stage(prep_batch_id)`).run();
+  await env.SCORE_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_score_board_prepared_stage_batch_source ON score_board_prepared_stage(prep_batch_id, source_key)`).run();
 
   await env.SCORE_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_source ON score_board_prepared_current(source_key, pickable_safe)`).run();
   await env.SCORE_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_score_board_prepared_current_game ON score_board_prepared_current(official_date, official_game_pk)`).run();
@@ -1114,20 +1157,21 @@ async function writePreparedRows(env, batchId, rows, bySource, startedAt, input,
   const partialWrite = writeEndExclusive < rows.length;
   await ensureScoreTables(env);
 
-  const insertSql = `INSERT OR REPLACE INTO score_board_prepared_current (
-    prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
+  const insertSql = `INSERT OR REPLACE INTO score_board_prepared_stage (
+    stage_row_id, prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
     player_name, player_name_normalized, resolved_player_id, resolved_mlb_player_id,
     player_match_status, player_match_confidence, team, opponent, team_full_name, opponent_full_name,
     canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, official_date,
     source_start_time, source_time_status, start_time_confidence, matchup_status, matchup_confidence,
     source_pickable, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
   await updatePrepBatchCheckpoint(env, batchId, "WRITING_REPLACEMENT_ROWS", "SCORE_BOARD_PREP_WRITING_REPLACEMENT_ROWS", { attempted_rows: rows.length, write_offset: writeOffset, write_end_exclusive: writeEndExclusive, write_rows_per_invocation: WRITE_ROWS_PER_INVOCATION, insert_chunk_size: INSERT_CHUNK_SIZE, preserve_current_until_verified: true });
   const insertStart = Date.now();
   for (let i = writeOffset; i < writeEndExclusive; i += INSERT_CHUNK_SIZE) {
     const chunk = rows.slice(i, Math.min(i + INSERT_CHUNK_SIZE, writeEndExclusive));
     const statements = chunk.map(r => env.SCORE_DB.prepare(insertSql).bind(
+      `${batchId}|${r.prepared_row_id}`,
       r.prepared_row_id,
       r.prep_batch_id,
       r.source_key,
@@ -1182,7 +1226,7 @@ SELECT
   SUM(CASE WHEN block_reason LIKE '%started_or_expired_by_official_time%' THEN 1 ELSE 0 END) AS started_rows,
   SUM(CASE WHEN block_reason LIKE '%source_unpickable_flag%' THEN 1 ELSE 0 END) AS source_unpickable_rows,
   SUM(CASE WHEN block_reason LIKE '%player_team_conflict%' THEN 1 ELSE 0 END) AS player_team_conflict_rows
-FROM score_board_prepared_current
+FROM score_board_prepared_stage
 WHERE prep_batch_id = ?`, [batchId]);
 
   const verifiedPreparedRows = Number(totalRow && totalRow.prepared_rows || 0);
@@ -1221,6 +1265,31 @@ WHERE prep_batch_id = ?`, [batchId]);
     matchup_unresolved_rows: Number(totalRow.matchup_unresolved_rows || 0),
     player_team_conflict_rows: Number(totalRow.player_team_conflict_rows || 0)
   };
+
+  const promoteStart = Date.now();
+  await updatePrepBatchCheckpoint(env, batchId, "PROMOTING_STAGE_TO_CURRENT", "SCORE_BOARD_PREP_PROMOTING_STAGE_TO_CURRENT", { attempted_rows: rows.length, stage_rows: verifiedPreparedRows, no_active_current_staging: true, timing_ms: timing });
+  await env.SCORE_DB.prepare(`INSERT OR REPLACE INTO score_board_prepared_current (
+    prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
+    player_name, player_name_normalized, resolved_player_id, resolved_mlb_player_id,
+    player_match_status, player_match_confidence, team, opponent, team_full_name, opponent_full_name,
+    canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, official_date,
+    source_start_time, source_time_status, start_time_confidence, matchup_status, matchup_confidence,
+    source_pickable, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json, created_at, updated_at
+  ) SELECT
+    prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
+    player_name, player_name_normalized, resolved_player_id, resolved_mlb_player_id,
+    player_match_status, player_match_confidence, team, opponent, team_full_name, opponent_full_name,
+    canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, official_date,
+    source_start_time, source_time_status, start_time_confidence, matchup_status, matchup_confidence,
+    source_pickable, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json, created_at, CURRENT_TIMESTAMP
+  FROM score_board_prepared_stage WHERE prep_batch_id=?`).bind(batchId).run();
+  const promotedRow = await firstRow(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current WHERE prep_batch_id=?", [batchId]);
+  const promotedRows = Number(promotedRow && promotedRow.rows || 0);
+  timing.promote_ms = Date.now() - promoteStart;
+  if (promotedRows < rows.length) {
+    await updatePrepBatchCheckpoint(env, batchId, "PARTIAL_CONTINUE_BOARD_PREP_PROMOTE", "SCORE_BOARD_PREP_PARTIAL_PROMOTE_COUNT_GUARD", { attempted_rows: rows.length, promoted_rows: promotedRows, stage_rows: verifiedPreparedRows, no_cleanup: true, timing_ms: timing });
+    return { partial:true, next_write_offset: verifiedPreparedRows, remaining_rows: rows.length - promotedRows, insertedThisInvocation:0, insertedCurrentRows: promotedRows, totals: computeTotals(rows), bySource, sleeperEvents: [] };
+  }
 
   const finalBySource = await allRows(env.SCORE_DB, `
 SELECT
@@ -1288,6 +1357,7 @@ ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
   if (totals.prepared_rows > 0 && totals.prepared_rows > 0) {
     await updatePrepBatchCheckpoint(env, batchId, "CLEANING_OLD_PREP_BATCHES", "SCORE_BOARD_PREP_CLEANING_OLD_BATCHES_AFTER_VERIFY", { prepared_rows: totals.prepared_rows, preserve_current_until_verified: true });
     await env.SCORE_DB.prepare("DELETE FROM score_board_prepared_current WHERE prep_batch_id <> ?").bind(batchId).run();
+    await env.SCORE_DB.prepare("DELETE FROM score_board_prepared_stage WHERE prep_batch_id <> ?").bind(batchId).run();
   }
   timing.cleanup_old_batches_ms = Date.now() - cleanupStart;
 
@@ -1432,6 +1502,7 @@ async function runBoardPrep(env, input) {
       orchestrator_should_self_continue: true,
       score_prep_chunked_write_resume: true,
       score_prep_complete_count_guard: true,
+      score_prep_stage_table_write: true,
       current_table_retention_policy: "partial_new_batch_rows_may_coexist_with_previous_current_until_final_verify_cleanup",
       by_source: bySource,
       timing_ms: { ...timing, total_ms: Date.now() - wallStart },
@@ -1490,6 +1561,7 @@ LIMIT 20`, [batchId]);
     final_db_truth: true,
     preserve_previous_current_until_replacement_verified: true,
     score_prep_complete_count_guard: true,
+    score_prep_stage_table_write: true,
     current_table_retention_policy: "score_board_prepared_current_current_pt_today_tomorrow_only_insert_verify_then_cleanup_old_batches",
     by_source: bySource,
     sleeper_event_resolution: writeResult.sleeperEvents,
