@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.292-expansion-v2-front-of-queue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.293-score-prep-timeout-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -115,6 +115,7 @@ async function run(db, sql, ...binds) {
 
 const EXACT_WORKER_SERVICE_TIMEOUT_MS = 75000;
 const DAILY_CONTEXT_EXACT_WORKER_TIMEOUT_MS = 45000;
+const SCORE_PREP_SERVICE_TIMEOUT_MS = 90000;
 
 function timeoutSignal(ms) {
   if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") return AbortSignal.timeout(ms);
@@ -13764,11 +13765,11 @@ async function processScorePrepJob(env, row, runId, trigger) {
   let output;
   let httpStatus = null;
   try {
-    const resp = await env.SCORE_PREP_WORKER.fetch("https://internal.alphadog-v2-score-prep/run", {
+    const resp = await serviceBindingFetch(env.SCORE_PREP_WORKER, "https://internal.alphadog-v2-score-prep/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    });
+    }, "score_prep", SCORE_PREP_SERVICE_TIMEOUT_MS);
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); }
@@ -13804,7 +13805,9 @@ async function processScorePrepJob(env, row, runId, trigger) {
       no_ranking: true,
       no_final_board_write: true,
       writes_shadow_table_only: false,
-      no_old_production_touch: true
+      no_old_production_touch: true,
+      service_binding_timeout_ms: SCORE_PREP_SERVICE_TIMEOUT_MS,
+      score_prep_timeout_guard_v0_2_293: true
     }
   };
 

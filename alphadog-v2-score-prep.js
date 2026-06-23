@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.11-sleeper-pitcher-walks-role-remap";
+const VERSION = "alphadog-v2-score-prep-v0.2.12-preserve-current-swap";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
@@ -1034,9 +1034,6 @@ function summarizeSleeperEvents(rows) {
 async function writePreparedRows(env, batchId, rows, bySource, startedAt, input, timing = {}) {
   const writeStart = Date.now();
   await ensureScoreTables(env);
-  const deleteStart = Date.now();
-  await env.SCORE_DB.prepare("DELETE FROM score_board_prepared_current").run();
-  timing.delete_ms = Date.now() - deleteStart;
 
   const insertSql = `INSERT OR REPLACE INTO score_board_prepared_current (
     prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
@@ -1180,6 +1177,16 @@ ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
   })));
 
   timing.verify_ms = Date.now() - verifyStart;
+
+  // v0.2.12 safety fix: never clear the active prepared board before the
+  // replacement batch has been fully inserted and DB-verified. A hung/aborted
+  // worker after an early DELETE left score_board_prepared_current empty.
+  // Now the swap is: insert/verify new batch first, then remove older batches.
+  const cleanupStart = Date.now();
+  if (totals.prepared_rows > 0) {
+    await env.SCORE_DB.prepare("DELETE FROM score_board_prepared_current WHERE prep_batch_id <> ?").bind(batchId).run();
+  }
+  timing.cleanup_old_batches_ms = Date.now() - cleanupStart;
 
   const finishAt = nowIso();
   await env.SCORE_DB.prepare(`INSERT OR REPLACE INTO score_board_prep_batches (
@@ -1330,7 +1337,8 @@ LIMIT 20`, [batchId]);
     stale_or_out_of_window_by_source: staleExcludedBySource,
     inserted_current_rows: writeResult.insertedCurrentRows,
     final_db_truth: true,
-    current_table_retention_policy: "score_board_prepared_current_current_pt_today_tomorrow_only",
+    preserve_previous_current_until_replacement_verified: true,
+    current_table_retention_policy: "score_board_prepared_current_current_pt_today_tomorrow_only_insert_verify_then_cleanup_old_batches",
     by_source: bySource,
     sleeper_event_resolution: writeResult.sleeperEvents,
     blocked_samples: blockedSamples,
