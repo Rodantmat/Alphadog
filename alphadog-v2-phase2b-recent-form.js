@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.17-stable-timebox-index-resume";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.17-stable-timebox-index-resume";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.18-dormant-expansion-props";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.18-dormant-expansion-props";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -15,13 +15,14 @@ const PITCHER_SOFT_TIMEBOX_MS = 12000;
 
 const HITTER_PROPS = new Set([
   "hits", "total_bases", "runs", "rbis", "singles", "doubles", "home_runs", "walks",
-  "hitter_strikeouts", "hits_runs_rbis", "stolen_bases", "fantasy", "fantasy_score"
+  "hitter_strikeouts", "hits_runs_rbis", "stolen_bases", "fantasy", "fantasy_score",
+  "plate_appearances", "triples"
 ]);
 const PITCHER_PROPS = new Set([
   "pitcher_strikeouts", "pitcher_outs", "pitching_outs", "earned_runs", "earned_runs_allowed",
-  "hits_allowed", "walks_allowed"
+  "hits_allowed", "walks_allowed", "pitches_thrown", "rfi_nrfi"
 ]);
-const DEFERRED_PROPS = new Set(["rfi_nrfi", "pitcher_strikeouts_combo"]);
+const DEFERRED_PROPS = new Set(["pitcher_strikeouts_combo"]);
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {

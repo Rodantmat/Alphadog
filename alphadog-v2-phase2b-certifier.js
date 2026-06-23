@@ -1,20 +1,21 @@
 const WORKER_NAME = "alphadog-v2-phase2b-certifier";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-matrix-builder";
 const JOB_KEY = "prop-matrix-builder";
-const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.12-sweet-spot-75x6";
+const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.13-dormant-expansion-props";
 const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.11-sweet-spot-75x6";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
 const HITTER_PROPS = new Set([
   "hits", "total_bases", "runs", "rbis", "singles", "doubles", "home_runs", "walks",
-  "hitter_strikeouts", "hits_runs_rbis", "stolen_bases", "fantasy", "fantasy_score"
+  "hitter_strikeouts", "hits_runs_rbis", "stolen_bases", "fantasy", "fantasy_score",
+  "plate_appearances", "triples"
 ]);
 const PITCHER_PROPS = new Set([
   "pitcher_strikeouts", "pitcher_outs", "pitching_outs", "earned_runs", "earned_runs_allowed",
-  "hits_allowed", "walks_allowed"
+  "hits_allowed", "walks_allowed", "pitches_thrown", "rfi_nrfi"
 ]);
-const DEFERRED_PROPS = new Set(["rfi_nrfi", "pitcher_strikeouts_combo"]);
+const DEFERRED_PROPS = new Set(["pitcher_strikeouts_combo"]);
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -787,12 +788,12 @@ async function runMatrixBuilder(request, env) {
     let blockerCount = 0;
     let missingComponentCount = 0;
 
-    if (classification.family === "deferred" || String(row.canonical_prop_key || "").toLowerCase() === "rfi_nrfi") {
+    if (classification.family === "deferred") {
       matrixStatus = "matrix_deferred";
       matrixGrade = "DEFERRED_UNSUPPORTED_PROP";
       blocking = 1;
       blockerCount++;
-      addIssue(issues, batchId, matrixId, row, "blocker", "deferred_prop", "PROP_DEFERRED_PENDING_SEPARATE_DESIGN", { classification, note:"RFI/NRFI is deferred by design and not a system error." });
+      addIssue(issues, batchId, matrixId, row, "blocker", "deferred_prop", "PROP_DEFERRED_PENDING_SEPARATE_DESIGN", { classification });
     } else if (!classification.supported) {
       matrixStatus = "matrix_deferred";
       matrixGrade = "DEFERRED_UNSUPPORTED_PROP";

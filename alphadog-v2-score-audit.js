@@ -4339,7 +4339,7 @@ async function runHitProbabilityCurrent(env, input = {}){
 
 const ENRICHMENT_V1_JOB_KEY = "score-enrichment-v1";
 const ENRICHMENT_V1_MODE = "score_enrichment_v1_side_expanded";
-const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.9-soft-calibration-pressure";
+const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.10-dormant-expansion-v2-bridge";
 const ENRICHMENT_V1_CHUNK_ROWS = 250;
 
 function clampNum(v, lo, hi) {
@@ -4359,12 +4359,14 @@ function enrichmentProfileFor(prop, family) {
   if (p === "hitter_strikeouts") return "hitter_strikeout";
   if (p === "walks") return "hitter_walk_obp";
   if (p === "stolen_bases") return "stolen_base_attempt";
+  if (p === "plate_appearances") return "hitter_plate_appearances";
   if (["home_runs", "total_bases", "doubles", "triples"].includes(p)) return "hitter_power";
   if (["hits", "singles"].includes(p)) return "hitter_contact";
   if (["runs", "rbis", "hits_runs_rbis"].includes(p)) return "hitter_run_rbi";
   if (p === "fantasy_score") return "fantasy_score_deferred";
   if (p === "pitcher_strikeouts") return "pitcher_strikeout";
   if (p === "pitcher_outs") return "pitcher_outs";
+  if (p === "pitches_thrown") return "pitcher_pitches_thrown";
   if (p === "hits_allowed") return "pitcher_hits_allowed";
   if (["earned_runs", "runs_allowed"].includes(p)) return "pitcher_earned_runs_allowed";
   if (p === "walks_allowed") return "pitcher_walks";
@@ -4375,12 +4377,14 @@ const ENRICHMENT_PROFILE_WEIGHTS = {
   hitter_contact: { baseline:40, recent_form:10, direct_matchup:13, split_fit:10, lineup_pa:8, market:3, park_environment:7, bullpen:3, lineup_status:3, opponent_defense:3 },
   hitter_power: { baseline:35, recent_form:15, direct_matchup:12, split_fit:10, lineup_opportunity:3, market:3, park_environment:12, bullpen:5, lineup_status:5 },
   hitter_run_rbi: { baseline:28, recent_form:10, direct_matchup:11, split_fit:8, lineup_role:15, market:6, park_environment:6, bullpen:8, lineup_status:4, run_strategy:4 },
+  hitter_plate_appearances: { baseline:34, lineup_slot:28, lineup_confirmed:12, team_total:8, pitcher_pitch_to_contact:6, schedule_rest:4, market:3, park_weather:5 },
   hitter_strikeout: { baseline:35, recent_discipline:18, pitcher_k_whiff:14, pitch_mix_split:13, lineup_pa:5, market:3, bullpen_k:5, lineup_status:4, umpire:3 },
   hitter_walk_obp: { baseline:34, recent_discipline:18, pitcher_control:16, pitch_mix_zone:10, umpire:7, lineup_pa:5, market:4, lineup_status:6 },
   stolen_base_attempt: { baseline:30, runner_attempt_history:20, runner_speed:10, pitcher_hold:15, catcher_pop_throw:10, game_state_strategy:12, market:3 },
   stolen_base_success: { baseline:25, runner_speed:20, catcher_pop_throw:20, pitcher_hold:18, jump_route_context:7, game_state_strategy:5, market:5 },
   pitcher_strikeout: { baseline:35, pitcher_k_whiff:20, opponent_k_profile:13, pitch_mix_fit:14, workload_pitch_count:6, umpire:5, market:4, park_weather:3 },
   pitcher_outs: { baseline:35, starter_workload:18, opponent_pressure:12, bullpen_availability:14, rest_pitch_count:10, market:4, park_weather:4, starter_confirmation:3 },
+  pitcher_pitches_thrown: { baseline:35, starter_workload:20, pitch_count_history:16, bullpen_availability:12, rest_pitch_count:9, game_script_market:4, starter_confirmation:4 },
   pitcher_hits_allowed: { baseline:30, pitcher_contact_prevention:17, opponent_contact:14, pitch_mix_split:10, defense_framing:10, market:5, park_weather:10, workload:4 },
   pitcher_earned_runs_allowed: { baseline:30, pitcher_run_prevention:17, opponent_run_quality:14, pitch_mix_split:8, bullpen_inherited_runner_risk:10, market_implied_runs:7, park_weather:10, workload:4 },
   pitcher_walks: { baseline:35, pitcher_control:18, opponent_walk_chase:13, pitch_mix_split:8, umpire:10, catcher_framing:5, workload:6, market:5 },
@@ -4574,8 +4578,16 @@ function dailyLayerFromPayload(packet, profileKey, selectedSide) {
   if (availability.includes("unavailable") || availability.includes("injured") || availability.includes("inactive")) score -= 3;
   if (profileKey.startsWith("hitter") || profileKey.startsWith("stolen")) {
     if (lineupSlot != null) {
-      if (lineupSlot >= 1 && lineupSlot <= 3) score += 1.0;
-      else if (lineupSlot >= 7) score -= 0.7;
+      if (profileKey === "hitter_plate_appearances") {
+        if (lineupSlot === 1) score += 2.0;
+        else if (lineupSlot === 2) score += 1.6;
+        else if (lineupSlot === 3) score += 1.1;
+        else if (lineupSlot >= 7) score -= 1.2;
+        else if (lineupSlot >= 5) score -= 0.4;
+      } else {
+        if (lineupSlot >= 1 && lineupSlot <= 3) score += 1.0;
+        else if (lineupSlot >= 7) score -= 0.7;
+      }
     }
     if (profileKey === "hitter_power" || profileKey === "hitter_run_rbi" || profileKey === "hitter_contact") {
       if (windContext.includes("out") || windContext.includes("boost") || windContext.includes("carry")) score += 0.8;
@@ -4588,6 +4600,11 @@ function dailyLayerFromPayload(packet, profileKey, selectedSide) {
     if (starterStatus.includes("confirmed") || starterStatus.includes("probable")) score += 0.6;
     if (openerFlag === 1 || bulkFlag === 1) score -= (profileKey === "pitcher_outs" ? 2.0 : 0.7);
     if (profileKey === "pitcher_outs" && (bullpenRisk.includes("high") || bullpenRisk.includes("fatigue"))) score += 0.5;
+    if (profileKey === "pitcher_pitches_thrown") {
+      if (starterStatus.includes("confirmed") || starterStatus.includes("probable")) score += 0.7;
+      if (bullpenRisk.includes("high") || bullpenRisk.includes("fatigue") || bullpenRisk.includes("severe")) score += 0.4;
+      if (openerFlag === 1 || bulkFlag === 1) score -= 2.4;
+    }
     if ((profileKey === "pitcher_hits_allowed" || profileKey === "pitcher_earned_runs_allowed") && (windContext.includes("out") || windContext.includes("boost") || windContext.includes("carry"))) score += isLessSide(selectedSide) ? -0.8 : 0.8;
   }
   let layer = layerFromSignedScore(score);
@@ -4636,6 +4653,8 @@ function contextLayerWeight(profileKey, weights, layerKey) {
     return 8;
   }
   if (layerKey === "daily_context") {
+    if (profileKey === "hitter_plate_appearances") return 10;
+    if (profileKey === "pitcher_pitches_thrown") return 9;
     if (profileKey === "hitter_run_rbi" || profileKey === "stolen_base_attempt" || profileKey === "pitcher_outs") return 8;
     if (profileKey.startsWith("pitcher")) return 7;
     if (profileKey === "hitter_power") return 7;
@@ -4897,12 +4916,24 @@ async function runScoreEnrichmentV1(env, input = {}) {
          s.market_game_context_status, s.market_prop_context_status, s.daily_readiness_status, s.matrix_status,
          s.matrix_grade, s.blocking_for_scoring, s.warning_count, s.blocker_count, s.missing_component_count,
          s.matrix_payload_json, s.details_json,
-         hp.baseline_hp_row_id, hp.baseline_hp_0_100, hp.baseline_confidence_0_100, hp.non_push_sample, hp.hit_count, hp.miss_count,
-         hp.sample_profile, hp.role_profile, hp.volatility_profile, hp.variance_profile, hp.line_difficulty_profile,
+         COALESCE(hpv2.baseline_hp_row_id, hp.baseline_hp_row_id) AS baseline_hp_row_id,
+         COALESCE(hpv2.baseline_hp_0_100, hp.baseline_hp_0_100) AS baseline_hp_0_100,
+         COALESCE(hpv2.baseline_confidence_0_100, hp.baseline_confidence_0_100) AS baseline_confidence_0_100,
+         COALESCE(hpv2.non_push_sample, hp.non_push_sample) AS non_push_sample,
+         COALESCE(hpv2.hit_count, hp.hit_count) AS hit_count,
+         COALESCE(hpv2.miss_count, hp.miss_count) AS miss_count,
+         COALESCE(hpv2.sample_profile, hp.sample_profile) AS sample_profile,
+         COALESCE(hpv2.role_profile, hp.role_profile) AS role_profile,
+         COALESCE(hpv2.volatility_profile, hp.volatility_profile) AS volatility_profile,
+         COALESCE(hpv2.variance_profile, hp.variance_profile) AS variance_profile,
+         COALESCE(hpv2.line_difficulty_profile, hp.line_difficulty_profile) AS line_difficulty_profile,
+         CASE WHEN hpv2.baseline_hp_row_id IS NOT NULL THEN 'player_baseline_hp_v2_current' WHEN hp.baseline_hp_row_id IS NOT NULL THEN 'player_baseline_hp_current' ELSE 'missing' END AS baseline_source_mode,
          COALESCE(h.factor_grade, p.factor_grade) AS factor_grade,
          COALESCE(h.factor_payload_json, p.factor_payload_json) AS factor_payload_json,
          COALESCE(h.details_json, p.details_json) AS factor_details_json
   FROM side_expanded s
+  LEFT JOIN player_baseline_hp_v2_current hpv2
+    ON hpv2.player_id=s.mlb_player_id AND hpv2.canonical_prop_key=s.canonical_prop_key AND hpv2.line_value=s.board_line_value AND lower(hpv2.selected_side)=s.selected_side
   LEFT JOIN player_baseline_hp_current hp
     ON hp.player_id=s.mlb_player_id AND hp.canonical_prop_key=s.canonical_prop_key AND hp.line_value=s.board_line_value AND lower(hp.selected_side)=s.selected_side
   LEFT JOIN prop_factor_hitter_packets h ON h.packet_id=s.factor_packet_id
@@ -4947,7 +4978,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
     const marketLayer = noHpAnchor ? 0 : marketLayerFromPayload(factorPayload, profileKey, row.selected_side);
     const matrixLayer = rowBlocked ? -3 : 0;
     const factorLayers = [
-      layerObj("baseline_anchor", weights.baseline || weights.sp_first_inning || 0, baselineLayer, baselineAvailable ? Math.min(1, baselineConfRaw / 100) : 0, baselineAvailable ? "confirmed_baseline_anchor" : "missing", { anchor_only:true, hp_weight_pressure:0, note:"Baseline HP is the anchor. Do not add this pressure again in HP V2." }),
+      layerObj("baseline_anchor", weights.baseline || weights.sp_first_inning || 0, baselineLayer, baselineAvailable ? Math.min(1, baselineConfRaw / 100) : 0, baselineAvailable ? "confirmed_baseline_anchor" : "missing", { anchor_only:true, hp_weight_pressure:0, baseline_source_mode: row.baseline_source_mode || null, note:"Baseline HP is the anchor. Do not add this pressure again in HP V2." }),
       layerObj("factor_packet_context", noHpAnchor ? 0 : contextLayerWeight(profileKey, weights, "factor_packet"), packetLayer, factorQuality, factorQuality >= 1 ? "confirmed_mined_directional" : (factorQuality > 0 ? "partial_mined_directional" : "missing"), { suppressed_by_blocker: rowBlocked, suppressed_by_missing_baseline_anchor: !baselineAvailable }),
       layerObj("daily_game_context", noHpAnchor ? 0 : contextLayerWeight(profileKey, weights, "daily_context"), dailyLayer, dailyQuality, dailyQuality >= 1 ? "confirmed_daily_directional" : "partial_daily_directional", { suppressed_by_blocker: rowBlocked, suppressed_by_missing_baseline_anchor: !baselineAvailable }),
       layerObj("market_context", noHpAnchor ? 0 : contextLayerWeight(profileKey, weights, "market_context"), marketLayer, marketQuality, marketQuality >= 1 ? "confirmed_market_directional" : (marketQuality > 0 ? "game_market_only" : "missing"), { suppressed_by_blocker: rowBlocked, suppressed_by_missing_baseline_anchor: !baselineAvailable }),
@@ -4967,6 +4998,8 @@ async function runScoreEnrichmentV1(env, input = {}) {
       hit_probability_definition: "realism_based_probability_from_baseline_to_be_enriched_by_hit_prob_v2_later",
       hp_v2_not_calculated_in_this_phase: true,
       final_score_not_calculated_in_this_phase: true,
+      baseline_source_mode: row.baseline_source_mode || null,
+      v2_heb_bridge_preferred: row.baseline_source_mode === "player_baseline_hp_v2_current",
       sample_profile: row.sample_profile || null,
       role_profile: row.role_profile || null,
       volatility_profile: row.volatility_profile || null,

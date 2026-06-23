@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.13-checkpoint-preserve-current";
+const VERSION = "alphadog-v2-score-prep-v0.2.14-dormant-expansion-prop-mapping";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
@@ -243,6 +243,7 @@ function propKeyPrizePicks(statType, ref = null) {
     ["hitter hits", "hits"],
     ["singles", "singles"],
     ["doubles", "doubles"],
+    ["triples", "triples"],
     ["total bases", "total_bases"],
     ["home runs", "home_runs"],
     ["runs", "runs"],
@@ -257,7 +258,14 @@ function propKeyPrizePicks(statType, ref = null) {
     ["hits allowed", "hits_allowed"],
     ["walks", "walks"],
     ["walks allowed", "walks_allowed"],
-    ["stolen bases", "stolen_bases"]
+    ["stolen bases", "stolen_bases"],
+    ["plate appearances", "plate_appearances"],
+    ["hitter plate appearances", "plate_appearances"],
+    ["batter plate appearances", "plate_appearances"],
+    ["pitches thrown", "pitches_thrown"],
+    ["pitcher pitches thrown", "pitches_thrown"],
+    ["pitch count", "pitches_thrown"],
+    ["pitcher pitch count", "pitches_thrown"]
   ]);
   return map.get(n) || n.replace(/ /g, "_") || null;
 }
@@ -931,6 +939,13 @@ function sleeperPreparedPropKeyForResolvedPlayer({ rawPropKey, sourcePropName, r
   const prop = safeStr(rawPropKey);
   const source = safeStr(sourcePropName || rawMarketKey);
   const sourceNorm = source.toLowerCase();
+
+  if (["player_plate_appearances", "plate_appearances", "player_batter_plate_appearances", "batter_plate_appearances"].includes(sourceNorm)) {
+    return "plate_appearances";
+  }
+  if (["player_pitches_thrown", "pitches_thrown", "player_pitch_count", "pitch_count", "pitcher_pitch_count"].includes(sourceNorm)) {
+    return "pitches_thrown";
+  }
 
   // Sleeper/Parlay can emit pitcher walk props as generic player_walks/walks.
   // Hitter walk props are source-distinct as player_bat_walks and must remain walks.
