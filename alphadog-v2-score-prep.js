@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.17-stage-table-chunked-swap";
+const VERSION = "alphadog-v2-score-prep-v0.2.18-resume-batch-recovery";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
@@ -347,6 +347,32 @@ async function updatePrepBatchCheckpoint(env, batchId, status, certificationStat
       .bind(status, certificationStatus, safeJson(data, 9000), batchId)
       .run();
   } catch (_) {}
+}
+
+async function recoverResumeBatchForRequest(env, input) {
+  const requestId = input && input.request_id ? String(input.request_id) : "";
+  if (!requestId) return null;
+  try {
+    const row = await firstRow(env.SCORE_DB, `
+SELECT
+  b.batch_id,
+  COUNT(s.stage_row_id) AS stage_rows,
+  MAX(s.updated_at) AS max_stage_updated_at,
+  MAX(b.updated_at) AS batch_updated_at
+FROM score_board_prep_batches b
+LEFT JOIN score_board_prepared_stage s ON s.prep_batch_id = b.batch_id
+WHERE b.worker_name = ?
+  AND b.status IN ('PARTIAL_CONTINUE_BOARD_PREP_WRITE','PREPARED_ROWS_BUILT','RUNNING_BOARD_PREP_ENRICHMENT','PARTIAL_CONTINUE_BOARD_PREP_PROMOTE')
+  AND b.source_json LIKE ?
+GROUP BY b.batch_id
+HAVING COUNT(s.stage_row_id) > 0
+ORDER BY COUNT(s.stage_row_id) DESC, MAX(s.updated_at) DESC, MAX(b.updated_at) DESC
+LIMIT 1`, [WORKER_NAME, `%${requestId}%`]);
+    if (!row || !row.batch_id) return null;
+    return { batch_id: row.batch_id, stage_rows: Number(row.stage_rows || 0), max_stage_updated_at: row.max_stage_updated_at || null };
+  } catch (_) {
+    return null;
+  }
 }
 
 async function ensureScoreTables(env) {
@@ -1429,15 +1455,28 @@ async function runBoardPrep(env, input) {
   const startedAt = nowIso();
   const timing = {};
   const requestId = input.request_id || `score_prep_${Date.now()}`;
-  const batchId = input.prep_batch_id || input.batch_id || `score_board_prep_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  let batchId = input.prep_batch_id || input.batch_id || null;
 
   const bindings = bindingSummary(env);
   for (const required of ["REF_DB", "TEAM_DB", "MARKET_DB", "SCORE_DB"]) {
     if (!bindings[required]) throw new Error(`missing_required_binding_${required}`);
   }
 
+  await ensureScoreTables(env);
+  let recoveredResume = null;
+  if (!batchId) {
+    recoveredResume = await recoverResumeBatchForRequest(env, input);
+    if (recoveredResume && recoveredResume.batch_id) {
+      batchId = recoveredResume.batch_id;
+      if (!Number(input.score_prep_write_offset || input.write_offset || 0)) {
+        input.score_prep_write_offset = recoveredResume.stage_rows;
+      }
+    }
+  }
+  if (!batchId) batchId = `score_board_prep_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
   await markPrepBatchRunning(env, batchId, input, startedAt);
-  await controlLog(env, input, "INFO", "score_prep_worker_started", "Score Prep worker started with checkpointed batch row before source load", { batch_id: batchId, bindings, preserve_current_until_verified: true });
+  await controlLog(env, input, "INFO", "score_prep_worker_started", "Score Prep worker started with checkpointed batch row before source load", { batch_id: batchId, recovered_resume_batch: recoveredResume, write_offset: Number(input.score_prep_write_offset || input.write_offset || 0), bindings, preserve_current_until_verified: true });
   await controlRunHeartbeat(env, input, "SCORE_PREP_WORKER_STARTED", 0, 0, { batch_id: batchId });
 
   const loadStart = Date.now();
@@ -1503,6 +1542,7 @@ async function runBoardPrep(env, input) {
       score_prep_chunked_write_resume: true,
       score_prep_complete_count_guard: true,
       score_prep_stage_table_write: true,
+      score_prep_resume_batch_recovery: true,
       current_table_retention_policy: "partial_new_batch_rows_may_coexist_with_previous_current_until_final_verify_cleanup",
       by_source: bySource,
       timing_ms: { ...timing, total_ms: Date.now() - wallStart },
@@ -1562,6 +1602,7 @@ LIMIT 20`, [batchId]);
     preserve_previous_current_until_replacement_verified: true,
     score_prep_complete_count_guard: true,
     score_prep_stage_table_write: true,
+    score_prep_resume_batch_recovery: true,
     current_table_retention_policy: "score_board_prepared_current_current_pt_today_tomorrow_only_insert_verify_then_cleanup_old_batches",
     by_source: bySource,
     sleeper_event_resolution: writeResult.sleeperEvents,
