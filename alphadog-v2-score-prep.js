@@ -1,10 +1,11 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.14-dormant-expansion-prop-mapping";
+const VERSION = "alphadog-v2-score-prep-v0.2.15-chunked-write-resume";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
 const SOURCE_SLEEPER = "sleeper";
 const INSERT_CHUNK_SIZE = 75;
+const WRITE_ROWS_PER_INVOCATION = 700;
 
 function nowIso() {
   return new Date().toISOString();
@@ -1108,6 +1109,9 @@ function summarizeSleeperEvents(rows) {
 
 async function writePreparedRows(env, batchId, rows, bySource, startedAt, input, timing = {}) {
   const writeStart = Date.now();
+  const writeOffset = Math.max(0, Number(input.score_prep_write_offset ?? input.write_offset ?? 0) || 0);
+  const writeEndExclusive = Math.min(rows.length, writeOffset + WRITE_ROWS_PER_INVOCATION);
+  const partialWrite = writeEndExclusive < rows.length;
   await ensureScoreTables(env);
 
   const insertSql = `INSERT OR REPLACE INTO score_board_prepared_current (
@@ -1119,10 +1123,10 @@ async function writePreparedRows(env, batchId, rows, bySource, startedAt, input,
     source_pickable, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-  await updatePrepBatchCheckpoint(env, batchId, "WRITING_REPLACEMENT_ROWS", "SCORE_BOARD_PREP_WRITING_REPLACEMENT_ROWS", { attempted_rows: rows.length, insert_chunk_size: INSERT_CHUNK_SIZE, preserve_current_until_verified: true });
+  await updatePrepBatchCheckpoint(env, batchId, "WRITING_REPLACEMENT_ROWS", "SCORE_BOARD_PREP_WRITING_REPLACEMENT_ROWS", { attempted_rows: rows.length, write_offset: writeOffset, write_end_exclusive: writeEndExclusive, write_rows_per_invocation: WRITE_ROWS_PER_INVOCATION, insert_chunk_size: INSERT_CHUNK_SIZE, preserve_current_until_verified: true });
   const insertStart = Date.now();
-  for (let i = 0; i < rows.length; i += INSERT_CHUNK_SIZE) {
-    const chunk = rows.slice(i, i + INSERT_CHUNK_SIZE);
+  for (let i = writeOffset; i < writeEndExclusive; i += INSERT_CHUNK_SIZE) {
+    const chunk = rows.slice(i, Math.min(i + INSERT_CHUNK_SIZE, writeEndExclusive));
     const statements = chunk.map(r => env.SCORE_DB.prepare(insertSql).bind(
       r.prepared_row_id,
       r.prep_batch_id,
@@ -1333,7 +1337,7 @@ async function runBoardPrep(env, input) {
   const startedAt = nowIso();
   const timing = {};
   const requestId = input.request_id || `score_prep_${Date.now()}`;
-  const batchId = `score_board_prep_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const batchId = input.prep_batch_id || input.batch_id || `score_board_prep_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   const bindings = bindingSummary(env);
   for (const required of ["REF_DB", "TEAM_DB", "MARKET_DB", "SCORE_DB"]) {
@@ -1378,6 +1382,40 @@ async function runBoardPrep(env, input) {
   const writeResult = await writePreparedRows(env, batchId, prepared, initialBySource, startedAt, input, timing);
   const totals = writeResult.totals;
   const bySource = writeResult.bySource;
+  if (writeResult.partial) {
+    await controlLog(env, input, "INFO", "score_prep_partial_write_continue", "Score Prep wrote a bounded chunk and yielded for backend continuation", { batch_id: batchId, next_write_offset: writeResult.next_write_offset, remaining_rows: writeResult.remaining_rows, inserted_current_rows: writeResult.insertedCurrentRows, timing_ms: timing });
+    await controlRunHeartbeat(env, input, "SCORE_PREP_PARTIAL_WRITE_CONTINUE", totals.rows_read, writeResult.insertedCurrentRows, { batch_id: batchId, next_write_offset: writeResult.next_write_offset, remaining_rows: writeResult.remaining_rows });
+    return {
+      ok: true,
+      data_ok: true,
+      version: VERSION,
+      worker_name: WORKER_NAME,
+      job_key: JOB_KEY,
+      request_id: requestId,
+      chain_id: input.chain_id || null,
+      batch_id: batchId,
+      prep_batch_id: batchId,
+      mode: "board_prep_enrichment",
+      status: "PARTIAL_CONTINUE_BOARD_PREP_WRITE",
+      certification: "SCORE_BOARD_PREP_PARTIAL_WRITE_CONTINUE",
+      certification_grade: "PARTIAL",
+      rows_read: totals.rows_read,
+      rows_written: writeResult.insertedCurrentRows,
+      prepared_rows: totals.prepared_rows,
+      inserted_this_invocation: writeResult.insertedThisInvocation,
+      inserted_current_rows: writeResult.insertedCurrentRows,
+      next_write_offset: writeResult.next_write_offset,
+      remaining_rows: writeResult.remaining_rows,
+      continuation_required: true,
+      orchestrator_should_self_continue: true,
+      score_prep_chunked_write_resume: true,
+      current_table_retention_policy: "partial_new_batch_rows_may_coexist_with_previous_current_until_final_verify_cleanup",
+      by_source: bySource,
+      timing_ms: { ...timing, total_ms: Date.now() - wallStart },
+      timestamp_utc: nowIso(),
+      elapsed_ms: Date.now() - wallStart
+    };
+  }
   await controlLog(env, input, "INFO", "score_prep_write_verified", "Score Prep inserted and DB-verified replacement rows before old-batch cleanup", { batch_id: batchId, totals, by_source: bySource, timing_ms: timing });
   await controlRunHeartbeat(env, input, "SCORE_PREP_WRITE_VERIFIED", totals.rows_read, totals.rows_written, { batch_id: batchId, totals, by_source: bySource });
 

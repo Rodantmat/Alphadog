@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.293-score-prep-timeout-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.294-score-prep-chunked-resume";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -8639,14 +8639,15 @@ async function processDailyProbablePitchersJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  const partial = false;
-  if (partial) {
+  if (scorePrepPartial) {
     const nextInput = {
       ...rowInput,
-      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
-      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
-      matrix_resume: true,
-      continuation_from_request_id: row.request_id
+      prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
+      batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.batch_id || null,
+      score_prep_resume: true,
+      score_prep_write_offset: Number(output && output.next_write_offset || 0),
+      continuation_from_request_id: row.request_id,
+      score_prep_chunked_write_resume: true
     };
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
@@ -8878,14 +8879,15 @@ async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  const partial = false;
-  if (partial) {
+  if (scorePrepPartial) {
     const nextInput = {
       ...rowInput,
-      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
-      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
-      matrix_resume: true,
-      continuation_from_request_id: row.request_id
+      prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
+      batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.batch_id || null,
+      score_prep_resume: true,
+      score_prep_write_offset: Number(output && output.next_write_offset || 0),
+      continuation_from_request_id: row.request_id,
+      score_prep_chunked_write_resume: true
     };
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
@@ -9121,14 +9123,15 @@ async function processDailyWeatherJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  const partial = false;
-  if (partial) {
+  if (scorePrepPartial) {
     const nextInput = {
       ...rowInput,
-      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
-      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
-      matrix_resume: true,
-      continuation_from_request_id: row.request_id
+      prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
+      batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.batch_id || null,
+      score_prep_resume: true,
+      score_prep_write_offset: Number(output && output.next_write_offset || 0),
+      continuation_from_request_id: row.request_id,
+      score_prep_chunked_write_resume: true
     };
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
@@ -9409,14 +9412,15 @@ async function processDailyTeamScheduleSpotJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  const partial = false;
-  if (partial) {
+  if (scorePrepPartial) {
     const nextInput = {
       ...rowInput,
-      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
-      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
-      matrix_resume: true,
-      continuation_from_request_id: row.request_id
+      prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
+      batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.batch_id || null,
+      score_prep_resume: true,
+      score_prep_write_offset: Number(output && output.next_write_offset || 0),
+      continuation_from_request_id: row.request_id,
+      score_prep_chunked_write_resume: true
     };
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
@@ -9652,14 +9656,15 @@ async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  const partial = false;
-  if (partial) {
+  if (scorePrepPartial) {
     const nextInput = {
       ...rowInput,
-      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
-      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
-      matrix_resume: true,
-      continuation_from_request_id: row.request_id
+      prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
+      batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.batch_id || null,
+      score_prep_resume: true,
+      score_prep_write_offset: Number(output && output.next_write_offset || 0),
+      continuation_from_request_id: row.request_id,
+      score_prep_chunked_write_resume: true
     };
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
@@ -9906,14 +9911,15 @@ async function processDailyUmpireContextJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  const partial = false;
-  if (partial) {
+  if (scorePrepPartial) {
     const nextInput = {
       ...rowInput,
-      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
-      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
-      matrix_resume: true,
-      continuation_from_request_id: row.request_id
+      prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
+      batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.batch_id || null,
+      score_prep_resume: true,
+      score_prep_write_offset: Number(output && output.next_write_offset || 0),
+      continuation_from_request_id: row.request_id,
+      score_prep_chunked_write_resume: true
     };
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
@@ -11299,14 +11305,15 @@ async function processDailyLineupsJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  const partial = false;
-  if (partial) {
+  if (scorePrepPartial) {
     const nextInput = {
       ...rowInput,
-      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
-      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
-      matrix_resume: true,
-      continuation_from_request_id: row.request_id
+      prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
+      batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.batch_id || null,
+      score_prep_resume: true,
+      score_prep_write_offset: Number(output && output.next_write_offset || 0),
+      continuation_from_request_id: row.request_id,
+      score_prep_chunked_write_resume: true
     };
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
@@ -11529,14 +11536,15 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  const partial = false;
-  if (partial) {
+  if (scorePrepPartial) {
     const nextInput = {
       ...rowInput,
-      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
-      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
-      matrix_resume: true,
-      continuation_from_request_id: row.request_id
+      prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
+      batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.batch_id || null,
+      score_prep_resume: true,
+      score_prep_write_offset: Number(output && output.next_write_offset || 0),
+      continuation_from_request_id: row.request_id,
+      score_prep_chunked_write_resume: true
     };
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
@@ -13600,14 +13608,15 @@ async function processScoreFinalBoardJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  const partial = false;
-  if (partial) {
+  if (scorePrepPartial) {
     const nextInput = {
       ...rowInput,
-      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
-      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
-      matrix_resume: true,
-      continuation_from_request_id: row.request_id
+      prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
+      batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.batch_id || null,
+      score_prep_resume: true,
+      score_prep_write_offset: Number(output && output.next_write_offset || 0),
+      continuation_from_request_id: row.request_id,
+      score_prep_chunked_write_resume: true
     };
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
@@ -13782,12 +13791,13 @@ async function processScorePrepJob(env, row, runId, trigger) {
 
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
+  const scorePrepPartial = !!(ok && output && (output.continuation_required || output.orchestrator_should_self_continue || String(output.status || "").includes("PARTIAL_CONTINUE")));
   const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
   const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
   const externalCalls = Number(output && output.external_calls_performed ? output.external_calls_performed : 0);
   const certification = String((output && output.certification) || (ok ? "score_prep_completed" : "score_prep_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
+  const queueStatus = scorePrepPartial ? "pending" : (ok ? "completed" : "failed");
+  const runStatus = scorePrepPartial ? "partial_continue" : (ok ? "completed" : "failed");
   const errorCode = ok ? null : "score_prep_worker_failed";
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Score Prep worker failed").slice(0, 900);
   const cappedOutput = {
@@ -13807,7 +13817,8 @@ async function processScorePrepJob(env, row, runId, trigger) {
       writes_shadow_table_only: false,
       no_old_production_touch: true,
       service_binding_timeout_ms: SCORE_PREP_SERVICE_TIMEOUT_MS,
-      score_prep_timeout_guard_v0_2_293: true
+      score_prep_timeout_guard_v0_2_293: true,
+      score_prep_chunked_resume_v0_2_294: true
     }
   };
 
@@ -13816,14 +13827,15 @@ async function processScorePrepJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  const partial = false;
-  if (partial) {
+  if (scorePrepPartial) {
     const nextInput = {
       ...rowInput,
-      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
-      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
-      matrix_resume: true,
-      continuation_from_request_id: row.request_id
+      prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
+      batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.batch_id || null,
+      score_prep_resume: true,
+      score_prep_write_offset: Number(output && output.next_write_offset || 0),
+      continuation_from_request_id: row.request_id,
+      score_prep_chunked_write_resume: true
     };
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
@@ -14088,14 +14100,15 @@ async function processDeltaCertifierJob(env, row, runId, trigger) {
     runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage
   );
 
-  const partial = false;
-  if (partial) {
+  if (scorePrepPartial) {
     const nextInput = {
       ...rowInput,
-      matrix_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.matrix_batch_id || null,
-      resume_batch_id: output && (output.matrix_batch_id || output.batch_id) ? (output.matrix_batch_id || output.batch_id) : rowInput.resume_batch_id || null,
-      matrix_resume: true,
-      continuation_from_request_id: row.request_id
+      prep_batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.prep_batch_id || rowInput.batch_id || null,
+      batch_id: output && (output.prep_batch_id || output.batch_id) ? (output.prep_batch_id || output.batch_id) : rowInput.batch_id || null,
+      score_prep_resume: true,
+      score_prep_write_offset: Number(output && output.next_write_offset || 0),
+      continuation_from_request_id: row.request_id,
+      score_prep_chunked_write_resume: true
     };
     await run(env.CONTROL_DB,
       "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
