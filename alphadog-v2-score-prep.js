@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.15-chunked-write-resume";
+const VERSION = "alphadog-v2-score-prep-v0.2.16-complete-count-guard";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
@@ -1185,6 +1185,28 @@ SELECT
 FROM score_board_prepared_current
 WHERE prep_batch_id = ?`, [batchId]);
 
+  const verifiedPreparedRows = Number(totalRow && totalRow.prepared_rows || 0);
+  if (verifiedPreparedRows < rows.length) {
+    await updatePrepBatchCheckpoint(env, batchId, "PARTIAL_CONTINUE_BOARD_PREP_WRITE", "SCORE_BOARD_PREP_PARTIAL_WRITE_COUNT_GUARD", {
+      attempted_rows: rows.length,
+      inserted_current_rows: verifiedPreparedRows,
+      next_write_offset: verifiedPreparedRows,
+      remaining_rows: rows.length - verifiedPreparedRows,
+      completion_guard: "verified_rows_less_than_attempted_rows_no_cleanup",
+      timing_ms: timing
+    });
+    return {
+      partial: true,
+      next_write_offset: verifiedPreparedRows,
+      remaining_rows: rows.length - verifiedPreparedRows,
+      insertedThisInvocation: Math.max(0, verifiedPreparedRows - writeOffset),
+      insertedCurrentRows: verifiedPreparedRows,
+      totals: computeTotals(rows),
+      bySource,
+      sleeperEvents: []
+    };
+  }
+
   const totals = {
     rows_read: Number(totalRow.prepared_rows || 0),
     rows_written: Number(totalRow.prepared_rows || 0) + 1,
@@ -1409,6 +1431,7 @@ async function runBoardPrep(env, input) {
       continuation_required: true,
       orchestrator_should_self_continue: true,
       score_prep_chunked_write_resume: true,
+      score_prep_complete_count_guard: true,
       current_table_retention_policy: "partial_new_batch_rows_may_coexist_with_previous_current_until_final_verify_cleanup",
       by_source: bySource,
       timing_ms: { ...timing, total_ms: Date.now() - wallStart },
@@ -1466,6 +1489,7 @@ LIMIT 20`, [batchId]);
     inserted_current_rows: writeResult.insertedCurrentRows,
     final_db_truth: true,
     preserve_previous_current_until_replacement_verified: true,
+    score_prep_complete_count_guard: true,
     current_table_retention_policy: "score_board_prepared_current_current_pt_today_tomorrow_only_insert_verify_then_cleanup_old_batches",
     by_source: bySource,
     sleeper_event_resolution: writeResult.sleeperEvents,
