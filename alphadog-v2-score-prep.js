@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.12-preserve-current-swap";
+const VERSION = "alphadog-v2-score-prep-v0.2.13-checkpoint-preserve-current";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
@@ -278,6 +278,66 @@ async function allRows(db, sql, binds = []) {
 async function firstRow(db, sql, binds = []) {
   const rows = await allRows(db, sql, binds);
   return rows[0] || null;
+}
+
+function limitText(v, max = 900) {
+  const s = v === undefined || v === null ? "" : String(v);
+  return s.length > max ? s.slice(0, max) : s;
+}
+
+function safeJson(v, max = 9000) {
+  let text = "{}";
+  try { text = JSON.stringify(v == null ? {} : v); } catch (_) { text = JSON.stringify({ serialization_error: true }); }
+  return text.length > max ? text.slice(0, max) : text;
+}
+
+async function controlLog(env, input, level, eventKey, message, data = {}) {
+  if (!env || !env.CONTROL_DB || !input || !input.request_id) return;
+  try {
+    await env.CONTROL_DB.prepare(`INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`)
+      .bind(String(input.request_id || ""), input.run_id || null, WORKER_NAME, JOB_KEY, level, eventKey, limitText(message, 900), safeJson(data, 9000))
+      .run();
+  } catch (_) {}
+}
+
+async function controlRunHeartbeat(env, input, statusText, rowsRead = 0, rowsWritten = 0, extra = {}) {
+  if (!env || !env.CONTROL_DB || !input || !input.request_id) return;
+  try {
+    await env.CONTROL_DB.prepare(`UPDATE control_job_runs SET status=CASE WHEN status='running' THEN 'running' ELSE status END, data_ok=0, certification_status=?, rows_read=?, rows_written=?, output_json=COALESCE(output_json, ?), error_code=NULL, error_message=NULL WHERE request_id=? AND finished_at IS NULL`)
+      .bind(statusText, Number(rowsRead || 0), Number(rowsWritten || 0), safeJson({ ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: statusText, ...extra }, 9000), String(input.request_id || ""))
+      .run();
+  } catch (_) {}
+}
+
+async function markPrepBatchRunning(env, batchId, input, startedAt) {
+  await ensureScoreTables(env);
+  await env.SCORE_DB.prepare(`INSERT OR REPLACE INTO score_board_prep_batches (
+    batch_id, worker_name, worker_version, mode, status, certification_status, certification_grade,
+    prizepicks_rows, sleeper_rows, prepared_rows, pickable_safe_rows, blocked_rows,
+    unresolved_player_rows, matchup_unresolved_rows, started_rows, source_json, certification_json,
+    started_at, finished_at, updated_at
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, 0, 0, 0, 0, ?, ?, ?, NULL, CURRENT_TIMESTAMP)`)
+    .bind(
+      batchId,
+      WORKER_NAME,
+      VERSION,
+      "board_prep_enrichment",
+      "RUNNING_BOARD_PREP_ENRICHMENT",
+      "SCORE_BOARD_PREP_ENRICHMENT_RUNNING_CHECKPOINTED",
+      "RUNNING",
+      safeJson({ request_id: input.request_id || null, chain_id: input.chain_id || null, checkpoint: "started", preserve_current_until_verified: true }, 9000),
+      safeJson({ checkpoint: "started", preserve_current_until_verified: true }, 9000),
+      startedAt
+    )
+    .run();
+}
+
+async function updatePrepBatchCheckpoint(env, batchId, status, certificationStatus, data = {}) {
+  try {
+    await env.SCORE_DB.prepare(`UPDATE score_board_prep_batches SET status=?, certification_status=?, certification_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`)
+      .bind(status, certificationStatus, safeJson(data, 9000), batchId)
+      .run();
+  } catch (_) {}
 }
 
 async function ensureScoreTables(env) {
@@ -1044,6 +1104,7 @@ async function writePreparedRows(env, batchId, rows, bySource, startedAt, input,
     source_pickable, pickable_safe, prep_status, block_reason, raw_source_json, row_payload_json
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
+  await updatePrepBatchCheckpoint(env, batchId, "WRITING_REPLACEMENT_ROWS", "SCORE_BOARD_PREP_WRITING_REPLACEMENT_ROWS", { attempted_rows: rows.length, insert_chunk_size: INSERT_CHUNK_SIZE, preserve_current_until_verified: true });
   const insertStart = Date.now();
   for (let i = 0; i < rows.length; i += INSERT_CHUNK_SIZE) {
     const chunk = rows.slice(i, i + INSERT_CHUNK_SIZE);
@@ -1183,7 +1244,8 @@ ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
   // worker after an early DELETE left score_board_prepared_current empty.
   // Now the swap is: insert/verify new batch first, then remove older batches.
   const cleanupStart = Date.now();
-  if (totals.prepared_rows > 0) {
+  if (totals.prepared_rows > 0 && totals.prepared_rows > 0) {
+    await updatePrepBatchCheckpoint(env, batchId, "CLEANING_OLD_PREP_BATCHES", "SCORE_BOARD_PREP_CLEANING_OLD_BATCHES_AFTER_VERIFY", { prepared_rows: totals.prepared_rows, preserve_current_until_verified: true });
     await env.SCORE_DB.prepare("DELETE FROM score_board_prepared_current WHERE prep_batch_id <> ?").bind(batchId).run();
   }
   timing.cleanup_old_batches_ms = Date.now() - cleanupStart;
@@ -1263,6 +1325,10 @@ async function runBoardPrep(env, input) {
     if (!bindings[required]) throw new Error(`missing_required_binding_${required}`);
   }
 
+  await markPrepBatchRunning(env, batchId, input, startedAt);
+  await controlLog(env, input, "INFO", "score_prep_worker_started", "Score Prep worker started with checkpointed batch row before source load", { batch_id: batchId, bindings, preserve_current_until_verified: true });
+  await controlRunHeartbeat(env, input, "SCORE_PREP_WORKER_STARTED", 0, 0, { batch_id: batchId });
+
   const loadStart = Date.now();
   const [{ prizepicksRows, sleeperRows }, ref] = await Promise.all([
     loadMarketRows(env),
@@ -1271,6 +1337,9 @@ async function runBoardPrep(env, input) {
   const dates = collectCalendarDates(prizepicksRows, sleeperRows);
   const calendar = await loadCalendar(env, dates, ref);
   timing.load_ms = Date.now() - loadStart;
+  await updatePrepBatchCheckpoint(env, batchId, "LOADED_BOARD_SOURCES", "SCORE_BOARD_PREP_SOURCES_LOADED", { prizepicks_rows: prizepicksRows.length, sleeper_rows: sleeperRows.length, calendar_candidate_dates: dates, timing_ms: timing });
+  await controlLog(env, input, "INFO", "score_prep_sources_loaded", "Score Prep loaded board sources and reference/calendar context", { batch_id: batchId, prizepicks_rows: prizepicksRows.length, sleeper_rows: sleeperRows.length, calendar_dates: dates, timing_ms: timing });
+  await controlRunHeartbeat(env, input, "SCORE_PREP_SOURCES_LOADED", prizepicksRows.length + sleeperRows.length, 0, { batch_id: batchId, timing_ms: timing });
   const now = new Date();
 
   const resolveStart = Date.now();
@@ -1287,9 +1356,15 @@ async function runBoardPrep(env, input) {
   timing.resolve_ms = Date.now() - resolveStart;
   const initialBySource = summarizeBySource(prepared);
   const staleExcludedBySource = summarizeBySource(staleExcluded);
+  await updatePrepBatchCheckpoint(env, batchId, "PREPARED_ROWS_BUILT", "SCORE_BOARD_PREP_ROWS_BUILT_BEFORE_WRITE", { prepared_rows: prepared.length, all_source_rows_seen_before_window_filter: preparedAllSources.length, current_window_dates: Array.from(currentWindowDateSet), stale_or_out_of_window_rows_excluded_from_current: staleExcluded.length, by_source: initialBySource, timing_ms: timing });
+  await controlLog(env, input, "INFO", "score_prep_rows_built", "Score Prep built replacement prepared rows before DB write", { batch_id: batchId, prepared_rows: prepared.length, all_source_rows_seen_before_window_filter: preparedAllSources.length, current_window_dates: Array.from(currentWindowDateSet), by_source: initialBySource, timing_ms: timing });
+  await controlRunHeartbeat(env, input, "SCORE_PREP_ROWS_BUILT_BEFORE_WRITE", prepared.length, 0, { batch_id: batchId, by_source: initialBySource });
+  if (!prepared.length) throw new Error("score_prep_zero_prepared_rows_guard_preserved_existing_current");
   const writeResult = await writePreparedRows(env, batchId, prepared, initialBySource, startedAt, input, timing);
   const totals = writeResult.totals;
   const bySource = writeResult.bySource;
+  await controlLog(env, input, "INFO", "score_prep_write_verified", "Score Prep inserted and DB-verified replacement rows before old-batch cleanup", { batch_id: batchId, totals, by_source: bySource, timing_ms: timing });
+  await controlRunHeartbeat(env, input, "SCORE_PREP_WRITE_VERIFIED", totals.rows_read, totals.rows_written, { batch_id: batchId, totals, by_source: bySource });
 
   const sampleStart = Date.now();
   const blockedSampleRows = await allRows(env.SCORE_DB, `
@@ -1384,6 +1459,8 @@ export default {
         const output = await runBoardPrep(env, input);
         return jsonResponse(output);
       } catch (err) {
+        await controlLog(env, input, "ERROR", "score_prep_worker_failed", "Score Prep worker failed before certified completion", { error: err && err.message ? err.message : String(err) });
+        await controlRunHeartbeat(env, input, "SCORE_PREP_WORKER_FAILED", 0, 0, { error: err && err.message ? err.message : String(err) });
         return jsonResponse({
           ok: false,
           data_ok: false,
