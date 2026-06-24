@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-score-audit-v0.4.57-v2-shadow-batched-flush";
+const VERSION = "alphadog-v2-score-audit-v0.4.58-v2-shadow-calibrated-audit";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -5033,7 +5033,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.57-v2-shadow-batched-flush";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.58-v2-shadow-calibrated-audit";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5365,14 +5365,58 @@ async function runScoreEnrichmentV2Shadow(env, input = {}) {
   const issueFlush = await v2Flush(env.SCORE_DB, issueStmts, 25);
   const remaining = Math.max(0, total - (offset + rows.length));
   const complete = remaining <= 0;
+  const issueBackfill = complete ? await v2BackfillScoreEnrichmentIssues(env, batchId) : { attempted:false, inserted_or_replaced:0 };
   const counts = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, SUM(CASE WHEN baseline_source='production_v1' THEN 1 ELSE 0 END) AS old_rows, SUM(CASE WHEN baseline_source='expansion_v2_shadow' THEN 1 ELSE 0 END) AS expansion_rows, SUM(CASE WHEN baseline_source='missing' THEN 1 ELSE 0 END) AS missing_rows, SUM(CASE WHEN event_status='blocked_source_row' THEN 1 ELSE 0 END) AS blocked_rows, SUM(CASE WHEN event_status<>'ready' OR warning_count>0 THEN 1 ELSE 0 END) AS warning_rows FROM v2_score_enrichment_events WHERE batch_id=?`, batchId);
   const issueCount = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_score_enrichment_issues WHERE batch_id=?`, batchId);
   const cert = complete ? "SCORE_ENRICHMENT_V2_SHADOW_CERTIFIED_WORKER_OWNED" : "SCORE_ENRICHMENT_V2_SHADOW_PARTIAL_CONTINUE";
   const grade = v2CertificationGrade(true, !complete);
-  const output = baseIdentity({ ok:true,data_ok:true,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v2-shadow",deployed_worker_slot:WORKER_NAME,job_key:SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:SCORE_ENRICHMENT_V2_SHADOW_MODE,status:complete?"completed_score_enrichment_v2_shadow":"partial_continue_score_enrichment_v2_shadow",certification:cert,certification_grade:grade,batch_id:batchId,v2_score_enrichment_batch_id:batchId,source_enrichment_batch_id:sourceBatchId,source_rows_read:total,events_written:Number(counts&&counts.rows||0),rows_read:total,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:written,v2_d1_batch_flush:true,v2_event_flush_statements:eventFlush.statements,v2_event_flush_batches:eventFlush.batches,v2_event_flush_fallback:eventFlush.fallback,v2_issue_flush_statements:issueFlush.statements,v2_issue_flush_batches:issueFlush.batches,v2_issue_flush_fallback:issueFlush.fallback,old_baseline_rows:Number(counts&&counts.old_rows||0),expansion_baseline_rows:Number(counts&&counts.expansion_rows||0),missing_baseline_rows:Number(counts&&counts.missing_rows||0),blocked_rows:Number(counts&&counts.blocked_rows||0),warning_rows:Number(counts&&counts.warning_rows||0),issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,writes_v2_shadow_tables_only:true,production_tables_read_only:["score_enrichment_current","expansion_player_baseline_hp_current"],no_fake_hp:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
+  const output = baseIdentity({ ok:true,data_ok:true,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v2-shadow",deployed_worker_slot:WORKER_NAME,job_key:SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:SCORE_ENRICHMENT_V2_SHADOW_MODE,status:complete?"completed_score_enrichment_v2_shadow":"partial_continue_score_enrichment_v2_shadow",certification:cert,certification_grade:grade,batch_id:batchId,v2_score_enrichment_batch_id:batchId,source_enrichment_batch_id:sourceBatchId,source_rows_read:total,events_written:Number(counts&&counts.rows||0),rows_read:total,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:written,v2_d1_batch_flush:true,v2_event_flush_statements:eventFlush.statements,v2_event_flush_batches:eventFlush.batches,v2_event_flush_fallback:eventFlush.fallback,v2_issue_flush_statements:issueFlush.statements,v2_issue_flush_batches:issueFlush.batches,v2_issue_flush_fallback:issueFlush.fallback,v2_issue_backfill_attempted:issueBackfill.attempted,v2_issue_backfill_inserted:issueBackfill.inserted_or_replaced,old_baseline_rows:Number(counts&&counts.old_rows||0),expansion_baseline_rows:Number(counts&&counts.expansion_rows||0),missing_baseline_rows:Number(counts&&counts.missing_rows||0),blocked_rows:Number(counts&&counts.blocked_rows||0),warning_rows:Number(counts&&counts.warning_rows||0),issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,writes_v2_shadow_tables_only:true,production_tables_read_only:["score_enrichment_current","expansion_player_baseline_hp_current"],no_fake_hp:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE v2_score_enrichment_batches SET status=?, source_rows_read=?, events_written=?, old_baseline_rows=?, expansion_baseline_rows=?, missing_baseline_rows=?, blocked_rows=?, warning_rows=?, issue_rows_written=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", total, output.events_written, output.old_baseline_rows, output.expansion_baseline_rows, output.missing_baseline_rows, output.blocked_rows, output.warning_rows, output.issue_rows_written, cert, grade, v2Json(output,14000), batchId);
   return output;
 }
+
+function v3ShadowReliabilityWeight(row, confidence) {
+  const source = String(row && row.baseline_source || '').toLowerCase();
+  if (source !== 'expansion_v2_shadow') return 1;
+  const c = v2Clamp(Number(confidence || 0), 5, 95) / 100;
+  const prop = String(row && row.canonical_prop_key || '').toLowerCase();
+  if (prop === 'rfi_nrfi') return v2Clamp(c, 0.05, 0.35);
+  return v2Clamp(c, 0.10, 0.60);
+}
+function v3ShadowCalibrateHp(row, rawHp, confidence) {
+  if (rawHp === null || rawHp === undefined) return { hp: null, reliability_weight: null, calibration_applied: false, calibration_reason: 'no_baseline_hp' };
+  const source = String(row && row.baseline_source || '').toLowerCase();
+  if (source !== 'expansion_v2_shadow') return { hp: rawHp, reliability_weight: 1, calibration_applied: false, calibration_reason: 'production_or_non_expansion_passthrough' };
+  const w = v3ShadowReliabilityWeight(row, confidence);
+  const calibrated = Math.round(v2Clamp(50 + ((Number(rawHp) - 50) * w), 1, 99) * 100) / 100;
+  const prop = String(row && row.canonical_prop_key || '').toLowerCase();
+  return { hp: calibrated, reliability_weight: Math.round(w * 10000) / 10000, calibration_applied: true, calibration_reason: prop === 'rfi_nrfi' ? 'expansion_rfi_binary_low_sample_confidence_shrink' : 'expansion_baseline_confidence_shrink' };
+}
+async function v2BackfillScoreEnrichmentIssues(env, batchId) {
+  if (!env || !env.SCORE_DB || !batchId) return { attempted:false, inserted_or_replaced:0 };
+  const before = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_score_enrichment_issues WHERE batch_id=?`, batchId);
+  await run(env.SCORE_DB, `INSERT OR REPLACE INTO v2_score_enrichment_issues (issue_id,batch_id,event_id,severity,issue_code,issue_message,details_json,created_at)
+    SELECT
+      e.batch_id || '|' || e.event_id || '|' || CASE WHEN e.event_status='blocked_source_row' THEN 'SOURCE_ROW_BLOCKED' ELSE 'BASELINE_MISSING_SHADOW_DEFERRED' END AS issue_id,
+      e.batch_id,
+      e.event_id,
+      CASE WHEN e.event_status='blocked_source_row' THEN 'BLOCKER' ELSE 'WARNING' END AS severity,
+      CASE WHEN e.event_status='blocked_source_row' THEN 'SOURCE_ROW_BLOCKED' ELSE 'BASELINE_MISSING_SHADOW_DEFERRED' END AS issue_code,
+      CASE WHEN e.event_status='blocked_source_row' THEN 'Source enrichment row blocks scoring' ELSE 'No production or expansion baseline matched; HP V3 must not emit fake HP' END AS issue_message,
+      '{"backfilled":true,"source":"score_enrichment_v2_shadow_final_audit"}' AS details_json,
+      CURRENT_TIMESTAMP
+    FROM v2_score_enrichment_events e
+    WHERE e.batch_id=?
+      AND e.event_status<>'ready'
+      AND NOT EXISTS (
+        SELECT 1 FROM v2_score_enrichment_issues i
+        WHERE i.batch_id=e.batch_id
+          AND i.event_id=e.event_id
+      )`, batchId);
+  const after = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_score_enrichment_issues WHERE batch_id=?`, batchId);
+  return { attempted:true, inserted_or_replaced:Math.max(0, Number(after && after.rows || 0) - Number(before && before.rows || 0)), before:Number(before && before.rows || 0), after:Number(after && after.rows || 0) };
+}
+
 async function runHitProbabilityV3Shadow(env, input = {}) {
   const started = Date.now();
   if (!env.SCORE_DB) return baseIdentity({ ok:false,data_ok:false,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-hit-probability-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:HIT_PROBABILITY_V3_SHADOW_JOB_KEY,status:"blocked_missing_score_db",certification:"HIT_PROBABILITY_V3_SHADOW_MISSING_SCORE_DB",certification_grade:"BLOCKED" });
@@ -5411,9 +5455,11 @@ async function runHitProbabilityV3Shadow(env, input = {}) {
     const effect = v2Num(row.factor_effect_0_100, 0) || 0;
     const raw = hasBaseline ? Math.round(v2Clamp(Number(row.baseline_hp_0_100) * Number(row.factor_effect_multiplier || 1), 1, 99) * 100) / 100 : null;
     const confidence = hasBaseline ? Math.round(v2Clamp(Number(row.baseline_confidence_0_100 || 0), 5, 95) * 100) / 100 : null;
+    const calibrated = hasBaseline ? v3ShadowCalibrateHp(row, raw, confidence) : { hp:null, reliability_weight:null, calibration_applied:false, calibration_reason:'no_baseline_hp' };
+    const finalHp = calibrated.hp;
     const status = hasBaseline ? "ready_raw" : (row.event_status === "blocked_source_row" ? "blocked_source_row" : "deferred_baseline_missing");
     const grade = hasBaseline ? "READY" : (status === "blocked_source_row" ? "BLOCKED" : "DEFERRED");
-    stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_hit_probability_current (hp_v3_row_id,batch_id,source_v2_enrichment_batch_id,event_id,prepared_row_id,matrix_id,source_line_id,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,source_key,line_value,selected_side,payout_variant,baseline_hp_row_id,baseline_source,baseline_hp_0_100,baseline_confidence_0_100,composite_factor_signature,composite_factor_effect_0_100,v3_hp_raw,v3_hp_final,v3_confidence_0_100,normalization_status,hp_v3_status,hp_v3_grade,blocker_count,warning_count,model_payload_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(hpId,batchId,sourceBatchId,row.event_id,row.prepared_row_id,row.matrix_id,row.source_line_id,row.game_pk,row.official_date,row.mlb_player_id,row.player_name,row.canonical_prop_key,row.source_key,row.line_value,row.selected_side,row.payout_variant,row.baseline_hp_row_id,row.baseline_source,row.baseline_hp_0_100,row.baseline_confidence_0_100,`${row.factor_id || 'factor'}:${row.factor_effect_tier || 'neutral'}:${row.factor_quality_tier || 'unknown'}`,effect,raw,raw,confidence,hasBaseline?"raw_pending_pair_normalization":"not_normalizable",status,grade,status === "blocked_source_row" ? 1 : 0,status === "deferred_baseline_missing" ? 1 : 0,v2Json({ no_fake_hp_when_baseline_missing:true, baseline_missing_outputs_null:!hasBaseline, multiplicative_modifier:row.factor_effect_multiplier },4000)));
+    stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_hit_probability_current (hp_v3_row_id,batch_id,source_v2_enrichment_batch_id,event_id,prepared_row_id,matrix_id,source_line_id,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,source_key,line_value,selected_side,payout_variant,baseline_hp_row_id,baseline_source,baseline_hp_0_100,baseline_confidence_0_100,composite_factor_signature,composite_factor_effect_0_100,v3_hp_raw,v3_hp_final,v3_confidence_0_100,normalization_status,hp_v3_status,hp_v3_grade,blocker_count,warning_count,model_payload_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(hpId,batchId,sourceBatchId,row.event_id,row.prepared_row_id,row.matrix_id,row.source_line_id,row.game_pk,row.official_date,row.mlb_player_id,row.player_name,row.canonical_prop_key,row.source_key,row.line_value,row.selected_side,row.payout_variant,row.baseline_hp_row_id,row.baseline_source,row.baseline_hp_0_100,row.baseline_confidence_0_100,`${row.factor_id || 'factor'}:${row.factor_effect_tier || 'neutral'}:${row.factor_quality_tier || 'unknown'}`,effect,raw,finalHp,confidence,hasBaseline?"raw_pending_pair_normalization":"not_normalizable",status,grade,status === "blocked_source_row" ? 1 : 0,status === "deferred_baseline_missing" ? 1 : 0,v2Json({ no_fake_hp_when_baseline_missing:true, baseline_missing_outputs_null:!hasBaseline, multiplicative_modifier:row.factor_effect_multiplier, calibration_applied:calibrated.calibration_applied, calibration_reason:calibrated.calibration_reason, reliability_weight:calibrated.reliability_weight, raw_hp_before_calibration:raw, final_hp_after_calibration:finalHp },4000)));
     if (!hasBaseline) {
       issueStmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_hit_probability_issues (issue_id,batch_id,hp_v3_row_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`${batchId}|${hpId}|NO_BASELINE_HP`,batchId,hpId,status === "blocked_source_row" ? "BLOCKER" : "WARNING",status === "blocked_source_row" ? "SOURCE_ROW_BLOCKED" : "BASELINE_MISSING_HP_NULL","HP V3 did not emit fake HP for missing or blocked baseline row",v2Json({ event_id:row.event_id, canonical_prop_key:row.canonical_prop_key, source_key:row.source_key },3000)));
     }
@@ -5425,7 +5471,7 @@ async function runHitProbabilityV3Shadow(env, input = {}) {
   const complete = remaining <= 0;
   let normalizedGroups = 0, normalizationBlockedGroups = 0;
   if (complete) {
-    const groups = await all(env.SCORE_DB, `SELECT prepared_row_id, source_line_id, canonical_prop_key, line_value, COUNT(*) AS rows, SUM(CASE WHEN v3_hp_raw IS NOT NULL THEN 1 ELSE 0 END) AS valid_rows, SUM(CASE WHEN lower(selected_side)='more' THEN v3_hp_raw ELSE 0 END) AS more_hp, SUM(CASE WHEN lower(selected_side)='less' THEN v3_hp_raw ELSE 0 END) AS less_hp FROM v2_hit_probability_current WHERE batch_id=? GROUP BY prepared_row_id, source_line_id, canonical_prop_key, line_value HAVING COUNT(*)=2 AND SUM(CASE WHEN lower(selected_side) IN ('more','less') THEN 1 ELSE 0 END)=2`, batchId);
+    const groups = await all(env.SCORE_DB, `SELECT prepared_row_id, source_line_id, canonical_prop_key, line_value, COUNT(*) AS rows, SUM(CASE WHEN v3_hp_final IS NOT NULL THEN 1 ELSE 0 END) AS valid_rows, SUM(CASE WHEN lower(selected_side)='more' THEN v3_hp_final ELSE 0 END) AS more_hp, SUM(CASE WHEN lower(selected_side)='less' THEN v3_hp_final ELSE 0 END) AS less_hp FROM v2_hit_probability_current WHERE batch_id=? GROUP BY prepared_row_id, source_line_id, canonical_prop_key, line_value HAVING COUNT(*)=2 AND SUM(CASE WHEN lower(selected_side) IN ('more','less') THEN 1 ELSE 0 END)=2`, batchId);
     for (const g of groups) {
       if (Number(g.valid_rows || 0) !== 2) continue;
       const sum = Number(g.more_hp || 0) + Number(g.less_hp || 0);
