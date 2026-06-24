@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.301-v2-shadow-lifecycle-timeout-reconcile";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.302-v2-shadow-schema-safe-reconcile";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -13285,27 +13285,48 @@ async function buildShadowScoreAuditEvidenceOutput(env, row, runId, trigger, row
   const isFinalScoreV2 = jobKey === "final-score-v2-shadow";
   const isFinalBoardV3 = jobKey === "final-board-v3-shadow";
   const cfg = isScoreEnrichment ? {
-    batchTable:"v2_score_enrichment_batches", rowTable:"v2_score_enrichment_events", batchField:"v2_score_enrichment_batch_id", mode:"score_enrichment_v2_shadow", logical:"alphadog-v2-score-enrichment-v2-shadow", partialCert:"SCORE_ENRICHMENT_V2_SHADOW_PARTIAL_CONTINUE_RECONCILED", completeCert:"SCORE_ENRICHMENT_V2_SHADOW_RECONCILED_COMPLETE", currentId: rowInput.v2_enrichment_batch_id || rowInput.resume_batch_id || null
+    batchTable:"v2_score_enrichment_batches", rowTable:"v2_score_enrichment_events", batchField:"v2_score_enrichment_batch_id", writtenCol:"events_written", sourceIdCol:"source_enrichment_batch_id", sourceInputField:"source_enrichment_batch_id", mode:"score_enrichment_v2_shadow", logical:"alphadog-v2-score-enrichment-v2-shadow", partialCert:"SCORE_ENRICHMENT_V2_SHADOW_PARTIAL_CONTINUE_RECONCILED", completeCert:"SCORE_ENRICHMENT_V2_SHADOW_RECONCILED_COMPLETE", currentId: rowInput.v2_enrichment_batch_id || rowInput.resume_batch_id || null
   } : isHpV3 ? {
-    batchTable:"v2_hit_probability_batches", rowTable:"v2_hit_probability_current", batchField:"hp_v3_batch_id", mode:"hit_probability_v3_shadow", logical:"alphadog-v2-hit-probability-v3-shadow", partialCert:"HIT_PROBABILITY_V3_SHADOW_PARTIAL_CONTINUE_RECONCILED", completeCert:"HIT_PROBABILITY_V3_SHADOW_RECONCILED_COMPLETE", currentId: rowInput.hp_v3_batch_id || rowInput.resume_batch_id || null
+    batchTable:"v2_hit_probability_batches", rowTable:"v2_hit_probability_current", batchField:"hp_v3_batch_id", writtenCol:"rows_written", sourceIdCol:"source_v2_enrichment_batch_id", sourceInputField:"source_v2_enrichment_batch_id", mode:"hit_probability_v3_shadow", logical:"alphadog-v2-hit-probability-v3-shadow", partialCert:"HIT_PROBABILITY_V3_SHADOW_PARTIAL_CONTINUE_RECONCILED", completeCert:"HIT_PROBABILITY_V3_SHADOW_RECONCILED_COMPLETE", currentId: rowInput.hp_v3_batch_id || rowInput.resume_batch_id || null
   } : isFinalScoreV2 ? {
-    batchTable:"v2_final_score_batches", rowTable:"v2_final_score_current", batchField:"final_score_v2_batch_id", mode:"final_score_v2_shadow", logical:"alphadog-v2-final-score-v2-shadow", partialCert:"FINAL_SCORE_V2_SHADOW_PARTIAL_CONTINUE_RECONCILED", completeCert:"FINAL_SCORE_V2_SHADOW_RECONCILED_COMPLETE", currentId: rowInput.final_score_v2_batch_id || rowInput.resume_batch_id || null
+    batchTable:"v2_final_score_batches", rowTable:"v2_final_score_current", batchField:"final_score_v2_batch_id", writtenCol:"rows_written", sourceIdCol:"source_hp_v3_batch_id", sourceInputField:"source_hp_v3_batch_id", mode:"final_score_v2_shadow", logical:"alphadog-v2-final-score-v2-shadow", partialCert:"FINAL_SCORE_V2_SHADOW_PARTIAL_CONTINUE_RECONCILED", completeCert:"FINAL_SCORE_V2_SHADOW_RECONCILED_COMPLETE", currentId: rowInput.final_score_v2_batch_id || rowInput.resume_batch_id || null
   } : isFinalBoardV3 ? {
-    batchTable:"v2_final_board_batches", rowTable:"v2_final_board_current", batchField:"final_board_v3_batch_id", mode:"score_final_board_v3_shadow", logical:"alphadog-v2-final-board-v3-shadow", partialCert:"FINAL_BOARD_V3_SHADOW_PARTIAL_CONTINUE_RECONCILED", completeCert:"FINAL_BOARD_V3_SHADOW_RECONCILED_COMPLETE", currentId: rowInput.final_board_v3_batch_id || rowInput.resume_batch_id || null
+    batchTable:"v2_final_board_batches", rowTable:"v2_final_board_current", batchField:"final_board_v3_batch_id", writtenCol:"rows_written", sourceIdCol:"source_final_score_v2_batch_id", sourceInputField:"source_final_score_v2_batch_id", mode:"score_final_board_v3_shadow", logical:"alphadog-v2-final-board-v3-shadow", partialCert:"FINAL_BOARD_V3_SHADOW_PARTIAL_CONTINUE_RECONCILED", completeCert:"FINAL_BOARD_V3_SHADOW_RECONCILED_COMPLETE", currentId: rowInput.final_board_v3_batch_id || rowInput.resume_batch_id || null
   } : null;
   if (!cfg || !env.SCORE_DB) return { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:jobKey, request_id:row.request_id, run_id:runId, status:"v2_v3_shadow_timeout_reconcile_unavailable", certification:"V2_V3_SHADOW_TIMEOUT_RECONCILE_UNAVAILABLE", certification_grade:"FAILED", error:errText };
-  const batch = await first(env.SCORE_DB, `SELECT batch_id, source_rows_read, expected_hp_rows, expected_final_score_rows, eligible_rows_read, output_json FROM ${cfg.batchTable} WHERE request_id=? ORDER BY datetime(updated_at) DESC LIMIT 1`, row.request_id);
+
+  // v0.2.302: schema-safe shadow reconcile. Do not use universal HP/final columns
+  // such as expected_hp_rows against every v2_* batch table; each shadow batch
+  // has its own compact schema and the worker owns the actual writes.
+  const batch = await first(env.SCORE_DB, `SELECT batch_id, source_rows_read, ${cfg.sourceIdCol} AS source_batch_id, output_json FROM ${cfg.batchTable} WHERE request_id=? ORDER BY datetime(updated_at) DESC LIMIT 1`, row.request_id);
   const batchId = (batch && batch.batch_id) || cfg.currentId || null;
   if (!batchId) return { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:jobKey, request_id:row.request_id, run_id:runId, status:"v2_v3_shadow_timeout_no_batch_to_reconcile", certification:"V2_V3_SHADOW_TIMEOUT_NO_BATCH_TO_RECONCILE", certification_grade:"FAILED", error:errText };
+  const sourceBatchId = (batch && batch.source_batch_id) || rowInput[cfg.sourceInputField] || null;
   const countRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM ${cfg.rowTable} WHERE batch_id=?`, batchId);
   const rowsWritten = Math.max(0, Number(countRow && countRow.rows || 0) || 0);
   let previousOutput = {};
   try { previousOutput = JSON.parse((batch && batch.output_json) || "{}"); } catch (_) { previousOutput = {}; }
-  const sourceRowsRead = Math.max(Number(batch && (batch.source_rows_read || batch.expected_hp_rows || batch.expected_final_score_rows || batch.eligible_rows_read) || 0) || 0, Number(previousOutput.source_rows_read || previousOutput.rows_read || 0) || 0, rowsWritten);
+  let sourceCount = 0;
+  if (isScoreEnrichment && sourceBatchId) {
+    const r = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM score_enrichment_current WHERE batch_id=?`, sourceBatchId);
+    sourceCount = Number(r && r.rows || 0) || 0;
+  } else if (isHpV3 && sourceBatchId) {
+    const r = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_score_enrichment_events WHERE batch_id=?`, sourceBatchId);
+    sourceCount = Number(r && r.rows || 0) || 0;
+  } else if (isFinalScoreV2 && sourceBatchId) {
+    const r = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_hit_probability_current WHERE batch_id=?`, sourceBatchId);
+    sourceCount = Number(r && r.rows || 0) || 0;
+  } else if (isFinalBoardV3 && sourceBatchId) {
+    const r = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_current WHERE batch_id=? AND eligible_for_final_board=1`, sourceBatchId);
+    sourceCount = Number(r && r.rows || 0) || 0;
+  }
+  const sourceRowsRead = Math.max(Number(batch && batch.source_rows_read || 0) || 0, Number(previousOutput.source_rows_read || previousOutput.rows_read || 0) || 0, sourceCount, rowsWritten);
   const remaining = Math.max(0, sourceRowsRead - rowsWritten);
   const complete = sourceRowsRead > 0 && remaining <= 0;
   const cert = complete ? cfg.completeCert : cfg.partialCert;
-  return { ok:true, data_ok:true, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, logical_worker_name:cfg.logical, deployed_worker_slot:"alphadog-v2-score-audit", job_key:jobKey, request_id:row.request_id, run_id:runId, chain_id:row.chain_id, mode:cfg.mode, status:complete ? `completed_${cfg.mode}_reconciled_from_timeout` : `partial_continue_${cfg.mode}_reconciled_from_timeout`, certification:cert, certification_grade:complete ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : "PARTIAL", batch_id:batchId, [cfg.batchField]:batchId, rows_read:sourceRowsRead, source_rows_read:sourceRowsRead, rows_written:rowsWritten, offset:rowsWritten, next_offset:rowsWritten, remaining_rows:remaining, continuation_required:!complete, orchestrator_should_self_continue:!complete, service_binding_timeout_reconciled_from_v2_tables:true, original_dispatch_error:String(errText || "").slice(0,900), no_production_mutation:true, writes_v2_shadow_tables_only:true };
+  const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, logical_worker_name:cfg.logical, deployed_worker_slot:"alphadog-v2-score-audit", job_key:jobKey, request_id:row.request_id, run_id:runId, chain_id:row.chain_id, mode:cfg.mode, status:complete ? `completed_${cfg.mode}_reconciled_from_timeout` : `partial_continue_${cfg.mode}_reconciled_from_timeout`, certification:cert, certification_grade:complete ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : "PARTIAL", batch_id:batchId, [cfg.batchField]:batchId, source_batch_id:sourceBatchId, rows_read:sourceRowsRead, source_rows_read:sourceRowsRead, rows_written:rowsWritten, offset:rowsWritten, next_offset:rowsWritten, remaining_rows:remaining, continuation_required:!complete, orchestrator_should_self_continue:!complete, service_binding_timeout_reconciled_from_v2_tables:true, original_dispatch_error:String(errText || "").slice(0,900), no_production_mutation:true, writes_v2_shadow_tables_only:true };
+  await run(env.SCORE_DB, `UPDATE ${cfg.batchTable} SET status=?, source_rows_read=?, ${cfg.writtenCol}=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete ? "completed" : "partial_continue", sourceRowsRead, rowsWritten, cert, output.certification_grade, JSON.stringify(output).slice(0, 14000), batchId);
+  return output;
 }
 
 async function processScoringEngineJob(env, row, runId, trigger) {
