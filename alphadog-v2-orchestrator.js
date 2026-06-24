@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.305-v2-shadow-full-run-wire";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.306-expansion-fullrun-hot-pump-parity";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -16431,10 +16431,14 @@ async function countDuePlayerBaselineSanity(env) {
 async function countDueExpansionBaselineV2Hot(env) {
   // V2 HEB is a long chunked baseline job. Treat any unfinished V2 row as hot work;
   // run_after is not allowed to become the normal driver or sit past due.
+  // v0.2.306: Incremental Morning Full Run now uses job_key='expansion-baseline-full-run'
+  // for the same worker slot. Count both the standalone V2 key and the full-run child key;
+  // otherwise backend self-continuation can stop after the waitUntil budget and leave the
+  // full-run child pending until manual Wake/cron even though the output is PARTIAL_CONTINUE.
   const row = await first(env.CONTROL_DB,
     `SELECT COUNT(*) AS c
        FROM control_job_queue
-      WHERE job_key='expansion-baseline-v2'
+      WHERE job_key IN ('expansion-baseline-v2','expansion-baseline-full-run')
         AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
         AND status IN ('pending','running','partial_continue')
         AND finished_at IS NULL`
@@ -16955,9 +16959,11 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const shouldSelfContinue = (continuationAllowedByLastCycle || lockBusyHotContinuation) && dueAnyHotChain && depth < maxChains && !!ctx;
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
-  const hotContinuationDelayMs = shouldSelfContinue && (dueExpansionBaselineV2Hot > 0 || duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueScoreEnrichmentV1Hot > 0 || dueShadowScoringV2Hot > 0)
-    ? (lastStatus === "no_due_jobs" ? 2500 : 0)
-    : (shouldSelfContinue && (lastStatus === "no_due_jobs" || lockBusyHotContinuation) ? 6500 : 0);
+  const hotContinuationDelayMs = shouldSelfContinue && dueExpansionBaselineV2Hot > 0
+    ? 0
+    : (shouldSelfContinue && (duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueScoreEnrichmentV1Hot > 0)
+      ? (lastStatus === "no_due_jobs" ? 250 : 0)
+      : (shouldSelfContinue && (lastStatus === "no_due_jobs" || lockBusyHotContinuation) ? 2500 : 0));
 
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'INFO', 'orchestrator_auto_pump_completed', 'Orchestrator auto-pump completed bounded continuation loop', ?, CURRENT_TIMESTAMP)",
@@ -17154,7 +17160,7 @@ export default {
       const maxMs = body.max_ms || body.maxMs || 90000;
       const source = body.source || "http_auto_pump";
       const pumpDepth = body.pump_depth || body.pumpDepth || 0;
-      const maxPumpChains = body.max_pump_chains || body.maxPumpChains || 6;
+      const maxPumpChains = body.max_pump_chains || body.maxPumpChains || 24;
       return jsonResponse(await pump(env, source, maxCycles, maxJobsPerCycle, maxMs, ctx, request.url, pumpDepth, maxPumpChains));
     }
 
