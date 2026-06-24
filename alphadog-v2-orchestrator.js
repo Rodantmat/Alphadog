@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.300-v2-shadow-top-level-cursor-forward";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.301-v2-shadow-lifecycle-timeout-reconcile";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1042,12 +1042,13 @@ function marketHeavyCooldownCertification(jobKey) {
 
 async function maybeYieldHeavyMarketChildCooldown(env, row, runId, input, rowInput, options = {}) {
   const jobKey = String(row && row.job_key ? row.job_key : "");
-  const heavyJobs = new Set(["prop-matrix-builder", "score-enrichment-v1", "hit-probability-v2", "final-score-v1", "final-board-v2"]);
+  const heavyJobs = new Set(["prop-matrix-builder", "score-enrichment-v1", "hit-probability-v2", "final-score-v1", "final-board-v2", "score-enrichment-v2-shadow", "hit-probability-v3-shadow", "final-score-v2-shadow", "final-board-v3-shadow"]);
   if (!heavyJobs.has(jobKey)) return null;
+  const isShadowHeavyJob = jobKey === "score-enrichment-v2-shadow" || jobKey === "hit-probability-v3-shadow" || jobKey === "final-score-v2-shadow" || jobKey === "final-board-v3-shadow";
   const chainId = String(row && row.chain_id ? row.chain_id : "");
   const parentRequestId = String((rowInput && (rowInput.parent_request_id || rowInput.parentRequestId)) || "");
   const fromMarketFull = chainId.includes("market_scoring_full_run") || parentRequestId.includes("market_scoring_full_run");
-  if (!fromMarketFull) return null;
+  if (!fromMarketFull && !isShadowHeavyJob) return null;
 
   const recent = await first(env.CONTROL_DB, `SELECT
       COUNT(*) AS partial_continue_runs,
@@ -1069,7 +1070,7 @@ async function maybeYieldHeavyMarketChildCooldown(env, row, runId, input, rowInp
     LIMIT 1`, row.request_id, row.job_key);
   let previousOutput = {};
   try { previousOutput = JSON.parse(previous && previous.output_json || "{}"); } catch (_) { previousOutput = {}; }
-  const batchId = previousOutput.batch_id || previousOutput.matrix_batch_id || previousOutput.final_board_batch_id || previousOutput.hp_board_batch_id || previousOutput.source_engine_batch_id || (rowInput && rowInput.resume_batch_id) || null;
+  const batchId = previousOutput.batch_id || previousOutput.v2_score_enrichment_batch_id || previousOutput.hp_v3_batch_id || previousOutput.final_score_v2_batch_id || previousOutput.final_board_v3_batch_id || previousOutput.matrix_batch_id || previousOutput.final_board_batch_id || previousOutput.hp_board_batch_id || previousOutput.source_engine_batch_id || (rowInput && (rowInput.resume_batch_id || rowInput.v2_enrichment_batch_id || rowInput.hp_v3_batch_id || rowInput.final_score_v2_batch_id || rowInput.final_board_v3_batch_id)) || null;
   const cert = marketHeavyCooldownCertification(jobKey);
   const rowsRead = Number(previousOutput.rows_read || previousOutput.prepared_rows_read || previousOutput.matrix_rows_read || previousOutput.source_rows_read || (previous && previous.rows_read) || 0);
   const rowsWritten = Number(previousOutput.rows_written || previousOutput.matrix_rows_written || previousOutput.score_rows_written || previousOutput.probability_rows_written || previousOutput.board_rows_written || previousOutput.final_rows_written || (previous && previous.rows_written) || 0);
@@ -1115,6 +1116,10 @@ async function maybeYieldHeavyMarketChildCooldown(env, row, runId, input, rowInp
     heavy_service_binding_cooldown_seconds: HEAVY_MARKET_SERVICE_BINDING_COOLDOWN_SECONDS
   };
   if (jobKey === "prop-matrix-builder") { nextInput.matrix_batch_id = batchId || nextInput.matrix_batch_id || null; nextInput.matrix_resume = true; }
+  if (jobKey === "score-enrichment-v2-shadow") { nextInput.v2_v3_shadow_resume = true; nextInput.resume_batch_id = batchId || nextInput.resume_batch_id || null; nextInput.v2_enrichment_batch_id = batchId || nextInput.v2_enrichment_batch_id || null; if (previousOutput.next_offset !== undefined) nextInput.v2_enrichment_offset = previousOutput.next_offset; }
+  if (jobKey === "hit-probability-v3-shadow") { nextInput.v2_v3_shadow_resume = true; nextInput.resume_batch_id = batchId || nextInput.resume_batch_id || null; nextInput.hp_v3_batch_id = batchId || nextInput.hp_v3_batch_id || null; if (previousOutput.next_offset !== undefined) nextInput.hp_v3_offset = previousOutput.next_offset; }
+  if (jobKey === "final-score-v2-shadow") { nextInput.v2_v3_shadow_resume = true; nextInput.resume_batch_id = batchId || nextInput.resume_batch_id || null; nextInput.final_score_v2_batch_id = batchId || nextInput.final_score_v2_batch_id || null; if (previousOutput.next_offset !== undefined) nextInput.final_score_v2_offset = previousOutput.next_offset; }
+  if (jobKey === "final-board-v3-shadow") { nextInput.v2_v3_shadow_resume = true; nextInput.resume_batch_id = batchId || nextInput.resume_batch_id || null; nextInput.final_board_v3_batch_id = batchId || nextInput.final_board_v3_batch_id || null; if (previousOutput.next_offset !== undefined) nextInput.final_board_v3_offset = previousOutput.next_offset; }
   if (jobKey === "scoring-engine") { nextInput.scoring_engine_resume = true; }
   if (jobKey === "hit-probability") { nextInput.hit_probability_resume = true; nextInput.hp_resume = true; }
   if (jobKey === "score-final-board") { nextInput.final_board_resume = true; }
@@ -13272,6 +13277,37 @@ async function processFinalBoardV2DirectJob(env,row,runId,trigger){
   return output;
 }
 
+
+async function buildShadowScoreAuditEvidenceOutput(env, row, runId, trigger, rowInput = {}, errText = "") {
+  const jobKey = String(row && row.job_key || "");
+  const isScoreEnrichment = jobKey === "score-enrichment-v2-shadow";
+  const isHpV3 = jobKey === "hit-probability-v3-shadow";
+  const isFinalScoreV2 = jobKey === "final-score-v2-shadow";
+  const isFinalBoardV3 = jobKey === "final-board-v3-shadow";
+  const cfg = isScoreEnrichment ? {
+    batchTable:"v2_score_enrichment_batches", rowTable:"v2_score_enrichment_events", batchField:"v2_score_enrichment_batch_id", mode:"score_enrichment_v2_shadow", logical:"alphadog-v2-score-enrichment-v2-shadow", partialCert:"SCORE_ENRICHMENT_V2_SHADOW_PARTIAL_CONTINUE_RECONCILED", completeCert:"SCORE_ENRICHMENT_V2_SHADOW_RECONCILED_COMPLETE", currentId: rowInput.v2_enrichment_batch_id || rowInput.resume_batch_id || null
+  } : isHpV3 ? {
+    batchTable:"v2_hit_probability_batches", rowTable:"v2_hit_probability_current", batchField:"hp_v3_batch_id", mode:"hit_probability_v3_shadow", logical:"alphadog-v2-hit-probability-v3-shadow", partialCert:"HIT_PROBABILITY_V3_SHADOW_PARTIAL_CONTINUE_RECONCILED", completeCert:"HIT_PROBABILITY_V3_SHADOW_RECONCILED_COMPLETE", currentId: rowInput.hp_v3_batch_id || rowInput.resume_batch_id || null
+  } : isFinalScoreV2 ? {
+    batchTable:"v2_final_score_batches", rowTable:"v2_final_score_current", batchField:"final_score_v2_batch_id", mode:"final_score_v2_shadow", logical:"alphadog-v2-final-score-v2-shadow", partialCert:"FINAL_SCORE_V2_SHADOW_PARTIAL_CONTINUE_RECONCILED", completeCert:"FINAL_SCORE_V2_SHADOW_RECONCILED_COMPLETE", currentId: rowInput.final_score_v2_batch_id || rowInput.resume_batch_id || null
+  } : isFinalBoardV3 ? {
+    batchTable:"v2_final_board_batches", rowTable:"v2_final_board_current", batchField:"final_board_v3_batch_id", mode:"score_final_board_v3_shadow", logical:"alphadog-v2-final-board-v3-shadow", partialCert:"FINAL_BOARD_V3_SHADOW_PARTIAL_CONTINUE_RECONCILED", completeCert:"FINAL_BOARD_V3_SHADOW_RECONCILED_COMPLETE", currentId: rowInput.final_board_v3_batch_id || rowInput.resume_batch_id || null
+  } : null;
+  if (!cfg || !env.SCORE_DB) return { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:jobKey, request_id:row.request_id, run_id:runId, status:"v2_v3_shadow_timeout_reconcile_unavailable", certification:"V2_V3_SHADOW_TIMEOUT_RECONCILE_UNAVAILABLE", certification_grade:"FAILED", error:errText };
+  const batch = await first(env.SCORE_DB, `SELECT batch_id, source_rows_read, expected_hp_rows, expected_final_score_rows, eligible_rows_read, output_json FROM ${cfg.batchTable} WHERE request_id=? ORDER BY datetime(updated_at) DESC LIMIT 1`, row.request_id);
+  const batchId = (batch && batch.batch_id) || cfg.currentId || null;
+  if (!batchId) return { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:jobKey, request_id:row.request_id, run_id:runId, status:"v2_v3_shadow_timeout_no_batch_to_reconcile", certification:"V2_V3_SHADOW_TIMEOUT_NO_BATCH_TO_RECONCILE", certification_grade:"FAILED", error:errText };
+  const countRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM ${cfg.rowTable} WHERE batch_id=?`, batchId);
+  const rowsWritten = Math.max(0, Number(countRow && countRow.rows || 0) || 0);
+  let previousOutput = {};
+  try { previousOutput = JSON.parse((batch && batch.output_json) || "{}"); } catch (_) { previousOutput = {}; }
+  const sourceRowsRead = Math.max(Number(batch && (batch.source_rows_read || batch.expected_hp_rows || batch.expected_final_score_rows || batch.eligible_rows_read) || 0) || 0, Number(previousOutput.source_rows_read || previousOutput.rows_read || 0) || 0, rowsWritten);
+  const remaining = Math.max(0, sourceRowsRead - rowsWritten);
+  const complete = sourceRowsRead > 0 && remaining <= 0;
+  const cert = complete ? cfg.completeCert : cfg.partialCert;
+  return { ok:true, data_ok:true, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, logical_worker_name:cfg.logical, deployed_worker_slot:"alphadog-v2-score-audit", job_key:jobKey, request_id:row.request_id, run_id:runId, chain_id:row.chain_id, mode:cfg.mode, status:complete ? `completed_${cfg.mode}_reconciled_from_timeout` : `partial_continue_${cfg.mode}_reconciled_from_timeout`, certification:cert, certification_grade:complete ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : "PARTIAL", batch_id:batchId, [cfg.batchField]:batchId, rows_read:sourceRowsRead, source_rows_read:sourceRowsRead, rows_written:rowsWritten, offset:rowsWritten, next_offset:rowsWritten, remaining_rows:remaining, continuation_required:!complete, orchestrator_should_self_continue:!complete, service_binding_timeout_reconciled_from_v2_tables:true, original_dispatch_error:String(errText || "").slice(0,900), no_production_mutation:true, writes_v2_shadow_tables_only:true };
+}
+
 async function processScoringEngineJob(env, row, runId, trigger) {
   const isSimulationJob = row && row.job_key === "scoring-engine-simulation";
   const isHitProbabilityJob = row && row.job_key === "hit-probability";
@@ -13411,7 +13447,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    }, isShadowV2Job ? "v2_v3_shadow_score_audit" : (isEnrichmentJob ? "score_enrichment_v1" : "scoring_engine"), isShadowV2Job ? EXACT_WORKER_SERVICE_TIMEOUT_MS : (isEnrichmentJob ? 12000 : EXACT_WORKER_SERVICE_TIMEOUT_MS));
+    }, isShadowV2Job ? "v2_v3_shadow_score_audit" : (isEnrichmentJob ? "score_enrichment_v1" : "scoring_engine"), isShadowV2Job ? 45000 : (isEnrichmentJob ? 12000 : EXACT_WORKER_SERVICE_TIMEOUT_MS));
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); }
@@ -13420,7 +13456,13 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     }
   } catch (err) {
     const errText = String(err && err.message ? err.message : err);
-    if (isEnrichmentJob) {
+    if (isShadowV2Job) {
+      output = await buildShadowScoreAuditEvidenceOutput(env, row, runId, trigger, rowInput, errText);
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'v2_v3_shadow_service_binding_timeout_reconciled_from_tables', 'Recovered V2/V3 shadow service-binding timeout from worker-owned v2_* table evidence', ?, CURRENT_TIMESTAMP)",
+        row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output).slice(0, 9000)
+      );
+    } else if (isEnrichmentJob) {
       output = await buildScoreEnrichmentV1EvidenceOutput(env, row, runId, trigger, rowInput, errText);
       await run(env.CONTROL_DB,
         "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'score_enrichment_v1_service_binding_timeout_rescued_from_current', 'Recovered Score Enrichment V1 service-binding timeout from current/batch evidence', ?, CURRENT_TIMESTAMP)",
@@ -13450,7 +13492,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
-    deployed_slot_version: isShadowV2Job ? "alphadog-v2-score-audit-v0.4.54-v2-shadow-canonical-batch-reuse" : (isHitProbabilityV2Job ? "alphadog-v2-score-audit-v0.4.48-hit-probability-v2-current" : (isEnrichmentJob ? "alphadog-v2-score-audit-v0.4.47-enrichment-v1-250x25-resume-safe" : (isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock"))),
+    deployed_slot_version: isShadowV2Job ? "alphadog-v2-score-audit-v0.4.56-v2-shadow-terminal-lifecycle" : (isHitProbabilityV2Job ? "alphadog-v2-score-audit-v0.4.48-hit-probability-v2-current" : (isEnrichmentJob ? "alphadog-v2-score-audit-v0.4.47-enrichment-v1-250x25-resume-safe" : (isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock"))),
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,

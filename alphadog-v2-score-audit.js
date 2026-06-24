@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-score-audit-v0.4.55-v2-shadow-heartbeat-version-parity";
+const VERSION = "alphadog-v2-score-audit-v0.4.56-v2-shadow-terminal-lifecycle";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -5033,7 +5033,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.55-v2-shadow-heartbeat-version-parity";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.56-v2-shadow-terminal-lifecycle";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5284,7 +5284,7 @@ async function runScoreEnrichmentV2Shadow(env, input = {}) {
     explicitOffset: explicitOffsetProvided ? offset : null,
     insertSql:`INSERT OR REPLACE INTO v2_score_enrichment_batches (batch_id,request_id,run_id,worker_version,mode,status,source_enrichment_batch_id,certification_status,certification_grade,output_json,updated_at) VALUES (?,?,?,?,?,'running',?,'SCORE_ENRICHMENT_V2_SHADOW_STARTED','RUNNING',?,CURRENT_TIMESTAMP)`,
     insertBinds:[batchId, requestId, runId, SHADOW_SCORE_VERSION, SCORE_ENRICHMENT_V2_SHADOW_MODE, sourceBatchId, v2Json({ request_id:requestId, source_enrichment_batch_id:sourceBatchId, no_production_mutation:true })],
-    updateSql:`UPDATE v2_score_enrichment_batches SET status='running', run_id=?, worker_version=?, mode=?, source_enrichment_batch_id=?, certification_status='SCORE_ENRICHMENT_V2_SHADOW_RESUMED', certification_grade='RUNNING', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    updateSql:`UPDATE v2_score_enrichment_batches SET run_id=?, worker_version=?, mode=?, source_enrichment_batch_id=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
     updateBinds:[runId, SHADOW_SCORE_VERSION, SCORE_ENRICHMENT_V2_SHADOW_MODE, sourceBatchId, batchId]
   });
   offset = resumeState.offset;
@@ -5372,7 +5372,7 @@ async function runHitProbabilityV3Shadow(env, input = {}) {
     explicitOffset: explicitOffsetProvided ? offset : null,
     insertSql:`INSERT OR REPLACE INTO v2_hit_probability_batches (batch_id,request_id,run_id,worker_version,mode,status,source_v2_enrichment_batch_id,certification_status,certification_grade,output_json,updated_at) VALUES (?,?,?,?,?,'running',?,'HIT_PROBABILITY_V3_SHADOW_STARTED','RUNNING',?,CURRENT_TIMESTAMP)`,
     insertBinds:[batchId, requestId, runId, SHADOW_SCORE_VERSION, HIT_PROBABILITY_V3_SHADOW_MODE, sourceBatchId, v2Json({ source_v2_enrichment_batch_id:sourceBatchId })],
-    updateSql:`UPDATE v2_hit_probability_batches SET status='running', run_id=?, worker_version=?, mode=?, source_v2_enrichment_batch_id=?, certification_status='HIT_PROBABILITY_V3_SHADOW_RESUMED', certification_grade='RUNNING', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    updateSql:`UPDATE v2_hit_probability_batches SET run_id=?, worker_version=?, mode=?, source_v2_enrichment_batch_id=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
     updateBinds:[runId, SHADOW_SCORE_VERSION, HIT_PROBABILITY_V3_SHADOW_MODE, sourceBatchId, batchId]
   });
   offset = resumeState.offset;
@@ -5449,7 +5449,7 @@ async function runFinalScoreV2Shadow(env, input = {}) {
     explicitOffset: explicitOffsetProvided ? offset : null,
     insertSql:`INSERT OR REPLACE INTO v2_final_score_batches (batch_id,request_id,run_id,worker_version,mode,status,source_hp_v3_batch_id,certification_status,certification_grade,output_json,updated_at) VALUES (?,?,?,?,?,'running',?,'FINAL_SCORE_V2_SHADOW_STARTED','RUNNING',?,CURRENT_TIMESTAMP)`,
     insertBinds:[batchId, requestId, runId, SHADOW_SCORE_VERSION, FINAL_SCORE_V2_SHADOW_MODE, sourceBatchId, v2Json({ source_hp_v3_batch_id:sourceBatchId })],
-    updateSql:`UPDATE v2_final_score_batches SET status='running', run_id=?, worker_version=?, mode=?, source_hp_v3_batch_id=?, certification_status='FINAL_SCORE_V2_SHADOW_RESUMED', certification_grade='RUNNING', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    updateSql:`UPDATE v2_final_score_batches SET run_id=?, worker_version=?, mode=?, source_hp_v3_batch_id=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
     updateBinds:[runId, SHADOW_SCORE_VERSION, FINAL_SCORE_V2_SHADOW_MODE, sourceBatchId, batchId]
   });
   offset = resumeState.offset;
@@ -5507,7 +5507,7 @@ async function runFinalBoardV3Shadow(env, input = {}) {
     explicitOffset: explicitOffsetProvided ? offset : null,
     insertSql:`INSERT OR REPLACE INTO v2_final_board_batches (batch_id,request_id,run_id,worker_version,mode,status,source_final_score_v2_batch_id,certification_status,certification_grade,output_json,updated_at) VALUES (?,?,?,?,?,'running',?,'FINAL_BOARD_V3_SHADOW_STARTED','RUNNING',?,CURRENT_TIMESTAMP)`,
     insertBinds:[batchId, requestId, runId, SHADOW_SCORE_VERSION, FINAL_BOARD_V3_SHADOW_MODE, sourceBatchId, v2Json({ source_final_score_v2_batch_id:sourceBatchId })],
-    updateSql:`UPDATE v2_final_board_batches SET status='running', run_id=?, worker_version=?, mode=?, source_final_score_v2_batch_id=?, certification_status='FINAL_BOARD_V3_SHADOW_RESUMED', certification_grade='RUNNING', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    updateSql:`UPDATE v2_final_board_batches SET run_id=?, worker_version=?, mode=?, source_final_score_v2_batch_id=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
     updateBinds:[runId, SHADOW_SCORE_VERSION, FINAL_BOARD_V3_SHADOW_MODE, sourceBatchId, batchId]
   });
   offset = resumeState.offset;
@@ -5590,7 +5590,9 @@ export default {
         const isHitProbabilityEstimate = input && (input.mode === "hit_probability_current_estimate" || input.job_key === "hit-probability");
         const isHpBoard = input && (input.mode === HP_BOARD_MODE || input.job_key === HP_BOARD_JOB_KEY);
         const isHitProbability = isHitProbabilityEstimate || isHpBoard || isHitProbabilityV3Shadow;
-        await controlLifecycleHeartbeat(env, input, isShadowV2Lane ? "running_v2_v3_shadow_scoring_worker_started" : (isEnrichmentV1 ? "running_score_enrichment_v1_worker_started" : (isHitProbability ? "running_hit_probability_worker_started" : (isSimulation ? "running_scoring_engine_simulation_worker_started" : (isFinalBoard ? "running_scoring_final_board_worker_started" : "running_scoring_engine_worker_started")))), { selected_mode: input.mode || null, worker_owned_shadow_lane:isShadowV2Lane, version: isShadowV2Lane ? SHADOW_SCORE_VERSION : controlVersion(), worker_name: isShadowV2Lane ? WORKER_NAME : controlWorkerName() });
+        if (!isShadowV2Lane) {
+          await controlLifecycleHeartbeat(env, input, isEnrichmentV1 ? "running_score_enrichment_v1_worker_started" : (isHitProbability ? "running_hit_probability_worker_started" : (isSimulation ? "running_scoring_engine_simulation_worker_started" : (isFinalBoard ? "running_scoring_final_board_worker_started" : "running_scoring_engine_worker_started"))), { selected_mode: input.mode || null, worker_owned_shadow_lane:false });
+        }
         const isFrameworkGate = input && input.mode === "scoring_engine_framework_profile_gate" && input.framework_only === true && input.real_scoring_enabled !== true;
         let output;
         if (isScoreEnrichmentV2Shadow) {
