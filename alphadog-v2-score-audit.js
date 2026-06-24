@@ -5033,7 +5033,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.59-v2-shadow-enrichment-small-chunk";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.60-v2-shadow-variant-lineage-fix";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5105,11 +5105,12 @@ function v2PayoutVariantFromPayload(row) {
     payload.odds_type,
     payload.line_variant,
     payload.source_line_type,
-    payload.variant
+    payload.variant,
+    row && row.source_line_id
   ].filter(x => x !== undefined && x !== null && String(x).trim());
-  const raw = vals.length ? String(vals[0]).toLowerCase() : "standard";
-  if (raw.includes("demon")) return "demon";
-  if (raw.includes("goblin")) return "goblin";
+  const raw = vals.join("|").toLowerCase();
+  if (raw.includes("|demon|") || raw.includes("demon")) return "demon";
+  if (raw.includes("|goblin|") || raw.includes("goblin")) return "goblin";
   return "standard";
 }
 function v2FactorCap(prop, family, source, line, side) {
