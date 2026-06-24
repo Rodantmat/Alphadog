@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-certification-center-v0.1.36-v3-shadow-board-rewire";
+const VERSION = "alphadog-v2-certification-center-v0.1.37-queryall-helper-hotfix";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -99,6 +99,14 @@ async function readJsonSafe(request) {
   } catch {
     return {};
   }
+}
+
+async function queryAll(db, sql, params = []) {
+  if (!db || typeof db.prepare !== "function") throw new Error("D1 binding missing for queryAll");
+  const stmt = db.prepare(sql);
+  const bound = Array.isArray(params) && params.length ? stmt.bind(...params) : stmt;
+  const res = await bound.all();
+  return Array.isArray(res?.results) ? res.results : [];
 }
 
 function baseIdentity(env) {
