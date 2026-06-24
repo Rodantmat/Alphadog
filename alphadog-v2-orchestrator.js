@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.304-v2-shadow-evidence-quiet-dispatch-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.305-v2-shadow-full-run-wire";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -1024,10 +1024,10 @@ function isMarketScoringFullRunHeavyStage(stage) {
   const key = String(stage && stage.stage_key ? stage.stage_key : "");
   return isMarketScoringFullRunPropFactorStage(stage)
     || key === "prop_matrix_build"
-    || key === "score_enrichment_v1"
-    || key === "hit_probability_v2"
-    || key === "final_score_v1"
-    || key === "final_board_v2";
+    || key === "score_enrichment_v2_shadow"
+    || key === "hit_probability_v3_shadow"
+    || key === "final_score_v2_shadow"
+    || key === "final_board_v3_shadow";
 }
 
 function marketScoringFullRunParentRecheckSeconds(stage) {
@@ -1147,10 +1147,10 @@ const MARKET_SCORING_FULL_RUN_STAGES = [
   { stage_key: "prop_factor_hitters", job_key: "prop-factor-miner", worker_name: "alphadog-v2-phase2b-recent-form", display_name: "Prop Factor Miner Hitters", visible_button: "FACTORS > Hitters", mode: "hitter_prop_factor_mining", worker_group: "10 Factors", phase_key: "factors", priority: 6, factor_family: "hitter" },
   { stage_key: "prop_factor_pitchers", job_key: "prop-factor-miner", worker_name: "alphadog-v2-phase2b-recent-form", display_name: "Prop Factor Miner Pitchers", visible_button: "FACTORS > Pitchers", mode: "pitcher_prop_factor_mining", worker_group: "10 Factors", phase_key: "factors", priority: 6, factor_family: "pitcher" },
   { stage_key: "prop_matrix_build", job_key: "prop-matrix-builder", worker_name: "alphadog-v2-phase2b-certifier", display_name: "Prop Matrix Build", visible_button: "MATRIX > Build", mode: "prop_matrix_build", worker_group: "10 Matrix", phase_key: "matrix", priority: 6 },
-  { stage_key: "score_enrichment_v1", job_key: "score-enrichment-v1", worker_name: "alphadog-v2-score-audit", display_name: "Score Enrichment V1", visible_button: "SCORING > Score Enrichment V1", mode: "score_enrichment_v1_side_expanded", worker_group: "11 Scoring", phase_key: "scoring", priority: 7 },
-  { stage_key: "hit_probability_v2", job_key: "hit-probability-v2", worker_name: "alphadog-v2-score-audit", display_name: "Hit Probability V2", visible_button: "SCORING > Hit Probability V2", mode: "hit_probability_v2_current", worker_group: "11 Scoring", phase_key: "scoring", priority: 7 },
-  { stage_key: "final_score_v1", job_key: "final-score-v1", worker_name: "alphadog-v2-score-audit", display_name: "Final Score V1", visible_button: "SCORING > Final Score", mode: "final_score_v1_current", worker_group: "11 Scoring", phase_key: "scoring", priority: 8 },
-  { stage_key: "final_board_v2", job_key: "final-board-v2", worker_name: "alphadog-v2-score-audit", display_name: "Final Board V2", visible_button: "SCORING > Final Board V2", mode: "score_final_board_v2_current", worker_group: "11 Scoring", phase_key: "scoring", priority: 9 }
+  { stage_key: "score_enrichment_v2_shadow", job_key: "score-enrichment-v2-shadow", worker_name: "alphadog-v2-score-audit", display_name: "Score Enrichment V2 Shadow", visible_button: "SCORING > Enrich V2", mode: "score_enrichment_v2_shadow", worker_group: "11 Scoring", phase_key: "scoring", priority: 7 },
+  { stage_key: "hit_probability_v3_shadow", job_key: "hit-probability-v3-shadow", worker_name: "alphadog-v2-score-audit", display_name: "Hit Probability V3 Shadow", visible_button: "SCORING > HP V3", mode: "hit_probability_v3_shadow", worker_group: "11 Scoring", phase_key: "scoring", priority: 7 },
+  { stage_key: "final_score_v2_shadow", job_key: "final-score-v2-shadow", worker_name: "alphadog-v2-score-audit", display_name: "Final Score V2 Shadow", visible_button: "SCORING > Final Score V2", mode: "final_score_v2_shadow", worker_group: "11 Scoring", phase_key: "scoring", priority: 8 },
+  { stage_key: "final_board_v3_shadow", job_key: "final-board-v3-shadow", worker_name: "alphadog-v2-score-audit", display_name: "Final Board V3 Shadow", visible_button: "SCORING > Final Board V3", mode: "score_final_board_v3_shadow", worker_group: "11 Scoring", phase_key: "scoring", priority: 9 }
 ];
 
 function marketScoringFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
@@ -2202,6 +2202,68 @@ async function processMarketScoringFullRunJob(env, row, runId, trigger) {
     const child = stageChildren[stageChildren.length - 1] || null;
     if (!child) {
       const extraChildInput = {};
+      if (stage.stage_key === "score_enrichment_v2_shadow") {
+        const matrixReport = stageReports.find(r => r.stage_key === "prop_matrix_build" && r.batch_id);
+        if (matrixReport && matrixReport.batch_id) {
+          extraChildInput.source_matrix_batch_id = matrixReport.batch_id;
+          extraChildInput.prop_matrix_batch_id = matrixReport.batch_id;
+          extraChildInput.source_matrix_batch_required_from_same_chain = true;
+        }
+        extraChildInput.logical_worker_name = "alphadog-v2-score-enrichment-v2-shadow";
+        extraChildInput.deployed_worker_slot = "alphadog-v2-score-audit";
+        extraChildInput.v2_v3_shadow_chain = true;
+        extraChildInput.worker_owned_schema_creation = true;
+        extraChildInput.service_binding_timeout_reconcile_from_tables = true;
+        extraChildInput.d1_limit_safe_chunking_required = true;
+        extraChildInput.no_old_production_touch = true;
+        extraChildInput.no_production_scoring_table_writes = true;
+      }
+      if (stage.stage_key === "hit_probability_v3_shadow") {
+        const enrichmentReport = stageReports.find(r => r.stage_key === "score_enrichment_v2_shadow" && r.batch_id);
+        if (enrichmentReport && enrichmentReport.batch_id) {
+          extraChildInput.source_v2_enrichment_batch_id = enrichmentReport.batch_id;
+          extraChildInput.v2_enrichment_batch_id = enrichmentReport.batch_id;
+          extraChildInput.source_v2_enrichment_batch_required_from_same_chain = true;
+        }
+        extraChildInput.logical_worker_name = "alphadog-v2-hit-probability-v3-shadow";
+        extraChildInput.deployed_worker_slot = "alphadog-v2-score-audit";
+        extraChildInput.v2_v3_shadow_chain = true;
+        extraChildInput.no_fake_hp_when_baseline_missing = true;
+        extraChildInput.live_playable_forced_zero = true;
+        extraChildInput.service_binding_timeout_reconcile_from_tables = true;
+        extraChildInput.d1_limit_safe_chunking_required = true;
+      }
+      if (stage.stage_key === "final_score_v2_shadow") {
+        const hpReport = stageReports.find(r => r.stage_key === "hit_probability_v3_shadow" && r.batch_id);
+        if (hpReport && hpReport.batch_id) {
+          extraChildInput.source_hp_v3_batch_id = hpReport.batch_id;
+          extraChildInput.hp_v3_batch_id = hpReport.batch_id;
+          extraChildInput.source_hp_v3_batch_required_from_same_chain = true;
+        }
+        extraChildInput.logical_worker_name = "alphadog-v2-final-score-v2-shadow";
+        extraChildInput.deployed_worker_slot = "alphadog-v2-score-audit";
+        extraChildInput.v2_v3_shadow_chain = true;
+        extraChildInput.goblin_demon_score_only_adjustment = true;
+        extraChildInput.goblin_demon_does_not_modify_hp = true;
+        extraChildInput.live_playable_forced_zero = true;
+        extraChildInput.service_binding_timeout_reconcile_from_tables = true;
+        extraChildInput.d1_limit_safe_chunking_required = true;
+      }
+      if (stage.stage_key === "final_board_v3_shadow") {
+        const finalScoreReport = stageReports.find(r => r.stage_key === "final_score_v2_shadow" && r.batch_id);
+        if (finalScoreReport && finalScoreReport.batch_id) {
+          extraChildInput.source_final_score_v2_batch_id = finalScoreReport.batch_id;
+          extraChildInput.final_score_v2_batch_id = finalScoreReport.batch_id;
+          extraChildInput.source_final_score_v2_batch_required_from_same_chain = true;
+        }
+        extraChildInput.logical_worker_name = "alphadog-v2-final-board-v3-shadow";
+        extraChildInput.deployed_worker_slot = "alphadog-v2-score-audit";
+        extraChildInput.v2_v3_shadow_chain = true;
+        extraChildInput.review_board_only = true;
+        extraChildInput.live_playable_forced_zero = true;
+        extraChildInput.service_binding_timeout_reconcile_from_tables = true;
+        extraChildInput.d1_limit_safe_chunking_required = true;
+      }
       if (stage.stage_key === "score_enrichment_v1") {
         const matrixReport = stageReports.find(r => r.stage_key === "prop_matrix_build" && r.batch_id);
         if (matrixReport && matrixReport.batch_id) {
@@ -2331,12 +2393,12 @@ async function processMarketScoringFullRunJob(env, row, runId, trigger) {
   const rowsRead = stageReports.reduce((sum, r) => sum + Number(r.rows_read || 0), 0);
   const rowsWritten = stageReports.reduce((sum, r) => sum + Number(r.rows_written || 0), 0);
   const externalCalls = stageReports.reduce((sum, r) => sum + Number(r.external_calls || 0), 0);
-  const finalCertification = "MARKET_SCORING_FULL_RUN_CERTIFIED_V2_SCORING_CHAIN_COMPLETED";
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_scoring_full_run", status: "COMPLETED_MARKET_SCORING_FULL_RUN", certification: finalCertification, certification_grade: "FULL_RUN_PASS_WITH_REVIEW_WARNINGS_ALLOWED", market_scoring_full_run_certified: true, completed_stage_count: stageReports.length, total_stage_count: MARKET_SCORING_FULL_RUN_STAGES.length, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, stages: stageReports, approved_chain_order: MARKET_SCORING_FULL_RUN_STAGES.map(s => s.job_key), full_run_order: MARKET_SCORING_FULL_RUN_STAGES.map(s => s.stage_key), no_source_board_mutation: true, no_prepared_board_mutation: true, no_old_production_touch: true, score_enrichment_v1_included: true, hit_probability_v2_included: true, final_score_v1_included: true, final_board_v2_included: true, final_board_v2_clean_default_included: true, hit_probability_included: true, hp_board_included: false, legacy_scoring_engine_removed: true, legacy_hit_probability_removed: true, legacy_hp_board_removed: true, legacy_score_final_board_removed: true, hp_v2_before_final_score_v1: true, final_score_v1_before_final_board_v2: true, hp_first_final_board_v2_source_active: true, no_true_hit_probability_claims: true };
+  const finalCertification = "MARKET_SCORING_FULL_RUN_CERTIFIED_V3_SHADOW_SCORING_CHAIN_COMPLETED";
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_scoring_full_run", status: "COMPLETED_MARKET_SCORING_FULL_RUN", certification: finalCertification, certification_grade: "FULL_RUN_PASS_WITH_REVIEW_WARNINGS_ALLOWED", market_scoring_full_run_certified: true, completed_stage_count: stageReports.length, total_stage_count: MARKET_SCORING_FULL_RUN_STAGES.length, rows_read: rowsRead, rows_written: rowsWritten, external_calls: externalCalls, stages: stageReports, approved_chain_order: MARKET_SCORING_FULL_RUN_STAGES.map(s => s.job_key), full_run_order: MARKET_SCORING_FULL_RUN_STAGES.map(s => s.stage_key), no_source_board_mutation: true, no_prepared_board_mutation: true, no_old_production_touch: true, score_enrichment_v2_shadow_included: true, hit_probability_v3_shadow_included: true, final_score_v2_shadow_included: true, final_board_v3_shadow_included: true, score_enrichment_v1_included: false, hit_probability_v2_included: false, final_score_v1_included: false, final_board_v2_included: false, final_board_v2_clean_default_included: false, hit_probability_included: true, hp_board_included: false, legacy_scoring_engine_removed: true, legacy_hit_probability_removed: true, legacy_hp_board_removed: true, legacy_score_final_board_removed: true, old_scoring_system_removed_from_full_run: true, hp_v3_before_final_score_v2: true, final_score_v2_before_final_board_v3: true, hp_first_final_board_v3_source_active: true, no_true_hit_probability_claims: true };
   await releaseMarketScoringFullRunLock(env, row);
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalCertification, rowsRead, rowsWritten, externalCalls, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'market_scoring_full_run_completed', 'Market/Factors/Matrix/Score Enrichment V1/HP V2/Final Score V1/Final Board V2 full run chain completed', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'market_scoring_full_run_completed', 'Market/Factors/Matrix/Score Enrichment V2 Shadow/HP V3 Shadow/Final Score V2 Shadow/Final Board V3 Shadow full run chain completed', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
   return output;
 }
 
@@ -3213,8 +3275,7 @@ const INCREMENTAL_MORNING_FULL_RUN_STAGES = [
   { stage_key: "hitter_metrics_affected_delta", job_key: "base-hitter-metrics", worker_name: "alphadog-v2-base-hitter-metrics", display_name: "Hitter Metrics Affected Delta", visible_button: "DELTA > Hitter Metrics", mode: "delta_recalculate_affected_players", layer_key: "hitter_metrics", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_metrics_affected_delta", job_key: "base-pitcher-metrics", worker_name: "alphadog-v2-base-pitcher-metrics", display_name: "Pitcher Metrics Affected Delta", visible_button: "DELTA > Pitcher Metrics", mode: "delta_recalculate_affected_players", layer_key: "pitcher_metrics", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "calendar_tally_final_check", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Final Check", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "final_check", require_zero_blocking_gaps: true },
-  { stage_key: "player_baseline_sanity", job_key: "player-baseline-sanity", worker_name: "alphadog-v2-phase2b-pitcher-role", display_name: "Player Baseline Sanity", visible_button: "PLAYER BASELINE > Sanity", mode: "history_only_layer_1_sanity_baseline", worker_group: "Delta", phase_key: "player_baseline", priority: 4, player_baseline_stage: "sanity", require_completed_final_calendar_tally: true },
-  { stage_key: "player_baseline_hp", job_key: "player-baseline-hp", worker_name: "alphadog-v2-phase2b-pitcher-role", display_name: "Player Baseline HP", visible_button: "PLAYER BASELINE > HP", mode: "history_only_baseline_hp_enrichment", worker_group: "Delta", phase_key: "player_baseline", priority: 4, player_baseline_stage: "baseline_hp", require_completed_player_baseline_sanity: true }
+  { stage_key: "expansion_baseline_full_run", job_key: "expansion-baseline-full-run", worker_name: "alphadog-v2-phase3a-first-inning-pitcher-context", display_name: "Expansion Baseline Full Run", visible_button: "EXPANSION > Full Baseline", mode: "expansion_baseline_full_run", worker_group: "Delta", phase_key: "player_baseline", priority: 4, expansion_baseline_stage: "full_run", require_completed_final_calendar_tally: true }
 ];
 
 const STATIC_FULL_RUN_STAGES = [
@@ -3593,8 +3654,11 @@ function incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryC
     calendar_tally_precheck_first: INCREMENTAL_MORNING_FULL_RUN_STAGES[0] && INCREMENTAL_MORNING_FULL_RUN_STAGES[0].stage_key === "calendar_tally_precheck",
     calendar_tally_final_check_in_chain: INCREMENTAL_MORNING_FULL_RUN_STAGES.some(s => s.stage_key === "calendar_tally_final_check"),
     calendar_tally_final_check_before_player_baseline: true,
-    player_baseline_sanity_included_after_delta: INCREMENTAL_MORNING_FULL_RUN_STAGES.some(s => s.stage_key === "player_baseline_sanity"),
-    player_baseline_hp_included_after_sanity: INCREMENTAL_MORNING_FULL_RUN_STAGES.some(s => s.stage_key === "player_baseline_hp"),
+    old_player_baseline_sanity_removed: true,
+    old_player_baseline_hp_removed: true,
+    expansion_baseline_full_run_included_after_delta: INCREMENTAL_MORNING_FULL_RUN_STAGES.some(s => s.stage_key === "expansion_baseline_full_run"),
+    writes_expansion_baseline_tables_only: stage.stage_key === "expansion_baseline_full_run",
+    full_depth_base: stage.stage_key === "expansion_baseline_full_run",
     created_at: nowIso()
   };
 }
@@ -4420,11 +4484,11 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     stageReports.push(report);
   }
 
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_BASE_DELTAS_AND_PLAYER_BASELINE_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_final_check_in_chain: true, calendar_tally_final_check_before_player_baseline: true, player_baseline_sanity_included: true, player_baseline_hp_included: true, final_calendar_tally_blocking_gap_count: 0, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_BASE_DELTAS_AND_EXPANSION_BASELINE_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_final_check_in_chain: true, calendar_tally_final_check_before_player_baseline: true, old_player_baseline_sanity_removed: true, old_player_baseline_hp_removed: true, expansion_baseline_full_run_included: true, final_calendar_tally_blocking_gap_count: 0, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
   await releaseIncrementalMorningFullRunLock(env, row);
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_BASE_DELTAS_AND_PLAYER_BASELINE', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_completed', 'Incremental Morning Full Run certified all incremental base/delta stages and Player Baseline Sanity/HP refresh', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_completed', 'Incremental Morning Full Run certified all incremental base/delta stages and Expansion Baseline Full Run refresh', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
   return output;
 }
 
