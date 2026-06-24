@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.302-v2-shadow-schema-safe-reconcile";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.303-v2-shadow-stale-dispatch-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -15181,6 +15181,14 @@ async function processOneUnlocked(env, trigger) {
     );
   }
 
+  // v0.2.303: V2/V3 shadow jobs can be interrupted after the orchestrator writes
+  // ORCHESTRATOR_DISPATCH_STARTED but before the service-binding response returns.
+  // Recover only when worker-owned v2_* batch evidence proves safe partial progress,
+  // then resume the same request/batch from the row count. No scoring/calibration math changes.
+  if (!row) {
+    row = await rescueStaleShadowV2DispatchStartedForResume(env, trigger);
+  }
+
   if (!row) {
     row = await first(env.CONTROL_DB,
       "SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json FROM control_job_queue WHERE status='pending' AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP) ORDER BY priority ASC, datetime(created_at) ASC LIMIT 1"
@@ -16555,6 +16563,220 @@ async function countDueShadowScoringV2Hot(env) {
         AND finished_at IS NULL`
   );
   return Number(row && row.c ? row.c : 0);
+}
+
+
+function shadowV2ResumeMeta(jobKey) {
+  const key = String(jobKey || "");
+  if (key === "score-enrichment-v2-shadow") {
+    return {
+      batchTable: "v2_score_enrichment_batches",
+      rowTable: "v2_score_enrichment_events",
+      batchInputField: "v2_enrichment_batch_id",
+      offsetInputField: "v2_enrichment_offset",
+      sourceInputField: "source_enrichment_batch_id",
+      sourceIdColumn: "source_enrichment_batch_id",
+      writtenColumn: "events_written",
+      mode: "score_enrichment_v2_shadow",
+      logicalWorker: "alphadog-v2-score-enrichment-v2-shadow",
+      certification: "SCORE_ENRICHMENT_V2_SHADOW_STALE_DISPATCH_AUTO_RESUMED"
+    };
+  }
+  if (key === "hit-probability-v3-shadow") {
+    return {
+      batchTable: "v2_hit_probability_batches",
+      rowTable: "v2_hit_probability_current",
+      batchInputField: "hp_v3_batch_id",
+      offsetInputField: "hp_v3_offset",
+      sourceInputField: "source_v2_enrichment_batch_id",
+      sourceIdColumn: "source_v2_enrichment_batch_id",
+      writtenColumn: "rows_written",
+      mode: "hit_probability_v3_shadow",
+      logicalWorker: "alphadog-v2-hit-probability-v3-shadow",
+      certification: "HIT_PROBABILITY_V3_SHADOW_STALE_DISPATCH_AUTO_RESUMED"
+    };
+  }
+  if (key === "final-score-v2-shadow") {
+    return {
+      batchTable: "v2_final_score_batches",
+      rowTable: "v2_final_score_current",
+      batchInputField: "final_score_v2_batch_id",
+      offsetInputField: "final_score_v2_offset",
+      sourceInputField: "source_hp_v3_batch_id",
+      sourceIdColumn: "source_hp_v3_batch_id",
+      writtenColumn: "rows_written",
+      mode: "final_score_v2_shadow",
+      logicalWorker: "alphadog-v2-final-score-v2-shadow",
+      certification: "FINAL_SCORE_V2_SHADOW_STALE_DISPATCH_AUTO_RESUMED"
+    };
+  }
+  if (key === "final-board-v3-shadow") {
+    return {
+      batchTable: "v2_final_board_batches",
+      rowTable: "v2_final_board_current",
+      batchInputField: "final_board_v3_batch_id",
+      offsetInputField: "final_board_v3_offset",
+      sourceInputField: "source_final_score_v2_batch_id",
+      sourceIdColumn: "source_final_score_v2_batch_id",
+      writtenColumn: "rows_written",
+      mode: "score_final_board_v3_shadow",
+      logicalWorker: "alphadog-v2-final-board-v3-shadow",
+      certification: "FINAL_BOARD_V3_SHADOW_STALE_DISPATCH_AUTO_RESUMED"
+    };
+  }
+  return null;
+}
+
+async function rescueStaleShadowV2DispatchStartedForResume(env, trigger) {
+  if (!env || !env.CONTROL_DB || !env.SCORE_DB) return null;
+  const row = await first(env.CONTROL_DB,
+    `SELECT q.request_id, q.chain_id, q.job_key, q.worker_name, q.status, q.tick_count, q.input_json, q.output_json, q.updated_at, q.started_at, q.run_after,
+            r.run_id AS stale_run_id, r.started_at AS stale_run_started_at
+       FROM control_job_queue q
+       JOIN control_job_runs r
+         ON r.request_id=q.request_id
+        AND r.job_key=q.job_key
+        AND r.status='running'
+        AND r.finished_at IS NULL
+        AND r.certification_status='ORCHESTRATOR_DISPATCH_STARTED'
+        AND r.output_json IS NULL
+      WHERE q.job_key IN ('score-enrichment-v2-shadow','hit-probability-v3-shadow','final-score-v2-shadow','final-board-v3-shadow')
+        AND q.worker_name='alphadog-v2-score-audit'
+        AND q.status='running'
+        AND q.finished_at IS NULL
+        AND datetime(COALESCE(q.updated_at, q.started_at, q.created_at)) <= datetime(CURRENT_TIMESTAMP, '-90 seconds')
+        AND datetime(r.started_at) <= datetime(CURRENT_TIMESTAMP, '-90 seconds')
+      ORDER BY datetime(COALESCE(q.updated_at, q.started_at, q.created_at)) ASC
+      LIMIT 1`
+  );
+  if (!row || !row.request_id) return null;
+  const meta = shadowV2ResumeMeta(row.job_key);
+  if (!meta) return null;
+
+  let rowInput = parseJsonSafeText(row.input_json || "{}", {});
+  if (!rowInput || typeof rowInput !== "object") rowInput = {};
+  let rowOutput = parseJsonSafeText(row.output_json || "{}", {});
+  if (!rowOutput || typeof rowOutput !== "object") rowOutput = {};
+  const knownBatchId = String(rowInput[meta.batchInputField] || rowInput.resume_batch_id || rowOutput.batch_id || rowOutput[meta.batchInputField] || "");
+  if (!knownBatchId) return null;
+
+  const batch = await first(env.SCORE_DB,
+    `SELECT batch_id, status, source_rows_read, ${meta.writtenColumn} AS written_rows, ${meta.sourceIdColumn} AS source_batch_id, updated_at
+       FROM ${meta.batchTable}
+      WHERE batch_id=?
+        AND request_id=?
+      LIMIT 1`,
+    knownBatchId, row.request_id
+  );
+  if (!batch || !batch.batch_id) return null;
+  const rowCount = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM ${meta.rowTable} WHERE batch_id=?`, batch.batch_id);
+  const rowsWritten = Math.max(Number(batch.written_rows || 0), Number(rowCount && rowCount.rows || 0));
+  const sourceRowsRead = Number(batch.source_rows_read || rowOutput.rows_read || rowOutput.source_rows_read || 0);
+  if (!(rowsWritten > 0 && (!sourceRowsRead || rowsWritten < sourceRowsRead))) return null;
+
+  const nextInput = {
+    ...rowInput,
+    resume_batch_id: batch.batch_id,
+    [meta.batchInputField]: batch.batch_id,
+    [meta.offsetInputField]: rowsWritten,
+    v2_v3_shadow_resume: true,
+    stale_shadow_dispatch_auto_resume: true,
+    stale_shadow_dispatch_auto_resume_at: new Date().toISOString(),
+    stale_shadow_dispatch_auto_resume_version: SYSTEM_VERSION,
+    stale_shadow_dispatch_auto_resume_trigger: trigger,
+    stale_dispatch_run_id: row.stale_run_id || null
+  };
+  if (batch.source_batch_id) nextInput[meta.sourceInputField] = batch.source_batch_id;
+
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    processed_by: WORKER_NAME,
+    worker_name: row.worker_name,
+    logical_worker_name: meta.logicalWorker,
+    deployed_worker_slot: "alphadog-v2-score-audit",
+    job_key: row.job_key,
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    mode: meta.mode,
+    status: "V2_V3_SHADOW_STALE_DISPATCH_AUTO_RESUMED",
+    certification: meta.certification,
+    certification_grade: "RECOVERED_PARTIAL_CONTINUE",
+    batch_id: batch.batch_id,
+    rows_read: sourceRowsRead,
+    rows_written: rowsWritten,
+    next_offset: rowsWritten,
+    remaining_rows: sourceRowsRead > rowsWritten ? sourceRowsRead - rowsWritten : null,
+    stale_running_auto_resume: true,
+    stale_threshold_seconds: 90,
+    previous_queue_status: row.status,
+    previous_queue_updated_at: row.updated_at || null,
+    stale_run_id: row.stale_run_id || null,
+    stale_run_started_at: row.stale_run_started_at || null,
+    batch_status: batch.status || null,
+    batch_updated_at: batch.updated_at || null,
+    source_batch_id: batch.source_batch_id || null,
+    worker_owned_shadow_logic: true,
+    orchestrator_dispatch_only: true,
+    no_new_batch_created: true,
+    no_formula_change: true,
+    no_hp_math_change: true,
+    no_calibration_change: true,
+    no_production_table_mutation: true,
+    writes_v2_shadow_tables_only: true
+  };
+
+  await run(env.CONTROL_DB,
+    `UPDATE control_job_runs
+        SET status='failed_stale_auto_recovered',
+            data_ok=0,
+            certification_status=?,
+            finished_at=CURRENT_TIMESTAMP,
+            elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END,
+            output_json=?,
+            error_code='v2_v3_shadow_stale_dispatch_auto_resumed',
+            error_message='Stale ORCHESTRATOR_DISPATCH_STARTED shadow dispatch was auto-closed so the same queue row can resume from worker-owned v2_* batch evidence.'
+      WHERE request_id=?
+        AND job_key=?
+        AND status='running'
+        AND certification_status='ORCHESTRATOR_DISPATCH_STARTED'
+        AND finished_at IS NULL`,
+    meta.certification, safeStringifyD1(output), row.request_id, row.job_key
+  );
+
+  await run(env.CONTROL_DB,
+    `UPDATE control_job_queue
+        SET status='pending',
+            run_after=CURRENT_TIMESTAMP,
+            finished_at=NULL,
+            updated_at=CURRENT_TIMESTAMP,
+            input_json=?,
+            output_json=?,
+            error_code=NULL,
+            error_message=NULL
+      WHERE request_id=?
+        AND job_key IN ('score-enrichment-v2-shadow','hit-probability-v3-shadow','final-score-v2-shadow','final-board-v3-shadow')
+        AND worker_name='alphadog-v2-score-audit'
+        AND status='running'
+        AND finished_at IS NULL`,
+    safeStringifyD1(nextInput), safeStringifyD1(output), row.request_id
+  );
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'v2_v3_shadow_stale_dispatch_auto_resumed', 'Auto-recovered stale V2/V3 shadow dispatch-start row back to pending from worker-owned v2_* batch evidence', ?, CURRENT_TIMESTAMP)",
+    row.request_id, row.stale_run_id || null, WORKER_NAME, row.job_key, JSON.stringify(output).slice(0, 9000)
+  );
+
+  return {
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    job_key: row.job_key,
+    worker_name: row.worker_name,
+    status: 'pending',
+    tick_count: row.tick_count,
+    input_json: safeStringifyD1(nextInput)
+  };
 }
 
 async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle = 1, maxMs = 65000, ctx = null, requestUrl = null, pumpDepth = 0, maxPumpChains = 12) {
