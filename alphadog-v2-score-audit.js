@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-score-audit-v0.4.53-v2-shadow-resume-cursor-fix";
+const VERSION = "alphadog-v2-score-audit-v0.4.55-v2-shadow-heartbeat-version-parity";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -5033,7 +5033,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.54-v2-shadow-canonical-batch-reuse";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.55-v2-shadow-heartbeat-version-parity";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5590,7 +5590,7 @@ export default {
         const isHitProbabilityEstimate = input && (input.mode === "hit_probability_current_estimate" || input.job_key === "hit-probability");
         const isHpBoard = input && (input.mode === HP_BOARD_MODE || input.job_key === HP_BOARD_JOB_KEY);
         const isHitProbability = isHitProbabilityEstimate || isHpBoard || isHitProbabilityV3Shadow;
-        await controlLifecycleHeartbeat(env, input, isShadowV2Lane ? "running_v2_v3_shadow_scoring_worker_started" : (isEnrichmentV1 ? "running_score_enrichment_v1_worker_started" : (isHitProbability ? "running_hit_probability_worker_started" : (isSimulation ? "running_scoring_engine_simulation_worker_started" : (isFinalBoard ? "running_scoring_final_board_worker_started" : "running_scoring_engine_worker_started")))), { selected_mode: input.mode || null, worker_owned_shadow_lane:isShadowV2Lane });
+        await controlLifecycleHeartbeat(env, input, isShadowV2Lane ? "running_v2_v3_shadow_scoring_worker_started" : (isEnrichmentV1 ? "running_score_enrichment_v1_worker_started" : (isHitProbability ? "running_hit_probability_worker_started" : (isSimulation ? "running_scoring_engine_simulation_worker_started" : (isFinalBoard ? "running_scoring_final_board_worker_started" : "running_scoring_engine_worker_started")))), { selected_mode: input.mode || null, worker_owned_shadow_lane:isShadowV2Lane, version: isShadowV2Lane ? SHADOW_SCORE_VERSION : controlVersion(), worker_name: isShadowV2Lane ? WORKER_NAME : controlWorkerName() });
         const isFrameworkGate = input && input.mode === "scoring_engine_framework_profile_gate" && input.framework_only === true && input.real_scoring_enabled !== true;
         let output;
         if (isScoreEnrichmentV2Shadow) {
