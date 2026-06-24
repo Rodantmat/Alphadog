@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.11-dynamic-v2-current-source-fix";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.12-dynamic-v2-safe-chunk-accelerator";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -775,8 +775,12 @@ async function runBaselineV2(env,input={}){
   const requestId=String(input.request_id||rid("baseline_v2")); const runId=String(input.run_id||rid("run"));
   const before=await productionCounts(env);
   const batchId=String(input.batch_id||rid("player_baseline_v2_batch"));
-  const chunkSize=clamp(Number(input.v2_chunk_size||8),1,8); const cursor=Number(input.v2_cursor_offset||0);
-  const startedMs=Date.now(); const softYieldMs=18000;
+  const requestedChunkSize=Number(input.dynamic_v2_chunk_size || input.v2_chunk_size || 32);
+  const fullRunBridgeMode=String(input.mode||"")==="baseline_v2_heb" && String(input.expansion_mode||"")==="baseline_v2_heb" && input.parent_full_run!==false;
+  const minFullRunChunkSize=Number(input.dynamic_v2_min_chunk_size || 24);
+  const effectiveRequestedChunkSize=(fullRunBridgeMode && requestedChunkSize < minFullRunChunkSize) ? minFullRunChunkSize : requestedChunkSize;
+  const chunkSize=clamp(effectiveRequestedChunkSize,1,48); const cursor=Number(input.v2_cursor_offset||0);
+  const startedMs=Date.now(); const softYieldMs=Number(input.dynamic_v2_soft_yield_ms || 18000);
   if(cursor===0){
     await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_sanity_v2_batches (batch_id,request_id,run_id,mode,status,worker_version,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"baseline_v2_heb","running",VERSION);
     await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_hp_v2_batches (batch_id,request_id,run_id,mode,status,worker_version,source_sanity_batch_id,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"baseline_v2_heb","running",VERSION,batchId);
@@ -909,9 +913,9 @@ async function fullRun(env,input={}){
   }
 
   if(!state.dynamic_v2_completed){
-    dynamicV2 = await runBaselineV2(env,{...input, mode:"baseline_v2_heb", expansion_mode:"baseline_v2_heb", request_id:requestId, run_id:runId, batch_id:input.dynamic_v2_batch_id || state.dynamic_v2_batch_id || input.v2_batch_id || null, v2_cursor_offset:input.v2_cursor_offset || 0, v2_chunk_size:Math.min(Number(input.v2_chunk_size || 24), 24)});
+    dynamicV2 = await runBaselineV2(env,{...input, mode:"baseline_v2_heb", expansion_mode:"baseline_v2_heb", request_id:requestId, run_id:runId, batch_id:input.dynamic_v2_batch_id || state.dynamic_v2_batch_id || input.v2_batch_id || null, v2_cursor_offset:input.v2_cursor_offset || 0, dynamic_v2_chunk_size:Number(input.dynamic_v2_chunk_size || input.v2_chunk_size || 32), dynamic_v2_min_chunk_size:Number(input.dynamic_v2_min_chunk_size || 24), v2_chunk_size:Number(input.v2_chunk_size || input.dynamic_v2_chunk_size || 32)});
     if(dynamicV2 && dynamicV2.partial_continue){
-      const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, source_sanity_batch_id:sourceSanityBatchId, hp_batch_id:(hp && hp.batch_id) || input.hp_batch_id || state.hp_batch_id || null, dynamic_v2_batch_id:dynamicV2.batch_id, v2_cursor_offset:dynamicV2.v2_cursor_offset, v2_chunk_size:dynamicV2.v2_chunk_size || 24, expansion_full_run_state:{mining_completed:true,line_inventory_completed:true,sanity_completed:true,hp_completed:true,dynamic_v2_completed:false,source_sanity_batch_id:sourceSanityBatchId,production_counts_before:before,hp_batch_id:(hp && hp.batch_id) || input.hp_batch_id || state.hp_batch_id || null,dynamic_v2_batch_id:dynamicV2.batch_id}};
+      const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, source_sanity_batch_id:sourceSanityBatchId, hp_batch_id:(hp && hp.batch_id) || input.hp_batch_id || state.hp_batch_id || null, dynamic_v2_batch_id:dynamicV2.batch_id, v2_cursor_offset:dynamicV2.v2_cursor_offset, dynamic_v2_chunk_size:dynamicV2.v2_chunk_size || input.dynamic_v2_chunk_size || 32, dynamic_v2_min_chunk_size:input.dynamic_v2_min_chunk_size || 24, v2_chunk_size:dynamicV2.v2_chunk_size || input.v2_chunk_size || 32, expansion_full_run_state:{mining_completed:true,line_inventory_completed:true,sanity_completed:true,hp_completed:true,dynamic_v2_completed:false,source_sanity_batch_id:sourceSanityBatchId,production_counts_before:before,hp_batch_id:(hp && hp.batch_id) || input.hp_batch_id || state.hp_batch_id || null,dynamic_v2_batch_id:dynamicV2.batch_id}};
       return baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_DYNAMIC_V2_HEB",certification:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_DYNAMIC_V2_HEB",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,next_input_json:nextInput,dynamic_v2_heb:dynamicV2,rows_written:Number(dynamicV2.rows_written||0),current_system_mutated:false,dynamic_v2_heb_included_in_full_run:true});
     }
   } else {
