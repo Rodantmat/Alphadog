@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-score-audit-v0.4.60-v2-shadow-variant-lineage-fix";
+const VERSION = "alphadog-v2-score-audit-v0.4.61-v3-board-calendar-guard";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -5033,7 +5033,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.60-v2-shadow-variant-lineage-fix";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.61-v3-board-calendar-guard";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5555,6 +5555,63 @@ async function runFinalScoreV2Shadow(env, input = {}) {
   await run(env.SCORE_DB, `UPDATE v2_final_score_batches SET status=?, source_rows_read=?, rows_written=?, eligible_rows=?, review_rows=?, blocked_rows=?, issue_rows_written=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", total, output.rows_written, output.eligible_rows, output.review_rows, output.blocked_rows, output.issue_rows_written, cert, grade, v2Json(output,14000), batchId);
   return output;
 }
+
+function v3TodayUtc() {
+  return new Date().toISOString().slice(0, 10);
+}
+function v3CalendarGameOpen(row, nowMs = Date.now()) {
+  if (!row) return false;
+  const officialDate = String(row.official_date || "").slice(0, 10);
+  if (officialDate && officialDate < v3TodayUtc()) return false;
+  const detailed = String(row.detailed_state || "").toLowerCase();
+  const abstractState = String(row.abstract_game_state || "").toLowerCase();
+  const statusCode = String(row.status_code || "").toUpperCase();
+  if (Number(row.is_final || 0) || Number(row.is_postponed || 0) || Number(row.is_suspended || 0) || Number(row.is_cancelled || 0)) return false;
+  if (/final|game over|postponed|suspended|cancel/.test(detailed) || /final|postponed|cancel/.test(abstractState)) return false;
+  if (["F", "O", "C", "D", "DR", "PW", "PR"].includes(statusCode)) return false;
+  const t = Date.parse(row.game_time_utc || "");
+  if (!Number.isFinite(t)) return false;
+  return t > nowMs;
+}
+async function v3CalendarContextMap(env, gamePks = []) {
+  const ids = [...new Set((gamePks || []).map(v => Number(v)).filter(Number.isFinite))];
+  const map = new Map();
+  if (!ids.length || !env.TEAM_DB) return map;
+  const chunkSize = 90;
+  for (let i = 0; i < ids.length; i += chunkSize) {
+    const chunk = ids.slice(i, i + chunkSize);
+    const placeholders = chunk.map(() => "?").join(",");
+    const rows = await all(env.TEAM_DB, `SELECT game_pk, official_date, game_time_utc, game_time_pt, status_code, abstract_game_state, detailed_state, is_scheduled, is_pregame, is_live, is_final, is_postponed, is_suspended, is_cancelled, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name FROM mlb_game_calendar WHERE game_pk IN (${placeholders})`, ...chunk);
+    for (const r of rows || []) map.set(Number(r.game_pk), r);
+  }
+  return map;
+}
+function v3CalendarDetails(row) {
+  if (!row) return null;
+  return {
+    game_pk: row.game_pk == null ? null : Number(row.game_pk),
+    official_date: row.official_date || null,
+    game_time_utc: row.game_time_utc || null,
+    game_time_pt: row.game_time_pt || null,
+    status_code: row.status_code || null,
+    abstract_game_state: row.abstract_game_state || null,
+    detailed_state: row.detailed_state || null,
+    is_scheduled: Number(row.is_scheduled || 0),
+    is_pregame: Number(row.is_pregame || 0),
+    is_live: Number(row.is_live || 0),
+    is_final: Number(row.is_final || 0),
+    is_postponed: Number(row.is_postponed || 0),
+    is_suspended: Number(row.is_suspended || 0),
+    is_cancelled: Number(row.is_cancelled || 0),
+    home_team_id: row.home_team_id == null ? null : Number(row.home_team_id),
+    away_team_id: row.away_team_id == null ? null : Number(row.away_team_id),
+    home_team_name: row.home_team_name || null,
+    away_team_name: row.away_team_name || null,
+    venue_id: row.venue_id == null ? null : Number(row.venue_id),
+    venue_name: row.venue_name || null
+  };
+}
+
 async function runFinalBoardV3Shadow(env, input = {}) {
   const started = Date.now();
   if (!env.SCORE_DB) return baseIdentity({ ok:false,data_ok:false,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,status:"blocked_missing_score_db",certification:"FINAL_BOARD_V3_SHADOW_MISSING_SCORE_DB",certification_grade:"BLOCKED" });
@@ -5582,16 +5639,25 @@ async function runFinalBoardV3Shadow(env, input = {}) {
     updateBinds:[runId, SHADOW_SCORE_VERSION, FINAL_BOARD_V3_SHADOW_MODE, sourceBatchId, batchId]
   });
   offset = resumeState.offset;
-  const totalRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_current WHERE batch_id=?`, sourceBatchId);
-  const eligibleRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_current WHERE batch_id=? AND eligible_for_final_board=1`, sourceBatchId);
+  const boardOfficialDateFloor = String(v2FirstDefined(input, nestedInput, ["board_official_date_floor"]) || v3TodayUtc()).slice(0, 10);
+  const totalRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_current WHERE batch_id=? AND official_date >= ?`, sourceBatchId, boardOfficialDateFloor);
+  const eligibleRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_current WHERE batch_id=? AND eligible_for_final_board=1 AND official_date >= ?`, sourceBatchId, boardOfficialDateFloor);
   const total = Number(totalRow && totalRow.rows || 0);
   const eligibleTotal = Number(eligibleRow && eligibleRow.rows || 0);
-  const rows = await all(env.SCORE_DB, `SELECT * FROM v2_final_score_current WHERE batch_id=? AND eligible_for_final_board=1 ORDER BY final_score_0_100 DESC, hit_probability_0_100 DESC, certainty_0_100 DESC, final_score_v2_row_id LIMIT ? OFFSET ?`, sourceBatchId, limit, offset);
+  const rows = await all(env.SCORE_DB, `SELECT * FROM v2_final_score_current WHERE batch_id=? AND eligible_for_final_board=1 AND official_date >= ? ORDER BY final_score_0_100 DESC, hit_probability_0_100 DESC, certainty_0_100 DESC, final_score_v2_row_id LIMIT ? OFFSET ?`, sourceBatchId, boardOfficialDateFloor, limit, offset);
+  const gameMap = await v3CalendarContextMap(env, rows.map(r => r.game_pk));
+  const rankStart = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_board_current WHERE batch_id=?`, batchId);
   const stmts = [];
-  let rank = offset + 1;
+  let rank = Number(rankStart && rankStart.rows || 0) + 1;
+  let skippedClosedGames = 0;
+  let skippedMissingCalendar = 0;
   for (const row of rows) {
+    const gameContext = gameMap.get(Number(row.game_pk));
+    if (!gameContext) { skippedMissingCalendar++; continue; }
+    if (!v3CalendarGameOpen(gameContext)) { skippedClosedGames++; continue; }
+    const calendarDetails = v3CalendarDetails(gameContext);
     const id = `v3_board|${batchId}|${row.final_score_v2_row_id}`;
-    stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_final_board_current (board_v3_row_id,batch_id,source_final_score_v2_batch_id,final_score_v2_row_id,prepared_row_id,matrix_id,source_line_id,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,source_key,line_value,selected_side,payout_variant,rank_order,hit_probability_0_100,certainty_0_100,overall_score_0_100,board_status,board_grade,board_lane,review_playable,live_playable,sort_tuple_json,details_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(id,batchId,sourceBatchId,row.final_score_v2_row_id,row.prepared_row_id,row.matrix_id,row.source_line_id,row.game_pk,row.official_date,row.mlb_player_id,row.player_name,row.canonical_prop_key,row.source_key,row.line_value,row.selected_side,row.payout_variant,rank,row.hit_probability_0_100,row.certainty_0_100,row.final_score_0_100,"shadow_review_board","REVIEW","shadow_v3",1,0,v2Json([row.final_score_0_100,row.hit_probability_0_100,row.certainty_0_100,rank],1000),v2Json({ review_only:true, not_production_final_board:true, not_live_plays:true },3000)));
+    stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_final_board_current (board_v3_row_id,batch_id,source_final_score_v2_batch_id,final_score_v2_row_id,prepared_row_id,matrix_id,source_line_id,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,source_key,line_value,selected_side,payout_variant,rank_order,hit_probability_0_100,certainty_0_100,overall_score_0_100,board_status,board_grade,board_lane,review_playable,live_playable,sort_tuple_json,details_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(id,batchId,sourceBatchId,row.final_score_v2_row_id,row.prepared_row_id,row.matrix_id,row.source_line_id,row.game_pk,row.official_date,row.mlb_player_id,row.player_name,row.canonical_prop_key,row.source_key,row.line_value,row.selected_side,row.payout_variant,rank,row.hit_probability_0_100,row.certainty_0_100,row.final_score_0_100,"shadow_review_board","REVIEW","shadow_v3",1,0,v2Json([row.final_score_0_100,row.hit_probability_0_100,row.certainty_0_100,rank],1000),v2Json({ review_only:true, not_production_final_board:true, not_live_plays:true, game_context:calendarDetails, game_status_guard:"official_date_today_or_future_and_game_time_utc_gt_now" },3000)));
     rank++;
   }
   const eventFlush = await v2Flush(env.SCORE_DB, stmts, 25);
@@ -5603,7 +5669,7 @@ async function runFinalBoardV3Shadow(env, input = {}) {
   const issueCount = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_board_issues WHERE batch_id=?`, batchId);
   const cert = complete ? (leakRows === 0 ? "FINAL_BOARD_V3_SHADOW_CERTIFIED_REVIEW_ONLY" : "FINAL_BOARD_V3_SHADOW_CERTIFICATION_FAILED") : "FINAL_BOARD_V3_SHADOW_PARTIAL_CONTINUE";
   const grade = complete ? (leakRows === 0 ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : "FAILED") : "PARTIAL";
-  const output = baseIdentity({ ok:leakRows===0,data_ok:leakRows===0,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:complete?"completed_final_board_v3_shadow":"partial_continue_final_board_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_board_v3_batch_id:batchId,source_final_score_v2_batch_id:sourceBatchId,source_rows_read:total,eligible_rows_read:eligibleTotal,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:rows.length,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,chunk_rows_target_150:true,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,not_production_final_board:true,live_playable_forced_zero:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
+  const output = baseIdentity({ ok:leakRows===0,data_ok:leakRows===0,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:complete?"completed_final_board_v3_shadow":"partial_continue_final_board_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_board_v3_batch_id:batchId,source_final_score_v2_batch_id:sourceBatchId,source_rows_read:total,eligible_rows_read:eligibleTotal,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:stmts.length,source_rows_scanned_this_invocation:rows.length,skipped_closed_or_started_games:skippedClosedGames,skipped_missing_calendar_games:skippedMissingCalendar,board_official_date_floor:boardOfficialDateFloor,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,chunk_rows_target_150:true,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,not_production_final_board:true,live_playable_forced_zero:true,calendar_pregame_guard:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE v2_final_board_batches SET status=?, source_rows_read=?, eligible_rows_read=?, rows_written=?, issue_rows_written=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", total, eligibleTotal, output.rows_written, output.issue_rows_written, cert, grade, v2Json(output,14000), batchId);
   return output;
 }

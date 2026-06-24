@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-certification-center";
 const LOGICAL_APP = "alphadog-v2-main-ui";
-const VERSION = "alphadog-v2-certification-center-v0.1.37-queryall-helper-hotfix";
+const VERSION = "alphadog-v2-certification-center-v0.1.37-v3-board-calendar-guard";
 const JOB_KEY = "main-ui-board-viewer";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -99,14 +99,6 @@ async function readJsonSafe(request) {
   } catch {
     return {};
   }
-}
-
-async function queryAll(db, sql, params = []) {
-  if (!db || typeof db.prepare !== "function") throw new Error("D1 binding missing for queryAll");
-  const stmt = db.prepare(sql);
-  const bound = Array.isArray(params) && params.length ? stmt.bind(...params) : stmt;
-  const res = await bound.all();
-  return Array.isArray(res?.results) ? res.results : [];
 }
 
 function baseIdentity(env) {
@@ -699,6 +691,10 @@ function buildCurrentSql(url) {
   const minHp = url.searchParams.get("min_hit_probability");
   const minScore = url.searchParams.get("min_score");
   const date = url.searchParams.get("date");
+  if (!date) {
+    where.push("f.official_date >= date('now')");
+    where.push("(json_extract(f.details_json, '$.game_context.game_time_utc') IS NULL OR json_extract(f.details_json, '$.game_context.game_time_utc') > strftime('%Y-%m-%dT%H:%M:%SZ','now'))");
+  }
   const limit = clampLimit(url.searchParams.get("limit"));
   function inClause(column, values) { if (!values.length) return; where.push(`${column} IN (${values.map(() => "?").join(",")})`); params.push(...values); }
   inClause("f.canonical_prop_key", propKeys);
@@ -747,7 +743,11 @@ function buildCurrentSql(url) {
       f.source_key,
       f.game_pk,
       f.official_date,
-      NULL AS official_game_time_utc,
+      json_extract(f.details_json, '$.game_context.game_time_utc') AS official_game_time_utc,
+      json_extract(f.details_json, '$.game_context.game_time_pt') AS official_game_time_pt,
+      json_extract(f.details_json, '$.game_context.status_code') AS game_status_code,
+      json_extract(f.details_json, '$.game_context.abstract_game_state') AS abstract_game_state,
+      json_extract(f.details_json, '$.game_context.detailed_state') AS detailed_state,
       f.prepared_row_id,
       f.matrix_id,
       f.source_line_id,
@@ -781,6 +781,9 @@ function buildCurrentSql(url) {
       COALESCE(json_extract(f.details_json, '$.game_context.home_team_name'), p.team_full_name, p.team) AS home_team_name,
       COALESCE(json_extract(f.details_json, '$.game_context.away_team_name'), p.opponent_full_name, p.opponent) AS away_team_name,
       json_extract(f.details_json, '$.game_context.venue_name') AS venue_name,
+      json_extract(f.details_json, '$.game_context.venue_id') AS venue_id,
+      json_extract(f.details_json, '$.game_context.home_team_id') AS home_team_id,
+      json_extract(f.details_json, '$.game_context.away_team_id') AS away_team_id,
       COALESCE(json_extract(p.row_payload_json, '$.source_line_type'), f.payout_variant, 'regular') AS source_line_type,
       CASE WHEN LOWER(COALESCE(f.payout_variant,''))='goblin' THEN 1 ELSE 0 END AS is_goblin,
       CASE WHEN LOWER(COALESCE(f.payout_variant,''))='demon' THEN 1 ELSE 0 END AS is_demon,
@@ -876,7 +879,9 @@ async function apiDossier(env, url) {
       f.source_key,
       f.game_pk,
       f.official_date,
-      NULL AS official_game_time_utc,
+      json_extract(f.details_json, '$.game_context.game_time_utc') AS official_game_time_utc,
+      json_extract(f.details_json, '$.game_context.game_time_pt') AS official_game_time_pt,
+      json_extract(f.details_json, '$.game_context.status_code') AS game_status_code,
       f.prepared_row_id,
       f.matrix_id,
       f.source_line_id,
@@ -969,7 +974,9 @@ async function apiDossier(env, url) {
       f.source_key,
       f.game_pk,
       f.official_date,
-      NULL AS official_game_time_utc,
+      json_extract(f.details_json, '$.game_context.game_time_utc') AS official_game_time_utc,
+      json_extract(f.details_json, '$.game_context.game_time_pt') AS official_game_time_pt,
+      json_extract(f.details_json, '$.game_context.status_code') AS game_status_code,
       f.prepared_row_id,
       f.matrix_id,
       f.source_line_id,
@@ -1065,10 +1072,23 @@ async function apiDossier(env, url) {
   });
 }
 
+
+function currentLegOpen(row) {
+  const date = String(row.official_date || "").slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+  if (date && date < today) return false;
+  const t = Date.parse(row.official_game_time_utc || "");
+  if (Number.isFinite(t) && t <= Date.now()) return false;
+  const detailed = String(row.detailed_state || row.game_status_code || "").toLowerCase();
+  if (/final|game over|postponed|suspended|cancel/.test(detailed)) return false;
+  return true;
+}
+
 async function apiCurrent(env, url) {
   if (!env.SCORE_DB) return jsonResponse({ ok: false, error: "SCORE_DB binding missing", version: VERSION }, 500);
   const { sql, params, limit } = buildCurrentSql(url);
-  const rows = await queryAll(env.SCORE_DB, sql, params);
+  const rawRows = await queryAll(env.SCORE_DB, sql, params);
+  const rows = rawRows.filter(currentLegOpen);
   return jsonResponse({
     ok: true,
     data_ok: true,
@@ -1077,6 +1097,8 @@ async function apiCurrent(env, url) {
     logical_app: LOGICAL_APP,
     route: "/api/main-board/current",
     row_count: rows.length,
+    raw_row_count_before_calendar_guard: rawRows.length,
+    calendar_guard_hidden_rows: Math.max(0, rawRows.length - rows.length),
     limit,
     rows: rows.map(rowToApi),
     semantics: {
@@ -1117,6 +1139,8 @@ async function apiFilters(env) {
     WHERE batch_id=(SELECT batch_id FROM v2_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
       AND review_playable=1
       AND COALESCE(live_playable,0)=0
+      AND official_date >= date('now')
+      AND (json_extract(details_json, '$.game_context.game_time_utc') IS NULL OR json_extract(details_json, '$.game_context.game_time_utc') > strftime('%Y-%m-%dT%H:%M:%SZ','now'))
     GROUP BY source_key, canonical_prop_key, prop_family, payout_variant, side_mode, is_goblin, is_demon, is_standard, probability_band, board_tier, review_playable, live_playable
     ORDER BY source_key, prop_family, canonical_prop_key, payout_variant
   `);
@@ -1415,7 +1439,9 @@ async function fetchBoardRowsByIds(env, ids) {
       f.rank_order,
       f.game_pk,
       f.official_date,
-      NULL AS official_game_time_utc,
+      json_extract(f.details_json, '$.game_context.game_time_utc') AS official_game_time_utc,
+      json_extract(f.details_json, '$.game_context.game_time_pt') AS official_game_time_pt,
+      json_extract(f.details_json, '$.game_context.status_code') AS game_status_code,
       f.mlb_player_id AS player_id,
       f.player_name,
       NULL AS team_id,
@@ -1549,7 +1575,7 @@ async function apiPlayerProfile(env, url) {
   const ids = [p.player_id, p.mlb_player_id].filter(v=>v!=null && String(v)!=="");
   const q = ids.map(()=>"?").join(",");
   const legs = q ? await optionalQueryAll(env.SCORE_DB, `
-    SELECT board_v3_row_id AS final_board_row_id, source_key, rank_order, game_pk, official_date, NULL AS official_game_time_utc, mlb_player_id AS player_id, player_name, NULL AS team_id, NULL AS opponent_team_id, canonical_prop_key, line_value, selected_side, hit_probability_0_100 AS estimated_hit_probability_0_100, certainty_0_100 AS probability_confidence_0_100, overall_score_0_100 AS score_0_100, board_grade, board_lane
+    SELECT board_v3_row_id AS final_board_row_id, source_key, rank_order, game_pk, official_date, json_extract(details_json, '$.game_context.game_time_utc') AS official_game_time_utc, mlb_player_id AS player_id, player_name, NULL AS team_id, NULL AS opponent_team_id, canonical_prop_key, line_value, selected_side, hit_probability_0_100 AS estimated_hit_probability_0_100, certainty_0_100 AS probability_confidence_0_100, overall_score_0_100 AS score_0_100, board_grade, board_lane
     FROM v2_final_board_current
     WHERE batch_id = (SELECT batch_id FROM v2_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
       AND mlb_player_id IN (${q})
