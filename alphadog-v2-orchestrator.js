@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.297-v2-shadow-safe-shell-dispatch";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.298-v2-shadow-worker-version-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -13434,7 +13434,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
-    deployed_slot_version: isShadowV2Job ? "alphadog-v2-score-audit-v0.4.50-v2-v3-shadow-worker-owned-hotfix" : (isHitProbabilityV2Job ? "alphadog-v2-score-audit-v0.4.48-hit-probability-v2-current" : (isEnrichmentJob ? "alphadog-v2-score-audit-v0.4.47-enrichment-v1-250x25-resume-safe" : (isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock"))),
+    deployed_slot_version: isShadowV2Job ? "alphadog-v2-score-audit-v0.4.51-v2-shadow-no-like-dispatch-guard" : (isHitProbabilityV2Job ? "alphadog-v2-score-audit-v0.4.48-hit-probability-v2-current" : (isEnrichmentJob ? "alphadog-v2-score-audit-v0.4.47-enrichment-v1-250x25-resume-safe" : (isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock"))),
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
