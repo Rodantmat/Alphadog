@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.9-parallel-v2-heb-direct-dominance";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.10-expansion-v2-full-run-bridge";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -842,21 +842,29 @@ async function certifier(env,input={}){
   const lineInventoryIssues=await tableCount(env.SCORE_DB,"expansion_line_inventory_issues");
   const sanityRows=await tableCount(env.SCORE_DB,"expansion_player_baseline_sanity_current");
   const hpRows=await tableCount(env.SCORE_DB,"expansion_player_baseline_hp_current");
+  const dynamicV2HpRows=await tableCount(env.SCORE_DB,"player_baseline_hp_v2_current");
   const sanityNs=await all(env.SCORE_DB,`SELECT profile_namespace, COUNT(*) AS rows FROM expansion_player_baseline_sanity_current GROUP BY profile_namespace ORDER BY profile_namespace`);
   const hpNs=await all(env.SCORE_DB,`SELECT profile_namespace, selected_side, COUNT(*) AS rows FROM expansion_player_baseline_hp_current GROUP BY profile_namespace, selected_side ORDER BY profile_namespace, selected_side`);
+  const dynamicV2Props=await all(env.SCORE_DB,`SELECT canonical_prop_key, COUNT(*) AS rows, COUNT(DISTINCT player_id) AS players, COUNT(DISTINCT line_value) AS line_values, COUNT(DISTINCT selected_side) AS sides FROM player_baseline_hp_v2_current GROUP BY canonical_prop_key ORDER BY canonical_prop_key`);
+  const dynamicV2PropSet=new Set(dynamicV2Props.map(r=>String(r.canonical_prop_key||'')));
+  const dynamicInventoryTargets=await all(env.SCORE_DB,`SELECT canonical_prop_key, COUNT(*) AS inventory_rows, SUM(source_rows) AS source_rows, SUM(missing_baseline_rows) AS old_baseline_missing_rows FROM expansion_line_inventory_current WHERE canonical_prop_key IN ('fantasy','fantasy_score','rfi_nrfi','plate_appearances') GROUP BY canonical_prop_key ORDER BY canonical_prop_key`);
+  const dynamicInventorySet=new Set(dynamicInventoryTargets.map(r=>String(r.canonical_prop_key||'')));
   const required=["RA_","PFS_PP_","PFS_SL_","RFI_PP_","RFI_SL_"];
+  const requiredDynamicProps=["fantasy","fantasy_score","rfi_nrfi","plate_appearances"];
   const sanitySet=new Set(sanityNs.map(r=>String(r.profile_namespace)));
   const hpSideSet=new Set(hpNs.map(r=>`${r.profile_namespace}:${r.selected_side}`));
   const blockers=[]; const warnings=[];
   for(const ns of required){ if(!sanitySet.has(ns)) blockers.push(`missing_sanity_namespace_${ns}`); if(!hpSideSet.has(`${ns}:more`)) blockers.push(`missing_hp_more_${ns}`); if(!hpSideSet.has(`${ns}:less`)) blockers.push(`missing_hp_less_${ns}`); }
+  for(const prop of requiredDynamicProps){ if(dynamicInventorySet.has(prop) && !dynamicV2PropSet.has(prop)) blockers.push(`missing_dynamic_v2_baseline_prop_${prop}`); }
   if(!gameRows) warnings.push("no_first_inning_game_context_rows_currently_available");
   if(!pitcherRows) warnings.push("no_first_inning_pitcher_context_rows_currently_available");
   if(!lineInventoryRows) warnings.push("no_expansion_line_inventory_rows_currently_available");
+  if(dynamicInventoryTargets.length && !dynamicV2HpRows) blockers.push("no_player_baseline_hp_v2_rows_for_dynamic_inventory");
   if(!sanityRows) blockers.push("no_expansion_sanity_rows");
   if(!hpRows) blockers.push("no_expansion_hp_rows");
   if(changed.length) blockers.push("production_mutation_guard_failed");
   const pass = blockers.length===0;
-  const output = baseOutput(input,{mode:"expansion_baseline_certifier",status:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification_grade:pass?(warnings.length?"PASS_WITH_WARNINGS":"PASS"):(changed.length?"FAIL_MUTATION_GUARD":"FAIL_BLOCKED"),current_system_mutated:changed.length>0,rows:{first_inning_game_context_rows:gameRows,first_inning_pitcher_context_rows:pitcherRows,line_inventory_rows:lineInventoryRows,line_inventory_issue_rows:lineInventoryIssues,sanity_rows:sanityRows,baseline_hp_rows:hpRows},coverage:{sanity:sanityNs,hp:hpNs},mutation_guard:{passed:changed.length===0,changed_tables:changed,production_counts_after:after},warnings,blockers});
+  const output = baseOutput(input,{mode:"expansion_baseline_certifier",status:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification_grade:pass?(warnings.length?"PASS_WITH_WARNINGS":"PASS"):(changed.length?"FAIL_MUTATION_GUARD":"FAIL_BLOCKED"),current_system_mutated:changed.length>0,dynamic_v2_heb_required:true,dynamic_v2_heb_bridge_preferred_by_score_audit:true,rows:{first_inning_game_context_rows:gameRows,first_inning_pitcher_context_rows:pitcherRows,line_inventory_rows:lineInventoryRows,line_inventory_issue_rows:lineInventoryIssues,sanity_rows:sanityRows,baseline_hp_rows:hpRows,dynamic_v2_hp_rows:dynamicV2HpRows},coverage:{sanity:sanityNs,hp:hpNs,dynamic_v2_props:dynamicV2Props,dynamic_inventory_targets:dynamicInventoryTargets},mutation_guard:{passed:changed.length===0,changed_tables:changed,production_counts_after:after},warnings,blockers});
   output.ok = pass;
   output.data_ok = pass;
   return output;
@@ -867,32 +875,48 @@ async function fullRun(env,input={}){
   const runId=String(input.run_id||rid("run"));
   const state=input.expansion_full_run_state || {};
   const before=input.production_counts_before || state.production_counts_before || await productionCounts(env);
-  let mining=null, lineInventory=null, sanity=null, hp=null;
+  let mining=null, lineInventory=null, sanity=null, hp=null, dynamicV2=null;
   let sourceSanityBatchId=input.source_sanity_batch_id || state.source_sanity_batch_id || null;
 
   if(!state.mining_completed){
     mining = await mineFirstInningContext(env,{...input, mode:"expansion_baseline_mining", request_id:requestId, run_id:runId, mining_batch_id:input.mining_batch_id || state.mining_batch_id || null, mining_cursor_offset:input.mining_cursor_offset || state.mining_cursor_offset || 0, mining_game_chunk_size:input.mining_game_chunk_size || state.mining_game_chunk_size || 60});
     if(mining && mining.partial_continue){
-      const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, mining_batch_id:mining.batch_id, mining_cursor_offset:mining.mining_cursor_offset, mining_game_chunk_size:mining.mining_game_chunk_size || 60, game_limit:mining.source_games_total || input.game_limit || input.max_games || 2500, full_depth_base:true, expansion_full_run_state:{mining_completed:false,line_inventory_completed:false,mining_batch_id:mining.batch_id,mining_cursor_offset:mining.mining_cursor_offset,mining_game_chunk_size:mining.mining_game_chunk_size || 60,production_counts_before:before}};
-      return baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_MINING",certification:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_MINING",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,next_input_json:nextInput,mining,rows_written:Number(mining.rows_written||0),current_system_mutated:false,full_depth_base:true});
+      const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, mining_batch_id:mining.batch_id, mining_cursor_offset:mining.mining_cursor_offset, mining_game_chunk_size:mining.mining_game_chunk_size || 60, game_limit:mining.source_games_total || input.game_limit || input.max_games || 2500, full_depth_base:true, expansion_full_run_state:{mining_completed:false,line_inventory_completed:false,sanity_completed:false,hp_completed:false,dynamic_v2_completed:false,mining_batch_id:mining.batch_id,mining_cursor_offset:mining.mining_cursor_offset,mining_game_chunk_size:mining.mining_game_chunk_size || 60,production_counts_before:before}};
+      return baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_MINING",certification:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_MINING",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,next_input_json:nextInput,mining,rows_written:Number(mining.rows_written||0),current_system_mutated:false,full_depth_base:true,dynamic_v2_heb_included_in_full_run:true});
     }
     lineInventory = await runLineInventory(env,{...input, mode:"expansion_line_inventory", request_id:requestId, run_id:runId});
     sanity = await runSanity(env,{...input, mode:"expansion_baseline_sanity", request_id:requestId, run_id:runId});
     sourceSanityBatchId = sanity.batch_id;
   } else if(!state.line_inventory_completed) {
     lineInventory = await runLineInventory(env,{...input, mode:"expansion_line_inventory", request_id:requestId, run_id:runId});
+  } else {
+    lineInventory = state.line_inventory || "previous_call_completed";
+    sanity = state.sanity || "previous_call_completed";
   }
 
-  hp = await runHp(env,{...input, mode:"expansion_baseline_hp", request_id:requestId, run_id:runId, source_sanity_batch_id:sourceSanityBatchId, batch_id:input.hp_batch_id || input.batch_id || null, hp_cursor_offset:input.hp_cursor_offset || 0, hp_source_chunk_size:input.hp_source_chunk_size || 60});
-  if(hp && hp.partial_continue){
-    const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, source_sanity_batch_id:sourceSanityBatchId, hp_batch_id:hp.batch_id, hp_cursor_offset:hp.hp_cursor_offset, hp_source_chunk_size:hp.hp_source_chunk_size || 60, expansion_full_run_state:{mining_completed:true,line_inventory_completed:true,sanity_completed:true,source_sanity_batch_id:sourceSanityBatchId,production_counts_before:before}};
-    const output=baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_HP",certification:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_HP",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,next_input_json:nextInput,hp,rows_written:Number(hp.rows_written||0),current_system_mutated:false});
-    return output;
+  if(!state.hp_completed){
+    hp = await runHp(env,{...input, mode:"expansion_baseline_hp", request_id:requestId, run_id:runId, source_sanity_batch_id:sourceSanityBatchId, batch_id:input.hp_batch_id || state.hp_batch_id || input.batch_id || null, hp_cursor_offset:input.hp_cursor_offset || 0, hp_source_chunk_size:input.hp_source_chunk_size || 60});
+    if(hp && hp.partial_continue){
+      const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, source_sanity_batch_id:sourceSanityBatchId, hp_batch_id:hp.batch_id, hp_cursor_offset:hp.hp_cursor_offset, hp_source_chunk_size:hp.hp_source_chunk_size || 60, expansion_full_run_state:{mining_completed:true,line_inventory_completed:true,sanity_completed:true,hp_completed:false,dynamic_v2_completed:false,source_sanity_batch_id:sourceSanityBatchId,production_counts_before:before,hp_batch_id:hp.batch_id}};
+      return baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_HP",certification:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_HP",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,next_input_json:nextInput,hp,rows_written:Number(hp.rows_written||0),current_system_mutated:false,dynamic_v2_heb_included_in_full_run:true});
+    }
+  } else {
+    hp = state.hp || "previous_call_completed";
+  }
+
+  if(!state.dynamic_v2_completed){
+    dynamicV2 = await runBaselineV2(env,{...input, mode:"baseline_v2_heb", expansion_mode:"baseline_v2_heb", request_id:requestId, run_id:runId, batch_id:input.dynamic_v2_batch_id || state.dynamic_v2_batch_id || input.v2_batch_id || null, v2_cursor_offset:input.v2_cursor_offset || 0, v2_chunk_size:Math.min(Number(input.v2_chunk_size || 8), 8)});
+    if(dynamicV2 && dynamicV2.partial_continue){
+      const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, source_sanity_batch_id:sourceSanityBatchId, hp_batch_id:(hp && hp.batch_id) || input.hp_batch_id || state.hp_batch_id || null, dynamic_v2_batch_id:dynamicV2.batch_id, v2_cursor_offset:dynamicV2.v2_cursor_offset, v2_chunk_size:dynamicV2.v2_chunk_size || 8, expansion_full_run_state:{mining_completed:true,line_inventory_completed:true,sanity_completed:true,hp_completed:true,dynamic_v2_completed:false,source_sanity_batch_id:sourceSanityBatchId,production_counts_before:before,hp_batch_id:(hp && hp.batch_id) || input.hp_batch_id || state.hp_batch_id || null,dynamic_v2_batch_id:dynamicV2.batch_id}};
+      return baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_DYNAMIC_V2_HEB",certification:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_DYNAMIC_V2_HEB",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,next_input_json:nextInput,dynamic_v2_heb:dynamicV2,rows_written:Number(dynamicV2.rows_written||0),current_system_mutated:false,dynamic_v2_heb_included_in_full_run:true});
+    }
+  } else {
+    dynamicV2 = state.dynamic_v2 || "previous_call_completed";
   }
 
   const cert = await certifier(env,{...input, mode:"expansion_baseline_certifier", request_id:requestId, run_id:runId, production_counts_before:before});
   const pass = !!(cert && cert.ok === true);
-  const output = baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:pass?"EXPANSION_BASELINE_FULL_RUN_COMPLETED":"EXPANSION_BASELINE_FULL_RUN_BLOCKED",certification:cert.certification,certification_grade:cert.certification_grade,stages:{mining: mining || "previous_call_completed", line_inventory: lineInventory || "previous_call_completed", sanity: sanity || "previous_call_completed", hp, certifier:cert},rows_written:Number(hp&&hp.rows_written||0),current_system_mutated:cert.current_system_mutated});
+  const output = baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:pass?"EXPANSION_BASELINE_FULL_RUN_COMPLETED":"EXPANSION_BASELINE_FULL_RUN_BLOCKED",certification:cert.certification,certification_grade:cert.certification_grade,stages:{mining: mining || "previous_call_completed", line_inventory: lineInventory || "previous_call_completed", sanity: sanity || "previous_call_completed", hp, dynamic_v2_heb:dynamicV2, certifier:cert},dynamic_v2_heb_included_in_full_run:true,dynamic_v2_heb_bridge_preferred_by_score_audit:true,rows_written:Number(hp&&hp.rows_written||0)+Number(dynamicV2&&dynamicV2.rows_written||0),current_system_mutated:cert.current_system_mutated});
   output.ok = pass;
   output.data_ok = pass;
   return output;
