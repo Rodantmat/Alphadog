@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.10-expansion-v2-full-run-bridge";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.11-dynamic-v2-current-source-fix";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -782,12 +782,16 @@ async function runBaselineV2(env,input={}){
     await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_hp_v2_batches (batch_id,request_id,run_id,mode,status,worker_version,source_sanity_batch_id,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"baseline_v2_heb","running",VERSION,batchId);
     await run(env.SCORE_DB,`DELETE FROM player_baseline_sanity_v2_stage`); await run(env.SCORE_DB,`DELETE FROM player_baseline_hp_v2_stage`);
   }
-  const sourceBatchRow=await first(env.SCORE_DB,`SELECT batch_id FROM hit_probability_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1`);
-  const sourceHpV2BatchId=String(input.source_hp_v2_batch_id||input.hp_v2_batch_id||(sourceBatchRow&&sourceBatchRow.batch_id)||"");
-  const targetWhere=`baseline_hp_row_id IS NULL AND board_line_value IS NOT NULL AND canonical_prop_key IS NOT NULL AND selected_side IS NOT NULL AND batch_id=?`;
-  const totalRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM (SELECT MAX(hp_v2_row_id) AS hp_v2_row_id FROM hit_probability_v2_current WHERE ${targetWhere} GROUP BY source_key, game_pk, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side, COALESCE(factor_family,'unknown'))`,sourceHpV2BatchId);
+  const explicitSourceHpV2BatchId=String(input.source_hp_v2_batch_id||input.hp_v2_batch_id||"");
+  const fullRunCurrentSource = String(input.mode||"")==="baseline_v2_heb" && String(input.expansion_mode||"")==="baseline_v2_heb" && !explicitSourceHpV2BatchId;
+  const sourceBatchRow= explicitSourceHpV2BatchId ? null : await first(env.SCORE_DB,`SELECT batch_id FROM hit_probability_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1`);
+  const sourceHpV2BatchId=String(explicitSourceHpV2BatchId || (fullRunCurrentSource ? "__ALL_HIT_PROBABILITY_V2_CURRENT__" : ((sourceBatchRow&&sourceBatchRow.batch_id)||"")));
+  const targetWhereBase=`baseline_hp_row_id IS NULL AND board_line_value IS NOT NULL AND canonical_prop_key IS NOT NULL AND selected_side IS NOT NULL`;
+  const targetWhere = sourceHpV2BatchId === "__ALL_HIT_PROBABILITY_V2_CURRENT__" ? targetWhereBase : `${targetWhereBase} AND batch_id=?`;
+  const targetParams = sourceHpV2BatchId === "__ALL_HIT_PROBABILITY_V2_CURRENT__" ? [] : [sourceHpV2BatchId];
+  const totalRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM (SELECT MAX(hp_v2_row_id) AS hp_v2_row_id FROM hit_probability_v2_current WHERE ${targetWhere} GROUP BY source_key, game_pk, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side, COALESCE(factor_family,'unknown'))`,...targetParams);
   const total=Number(totalRow&&totalRow.c||0);
-  const rows=await all(env.SCORE_DB,`SELECT MAX(hp_v2_row_id) AS hp_v2_row_id, source_key, game_pk, MAX(official_date) AS official_date, COALESCE(mlb_player_id,0) AS mlb_player_id, MAX(player_name) AS player_name, canonical_prop_key, board_line_value, selected_side, COALESCE(factor_family,'unknown') AS factor_family FROM hit_probability_v2_current WHERE ${targetWhere} GROUP BY source_key, game_pk, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side, COALESCE(factor_family,'unknown') ORDER BY hp_v2_row_id LIMIT ? OFFSET ?`,sourceHpV2BatchId,chunkSize,cursor);
+  const rows=await all(env.SCORE_DB,`SELECT MAX(hp_v2_row_id) AS hp_v2_row_id, source_key, game_pk, MAX(official_date) AS official_date, COALESCE(mlb_player_id,0) AS mlb_player_id, MAX(player_name) AS player_name, canonical_prop_key, board_line_value, selected_side, COALESCE(factor_family,'unknown') AS factor_family FROM hit_probability_v2_current WHERE ${targetWhere} GROUP BY source_key, game_pk, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side, COALESCE(factor_family,'unknown') ORDER BY hp_v2_row_id LIMIT ? OFFSET ?`,...targetParams,chunkSize,cursor);
   let written=0, issues=0, processed=0;
   for(const r of rows){
     if(processed>0 && Date.now()-startedMs>=softYieldMs) break;
@@ -905,9 +909,9 @@ async function fullRun(env,input={}){
   }
 
   if(!state.dynamic_v2_completed){
-    dynamicV2 = await runBaselineV2(env,{...input, mode:"baseline_v2_heb", expansion_mode:"baseline_v2_heb", request_id:requestId, run_id:runId, batch_id:input.dynamic_v2_batch_id || state.dynamic_v2_batch_id || input.v2_batch_id || null, v2_cursor_offset:input.v2_cursor_offset || 0, v2_chunk_size:Math.min(Number(input.v2_chunk_size || 8), 8)});
+    dynamicV2 = await runBaselineV2(env,{...input, mode:"baseline_v2_heb", expansion_mode:"baseline_v2_heb", request_id:requestId, run_id:runId, batch_id:input.dynamic_v2_batch_id || state.dynamic_v2_batch_id || input.v2_batch_id || null, v2_cursor_offset:input.v2_cursor_offset || 0, v2_chunk_size:Math.min(Number(input.v2_chunk_size || 24), 24)});
     if(dynamicV2 && dynamicV2.partial_continue){
-      const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, source_sanity_batch_id:sourceSanityBatchId, hp_batch_id:(hp && hp.batch_id) || input.hp_batch_id || state.hp_batch_id || null, dynamic_v2_batch_id:dynamicV2.batch_id, v2_cursor_offset:dynamicV2.v2_cursor_offset, v2_chunk_size:dynamicV2.v2_chunk_size || 8, expansion_full_run_state:{mining_completed:true,line_inventory_completed:true,sanity_completed:true,hp_completed:true,dynamic_v2_completed:false,source_sanity_batch_id:sourceSanityBatchId,production_counts_before:before,hp_batch_id:(hp && hp.batch_id) || input.hp_batch_id || state.hp_batch_id || null,dynamic_v2_batch_id:dynamicV2.batch_id}};
+      const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, source_sanity_batch_id:sourceSanityBatchId, hp_batch_id:(hp && hp.batch_id) || input.hp_batch_id || state.hp_batch_id || null, dynamic_v2_batch_id:dynamicV2.batch_id, v2_cursor_offset:dynamicV2.v2_cursor_offset, v2_chunk_size:dynamicV2.v2_chunk_size || 24, expansion_full_run_state:{mining_completed:true,line_inventory_completed:true,sanity_completed:true,hp_completed:true,dynamic_v2_completed:false,source_sanity_batch_id:sourceSanityBatchId,production_counts_before:before,hp_batch_id:(hp && hp.batch_id) || input.hp_batch_id || state.hp_batch_id || null,dynamic_v2_batch_id:dynamicV2.batch_id}};
       return baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_DYNAMIC_V2_HEB",certification:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_DYNAMIC_V2_HEB",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,next_input_json:nextInput,dynamic_v2_heb:dynamicV2,rows_written:Number(dynamicV2.rows_written||0),current_system_mutated:false,dynamic_v2_heb_included_in_full_run:true});
     }
   } else {
