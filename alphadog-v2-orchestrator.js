@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.306-expansion-fullrun-hot-pump-parity";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.307-expansion-fullrun-resume-retry-parity";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -3693,9 +3693,64 @@ async function releaseIncrementalMorningFullRunLock(env, parentRow) {
   );
 }
 
-async function enqueueIncrementalMorningFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0) {
+function buildIncrementalMorningFullRunRetryResumeInput(parentRow, stage, stepIndex, retryCount, failedChild) {
+  const base = incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryCount);
+  const failedInput = parseJsonSafeText(failedChild && failedChild.input_json || "{}", {});
+  const failedOutput = parseJsonSafeText(failedChild && failedChild.output_json || "{}", {});
+  const nextInput = failedOutput && failedOutput.next_input_json && typeof failedOutput.next_input_json === "object"
+    ? failedOutput.next_input_json
+    : (failedOutput && failedOutput.next_input && typeof failedOutput.next_input === "object" ? failedOutput.next_input : null);
+  const resume = { ...failedInput, ...(nextInput || {}) };
+  const state = { ...(failedInput.expansion_full_run_state || {}), ...((nextInput && nextInput.expansion_full_run_state) || {}) };
+  const input = { ...base, ...resume };
+  input.source = "incremental_morning_full_run_parent_retry_resume";
+  input.chain_id = parentRow.chain_id;
+  input.parent_chain_id = parentRow.chain_id;
+  input.parent_request_id = parentRow.request_id;
+  input.full_run_stage_key = stage.stage_key;
+  input.stage_index = stepIndex;
+  input.stage_count = INCREMENTAL_MORNING_FULL_RUN_STAGES.length;
+  input.retry_count = retryCount;
+  input.visible_button = stage.visible_button;
+  input.no_browser_loop = true;
+  input.backend_scheduled_continuation = true;
+  input.no_generic_dispatch = true;
+  input.no_scoring = true;
+  input.no_ranking = true;
+  input.no_final_board = true;
+  input.no_old_production_touch = true;
+  input.incremental_retry_resume_v0_2_307 = true;
+  input.retry_resume_from_child_request_id = failedChild && failedChild.request_id || null;
+  input.retry_resume_from_child_status = failedChild && failedChild.status || null;
+  input.retry_resume_from_child_error_code = failedChild && failedChild.error_code || null;
+  input.retry_resume_from_child_error_message = failedChild && failedChild.error_message || null;
+  if (Object.keys(state).length > 0) input.expansion_full_run_state = state;
+  const stateBatch = state && state.dynamic_v2_batch_id ? state.dynamic_v2_batch_id : null;
+  const topBatch = input.dynamic_v2_batch_id || input.batch_id || null;
+  if (stage.stage_key === "expansion_baseline_full_run") {
+    input.mode = input.mode || stage.mode;
+    input.expansion_mode = input.expansion_mode || input.mode || stage.mode;
+    input.dynamic_v2_batch_id = input.dynamic_v2_batch_id || stateBatch || topBatch;
+    if (stateBatch && !input.dynamic_v2_batch_id) input.dynamic_v2_batch_id = stateBatch;
+    if (input.dynamic_v2_batch_id && !input.batch_id) input.batch_id = input.dynamic_v2_batch_id;
+    const cursor = input.v2_cursor_offset ?? (state && state.v2_cursor_offset) ?? input.cursor_offset ?? null;
+    if (cursor !== null && cursor !== undefined) input.v2_cursor_offset = Number(cursor);
+    const chunk = input.dynamic_v2_chunk_size || input.v2_chunk_size || 24;
+    input.dynamic_v2_chunk_size = Math.max(24, Math.min(60, Number(chunk || 24)));
+    input.v2_chunk_size = input.dynamic_v2_chunk_size;
+    input.dynamic_v2_min_chunk_size = Math.max(24, Number(input.dynamic_v2_min_chunk_size || 24));
+    input.resume_existing_dynamic_v2_batch = true;
+    input.no_restart_mining_on_transient_retry = true;
+  }
+  input.created_at = nowIso();
+  return input;
+}
+
+async function enqueueIncrementalMorningFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0, inputOverride = null) {
   const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
-  const input = incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryCount);
+  const input = inputOverride && typeof inputOverride === "object"
+    ? inputOverride
+    : incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryCount);
   await run(env.CONTROL_DB,
     "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
     childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input)
@@ -4400,8 +4455,8 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     if (validation.wait) {
       const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_CHILD", certification: "INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, waiting_on_child_status: child.status, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
       await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
-      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+8 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_parent_deferred_while_child_active', 'Parent deferred briefly so the active child hot-continuation row can own the next backend tick', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: child.request_id, child_status: child.status, stage_key: stage.stage_key, parent_run_after_delay_seconds: 8, full_run_hot_continuation_v0_2_95: true }));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+1 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_parent_deferred_while_child_active', 'Parent deferred briefly so the active child hot-continuation row can own the next backend tick', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: child.request_id, child_status: child.status, stage_key: stage.stage_key, parent_run_after_delay_seconds: 1, full_run_hot_continuation_v0_2_307: true }));
       return output;
     }
 
@@ -4438,8 +4493,11 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
             child.request_id, runId, WORKER_NAME, child.job_key, JSON.stringify({ parent_request_id: row.request_id, stage_key: stage.stage_key, previous_status: child.status, previous_updated_at: child.updated_at, retry_attempt_index: attempts.length, stale_threshold_minutes: 2, version: SYSTEM_VERSION })
           );
         }
-        const enqueued = await enqueueIncrementalMorningFullRunChild(env, row, stage, i, attempts.length);
-        const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_TRANSIENT_RETRY_ENQUEUED", certification: "INCREMENTAL_MORNING_FULL_RUN_TRANSIENT_RETRY_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, failed_child_request_id: child.request_id, retry_child_request_id: enqueued.child_request_id, retry_count: attempts.length, failed_reason: validation.reason, stages: [...stageReports, { ...report, retry_child_request_id: enqueued.child_request_id }], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
+        const retryInputOverride = stage.stage_key === "expansion_baseline_full_run"
+          ? buildIncrementalMorningFullRunRetryResumeInput(row, stage, i, attempts.length, child)
+          : null;
+        const enqueued = await enqueueIncrementalMorningFullRunChild(env, row, stage, i, attempts.length, retryInputOverride);
+        const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_TRANSIENT_RETRY_ENQUEUED", certification: "INCREMENTAL_MORNING_FULL_RUN_TRANSIENT_RETRY_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, failed_child_request_id: child.request_id, retry_child_request_id: enqueued.child_request_id, retry_count: attempts.length, failed_reason: validation.reason, retry_resume_inherited: !!retryInputOverride, retry_resume_dynamic_v2_batch_id: retryInputOverride && (retryInputOverride.dynamic_v2_batch_id || (retryInputOverride.expansion_full_run_state && retryInputOverride.expansion_full_run_state.dynamic_v2_batch_id)) || null, retry_resume_v2_cursor_offset: retryInputOverride && retryInputOverride.v2_cursor_offset || null, retry_resume_dynamic_v2_chunk_size: retryInputOverride && retryInputOverride.dynamic_v2_chunk_size || null, stages: [...stageReports, { ...report, retry_child_request_id: enqueued.child_request_id, retry_resume_inherited: !!retryInputOverride }], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
         await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'INCREMENTAL_MORNING_FULL_RUN_TRANSIENT_RETRY_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
         await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
         return output;
