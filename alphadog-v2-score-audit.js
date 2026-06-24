@@ -5033,7 +5033,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.53-v2-shadow-resume-cursor-fix";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.54-v2-shadow-canonical-batch-reuse";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5192,6 +5192,43 @@ function v2ReadOffset(input = {}, keys = []) {
   }
   return 0;
 }
+function v2NestedInput(input = {}) {
+  return (input && input.input_json && typeof input.input_json === "object") ? input.input_json : {};
+}
+function v2FirstDefined(input = {}, nested = {}, keys = []) {
+  for (const k of keys) {
+    if (Object.prototype.hasOwnProperty.call(input, k) && input[k] !== null && input[k] !== undefined && String(input[k]).trim() !== "") return input[k];
+    if (Object.prototype.hasOwnProperty.call(nested, k) && nested[k] !== null && nested[k] !== undefined && String(nested[k]).trim() !== "") return nested[k];
+  }
+  return null;
+}
+function v2HasExplicitOffsetDeep(input = {}, nested = {}, keys = []) {
+  for (const k of keys) {
+    if (Object.prototype.hasOwnProperty.call(input, k) && input[k] !== null && input[k] !== undefined && String(input[k]).trim() !== "") return true;
+    if (Object.prototype.hasOwnProperty.call(nested, k) && nested[k] !== null && nested[k] !== undefined && String(nested[k]).trim() !== "") return true;
+  }
+  return false;
+}
+function v2ReadOffsetDeep(input = {}, nested = {}, keys = []) {
+  const v = v2FirstDefined(input, nested, keys);
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+}
+function v2SafeIdPart(value) {
+  return String(value || "shadow")
+    .replace(/[^a-zA-Z0-9_\-]/g, "_")
+    .slice(0, 96);
+}
+function v2CanonicalBatchId(prefix, requestId) {
+  return `${prefix}_${v2SafeIdPart(requestId)}`;
+}
+async function v2BatchExists(env, batchTable, batchId) {
+  const allowed = new Set(["v2_score_enrichment_batches", "v2_hit_probability_batches", "v2_final_score_batches", "v2_final_board_batches"]);
+  if (!allowed.has(batchTable)) throw new Error(`unsupported_v2_shadow_batch_table:${batchTable}`);
+  if (!env || !env.SCORE_DB || !batchId) return false;
+  const row = await first(env.SCORE_DB, `SELECT batch_id FROM ${batchTable} WHERE batch_id=? LIMIT 1`, batchId);
+  return !!(row && row.batch_id);
+}
 async function v2CountBatchRows(env, tableName, batchId) {
   if (!env || !env.SCORE_DB || !batchId) return 0;
   const allowed = new Set(["v2_score_enrichment_events", "v2_hit_probability_current", "v2_final_score_current", "v2_final_board_current"]);
@@ -5231,14 +5268,14 @@ async function runScoreEnrichmentV2Shadow(env, input = {}) {
   const requestId = input.request_id || v2Rid("score_enrichment_v2");
   const runId = input.run_id || null;
   const chainId = input.chain_id || null;
-  const explicitOffsetProvided = v2HasExplicitOffset(input, ["v2_enrichment_offset", "offset"]);
-  let offset = explicitOffsetProvided ? v2ReadOffset(input, ["v2_enrichment_offset", "offset"]) : 0;
-  const limit = Math.max(50, Math.min(500, Number(input.chunk_rows || V2_ENRICHMENT_CHUNK_ROWS) || V2_ENRICHMENT_CHUNK_ROWS));
-  const sourceBatchId = input.source_enrichment_batch_id || await latestV1EnrichmentBatch(env);
+  const nestedInput = v2NestedInput(input);
+  const explicitOffsetProvided = v2HasExplicitOffsetDeep(input, nestedInput, ["v2_enrichment_offset", "offset"]);
+  let offset = explicitOffsetProvided ? v2ReadOffsetDeep(input, nestedInput, ["v2_enrichment_offset", "offset"]) : 0;
+  const limit = Math.max(50, Math.min(500, Number(v2FirstDefined(input, nestedInput, ["chunk_rows"]) || V2_ENRICHMENT_CHUNK_ROWS) || V2_ENRICHMENT_CHUNK_ROWS));
+  const sourceBatchId = v2FirstDefined(input, nestedInput, ["source_enrichment_batch_id"]) || await latestV1EnrichmentBatch(env);
   if (!sourceBatchId) return baseIdentity({ ok:false, data_ok:false, version:SHADOW_SCORE_VERSION, worker_name:WORKER_NAME, logical_worker_name:"alphadog-v2-score-enrichment-v2-shadow", deployed_worker_slot:WORKER_NAME, job_key:SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY, request_id:requestId, run_id:runId, chain_id:chainId, mode:SCORE_ENRICHMENT_V2_SHADOW_MODE, status:"blocked_missing_source_enrichment_batch", certification:"SCORE_ENRICHMENT_V2_SHADOW_MISSING_SOURCE_BATCH", certification_grade:"BLOCKED" });
-  let batchId = input.v2_enrichment_batch_id || input.resume_batch_id || null;
-  const resumeExisting = !!batchId;
-  batchId = batchId || v2Rid("v2_score_enrichment_batch");
+  let batchId = v2FirstDefined(input, nestedInput, ["v2_enrichment_batch_id", "resume_batch_id"]) || v2CanonicalBatchId("v2_score_enrichment_batch", requestId);
+  const resumeExisting = await v2BatchExists(env, "v2_score_enrichment_batches", batchId);
   const resumeState = await v2StartOrResumeBatch(env, {
     batchId,
     resumeExisting,
@@ -5319,14 +5356,14 @@ async function runHitProbabilityV3Shadow(env, input = {}) {
   const requestId = input.request_id || v2Rid("hit_probability_v3");
   const runId = input.run_id || null;
   const chainId = input.chain_id || null;
-  const sourceBatchId = input.source_v2_enrichment_batch_id || input.v2_score_enrichment_batch_id || await latestV2EnrichmentBatch(env);
+  const nestedInput = v2NestedInput(input);
+  const sourceBatchId = v2FirstDefined(input, nestedInput, ["source_v2_enrichment_batch_id", "v2_score_enrichment_batch_id", "v2_enrichment_batch_id"]) || await latestV2EnrichmentBatch(env);
   if (!sourceBatchId) return baseIdentity({ ok:false,data_ok:false,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-hit-probability-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:HIT_PROBABILITY_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:HIT_PROBABILITY_V3_SHADOW_MODE,status:"blocked_missing_v2_enrichment_batch",certification:"HIT_PROBABILITY_V3_SHADOW_MISSING_ENRICHMENT",certification_grade:"BLOCKED" });
-  const explicitOffsetProvided = v2HasExplicitOffset(input, ["hp_v3_offset", "offset"]);
-  let offset = explicitOffsetProvided ? v2ReadOffset(input, ["hp_v3_offset", "offset"]) : 0;
-  const limit = Math.max(100, Math.min(800, Number(input.chunk_rows || V3_HP_CHUNK_ROWS) || V3_HP_CHUNK_ROWS));
-  let batchId = input.hp_v3_batch_id || input.resume_batch_id || null;
-  const resumeExisting = !!batchId;
-  batchId = batchId || v2Rid("v2_hp_v3_batch");
+  const explicitOffsetProvided = v2HasExplicitOffsetDeep(input, nestedInput, ["hp_v3_offset", "offset"]);
+  let offset = explicitOffsetProvided ? v2ReadOffsetDeep(input, nestedInput, ["hp_v3_offset", "offset"]) : 0;
+  const limit = Math.max(100, Math.min(800, Number(v2FirstDefined(input, nestedInput, ["chunk_rows"]) || V3_HP_CHUNK_ROWS) || V3_HP_CHUNK_ROWS));
+  let batchId = v2FirstDefined(input, nestedInput, ["hp_v3_batch_id", "resume_batch_id"]) || v2CanonicalBatchId("v2_hp_v3_batch", requestId);
+  const resumeExisting = await v2BatchExists(env, "v2_hit_probability_batches", batchId);
   const resumeState = await v2StartOrResumeBatch(env, {
     batchId,
     resumeExisting,
@@ -5398,12 +5435,12 @@ async function runFinalScoreV2Shadow(env, input = {}) {
   const chainId = input.chain_id || null;
   const sourceBatchId = input.hp_v3_batch_id || input.source_hp_v3_batch_id || await latestHpV3Batch(env);
   if (!sourceBatchId) return baseIdentity({ ok:false,data_ok:false,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-score-v2-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_SCORE_V2_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_SCORE_V2_SHADOW_MODE,status:"blocked_missing_hp_v3_batch",certification:"FINAL_SCORE_V2_SHADOW_MISSING_HP_V3",certification_grade:"BLOCKED" });
-  const explicitOffsetProvided = v2HasExplicitOffset(input, ["final_score_v2_offset", "offset"]);
-  let offset = explicitOffsetProvided ? v2ReadOffset(input, ["final_score_v2_offset", "offset"]) : 0;
-  const limit = Math.max(100, Math.min(900, Number(input.chunk_rows || V2_FINAL_SCORE_CHUNK_ROWS) || V2_FINAL_SCORE_CHUNK_ROWS));
-  let batchId = input.final_score_v2_batch_id || input.resume_batch_id || null;
-  const resumeExisting = !!batchId;
-  batchId = batchId || v2Rid("v2_final_score_batch");
+  const nestedInput = v2NestedInput(input);
+  const explicitOffsetProvided = v2HasExplicitOffsetDeep(input, nestedInput, ["final_score_v2_offset", "offset"]);
+  let offset = explicitOffsetProvided ? v2ReadOffsetDeep(input, nestedInput, ["final_score_v2_offset", "offset"]) : 0;
+  const limit = Math.max(100, Math.min(900, Number(v2FirstDefined(input, nestedInput, ["chunk_rows"]) || V2_FINAL_SCORE_CHUNK_ROWS) || V2_FINAL_SCORE_CHUNK_ROWS));
+  let batchId = v2FirstDefined(input, nestedInput, ["final_score_v2_batch_id", "resume_batch_id"]) || v2CanonicalBatchId("v2_final_score_batch", requestId);
+  const resumeExisting = await v2BatchExists(env, "v2_final_score_batches", batchId);
   const resumeState = await v2StartOrResumeBatch(env, {
     batchId,
     resumeExisting,
@@ -5456,12 +5493,12 @@ async function runFinalBoardV3Shadow(env, input = {}) {
   const chainId = input.chain_id || null;
   const sourceBatchId = input.final_score_v2_batch_id || input.source_final_score_v2_batch_id || await latestFinalScoreV2Batch(env);
   if (!sourceBatchId) return baseIdentity({ ok:false,data_ok:false,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:"blocked_missing_final_score_v2_batch",certification:"FINAL_BOARD_V3_SHADOW_MISSING_FINAL_SCORE_V2",certification_grade:"BLOCKED" });
-  const explicitOffsetProvided = v2HasExplicitOffset(input, ["final_board_v3_offset", "offset"]);
-  let offset = explicitOffsetProvided ? v2ReadOffset(input, ["final_board_v3_offset", "offset"]) : 0;
-  const limit = Math.max(100, Math.min(500, Number(input.chunk_rows || V3_FINAL_BOARD_CHUNK_ROWS) || V3_FINAL_BOARD_CHUNK_ROWS));
-  let batchId = input.final_board_v3_batch_id || input.resume_batch_id || null;
-  const resumeExisting = !!batchId;
-  batchId = batchId || v2Rid("v2_final_board_batch");
+  const nestedInput = v2NestedInput(input);
+  const explicitOffsetProvided = v2HasExplicitOffsetDeep(input, nestedInput, ["final_board_v3_offset", "offset"]);
+  let offset = explicitOffsetProvided ? v2ReadOffsetDeep(input, nestedInput, ["final_board_v3_offset", "offset"]) : 0;
+  const limit = Math.max(100, Math.min(500, Number(v2FirstDefined(input, nestedInput, ["chunk_rows"]) || V3_FINAL_BOARD_CHUNK_ROWS) || V3_FINAL_BOARD_CHUNK_ROWS));
+  let batchId = v2FirstDefined(input, nestedInput, ["final_board_v3_batch_id", "resume_batch_id"]) || v2CanonicalBatchId("v2_final_board_batch", requestId);
+  const resumeExisting = await v2BatchExists(env, "v2_final_board_batches", batchId);
   const resumeState = await v2StartOrResumeBatch(env, {
     batchId,
     resumeExisting,

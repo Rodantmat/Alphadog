@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.299-v2-shadow-hot-autopump";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.300-v2-shadow-top-level-cursor-forward";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -13377,7 +13377,23 @@ async function processScoringEngineJob(env, row, runId, trigger) {
     no_old_prop_scores_write: true,
     no_ranking: true,
     no_final_board: true,
-    no_old_production_touch: true
+    no_old_production_touch: true,
+    // Shadow V2/V3 cursor fields are forwarded top-level because the score-audit
+    // worker owns continuation state at the mode/job branch. Keep rowInput nested
+    // for audit, but do not force the worker to discover cursors only inside it.
+    resume_batch_id: isShadowV2Job ? (rowInput.resume_batch_id || null) : undefined,
+    v2_enrichment_batch_id: isScoreEnrichmentV2ShadowJob ? (rowInput.v2_enrichment_batch_id || rowInput.resume_batch_id || null) : undefined,
+    v2_enrichment_offset: isScoreEnrichmentV2ShadowJob ? (rowInput.v2_enrichment_offset ?? rowInput.offset ?? null) : undefined,
+    hp_v3_batch_id: isHitProbabilityV3ShadowJob ? (rowInput.hp_v3_batch_id || rowInput.resume_batch_id || null) : undefined,
+    hp_v3_offset: isHitProbabilityV3ShadowJob ? (rowInput.hp_v3_offset ?? rowInput.offset ?? null) : undefined,
+    final_score_v2_batch_id: isFinalScoreV2ShadowJob ? (rowInput.final_score_v2_batch_id || rowInput.resume_batch_id || null) : undefined,
+    final_score_v2_offset: isFinalScoreV2ShadowJob ? (rowInput.final_score_v2_offset ?? rowInput.offset ?? null) : undefined,
+    final_board_v3_batch_id: isFinalBoardV3ShadowJob ? (rowInput.final_board_v3_batch_id || rowInput.resume_batch_id || null) : undefined,
+    final_board_v3_offset: isFinalBoardV3ShadowJob ? (rowInput.final_board_v3_offset ?? rowInput.offset ?? null) : undefined,
+    source_enrichment_batch_id: isScoreEnrichmentV2ShadowJob ? (rowInput.source_enrichment_batch_id || null) : undefined,
+    source_v2_enrichment_batch_id: isHitProbabilityV3ShadowJob ? (rowInput.source_v2_enrichment_batch_id || rowInput.v2_enrichment_batch_id || null) : undefined,
+    source_hp_v3_batch_id: isFinalScoreV2ShadowJob ? (rowInput.source_hp_v3_batch_id || rowInput.hp_v3_batch_id || null) : undefined,
+    source_final_score_v2_batch_id: isFinalBoardV3ShadowJob ? (rowInput.source_final_score_v2_batch_id || rowInput.final_score_v2_batch_id || null) : undefined
   };
 
   const cooldownYield = await maybeYieldHeavyMarketChildCooldown(env, row, runId, input, rowInput, {
@@ -13434,7 +13450,7 @@ async function processScoringEngineJob(env, row, runId, trigger) {
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
-    deployed_slot_version: isShadowV2Job ? "alphadog-v2-score-audit-v0.4.51-v2-shadow-no-like-dispatch-guard" : (isHitProbabilityV2Job ? "alphadog-v2-score-audit-v0.4.48-hit-probability-v2-current" : (isEnrichmentJob ? "alphadog-v2-score-audit-v0.4.47-enrichment-v1-250x25-resume-safe" : (isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock"))),
+    deployed_slot_version: isShadowV2Job ? "alphadog-v2-score-audit-v0.4.54-v2-shadow-canonical-batch-reuse" : (isHitProbabilityV2Job ? "alphadog-v2-score-audit-v0.4.48-hit-probability-v2-current" : (isEnrichmentJob ? "alphadog-v2-score-audit-v0.4.47-enrichment-v1-250x25-resume-safe" : (isHitProbabilityJob ? "alphadog-v2-scoring-engine-v0.4.16-hp-board-display-calibration-same-worker" : "alphadog-v2-scoring-engine-v0.4.9-current-chunk-continuation-lock"))),
     orchestrator_dispatch: {
       version: SYSTEM_VERSION,
       processed_by: WORKER_NAME,
