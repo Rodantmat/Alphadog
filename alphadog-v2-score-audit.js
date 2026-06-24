@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-score-audit";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const VERSION = "alphadog-v2-score-audit-v0.4.52-v2-shadow-hot-autopump-ready";
+const VERSION = "alphadog-v2-score-audit-v0.4.53-v2-shadow-resume-cursor-fix";
 const JOB_KEY = "scoring-engine";
 const PROFILE_KEY = "SCORING_FRAMEWORK_V0_1_PROFILE_GATE";
 const PRODUCTION_PROFILE_KEY = "STRICT_C_HP_FIRST_TRUST_V4_1";
@@ -5033,7 +5033,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.52-v2-shadow-hot-autopump-ready";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.53-v2-shadow-resume-cursor-fix";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5176,6 +5176,54 @@ async function latestFinalScoreV2Batch(env) {
   const row = await first(env.SCORE_DB, `SELECT batch_id FROM v2_final_score_batches WHERE status='completed' ORDER BY datetime(updated_at) DESC LIMIT 1`);
   return row && row.batch_id ? row.batch_id : null;
 }
+
+function v2HasExplicitOffset(input = {}, keys = []) {
+  for (const k of keys) {
+    if (Object.prototype.hasOwnProperty.call(input, k) && input[k] !== null && input[k] !== undefined && String(input[k]).trim() !== "") return true;
+  }
+  return false;
+}
+function v2ReadOffset(input = {}, keys = []) {
+  for (const k of keys) {
+    if (Object.prototype.hasOwnProperty.call(input, k) && input[k] !== null && input[k] !== undefined && String(input[k]).trim() !== "") {
+      const n = Number(input[k]);
+      return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+    }
+  }
+  return 0;
+}
+async function v2CountBatchRows(env, tableName, batchId) {
+  if (!env || !env.SCORE_DB || !batchId) return 0;
+  const allowed = new Set(["v2_score_enrichment_events", "v2_hit_probability_current", "v2_final_score_current", "v2_final_board_current"]);
+  if (!allowed.has(tableName)) throw new Error(`unsupported_v2_shadow_resume_table:${tableName}`);
+  const row = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM ${tableName} WHERE batch_id=?`, batchId);
+  return Math.max(0, Number(row && row.rows || 0) || 0);
+}
+async function v2StartOrResumeBatch(env, cfg = {}) {
+  const {
+    batchId,
+    batchTable,
+    currentTable,
+    issueTable,
+    insertSql,
+    insertBinds = [],
+    updateSql,
+    updateBinds = [],
+    explicitOffset,
+    resetRequested = false
+  } = cfg;
+  if (!batchId) throw new Error("missing_v2_shadow_batch_id");
+  const isNew = !cfg.resumeExisting;
+  if (isNew || resetRequested) {
+    await run(env.SCORE_DB, insertSql, ...insertBinds);
+    if (currentTable) await run(env.SCORE_DB, `DELETE FROM ${currentTable} WHERE batch_id=?`, batchId);
+    if (issueTable) await run(env.SCORE_DB, `DELETE FROM ${issueTable} WHERE batch_id=?`, batchId);
+    return { offset:0, resumed:false, reset:true };
+  }
+  await run(env.SCORE_DB, updateSql, ...updateBinds);
+  const inferredOffset = explicitOffset === null ? await v2CountBatchRows(env, currentTable, batchId) : explicitOffset;
+  return { offset:Math.max(0, Number(inferredOffset || 0) || 0), resumed:true, reset:false };
+}
 async function runScoreEnrichmentV2Shadow(env, input = {}) {
   const started = Date.now();
   if (!env.SCORE_DB) return baseIdentity({ ok:false, data_ok:false, version:SHADOW_SCORE_VERSION, worker_name:WORKER_NAME, logical_worker_name:"alphadog-v2-score-enrichment-v2-shadow", deployed_worker_slot:WORKER_NAME, job_key:SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY, status:"blocked_missing_score_db", certification:"SCORE_ENRICHMENT_V2_SHADOW_MISSING_SCORE_DB", certification_grade:"BLOCKED" });
@@ -5183,17 +5231,26 @@ async function runScoreEnrichmentV2Shadow(env, input = {}) {
   const requestId = input.request_id || v2Rid("score_enrichment_v2");
   const runId = input.run_id || null;
   const chainId = input.chain_id || null;
-  const offset = Math.max(0, Number(input.v2_enrichment_offset || input.offset || 0) || 0);
+  const explicitOffsetProvided = v2HasExplicitOffset(input, ["v2_enrichment_offset", "offset"]);
+  let offset = explicitOffsetProvided ? v2ReadOffset(input, ["v2_enrichment_offset", "offset"]) : 0;
   const limit = Math.max(50, Math.min(500, Number(input.chunk_rows || V2_ENRICHMENT_CHUNK_ROWS) || V2_ENRICHMENT_CHUNK_ROWS));
   const sourceBatchId = input.source_enrichment_batch_id || await latestV1EnrichmentBatch(env);
   if (!sourceBatchId) return baseIdentity({ ok:false, data_ok:false, version:SHADOW_SCORE_VERSION, worker_name:WORKER_NAME, logical_worker_name:"alphadog-v2-score-enrichment-v2-shadow", deployed_worker_slot:WORKER_NAME, job_key:SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY, request_id:requestId, run_id:runId, chain_id:chainId, mode:SCORE_ENRICHMENT_V2_SHADOW_MODE, status:"blocked_missing_source_enrichment_batch", certification:"SCORE_ENRICHMENT_V2_SHADOW_MISSING_SOURCE_BATCH", certification_grade:"BLOCKED" });
   let batchId = input.v2_enrichment_batch_id || input.resume_batch_id || null;
-  if (!batchId || offset === 0) {
-    batchId = batchId || v2Rid("v2_score_enrichment_batch");
-    await run(env.SCORE_DB, `INSERT OR REPLACE INTO v2_score_enrichment_batches (batch_id,request_id,run_id,worker_version,mode,status,source_enrichment_batch_id,certification_status,certification_grade,output_json,updated_at) VALUES (?,?,?,?,?,'running',?,'SCORE_ENRICHMENT_V2_SHADOW_STARTED','RUNNING',?,CURRENT_TIMESTAMP)`, batchId, requestId, runId, SHADOW_SCORE_VERSION, SCORE_ENRICHMENT_V2_SHADOW_MODE, sourceBatchId, v2Json({ request_id:requestId, source_enrichment_batch_id:sourceBatchId, no_production_mutation:true }));
-    await run(env.SCORE_DB, `DELETE FROM v2_score_enrichment_events WHERE batch_id=?`, batchId);
-    await run(env.SCORE_DB, `DELETE FROM v2_score_enrichment_issues WHERE batch_id=?`, batchId);
-  }
+  const resumeExisting = !!batchId;
+  batchId = batchId || v2Rid("v2_score_enrichment_batch");
+  const resumeState = await v2StartOrResumeBatch(env, {
+    batchId,
+    resumeExisting,
+    currentTable:"v2_score_enrichment_events",
+    issueTable:"v2_score_enrichment_issues",
+    explicitOffset: explicitOffsetProvided ? offset : null,
+    insertSql:`INSERT OR REPLACE INTO v2_score_enrichment_batches (batch_id,request_id,run_id,worker_version,mode,status,source_enrichment_batch_id,certification_status,certification_grade,output_json,updated_at) VALUES (?,?,?,?,?,'running',?,'SCORE_ENRICHMENT_V2_SHADOW_STARTED','RUNNING',?,CURRENT_TIMESTAMP)`,
+    insertBinds:[batchId, requestId, runId, SHADOW_SCORE_VERSION, SCORE_ENRICHMENT_V2_SHADOW_MODE, sourceBatchId, v2Json({ request_id:requestId, source_enrichment_batch_id:sourceBatchId, no_production_mutation:true })],
+    updateSql:`UPDATE v2_score_enrichment_batches SET status='running', run_id=?, worker_version=?, mode=?, source_enrichment_batch_id=?, certification_status='SCORE_ENRICHMENT_V2_SHADOW_RESUMED', certification_grade='RUNNING', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    updateBinds:[runId, SHADOW_SCORE_VERSION, SCORE_ENRICHMENT_V2_SHADOW_MODE, sourceBatchId, batchId]
+  });
+  offset = resumeState.offset;
   const totalRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM score_enrichment_current WHERE batch_id=?`, sourceBatchId);
   const total = Number(totalRow && totalRow.rows || 0);
   const rows = await all(env.SCORE_DB, `SELECT e.*, xb.baseline_hp_row_id AS expansion_baseline_hp_row_id, xb.baseline_hp_0_100 AS expansion_baseline_hp_0_100, xb.baseline_confidence_0_100 AS expansion_baseline_confidence_0_100, xb.baseline_hp_profile_key AS expansion_baseline_hp_profile_key, xb.profile_namespace AS expansion_profile_namespace, xb.source_formula_key AS expansion_source_formula_key
@@ -5251,7 +5308,7 @@ async function runScoreEnrichmentV2Shadow(env, input = {}) {
   const issueCount = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_score_enrichment_issues WHERE batch_id=?`, batchId);
   const cert = complete ? "SCORE_ENRICHMENT_V2_SHADOW_CERTIFIED_WORKER_OWNED" : "SCORE_ENRICHMENT_V2_SHADOW_PARTIAL_CONTINUE";
   const grade = v2CertificationGrade(true, !complete);
-  const output = baseIdentity({ ok:true,data_ok:true,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v2-shadow",deployed_worker_slot:WORKER_NAME,job_key:SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:SCORE_ENRICHMENT_V2_SHADOW_MODE,status:complete?"completed_score_enrichment_v2_shadow":"partial_continue_score_enrichment_v2_shadow",certification:cert,certification_grade:grade,batch_id:batchId,v2_score_enrichment_batch_id:batchId,source_enrichment_batch_id:sourceBatchId,source_rows_read:total,events_written:Number(counts&&counts.rows||0),rows_read:total,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:written,old_baseline_rows:Number(counts&&counts.old_rows||0),expansion_baseline_rows:Number(counts&&counts.expansion_rows||0),missing_baseline_rows:Number(counts&&counts.missing_rows||0),blocked_rows:Number(counts&&counts.blocked_rows||0),warning_rows:Number(counts&&counts.warning_rows||0),issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,writes_v2_shadow_tables_only:true,production_tables_read_only:["score_enrichment_current","expansion_player_baseline_hp_current"],no_fake_hp:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
+  const output = baseIdentity({ ok:true,data_ok:true,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v2-shadow",deployed_worker_slot:WORKER_NAME,job_key:SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:SCORE_ENRICHMENT_V2_SHADOW_MODE,status:complete?"completed_score_enrichment_v2_shadow":"partial_continue_score_enrichment_v2_shadow",certification:cert,certification_grade:grade,batch_id:batchId,v2_score_enrichment_batch_id:batchId,source_enrichment_batch_id:sourceBatchId,source_rows_read:total,events_written:Number(counts&&counts.rows||0),rows_read:total,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:written,old_baseline_rows:Number(counts&&counts.old_rows||0),expansion_baseline_rows:Number(counts&&counts.expansion_rows||0),missing_baseline_rows:Number(counts&&counts.missing_rows||0),blocked_rows:Number(counts&&counts.blocked_rows||0),warning_rows:Number(counts&&counts.warning_rows||0),issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,writes_v2_shadow_tables_only:true,production_tables_read_only:["score_enrichment_current","expansion_player_baseline_hp_current"],no_fake_hp:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE v2_score_enrichment_batches SET status=?, source_rows_read=?, events_written=?, old_baseline_rows=?, expansion_baseline_rows=?, missing_baseline_rows=?, blocked_rows=?, warning_rows=?, issue_rows_written=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", total, output.events_written, output.old_baseline_rows, output.expansion_baseline_rows, output.missing_baseline_rows, output.blocked_rows, output.warning_rows, output.issue_rows_written, cert, grade, v2Json(output,14000), batchId);
   return output;
 }
@@ -5264,15 +5321,24 @@ async function runHitProbabilityV3Shadow(env, input = {}) {
   const chainId = input.chain_id || null;
   const sourceBatchId = input.source_v2_enrichment_batch_id || input.v2_score_enrichment_batch_id || await latestV2EnrichmentBatch(env);
   if (!sourceBatchId) return baseIdentity({ ok:false,data_ok:false,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-hit-probability-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:HIT_PROBABILITY_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:HIT_PROBABILITY_V3_SHADOW_MODE,status:"blocked_missing_v2_enrichment_batch",certification:"HIT_PROBABILITY_V3_SHADOW_MISSING_ENRICHMENT",certification_grade:"BLOCKED" });
-  const offset = Math.max(0, Number(input.hp_v3_offset || input.offset || 0) || 0);
+  const explicitOffsetProvided = v2HasExplicitOffset(input, ["hp_v3_offset", "offset"]);
+  let offset = explicitOffsetProvided ? v2ReadOffset(input, ["hp_v3_offset", "offset"]) : 0;
   const limit = Math.max(100, Math.min(800, Number(input.chunk_rows || V3_HP_CHUNK_ROWS) || V3_HP_CHUNK_ROWS));
   let batchId = input.hp_v3_batch_id || input.resume_batch_id || null;
-  if (!batchId || offset === 0) {
-    batchId = batchId || v2Rid("v2_hp_v3_batch");
-    await run(env.SCORE_DB, `INSERT OR REPLACE INTO v2_hit_probability_batches (batch_id,request_id,run_id,worker_version,mode,status,source_v2_enrichment_batch_id,certification_status,certification_grade,output_json,updated_at) VALUES (?,?,?,?,?,'running',?,'HIT_PROBABILITY_V3_SHADOW_STARTED','RUNNING',?,CURRENT_TIMESTAMP)`, batchId, requestId, runId, SHADOW_SCORE_VERSION, HIT_PROBABILITY_V3_SHADOW_MODE, sourceBatchId, v2Json({ source_v2_enrichment_batch_id:sourceBatchId }));
-    await run(env.SCORE_DB, `DELETE FROM v2_hit_probability_current WHERE batch_id=?`, batchId);
-    await run(env.SCORE_DB, `DELETE FROM v2_hit_probability_issues WHERE batch_id=?`, batchId);
-  }
+  const resumeExisting = !!batchId;
+  batchId = batchId || v2Rid("v2_hp_v3_batch");
+  const resumeState = await v2StartOrResumeBatch(env, {
+    batchId,
+    resumeExisting,
+    currentTable:"v2_hit_probability_current",
+    issueTable:"v2_hit_probability_issues",
+    explicitOffset: explicitOffsetProvided ? offset : null,
+    insertSql:`INSERT OR REPLACE INTO v2_hit_probability_batches (batch_id,request_id,run_id,worker_version,mode,status,source_v2_enrichment_batch_id,certification_status,certification_grade,output_json,updated_at) VALUES (?,?,?,?,?,'running',?,'HIT_PROBABILITY_V3_SHADOW_STARTED','RUNNING',?,CURRENT_TIMESTAMP)`,
+    insertBinds:[batchId, requestId, runId, SHADOW_SCORE_VERSION, HIT_PROBABILITY_V3_SHADOW_MODE, sourceBatchId, v2Json({ source_v2_enrichment_batch_id:sourceBatchId })],
+    updateSql:`UPDATE v2_hit_probability_batches SET status='running', run_id=?, worker_version=?, mode=?, source_v2_enrichment_batch_id=?, certification_status='HIT_PROBABILITY_V3_SHADOW_RESUMED', certification_grade='RUNNING', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    updateBinds:[runId, SHADOW_SCORE_VERSION, HIT_PROBABILITY_V3_SHADOW_MODE, sourceBatchId, batchId]
+  });
+  offset = resumeState.offset;
   const totalRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_score_enrichment_events WHERE batch_id=?`, sourceBatchId);
   const total = Number(totalRow && totalRow.rows || 0);
   const rows = await all(env.SCORE_DB, `SELECT * FROM v2_score_enrichment_events WHERE batch_id=? ORDER BY event_id LIMIT ? OFFSET ?`, sourceBatchId, limit, offset);
@@ -5319,7 +5385,7 @@ async function runHitProbabilityV3Shadow(env, input = {}) {
   const issueCount = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_hit_probability_issues WHERE batch_id=?`, batchId);
   const cert = complete ? "HIT_PROBABILITY_V3_SHADOW_CERTIFIED_NO_FAKE_HP" : "HIT_PROBABILITY_V3_SHADOW_PARTIAL_CONTINUE";
   const grade = complete && normalizationBlockedGroups === 0 ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : (complete ? "PASS_WITH_BLOCKED_NORMALIZATION_ROWS" : "PARTIAL");
-  const output = baseIdentity({ ok:true,data_ok:true,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-hit-probability-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:HIT_PROBABILITY_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:HIT_PROBABILITY_V3_SHADOW_MODE,status:complete?"completed_hit_probability_v3_shadow":"partial_continue_hit_probability_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,hp_v3_batch_id:batchId,source_v2_enrichment_batch_id:sourceBatchId,source_rows_read:total,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:written,hp_ready_rows:Number(counts&&counts.ready_rows||0),hp_deferred_rows:Number(counts&&counts.deferred_rows||0),hp_blocked_rows:Number(counts&&counts.blocked_rows||0),normalized_groups:normalizedGroups,normalization_blocked_groups:normalizationBlockedGroups,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,no_fake_hp_when_baseline_missing:true,missing_baseline_hp_null:true,valid_pair_normalization:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
+  const output = baseIdentity({ ok:true,data_ok:true,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-hit-probability-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:HIT_PROBABILITY_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:HIT_PROBABILITY_V3_SHADOW_MODE,status:complete?"completed_hit_probability_v3_shadow":"partial_continue_hit_probability_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,hp_v3_batch_id:batchId,source_v2_enrichment_batch_id:sourceBatchId,source_rows_read:total,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:written,hp_ready_rows:Number(counts&&counts.ready_rows||0),hp_deferred_rows:Number(counts&&counts.deferred_rows||0),hp_blocked_rows:Number(counts&&counts.blocked_rows||0),normalized_groups:normalizedGroups,normalization_blocked_groups:normalizationBlockedGroups,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,no_fake_hp_when_baseline_missing:true,missing_baseline_hp_null:true,valid_pair_normalization:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE v2_hit_probability_batches SET status=?, source_rows_read=?, rows_written=?, hp_ready_rows=?, hp_deferred_rows=?, hp_blocked_rows=?, normalized_groups=?, normalization_blocked_groups=?, issue_rows_written=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", total, output.rows_written, output.hp_ready_rows, output.hp_deferred_rows, output.hp_blocked_rows, normalizedGroups, normalizationBlockedGroups, output.issue_rows_written, cert, grade, v2Json(output,14000), batchId);
   return output;
 }
@@ -5332,15 +5398,24 @@ async function runFinalScoreV2Shadow(env, input = {}) {
   const chainId = input.chain_id || null;
   const sourceBatchId = input.hp_v3_batch_id || input.source_hp_v3_batch_id || await latestHpV3Batch(env);
   if (!sourceBatchId) return baseIdentity({ ok:false,data_ok:false,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-score-v2-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_SCORE_V2_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_SCORE_V2_SHADOW_MODE,status:"blocked_missing_hp_v3_batch",certification:"FINAL_SCORE_V2_SHADOW_MISSING_HP_V3",certification_grade:"BLOCKED" });
-  const offset = Math.max(0, Number(input.final_score_v2_offset || input.offset || 0) || 0);
+  const explicitOffsetProvided = v2HasExplicitOffset(input, ["final_score_v2_offset", "offset"]);
+  let offset = explicitOffsetProvided ? v2ReadOffset(input, ["final_score_v2_offset", "offset"]) : 0;
   const limit = Math.max(100, Math.min(900, Number(input.chunk_rows || V2_FINAL_SCORE_CHUNK_ROWS) || V2_FINAL_SCORE_CHUNK_ROWS));
   let batchId = input.final_score_v2_batch_id || input.resume_batch_id || null;
-  if (!batchId || offset === 0) {
-    batchId = batchId || v2Rid("v2_final_score_batch");
-    await run(env.SCORE_DB, `INSERT OR REPLACE INTO v2_final_score_batches (batch_id,request_id,run_id,worker_version,mode,status,source_hp_v3_batch_id,certification_status,certification_grade,output_json,updated_at) VALUES (?,?,?,?,?,'running',?,'FINAL_SCORE_V2_SHADOW_STARTED','RUNNING',?,CURRENT_TIMESTAMP)`, batchId, requestId, runId, SHADOW_SCORE_VERSION, FINAL_SCORE_V2_SHADOW_MODE, sourceBatchId, v2Json({ source_hp_v3_batch_id:sourceBatchId }));
-    await run(env.SCORE_DB, `DELETE FROM v2_final_score_current WHERE batch_id=?`, batchId);
-    await run(env.SCORE_DB, `DELETE FROM v2_final_score_issues WHERE batch_id=?`, batchId);
-  }
+  const resumeExisting = !!batchId;
+  batchId = batchId || v2Rid("v2_final_score_batch");
+  const resumeState = await v2StartOrResumeBatch(env, {
+    batchId,
+    resumeExisting,
+    currentTable:"v2_final_score_current",
+    issueTable:"v2_final_score_issues",
+    explicitOffset: explicitOffsetProvided ? offset : null,
+    insertSql:`INSERT OR REPLACE INTO v2_final_score_batches (batch_id,request_id,run_id,worker_version,mode,status,source_hp_v3_batch_id,certification_status,certification_grade,output_json,updated_at) VALUES (?,?,?,?,?,'running',?,'FINAL_SCORE_V2_SHADOW_STARTED','RUNNING',?,CURRENT_TIMESTAMP)`,
+    insertBinds:[batchId, requestId, runId, SHADOW_SCORE_VERSION, FINAL_SCORE_V2_SHADOW_MODE, sourceBatchId, v2Json({ source_hp_v3_batch_id:sourceBatchId })],
+    updateSql:`UPDATE v2_final_score_batches SET status='running', run_id=?, worker_version=?, mode=?, source_hp_v3_batch_id=?, certification_status='FINAL_SCORE_V2_SHADOW_RESUMED', certification_grade='RUNNING', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    updateBinds:[runId, SHADOW_SCORE_VERSION, FINAL_SCORE_V2_SHADOW_MODE, sourceBatchId, batchId]
+  });
+  offset = resumeState.offset;
   const totalRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_hit_probability_current WHERE batch_id=?`, sourceBatchId);
   const total = Number(totalRow && totalRow.rows || 0);
   const rows = await all(env.SCORE_DB, `SELECT * FROM v2_hit_probability_current WHERE batch_id=? ORDER BY hp_v3_row_id LIMIT ? OFFSET ?`, sourceBatchId, limit, offset);
@@ -5368,7 +5443,7 @@ async function runFinalScoreV2Shadow(env, input = {}) {
   const issueCount = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_issues WHERE batch_id=?`, batchId);
   const cert = complete ? "FINAL_SCORE_V2_SHADOW_CERTIFIED_REVIEW_ONLY" : "FINAL_SCORE_V2_SHADOW_PARTIAL_CONTINUE";
   const grade = v2CertificationGrade(true, !complete);
-  const output = baseIdentity({ ok:true,data_ok:true,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-score-v2-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_SCORE_V2_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_SCORE_V2_SHADOW_MODE,status:complete?"completed_final_score_v2_shadow":"partial_continue_final_score_v2_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_score_v2_batch_id:batchId,source_hp_v3_batch_id:sourceBatchId,source_rows_read:total,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:written,eligible_rows:Number(counts&&counts.eligible_rows||0),review_rows:Number(counts&&counts.review_rows||0),blocked_rows:Number(counts&&counts.blocked_rows||0),issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,live_playable_forced_zero:true,goblin_demon_score_only:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
+  const output = baseIdentity({ ok:true,data_ok:true,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-score-v2-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_SCORE_V2_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_SCORE_V2_SHADOW_MODE,status:complete?"completed_final_score_v2_shadow":"partial_continue_final_score_v2_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_score_v2_batch_id:batchId,source_hp_v3_batch_id:sourceBatchId,source_rows_read:total,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:written,eligible_rows:Number(counts&&counts.eligible_rows||0),review_rows:Number(counts&&counts.review_rows||0),blocked_rows:Number(counts&&counts.blocked_rows||0),issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,live_playable_forced_zero:true,goblin_demon_score_only:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE v2_final_score_batches SET status=?, source_rows_read=?, rows_written=?, eligible_rows=?, review_rows=?, blocked_rows=?, issue_rows_written=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", total, output.rows_written, output.eligible_rows, output.review_rows, output.blocked_rows, output.issue_rows_written, cert, grade, v2Json(output,14000), batchId);
   return output;
 }
@@ -5381,15 +5456,24 @@ async function runFinalBoardV3Shadow(env, input = {}) {
   const chainId = input.chain_id || null;
   const sourceBatchId = input.final_score_v2_batch_id || input.source_final_score_v2_batch_id || await latestFinalScoreV2Batch(env);
   if (!sourceBatchId) return baseIdentity({ ok:false,data_ok:false,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:"blocked_missing_final_score_v2_batch",certification:"FINAL_BOARD_V3_SHADOW_MISSING_FINAL_SCORE_V2",certification_grade:"BLOCKED" });
-  const offset = Math.max(0, Number(input.final_board_v3_offset || input.offset || 0) || 0);
+  const explicitOffsetProvided = v2HasExplicitOffset(input, ["final_board_v3_offset", "offset"]);
+  let offset = explicitOffsetProvided ? v2ReadOffset(input, ["final_board_v3_offset", "offset"]) : 0;
   const limit = Math.max(100, Math.min(500, Number(input.chunk_rows || V3_FINAL_BOARD_CHUNK_ROWS) || V3_FINAL_BOARD_CHUNK_ROWS));
   let batchId = input.final_board_v3_batch_id || input.resume_batch_id || null;
-  if (!batchId || offset === 0) {
-    batchId = batchId || v2Rid("v2_final_board_batch");
-    await run(env.SCORE_DB, `INSERT OR REPLACE INTO v2_final_board_batches (batch_id,request_id,run_id,worker_version,mode,status,source_final_score_v2_batch_id,certification_status,certification_grade,output_json,updated_at) VALUES (?,?,?,?,?,'running',?,'FINAL_BOARD_V3_SHADOW_STARTED','RUNNING',?,CURRENT_TIMESTAMP)`, batchId, requestId, runId, SHADOW_SCORE_VERSION, FINAL_BOARD_V3_SHADOW_MODE, sourceBatchId, v2Json({ source_final_score_v2_batch_id:sourceBatchId }));
-    await run(env.SCORE_DB, `DELETE FROM v2_final_board_current WHERE batch_id=?`, batchId);
-    await run(env.SCORE_DB, `DELETE FROM v2_final_board_issues WHERE batch_id=?`, batchId);
-  }
+  const resumeExisting = !!batchId;
+  batchId = batchId || v2Rid("v2_final_board_batch");
+  const resumeState = await v2StartOrResumeBatch(env, {
+    batchId,
+    resumeExisting,
+    currentTable:"v2_final_board_current",
+    issueTable:"v2_final_board_issues",
+    explicitOffset: explicitOffsetProvided ? offset : null,
+    insertSql:`INSERT OR REPLACE INTO v2_final_board_batches (batch_id,request_id,run_id,worker_version,mode,status,source_final_score_v2_batch_id,certification_status,certification_grade,output_json,updated_at) VALUES (?,?,?,?,?,'running',?,'FINAL_BOARD_V3_SHADOW_STARTED','RUNNING',?,CURRENT_TIMESTAMP)`,
+    insertBinds:[batchId, requestId, runId, SHADOW_SCORE_VERSION, FINAL_BOARD_V3_SHADOW_MODE, sourceBatchId, v2Json({ source_final_score_v2_batch_id:sourceBatchId })],
+    updateSql:`UPDATE v2_final_board_batches SET status='running', run_id=?, worker_version=?, mode=?, source_final_score_v2_batch_id=?, certification_status='FINAL_BOARD_V3_SHADOW_RESUMED', certification_grade='RUNNING', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    updateBinds:[runId, SHADOW_SCORE_VERSION, FINAL_BOARD_V3_SHADOW_MODE, sourceBatchId, batchId]
+  });
+  offset = resumeState.offset;
   const totalRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_current WHERE batch_id=?`, sourceBatchId);
   const eligibleRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_current WHERE batch_id=? AND eligible_for_final_board=1`, sourceBatchId);
   const total = Number(totalRow && totalRow.rows || 0);
@@ -5411,7 +5495,7 @@ async function runFinalBoardV3Shadow(env, input = {}) {
   const issueCount = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_board_issues WHERE batch_id=?`, batchId);
   const cert = complete ? (leakRows === 0 ? "FINAL_BOARD_V3_SHADOW_CERTIFIED_REVIEW_ONLY" : "FINAL_BOARD_V3_SHADOW_CERTIFICATION_FAILED") : "FINAL_BOARD_V3_SHADOW_PARTIAL_CONTINUE";
   const grade = complete ? (leakRows === 0 ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : "FAILED") : "PARTIAL";
-  const output = baseIdentity({ ok:leakRows===0,data_ok:leakRows===0,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:complete?"completed_final_board_v3_shadow":"partial_continue_final_board_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_board_v3_batch_id:batchId,source_final_score_v2_batch_id:sourceBatchId,source_rows_read:total,eligible_rows_read:eligibleTotal,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:rows.length,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,not_production_final_board:true,live_playable_forced_zero:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
+  const output = baseIdentity({ ok:leakRows===0,data_ok:leakRows===0,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:complete?"completed_final_board_v3_shadow":"partial_continue_final_board_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_board_v3_batch_id:batchId,source_final_score_v2_batch_id:sourceBatchId,source_rows_read:total,eligible_rows_read:eligibleTotal,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:rows.length,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,not_production_final_board:true,live_playable_forced_zero:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE v2_final_board_batches SET status=?, source_rows_read=?, eligible_rows_read=?, rows_written=?, issue_rows_written=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", total, eligibleTotal, output.rows_written, output.issue_rows_written, cert, grade, v2Json(output,14000), batchId);
   return output;
 }
