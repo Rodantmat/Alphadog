@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.303-v2-shadow-stale-dispatch-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.304-v2-shadow-evidence-quiet-dispatch-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -14799,7 +14799,7 @@ async function rescueStalePlayerBaselineRunningJobForResume(env, trigger) {
     certification: 'PLAYER_BASELINE_STALE_RUNNING_DISPATCH_AUTO_RESUMED',
     certification_grade: 'RECOVERED_PARTIAL_CONTINUE',
     stale_running_auto_resume: true,
-    stale_threshold_seconds: 90,
+    stale_threshold_seconds: 45,
     previous_status: row.status,
     previous_updated_at: row.updated_at,
     previous_run_after: row.run_after,
@@ -16100,6 +16100,21 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       processed.push({ status: "stale_prop_matrix_builder_recovered", recovered_count: propMatrixStaleRecovery.recovered, reports: propMatrixStaleRecovery.reports });
     }
 
+    // v0.2.304: V2/V3 shadow service-binding dispatch can write worker-owned v2_* rows
+    // and then fail to return to the orchestrator, leaving the queue row stuck as running.
+    // Reclaim it inside the locked pre-dispatch recovery section before selecting any new work.
+    // Resume from actual v2_* row evidence, not stale batch counters. No formula/math changes.
+    const shadowV2DispatchRecovery = await rescueStaleShadowV2DispatchStartedForResume(env, `${trigger || "tick"}:locked_preselect`);
+    if (shadowV2DispatchRecovery && shadowV2DispatchRecovery.request_id) {
+      processed.push({
+        status: "v2_v3_shadow_stale_dispatch_recovered_preselect",
+        request_id: shadowV2DispatchRecovery.request_id,
+        job_key: shadowV2DispatchRecovery.job_key,
+        worker_name: shadowV2DispatchRecovery.worker_name,
+        evidence_quiet_dispatch_rescue_v0_2_304: true
+      });
+    }
+
     const limit = Math.max(1, Math.min(Number(maxJobs || 3), 10));
 
     for (let i = 0; i < limit; i++) {
@@ -16644,8 +16659,8 @@ async function rescueStaleShadowV2DispatchStartedForResume(env, trigger) {
         AND q.worker_name='alphadog-v2-score-audit'
         AND q.status='running'
         AND q.finished_at IS NULL
-        AND datetime(COALESCE(q.updated_at, q.started_at, q.created_at)) <= datetime(CURRENT_TIMESTAMP, '-90 seconds')
-        AND datetime(r.started_at) <= datetime(CURRENT_TIMESTAMP, '-90 seconds')
+        AND datetime(COALESCE(q.updated_at, q.started_at, q.created_at)) <= datetime(CURRENT_TIMESTAMP, '-45 seconds')
+        AND datetime(r.started_at) <= datetime(CURRENT_TIMESTAMP, '-45 seconds')
       ORDER BY datetime(COALESCE(q.updated_at, q.started_at, q.created_at)) ASC
       LIMIT 1`
   );
@@ -16709,7 +16724,7 @@ async function rescueStaleShadowV2DispatchStartedForResume(env, trigger) {
     next_offset: rowsWritten,
     remaining_rows: sourceRowsRead > rowsWritten ? sourceRowsRead - rowsWritten : null,
     stale_running_auto_resume: true,
-    stale_threshold_seconds: 90,
+    stale_threshold_seconds: 45,
     previous_queue_status: row.status,
     previous_queue_updated_at: row.updated_at || null,
     stale_run_id: row.stale_run_id || null,
