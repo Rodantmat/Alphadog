@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.307-expansion-fullrun-resume-retry-parity";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.308-expansion-fullrun-live-sibling-resume";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12106,8 +12106,92 @@ async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
 }
 
 
+
+function expansionResumeNumber(value, fallback = null) {
+  if (value === null || value === undefined || value === "") return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+async function maybeApplyExpansionFullRunSiblingResume(env, row, input) {
+  if (!row || row.job_key !== "expansion-baseline-full-run" || !row.parent_request_id) {
+    return { input, applied: false, reason: "not_expansion_full_run_child" };
+  }
+  const certText = String((input && (input.certification || input.status || input.mode || input.expansion_mode)) || "");
+  const alreadyDynamic = input && (input.dynamic_v2_batch_id || input.v2_cursor_offset !== undefined || input.mode === "baseline_v2_heb" || /DYNAMIC_V2|BASELINE_V2_HEB/i.test(certText));
+  if (alreadyDynamic) {
+    return { input, applied: false, reason: "already_has_dynamic_resume_state" };
+  }
+  const prior = await first(env.CONTROL_DB,
+    "SELECT request_id, input_json, output_json, error_code, error_message, finished_at, updated_at, json_extract(input_json,'$.dynamic_v2_batch_id') AS dynamic_v2_batch_id, json_extract(input_json,'$.v2_cursor_offset') AS v2_cursor_offset, json_extract(input_json,'$.dynamic_v2_chunk_size') AS dynamic_v2_chunk_size FROM control_job_queue WHERE parent_request_id=? AND job_key='expansion-baseline-full-run' AND request_id<>? AND status='failed' AND json_extract(input_json,'$.dynamic_v2_batch_id') IS NOT NULL AND json_extract(input_json,'$.v2_cursor_offset') IS NOT NULL ORDER BY datetime(COALESCE(finished_at,updated_at,created_at)) DESC LIMIT 1",
+    row.parent_request_id, row.request_id
+  );
+  if (!prior || !prior.dynamic_v2_batch_id) {
+    return { input, applied: false, reason: "no_failed_sibling_dynamic_resume_state" };
+  }
+  const priorInput = parseJsonSafeText(prior.input_json || "{}", {});
+  const priorState = priorInput && priorInput.expansion_full_run_state && typeof priorInput.expansion_full_run_state === "object" ? priorInput.expansion_full_run_state : {};
+  const dynamicBatch = prior.dynamic_v2_batch_id || priorInput.dynamic_v2_batch_id || priorState.dynamic_v2_batch_id || null;
+  const cursor = expansionResumeNumber(prior.v2_cursor_offset ?? priorInput.v2_cursor_offset ?? priorState.v2_cursor_offset, null);
+  if (!dynamicBatch || cursor === null || cursor < 1) {
+    return { input, applied: false, reason: "failed_sibling_resume_state_incomplete", failed_child_request_id: prior.request_id, dynamic_v2_batch_id: dynamicBatch || null, v2_cursor_offset: cursor };
+  }
+  let stagedRows = null;
+  if (env.SCORE_DB) {
+    try {
+      const staged = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM player_baseline_hp_v2_stage WHERE batch_id=?", dynamicBatch);
+      stagedRows = expansionResumeNumber(staged && staged.rows, 0);
+    } catch (_) {
+      stagedRows = null;
+    }
+  }
+  if (stagedRows !== null && stagedRows < 1) {
+    return { input, applied: false, reason: "failed_sibling_dynamic_stage_rows_missing", failed_child_request_id: prior.request_id, dynamic_v2_batch_id: dynamicBatch, staged_rows: stagedRows };
+  }
+  const chunk = Math.max(24, Math.min(60, expansionResumeNumber(prior.dynamic_v2_chunk_size ?? priorInput.dynamic_v2_chunk_size ?? priorInput.v2_chunk_size, 24)));
+  const mergedState = {
+    ...(input.expansion_full_run_state || {}),
+    ...priorState,
+    mining_completed: true,
+    line_inventory_completed: true,
+    sanity_completed: true,
+    hp_completed: true,
+    dynamic_v2_completed: false,
+    dynamic_v2_batch_id: dynamicBatch,
+    v2_cursor_offset: cursor
+  };
+  const resumed = {
+    ...input,
+    source: "incremental_morning_full_run_live_failed_sibling_resume",
+    mode: "baseline_v2_heb",
+    expansion_mode: "baseline_v2_heb",
+    dynamic_v2_batch_id: dynamicBatch,
+    batch_id: dynamicBatch,
+    v2_cursor_offset: cursor,
+    dynamic_v2_chunk_size: chunk,
+    v2_chunk_size: chunk,
+    dynamic_v2_min_chunk_size: Math.max(24, expansionResumeNumber(input.dynamic_v2_min_chunk_size, 24)),
+    resume_existing_dynamic_v2_batch: true,
+    no_restart_mining_on_transient_retry: true,
+    no_restart_hp_on_transient_retry: true,
+    retry_resume_from_child_request_id: prior.request_id,
+    retry_resume_from_child_error_code: prior.error_code || null,
+    retry_resume_from_child_error_message: prior.error_message || null,
+    expansion_full_run_state: mergedState,
+    live_failed_sibling_resume_v0_2_308: true,
+    created_at: nowIso()
+  };
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, NULL, ?, ?, 'WARN', 'expansion_full_run_live_failed_sibling_resume_applied', 'Expansion Full Run child adopted durable Dynamic V2 state from failed sibling instead of restarting mining/HP', ?, CURRENT_TIMESTAMP)",
+    row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, parent_request_id: row.parent_request_id, failed_child_request_id: prior.request_id, dynamic_v2_batch_id: dynamicBatch, v2_cursor_offset: cursor, dynamic_v2_chunk_size: chunk, staged_rows: stagedRows, version: SYSTEM_VERSION }).slice(0,9000)
+  );
+  return { input: resumed, applied: true, failed_child_request_id: prior.request_id, dynamic_v2_batch_id: dynamicBatch, v2_cursor_offset: cursor, dynamic_v2_chunk_size: chunk, staged_rows: stagedRows };
+}
+
 async function processExpansionBaselineJob(env, row, runId, trigger) {
-  const input = parseJsonSafeText(row.input_json || "{}", {});
+  let input = parseJsonSafeText(row.input_json || "{}", {});
+  const siblingResume = await maybeApplyExpansionFullRunSiblingResume(env, row, input);
+  input = siblingResume && siblingResume.input ? siblingResume.input : input;
   input.request_id = row.request_id;
   input.chain_id = row.chain_id;
   input.run_id = runId;
@@ -12149,7 +12233,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   const cert = String((output && output.certification) || (partial ? "BASELINE_V2_HEB_PARTIAL_CONTINUE" : (output && output.ok ? "BASELINE_V2_HEB_COMPLETED" : "BASELINE_V2_HEB_FAILED"))).slice(0,120);
   const rowsRead = Number(output && (output.source_rows_read || output.rows_read || 0));
   const rowsWritten = Number(output && (output.rows_written || output.rows_promoted || output.rows_staged || 0));
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true } };
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
 
   if (partial && nextInput) {
     const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
