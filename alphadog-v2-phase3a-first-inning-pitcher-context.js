@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.13-dynamic-v2-fast-safe-throughput";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.14-dynamic-v2-audit-telemetry";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -776,6 +776,45 @@ function profilePriorFromDirectValues(row,line,side,values,hs){
   return {prior_rate_0_100:round(conservative,2), support:n, source_rows:Array.isArray(values)?values.length:0, fast_direct_prior:true, prior_source:"direct_values_shrunk_to_50"};
 }
 
+
+async function dynamicV2InventoryAudit(env){
+  const row = await first(env.SCORE_DB,`SELECT batch_id, COUNT(*) AS inventory_buckets, SUM(source_rows) AS source_rows_sum, SUM(players) AS players_sum, SUM(standard_rows) AS standard_rows_sum, SUM(goblin_rows) AS goblin_rows_sum, SUM(demon_rows) AS demon_rows_sum, SUM(missing_baseline_rows) AS missing_baseline_rows_sum, SUM(CASE WHEN needs_dynamic_generation=1 THEN missing_baseline_rows ELSE 0 END) AS needed_missing_baseline_rows_sum, COUNT(DISTINCT canonical_prop_key) AS inventory_props, MAX(updated_at) AS inventory_last_updated FROM expansion_line_inventory_current GROUP BY batch_id ORDER BY MAX(updated_at) DESC LIMIT 1`);
+  if(!row) return {available:false};
+  return {
+    available:true,
+    inventory_batch_id: row.batch_id || null,
+    inventory_buckets: Number(row.inventory_buckets||0),
+    inventory_props: Number(row.inventory_props||0),
+    inventory_source_rows: Number(row.source_rows_sum||0),
+    inventory_players_sum: Number(row.players_sum||0),
+    inventory_standard_rows: Number(row.standard_rows_sum||0),
+    inventory_goblin_rows: Number(row.goblin_rows_sum||0),
+    inventory_demon_rows: Number(row.demon_rows_sum||0),
+    inventory_missing_baseline_rows: Number(row.missing_baseline_rows_sum||0),
+    inventory_needed_missing_baseline_rows: Number(row.needed_missing_baseline_rows_sum||0),
+    inventory_last_updated: row.inventory_last_updated || null,
+    accounting_note: "inventory_missing_baseline_rows is source/inventory demand; dynamic_v2_candidate_rows is deduped player|prop|line|side candidate demand"
+  };
+}
+function dynamicV2Reconcile(inv,total,readRows,staged,promoted,issues){
+  const candidateTotal=Number(total||0);
+  const read=Number(readRows||0);
+  const stagedRows=Number(staged||0);
+  const promotedRows=promoted==null?null:Number(promoted||0);
+  const issueRows=Number(issues||0);
+  return {
+    ...(inv||{}),
+    dynamic_v2_candidate_rows_total: candidateTotal,
+    dynamic_v2_candidate_rows_read: read,
+    dynamic_v2_rows_staged: stagedRows,
+    dynamic_v2_rows_promoted: promotedRows,
+    dynamic_v2_issue_rows: issueRows,
+    dynamic_v2_candidate_minus_staged_rows: Math.max(0,candidateTotal-stagedRows),
+    dynamic_v2_candidate_minus_promoted_rows: promotedRows==null?null:Math.max(0,candidateTotal-promotedRows),
+    dynamic_v2_reconciled_ok: promotedRows==null ? (read<=candidateTotal && stagedRows<=candidateTotal && issueRows>=0) : (promotedRows===stagedRows && issueRows===0 && promotedRows<=candidateTotal)
+  };
+}
+
 async function runBaselineV2(env,input={}){
   await ensureSchema(env); await ensureBaselineV2Schema(env);
   const requestId=String(input.request_id||rid("baseline_v2")); const runId=String(input.run_id||rid("run"));
@@ -832,10 +871,12 @@ async function runBaselineV2(env,input={}){
   }
   const next=cursor+processed;
   const staged=Number((await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM player_baseline_hp_v2_stage WHERE batch_id=?`,batchId))?.c||0);
+  const dynamicV2Inventory = await dynamicV2InventoryAudit(env);
+  const dynamicV2Telemetry = dynamicV2Reconcile(dynamicV2Inventory,total,next,staged,null,issues);
   if(next<total){
     await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET rows_staged=?, issue_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,staged,issues,batchId);
     await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_batches SET source_rows_read=?, rows_staged=?, issue_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,next,staged,issues,batchId);
-    return baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:"BASELINE_V2_HEB_PARTIAL_CONTINUE",certification:"BASELINE_V2_HEB_PARTIAL_CONTINUE",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,v2_cursor_offset:next,v2_chunk_size:chunkSize,dynamic_v2_chunk_size:chunkSize,dynamic_v2_target_chunk_size:targetFullRunChunkSize,dynamic_v2_fast_safe_prior:useFastSafePrior,inventory_lookup_rows:invRows.length,rows_written:written,rows_staged:staged,processed_rows:processed,soft_yield_ms:softYieldMs,elapsed_ms:Date.now()-startedMs,next_input_json:{...input,mode:"baseline_v2_heb",batch_id:batchId,v2_cursor_offset:next,v2_chunk_size:chunkSize,dynamic_v2_chunk_size:chunkSize,dynamic_v2_target_chunk_size:targetFullRunChunkSize,dynamic_v2_min_chunk_size:minFullRunChunkSize,dynamic_v2_fast_safe_prior:useFastSafePrior}});
+    return baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:"BASELINE_V2_HEB_PARTIAL_CONTINUE",certification:"BASELINE_V2_HEB_PARTIAL_CONTINUE",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,v2_cursor_offset:next,v2_chunk_size:chunkSize,dynamic_v2_chunk_size:chunkSize,dynamic_v2_target_chunk_size:targetFullRunChunkSize,dynamic_v2_fast_safe_prior:useFastSafePrior,inventory_lookup_rows:invRows.length,source_rows_read:next,source_rows_total:total,candidate_rows_read:next,candidate_rows_total:total,rows_read:next,rows_written:written,rows_staged:staged,processed_rows:processed,dynamic_v2_reconciliation:dynamicV2Telemetry,soft_yield_ms:softYieldMs,elapsed_ms:Date.now()-startedMs,next_input_json:{...input,mode:"baseline_v2_heb",batch_id:batchId,v2_cursor_offset:next,v2_chunk_size:chunkSize,dynamic_v2_chunk_size:chunkSize,dynamic_v2_target_chunk_size:targetFullRunChunkSize,dynamic_v2_min_chunk_size:minFullRunChunkSize,dynamic_v2_fast_safe_prior:useFastSafePrior}});
   }
   await run(env.SCORE_DB,`DELETE FROM player_baseline_sanity_v2_current`); await run(env.SCORE_DB,`DELETE FROM player_baseline_hp_v2_current`);
   await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_sanity_v2_current SELECT * FROM player_baseline_sanity_v2_stage WHERE batch_id=?`,batchId);
@@ -844,7 +885,8 @@ async function runBaselineV2(env,input={}){
   await run(env.SCORE_DB,`INSERT INTO player_baseline_hp_v2_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM player_baseline_hp_v2_stage WHERE batch_id=?`,batchId);
   const after=await productionCounts(env); const changed=changedCounts(before,after); const grade=changed.length?"FAIL_MUTATION_GUARD":(issues?"PASS_WITH_WARNINGS":"PASS");
   const cert=changed.length?"BASELINE_V2_HEB_BLOCKED_PRODUCTION_MUTATION":"BASELINE_V2_HEB_CERTIFIED_PARALLEL_READY";
-  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,source_hp_v2_batch_id:sourceHpV2BatchId,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:issues,mutation_guard:{changed_tables:changed},formula_version:BASELINE_V2_FORMULA_VERSION});
+  const finalDynamicV2Telemetry=dynamicV2Reconcile(dynamicV2Inventory,total,total,staged,staged,issues);
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,source_rows_total:total,candidate_rows_read:total,candidate_rows_total:total,rows_read:total,source_hp_v2_batch_id:sourceHpV2BatchId,rows_written:staged,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:issues,dynamic_v2_reconciliation:finalDynamicV2Telemetry,mutation_guard:{changed_tables:changed},formula_version:BASELINE_V2_FORMULA_VERSION});
   await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",staged,staged,staged,issues,cert,grade,safeJson(output),batchId);
   await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",total,staged,staged,staged,issues,cert,grade,safeJson(output),batchId);
   output.ok=!changed.length; output.data_ok=!changed.length; return output;
@@ -883,7 +925,9 @@ async function certifier(env,input={}){
   if(!hpRows) blockers.push("no_expansion_hp_rows");
   if(changed.length) blockers.push("production_mutation_guard_failed");
   const pass = blockers.length===0;
-  const output = baseOutput(input,{mode:"expansion_baseline_certifier",status:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification_grade:pass?(warnings.length?"PASS_WITH_WARNINGS":"PASS"):(changed.length?"FAIL_MUTATION_GUARD":"FAIL_BLOCKED"),current_system_mutated:changed.length>0,dynamic_v2_heb_required:true,dynamic_v2_heb_bridge_preferred_by_score_audit:true,rows:{first_inning_game_context_rows:gameRows,first_inning_pitcher_context_rows:pitcherRows,line_inventory_rows:lineInventoryRows,line_inventory_issue_rows:lineInventoryIssues,sanity_rows:sanityRows,baseline_hp_rows:hpRows,dynamic_v2_hp_rows:dynamicV2HpRows},coverage:{sanity:sanityNs,hp:hpNs,dynamic_v2_props:dynamicV2Props,dynamic_inventory_targets:dynamicInventoryTargets},mutation_guard:{passed:changed.length===0,changed_tables:changed,production_counts_after:after},warnings,blockers});
+  const certInvAudit = await dynamicV2InventoryAudit(env);
+  const certDynamicV2Telemetry = dynamicV2Reconcile(certInvAudit,dynamicV2HpRows,dynamicV2HpRows,dynamicV2HpRows,dynamicV2HpRows,0);
+  const output = baseOutput(input,{mode:"expansion_baseline_certifier",status:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification:pass?"EXPANSION_BASELINE_CERTIFIED_SHADOW_BASELINE_READY":"EXPANSION_BASELINE_CERTIFIER_BLOCKED",certification_grade:pass?(warnings.length?"PASS_WITH_WARNINGS":"PASS"):(changed.length?"FAIL_MUTATION_GUARD":"FAIL_BLOCKED"),current_system_mutated:changed.length>0,dynamic_v2_heb_required:true,dynamic_v2_heb_bridge_preferred_by_score_audit:true,rows:{first_inning_game_context_rows:gameRows,first_inning_pitcher_context_rows:pitcherRows,line_inventory_rows:lineInventoryRows,line_inventory_issue_rows:lineInventoryIssues,sanity_rows:sanityRows,baseline_hp_rows:hpRows,dynamic_v2_hp_rows:dynamicV2HpRows},dynamic_v2_reconciliation:certDynamicV2Telemetry,coverage:{sanity:sanityNs,hp:hpNs,dynamic_v2_props:dynamicV2Props,dynamic_inventory_targets:dynamicInventoryTargets},mutation_guard:{passed:changed.length===0,changed_tables:changed,production_counts_after:after},warnings,blockers});
   output.ok = pass;
   output.data_ok = pass;
   return output;
@@ -927,7 +971,7 @@ async function fullRun(env,input={}){
     dynamicV2 = await runBaselineV2(env,{...input, mode:"baseline_v2_heb", expansion_mode:"baseline_v2_heb", request_id:requestId, run_id:runId, batch_id:input.dynamic_v2_batch_id || state.dynamic_v2_batch_id || input.v2_batch_id || null, v2_cursor_offset:input.v2_cursor_offset || 0, dynamic_v2_chunk_size:Number(input.dynamic_v2_chunk_size || input.v2_chunk_size || 72), dynamic_v2_min_chunk_size:Number(input.dynamic_v2_min_chunk_size || 48), dynamic_v2_target_chunk_size:Number(input.dynamic_v2_target_chunk_size || 72), dynamic_v2_fast_safe_prior:input.dynamic_v2_fast_safe_prior!==false, v2_chunk_size:Number(input.v2_chunk_size || input.dynamic_v2_chunk_size || 72)});
     if(dynamicV2 && dynamicV2.partial_continue){
       const nextInput={...input, mode:"expansion_baseline_full_run", expansion_mode:"expansion_baseline_full_run", request_id:requestId, run_id:runId, production_counts_before:before, source_sanity_batch_id:sourceSanityBatchId, hp_batch_id:(hp && hp.batch_id) || input.hp_batch_id || state.hp_batch_id || null, dynamic_v2_batch_id:dynamicV2.batch_id, v2_cursor_offset:dynamicV2.v2_cursor_offset, dynamic_v2_chunk_size:dynamicV2.v2_chunk_size || input.dynamic_v2_chunk_size || 32, dynamic_v2_min_chunk_size:input.dynamic_v2_min_chunk_size || 48, dynamic_v2_target_chunk_size:input.dynamic_v2_target_chunk_size || 72, dynamic_v2_fast_safe_prior:input.dynamic_v2_fast_safe_prior!==false, v2_chunk_size:dynamicV2.v2_chunk_size || input.v2_chunk_size || 72, expansion_full_run_state:{mining_completed:true,line_inventory_completed:true,sanity_completed:true,hp_completed:true,dynamic_v2_completed:false,source_sanity_batch_id:sourceSanityBatchId,production_counts_before:before,hp_batch_id:(hp && hp.batch_id) || input.hp_batch_id || state.hp_batch_id || null,dynamic_v2_batch_id:dynamicV2.batch_id}};
-      return baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_DYNAMIC_V2_HEB",certification:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_DYNAMIC_V2_HEB",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,next_input_json:nextInput,dynamic_v2_heb:dynamicV2,rows_written:Number(dynamicV2.rows_written||0),current_system_mutated:false,dynamic_v2_heb_included_in_full_run:true});
+      return baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_DYNAMIC_V2_HEB",certification:"EXPANSION_BASELINE_FULL_RUN_PARTIAL_CONTINUE_DYNAMIC_V2_HEB",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,next_input_json:nextInput,dynamic_v2_heb:dynamicV2,rows_read:Number(dynamicV2.rows_read||dynamicV2.source_rows_read||0),rows_written:Number(dynamicV2.rows_written||0),rows_staged:Number(dynamicV2.rows_staged||0),dynamic_v2_reconciliation:dynamicV2.dynamic_v2_reconciliation||null,current_system_mutated:false,dynamic_v2_heb_included_in_full_run:true});
     }
   } else {
     dynamicV2 = state.dynamic_v2 || "previous_call_completed";
@@ -935,7 +979,7 @@ async function fullRun(env,input={}){
 
   const cert = await certifier(env,{...input, mode:"expansion_baseline_certifier", request_id:requestId, run_id:runId, production_counts_before:before});
   const pass = !!(cert && cert.ok === true);
-  const output = baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:pass?"EXPANSION_BASELINE_FULL_RUN_COMPLETED":"EXPANSION_BASELINE_FULL_RUN_BLOCKED",certification:cert.certification,certification_grade:cert.certification_grade,stages:{mining: mining || "previous_call_completed", line_inventory: lineInventory || "previous_call_completed", sanity: sanity || "previous_call_completed", hp, dynamic_v2_heb:dynamicV2, certifier:cert},dynamic_v2_heb_included_in_full_run:true,dynamic_v2_heb_bridge_preferred_by_score_audit:true,rows_written:Number(hp&&hp.rows_written||0)+Number(dynamicV2&&dynamicV2.rows_written||0),current_system_mutated:cert.current_system_mutated});
+  const output = baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_baseline_full_run",status:pass?"EXPANSION_BASELINE_FULL_RUN_COMPLETED":"EXPANSION_BASELINE_FULL_RUN_BLOCKED",certification:cert.certification,certification_grade:cert.certification_grade,stages:{mining: mining || "previous_call_completed", line_inventory: lineInventory || "previous_call_completed", sanity: sanity || "previous_call_completed", hp, dynamic_v2_heb:dynamicV2, certifier:cert},dynamic_v2_heb_included_in_full_run:true,dynamic_v2_heb_bridge_preferred_by_score_audit:true,rows_read:Number(dynamicV2&&dynamicV2.rows_read||dynamicV2&&dynamicV2.source_rows_read||0),rows_written:Number(dynamicV2&&dynamicV2.rows_written||0),rows_staged:Number(dynamicV2&&dynamicV2.rows_staged||0),rows_promoted:Number(dynamicV2&&dynamicV2.rows_promoted||0),history_rows:Number(dynamicV2&&dynamicV2.history_rows||0),issue_rows:Number(dynamicV2&&dynamicV2.issue_rows||0),dynamic_v2_reconciliation:(dynamicV2&&dynamicV2.dynamic_v2_reconciliation)||null,current_system_mutated:cert.current_system_mutated});
   output.ok = pass;
   output.data_ok = pass;
   return output;
