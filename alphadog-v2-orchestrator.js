@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.308-expansion-fullrun-live-sibling-resume";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.309-board-prizepicks-stale-dispatch-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -357,6 +357,21 @@ function isPrizePicksGithubBoardJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
   return job === "prizepicks-github-board" && worker === "alphadog-v2-prizepicks-github-board";
+}
+
+function isDirectWaitUntilHotTrigger(trigger) {
+  return String(trigger || "").includes("direct_waituntil_hot_continue");
+}
+
+function isCronOriginTrigger(trigger) {
+  return String(trigger || "").trim().startsWith("cron:");
+}
+
+function shouldDeferPrizePicksHeavyRetryToFreshTick(trigger, inputJson) {
+  const input = inputJson && typeof inputJson === "object" ? inputJson : {};
+  const retryCount = Number(input.retry_count || 0);
+  const pollAttempt = Number(input.poll_attempt || 0);
+  return (retryCount >= 1 || pollAttempt >= 1) && isDirectWaitUntilHotTrigger(trigger) && !isCronOriginTrigger(trigger);
 }
 
 function isParlaySleeperBoardJob(row) {
@@ -5591,6 +5606,58 @@ async function processPrizePicksGithubBoardJob(env, row, runId, trigger) {
     mode: "orchestrator_exact_prizepicks_github_board_dispatch",
     input_json: (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })()
   };
+
+  const rowInputForPrizePicks = input.input_json || {};
+  if (shouldDeferPrizePicksHeavyRetryToFreshTick(trigger, rowInputForPrizePicks)) {
+    const started = Date.now();
+    const output = {
+      ok: true,
+      data_ok: true,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      request_id: row.request_id,
+      chain_id: row.chain_id,
+      mode: "orchestrator_exact_prizepicks_github_board_dispatch_deferred",
+      status: "PRIZEPICKS_GITHUB_BOARD_HEAVY_RETRY_DEFERRED_TO_FRESH_TICK",
+      certification: "PRIZEPICKS_GITHUB_BOARD_HEAVY_RETRY_DEFERRED_TO_FRESH_TICK",
+      certification_grade: "PARTIAL_CONTINUE",
+      reason: "poll_retry_is_too_heavy_for_http_waituntil_hot_chain",
+      trigger,
+      retry_count: Number(rowInputForPrizePicks.retry_count || 0),
+      poll_attempt: Number(rowInputForPrizePicks.poll_attempt || 0),
+      max_poll_attempts: Number(rowInputForPrizePicks.max_poll_attempts || 12),
+      run_after_seconds: 75,
+      continuation_required: true,
+      orchestrator_should_self_continue: true,
+      no_service_binding_dispatch: true,
+      no_board_table_mutation: true,
+      no_new_child_created: true,
+      cloudflare_waituntil_safe_guard_v0_2_309: true
+    };
+    const nextInput = {
+      ...rowInputForPrizePicks,
+      deferred_from_hot_waituntil: true,
+      deferred_from_hot_waituntil_at: nowIso(),
+      deferred_from_trigger: String(trigger || "").slice(0, 500),
+      force_fresh_prizepicks_dispatch: true
+    };
+    const outputJson = safeStringifyD1(output, 12000);
+    await run(env.CONTROL_DB,
+      "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'PRIZEPICKS_GITHUB_BOARD_HEAVY_RETRY_DEFERRED_TO_FRESH_TICK', 0, 0, 0, COALESCE((SELECT started_at FROM control_job_runs WHERE run_id=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, ?, ?, ?, NULL, NULL)",
+      runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runId, Date.now() - started, JSON.stringify(input), outputJson
+    );
+    await run(env.CONTROL_DB,
+      "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+75 seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status='running' AND finished_at IS NULL",
+      safeStringifyD1(nextInput, 12000), outputJson, row.request_id
+    );
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'prizepicks_github_board_heavy_retry_deferred_to_fresh_tick', 'Deferred heavy PrizePicks retry out of HTTP waitUntil hot chain before service-binding dispatch', ?, CURRENT_TIMESTAMP)",
+      row.request_id, runId, WORKER_NAME, row.job_key, safeStringifyD1(output, 9000)
+    );
+    return output;
+  }
 
   const recentPartial = await first(env.CONTROL_DB, `SELECT
       COUNT(*) AS partial_continue_runs,
@@ -14586,6 +14653,117 @@ async function recoverStaleBaseBullpenHistoryJobs(env, trigger) {
   return { recovered, rows: staleRows };
 }
 
+async function recoverStalePrizePicksGithubBoardDispatchStartedJobs(env, trigger) {
+  // v0.2.309: PrizePicks GitHub board refresh can legitimately take 40-60s on
+  // poll attempt 1 after the GitHub JSON becomes fresh. When that heavy retry is
+  // launched from an HTTP waitUntil hot chain, Cloudflare can terminate the
+  // orchestrator continuation before the service-binding response returns. The
+  // queue row is left running with no output_json and the run row stays at
+  // ORCHESTRATOR_DISPATCH_STARTED, blocking Board Full Run and Daily Full Run.
+  // Recovery is CONTROL_DB-only: do not mutate board tables, do not promote data,
+  // and do not create duplicate children. Return the same child to pending so the
+  // next fresh cron/manual tick can safely dispatch it again.
+  const staleRows = await all(env.CONTROL_DB,
+    `SELECT q.request_id, q.chain_id, q.parent_request_id, q.job_key, q.worker_name, q.status, q.tick_count, q.started_at, q.updated_at, q.input_json,
+            r.run_id, r.started_at AS run_started_at
+       FROM control_job_queue q
+       JOIN control_job_runs r ON r.request_id=q.request_id
+      WHERE q.job_key='prizepicks-github-board'
+        AND q.worker_name='alphadog-v2-prizepicks-github-board'
+        AND q.status='running'
+        AND q.finished_at IS NULL
+        AND q.output_json IS NULL
+        AND datetime(q.updated_at) <= datetime(CURRENT_TIMESTAMP, '-5 minutes')
+        AND r.status='running'
+        AND r.certification_status='ORCHESTRATOR_DISPATCH_STARTED'
+        AND r.finished_at IS NULL
+      ORDER BY datetime(q.updated_at) ASC
+      LIMIT 3`
+  );
+
+  let recovered = 0;
+  for (const row of staleRows) {
+    const rowInput = parseJsonSafeText(row.input_json || "{}", {});
+    const output = {
+      ok: true,
+      data_ok: true,
+      version: SYSTEM_VERSION,
+      processed_by: WORKER_NAME,
+      worker_name: row.worker_name,
+      job_key: row.job_key,
+      request_id: row.request_id,
+      chain_id: row.chain_id,
+      parent_request_id: row.parent_request_id || null,
+      status: "PRIZEPICKS_GITHUB_BOARD_STALE_DISPATCH_REQUEUED",
+      certification: "PRIZEPICKS_GITHUB_BOARD_STALE_DISPATCH_REQUEUED",
+      certification_grade: "PARTIAL_CONTINUE",
+      reason: "stale_orchestrator_dispatch_started_no_worker_return",
+      stale_updated_at: row.updated_at,
+      stale_started_at: row.started_at,
+      stale_run_id: row.run_id,
+      stale_run_started_at: row.run_started_at,
+      stale_threshold_seconds: 300,
+      retry_count: Number(rowInput.retry_count || 0),
+      poll_attempt: Number(rowInput.poll_attempt || 0),
+      max_poll_attempts: Number(rowInput.max_poll_attempts || 12),
+      continuation_required: true,
+      orchestrator_should_self_continue: true,
+      no_board_table_mutation: true,
+      no_new_child_created: true,
+      same_child_requeued: true,
+      fresh_tick_required_for_heavy_retry: true,
+      cloudflare_waituntil_safe_guard_v0_2_309: true
+    };
+    const nextInput = {
+      ...rowInput,
+      stale_dispatch_recovered: true,
+      stale_dispatch_recovered_at: nowIso(),
+      stale_dispatch_recovered_from_run_id: row.run_id,
+      stale_dispatch_recovery_count: Number(rowInput.stale_dispatch_recovery_count || 0) + 1,
+      force_fresh_prizepicks_dispatch: true
+    };
+    await run(env.CONTROL_DB,
+      `UPDATE control_job_runs
+          SET status='partial_continue',
+              data_ok=1,
+              certification_status='PRIZEPICKS_GITHUB_BOARD_STALE_DISPATCH_REQUEUED',
+              finished_at=CURRENT_TIMESTAMP,
+              elapsed_ms=CAST((julianday(CURRENT_TIMESTAMP) - julianday(started_at)) * 86400000 AS INTEGER),
+              output_json=?,
+              error_code=NULL,
+              error_message=NULL
+        WHERE run_id=?
+          AND status='running'
+          AND certification_status='ORCHESTRATOR_DISPATCH_STARTED'
+          AND finished_at IS NULL`,
+      safeStringifyD1(output, 12000), row.run_id
+    );
+    await run(env.CONTROL_DB,
+      `UPDATE control_job_queue
+          SET status='pending',
+              run_after=datetime(CURRENT_TIMESTAMP, '+5 seconds'),
+              finished_at=NULL,
+              updated_at=CURRENT_TIMESTAMP,
+              input_json=?,
+              output_json=?,
+              error_code=NULL,
+              error_message=NULL
+        WHERE request_id=?
+          AND job_key='prizepicks-github-board'
+          AND worker_name='alphadog-v2-prizepicks-github-board'
+          AND status='running'
+          AND finished_at IS NULL`,
+      safeStringifyD1(nextInput, 12000), safeStringifyD1(output, 12000), row.request_id
+    );
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'prizepicks_github_board_stale_dispatch_requeued', 'Recovered stale PrizePicks GitHub board dispatch-start row back to pending without board mutation', ?, CURRENT_TIMESTAMP)",
+      row.request_id, row.run_id, WORKER_NAME, row.job_key, safeStringifyD1(output, 9000)
+    );
+    recovered += 1;
+  }
+  return { recovered, rows: staleRows };
+}
+
 async function enqueueStaticPlayersWeeklyIfDue(env, cronExpression) {
   const active = await first(env.CONTROL_DB,
     "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key='static-players' AND worker_name='alphadog-v2-static-players' AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
@@ -15083,6 +15261,7 @@ async function processOneUnlocked(env, trigger) {
   // instead of letting stale continuations keep writing against a failed_stale batch.
   await cancelPlayerBaselineHpQueuesWithTerminalBatch(env, trigger);
   await recoverStaleScoreEnrichmentV1Jobs(env, `${trigger || "tick"}_preselect`);
+  await recoverStalePrizePicksGithubBoardDispatchStartedJobs(env, `${trigger || "tick"}_preselect`);
 
   // v0.2.292: Expansion Baseline V2 HEB is intentionally isolated and user-triggered.
   // Put it at the absolute front of queue selection. The previous generic/hot-count path
@@ -15465,6 +15644,7 @@ async function processOneUnlocked(env, trigger) {
          AND c.parent_request_id IS NOT NULL
          AND c.status='running'
          AND c.finished_at IS NULL
+         AND NOT (c.job_key='prizepicks-github-board' AND c.worker_name='alphadog-v2-prizepicks-github-board')
          AND datetime(c.updated_at) <= datetime(CURRENT_TIMESTAMP, '-5 seconds')
        ORDER BY datetime(c.updated_at) ASC
        LIMIT 1`
@@ -16301,7 +16481,11 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
     }
 
     const propMatrixStaleRecovery = await recoverStalePropMatrixBuilderJobs(env, trigger);
-  await recoverStaleScoreEnrichmentV1Jobs(env, trigger);
+    await recoverStaleScoreEnrichmentV1Jobs(env, trigger);
+    const prizePicksDispatchRecovery = await recoverStalePrizePicksGithubBoardDispatchStartedJobs(env, trigger);
+    if (prizePicksDispatchRecovery.recovered > 0) {
+      processed.push({ status: "stale_prizepicks_github_board_dispatch_recovered", recovered_count: prizePicksDispatchRecovery.recovered });
+    }
     if (propMatrixStaleRecovery.recovered > 0) {
       processed.push({ status: "stale_prop_matrix_builder_recovered", recovered_count: propMatrixStaleRecovery.recovered, reports: propMatrixStaleRecovery.reports });
     }
