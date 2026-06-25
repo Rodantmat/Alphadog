@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.18-expansion-delta-crossdb-anchor-fix";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.19-baseline-v2-all-current-canonical-dedupe";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -695,7 +695,7 @@ async function runHp(env,input={}){
 
 
 // ---------------- Parallel V2 HEB baseline system ----------------
-const BASELINE_V2_FORMULA_VERSION = "baseline_v2_heb_v0.1.1_canonical_entity_line_dedupe_rfi_tiers";
+const BASELINE_V2_FORMULA_VERSION = "baseline_v2_heb_v0.1.2_all_current_canonical_entity_line_dedupe";
 const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v2_confidence_v0.1.1_trace_only_no_hp_drag";
 const V2_ENTITY_VALUE_CACHE = new Map();
 const V2_PROFILE_PRIOR_CACHE = new Map();
@@ -886,12 +886,16 @@ async function runBaselineV2(env,input={}){
   }
   const sourceBatchRow=await first(env.SCORE_DB,`SELECT batch_id FROM hit_probability_v2_batches ORDER BY datetime(updated_at) DESC LIMIT 1`);
   const sourceHpV2BatchId=String(input.source_hp_v2_batch_id||input.hp_v2_batch_id||(sourceBatchRow&&sourceBatchRow.batch_id)||"");
-  const targetWhere=`baseline_hp_row_id IS NULL AND board_line_value IS NOT NULL AND canonical_prop_key IS NOT NULL AND selected_side IS NOT NULL AND batch_id=?`;
+  const readAllHpV2Current=sourceHpV2BatchId==="__ALL_HIT_PROBABILITY_V2_CURRENT__" || sourceHpV2BatchId==="*" || sourceHpV2BatchId.toUpperCase()==="ALL";
+  const baseTargetWhere=`baseline_hp_row_id IS NULL AND board_line_value IS NOT NULL AND canonical_prop_key IS NOT NULL AND selected_side IS NOT NULL`;
+  const targetWhere=readAllHpV2Current ? baseTargetWhere : `${baseTargetWhere} AND batch_id=?`;
+  const sourceBinds=readAllHpV2Current ? [] : [sourceHpV2BatchId];
+  const logicalGroupBy=`source_key, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side`;
   // Canonical baseline rows are historical entity/line/side rows, not per-board-game HP rows.
-  // Keeping game_pk or factor_family in this GROUP BY created duplicate V2 baselines for the same true row.
-  const totalRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM (SELECT MAX(hp_v2_row_id) AS hp_v2_row_id FROM hit_probability_v2_current WHERE ${targetWhere} GROUP BY source_key, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side)`,sourceHpV2BatchId);
+  // The ALL-current source is intentionally collapsed before staging so old HP-v2 batch row IDs cannot become duplicate baseline rows.
+  const totalRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM (SELECT MAX(hp_v2_row_id) AS hp_v2_row_id FROM hit_probability_v2_current WHERE ${targetWhere} GROUP BY ${logicalGroupBy})`,...sourceBinds);
   const total=Number(totalRow&&totalRow.c||0);
-  const rows=await all(env.SCORE_DB,`SELECT MAX(hp_v2_row_id) AS hp_v2_row_id, source_key, MAX(game_pk) AS game_pk, MAX(official_date) AS official_date, COALESCE(mlb_player_id,0) AS mlb_player_id, MAX(player_name) AS player_name, canonical_prop_key, board_line_value, selected_side, MAX(COALESCE(factor_family,'unknown')) AS factor_family, COUNT(*) AS source_hp_v2_rows, GROUP_CONCAT(DISTINCT game_pk) AS source_game_pks FROM hit_probability_v2_current WHERE ${targetWhere} GROUP BY source_key, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side ORDER BY source_key, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side LIMIT ? OFFSET ?`,sourceHpV2BatchId,chunkSize,cursor);
+  const rows=await all(env.SCORE_DB,`SELECT MAX(hp_v2_row_id) AS hp_v2_row_id, source_key, MAX(game_pk) AS game_pk, MAX(official_date) AS official_date, COALESCE(mlb_player_id,0) AS mlb_player_id, MAX(player_name) AS player_name, canonical_prop_key, board_line_value, selected_side, MAX(COALESCE(factor_family,'unknown')) AS factor_family, COUNT(*) AS source_hp_v2_rows, GROUP_CONCAT(DISTINCT game_pk) AS source_game_pks FROM hit_probability_v2_current WHERE ${targetWhere} GROUP BY ${logicalGroupBy} ORDER BY source_key, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side LIMIT ? OFFSET ?`,...sourceBinds,chunkSize,cursor);
   let written=0, issues=0, processed=0;
   for(const r of rows){
     if(processed>0 && Date.now()-startedMs>=softYieldMs) break;
@@ -930,7 +934,7 @@ async function runBaselineV2(env,input={}){
   await run(env.SCORE_DB,`INSERT INTO player_baseline_hp_v2_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM player_baseline_hp_v2_stage WHERE batch_id=?`,batchId);
   const after=await productionCounts(env); const changed=changedCounts(before,after); const grade=changed.length?"FAIL_MUTATION_GUARD":(issues?"PASS_WITH_WARNINGS":"PASS");
   const cert=changed.length?"BASELINE_V2_HEB_BLOCKED_PRODUCTION_MUTATION":"BASELINE_V2_HEB_CERTIFIED_PARALLEL_READY";
-  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,source_hp_v2_batch_id:sourceHpV2BatchId,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:issues,mutation_guard:{changed_tables:changed},formula_version:BASELINE_V2_FORMULA_VERSION});
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,source_hp_v2_batch_id:sourceHpV2BatchId,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:issues,mutation_guard:{changed_tables:changed},read_all_hp_v2_current:readAllHpV2Current,canonical_group_by:logicalGroupBy,formula_version:BASELINE_V2_FORMULA_VERSION});
   await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",staged,staged,staged,issues,cert,grade,safeJson(output),batchId);
   await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",total,staged,staged,staged,issues,cert,grade,safeJson(output),batchId);
   output.ok=!changed.length; output.data_ok=!changed.length; return output;
