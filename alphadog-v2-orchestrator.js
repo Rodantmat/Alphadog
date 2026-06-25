@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.309-board-prizepicks-stale-dispatch-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.310-expansion-fullrun-stale-dispatch-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -16776,7 +16776,7 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
   const row = await first(env.CONTROL_DB,
     `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json, output_json, started_at, updated_at
        FROM control_job_queue
-      WHERE job_key='expansion-baseline-v2'
+      WHERE job_key IN ('expansion-baseline-v2','expansion-baseline-full-run')
         AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
         AND status='running'
         AND finished_at IS NULL
@@ -16790,9 +16790,24 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
   let output = {};
   try { input = JSON.parse(row.input_json || '{}'); } catch (_) { input = {}; }
   try { output = JSON.parse(row.output_json || '{}'); } catch (_) { output = {}; }
-  const nextInput = output && output.next_input_json && typeof output.next_input_json === 'object'
-    ? output.next_input_json
-    : { ...input, mode: 'baseline_v2_heb', expansion_mode: 'baseline_v2_heb', v2_chunk_size: Math.min(Number(input.v2_chunk_size || 8), 8), expansion_v2_stale_running_rescue: true };
+  const isExpansionFullRun = row.job_key === 'expansion-baseline-full-run';
+  const recoveryStatus = isExpansionFullRun ? 'EXPANSION_BASELINE_FULL_RUN_STALE_RUNNING_RECOVERED' : 'EXPANSION_BASELINE_V2_STALE_RUNNING_RECOVERED';
+  const recoveryEventKey = isExpansionFullRun ? 'expansion_baseline_full_run_stale_running_recovered' : 'expansion_baseline_v2_stale_running_recovered';
+  const recoveryMessage = isExpansionFullRun
+    ? 'Recovered stale running Expansion Full Baseline row back to pending for hot continuation without rewriting mode/input'
+    : 'Recovered stale running Expansion V2 HEB row back to pending for hot continuation';
+  let nextInput = output && output.next_input_json && typeof output.next_input_json === 'object'
+    ? { ...output.next_input_json }
+    : (isExpansionFullRun
+      ? { ...input, mode: input.mode || 'expansion_baseline_full_run', expansion_mode: input.expansion_mode || input.mode || 'expansion_baseline_full_run', expansion_full_run_stale_running_rescue: true }
+      : { ...input, mode: 'baseline_v2_heb', expansion_mode: 'baseline_v2_heb', v2_chunk_size: Math.min(Number(input.v2_chunk_size || 8), 8), expansion_v2_stale_running_rescue: true });
+  nextInput.request_id = row.request_id;
+  nextInput.chain_id = row.chain_id;
+  nextInput.job_key = row.job_key;
+  nextInput.worker_name = row.worker_name;
+  nextInput.stale_running_recovered_by_orchestrator = true;
+  nextInput.stale_running_recovered_at = new Date().toISOString();
+  nextInput.stale_running_recovery_trigger = trigger;
 
   const recoveryOutput = {
     ok: true,
@@ -16803,8 +16818,8 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
     job_key: row.job_key,
     request_id: row.request_id,
     chain_id: row.chain_id,
-    status: 'EXPANSION_BASELINE_V2_STALE_RUNNING_RECOVERED',
-    certification: 'EXPANSION_BASELINE_V2_STALE_RUNNING_RECOVERED',
+    status: recoveryStatus,
+    certification: recoveryStatus,
     certification_grade: 'RECOVERED_PARTIAL_CONTINUE',
     previous_status: row.status,
     previous_updated_at: row.updated_at,
@@ -16813,31 +16828,38 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
     orchestrator_should_self_continue: true,
     next_input_json: nextInput,
     trigger,
-    expansion_v2_hot_autopump_v0_2_290: true,
+    expansion_v2_hot_autopump_v0_2_290: !isExpansionFullRun,
+    expansion_full_run_stale_dispatch_rescue_v0_2_310: isExpansionFullRun,
+    preserved_mode: nextInput.mode || null,
+    preserved_expansion_mode: nextInput.expansion_mode || null,
     no_current_baseline_mutation: true,
+    no_factor_mutation: true,
+    no_matrix_mutation: true,
+    no_scoring_mutation: true,
+    no_final_board_mutation: true,
     no_scoring: true,
     no_final_board: true
   };
 
   await run(env.CONTROL_DB,
     `UPDATE control_job_runs
-        SET status='partial_continue', data_ok=1, certification_status='EXPANSION_BASELINE_V2_STALE_RUNNING_RECOVERED',
+        SET status='partial_continue', data_ok=1, certification_status=?,
             finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), elapsed_ms=COALESCE(elapsed_ms, CAST((julianday('now') - julianday(started_at)) * 86400000 AS INTEGER)), output_json=?
-      WHERE request_id=? AND job_key='expansion-baseline-v2' AND status='running' AND finished_at IS NULL`,
-    JSON.stringify(recoveryOutput), row.request_id
+      WHERE request_id=? AND job_key=? AND status='running' AND finished_at IS NULL`,
+    recoveryStatus, JSON.stringify(recoveryOutput), row.request_id, row.job_key
   );
   await run(env.CONTROL_DB,
     `UPDATE control_job_queue
         SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL
-      WHERE request_id=? AND job_key='expansion-baseline-v2' AND status='running' AND finished_at IS NULL`,
-    JSON.stringify(nextInput), JSON.stringify(recoveryOutput), row.request_id
+      WHERE request_id=? AND job_key=? AND status='running' AND finished_at IS NULL`,
+    JSON.stringify(nextInput), JSON.stringify(recoveryOutput), row.request_id, row.job_key
   );
   await run(env.CONTROL_DB,
     `INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at)
-     VALUES (?, ?, 'expansion-baseline-v2', 'WARN', 'expansion_baseline_v2_stale_running_recovered', 'Recovered stale running Expansion V2 HEB row back to pending for hot continuation', ?, CURRENT_TIMESTAMP)`,
-    row.request_id, WORKER_NAME, JSON.stringify(recoveryOutput)
+     VALUES (?, ?, ?, 'WARN', ?, ?, ?, CURRENT_TIMESTAMP)`,
+    row.request_id, WORKER_NAME, row.job_key, recoveryEventKey, recoveryMessage, JSON.stringify(recoveryOutput)
   );
-  return { recovered: 1, request_id: row.request_id };
+  return { recovered: 1, request_id: row.request_id, job_key: row.job_key, status: recoveryStatus };
 }
 
 
