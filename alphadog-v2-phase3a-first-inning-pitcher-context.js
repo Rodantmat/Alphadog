@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.17-expansion-delta-canonical-fullrun";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.18-expansion-delta-crossdb-anchor-fix";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -982,16 +982,25 @@ async function getExpansionDeltaGameList(env, input={}){
   const maxGames=Math.max(1,Math.min(Number(input.delta_game_limit || input.game_limit || 2500),2500));
   const existing=Array.isArray(input.delta_game_pks) ? input.delta_game_pks.map(Number).filter(Boolean) : null;
   if(existing) return existing;
-  const rows=await all(env.TEAM_DB,`SELECT game_pk FROM (
-      SELECT game_pk, MAX(game_date) AS game_date
-      FROM starter_history
-      WHERE started_game=1 AND game_pk IS NOT NULL
-      GROUP BY game_pk
-    ) g
-    WHERE NOT EXISTS (SELECT 1 FROM expansion_first_inning_game_context_current c WHERE c.game_pk=g.game_pk)
-    ORDER BY date(g.game_date) ASC, g.game_pk ASC
-    LIMIT ?`, maxGames);
-  return rows.map(r=>Number(r.game_pk)).filter(Boolean);
+
+  // Manual SQL / D1 does not allow cross-database references. Keep the proven contract here too:
+  // read existing expansion game anchors from CONTEXT_DB, read candidate starter-history games from TEAM_DB,
+  // then perform the anti-join in JS. Do not reference CONTEXT_DB tables inside TEAM_DB SQL.
+  const currentRows=await all(env.CONTEXT_DB,`SELECT game_pk FROM expansion_first_inning_game_context_current WHERE game_pk IS NOT NULL`);
+  const alreadyMined=new Set(currentRows.map(r=>Number(r.game_pk)).filter(Boolean));
+  const candidates=await all(env.TEAM_DB,`SELECT game_pk, MAX(game_date) AS game_date
+    FROM starter_history
+    WHERE started_game=1 AND game_pk IS NOT NULL
+    GROUP BY game_pk
+    ORDER BY date(game_date) ASC, game_pk ASC`);
+  const out=[];
+  for(const r of candidates){
+    const gamePk=Number(r.game_pk)||0;
+    if(!gamePk || alreadyMined.has(gamePk)) continue;
+    out.push(gamePk);
+    if(out.length>=maxGames) break;
+  }
+  return out;
 }
 
 async function runDeltaMining(env,input={}){
