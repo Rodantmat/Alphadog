@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.19-baseline-v2-all-current-canonical-dedupe";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.20-baseline-v2-formula-canonical-dedupe";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -695,7 +695,7 @@ async function runHp(env,input={}){
 
 
 // ---------------- Parallel V2 HEB baseline system ----------------
-const BASELINE_V2_FORMULA_VERSION = "baseline_v2_heb_v0.1.2_all_current_canonical_entity_line_dedupe";
+const BASELINE_V2_FORMULA_VERSION = "baseline_v2_heb_v0.1.3_formula_canonical_entity_line_dedupe";
 const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v2_confidence_v0.1.1_trace_only_no_hp_drag";
 const V2_ENTITY_VALUE_CACHE = new Map();
 const V2_PROFILE_PRIOR_CACHE = new Map();
@@ -866,10 +866,21 @@ function baselineV2EntityType(row){
   return "hitter";
 }
 function lineIdToken(line){ return String(line).replace(/[^0-9A-Za-z]+/g,'p').replace(/^p+|p+$/g,'') || 'line'; }
-function canonicalBaselineKey(row,line,side){
-  const source=String(row.source_key||"unknown");
+function baselineFormulaScope(row, profileNamespace, formulaKey){
+  const prop=String(row.canonical_prop_key||"").toLowerCase();
+  const ns=String(profileNamespace||"");
+  const fk=String(formulaKey||"");
+  // Baseline is not a trading board. Do not split identical PrizePicks/Sleeper rows by platform.
+  // Split only when the baseline formula/profile is truly source-specific (RFI_PP vs RFI_SL, HFS/PFS variants, etc.).
+  if(prop==="rfi_nrfi") return `${String(row.source_key||"source")}|${ns}|${fk}`;
+  if(/(^|_)RFI_(PP|SL)(_|$)/i.test(ns) || /(^|_)PFS_(PP|SL)(_|$)/i.test(ns) || /(^|_)HFS_(PP|SL)(_|$)/i.test(ns)) return `${String(row.source_key||"source")}|${ns}|${fk}`;
+  if(/(^|_)RFI_(PP|SL)(_|$)/i.test(fk) || /(^|_)PFS_(PP|SL)(_|$)/i.test(fk) || /(^|_)HFS_(PP|SL)(_|$)/i.test(fk)) return `${String(row.source_key||"source")}|${ns}|${fk}`;
+  return `baseline|${ns}|${fk}`;
+}
+function canonicalBaselineKey(row,line,side,profileNamespace,formulaKey){
   const player=Number(row.mlb_player_id||0) || upperToken(row.player_name||"game");
-  return `${source}|${player}|${upperToken(row.canonical_prop_key)}|${lineIdToken(line)}|${side}`;
+  const scope=baselineFormulaScope(row,profileNamespace,formulaKey);
+  return `${upperToken(scope)}|${player}|${upperToken(row.canonical_prop_key)}|${lineIdToken(line)}|${side}`;
 }
 
 async function runBaselineV2(env,input={}){
@@ -890,12 +901,30 @@ async function runBaselineV2(env,input={}){
   const baseTargetWhere=`baseline_hp_row_id IS NULL AND board_line_value IS NOT NULL AND canonical_prop_key IS NOT NULL AND selected_side IS NOT NULL`;
   const targetWhere=readAllHpV2Current ? baseTargetWhere : `${baseTargetWhere} AND batch_id=?`;
   const sourceBinds=readAllHpV2Current ? [] : [sourceHpV2BatchId];
-  const logicalGroupBy=`source_key, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side`;
-  // Canonical baseline rows are historical entity/line/side rows, not per-board-game HP rows.
-  // The ALL-current source is intentionally collapsed before staging so old HP-v2 batch row IDs cannot become duplicate baseline rows.
-  const totalRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM (SELECT MAX(hp_v2_row_id) AS hp_v2_row_id FROM hit_probability_v2_current WHERE ${targetWhere} GROUP BY ${logicalGroupBy})`,...sourceBinds);
+  const logicalGroupBy=`baseline_formula_scope, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side, profile_namespace, source_formula_key`;
+  const inventoryProfileExpr=`COALESCE((SELECT inv.profile_namespace FROM expansion_line_inventory_current inv WHERE inv.source_key=hp.source_key AND inv.canonical_prop_key=hp.canonical_prop_key AND inv.selected_side=hp.selected_side AND inv.line_value=hp.board_line_value ORDER BY CASE WHEN inv.profile_namespace IS NULL THEN 1 ELSE 0 END LIMIT 1),'')`;
+  const inventoryFormulaExpr=`COALESCE((SELECT inv.source_formula_key FROM expansion_line_inventory_current inv WHERE inv.source_key=hp.source_key AND inv.canonical_prop_key=hp.canonical_prop_key AND inv.selected_side=hp.selected_side AND inv.line_value=hp.board_line_value ORDER BY CASE WHEN inv.source_formula_key IS NULL THEN 1 ELSE 0 END LIMIT 1),'')`;
+  const sourceCte=`WITH hp_enriched AS (
+    SELECT hp.*,
+      ${inventoryProfileExpr} AS profile_namespace,
+      ${inventoryFormulaExpr} AS source_formula_key
+    FROM hit_probability_v2_current hp
+    WHERE ${targetWhere}
+  ), hp_canonical AS (
+    SELECT *,
+      CASE
+        WHEN lower(COALESCE(canonical_prop_key,''))='rfi_nrfi' THEN COALESCE(source_key,'source') || '|' || COALESCE(profile_namespace,'') || '|' || COALESCE(source_formula_key,'')
+        WHEN upper(COALESCE(profile_namespace,'')) LIKE '%RFI_PP%' OR upper(COALESCE(profile_namespace,'')) LIKE '%RFI_SL%' OR upper(COALESCE(profile_namespace,'')) LIKE '%PFS_PP%' OR upper(COALESCE(profile_namespace,'')) LIKE '%PFS_SL%' OR upper(COALESCE(profile_namespace,'')) LIKE '%HFS_PP%' OR upper(COALESCE(profile_namespace,'')) LIKE '%HFS_SL%' THEN COALESCE(source_key,'source') || '|' || COALESCE(profile_namespace,'') || '|' || COALESCE(source_formula_key,'')
+        WHEN upper(COALESCE(source_formula_key,'')) LIKE '%RFI_PP%' OR upper(COALESCE(source_formula_key,'')) LIKE '%RFI_SL%' OR upper(COALESCE(source_formula_key,'')) LIKE '%PFS_PP%' OR upper(COALESCE(source_formula_key,'')) LIKE '%PFS_SL%' OR upper(COALESCE(source_formula_key,'')) LIKE '%HFS_PP%' OR upper(COALESCE(source_formula_key,'')) LIKE '%HFS_SL%' THEN COALESCE(source_key,'source') || '|' || COALESCE(profile_namespace,'') || '|' || COALESCE(source_formula_key,'')
+        ELSE 'baseline|' || COALESCE(profile_namespace,'') || '|' || COALESCE(source_formula_key,'')
+      END AS baseline_formula_scope
+    FROM hp_enriched
+  )`;
+  // Canonical baseline rows are historical entity/line/side/formula rows, not per-board-game or per-platform HP rows.
+  // The ALL-current source is collapsed before staging so old HP-v2 batch IDs and app duplicates cannot become duplicate baseline rows.
+  const totalRow=await first(env.SCORE_DB,`${sourceCte} SELECT COUNT(*) AS c FROM (SELECT MAX(hp_v2_row_id) AS hp_v2_row_id FROM hp_canonical GROUP BY ${logicalGroupBy})`,...sourceBinds);
   const total=Number(totalRow&&totalRow.c||0);
-  const rows=await all(env.SCORE_DB,`SELECT MAX(hp_v2_row_id) AS hp_v2_row_id, source_key, MAX(game_pk) AS game_pk, MAX(official_date) AS official_date, COALESCE(mlb_player_id,0) AS mlb_player_id, MAX(player_name) AS player_name, canonical_prop_key, board_line_value, selected_side, MAX(COALESCE(factor_family,'unknown')) AS factor_family, COUNT(*) AS source_hp_v2_rows, GROUP_CONCAT(DISTINCT game_pk) AS source_game_pks FROM hit_probability_v2_current WHERE ${targetWhere} GROUP BY ${logicalGroupBy} ORDER BY source_key, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side LIMIT ? OFFSET ?`,...sourceBinds,chunkSize,cursor);
+  const rows=await all(env.SCORE_DB,`${sourceCte} SELECT MAX(hp_v2_row_id) AS hp_v2_row_id, MAX(source_key) AS source_key, GROUP_CONCAT(DISTINCT source_key) AS source_keys, MAX(game_pk) AS game_pk, MAX(official_date) AS official_date, COALESCE(mlb_player_id,0) AS mlb_player_id, MAX(player_name) AS player_name, canonical_prop_key, board_line_value, selected_side, MAX(COALESCE(factor_family,'unknown')) AS factor_family, profile_namespace, source_formula_key, baseline_formula_scope, COUNT(*) AS source_hp_v2_rows, GROUP_CONCAT(DISTINCT game_pk) AS source_game_pks FROM hp_canonical GROUP BY ${logicalGroupBy} ORDER BY baseline_formula_scope, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side LIMIT ? OFFSET ?`,...sourceBinds,chunkSize,cursor);
   let written=0, issues=0, processed=0;
   for(const r of rows){
     if(processed>0 && Date.now()-startedMs>=softYieldMs) break;
@@ -903,21 +932,21 @@ async function runBaselineV2(env,input={}){
     const line=Number(r.board_line_value); const side=String(r.selected_side); const values=await loadValuesForHpRow(env,r); const hs=hitStatsFor(values,line,side);
     const entityType=baselineV2EntityType(r);
     const profileNsRow=await first(env.SCORE_DB,`SELECT profile_namespace, source_formula_key, line_threshold_bucket FROM expansion_line_inventory_current WHERE source_key=? AND canonical_prop_key=? AND selected_side=? AND line_value=? ORDER BY CASE WHEN profile_namespace IS NULL THEN 1 ELSE 0 END LIMIT 1`,r.source_key,r.canonical_prop_key,side,line);
-    const profileNamespace=profileNsRow&&profileNsRow.profile_namespace || `${String(entityType).toUpperCase()}_${upperToken(r.canonical_prop_key)}_V2_`;
-    const formulaKey=profileNsRow&&profileNsRow.source_formula_key || `V2_${upperToken(r.canonical_prop_key)}_DYNAMIC`;
+    const profileNamespace=r.profile_namespace || profileNsRow&&profileNsRow.profile_namespace || `${String(entityType).toUpperCase()}_${upperToken(r.canonical_prop_key)}_V2_`;
+    const formulaKey=r.source_formula_key || profileNsRow&&profileNsRow.source_formula_key || `V2_${upperToken(r.canonical_prop_key)}_DYNAMIC`;
     const prior=await profilePriorFor(env,r,line,side,profileNamespace,formulaKey,entityType); const sampleTier=sampleTierV2(hs.non_push_sample,r.canonical_prop_key); const baseM=mForProp(r.canonical_prop_key);
     const nb=boundedNeighborBias(values,line,side,hs.raw_rate_0_100); const adjPrior=clamp(Number(prior.prior_rate_0_100||50)+Number(nb.neighbor_bias_0_100||0),1,99);
     const m=effectiveHebM(hs.hit,hs.miss,adjPrior,baseM);
     const directWeight=hs.non_push_sample>0?round(100*hs.non_push_sample/(hs.non_push_sample+m),2):0;
     const post=posteriorHeb(hs.hit,hs.miss,hs.push,adjPrior,m);
     const roleProfile=entityType==="pitcher"?"V2_PITCHER_ENTITY":(entityType==="game_pair"?"V2_GAME_PAIR_ENTITY":"V2_HITTER_ENTITY");
-    const canonicalKey=canonicalBaselineKey(r,line,side);
+    const canonicalKey=canonicalBaselineKey(r,line,side,profileNamespace,formulaKey);
     const sanityId=`pbs_v2|${batchId}|${canonicalKey}`; const hpId=`pbhp_v2|${batchId}|${canonicalKey}`;
     const confidence=round(clamp((hs.non_push_sample/(hs.non_push_sample+m))*85 + Math.min(prior.support,100)/100*10,5,95),2);
-    const trace={source_key:r.source_key,source_formula_key:formulaKey,profile_namespace:profileNamespace,entity_type:entityType,exact_line_value:line,selected_side:side,direct:{...hs},profile_prior_rate_0_100:prior.prior_rate_0_100,global_prior_rate_0_100:prior.prior_rate_0_100,adjusted_prior_rate_0_100:round(adjPrior,2),neighbor:nb,M:m,base_M:baseM,direct_weight_pct:directWeight,direct_dominance_applied:(m<baseM),sample_tier:sampleTier,profile_support_rows:prior.support,canonical_entity_line_side_key:canonicalKey,source_hp_v2_rows:Number(r.source_hp_v2_rows||1),source_game_pks:String(r.source_game_pks||r.game_pk||""),hbp_parse_source:String(r.canonical_prop_key)==="fantasy_score"?"raw_json.hitByPitch":null,no_daily_context:true,no_market_context:true,no_scoring_context:true};
+    const trace={source_key:r.source_key,source_formula_key:formulaKey,profile_namespace:profileNamespace,entity_type:entityType,exact_line_value:line,selected_side:side,direct:{...hs},profile_prior_rate_0_100:prior.prior_rate_0_100,global_prior_rate_0_100:prior.prior_rate_0_100,adjusted_prior_rate_0_100:round(adjPrior,2),neighbor:nb,M:m,base_M:baseM,direct_weight_pct:directWeight,direct_dominance_applied:(m<baseM),sample_tier:sampleTier,profile_support_rows:prior.support,canonical_entity_line_side_key:canonicalKey,source_keys:String(r.source_keys||r.source_key||""),baseline_formula_scope:String(r.baseline_formula_scope||""),source_hp_v2_rows:Number(r.source_hp_v2_rows||1),source_game_pks:String(r.source_game_pks||r.game_pk||""),hbp_parse_source:String(r.canonical_prop_key)==="fantasy_score"?"raw_json.hitByPitch":null,no_daily_context:true,no_market_context:true,no_scoring_context:true};
     if(post==null){ issues++; await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_hp_v2_issues (issue_id,batch_id,source_baseline_row_id,severity,issue_code,issue_message,issue_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,rid("pbhp_v2_issue"),batchId,sanityId,"BLOCK","V2_NO_DIRECT_OR_PRIOR","No valid direct sample for v2 HEB row",safeJson({row:r,trace})); continue; }
     await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_sanity_v2_stage (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,role_profile,prior_pool_key,sanity_profile_key,sample_profile,usage_profile,line_difficulty_profile,volatility_profile,baseline_drag_profile,confidence_drag_profile,variance_profile,games_sample,events_sample,baseline_confidence_0_100,line_baseline_json,distribution_shape_json,notes_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,sanityId,batchId,entityType,Number(r.mlb_player_id)||null,r.player_name,r.canonical_prop_key,roleProfile,`${profileNamespace}|${side}|${profileNsRow&&profileNsRow.line_threshold_bucket||lineThresholdBucketForInventory(r.canonical_prop_key,line)}|${sampleTier}`,`${profileNamespace}${sampleTier}`,sampleTier,hs.non_push_sample>=20?"ESTABLISHED_HISTORY":"LIMITED_HISTORY",lineDifficulty(profileNamespace,line),valueStats(values).volatility_profile,"NONE","NONE",valueStats(values).volatility_profile,values.length,values.length,confidence,safeJson({line,line_rates:{[String(line)]:hs},trace}),safeJson(valueStats(values)),safeJson(trace));
-    await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_hp_v2_stage (baseline_hp_row_id,batch_id,source_sanity_batch_id,source_baseline_row_id,player_type,player_id,player_name,canonical_prop_key,prop_family,line_value,selected_side,baseline_hp_0_100,hp_adjustment_0_100,raw_rate_0_100,tier_prior_rate_0_100,raw_prior_gap_0_100,baseline_confidence_0_100,baseline_enriched_confidence_0_100,consistency_bonus_0_100,soft_uncertainty_reserve_0_100,sample_profile,role_profile,sanity_profile_key,volatility_profile,variance_profile,line_difficulty_profile,baseline_hp_profile_key,non_push_sample,hit_count,miss_count,push_count,prior_strength,formula_version,confidence_formula_version,no_daily_context,no_market_context,no_scoring_context,profile_notes_json,source_snapshot_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,1,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,hpId,batchId,batchId,sanityId,entityType,Number(r.mlb_player_id)||null,r.player_name,r.canonical_prop_key,propFamilyV2(r.canonical_prop_key,entityType),line,side,post,0,hs.raw_rate_0_100,round(adjPrior,2),hs.raw_rate_0_100==null?null:round(hs.raw_rate_0_100-adjPrior,2),confidence,confidence,0,round(100-confidence,2),sampleTier,roleProfile,`${profileNamespace}${sampleTier}`,valueStats(values).volatility_profile,valueStats(values).volatility_profile,lineDifficulty(profileNamespace,line),`${profileNamespace}HEB_${sampleTier}`,hs.non_push_sample,hs.hit,hs.miss,hs.push,m,BASELINE_V2_FORMULA_VERSION,BASELINE_V2_CONFIDENCE_VERSION,safeJson(trace),safeJson({source_rows:values.length,source_formula_key:formulaKey,profile_namespace:profileNamespace,canonical_entity_line_side_key:canonicalKey,source_hp_v2_rows:Number(r.source_hp_v2_rows||1),source_game_pks:String(r.source_game_pks||r.game_pk||"")}));
+    await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_hp_v2_stage (baseline_hp_row_id,batch_id,source_sanity_batch_id,source_baseline_row_id,player_type,player_id,player_name,canonical_prop_key,prop_family,line_value,selected_side,baseline_hp_0_100,hp_adjustment_0_100,raw_rate_0_100,tier_prior_rate_0_100,raw_prior_gap_0_100,baseline_confidence_0_100,baseline_enriched_confidence_0_100,consistency_bonus_0_100,soft_uncertainty_reserve_0_100,sample_profile,role_profile,sanity_profile_key,volatility_profile,variance_profile,line_difficulty_profile,baseline_hp_profile_key,non_push_sample,hit_count,miss_count,push_count,prior_strength,formula_version,confidence_formula_version,no_daily_context,no_market_context,no_scoring_context,profile_notes_json,source_snapshot_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,1,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,hpId,batchId,batchId,sanityId,entityType,Number(r.mlb_player_id)||null,r.player_name,r.canonical_prop_key,propFamilyV2(r.canonical_prop_key,entityType),line,side,post,0,hs.raw_rate_0_100,round(adjPrior,2),hs.raw_rate_0_100==null?null:round(hs.raw_rate_0_100-adjPrior,2),confidence,confidence,0,round(100-confidence,2),sampleTier,roleProfile,`${profileNamespace}${sampleTier}`,valueStats(values).volatility_profile,valueStats(values).volatility_profile,lineDifficulty(profileNamespace,line),`${profileNamespace}HEB_${sampleTier}`,hs.non_push_sample,hs.hit,hs.miss,hs.push,m,BASELINE_V2_FORMULA_VERSION,BASELINE_V2_CONFIDENCE_VERSION,safeJson(trace),safeJson({source_rows:values.length,source_formula_key:formulaKey,profile_namespace:profileNamespace,canonical_entity_line_side_key:canonicalKey,source_keys:String(r.source_keys||r.source_key||""),baseline_formula_scope:String(r.baseline_formula_scope||""),source_hp_v2_rows:Number(r.source_hp_v2_rows||1),source_game_pks:String(r.source_game_pks||r.game_pk||"")}));
     written++;
   }
   const next=cursor+processed;
@@ -934,7 +963,7 @@ async function runBaselineV2(env,input={}){
   await run(env.SCORE_DB,`INSERT INTO player_baseline_hp_v2_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM player_baseline_hp_v2_stage WHERE batch_id=?`,batchId);
   const after=await productionCounts(env); const changed=changedCounts(before,after); const grade=changed.length?"FAIL_MUTATION_GUARD":(issues?"PASS_WITH_WARNINGS":"PASS");
   const cert=changed.length?"BASELINE_V2_HEB_BLOCKED_PRODUCTION_MUTATION":"BASELINE_V2_HEB_CERTIFIED_PARALLEL_READY";
-  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,source_hp_v2_batch_id:sourceHpV2BatchId,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:issues,mutation_guard:{changed_tables:changed},read_all_hp_v2_current:readAllHpV2Current,canonical_group_by:logicalGroupBy,formula_version:BASELINE_V2_FORMULA_VERSION});
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,source_hp_v2_batch_id:sourceHpV2BatchId,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:issues,mutation_guard:{changed_tables:changed},read_all_hp_v2_current:readAllHpV2Current,canonical_group_by:logicalGroupBy,baseline_source_policy:"source_agnostic_unless_formula_profile_is_source_specific",formula_version:BASELINE_V2_FORMULA_VERSION});
   await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",staged,staged,staged,issues,cert,grade,safeJson(output),batchId);
   await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",total,staged,staged,staged,issues,cert,grade,safeJson(output),batchId);
   output.ok=!changed.length; output.data_ok=!changed.length; return output;
