@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.310-expansion-fullrun-stale-dispatch-rescue";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.311-expansion-fullrun-hot-pump-selector-parity";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -15263,13 +15263,16 @@ async function processOneUnlocked(env, trigger) {
   await recoverStaleScoreEnrichmentV1Jobs(env, `${trigger || "tick"}_preselect`);
   await recoverStalePrizePicksGithubBoardDispatchStartedJobs(env, `${trigger || "tick"}_preselect`);
 
-  // v0.2.292: Expansion Baseline V2 HEB is intentionally isolated and user-triggered.
-  // Put it at the absolute front of queue selection. The previous generic/hot-count path
-  // correctly counted due V2 work but could keep self-continuing without selecting it.
+  // v0.2.311: Expansion baseline hot-pump selector must match the hot-count predicate.
+  // Prior v0.2.310 correctly counted both expansion-baseline-v2 and expansion-baseline-full-run,
+  // but the front-of-queue selector only selected expansion-baseline-v2. That left Full Baseline
+  // rows pending while auto-pump kept logging due_expansion_baseline_v2_hot_after_pump=1.
+  // Select both keys here; preserve each row's existing mode/input and do not rewrite Full Baseline
+  // into standalone baseline_v2_heb.
   let row = await first(env.CONTROL_DB,
     `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json
        FROM control_job_queue
-      WHERE job_key='expansion-baseline-v2'
+      WHERE job_key IN ('expansion-baseline-v2','expansion-baseline-full-run')
         AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
         AND status IN ('pending','partial_continue')
         AND finished_at IS NULL
@@ -15278,9 +15281,10 @@ async function processOneUnlocked(env, trigger) {
       LIMIT 1`
   );
   if (row) {
+    const isExpansionFullRun = row.job_key === 'expansion-baseline-full-run';
     await run(env.CONTROL_DB,
-      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'expansion_baseline_v2_front_queue_selected', 'Selected Expansion Baseline V2 HEB before all generic/full-run queue work', ?, CURRENT_TIMESTAMP)",
-      row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, expansion_v2_front_of_queue_v0_2_292: true, no_manual_wake_required: true, no_current_baseline_mutation: true, version: SYSTEM_VERSION })
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'expansion_baseline_hot_front_queue_selected', 'Selected Expansion Baseline hot row before all generic/full-run queue work', ?, CURRENT_TIMESTAMP)",
+      row.request_id, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, previous_status: row.status, trigger, selected_job_key: row.job_key, expansion_full_run_front_of_queue_v0_2_311: isExpansionFullRun, expansion_v2_front_of_queue_v0_2_292: !isExpansionFullRun, no_manual_wake_required: true, preserves_existing_mode_input: true, no_current_baseline_mutation: true, version: SYSTEM_VERSION })
     );
   }
 
