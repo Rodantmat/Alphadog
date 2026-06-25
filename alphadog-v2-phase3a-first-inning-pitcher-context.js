@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.15-v2-hp-prior-shrinkage-guard";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.16-mining-timeout-progress-safe";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -200,13 +200,23 @@ function firstInningFromLinescore(json){
   };
 }
 
-async function fetchMlbLinescore(env, gamePk){
+async function fetchMlbLinescore(env, gamePk, timeoutMs=8000){
   const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/,"");
   const url = `${base}/game/${gamePk}/linescore`;
-  const resp = await fetch(url, { headers: { "accept":"application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDogExpansionBaseline/0.1") } });
-  const text = await resp.text();
-  if(!resp.ok) throw new Error(`MLB_LINESCORE_HTTP_${resp.status}:${String(text||"").slice(0,180)}`);
-  return { url, json: JSON.parse(text) };
+  const controller = new AbortController();
+  const timer = setTimeout(() => { try { controller.abort(`MLB_LINESCORE_TIMEOUT_${timeoutMs}MS`); } catch(_){} }, Math.max(1000, Number(timeoutMs||8000)));
+  try {
+    const resp = await fetch(url, { signal: controller.signal, headers: { "accept":"application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDogExpansionBaseline/0.1") } });
+    const text = await resp.text();
+    if(!resp.ok) throw new Error(`MLB_LINESCORE_HTTP_${resp.status}:${String(text||"").slice(0,180)}`);
+    return { url, json: JSON.parse(text) };
+  } catch (err) {
+    const msg = String(err && err.message ? err.message : err || "MLB_LINESCORE_FETCH_FAILED");
+    if (/abort|timeout/i.test(msg)) throw new Error(`MLB_LINESCORE_TIMEOUT_${timeoutMs}MS`);
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function mineFirstInningContext(env, input={}){
@@ -219,8 +229,12 @@ async function mineFirstInningContext(env, input={}){
   const maxSourceGames = explicitLimit > 0 ? Math.max(1, Math.min(explicitLimit, 2500)) : 2500;
   const batchId = String(input.mining_batch_id || input.batch_id || rid("expansion_first_inning_context_batch"));
   const freshStart = cursor === 0 && !input.mining_batch_id;
+  const miningStartedMs = Date.now();
+  const miningSoftYieldMs = Math.max(25000, Math.min(Number(input.mining_soft_yield_ms || 55000), 65000));
+  const mlbLinescoreTimeoutMs = Math.max(1500, Math.min(Number(input.mlb_linescore_timeout_ms || input.mining_fetch_timeout_ms || 8000), 15000));
 
-  await writeRun(env.CONTEXT_DB,"expansion_first_inning_context_batches",`INSERT OR REPLACE INTO expansion_first_inning_context_batches (batch_id,request_id,run_id,mode,status,worker_version,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, batchId, requestId, runId, "expansion_baseline_mining", "running", VERSION);
+  await writeRun(env.CONTEXT_DB,"expansion_first_inning_context_batches",`INSERT OR IGNORE INTO expansion_first_inning_context_batches (batch_id,request_id,run_id,mode,status,worker_version,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, batchId, requestId, runId, "expansion_baseline_mining", "running", VERSION);
+  await writeRun(env.CONTEXT_DB,"expansion_first_inning_context_batches",`UPDATE expansion_first_inning_context_batches SET request_id=?, run_id=?, mode=?, status=?, worker_version=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, requestId, runId, "expansion_baseline_mining", "running", VERSION, batchId);
 
   const totalRow = await first(env.TEAM_DB, `SELECT COUNT(*) AS c FROM (
       SELECT game_pk
@@ -250,16 +264,18 @@ async function mineFirstInningContext(env, input={}){
     await writeRun(env.CONTEXT_DB,"expansion_first_inning_context_issues",`DELETE FROM expansion_first_inning_context_issues`);
   }
 
-  let gamesWritten=0, pitcherRows=0, issues=0;
+  let gamesWritten=0, pitcherRows=0, issues=0, gamesAttempted=0, softYieldTriggered=false;
   const gameStmts=[];
   const pitcherStmts=[];
   const issueStmts=[];
 
   for(const g of games){
+    if (gamesAttempted > 0 && (Date.now() - miningStartedMs) >= miningSoftYieldMs) { softYieldTriggered = true; break; }
     const gamePk = Number(g.game_pk);
     if(!gamePk) continue;
+    gamesAttempted++;
     try{
-      const fetched = await fetchMlbLinescore(env, gamePk);
+      const fetched = await fetchMlbLinescore(env, gamePk, mlbLinescoreTimeoutMs);
       const parsed = firstInningFromLinescore(fetched.json);
       if(!parsed) throw new Error("MISSING_FIRST_INNING_LINESCORE_RUNS");
       const contextRowId = `exp_first_game|${gamePk}`;
@@ -300,9 +316,9 @@ async function mineFirstInningContext(env, input={}){
   const totalPitcherRows=await tableCount(env.CONTEXT_DB,"expansion_first_inning_pitcher_context_current");
   const issueRow=await first(env.CONTEXT_DB,`SELECT COUNT(*) AS c FROM expansion_first_inning_context_issues WHERE batch_id=?`,batchId);
   const issueTotal=Number(issueRow && issueRow.c || 0);
-  const nextCursor = cursor + games.length;
-  const done = nextCursor >= totalGames || games.length === 0;
-  const output = baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"expansion_baseline_mining",status:done?"EXPANSION_BASELINE_MINING_COMPLETED":"EXPANSION_BASELINE_MINING_PARTIAL_CONTINUE",certification:done?"EXPANSION_FIRST_INNING_CONTEXT_MINED_FULL_DEPTH":"EXPANSION_FIRST_INNING_CONTEXT_MINING_PARTIAL_CONTINUE",certification_grade:issueTotal>0?"PASS_WITH_WARNINGS":(done?"PASS":"PARTIAL_CONTINUE"),partial_continue:!done,orchestrator_should_self_continue:!done,source_games_total:totalGames,source_games_read:nextCursor,games_requested:totalGames,games_written:totalGameRows,pitcher_rows_written:totalPitcherRows,issue_rows:issueTotal,rows_written:gamesWritten+pitcherRows,mining_cursor_offset:nextCursor,mining_game_chunk_size:chunkSize,next_input_json:!done?{...input,mode:"expansion_baseline_mining",request_id:requestId,run_id:runId,mining_batch_id:batchId,mining_cursor_offset:nextCursor,mining_game_chunk_size:chunkSize,game_limit:maxSourceGames,full_depth_base:true}:null,full_depth_base:true});
+  const nextCursor = cursor + gamesAttempted;
+  const done = nextCursor >= totalGames || games.length === 0 || gamesAttempted === 0;
+  const output = baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"expansion_baseline_mining",status:done?"EXPANSION_BASELINE_MINING_COMPLETED":"EXPANSION_BASELINE_MINING_PARTIAL_CONTINUE",certification:done?"EXPANSION_FIRST_INNING_CONTEXT_MINED_FULL_DEPTH":"EXPANSION_FIRST_INNING_CONTEXT_MINING_PARTIAL_CONTINUE",certification_grade:issueTotal>0?"PASS_WITH_WARNINGS":(done?"PASS":"PARTIAL_CONTINUE"),partial_continue:!done,orchestrator_should_self_continue:!done,source_games_total:totalGames,source_games_read:nextCursor,games_requested:totalGames,games_written:totalGameRows,pitcher_rows_written:totalPitcherRows,issue_rows:issueTotal,rows_written:gamesWritten+pitcherRows,mining_cursor_offset:nextCursor,mining_game_chunk_size:chunkSize,mining_games_attempted:gamesAttempted,mining_soft_yield_triggered:softYieldTriggered,mining_soft_yield_ms:miningSoftYieldMs,mlb_linescore_timeout_ms:mlbLinescoreTimeoutMs,next_input_json:!done?{...input,mode:"expansion_baseline_mining",request_id:requestId,run_id:runId,mining_batch_id:batchId,mining_cursor_offset:nextCursor,mining_game_chunk_size:chunkSize,game_limit:maxSourceGames,full_depth_base:true,mining_soft_yield_ms:miningSoftYieldMs,mlb_linescore_timeout_ms:mlbLinescoreTimeoutMs}:null,full_depth_base:true});
   await writeRun(env.CONTEXT_DB,"expansion_first_inning_context_batches",`UPDATE expansion_first_inning_context_batches SET status=?, games_requested=?, games_written=?, pitcher_rows_written=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, done?"completed":"partial_continue",totalGames,totalGameRows,totalPitcherRows,issueTotal,output.certification,output.certification_grade,safeJson(output),batchId);
   return output;
 }
