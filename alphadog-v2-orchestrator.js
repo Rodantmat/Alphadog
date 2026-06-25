@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.316-daily-delta-v3-cascade-label-alignment";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.317-expansion-v2-batched-fast-current";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12319,7 +12319,11 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   input.no_scoring = true;
   input.no_final_board = true;
   input.no_scheduler_mutation = true;
-  input.v2_chunk_size = Math.max(10, Math.min(150, Number(input.v2_chunk_size || 80)));
+  const expansionV2AllCurrent = input.read_all_hp_v2_current === true || String(input.source_hp_v2_batch_id || input.hp_v2_batch_id || '').toUpperCase() === '__ALL_HIT_PROBABILITY_V2_CURRENT__' || String(input.source_hp_v2_batch_id || input.hp_v2_batch_id || '').toUpperCase() === 'ALL' || String(input.source_hp_v2_batch_id || input.hp_v2_batch_id || '') === '*';
+  input.v2_all_current_chunk_size = expansionV2AllCurrent ? Math.max(96, Math.min(220, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 160))) : input.v2_all_current_chunk_size;
+  input.v2_chunk_size = expansionV2AllCurrent ? Math.max(96, Math.min(220, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 160))) : Math.max(10, Math.min(150, Number(input.v2_chunk_size || 80)));
+  input.v2_soft_yield_ms = expansionV2AllCurrent ? Math.max(45000, Math.min(65000, Number(input.v2_soft_yield_ms || 60000))) : input.v2_soft_yield_ms;
+  if (expansionV2AllCurrent) input.fast_safe_chunk_policy = 'all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s';
 
   if (!env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER || typeof env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER.fetch !== "function") {
     const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", job_key:row.job_key, request_id:row.request_id, run_id:runId, status:"EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING", certification:"EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING", certification_grade:"BLOCKED", required_binding:"PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER" };
@@ -16977,7 +16981,7 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
     ? { ...output.next_input_json }
     : (isExpansionFullRun
       ? { ...input, mode: input.mode || 'expansion_baseline_full_run', expansion_mode: input.expansion_mode || input.mode || 'expansion_baseline_full_run', expansion_full_run_stale_running_rescue: true }
-      : { ...input, mode: 'baseline_v2_heb', expansion_mode: 'baseline_v2_heb', v2_chunk_size: Math.min(Number(input.v2_chunk_size || 8), 8), expansion_v2_stale_running_rescue: true });
+      : { ...input, mode: 'baseline_v2_heb', expansion_mode: 'baseline_v2_heb', v2_chunk_size: Math.max(96, Math.min(220, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 160))), v2_all_current_chunk_size: Math.max(96, Math.min(220, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 160))), v2_soft_yield_ms: Math.max(45000, Math.min(65000, Number(input.v2_soft_yield_ms || 60000))), fast_safe_chunk_policy: 'all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s', expansion_v2_stale_running_rescue: true });
   nextInput.request_id = row.request_id;
   nextInput.chain_id = row.chain_id;
   nextInput.job_key = row.job_key;
