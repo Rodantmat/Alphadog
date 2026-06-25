@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.14-v2-canonical-baseline-dedupe";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.15-v2-hp-prior-shrinkage-guard";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -538,6 +538,30 @@ function formulaKeyFor(ns){ if(ns==="RA_") return "RA_FULL_GAME_TOTAL_RUNS_ALLOW
 function linesFor(ns){ if(ns==="RA_") return RA_LINES; if(ns==="PFS_PP_"||ns==="PFS_SL_") return PFS_LINES; return RFI_LINES; }
 function propFamilyFor(ns){ if(ns==="RA_") return "EXPANSION_RUNS_ALLOWED"; if(ns.startsWith("PFS_")) return "EXPANSION_PITCHER_FANTASY_SCORE"; if(ns.startsWith("RFI_")) return "EXPANSION_FIRST_INNING_RUNS"; return "EXPANSION_BASELINE"; }
 function valuesFromSanity(row){ const line= parseJson(row.line_baseline_json,{}); return line.line_rates || {}; }
+function expansionHpPoolKey(r){ return [r.profile_namespace,r.canonical_prop_key,r.source_formula_key,String(r.line_value),r.selected_side].join("|"); }
+function expansionHpPriorStrength(sampleProfile, nonPush){
+  const sp=String(sampleProfile||""); const n=Number(nonPush||0);
+  if(sp==="TINY_SAMPLE" || n < 5) return 20;
+  if(sp==="LOW_SAMPLE" || n < 15) return 12;
+  if(sp==="MEDIUM_SAMPLE" || n < 30) return 6;
+  return 2;
+}
+function expansionHpCap(sampleProfile, nonPush){
+  const sp=String(sampleProfile||""); const n=Number(nonPush||0);
+  if(sp==="TINY_SAMPLE" || n < 5) return {lo:15, hi:85};
+  if(sp==="LOW_SAMPLE" || n < 15) return {lo:10, hi:90};
+  if(sp==="MEDIUM_SAMPLE" || n < 30) return {lo:5, hi:95};
+  return {lo:1, hi:99};
+}
+function expansionPosteriorHp(hit, miss, priorPct, priorStrength, sampleProfile){
+  const h=Number(hit||0), m=Number(miss||0), n=h+m;
+  if(n<=0) return null;
+  const prior=clamp(Number(priorPct||50),1,99)/100;
+  const ps=Math.max(0, Number(priorStrength||0));
+  const rawPosterior=100*((h + prior*ps)/(n + ps));
+  const cap=expansionHpCap(sampleProfile,n);
+  return round(clamp(rawPosterior, cap.lo, cap.hi),2);
+}
 function buildHpRowsForSanityRows(sanityRows, batchId, sourceSanityBatchId){
   const hpRows=[];
   for(const s of sanityRows){
@@ -552,22 +576,41 @@ function buildHpRowsForSanityRows(sanityRows, batchId, sourceSanityBatchId){
         const push=Number(lr.push||0);
         const nonPush=Number(lr.non_push_sample||0);
         const raw=side==="more"?lr.more_rate_0_100:lr.less_rate_0_100;
-        const baselineHp=raw==null?null:round(raw,2);
         const conf=Number(s.baseline_confidence_0_100||0);
         hpRows.push({
           baseline_hp_row_id:`exp_hp|${ns}|${s.entity_id||s.player_id||"pool"}|${s.canonical_prop_key}|${String(line).replace('.','p')}|${side}`,
           batch_id:batchId, source_sanity_batch_id:sourceSanityBatchId, source_baseline_row_id:s.baseline_row_id,
           expansion_scope:"baseline_only_shadow", profile_namespace:ns, source_data_family:s.source_data_family, source_table:s.source_table, source_formula_key:formulaKeyFor(ns), baseline_formula_version:VERSION,
           entity_type:s.entity_type, entity_id:s.entity_id, player_type:s.player_type, player_id:s.player_id, player_name:s.player_name, canonical_prop_key:s.canonical_prop_key, prop_family:propFamilyFor(ns),
-          line_value:line, selected_side:side, baseline_hp_0_100:baselineHp, raw_rate_0_100:raw==null?null:round(raw,2), tier_prior_rate_0_100:raw==null?null:round(raw,2), raw_prior_gap_0_100:0,
+          line_value:line, selected_side:side, baseline_hp_0_100:null, raw_rate_0_100:raw==null?null:round(raw,2), tier_prior_rate_0_100:null, raw_prior_gap_0_100:null,
           baseline_confidence_0_100:conf, baseline_enriched_confidence_0_100:conf, consistency_bonus_0_100:0, soft_uncertainty_reserve_0_100:round(100-conf,1),
           sample_profile:s.sample_profile, role_profile:s.role_profile, sanity_profile_key:s.sanity_profile_key, volatility_profile:s.volatility_profile, variance_profile:s.variance_profile, line_difficulty_profile:lineDifficulty(ns,line), baseline_hp_profile_key:`${ns}${String(side).toUpperCase()}_${String(line).replace('.','P')}_${s.sanity_profile_key}`,
-          non_push_sample:nonPush, hit_count:hit, miss_count:miss, push_count:push, prior_strength:0,
-          profile_notes_json:safeJson({baseline_only:true,namespace:ns,formula_key:formulaKeyFor(ns),no_daily_context:true,no_market_context:true,no_scoring_context:true}),
-          source_snapshot_json:safeJson({source_baseline_row_id:s.baseline_row_id,line_rate:lr})
+          non_push_sample:nonPush, hit_count:hit, miss_count:miss, push_count:push, prior_strength:null,
+          profile_notes_json:null,
+          source_snapshot_json:null,
+          _line_rate:lr
         });
       }
     }
+  }
+  const pools=new Map();
+  for(const r of hpRows){
+    const key=expansionHpPoolKey(r); const cur=pools.get(key)||{hit:0,miss:0,sample:0,rows:0};
+    cur.hit += Number(r.hit_count||0); cur.miss += Number(r.miss_count||0); cur.sample += Number(r.non_push_sample||0); cur.rows += 1; pools.set(key,cur);
+  }
+  for(const r of hpRows){
+    const pool=pools.get(expansionHpPoolKey(r))||{hit:0,miss:0,sample:0,rows:0};
+    const poolRate=pool.sample>0 ? round(100*pool.hit/pool.sample,2) : 50;
+    const priorRate=Number.isFinite(Number(poolRate)) ? clamp(Number(poolRate),1,99) : 50;
+    const priorStrength=expansionHpPriorStrength(r.sample_profile,r.non_push_sample);
+    r.tier_prior_rate_0_100=round(priorRate,2);
+    r.raw_prior_gap_0_100=r.raw_rate_0_100==null?null:round(Number(r.raw_rate_0_100)-priorRate,2);
+    r.prior_strength=priorStrength;
+    r.baseline_hp_0_100=expansionPosteriorHp(r.hit_count,r.miss_count,priorRate,priorStrength,r.sample_profile);
+    const cap=expansionHpCap(r.sample_profile,r.non_push_sample);
+    r.profile_notes_json=safeJson({baseline_only:true,namespace:r.profile_namespace,formula_key:r.source_formula_key,no_daily_context:true,no_market_context:true,no_scoring_context:true,hp_calibration_guard:"pool_prior_shrinkage_with_sample_caps",prior_pool_key:expansionHpPoolKey(r),prior_pool_sample:pool.sample,prior_pool_rows:pool.rows,prior_strength:priorStrength,prior_rate_0_100:round(priorRate,2),cap_0_100:cap});
+    r.source_snapshot_json=safeJson({source_baseline_row_id:r.source_baseline_row_id,line_rate:r._line_rate,raw_rate_0_100:r.raw_rate_0_100,posterior_hp_0_100:r.baseline_hp_0_100});
+    delete r._line_rate;
   }
   return hpRows;
 }
