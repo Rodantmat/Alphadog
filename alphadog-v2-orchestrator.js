@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.311-expansion-fullrun-hot-pump-selector-parity";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.312-expansion-fullrun-autonomous-lock-release";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -16400,9 +16400,124 @@ async function processOneUnlocked(env, trigger) {
   }
 }
 
+
+async function releaseStaleExpansionBaselineHotLockPreLock(env, trigger = "manual") {
+  // v0.2.312: Expansion Full Baseline must not require manual Wake between chunks.
+  // Root cause observed in control logs: the queue row can be pending + due with
+  // orchestrator_should_self_continue=1 and no open control_job_runs, while the
+  // GLOBAL_ORCHESTRATOR lock remains held by a prior hot pump. That makes every
+  // direct waitUntil pump report due_expansion_baseline_v2_hot_after_pump=1 but
+  // only see lock_busy until lock expiry/manual wake. This mirrors the proven
+  // Daily Context pre-lock lock-release pattern, but is stricter: release only
+  // when an Expansion Baseline row is due, no same-request run is open, and no
+  // control_job_runs row is open globally.
+  if (!env || !env.CONTROL_DB) return { released: 0, reason: "missing_control_db" };
+
+  const hot = await first(env.CONTROL_DB,
+    `SELECT request_id, chain_id, job_key, worker_name, status, run_after, updated_at, output_json
+       FROM control_job_queue
+      WHERE job_key IN ('expansion-baseline-v2','expansion-baseline-full-run')
+        AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
+        AND status IN ('pending','partial_continue')
+        AND finished_at IS NULL
+        AND datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+      ORDER BY datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) ASC, datetime(created_at) ASC
+      LIMIT 1`
+  );
+  if (!hot || !hot.request_id) return { released: 0, reason: "no_due_expansion_hot_row" };
+
+  const lock = await first(env.CONTROL_DB,
+    `SELECT lock_key, lock_flag, owner_request_id, owner_worker_name, acquired_at, expires_at, updated_at,
+            CASE WHEN expires_at IS NOT NULL AND datetime(expires_at) > datetime(CURRENT_TIMESTAMP) THEN 1 ELSE 0 END AS not_expired
+       FROM control_locks
+      WHERE lock_key='GLOBAL_ORCHESTRATOR'
+      LIMIT 1`
+  );
+  if (!lock || Number(lock.lock_flag || 0) !== 1 || Number(lock.not_expired || 0) !== 1) {
+    return { released: 0, reason: "no_active_lock" };
+  }
+  if (String(lock.owner_worker_name || '') !== WORKER_NAME) {
+    return { released: 0, reason: "lock_not_owned_by_orchestrator", owner_worker_name: lock.owner_worker_name || null };
+  }
+
+  const lockAge = await first(env.CONTROL_DB,
+    `SELECT CAST((julianday(CURRENT_TIMESTAMP) - julianday(COALESCE(?, CURRENT_TIMESTAMP))) * 86400 AS INTEGER) AS seconds_since_lock_update`,
+    lock.updated_at || lock.acquired_at || null
+  );
+  const secondsSinceLockUpdate = Number(lockAge && lockAge.seconds_since_lock_update || 0);
+  if (secondsSinceLockUpdate < 25) {
+    return { released: 0, reason: "lock_too_fresh", seconds_since_lock_update: secondsSinceLockUpdate };
+  }
+
+  const sameRequestOpen = await first(env.CONTROL_DB,
+    `SELECT COUNT(*) AS c
+       FROM control_job_runs
+      WHERE request_id=?
+        AND finished_at IS NULL`,
+    hot.request_id
+  );
+  if (Number(sameRequestOpen && sameRequestOpen.c || 0) > 0) {
+    return { released: 0, reason: "same_request_run_open", open_rows: Number(sameRequestOpen.c || 0) };
+  }
+
+  const globalOpen = await first(env.CONTROL_DB,
+    `SELECT COUNT(*) AS c
+       FROM control_job_runs
+      WHERE finished_at IS NULL
+        AND status='running'`
+  );
+  if (Number(globalOpen && globalOpen.c || 0) > 0) {
+    return { released: 0, reason: "global_run_open", open_rows: Number(globalOpen.c || 0) };
+  }
+
+  let output = {};
+  try { output = JSON.parse(hot.output_json || '{}'); } catch (_) { output = {}; }
+  const shouldSelfContinue = output && (output.orchestrator_should_self_continue || output.continuation_required || String(output.status || '').toLowerCase().includes('partial_continue'));
+  if (!shouldSelfContinue) {
+    return { released: 0, reason: "due_row_not_marked_self_continue" };
+  }
+
+  await run(env.CONTROL_DB,
+    `UPDATE control_locks
+        SET lock_flag=0, owner_request_id=NULL, owner_worker_name=NULL, expires_at=NULL, updated_at=CURRENT_TIMESTAMP
+      WHERE lock_key='GLOBAL_ORCHESTRATOR'
+        AND owner_worker_name=?`,
+    WORKER_NAME
+  );
+  await run(env.CONTROL_DB,
+    `UPDATE control_system_state
+        SET lock_flag=0, running_job_key=NULL, running_request_id=NULL, running_chain_id=NULL, status='IDLE', updated_at=CURRENT_TIMESTAMP
+      WHERE state_key='GLOBAL'`
+  );
+  await run(env.CONTROL_DB,
+    `INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at)
+     VALUES (?, ?, ?, 'WARN', 'expansion_baseline_full_run_prelock_stale_lock_released', 'Released stale GLOBAL_ORCHESTRATOR lock for due Expansion Baseline hot row with no open run; autonomous continuation can proceed without manual Wake', ?, CURRENT_TIMESTAMP)`,
+    hot.request_id, WORKER_NAME, hot.job_key, JSON.stringify({
+      trigger,
+      request_id: hot.request_id,
+      job_key: hot.job_key,
+      queue_status: hot.status,
+      run_after: hot.run_after || null,
+      queue_updated_at: hot.updated_at || null,
+      lock_owner_request_id: lock.owner_request_id || null,
+      lock_updated_at: lock.updated_at || null,
+      lock_acquired_at: lock.acquired_at || null,
+      seconds_since_lock_update: secondsSinceLockUpdate,
+      no_open_same_request_runs: true,
+      no_open_global_running_runs: true,
+      due_expansion_hot_row: true,
+      no_manual_wake_required: true,
+      copied_from_daily_context_prelock_lock_release_pattern: true,
+      version: SYSTEM_VERSION
+    }).slice(0, 9000)
+  );
+  return { released: 1, request_id: hot.request_id, job_key: hot.job_key, seconds_since_lock_update: secondsSinceLockUpdate };
+}
+
 async function tick(env, trigger = "manual", maxJobs = 3) {
   let prelockDailyContextRecovery = null;
   let prelockCoverageDateMoveReconcile = null;
+  let expansionBaselineHotLockRelease = { released: 0 };
   let expansionBaselineV2StaleRecovery = { recovered: 0 };
   try {
     prelockCoverageDateMoveReconcile = await reconcileCalendarCoverageDateMoves(env, `${trigger || 'tick'}:prelock`);
@@ -16417,6 +16532,16 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'WARN', 'daily_context_prelock_sidecar_recovery_failed', 'Pre-lock Daily Context sidecar recovery probe failed before acquiring GLOBAL_ORCHESTRATOR', ?, CURRENT_TIMESTAMP)", WORKER_NAME, JSON.stringify({ trigger, error: prelockDailyContextRecovery.error, version: SYSTEM_VERSION }));
     } catch (_) {}
   }
+
+  try {
+    expansionBaselineHotLockRelease = await releaseStaleExpansionBaselineHotLockPreLock(env, `${trigger || "tick"}_prelock`);
+  } catch (err) {
+    expansionBaselineHotLockRelease = { released: 0, error: String(err && err.message ? err.message : err).slice(0, 900) };
+    try {
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'orchestrator', 'WARN', 'expansion_baseline_hot_prelock_lock_release_failed', 'Pre-lock Expansion Baseline stale lock release probe failed before acquiring GLOBAL_ORCHESTRATOR', ?, CURRENT_TIMESTAMP)", WORKER_NAME, JSON.stringify({ trigger, error: expansionBaselineHotLockRelease.error, version: SYSTEM_VERSION }));
+    } catch (_) {}
+  }
+
   try {
     expansionBaselineV2StaleRecovery = await rescueStaleExpansionBaselineV2Job(env, `${trigger || "tick"}_preselect`);
   } catch (err) {
@@ -16436,7 +16561,8 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
       trigger,
       lock,
       prelock_daily_context_recovery: prelockDailyContextRecovery,
-      prelock_coverage_date_move_reconcile: prelockCoverageDateMoveReconcile
+      prelock_coverage_date_move_reconcile: prelockCoverageDateMoveReconcile,
+      expansion_baseline_hot_lock_release: expansionBaselineHotLockRelease
     });
   }
 
@@ -16444,6 +16570,9 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
   try {
     if (prelockCoverageDateMoveReconcile && prelockCoverageDateMoveReconcile.changed) {
       processed.push({ status: 'calendar_coverage_date_moves_reconciled', ...prelockCoverageDateMoveReconcile });
+    }
+    if (expansionBaselineHotLockRelease && expansionBaselineHotLockRelease.released > 0) {
+      processed.push({ status: 'expansion_baseline_hot_stale_lock_released_preselect', ...expansionBaselineHotLockRelease });
     }
     if (expansionBaselineV2StaleRecovery && expansionBaselineV2StaleRecovery.recovered > 0) {
       processed.push({ status: 'expansion_baseline_v2_stale_running_recovered', ...expansionBaselineV2StaleRecovery });
@@ -16523,7 +16652,7 @@ async function tick(env, trigger = "manual", maxJobs = 3) {
     await releaseLock(env, owner, "IDLE");
 
     const completed = processed.filter(x => x.status === "completed_one_safe_test_job" || x.status === "completed_one_market_source_health_job" || x.status === "completed_one_market_teams_game_odds_job" || x.status === "completed_one_market_hitter_prop_context_job" || x.status === "completed_one_market_pitcher_prop_context_job" || x.status === "completed_one_oddsapi_hitter_prop_context_job" || x.status === "completed_one_prizepicks_github_board_job" || x.status === "completed_one_parlay_sleeper_board_job" || x.status === "completed_one_base_hitter_game_logs_job" || x.status === "completed_one_base_hitter_splits_job" || x.status === "completed_one_base_hitter_metrics_job" || x.status === "completed_one_base_pitcher_game_logs_job" || x.status === "completed_one_base_team_game_logs_job" || x.status === "completed_one_base_pitcher_splits_job" || x.status === "completed_one_base_starter_history_job" || x.status === "completed_one_base_bullpen_history_job" || x.status === "completed_one_static_teams_job" || x.status === "completed_one_static_stadiums_job" || x.status === "completed_one_static_park_factors_job" || x.status === "completed_one_static_players_job" || x.status === "completed_one_static_prop_taxonomy_job" || x.status === "completed_one_static_certifier_job" || x.status === "completed_one_delta_certifier_job" || x.status === "completed_one_static_full_run_job" || x.status === "completed_one_incremental_morning_full_run_job" || x.status === "completed_one_board_full_run_job" || x.status === "completed_one_daily_weather_job" || x.status === "completed_one_daily_bullpen_availability_job" || x.status === "completed_one_daily_team_schedule_spot_job" || x.status === "completed_one_daily_starters_job" || x.status === "completed_one_daily_player_availability_job" || x.status === "completed_one_daily_lineups_source_probe_job" || x.status === "completed_one_daily_game_status_job" || x.status === "completed_one_daily_context_certifier_job" || x.status === "completed_one_daily_context_full_run_job" || x.status === "completed_one_prop_factor_miner_job" || x.status === "completed_one_prop_matrix_builder_job" || x.status === "completed_one_scoring_engine_job" || x.status === "completed_one_score_final_board_job" || x.status === "completed_one_market_scoring_full_run_job" || x.status === "completed_one_daily_full_run_job").length;
-    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job" || x.status === "partial_continue_daily_context_full_run_job" || x.status === "partial_continue_market_scoring_full_run_job" || x.status === "partial_continue_daily_full_run_job" || x.status === "partial_continue_prop_matrix_builder_job" || x.status === "partial_continue_score_audit_job").length;
+    const partialContinue = processed.filter(x => x.status === "partial_continue_static_full_run_job" || x.status === "partial_continue_incremental_morning_full_run_job" || x.status === "partial_continue_base_hitter_game_logs_job" || x.status === "partial_continue_base_hitter_splits_job" || x.status === "partial_continue_base_hitter_metrics_job" || x.status === "partial_continue_base_pitcher_game_logs_job" || x.status === "partial_continue_base_team_game_logs_job" || x.status === "partial_continue_base_pitcher_splits_job" || x.status === "partial_continue_base_starter_history_job" || x.status === "partial_continue_base_bullpen_history_job" || x.status === "partial_continue_board_full_run_job" || x.status === "partial_continue_daily_context_full_run_job" || x.status === "partial_continue_market_scoring_full_run_job" || x.status === "partial_continue_expansion_baseline_job" || x.status === "partial_continue_daily_full_run_job" || x.status === "partial_continue_prop_matrix_builder_job" || x.status === "partial_continue_score_audit_job").length;
     const blocked = processed.filter(x => x.status === "failed_one_dispatch_exception_contained" || x.status === "blocked_unsupported_job" || x.status === "failed_one_market_teams_game_odds_job" || x.status === "failed_one_market_hitter_prop_context_job" || x.status === "failed_one_market_pitcher_prop_context_job" || x.status === "failed_one_oddsapi_hitter_prop_context_job" || x.status === "failed_one_market_source_health_job" || x.status === "failed_one_prizepicks_github_board_job" || x.status === "failed_one_parlay_sleeper_board_job" || x.status === "failed_one_base_hitter_game_logs_job" || x.status === "failed_one_base_hitter_splits_job" || x.status === "failed_one_base_hitter_metrics_job" || x.status === "failed_one_base_pitcher_game_logs_job" || x.status === "failed_one_base_team_game_logs_job" || x.status === "failed_one_base_pitcher_splits_job" || x.status === "failed_one_base_starter_history_job" || x.status === "failed_one_base_bullpen_history_job" || x.status === "failed_one_static_teams_job" || x.status === "failed_one_static_stadiums_job" || x.status === "failed_one_static_park_factors_job" || x.status === "failed_one_static_players_job" || x.status === "failed_one_static_prop_taxonomy_job" || x.status === "failed_one_static_certifier_job" || x.status === "failed_one_delta_certifier_job" || x.status === "failed_one_static_full_run_job" || x.status === "failed_one_incremental_morning_full_run_job" || x.status === "failed_one_board_full_run_job" || x.status === "failed_one_daily_weather_job" || x.status === "failed_one_daily_bullpen_availability_job" || x.status === "failed_one_daily_team_schedule_spot_job" || x.status === "failed_one_daily_starters_job" || x.status === "failed_one_daily_player_availability_job" || x.status === "failed_one_daily_lineups_source_probe_job" || x.status === "failed_one_daily_game_status_job" || x.status === "failed_one_daily_context_certifier_job" || x.status === "failed_one_daily_context_full_run_job" || x.status === "failed_one_prop_factor_miner_job" || x.status === "failed_one_prop_matrix_builder_job" || x.status === "failed_one_scoring_engine_job" || x.status === "failed_one_score_final_board_job" || x.status === "failed_one_market_scoring_full_run_job" || x.status === "failed_one_daily_full_run_job").length;
     const noDue = processed.some(x => x.status === "no_due_jobs");
 
@@ -17312,7 +17441,7 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   const lastCycle = cycles.length ? cycles[cycles.length - 1] : null;
   const lastStatus = String((lastCycle && lastCycle.status) || "");
   const hotContinuationDelayMs = shouldSelfContinue && dueExpansionBaselineV2Hot > 0
-    ? 0
+    ? (lockBusyHotContinuation ? 2500 : 250)
     : (shouldSelfContinue && (duePropFactorMinerHot > 0 || duePropMatrixBuilderHot > 0 || dueScoreEnrichmentV1Hot > 0)
       ? (lastStatus === "no_due_jobs" ? 250 : 0)
       : (shouldSelfContinue && (lastStatus === "no_due_jobs" || lockBusyHotContinuation) ? 2500 : 0));
