@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.313-expansion-delta-fullrun-wire";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.314-daily-fullrun-v3-shadow-cert-acceptance";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -2456,12 +2456,13 @@ function dailyFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
     includes_daily_context_full_run: stage.stage_key === "daily_context_full_run",
     includes_board_full_run: stage.stage_key === "board_full_run",
     includes_market_scoring_full_run: stage.stage_key === "market_scoring_full_run",
-    requires_v2_scoring_stack: stage.stage_key === "market_scoring_full_run",
+    requires_v3_shadow_scoring_stack: stage.stage_key === "market_scoring_full_run",
+    accepts_v3_shadow_review_only_stack: stage.stage_key === "market_scoring_full_run",
     removes_legacy_scoring_stack: stage.stage_key === "market_scoring_full_run",
-    includes_score_enrichment_v1: stage.stage_key === "market_scoring_full_run",
-    includes_hit_probability_v2: stage.stage_key === "market_scoring_full_run",
-    includes_final_score_v1: stage.stage_key === "market_scoring_full_run",
-    includes_final_board_v2: stage.stage_key === "market_scoring_full_run",
+    includes_score_enrichment_v2_shadow: stage.stage_key === "market_scoring_full_run",
+    includes_hit_probability_v3_shadow: stage.stage_key === "market_scoring_full_run",
+    includes_final_score_v2_shadow: stage.stage_key === "market_scoring_full_run",
+    includes_final_board_v3_shadow: stage.stage_key === "market_scoring_full_run",
     prepared_for_split_slate: true,
     prepared_for_half_slate: true,
     prepared_for_single_game_slate: true,
@@ -2535,10 +2536,41 @@ function dailyFullRunChildPassed(stage, child) {
   }
   if (stage.stage_key === "market_scoring_full_run") {
     if (output.market_scoring_full_run_certified !== true) return { pass: false, reason: "market_scoring_full_run_not_certified", certification: output.certification || output.certification_status || null };
-    if (output.score_enrichment_v1_included !== true || output.hit_probability_v2_included !== true || output.final_score_v1_included !== true || output.final_board_v2_included !== true) {
-      return { pass: false, reason: "market_scoring_full_run_v2_scoring_stack_missing", score_enrichment_v1_included: output.score_enrichment_v1_included, hit_probability_v2_included: output.hit_probability_v2_included, final_score_v1_included: output.final_score_v1_included, final_board_v2_included: output.final_board_v2_included };
+    const cert = String(output.certification || output.certification_status || "");
+    const childStages = Array.isArray(output.stages) ? output.stages : [];
+    const childStagePassed = (stageKey) => childStages.some((s) => String(s && s.stage_key || "") === stageKey && s.pass === true);
+    const completedStageCount = Number(output.completed_stage_count || 0);
+    const totalStageCount = Number(output.total_stage_count || MARKET_SCORING_FULL_RUN_STAGES.length);
+    const v3ShadowStackIncluded =
+      cert === "MARKET_SCORING_FULL_RUN_CERTIFIED_V3_SHADOW_SCORING_CHAIN_COMPLETED" &&
+      completedStageCount === totalStageCount &&
+      childStagePassed("score_enrichment_v2_shadow") &&
+      childStagePassed("hit_probability_v3_shadow") &&
+      childStagePassed("final_score_v2_shadow") &&
+      childStagePassed("final_board_v3_shadow");
+    const v2LegacyNamedStackIncluded =
+      output.score_enrichment_v1_included === true &&
+      output.hit_probability_v2_included === true &&
+      output.final_score_v1_included === true &&
+      output.final_board_v2_included === true;
+    if (!v3ShadowStackIncluded && !v2LegacyNamedStackIncluded) {
+      return {
+        pass: false,
+        reason: "market_scoring_full_run_scoring_stack_missing",
+        certification: cert || null,
+        completed_stage_count: output.completed_stage_count || 0,
+        total_stage_count: output.total_stage_count || null,
+        score_enrichment_v2_shadow_included: childStagePassed("score_enrichment_v2_shadow"),
+        hit_probability_v3_shadow_included: childStagePassed("hit_probability_v3_shadow"),
+        final_score_v2_shadow_included: childStagePassed("final_score_v2_shadow"),
+        final_board_v3_shadow_included: childStagePassed("final_board_v3_shadow"),
+        score_enrichment_v1_included: output.score_enrichment_v1_included,
+        hit_probability_v2_included: output.hit_probability_v2_included,
+        final_score_v1_included: output.final_score_v1_included,
+        final_board_v2_included: output.final_board_v2_included
+      };
     }
-    if (output.legacy_scoring_engine_removed !== true || output.legacy_hp_board_removed !== true || output.legacy_score_final_board_removed !== true) {
+    if (!v3ShadowStackIncluded && (output.legacy_scoring_engine_removed !== true || output.legacy_hp_board_removed !== true || output.legacy_score_final_board_removed !== true)) {
       return { pass: false, reason: "market_scoring_full_run_legacy_scoring_stack_not_removed", legacy_scoring_engine_removed: output.legacy_scoring_engine_removed, legacy_hp_board_removed: output.legacy_hp_board_removed, legacy_score_final_board_removed: output.legacy_score_final_board_removed };
     }
   }
