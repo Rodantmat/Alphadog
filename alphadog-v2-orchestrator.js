@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.312-expansion-fullrun-autonomous-lock-release";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.313-expansion-delta-fullrun-wire";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -3290,7 +3290,7 @@ const INCREMENTAL_MORNING_FULL_RUN_STAGES = [
   { stage_key: "hitter_metrics_affected_delta", job_key: "base-hitter-metrics", worker_name: "alphadog-v2-base-hitter-metrics", display_name: "Hitter Metrics Affected Delta", visible_button: "DELTA > Hitter Metrics", mode: "delta_recalculate_affected_players", layer_key: "hitter_metrics", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_metrics_affected_delta", job_key: "base-pitcher-metrics", worker_name: "alphadog-v2-base-pitcher-metrics", display_name: "Pitcher Metrics Affected Delta", visible_button: "DELTA > Pitcher Metrics", mode: "delta_recalculate_affected_players", layer_key: "pitcher_metrics", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "calendar_tally_final_check", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Final Check", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "final_check", require_zero_blocking_gaps: true },
-  { stage_key: "expansion_baseline_full_run", job_key: "expansion-baseline-full-run", worker_name: "alphadog-v2-phase3a-first-inning-pitcher-context", display_name: "Expansion Baseline Full Run", visible_button: "EXPANSION > Full Baseline", mode: "expansion_baseline_full_run", worker_group: "Delta", phase_key: "player_baseline", priority: 4, expansion_baseline_stage: "full_run", require_completed_final_calendar_tally: true }
+  { stage_key: "expansion_baseline_full_run", job_key: "expansion-baseline-full-run", worker_name: "alphadog-v2-phase3a-first-inning-pitcher-context", display_name: "Expansion Baseline Delta Full Run", visible_button: "EXPANSION > Full Baseline", mode: "expansion_delta_full_run", worker_group: "Delta", phase_key: "player_baseline", priority: 4, expansion_baseline_stage: "delta_full_run", require_completed_final_calendar_tally: true, fallback_to_full_baseline_if_missing_pristine_base: true }
 ];
 
 const STATIC_FULL_RUN_STAGES = [
@@ -3673,7 +3673,9 @@ function incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryC
     old_player_baseline_hp_removed: true,
     expansion_baseline_full_run_included_after_delta: INCREMENTAL_MORNING_FULL_RUN_STAGES.some(s => s.stage_key === "expansion_baseline_full_run"),
     writes_expansion_baseline_tables_only: stage.stage_key === "expansion_baseline_full_run",
-    full_depth_base: stage.stage_key === "expansion_baseline_full_run",
+    expansion_delta_full_run: stage.stage_key === "expansion_baseline_full_run",
+    full_depth_base: false,
+    fallback_to_full_baseline_if_missing_pristine_base: stage.stage_key === "expansion_baseline_full_run",
     created_at: nowIso()
   };
 }
@@ -3745,6 +3747,8 @@ function buildIncrementalMorningFullRunRetryResumeInput(parentRow, stage, stepIn
   if (stage.stage_key === "expansion_baseline_full_run") {
     input.mode = input.mode || stage.mode;
     input.expansion_mode = input.expansion_mode || input.mode || stage.mode;
+    input.full_depth_base = false;
+    input.fallback_to_full_baseline_if_missing_pristine_base = true;
     input.dynamic_v2_batch_id = input.dynamic_v2_batch_id || stateBatch || topBatch;
     if (stateBatch && !input.dynamic_v2_batch_id) input.dynamic_v2_batch_id = stateBatch;
     if (input.dynamic_v2_batch_id && !input.batch_id) input.batch_id = input.dynamic_v2_batch_id;
@@ -12264,7 +12268,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   input.run_id = runId;
   input.job_key = row.job_key;
   input.worker_name = row.worker_name;
-  input.mode = input.mode || input.expansion_mode || (row.job_key === "expansion-baseline-v2" ? "baseline_v2_heb" : (row.job_key === "expansion-baseline-line-inventory" ? "expansion_line_inventory" : (row.job_key === "expansion-baseline-sanity" ? "expansion_baseline_sanity" : (row.job_key === "expansion-baseline-hp" ? "expansion_baseline_hp" : "expansion_baseline_full_run"))));
+  input.mode = input.mode || input.expansion_mode || (row.job_key === "expansion-baseline-v2" ? "baseline_v2_heb" : (row.job_key === "expansion-baseline-line-inventory" ? "expansion_line_inventory" : (row.job_key === "expansion-baseline-sanity" ? "expansion_baseline_sanity" : (row.job_key === "expansion-baseline-hp" ? "expansion_baseline_hp" : "expansion_delta_full_run"))));
   input.expansion_mode = input.expansion_mode || input.mode;
   input.trigger = trigger;
   input.logical_worker_name = "alphadog-v2-expansion-baseline-v2-heb";
@@ -12306,7 +12310,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
     const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
     await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,cert,rowsRead,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(cappedOutput));
     await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", runAfterSeconds, safeStringifyD1(nextInput), safeStringifyD1(cappedOutput), row.request_id);
-    await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'expansion_baseline_v2_partial_continue', 'Orchestrator scheduled Expansion Baseline V2 HEB partial continuation', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,JSON.stringify({request_id:row.request_id,run_id:runId,certification:cert,batch_id:nextInput.batch_id||null,v2_cursor_offset:nextInput.v2_cursor_offset||null,run_after_seconds:runAfterSeconds,version:SYSTEM_VERSION}).slice(0,9000));
+    await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'expansion_baseline_partial_continue', 'Orchestrator scheduled Expansion Baseline continuation', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,JSON.stringify({request_id:row.request_id,run_id:runId,certification:cert,batch_id:nextInput.batch_id||null,v2_cursor_offset:nextInput.v2_cursor_offset||null,delta_cursor_offset:nextInput.delta_cursor_offset||null,delta_mining_batch_id:nextInput.delta_mining_batch_id||null,mode:nextInput.mode||input.mode||null,run_after_seconds:runAfterSeconds,version:SYSTEM_VERSION}).slice(0,9000));
     return cappedOutput;
   }
 

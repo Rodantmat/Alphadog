@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.16-mining-timeout-progress-safe";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.17-expansion-delta-canonical-fullrun";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -8,6 +8,10 @@ const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-line-inventory",
   "expansion-baseline-certifier",
   "expansion-baseline-full-run",
+  "expansion-delta-full-run",
+  "expansion-delta-mining",
+  "expansion-delta-sanity",
+  "expansion-delta-hp",
   "expansion-baseline-v2",
   "expansion-baseline-v2-full-run"
 ]);
@@ -578,39 +582,42 @@ function expansionPosteriorHp(hit, miss, priorPct, priorStrength, sampleProfile)
   const cap=expansionHpCap(sampleProfile,n);
   return round(clamp(rawPosterior, cap.lo, cap.hi),2);
 }
-function buildHpRowsForSanityRows(sanityRows, batchId, sourceSanityBatchId){
-  const hpRows=[];
-  for(const s of sanityRows){
-    const ns=String(s.profile_namespace||"");
-    const lineRates=valuesFromSanity(s);
-    const lines=linesFor(ns);
-    for(const line of lines){
-      const lr=lineRates[String(line)] || {};
-      for(const side of SIDES){
-        const hit=side==="more"?Number(lr.more_hit||0):Number(lr.less_hit||0);
-        const miss=side==="more"?Number(lr.less_hit||0):Number(lr.more_hit||0);
-        const push=Number(lr.push||0);
-        const nonPush=Number(lr.non_push_sample||0);
-        const raw=side==="more"?lr.more_rate_0_100:lr.less_rate_0_100;
-        const conf=Number(s.baseline_confidence_0_100||0);
-        hpRows.push({
-          baseline_hp_row_id:`exp_hp|${ns}|${s.entity_id||s.player_id||"pool"}|${s.canonical_prop_key}|${String(line).replace('.','p')}|${side}`,
-          batch_id:batchId, source_sanity_batch_id:sourceSanityBatchId, source_baseline_row_id:s.baseline_row_id,
-          expansion_scope:"baseline_only_shadow", profile_namespace:ns, source_data_family:s.source_data_family, source_table:s.source_table, source_formula_key:formulaKeyFor(ns), baseline_formula_version:VERSION,
-          entity_type:s.entity_type, entity_id:s.entity_id, player_type:s.player_type, player_id:s.player_id, player_name:s.player_name, canonical_prop_key:s.canonical_prop_key, prop_family:propFamilyFor(ns),
-          line_value:line, selected_side:side, baseline_hp_0_100:null, raw_rate_0_100:raw==null?null:round(raw,2), tier_prior_rate_0_100:null, raw_prior_gap_0_100:null,
-          baseline_confidence_0_100:conf, baseline_enriched_confidence_0_100:conf, consistency_bonus_0_100:0, soft_uncertainty_reserve_0_100:round(100-conf,1),
-          sample_profile:s.sample_profile, role_profile:s.role_profile, sanity_profile_key:s.sanity_profile_key, volatility_profile:s.volatility_profile, variance_profile:s.variance_profile, line_difficulty_profile:lineDifficulty(ns,line), baseline_hp_profile_key:`${ns}${String(side).toUpperCase()}_${String(line).replace('.','P')}_${s.sanity_profile_key}`,
-          non_push_sample:nonPush, hit_count:hit, miss_count:miss, push_count:push, prior_strength:null,
-          profile_notes_json:null,
-          source_snapshot_json:null,
-          _line_rate:lr
-        });
+function buildHpRowsForSanityRows(sanityRows, batchId, sourceSanityBatchId, poolSanityRows=null){
+  const makeRows=(rows)=>{
+    const out=[];
+    for(const s of rows){
+      const ns=String(s.profile_namespace||"");
+      const lineRates=valuesFromSanity(s);
+      const lines=linesFor(ns);
+      for(const line of lines){
+        const lr=lineRates[String(line)] || {};
+        for(const side of SIDES){
+          const hit=side==="more"?Number(lr.more_hit||0):Number(lr.less_hit||0);
+          const miss=side==="more"?Number(lr.less_hit||0):Number(lr.more_hit||0);
+          const push=Number(lr.push||0);
+          const nonPush=Number(lr.non_push_sample||0);
+          const raw=side==="more"?lr.more_rate_0_100:lr.less_rate_0_100;
+          const conf=Number(s.baseline_confidence_0_100||0);
+          out.push({
+            baseline_hp_row_id:`exp_hp|${ns}|${s.entity_id||s.player_id||"pool"}|${s.canonical_prop_key}|${String(line).replace('.','p')}|${side}`,
+            batch_id:batchId, source_sanity_batch_id:sourceSanityBatchId, source_baseline_row_id:s.baseline_row_id,
+            expansion_scope:"baseline_only_shadow", profile_namespace:ns, source_data_family:s.source_data_family, source_table:s.source_table, source_formula_key:formulaKeyFor(ns), baseline_formula_version:VERSION,
+            entity_type:s.entity_type, entity_id:s.entity_id, player_type:s.player_type, player_id:s.player_id, player_name:s.player_name, canonical_prop_key:s.canonical_prop_key, prop_family:propFamilyFor(ns),
+            line_value:line, selected_side:side, baseline_hp_0_100:null, raw_rate_0_100:raw==null?null:round(raw,2), tier_prior_rate_0_100:null, raw_prior_gap_0_100:null,
+            baseline_confidence_0_100:conf, baseline_enriched_confidence_0_100:conf, consistency_bonus_0_100:0, soft_uncertainty_reserve_0_100:round(100-conf,1),
+            sample_profile:s.sample_profile, role_profile:s.role_profile, sanity_profile_key:s.sanity_profile_key, volatility_profile:s.volatility_profile, variance_profile:s.variance_profile, line_difficulty_profile:lineDifficulty(ns,line), baseline_hp_profile_key:`${ns}${String(side).toUpperCase()}_${String(line).replace('.','P')}_${s.sanity_profile_key}`,
+            non_push_sample:nonPush, hit_count:hit, miss_count:miss, push_count:push, prior_strength:null,
+            profile_notes_json:null, source_snapshot_json:null, _line_rate:lr
+          });
+        }
       }
     }
-  }
+    return out;
+  };
+  const hpRows=makeRows(sanityRows || []);
+  const poolRows=makeRows(Array.isArray(poolSanityRows) && poolSanityRows.length ? poolSanityRows : (sanityRows || []));
   const pools=new Map();
-  for(const r of hpRows){
+  for(const r of poolRows){
     const key=expansionHpPoolKey(r); const cur=pools.get(key)||{hit:0,miss:0,sample:0,rows:0};
     cur.hit += Number(r.hit_count||0); cur.miss += Number(r.miss_count||0); cur.sample += Number(r.non_push_sample||0); cur.rows += 1; pools.set(key,cur);
   }
@@ -624,7 +631,7 @@ function buildHpRowsForSanityRows(sanityRows, batchId, sourceSanityBatchId){
     r.prior_strength=priorStrength;
     r.baseline_hp_0_100=expansionPosteriorHp(r.hit_count,r.miss_count,priorRate,priorStrength,r.sample_profile);
     const cap=expansionHpCap(r.sample_profile,r.non_push_sample);
-    r.profile_notes_json=safeJson({baseline_only:true,namespace:r.profile_namespace,formula_key:r.source_formula_key,no_daily_context:true,no_market_context:true,no_scoring_context:true,hp_calibration_guard:"pool_prior_shrinkage_with_sample_caps",prior_pool_key:expansionHpPoolKey(r),prior_pool_sample:pool.sample,prior_pool_rows:pool.rows,prior_strength:priorStrength,prior_rate_0_100:round(priorRate,2),cap_0_100:cap});
+    r.profile_notes_json=safeJson({baseline_only:true,namespace:r.profile_namespace,formula_key:r.source_formula_key,no_daily_context:true,no_market_context:true,no_scoring_context:true,hp_calibration_guard:"pool_prior_shrinkage_with_sample_caps",prior_pool_key:expansionHpPoolKey(r),prior_pool_sample:pool.sample,prior_pool_rows:pool.rows,prior_strength:priorStrength,prior_rate_0_100:round(priorRate,2),cap_0_100:cap,delta_pool_source:Array.isArray(poolSanityRows)&&poolSanityRows.length?"all_current_sanity_rows":"target_rows"});
     r.source_snapshot_json=safeJson({source_baseline_row_id:r.source_baseline_row_id,line_rate:r._line_rate,raw_rate_0_100:r.raw_rate_0_100,posterior_hp_0_100:r.baseline_hp_0_100});
     delete r._line_rate;
   }
@@ -960,7 +967,196 @@ async function certifier(env,input={}){
   return output;
 }
 
-async function fullRun(env,input={}){
+async function expansionBasePristine(env){
+  await ensureSchema(env);
+  const game=await first(env.CONTEXT_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT game_pk) AS distinct_rows, COUNT(*)-COUNT(DISTINCT game_pk) AS dupes FROM expansion_first_inning_game_context_current`);
+  const pitcher=await first(env.CONTEXT_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT CAST(game_pk AS TEXT)||'|'||CAST(pitcher_id AS TEXT)) AS distinct_rows, COUNT(*)-COUNT(DISTINCT CAST(game_pk AS TEXT)||'|'||CAST(pitcher_id AS TEXT)) AS dupes, COUNT(DISTINCT pitcher_id) AS pitchers FROM expansion_first_inning_pitcher_context_current`);
+  const sanity=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows FROM expansion_player_baseline_sanity_current`);
+  const hp=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT baseline_hp_row_id) AS distinct_rows, COUNT(*)-COUNT(DISTINCT baseline_hp_row_id) AS dupes FROM expansion_player_baseline_hp_current`);
+  const hpInvalid=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM expansion_player_baseline_hp_current WHERE baseline_hp_0_100 IS NULL OR baseline_hp_0_100<0 OR baseline_hp_0_100>100 OR prior_strength IS NULL OR prior_strength<=0 OR tier_prior_rate_0_100 IS NULL OR non_push_sample IS NULL OR hit_count IS NULL OR miss_count IS NULL`);
+  const ok=Number(game&&game.rows||0)>0 && Number(game&&game.dupes||0)===0 && Number(pitcher&&pitcher.rows||0)>0 && Number(pitcher&&pitcher.dupes||0)===0 && Number(sanity&&sanity.rows||0)>0 && Number(hp&&hp.rows||0)>0 && Number(hp&&hp.dupes||0)===0 && Number(hpInvalid&&hpInvalid.c||0)===0;
+  return {ok, game_rows:Number(game&&game.rows||0), pitcher_rows:Number(pitcher&&pitcher.rows||0), sanity_rows:Number(sanity&&sanity.rows||0), hp_rows:Number(hp&&hp.rows||0), game_duplicate_rows:Number(game&&game.dupes||0), pitcher_duplicate_rows:Number(pitcher&&pitcher.dupes||0), hp_duplicate_rows:Number(hp&&hp.dupes||0), invalid_hp_rows:Number(hpInvalid&&hpInvalid.c||0)};
+}
+
+async function getExpansionDeltaGameList(env, input={}){
+  const maxGames=Math.max(1,Math.min(Number(input.delta_game_limit || input.game_limit || 2500),2500));
+  const existing=Array.isArray(input.delta_game_pks) ? input.delta_game_pks.map(Number).filter(Boolean) : null;
+  if(existing) return existing;
+  const rows=await all(env.TEAM_DB,`SELECT game_pk FROM (
+      SELECT game_pk, MAX(game_date) AS game_date
+      FROM starter_history
+      WHERE started_game=1 AND game_pk IS NOT NULL
+      GROUP BY game_pk
+    ) g
+    WHERE NOT EXISTS (SELECT 1 FROM expansion_first_inning_game_context_current c WHERE c.game_pk=g.game_pk)
+    ORDER BY date(g.game_date) ASC, g.game_pk ASC
+    LIMIT ?`, maxGames);
+  return rows.map(r=>Number(r.game_pk)).filter(Boolean);
+}
+
+async function runDeltaMining(env,input={}){
+  await ensureSchema(env);
+  const requestId=String(input.request_id||rid("expansion_delta_mining"));
+  const runId=String(input.run_id||rid("run"));
+  const batchId=String(input.delta_mining_batch_id||input.mining_batch_id||input.batch_id||rid("expansion_first_inning_delta_batch"));
+  const cursor=Math.max(0,Number(input.delta_cursor_offset||input.mining_cursor_offset||input.cursor_offset||0));
+  const chunkSize=Math.max(10,Math.min(Number(input.delta_game_chunk_size||input.mining_game_chunk_size||60),120));
+  const mlbLinescoreTimeoutMs=Math.max(1500,Math.min(Number(input.mlb_linescore_timeout_ms||input.mining_fetch_timeout_ms||8000),15000));
+  const gamePks=await getExpansionDeltaGameList(env,input);
+  const total=gamePks.length;
+  await writeRun(env.CONTEXT_DB,"expansion_first_inning_context_batches",`INSERT OR IGNORE INTO expansion_first_inning_context_batches (batch_id,request_id,run_id,mode,status,worker_version,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"expansion_delta_mining","running",VERSION);
+  await writeRun(env.CONTEXT_DB,"expansion_first_inning_context_batches",`UPDATE expansion_first_inning_context_batches SET request_id=?, run_id=?, mode='expansion_delta_mining', status='running', worker_version=?, games_requested=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,requestId,runId,VERSION,total,batchId);
+  const slice=gamePks.slice(cursor,cursor+chunkSize);
+  let gamesWritten=0,pitcherRows=0,issues=0;
+  const gameStmts=[],pitcherStmts=[],issueStmts=[];
+  for(const gamePk of slice){
+    const g=await first(env.TEAM_DB,`SELECT game_pk, MAX(game_date) AS game_date, MAX(CASE WHEN is_home=1 THEN team_id END) AS home_team_id, MAX(CASE WHEN is_home=0 THEN team_id END) AS away_team_id FROM starter_history WHERE game_pk=? AND started_game=1 GROUP BY game_pk`,gamePk);
+    try{
+      const fetched=await fetchMlbLinescore(env,gamePk,mlbLinescoreTimeoutMs);
+      const parsed=firstInningFromLinescore(fetched.json);
+      if(!parsed) throw new Error("MISSING_FIRST_INNING_LINESCORE_RUNS");
+      const contextRowId=`exp_first_game|${gamePk}`;
+      const yrfi=parsed.first_inning_total_runs>=1?1:0; const nrfi=parsed.first_inning_total_runs===0?1:0;
+      gameStmts.push(env.CONTEXT_DB.prepare(`INSERT OR REPLACE INTO expansion_first_inning_game_context_current (context_row_id,batch_id,game_pk,game_date,home_team_id,away_team_id,home_team_name,away_team_name,top_1st_runs,bottom_1st_runs,first_inning_total_runs,yrfi_flag,nrfi_flag,rfi_pp_more_hit,rfi_pp_less_hit,source_endpoint,source_confidence,source_snapshot_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,COALESCE((SELECT created_at FROM expansion_first_inning_game_context_current WHERE context_row_id=?),CURRENT_TIMESTAMP),CURRENT_TIMESTAMP)`).bind(contextRowId,batchId,gamePk,g&&g.game_date||null,g&&g.home_team_id||null,g&&g.away_team_id||null,parsed.home_team_name,parsed.away_team_name,parsed.top_1st_runs,parsed.bottom_1st_runs,parsed.first_inning_total_runs,yrfi,nrfi,yrfi,nrfi,fetched.url,"MLB_LINESCORE_FIRST_INNING",safeJson({game_pk:gamePk,first_inning:parsed,source:"MLB_STATS_API_LINESCORE",delta_update:true}),contextRowId));
+      gamesWritten++;
+      const starters=await all(env.TEAM_DB,`SELECT player_id, starter_player_id, starter_name, team_id, opponent_team_id, is_home, started_game, starter_key, game_date FROM starter_history WHERE game_pk=? AND started_game=1`,gamePk);
+      for(const s0 of starters){
+        const pitcherId=Number(s0.player_id||s0.starter_player_id||0)||null;
+        if(!pitcherId){ issues++; issueStmts.push(env.CONTEXT_DB.prepare(`INSERT OR REPLACE INTO expansion_first_inning_context_issues (issue_id,batch_id,game_pk,pitcher_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(rid("exp_delta_issue"),batchId,gamePk,null,"WARN","MISSING_STARTER_PLAYER_ID","Starter row missing pitcher id",safeJson(s0))); continue; }
+        const isHome=Number(s0.is_home||0)===1?1:0; const runsAllowed=isHome?parsed.top_1st_runs:parsed.bottom_1st_runs; const half=isHome?"top_1st":"bottom_1st";
+        const rowId=`exp_first_pitcher|${gamePk}|${pitcherId}`;
+        pitcherStmts.push(env.CONTEXT_DB.prepare(`INSERT OR REPLACE INTO expansion_first_inning_pitcher_context_current (pitcher_context_row_id,batch_id,game_pk,game_date,pitcher_id,pitcher_name,team_id,opponent_team_id,is_home,started_game,first_frame_half,first_frame_runs_allowed,rfi_sl_more_hit,rfi_sl_less_hit,source_game_context_row_id,starter_source_key,source_confidence,details_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,COALESCE((SELECT created_at FROM expansion_first_inning_pitcher_context_current WHERE pitcher_context_row_id=?),CURRENT_TIMESTAMP),CURRENT_TIMESTAMP)`).bind(rowId,batchId,gamePk,s0.game_date||g&&g.game_date||null,pitcherId,s0.starter_name||null,s0.team_id||null,s0.opponent_team_id||null,isHome,1,half,runsAllowed,runsAllowed>=1?1:0,runsAllowed===0?1:0,contextRowId,s0.starter_key||null,"MLB_LINESCORE_PLUS_STARTER_HISTORY",safeJson({mapping:isHome?"home_starter_allows_top_1st":"away_starter_allows_bottom_1st",top_1st_runs:parsed.top_1st_runs,bottom_1st_runs:parsed.bottom_1st_runs,delta_update:true}),rowId));
+        pitcherRows++;
+      }
+    }catch(err){
+      issues++;
+      issueStmts.push(env.CONTEXT_DB.prepare(`INSERT OR REPLACE INTO expansion_first_inning_context_issues (issue_id,batch_id,game_pk,pitcher_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(rid("exp_delta_issue"),batchId,gamePk,null,"WARN","DELTA_MLB_LINESCORE_FETCH_OR_PARSE_FAILED",String(err&&err.message?err.message:err).slice(0,500),safeJson({game_pk:gamePk,delta_update:true})));
+    }
+  }
+  if(gameStmts.length) await writeBatch(env.CONTEXT_DB,"expansion_first_inning_game_context_current",gameStmts,25);
+  if(pitcherStmts.length) await writeBatch(env.CONTEXT_DB,"expansion_first_inning_pitcher_context_current",pitcherStmts,25);
+  if(issueStmts.length) await writeBatch(env.CONTEXT_DB,"expansion_first_inning_context_issues",issueStmts,25);
+  if(gamesWritten){
+    await writeRun(env.CONTEXT_DB,"expansion_first_inning_game_context_history",`INSERT INTO expansion_first_inning_game_context_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_first_inning_game_context_current WHERE batch_id=?`,batchId);
+    await writeRun(env.CONTEXT_DB,"expansion_first_inning_pitcher_context_history",`INSERT INTO expansion_first_inning_pitcher_context_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_first_inning_pitcher_context_current WHERE batch_id=?`,batchId);
+  }
+  const nextCursor=cursor+slice.length;
+  const done=nextCursor>=total;
+  const currentGames=await tableCount(env.CONTEXT_DB,"expansion_first_inning_game_context_current");
+  const currentPitchers=await tableCount(env.CONTEXT_DB,"expansion_first_inning_pitcher_context_current");
+  const issueRow=await first(env.CONTEXT_DB,`SELECT COUNT(*) AS c FROM expansion_first_inning_context_issues WHERE batch_id=?`,batchId);
+  const issueTotal=Number(issueRow&&issueRow.c||0);
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"expansion_delta_mining",status:done?"EXPANSION_DELTA_MINING_COMPLETED":"EXPANSION_DELTA_MINING_PARTIAL_CONTINUE",certification:done?(issueTotal?"EXPANSION_DELTA_MINING_COMPLETED_WITH_WARNINGS":"EXPANSION_DELTA_MINING_CERTIFIED"):"EXPANSION_DELTA_MINING_PARTIAL_CONTINUE",certification_grade:done?(issueTotal?"PASS_WITH_WARNINGS":"PASS"):"PARTIAL_CONTINUE",partial_continue:!done,orchestrator_should_self_continue:!done,delta_game_pks:gamePks,delta_games_total:total,delta_games_attempted:slice.length,delta_games_written:gamesWritten,delta_pitcher_rows_written:pitcherRows,current_game_rows:currentGames,current_pitcher_rows:currentPitchers,issue_rows:issueTotal,delta_cursor_offset:nextCursor,delta_game_chunk_size:chunkSize,rows_written:gamesWritten+pitcherRows,next_input_json:!done?{...input,mode:"expansion_delta_full_run",expansion_mode:"expansion_delta_full_run",request_id:requestId,run_id:runId,delta_mining_batch_id:batchId,delta_game_pks:gamePks,delta_cursor_offset:nextCursor,delta_game_chunk_size:chunkSize}:null,delta_update:true,no_current_wipe:true});
+  await writeRun(env.CONTEXT_DB,"expansion_first_inning_context_batches",`UPDATE expansion_first_inning_context_batches SET status=?, games_requested=?, games_written=?, pitcher_rows_written=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,done?"completed":"partial_continue",total,gamesWritten,pitcherRows,issueTotal,output.certification,output.certification_grade,safeJson(output),batchId);
+  return output;
+}
+
+async function buildExpansionSanityRows(env,batchId,affectedPlayerIds=null, includeRfiPp=true){
+  const sanityRows=[];
+  const playerFilter=Array.isArray(affectedPlayerIds)&&affectedPlayerIds.length ? affectedPlayerIds.map(Number).filter(Boolean) : null;
+  let rows;
+  if(playerFilter&&playerFilter.length){
+    const qs=playerFilter.map(()=>'?').join(',');
+    rows=await all(env.TEAM_DB,`SELECT COALESCE(player_id, starter_player_id) AS player_id, starter_name, game_pk, game_date, team_id, opponent_team_id, is_home, started_game, outs_recorded, strikeouts, earned_runs, runs_allowed, walks_allowed, hits_allowed, home_runs_allowed, pitches FROM starter_history WHERE started_game=1 AND COALESCE(player_id, starter_player_id) IS NOT NULL AND game_pk IS NOT NULL AND COALESCE(player_id, starter_player_id) IN (${qs}) ORDER BY player_id, game_date`,...playerFilter);
+  } else rows=await starterRows(env);
+  for(const [pid,prs] of groupBy(rows,r=>r.player_id).entries()){
+    const name=prs.find(r=>r.starter_name)?.starter_name||null; const playerId=Number(pid);
+    const raVals=prs.map(r=>num(r.runs_allowed)); const ppVals=prs.map(pfsPp); const slVals=prs.map(pfsSl);
+    sanityRows.push(makeSanityRow({batchId,ns:"RA_",sourceFamily:"starter_history_runs_allowed",sourceTable:"TEAM_DB.starter_history",entityType:"pitcher",entityId:playerId,playerType:"pitcher",playerId,playerName:name,propKey:"runs_allowed",values:raVals,lines:RA_LINES,profileKey:raProfile(raVals,prs.length),sourceFormulaKey:"RA_FULL_GAME_TOTAL_RUNS_ALLOWED",extraNotes:{earned_and_unearned_runs_count:true,separate_from_earned_runs:true,delta_update:!!playerFilter}}));
+    sanityRows.push(makeSanityRow({batchId,ns:"PFS_PP_",sourceFamily:"starter_history_pitcher_fantasy",sourceTable:"TEAM_DB.starter_history",entityType:"pitcher",entityId:playerId,playerType:"pitcher",playerId,playerName:name,propKey:"pitcher_fantasy_score",values:ppVals,lines:PFS_LINES,profileKey:pfsPpProfile(ppVals,prs),sourceFormulaKey:"PFS_PP_NO_WIN_OUTS_K_QS_ER",extraNotes:{win_excluded:true,win_reserve_only:true,formula:"outs_recorded + 3*K + 4*QS - 3*ER",delta_update:!!playerFilter}}));
+    sanityRows.push(makeSanityRow({batchId,ns:"PFS_SL_",sourceFamily:"starter_history_pitcher_fantasy",sourceTable:"TEAM_DB.starter_history",entityType:"pitcher",entityId:playerId,playerType:"pitcher",playerId,playerName:name,propKey:"pitcher_fantasy_score",values:slVals,lines:PFS_LINES,profileKey:pfsSlProfile(slVals,prs),sourceFormulaKey:"PFS_SL_NO_WIN_OUTS_K_ER_BB",extraNotes:{win_excluded:true,win_reserve_only:true,qs_not_used:true,formula:"outs_recorded + 3*K - 3*ER - 2*BB",delta_update:!!playerFilter}}));
+  }
+  let rfiSql=`SELECT pitcher_id, pitcher_name, first_frame_runs_allowed FROM expansion_first_inning_pitcher_context_current WHERE pitcher_id IS NOT NULL`;
+  let rfiRows;
+  if(playerFilter&&playerFilter.length){ const qs=playerFilter.map(()=>'?').join(','); rfiRows=await all(env.CONTEXT_DB,`${rfiSql} AND pitcher_id IN (${qs})`,...playerFilter); } else rfiRows=await all(env.CONTEXT_DB,rfiSql);
+  for(const [pid,prs] of groupBy(rfiRows,r=>r.pitcher_id).entries()){
+    const playerId=Number(pid); const vals=prs.map(r=>num(r.first_frame_runs_allowed)); const name=prs.find(r=>r.pitcher_name)?.pitcher_name||null;
+    sanityRows.push(makeSanityRow({batchId,ns:"RFI_SL_",sourceFamily:"first_inning_pitcher_context",sourceTable:"CONTEXT_DB.expansion_first_inning_pitcher_context_current",entityType:"pitcher",entityId:playerId,playerType:"pitcher",playerId,playerName:name,propKey:"rfi_nrfi",values:vals,lines:RFI_LINES,profileKey:rfiSlProfile(vals,vals.length),sourceFormulaKey:"RFI_SL_PITCHER_SPECIFIC_FIRST_FRAME",extraNotes:{sleeper_specific:true,home_starter_allows_top_1st:true,away_starter_allows_bottom_1st:true,earned_and_unearned_runs_count:true,delta_update:!!playerFilter}}));
+  }
+  if(includeRfiPp){
+    const rfiGames=await all(env.CONTEXT_DB,`SELECT game_pk, first_inning_total_runs FROM expansion_first_inning_game_context_current WHERE game_pk IS NOT NULL`);
+    const ppVals=rfiGames.map(r=>num(r.first_inning_total_runs));
+    if(ppVals.length) sanityRows.push(makeSanityRow({batchId,ns:"RFI_PP_",sourceFamily:"first_inning_game_context",sourceTable:"CONTEXT_DB.expansion_first_inning_game_context_current",entityType:"game_pair_pool",entityId:"rfi_pp_game_pair_pool",playerType:"game_pair",playerId:null,playerName:"RFI_PP_GAME_PAIR_POOL",propKey:"rfi_nrfi",values:ppVals,lines:RFI_LINES,profileKey:rfiPpProfile(ppVals,ppVals.length),sourceFormulaKey:"RFI_PP_PAIR_GAME_FIRST_INNING_TOTAL",extraNotes:{prizepicks_combo_pair_level:true,earned_and_unearned_runs_count:true,delta_update:!!playerFilter}}));
+  }
+  return sanityRows;
+}
+
+async function insertSanityRows(env,sanityRows){
+  const stmts=sanityRows.map(r=>env.SCORE_DB.prepare(`INSERT OR REPLACE INTO expansion_player_baseline_sanity_stage (baseline_row_id,batch_id,expansion_scope,profile_namespace,source_data_family,source_table,profile_logic_version,entity_type,entity_id,player_type,player_id,player_name,canonical_prop_key,role_profile,prior_pool_key,sanity_profile_key,sample_profile,usage_profile,line_difficulty_profile,volatility_profile,baseline_drag_profile,confidence_drag_profile,variance_profile,games_sample,events_sample,baseline_confidence_0_100,line_baseline_json,distribution_shape_json,notes_json,no_daily_context,no_market_context,no_scoring_context,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(r.baseline_row_id,r.batch_id,r.expansion_scope,r.profile_namespace,r.source_data_family,r.source_table,r.profile_logic_version,r.entity_type,r.entity_id,r.player_type,r.player_id,r.player_name,r.canonical_prop_key,r.role_profile,r.prior_pool_key,r.sanity_profile_key,r.sample_profile,r.usage_profile,r.line_difficulty_profile,r.volatility_profile,r.baseline_drag_profile,r.confidence_drag_profile,r.variance_profile,r.games_sample,r.events_sample,r.baseline_confidence_0_100,r.line_baseline_json,r.distribution_shape_json,r.notes_json));
+  if(stmts.length) await writeBatch(env.SCORE_DB,"expansion_player_baseline_sanity_stage",stmts,35);
+}
+
+async function runDeltaSanity(env,input={}){
+  await ensureSchema(env);
+  const requestId=String(input.request_id||rid("expansion_delta_sanity")); const runId=String(input.run_id||rid("run")); const batchId=String(input.delta_sanity_batch_id||input.batch_id||rid("expansion_delta_sanity_batch"));
+  const miningBatchId=String(input.delta_mining_batch_id||input.mining_batch_id||"");
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_batches",`INSERT OR REPLACE INTO expansion_player_baseline_sanity_batches (batch_id,request_id,run_id,mode,status,worker_version,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"expansion_delta_sanity","running",VERSION);
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_stage",`DELETE FROM expansion_player_baseline_sanity_stage WHERE batch_id=?`,batchId);
+  const affected= miningBatchId ? await all(env.CONTEXT_DB,`SELECT DISTINCT pitcher_id FROM expansion_first_inning_pitcher_context_current WHERE batch_id=? AND pitcher_id IS NOT NULL`,miningBatchId) : [];
+  const affectedIds=affected.map(r=>Number(r.pitcher_id)).filter(Boolean);
+  const sanityRows=await buildExpansionSanityRows(env,batchId,affectedIds,true);
+  await insertSanityRows(env,sanityRows);
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_current",`INSERT OR REPLACE INTO expansion_player_baseline_sanity_current SELECT * FROM expansion_player_baseline_sanity_stage WHERE batch_id=?`,batchId);
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_history",`INSERT INTO expansion_player_baseline_sanity_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_player_baseline_sanity_stage WHERE batch_id=?`,batchId);
+  const nsRows=await all(env.SCORE_DB,`SELECT profile_namespace, COUNT(*) AS rows FROM expansion_player_baseline_sanity_current GROUP BY profile_namespace ORDER BY profile_namespace`);
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"expansion_delta_sanity",status:"EXPANSION_DELTA_SANITY_COMPLETED",certification:"EXPANSION_DELTA_SANITY_CERTIFIED_AFFECTED_ROWS_PROMOTED",certification_grade:"PASS",affected_pitchers:affectedIds.length,rows_staged:sanityRows.length,rows_promoted:sanityRows.length,history_rows:sanityRows.length,namespace_rows:nsRows,rows_written:sanityRows.length,delta_update:true,no_current_wipe:true});
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_batches",`UPDATE expansion_player_baseline_sanity_batches SET status='completed', finished_at=CURRENT_TIMESTAMP, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,sanityRows.length,sanityRows.length,sanityRows.length,output.certification,output.certification_grade,safeJson(output),batchId);
+  return output;
+}
+
+async function insertHpRowsCurrentHistory(env,hpRows){
+  if(!hpRows.length) return;
+  await insertHpRows(env,hpRows);
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_current",`INSERT OR REPLACE INTO expansion_player_baseline_hp_current SELECT * FROM expansion_player_baseline_hp_stage WHERE batch_id=?`,hpRows[0].batch_id);
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_history",`INSERT INTO expansion_player_baseline_hp_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_player_baseline_hp_stage WHERE batch_id=?`,hpRows[0].batch_id);
+}
+
+async function runDeltaHp(env,input={}){
+  await ensureSchema(env);
+  const requestId=String(input.request_id||rid("expansion_delta_hp")); const runId=String(input.run_id||rid("run")); const batchId=String(input.delta_hp_batch_id||input.hp_batch_id||input.batch_id||rid("expansion_delta_hp_batch"));
+  const sourceSanityBatchId=String(input.delta_sanity_batch_id||input.source_sanity_batch_id||"");
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`INSERT OR REPLACE INTO expansion_player_baseline_hp_batches (batch_id,request_id,run_id,mode,status,worker_version,source_sanity_batch_id,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"expansion_delta_hp","running",VERSION,sourceSanityBatchId);
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_stage",`DELETE FROM expansion_player_baseline_hp_stage WHERE batch_id=?`,batchId);
+  const affectedSanity= sourceSanityBatchId ? await all(env.SCORE_DB,`SELECT * FROM expansion_player_baseline_sanity_current WHERE batch_id=? ORDER BY profile_namespace, COALESCE(entity_id,''), COALESCE(player_id,0), canonical_prop_key`,sourceSanityBatchId) : [];
+  const allSanity=await all(env.SCORE_DB,`SELECT * FROM expansion_player_baseline_sanity_current ORDER BY profile_namespace, COALESCE(entity_id,''), COALESCE(player_id,0), canonical_prop_key`);
+  const hpRows=buildHpRowsForSanityRows(affectedSanity,batchId,sourceSanityBatchId,allSanity);
+  await insertHpRowsCurrentHistory(env,hpRows);
+  const currentCount=await tableCount(env.SCORE_DB,"expansion_player_baseline_hp_current");
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_sanity_batch_id:sourceSanityBatchId,mode:"expansion_delta_hp",status:"EXPANSION_DELTA_HP_COMPLETED",certification:"EXPANSION_DELTA_HP_CERTIFIED_AFFECTED_ROWS_PROMOTED",certification_grade:"PASS",source_rows_read:affectedSanity.length,all_sanity_rows_for_prior_pool:allSanity.length,rows_staged:hpRows.length,rows_promoted:hpRows.length,history_rows:hpRows.length,current_hp_rows:currentCount,rows_written:hpRows.length,delta_update:true,no_current_wipe:true,prior_pool_from_all_current_sanity:true});
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`UPDATE expansion_player_baseline_hp_batches SET status='completed', finished_at=CURRENT_TIMESTAMP, source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,affectedSanity.length,hpRows.length,hpRows.length,hpRows.length,output.certification,output.certification_grade,safeJson(output),batchId);
+  return output;
+}
+
+async function deltaFullRun(env,input={}){
+  const requestId=String(input.request_id||rid("expansion_delta_full")); const runId=String(input.run_id||rid("run"));
+  const base=await expansionBasePristine(env);
+  if(!base.ok && !input.disable_base_fallback){
+    const fallback=await fullRunFullDepth(env,{...input,request_id:requestId,run_id:runId,force_full_baseline:true,full_depth_base:true,base_pristine_before_delta:base});
+    fallback.delta_fallback_to_full_base=true; fallback.base_pristine_before_delta=base;
+    return fallback;
+  }
+  const before=input.production_counts_before||await productionCounts(env);
+  const state=input.expansion_delta_state||{};
+  let mining=null,lineInventory=null,sanity=null,hp=null;
+  if(!state.mining_completed){
+    mining=await runDeltaMining(env,{...input,mode:"expansion_delta_mining",request_id:requestId,run_id:runId,delta_mining_batch_id:input.delta_mining_batch_id||state.delta_mining_batch_id||null,delta_game_pks:input.delta_game_pks||state.delta_game_pks||null,delta_cursor_offset:input.delta_cursor_offset||state.delta_cursor_offset||0,delta_game_chunk_size:input.delta_game_chunk_size||state.delta_game_chunk_size||60});
+    if(mining&&mining.partial_continue){
+      return baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_delta_full_run",status:"EXPANSION_DELTA_FULL_RUN_PARTIAL_CONTINUE_MINING",certification:"EXPANSION_DELTA_FULL_RUN_PARTIAL_CONTINUE_MINING",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,next_input_json:{...input,mode:"expansion_delta_full_run",expansion_mode:"expansion_delta_full_run",request_id:requestId,run_id:runId,production_counts_before:before,delta_mining_batch_id:mining.batch_id,delta_game_pks:mining.delta_game_pks,delta_cursor_offset:mining.delta_cursor_offset,delta_game_chunk_size:mining.delta_game_chunk_size,expansion_delta_state:{mining_completed:false,delta_mining_batch_id:mining.batch_id,delta_game_pks:mining.delta_game_pks,delta_cursor_offset:mining.delta_cursor_offset,delta_game_chunk_size:mining.delta_game_chunk_size,production_counts_before:before}},mining,base_pristine:base,delta_update:true});
+    }
+    if(Number(mining.delta_games_written||0)>0){ sanity=await runDeltaSanity(env,{...input,mode:"expansion_delta_sanity",request_id:requestId,run_id:runId,delta_mining_batch_id:mining.batch_id}); }
+  } else if(state.delta_mining_batch_id){
+    sanity=await runDeltaSanity(env,{...input,mode:"expansion_delta_sanity",request_id:requestId,run_id:runId,delta_mining_batch_id:state.delta_mining_batch_id,delta_sanity_batch_id:state.delta_sanity_batch_id||input.delta_sanity_batch_id||null});
+  }
+  lineInventory=await runLineInventory(env,{...input,mode:"expansion_line_inventory",request_id:requestId,run_id:runId});
+  if(sanity&&Number(sanity.rows_staged||0)>0){ hp=await runDeltaHp(env,{...input,mode:"expansion_delta_hp",request_id:requestId,run_id:runId,delta_sanity_batch_id:sanity.batch_id}); }
+  const cert=await certifier(env,{...input,mode:"expansion_baseline_certifier",request_id:requestId,run_id:runId,production_counts_before:before});
+  const pass=!!(cert&&cert.ok===true);
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,mode:"expansion_delta_full_run",status:pass?"EXPANSION_DELTA_FULL_RUN_COMPLETED":"EXPANSION_DELTA_FULL_RUN_BLOCKED",certification:pass?"EXPANSION_DELTA_FULL_RUN_CERTIFIED_NEW_BASELINE_READY":cert.certification,certification_grade:pass?(cert.certification_grade||"PASS"):cert.certification_grade,base_pristine_before_delta:base,stages:{mining:mining||"previous_or_no_delta",line_inventory:lineInventory,sanity:sanity||"no_affected_sanity_rows",hp:hp||"no_affected_hp_rows",certifier:cert},delta_games_written:mining?Number(mining.delta_games_written||0):0,rows_written:Number((mining&&mining.rows_written||0)+(sanity&&sanity.rows_written||0)+(hp&&hp.rows_written||0)),delta_update:true,current_system_mutated:cert.current_system_mutated});
+  output.ok=pass; output.data_ok=pass;
+  return output;
+}
+
+async function fullRunFullDepth(env,input={}){
   const requestId=String(input.request_id||rid("expansion_baseline_full"));
   const runId=String(input.run_id||rid("run"));
   const state=input.expansion_full_run_state || {};
@@ -996,12 +1192,23 @@ async function fullRun(env,input={}){
   return output;
 }
 
+async function fullRun(env,input={}){
+  const mode=String(input.mode||input.expansion_mode||"");
+  if(mode==="expansion_delta_full_run" || mode==="expansion-delta-full-run") return deltaFullRun(env,input);
+  if(input.force_full_baseline===true || input.full_depth_base===true || input.disable_delta_auto===true) return fullRunFullDepth(env,input);
+  return deltaFullRun(env,input);
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   const mode=String(input.mode || input.expansion_mode || input.job_key || "expansion_baseline_full_run");
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
   if(mode==="expansion_baseline_hp" || mode==="expansion-baseline-hp") return runHp(env,input);
+  if(mode==="expansion_delta_mining" || mode==="expansion-delta-mining") return runDeltaMining(env,input);
+  if(mode==="expansion_delta_sanity" || mode==="expansion-delta-sanity") return runDeltaSanity(env,input);
+  if(mode==="expansion_delta_hp" || mode==="expansion-delta-hp") return runDeltaHp(env,input);
+  if(mode==="expansion_delta_full_run" || mode==="expansion-delta-full-run") return deltaFullRun(env,input);
   if(mode==="expansion_line_inventory" || mode==="expansion-baseline-line-inventory") return runLineInventory(env,input);
   if(mode==="expansion_baseline_certifier" || mode==="expansion-baseline-certifier") return certifier(env,input);
   if(mode==="expansion_baseline_full_run" || mode==="expansion-baseline-full-run") return fullRun(env,input);
@@ -1010,7 +1217,7 @@ async function runMode(env,input={}){
   if (jobKey === "phase3a-first-inning-pitcher-context" || mode === "phase3a-first-inning-pitcher-context" || mode === "legacy_dummy") {
     return {ok:true,data_ok:true,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,job_key:jobKey || "phase3a-first-inning-pitcher-context",status:"LEGACY_DUMMY_SLOT_READY_NO_MUTATION",certification:"LEGACY_DUMMY_SLOT_READY_NO_MUTATION",rows_read:0,rows_written:0,writes_performed:0,external_calls_performed:0,expansion_only:false,baseline_only:false,no_current_baseline_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true};
   }
-  return {ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"UNSUPPORTED_EXPANSION_BASELINE_MODE",mode,allowed_modes:["expansion_baseline_mining","expansion_line_inventory","expansion_baseline_sanity","expansion_baseline_hp","expansion_baseline_certifier","expansion_baseline_full_run","baseline_v2_heb","expansion-baseline-v2"]};
+  return {ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"UNSUPPORTED_EXPANSION_BASELINE_MODE",mode,allowed_modes:["expansion_baseline_mining","expansion_line_inventory","expansion_baseline_sanity","expansion_baseline_hp","expansion_baseline_certifier","expansion_baseline_full_run","expansion_delta_mining","expansion_delta_sanity","expansion_delta_hp","expansion_delta_full_run","baseline_v2_heb","expansion-baseline-v2"]};
 }
 
 export default {
