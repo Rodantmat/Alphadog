@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.317-expansion-v2-batched-fast-current";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.318-shadow-complete-stale-finalizer";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -17284,7 +17284,10 @@ async function rescueStaleShadowV2DispatchStartedForResume(env, trigger) {
   const rowCount = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM ${meta.rowTable} WHERE batch_id=?`, batch.batch_id);
   const rowsWritten = Math.max(Number(batch.written_rows || 0), Number(rowCount && rowCount.rows || 0));
   const sourceRowsRead = Number(batch.source_rows_read || rowOutput.rows_read || rowOutput.source_rows_read || 0);
-  if (!(rowsWritten > 0 && (!sourceRowsRead || rowsWritten < sourceRowsRead))) return null;
+  const batchStatus = String(batch.status || "").toLowerCase();
+  const partialNeedsResume = rowsWritten > 0 && (!sourceRowsRead || rowsWritten < sourceRowsRead);
+  const completeButUnfinalized = rowsWritten > 0 && sourceRowsRead > 0 && rowsWritten >= sourceRowsRead && batchStatus !== "completed";
+  if (!partialNeedsResume && !completeButUnfinalized) return null;
 
   const nextInput = {
     ...rowInput,
@@ -17312,15 +17315,18 @@ async function rescueStaleShadowV2DispatchStartedForResume(env, trigger) {
     request_id: row.request_id,
     chain_id: row.chain_id,
     mode: meta.mode,
-    status: "V2_V3_SHADOW_STALE_DISPATCH_AUTO_RESUMED",
-    certification: meta.certification,
-    certification_grade: "RECOVERED_PARTIAL_CONTINUE",
+    status: completeButUnfinalized ? "V2_V3_SHADOW_STALE_DISPATCH_AUTO_RESUMED_FOR_FINALIZE" : "V2_V3_SHADOW_STALE_DISPATCH_AUTO_RESUMED",
+    certification: completeButUnfinalized ? `${meta.certification}_FOR_FINALIZE` : meta.certification,
+    certification_grade: completeButUnfinalized ? "RECOVERED_FINALIZE_PENDING" : "RECOVERED_PARTIAL_CONTINUE",
     batch_id: batch.batch_id,
     rows_read: sourceRowsRead,
     rows_written: rowsWritten,
     next_offset: rowsWritten,
-    remaining_rows: sourceRowsRead > rowsWritten ? sourceRowsRead - rowsWritten : null,
+    remaining_rows: sourceRowsRead > rowsWritten ? sourceRowsRead - rowsWritten : 0,
     stale_running_auto_resume: true,
+    stale_complete_unfinalized_resume: completeButUnfinalized,
+    stale_partial_needs_resume: partialNeedsResume,
+    resume_offset_from_persisted_rows: rowsWritten,
     stale_threshold_seconds: 45,
     previous_queue_status: row.status,
     previous_queue_updated_at: row.updated_at || null,
@@ -17354,7 +17360,7 @@ async function rescueStaleShadowV2DispatchStartedForResume(env, trigger) {
         AND status='running'
         AND certification_status='ORCHESTRATOR_DISPATCH_STARTED'
         AND finished_at IS NULL`,
-    meta.certification, safeStringifyD1(output), row.request_id, row.job_key
+    output.certification, safeStringifyD1(output), row.request_id, row.job_key
   );
 
   await run(env.CONTROL_DB,
@@ -17376,7 +17382,7 @@ async function rescueStaleShadowV2DispatchStartedForResume(env, trigger) {
   );
 
   await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'v2_v3_shadow_stale_dispatch_auto_resumed', 'Auto-recovered stale V2/V3 shadow dispatch-start row back to pending from worker-owned v2_* batch evidence', ?, CURRENT_TIMESTAMP)",
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'v2_v3_shadow_stale_dispatch_auto_resumed', completeButUnfinalized ? 'Auto-recovered stale V2/V3 shadow dispatch-start row for finalization from complete worker-owned v2_* rows' : 'Auto-recovered stale V2/V3 shadow dispatch-start row back to pending from worker-owned v2_* batch evidence', ?, CURRENT_TIMESTAMP)",
     row.request_id, row.stale_run_id || null, WORKER_NAME, row.job_key, JSON.stringify(output).slice(0, 9000)
   );
 
