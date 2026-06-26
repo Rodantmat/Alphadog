@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.2.8-bounded-full-run-heartbeat";
+const VERSION = "alphadog-v2-delta-certifier-v0.2.9-preview-not-review-live-guard";
 const JOB_KEY = "delta-certifier";
 const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
 const FULL_RUN_LOOKAHEAD_DAYS = 6;
@@ -284,7 +284,11 @@ function classifyGame(game) {
   const detailed = String(status.detailedState || "");
   const abstractState = String(status.abstractGameState || "");
   const hay = `${code} ${detailed} ${abstractState}`.toLowerCase();
-  const isLive = abstractState.toLowerCase() === "live" || hay.includes("in progress") || hay.includes("manager challenge") || hay.includes("review");
+  const detailedLower = detailed.toLowerCase();
+  const abstractLower = abstractState.toLowerCase();
+  // Do not treat Preview as live because it contains the substring "review".
+  // Live is only explicit MLB live state/code or explicit in-game review text.
+  const isLive = abstractLower === "live" || code === "I" || detailedLower.includes("in progress") || detailedLower.includes("manager challenge") || /\breview\b/.test(detailedLower);
   const isPostponed = hay.includes("postponed") || code === "DR" || code === "DI" || code === "D";
   const isSuspended = hay.includes("suspended") || code === "U";
   const isCancelled = hay.includes("cancelled") || hay.includes("canceled") || code === "C";
