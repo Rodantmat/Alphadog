@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.319-hp-v3-finalization-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.320-hp-v3-terminal-raw-safe";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -13645,15 +13645,19 @@ async function buildShadowScoreAuditEvidenceOutput(env, row, runId, trigger, row
   const remaining = Math.max(0, sourceRowsRead - rowsWritten);
   const rowCountComplete = sourceRowsRead > 0 && remaining <= 0;
   let hpV3RawPendingRows = 0;
+  let hpV3FinalizationPendingGroups = 0;
   let hpV3FinalizationPending = false;
+  let hpV3OneSidedRawRows = 0;
   if (isHpV3 && rowCountComplete) {
-    const hpFinalize = await first(env.SCORE_DB, `SELECT SUM(CASE WHEN hp_v3_grade='READY' AND normalization_status='raw_pending_pair_normalization' THEN 1 ELSE 0 END) AS raw_pending_rows FROM v2_hit_probability_current WHERE batch_id=?`, batchId);
+    const hpFinalize = await hpV3TwoSidedRawPendingSummary(env, batchId);
     hpV3RawPendingRows = Number(hpFinalize && hpFinalize.raw_pending_rows || 0) || 0;
-    hpV3FinalizationPending = hpV3RawPendingRows > 0;
+    hpV3FinalizationPendingGroups = Number(hpFinalize && hpFinalize.pending_groups || 0) || 0;
+    hpV3OneSidedRawRows = Number(hpFinalize && hpFinalize.one_sided_raw_rows || 0) || 0;
+    hpV3FinalizationPending = hpV3FinalizationPendingGroups > 0;
   }
   const complete = rowCountComplete && !hpV3FinalizationPending;
   const cert = complete ? cfg.completeCert : cfg.partialCert;
-  const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, logical_worker_name:cfg.logical, deployed_worker_slot:"alphadog-v2-score-audit", job_key:jobKey, request_id:row.request_id, run_id:runId, chain_id:row.chain_id, mode:cfg.mode, status:complete ? `completed_${cfg.mode}_reconciled_from_timeout` : `partial_continue_${cfg.mode}_reconciled_from_timeout`, certification:cert, certification_grade:complete ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : "PARTIAL", batch_id:batchId, [cfg.batchField]:batchId, source_batch_id:sourceBatchId, rows_read:sourceRowsRead, source_rows_read:sourceRowsRead, rows_written:rowsWritten, offset:rowsWritten, next_offset:rowsWritten, remaining_rows:remaining, continuation_required:!complete, orchestrator_should_self_continue:!complete, service_binding_timeout_reconciled_from_v2_tables:true, hp_v3_row_count_complete:rowCountComplete, hp_v3_finalization_pending:hpV3FinalizationPending, hp_v3_raw_pending_normalization_rows:hpV3RawPendingRows, original_dispatch_error:String(errText || "").slice(0,900), no_production_mutation:true, writes_v2_shadow_tables_only:true };
+  const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, logical_worker_name:cfg.logical, deployed_worker_slot:"alphadog-v2-score-audit", job_key:jobKey, request_id:row.request_id, run_id:runId, chain_id:row.chain_id, mode:cfg.mode, status:complete ? `completed_${cfg.mode}_reconciled_from_timeout` : `partial_continue_${cfg.mode}_reconciled_from_timeout`, certification:cert, certification_grade:complete ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : "PARTIAL", batch_id:batchId, [cfg.batchField]:batchId, source_batch_id:sourceBatchId, rows_read:sourceRowsRead, source_rows_read:sourceRowsRead, rows_written:rowsWritten, offset:rowsWritten, next_offset:rowsWritten, remaining_rows:remaining, continuation_required:!complete, orchestrator_should_self_continue:!complete, service_binding_timeout_reconciled_from_v2_tables:true, hp_v3_row_count_complete:rowCountComplete, hp_v3_finalization_pending:hpV3FinalizationPending, hp_v3_pending_two_sided_normalization_groups:hpV3FinalizationPendingGroups, hp_v3_raw_pending_normalization_rows:hpV3RawPendingRows, hp_v3_one_sided_raw_ready_rows:hpV3OneSidedRawRows, original_dispatch_error:String(errText || "").slice(0,900), no_production_mutation:true, writes_v2_shadow_tables_only:true };
   await run(env.SCORE_DB, `UPDATE ${cfg.batchTable} SET status=?, source_rows_read=?, ${cfg.writtenCol}=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete ? "completed" : "partial_continue", sourceRowsRead, rowsWritten, cert, output.certification_grade, JSON.stringify(output).slice(0, 14000), batchId);
   return output;
 }
@@ -17186,6 +17190,41 @@ async function countDueShadowScoringV2Hot(env) {
 }
 
 
+
+async function hpV3TwoSidedRawPendingSummary(env, batchId) {
+  if (!env || !env.SCORE_DB || !batchId) return { pending_groups:0, raw_pending_rows:0, one_sided_raw_rows:0 };
+  const twoSided = await first(env.SCORE_DB,
+    `SELECT COUNT(*) AS pending_groups, COALESCE(SUM(rows),0) AS raw_pending_rows
+       FROM (
+         SELECT prepared_row_id, COALESCE(source_line_id,'') AS source_line_id, canonical_prop_key, line_value,
+                COUNT(*) AS rows,
+                SUM(CASE WHEN lower(selected_side) IN ('more','less') THEN 1 ELSE 0 END) AS side_rows,
+                SUM(CASE WHEN v3_hp_final IS NOT NULL THEN 1 ELSE 0 END) AS valid_rows
+           FROM v2_hit_probability_current
+          WHERE batch_id=?
+            AND hp_v3_grade='READY'
+            AND normalization_status='raw_pending_pair_normalization'
+          GROUP BY prepared_row_id, COALESCE(source_line_id,''), canonical_prop_key, line_value
+         HAVING rows=2 AND side_rows=2 AND valid_rows=2
+       ) x`,
+    batchId
+  );
+  const oneSided = await first(env.SCORE_DB,
+    `SELECT COUNT(*) AS one_sided_raw_rows
+       FROM v2_hit_probability_current
+      WHERE batch_id=?
+        AND hp_v3_grade='READY'
+        AND normalization_status='raw_pending_pair_normalization'
+        AND lower(COALESCE(selected_side,'')) IN ('more','less')`,
+    batchId
+  );
+  return {
+    pending_groups: Number(twoSided && twoSided.pending_groups || 0) || 0,
+    raw_pending_rows: Number(twoSided && twoSided.raw_pending_rows || 0) || 0,
+    one_sided_raw_rows: Number(oneSided && oneSided.one_sided_raw_rows || 0) || 0
+  };
+}
+
 function shadowV2ResumeMeta(jobKey) {
   const key = String(jobKey || "");
   if (key === "score-enrichment-v2-shadow") {
@@ -17294,7 +17333,18 @@ async function rescueStaleShadowV2DispatchStartedForResume(env, trigger) {
   const sourceRowsRead = Number(batch.source_rows_read || rowOutput.rows_read || rowOutput.source_rows_read || 0);
   const batchStatus = String(batch.status || "").toLowerCase();
   const partialNeedsResume = rowsWritten > 0 && (!sourceRowsRead || rowsWritten < sourceRowsRead);
-  const completeButUnfinalized = rowsWritten > 0 && sourceRowsRead > 0 && rowsWritten >= sourceRowsRead && batchStatus !== "completed";
+  let completeButUnfinalized = rowsWritten > 0 && sourceRowsRead > 0 && rowsWritten >= sourceRowsRead && batchStatus !== "completed";
+  let hpV3TerminalRawSafe = false;
+  let hpV3PendingTwoSidedGroups = 0;
+  let hpV3RawPendingRows = 0;
+  let hpV3OneSidedRawRows = 0;
+  if (completeButUnfinalized && row.job_key === "hit-probability-v3-shadow") {
+    const hpFinalize = await hpV3TwoSidedRawPendingSummary(env, batch.batch_id);
+    hpV3PendingTwoSidedGroups = Number(hpFinalize && hpFinalize.pending_groups || 0) || 0;
+    hpV3RawPendingRows = Number(hpFinalize && hpFinalize.raw_pending_rows || 0) || 0;
+    hpV3OneSidedRawRows = Number(hpFinalize && hpFinalize.one_sided_raw_rows || 0) || 0;
+    hpV3TerminalRawSafe = hpV3PendingTwoSidedGroups === 0;
+  }
   if (!partialNeedsResume && !completeButUnfinalized) return null;
 
   const nextInput = {
@@ -17334,6 +17384,10 @@ async function rescueStaleShadowV2DispatchStartedForResume(env, trigger) {
     stale_running_auto_resume: true,
     stale_complete_unfinalized_resume: completeButUnfinalized,
     stale_partial_needs_resume: partialNeedsResume,
+    hp_v3_terminal_raw_safe: hpV3TerminalRawSafe,
+    hp_v3_pending_two_sided_normalization_groups: hpV3PendingTwoSidedGroups,
+    hp_v3_raw_pending_normalization_rows: hpV3RawPendingRows,
+    hp_v3_one_sided_raw_ready_rows: hpV3OneSidedRawRows,
     resume_offset_from_persisted_rows: rowsWritten,
     stale_threshold_seconds: 45,
     previous_queue_status: row.status,
@@ -17352,6 +17406,66 @@ async function rescueStaleShadowV2DispatchStartedForResume(env, trigger) {
     no_production_table_mutation: true,
     writes_v2_shadow_tables_only: true
   };
+
+  if (completeButUnfinalized && hpV3TerminalRawSafe) {
+    const completedOutput = {
+      ...output,
+      status: `completed_${meta.mode}_terminal_raw_safe`,
+      certification: row.job_key === 'hit-probability-v3-shadow' ? 'HIT_PROBABILITY_V3_SHADOW_RECONCILED_COMPLETE' : output.certification,
+      certification_grade: 'PASS_WITH_REVIEW_WARNINGS_ALLOWED',
+      continuation_required: false,
+      orchestrator_should_self_continue: false,
+      stale_complete_unfinalized_closed_without_worker_redispach: true
+    };
+    await run(env.SCORE_DB,
+      `UPDATE ${meta.batchTable}
+          SET status='completed',
+              ${meta.writtenColumn}=?,
+              source_rows_read=?,
+              certification_status=?,
+              certification_grade=?,
+              output_json=?,
+              updated_at=CURRENT_TIMESTAMP
+        WHERE batch_id=?`,
+      rowsWritten, sourceRowsRead, completedOutput.certification, completedOutput.certification_grade, safeStringifyD1(completedOutput).slice(0, 14000), batch.batch_id
+    );
+    await run(env.CONTROL_DB,
+      `UPDATE control_job_runs
+          SET status='failed_stale_auto_recovered',
+              data_ok=1,
+              certification_status=?,
+              finished_at=CURRENT_TIMESTAMP,
+              elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END,
+              output_json=?,
+              error_code='v2_v3_shadow_stale_dispatch_terminal_raw_safe',
+              error_message='Stale shadow dispatch closed terminal because HP V3 rows are complete and no two-sided raw normalization groups remain.'
+        WHERE request_id=?
+          AND job_key=?
+          AND status='running'
+          AND certification_status='ORCHESTRATOR_DISPATCH_STARTED'
+          AND finished_at IS NULL`,
+      completedOutput.certification, safeStringifyD1(completedOutput), row.request_id, row.job_key
+    );
+    await run(env.CONTROL_DB,
+      `UPDATE control_job_queue
+          SET status='completed',
+              finished_at=CURRENT_TIMESTAMP,
+              updated_at=CURRENT_TIMESTAMP,
+              output_json=?,
+              error_code=NULL,
+              error_message=NULL
+        WHERE request_id=?
+          AND job_key='hit-probability-v3-shadow'
+          AND worker_name='alphadog-v2-score-audit'
+          AND finished_at IS NULL`,
+      safeStringifyD1(completedOutput), row.request_id
+    );
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'v2_v3_shadow_stale_dispatch_terminal_raw_safe', 'Closed HP V3 stale dispatch as terminal from row-count proof and no pending two-sided normalization groups', ?, CURRENT_TIMESTAMP)",
+      row.request_id, row.stale_run_id || null, WORKER_NAME, row.job_key, JSON.stringify(completedOutput).slice(0, 9000)
+    );
+    return null;
+  }
 
   await run(env.CONTROL_DB,
     `UPDATE control_job_runs

@@ -5033,7 +5033,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.62-v2-baseline-bridge-source-guard";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.63-hp-v3-fast-finalize";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5042,10 +5042,10 @@ const FINAL_SCORE_V2_SHADOW_JOB_KEY = "final-score-v2-shadow";
 const FINAL_SCORE_V2_SHADOW_MODE = "final_score_v2_shadow";
 const FINAL_BOARD_V3_SHADOW_JOB_KEY = "final-board-v3-shadow";
 const FINAL_BOARD_V3_SHADOW_MODE = "score_final_board_v3_shadow";
-const V2_ENRICHMENT_CHUNK_ROWS = 150;
-const V3_HP_CHUNK_ROWS = 500;
-const V2_FINAL_SCORE_CHUNK_ROWS = 650;
-const V3_FINAL_BOARD_CHUNK_ROWS = 300;
+const V2_ENRICHMENT_CHUNK_ROWS = 400;
+const V3_HP_CHUNK_ROWS = 800;
+const V2_FINAL_SCORE_CHUNK_ROWS = 900;
+const V3_FINAL_BOARD_CHUNK_ROWS = 500;
 
 function v2Rid(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -5373,8 +5373,8 @@ async function runScoreEnrichmentV2Shadow(env, input = {}) {
     }
     written++;
   }
-  const eventFlush = await v2Flush(env.SCORE_DB, stmts, 25);
-  const issueFlush = await v2Flush(env.SCORE_DB, issueStmts, 25);
+  const eventFlush = await v2Flush(env.SCORE_DB, stmts, 50);
+  const issueFlush = await v2Flush(env.SCORE_DB, issueStmts, 50);
   const remaining = Math.max(0, total - (offset + rows.length));
   const complete = remaining <= 0;
   const issueBackfill = complete ? await v2BackfillScoreEnrichmentIssues(env, batchId) : { attempted:false, inserted_or_replaced:0 };
@@ -5477,13 +5477,13 @@ async function runHitProbabilityV3Shadow(env, input = {}) {
     }
     written++;
   }
-  const eventFlush = await v2Flush(env.SCORE_DB, stmts, 25);
-  const issueFlush = await v2Flush(env.SCORE_DB, issueStmts, 25);
+  const eventFlush = await v2Flush(env.SCORE_DB, stmts, 50);
+  const issueFlush = await v2Flush(env.SCORE_DB, issueStmts, 50);
   const remaining = Math.max(0, total - (offset + rows.length));
   const complete = remaining <= 0;
   let normalizedGroups = 0, normalizationBlockedGroups = 0;
   if (complete) {
-    const groups = await all(env.SCORE_DB, `SELECT prepared_row_id, source_line_id, canonical_prop_key, line_value, COUNT(*) AS rows, SUM(CASE WHEN v3_hp_final IS NOT NULL THEN 1 ELSE 0 END) AS valid_rows, SUM(CASE WHEN lower(selected_side)='more' THEN v3_hp_final ELSE 0 END) AS more_hp, SUM(CASE WHEN lower(selected_side)='less' THEN v3_hp_final ELSE 0 END) AS less_hp FROM v2_hit_probability_current WHERE batch_id=? GROUP BY prepared_row_id, source_line_id, canonical_prop_key, line_value HAVING COUNT(*)=2 AND SUM(CASE WHEN lower(selected_side) IN ('more','less') THEN 1 ELSE 0 END)=2`, batchId);
+    const groups = await all(env.SCORE_DB, `SELECT prepared_row_id, source_line_id, canonical_prop_key, line_value, COUNT(*) AS rows, SUM(CASE WHEN v3_hp_final IS NOT NULL THEN 1 ELSE 0 END) AS valid_rows, SUM(CASE WHEN lower(selected_side)='more' THEN v3_hp_final ELSE 0 END) AS more_hp, SUM(CASE WHEN lower(selected_side)='less' THEN v3_hp_final ELSE 0 END) AS less_hp FROM v2_hit_probability_current WHERE batch_id=? AND hp_v3_grade='READY' AND normalization_status='raw_pending_pair_normalization' GROUP BY prepared_row_id, source_line_id, canonical_prop_key, line_value HAVING COUNT(*)=2 AND SUM(CASE WHEN lower(selected_side) IN ('more','less') THEN 1 ELSE 0 END)=2`, batchId);
     for (const g of groups) {
       if (Number(g.valid_rows || 0) !== 2) continue;
       const sum = Number(g.more_hp || 0) + Number(g.less_hp || 0);
@@ -5554,8 +5554,8 @@ async function runFinalScoreV2Shadow(env, input = {}) {
     if (!eligible) issueStmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_final_score_issues (issue_id,batch_id,final_score_v2_row_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`${batchId}|${id}|NOT_ELIGIBLE`,batchId,id,status === "blocked" ? "BLOCKER" : "INFO","FINAL_SCORE_V2_NOT_BOARD_ELIGIBLE","V2 final score row is not eligible for review board",v2Json({ hp_v3_status:row.hp_v3_status, hp },3000)));
     written++;
   }
-  const eventFlush = await v2Flush(env.SCORE_DB, stmts, 25);
-  const issueFlush = await v2Flush(env.SCORE_DB, issueStmts, 25);
+  const eventFlush = await v2Flush(env.SCORE_DB, stmts, 50);
+  const issueFlush = await v2Flush(env.SCORE_DB, issueStmts, 50);
   const remaining = Math.max(0, total - (offset + rows.length));
   const complete = remaining <= 0;
   const counts = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, SUM(CASE WHEN eligible_for_final_board=1 THEN 1 ELSE 0 END) AS eligible_rows, SUM(CASE WHEN review_playable=1 THEN 1 ELSE 0 END) AS review_rows, SUM(CASE WHEN final_score_status='blocked' THEN 1 ELSE 0 END) AS blocked_rows FROM v2_final_score_current WHERE batch_id=?`, batchId);
