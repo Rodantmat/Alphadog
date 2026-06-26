@@ -4339,7 +4339,7 @@ async function runHitProbabilityCurrent(env, input = {}){
 
 const ENRICHMENT_V1_JOB_KEY = "score-enrichment-v1";
 const ENRICHMENT_V1_MODE = "score_enrichment_v1_side_expanded";
-const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.10-dormant-expansion-v2-bridge";
+const ENRICHMENT_V1_VERSION = "alphadog-v2-score-enrichment-v1-v0.1.11-hitter-raw-payload-directional-parser";
 const ENRICHMENT_V1_CHUNK_ROWS = 250;
 
 function clampNum(v, lo, hi) {
@@ -4540,6 +4540,177 @@ function pitcherMarketScore(packet, profileKey, selectedSide) {
   }
   return sideApplyMoreScore(more, selectedSide);
 }
+
+function getBoardLineValue(packet) {
+  return firstNum(packet, ["line_value", "board_line_value", "projection_line", "line"]);
+}
+function arrayFromMaybe(v) {
+  if (!v) return [];
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string") { try { const parsed = JSON.parse(v); return Array.isArray(parsed) ? parsed : []; } catch (_) { return []; } }
+  return [];
+}
+function firstObjectByWindow(rows, needles) {
+  const arr = arrayFromMaybe(rows);
+  for (const n of needles) {
+    const needle = lowerText(n);
+    const found = arr.find(r => lowerText(r && (r.metric_window || r.window || r.split_key || r.split_code || r.split_description)).includes(needle));
+    if (found) return found;
+  }
+  return null;
+}
+function hitterMetricBase(packet) {
+  const bm = packet && packet.base_metrics ? packet.base_metrics : {};
+  return bm.season_summary || bm.legacy_summary_table_row || firstObjectByWindow(bm.snapshots, ["season", "std", "current"]) || {};
+}
+function numFromObj(obj, keys) {
+  for (const k of keys) {
+    const v = obj && Object.prototype.hasOwnProperty.call(obj, k) ? obj[k] : null;
+    const n = asNumMaybe(v);
+    if (n != null) return n;
+  }
+  return firstNum(obj, keys);
+}
+function hitterRateForProp(obj, prop) {
+  const games = numFromObj(obj, ["games_count", "games_logged", "games"]);
+  const pa = numFromObj(obj, ["pa_sum", "total_pa", "pa"]);
+  const ab = numFromObj(obj, ["ab_sum", "total_ab", "ab"]);
+  const denomGame = games && games > 0 ? games : null;
+  const perGame = (keys) => {
+    const v = numFromObj(obj, keys);
+    return (v != null && denomGame) ? v / denomGame : null;
+  };
+  const perPa = (keys) => {
+    const v = numFromObj(obj, keys);
+    return (v != null && pa && pa > 0) ? v / pa : null;
+  };
+  const p = lowerText(prop);
+  if (p === "hits") return perGame(["hits_sum", "total_hits", "hits"]);
+  if (p === "singles") return perGame(["singles_sum", "total_singles", "singles"]);
+  if (p === "doubles") return perGame(["doubles_sum", "total_doubles", "doubles"]);
+  if (p === "triples") return perGame(["triples_sum", "total_triples", "triples"]);
+  if (p === "home_runs") return perGame(["home_runs_sum", "total_home_runs", "home_runs"]);
+  if (p === "walks") return perGame(["walks_sum", "total_walks", "walks"]);
+  if (p === "hitter_strikeouts") return perGame(["strikeouts_sum", "total_strikeouts", "strikeouts"]);
+  if (p === "runs") return perGame(["runs_sum", "total_runs", "runs"]);
+  if (p === "rbis") return perGame(["rbi_sum", "total_rbi", "rbis", "rbi"]);
+  if (p === "stolen_bases") return perGame(["stolen_bases_sum", "total_stolen_bases", "stolen_bases"]);
+  if (p === "total_bases") return perGame(["total_bases_derived_sum", "total_bases", "tb"]);
+  if (p === "hits_runs_rbis") {
+    const h = perGame(["hits_sum", "total_hits", "hits"]);
+    const r = perGame(["runs_sum", "total_runs", "runs"]);
+    const bi = perGame(["rbi_sum", "total_rbi", "rbis", "rbi"]);
+    return [h,r,bi].some(x => x != null) ? (Number(h||0)+Number(r||0)+Number(bi||0)) : null;
+  }
+  const generic = perPa(["hits_sum", "total_hits", "hits"]);
+  if (generic != null && pa && ab) return generic * (pa / Math.max(1, games || 1));
+  return null;
+}
+function lineDifficultyScore(mean, line) {
+  if (mean == null || line == null) return 0;
+  const m = Number(mean), l = Number(line);
+  if (!Number.isFinite(m) || !Number.isFinite(l)) return 0;
+  const scale = Math.max(0.45, Math.sqrt(Math.max(0.15, l + 0.35)));
+  const z = (m - l) / scale;
+  if (z >= 0.85) return 2.0;
+  if (z >= 0.35) return 1.0;
+  if (z <= -0.85) return -2.0;
+  if (z <= -0.35) return -1.0;
+  return 0;
+}
+function recentTrendScore(packet, prop) {
+  const bm = packet && packet.base_metrics ? packet.base_metrics : {};
+  const base = hitterMetricBase(packet);
+  const baseRate = hitterRateForProp(base, prop);
+  const recent = firstObjectByWindow(bm.snapshots, ["last10", "l10", "recent10", "last_10", "10"])
+              || firstObjectByWindow(bm.snapshots, ["last5", "l5", "recent5", "last_5", "5"]);
+  const recentRate = hitterRateForProp(recent, prop);
+  if (baseRate == null || recentRate == null || baseRate <= 0) return 0;
+  const ratio = recentRate / baseRate;
+  if (ratio >= 1.35) return 1.2;
+  if (ratio >= 1.15) return 0.6;
+  if (ratio <= 0.65) return -1.2;
+  if (ratio <= 0.85) return -0.6;
+  return 0;
+}
+function splitFitScore(packet, prop) {
+  const daily = packet && packet.daily_context ? packet.daily_context : {};
+  const starterHand = firstText(daily, ["starter_hand", "pitcher_hand", "opposing_starter_hand"]);
+  const splits = arrayFromMaybe(packet && packet.base_metrics && packet.base_metrics.splits);
+  if (!splits.length || !starterHand) return 0;
+  const wantsLeft = starterHand.startsWith("l");
+  const split = splits.find(r => {
+    const txt = lowerText(`${r.split_key||""} ${r.split_code||""} ${r.split_description||""}`);
+    return wantsLeft ? (txt.includes("lhp") || txt.includes("left") || txt.includes("vs_l")) : (txt.includes("rhp") || txt.includes("right") || txt.includes("vs_r"));
+  });
+  if (!split) return 0;
+  const splitRate = hitterRateForProp(split, prop);
+  const baseRate = hitterRateForProp(hitterMetricBase(packet), prop);
+  if (splitRate == null || baseRate == null || baseRate <= 0) return 0;
+  const ratio = splitRate / baseRate;
+  if (ratio >= 1.30) return 1.0;
+  if (ratio >= 1.12) return 0.5;
+  if (ratio <= 0.70) return -1.0;
+  if (ratio <= 0.88) return -0.5;
+  return 0;
+}
+function parseParkNotesNum(text, label) {
+  const t = String(text || "");
+  const re = new RegExp(label + "\\s+(\\d+(?:\\.\\d+)?)", "i");
+  const m = t.match(re);
+  return m ? asNumMaybe(m[1]) : null;
+}
+function hitterDailyContextScore(packet, profileKey) {
+  const daily = packet && packet.daily_context ? packet.daily_context : {};
+  const readiness = daily.readiness || {};
+  const weather = daily.weather || {};
+  const teamBp = daily.team_bullpen || {};
+  const oppBp = daily.opponent_bullpen || {};
+  const teamSched = daily.team_schedule || {};
+  const oppSched = daily.opponent_schedule || {};
+  let score = 0;
+  const avail = firstText(daily, ["availability_status", "player_availability_status", "roster_status"]);
+  if (avail.includes("unavailable") || avail.includes("injured") || avail.includes("inactive")) score -= 3;
+  const lineupSlot = firstNum(daily, ["lineup_slot", "batting_order", "batting_order_slot"]);
+  if (lineupSlot != null) {
+    if (profileKey === "hitter_run_rbi") { if (lineupSlot <= 4) score += 1.2; else if (lineupSlot >= 8) score -= 1.0; else if (lineupSlot >= 6) score -= 0.4; }
+    else if (profileKey === "hitter_contact" || profileKey === "hitter_power" || profileKey === "hitter_walk_obp" || profileKey === "hitter_strikeout") { if (lineupSlot <= 3) score += 0.7; else if (lineupSlot >= 8) score -= 0.8; }
+    else if (profileKey.startsWith("stolen")) { if (lineupSlot <= 2) score += 0.7; else if (lineupSlot >= 8) score -= 0.5; }
+  }
+  const temp = firstNum(weather, ["temperature_f"]);
+  if ((profileKey === "hitter_power" || profileKey === "hitter_run_rbi" || profileKey === "hitter_contact") && temp != null) {
+    if (temp >= 82) score += 0.6; else if (temp >= 76) score += 0.3; else if (temp <= 50) score -= 0.5;
+  }
+  const parkNotes = firstText(weather, ["park_weather_notes"]);
+  const runPf = parseParkNotesNum(parkNotes, "run");
+  const hrPf = parseParkNotesNum(parkNotes, "hr");
+  if (profileKey === "hitter_power" && hrPf != null) { if (hrPf >= 110) score += 1.1; else if (hrPf >= 104) score += 0.5; else if (hrPf <= 90) score -= 1.1; else if (hrPf <= 96) score -= 0.5; }
+  if ((profileKey === "hitter_contact" || profileKey === "hitter_run_rbi") && runPf != null) { if (runPf >= 106) score += 0.7; else if (runPf <= 94) score -= 0.7; }
+  const rain = firstNum(weather, ["rain_risk_flag"]);
+  const delay = firstNum(weather, ["delay_risk_flag"]);
+  if (rain === 1 || delay === 1) score -= 0.4;
+  const bpText = `${firstText(readiness, ["bullpen_context_status"])} ${firstText(oppBp, ["bullpen_context_status", "availability_grade", "bullpen_risk_level", "fatigue_status"])} ${firstText(teamBp, ["bullpen_context_status", "availability_grade", "bullpen_risk_level", "fatigue_status"])}`;
+  if ((profileKey === "hitter_power" || profileKey === "hitter_run_rbi" || profileKey === "hitter_contact" || profileKey === "hitter_walk_obp") && (bpText.includes("taxed") || bpText.includes("fatigue") || bpText.includes("thin") || bpText.includes("high"))) score += 0.6;
+  const schedText = `${firstText(readiness, ["schedule_spot_context_status"])} ${JSON.stringify(teamSched||{})} ${JSON.stringify(oppSched||{})}`.toLowerCase();
+  if (schedText.includes("travel_risk") || schedText.includes("three_in_four") || schedText.includes("four_in_six")) score -= 0.3;
+  return score;
+}
+function hitterPacketScore(packet, profileKey, selectedSide) {
+  if (!(profileKey && (profileKey.startsWith("hitter") || profileKey.startsWith("stolen")))) return 0;
+  const prop = lowerText(packet && (packet.canonical_prop_key || (packet.board_context && packet.board_context.canonical_prop_key)) || "");
+  const line = getBoardLineValue(packet);
+  let more = 0;
+  const base = hitterMetricBase(packet);
+  const mean = hitterRateForProp(base, prop);
+  more += lineDifficultyScore(mean, line);
+  more += recentTrendScore(packet, prop);
+  more += splitFitScore(packet, prop);
+  more += hitterDailyContextScore(packet, profileKey);
+  const g = marketGameNums(packet || {});
+  if (profileKey === "hitter_run_rbi" && g.maxImp != null) { if (g.maxImp >= 5.0) more += 0.5; else if (g.maxImp <= 3.7) more -= 0.4; }
+  if ((profileKey === "hitter_power" || profileKey === "hitter_contact") && g.total != null) { if (g.total >= 9.5) more += 0.4; else if (g.total <= 7.5) more -= 0.3; }
+  return sideApplyMoreScore(clampNum(more, -3, 3), selectedSide);
+}
 function profileDirectionalWeight(weights, keys, fallback) {
   let total = 0;
   for (const k of keys) total += Number(weights[k] || 0);
@@ -4566,49 +4737,26 @@ function marketLayerFromPayload(packet, profileKey, selectedSide) {
 }
 function dailyLayerFromPayload(packet, profileKey, selectedSide) {
   const daily = packet.daily_context || {};
-  const lineupSlot = asNumMaybe(daily.lineup && daily.lineup.lineup_slot);
-  const availability = firstText(daily, ["availability_status", "player_availability_status", "roster_status"]);
-  const starterStatus = firstText(daily, ["starter_status", "starter_context_status", "source_status"]);
-  const openerFlag = firstNum(daily, ["opener_flag"]);
-  const bulkFlag = firstNum(daily, ["bulk_pitcher_flag"]);
-  const weatherTemp = firstNum(daily, ["temperature_f"]);
-  const windContext = firstText(daily, ["wind_context", "park_weather_notes", "wind_direction_cardinal"]);
-  const bullpenRisk = firstText(daily, ["bullpen_risk_level", "availability_grade", "bullpen_status"]);
   let score = 0;
-  if (availability.includes("unavailable") || availability.includes("injured") || availability.includes("inactive")) score -= 3;
   if (profileKey.startsWith("hitter") || profileKey.startsWith("stolen")) {
-    if (lineupSlot != null) {
-      if (profileKey === "hitter_plate_appearances") {
-        if (lineupSlot === 1) score += 2.0;
-        else if (lineupSlot === 2) score += 1.6;
-        else if (lineupSlot === 3) score += 1.1;
-        else if (lineupSlot >= 7) score -= 1.2;
-        else if (lineupSlot >= 5) score -= 0.4;
-      } else {
-        if (lineupSlot >= 1 && lineupSlot <= 3) score += 1.0;
-        else if (lineupSlot >= 7) score -= 0.7;
-      }
-    }
-    if (profileKey === "hitter_power" || profileKey === "hitter_run_rbi" || profileKey === "hitter_contact") {
-      if (windContext.includes("out") || windContext.includes("boost") || windContext.includes("carry")) score += 0.8;
-      if (windContext.includes("in") || windContext.includes("suppress")) score -= 0.8;
-      if (weatherTemp != null && weatherTemp >= 78) score += 0.4;
-      if (weatherTemp != null && weatherTemp <= 50) score -= 0.4;
-      if (bullpenRisk.includes("high") || bullpenRisk.includes("fatigue") || bullpenRisk.includes("thin")) score += 0.7;
-    }
+    score += hitterDailyContextScore(packet, profileKey);
   } else if (profileKey.startsWith("pitcher")) {
+    const starterStatus = firstText(daily, ["starter_status", "starter_context_status", "source_status"]);
+    const openerFlag = firstNum(daily, ["opener_flag"]);
+    const bulkFlag = firstNum(daily, ["bulk_pitcher_flag"]);
+    const windContext = firstText(daily, ["wind_context", "park_weather_notes", "wind_direction_cardinal"]);
+    const bullpenRisk = firstText(daily, ["bullpen_risk_level", "availability_grade", "bullpen_status", "bullpen_context_status", "fatigue_status"]);
     if (starterStatus.includes("confirmed") || starterStatus.includes("probable")) score += 0.6;
     if (openerFlag === 1 || bulkFlag === 1) score -= (profileKey === "pitcher_outs" ? 2.0 : 0.7);
-    if (profileKey === "pitcher_outs" && (bullpenRisk.includes("high") || bullpenRisk.includes("fatigue"))) score += 0.5;
+    if (profileKey === "pitcher_outs" && (bullpenRisk.includes("high") || bullpenRisk.includes("fatigue") || bullpenRisk.includes("taxed"))) score += 0.5;
     if (profileKey === "pitcher_pitches_thrown") {
       if (starterStatus.includes("confirmed") || starterStatus.includes("probable")) score += 0.7;
-      if (bullpenRisk.includes("high") || bullpenRisk.includes("fatigue") || bullpenRisk.includes("severe")) score += 0.4;
+      if (bullpenRisk.includes("high") || bullpenRisk.includes("fatigue") || bullpenRisk.includes("severe") || bullpenRisk.includes("taxed")) score += 0.4;
       if (openerFlag === 1 || bulkFlag === 1) score -= 2.4;
     }
     if ((profileKey === "pitcher_hits_allowed" || profileKey === "pitcher_earned_runs_allowed") && (windContext.includes("out") || windContext.includes("boost") || windContext.includes("carry"))) score += isLessSide(selectedSide) ? -0.8 : 0.8;
   }
   let layer = layerFromSignedScore(score);
-  // For LESS side, hitter volume/power context usually inverts. Pitcher allowed profiles already handle side in the score where needed.
   if (isLessSide(selectedSide) && (profileKey.startsWith("hitter") || profileKey.startsWith("stolen"))) layer = invertLayer(layer);
   return layer;
 }
@@ -4618,25 +4766,13 @@ function packetLayerFromPayload(packet, profileKey, selectedSide) {
   const factorStatus = lowerText(packet.factor_status || packet.factor_grade || "");
   let score = 0;
   if (factorStatus.includes("ready")) score += 0.4;
-  if (missing >= 3) score -= 1.2;
-  else if (missing > 0) score -= 0.5;
-  if (warnings >= 4) score -= 0.6;
-  // Use baseline-neutral raw packet evidence only when clear fields exist.
-  const lineupSlot = firstNum(packet, ["lineup_slot"]);
-  const sprint = firstNum(packet, ["sprint_speed", "sprint_speed_ft_per_sec"]);
-  const fatigue = firstNum(packet, ["bullpen_fatigue_score", "schedule_fatigue_score"]);
-  if (profileKey === "stolen_base_attempt" || profileKey === "stolen_base_success") {
-    if (sprint != null && sprint >= 28) score += 1.2;
-    if (sprint != null && sprint <= 26) score -= 0.8;
-  }
-  if (profileKey === "hitter_run_rbi" && lineupSlot != null) {
-    if (lineupSlot <= 4) score += 0.8;
-    else if (lineupSlot >= 7) score -= 0.6;
-  }
-  if ((profileKey.startsWith("hitter") || profileKey.startsWith("stolen")) && fatigue != null && fatigue >= 65) score += 0.5;
-  if (profileKey === "pitcher_outs" && fatigue != null && fatigue >= 65) score += 0.4;
-  score += pitcherPacketScore(packet, profileKey, selectedSide);
-  let layer = layerFromSignedScore(score);
+  // Missing data is confidence drag elsewhere; keep HP pressure milder than true negative evidence.
+  if (missing >= 3) score -= 0.4;
+  else if (missing > 0) score -= 0.15;
+  if (warnings >= 6) score -= 0.25;
+  if (profileKey.startsWith("hitter") || profileKey.startsWith("stolen")) score += hitterPacketScore(packet, profileKey, selectedSide);
+  else score += pitcherPacketScore(packet, profileKey, selectedSide);
+  let layer = layerFromSignedScore(clampNum(score, -3, 3));
   if (isLessSide(selectedSide) && (profileKey.startsWith("hitter") || profileKey.startsWith("stolen"))) layer = invertLayer(layer);
   return layer;
 }
@@ -5023,7 +5159,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
   const remaining = Math.max(0, expectedRows - (offset + rows.length));
   const complete = remaining <= 0;
   const output = baseIdentity({
-    ok:true,data_ok:true,version:ENRICHMENT_V1_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v1",deployed_worker_slot:"alphadog-v2-score-audit",job_key:ENRICHMENT_V1_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:ENRICHMENT_V1_MODE,status:complete?"completed_score_enrichment_v1_side_expanded":"partial_continue_score_enrichment_v1_side_expanded",certification:complete?"SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED":"SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE",certification_grade:complete?"PASS_WITH_REVIEW_WARNINGS_ALLOWED":"PARTIAL",batch_id:batchId,enrichment_batch_id:batchId,source_matrix_batch_id:sourceMatrixBatchId,matrix_rows_read:Math.ceil(expectedRows/2),expected_enrichment_rows:expectedRows,enrichment_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:written,baseline_matched_rows:Number(totals && totals.matched || 0),baseline_missing_rows:Number(totals && totals.missing || 0),blocked_rows:Number(totals && totals.blocked || 0),warning_rows:Number(totals && totals.warn || 0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,resume_mismatch_reset:resumeMismatchReset,version_reset:versionReset,requested_batch_id:requestedBatchId,batched_compact_writes:true,compact_snapshots:true,directional_context_layers:true,baseline_anchor_not_double_counted:true,clean_source_matrix_batch_ownership:true,conservative_context_pressure:true,blocked_rows_zero_context_pressure:true,baseline_missing_rows_zero_context_pressure:true,d1_microflush_25:true,chunk_rows_target_250:true,side_expanded:true,goblin_demon_less_excluded:true,prizepicks_goblin_demon_more_only_contract:true,baseline_confidence_cap_60:true,enrichment_confidence_max_40:true,no_hp_v2:true,no_current_scoring_mutation:true,no_final_score:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
+    ok:true,data_ok:true,version:ENRICHMENT_V1_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-score-enrichment-v1",deployed_worker_slot:"alphadog-v2-score-audit",job_key:ENRICHMENT_V1_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:ENRICHMENT_V1_MODE,status:complete?"completed_score_enrichment_v1_side_expanded":"partial_continue_score_enrichment_v1_side_expanded",certification:complete?"SCORE_ENRICHMENT_V1_CERTIFIED_SIDE_EXPANDED":"SCORE_ENRICHMENT_V1_PARTIAL_CONTINUE",certification_grade:complete?"PASS_WITH_REVIEW_WARNINGS_ALLOWED":"PARTIAL",batch_id:batchId,enrichment_batch_id:batchId,source_matrix_batch_id:sourceMatrixBatchId,matrix_rows_read:Math.ceil(expectedRows/2),expected_enrichment_rows:expectedRows,enrichment_rows_written:writtenTotal,rows_read:expectedRows,rows_written:writtenTotal,inserted_this_invocation:written,baseline_matched_rows:Number(totals && totals.matched || 0),baseline_missing_rows:Number(totals && totals.missing || 0),blocked_rows:Number(totals && totals.blocked || 0),warning_rows:Number(totals && totals.warn || 0),issue_rows_written:issues,offset,chunk_rows:limit,next_offset:offset+rows.length,remaining_rows:remaining,resume_mismatch_reset:resumeMismatchReset,version_reset:versionReset,requested_batch_id:requestedBatchId,batched_compact_writes:true,compact_snapshots:true,directional_context_layers:true,hitter_raw_payload_directional_parser_v0_1_11:true,baseline_anchor_not_double_counted:true,clean_source_matrix_batch_ownership:true,conservative_context_pressure:true,blocked_rows_zero_context_pressure:true,baseline_missing_rows_zero_context_pressure:true,d1_microflush_25:true,chunk_rows_target_250:true,side_expanded:true,goblin_demon_less_excluded:true,prizepicks_goblin_demon_more_only_contract:true,baseline_confidence_cap_60:true,enrichment_confidence_max_40:true,no_hp_v2:true,no_current_scoring_mutation:true,no_final_score:true,no_final_board:true,no_ranking:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE score_enrichment_batches SET status=?, matrix_rows_read=?, expected_enrichment_rows=?, enrichment_rows_written=?, baseline_matched_rows=?, baseline_missing_rows=?, blocked_rows=?, warning_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", Math.ceil(expectedRows/2), expectedRows, writtenTotal, output.baseline_matched_rows, output.baseline_missing_rows, output.blocked_rows, output.warning_rows, output.certification, output.certification_grade, scoreJson(output,14000), batchId);
   return output;
 }
@@ -5033,7 +5169,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.63-hp-v3-fast-finalize";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.64-hitter-directional-confidence-cap";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5459,6 +5595,16 @@ async function runHitProbabilityV3Shadow(env, input = {}) {
   const totalRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_score_enrichment_events WHERE batch_id=?`, sourceBatchId);
   const total = Number(totalRow && totalRow.rows || 0);
   const rows = await all(env.SCORE_DB, `SELECT * FROM v2_score_enrichment_events WHERE batch_id=? ORDER BY event_id LIMIT ? OFFSET ?`, sourceBatchId, limit, offset);
+  const confidenceGroups = await all(env.SCORE_DB, `SELECT canonical_prop_key, source_key, payout_variant, selected_side, line_value, COUNT(*) AS rows FROM v2_score_enrichment_events WHERE batch_id=? AND event_status='ready' GROUP BY canonical_prop_key, source_key, payout_variant, selected_side, line_value`, sourceBatchId);
+  const confidenceGroupCounts = new Map(confidenceGroups.map(g => [`${lowerText(g.canonical_prop_key)}|${lowerText(g.source_key)}|${lowerText(g.payout_variant)}|${lowerText(g.selected_side)}|${Number(g.line_value)}`, Number(g.rows || 0)]));
+  const confidenceCapForV3Group = (row) => {
+    const k = `${lowerText(row.canonical_prop_key)}|${lowerText(row.source_key)}|${lowerText(row.payout_variant)}|${lowerText(row.selected_side)}|${Number(row.line_value)}`;
+    const n = confidenceGroupCounts.get(k) || 0;
+    if (n > 0 && n < 2) return { cap:60, group_rows:n, reason:'single_row_prop_source_variant_side_line_confidence_cap' };
+    if (n > 0 && n < 5) return { cap:72, group_rows:n, reason:'tiny_prop_source_variant_side_line_confidence_cap' };
+    if (n > 0 && n < 10) return { cap:82, group_rows:n, reason:'small_prop_source_variant_side_line_confidence_cap' };
+    return { cap:95, group_rows:n, reason:null };
+  };
   const stmts = [], issueStmts = [];
   let written = 0;
   for (const row of rows) {
@@ -5466,12 +5612,14 @@ async function runHitProbabilityV3Shadow(env, input = {}) {
     const hasBaseline = !!row.baseline_hp_row_id && row.baseline_hp_0_100 !== null && row.event_status === "ready";
     const effect = v2Num(row.factor_effect_0_100, 0) || 0;
     const raw = hasBaseline ? Math.round(v2Clamp(Number(row.baseline_hp_0_100) * Number(row.factor_effect_multiplier || 1), 1, 99) * 100) / 100 : null;
-    const confidence = hasBaseline ? Math.round(v2Clamp(Number(row.baseline_confidence_0_100 || 0), 5, 95) * 100) / 100 : null;
+    const groupConfidence = confidenceCapForV3Group(row);
+    const baseConfidence = hasBaseline ? v2Clamp(Number(row.baseline_confidence_0_100 || 0), 5, 95) : null;
+    const confidence = hasBaseline ? Math.round(Math.min(baseConfidence, groupConfidence.cap) * 100) / 100 : null;
     const calibrated = hasBaseline ? v3ShadowCalibrateHp(row, raw, confidence) : { hp:null, reliability_weight:null, calibration_applied:false, calibration_reason:'no_baseline_hp' };
     const finalHp = calibrated.hp;
     const status = hasBaseline ? "ready_raw" : (row.event_status === "blocked_source_row" ? "blocked_source_row" : "deferred_baseline_missing");
     const grade = hasBaseline ? "READY" : (status === "blocked_source_row" ? "BLOCKED" : "DEFERRED");
-    stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_hit_probability_current (hp_v3_row_id,batch_id,source_v2_enrichment_batch_id,event_id,prepared_row_id,matrix_id,source_line_id,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,source_key,line_value,selected_side,payout_variant,baseline_hp_row_id,baseline_source,baseline_hp_0_100,baseline_confidence_0_100,composite_factor_signature,composite_factor_effect_0_100,v3_hp_raw,v3_hp_final,v3_confidence_0_100,normalization_status,hp_v3_status,hp_v3_grade,blocker_count,warning_count,model_payload_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(hpId,batchId,sourceBatchId,row.event_id,row.prepared_row_id,row.matrix_id,row.source_line_id,row.game_pk,row.official_date,row.mlb_player_id,row.player_name,row.canonical_prop_key,row.source_key,row.line_value,row.selected_side,row.payout_variant,row.baseline_hp_row_id,row.baseline_source,row.baseline_hp_0_100,row.baseline_confidence_0_100,`${row.factor_id || 'factor'}:${row.factor_effect_tier || 'neutral'}:${row.factor_quality_tier || 'unknown'}`,effect,raw,finalHp,confidence,hasBaseline?"raw_pending_pair_normalization":"not_normalizable",status,grade,status === "blocked_source_row" ? 1 : 0,status === "deferred_baseline_missing" ? 1 : 0,v2Json({ no_fake_hp_when_baseline_missing:true, baseline_missing_outputs_null:!hasBaseline, multiplicative_modifier:row.factor_effect_multiplier, calibration_applied:calibrated.calibration_applied, calibration_reason:calibrated.calibration_reason, reliability_weight:calibrated.reliability_weight, raw_hp_before_calibration:raw, final_hp_after_calibration:finalHp },4000)));
+    stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_hit_probability_current (hp_v3_row_id,batch_id,source_v2_enrichment_batch_id,event_id,prepared_row_id,matrix_id,source_line_id,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,source_key,line_value,selected_side,payout_variant,baseline_hp_row_id,baseline_source,baseline_hp_0_100,baseline_confidence_0_100,composite_factor_signature,composite_factor_effect_0_100,v3_hp_raw,v3_hp_final,v3_confidence_0_100,normalization_status,hp_v3_status,hp_v3_grade,blocker_count,warning_count,model_payload_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(hpId,batchId,sourceBatchId,row.event_id,row.prepared_row_id,row.matrix_id,row.source_line_id,row.game_pk,row.official_date,row.mlb_player_id,row.player_name,row.canonical_prop_key,row.source_key,row.line_value,row.selected_side,row.payout_variant,row.baseline_hp_row_id,row.baseline_source,row.baseline_hp_0_100,row.baseline_confidence_0_100,`${row.factor_id || 'factor'}:${row.factor_effect_tier || 'neutral'}:${row.factor_quality_tier || 'unknown'}`,effect,raw,finalHp,confidence,hasBaseline?"raw_pending_pair_normalization":"not_normalizable",status,grade,status === "blocked_source_row" ? 1 : 0,status === "deferred_baseline_missing" ? 1 : 0,v2Json({ no_fake_hp_when_baseline_missing:true, baseline_missing_outputs_null:!hasBaseline, multiplicative_modifier:row.factor_effect_multiplier, confidence_group_rows:groupConfidence.group_rows, confidence_cap_reason:groupConfidence.reason, confidence_cap_applied:hasBaseline && baseConfidence != null && confidence < baseConfidence, calibration_applied:calibrated.calibration_applied, calibration_reason:calibrated.calibration_reason, reliability_weight:calibrated.reliability_weight, raw_hp_before_calibration:raw, final_hp_after_calibration:finalHp },4000)));
     if (!hasBaseline) {
       issueStmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_hit_probability_issues (issue_id,batch_id,hp_v3_row_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`${batchId}|${hpId}|NO_BASELINE_HP`,batchId,hpId,status === "blocked_source_row" ? "BLOCKER" : "WARNING",status === "blocked_source_row" ? "SOURCE_ROW_BLOCKED" : "BASELINE_MISSING_HP_NULL","HP V3 did not emit fake HP for missing or blocked baseline row",v2Json({ event_id:row.event_id, canonical_prop_key:row.canonical_prop_key, source_key:row.source_key },3000)));
     }
