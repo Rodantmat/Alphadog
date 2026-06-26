@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.318-shadow-complete-stale-finalizer";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.319-hp-v3-finalization-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -13643,9 +13643,17 @@ async function buildShadowScoreAuditEvidenceOutput(env, row, runId, trigger, row
   }
   const sourceRowsRead = Math.max(Number(batch && batch.source_rows_read || 0) || 0, Number(previousOutput.source_rows_read || previousOutput.rows_read || 0) || 0, sourceCount, rowsWritten);
   const remaining = Math.max(0, sourceRowsRead - rowsWritten);
-  const complete = sourceRowsRead > 0 && remaining <= 0;
+  const rowCountComplete = sourceRowsRead > 0 && remaining <= 0;
+  let hpV3RawPendingRows = 0;
+  let hpV3FinalizationPending = false;
+  if (isHpV3 && rowCountComplete) {
+    const hpFinalize = await first(env.SCORE_DB, `SELECT SUM(CASE WHEN hp_v3_grade='READY' AND normalization_status='raw_pending_pair_normalization' THEN 1 ELSE 0 END) AS raw_pending_rows FROM v2_hit_probability_current WHERE batch_id=?`, batchId);
+    hpV3RawPendingRows = Number(hpFinalize && hpFinalize.raw_pending_rows || 0) || 0;
+    hpV3FinalizationPending = hpV3RawPendingRows > 0;
+  }
+  const complete = rowCountComplete && !hpV3FinalizationPending;
   const cert = complete ? cfg.completeCert : cfg.partialCert;
-  const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, logical_worker_name:cfg.logical, deployed_worker_slot:"alphadog-v2-score-audit", job_key:jobKey, request_id:row.request_id, run_id:runId, chain_id:row.chain_id, mode:cfg.mode, status:complete ? `completed_${cfg.mode}_reconciled_from_timeout` : `partial_continue_${cfg.mode}_reconciled_from_timeout`, certification:cert, certification_grade:complete ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : "PARTIAL", batch_id:batchId, [cfg.batchField]:batchId, source_batch_id:sourceBatchId, rows_read:sourceRowsRead, source_rows_read:sourceRowsRead, rows_written:rowsWritten, offset:rowsWritten, next_offset:rowsWritten, remaining_rows:remaining, continuation_required:!complete, orchestrator_should_self_continue:!complete, service_binding_timeout_reconciled_from_v2_tables:true, original_dispatch_error:String(errText || "").slice(0,900), no_production_mutation:true, writes_v2_shadow_tables_only:true };
+  const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, logical_worker_name:cfg.logical, deployed_worker_slot:"alphadog-v2-score-audit", job_key:jobKey, request_id:row.request_id, run_id:runId, chain_id:row.chain_id, mode:cfg.mode, status:complete ? `completed_${cfg.mode}_reconciled_from_timeout` : `partial_continue_${cfg.mode}_reconciled_from_timeout`, certification:cert, certification_grade:complete ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : "PARTIAL", batch_id:batchId, [cfg.batchField]:batchId, source_batch_id:sourceBatchId, rows_read:sourceRowsRead, source_rows_read:sourceRowsRead, rows_written:rowsWritten, offset:rowsWritten, next_offset:rowsWritten, remaining_rows:remaining, continuation_required:!complete, orchestrator_should_self_continue:!complete, service_binding_timeout_reconciled_from_v2_tables:true, hp_v3_row_count_complete:rowCountComplete, hp_v3_finalization_pending:hpV3FinalizationPending, hp_v3_raw_pending_normalization_rows:hpV3RawPendingRows, original_dispatch_error:String(errText || "").slice(0,900), no_production_mutation:true, writes_v2_shadow_tables_only:true };
   await run(env.SCORE_DB, `UPDATE ${cfg.batchTable} SET status=?, source_rows_read=?, ${cfg.writtenCol}=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete ? "completed" : "partial_continue", sourceRowsRead, rowsWritten, cert, output.certification_grade, JSON.stringify(output).slice(0, 14000), batchId);
   return output;
 }
