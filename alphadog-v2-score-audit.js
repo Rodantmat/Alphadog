@@ -5169,7 +5169,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.65-calendar-status-canonical-guard";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.66-v2-final-score-prepared-gate";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5190,6 +5190,23 @@ function v2Json(value, max = 9000) {
   let text = "{}";
   try { text = JSON.stringify(value == null ? {} : value); } catch (_) { text = JSON.stringify({ serialization_error:true }); }
   return text.length > max ? text.slice(0, max) : text;
+}
+function v2PreparedNoScoreGate(row) {
+  const scoringEnabled = row && row.prepared_scoring_enabled;
+  const noScoring = row && row.prepared_no_scoring;
+  const noFinalBoard = row && row.prepared_no_final_board;
+  const noAutoRecommendation = row && row.prepared_no_auto_recommendation;
+  return scoringEnabled === 0 || scoringEnabled === "0" || noScoring === 1 || noScoring === "1" || noFinalBoard === 1 || noFinalBoard === "1" || noAutoRecommendation === 1 || noAutoRecommendation === "1";
+}
+function v2PreparedGateDetails(row) {
+  return {
+    scoring_enabled: row && row.prepared_scoring_enabled == null ? null : Number(row.prepared_scoring_enabled),
+    no_scoring: row && row.prepared_no_scoring == null ? null : Number(row.prepared_no_scoring),
+    no_final_board: row && row.prepared_no_final_board == null ? null : Number(row.prepared_no_final_board),
+    no_auto_recommendation: row && row.prepared_no_auto_recommendation == null ? null : Number(row.prepared_no_auto_recommendation),
+    logic_status: row && row.prepared_logic_status || null,
+    rfi_nrfi_note: row && row.prepared_rfi_nrfi_note || null
+  };
 }
 async function v2Flush(db, stmts, size = 25) {
   if (!stmts || !stmts.length) return { statements:0, batches:0, fallback:false };
@@ -5685,7 +5702,21 @@ async function runFinalScoreV2Shadow(env, input = {}) {
   offset = resumeState.offset;
   const totalRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_hit_probability_current WHERE batch_id=?`, sourceBatchId);
   const total = Number(totalRow && totalRow.rows || 0);
-  const rows = await all(env.SCORE_DB, `SELECT * FROM v2_hit_probability_current WHERE batch_id=? ORDER BY hp_v3_row_id LIMIT ? OFFSET ?`, sourceBatchId, limit, offset);
+  const rows = await all(env.SCORE_DB, `
+    SELECT
+      h.*,
+      json_extract(p.row_payload_json,'$.logic_status') AS prepared_logic_status,
+      json_extract(p.row_payload_json,'$.scoring_enabled') AS prepared_scoring_enabled,
+      json_extract(p.row_payload_json,'$.no_scoring') AS prepared_no_scoring,
+      json_extract(p.row_payload_json,'$.no_final_board') AS prepared_no_final_board,
+      json_extract(p.row_payload_json,'$.no_auto_recommendation') AS prepared_no_auto_recommendation,
+      json_extract(p.row_payload_json,'$.rfi_nrfi_note') AS prepared_rfi_nrfi_note
+    FROM v2_hit_probability_current h
+    LEFT JOIN score_board_prepared_current p
+      ON p.prepared_row_id=h.prepared_row_id
+    WHERE h.batch_id=?
+    ORDER BY h.hp_v3_row_id
+    LIMIT ? OFFSET ?`, sourceBatchId, limit, offset);
   const stmts = [], issueStmts = [];
   let written = 0;
   for (const row of rows) {
@@ -5694,12 +5725,15 @@ async function runFinalScoreV2Shadow(env, input = {}) {
     const conf = v2Num(row.v3_confidence_0_100, null);
     const payout = String(row.payout_variant || "standard").toLowerCase();
     const payoutAdj = payout === "demon" ? 2 : (payout === "goblin" ? -1.5 : 0);
-    const eligible = hp !== null && hp >= 60 && row.hp_v3_status && String(row.hp_v3_status).startsWith("ready");
-    const score = eligible ? Math.round(v2Clamp((hp * 0.72) + ((conf || 0) * 0.28) + payoutAdj, 0, 100) * 100) / 100 : null;
-    const status = eligible ? "review_ready" : (row.hp_v3_status && String(row.hp_v3_status).startsWith("blocked") ? "blocked" : "deferred_or_low_hp");
+    const preparedGateBlocked = v2PreparedNoScoreGate(row);
+    const hpEligible = hp !== null && hp >= 60 && row.hp_v3_status && String(row.hp_v3_status).startsWith("ready");
+    const eligible = hpEligible && !preparedGateBlocked;
+    const score = hpEligible ? Math.round(v2Clamp((hp * 0.72) + ((conf || 0) * 0.28) + payoutAdj, 0, 100) * 100) / 100 : null;
+    const status = eligible ? "review_ready" : (preparedGateBlocked ? "blocked" : (row.hp_v3_status && String(row.hp_v3_status).startsWith("blocked") ? "blocked" : "deferred_or_low_hp"));
     const grade = eligible ? "REVIEW" : (status === "blocked" ? "BLOCKED" : "DEFERRED");
-    stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_final_score_current (final_score_v2_row_id,batch_id,source_hp_v3_batch_id,hp_v3_row_id,prepared_row_id,matrix_id,source_line_id,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,source_key,line_value,selected_side,payout_variant,hit_probability_0_100,certainty_0_100,final_score_0_100,final_score_confidence_0_100,final_score_status,final_score_grade,final_score_lane,review_playable,live_playable,eligible_for_final_board,blocked_reason,details_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(id,batchId,sourceBatchId,row.hp_v3_row_id,row.prepared_row_id,row.matrix_id,row.source_line_id,row.game_pk,row.official_date,row.mlb_player_id,row.player_name,row.canonical_prop_key,row.source_key,row.line_value,row.selected_side,row.payout_variant,hp,conf,score,conf,status,grade,"shadow_review",eligible?1:0,0,eligible?1:0,eligible?null:status,v2Json({ payout_adjustment_score_only:payoutAdj, goblin_demon_does_not_modify_hp:true, live_playable_forced_zero:true },4000)));
-    if (!eligible) issueStmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_final_score_issues (issue_id,batch_id,final_score_v2_row_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`${batchId}|${id}|NOT_ELIGIBLE`,batchId,id,status === "blocked" ? "BLOCKER" : "INFO","FINAL_SCORE_V2_NOT_BOARD_ELIGIBLE","V2 final score row is not eligible for review board",v2Json({ hp_v3_status:row.hp_v3_status, hp },3000)));
+    const blockedReason = eligible ? null : (preparedGateBlocked ? "prepared_row_no_scoring_or_no_final_board" : status);
+    stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_final_score_current (final_score_v2_row_id,batch_id,source_hp_v3_batch_id,hp_v3_row_id,prepared_row_id,matrix_id,source_line_id,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,source_key,line_value,selected_side,payout_variant,hit_probability_0_100,certainty_0_100,final_score_0_100,final_score_confidence_0_100,final_score_status,final_score_grade,final_score_lane,review_playable,live_playable,eligible_for_final_board,blocked_reason,details_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(id,batchId,sourceBatchId,row.hp_v3_row_id,row.prepared_row_id,row.matrix_id,row.source_line_id,row.game_pk,row.official_date,row.mlb_player_id,row.player_name,row.canonical_prop_key,row.source_key,row.line_value,row.selected_side,row.payout_variant,hp,conf,score,conf,status,grade,"shadow_review",eligible?1:0,0,eligible?1:0,blockedReason,v2Json({ payout_adjustment_score_only:payoutAdj, goblin_demon_does_not_modify_hp:true, live_playable_forced_zero:true, prepared_gate_blocked:preparedGateBlocked, prepared_gate_details:v2PreparedGateDetails(row), score_computed_even_when_prepared_gate_blocked:hpEligible && preparedGateBlocked },4000)));
+    if (!eligible) issueStmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_final_score_issues (issue_id,batch_id,final_score_v2_row_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`${batchId}|${id}|NOT_ELIGIBLE`,batchId,id,status === "blocked" ? "BLOCKER" : "INFO",preparedGateBlocked ? "FINAL_SCORE_V2_PREPARED_ROW_NOT_SCORABLE" : "FINAL_SCORE_V2_NOT_BOARD_ELIGIBLE",preparedGateBlocked ? "Prepared row is marked no_scoring/no_final_board; V2 final score must not promote it" : "V2 final score row is not eligible for review board",v2Json({ hp_v3_status:row.hp_v3_status, hp, prepared_gate_blocked:preparedGateBlocked, prepared_gate_details:v2PreparedGateDetails(row) },3000)));
     written++;
   }
   const eventFlush = await v2Flush(env.SCORE_DB, stmts, 50);
@@ -5710,7 +5744,7 @@ async function runFinalScoreV2Shadow(env, input = {}) {
   const issueCount = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_issues WHERE batch_id=?`, batchId);
   const cert = complete ? "FINAL_SCORE_V2_SHADOW_CERTIFIED_REVIEW_ONLY" : "FINAL_SCORE_V2_SHADOW_PARTIAL_CONTINUE";
   const grade = v2CertificationGrade(true, !complete);
-  const output = baseIdentity({ ok:true,data_ok:true,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-score-v2-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_SCORE_V2_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_SCORE_V2_SHADOW_MODE,status:complete?"completed_final_score_v2_shadow":"partial_continue_final_score_v2_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_score_v2_batch_id:batchId,source_hp_v3_batch_id:sourceBatchId,source_rows_read:total,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:written,v2_d1_batch_flush:true,v2_event_flush_statements:eventFlush.statements,v2_event_flush_batches:eventFlush.batches,v2_event_flush_fallback:eventFlush.fallback,v2_issue_flush_statements:issueFlush.statements,v2_issue_flush_batches:issueFlush.batches,v2_issue_flush_fallback:issueFlush.fallback,eligible_rows:Number(counts&&counts.eligible_rows||0),review_rows:Number(counts&&counts.review_rows||0),blocked_rows:Number(counts&&counts.blocked_rows||0),issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,chunk_rows_target_150:true,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,live_playable_forced_zero:true,goblin_demon_score_only:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
+  const output = baseIdentity({ ok:true,data_ok:true,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-score-v2-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_SCORE_V2_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_SCORE_V2_SHADOW_MODE,status:complete?"completed_final_score_v2_shadow":"partial_continue_final_score_v2_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_score_v2_batch_id:batchId,source_hp_v3_batch_id:sourceBatchId,source_rows_read:total,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:written,v2_d1_batch_flush:true,v2_event_flush_statements:eventFlush.statements,v2_event_flush_batches:eventFlush.batches,v2_event_flush_fallback:eventFlush.fallback,v2_issue_flush_statements:issueFlush.statements,v2_issue_flush_batches:issueFlush.batches,v2_issue_flush_fallback:issueFlush.fallback,eligible_rows:Number(counts&&counts.eligible_rows||0),review_rows:Number(counts&&counts.review_rows||0),blocked_rows:Number(counts&&counts.blocked_rows||0),issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,chunk_rows_target_150:true,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,live_playable_forced_zero:true,goblin_demon_score_only:true,prepared_no_scoring_gate_enforced:true,no_final_board_prepared_rows_blocked:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE v2_final_score_batches SET status=?, source_rows_read=?, rows_written=?, eligible_rows=?, review_rows=?, blocked_rows=?, issue_rows_written=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", total, output.rows_written, output.eligible_rows, output.review_rows, output.blocked_rows, output.issue_rows_written, cert, grade, v2Json(output,14000), batchId);
   return output;
 }
@@ -5820,11 +5854,18 @@ async function runFinalBoardV3Shadow(env, input = {}) {
   });
   offset = resumeState.offset;
   const boardOfficialDateFloor = String(v2FirstDefined(input, nestedInput, ["board_official_date_floor"]) || v3TodayUtc()).slice(0, 10);
+  const preparedGateWhere = `
+    AND NOT (
+      json_extract(p.row_payload_json,'$.scoring_enabled')=0
+      OR json_extract(p.row_payload_json,'$.no_scoring')=1
+      OR json_extract(p.row_payload_json,'$.no_final_board')=1
+      OR json_extract(p.row_payload_json,'$.no_auto_recommendation')=1
+    )`;
   const totalRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_current WHERE batch_id=? AND official_date >= ?`, sourceBatchId, boardOfficialDateFloor);
-  const eligibleRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_current WHERE batch_id=? AND eligible_for_final_board=1 AND official_date >= ?`, sourceBatchId, boardOfficialDateFloor);
+  const eligibleRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_current fs LEFT JOIN score_board_prepared_current p ON p.prepared_row_id=fs.prepared_row_id WHERE fs.batch_id=? AND fs.eligible_for_final_board=1 AND fs.official_date >= ? ${preparedGateWhere}`, sourceBatchId, boardOfficialDateFloor);
   const total = Number(totalRow && totalRow.rows || 0);
   const eligibleTotal = Number(eligibleRow && eligibleRow.rows || 0);
-  const rows = await all(env.SCORE_DB, `SELECT * FROM v2_final_score_current WHERE batch_id=? AND eligible_for_final_board=1 AND official_date >= ? ORDER BY final_score_0_100 DESC, hit_probability_0_100 DESC, certainty_0_100 DESC, final_score_v2_row_id LIMIT ? OFFSET ?`, sourceBatchId, boardOfficialDateFloor, limit, offset);
+  const rows = await all(env.SCORE_DB, `SELECT fs.* FROM v2_final_score_current fs LEFT JOIN score_board_prepared_current p ON p.prepared_row_id=fs.prepared_row_id WHERE fs.batch_id=? AND fs.eligible_for_final_board=1 AND fs.official_date >= ? ${preparedGateWhere} ORDER BY fs.final_score_0_100 DESC, fs.hit_probability_0_100 DESC, fs.certainty_0_100 DESC, fs.final_score_v2_row_id LIMIT ? OFFSET ?`, sourceBatchId, boardOfficialDateFloor, limit, offset);
   const gameMap = await v3CalendarContextMap(env, rows.map(r => r.game_pk));
   const rankStart = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_board_current WHERE batch_id=?`, batchId);
   const stmts = [];
@@ -5849,7 +5890,7 @@ async function runFinalBoardV3Shadow(env, input = {}) {
   const issueCount = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_board_issues WHERE batch_id=?`, batchId);
   const cert = complete ? (leakRows === 0 ? "FINAL_BOARD_V3_SHADOW_CERTIFIED_REVIEW_ONLY" : "FINAL_BOARD_V3_SHADOW_CERTIFICATION_FAILED") : "FINAL_BOARD_V3_SHADOW_PARTIAL_CONTINUE";
   const grade = complete ? (leakRows === 0 ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : "FAILED") : "PARTIAL";
-  const output = baseIdentity({ ok:leakRows===0,data_ok:leakRows===0,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:complete?"completed_final_board_v3_shadow":"partial_continue_final_board_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_board_v3_batch_id:batchId,source_final_score_v2_batch_id:sourceBatchId,source_rows_read:total,eligible_rows_read:eligibleTotal,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:stmts.length,source_rows_scanned_this_invocation:rows.length,skipped_closed_or_started_games:skippedClosedGames,skipped_missing_calendar_games:skippedMissingCalendar,board_official_date_floor:boardOfficialDateFloor,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,chunk_rows_target_150:true,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,not_production_final_board:true,live_playable_forced_zero:true,calendar_pregame_guard:true,calendar_status_canonical_guard_v0_4_65:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
+  const output = baseIdentity({ ok:leakRows===0,data_ok:leakRows===0,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:complete?"completed_final_board_v3_shadow":"partial_continue_final_board_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_board_v3_batch_id:batchId,source_final_score_v2_batch_id:sourceBatchId,source_rows_read:total,eligible_rows_read:eligibleTotal,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:stmts.length,source_rows_scanned_this_invocation:rows.length,skipped_closed_or_started_games:skippedClosedGames,skipped_missing_calendar_games:skippedMissingCalendar,board_official_date_floor:boardOfficialDateFloor,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,chunk_rows_target_150:true,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,not_production_final_board:true,live_playable_forced_zero:true,calendar_pregame_guard:true,calendar_status_canonical_guard_v0_4_65:true,prepared_no_scoring_gate_enforced:true,no_final_board_prepared_rows_excluded:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE v2_final_board_batches SET status=?, source_rows_read=?, eligible_rows_read=?, rows_written=?, issue_rows_written=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", total, eligibleTotal, output.rows_written, output.issue_rows_written, cert, grade, v2Json(output,14000), batchId);
   return output;
 }
