@@ -5169,7 +5169,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.67-final-board-source-fallback";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.68-final-board-prepared-null-safe-gate";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5861,10 +5861,10 @@ async function runFinalBoardV3Shadow(env, input = {}) {
   const boardOfficialDateFloorSource = requestedBoardOfficialDateFloor ? "input_explicit" : ((sourceDateRow && sourceDateRow.min_official_date) ? "source_final_score_min_official_date" : "utc_today_fallback");
   const preparedGateWhere = `
     AND NOT (
-      json_extract(p.row_payload_json,'$.scoring_enabled')=0
-      OR json_extract(p.row_payload_json,'$.no_scoring')=1
-      OR json_extract(p.row_payload_json,'$.no_final_board')=1
-      OR json_extract(p.row_payload_json,'$.no_auto_recommendation')=1
+      COALESCE(json_extract(p.row_payload_json,'$.scoring_enabled'), 1)=0
+      OR COALESCE(json_extract(p.row_payload_json,'$.no_scoring'), 0)=1
+      OR COALESCE(json_extract(p.row_payload_json,'$.no_final_board'), 0)=1
+      OR COALESCE(json_extract(p.row_payload_json,'$.no_auto_recommendation'), 0)=1
     )`;
   const totalRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_current WHERE batch_id=? AND official_date >= ?`, sourceBatchId, boardOfficialDateFloor);
   const eligibleRow = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_score_current fs LEFT JOIN score_board_prepared_current p ON p.prepared_row_id=fs.prepared_row_id WHERE fs.batch_id=? AND fs.eligible_for_final_board=1 AND fs.official_date >= ? ${preparedGateWhere}`, sourceBatchId, boardOfficialDateFloor);
@@ -5895,7 +5895,7 @@ async function runFinalBoardV3Shadow(env, input = {}) {
   const issueCount = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_board_issues WHERE batch_id=?`, batchId);
   const cert = complete ? (leakRows === 0 ? "FINAL_BOARD_V3_SHADOW_CERTIFIED_REVIEW_ONLY" : "FINAL_BOARD_V3_SHADOW_CERTIFICATION_FAILED") : "FINAL_BOARD_V3_SHADOW_PARTIAL_CONTINUE";
   const grade = complete ? (leakRows === 0 ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : "FAILED") : "PARTIAL";
-  const output = baseIdentity({ ok:leakRows===0,data_ok:leakRows===0,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:complete?"completed_final_board_v3_shadow":"partial_continue_final_board_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_board_v3_batch_id:batchId,source_final_score_v2_batch_id:sourceBatchId,source_batch_resolved_by:sourceBatchResolvedBy,source_rows_read:total,eligible_rows_read:eligibleTotal,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:stmts.length,source_rows_scanned_this_invocation:rows.length,skipped_closed_or_started_games:skippedClosedGames,skipped_missing_calendar_games:skippedMissingCalendar,board_official_date_floor:boardOfficialDateFloor,board_official_date_floor_source:boardOfficialDateFloorSource,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,chunk_rows_target_150:true,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,not_production_final_board:true,live_playable_forced_zero:true,calendar_pregame_guard:true,calendar_status_canonical_guard_v0_4_65:true,prepared_no_scoring_gate_enforced:true,no_final_board_prepared_rows_excluded:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
+  const output = baseIdentity({ ok:leakRows===0,data_ok:leakRows===0,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:complete?"completed_final_board_v3_shadow":"partial_continue_final_board_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_board_v3_batch_id:batchId,source_final_score_v2_batch_id:sourceBatchId,source_batch_resolved_by:sourceBatchResolvedBy,source_rows_read:total,eligible_rows_read:eligibleTotal,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:stmts.length,source_rows_scanned_this_invocation:rows.length,skipped_closed_or_started_games:skippedClosedGames,skipped_missing_calendar_games:skippedMissingCalendar,board_official_date_floor:boardOfficialDateFloor,board_official_date_floor_source:boardOfficialDateFloorSource,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,chunk_rows_target_150:true,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,not_production_final_board:true,live_playable_forced_zero:true,calendar_pregame_guard:true,calendar_status_canonical_guard_v0_4_65:true,prepared_no_scoring_gate_enforced:true,prepared_gate_null_safe_v0_4_68:true,no_final_board_prepared_rows_excluded:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE v2_final_board_batches SET status=?, source_rows_read=?, eligible_rows_read=?, rows_written=?, issue_rows_written=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", total, eligibleTotal, output.rows_written, output.issue_rows_written, cert, grade, v2Json(output,14000), batchId);
   return output;
 }
