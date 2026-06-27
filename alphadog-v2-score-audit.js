@@ -5169,7 +5169,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.66-v2-final-score-prepared-gate";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.67-final-board-source-fallback";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5833,8 +5833,10 @@ async function runFinalBoardV3Shadow(env, input = {}) {
   const requestId = input.request_id || v2Rid("final_board_v3");
   const runId = input.run_id || null;
   const chainId = input.chain_id || null;
-  const sourceBatchId = input.final_score_v2_batch_id || input.source_final_score_v2_batch_id || await latestFinalScoreV2Batch(env);
-  if (!sourceBatchId) return baseIdentity({ ok:false,data_ok:false,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:"blocked_missing_final_score_v2_batch",certification:"FINAL_BOARD_V3_SHADOW_MISSING_FINAL_SCORE_V2",certification_grade:"BLOCKED" });
+  const explicitSourceBatchId = input.final_score_v2_batch_id || input.source_final_score_v2_batch_id || null;
+  const sourceBatchId = explicitSourceBatchId || await latestFinalScoreV2Batch(env);
+  const sourceBatchResolvedBy = explicitSourceBatchId ? "input_explicit" : "worker_latest_completed_fallback";
+  if (!sourceBatchId) return baseIdentity({ ok:false,data_ok:false,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:"blocked_missing_final_score_v2_batch",certification:"FINAL_BOARD_V3_SHADOW_MISSING_FINAL_SCORE_V2",certification_grade:"BLOCKED",source_batch_resolved_by:sourceBatchResolvedBy });
   const nestedInput = v2NestedInput(input);
   const explicitOffsetProvided = v2HasExplicitOffsetDeep(input, nestedInput, ["final_board_v3_offset", "offset"]);
   let offset = explicitOffsetProvided ? v2ReadOffsetDeep(input, nestedInput, ["final_board_v3_offset", "offset"]) : 0;
@@ -5853,7 +5855,10 @@ async function runFinalBoardV3Shadow(env, input = {}) {
     updateBinds:[runId, SHADOW_SCORE_VERSION, FINAL_BOARD_V3_SHADOW_MODE, sourceBatchId, batchId]
   });
   offset = resumeState.offset;
-  const boardOfficialDateFloor = String(v2FirstDefined(input, nestedInput, ["board_official_date_floor"]) || v3TodayUtc()).slice(0, 10);
+  const requestedBoardOfficialDateFloor = v2FirstDefined(input, nestedInput, ["board_official_date_floor"]);
+  const sourceDateRow = requestedBoardOfficialDateFloor ? null : await first(env.SCORE_DB, `SELECT MIN(official_date) AS min_official_date FROM v2_final_score_current WHERE batch_id=? AND official_date IS NOT NULL`, sourceBatchId);
+  const boardOfficialDateFloor = String(requestedBoardOfficialDateFloor || (sourceDateRow && sourceDateRow.min_official_date) || v3TodayUtc()).slice(0, 10);
+  const boardOfficialDateFloorSource = requestedBoardOfficialDateFloor ? "input_explicit" : ((sourceDateRow && sourceDateRow.min_official_date) ? "source_final_score_min_official_date" : "utc_today_fallback");
   const preparedGateWhere = `
     AND NOT (
       json_extract(p.row_payload_json,'$.scoring_enabled')=0
@@ -5890,7 +5895,7 @@ async function runFinalBoardV3Shadow(env, input = {}) {
   const issueCount = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_final_board_issues WHERE batch_id=?`, batchId);
   const cert = complete ? (leakRows === 0 ? "FINAL_BOARD_V3_SHADOW_CERTIFIED_REVIEW_ONLY" : "FINAL_BOARD_V3_SHADOW_CERTIFICATION_FAILED") : "FINAL_BOARD_V3_SHADOW_PARTIAL_CONTINUE";
   const grade = complete ? (leakRows === 0 ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : "FAILED") : "PARTIAL";
-  const output = baseIdentity({ ok:leakRows===0,data_ok:leakRows===0,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:complete?"completed_final_board_v3_shadow":"partial_continue_final_board_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_board_v3_batch_id:batchId,source_final_score_v2_batch_id:sourceBatchId,source_rows_read:total,eligible_rows_read:eligibleTotal,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:stmts.length,source_rows_scanned_this_invocation:rows.length,skipped_closed_or_started_games:skippedClosedGames,skipped_missing_calendar_games:skippedMissingCalendar,board_official_date_floor:boardOfficialDateFloor,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,chunk_rows_target_150:true,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,not_production_final_board:true,live_playable_forced_zero:true,calendar_pregame_guard:true,calendar_status_canonical_guard_v0_4_65:true,prepared_no_scoring_gate_enforced:true,no_final_board_prepared_rows_excluded:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
+  const output = baseIdentity({ ok:leakRows===0,data_ok:leakRows===0,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-final-board-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:FINAL_BOARD_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:FINAL_BOARD_V3_SHADOW_MODE,status:complete?"completed_final_board_v3_shadow":"partial_continue_final_board_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,final_board_v3_batch_id:batchId,source_final_score_v2_batch_id:sourceBatchId,source_batch_resolved_by:sourceBatchResolvedBy,source_rows_read:total,eligible_rows_read:eligibleTotal,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:stmts.length,source_rows_scanned_this_invocation:rows.length,skipped_closed_or_started_games:skippedClosedGames,skipped_missing_calendar_games:skippedMissingCalendar,board_official_date_floor:boardOfficialDateFloor,board_official_date_floor_source:boardOfficialDateFloorSource,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,chunk_rows_target_150:true,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,review_only:true,not_production_final_board:true,live_playable_forced_zero:true,calendar_pregame_guard:true,calendar_status_canonical_guard_v0_4_65:true,prepared_no_scoring_gate_enforced:true,no_final_board_prepared_rows_excluded:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE v2_final_board_batches SET status=?, source_rows_read=?, eligible_rows_read=?, rows_written=?, issue_rows_written=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", total, eligibleTotal, output.rows_written, output.issue_rows_written, cert, grade, v2Json(output,14000), batchId);
   return output;
 }
