@@ -5169,7 +5169,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.70-utility-calibrated-ranking-no-caps";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.71-hp-v3-shrink-logit-calibration";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5612,22 +5612,113 @@ async function runScoreEnrichmentV2Shadow(env, input = {}) {
   return output;
 }
 
+function v3HpSigmoid(x) {
+  if (x > 20) return 0.9999999979;
+  if (x < -20) return 0.0000000021;
+  return 1 / (1 + Math.exp(-x));
+}
+function v3HpLogit(p) {
+  const q = v2Clamp(Number(p || 0), 0.001, 0.999);
+  return Math.log(q / (1 - q));
+}
+function v3HpRoundPct(p) {
+  if (p === null || p === undefined || !Number.isFinite(Number(p))) return null;
+  return Math.round(v2Clamp(Number(p) * 100, 1, 99) * 100) / 100;
+}
+function v3HpPropFamily(prop) {
+  const p = String(prop || '').toLowerCase();
+  if (['hits','singles','doubles','triples','home_runs','total_bases','hits_runs_rbis','runs','rbis','walks','hitter_strikeouts','stolen_bases'].includes(p)) return 'hitter';
+  if (['pitcher_strikeouts','pitcher_outs','hits_allowed','walks_allowed','earned_runs','runs_allowed','pitcher_fantasy_score'].includes(p)) return 'pitcher';
+  if (p === 'rfi_nrfi') return 'rfi_nrfi';
+  return 'generic';
+}
+function v3HpStructuralPrior(row) {
+  const prop = String(row && row.canonical_prop_key || '').toLowerCase();
+  const side = String(row && row.selected_side || '').toLowerCase();
+  const line = Number(row && row.line_value);
+  let more = null;
+  if (prop === 'hits') more = line <= 0.5 ? 0.56 : (line <= 1.5 ? 0.22 : 0.08);
+  else if (prop === 'singles') more = line <= 0.5 ? 0.40 : 0.12;
+  else if (prop === 'doubles') more = line <= 0.5 ? 0.15 : 0.04;
+  else if (prop === 'triples') more = line <= 0.5 ? 0.015 : 0.005;
+  else if (prop === 'home_runs') more = line <= 0.5 ? 0.12 : 0.035;
+  else if (prop === 'total_bases') more = line <= 0.5 ? 0.54 : (line <= 1.5 ? 0.39 : (line <= 3.5 ? 0.16 : 0.06));
+  else if (prop === 'hits_runs_rbis') more = line <= 0.5 ? 0.62 : (line <= 1.5 ? 0.46 : (line <= 2.5 ? 0.31 : 0.18));
+  else if (prop === 'runs') more = line <= 0.5 ? 0.37 : (line <= 1.5 ? 0.09 : 0.03);
+  else if (prop === 'rbis') more = line <= 0.5 ? 0.30 : (line <= 1.5 ? 0.10 : 0.04);
+  else if (prop === 'walks') more = line <= 0.5 ? 0.30 : (line <= 1.5 ? 0.07 : 0.025);
+  else if (prop === 'hitter_strikeouts') more = line <= 0.5 ? 0.66 : (line <= 1.5 ? 0.25 : 0.08);
+  else if (prop === 'stolen_bases') more = line <= 0.5 ? 0.08 : 0.02;
+  else if (prop === 'pitcher_strikeouts') more = line <= 3.5 ? 0.56 : (line <= 4.5 ? 0.45 : (line <= 5.5 ? 0.34 : 0.20));
+  else if (prop === 'pitcher_outs') more = line <= 14.5 ? 0.58 : (line <= 15.5 ? 0.51 : (line <= 16.5 ? 0.44 : 0.35));
+  else if (prop === 'hits_allowed') more = line <= 3.5 ? 0.60 : (line <= 4.5 ? 0.47 : (line <= 5.5 ? 0.34 : 0.20));
+  else if (prop === 'walks_allowed') more = line <= 0.5 ? 0.72 : (line <= 1.5 ? 0.48 : (line <= 2.5 ? 0.24 : 0.09));
+  else if (prop === 'earned_runs' || prop === 'runs_allowed') more = line <= 0.5 ? 0.68 : (line <= 1.5 ? 0.48 : (line <= 2.5 ? 0.32 : 0.18));
+  else if (prop === 'rfi_nrfi') more = 0.50;
+  else more = 0.50;
+  const p = side === 'less' ? (1 - more) : more;
+  return v2Clamp(p, 0.01, 0.99);
+}
+function v3HpPriorStrength(row) {
+  const prop = String(row && row.canonical_prop_key || '').toLowerCase();
+  const line = Number(row && row.line_value);
+  if (prop === 'rfi_nrfi') return 50;
+  if (['home_runs','triples','stolen_bases'].includes(prop)) return 120;
+  if (['doubles'].includes(prop)) return 70;
+  if (['pitcher_outs'].includes(prop)) return 18;
+  if (['pitcher_strikeouts','hits_allowed','walks_allowed','earned_runs','runs_allowed'].includes(prop)) return line <= 0.5 ? 35 : 25;
+  if (['total_bases','hits_runs_rbis'].includes(prop)) return line <= 0.5 ? 45 : 35;
+  if (['hits','hitter_strikeouts','walks','runs','rbis','singles'].includes(prop)) return line <= 0.5 ? 35 : 30;
+  return 30;
+}
+function v3HpEffectiveSample(row, confidence, groupRows) {
+  const c = v2Clamp(Number(confidence || 0), 5, 95);
+  const g = Math.max(0, Number(groupRows || 0));
+  const prop = String(row && row.canonical_prop_key || '').toLowerCase();
+  let n = Math.max(5, c);
+  if (g > 0) n = Math.min(n, Math.max(5, g * (prop === 'rfi_nrfi' ? 2 : 3)));
+  if (['pitcher_outs','hits_allowed','walks_allowed','earned_runs','runs_allowed','pitcher_strikeouts'].includes(prop)) n = Math.min(n, 80);
+  return Math.round(v2Clamp(n, 5, 150) * 100) / 100;
+}
+function v3HpContextLogitDelta(effect, confidence) {
+  const e = v2Clamp(Number(effect || 0), -10, 10);
+  const c = v2Clamp(Number(confidence || 0), 5, 95) / 100;
+  const reliability = 0.35 + (0.65 * c);
+  return Math.round((e / 100) * 1.15 * reliability * 10000) / 10000;
+}
 function v3ShadowReliabilityWeight(row, confidence) {
-  const source = String(row && row.baseline_source || '').toLowerCase();
-  if (source !== 'expansion_v2_shadow') return 1;
   const c = v2Clamp(Number(confidence || 0), 5, 95) / 100;
   const prop = String(row && row.canonical_prop_key || '').toLowerCase();
   if (prop === 'rfi_nrfi') return v2Clamp(c, 0.05, 0.35);
-  return v2Clamp(c, 0.10, 0.60);
+  return v2Clamp(c, 0.10, 0.75);
 }
-function v3ShadowCalibrateHp(row, rawHp, confidence) {
-  if (rawHp === null || rawHp === undefined) return { hp: null, reliability_weight: null, calibration_applied: false, calibration_reason: 'no_baseline_hp' };
+function v3ShadowCalibrateHp(row, baselineHp, confidence, factorEffect, groupRows) {
+  if (baselineHp === null || baselineHp === undefined) return { hp: null, reliability_weight: null, calibration_applied: false, calibration_reason: 'no_baseline_hp' };
+  const baseline = v2Clamp(Number(baselineHp), 1, 99) / 100;
+  const prior = v3HpStructuralPrior(row);
+  const m = v3HpPriorStrength(row);
+  const nEff = v3HpEffectiveSample(row, confidence, groupRows);
+  const shrunk = ((baseline * nEff) + (prior * m)) / (nEff + m);
+  const delta = v3HpContextLogitDelta(factorEffect, confidence);
+  const finalP = v3HpSigmoid(v3HpLogit(shrunk) + delta);
+  const finalHp = v3HpRoundPct(finalP);
   const source = String(row && row.baseline_source || '').toLowerCase();
-  if (source !== 'expansion_v2_shadow') return { hp: rawHp, reliability_weight: 1, calibration_applied: false, calibration_reason: 'production_or_non_expansion_passthrough' };
-  const w = v3ShadowReliabilityWeight(row, confidence);
-  const calibrated = Math.round(v2Clamp(50 + ((Number(rawHp) - 50) * w), 1, 99) * 100) / 100;
   const prop = String(row && row.canonical_prop_key || '').toLowerCase();
-  return { hp: calibrated, reliability_weight: Math.round(w * 10000) / 10000, calibration_applied: true, calibration_reason: prop === 'rfi_nrfi' ? 'expansion_rfi_binary_low_sample_confidence_shrink' : 'expansion_baseline_confidence_shrink' };
+  const family = v3HpPropFamily(prop);
+  return {
+    hp: finalHp,
+    reliability_weight: Math.round((nEff / (nEff + m)) * 10000) / 10000,
+    calibration_applied: true,
+    calibration_reason: source === 'expansion_v2_shadow' ? 'expansion_v2_eb_shrink_logit_context' : 'production_v1_eb_shrink_logit_context',
+    baseline_probability_before_calibration: v3HpRoundPct(baseline),
+    structural_prior_0_100: v3HpRoundPct(prior),
+    prior_strength_m: m,
+    effective_sample_n: nEff,
+    shrunk_baseline_0_100: v3HpRoundPct(shrunk),
+    context_logit_delta: delta,
+    hp_family: family,
+    raw_hp_after_logit_context: finalHp
+  };
 }
 async function v2BackfillScoreEnrichmentIssues(env, batchId) {
   if (!env || !env.SCORE_DB || !batchId) return { attempted:false, inserted_or_replaced:0 };
@@ -5700,15 +5791,15 @@ async function runHitProbabilityV3Shadow(env, input = {}) {
     const hpId = `v3_hp|${batchId}|${row.event_id}`;
     const hasBaseline = !!row.baseline_hp_row_id && row.baseline_hp_0_100 !== null && row.event_status === "ready";
     const effect = v2Num(row.factor_effect_0_100, 0) || 0;
-    const raw = hasBaseline ? Math.round(v2Clamp(Number(row.baseline_hp_0_100) * Number(row.factor_effect_multiplier || 1), 1, 99) * 100) / 100 : null;
     const groupConfidence = confidenceCapForV3Group(row);
     const baseConfidence = hasBaseline ? v2Clamp(Number(row.baseline_confidence_0_100 || 0), 5, 95) : null;
     const confidence = hasBaseline ? Math.round(Math.min(baseConfidence, groupConfidence.cap) * 100) / 100 : null;
-    const calibrated = hasBaseline ? v3ShadowCalibrateHp(row, raw, confidence) : { hp:null, reliability_weight:null, calibration_applied:false, calibration_reason:'no_baseline_hp' };
+    const calibrated = hasBaseline ? v3ShadowCalibrateHp(row, Number(row.baseline_hp_0_100), confidence, effect, groupConfidence.group_rows) : { hp:null, reliability_weight:null, calibration_applied:false, calibration_reason:'no_baseline_hp' };
+    const raw = calibrated.raw_hp_after_logit_context;
     const finalHp = calibrated.hp;
     const status = hasBaseline ? "ready_raw" : (row.event_status === "blocked_source_row" ? "blocked_source_row" : "deferred_baseline_missing");
     const grade = hasBaseline ? "READY" : (status === "blocked_source_row" ? "BLOCKED" : "DEFERRED");
-    stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_hit_probability_current (hp_v3_row_id,batch_id,source_v2_enrichment_batch_id,event_id,prepared_row_id,matrix_id,source_line_id,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,source_key,line_value,selected_side,payout_variant,baseline_hp_row_id,baseline_source,baseline_hp_0_100,baseline_confidence_0_100,composite_factor_signature,composite_factor_effect_0_100,v3_hp_raw,v3_hp_final,v3_confidence_0_100,normalization_status,hp_v3_status,hp_v3_grade,blocker_count,warning_count,model_payload_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(hpId,batchId,sourceBatchId,row.event_id,row.prepared_row_id,row.matrix_id,row.source_line_id,row.game_pk,row.official_date,row.mlb_player_id,row.player_name,row.canonical_prop_key,row.source_key,row.line_value,row.selected_side,row.payout_variant,row.baseline_hp_row_id,row.baseline_source,row.baseline_hp_0_100,row.baseline_confidence_0_100,`${row.factor_id || 'factor'}:${row.factor_effect_tier || 'neutral'}:${row.factor_quality_tier || 'unknown'}`,effect,raw,finalHp,confidence,hasBaseline?"raw_pending_pair_normalization":"not_normalizable",status,grade,status === "blocked_source_row" ? 1 : 0,status === "deferred_baseline_missing" ? 1 : 0,v2Json({ no_fake_hp_when_baseline_missing:true, baseline_missing_outputs_null:!hasBaseline, multiplicative_modifier:row.factor_effect_multiplier, confidence_group_rows:groupConfidence.group_rows, confidence_cap_reason:groupConfidence.reason, confidence_cap_applied:hasBaseline && baseConfidence != null && confidence < baseConfidence, calibration_applied:calibrated.calibration_applied, calibration_reason:calibrated.calibration_reason, reliability_weight:calibrated.reliability_weight, raw_hp_before_calibration:raw, final_hp_after_calibration:finalHp },4000)));
+    stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_hit_probability_current (hp_v3_row_id,batch_id,source_v2_enrichment_batch_id,event_id,prepared_row_id,matrix_id,source_line_id,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,source_key,line_value,selected_side,payout_variant,baseline_hp_row_id,baseline_source,baseline_hp_0_100,baseline_confidence_0_100,composite_factor_signature,composite_factor_effect_0_100,v3_hp_raw,v3_hp_final,v3_confidence_0_100,normalization_status,hp_v3_status,hp_v3_grade,blocker_count,warning_count,model_payload_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(hpId,batchId,sourceBatchId,row.event_id,row.prepared_row_id,row.matrix_id,row.source_line_id,row.game_pk,row.official_date,row.mlb_player_id,row.player_name,row.canonical_prop_key,row.source_key,row.line_value,row.selected_side,row.payout_variant,row.baseline_hp_row_id,row.baseline_source,row.baseline_hp_0_100,row.baseline_confidence_0_100,`${row.factor_id || 'factor'}:${row.factor_effect_tier || 'neutral'}:${row.factor_quality_tier || 'unknown'}`,effect,raw,finalHp,confidence,hasBaseline?"raw_pending_pair_normalization":"not_normalizable",status,grade,status === "blocked_source_row" ? 1 : 0,status === "deferred_baseline_missing" ? 1 : 0,v2Json({ no_fake_hp_when_baseline_missing:true, baseline_missing_outputs_null:!hasBaseline, hp_v3_sharp_calibration:true, hp_not_modified_by_payout_variant:true, payout_variant_score_only:true, additive_probability_context_removed:true, context_applied_in_logit_space:true, empirical_bayes_shrinkage:true, structural_prior_0_100:calibrated.structural_prior_0_100, prior_strength_m:calibrated.prior_strength_m, effective_sample_n:calibrated.effective_sample_n, shrunk_baseline_0_100:calibrated.shrunk_baseline_0_100, context_logit_delta:calibrated.context_logit_delta, hp_family:calibrated.hp_family, multiplicative_modifier_legacy_read_only:row.factor_effect_multiplier, confidence_group_rows:groupConfidence.group_rows, confidence_cap_reason:groupConfidence.reason, confidence_cap_applied:hasBaseline && baseConfidence != null && confidence < baseConfidence, calibration_applied:calibrated.calibration_applied, calibration_reason:calibrated.calibration_reason, reliability_weight:calibrated.reliability_weight, raw_baseline_hp_before_calibration:calibrated.baseline_probability_before_calibration, raw_hp_after_logit_context:raw, final_hp_after_calibration:finalHp },5000)));
     if (!hasBaseline) {
       issueStmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_hit_probability_issues (issue_id,batch_id,hp_v3_row_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`${batchId}|${hpId}|NO_BASELINE_HP`,batchId,hpId,status === "blocked_source_row" ? "BLOCKER" : "WARNING",status === "blocked_source_row" ? "SOURCE_ROW_BLOCKED" : "BASELINE_MISSING_HP_NULL","HP V3 did not emit fake HP for missing or blocked baseline row",v2Json({ event_id:row.event_id, canonical_prop_key:row.canonical_prop_key, source_key:row.source_key },3000)));
     }
@@ -5741,7 +5832,7 @@ async function runHitProbabilityV3Shadow(env, input = {}) {
   const issueCount = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM v2_hit_probability_issues WHERE batch_id=?`, batchId);
   const cert = complete ? "HIT_PROBABILITY_V3_SHADOW_CERTIFIED_NO_FAKE_HP" : "HIT_PROBABILITY_V3_SHADOW_PARTIAL_CONTINUE";
   const grade = complete && normalizationBlockedGroups === 0 ? "PASS_WITH_REVIEW_WARNINGS_ALLOWED" : (complete ? "PASS_WITH_BLOCKED_NORMALIZATION_ROWS" : "PARTIAL");
-  const output = baseIdentity({ ok:true,data_ok:true,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-hit-probability-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:HIT_PROBABILITY_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:HIT_PROBABILITY_V3_SHADOW_MODE,status:complete?"completed_hit_probability_v3_shadow":"partial_continue_hit_probability_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,hp_v3_batch_id:batchId,source_v2_enrichment_batch_id:sourceBatchId,source_rows_read:total,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:written,v2_d1_batch_flush:true,v2_event_flush_statements:eventFlush.statements,v2_event_flush_batches:eventFlush.batches,v2_event_flush_fallback:eventFlush.fallback,v2_issue_flush_statements:issueFlush.statements,v2_issue_flush_batches:issueFlush.batches,v2_issue_flush_fallback:issueFlush.fallback,hp_ready_rows:Number(counts&&counts.ready_rows||0),hp_deferred_rows:Number(counts&&counts.deferred_rows||0),hp_blocked_rows:Number(counts&&counts.blocked_rows||0),normalized_groups:normalizedGroups,normalization_blocked_groups:normalizationBlockedGroups,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,chunk_rows_target_150:true,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,no_fake_hp_when_baseline_missing:true,missing_baseline_hp_null:true,valid_pair_normalization:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
+  const output = baseIdentity({ ok:true,data_ok:true,version:SHADOW_SCORE_VERSION,worker_name:WORKER_NAME,logical_worker_name:"alphadog-v2-hit-probability-v3-shadow",deployed_worker_slot:WORKER_NAME,job_key:HIT_PROBABILITY_V3_SHADOW_JOB_KEY,request_id:requestId,run_id:runId,chain_id:chainId,mode:HIT_PROBABILITY_V3_SHADOW_MODE,status:complete?"completed_hit_probability_v3_shadow":"partial_continue_hit_probability_v3_shadow",certification:cert,certification_grade:grade,batch_id:batchId,hp_v3_batch_id:batchId,source_v2_enrichment_batch_id:sourceBatchId,source_rows_read:total,rows_written:Number(counts&&counts.rows||0),inserted_this_invocation:written,v2_d1_batch_flush:true,v2_event_flush_statements:eventFlush.statements,v2_event_flush_batches:eventFlush.batches,v2_event_flush_fallback:eventFlush.fallback,v2_issue_flush_statements:issueFlush.statements,v2_issue_flush_batches:issueFlush.batches,v2_issue_flush_fallback:issueFlush.fallback,hp_ready_rows:Number(counts&&counts.ready_rows||0),hp_deferred_rows:Number(counts&&counts.deferred_rows||0),hp_blocked_rows:Number(counts&&counts.blocked_rows||0),normalized_groups:normalizedGroups,normalization_blocked_groups:normalizationBlockedGroups,issue_rows_written:Number(issueCount&&issueCount.rows||0),offset,chunk_rows:limit,chunk_rows_target_150:true,next_offset:offset+rows.length,remaining_rows:remaining,worker_owned_shadow_logic:true,orchestrator_dispatch_only:true,no_fake_hp_when_baseline_missing:true,missing_baseline_hp_null:true,valid_pair_normalization:true,hp_v3_sharp_calibration:true,production_v1_passthrough_removed:true,empirical_bayes_shrinkage:true,context_applied_in_logit_space:true,payout_variant_does_not_modify_hp:true,no_hp_caps:true,no_kill_switch:true,continuation_required:!complete,orchestrator_should_self_continue:!complete,resume_existing_batch:resumeExisting,resume_inferred_offset:!explicitOffsetProvided,resume_batch_row_count_before:offset,elapsed_ms:Date.now()-started });
   await run(env.SCORE_DB, `UPDATE v2_hit_probability_batches SET status=?, source_rows_read=?, rows_written=?, hp_ready_rows=?, hp_deferred_rows=?, hp_blocked_rows=?, normalized_groups=?, normalization_blocked_groups=?, issue_rows_written=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, complete?"completed":"partial_continue", total, output.rows_written, output.hp_ready_rows, output.hp_deferred_rows, output.hp_blocked_rows, normalizedGroups, normalizationBlockedGroups, output.issue_rows_written, cert, grade, v2Json(output,14000), batchId);
   return output;
 }
