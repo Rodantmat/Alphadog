@@ -4975,6 +4975,11 @@ async function runScoreEnrichmentV1(env, input = {}) {
   const expectedRows = Number(totalRow && totalRow.rows || 0);
   await run(env.SCORE_DB, `INSERT OR IGNORE INTO score_enrichment_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, status, source_matrix_batch_id, expected_enrichment_rows, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, runId, WORKER_NAME, ENRICHMENT_V1_VERSION, ENRICHMENT_V1_MODE, sourceMatrixBatchId, expectedRows);
+  if (offset === 0) {
+    await run(env.SCORE_DB, `DELETE FROM score_enrichment_current WHERE batch_id=?`, batchId);
+    await run(env.SCORE_DB, `DELETE FROM score_enrichment_issues WHERE batch_id=?`, batchId);
+    await v2HardRetainCurrentAndIssues(env, "score_enrichment_current", "score_enrichment_issues", batchId);
+  }
   let versionReset = false;
   const batchVersionRow = await first(env.SCORE_DB, `SELECT worker_version FROM score_enrichment_batches WHERE batch_id=?`, batchId);
   if (batchVersionRow && batchVersionRow.worker_version && String(batchVersionRow.worker_version) !== ENRICHMENT_V1_VERSION) {
@@ -5169,7 +5174,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.71-hp-v3-shrink-logit-calibration";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.72-current-retention-hard-guard";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5497,6 +5502,39 @@ async function v2CountBatchRows(env, tableName, batchId) {
   const row = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM ${tableName} WHERE batch_id=?`, batchId);
   return Math.max(0, Number(row && row.rows || 0) || 0);
 }
+const V2_SCORE_DB_RETENTION_CURRENT_TABLES = new Set([
+  "score_enrichment_current",
+  "v2_score_enrichment_events",
+  "v2_hit_probability_current",
+  "v2_final_score_current",
+  "v2_final_board_current"
+]);
+const V2_SCORE_DB_RETENTION_ISSUE_TABLES = new Set([
+  "score_enrichment_issues",
+  "v2_score_enrichment_issues",
+  "v2_hit_probability_issues",
+  "v2_final_score_issues",
+  "v2_final_board_issues"
+]);
+function v2RetentionAssertTable(tableName, allowedSet, label) {
+  const t = String(tableName || "");
+  if (!allowedSet.has(t)) throw new Error(`unsupported_${label}_retention_table:${t}`);
+  return t;
+}
+async function v2HardRetainOnlyBatch(env, tableName, batchId, kind = "current") {
+  if (!env || !env.SCORE_DB || !batchId) return { skipped:true, table_name:tableName || null, batch_id:batchId || null, kind };
+  const allowed = kind === "issue" ? V2_SCORE_DB_RETENTION_ISSUE_TABLES : V2_SCORE_DB_RETENTION_CURRENT_TABLES;
+  const t = v2RetentionAssertTable(tableName, allowed, kind);
+  await run(env.SCORE_DB, `DELETE FROM ${t} WHERE batch_id <> ?`, batchId);
+  return { skipped:false, table_name:t, batch_id:batchId, kind, retention_rule:"retain_only_active_batch" };
+}
+async function v2HardRetainCurrentAndIssues(env, currentTable, issueTable, batchId) {
+  const out = [];
+  if (currentTable) out.push(await v2HardRetainOnlyBatch(env, currentTable, batchId, "current"));
+  if (issueTable) out.push(await v2HardRetainOnlyBatch(env, issueTable, batchId, "issue"));
+  return out;
+}
+
 async function v2StartOrResumeBatch(env, cfg = {}) {
   const {
     batchId,
@@ -5516,7 +5554,8 @@ async function v2StartOrResumeBatch(env, cfg = {}) {
     await run(env.SCORE_DB, insertSql, ...insertBinds);
     if (currentTable) await run(env.SCORE_DB, `DELETE FROM ${currentTable} WHERE batch_id=?`, batchId);
     if (issueTable) await run(env.SCORE_DB, `DELETE FROM ${issueTable} WHERE batch_id=?`, batchId);
-    return { offset:0, resumed:false, reset:true };
+    await v2HardRetainCurrentAndIssues(env, currentTable, issueTable, batchId);
+    return { offset:0, resumed:false, reset:true, retention_hard_guard:true };
   }
   await run(env.SCORE_DB, updateSql, ...updateBinds);
   const inferredOffset = explicitOffset === null ? await v2CountBatchRows(env, currentTable, batchId) : explicitOffset;

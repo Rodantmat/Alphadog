@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.320-hp-v3-terminal-raw-safe";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.321-score-db-current-retention-hard-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -2585,6 +2585,33 @@ function dailyFullRunChildPassed(stage, child) {
   return { pass: true, certification: output.certification || output.certification_status || null, certification_grade: output.certification_grade || null, output };
 }
 
+async function dailyFullRunScoreDbFreshRunPreflight(env, parentRow) {
+  if (!env || !env.SCORE_DB) return { skipped:true, reason:"missing_SCORE_DB" };
+  const stats = [];
+  const deleteAndCount = async (tableName, sql, ...binds) => {
+    const exists = await first(env.SCORE_DB, "SELECT name FROM sqlite_master WHERE type='table' AND name=? LIMIT 1", tableName);
+    if (!exists || !exists.name) {
+      stats.push({ table_name:tableName, skipped:true, reason:"table_missing" });
+      return;
+    }
+    const before = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM ${tableName}`);
+    await run(env.SCORE_DB, sql, ...binds);
+    const after = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows FROM ${tableName}`);
+    stats.push({ table_name:tableName, before_rows:Number(before&&before.rows||0), after_rows:Number(after&&after.rows||0) });
+  };
+  await deleteAndCount("prop_matrix_issues", "DELETE FROM prop_matrix_issues");
+  await deleteAndCount("prop_matrix_coverage_current", "DELETE FROM prop_matrix_coverage_current");
+  await deleteAndCount("prop_matrix_current", "DELETE FROM prop_matrix_current");
+  await deleteAndCount("prop_factor_issues", "DELETE FROM prop_factor_issues");
+  await deleteAndCount("prop_factor_hitter_packets", "DELETE FROM prop_factor_hitter_packets");
+  await deleteAndCount("prop_factor_pitcher_packets", "DELETE FROM prop_factor_pitcher_packets");
+  await deleteAndCount("prop_factor_coverage_current", "DELETE FROM prop_factor_coverage_current");
+  try {
+    await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'daily-full-run', 'INFO', 'daily_full_run_score_db_fresh_preflight', 'Daily Full Run purged transient SCORE_DB Factor/Matrix row artifacts before fresh run', ?, CURRENT_TIMESTAMP)", parentRow && parentRow.request_id || null, WORKER_NAME, JSON.stringify({ retention_contract:'fresh_daily_run_no_transient_factor_matrix_carryover', stats }));
+  } catch (_) {}
+  return { skipped:false, retention_contract:'fresh_daily_run_no_transient_factor_matrix_carryover', stats };
+}
+
 async function processDailyFullRunJob(env, row, runId, trigger) {
   const started = Date.now();
   const parentInput = parseJsonSafeText(row.input_json || "{}", {});
@@ -2600,6 +2627,7 @@ async function processDailyFullRunJob(env, row, runId, trigger) {
     "SELECT request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, error_code, error_message, output_json, input_json, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE parent_request_id=? AND chain_id=? ORDER BY datetime(created_at) ASC",
     row.request_id, row.chain_id
   );
+  const scoreDbFreshRunPreflight = childRows.length === 0 ? await dailyFullRunScoreDbFreshRunPreflight(env, row) : { skipped:true, reason:"daily_full_run_children_already_exist" };
   const stageReports = [];
 
   for (let i = 0; i < DAILY_FULL_RUN_STAGES.length; i++) {
@@ -2612,7 +2640,7 @@ async function processDailyFullRunJob(env, row, runId, trigger) {
 
     if (!child) {
       const enqueued = await enqueueDailyFullRunChild(env, row, stage, i, 0);
-      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_full_run", status: "PARTIAL_CONTINUE_DAILY_FULL_RUN_CHILD_ENQUEUED", certification: "DAILY_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: DAILY_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, hard_child_request_boundary: true, child_run_after_delay_seconds: 0, parent_recheck_delay_seconds: 0, lock_held: true, approved_chain_order: DAILY_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports, full_daily_master_run: true };
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_full_run", status: "PARTIAL_CONTINUE_DAILY_FULL_RUN_CHILD_ENQUEUED", certification: "DAILY_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: DAILY_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, hard_child_request_boundary: true, child_run_after_delay_seconds: 0, parent_recheck_delay_seconds: 0, lock_held: true, approved_chain_order: DAILY_FULL_RUN_STAGES.map(s => s.job_key), stages: stageReports, full_daily_master_run: true, score_db_fresh_run_preflight: scoreDbFreshRunPreflight };
       await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'DAILY_FULL_RUN_CHILD_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
       await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
       await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'daily_full_run_child_enqueued', 'Daily Full Run enqueued next parent full-run stage', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ parent_request_id: row.request_id, child_request_id: enqueued.child_request_id, stage_key: stage.stage_key, stage_index: i, mode: stage.mode, approved_chain_order: DAILY_FULL_RUN_STAGES.map(s => s.job_key) }));
@@ -2632,7 +2660,7 @@ async function processDailyFullRunJob(env, row, runId, trigger) {
 
     if (!validation.pass) {
       const finalStatus = "FAILED_DAILY_FULL_RUN_CHILD_FAILED";
-      const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: validation.reason, child_error_code: child.error_code || null, child_error_message: child.error_message || null, stages: [...stageReports, report], completed_stage_count: stageReports.length, total_stage_count: DAILY_FULL_RUN_STAGES.length, approved_chain_order: DAILY_FULL_RUN_STAGES.map(s => s.job_key), full_daily_master_run_certified: false };
+      const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "daily_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: validation.reason, child_error_code: child.error_code || null, child_error_message: child.error_message || null, stages: [...stageReports, report], completed_stage_count: stageReports.length, total_stage_count: DAILY_FULL_RUN_STAGES.length, approved_chain_order: DAILY_FULL_RUN_STAGES.map(s => s.job_key), full_daily_master_run_certified: false, score_db_fresh_run_preflight: scoreDbFreshRunPreflight };
       await releaseDailyFullRunLock(env, row);
       await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "daily full run child failed").slice(0, 900));
       await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "daily full run child failed").slice(0, 900), row.request_id);
@@ -13132,12 +13160,56 @@ async function buildScoreEnrichmentV1EvidenceOutput(env, row, runId, trigger, ro
 
 
 // ============================================================
+// SCORE_DB current-table hard retention guard v0.2.321
+// ============================================================
+const ORCH_SCORE_DB_RETENTION_CURRENT_TABLES = new Set([
+  "hit_probability_v2_current",
+  "final_score_v1_current",
+  "score_final_board_v2_current",
+  "v2_score_enrichment_events",
+  "v2_hit_probability_current",
+  "v2_final_score_current",
+  "v2_final_board_current",
+  "score_enrichment_current"
+]);
+const ORCH_SCORE_DB_RETENTION_ISSUE_TABLES = new Set([
+  "hit_probability_v2_issues",
+  "final_score_v1_issues",
+  "score_final_board_v2_issues",
+  "v2_score_enrichment_issues",
+  "v2_hit_probability_issues",
+  "v2_final_score_issues",
+  "v2_final_board_issues",
+  "score_enrichment_issues"
+]);
+function orchRetentionAssertTable(tableName, allowedSet, label) {
+  const t = String(tableName || "");
+  if (!allowedSet.has(t)) throw new Error(`unsupported_${label}_retention_table:${t}`);
+  return t;
+}
+async function orchHardRetainOnlyBatch(env, tableName, batchId, kind = "current") {
+  if (!env || !env.SCORE_DB || !batchId) return { skipped:true, table_name:tableName || null, batch_id:batchId || null, kind };
+  const allowed = kind === "issue" ? ORCH_SCORE_DB_RETENTION_ISSUE_TABLES : ORCH_SCORE_DB_RETENTION_CURRENT_TABLES;
+  const t = orchRetentionAssertTable(tableName, allowed, kind);
+  const before = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, COUNT(DISTINCT batch_id) AS batches FROM ${t}`);
+  await run(env.SCORE_DB, `DELETE FROM ${t} WHERE batch_id <> ?`, batchId);
+  const after = await first(env.SCORE_DB, `SELECT COUNT(*) AS rows, COUNT(DISTINCT batch_id) AS batches FROM ${t}`);
+  return { skipped:false, table_name:t, batch_id:batchId, kind, before_rows:Number(before&&before.rows||0), before_batches:Number(before&&before.batches||0), after_rows:Number(after&&after.rows||0), after_batches:Number(after&&after.batches||0) };
+}
+async function orchHardRetainCurrentAndIssues(env, currentTable, issueTable, batchId) {
+  const out = [];
+  if (currentTable) out.push(await orchHardRetainOnlyBatch(env, currentTable, batchId, "current"));
+  if (issueTable) out.push(await orchHardRetainOnlyBatch(env, issueTable, batchId, "issue"));
+  return out;
+}
+
+// ============================================================
 // HP V2 direct orchestrator fallback v0.2.264
 // ============================================================
 // This exists because score-audit deployments can lag. HP V2 is isolated and writes only
 // hit_probability_v2_* tables from score_enrichment_current. It does not touch old scoring,
 // old HP, HP board, final board, prepared/source boards, ranks, or live/review gates.
-const ORCH_HP_V2_VERSION = "alphadog-v2-hit-probability-v2-v0.1.4-goblin-demon-side-contract";
+const ORCH_HP_V2_VERSION = "alphadog-v2-hit-probability-v2-v0.1.5-current-retention-hard-guard";
 const ORCH_HP_V2_MODE = "hit_probability_v2_current";
 const ORCH_HP_V2_PROFILE_VERSION = "HP_V2_BASELINE_ENRICHMENT_CONTEXT_V0_1_3_ORCH_DIRECT";
 const ORCH_HP_V2_CHUNK_ROWS = 300;
@@ -13213,7 +13285,7 @@ async function processHitProbabilityV2DirectJob(env,row,runId,trigger){
   let offset=Number(rowInput.hp_v2_offset||rowInput.offset||0)||0;
   const limit=Math.max(50,Math.min(Number(rowInput.chunk_rows||ORCH_HP_V2_CHUNK_ROWS),750));
   await run(env.SCORE_DB,`INSERT OR IGNORE INTO hit_probability_v2_batches (batch_id,request_id,run_id,worker_name,worker_version,profile_version,mode,status,source_enrichment_batch_id,source_matrix_batch_id,expected_hp_rows,created_at,updated_at) VALUES (?,?,?,?,?,?,?,'running',?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,finalBatchId,row.request_id,runId,WORKER_NAME,ORCH_HP_V2_VERSION,ORCH_HP_V2_PROFILE_VERSION,ORCH_HP_V2_MODE,sourceEnrichmentBatchId,sourceMatrixBatchId,expectedRows);
-  if(offset===0){ await run(env.SCORE_DB,`DELETE FROM hit_probability_v2_current WHERE batch_id=?`,finalBatchId); await run(env.SCORE_DB,`DELETE FROM hit_probability_v2_issues WHERE batch_id=?`,finalBatchId); }
+  if(offset===0){ await run(env.SCORE_DB,`DELETE FROM hit_probability_v2_current WHERE batch_id=?`,finalBatchId); await run(env.SCORE_DB,`DELETE FROM hit_probability_v2_issues WHERE batch_id=?`,finalBatchId); await orchHardRetainCurrentAndIssues(env,'hit_probability_v2_current','hit_probability_v2_issues',finalBatchId); }
   await run(env.SCORE_DB,`UPDATE hit_probability_v2_batches SET status='running', run_id=?, worker_version=?, profile_version=?, source_enrichment_batch_id=?, source_matrix_batch_id=?, expected_hp_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,runId,ORCH_HP_V2_VERSION,ORCH_HP_V2_PROFILE_VERSION,sourceEnrichmentBatchId,sourceMatrixBatchId,expectedRows,finalBatchId);
   const rows=await all(env.SCORE_DB,`SELECT enrichment_row_id, prepared_row_id, matrix_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc, mlb_player_id, player_name, team_id, opponent_team_id, canonical_prop_key, board_line_value, selected_side, factor_family, baseline_hp_row_id, baseline_hp_0_100, baseline_confidence_v2_0_60, baseline_sample_size, baseline_hit_count, baseline_miss_count, factor_hp_pressure, enrichment_confidence_add_available_0_40, confidence_cap_0_100, data_quality_score_0_100, warning_count, blocker_count, missing_component_count, blocking_for_scoring, enrichment_status, enrichment_grade, matrix_status, matrix_grade FROM score_enrichment_current WHERE batch_id=? AND NOT (lower(COALESCE(source_key,''))='prizepicks' AND lower(COALESCE(selected_side,''))='less' AND (source_line_id LIKE '%|goblin|%' OR source_line_id LIKE '%|demon|%')) ORDER BY prepared_row_id, selected_side LIMIT ? OFFSET ?`,sourceEnrichmentBatchId,limit,offset);
   const models=new Map(), byPrep=new Map();
@@ -13249,7 +13321,7 @@ async function processHitProbabilityV2DirectJob(env,row,runId,trigger){
 // final_score_v1_* tables. It does not mutate old scoring_engine_current,
 // hit_probability_v2_current, score_final_board_current, prepared/source boards,
 // ranks, or live/review gates outside its own output columns.
-const ORCH_FINAL_SCORE_V1_VERSION = "alphadog-v2-final-score-v1-v0.1.4-multiplier-aware-score";
+const ORCH_FINAL_SCORE_V1_VERSION = "alphadog-v2-final-score-v1-v0.1.5-current-retention-hard-guard";
 const ORCH_FINAL_SCORE_V1_MODE = "final_score_v1_current";
 const ORCH_FINAL_SCORE_V1_PROFILE_VERSION = "FINAL_SCORE_V1_HP_DOMINANT_MULTIPLIER_AWARE_V0_1_3";
 const ORCH_FINAL_SCORE_V1_CHUNK_ROWS = 650;
@@ -13394,7 +13466,7 @@ async function processFinalScoreV1DirectJob(env,row,runId,trigger){
   let offset=Number(rowInput.final_score_v1_offset||rowInput.offset||0)||0;
   const limit=Math.max(100,Math.min(Number(rowInput.chunk_rows||ORCH_FINAL_SCORE_V1_CHUNK_ROWS),900));
   await run(env.SCORE_DB,`INSERT OR IGNORE INTO final_score_v1_batches (batch_id,request_id,run_id,worker_name,worker_version,profile_version,mode,status,source_score_enrichment_batch_id,source_hp_v2_batch_id,hp_v2_rows_read,enrichment_rows_read,expected_final_score_rows,created_at,updated_at) VALUES (?,?,?,?,?,?,?,'running',?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,row.request_id,runId,WORKER_NAME,ORCH_FINAL_SCORE_V1_VERSION,ORCH_FINAL_SCORE_V1_PROFILE_VERSION,ORCH_FINAL_SCORE_V1_MODE,sourceEnrichmentBatchId,sourceHpV2BatchId,expectedRows,enrichmentRows,expectedRows);
-  if(offset===0){ await run(env.SCORE_DB,`DELETE FROM final_score_v1_current WHERE batch_id=?`,batchId); await run(env.SCORE_DB,`DELETE FROM final_score_v1_issues WHERE batch_id=?`,batchId); }
+  if(offset===0){ await run(env.SCORE_DB,`DELETE FROM final_score_v1_current WHERE batch_id=?`,batchId); await run(env.SCORE_DB,`DELETE FROM final_score_v1_issues WHERE batch_id=?`,batchId); await orchHardRetainCurrentAndIssues(env,'final_score_v1_current','final_score_v1_issues',batchId); }
   await run(env.SCORE_DB,`UPDATE final_score_v1_batches SET status='running', run_id=?, worker_version=?, profile_version=?, source_score_enrichment_batch_id=?, source_hp_v2_batch_id=?, hp_v2_rows_read=?, enrichment_rows_read=?, expected_final_score_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,runId,ORCH_FINAL_SCORE_V1_VERSION,ORCH_FINAL_SCORE_V1_PROFILE_VERSION,sourceEnrichmentBatchId,sourceHpV2BatchId,expectedRows,enrichmentRows,expectedRows,batchId);
   const rows=await all(env.SCORE_DB,`SELECT h.*, b.sample_profile AS baseline_sample_profile, b.role_profile AS baseline_role_profile, b.volatility_profile AS baseline_volatility_profile, b.variance_profile AS baseline_variance_profile, b.line_difficulty_profile AS baseline_line_difficulty_profile FROM hit_probability_v2_current h LEFT JOIN player_baseline_hp_current b ON b.baseline_hp_row_id=h.baseline_hp_row_id WHERE h.batch_id=? AND NOT (lower(COALESCE(h.source_key,''))='prizepicks' AND lower(COALESCE(h.selected_side,''))='less' AND (h.source_line_id LIKE '%|goblin|%' OR h.source_line_id LIKE '%|demon|%')) ORDER BY h.prepared_row_id, h.selected_side LIMIT ? OFFSET ?`,sourceHpV2BatchId,limit,offset);
   const cur=[], iss=[]; let issues=0;
@@ -13426,7 +13498,7 @@ async function processFinalScoreV1DirectJob(env,row,runId,trigger){
 }
 
 
-const ORCH_FINAL_BOARD_V2_VERSION = "alphadog-v2-final-board-v2-v0.1.3-timeout-safe-annotation";
+const ORCH_FINAL_BOARD_V2_VERSION = "alphadog-v2-final-board-v2-v0.1.4-current-retention-hard-guard";
 const ORCH_FINAL_BOARD_V2_MODE = "score_final_board_v2_current";
 const ORCH_FINAL_BOARD_V2_PROFILE_VERSION = "FINAL_BOARD_V2_CLEAN_DEFAULT_RANKING_V0_1_1";
 const ORCH_FINAL_BOARD_V2_CHUNK_ROWS = 300;
@@ -13545,6 +13617,9 @@ async function processFinalBoardV2DirectJob(env,row,runId,trigger){
   if(!batchId){
     batchId=rid('score_final_board_v2_batch');
     await run(env.SCORE_DB, `INSERT OR REPLACE INTO score_final_board_v2_batches (batch_id,request_id,run_id,worker_name,worker_version,profile_version,mode,status,source_final_score_batch_id,source_hp_v2_batch_id,source_score_enrichment_batch_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, batchId,row.request_id,runId,WORKER_NAME,ORCH_FINAL_BOARD_V2_VERSION,ORCH_FINAL_BOARD_V2_PROFILE_VERSION,ORCH_FINAL_BOARD_V2_MODE,'running',sourceFinalScoreBatchId,sourceHpV2BatchId,sourceEnrichmentBatchId);
+    await run(env.SCORE_DB, `DELETE FROM score_final_board_v2_current WHERE batch_id=?`, batchId);
+    await run(env.SCORE_DB, `DELETE FROM score_final_board_v2_issues WHERE batch_id=?`, batchId);
+    await orchHardRetainCurrentAndIssues(env,'score_final_board_v2_current','score_final_board_v2_issues',batchId);
   }
   const counts=await first(env.SCORE_DB, `SELECT COUNT(*) AS source_rows, SUM(CASE WHEN eligible_for_final_board=1 AND review_playable=1 AND live_playable=0 AND final_score_status='final_score_ready' THEN 1 ELSE 0 END) AS eligible_rows, SUM(CASE WHEN final_score_status='final_score_blocked' THEN 1 ELSE 0 END) AS blocked_rows, SUM(CASE WHEN final_score_status='final_score_archived_low_hp' THEN 1 ELSE 0 END) AS low_hp_rows, SUM(CASE WHEN final_score_status='final_score_archived_low_score' THEN 1 ELSE 0 END) AS low_score_rows, SUM(CASE WHEN final_score_status='final_score_deep_review_low_confidence' THEN 1 ELSE 0 END) AS low_certainty_rows, SUM(CASE WHEN live_playable=1 THEN 1 ELSE 0 END) AS live_rows FROM final_score_v1_current WHERE batch_id=? AND NOT (lower(COALESCE(source_key,''))='prizepicks' AND lower(COALESCE(selected_side,''))='less' AND (source_line_id LIKE '%|goblin|%' OR source_line_id LIKE '%|demon|%'))`, sourceFinalScoreBatchId);
   const sourceRows=Number(counts&&counts.source_rows||0), eligibleRows=Number(counts&&counts.eligible_rows||0);
