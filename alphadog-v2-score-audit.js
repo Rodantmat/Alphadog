@@ -5174,7 +5174,7 @@ async function runScoreEnrichmentV1(env, input = {}) {
 // Owns heavy V2/V3 shadow scoring logic for:
 // score-enrichment-v2-shadow -> hit-probability-v3-shadow -> final-score-v2-shadow -> final-board-v3-shadow
 // ============================================================================
-const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.72-current-retention-hard-guard";
+const SHADOW_SCORE_VERSION = "alphadog-v2-score-audit-v0.4.73-hp-v3-null-bind-safe";
 const SCORE_ENRICHMENT_V2_SHADOW_JOB_KEY = "score-enrichment-v2-shadow";
 const SCORE_ENRICHMENT_V2_SHADOW_MODE = "score_enrichment_v2_shadow";
 const HIT_PROBABILITY_V3_SHADOW_JOB_KEY = "hit-probability-v3-shadow";
@@ -5245,6 +5245,18 @@ async function v2Flush(db, stmts, size = 25) {
 function v2Num(v, fallback = null) {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
+}
+function v2SqlValue(v) {
+  if (v === undefined) return null;
+  if (typeof v === "number" && !Number.isFinite(v)) return null;
+  return v;
+}
+function v2SqlNumber(v, fallback = null) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+function v2Bind(stmt, values) {
+  return stmt.bind(...values.map(v2SqlValue));
 }
 function v2Clamp(v, lo, hi) {
   const n = Number(v);
@@ -5834,13 +5846,16 @@ async function runHitProbabilityV3Shadow(env, input = {}) {
     const baseConfidence = hasBaseline ? v2Clamp(Number(row.baseline_confidence_0_100 || 0), 5, 95) : null;
     const confidence = hasBaseline ? Math.round(Math.min(baseConfidence, groupConfidence.cap) * 100) / 100 : null;
     const calibrated = hasBaseline ? v3ShadowCalibrateHp(row, Number(row.baseline_hp_0_100), confidence, effect, groupConfidence.group_rows) : { hp:null, reliability_weight:null, calibration_applied:false, calibration_reason:'no_baseline_hp' };
-    const raw = calibrated.raw_hp_after_logit_context;
-    const finalHp = calibrated.hp;
+    const raw = v2SqlNumber(calibrated.raw_hp_after_logit_context, null);
+    const finalHp = v2SqlNumber(calibrated.hp, null);
     const status = hasBaseline ? "ready_raw" : (row.event_status === "blocked_source_row" ? "blocked_source_row" : "deferred_baseline_missing");
     const grade = hasBaseline ? "READY" : (status === "blocked_source_row" ? "BLOCKED" : "DEFERRED");
-    stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_hit_probability_current (hp_v3_row_id,batch_id,source_v2_enrichment_batch_id,event_id,prepared_row_id,matrix_id,source_line_id,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,source_key,line_value,selected_side,payout_variant,baseline_hp_row_id,baseline_source,baseline_hp_0_100,baseline_confidence_0_100,composite_factor_signature,composite_factor_effect_0_100,v3_hp_raw,v3_hp_final,v3_confidence_0_100,normalization_status,hp_v3_status,hp_v3_grade,blocker_count,warning_count,model_payload_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(hpId,batchId,sourceBatchId,row.event_id,row.prepared_row_id,row.matrix_id,row.source_line_id,row.game_pk,row.official_date,row.mlb_player_id,row.player_name,row.canonical_prop_key,row.source_key,row.line_value,row.selected_side,row.payout_variant,row.baseline_hp_row_id,row.baseline_source,row.baseline_hp_0_100,row.baseline_confidence_0_100,`${row.factor_id || 'factor'}:${row.factor_effect_tier || 'neutral'}:${row.factor_quality_tier || 'unknown'}`,effect,raw,finalHp,confidence,hasBaseline?"raw_pending_pair_normalization":"not_normalizable",status,grade,status === "blocked_source_row" ? 1 : 0,status === "deferred_baseline_missing" ? 1 : 0,v2Json({ no_fake_hp_when_baseline_missing:true, baseline_missing_outputs_null:!hasBaseline, hp_v3_sharp_calibration:true, hp_not_modified_by_payout_variant:true, payout_variant_score_only:true, additive_probability_context_removed:true, context_applied_in_logit_space:true, empirical_bayes_shrinkage:true, structural_prior_0_100:calibrated.structural_prior_0_100, prior_strength_m:calibrated.prior_strength_m, effective_sample_n:calibrated.effective_sample_n, shrunk_baseline_0_100:calibrated.shrunk_baseline_0_100, context_logit_delta:calibrated.context_logit_delta, hp_family:calibrated.hp_family, multiplicative_modifier_legacy_read_only:row.factor_effect_multiplier, confidence_group_rows:groupConfidence.group_rows, confidence_cap_reason:groupConfidence.reason, confidence_cap_applied:hasBaseline && baseConfidence != null && confidence < baseConfidence, calibration_applied:calibrated.calibration_applied, calibration_reason:calibrated.calibration_reason, reliability_weight:calibrated.reliability_weight, raw_baseline_hp_before_calibration:calibrated.baseline_probability_before_calibration, raw_hp_after_logit_context:raw, final_hp_after_calibration:finalHp },5000)));
+    const hpInsertBinds = [
+      hpId,batchId,sourceBatchId,row.event_id,row.prepared_row_id,row.matrix_id,row.source_line_id,row.game_pk,row.official_date,row.mlb_player_id,row.player_name,row.canonical_prop_key,row.source_key,row.line_value,row.selected_side,row.payout_variant,row.baseline_hp_row_id,row.baseline_source,row.baseline_hp_0_100,row.baseline_confidence_0_100,`${row.factor_id || 'factor'}:${row.factor_effect_tier || 'neutral'}:${row.factor_quality_tier || 'unknown'}`,effect,raw,finalHp,confidence,hasBaseline?"raw_pending_pair_normalization":"not_normalizable",status,grade,status === "blocked_source_row" ? 1 : 0,status === "deferred_baseline_missing" ? 1 : 0,v2Json({ no_fake_hp_when_baseline_missing:true, baseline_missing_outputs_null:!hasBaseline, hp_v3_sharp_calibration:true, hp_not_modified_by_payout_variant:true, payout_variant_score_only:true, additive_probability_context_removed:true, context_applied_in_logit_space:true, empirical_bayes_shrinkage:true, structural_prior_0_100:calibrated.structural_prior_0_100, prior_strength_m:calibrated.prior_strength_m, effective_sample_n:calibrated.effective_sample_n, shrunk_baseline_0_100:calibrated.shrunk_baseline_0_100, context_logit_delta:calibrated.context_logit_delta, hp_family:calibrated.hp_family, multiplicative_modifier_legacy_read_only:row.factor_effect_multiplier, confidence_group_rows:groupConfidence.group_rows, confidence_cap_reason:groupConfidence.reason, confidence_cap_applied:hasBaseline && baseConfidence != null && confidence < baseConfidence, calibration_applied:calibrated.calibration_applied, calibration_reason:calibrated.calibration_reason, reliability_weight:calibrated.reliability_weight, raw_baseline_hp_before_calibration:calibrated.baseline_probability_before_calibration, raw_hp_after_logit_context:raw, final_hp_after_calibration:finalHp },5000)
+    ];
+    stmts.push(v2Bind(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_hit_probability_current (hp_v3_row_id,batch_id,source_v2_enrichment_batch_id,event_id,prepared_row_id,matrix_id,source_line_id,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,source_key,line_value,selected_side,payout_variant,baseline_hp_row_id,baseline_source,baseline_hp_0_100,baseline_confidence_0_100,composite_factor_signature,composite_factor_effect_0_100,v3_hp_raw,v3_hp_final,v3_confidence_0_100,normalization_status,hp_v3_status,hp_v3_grade,blocker_count,warning_count,model_payload_json,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`), hpInsertBinds));
     if (!hasBaseline) {
-      issueStmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_hit_probability_issues (issue_id,batch_id,hp_v3_row_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`${batchId}|${hpId}|NO_BASELINE_HP`,batchId,hpId,status === "blocked_source_row" ? "BLOCKER" : "WARNING",status === "blocked_source_row" ? "SOURCE_ROW_BLOCKED" : "BASELINE_MISSING_HP_NULL","HP V3 did not emit fake HP for missing or blocked baseline row",v2Json({ event_id:row.event_id, canonical_prop_key:row.canonical_prop_key, source_key:row.source_key },3000)));
+      issueStmts.push(v2Bind(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO v2_hit_probability_issues (issue_id,batch_id,hp_v3_row_id,severity,issue_code,issue_message,details_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`), [`${batchId}|${hpId}|NO_BASELINE_HP`,batchId,hpId,status === "blocked_source_row" ? "BLOCKER" : "WARNING",status === "blocked_source_row" ? "SOURCE_ROW_BLOCKED" : "BASELINE_MISSING_HP_NULL","HP V3 did not emit fake HP for missing or blocked baseline row",v2Json({ event_id:row.event_id, canonical_prop_key:row.canonical_prop_key, source_key:row.source_key },3000)]));
     }
     written++;
   }
