@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-probable-pitchers";
-const VERSION = "alphadog-v2-daily-probable-pitchers-v0.1.3-today-tomorrow-retention";
+const VERSION = "alphadog-v2-daily-probable-pitchers-v0.1.4-timeout-safe-no-live-feed-default";
 const JOB_KEY = "daily-probable-pitchers";
 const SOURCE_KEY = "official_mlb_statsapi_schedule_probable_pitcher";
 const MAX_PREPARED_ROWS = 5000;
@@ -100,6 +100,12 @@ function liveFeedUrl(gamePk) {
 function requestHeaders(env) {
   const ua = String(env.MLB_API_USER_AGENT || "AlphaDog-v2-Daily-Starters/0.1");
   return { "accept": "application/json", "user-agent": ua };
+}
+
+function liveFeedActualsEnabled(input, env) {
+  const inputEnabled = input && (input.enable_live_feed_actuals === true || input.force_live_feed_actuals === true);
+  const envValue = String(env.DAILY_STARTERS_ENABLE_LIVE_FEED_ACTUALS || env.ENABLE_DAILY_STARTERS_LIVE_FEED_ACTUALS || "").toLowerCase();
+  return inputEnabled || envValue === "1" || envValue === "true" || envValue === "yes";
 }
 
 async function ensureSchema(env) {
@@ -424,9 +430,11 @@ function collectStarterIdsForHandFill(relevantGames, actualMap, refHands) {
   return missing;
 }
 
-async function fetchActualStarterMap(env, games, counters) {
+async function fetchActualStarterMap(env, games, counters, options = {}) {
   const out = new Map();
-  const candidates = games.filter(g => statusIsLiveOrFinal(g)).slice(0, MAX_LIVE_FEED_CALLS);
+  if (!options.enabled) return out;
+  const limit = Number.isFinite(Number(options.limit)) ? Math.max(0, Math.min(MAX_LIVE_FEED_CALLS, Number(options.limit))) : MAX_LIVE_FEED_CALLS;
+  const candidates = games.filter(g => statusIsLiveOrFinal(g)).slice(0, limit);
   for (const game of candidates) {
     const gamePk = Number(game.gamePk);
     const url = liveFeedUrl(gamePk);
@@ -737,7 +745,8 @@ async function runDailyStarters(request, env) {
       }
     }
 
-    const actualMap = await fetchActualStarterMap(env, relevantGames, counters);
+    const liveFeedActuals = liveFeedActualsEnabled(input, env);
+    const actualMap = await fetchActualStarterMap(env, relevantGames, counters, { enabled: liveFeedActuals });
     const allStarterIds = [...probableIds];
     for (const actual of actualMap.values()) {
       if (actual?.id) allStarterIds.push(Number(actual.id));
@@ -822,11 +831,13 @@ async function runDailyStarters(request, env) {
       legacy_rows_written: counters.legacy_rows_written,
       external_calls_performed: counters.external_calls,
       live_feed_games_checked: counters.live_feed_games_checked,
+      live_feed_actuals_enabled: liveFeedActuals,
+      timeout_safe_contract: "schedule_hydrate_only_by_default_live_feed_actuals_opt_in",
       no_board_mutation: true,
       no_scoring: true,
       no_ranking: true,
       no_final_board: true,
-      status_model_note: "v0.1 does not emit confirmed. Pregame MLB probablePitcher remains probable until live/final boxscore proves actual_started."
+      status_model_note: liveFeedActuals ? "Live/final boxscore actual starter verification enabled for this run." : "Timeout-safe default: MLB schedule hydrate probablePitcher is authoritative for daily context; live/final boxscore actual starter verification is opt-in only."
     };
 
     await run(env.DAILY_DB, `UPDATE daily_starters_batches SET
@@ -902,10 +913,12 @@ function health(env) {
     },
     source_strategy: {
       primary: "MLB StatsAPI schedule hydrate=probablePitcher(note,person)",
-      secondary: "MLB StatsAPI live feed only for Live/Final actual_started verification",
+      secondary: "MLB StatsAPI live feed actual_started verification is opt-in only to avoid service-binding timeout",
       no_paid_sources: true,
       no_html_scraping: true,
       no_confirmed_status_in_v0_1: true,
+      live_feed_actuals_default: "disabled",
+      timeout_safe_default: true,
       retention_policy: "current/snapshot/issue/legacy starter data retained only for PT today and tomorrow"
     }
   };
