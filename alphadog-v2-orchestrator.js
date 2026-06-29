@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.322-score-prep-db-truth-timeout-recovery";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.323-market-teams-db-truth-timeout-recovery";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -3469,6 +3469,128 @@ WHERE batch_id=?`, prepBatchId);
 }
 
 
+
+async function recoverMarketTeamsGameOddsFromDbTruth(env, row, input, output, startedAtMs, runId) {
+  const errText = String((output && (output.error || output.status || output.error_message)) || "").toLowerCase();
+  if (!errText.includes("market_normalizer_service_binding_timeout") && !errText.includes("service_binding_timeout")) return null;
+  if (!env.MARKET_DB) return null;
+
+  const batch = await first(env.MARKET_DB, `
+SELECT batch_id, request_id, run_id, status, prepared_rows_read, prepared_games_checked,
+       odds_api_events_seen, odds_api_events_mapped, odds_api_game_odds_rows,
+       warning_count, blocker_count, certification_status, certification_grade,
+       created_at, updated_at
+FROM market_context_probe_batches
+WHERE request_id=? AND mode='market_teams_game_odds'
+ORDER BY datetime(updated_at) DESC
+LIMIT 1`, row.request_id);
+  if (!batch || !batch.batch_id) return null;
+
+  const batchId = String(batch.batch_id);
+  const preparedRows = Number(batch.prepared_rows_read || 0);
+  const preparedGames = Number(batch.prepared_games_checked || 0);
+  const eventsMapped = Number(batch.odds_api_events_mapped || 0);
+  const oddsRowsReported = Number(batch.odds_api_game_odds_rows || 0);
+  if (preparedRows <= 0 || preparedGames <= 0 || eventsMapped < preparedGames || oddsRowsReported <= 0) return null;
+
+  const odds = await first(env.MARKET_DB, `
+SELECT COUNT(*) AS rows,
+       COUNT(DISTINCT game_pk) AS games,
+       COUNT(DISTINCT source_event_id) AS source_events,
+       COUNT(DISTINCT bookmaker_key) AS books,
+       COUNT(DISTINCT market_key) AS markets,
+       MIN(created_at) AS min_created,
+       MAX(created_at) AS max_created
+FROM market_context_probe_game_odds
+WHERE batch_id=?`, batchId);
+  const summary = await first(env.MARKET_DB, `
+SELECT COUNT(*) AS rows,
+       COUNT(DISTINCT game_pk) AS games,
+       SUM(CASE WHEN parse_status IS NULL OR parse_status='' THEN 1 ELSE 0 END) AS missing_parse_status,
+       SUM(CASE WHEN parse_status NOT IN ('PARSED_OK') THEN 1 ELSE 0 END) AS non_ok_parse_status,
+       MIN(created_at) AS min_created,
+       MAX(created_at) AS max_created
+FROM market_context_probe_game_market_summary
+WHERE batch_id=?`, batchId);
+  const eventMap = await first(env.MARKET_DB, `
+SELECT COUNT(*) AS rows,
+       COUNT(DISTINCT game_pk) AS games,
+       SUM(CASE WHEN mapping_status IS NULL OR mapping_status='' THEN 1 ELSE 0 END) AS missing_mapping_status,
+       MIN(created_at) AS min_created,
+       MAX(created_at) AS max_created
+FROM market_context_probe_event_map
+WHERE batch_id=?`, batchId);
+
+  const oddsRows = Number(odds && odds.rows || 0);
+  const oddsGames = Number(odds && odds.games || 0);
+  const oddsBooks = Number(odds && odds.books || 0);
+  const oddsMarkets = Number(odds && odds.markets || 0);
+  const summaryRows = Number(summary && summary.rows || 0);
+  const summaryGames = Number(summary && summary.games || 0);
+  const missingSummaryStatus = Number(summary && summary.missing_parse_status || 0);
+  const badSummaryStatus = Number(summary && summary.non_ok_parse_status || 0);
+  const eventMapRows = Number(eventMap && eventMap.rows || 0);
+  const eventMapGames = Number(eventMap && eventMap.games || 0);
+  const missingMapStatus = Number(eventMap && eventMap.missing_mapping_status || 0);
+
+  if (oddsRows <= 0 || oddsGames < preparedGames || oddsBooks <= 0 || oddsMarkets <= 0) return null;
+  if (summaryRows < preparedGames || summaryGames < preparedGames || missingSummaryStatus > 0 || badSummaryStatus > 0) return null;
+  if (eventMapRows <= 0 || eventMapGames < preparedGames || missingMapStatus > 0) return null;
+
+  const rowsWritten = oddsRows + summaryRows + eventMapRows;
+  const recovered = {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    processed_by: WORKER_NAME,
+    worker_name: row.worker_name,
+    job_key: row.job_key,
+    request_id: row.request_id,
+    chain_id: row.chain_id || null,
+    mode: "market_teams_game_odds",
+    status: "completed_teams_game_odds_evidence_written_recovered_after_timeout",
+    certification: "MARKET_TEAMS_GAME_ODDS_EVIDENCE_WRITTEN",
+    certification_status: "MARKET_TEAMS_GAME_ODDS_EVIDENCE_WRITTEN",
+    certification_grade: Number(batch.blocker_count || 0) > 0 ? "PASS_WITH_WARNINGS" : "PASS",
+    batch_id: batchId,
+    rows_read: preparedRows,
+    rows_written: rowsWritten,
+    external_calls_performed: Number(batch.odds_api_events_seen || 0),
+    external_calls: Number(batch.odds_api_events_seen || 0),
+    prepared_rows_read: preparedRows,
+    prepared_games_checked: preparedGames,
+    odds_api_events_seen: Number(batch.odds_api_events_seen || 0),
+    odds_api_events_mapped: eventsMapped,
+    odds_api_game_odds_rows: oddsRows,
+    market_summary_rows: summaryRows,
+    event_map_rows: eventMapRows,
+    book_count: oddsBooks,
+    market_count: oddsMarkets,
+    final_db_truth: true,
+    market_teams_db_truth_timeout_recovery_v0_2_323: true,
+    recovered_after_service_binding_timeout: true,
+    original_worker_error: output && (output.error || output.status) || null,
+    no_market_current_lines_writes: true,
+    no_score_db_mutation: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board_write: true,
+    no_matrix_builder: true,
+    no_old_production_touch: true,
+    elapsed_ms: Math.max(0, Date.now() - startedAtMs)
+  };
+
+  await run(env.MARKET_DB,
+    "UPDATE market_context_probe_batches SET status='completed_teams_game_odds_evidence_written', certification_status='MARKET_TEAMS_GAME_ODDS_EVIDENCE_WRITTEN', certification_grade=?, warning_count=COALESCE(warning_count,0), blocker_count=COALESCE(blocker_count,0), output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?",
+    recovered.certification_grade, JSON.stringify(recovered), batchId);
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'market_teams_timeout_db_truth_recovered', 'Recovered Market Teams/Game Odds service-binding timeout because MARKET_DB evidence tables were complete and DB-verified', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId || rid("run"), WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, batch_id:batchId, prepared_rows:preparedRows, prepared_games:preparedGames, odds_rows:oddsRows, summary_rows:summaryRows, event_map_rows:eventMapRows, version:SYSTEM_VERSION }).slice(0, 9000));
+
+  return recovered;
+}
+
 function isPartialContinueOutput(output) {
   const rawStatus = String((output && output.status) || "").toLowerCase();
   const certification = String((output && output.certification) || "").toLowerCase();
@@ -5191,6 +5313,8 @@ async function processMarketContextSourceProbeJob(env, row, runId, trigger) {
     const text = await resp.text();
     try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
   } catch (err) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) }; }
+  const recoveredMarketTeams = await recoverMarketTeamsGameOddsFromDbTruth(env, row, input, output, started, runId);
+  if (recoveredMarketTeams) output = recoveredMarketTeams;
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
   const rowsRead = Number(output && (output.rows_read || output.prepared_rows_read) ? (output.rows_read || output.prepared_rows_read) : 0);
