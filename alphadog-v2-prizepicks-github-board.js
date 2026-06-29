@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-prizepicks-github-board";
-const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.16-github-json-poll-continuation";
+const VERSION = "alphadog-v2-prizepicks-github-board-v0.1.17-deterministic-stage-id-safe";
 const JOB_KEY = "prizepicks-github-board";
 const SOURCE_KEY = "prizepicks_github";
 const RAW_SNAPSHOT_STATUS_OK = "source_shape_staged";
@@ -32,6 +32,19 @@ const EXPECTED_PP_ACTIVE_COLUMNS = ["source_key", "slate_date", "active_batch_id
 function nowUtc() { return new Date().toISOString(); }
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, Math.max(0, Number(ms || 0)))); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
+
+function safeIdPart(value, fallback = "x") {
+  const text = value === undefined || value === null || value === "" ? String(fallback) : String(value);
+  const cleaned = text.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 120);
+  return cleaned || String(fallback);
+}
+
+function deterministicStageId(batchId, projectionId, index) {
+  // Stage rows must be retry-safe and collision-proof inside large PrizePicks slates.
+  // The previous random 6-char suffix can collide on 7k+ rows and crash D1 primary-key inserts.
+  return `pp_stage_${safeIdPart(batchId)}_${safeIdPart(projectionId, `row_${index}`)}_${Number(index || 0)}`;
+}
+
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -583,7 +596,7 @@ function parseProjectionRow(row, index, leagueMap, slateDate, fetchedAt, batchId
   if (!isMlb) errors.push("not_identified_as_mlb");
   const parseStatus = errors.length === 0 ? "valid" : "invalid";
   return {
-    stage_id: rid("pp_stage"),
+    stage_id: deterministicStageId(batchId, projectionId, index),
     batch_id: batchId,
     source_key: SOURCE_KEY,
     slate_date: slateDate,
