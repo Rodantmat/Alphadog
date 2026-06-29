@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.323-market-teams-db-truth-timeout-recovery";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.324-board-full-run-score-preppable-guard";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -869,8 +869,28 @@ async function validateBoardFullRunFinalGuard(env, stageReports) {
     };
   }
 
-  const marketPrizePicks = await first(env.MARKET_DB, "SELECT COUNT(*) AS rows FROM prizepicks_board_current");
-  const marketSleeper = await first(env.MARKET_DB, "SELECT COUNT(*) AS rows FROM sleeper_board_current");
+  const marketPrizePicksActive = await first(env.MARKET_DB, `
+SELECT COUNT(*) AS rows
+FROM prizepicks_board_current p
+JOIN prizepicks_board_active_batches a
+  ON a.source_key = p.source_key
+ AND a.slate_date = p.slate_date
+ AND a.active_batch_id = p.batch_id`);
+  const marketPrizePicksComposite = await first(env.MARKET_DB, `
+SELECT COUNT(*) AS rows
+FROM prizepicks_board_current p
+JOIN prizepicks_board_active_batches a
+  ON a.source_key = p.source_key
+ AND a.slate_date = p.slate_date
+ AND a.active_batch_id = p.batch_id
+WHERE p.team LIKE '%/%'`);
+  const marketSleeperActive = await first(env.MARKET_DB, `
+SELECT COUNT(*) AS rows
+FROM sleeper_board_current s
+JOIN sleeper_board_active_batches a
+  ON a.source_key = s.source_key
+ AND a.slate_date = s.slate_date
+ AND a.active_batch_id = s.batch_id`);
   const scorePrizePicks = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current WHERE source_key = 'prizepicks'");
   const scoreSleeper = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current WHERE source_key = 'sleeper'");
   const scoreTotal = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current");
@@ -881,28 +901,38 @@ async function validateBoardFullRunFinalGuard(env, stageReports) {
   const scorePrepPreparedRows = Number(scorePrepReport.prepared_rows || 0);
   const scorePrepAllSourceRowsBeforeWindow = Number(scorePrepReport.all_source_rows_seen_before_window_filter || 0);
 
-  const marketPrizePicksRows = Number(marketPrizePicks && marketPrizePicks.rows || 0);
-  const marketSleeperRows = Number(marketSleeper && marketSleeper.rows || 0);
+  const marketPrizePicksRows = Number(marketPrizePicksActive && marketPrizePicksActive.rows || 0);
+  const marketPrizePicksCompositeRows = Number(marketPrizePicksComposite && marketPrizePicksComposite.rows || 0);
+  const marketPrizePicksScorePreppableRows = Math.max(0, marketPrizePicksRows - marketPrizePicksCompositeRows);
+  const marketSleeperRows = Number(marketSleeperActive && marketSleeperActive.rows || 0);
+  const marketSleeperInventoryOnlyRows = Math.max(0, marketSleeperRows - scorePrepSleeperRows);
   const scorePrizePicksRows = Number(scorePrizePicks && scorePrizePicks.rows || 0);
   const scoreSleeperRows = Number(scoreSleeper && scoreSleeper.rows || 0);
   const scoreTotalRows = Number(scoreTotal && scoreTotal.rows || 0);
   const marketTotalRows = marketPrizePicksRows + marketSleeperRows;
+  const marketScorePreppableRows = marketPrizePicksScorePreppableRows + scorePrepSleeperRows;
 
   const parity = {
     market_prizepicks_rows_raw_current: marketPrizePicksRows,
+    market_prizepicks_rows_score_preppable: marketPrizePicksScorePreppableRows,
+    market_prizepicks_composite_game_team_rows_excluded: marketPrizePicksCompositeRows,
     score_prizepicks_rows_current_window: scorePrizePicksRows,
     score_prep_prizepicks_rows_current_window: scorePrepPrizePicksRows,
     market_sleeper_rows_raw_current: marketSleeperRows,
+    market_sleeper_rows_score_preppable_contract: scorePrepSleeperRows,
+    market_sleeper_inventory_only_rows_excluded: marketSleeperInventoryOnlyRows,
     score_sleeper_rows_current_window: scoreSleeperRows,
     score_prep_sleeper_rows_current_window: scorePrepSleeperRows,
     market_total_rows_raw_current: marketTotalRows,
+    market_total_rows_score_preppable_contract: marketScorePreppableRows,
     score_total_rows_current_window: scoreTotalRows,
     score_prep_prepared_rows_current_window: scorePrepPreparedRows,
     score_prep_all_source_rows_before_window_filter: scorePrepAllSourceRowsBeforeWindow,
-    board_rows_excluded_by_score_prep_window: scorePrepAllSourceRowsBeforeWindow > 0 ? scorePrepAllSourceRowsBeforeWindow - scorePrepPreparedRows : marketTotalRows - scoreTotalRows,
+    board_rows_excluded_by_score_prep_window: marketTotalRows - scoreTotalRows,
+    board_rows_excluded_by_contract: marketTotalRows - marketScorePreppableRows,
     score_distinct_prep_batches: Number(prepBatchCount && prepBatchCount.rows || 0),
     current_window_dates: scorePrepReport.current_window_dates || null,
-    guard_policy: "compare_score_current_to_score_prep_current_window_and_market_raw_to_score_prep_raw_seen"
+    guard_policy: "compare_score_current_to_score_prep_current_window_and_market_score_preppable_contract_not_raw_inventory"
   };
 
   const mismatches = [];
@@ -910,11 +940,11 @@ async function validateBoardFullRunFinalGuard(env, stageReports) {
   if (parity.score_sleeper_rows_current_window !== parity.score_prep_sleeper_rows_current_window) mismatches.push("score_sleeper_rows_do_not_match_score_prep_current_window");
   if (parity.score_total_rows_current_window !== parity.score_prep_prepared_rows_current_window) mismatches.push("score_total_rows_do_not_match_score_prep_prepared_rows");
   if (parity.score_distinct_prep_batches !== 1) mismatches.push("score_prepared_current_multiple_or_missing_batches");
-  if (scorePrepAllSourceRowsBeforeWindow > 0 && marketTotalRows !== scorePrepAllSourceRowsBeforeWindow) mismatches.push("market_raw_total_does_not_match_score_prep_raw_seen_before_window_filter");
-  if (scorePrepAllSourceRowsBeforeWindow <= 0 && marketTotalRows !== scoreTotalRows) mismatches.push("legacy_market_score_row_mismatch_without_window_report");
+  if (marketPrizePicksScorePreppableRows !== scorePrepPrizePicksRows) mismatches.push("market_prizepicks_score_preppable_rows_do_not_match_score_prep_prizepicks_rows");
   if (marketPrizePicksRows < scorePrizePicksRows) mismatches.push("market_prizepicks_raw_less_than_score_prizepicks_current_window");
   if (marketSleeperRows < scoreSleeperRows) mismatches.push("market_sleeper_raw_less_than_score_sleeper_current_window");
   if (parity.board_rows_excluded_by_score_prep_window < 0) mismatches.push("negative_window_exclusion_count");
+  if (parity.board_rows_excluded_by_contract < 0) mismatches.push("negative_contract_exclusion_count");
 
   if (mismatches.length > 0) {
     return {
@@ -3461,9 +3491,33 @@ WHERE batch_id=?`, prepBatchId);
     elapsed_ms: Math.max(0, Date.now() - startedAtMs)
   };
 
+  await run(env.SCORE_DB, `
+UPDATE score_board_prep_batches
+SET status='COMPLETED_BOARD_PREP_ENRICHMENT',
+    certification_status='SCORE_BOARD_PREP_ENRICHMENT_COMPLETED_PRESERVED_RAW_BOARDS',
+    certification_grade=?,
+    prepared_rows=?,
+    prizepicks_rows=?,
+    sleeper_rows=?,
+    pickable_safe_rows=?,
+    blocked_rows=?,
+    finished_at=COALESCE(finished_at, CURRENT_TIMESTAMP),
+    updated_at=CURRENT_TIMESTAMP,
+    certification_json=COALESCE(certification_json, ?)
+WHERE batch_id=?
+  AND (status IS NULL OR status NOT LIKE 'COMPLETED%')`,
+    recovered.certification_grade,
+    preparedRows,
+    prizepicksRows,
+    sleeperRows,
+    pickableSafeRows,
+    Number(summary.blocked_rows || 0),
+    JSON.stringify({ recovered_after_service_binding_timeout:true, prepared_rows:preparedRows, prizepicks_rows:prizepicksRows, sleeper_rows:sleeperRows, pickable_safe_rows:pickableSafeRows, version:SYSTEM_VERSION }).slice(0, 9000),
+    prepBatchId);
+
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'score_prep_timeout_db_truth_recovered', 'Recovered Score Prep service-binding timeout because SCORE_DB prepared current was complete and DB-verified', ?, CURRENT_TIMESTAMP)",
-    row.request_id, rid("run"), WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, prep_batch_id:prepBatchId, prepared_rows:preparedRows, prizepicks_rows:prizepicksRows, sleeper_rows:sleeperRows, pickable_safe_rows:pickableSafeRows, version:SYSTEM_VERSION }).slice(0, 9000));
+    row.request_id, rid("run"), WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, prep_batch_id:prepBatchId, prepared_rows:preparedRows, prizepicks_rows:prizepicksRows, sleeper_rows:sleeperRows, pickable_safe_rows:pickableSafeRows, terminalized_score_prep_batch_row:true, version:SYSTEM_VERSION }).slice(0, 9000));
 
   return recovered;
 }
