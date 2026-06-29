@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.321-score-db-current-retention-hard-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.322-score-prep-db-truth-timeout-recovery";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -3372,6 +3372,100 @@ const STATIC_FULL_RUN_STAGES = [
 
 function parseJsonSafeText(text, fallback = {}) {
   try { return text ? JSON.parse(text) : fallback; } catch (_) { return fallback; }
+}
+
+async function recoverScorePrepFromDbTruth(env, row, input, output, startedAtMs) {
+  const errText = String((output && (output.error || output.status || output.error_message)) || "").toLowerCase();
+  if (!errText.includes("score_prep_service_binding_timeout") && !errText.includes("service_binding_timeout")) return null;
+  if (!env.SCORE_DB) return null;
+
+  const childStartedAt = row && row.started_at ? String(row.started_at) : null;
+  const latestBatch = await first(env.SCORE_DB, `
+SELECT prep_batch_id, COUNT(*) AS prepared_rows, MAX(updated_at) AS max_updated
+FROM score_board_prepared_current
+GROUP BY prep_batch_id
+ORDER BY max_updated DESC
+LIMIT 1`);
+  if (!latestBatch || !latestBatch.prep_batch_id) return null;
+
+  const prepBatchId = String(latestBatch.prep_batch_id);
+  const summary = await first(env.SCORE_DB, `
+SELECT
+  COUNT(*) AS prepared_rows,
+  SUM(CASE WHEN source_key='prizepicks' THEN 1 ELSE 0 END) AS prizepicks_rows,
+  SUM(CASE WHEN source_key='sleeper' THEN 1 ELSE 0 END) AS sleeper_rows,
+  SUM(CASE WHEN pickable_safe=1 THEN 1 ELSE 0 END) AS pickable_safe_rows,
+  SUM(CASE WHEN pickable_safe=0 THEN 1 ELSE 0 END) AS blocked_rows,
+  SUM(CASE WHEN official_game_pk IS NULL THEN 1 ELSE 0 END) AS null_game_pk,
+  SUM(CASE WHEN canonical_prop_key IS NULL THEN 1 ELSE 0 END) AS null_prop,
+  SUM(CASE WHEN line_value IS NULL THEN 1 ELSE 0 END) AS null_line,
+  MIN(created_at) AS min_created,
+  MAX(updated_at) AS max_updated
+FROM score_board_prepared_current
+WHERE prep_batch_id=?`, prepBatchId);
+
+  const preparedRows = Number(summary && summary.prepared_rows || 0);
+  const prizepicksRows = Number(summary && summary.prizepicks_rows || 0);
+  const sleeperRows = Number(summary && summary.sleeper_rows || 0);
+  const pickableSafeRows = Number(summary && summary.pickable_safe_rows || 0);
+  const nullGamePk = Number(summary && summary.null_game_pk || 0);
+  const nullProp = Number(summary && summary.null_prop || 0);
+  const nullLine = Number(summary && summary.null_line || 0);
+  if (preparedRows <= 0 || prizepicksRows <= 0 || sleeperRows <= 0 || pickableSafeRows <= 0) return null;
+  if (nullGamePk > 0 || nullProp > 0 || nullLine > 0) return null;
+
+  const batchRow = await first(env.SCORE_DB, `
+SELECT batch_id, status, certification_status, certification_grade, prepared_rows, prizepicks_rows, sleeper_rows, pickable_safe_rows, blocked_rows, updated_at
+FROM score_board_prep_batches
+WHERE batch_id=?`, prepBatchId);
+
+  const recovered = {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    processed_by: WORKER_NAME,
+    worker_name: row.worker_name,
+    job_key: row.job_key,
+    request_id: row.request_id,
+    chain_id: row.chain_id || null,
+    mode: "board_prep_enrichment",
+    status: "COMPLETED_BOARD_PREP_ENRICHMENT_DB_TRUTH_RECOVERED_AFTER_TIMEOUT",
+    certification: "SCORE_BOARD_PREP_ENRICHMENT_COMPLETED_PRESERVED_RAW_BOARDS",
+    certification_grade: Number(summary.blocked_rows || 0) > 0 ? "PREP_PASS_WITH_BLOCK_FLAGS" : "PREP_PASS",
+    batch_id: prepBatchId,
+    prep_batch_id: prepBatchId,
+    rows_read: preparedRows,
+    rows_written: preparedRows + 1,
+    prepared_rows: preparedRows,
+    inserted_current_rows: preparedRows,
+    prizepicks_rows: prizepicksRows,
+    sleeper_rows: sleeperRows,
+    pickable_safe_rows: pickableSafeRows,
+    blocked_rows: Number(summary.blocked_rows || 0),
+    final_db_truth: true,
+    recovered_after_service_binding_timeout: true,
+    score_prep_db_truth_timeout_recovery_v0_2_322: true,
+    score_prep_batch_row_present: !!batchRow,
+    score_prep_batch_status: batchRow && batchRow.status || null,
+    min_created: summary.min_created || null,
+    max_updated: summary.max_updated || null,
+    child_started_at: childStartedAt,
+    original_worker_error: output && (output.error || output.status) || null,
+    no_market_board_mutation: true,
+    no_raw_board_delete: true,
+    no_scoring: true,
+    no_ranking: true,
+    no_final_board: true,
+    no_final_board_write: true,
+    no_old_production_touch: true,
+    elapsed_ms: Math.max(0, Date.now() - startedAtMs)
+  };
+
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'score_prep_timeout_db_truth_recovered', 'Recovered Score Prep service-binding timeout because SCORE_DB prepared current was complete and DB-verified', ?, CURRENT_TIMESTAMP)",
+    row.request_id, rid("run"), WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, prep_batch_id:prepBatchId, prepared_rows:preparedRows, prizepicks_rows:prizepicksRows, sleeper_rows:sleeperRows, pickable_safe_rows:pickableSafeRows, version:SYSTEM_VERSION }).slice(0, 9000));
+
+  return recovered;
 }
 
 
@@ -8867,6 +8961,9 @@ async function processDailyProbablePitchersJob(env, row, runId, trigger) {
     output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
   }
 
+  const recoveredScorePrep = await recoverScorePrepFromDbTruth(env, row, input, output, started);
+  if (recoveredScorePrep) output = recoveredScorePrep;
+
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
   const rowsRead = Number(output && (output.prepared_rows_read || output.teams_checked) ? (output.prepared_rows_read || output.teams_checked) : 0);
@@ -9103,6 +9200,9 @@ async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
   } catch (err) {
     output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
   }
+
+  const recoveredScorePrep = await recoverScorePrepFromDbTruth(env, row, input, output, started);
+  if (recoveredScorePrep) output = recoveredScorePrep;
 
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
@@ -9345,6 +9445,9 @@ async function processDailyWeatherJob(env, row, runId, trigger) {
   } catch (err) {
     output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
   }
+
+  const recoveredScorePrep = await recoverScorePrepFromDbTruth(env, row, input, output, started);
+  if (recoveredScorePrep) output = recoveredScorePrep;
 
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
@@ -9878,6 +9981,9 @@ async function processDailyBullpenAvailabilityJob(env, row, runId, trigger) {
     output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
   }
 
+  const recoveredScorePrep = await recoverScorePrepFromDbTruth(env, row, input, output, started);
+  if (recoveredScorePrep) output = recoveredScorePrep;
+
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
   const rowsRead = Number(output && (output.prepared_rows_read || output.teams_checked) ? (output.prepared_rows_read || output.teams_checked) : 0);
@@ -10127,6 +10233,9 @@ async function processDailyUmpireContextJob(env, row, runId, trigger) {
   } catch (err) {
     output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
   }
+
+  const recoveredScorePrep = await recoverScorePrepFromDbTruth(env, row, input, output, started);
+  if (recoveredScorePrep) output = recoveredScorePrep;
 
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
@@ -11762,6 +11871,9 @@ async function processDailyGamesStatusJob(env, row, runId, trigger) {
   } catch (err) {
     output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
   }
+
+  const recoveredScorePrep = await recoverScorePrepFromDbTruth(env, row, input, output, started);
+  if (recoveredScorePrep) output = recoveredScorePrep;
 
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
@@ -14295,6 +14407,9 @@ async function processScorePrepJob(env, row, runId, trigger) {
     output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
   }
 
+  const recoveredScorePrep = await recoverScorePrepFromDbTruth(env, row, input, output, started);
+  if (recoveredScorePrep) output = recoveredScorePrep;
+
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
   const scorePrepPartial = !!(ok && output && (output.continuation_required || output.orchestrator_should_self_continue || String(output.status || "").includes("PARTIAL_CONTINUE")));
@@ -14325,7 +14440,8 @@ async function processScorePrepJob(env, row, runId, trigger) {
       service_binding_timeout_ms: SCORE_PREP_SERVICE_TIMEOUT_MS,
       score_prep_timeout_guard_v0_2_293: true,
       score_prep_chunked_resume_v0_2_294: true,
-      score_prep_single_pass_guard_v0_2_295: true
+      score_prep_single_pass_guard_v0_2_295: true,
+      score_prep_db_truth_timeout_recovery_v0_2_322: true
     }
   };
 

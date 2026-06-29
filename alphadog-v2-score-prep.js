@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-score-prep";
-const VERSION = "alphadog-v2-score-prep-v0.2.19-single-pass-stage-swap";
+const VERSION = "alphadog-v2-score-prep-v0.2.20-fast-finalize-after-db-truth";
 const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
@@ -1544,6 +1544,7 @@ async function runBoardPrep(env, input) {
       score_prep_stage_table_write: true,
       score_prep_resume_batch_recovery: true,
       score_prep_single_pass_stage_swap_v0_2_19: true,
+    score_prep_fast_finalize_after_db_truth_v0_2_20: true,
       current_table_retention_policy: "partial_new_batch_rows_may_coexist_with_previous_current_until_final_verify_cleanup",
       by_source: bySource,
       timing_ms: { ...timing, total_ms: Date.now() - wallStart },
@@ -1554,31 +1555,11 @@ async function runBoardPrep(env, input) {
   await controlLog(env, input, "INFO", "score_prep_write_verified", "Score Prep inserted and DB-verified replacement rows before old-batch cleanup", { batch_id: batchId, totals, by_source: bySource, timing_ms: timing });
   await controlRunHeartbeat(env, input, "SCORE_PREP_WRITE_VERIFIED", totals.rows_read, totals.rows_written, { batch_id: batchId, totals, by_source: bySource });
 
-  const sampleStart = Date.now();
-  const blockedSampleRows = await allRows(env.SCORE_DB, `
-SELECT source_key, player_name, team, opponent, canonical_prop_key, line_value, official_game_pk,
-       official_game_time_utc, matchup_status, player_match_status, pickable_safe, block_reason
-FROM score_board_prepared_current
-WHERE prep_batch_id = ? AND pickable_safe = 0
-ORDER BY source_key, source_event_id, player_name, canonical_prop_key
-LIMIT 20`, [batchId]);
-  timing.sample_ms = Date.now() - sampleStart;
-
-  const blockedSamples = blockedSampleRows.map(r => ({
-    source_key: r.source_key,
-    player_name: r.player_name,
-    team: r.team,
-    opponent: r.opponent,
-    canonical_prop_key: r.canonical_prop_key,
-    line_value: r.line_value,
-    official_game_pk: r.official_game_pk,
-    official_game_time_utc: r.official_game_time_utc,
-    matchup_status: r.matchup_status,
-    player_match_status: r.player_match_status,
-    pickable_safe: r.pickable_safe,
-    block_reason: r.block_reason
-  }));
-
+  // v0.2.20: the DB-truth point is the safe terminal point.
+  // Prior code did extra sample reads and returned large diagnostics after
+  // score_prep_write_verified; the service binding could time out even though
+  // score_board_prepared_current had already been inserted and verified.
+  // Return a compact certified payload immediately after DB truth.
   return {
     ok: true,
     data_ok: true,
@@ -1605,14 +1586,11 @@ LIMIT 20`, [batchId]);
     score_prep_stage_table_write: true,
     score_prep_resume_batch_recovery: true,
       score_prep_single_pass_stage_swap_v0_2_19: true,
+    score_prep_fast_finalize_after_db_truth_v0_2_20: true,
     current_table_retention_policy: "score_board_prepared_current_current_pt_today_tomorrow_only_insert_verify_then_cleanup_old_batches",
     by_source: bySource,
-    sleeper_event_resolution: writeResult.sleeperEvents,
-    blocked_samples: blockedSamples,
-    calendar_rows_loaded: calendar.rows.length,
-    ref_alias_rows_loaded: ref.aliases.length,
-    ref_prop_alias_rows_loaded: ref.propAliases.length,
-    ref_player_rows_loaded: ref.players.length,
+    sleeper_event_resolution_count: Array.isArray(writeResult.sleeperEvents) ? writeResult.sleeperEvents.length : 0,
+    diagnostics_compacted_after_db_truth: true,
     output_tables: ["SCORE_DB.score_board_prep_batches", "SCORE_DB.score_board_prepared_current"],
     no_market_board_mutation: true,
     no_raw_board_delete: true,
