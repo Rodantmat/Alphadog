@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.323-market-teams-db-truth-timeout-recovery";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.324-expansion-v2-fast-chunk-parity";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12404,7 +12404,7 @@ async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
     const rowsReadPartial = Number((output && (output.hitter_log_rows_read || 0)) || 0) + Number((output && (output.pitcher_log_rows_read || 0)) || 0);
     const rowsWrittenPartial = Number(output && (output.rows_written || output.rows_staged || output.rows_promoted || 0));
     const certPartial = String((output && output.certification) || "PLAYER_BASELINE_SANITY_PARTIAL_CONTINUE").slice(0, 120);
-    const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
+    const runAfterSeconds = expansionV2AllCurrent ? Math.max(0, Math.min(5, Number(output.run_after_delay_seconds ?? 0))) : Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
     const cappedPartialOutput = {
       ...output,
       orchestrator_dispatch: {
@@ -12584,10 +12584,15 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   input.no_final_board = true;
   input.no_scheduler_mutation = true;
   const expansionV2AllCurrent = input.read_all_hp_v2_current === true || String(input.source_hp_v2_batch_id || input.hp_v2_batch_id || '').toUpperCase() === '__ALL_HIT_PROBABILITY_V2_CURRENT__' || String(input.source_hp_v2_batch_id || input.hp_v2_batch_id || '').toUpperCase() === 'ALL' || String(input.source_hp_v2_batch_id || input.hp_v2_batch_id || '') === '*';
-  input.v2_all_current_chunk_size = expansionV2AllCurrent ? Math.max(96, Math.min(220, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 160))) : input.v2_all_current_chunk_size;
-  input.v2_chunk_size = expansionV2AllCurrent ? Math.max(96, Math.min(220, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 160))) : Math.max(10, Math.min(150, Number(input.v2_chunk_size || 80)));
-  input.v2_soft_yield_ms = expansionV2AllCurrent ? Math.max(45000, Math.min(65000, Number(input.v2_soft_yield_ms || 60000))) : input.v2_soft_yield_ms;
-  if (expansionV2AllCurrent) input.fast_safe_chunk_policy = 'all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s';
+  const expansionV2FastChunkDefault = 160;
+  const expansionV2FastChunkCap = 220;
+  input.v2_all_current_chunk_size = expansionV2AllCurrent ? Math.max(expansionV2FastChunkDefault, Math.min(expansionV2FastChunkCap, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || expansionV2FastChunkDefault))) : input.v2_all_current_chunk_size;
+  input.v2_chunk_size = expansionV2AllCurrent ? Math.max(expansionV2FastChunkDefault, Math.min(expansionV2FastChunkCap, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || expansionV2FastChunkDefault))) : Math.max(10, Math.min(150, Number(input.v2_chunk_size || 80)));
+  input.v2_soft_yield_ms = expansionV2AllCurrent ? Math.max(60000, Math.min(65000, Number(input.v2_soft_yield_ms || 60000))) : input.v2_soft_yield_ms;
+  if (expansionV2AllCurrent) {
+    input.fast_safe_chunk_policy = 'all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s_orchestrator_v0_2_324';
+    input.expansion_v2_fast_chunk_orchestrator_parity_v0_2_324 = true;
+  }
 
   if (!env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER || typeof env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER.fetch !== "function") {
     const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", job_key:row.job_key, request_id:row.request_id, run_id:runId, status:"EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING", certification:"EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING", certification_grade:"BLOCKED", required_binding:"PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER" };
@@ -12608,17 +12613,27 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   }
 
   const partial = !!(output && (output.partial_continue || output.orchestrator_should_self_continue || output.continuation_required));
-  const nextInput = output && output.next_input_json && typeof output.next_input_json === "object" ? output.next_input_json : (output && output.next_input && typeof output.next_input === "object" ? output.next_input : null);
+  let nextInput = output && output.next_input_json && typeof output.next_input_json === "object" ? output.next_input_json : (output && output.next_input && typeof output.next_input === "object" ? output.next_input : null);
+  if (partial && nextInput && expansionV2AllCurrent) {
+    nextInput = {
+      ...nextInput,
+      v2_chunk_size: Math.max(expansionV2FastChunkDefault, Math.min(expansionV2FastChunkCap, Number(nextInput.v2_chunk_size || input.v2_chunk_size || expansionV2FastChunkDefault))),
+      v2_all_current_chunk_size: Math.max(expansionV2FastChunkDefault, Math.min(expansionV2FastChunkCap, Number(nextInput.v2_all_current_chunk_size || input.v2_all_current_chunk_size || expansionV2FastChunkDefault))),
+      v2_soft_yield_ms: Math.max(60000, Math.min(65000, Number(nextInput.v2_soft_yield_ms || input.v2_soft_yield_ms || 60000))),
+      fast_safe_chunk_policy: 'all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s_orchestrator_v0_2_324',
+      expansion_v2_fast_chunk_orchestrator_parity_v0_2_324: true
+    };
+  }
   const cert = String((output && output.certification) || (partial ? "BASELINE_V2_HEB_PARTIAL_CONTINUE" : (output && output.ok ? "BASELINE_V2_HEB_COMPLETED" : "BASELINE_V2_HEB_FAILED"))).slice(0,120);
   const rowsRead = Number(output && (output.source_rows_read || output.rows_read || 0));
   const rowsWritten = Number(output && (output.rows_written || output.rows_promoted || output.rows_staged || 0));
   const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
 
   if (partial && nextInput) {
-    const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
+    const runAfterSeconds = expansionV2AllCurrent ? Math.max(0, Math.min(5, Number(output.run_after_delay_seconds ?? 0))) : Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
     await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,cert,rowsRead,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(cappedOutput));
     await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", runAfterSeconds, safeStringifyD1(nextInput), safeStringifyD1(cappedOutput), row.request_id);
-    await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'expansion_baseline_partial_continue', 'Orchestrator scheduled Expansion Baseline continuation', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,JSON.stringify({request_id:row.request_id,run_id:runId,certification:cert,batch_id:nextInput.batch_id||null,v2_cursor_offset:nextInput.v2_cursor_offset||null,delta_cursor_offset:nextInput.delta_cursor_offset||null,delta_mining_batch_id:nextInput.delta_mining_batch_id||null,mode:nextInput.mode||input.mode||null,run_after_seconds:runAfterSeconds,version:SYSTEM_VERSION}).slice(0,9000));
+    await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'expansion_baseline_partial_continue', 'Orchestrator scheduled Expansion Baseline continuation with V2 fast-chunk parity preserved', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,JSON.stringify({request_id:row.request_id,run_id:runId,certification:cert,batch_id:nextInput.batch_id||null,v2_cursor_offset:nextInput.v2_cursor_offset||null,v2_chunk_size:nextInput.v2_chunk_size||null,v2_all_current_chunk_size:nextInput.v2_all_current_chunk_size||null,v2_soft_yield_ms:nextInput.v2_soft_yield_ms||null,fast_safe_chunk_policy:nextInput.fast_safe_chunk_policy||null,delta_cursor_offset:nextInput.delta_cursor_offset||null,delta_mining_batch_id:nextInput.delta_mining_batch_id||null,mode:nextInput.mode||input.mode||null,run_after_seconds:runAfterSeconds,expansion_v2_fast_chunk_orchestrator_parity_v0_2_324:!!nextInput.expansion_v2_fast_chunk_orchestrator_parity_v0_2_324,version:SYSTEM_VERSION}).slice(0,9000));
     return cappedOutput;
   }
 
@@ -17308,7 +17323,7 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
     ? { ...output.next_input_json }
     : (isExpansionFullRun
       ? { ...input, mode: input.mode || 'expansion_baseline_full_run', expansion_mode: input.expansion_mode || input.mode || 'expansion_baseline_full_run', expansion_full_run_stale_running_rescue: true }
-      : { ...input, mode: 'baseline_v2_heb', expansion_mode: 'baseline_v2_heb', v2_chunk_size: Math.max(96, Math.min(220, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 160))), v2_all_current_chunk_size: Math.max(96, Math.min(220, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 160))), v2_soft_yield_ms: Math.max(45000, Math.min(65000, Number(input.v2_soft_yield_ms || 60000))), fast_safe_chunk_policy: 'all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s', expansion_v2_stale_running_rescue: true });
+      : { ...input, mode: 'baseline_v2_heb', expansion_mode: 'baseline_v2_heb', v2_chunk_size: Math.max(160, Math.min(220, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 160))), v2_all_current_chunk_size: Math.max(160, Math.min(220, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 160))), v2_soft_yield_ms: Math.max(60000, Math.min(65000, Number(input.v2_soft_yield_ms || 60000))), fast_safe_chunk_policy: 'all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s_orchestrator_v0_2_324', expansion_v2_fast_chunk_orchestrator_parity_v0_2_324: true, expansion_v2_stale_running_rescue: true });
   nextInput.request_id = row.request_id;
   nextInput.chain_id = row.chain_id;
   nextInput.job_key = row.job_key;
