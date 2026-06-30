@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.33-baseline-v2-hot-resume-heartbeat";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.34-baseline-v2-calibration-guard";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -712,8 +712,8 @@ async function runHp(env,input={}){
 
 
 // ---------------- Parallel V2 HEB baseline system ----------------
-const BASELINE_V2_FORMULA_VERSION = "baseline_v2_full_prop_models_v0.2.3_pitcher_workload_bf_source_soft_caps";
-const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v2_confidence_v0.2.3_pitcher_workload_bf_source_soft_caps";
+const BASELINE_V2_FORMULA_VERSION = "baseline_v2_full_prop_models_v0.2.4_calibration_guard_floor_empirical_blend";
+const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v2_confidence_v0.2.4_gap_deflation_guard";
 const V2_ENTITY_VALUE_CACHE = new Map();
 const V2_PROFILE_PRIOR_CACHE = new Map();
 const V2_GLOBAL_VALUE_CACHE = new Map();
@@ -1009,6 +1009,40 @@ function modelRfiBaseline(values,line,side){ const hs=hitStatsFor(values,line,si
 async function lockedBaselineModel(env,row,line,side,entityType,profileNamespace,formulaKey){ const prop=String(row.canonical_prop_key||""); const source=String(row.source_key||""); const modelKey=`${entityType}|${source}|${Number(row.mlb_player_id||0)}|${prop}|${line}|${side}|${profileNamespace}|${formulaKey}`; if(V2_BASELINE_MODEL_CACHE.has(modelKey)) return V2_BASELINE_MODEL_CACHE.get(modelKey); let result; if(prop==="rfi_nrfi"){ const vals=await loadValuesForHpRow(env,row); result=modelRfiBaseline(vals,line,side); }
   else { const rows=await loadBaselineModelRows(env,row,entityType); result=entityType==="pitcher"?modelPitcherComponent(rows,prop,line,side,source,formulaKey):modelHitterBaseline(rows,prop,line,side,source); }
   const hp=result.prob==null?null:round(clamp(result.prob*100,0,100),2); const conf=result.prob==null?5:round(clamp(result.confidence,1,95),2); const out={...result, baseline_hp_0_100:hp, baseline_confidence_0_100:conf, model_version:BASELINE_V2_FORMULA_VERSION, confidence_version:BASELINE_V2_CONFIDENCE_VERSION, binary_game_rate_replaced:true}; V2_BASELINE_MODEL_CACHE.set(modelKey,out); return out; }
+function applyBaselineV2CalibrationGuard({prop, entityType, side, line, hp, confidence, hs}){
+  if(hp==null) return {hp, confidence, adjusted:false, notes:{}};
+  const notes={floor_min_0_05_max_99_95:true};
+  let outHp=Number(hp);
+  let outConf=Number(confidence||5);
+  const raw=hs && hs.raw_rate_0_100!=null ? Number(hs.raw_rate_0_100) : null;
+  const sample=Number(hs && hs.non_push_sample || 0);
+  const p=String(prop||"").toLowerCase();
+  const et=String(entityType||"").toLowerCase();
+  let adjusted=false;
+
+  // v0.1.34: absolute 0/100 HP is not allowed in history-only baseline rows.
+  // These are tail probabilities, not physical impossibilities. Clamp symmetrically so exact
+  // no-push complements remain 0.05 + 99.95 when both sides share the same event universe.
+  const floored=round(clamp(outHp,0.05,99.95),2);
+  if(floored!==outHp){ adjusted=true; notes.hp_floor_applied={before:outHp,after:floored}; outHp=floored; }
+
+  // v0.1.34: sample-proven calibration audit found HITTER hits MORE 1.5 / 0.5 was over-shrunk
+  // by the component prior. For large/stabilized direct histories, blend back toward empirical
+  // binary truth. This preserves complements when the opposite side uses the same raw universe.
+  if(et==="hitter" && p==="hits" && raw!=null && sample>=40 && Math.abs(outHp-raw)>15){
+    const blended=round(clamp(0.65*raw + 0.35*outHp,0.05,99.95),2);
+    notes.large_sample_hits_empirical_blend={sample,raw_rate_0_100:raw,before:outHp,after:blended,alpha_raw:0.65,alpha_model:0.35};
+    outHp=blended; adjusted=true;
+  }
+
+  // v0.1.34: if model-calibrated HP remains far from direct empirical rate, confidence must
+  // advertise prior/model override risk instead of passing through moderate/high confidence.
+  if(raw!=null && sample>=30 && Math.abs(outHp-raw)>15 && outConf>15){
+    notes.confidence_gap_deflated={sample,raw_rate_0_100:raw,hp_0_100:outHp,before:outConf,after:15,gap_0_100:round(Math.abs(outHp-raw),2)};
+    outConf=15; adjusted=true;
+  }
+  return {hp:round(outHp,2), confidence:round(clamp(outConf,1,95),2), adjusted, notes};
+}
 
 async function runBaselineV2(env,input={}){
   await ensureSchema(env); await ensureBaselineV2Schema(env);
@@ -1127,12 +1161,15 @@ async function runBaselineV2(env,input={}){
     const roleProfile=entityType==="pitcher"?"V2_PITCHER_ENTITY":(entityType==="game_pair"?"V2_GAME_PAIR_ENTITY":"V2_HITTER_ENTITY");
     const canonicalKey=canonicalBaselineKey(r,line,side,profileNamespace,formulaKey);
     const sanityId=`pbs_v2|${canonicalKey}`; const hpId=`pbhp_v2|${canonicalKey}`;
-    const confidence=round(clamp(model.baseline_confidence_0_100,1,95),2);
-    const post=model.baseline_hp_0_100;
-    const trace={source_key:r.source_key,source_formula_key:formulaKey,profile_namespace:profileNamespace,entity_type:entityType,exact_line_value:line,selected_side:side,direct_binary_reference:{...hs},model,model_family:"locked_full_prop_baseline_v2",binary_game_rate_replaced:true,sample_tier:sampleTier,canonical_entity_line_side_key:canonicalKey,source_keys:String(r.source_keys||r.source_key||""),baseline_formula_scope:String(r.baseline_formula_scope||""),source_hp_v2_rows:Number(r.source_hp_v2_rows||1),source_hp_v2_batch_ids:String(r.source_hp_v2_batch_ids||sourceHpV2BatchId||""),source_hp_v2_batch_id:sourceHpV2BatchId,source_game_pks:String(r.source_game_pks||r.game_pk||""),no_daily_context:true,no_market_context:true,no_scoring_context:true};
+    let confidence=round(clamp(model.baseline_confidence_0_100,1,95),2);
+    let post=model.baseline_hp_0_100;
+    const calibrationGuard=applyBaselineV2CalibrationGuard({prop:r.canonical_prop_key,entityType,side,line,hp:post,confidence,hs});
+    post=calibrationGuard.hp; confidence=calibrationGuard.confidence;
+    const calibratedModel={...model, baseline_hp_0_100:post, baseline_confidence_0_100:confidence, calibration_guard_v0_1_34:calibrationGuard};
+    const trace={source_key:r.source_key,source_formula_key:formulaKey,profile_namespace:profileNamespace,entity_type:entityType,exact_line_value:line,selected_side:side,direct_binary_reference:{...hs},model:calibratedModel,raw_model_before_calibration:model,model_family:"locked_full_prop_baseline_v2",binary_game_rate_replaced:true,calibration_guard_v0_1_34:calibrationGuard,sample_tier:sampleTier,canonical_entity_line_side_key:canonicalKey,source_keys:String(r.source_keys||r.source_key||""),baseline_formula_scope:String(r.baseline_formula_scope||""),source_hp_v2_rows:Number(r.source_hp_v2_rows||1),source_hp_v2_batch_ids:String(r.source_hp_v2_batch_ids||sourceHpV2BatchId||""),source_hp_v2_batch_id:sourceHpV2BatchId,source_game_pks:String(r.source_game_pks||r.game_pk||""),no_daily_context:true,no_market_context:true,no_scoring_context:true};
     if(post==null){ issues++; stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_hp_v2_issues (issue_id,batch_id,source_baseline_row_id,severity,issue_code,issue_message,issue_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(rid("pbhp_v2_issue"),batchId,sanityId,"BLOCK","V2_MODEL_NO_PROBABILITY","Locked baseline model could not emit probability",safeJson({row:r,trace}))); if(stageStatements.length>=stageBatchSize) await flushStageStatements(); continue; }
     const stats=valueStats(values);
-    stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_sanity_v2_stage (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,role_profile,prior_pool_key,sanity_profile_key,sample_profile,usage_profile,line_difficulty_profile,volatility_profile,baseline_drag_profile,confidence_drag_profile,variance_profile,games_sample,events_sample,baseline_confidence_0_100,line_baseline_json,distribution_shape_json,notes_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(sanityId,batchId,entityType,Number(r.mlb_player_id)||null,r.player_name,r.canonical_prop_key,roleProfile,`${profileNamespace}|${side}|${lineBucket}|${sampleTier}`,`${profileNamespace}${sampleTier}`,sampleTier,(model.games||hs.non_push_sample)>=20?"ESTABLISHED_HISTORY":"LIMITED_HISTORY",lineDifficulty(profileNamespace,line),stats.volatility_profile,"NONE","NONE",stats.volatility_profile,model.games||values.length,model.games||values.length,confidence,safeJson({line,line_rates:{[String(line)]:hs},model,trace}),safeJson({...stats,model_engine:model.engine}),safeJson(trace)));
+    stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_sanity_v2_stage (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,role_profile,prior_pool_key,sanity_profile_key,sample_profile,usage_profile,line_difficulty_profile,volatility_profile,baseline_drag_profile,confidence_drag_profile,variance_profile,games_sample,events_sample,baseline_confidence_0_100,line_baseline_json,distribution_shape_json,notes_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(sanityId,batchId,entityType,Number(r.mlb_player_id)||null,r.player_name,r.canonical_prop_key,roleProfile,`${profileNamespace}|${side}|${lineBucket}|${sampleTier}`,`${profileNamespace}${sampleTier}`,sampleTier,(model.games||hs.non_push_sample)>=20?"ESTABLISHED_HISTORY":"LIMITED_HISTORY",lineDifficulty(profileNamespace,line),stats.volatility_profile,"NONE","NONE",stats.volatility_profile,model.games||values.length,model.games||values.length,confidence,safeJson({line,line_rates:{[String(line)]:hs},model:calibratedModel,trace}),safeJson({...stats,model_engine:model.engine}),safeJson(trace)));
     stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_hp_v2_stage (baseline_hp_row_id,batch_id,source_sanity_batch_id,source_baseline_row_id,player_type,player_id,player_name,canonical_prop_key,prop_family,line_value,selected_side,baseline_hp_0_100,hp_adjustment_0_100,raw_rate_0_100,tier_prior_rate_0_100,raw_prior_gap_0_100,baseline_confidence_0_100,baseline_enriched_confidence_0_100,consistency_bonus_0_100,soft_uncertainty_reserve_0_100,sample_profile,role_profile,sanity_profile_key,volatility_profile,variance_profile,line_difficulty_profile,baseline_hp_profile_key,non_push_sample,hit_count,miss_count,push_count,prior_strength,formula_version,confidence_formula_version,no_daily_context,no_market_context,no_scoring_context,profile_notes_json,source_snapshot_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,1,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(hpId,batchId,batchId,sanityId,entityType,Number(r.mlb_player_id)||null,r.player_name,r.canonical_prop_key,propFamilyV2(r.canonical_prop_key,entityType),line,side,post,0,hs.raw_rate_0_100,post,hs.raw_rate_0_100==null?null:round(hs.raw_rate_0_100-post,2),confidence,confidence,0,round(100-confidence,2),sampleTier,roleProfile,`${profileNamespace}${sampleTier}`,stats.volatility_profile,stats.volatility_profile,lineDifficulty(profileNamespace,line),`${profileNamespace}MODEL_${sampleTier}`,hs.non_push_sample,hs.hit,hs.miss,hs.push,model.games||hs.non_push_sample||1,BASELINE_V2_FORMULA_VERSION,BASELINE_V2_CONFIDENCE_VERSION,safeJson(trace),safeJson({source_rows:model.games||values.length,source_formula_key:formulaKey,profile_namespace:profileNamespace,canonical_entity_line_side_key:canonicalKey,source_keys:String(r.source_keys||r.source_key||""),baseline_formula_scope:String(r.baseline_formula_scope||""),source_hp_v2_rows:Number(r.source_hp_v2_rows||1),source_hp_v2_batch_id:sourceHpV2BatchId,source_hp_v2_batch_ids:String(r.source_hp_v2_batch_ids||sourceHpV2BatchId||""),source_game_pks:String(r.source_game_pks||r.game_pk||""),model_engine:model.engine,binary_game_rate_replaced:true})));
     if(stageStatements.length>=stageBatchSize) await flushStageStatements();
     written++;
