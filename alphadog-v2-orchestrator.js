@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.325-incremental-expansion-separated-calendar-certified";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.326-expansion-delta-inventory-scoped-hp-chunks";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -4112,10 +4112,15 @@ async function buildLinkedIncrementalMorningFullRunChildInput(env, parentRow, st
 
   if (stage.stage_key === "expansion_delta_sanity") {
     const mining = await latestCompletedIncrementalStageOutput(env, parentRow, "expansion_delta_mining");
+    const inventory = await latestCompletedIncrementalStageOutput(env, parentRow, "expansion_line_inventory_delta");
     input.requires_completed_expansion_mining = true;
+    input.requires_completed_expansion_line_inventory = true;
     input.delta_mining_batch_id = mining.batch_id || mining.delta_mining_batch_id || null;
     input.delta_game_pks = Array.isArray(mining.delta_game_pks) ? mining.delta_game_pks : null;
     input.expansion_mining_certification = mining.certification || null;
+    input.line_inventory_batch_id = inventory.batch_id || inventory.line_inventory_batch_id || null;
+    input.expansion_line_inventory_certification = inventory.certification || null;
+    input.inventory_scoped_delta_sanity_v0_2_326 = true;
   }
 
   if (stage.stage_key === "expansion_delta_hp") {
@@ -4124,6 +4129,8 @@ async function buildLinkedIncrementalMorningFullRunChildInput(env, parentRow, st
     input.delta_sanity_batch_id = sanity.batch_id || sanity.delta_sanity_batch_id || sanity.source_sanity_batch_id || null;
     input.source_sanity_batch_id = input.delta_sanity_batch_id;
     input.expansion_sanity_certification = sanity.certification || null;
+    input.hp_source_chunk_size = Math.max(10, Math.min(60, Number(input.hp_source_chunk_size || 40)));
+    input.delta_hp_chunked_v0_2_326 = true;
   }
 
   if (stage.stage_key === "calendar_tally_final_check") {
