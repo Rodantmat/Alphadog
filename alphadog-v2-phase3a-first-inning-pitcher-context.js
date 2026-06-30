@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.30-pitcher-workload-bf-source-soft-caps";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.31-delta-sanity-inventory-scoped-hp-chunks";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -1291,16 +1291,37 @@ async function runDeltaSanity(env,input={}){
   await ensureSchema(env);
   const requestId=String(input.request_id||rid("expansion_delta_sanity")); const runId=String(input.run_id||rid("run")); const batchId=String(input.delta_sanity_batch_id||input.batch_id||rid("expansion_delta_sanity_batch"));
   const miningBatchId=String(input.delta_mining_batch_id||input.mining_batch_id||"");
+  const lineInventoryBatchId=String(input.line_inventory_batch_id||input.expansion_line_inventory_batch_id||input.delta_line_inventory_batch_id||"");
   await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_batches",`INSERT OR REPLACE INTO expansion_player_baseline_sanity_batches (batch_id,request_id,run_id,mode,status,worker_version,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"expansion_delta_sanity","running",VERSION);
   await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_stage",`DELETE FROM expansion_player_baseline_sanity_stage WHERE batch_id=?`,batchId);
-  const affected= miningBatchId ? await all(env.CONTEXT_DB,`SELECT DISTINCT pitcher_id FROM expansion_first_inning_pitcher_context_current WHERE batch_id=? AND pitcher_id IS NOT NULL`,miningBatchId) : [];
-  const affectedIds=affected.map(r=>Number(r.pitcher_id)).filter(Boolean);
-  const sanityRows=await buildExpansionSanityRows(env,batchId,affectedIds,true);
+  const minedPitchers= miningBatchId ? await all(env.CONTEXT_DB,`SELECT DISTINCT pitcher_id FROM expansion_first_inning_pitcher_context_current WHERE batch_id=? AND pitcher_id IS NOT NULL`,miningBatchId) : [];
+  const inventoryMissing = lineInventoryBatchId ? await all(env.SCORE_DB,`SELECT hp.mlb_player_id AS player_id, hp.source_key, hp.canonical_prop_key, hp.selected_side, hp.board_line_value AS line_value, inv.profile_namespace
+    FROM hit_probability_v2_current hp
+    INNER JOIN expansion_line_inventory_current inv
+      ON inv.batch_id=?
+     AND inv.source_key=hp.source_key
+     AND inv.canonical_prop_key=hp.canonical_prop_key
+     AND inv.selected_side=hp.selected_side
+     AND inv.line_value=hp.board_line_value
+    WHERE hp.baseline_hp_row_id IS NULL
+      AND COALESCE(inv.needs_dynamic_generation,0)=1
+      AND COALESCE(inv.missing_baseline_rows,0)>0`,lineInventoryBatchId) : [];
+  const affectedSet=new Set();
+  for(const r of minedPitchers){ const id=Number(r.pitcher_id); if(id) affectedSet.add(id); }
+  for(const r of inventoryMissing){ const id=Number(r.player_id); if(id) affectedSet.add(id); }
+  const affectedIds=[...affectedSet];
+  const includeRfiPp=inventoryMissing.some(r=>String(r.profile_namespace||'')==='RFI_PP_' || (String(r.source_key||'')==='prizepicks' && String(r.canonical_prop_key||'')==='rfi_nrfi')) || minedPitchers.length>0;
+  const hasWork=affectedIds.length>0 || includeRfiPp;
+  const sanityRows=hasWork ? await buildExpansionSanityRows(env,batchId,affectedIds,includeRfiPp) : [];
   await insertSanityRows(env,sanityRows);
-  await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_current",`INSERT OR REPLACE INTO expansion_player_baseline_sanity_current SELECT * FROM expansion_player_baseline_sanity_stage WHERE batch_id=?`,batchId);
-  await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_history",`INSERT INTO expansion_player_baseline_sanity_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_player_baseline_sanity_stage WHERE batch_id=?`,batchId);
-  const nsRows=await all(env.SCORE_DB,`SELECT profile_namespace, COUNT(*) AS rows FROM expansion_player_baseline_sanity_current GROUP BY profile_namespace ORDER BY profile_namespace`);
-  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"expansion_delta_sanity",status:"EXPANSION_DELTA_SANITY_COMPLETED",certification:"EXPANSION_DELTA_SANITY_CERTIFIED_AFFECTED_ROWS_PROMOTED",certification_grade:"PASS",affected_pitchers:affectedIds.length,rows_staged:sanityRows.length,rows_promoted:sanityRows.length,history_rows:sanityRows.length,namespace_rows:nsRows,rows_written:sanityRows.length,delta_update:true,no_current_wipe:true});
+  if(sanityRows.length){
+    await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_current",`INSERT OR REPLACE INTO expansion_player_baseline_sanity_current SELECT * FROM expansion_player_baseline_sanity_stage WHERE batch_id=?`,batchId);
+    await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_history",`INSERT INTO expansion_player_baseline_sanity_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_player_baseline_sanity_stage WHERE batch_id=?`,batchId);
+  }
+  const nsRows=await all(env.SCORE_DB,`SELECT profile_namespace, COUNT(*) AS rows FROM expansion_player_baseline_sanity_current WHERE batch_id=? GROUP BY profile_namespace ORDER BY profile_namespace`,batchId);
+  const status=sanityRows.length?"EXPANSION_DELTA_SANITY_COMPLETED":"EXPANSION_DELTA_SANITY_NOOP_NO_AFFECTED_OR_MISSING_DYNAMIC_ROWS";
+  const cert=sanityRows.length?"EXPANSION_DELTA_SANITY_CERTIFIED_AFFECTED_ROWS_PROMOTED":"EXPANSION_DELTA_SANITY_CERTIFIED_NOOP_NO_DYNAMIC_GAPS";
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"expansion_delta_sanity",status,certification:cert,certification_grade:"PASS",affected_pitchers:affectedIds.length,mined_affected_pitchers:minedPitchers.length,line_inventory_batch_id:lineInventoryBatchId||null,inventory_missing_rows:inventoryMissing.length,include_rfi_pp:includeRfiPp,rows_staged:sanityRows.length,rows_promoted:sanityRows.length,history_rows:sanityRows.length,namespace_rows:nsRows,rows_written:sanityRows.length,delta_update:true,no_current_wipe:true,inventory_scoped_delta_sanity_v0_1_31:true,no_full_universe_fallback_when_no_affected_pitchers:true});
   await writeRun(env.SCORE_DB,"expansion_player_baseline_sanity_batches",`UPDATE expansion_player_baseline_sanity_batches SET status='completed', finished_at=CURRENT_TIMESTAMP, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,sanityRows.length,sanityRows.length,sanityRows.length,output.certification,output.certification_grade,safeJson(output),batchId);
   return output;
 }
@@ -1316,15 +1337,34 @@ async function runDeltaHp(env,input={}){
   await ensureSchema(env);
   const requestId=String(input.request_id||rid("expansion_delta_hp")); const runId=String(input.run_id||rid("run")); const batchId=String(input.delta_hp_batch_id||input.hp_batch_id||input.batch_id||rid("expansion_delta_hp_batch"));
   const sourceSanityBatchId=String(input.delta_sanity_batch_id||input.source_sanity_batch_id||"");
-  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`INSERT OR REPLACE INTO expansion_player_baseline_hp_batches (batch_id,request_id,run_id,mode,status,worker_version,source_sanity_batch_id,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"expansion_delta_hp","running",VERSION,sourceSanityBatchId);
-  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_stage",`DELETE FROM expansion_player_baseline_hp_stage WHERE batch_id=?`,batchId);
-  const affectedSanity= sourceSanityBatchId ? await all(env.SCORE_DB,`SELECT * FROM expansion_player_baseline_sanity_current WHERE batch_id=? ORDER BY profile_namespace, COALESCE(entity_id,''), COALESCE(player_id,0), canonical_prop_key`,sourceSanityBatchId) : [];
+  const cursor=Math.max(0,Number(input.hp_cursor_offset||input.cursor_offset||0));
+  const chunkSize=Math.max(10,Math.min(60,Number(input.hp_source_chunk_size||input.chunk_size||40)));
+  if(cursor===0){
+    await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`INSERT OR REPLACE INTO expansion_player_baseline_hp_batches (batch_id,request_id,run_id,mode,status,worker_version,source_sanity_batch_id,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"expansion_delta_hp","running",VERSION,sourceSanityBatchId);
+    await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_stage",`DELETE FROM expansion_player_baseline_hp_stage WHERE batch_id=?`,batchId);
+  } else {
+    await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`UPDATE expansion_player_baseline_hp_batches SET request_id=?, run_id=?, status='running', worker_version=?, source_sanity_batch_id=COALESCE(NULLIF(source_sanity_batch_id,''),?), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,requestId,runId,VERSION,sourceSanityBatchId,batchId);
+  }
+  const totalRow=sourceSanityBatchId ? await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM expansion_player_baseline_sanity_current WHERE batch_id=?`,sourceSanityBatchId) : {c:0};
+  const totalSanityRows=Number(totalRow&&totalRow.c||0);
+  const affectedSanity= sourceSanityBatchId ? await all(env.SCORE_DB,`SELECT * FROM expansion_player_baseline_sanity_current WHERE batch_id=? ORDER BY profile_namespace, COALESCE(entity_id,''), COALESCE(player_id,0), canonical_prop_key LIMIT ? OFFSET ?`,sourceSanityBatchId,chunkSize,cursor) : [];
   const allSanity=await all(env.SCORE_DB,`SELECT * FROM expansion_player_baseline_sanity_current ORDER BY profile_namespace, COALESCE(entity_id,''), COALESCE(player_id,0), canonical_prop_key`);
   const hpRows=buildHpRowsForSanityRows(affectedSanity,batchId,sourceSanityBatchId,allSanity);
-  await insertHpRowsCurrentHistory(env,hpRows);
+  await insertHpRows(env,hpRows);
+  const nextCursor=Math.min(totalSanityRows,cursor+affectedSanity.length);
+  const stagedRow=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM expansion_player_baseline_hp_stage WHERE batch_id=?`,batchId);
+  const stagedCount=Number(stagedRow&&stagedRow.c||0);
+  const done=nextCursor>=totalSanityRows;
+  if(!done){
+    const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_sanity_batch_id:sourceSanityBatchId,mode:"expansion_delta_hp",status:"EXPANSION_DELTA_HP_PARTIAL_CONTINUE",certification:"EXPANSION_DELTA_HP_PARTIAL_CONTINUE",certification_grade:"PARTIAL_CONTINUE",source_rows_read:nextCursor,source_rows_total:totalSanityRows,all_sanity_rows_for_prior_pool:allSanity.length,rows_staged:stagedCount,rows_written:hpRows.length,hp_cursor_offset:nextCursor,hp_source_chunk_size:chunkSize,partial_continue:true,orchestrator_should_self_continue:true,delta_update:true,no_current_wipe:true,prior_pool_from_all_current_sanity:true,chunked_delta_hp_v0_1_31:true,next_input_json:{...input,mode:"expansion_delta_hp",delta_hp_batch_id:batchId,hp_batch_id:batchId,batch_id:batchId,source_sanity_batch_id:sourceSanityBatchId,delta_sanity_batch_id:sourceSanityBatchId,hp_cursor_offset:nextCursor,hp_source_chunk_size:chunkSize}});
+    await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`UPDATE expansion_player_baseline_hp_batches SET status='running', source_rows_read=?, rows_staged=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,nextCursor,stagedCount,output.certification,output.certification_grade,safeJson(output),batchId);
+    return output;
+  }
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_current",`INSERT OR REPLACE INTO expansion_player_baseline_hp_current SELECT * FROM expansion_player_baseline_hp_stage WHERE batch_id=?`,batchId);
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_history",`INSERT INTO expansion_player_baseline_hp_history SELECT *, CURRENT_TIMESTAMP AS archived_at FROM expansion_player_baseline_hp_stage WHERE batch_id=?`,batchId);
   const currentCount=await tableCount(env.SCORE_DB,"expansion_player_baseline_hp_current");
-  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_sanity_batch_id:sourceSanityBatchId,mode:"expansion_delta_hp",status:"EXPANSION_DELTA_HP_COMPLETED",certification:"EXPANSION_DELTA_HP_CERTIFIED_AFFECTED_ROWS_PROMOTED",certification_grade:"PASS",source_rows_read:affectedSanity.length,all_sanity_rows_for_prior_pool:allSanity.length,rows_staged:hpRows.length,rows_promoted:hpRows.length,history_rows:hpRows.length,current_hp_rows:currentCount,rows_written:hpRows.length,delta_update:true,no_current_wipe:true,prior_pool_from_all_current_sanity:true});
-  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`UPDATE expansion_player_baseline_hp_batches SET status='completed', finished_at=CURRENT_TIMESTAMP, source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,affectedSanity.length,hpRows.length,hpRows.length,hpRows.length,output.certification,output.certification_grade,safeJson(output),batchId);
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_sanity_batch_id:sourceSanityBatchId,mode:"expansion_delta_hp",status:"EXPANSION_DELTA_HP_COMPLETED",certification:"EXPANSION_DELTA_HP_CERTIFIED_AFFECTED_ROWS_PROMOTED",certification_grade:"PASS",source_rows_read:totalSanityRows,all_sanity_rows_for_prior_pool:allSanity.length,rows_staged:stagedCount,rows_promoted:stagedCount,history_rows:stagedCount,current_hp_rows:currentCount,rows_written:hpRows.length,delta_update:true,no_current_wipe:true,prior_pool_from_all_current_sanity:true,chunked_delta_hp_v0_1_31:true});
+  await writeRun(env.SCORE_DB,"expansion_player_baseline_hp_batches",`UPDATE expansion_player_baseline_hp_batches SET status='completed', finished_at=CURRENT_TIMESTAMP, source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,totalSanityRows,stagedCount,stagedCount,stagedCount,output.certification,output.certification_grade,safeJson(output),batchId);
   return output;
 }
 
