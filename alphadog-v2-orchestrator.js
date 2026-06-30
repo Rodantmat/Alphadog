@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.328-expansion-v2-hot-parity-short-yield";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.329-expansion-v2-stale-dispatch-auto-rescue";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12603,7 +12603,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   const started = Date.now();
   let output; let httpStatus = null;
   try {
-    const resp = await serviceBindingFetch(env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER, "https://internal.alphadog-v2-phase3a-first-inning-pitcher-context/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "expansion_baseline_v2", 65000);
+    const resp = await serviceBindingFetch(env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER, "https://internal.alphadog-v2-phase3a-first-inning-pitcher-context/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "expansion_baseline_v2", 35000);
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text||"").slice(0,900) }; }
@@ -12616,15 +12616,42 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   const cert = String((output && output.certification) || (partial ? "BASELINE_V2_HEB_PARTIAL_CONTINUE" : (output && output.ok ? "BASELINE_V2_HEB_COMPLETED" : "BASELINE_V2_HEB_FAILED"))).slice(0,120);
   const rowsRead = Number(output && (output.source_rows_read || output.rows_read || 0));
   const rowsWritten = Number(output && (output.rows_written || output.rows_promoted || output.rows_staged || 0));
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, expansion_v2_hot_parity_short_yield_v0_2_328:true, normalized_v2_chunk_size:input.v2_chunk_size, normalized_v2_all_current_chunk_size:input.v2_all_current_chunk_size, normalized_v2_soft_yield_ms:input.v2_soft_yield_ms, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, expansion_v2_hot_parity_short_yield_v0_2_328:true, expansion_v2_stale_dispatch_auto_rescue_v0_2_329:true, normalized_v2_chunk_size:input.v2_chunk_size, normalized_v2_all_current_chunk_size:input.v2_all_current_chunk_size, normalized_v2_soft_yield_ms:input.v2_soft_yield_ms, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
 
   if (partial && nextInput) {
     const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
+    // v0.2.329: reject late/straggler partials that would rewind a newer continuation.
+    // The durable batch is the source of truth; cursor may only move forward.
+    const proposedCursor = Number(nextInput.v2_cursor_offset || nextInput.cursor_offset || 0);
+    const proposedBatchId = nextInput.batch_id || output.batch_id || input.batch_id || null;
+    let durableCursor = proposedCursor;
+    if (proposedBatchId && env.SCORE_DB) {
+      try {
+        const durable = await first(env.SCORE_DB, "SELECT COALESCE(MAX(source_rows_read),0) AS source_rows_read, (SELECT COUNT(*) FROM player_baseline_hp_v2_stage WHERE batch_id=?) AS stage_rows FROM player_baseline_hp_v2_batches WHERE batch_id=?", proposedBatchId, proposedBatchId);
+        durableCursor = Math.max(durableCursor, Number(durable && durable.source_rows_read || 0), Number(durable && durable.stage_rows || 0));
+      } catch (_) {}
+    }
+    const currentQueue = await first(env.CONTROL_DB, "SELECT input_json, output_json, status, finished_at FROM control_job_queue WHERE request_id=? AND job_key=? LIMIT 1", row.request_id, row.job_key);
+    const currentInput = parseJsonSafeText(currentQueue && currentQueue.input_json || "{}", {});
+    const currentOutput = parseJsonSafeText(currentQueue && currentQueue.output_json || "{}", {});
+    const currentNext = currentOutput && currentOutput.next_input_json && typeof currentOutput.next_input_json === 'object' ? currentOutput.next_input_json : {};
+    const currentCursor = Math.max(Number(currentInput.v2_cursor_offset || 0), Number(currentNext.v2_cursor_offset || 0));
+    if (proposedCursor > 0 && currentCursor > proposedCursor && durableCursor <= currentCursor) {
+      const discardOutput = { ...cappedOutput, status:'EXPANSION_V2_LATE_PARTIAL_REWIND_DISCARDED', certification:'EXPANSION_V2_LATE_PARTIAL_REWIND_DISCARDED', proposed_cursor:proposedCursor, current_cursor:currentCursor, durable_cursor:durableCursor };
+      await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'EXPANSION_V2_LATE_PARTIAL_REWIND_DISCARDED', ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, 'expansion_v2_late_partial_rewind_discarded', 'Late partial response tried to rewind cursor; discarded to preserve hot continuation parity.')", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,rowsRead,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(discardOutput));
+      await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'expansion_baseline_v2_late_partial_rewind_discarded', 'Discarded stale Expansion V2 partial response that would rewind cursor/state', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,JSON.stringify({request_id:row.request_id,run_id:runId,proposed_cursor:proposedCursor,current_cursor:currentCursor,durable_cursor:durableCursor,version:SYSTEM_VERSION}).slice(0,9000));
+      return discardOutput;
+    }
+    if (durableCursor > proposedCursor) {
+      nextInput.v2_cursor_offset = durableCursor;
+      if (nextInput.batch_id || proposedBatchId) nextInput.batch_id = nextInput.batch_id || proposedBatchId;
+      cappedOutput.orchestrator_dispatch.durable_cursor_forwarded = durableCursor;
+    }
     await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,cert,rowsRead,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(cappedOutput));
     const partialQueueUpdate = await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND job_key=? AND status IN ('running','pending','partial_continue') AND finished_at IS NULL", runAfterSeconds, safeStringifyD1(nextInput), safeStringifyD1(cappedOutput), row.request_id, row.job_key);
     if (!partialQueueUpdate || Number(partialQueueUpdate.changes || partialQueueUpdate.meta && partialQueueUpdate.meta.changes || 0) <= 0) {
-      await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'expansion_baseline_v2_cancel_safe_partial_discarded', 'Discarded late Expansion Baseline V2 partial response because queue row was no longer active; prevents cancelled row resurrection', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,JSON.stringify({request_id:row.request_id,run_id:runId,certification:cert,status:'late_partial_discarded_queue_not_active',cancel_safe_v0_2_328:true,version:SYSTEM_VERSION}).slice(0,9000));
-      return { ...cappedOutput, ok:true, data_ok:true, status:'EXPANSION_BASELINE_V2_LATE_PARTIAL_DISCARDED_QUEUE_NOT_ACTIVE', certification:'EXPANSION_BASELINE_V2_LATE_PARTIAL_DISCARDED_QUEUE_NOT_ACTIVE', cancel_safe_v0_2_328:true };
+      await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'expansion_baseline_v2_cancel_safe_partial_discarded', 'Discarded late Expansion Baseline V2 partial response because queue row was no longer active; prevents cancelled row resurrection', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,JSON.stringify({request_id:row.request_id,run_id:runId,certification:cert,status:'late_partial_discarded_queue_not_active',cancel_safe_v0_2_329:true,version:SYSTEM_VERSION}).slice(0,9000));
+      return { ...cappedOutput, ok:true, data_ok:true, status:'EXPANSION_BASELINE_V2_LATE_PARTIAL_DISCARDED_QUEUE_NOT_ACTIVE', certification:'EXPANSION_BASELINE_V2_LATE_PARTIAL_DISCARDED_QUEUE_NOT_ACTIVE', cancel_safe_v0_2_329:true };
     }
     await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'expansion_baseline_partial_continue', 'Orchestrator scheduled Expansion Baseline continuation', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,JSON.stringify({request_id:row.request_id,run_id:runId,certification:cert,batch_id:nextInput.batch_id||null,v2_cursor_offset:nextInput.v2_cursor_offset||null,delta_cursor_offset:nextInput.delta_cursor_offset||null,delta_mining_batch_id:nextInput.delta_mining_batch_id||null,mode:nextInput.mode||input.mode||null,run_after_seconds:runAfterSeconds,version:SYSTEM_VERSION}).slice(0,9000));
     return cappedOutput;
@@ -12634,7 +12661,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,queueStatus,dataOk?1:0,cert,rowsRead,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(cappedOutput),errorCode,errorMessage);
   const terminalQueueUpdate = await run(env.CONTROL_DB,"UPDATE control_job_queue SET status=?, started_at=COALESCE(started_at, CURRENT_TIMESTAMP), finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=? AND job_key=? AND status IN ('running','pending','partial_continue') AND finished_at IS NULL", queueStatus,safeStringifyD1(cappedOutput),errorCode,errorMessage,row.request_id,row.job_key);
   if (!terminalQueueUpdate || Number(terminalQueueUpdate.changes || terminalQueueUpdate.meta && terminalQueueUpdate.meta.changes || 0) <= 0) {
-    await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'expansion_baseline_v2_cancel_safe_terminal_discarded', 'Discarded late Expansion Baseline V2 terminal response because queue row was no longer active; prevents cancelled row resurrection', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,JSON.stringify({request_id:row.request_id,run_id:runId,certification:cert,status:'late_terminal_discarded_queue_not_active',cancel_safe_v0_2_328:true,version:SYSTEM_VERSION}).slice(0,9000));
+    await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'expansion_baseline_v2_cancel_safe_terminal_discarded', 'Discarded late Expansion Baseline V2 terminal response because queue row was no longer active; prevents cancelled row resurrection', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,JSON.stringify({request_id:row.request_id,run_id:runId,certification:cert,status:'late_terminal_discarded_queue_not_active',cancel_safe_v0_2_329:true,version:SYSTEM_VERSION}).slice(0,9000));
   }
   await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'expansion_baseline_v2_dispatch_completed', 'Orchestrator completed Expansion Baseline V2 HEB dispatch', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,ok?"INFO":"ERROR",JSON.stringify({request_id:row.request_id,run_id:runId,ok,data_ok:dataOk,rows_read:rowsRead,rows_written:rowsWritten,certification:cert,version:SYSTEM_VERSION}).slice(0,9000));
   return cappedOutput;
@@ -17299,15 +17326,7 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
         AND worker_name='alphadog-v2-phase3a-first-inning-pitcher-context'
         AND status='running'
         AND finished_at IS NULL
-        AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-180 seconds')
-        AND NOT EXISTS (
-          SELECT 1
-            FROM control_job_runs r
-           WHERE r.request_id=control_job_queue.request_id
-             AND r.job_key=control_job_queue.job_key
-             AND r.status='running'
-             AND r.finished_at IS NULL
-        )
+        AND datetime(updated_at) <= datetime(CURRENT_TIMESTAMP, '-60 seconds')
       ORDER BY datetime(updated_at) ASC
       LIMIT 1`
   );
@@ -17327,7 +17346,7 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
     ? { ...output.next_input_json }
     : (isExpansionFullRun
       ? { ...input, mode: input.mode || 'expansion_baseline_full_run', expansion_mode: input.expansion_mode || input.mode || 'expansion_baseline_full_run', expansion_full_run_stale_running_rescue: true }
-      : { ...input, mode: 'baseline_v2_heb', expansion_mode: 'baseline_v2_heb', v2_chunk_size: Math.max(96, Math.min(220, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 160))), v2_all_current_chunk_size: Math.max(96, Math.min(220, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 160))), v2_soft_yield_ms: Math.max(30000, Math.min(38000, Number(input.v2_soft_yield_ms || 38000))), fast_safe_chunk_policy: 'all_current_default_160_cap_220_batched_stage_writes_soft_yield_38s_orchestrator_guard', expansion_v2_stale_running_rescue: true });
+      : { ...input, mode: 'baseline_v2_heb', expansion_mode: 'baseline_v2_heb', v2_chunk_size: Math.max(80, Math.min(120, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 120))), v2_all_current_chunk_size: Math.max(80, Math.min(120, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 120))), v2_soft_yield_ms: Math.max(18000, Math.min(22000, Number(input.v2_soft_yield_ms || 22000))), fast_safe_chunk_policy: 'all_current_default_120_cap_120_batched_stage_writes_soft_yield_22s_orchestrator_guard', expansion_v2_stale_running_rescue: true });
   nextInput.request_id = row.request_id;
   nextInput.chain_id = row.chain_id;
   nextInput.job_key = row.job_key;
@@ -17335,6 +17354,15 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
   nextInput.stale_running_recovered_by_orchestrator = true;
   nextInput.stale_running_recovered_at = new Date().toISOString();
   nextInput.stale_running_recovery_trigger = trigger;
+  // v0.2.329: recovery path must preserve the same hot-parity contract as fresh dispatch.
+  // Do not resurrect older 60s/160-row input from stale output_json.
+  const recoveryAllCurrent = nextInput.read_all_hp_v2_current === true || String(nextInput.source_hp_v2_batch_id || nextInput.hp_v2_batch_id || '').toUpperCase() === '__ALL_HIT_PROBABILITY_V2_CURRENT__' || String(nextInput.source_hp_v2_batch_id || nextInput.hp_v2_batch_id || '').toUpperCase() === 'ALL' || String(nextInput.source_hp_v2_batch_id || nextInput.hp_v2_batch_id || '') === '*';
+  if (recoveryAllCurrent) {
+    nextInput.v2_all_current_chunk_size = Math.max(80, Math.min(120, Number(nextInput.v2_all_current_chunk_size || nextInput.v2_chunk_size || 120)));
+    nextInput.v2_chunk_size = Math.max(80, Math.min(120, Number(nextInput.v2_chunk_size || nextInput.v2_all_current_chunk_size || 120)));
+    nextInput.v2_soft_yield_ms = Math.max(18000, Math.min(22000, Number(nextInput.v2_soft_yield_ms || 22000)));
+    nextInput.fast_safe_chunk_policy = 'all_current_default_120_cap_120_batched_stage_writes_soft_yield_22s_orchestrator_recovery_guard';
+  }
 
   const recoveryOutput = {
     ok: true,
@@ -17350,7 +17378,7 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
     certification_grade: 'RECOVERED_PARTIAL_CONTINUE',
     previous_status: row.status,
     previous_updated_at: row.updated_at,
-    stale_threshold_seconds: 180,
+    stale_threshold_seconds: 60,
     continuation_required: true,
     orchestrator_should_self_continue: true,
     next_input_json: nextInput,
@@ -17368,13 +17396,18 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
     no_final_board: true
   };
 
-  await run(env.CONTROL_DB,
+  const retiredRuns = await run(env.CONTROL_DB,
     `UPDATE control_job_runs
-        SET status='partial_continue', data_ok=1, certification_status=?,
-            finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), elapsed_ms=COALESCE(elapsed_ms, CAST((julianday('now') - julianday(started_at)) * 86400000 AS INTEGER)), output_json=?
+        SET status='failed', data_ok=0, certification_status='EXPANSION_V2_STALE_DISPATCH_LEDGER_RETIRED',
+            finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), elapsed_ms=COALESCE(elapsed_ms, CAST((julianday('now') - julianday(started_at)) * 86400000 AS INTEGER)), output_json=?,
+            error_code='expansion_v2_stale_dispatch_ledger_retired',
+            error_message='Retired stale Expansion V2 dispatch ledger; durable batch/queue continuation preserved.'
       WHERE request_id=? AND job_key=? AND status='running' AND finished_at IS NULL`,
-    recoveryStatus, JSON.stringify(recoveryOutput), row.request_id, row.job_key
+    JSON.stringify(recoveryOutput), row.request_id, row.job_key
   );
+  recoveryOutput.retired_running_dispatch_ledgers = Number(retiredRuns && (retiredRuns.changes || retiredRuns.meta && retiredRuns.meta.changes) || 0);
+  recoveryOutput.expansion_v2_stale_dispatch_auto_rescue_v0_2_329 = true;
+
   await run(env.CONTROL_DB,
     `UPDATE control_job_queue
         SET status='pending', run_after=CURRENT_TIMESTAMP, finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL
