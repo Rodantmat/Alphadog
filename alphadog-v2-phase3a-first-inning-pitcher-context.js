@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.27-full-base-source-guard";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.28-full-base-fast-chunks";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -979,14 +979,21 @@ async function runBaselineV2(env,input={}){
   const sourceHpV2BatchId=String(input.source_hp_v2_batch_id||input.hp_v2_batch_id||(sourceBatchRow&&sourceBatchRow.batch_id)||"");
   const readAllHpV2Current=sourceHpV2BatchId==="__ALL_HIT_PROBABILITY_V2_CURRENT__" || sourceHpV2BatchId==="*" || sourceHpV2BatchId.toUpperCase()==="ALL" || input.read_all_hp_v2_current===true;
   const requestedChunkSize=Number(input.v2_chunk_size||input.v2_source_chunk_size||0);
-  const allCurrentFastDefault=Number(input.v2_all_current_chunk_size||80);
-  // All-current V2 can hit uneven rows where direct history lookup is heavier than average.
-  // Keep chunks bounded below the 75s service-binding ceiling; do not override smaller retry chunks upward.
-  const effectiveRequestedChunk=requestedChunkSize || allCurrentFastDefault;
-  const chunkSize=clamp(effectiveRequestedChunk || (readAllHpV2Current?80:8),1,readAllHpV2Current?96:16);
+  const allCurrentFastDefault=Number(input.v2_all_current_chunk_size||input.v2_fast_chunk_size||160);
+  // v0.1.28: full-base all-current was correctly routed in v0.1.27, but the safety clamp
+  // capped every continuation at 96 rows. The Control Room already asks for 160; old
+  // v0.1.27 partial outputs also carry v2_chunk_size=96, so prefer the larger all-current
+  // target on full-base continuation unless an explicit force flag is used. This keeps the
+  // active mr08* run usable after deploy: next Wake resumes the same batch at the next cursor,
+  // but drains with 160-row chunks instead of staying pinned to the old 96 cap.
+  const forcedExactChunk=input.v2_force_exact_chunk_size===true || input.force_v2_chunk_size===true;
+  const effectiveRequestedChunk=readAllHpV2Current
+    ? (forcedExactChunk ? (requestedChunkSize || allCurrentFastDefault || 160) : Math.max(requestedChunkSize || 0, allCurrentFastDefault || 0, 160))
+    : (requestedChunkSize || allCurrentFastDefault || 8);
+  const chunkSize=clamp(effectiveRequestedChunk || (readAllHpV2Current?160:8),1,readAllHpV2Current?220:32);
   const cursor=Number(input.v2_cursor_offset||0);
   const startedMs=Date.now();
-  const softYieldMs=clamp(Number(input.v2_soft_yield_ms || (readAllHpV2Current?35000:18000)),12000,readAllHpV2Current?42000:24000);
+  const softYieldMs=clamp(Number(input.v2_soft_yield_ms || (readAllHpV2Current?60000:18000)),12000,readAllHpV2Current?65000:30000);
   if(cursor===0){
     await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_sanity_v2_batches (batch_id,request_id,run_id,mode,status,worker_version,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"baseline_v2_heb","running",VERSION);
     await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_hp_v2_batches (batch_id,request_id,run_id,mode,status,worker_version,source_sanity_batch_id,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,"baseline_v2_heb","running",VERSION,batchId);
@@ -1034,7 +1041,7 @@ async function runBaselineV2(env,input={}){
   const rows=await all(env.SCORE_DB,`${sourceCte} SELECT MAX(hp_v2_row_id) AS hp_v2_row_id, MAX(source_key) AS source_key, GROUP_CONCAT(DISTINCT source_key) AS source_keys, MAX(game_pk) AS game_pk, MAX(official_date) AS official_date, COALESCE(mlb_player_id,0) AS mlb_player_id, MAX(player_name) AS player_name, canonical_prop_key, board_line_value, selected_side, MAX(COALESCE(factor_family,'unknown')) AS factor_family, profile_namespace, source_formula_key, baseline_formula_scope, COUNT(*) AS source_hp_v2_rows, GROUP_CONCAT(DISTINCT batch_id) AS source_hp_v2_batch_ids, GROUP_CONCAT(DISTINCT game_pk) AS source_game_pks FROM hp_canonical GROUP BY ${logicalGroupBy} ORDER BY baseline_formula_scope, COALESCE(mlb_player_id,0), canonical_prop_key, board_line_value, selected_side LIMIT ? OFFSET ?`,...sourceBinds,chunkSize,cursor);
   let written=0, issues=0, processed=0;
   const stageStatements=[];
-  const stageBatchSize=readAllHpV2Current?30:24;
+  const stageBatchSize=readAllHpV2Current?50:30;
   async function flushStageStatements(){
     if(stageStatements.length){
       const pending=stageStatements.splice(0, stageStatements.length);
@@ -1071,7 +1078,7 @@ async function runBaselineV2(env,input={}){
   const staged=Number((await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM player_baseline_hp_v2_stage WHERE batch_id=?`,batchId))?.c||0);
   const issueTotalSoFar=Number((await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM player_baseline_hp_v2_issues WHERE batch_id=?`,batchId))?.c||0);
   if(next<total){
-    const partialOutput=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,read_all_hp_v2_current:readAllHpV2Current,mode:"baseline_v2_heb",status:"BASELINE_V2_HEB_PARTIAL_CONTINUE",certification:"BASELINE_V2_HEB_PARTIAL_CONTINUE",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,v2_cursor_offset:next,v2_chunk_size:chunkSize,effective_v2_chunk_size:chunkSize,target_source_rows:total,raw_hp_v2_source_rows:rawHpV2SourceRows,null_only_source_rows:nullOnlySourceRows,pct_done:total?round((next*100)/total,2):null,rows_remaining:Math.max(total-next,0),rows_written:written,rows_staged:staged,issue_rows:issueTotalSoFar,processed_rows:processed,soft_yield_ms:softYieldMs,elapsed_ms:Date.now()-startedMs,stage_write_mode:"D1_BATCHED_STAGE_INSERTS",stage_batch_size:stageBatchSize,fast_safe_chunk_policy:"all_current_default_80_cap_96_batched_stage_writes_soft_yield_35s_reporting_trace",next_input_json:{...input,mode:"baseline_v2_heb",batch_id:batchId,v2_cursor_offset:next,v2_chunk_size:chunkSize,v2_all_current_chunk_size:allCurrentFastDefault,v2_soft_yield_ms:softYieldMs,fast_safe_chunk_policy:"all_current_default_80_cap_96_batched_stage_writes_soft_yield_35s_reporting_trace"}});
+    const partialOutput=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,read_all_hp_v2_current:readAllHpV2Current,mode:"baseline_v2_heb",status:"BASELINE_V2_HEB_PARTIAL_CONTINUE",certification:"BASELINE_V2_HEB_PARTIAL_CONTINUE",certification_grade:"PARTIAL_CONTINUE",partial_continue:true,orchestrator_should_self_continue:true,v2_cursor_offset:next,v2_chunk_size:chunkSize,effective_v2_chunk_size:chunkSize,target_source_rows:total,raw_hp_v2_source_rows:rawHpV2SourceRows,null_only_source_rows:nullOnlySourceRows,pct_done:total?round((next*100)/total,2):null,rows_remaining:Math.max(total-next,0),rows_written:written,rows_staged:staged,issue_rows:issueTotalSoFar,processed_rows:processed,soft_yield_ms:softYieldMs,elapsed_ms:Date.now()-startedMs,stage_write_mode:"D1_BATCHED_STAGE_INSERTS",stage_batch_size:stageBatchSize,fast_safe_chunk_policy:"all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s_reporting_trace",next_input_json:{...input,mode:"baseline_v2_heb",batch_id:batchId,v2_cursor_offset:next,v2_chunk_size:chunkSize,v2_all_current_chunk_size:allCurrentFastDefault,v2_soft_yield_ms:softYieldMs,fast_safe_chunk_policy:"all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s_reporting_trace"}});
     await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET worker_version=?, rows_staged=?, issue_rows=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,VERSION,staged,issueTotalSoFar,safeJson(partialOutput),batchId);
     await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_batches SET worker_version=?, source_rows_read=?, rows_staged=?, issue_rows=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,VERSION,next,staged,issueTotalSoFar,safeJson(partialOutput),batchId);
     return partialOutput;
@@ -1085,7 +1092,7 @@ async function runBaselineV2(env,input={}){
   const actualIssueRows=Number((await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM player_baseline_hp_v2_issues WHERE batch_id=?`,batchId))?.c||0);
   const grade=changed.length?"FAIL_MUTATION_GUARD":(actualIssueRows?"PASS_WITH_WARNINGS":"PASS");
   const cert=changed.length?"BASELINE_V2_HEB_BLOCKED_PRODUCTION_MUTATION":"BASELINE_V2_HEB_CERTIFIED_PARALLEL_READY";
-  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,raw_hp_v2_source_rows:rawHpV2SourceRows,null_only_source_rows:nullOnlySourceRows,source_hp_v2_batch_id:sourceHpV2BatchId,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:actualIssueRows,mutation_guard:{changed_tables:changed},reporting_fix_version:"v0.1.27_full_base_all_hp_keys_no_stale_link_filter",read_all_hp_v2_current:readAllHpV2Current,canonical_group_by:logicalGroupBy,baseline_source_policy:"source_agnostic_unless_formula_profile_is_source_specific",fast_safe_chunk_policy:"all_current_default_80_cap_96_batched_stage_writes_soft_yield_35s_reporting_trace",formula_version:BASELINE_V2_FORMULA_VERSION});
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,raw_hp_v2_source_rows:rawHpV2SourceRows,null_only_source_rows:nullOnlySourceRows,source_hp_v2_batch_id:sourceHpV2BatchId,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:actualIssueRows,mutation_guard:{changed_tables:changed},reporting_fix_version:"v0.1.28_full_base_all_hp_keys_fast_chunk_resume",read_all_hp_v2_current:readAllHpV2Current,canonical_group_by:logicalGroupBy,baseline_source_policy:"source_agnostic_unless_formula_profile_is_source_specific",fast_safe_chunk_policy:"all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s_reporting_trace",formula_version:BASELINE_V2_FORMULA_VERSION});
   await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",staged,staged,staged,actualIssueRows,cert,grade,safeJson(output),batchId);
   await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",total,staged,staged,staged,actualIssueRows,cert,grade,safeJson(output),batchId);
   output.ok=!changed.length; output.data_ok=!changed.length; return output;
