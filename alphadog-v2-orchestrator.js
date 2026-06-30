@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.324-board-full-run-score-preppable-guard";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.324-final-scoring-baseline-route-parity";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -869,28 +869,8 @@ async function validateBoardFullRunFinalGuard(env, stageReports) {
     };
   }
 
-  const marketPrizePicksActive = await first(env.MARKET_DB, `
-SELECT COUNT(*) AS rows
-FROM prizepicks_board_current p
-JOIN prizepicks_board_active_batches a
-  ON a.source_key = p.source_key
- AND a.slate_date = p.slate_date
- AND a.active_batch_id = p.batch_id`);
-  const marketPrizePicksComposite = await first(env.MARKET_DB, `
-SELECT COUNT(*) AS rows
-FROM prizepicks_board_current p
-JOIN prizepicks_board_active_batches a
-  ON a.source_key = p.source_key
- AND a.slate_date = p.slate_date
- AND a.active_batch_id = p.batch_id
-WHERE p.team LIKE '%/%'`);
-  const marketSleeperActive = await first(env.MARKET_DB, `
-SELECT COUNT(*) AS rows
-FROM sleeper_board_current s
-JOIN sleeper_board_active_batches a
-  ON a.source_key = s.source_key
- AND a.slate_date = s.slate_date
- AND a.active_batch_id = s.batch_id`);
+  const marketPrizePicks = await first(env.MARKET_DB, "SELECT COUNT(*) AS rows FROM prizepicks_board_current");
+  const marketSleeper = await first(env.MARKET_DB, "SELECT COUNT(*) AS rows FROM sleeper_board_current");
   const scorePrizePicks = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current WHERE source_key = 'prizepicks'");
   const scoreSleeper = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current WHERE source_key = 'sleeper'");
   const scoreTotal = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current");
@@ -901,38 +881,28 @@ JOIN sleeper_board_active_batches a
   const scorePrepPreparedRows = Number(scorePrepReport.prepared_rows || 0);
   const scorePrepAllSourceRowsBeforeWindow = Number(scorePrepReport.all_source_rows_seen_before_window_filter || 0);
 
-  const marketPrizePicksRows = Number(marketPrizePicksActive && marketPrizePicksActive.rows || 0);
-  const marketPrizePicksCompositeRows = Number(marketPrizePicksComposite && marketPrizePicksComposite.rows || 0);
-  const marketPrizePicksScorePreppableRows = Math.max(0, marketPrizePicksRows - marketPrizePicksCompositeRows);
-  const marketSleeperRows = Number(marketSleeperActive && marketSleeperActive.rows || 0);
-  const marketSleeperInventoryOnlyRows = Math.max(0, marketSleeperRows - scorePrepSleeperRows);
+  const marketPrizePicksRows = Number(marketPrizePicks && marketPrizePicks.rows || 0);
+  const marketSleeperRows = Number(marketSleeper && marketSleeper.rows || 0);
   const scorePrizePicksRows = Number(scorePrizePicks && scorePrizePicks.rows || 0);
   const scoreSleeperRows = Number(scoreSleeper && scoreSleeper.rows || 0);
   const scoreTotalRows = Number(scoreTotal && scoreTotal.rows || 0);
   const marketTotalRows = marketPrizePicksRows + marketSleeperRows;
-  const marketScorePreppableRows = marketPrizePicksScorePreppableRows + scorePrepSleeperRows;
 
   const parity = {
     market_prizepicks_rows_raw_current: marketPrizePicksRows,
-    market_prizepicks_rows_score_preppable: marketPrizePicksScorePreppableRows,
-    market_prizepicks_composite_game_team_rows_excluded: marketPrizePicksCompositeRows,
     score_prizepicks_rows_current_window: scorePrizePicksRows,
     score_prep_prizepicks_rows_current_window: scorePrepPrizePicksRows,
     market_sleeper_rows_raw_current: marketSleeperRows,
-    market_sleeper_rows_score_preppable_contract: scorePrepSleeperRows,
-    market_sleeper_inventory_only_rows_excluded: marketSleeperInventoryOnlyRows,
     score_sleeper_rows_current_window: scoreSleeperRows,
     score_prep_sleeper_rows_current_window: scorePrepSleeperRows,
     market_total_rows_raw_current: marketTotalRows,
-    market_total_rows_score_preppable_contract: marketScorePreppableRows,
     score_total_rows_current_window: scoreTotalRows,
     score_prep_prepared_rows_current_window: scorePrepPreparedRows,
     score_prep_all_source_rows_before_window_filter: scorePrepAllSourceRowsBeforeWindow,
-    board_rows_excluded_by_score_prep_window: marketTotalRows - scoreTotalRows,
-    board_rows_excluded_by_contract: marketTotalRows - marketScorePreppableRows,
+    board_rows_excluded_by_score_prep_window: scorePrepAllSourceRowsBeforeWindow > 0 ? scorePrepAllSourceRowsBeforeWindow - scorePrepPreparedRows : marketTotalRows - scoreTotalRows,
     score_distinct_prep_batches: Number(prepBatchCount && prepBatchCount.rows || 0),
     current_window_dates: scorePrepReport.current_window_dates || null,
-    guard_policy: "compare_score_current_to_score_prep_current_window_and_market_score_preppable_contract_not_raw_inventory"
+    guard_policy: "compare_score_current_to_score_prep_current_window_and_market_raw_to_score_prep_raw_seen"
   };
 
   const mismatches = [];
@@ -940,11 +910,11 @@ JOIN sleeper_board_active_batches a
   if (parity.score_sleeper_rows_current_window !== parity.score_prep_sleeper_rows_current_window) mismatches.push("score_sleeper_rows_do_not_match_score_prep_current_window");
   if (parity.score_total_rows_current_window !== parity.score_prep_prepared_rows_current_window) mismatches.push("score_total_rows_do_not_match_score_prep_prepared_rows");
   if (parity.score_distinct_prep_batches !== 1) mismatches.push("score_prepared_current_multiple_or_missing_batches");
-  if (marketPrizePicksScorePreppableRows !== scorePrepPrizePicksRows) mismatches.push("market_prizepicks_score_preppable_rows_do_not_match_score_prep_prizepicks_rows");
+  if (scorePrepAllSourceRowsBeforeWindow > 0 && marketTotalRows !== scorePrepAllSourceRowsBeforeWindow) mismatches.push("market_raw_total_does_not_match_score_prep_raw_seen_before_window_filter");
+  if (scorePrepAllSourceRowsBeforeWindow <= 0 && marketTotalRows !== scoreTotalRows) mismatches.push("legacy_market_score_row_mismatch_without_window_report");
   if (marketPrizePicksRows < scorePrizePicksRows) mismatches.push("market_prizepicks_raw_less_than_score_prizepicks_current_window");
   if (marketSleeperRows < scoreSleeperRows) mismatches.push("market_sleeper_raw_less_than_score_sleeper_current_window");
   if (parity.board_rows_excluded_by_score_prep_window < 0) mismatches.push("negative_window_exclusion_count");
-  if (parity.board_rows_excluded_by_contract < 0) mismatches.push("negative_contract_exclusion_count");
 
   if (mismatches.length > 0) {
     return {
@@ -3491,33 +3461,9 @@ WHERE batch_id=?`, prepBatchId);
     elapsed_ms: Math.max(0, Date.now() - startedAtMs)
   };
 
-  await run(env.SCORE_DB, `
-UPDATE score_board_prep_batches
-SET status='COMPLETED_BOARD_PREP_ENRICHMENT',
-    certification_status='SCORE_BOARD_PREP_ENRICHMENT_COMPLETED_PRESERVED_RAW_BOARDS',
-    certification_grade=?,
-    prepared_rows=?,
-    prizepicks_rows=?,
-    sleeper_rows=?,
-    pickable_safe_rows=?,
-    blocked_rows=?,
-    finished_at=COALESCE(finished_at, CURRENT_TIMESTAMP),
-    updated_at=CURRENT_TIMESTAMP,
-    certification_json=COALESCE(certification_json, ?)
-WHERE batch_id=?
-  AND (status IS NULL OR status NOT LIKE 'COMPLETED%')`,
-    recovered.certification_grade,
-    preparedRows,
-    prizepicksRows,
-    sleeperRows,
-    pickableSafeRows,
-    Number(summary.blocked_rows || 0),
-    JSON.stringify({ recovered_after_service_binding_timeout:true, prepared_rows:preparedRows, prizepicks_rows:prizepicksRows, sleeper_rows:sleeperRows, pickable_safe_rows:pickableSafeRows, version:SYSTEM_VERSION }).slice(0, 9000),
-    prepBatchId);
-
   await run(env.CONTROL_DB,
     "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'score_prep_timeout_db_truth_recovered', 'Recovered Score Prep service-binding timeout because SCORE_DB prepared current was complete and DB-verified', ?, CURRENT_TIMESTAMP)",
-    row.request_id, rid("run"), WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, prep_batch_id:prepBatchId, prepared_rows:preparedRows, prizepicks_rows:prizepicksRows, sleeper_rows:sleeperRows, pickable_safe_rows:pickableSafeRows, terminalized_score_prep_batch_row:true, version:SYSTEM_VERSION }).slice(0, 9000));
+    row.request_id, rid("run"), WORKER_NAME, row.job_key, JSON.stringify({ request_id:row.request_id, prep_batch_id:prepBatchId, prepared_rows:preparedRows, prizepicks_rows:prizepicksRows, sleeper_rows:sleeperRows, pickable_safe_rows:pickableSafeRows, version:SYSTEM_VERSION }).slice(0, 9000));
 
   return recovered;
 }
@@ -12629,7 +12575,13 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   input.mode = input.mode || input.expansion_mode || (row.job_key === "expansion-baseline-v2" ? "baseline_v2_heb" : (row.job_key === "expansion-baseline-line-inventory" ? "expansion_line_inventory" : (row.job_key === "expansion-baseline-sanity" ? "expansion_baseline_sanity" : (row.job_key === "expansion-baseline-hp" ? "expansion_baseline_hp" : "expansion_delta_full_run"))));
   input.expansion_mode = input.expansion_mode || input.mode;
   input.trigger = trigger;
-  input.logical_worker_name = "alphadog-v2-expansion-baseline-v2-heb";
+  if (input.final_scoring_system === true || String(input.baseline_run_type || '').startsWith('BASELINE_')) {
+    input.final_scoring_system = true;
+    input.final_scoring_orchestrator_parity_v0_2_324 = true;
+    input.baseline_dispatch_route = input.baseline_run_type === 'BASELINE_DELTA_LATEST_HP_V2_BATCH' ? 'final_scoring_baseline_delta' : 'final_scoring_baseline_base';
+    input.dispatch_permission_scope = 'SCORE_DB_PLAYER_BASELINE_V2_ONLY';
+  }
+  input.logical_worker_name = input.logical_worker_name || "alphadog-v2-expansion-baseline-v2-heb";
   input.deployed_worker_slot = "alphadog-v2-phase3a-first-inning-pitcher-context";
   input.parallel_v2_only = true;
   input.no_current_baseline_mutation = true;
@@ -12666,7 +12618,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   const cert = String((output && output.certification) || (partial ? "BASELINE_V2_HEB_PARTIAL_CONTINUE" : (output && output.ok ? "BASELINE_V2_HEB_COMPLETED" : "BASELINE_V2_HEB_FAILED"))).slice(0,120);
   const rowsRead = Number(output && (output.source_rows_read || output.rows_read || 0));
   const rowsWritten = Number(output && (output.rows_written || output.rows_promoted || output.rows_staged || 0));
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:input.logical_worker_name || "alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", baseline_run_type:input.baseline_run_type || null, baseline_dispatch_route:input.baseline_dispatch_route || null, final_scoring_system:!!input.final_scoring_system, final_scoring_orchestrator_parity_v0_2_324:!!input.final_scoring_orchestrator_parity_v0_2_324, dispatch_permission_scope:input.dispatch_permission_scope || null, parallel_v2_only:true, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
 
   if (partial && nextInput) {
     const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
@@ -12679,7 +12631,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   const ok = !!(output && output.ok); const dataOk = !!(output && output.data_ok); const queueStatus = ok ? "completed" : "failed"; const errorCode = ok ? null : "expansion_baseline_v2_worker_failed"; const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Expansion Baseline V2 worker failed").slice(0,900);
   await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,queueStatus,dataOk?1:0,cert,rowsRead,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(cappedOutput),errorCode,errorMessage);
   await run(env.CONTROL_DB,"UPDATE control_job_queue SET status=?, started_at=COALESCE(started_at, CURRENT_TIMESTAMP), finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus,safeStringifyD1(cappedOutput),errorCode,errorMessage,row.request_id);
-  await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'expansion_baseline_v2_dispatch_completed', 'Orchestrator completed Expansion Baseline V2 HEB dispatch', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,ok?"INFO":"ERROR",JSON.stringify({request_id:row.request_id,run_id:runId,ok,data_ok:dataOk,rows_read:rowsRead,rows_written:rowsWritten,certification:cert,version:SYSTEM_VERSION}).slice(0,9000));
+  await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'expansion_baseline_v2_dispatch_completed', 'Orchestrator completed Expansion Baseline V2 HEB dispatch', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,ok?"INFO":"ERROR",JSON.stringify({request_id:row.request_id,run_id:runId,ok,data_ok:dataOk,rows_read:rowsRead,rows_written:rowsWritten,certification:cert,baseline_run_type:input.baseline_run_type||null,baseline_dispatch_route:input.baseline_dispatch_route||null,final_scoring_system:!!input.final_scoring_system,version:SYSTEM_VERSION}).slice(0,9000));
   return cappedOutput;
 }
 
