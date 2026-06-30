@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.28-full-base-fast-chunks";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.29-hrr-direct-rate-lift-guard";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -702,8 +702,8 @@ async function runHp(env,input={}){
 
 
 // ---------------- Parallel V2 HEB baseline system ----------------
-const BASELINE_V2_FORMULA_VERSION = "baseline_v2_full_prop_models_v0.2.1_full_base_all_hp_keys_no_stale_link_filter";
-const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v2_confidence_v0.2.1_full_base_all_hp_keys_no_stale_link_filter";
+const BASELINE_V2_FORMULA_VERSION = "baseline_v2_full_prop_models_v0.2.2_hrr_direct_rate_lift_guard";
+const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v2_confidence_v0.2.2_hrr_direct_rate_lift_guard";
 const V2_ENTITY_VALUE_CACHE = new Map();
 const V2_PROFILE_PRIOR_CACHE = new Map();
 const V2_GLOBAL_VALUE_CACHE = new Map();
@@ -942,7 +942,7 @@ async function loadBaselineModelRows(env,row,entityType){ const prop=String(row.
   else if(entityType==="pitcher"){ rows=await all(env.TEAM_DB,`SELECT COALESCE(player_id, starter_player_id) AS player_id, starter_name AS player_name, game_pk, game_date, outs_recorded, strikeouts, earned_runs, runs_allowed, walks_allowed, hits_allowed, home_runs_allowed, pitches FROM starter_history WHERE started_game=1 AND COALESCE(player_id, starter_player_id)=? ORDER BY game_date`,playerId); }
   else { rows=await all(env.STATS_HITTER_DB,`SELECT player_id, game_pk, game_date, pa, hits, singles, doubles, triples, home_runs, runs, rbi, walks, strikeouts, stolen_bases, total_bases, raw_json FROM hitter_game_logs WHERE player_id=? ORDER BY game_date`,playerId); }
   V2_BASELINE_ROW_CACHE.set(key,rows); return rows; }
-function modelHitterBaseline(rows, prop, line, side, sourceKey){ const games=rows.length; const recent=recentRows(rows); const seasonPa=meanNum(rows,"pa"); const recentPa=recent.length?meanNum(recent,"pa"):seasonPa; const expPa=0.65*recentPa+0.35*seasonPa; const expAb=expPa*0.88; const priorAB=prop==="triples"?250:(prop==="home_runs"?250:200); const priorPA=prop==="walks"||prop==="hitter_strikeouts"?300:200; let more=0.5; let engine="hitter_locked_component_proxy"; if(prop==="hits"){ const p=exposureRate(rows,"hits","pa",0.215,priorAB); more=binomialTailGE(Math.floor(line)+1,Math.round(expAb),p); }
+function modelHitterBaseline(rows, prop, line, side, sourceKey){ const games=rows.length; const recent=recentRows(rows); const seasonPa=meanNum(rows,"pa"); const recentPa=recent.length?meanNum(recent,"pa"):seasonPa; const expPa=0.65*recentPa+0.35*seasonPa; const expAb=expPa*0.88; const priorAB=prop==="triples"?250:(prop==="home_runs"?250:200); const priorPA=prop==="walks"||prop==="hitter_strikeouts"?300:200; let more=0.5; let engine="hitter_locked_component_proxy"; let modelExtra={}; if(prop==="hits"){ const p=exposureRate(rows,"hits","pa",0.215,priorAB); more=binomialTailGE(Math.floor(line)+1,Math.round(expAb),p); }
   else if(prop==="singles"){ const p=exposureRate(rows,"singles","pa",0.14,priorAB); more=binomialTailGE(Math.floor(line)+1,Math.round(expAb),p); }
   else if(prop==="doubles"){ const p=exposureRate(rows,"doubles","pa",0.045,priorAB); more=overdispersedTailGE(Math.floor(line)+1,expAb*p,1.15); }
   else if(prop==="triples"){ const p=exposureRate(rows,"triples","pa",0.004,priorAB); more=line>=1.5?0.0001:overdispersedTailGE(1,expAb*p,1.2); }
@@ -953,9 +953,24 @@ function modelHitterBaseline(rows, prop, line, side, sourceKey){ const games=row
   else if(prop==="runs"){ const p=exposureRate(rows,"runs","pa",0.115,250); more=overdispersedTailGE(Math.floor(line)+1,expPa*p,1.18); }
   else if(prop==="rbis"){ const p=exposureRate(rows,"rbi","pa",0.11,250); more=overdispersedTailGE(Math.floor(line)+1,expPa*p,1.20); }
   else if(prop==="total_bases"){ const avg=rows.reduce((a,r)=>a+num(r.total_bases),0)/Math.max(1,games); const rec=recent.length?recent.reduce((a,r)=>a+num(r.total_bases),0)/recent.length:avg; more=overdispersedTailGE(Math.floor(line)+1,0.6*rec+0.4*avg,1.35); engine="compound_tb_proxy"; }
-  else if(prop==="hits_runs_rbis"){ const vals=rows.map(r=>num(r.hits)+num(r.runs)+num(r.rbi)); const avg=avgArr(vals); const ravg=avgArr(recent.map(r=>num(r.hits)+num(r.runs)+num(r.rbi))); more=overdispersedTailGE(Math.floor(line)+1,0.6*(ravg||avg)+0.4*avg,1.35); engine="hrr_cluster_proxy"; }
+  else if(prop==="hits_runs_rbis"){
+    const vals=rows.map(r=>num(r.hits)+num(r.runs)+num(r.rbi));
+    const avg=avgArr(vals);
+    const ravg=avgArr(recent.map(r=>num(r.hits)+num(r.runs)+num(r.rbi)));
+    const proxyMore=overdispersedTailGE(Math.floor(line)+1,0.6*(ravg||avg)+0.4*avg,1.35);
+    const direct=calcHpLine(vals,line,"more");
+    const directMore=direct.raw_rate_0_100==null ? proxyMore : clamp(direct.raw_rate_0_100/100,0,1);
+    // v0.1.29 / formula v0.2.2: SQL proof on 2026-06-30 showed hrr_cluster_proxy was replacing
+    // direct binary reality and creating +20 to +39 point lifts on HRR MORE 0.5/1.5/2.5.
+    // HRR may get a small compound/opportunity lift, but it may not override the observed direct line hit rate.
+    const sampleLift = games < 10 ? 0.03 : (games < 25 ? 0.05 : (games < 50 ? 0.07 : 0.09));
+    const lineLift = Number(line)<=0.5 ? sampleLift : (Number(line)<=1.5 ? Math.min(sampleLift,0.08) : (Number(line)<=2.5 ? Math.min(sampleLift,0.06) : Math.min(sampleLift,0.04)));
+    more=Math.min(proxyMore,directMore+lineLift);
+    engine="hrr_cluster_proxy_direct_rate_lift_guard";
+    modelExtra={hrr_proxy_more_pre_guard:round(proxyMore*100,2),hrr_direct_more_rate_0_100:direct.raw_rate_0_100,hrr_direct_non_push_sample:direct.non_push_sample,hrr_max_lift_over_direct_0_100:round(lineLift*100,2),hrr_lift_guard_applied:proxyMore>more};
+  }
   else if(prop==="fantasy_score"){ const vals=rows.map(hitterFantasyV2); const avg=avgArr(vals); const ravg=avgArr(recent.map(hitterFantasyV2)); more=overdispersedTailGE(Math.floor(line)+1,0.6*(ravg||avg)+0.4*avg,1.45); engine="hfs_compound_proxy"; }
-  const prob=sideProbFromMore(more,side); const cap=Math.min(lockedSampleCap(games,prop),v2LineCap(prop,line,sourceKey)); return {prob,confidence:cap,engine,games,workload_bucket:"HITTER",leash_profile:"NA",sample_cap:lockedSampleCap(games,prop),line_cap:v2LineCap(prop,line,sourceKey)}; }
+  const prob=sideProbFromMore(more,side); const cap=Math.min(lockedSampleCap(games,prop),v2LineCap(prop,line,sourceKey)); return {prob,confidence:cap,engine,games,workload_bucket:"HITTER",leash_profile:"NA",sample_cap:lockedSampleCap(games,prop),line_cap:v2LineCap(prop,line,sourceKey),...modelExtra}; }
 function modelPitcherComponent(rows, prop, line, side, sourceKey, formulaKey){ const games=rows.length; const bucket=workloadBucketFromRows(rows); const seasonBf=meanBf(rows); const recent=recentRows(rows); const recentBf=recent.length?meanBf(recent):seasonBf; const expBf=0.70*recentBf+0.30*seasonBf; const seasonOuts=meanNum(rows,"outs_recorded"); const recentOuts=recent.length?meanNum(recent,"outs_recorded"):seasonOuts; const expOuts=0.70*recentOuts+0.30*seasonOuts; const leash=seasonBf>0 && recentBf < seasonBf*0.80 ? "SHORTENING_LEASH" : (seasonBf>0 && recentBf>seasonBf*1.20 ? "EXPANDING_LEASH" : "STABLE_LEASH"); let more=0.5, engine="pitcher_locked_component_proxy", extra={}; if(prop==="pitcher_strikeouts"){ const rate=exposureRate(rows,"strikeouts","batters_faced",0.2218,300); more = line>=9.5 && expBf<18 ? 0.02 : binomialTailGE(Math.floor(line)+1,Math.round(expBf),rate); }
   else if(prop==="pitcher_outs"){ more=overdispersedTailGE(Math.floor(line)+1,expOuts,1.25); engine="beta_binomial_outs_proxy"; }
   else if(prop==="hits_allowed"){ const rate=exposureRate(rows,"hits_allowed","batters_faced",0.2152,300); more=overdispersedTailGE(Math.floor(line)+1,expBf*rate,1.25); engine="beta_binomial_hits_allowed_proxy"; }
@@ -1092,7 +1107,7 @@ async function runBaselineV2(env,input={}){
   const actualIssueRows=Number((await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM player_baseline_hp_v2_issues WHERE batch_id=?`,batchId))?.c||0);
   const grade=changed.length?"FAIL_MUTATION_GUARD":(actualIssueRows?"PASS_WITH_WARNINGS":"PASS");
   const cert=changed.length?"BASELINE_V2_HEB_BLOCKED_PRODUCTION_MUTATION":"BASELINE_V2_HEB_CERTIFIED_PARALLEL_READY";
-  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,raw_hp_v2_source_rows:rawHpV2SourceRows,null_only_source_rows:nullOnlySourceRows,source_hp_v2_batch_id:sourceHpV2BatchId,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:actualIssueRows,mutation_guard:{changed_tables:changed},reporting_fix_version:"v0.1.28_full_base_all_hp_keys_fast_chunk_resume",read_all_hp_v2_current:readAllHpV2Current,canonical_group_by:logicalGroupBy,baseline_source_policy:"source_agnostic_unless_formula_profile_is_source_specific",fast_safe_chunk_policy:"all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s_reporting_trace",formula_version:BASELINE_V2_FORMULA_VERSION});
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:"baseline_v2_heb",status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,raw_hp_v2_source_rows:rawHpV2SourceRows,null_only_source_rows:nullOnlySourceRows,source_hp_v2_batch_id:sourceHpV2BatchId,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:actualIssueRows,mutation_guard:{changed_tables:changed},reporting_fix_version:"v0.1.29_hrr_direct_rate_lift_guard_fast_chunk_resume",read_all_hp_v2_current:readAllHpV2Current,canonical_group_by:logicalGroupBy,baseline_source_policy:"source_agnostic_unless_formula_profile_is_source_specific",fast_safe_chunk_policy:"all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s_reporting_trace",formula_version:BASELINE_V2_FORMULA_VERSION});
   await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",staged,staged,staged,actualIssueRows,cert,grade,safeJson(output),batchId);
   await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",total,staged,staged,staged,actualIssueRows,cert,grade,safeJson(output),batchId);
   output.ok=!changed.length; output.data_ok=!changed.length; return output;
