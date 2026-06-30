@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.324-final-scoring-baseline-route-parity";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.323-market-teams-db-truth-timeout-recovery";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12575,13 +12575,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   input.mode = input.mode || input.expansion_mode || (row.job_key === "expansion-baseline-v2" ? "baseline_v2_heb" : (row.job_key === "expansion-baseline-line-inventory" ? "expansion_line_inventory" : (row.job_key === "expansion-baseline-sanity" ? "expansion_baseline_sanity" : (row.job_key === "expansion-baseline-hp" ? "expansion_baseline_hp" : "expansion_delta_full_run"))));
   input.expansion_mode = input.expansion_mode || input.mode;
   input.trigger = trigger;
-  if (input.final_scoring_system === true || String(input.baseline_run_type || '').startsWith('BASELINE_')) {
-    input.final_scoring_system = true;
-    input.final_scoring_orchestrator_parity_v0_2_324 = true;
-    input.baseline_dispatch_route = input.baseline_run_type === 'BASELINE_DELTA_LATEST_HP_V2_BATCH' ? 'final_scoring_baseline_delta' : 'final_scoring_baseline_base';
-    input.dispatch_permission_scope = 'SCORE_DB_PLAYER_BASELINE_V2_ONLY';
-  }
-  input.logical_worker_name = input.logical_worker_name || "alphadog-v2-expansion-baseline-v2-heb";
+  input.logical_worker_name = "alphadog-v2-expansion-baseline-v2-heb";
   input.deployed_worker_slot = "alphadog-v2-phase3a-first-inning-pitcher-context";
   input.parallel_v2_only = true;
   input.no_current_baseline_mutation = true;
@@ -12618,7 +12612,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   const cert = String((output && output.certification) || (partial ? "BASELINE_V2_HEB_PARTIAL_CONTINUE" : (output && output.ok ? "BASELINE_V2_HEB_COMPLETED" : "BASELINE_V2_HEB_FAILED"))).slice(0,120);
   const rowsRead = Number(output && (output.source_rows_read || output.rows_read || 0));
   const rowsWritten = Number(output && (output.rows_written || output.rows_promoted || output.rows_staged || 0));
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:input.logical_worker_name || "alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", baseline_run_type:input.baseline_run_type || null, baseline_dispatch_route:input.baseline_dispatch_route || null, final_scoring_system:!!input.final_scoring_system, final_scoring_orchestrator_parity_v0_2_324:!!input.final_scoring_orchestrator_parity_v0_2_324, dispatch_permission_scope:input.dispatch_permission_scope || null, parallel_v2_only:true, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
 
   if (partial && nextInput) {
     const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
@@ -12631,7 +12625,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   const ok = !!(output && output.ok); const dataOk = !!(output && output.data_ok); const queueStatus = ok ? "completed" : "failed"; const errorCode = ok ? null : "expansion_baseline_v2_worker_failed"; const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Expansion Baseline V2 worker failed").slice(0,900);
   await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,queueStatus,dataOk?1:0,cert,rowsRead,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(cappedOutput),errorCode,errorMessage);
   await run(env.CONTROL_DB,"UPDATE control_job_queue SET status=?, started_at=COALESCE(started_at, CURRENT_TIMESTAMP), finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus,safeStringifyD1(cappedOutput),errorCode,errorMessage,row.request_id);
-  await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'expansion_baseline_v2_dispatch_completed', 'Orchestrator completed Expansion Baseline V2 HEB dispatch', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,ok?"INFO":"ERROR",JSON.stringify({request_id:row.request_id,run_id:runId,ok,data_ok:dataOk,rows_read:rowsRead,rows_written:rowsWritten,certification:cert,baseline_run_type:input.baseline_run_type||null,baseline_dispatch_route:input.baseline_dispatch_route||null,final_scoring_system:!!input.final_scoring_system,version:SYSTEM_VERSION}).slice(0,9000));
+  await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'expansion_baseline_v2_dispatch_completed', 'Orchestrator completed Expansion Baseline V2 HEB dispatch', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,ok?"INFO":"ERROR",JSON.stringify({request_id:row.request_id,run_id:runId,ok,data_ok:dataOk,rows_read:rowsRead,rows_written:rowsWritten,certification:cert,version:SYSTEM_VERSION}).slice(0,9000));
   return cappedOutput;
 }
 
