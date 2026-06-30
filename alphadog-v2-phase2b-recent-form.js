@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-recent-form";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-factor-miner";
 const JOB_KEY = "prop-factor-miner";
-const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.18-dormant-expansion-props";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.18-dormant-expansion-props";
+const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.19-expansion-baseline-consumption";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.19-expansion-baseline-consumption";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
 
@@ -20,7 +20,7 @@ const HITTER_PROPS = new Set([
 ]);
 const PITCHER_PROPS = new Set([
   "pitcher_strikeouts", "pitcher_outs", "pitching_outs", "earned_runs", "earned_runs_allowed",
-  "hits_allowed", "walks_allowed", "pitches_thrown", "rfi_nrfi"
+  "hits_allowed", "walks_allowed", "pitches_thrown", "rfi_nrfi", "pitcher_fantasy_score", "runs_allowed"
 ]);
 const DEFERRED_PROPS = new Set(["pitcher_strikeouts_combo"]);
 
@@ -615,6 +615,10 @@ async function loadContext(env, dates) {
   ctx.pitcherSnapshots = new Map(); for (const r of await all(env.STATS_PITCHER_DB, "SELECT player_id, season, metric_window, config_profile_id, formula_version, games_count, appearances_count, starts_count, innings_pitched_sum, outs_recorded_sum, batters_faced_sum, pitches_sum, strikes_sum, hits_allowed_sum, runs_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated, hr_rate_calculated, k_minus_bb_rate_calculated, pitches_per_out_calculated, strikes_per_pitch_calculated, innings_per_appearance_calculated, sample_size_label, certification_grade, updated_at FROM pitcher_metric_snapshots WHERE season=2026")) pushMapArray(ctx.pitcherSnapshots, key(r.player_id), r);
   ctx.hitterSplits = new Map(); for (const r of await all(env.STATS_HITTER_DB, "SELECT player_id, season, split_key, split_code, split_description, pa, ab, hits, singles, doubles, home_runs, runs, rbi, walks, strikeouts, avg, obp, slg, ops, babip, certification_grade, source_snapshot_date, updated_at FROM hitter_splits WHERE season=2026")) pushMapArray(ctx.hitterSplits, key(r.player_id), r);
   ctx.pitcherSplits = new Map(); for (const r of await all(env.STATS_PITCHER_DB, "SELECT player_id, season, split_key, split_code, split_description, innings_pitched, innings_pitched_decimal, outs_recorded, batters_faced, hits_allowed, earned_runs, walks_allowed, strikeouts, era, whip, avg_against, obp_against, slg_against, ops_against, certification_grade, source_snapshot_date, updated_at FROM pitcher_splits WHERE season=2026")) pushMapArray(ctx.pitcherSplits, key(r.player_id), r);
+  ctx.expansionBaselineHp = new Map();
+  for (const r of await all(env.SCORE_DB, "SELECT batch_id, profile_namespace, source_data_family, source_table, source_formula_key, player_id, player_name, canonical_prop_key, line_value, selected_side, baseline_hp_0_100, raw_rate_0_100, baseline_confidence_0_100, sample_profile, non_push_sample, hit_count, miss_count, formula_version, confidence_formula_version, updated_at FROM expansion_player_baseline_hp_current")) {
+    pushMapArray(ctx.expansionBaselineHp, key(r.player_id, r.canonical_prop_key, r.line_value), r);
+  }
   ctx.refTeams = new Map();
   for (const r of await all(env.REF_DB, "SELECT team_id, mlb_team_id, abbreviation, full_name, nickname, short_name, team_code, file_code FROM ref_teams WHERE active=1")) {
     for (const v of [r.team_id, r.mlb_team_id, r.abbreviation, r.full_name, r.nickname, r.short_name, r.team_code, r.file_code]) {
@@ -824,6 +828,8 @@ function buildPacket(family, row, classification, ctx) {
   const readinessStatus = readiness ? readiness.context_status : "missing";
   const marketStatus = market.status;
   const dailyStatus = readiness ? readiness.context_grade : "missing_current_readiness";
+  const expansionBaselineRows = ctx.expansionBaselineHp ? (ctx.expansionBaselineHp.get(key(playerId, row.canonical_prop_key, row.line_value)) || []) : [];
+  if ((row.canonical_prop_key === "pitcher_fantasy_score" || row.canonical_prop_key === "runs_allowed" || row.canonical_prop_key === "rfi_nrfi") && expansionBaselineRows.length === 0) warnings.push("expansion_baseline_hp_missing_for_prop_line");
   const baseMetricStatus = baseMetric ? `present_from_${baseMetricSource}` : "missing";
   const grade = gradeFromCounts(0, warnings.length, missing.length);
   const payload = {
@@ -852,6 +858,7 @@ function buildPacket(family, row, classification, ctx) {
       is_home: isHome
     },
     base_metrics: { season_summary: baseMetric, season_summary_source: baseMetricSource, legacy_summary_table_row: legacyMetric, snapshots, splits },
+    expansion_baseline_hp: { source_table: "SCORE_DB.expansion_player_baseline_hp_current", rows: expansionBaselineRows, row_count: expansionBaselineRows.length, consumed_by_factor_packet: expansionBaselineRows.length > 0 },
     daily_context: {
       readiness,
       lineup,
@@ -1062,7 +1069,7 @@ async function runFactorMining(request, env) {
     const runId = input.run_id || (existingRunning && existingRunning.run_id) || rid("run");
     if (!resuming) {
       await run(env.SCORE_DB, `INSERT OR REPLACE INTO prop_factor_batches (batch_id,request_id,run_id,worker_name,worker_version,deployed_worker_slot,deployed_slot_version,mode,factor_family,status,window_start,window_end,prepared_rows_read,source_tables_checked_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
-        batchId, input.request_id || null, runId, LOGICAL_WORKER_NAME, SYSTEM_VERSION, WORKER_NAME, DEPLOYED_SLOT_VERSION, mode, family, "running", dates[0], dates[1], prepared.length, JSON.stringify({ score_db:["score_board_prepared_current"], market_db:["market_context_probe_coverage","market_context_probe_player_props","market_context_probe_game_market_summary"], daily_db:["daily_context_readiness_current","daily_lineups_current","daily_starters_current","daily_player_availability_current_v1","daily_game_weather_current","daily_bullpen_availability_current","daily_bullpen_pitcher_availability_current","daily_team_schedule_spot_current","daily_umpire_context_current"], stats_hitter_db:["hitter_metric_snapshots(primary)","hitter_metrics(legacy_optional_empty_ok)","hitter_splits"], stats_pitcher_db:["pitcher_metric_snapshots(primary)","pitcher_metrics(legacy_optional_empty_ok)","pitcher_splits"], team_db:["mlb_game_calendar","mlb_game_data_coverage"] })
+        batchId, input.request_id || null, runId, LOGICAL_WORKER_NAME, SYSTEM_VERSION, WORKER_NAME, DEPLOYED_SLOT_VERSION, mode, family, "running", dates[0], dates[1], prepared.length, JSON.stringify({ score_db:["score_board_prepared_current","expansion_player_baseline_hp_current"], market_db:["market_context_probe_coverage","market_context_probe_player_props","market_context_probe_game_market_summary"], daily_db:["daily_context_readiness_current","daily_lineups_current","daily_starters_current","daily_player_availability_current_v1","daily_game_weather_current","daily_bullpen_availability_current","daily_bullpen_pitcher_availability_current","daily_team_schedule_spot_current","daily_umpire_context_current"], stats_hitter_db:["hitter_metric_snapshots(primary)","hitter_metrics(legacy_optional_empty_ok)","hitter_splits"], stats_pitcher_db:["pitcher_metric_snapshots(primary)","pitcher_metrics(legacy_optional_empty_ok)","pitcher_splits"], team_db:["mlb_game_calendar","mlb_game_data_coverage"] })
       );
     } else {
       await run(env.SCORE_DB, `UPDATE prop_factor_batches SET status='running', prepared_rows_read=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, prepared.length, batchId);

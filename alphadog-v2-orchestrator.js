@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.324-expansion-v2-fast-chunk-parity";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.325-incremental-expansion-separated-calendar-certified";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -3347,7 +3347,7 @@ async function enqueueScheduledBoardFullRunIfDue(env, cronExpression = "unknown"
 }
 
 const INCREMENTAL_MORNING_FULL_RUN_STAGES = [
-  { stage_key: "calendar_tally_precheck", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Precheck", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "precheck", allow_blocking_gaps: true },
+  { stage_key: "calendar_tally_precheck", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Precheck", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "precheck", allow_blocking_gaps: true, calendar_tally_gap_plan_stage: true },
   { stage_key: "hitter_game_logs_delta", job_key: "base-hitter-game-logs", worker_name: "alphadog-v2-base-hitter-game-logs", display_name: "Hitter Game Logs Delta", visible_button: "DELTA > Hitter Game Logs", mode: "delta_update", layer_key: "hitter_game_logs", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_game_logs_delta", job_key: "base-pitcher-game-logs", worker_name: "alphadog-v2-base-pitcher-game-logs", display_name: "Pitcher Game Logs Delta", visible_button: "DELTA > Pitcher Game Logs", mode: "delta_update", layer_key: "pitcher_game_logs", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "team_game_logs_delta", job_key: "base-team-game-logs", worker_name: "alphadog-v2-base-team-game-logs", display_name: "Team Game Logs Delta", visible_button: "DELTA > Team Game Logs", mode: "delta_update", layer_key: "team_game_logs", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
@@ -3355,10 +3355,13 @@ const INCREMENTAL_MORNING_FULL_RUN_STAGES = [
   { stage_key: "bullpen_history_delta", job_key: "base-bullpen-history", worker_name: "alphadog-v2-base-bullpen-history", display_name: "Bullpen History Delta", visible_button: "BASE > Bullpen History", mode: "delta_update", layer_key: "bullpen_history", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "hitter_splits_delta", job_key: "base-hitter-splits", worker_name: "alphadog-v2-base-hitter-splits", display_name: "Hitter Splits Delta", visible_button: "DELTA > Hitter Splits", mode: "delta_update", layer_key: "hitter_splits", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_splits_delta", job_key: "base-pitcher-splits", worker_name: "alphadog-v2-base-pitcher-splits", display_name: "Pitcher Splits Delta", visible_button: "DELTA > Pitcher Splits", mode: "delta_update", layer_key: "pitcher_splits", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  { stage_key: "expansion_delta_mining", job_key: "expansion-baseline-full-run", worker_name: "alphadog-v2-phase3a-first-inning-pitcher-context", display_name: "Expansion Mining Delta", visible_button: "EXPANSION > Mining", mode: "expansion_delta_mining", worker_group: "Delta", phase_key: "expansion", priority: 4, expansion_baseline_stage: "delta_mining", separate_expansion_mining_stage: true },
   { stage_key: "hitter_metrics_affected_delta", job_key: "base-hitter-metrics", worker_name: "alphadog-v2-base-hitter-metrics", display_name: "Hitter Metrics Affected Delta", visible_button: "DELTA > Hitter Metrics", mode: "delta_recalculate_affected_players", layer_key: "hitter_metrics", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_metrics_affected_delta", job_key: "base-pitcher-metrics", worker_name: "alphadog-v2-base-pitcher-metrics", display_name: "Pitcher Metrics Affected Delta", visible_button: "DELTA > Pitcher Metrics", mode: "delta_recalculate_affected_players", layer_key: "pitcher_metrics", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
-  { stage_key: "calendar_tally_final_check", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Final Check", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "final_check", require_zero_blocking_gaps: true },
-  { stage_key: "expansion_baseline_full_run", job_key: "expansion-baseline-full-run", worker_name: "alphadog-v2-phase3a-first-inning-pitcher-context", display_name: "Expansion Baseline Delta Full Run", visible_button: "EXPANSION > Full Baseline", mode: "expansion_delta_full_run", worker_group: "Delta", phase_key: "player_baseline", priority: 4, expansion_baseline_stage: "delta_full_run", require_completed_final_calendar_tally: true, fallback_to_full_baseline_if_missing_pristine_base: true }
+  { stage_key: "expansion_line_inventory_delta", job_key: "expansion-baseline-full-run", worker_name: "alphadog-v2-phase3a-first-inning-pitcher-context", display_name: "Expansion Line Inventory Delta", visible_button: "EXPANSION > Line Inventory", mode: "expansion_line_inventory", worker_group: "Delta", phase_key: "expansion", priority: 4, expansion_baseline_stage: "line_inventory", requires_completed_expansion_mining: true },
+  { stage_key: "expansion_delta_sanity", job_key: "expansion-baseline-full-run", worker_name: "alphadog-v2-phase3a-first-inning-pitcher-context", display_name: "Expansion Delta Sanity", visible_button: "EXPANSION > Sanity", mode: "expansion_delta_sanity", worker_group: "Delta", phase_key: "player_baseline", priority: 4, expansion_baseline_stage: "delta_sanity", requires_completed_expansion_mining: true },
+  { stage_key: "expansion_delta_hp", job_key: "expansion-baseline-full-run", worker_name: "alphadog-v2-phase3a-first-inning-pitcher-context", display_name: "Expansion Delta HP", visible_button: "EXPANSION > HP", mode: "expansion_delta_hp", worker_group: "Delta", phase_key: "player_baseline", priority: 4, expansion_baseline_stage: "delta_hp", requires_completed_expansion_sanity: true },
+  { stage_key: "calendar_tally_final_check", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Final Check", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "final_check", require_zero_blocking_gaps: true, require_completed_expansion_delta_hp: true }
 ];
 
 const STATIC_FULL_RUN_STAGES = [
@@ -3911,6 +3914,37 @@ function childPassedIncrementalMorningFullRun(stage, child) {
     if (Number(output.issue_rows || 0) > 0) return { pass: false, reason: "player_baseline_hp_issue_rows_positive", issue_rows: output.issue_rows };
     return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.source_rows_read || output.rows_read || 0, rows_written: rowsPromoted, rows_promoted: rowsPromoted, external_calls: 0, output, player_baseline_stage_validated: true };
   }
+  if (stage.job_key === "expansion-baseline-full-run") {
+    const mode = String(stage.mode || output.mode || "");
+    const grade = String(output.certification_grade || "");
+    const passGrade = grade === "PASS" || grade === "PASS_WITH_WARNINGS";
+    if (mode === "expansion_delta_mining") {
+      if (!cert.includes("EXPANSION_DELTA_MINING") || !passGrade) return { pass: false, reason: "expansion_delta_mining_not_certified", certification: cert, certification_grade: grade, status };
+      if (Number(output.delta_games_total || 0) > 0 && Number(output.delta_games_written || 0) <= 0) return { pass: false, reason: "expansion_delta_mining_no_games_written", delta_games_total: output.delta_games_total, delta_games_written: output.delta_games_written };
+      if (Number(output.delta_pitcher_rows_written || 0) <= 0 && Number(output.delta_games_written || 0) > 0) return { pass: false, reason: "expansion_delta_mining_no_pitcher_rows_written", delta_games_written: output.delta_games_written, delta_pitcher_rows_written: output.delta_pitcher_rows_written };
+      return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.delta_games_total || output.rows_read || 0, rows_written: output.rows_written || 0, rows_promoted: 0, external_calls: output.external_calls_performed || output.external_calls || 0, output, expansion_stage_validated: true };
+    }
+    if (mode === "expansion_line_inventory") {
+      if (!cert.includes("EXPANSION_LINE_INVENTORY_CERTIFIED") || !passGrade) return { pass: false, reason: "expansion_line_inventory_not_certified", certification: cert, certification_grade: grade, status };
+      if (Number(output.inventory_rows || output.rows_written || 0) <= 0) return { pass: false, reason: "expansion_line_inventory_no_rows", inventory_rows: output.inventory_rows, rows_written: output.rows_written };
+      if (Number(output.unsupported_missing_rows || 0) > 0) return { pass: false, reason: "expansion_line_inventory_unsupported_missing_rows_positive", unsupported_missing_rows: output.unsupported_missing_rows };
+      return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.inventory_rows || output.rows_read || 0, rows_written: output.rows_written || output.inventory_rows || 0, rows_promoted: 0, external_calls: 0, output, expansion_stage_validated: true };
+    }
+    if (mode === "expansion_delta_sanity") {
+      if (!cert.includes("EXPANSION_DELTA_SANITY_CERTIFIED") || grade !== "PASS") return { pass: false, reason: "expansion_delta_sanity_not_certified_pass", certification: cert, certification_grade: grade, status };
+      if (Number(output.rows_staged || 0) <= 0 || Number(output.rows_promoted || 0) <= 0 || Number(output.history_rows || 0) <= 0) return { pass: false, reason: "expansion_delta_sanity_missing_stage_promote_history_counts", rows_staged: output.rows_staged, rows_promoted: output.rows_promoted, history_rows: output.history_rows };
+      if (Number(output.rows_staged || 0) !== Number(output.rows_promoted || 0) || Number(output.rows_promoted || 0) !== Number(output.history_rows || 0)) return { pass: false, reason: "expansion_delta_sanity_stage_promote_history_parity_failed", rows_staged: output.rows_staged, rows_promoted: output.rows_promoted, history_rows: output.history_rows };
+      if (Number(output.issue_rows || 0) > 0) return { pass: false, reason: "expansion_delta_sanity_issue_rows_positive", issue_rows: output.issue_rows };
+      return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.affected_pitchers || output.rows_read || 0, rows_written: output.rows_written || output.rows_promoted || 0, rows_promoted: output.rows_promoted || 0, external_calls: 0, output, expansion_stage_validated: true };
+    }
+    if (mode === "expansion_delta_hp") {
+      if (!cert.includes("EXPANSION_DELTA_HP_CERTIFIED") || grade !== "PASS") return { pass: false, reason: "expansion_delta_hp_not_certified_pass", certification: cert, certification_grade: grade, status };
+      if (Number(output.source_rows_read || 0) <= 0 || Number(output.rows_staged || 0) <= 0 || Number(output.rows_promoted || 0) <= 0 || Number(output.history_rows || 0) <= 0) return { pass: false, reason: "expansion_delta_hp_missing_source_stage_promote_history_counts", source_rows_read: output.source_rows_read, rows_staged: output.rows_staged, rows_promoted: output.rows_promoted, history_rows: output.history_rows };
+      if (Number(output.rows_staged || 0) !== Number(output.rows_promoted || 0) || Number(output.rows_promoted || 0) !== Number(output.history_rows || 0)) return { pass: false, reason: "expansion_delta_hp_stage_promote_history_parity_failed", rows_staged: output.rows_staged, rows_promoted: output.rows_promoted, history_rows: output.history_rows };
+      if (Number(output.issue_rows || 0) > 0) return { pass: false, reason: "expansion_delta_hp_issue_rows_positive", issue_rows: output.issue_rows };
+      return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.source_rows_read || 0, rows_written: output.rows_written || output.rows_promoted || 0, rows_promoted: output.rows_promoted || 0, external_calls: 0, output, expansion_stage_validated: true };
+    }
+  }
   const unsafeTrueKeys = ["source_table_mutation_performed", "scoring_performed", "ranking_performed", "final_board_write_performed", "final_board_write", "scoring_write_performed"];
   for (const k of unsafeTrueKeys) {
     if (Object.prototype.hasOwnProperty.call(output, k) && output[k] === true) return { pass: false, reason: `unsafe_output_${k}_true` };
@@ -4028,11 +4062,11 @@ function buildIncrementalMorningFullRunRetryResumeInput(parentRow, stage, stepIn
   if (Object.keys(state).length > 0) input.expansion_full_run_state = state;
   const stateBatch = state && state.dynamic_v2_batch_id ? state.dynamic_v2_batch_id : null;
   const topBatch = input.dynamic_v2_batch_id || input.batch_id || null;
-  if (stage.stage_key === "expansion_baseline_full_run") {
+  if (stage.job_key === "expansion-baseline-full-run") {
     input.mode = input.mode || stage.mode;
     input.expansion_mode = input.expansion_mode || input.mode || stage.mode;
     input.full_depth_base = false;
-    input.fallback_to_full_baseline_if_missing_pristine_base = true;
+    input.fallback_to_full_baseline_if_missing_pristine_base = stage.stage_key === "expansion_baseline_full_run";
     input.dynamic_v2_batch_id = input.dynamic_v2_batch_id || stateBatch || topBatch;
     if (stateBatch && !input.dynamic_v2_batch_id) input.dynamic_v2_batch_id = stateBatch;
     if (input.dynamic_v2_batch_id && !input.batch_id) input.batch_id = input.dynamic_v2_batch_id;
@@ -4049,11 +4083,65 @@ function buildIncrementalMorningFullRunRetryResumeInput(parentRow, stage, stepIn
   return input;
 }
 
+async function latestCompletedIncrementalStageOutput(env, parentRow, stageKey) {
+  const row = await first(env.CONTROL_DB,
+    "SELECT output_json FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND json_extract(input_json,'$.full_run_stage_key')=? AND status='completed' ORDER BY datetime(created_at) DESC LIMIT 1",
+    parentRow.request_id, parentRow.chain_id, stageKey
+  );
+  return parseJsonSafeText(row && row.output_json || "{}", {});
+}
+
+async function buildLinkedIncrementalMorningFullRunChildInput(env, parentRow, stage, stepIndex, retryCount = 0) {
+  const input = incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryCount);
+  input.expansion_separated_calendar_tally_sequence_v0_2_325 = true;
+  input.expansion_stage_key = stage.expansion_baseline_stage || null;
+
+  if (stage.stage_key === "expansion_delta_mining") {
+    input.expansion_delta_mining_before_metrics = true;
+    input.calendar_tally_precheck_gap_plan_required = true;
+    input.delta_mining_batch_id = input.delta_mining_batch_id || rid("expansion_first_inning_delta_batch");
+  }
+
+  if (stage.stage_key === "expansion_line_inventory_delta") {
+    const mining = await latestCompletedIncrementalStageOutput(env, parentRow, "expansion_delta_mining");
+    input.requires_completed_expansion_mining = true;
+    input.delta_mining_batch_id = mining.batch_id || mining.delta_mining_batch_id || null;
+    input.delta_game_pks = Array.isArray(mining.delta_game_pks) ? mining.delta_game_pks : null;
+    input.expansion_mining_certification = mining.certification || null;
+  }
+
+  if (stage.stage_key === "expansion_delta_sanity") {
+    const mining = await latestCompletedIncrementalStageOutput(env, parentRow, "expansion_delta_mining");
+    input.requires_completed_expansion_mining = true;
+    input.delta_mining_batch_id = mining.batch_id || mining.delta_mining_batch_id || null;
+    input.delta_game_pks = Array.isArray(mining.delta_game_pks) ? mining.delta_game_pks : null;
+    input.expansion_mining_certification = mining.certification || null;
+  }
+
+  if (stage.stage_key === "expansion_delta_hp") {
+    const sanity = await latestCompletedIncrementalStageOutput(env, parentRow, "expansion_delta_sanity");
+    input.requires_completed_expansion_sanity = true;
+    input.delta_sanity_batch_id = sanity.batch_id || sanity.delta_sanity_batch_id || sanity.source_sanity_batch_id || null;
+    input.source_sanity_batch_id = input.delta_sanity_batch_id;
+    input.expansion_sanity_certification = sanity.certification || null;
+  }
+
+  if (stage.stage_key === "calendar_tally_final_check") {
+    const hp = await latestCompletedIncrementalStageOutput(env, parentRow, "expansion_delta_hp");
+    input.require_completed_expansion_delta_hp = true;
+    input.expansion_delta_hp_batch_id = hp.batch_id || hp.hp_batch_id || null;
+    input.expansion_delta_hp_certification = hp.certification || null;
+    input.calendar_tally_final_after_expansion_baseline_delta = true;
+  }
+
+  return input;
+}
+
 async function enqueueIncrementalMorningFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0, inputOverride = null) {
   const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
   const input = inputOverride && typeof inputOverride === "object"
     ? inputOverride
-    : incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryCount);
+    : await buildLinkedIncrementalMorningFullRunChildInput(env, parentRow, stage, stepIndex, retryCount);
   await run(env.CONTROL_DB,
     "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
     childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input)
@@ -4796,7 +4884,7 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
             child.request_id, runId, WORKER_NAME, child.job_key, JSON.stringify({ parent_request_id: row.request_id, stage_key: stage.stage_key, previous_status: child.status, previous_updated_at: child.updated_at, retry_attempt_index: attempts.length, stale_threshold_minutes: 2, version: SYSTEM_VERSION })
           );
         }
-        const retryInputOverride = stage.stage_key === "expansion_baseline_full_run"
+        const retryInputOverride = stage.job_key === "expansion-baseline-full-run"
           ? buildIncrementalMorningFullRunRetryResumeInput(row, stage, i, attempts.length, child)
           : null;
         const enqueued = await enqueueIncrementalMorningFullRunChild(env, row, stage, i, attempts.length, retryInputOverride);
@@ -4845,11 +4933,11 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
     stageReports.push(report);
   }
 
-  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_BASE_DELTAS_AND_EXPANSION_BASELINE_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_final_check_in_chain: true, calendar_tally_final_check_before_player_baseline: true, old_player_baseline_sanity_removed: true, old_player_baseline_hp_removed: true, expansion_baseline_full_run_included: true, final_calendar_tally_blocking_gap_count: 0, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: "COMPLETED_INCREMENTAL_MORNING_FULL_RUN", certification: "INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_CALENDAR_TALLY_BASE_DELTAS_EXPANSION_MINING_AND_DELTA_BASELINE_PASS", certification_grade: "FULL_RUN_PASS", full_run_certified: true, calendar_tally_precheck_first: true, calendar_tally_final_check_in_chain: true, calendar_tally_final_check_after_expansion_delta_baseline: true, calendar_tally_gap_plan_before_all_miners: true, expansion_mining_separated_from_baseline_calculation: true, expansion_mining_before_metrics: true, expansion_line_inventory_separated: true, expansion_delta_sanity_separated: true, expansion_delta_hp_separated: true, old_player_baseline_sanity_removed: true, old_player_baseline_hp_removed: true, expansion_baseline_full_run_removed_from_incremental_sequence: true, final_calendar_tally_blocking_gap_count: 0, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: stageReports, approved_chain_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.job_key), approved_stage_order: INCREMENTAL_MORNING_FULL_RUN_STAGES.map(s => s.stage_key), no_board_refresh_included: true, board_refresh_deferred: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
   await releaseIncrementalMorningFullRunLock(env, row);
-  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_BASE_DELTAS_AND_PLAYER_BASELINE', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, 'INCREMENTAL_MORNING_FULL_RUN_CERTIFIED_EXPANSION_MINING_AND_DELTA_BASELINE', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, stageReports.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
-  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_completed', 'Incremental Morning Full Run certified all incremental base/delta stages and Expansion Baseline Full Run refresh', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'incremental_morning_full_run_completed', 'Incremental Morning Full Run certified Calendar/Tally, base deltas, separated expansion mining, separated expansion delta baseline, and final Calendar/Tally', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify(output));
   return output;
 }
 
@@ -12404,7 +12492,7 @@ async function processPlayerBaselineSanityJob(env, row, runId, trigger) {
     const rowsReadPartial = Number((output && (output.hitter_log_rows_read || 0)) || 0) + Number((output && (output.pitcher_log_rows_read || 0)) || 0);
     const rowsWrittenPartial = Number(output && (output.rows_written || output.rows_staged || output.rows_promoted || 0));
     const certPartial = String((output && output.certification) || "PLAYER_BASELINE_SANITY_PARTIAL_CONTINUE").slice(0, 120);
-    const runAfterSeconds = expansionV2AllCurrent ? Math.max(0, Math.min(5, Number(output.run_after_delay_seconds ?? 0))) : Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
+    const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
     const cappedPartialOutput = {
       ...output,
       orchestrator_dispatch: {
@@ -12584,15 +12672,10 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   input.no_final_board = true;
   input.no_scheduler_mutation = true;
   const expansionV2AllCurrent = input.read_all_hp_v2_current === true || String(input.source_hp_v2_batch_id || input.hp_v2_batch_id || '').toUpperCase() === '__ALL_HIT_PROBABILITY_V2_CURRENT__' || String(input.source_hp_v2_batch_id || input.hp_v2_batch_id || '').toUpperCase() === 'ALL' || String(input.source_hp_v2_batch_id || input.hp_v2_batch_id || '') === '*';
-  const expansionV2FastChunkDefault = 160;
-  const expansionV2FastChunkCap = 220;
-  input.v2_all_current_chunk_size = expansionV2AllCurrent ? Math.max(expansionV2FastChunkDefault, Math.min(expansionV2FastChunkCap, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || expansionV2FastChunkDefault))) : input.v2_all_current_chunk_size;
-  input.v2_chunk_size = expansionV2AllCurrent ? Math.max(expansionV2FastChunkDefault, Math.min(expansionV2FastChunkCap, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || expansionV2FastChunkDefault))) : Math.max(10, Math.min(150, Number(input.v2_chunk_size || 80)));
-  input.v2_soft_yield_ms = expansionV2AllCurrent ? Math.max(60000, Math.min(65000, Number(input.v2_soft_yield_ms || 60000))) : input.v2_soft_yield_ms;
-  if (expansionV2AllCurrent) {
-    input.fast_safe_chunk_policy = 'all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s_orchestrator_v0_2_324';
-    input.expansion_v2_fast_chunk_orchestrator_parity_v0_2_324 = true;
-  }
+  input.v2_all_current_chunk_size = expansionV2AllCurrent ? Math.max(96, Math.min(220, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 160))) : input.v2_all_current_chunk_size;
+  input.v2_chunk_size = expansionV2AllCurrent ? Math.max(96, Math.min(220, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 160))) : Math.max(10, Math.min(150, Number(input.v2_chunk_size || 80)));
+  input.v2_soft_yield_ms = expansionV2AllCurrent ? Math.max(45000, Math.min(65000, Number(input.v2_soft_yield_ms || 60000))) : input.v2_soft_yield_ms;
+  if (expansionV2AllCurrent) input.fast_safe_chunk_policy = 'all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s';
 
   if (!env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER || typeof env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER.fetch !== "function") {
     const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", job_key:row.job_key, request_id:row.request_id, run_id:runId, status:"EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING", certification:"EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING", certification_grade:"BLOCKED", required_binding:"PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER" };
@@ -12613,27 +12696,17 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   }
 
   const partial = !!(output && (output.partial_continue || output.orchestrator_should_self_continue || output.continuation_required));
-  let nextInput = output && output.next_input_json && typeof output.next_input_json === "object" ? output.next_input_json : (output && output.next_input && typeof output.next_input === "object" ? output.next_input : null);
-  if (partial && nextInput && expansionV2AllCurrent) {
-    nextInput = {
-      ...nextInput,
-      v2_chunk_size: Math.max(expansionV2FastChunkDefault, Math.min(expansionV2FastChunkCap, Number(nextInput.v2_chunk_size || input.v2_chunk_size || expansionV2FastChunkDefault))),
-      v2_all_current_chunk_size: Math.max(expansionV2FastChunkDefault, Math.min(expansionV2FastChunkCap, Number(nextInput.v2_all_current_chunk_size || input.v2_all_current_chunk_size || expansionV2FastChunkDefault))),
-      v2_soft_yield_ms: Math.max(60000, Math.min(65000, Number(nextInput.v2_soft_yield_ms || input.v2_soft_yield_ms || 60000))),
-      fast_safe_chunk_policy: 'all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s_orchestrator_v0_2_324',
-      expansion_v2_fast_chunk_orchestrator_parity_v0_2_324: true
-    };
-  }
+  const nextInput = output && output.next_input_json && typeof output.next_input_json === "object" ? output.next_input_json : (output && output.next_input && typeof output.next_input === "object" ? output.next_input : null);
   const cert = String((output && output.certification) || (partial ? "BASELINE_V2_HEB_PARTIAL_CONTINUE" : (output && output.ok ? "BASELINE_V2_HEB_COMPLETED" : "BASELINE_V2_HEB_FAILED"))).slice(0,120);
   const rowsRead = Number(output && (output.source_rows_read || output.rows_read || 0));
   const rowsWritten = Number(output && (output.rows_written || output.rows_promoted || output.rows_staged || 0));
   const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
 
   if (partial && nextInput) {
-    const runAfterSeconds = expansionV2AllCurrent ? Math.max(0, Math.min(5, Number(output.run_after_delay_seconds ?? 0))) : Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
+    const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
     await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,cert,rowsRead,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(cappedOutput));
     await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", runAfterSeconds, safeStringifyD1(nextInput), safeStringifyD1(cappedOutput), row.request_id);
-    await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'expansion_baseline_partial_continue', 'Orchestrator scheduled Expansion Baseline continuation with V2 fast-chunk parity preserved', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,JSON.stringify({request_id:row.request_id,run_id:runId,certification:cert,batch_id:nextInput.batch_id||null,v2_cursor_offset:nextInput.v2_cursor_offset||null,v2_chunk_size:nextInput.v2_chunk_size||null,v2_all_current_chunk_size:nextInput.v2_all_current_chunk_size||null,v2_soft_yield_ms:nextInput.v2_soft_yield_ms||null,fast_safe_chunk_policy:nextInput.fast_safe_chunk_policy||null,delta_cursor_offset:nextInput.delta_cursor_offset||null,delta_mining_batch_id:nextInput.delta_mining_batch_id||null,mode:nextInput.mode||input.mode||null,run_after_seconds:runAfterSeconds,expansion_v2_fast_chunk_orchestrator_parity_v0_2_324:!!nextInput.expansion_v2_fast_chunk_orchestrator_parity_v0_2_324,version:SYSTEM_VERSION}).slice(0,9000));
+    await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'expansion_baseline_partial_continue', 'Orchestrator scheduled Expansion Baseline continuation', ?, CURRENT_TIMESTAMP)", row.request_id,runId,WORKER_NAME,row.job_key,JSON.stringify({request_id:row.request_id,run_id:runId,certification:cert,batch_id:nextInput.batch_id||null,v2_cursor_offset:nextInput.v2_cursor_offset||null,delta_cursor_offset:nextInput.delta_cursor_offset||null,delta_mining_batch_id:nextInput.delta_mining_batch_id||null,mode:nextInput.mode||input.mode||null,run_after_seconds:runAfterSeconds,version:SYSTEM_VERSION}).slice(0,9000));
     return cappedOutput;
   }
 
@@ -17323,7 +17396,7 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
     ? { ...output.next_input_json }
     : (isExpansionFullRun
       ? { ...input, mode: input.mode || 'expansion_baseline_full_run', expansion_mode: input.expansion_mode || input.mode || 'expansion_baseline_full_run', expansion_full_run_stale_running_rescue: true }
-      : { ...input, mode: 'baseline_v2_heb', expansion_mode: 'baseline_v2_heb', v2_chunk_size: Math.max(160, Math.min(220, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 160))), v2_all_current_chunk_size: Math.max(160, Math.min(220, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 160))), v2_soft_yield_ms: Math.max(60000, Math.min(65000, Number(input.v2_soft_yield_ms || 60000))), fast_safe_chunk_policy: 'all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s_orchestrator_v0_2_324', expansion_v2_fast_chunk_orchestrator_parity_v0_2_324: true, expansion_v2_stale_running_rescue: true });
+      : { ...input, mode: 'baseline_v2_heb', expansion_mode: 'baseline_v2_heb', v2_chunk_size: Math.max(96, Math.min(220, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 160))), v2_all_current_chunk_size: Math.max(96, Math.min(220, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 160))), v2_soft_yield_ms: Math.max(45000, Math.min(65000, Number(input.v2_soft_yield_ms || 60000))), fast_safe_chunk_policy: 'all_current_default_160_cap_220_batched_stage_writes_soft_yield_60s', expansion_v2_stale_running_rescue: true });
   nextInput.request_id = row.request_id;
   nextInput.chain_id = row.chain_id;
   nextInput.job_key = row.job_key;
