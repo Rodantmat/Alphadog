@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.31-delta-sanity-inventory-scoped-hp-chunks";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.32-stable-baseline-ids-inventory-direct-join";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -493,11 +493,21 @@ async function runLineInventory(env,input={}){
       SUM(CASE WHEN source_line_id LIKE '%|standard|%' THEN 1 ELSE 0 END) AS standard_rows,
       SUM(CASE WHEN source_line_id LIKE '%|goblin|%' THEN 1 ELSE 0 END) AS goblin_rows,
       SUM(CASE WHEN source_line_id LIKE '%|demon|%' THEN 1 ELSE 0 END) AS demon_rows,
-      SUM(CASE WHEN baseline_hp_row_id IS NULL THEN 1 ELSE 0 END) AS missing_baseline_rows
-    FROM hit_probability_v2_current
-    WHERE board_line_value IS NOT NULL AND canonical_prop_key IS NOT NULL AND selected_side IS NOT NULL
-    GROUP BY canonical_prop_key, source_key, COALESCE(factor_family,'unknown'), selected_side, board_line_value
-    ORDER BY canonical_prop_key, source_key, selected_side, board_line_value`);
+      SUM(CASE WHEN b.baseline_hp_row_id IS NULL AND e.baseline_hp_row_id IS NULL THEN 1 ELSE 0 END) AS missing_baseline_rows
+    FROM hit_probability_v2_current hp
+    LEFT JOIN player_baseline_hp_v2_current b
+      ON b.player_id=hp.mlb_player_id
+     AND b.canonical_prop_key=hp.canonical_prop_key
+     AND b.selected_side=hp.selected_side
+     AND b.line_value=hp.board_line_value
+    LEFT JOIN expansion_player_baseline_hp_current e
+      ON e.player_id=hp.mlb_player_id
+     AND e.canonical_prop_key=hp.canonical_prop_key
+     AND e.selected_side=hp.selected_side
+     AND e.line_value=hp.board_line_value
+    WHERE hp.board_line_value IS NOT NULL AND hp.canonical_prop_key IS NOT NULL AND hp.selected_side IS NOT NULL
+    GROUP BY hp.canonical_prop_key, hp.source_key, COALESCE(hp.factor_family,'unknown'), hp.selected_side, hp.board_line_value
+    ORDER BY hp.canonical_prop_key, hp.source_key, hp.selected_side, hp.board_line_value`);
   const stmts=[]; const issues=[];
   let missing=0,dynamicSupported=0,unsupportedMissing=0;
   for(const r of inv){
@@ -506,7 +516,7 @@ async function runLineInventory(env,input={}){
     if(Number(r.missing_baseline_rows||0)>0 && resolved.needs) dynamicSupported += Number(r.missing_baseline_rows||0);
     if(Number(r.missing_baseline_rows||0)>0 && !resolved.profileNamespace) unsupportedMissing += Number(r.missing_baseline_rows||0);
     const id=`exp_line_inv|${r.source_key||'source'}|${r.canonical_prop_key}|${r.factor_family||'unknown'}|${r.selected_side}|${String(r.line_value).replace('.','p')}`;
-    const notes={baseline_only:true,observed_from:'hit_probability_v2_current',respects_exact_line_value:true,respects_selected_side:true,respects_source_key:true,role_resolution_note:resolved.note};
+    const notes={baseline_only:true,observed_from:'hit_probability_v2_current',missing_detector:'direct_current_baseline_join_v0_1_32',respects_exact_line_value:true,respects_selected_side:true,respects_source_key:true,role_resolution_note:resolved.note};
     stmts.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO expansion_line_inventory_current (inventory_row_id,batch_id,source_key,canonical_prop_key,factor_family,resolved_factor_family,selected_side,line_value,source_rows,players,standard_rows,goblin_rows,demon_rows,missing_baseline_rows,profile_namespace,source_formula_key,line_threshold_bucket,line_inventory_status,needs_dynamic_generation,factor_family_mismatch,role_resolution_note,notes_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(id,batchId,r.source_key||null,r.canonical_prop_key||null,r.factor_family||null,resolved.resolvedFactor||null,r.selected_side||null,Number(r.line_value),Number(r.source_rows||0),Number(r.players||0),Number(r.standard_rows||0),Number(r.goblin_rows||0),Number(r.demon_rows||0),Number(r.missing_baseline_rows||0),resolved.profileNamespace,resolved.sourceFormulaKey,resolved.lineBucket,resolved.status,Number(resolved.needs||0),Number(resolved.mismatch||0),resolved.note,safeJson(notes)));
     if(Number(r.missing_baseline_rows||0)>0 && !resolved.profileNamespace){ issues.push({severity:'WARN',issue_code:'UNMAPPED_MISSING_BASELINE_LINE',issue_message:`Missing baseline line not mapped to expansion/source-ready profile: ${r.canonical_prop_key}/${r.source_key}/${r.selected_side}/${r.line_value}`,row:r,resolved}); }
   }
@@ -1092,7 +1102,7 @@ async function runBaselineV2(env,input={}){
     const sampleTier=sampleTierV2(model.games || hs.non_push_sample || values.length,r.canonical_prop_key);
     const roleProfile=entityType==="pitcher"?"V2_PITCHER_ENTITY":(entityType==="game_pair"?"V2_GAME_PAIR_ENTITY":"V2_HITTER_ENTITY");
     const canonicalKey=canonicalBaselineKey(r,line,side,profileNamespace,formulaKey);
-    const sanityId=`pbs_v2|${batchId}|${canonicalKey}`; const hpId=`pbhp_v2|${batchId}|${canonicalKey}`;
+    const sanityId=`pbs_v2|${canonicalKey}`; const hpId=`pbhp_v2|${canonicalKey}`;
     const confidence=round(clamp(model.baseline_confidence_0_100,1,95),2);
     const post=model.baseline_hp_0_100;
     const trace={source_key:r.source_key,source_formula_key:formulaKey,profile_namespace:profileNamespace,entity_type:entityType,exact_line_value:line,selected_side:side,direct_binary_reference:{...hs},model,model_family:"locked_full_prop_baseline_v2",binary_game_rate_replaced:true,sample_tier:sampleTier,canonical_entity_line_side_key:canonicalKey,source_keys:String(r.source_keys||r.source_key||""),baseline_formula_scope:String(r.baseline_formula_scope||""),source_hp_v2_rows:Number(r.source_hp_v2_rows||1),source_hp_v2_batch_ids:String(r.source_hp_v2_batch_ids||sourceHpV2BatchId||""),source_hp_v2_batch_id:sourceHpV2BatchId,source_game_pks:String(r.source_game_pks||r.game_pk||""),no_daily_context:true,no_market_context:true,no_scoring_context:true};
@@ -1303,7 +1313,20 @@ async function runDeltaSanity(env,input={}){
      AND inv.canonical_prop_key=hp.canonical_prop_key
      AND inv.selected_side=hp.selected_side
      AND inv.line_value=hp.board_line_value
-    WHERE hp.baseline_hp_row_id IS NULL
+    LEFT JOIN player_baseline_hp_v2_current b
+      ON b.player_id=hp.mlb_player_id
+     AND b.canonical_prop_key=hp.canonical_prop_key
+     AND b.selected_side=hp.selected_side
+     AND b.line_value=hp.board_line_value
+    LEFT JOIN expansion_player_baseline_hp_current e
+      ON e.player_id=hp.mlb_player_id
+     AND e.canonical_prop_key=hp.canonical_prop_key
+     AND e.profile_namespace=inv.profile_namespace
+     AND e.canonical_prop_key=hp.canonical_prop_key
+     AND e.selected_side=hp.selected_side
+     AND e.line_value=hp.board_line_value
+    WHERE b.baseline_hp_row_id IS NULL
+      AND e.baseline_hp_row_id IS NULL
       AND COALESCE(inv.needs_dynamic_generation,0)=1
       AND COALESCE(inv.missing_baseline_rows,0)>0`,lineInventoryBatchId) : [];
   const affectedSet=new Set();
