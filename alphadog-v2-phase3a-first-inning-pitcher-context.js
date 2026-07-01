@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.47-baseline-v5-four-mode-route-parity";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.48-baseline-v5-classification-source-mapping-guard";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -449,6 +449,42 @@ function pitcherTier({games,outsPerStart,bfPerStart,kRate,bbRate,haRate,splitDel
   if(Math.abs(splitDelta)>=6) return {tier_key:splitDelta<0?'PITCHER_TIER_07_PLATOON_FAVORABLE_SUPPRESSOR':'PITCHER_TIER_08_PLATOON_UNFAVORABLE_DAMAGE_RISK', tier_number:splitDelta<0?7:8};
   return {tier_key:'PITCHER_TIER_04_STANDARD_STARTER', tier_number:4};
 }
+
+function normalizedBattingOrderValue(raw){
+  const n=Number(raw);
+  if(!Number.isFinite(n) || n<=0) return null;
+  if(n>=100 && n<=999){
+    const slot=Math.floor(n/100);
+    return (slot>=1 && slot<=9) ? slot : null;
+  }
+  if(n>=1 && n<=9) return n;
+  return null;
+}
+function battingOrderSummary(rows){
+  const total=(rows||[]).length;
+  const vals=[];
+  for(const r of (rows||[])){
+    const v=normalizedBattingOrderValue(r && r.batting_order);
+    if(v!=null) vals.push(v);
+  }
+  const coverage=total ? vals.length/total : 0;
+  const avg=vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  return {avg_batting_order_normalized:avg, batting_order_rows:vals.length, batting_order_coverage:coverage};
+}
+function resolveLineupProfileFromOrder(orderSummary){
+  const avg=orderSummary && Number(orderSummary.avg_batting_order_normalized);
+  const coverage=orderSummary && Number(orderSummary.batting_order_coverage||0);
+  const orderRows=orderSummary && Number(orderSummary.batting_order_rows||0);
+  if(!Number.isFinite(avg) || orderRows < 3 || coverage < 0.25) return 'LINEUP_UNKNOWN';
+  if(avg<=3) return 'TOP_ORDER';
+  if(avg<=6) return 'MIDDLE_ORDER';
+  return 'BOTTOM_ORDER';
+}
+function safeResolvedPlayerName(row){
+  const name=String((row && row.player_name) || '').trim();
+  const id=String((row && (row.mlb_player_id || row.player_id)) || '').trim();
+  return name && name !== id ? name : id;
+}
 async function classifyBaselineV5(env,row,line,side,entityType,model,hs,stats){
   const playerId=Number(row.mlb_player_id||0);
   const prop=String(row.canonical_prop_key||'');
@@ -471,16 +507,17 @@ async function classifyBaselineV5(env,row,line,side,entityType,model,hs,stats){
   }
   const pa=sumNum(rows,'pa'), ab=sumNum(rows,'ab'), hits=sumNum(rows,'hits'), walks=sumNum(rows,'walks'), so=sumNum(rows,'strikeouts');
   const paPerGame=games?pa/games:0, abRatio=pa?ab/pa:0, hitRatePerGame=games?hits/games:0, walkRate=pa?walks/pa:0, soRate=pa?so/pa:0;
-  const avgOrder=nonZeroAvgField(rows,'batting_order')||0;
+  const orderSummary=battingOrderSummary(rows);
+  const avgOrder=orderSummary.avg_batting_order_normalized;
   const splitRows=await loadHitterSplitRows(env,playerId);
   const leftHit=splitRate(splitRows,'vs_left','hits','pa');
   const rightHit=splitRate(splitRows,'vs_right','hits','pa');
   const splitDelta=(leftHit!=null && rightHit!=null)?round(leftHit-rightHit,2):0;
-  const tier=hitterTier12({games,paPerGame,abRatio,avgOrder,hitRatePerGame,walkRate,soRate,splitDelta,prop,line,side});
-  const lineupProfile=avgOrder>0?(avgOrder<=3?'TOP_ORDER':(avgOrder<=6?'MIDDLE_ORDER':'BOTTOM_ORDER')):'LINEUP_UNKNOWN';
+  const tier=hitterTier12({games,paPerGame,abRatio,avgOrder:avgOrder||0,hitRatePerGame,walkRate,soRate,splitDelta,prop,line,side});
+  const lineupProfile=resolveLineupProfileFromOrder(orderSummary);
   const volumeProfile=paPerGame>=4.2?'HIGH_VOLUME':(paPerGame>=3.7?'EVERYDAY_CORE':(paPerGame>=2.0?'LOW_USAGE_OR_PARTIAL':'MICRO_USAGE'));
   const platoonProfile=Math.abs(splitDelta)>=6?(splitDelta>0?'FAVORABLE_VS_LEFT_SHAPE':'FAVORABLE_VS_RIGHT_SHAPE'):'NEUTRAL_OR_LOW_SPLIT_SIGNAL';
-  return {classification_tier:tier.tier_key,tier_number:tier.tier_number,classification_profile_key:`V5_${tier.tier_key}_${upperToken(prop)}_${lineIdToken(line)}_${side}`,sample_profile:sampleTierV2(games,prop),volume_profile:volumeProfile,lineup_profile:lineupProfile,platoon_profile:platoonProfile,usage_profile:volumeProfile,volatility_profile:stats.volatility_profile,classification_confidence_0_100:round(clamp(model.baseline_confidence_0_100||25,1,95),2),games_sample:games,events_sample:games,pa_per_game:round(paPerGame,3),ab_ratio:round(abRatio,3),avg_batting_order:avgOrder?round(avgOrder,2):null,split_delta_0_100:splitDelta,metrics:{hits_per_game:round(hitRatePerGame,3),walk_rate:round(walkRate,4),strikeout_rate:round(soRate,4),split_rows:splitRows.length}};
+  return {classification_tier:tier.tier_key,tier_number:tier.tier_number,classification_profile_key:`V5_${tier.tier_key}_${upperToken(prop)}_${lineIdToken(line)}_${side}`,sample_profile:sampleTierV2(games,prop),volume_profile:volumeProfile,lineup_profile:lineupProfile,platoon_profile:platoonProfile,usage_profile:volumeProfile,volatility_profile:stats.volatility_profile,classification_confidence_0_100:round(clamp(model.baseline_confidence_0_100||25,1,95),2),games_sample:games,events_sample:games,pa_per_game:round(paPerGame,3),ab_ratio:round(abRatio,3),avg_batting_order:avgOrder!=null?round(avgOrder,2):null,split_delta_0_100:splitDelta,metrics:{hits_per_game:round(hitRatePerGame,3),walk_rate:round(walkRate,4),strikeout_rate:round(soRate,4),split_rows:splitRows.length,batting_order_rows:orderSummary.batting_order_rows,batting_order_coverage:round(orderSummary.batting_order_coverage,3)}};
 }
 function qualityStart(r){ return num(r.outs_recorded)>=18 && num(r.earned_runs)<=3 ? 1 : 0; }
 function pfsPp(r){ return num(r.outs_recorded) + 3*num(r.strikeouts) + 4*qualityStart(r) - 3*num(r.earned_runs); }
@@ -1033,7 +1070,24 @@ async function buildCanonicalHistoryBaselineSourceQueue(env,batchId,input={}){
   const minGames=Number(input.v2_min_history_games||1);
   const hitterProps=Object.keys(CANONICAL_HITTER_BASELINE_LINES);
   const pitcherProps=Object.keys(CANONICAL_PITCHER_BASELINE_LINES);
-  const hitterRows=await all(env.STATS_HITTER_DB,`SELECT player_id AS mlb_player_id, CAST(player_id AS TEXT) AS player_name, MAX(game_pk) AS game_pk, MAX(game_date) AS official_date, COUNT(*) AS history_games FROM hitter_game_logs WHERE player_id IS NOT NULL GROUP BY player_id HAVING COUNT(*)>=? ORDER BY player_id`,minGames);
+  const hitterRows=await all(env.STATS_HITTER_DB,`
+    SELECT
+      player_id AS mlb_player_id,
+      COALESCE(MAX(COALESCE(json_extract(raw_json,'$.player.person.fullName'), json_extract(raw_json,'$.player.fullName'))), CAST(player_id AS TEXT)) AS player_name,
+      MAX(game_pk) AS game_pk,
+      MAX(game_date) AS official_date,
+      COUNT(*) AS history_games,
+      SUM(COALESCE(pa,0)) AS total_pa,
+      SUM(CASE WHEN json_extract(raw_json,'$.player.position.type')='Pitcher' THEN 1 ELSE 0 END) AS pitcher_position_rows,
+      SUM(CASE WHEN json_extract(raw_json,'$.player.position.type')='Runner' THEN 1 ELSE 0 END) AS runner_position_rows
+    FROM hitter_game_logs
+    WHERE player_id IS NOT NULL
+    GROUP BY player_id
+    HAVING COUNT(*)>=?
+       AND SUM(COALESCE(pa,0)) > 0
+       AND SUM(CASE WHEN json_extract(raw_json,'$.player.position.type')='Pitcher' THEN 1 ELSE 0 END) < COUNT(*)
+       AND SUM(CASE WHEN json_extract(raw_json,'$.player.position.type')='Runner' THEN 1 ELSE 0 END) < COUNT(*)
+    ORDER BY player_id`,minGames);
   const pitcherRows=await all(env.TEAM_DB,`SELECT COALESCE(player_id, starter_player_id) AS mlb_player_id, MAX(starter_name) AS player_name, MAX(game_pk) AS game_pk, MAX(game_date) AS official_date, COUNT(*) AS history_games FROM starter_history WHERE started_game=1 AND COALESCE(player_id, starter_player_id) IS NOT NULL GROUP BY COALESCE(player_id, starter_player_id) HAVING COUNT(*)>=? ORDER BY COALESCE(player_id, starter_player_id)`,minGames);
   const stmts=[];
   function enqueuePlayer(r, entityType, props){
@@ -1432,17 +1486,18 @@ async function runBaselineV2(env,input={}){
     const calibratedModel={...model, baseline_hp_0_100:post, baseline_confidence_0_100:confidence, calibration_guard_v0_1_34:calibrationGuard};
     const trace={baseline_source_policy:"baseline_v5_history_only_static_base_delta_expansion_no_board_no_market_no_daily_no_app",source_formula_key:formulaKey,profile_namespace:profileNamespace,entity_type:entityType,exact_line_value:line,selected_side:side,direct_binary_reference:{...hs},model:calibratedModel,raw_model_before_calibration:model,model_family:"locked_full_prop_baseline_v2",binary_game_rate_replaced:true,calibration_guard_v0_1_34:calibrationGuard,sample_tier:sampleTier,canonical_entity_line_side_key:canonicalKey,baseline_formula_scope:String(r.baseline_formula_scope||""),history_inventory_rows:Number(r.source_hp_v2_rows||1),history_game_pks:String(r.source_game_pks||r.game_pk||""),no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true,no_app_context:true};
     if(calibrationGuard && calibrationGuard.block_promotion){
-      stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_hp_v2_issues (issue_id,batch_id,source_baseline_row_id,severity,issue_code,issue_message,issue_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`cal_pending|${batchId}|${hpId}`,batchId,hpId,"WARN","CALIBRATION_PENDING_SAMPLE60_GAP_GT10","Sample >60 and calibrated HP differs from raw empirical rate by >10 points; block auto-promotion pending calibration audit",safeJson({row:{player_id:r.mlb_player_id,player_name:r.player_name,canonical_prop_key:r.canonical_prop_key,line_value:line,selected_side:side},trace})));
+      stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_hp_v2_issues (issue_id,batch_id,source_baseline_row_id,severity,issue_code,issue_message,issue_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`cal_pending|${batchId}|${hpId}`,batchId,hpId,"WARN","CALIBRATION_PENDING_SAMPLE60_GAP_GT10","Sample >60 and calibrated HP differs from raw empirical rate by >10 points; block auto-promotion pending calibration audit",safeJson({row:{player_id:r.mlb_player_id,player_name:resolvedPlayerName,canonical_prop_key:r.canonical_prop_key,line_value:line,selected_side:side},trace})));
     }
     if(post==null){ issues++; stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_hp_v2_issues (issue_id,batch_id,source_baseline_row_id,severity,issue_code,issue_message,issue_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(rid("pbhp_v2_issue"),batchId,sanityId,"BLOCK","V2_MODEL_NO_PROBABILITY","Locked baseline model could not emit probability",safeJson({row:r,trace}))); if(stageStatements.length>=stageBatchSize) await flushStageStatements(); continue; }
     const stats=valueStats(values);
     const classification=await classifyBaselineV5(env,r,line,side,entityType,calibratedModel,hs,stats);
+    const resolvedPlayerName=safeResolvedPlayerName(r);
     trace.classification_v5=classification;
-    trace.classification_contract={replaces_old_sanity:true,history_only:true,uses_batting_order:entityType==="hitter",uses_platoon_splits:true,per_player_prop_line_side:true,keeps_locked_calibration_logic:true};
+    trace.classification_contract={replaces_old_sanity:true,history_only:true,uses_batting_order:entityType==="hitter",uses_platoon_splits:true,per_player_prop_line_side:true,keeps_locked_calibration_logic:true,source_mapping_guard_v0_1_48:true};
     const classificationId=`pbc_v5|${canonicalKey}`;
-    stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_classification_v5_stage (classification_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,classification_tier,classification_profile_key,sample_profile,volume_profile,lineup_profile,platoon_profile,usage_profile,volatility_profile,classification_confidence_0_100,games_sample,events_sample,pa_per_game,ab_ratio,avg_batting_order,split_delta_0_100,classification_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(classificationId,batchId,entityType,Number(r.mlb_player_id)||null,r.player_name,r.canonical_prop_key,line,side,classification.classification_tier,classification.classification_profile_key,classification.sample_profile,classification.volume_profile,classification.lineup_profile,classification.platoon_profile,classification.usage_profile,classification.volatility_profile,classification.classification_confidence_0_100,classification.games_sample,classification.events_sample,classification.pa_per_game,classification.ab_ratio,classification.avg_batting_order,classification.split_delta_0_100,safeJson(classification)));
-    stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_sanity_v2_stage (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,role_profile,prior_pool_key,sanity_profile_key,sample_profile,usage_profile,line_difficulty_profile,volatility_profile,baseline_drag_profile,confidence_drag_profile,variance_profile,games_sample,events_sample,baseline_confidence_0_100,line_baseline_json,distribution_shape_json,notes_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(sanityId,batchId,entityType,Number(r.mlb_player_id)||null,r.player_name,r.canonical_prop_key,roleProfile,`${profileNamespace}|${side}|${lineBucket}|${classification.classification_tier}|${sampleTier}`,classification.classification_profile_key,sampleTier,(model.games||hs.non_push_sample)>=20?"ESTABLISHED_HISTORY":"LIMITED_HISTORY",lineDifficulty(profileNamespace,line),stats.volatility_profile,"NONE","NONE",stats.volatility_profile,model.games||values.length,model.games||values.length,confidence,safeJson({line,line_rates:{[String(line)]:hs},model:calibratedModel,classification_v5:classification,trace}),safeJson({...stats,model_engine:model.engine}),safeJson(trace)));
-    stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_hp_v2_stage (baseline_hp_row_id,batch_id,source_sanity_batch_id,source_baseline_row_id,player_type,player_id,player_name,canonical_prop_key,prop_family,line_value,selected_side,baseline_hp_0_100,hp_adjustment_0_100,raw_rate_0_100,tier_prior_rate_0_100,raw_prior_gap_0_100,baseline_confidence_0_100,baseline_enriched_confidence_0_100,consistency_bonus_0_100,soft_uncertainty_reserve_0_100,sample_profile,role_profile,sanity_profile_key,volatility_profile,variance_profile,line_difficulty_profile,baseline_hp_profile_key,non_push_sample,hit_count,miss_count,push_count,prior_strength,formula_version,confidence_formula_version,no_daily_context,no_market_context,no_scoring_context,profile_notes_json,source_snapshot_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,1,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(hpId,batchId,batchId,sanityId,entityType,Number(r.mlb_player_id)||null,r.player_name,r.canonical_prop_key,propFamilyV2(r.canonical_prop_key,entityType),line,side,post,0,hs.raw_rate_0_100,post,hs.raw_rate_0_100==null?null:round(hs.raw_rate_0_100-post,2),confidence,confidence,0,round(100-confidence,2),sampleTier,roleProfile,classification.classification_profile_key,stats.volatility_profile,stats.volatility_profile,lineDifficulty(profileNamespace,line),`${classification.classification_profile_key}_MODEL`,hs.non_push_sample,hs.hit,hs.miss,hs.push,model.games||hs.non_push_sample||1,BASELINE_V2_FORMULA_VERSION,BASELINE_V2_CONFIDENCE_VERSION,safeJson(trace),safeJson({source_rows:model.games||values.length,source_formula_key:formulaKey,profile_namespace:profileNamespace,canonical_entity_line_side_key:canonicalKey,baseline_formula_scope:String(r.baseline_formula_scope||""),history_inventory_rows:Number(r.source_hp_v2_rows||1),history_game_pks:String(r.source_game_pks||r.game_pk||""),model_engine:model.engine,binary_game_rate_replaced:true,baseline_source_policy:"baseline_v5_history_only_static_base_delta_expansion_no_board_no_market_no_daily_no_app"})));
+    stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_classification_v5_stage (classification_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,classification_tier,classification_profile_key,sample_profile,volume_profile,lineup_profile,platoon_profile,usage_profile,volatility_profile,classification_confidence_0_100,games_sample,events_sample,pa_per_game,ab_ratio,avg_batting_order,split_delta_0_100,classification_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(classificationId,batchId,entityType,Number(r.mlb_player_id)||null,resolvedPlayerName,r.canonical_prop_key,line,side,classification.classification_tier,classification.classification_profile_key,classification.sample_profile,classification.volume_profile,classification.lineup_profile,classification.platoon_profile,classification.usage_profile,classification.volatility_profile,classification.classification_confidence_0_100,classification.games_sample,classification.events_sample,classification.pa_per_game,classification.ab_ratio,classification.avg_batting_order,classification.split_delta_0_100,safeJson(classification)));
+    stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_sanity_v2_stage (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,role_profile,prior_pool_key,sanity_profile_key,sample_profile,usage_profile,line_difficulty_profile,volatility_profile,baseline_drag_profile,confidence_drag_profile,variance_profile,games_sample,events_sample,baseline_confidence_0_100,line_baseline_json,distribution_shape_json,notes_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(sanityId,batchId,entityType,Number(r.mlb_player_id)||null,resolvedPlayerName,r.canonical_prop_key,roleProfile,`${profileNamespace}|${side}|${lineBucket}|${classification.classification_tier}|${sampleTier}`,classification.classification_profile_key,sampleTier,(model.games||hs.non_push_sample)>=20?"ESTABLISHED_HISTORY":"LIMITED_HISTORY",lineDifficulty(profileNamespace,line),stats.volatility_profile,"NONE","NONE",stats.volatility_profile,model.games||values.length,model.games||values.length,confidence,safeJson({line,line_rates:{[String(line)]:hs},model:calibratedModel,classification_v5:classification,trace}),safeJson({...stats,model_engine:model.engine}),safeJson(trace)));
+    stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_hp_v2_stage (baseline_hp_row_id,batch_id,source_sanity_batch_id,source_baseline_row_id,player_type,player_id,player_name,canonical_prop_key,prop_family,line_value,selected_side,baseline_hp_0_100,hp_adjustment_0_100,raw_rate_0_100,tier_prior_rate_0_100,raw_prior_gap_0_100,baseline_confidence_0_100,baseline_enriched_confidence_0_100,consistency_bonus_0_100,soft_uncertainty_reserve_0_100,sample_profile,role_profile,sanity_profile_key,volatility_profile,variance_profile,line_difficulty_profile,baseline_hp_profile_key,non_push_sample,hit_count,miss_count,push_count,prior_strength,formula_version,confidence_formula_version,no_daily_context,no_market_context,no_scoring_context,profile_notes_json,source_snapshot_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,1,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(hpId,batchId,batchId,sanityId,entityType,Number(r.mlb_player_id)||null,resolvedPlayerName,r.canonical_prop_key,propFamilyV2(r.canonical_prop_key,entityType),line,side,post,0,hs.raw_rate_0_100,post,hs.raw_rate_0_100==null?null:round(hs.raw_rate_0_100-post,2),confidence,confidence,0,round(100-confidence,2),sampleTier,roleProfile,classification.classification_profile_key,stats.volatility_profile,stats.volatility_profile,lineDifficulty(profileNamespace,line),`${classification.classification_profile_key}_MODEL`,hs.non_push_sample,hs.hit,hs.miss,hs.push,model.games||hs.non_push_sample||1,BASELINE_V2_FORMULA_VERSION,BASELINE_V2_CONFIDENCE_VERSION,safeJson(trace),safeJson({source_rows:model.games||values.length,source_formula_key:formulaKey,profile_namespace:profileNamespace,canonical_entity_line_side_key:canonicalKey,baseline_formula_scope:String(r.baseline_formula_scope||""),history_inventory_rows:Number(r.source_hp_v2_rows||1),history_game_pks:String(r.source_game_pks||r.game_pk||""),model_engine:model.engine,binary_game_rate_replaced:true,baseline_source_policy:"baseline_v5_history_only_static_base_delta_expansion_no_board_no_market_no_daily_no_app"})));
     if(stageStatements.length>=stageBatchSize) await flushStageStatements();
     written++;
   }
