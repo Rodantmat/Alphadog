@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.39-baseline-v2-source-queue-fast50";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.40-baseline-v2-hrr-empirical-trust";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -712,8 +712,8 @@ async function runHp(env,input={}){
 
 
 // ---------------- Parallel V2 HEB baseline system ----------------
-const BASELINE_V2_FORMULA_VERSION = "baseline_v2_full_prop_models_v0.2.8_source_queue_empirical_trust_fast50";
-const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v2_confidence_v0.2.7_source_queue_rare_event_sample_scaled_guard";
+const BASELINE_V2_FORMULA_VERSION = "baseline_v2_full_prop_models_v0.2.9_source_queue_hrr_empirical_trust_fast50";
+const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v2_confidence_v0.2.8_source_queue_hrr_rare_event_sample_scaled_guard";
 const V2_ENTITY_VALUE_CACHE = new Map();
 const V2_PROFILE_PRIOR_CACHE = new Map();
 const V2_GLOBAL_VALUE_CACHE = new Map();
@@ -1013,7 +1013,7 @@ async function lockedBaselineModel(env,row,line,side,entityType,profileNamespace
   const hp=result.prob==null?null:round(clamp(result.prob*100,0,100),2); const conf=result.prob==null?5:round(clamp(result.confidence,1,95),2); const out={...result, baseline_hp_0_100:hp, baseline_confidence_0_100:conf, model_version:BASELINE_V2_FORMULA_VERSION, confidence_version:BASELINE_V2_CONFIDENCE_VERSION, binary_game_rate_replaced:true}; V2_BASELINE_MODEL_CACHE.set(modelKey,out); return out; }
 function applyBaselineV2CalibrationGuard({prop, entityType, side, line, hp, confidence, hs, sampleTier}){
   if(hp==null) return {hp, confidence, adjusted:false, block_promotion:false, notes:{}};
-  const notes={floor_min_0_05_max_99_95:true, confidence_guard_version:"v0.1.38"};
+  const notes={floor_min_0_05_max_99_95:true, confidence_guard_version:"v0.1.40"};
   let outHp=Number(hp);
   let outConf=Number(confidence||5);
   const raw=hs && hs.raw_rate_0_100!=null ? Number(hs.raw_rate_0_100) : null;
@@ -1041,25 +1041,29 @@ function applyBaselineV2CalibrationGuard({prop, entityType, side, line, hp, conf
 
   // v0.1.37 / formula v0.2.6: Gemini + SQL samples showed the model was still
   // over-trusting the component prior on stabilized HITS rows: sample >60 with 10-15 point
-  // HP/raw gaps created 23 promotion blockers at only 616 staged rows. For HITS, once the
-  // direct binary observation has a real 60+ game base, trust empirical reality first and
-  // use the component model as a smaller stabilizer. This preserves complement symmetry
+  // HP/raw gaps created 23 promotion blockers at only 616 staged rows. v0.1.40 extends
+  // the same proven empirical-trust correction to HRR / hits_runs_rbis after v048 SQL
+  // proved the remaining blockers were isolated to HRR proxy-direct gaps. Once the direct
+  // binary observation has a real 60+ game base, trust empirical reality first and use
+  // the component/proxy model as a smaller stabilizer. This preserves complement symmetry
   // because MORE/LESS raw and model pairs are both complements before blending.
-  if(et==="hitter" && p==="hits" && raw!=null && sample>60 && Math.abs(outHp-raw)>10){
+  const empiricalTrustProp = p==="hits" || p==="hits_runs_rbis";
+  const empiricalTrustLabel = p==="hits_runs_rbis" ? "hrr" : "hits";
+  if(et==="hitter" && empiricalTrustProp && raw!=null && sample>60 && Math.abs(outHp-raw)>10){
     const blended=round(clamp(0.80*raw + 0.20*outHp,0.05,99.95),2);
-    notes.sample60_hits_empirical_trust_blend={sample,raw_rate_0_100:raw,before:outHp,after:blended,alpha_raw:0.80,alpha_model:0.20,gap_before_0_100:round(Math.abs(outHp-raw),2)};
+    notes[`sample60_${empiricalTrustLabel}_empirical_trust_blend`]={sample,raw_rate_0_100:raw,before:outHp,after:blended,alpha_raw:0.80,alpha_model:0.20,gap_before_0_100:round(Math.abs(outHp-raw),2)};
     outHp=blended; adjusted=true;
-  } else if(et==="hitter" && p==="hits" && raw!=null && sample>=40 && Math.abs(outHp-raw)>10){
+  } else if(et==="hitter" && empiricalTrustProp && raw!=null && sample>=40 && Math.abs(outHp-raw)>10){
     const blended=round(clamp(0.70*raw + 0.30*outHp,0.05,99.95),2);
-    notes.sample40_hits_empirical_trust_blend={sample,raw_rate_0_100:raw,before:outHp,after:blended,alpha_raw:0.70,alpha_model:0.30,gap_before_0_100:round(Math.abs(outHp-raw),2)};
+    notes[`sample40_${empiricalTrustLabel}_empirical_trust_blend`]={sample,raw_rate_0_100:raw,before:outHp,after:blended,alpha_raw:0.70,alpha_model:0.30,gap_before_0_100:round(Math.abs(outHp-raw),2)};
     outHp=blended; adjusted=true;
   }
 
-  // v0.1.34 fallback: if anything still exceeds the old 15-point emergency gap after
-  // the v0.1.37 empirical trust blend, apply a stronger final blend.
-  if(et==="hitter" && p==="hits" && raw!=null && sample>=40 && Math.abs(outHp-raw)>15){
+  // v0.1.40 fallback: if HITS/HRR still exceeds the old 15-point emergency gap after
+  // the empirical trust blend, apply a stronger final blend.
+  if(et==="hitter" && empiricalTrustProp && raw!=null && sample>=40 && Math.abs(outHp-raw)>15){
     const blended=round(clamp(0.85*raw + 0.15*outHp,0.05,99.95),2);
-    notes.large_sample_hits_empirical_blend={sample,raw_rate_0_100:raw,before:outHp,after:blended,alpha_raw:0.85,alpha_model:0.15};
+    notes[`large_sample_${empiricalTrustLabel}_empirical_blend`]={sample,raw_rate_0_100:raw,before:outHp,after:blended,alpha_raw:0.85,alpha_model:0.15};
     outHp=blended; adjusted=true;
   }
 
