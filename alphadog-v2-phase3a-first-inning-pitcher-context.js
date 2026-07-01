@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.40-baseline-v2-hrr-empirical-trust";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.41-baseline-v2-general-direct-empirical-trust";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -712,8 +712,8 @@ async function runHp(env,input={}){
 
 
 // ---------------- Parallel V2 HEB baseline system ----------------
-const BASELINE_V2_FORMULA_VERSION = "baseline_v2_full_prop_models_v0.2.9_source_queue_hrr_empirical_trust_fast50";
-const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v2_confidence_v0.2.8_source_queue_hrr_rare_event_sample_scaled_guard";
+const BASELINE_V2_FORMULA_VERSION = "baseline_v2_full_prop_models_v0.2.10_source_queue_general_direct_empirical_trust_fast50";
+const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v2_confidence_v0.2.9_source_queue_general_direct_rare_event_sample_scaled_guard";
 const V2_ENTITY_VALUE_CACHE = new Map();
 const V2_PROFILE_PRIOR_CACHE = new Map();
 const V2_GLOBAL_VALUE_CACHE = new Map();
@@ -1039,16 +1039,24 @@ function applyBaselineV2CalibrationGuard({prop, entityType, side, line, hp, conf
     outHp=blended; adjusted=true;
   }
 
-  // v0.1.37 / formula v0.2.6: Gemini + SQL samples showed the model was still
-  // over-trusting the component prior on stabilized HITS rows: sample >60 with 10-15 point
-  // HP/raw gaps created 23 promotion blockers at only 616 staged rows. v0.1.40 extends
-  // the same proven empirical-trust correction to HRR / hits_runs_rbis after v048 SQL
-  // proved the remaining blockers were isolated to HRR proxy-direct gaps. Once the direct
-  // binary observation has a real 60+ game base, trust empirical reality first and use
-  // the component/proxy model as a smaller stabilizer. This preserves complement symmetry
-  // because MORE/LESS raw and model pairs are both complements before blending.
-  const empiricalTrustProp = p==="hits" || p==="hits_runs_rbis";
-  const empiricalTrustLabel = p==="hits_runs_rbis" ? "hrr" : "hits";
+  // v0.1.41 / formula v0.2.10: SQL audit of v0.1.40 proved the source queue and
+  // HITS/HRR calibration were clean, but the same prior-overtrust pattern remained across
+  // direct binary hitter count families: RBIs, runs, singles, hitter strikeouts, total bases,
+  // and a small stolen-base tail. These rows all carry direct_binary_reference hit/miss
+  // samples, so stabilized 40+ / 60+ game samples must use empirical reality as the primary
+  // anchor while the model remains a smaller stabilizer. This branch is gap-gated, so clean
+  // families like doubles/home-runs are not moved unless they cross the same audit threshold.
+  const empiricalTrustProp = et==="hitter" && (
+    p==="hits" ||
+    p==="hits_runs_rbis" ||
+    p==="rbis" ||
+    p==="runs" ||
+    p==="singles" ||
+    p==="hitter_strikeouts" ||
+    p==="total_bases" ||
+    p==="stolen_bases"
+  );
+  const empiricalTrustLabel = p==="hits_runs_rbis" ? "hrr" : p;
   if(et==="hitter" && empiricalTrustProp && raw!=null && sample>60 && Math.abs(outHp-raw)>10){
     const blended=round(clamp(0.80*raw + 0.20*outHp,0.05,99.95),2);
     notes[`sample60_${empiricalTrustLabel}_empirical_trust_blend`]={sample,raw_rate_0_100:raw,before:outHp,after:blended,alpha_raw:0.80,alpha_model:0.20,gap_before_0_100:round(Math.abs(outHp-raw),2)};
@@ -1059,8 +1067,8 @@ function applyBaselineV2CalibrationGuard({prop, entityType, side, line, hp, conf
     outHp=blended; adjusted=true;
   }
 
-  // v0.1.40 fallback: if HITS/HRR still exceeds the old 15-point emergency gap after
-  // the empirical trust blend, apply a stronger final blend.
+  // v0.1.41 fallback: if a generalized direct-count family still exceeds the old
+  // 15-point emergency gap after the empirical trust blend, apply a stronger final blend.
   if(et==="hitter" && empiricalTrustProp && raw!=null && sample>=40 && Math.abs(outHp-raw)>15){
     const blended=round(clamp(0.85*raw + 0.15*outHp,0.05,99.95),2);
     notes[`large_sample_${empiricalTrustLabel}_empirical_blend`]={sample,raw_rate_0_100:raw,before:outHp,after:blended,alpha_raw:0.85,alpha_model:0.15};
