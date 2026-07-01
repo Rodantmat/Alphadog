@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.330-expansion-v2-timeout-safe-microchunks";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.331-expansion-v2-fast50-timeout-safe";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12588,13 +12588,13 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   // Control Room input carried from older buttons (60000ms/160 rows). Normalize inside
   // the orchestrator route that actually dispatches the service binding so every wake,
   // cron, watchdog, and backend pump path uses the same safe timing.
-  input.v2_all_current_chunk_size = expansionV2AllCurrent ? Math.max(20, Math.min(40, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 40))) : input.v2_all_current_chunk_size;
-  input.v2_chunk_size = expansionV2AllCurrent ? Math.max(20, Math.min(40, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 40))) : Math.max(10, Math.min(150, Number(input.v2_chunk_size || 80)));
-  input.v2_soft_yield_ms = expansionV2AllCurrent ? Math.max(8000, Math.min(12000, Number(input.v2_soft_yield_ms || 12000))) : input.v2_soft_yield_ms;
+  input.v2_all_current_chunk_size = expansionV2AllCurrent ? Math.max(20, Math.min(50, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 50))) : input.v2_all_current_chunk_size;
+  input.v2_chunk_size = expansionV2AllCurrent ? Math.max(20, Math.min(50, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 50))) : Math.max(10, Math.min(150, Number(input.v2_chunk_size || 80)));
+  input.v2_soft_yield_ms = expansionV2AllCurrent ? Math.max(8000, Math.min(14000, Number(input.v2_soft_yield_ms || 14000))) : input.v2_soft_yield_ms;
   if (expansionV2AllCurrent) {
     input.v2_force_exact_chunk_size = true;
     input.force_v2_chunk_size = true;
-    input.fast_safe_chunk_policy = 'all_current_microchunk_40_soft_yield_12s_timeout_recoverable_orchestrator_guard';
+    input.fast_safe_chunk_policy = 'all_current_fast50_soft_yield_14s_timeout_recoverable_orchestrator_guard';
   }
 
   if (!env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER || typeof env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER.fetch !== "function") {
@@ -12656,7 +12656,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
         rows_staged:durableStageRows,
         issue_rows:durableIssueRows,
         run_after_delay_seconds:0,
-        next_input_json:{...input, batch_id:resumeBatchId, v2_cursor_offset:durableCursor, v2_chunk_size:40, v2_all_current_chunk_size:40, v2_soft_yield_ms:12000, v2_force_exact_chunk_size:true, force_v2_chunk_size:true, fast_safe_chunk_policy:'all_current_microchunk_40_soft_yield_12s_timeout_recoverable_orchestrator_guard'}
+        next_input_json:{...input, batch_id:resumeBatchId, v2_cursor_offset:durableCursor, v2_chunk_size:50, v2_all_current_chunk_size:50, v2_soft_yield_ms:14000, v2_force_exact_chunk_size:true, force_v2_chunk_size:true, fast_safe_chunk_policy:'all_current_fast50_soft_yield_14s_timeout_recoverable_orchestrator_guard'}
       };
     } else {
       output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:errText };
@@ -12668,7 +12668,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   const cert = String((output && output.certification) || (partial ? "BASELINE_V2_HEB_PARTIAL_CONTINUE" : (output && output.ok ? "BASELINE_V2_HEB_COMPLETED" : "BASELINE_V2_HEB_FAILED"))).slice(0,120);
   const rowsRead = Number(output && (output.source_rows_read || output.rows_read || 0));
   const rowsWritten = Number(output && (output.rows_written || output.rows_promoted || output.rows_staged || 0));
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, expansion_v2_hot_parity_short_yield_v0_2_328:true, expansion_v2_stale_dispatch_auto_rescue_v0_2_329:true, expansion_v2_timeout_safe_microchunks_v0_2_330:true, normalized_v2_chunk_size:input.v2_chunk_size, normalized_v2_all_current_chunk_size:input.v2_all_current_chunk_size, normalized_v2_soft_yield_ms:input.v2_soft_yield_ms, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, expansion_v2_hot_parity_short_yield_v0_2_328:true, expansion_v2_stale_dispatch_auto_rescue_v0_2_329:true, expansion_v2_timeout_safe_microchunks_v0_2_330:true, expansion_v2_fast50_timeout_safe_v0_2_331:true, normalized_v2_chunk_size:input.v2_chunk_size, normalized_v2_all_current_chunk_size:input.v2_all_current_chunk_size, normalized_v2_soft_yield_ms:input.v2_soft_yield_ms, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
 
   if (partial && nextInput) {
     const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
@@ -12700,12 +12700,12 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
       cappedOutput.orchestrator_dispatch.durable_cursor_forwarded = durableCursor;
     }
     if (expansionV2AllCurrent) {
-      nextInput.v2_chunk_size = Math.max(20, Math.min(40, Number(nextInput.v2_chunk_size || 40)));
-      nextInput.v2_all_current_chunk_size = Math.max(20, Math.min(40, Number(nextInput.v2_all_current_chunk_size || 40)));
-      nextInput.v2_soft_yield_ms = Math.max(8000, Math.min(12000, Number(nextInput.v2_soft_yield_ms || 12000)));
+      nextInput.v2_chunk_size = Math.max(20, Math.min(50, Number(nextInput.v2_chunk_size || 50)));
+      nextInput.v2_all_current_chunk_size = Math.max(20, Math.min(50, Number(nextInput.v2_all_current_chunk_size || 50)));
+      nextInput.v2_soft_yield_ms = Math.max(8000, Math.min(14000, Number(nextInput.v2_soft_yield_ms || 14000)));
       nextInput.v2_force_exact_chunk_size = true;
       nextInput.force_v2_chunk_size = true;
-      nextInput.fast_safe_chunk_policy = 'all_current_microchunk_40_soft_yield_12s_timeout_recoverable_orchestrator_guard';
+      nextInput.fast_safe_chunk_policy = 'all_current_fast50_soft_yield_14s_timeout_recoverable_orchestrator_guard';
       cappedOutput.orchestrator_dispatch.microchunk_next_input_normalized = true;
     }
     await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,cert,rowsRead,rowsWritten,Date.now()-started,JSON.stringify(input),safeStringifyD1(cappedOutput));
@@ -17407,7 +17407,7 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
     ? { ...output.next_input_json }
     : (isExpansionFullRun
       ? { ...input, mode: input.mode || 'expansion_baseline_full_run', expansion_mode: input.expansion_mode || input.mode || 'expansion_baseline_full_run', expansion_full_run_stale_running_rescue: true }
-      : { ...input, mode: 'baseline_v2_heb', expansion_mode: 'baseline_v2_heb', v2_chunk_size: Math.max(20, Math.min(40, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 40))), v2_all_current_chunk_size: Math.max(20, Math.min(40, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 40))), v2_soft_yield_ms: Math.max(8000, Math.min(12000, Number(input.v2_soft_yield_ms || 12000))), fast_safe_chunk_policy: 'all_current_microchunk_40_soft_yield_12s_timeout_recoverable_orchestrator_guard', v2_force_exact_chunk_size: true, force_v2_chunk_size: true, expansion_v2_stale_running_rescue: true });
+      : { ...input, mode: 'baseline_v2_heb', expansion_mode: 'baseline_v2_heb', v2_chunk_size: Math.max(20, Math.min(50, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 50))), v2_all_current_chunk_size: Math.max(20, Math.min(50, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 50))), v2_soft_yield_ms: Math.max(8000, Math.min(14000, Number(input.v2_soft_yield_ms || 14000))), fast_safe_chunk_policy: 'all_current_fast50_soft_yield_14s_timeout_recoverable_orchestrator_guard', v2_force_exact_chunk_size: true, force_v2_chunk_size: true, expansion_v2_stale_running_rescue: true });
   nextInput.request_id = row.request_id;
   nextInput.chain_id = row.chain_id;
   nextInput.job_key = row.job_key;
@@ -17421,7 +17421,7 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
   if (recoveryAllCurrent) {
     nextInput.v2_all_current_chunk_size = Math.max(20, Math.min(40, Number(nextInput.v2_all_current_chunk_size || nextInput.v2_chunk_size || 40)));
     nextInput.v2_chunk_size = Math.max(20, Math.min(40, Number(nextInput.v2_chunk_size || nextInput.v2_all_current_chunk_size || 40)));
-    nextInput.v2_soft_yield_ms = Math.max(8000, Math.min(12000, Number(nextInput.v2_soft_yield_ms || 12000)));
+    nextInput.v2_soft_yield_ms = Math.max(8000, Math.min(14000, Number(nextInput.v2_soft_yield_ms || 14000)));
     nextInput.v2_force_exact_chunk_size = true;
     nextInput.force_v2_chunk_size = true;
     nextInput.fast_safe_chunk_policy = 'all_current_default_120_cap_120_batched_stage_writes_soft_yield_22s_orchestrator_recovery_guard';
