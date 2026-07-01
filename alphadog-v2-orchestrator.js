@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.332-expansion-v2-fast50-soft14-parity";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.333-baseline-v5-four-mode-parity";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12493,7 +12493,7 @@ async function maybeApplyExpansionFullRunSiblingResume(env, row, input) {
     return { input, applied: false, reason: "not_expansion_full_run_child" };
   }
   const certText = String((input && (input.certification || input.status || input.mode || input.expansion_mode)) || "");
-  const alreadyDynamic = input && (input.dynamic_v2_batch_id || input.v2_cursor_offset !== undefined || input.mode === "baseline_v2_heb" || /DYNAMIC_V2|BASELINE_V2_HEB/i.test(certText));
+  const alreadyDynamic = input && (input.dynamic_v2_batch_id || input.v2_cursor_offset !== undefined || input.mode === "baseline_v2_heb" || /^baseline_v5_/i.test(String(input.mode||"")) || /DYNAMIC_V2|BASELINE_V2_HEB|BASELINE_V5/i.test(certText));
   if (alreadyDynamic) {
     return { input, applied: false, reason: "already_has_dynamic_resume_state" };
   }
@@ -12575,7 +12575,8 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   input.mode = input.mode || input.expansion_mode || (row.job_key === "expansion-baseline-v2" ? "baseline_v2_heb" : (row.job_key === "expansion-baseline-line-inventory" ? "expansion_line_inventory" : (row.job_key === "expansion-baseline-sanity" ? "expansion_baseline_sanity" : (row.job_key === "expansion-baseline-hp" ? "expansion_baseline_hp" : "expansion_delta_full_run"))));
   input.expansion_mode = input.expansion_mode || input.mode;
   input.trigger = trigger;
-  input.logical_worker_name = "alphadog-v2-expansion-baseline-v2-heb";
+  const baselineV5Mode = /^baseline_v5_/i.test(String(input.mode || input.expansion_mode || ""));
+  input.logical_worker_name = baselineV5Mode ? "alphadog-v2-baseline-v5" : "alphadog-v2-expansion-baseline-v2-heb";
   input.deployed_worker_slot = "alphadog-v2-phase3a-first-inning-pitcher-context";
   input.parallel_v2_only = true;
   input.no_current_baseline_mutation = true;
@@ -12598,7 +12599,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   }
 
   if (!env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER || typeof env.PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER.fetch !== "function") {
-    const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", job_key:row.job_key, request_id:row.request_id, run_id:runId, status:"EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING", certification:"EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING", certification_grade:"BLOCKED", required_binding:"PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER" };
+    const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, logical_worker_name:baselineV5Mode?"alphadog-v2-baseline-v5":"alphadog-v2-expansion-baseline-v2-heb", job_key:row.job_key, request_id:row.request_id, run_id:runId, status:"EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING", certification:"EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING", certification_grade:"BLOCKED", required_binding:"PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER" };
     await run(env.CONTROL_DB,"INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'EXPANSION_BASELINE_V2_MISSING_SERVICE_BINDING', 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_expansion_baseline_v2_service_binding', 'PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER service binding is missing')", runId,row.request_id,row.chain_id,row.job_key,row.worker_name,JSON.stringify(input),safeStringifyD1(output));
     await run(env.CONTROL_DB,"UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_expansion_baseline_v2_service_binding', error_message='PHASE3A_FIRST_INNING_PITCHER_CONTEXT_WORKER service binding is missing' WHERE request_id=?", safeStringifyD1(output), row.request_id);
     return output;
@@ -12668,7 +12669,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   const cert = String((output && output.certification) || (partial ? "BASELINE_V2_HEB_PARTIAL_CONTINUE" : (output && output.ok ? "BASELINE_V2_HEB_COMPLETED" : "BASELINE_V2_HEB_FAILED"))).slice(0,120);
   const rowsRead = Number(output && (output.source_rows_read || output.rows_read || 0));
   const rowsWritten = Number(output && (output.rows_written || output.rows_promoted || output.rows_staged || 0));
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, expansion_v2_hot_parity_short_yield_v0_2_328:true, expansion_v2_stale_dispatch_auto_rescue_v0_2_329:true, expansion_v2_timeout_safe_microchunks_v0_2_330:true, expansion_v2_fast50_timeout_safe_v0_2_331:true, expansion_v2_fast50_soft14_parity_v0_2_332:true, normalized_v2_chunk_size:input.v2_chunk_size, normalized_v2_all_current_chunk_size:input.v2_all_current_chunk_size, normalized_v2_soft_yield_ms:input.v2_soft_yield_ms, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:baselineV5Mode?"alphadog-v2-baseline-v5":"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, expansion_v2_hot_parity_short_yield_v0_2_328:true, expansion_v2_stale_dispatch_auto_rescue_v0_2_329:true, expansion_v2_timeout_safe_microchunks_v0_2_330:true, expansion_v2_fast50_timeout_safe_v0_2_331:true, expansion_v2_fast50_soft14_parity_v0_2_332:true, normalized_v2_chunk_size:input.v2_chunk_size, normalized_v2_all_current_chunk_size:input.v2_all_current_chunk_size, normalized_v2_soft_yield_ms:input.v2_soft_yield_ms, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
 
   if (partial && nextInput) {
     const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
@@ -17407,7 +17408,7 @@ async function rescueStaleExpansionBaselineV2Job(env, trigger = "manual") {
     ? { ...output.next_input_json }
     : (isExpansionFullRun
       ? { ...input, mode: input.mode || 'expansion_baseline_full_run', expansion_mode: input.expansion_mode || input.mode || 'expansion_baseline_full_run', expansion_full_run_stale_running_rescue: true }
-      : { ...input, mode: 'baseline_v2_heb', expansion_mode: 'baseline_v2_heb', v2_chunk_size: Math.max(20, Math.min(50, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 50))), v2_all_current_chunk_size: Math.max(20, Math.min(50, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 50))), v2_soft_yield_ms: Math.max(8000, Math.min(14000, Number(input.v2_soft_yield_ms || 14000))), fast_safe_chunk_policy: 'all_current_fast50_soft_yield_14s_timeout_recoverable_orchestrator_guard', v2_force_exact_chunk_size: true, force_v2_chunk_size: true, expansion_v2_stale_running_rescue: true });
+      : { ...input, mode: /^baseline_v5_/i.test(String(input.mode||input.expansion_mode||'')) ? String(input.mode||input.expansion_mode) : 'baseline_v2_heb', expansion_mode: /^baseline_v5_/i.test(String(input.mode||input.expansion_mode||'')) ? String(input.mode||input.expansion_mode) : 'baseline_v2_heb', v2_chunk_size: Math.max(20, Math.min(50, Number(input.v2_chunk_size || input.v2_all_current_chunk_size || 50))), v2_all_current_chunk_size: Math.max(20, Math.min(50, Number(input.v2_all_current_chunk_size || input.v2_chunk_size || 50))), v2_soft_yield_ms: Math.max(8000, Math.min(14000, Number(input.v2_soft_yield_ms || 14000))), fast_safe_chunk_policy: 'all_current_fast50_soft_yield_14s_timeout_recoverable_orchestrator_guard', v2_force_exact_chunk_size: true, force_v2_chunk_size: true, expansion_v2_stale_running_rescue: true, baseline_v5_stale_running_rescue: /^baseline_v5_/i.test(String(input.mode||input.expansion_mode||'')) });
   nextInput.request_id = row.request_id;
   nextInput.chain_id = row.chain_id;
   nextInput.job_key = row.job_key;
