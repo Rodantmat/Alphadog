@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.43-baseline-v2-canonical-history-source-agnostic";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.44-baseline-v2-canonical-history-schema-safe";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -25,7 +25,7 @@ const RFI_LINES = [0.5];
 const SIDES = ["more", "less"];
 
 
-// v0.1.43: Baseline V2 is a pure history model. These line ladders are canonical
+// v0.1.44: Baseline V2 is a pure history model. These line ladders are canonical
 // historical calculation targets, not app inventory. PrizePicks/Sleeper/board lines
 // must never determine whether a baseline exists or what its HP is.
 const CANONICAL_HITTER_BASELINE_LINES = Object.freeze({
@@ -742,8 +742,8 @@ async function runHp(env,input={}){
 
 
 // ---------------- Parallel V2 HEB baseline system ----------------
-const BASELINE_V2_FORMULA_VERSION = "baseline_v2_full_prop_models_v0.2.12_canonical_history_source_agnostic_fast50";
-const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v2_confidence_v0.2.11_source_agnostic_final_caps_gap_deflator";
+const BASELINE_V2_FORMULA_VERSION = "baseline_v2_full_prop_models_v0.2.13_canonical_history_schema_safe_fast50";
+const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v2_confidence_v0.2.12_source_agnostic_schema_safe_caps";
 const V2_ENTITY_VALUE_CACHE = new Map();
 const V2_PROFILE_PRIOR_CACHE = new Map();
 const V2_GLOBAL_VALUE_CACHE = new Map();
@@ -954,7 +954,7 @@ async function buildCanonicalHistoryBaselineSourceQueue(env,batchId,input={}){
   const minGames=Number(input.v2_min_history_games||1);
   const hitterProps=Object.keys(CANONICAL_HITTER_BASELINE_LINES);
   const pitcherProps=Object.keys(CANONICAL_PITCHER_BASELINE_LINES);
-  const hitterRows=await all(env.STATS_HITTER_DB,`SELECT player_id AS mlb_player_id, MAX(player_name) AS player_name, MAX(game_pk) AS game_pk, MAX(game_date) AS official_date, COUNT(*) AS history_games FROM hitter_game_logs WHERE player_id IS NOT NULL GROUP BY player_id HAVING COUNT(*)>=? ORDER BY player_id`,minGames);
+  const hitterRows=await all(env.STATS_HITTER_DB,`SELECT player_id AS mlb_player_id, CAST(player_id AS TEXT) AS player_name, MAX(game_pk) AS game_pk, MAX(game_date) AS official_date, COUNT(*) AS history_games FROM hitter_game_logs WHERE player_id IS NOT NULL GROUP BY player_id HAVING COUNT(*)>=? ORDER BY player_id`,minGames);
   const pitcherRows=await all(env.TEAM_DB,`SELECT COALESCE(player_id, starter_player_id) AS mlb_player_id, MAX(starter_name) AS player_name, MAX(game_pk) AS game_pk, MAX(game_date) AS official_date, COUNT(*) AS history_games FROM starter_history WHERE started_game=1 AND COALESCE(player_id, starter_player_id) IS NOT NULL GROUP BY COALESCE(player_id, starter_player_id) HAVING COUNT(*)>=? ORDER BY COALESCE(player_id, starter_player_id)`,minGames);
   const stmts=[];
   function enqueuePlayer(r, entityType, props){
