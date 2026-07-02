@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.58-baseline-v5-base-readonly-classification-history-hp";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.59-baseline-v5-base-fresh-stage-sourcequeue-id-calibration-tightening";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -856,8 +856,8 @@ async function runHp(env,input={}){
 
 
 // ---------------- Parallel V2 HEB baseline system ----------------
-const BASELINE_V2_FORMULA_VERSION = "baseline_v5_history_hp_v0.5.1_readonly_classification_empirical_calibrated";
-const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v5_confidence_v0.5.1_readonly_classification_caps";
+const BASELINE_V2_FORMULA_VERSION = "baseline_v5_history_hp_v0.5.2_sourcequeue_id_fresh_stage_empirical_envelope";
+const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v5_confidence_v0.5.2_gap_deflated_envelope_caps";
 const V2_ENTITY_VALUE_CACHE = new Map();
 const V2_PROFILE_PRIOR_CACHE = new Map();
 const V2_GLOBAL_VALUE_CACHE = new Map();
@@ -1779,16 +1779,42 @@ function modelPitcherComponent(rows, prop, line, side, sourceKey, formulaKey){ c
   else if(prop==="walks_allowed"){ const rate=exposureRate(rows,"walks_allowed","batters_faced",0.09,300); const strikeRate=0.637; let sigma=(rate>=0.095?1.25:1.10); let mu=expBf*rate; if((rate>=0.120 || strikeRate<0.600) && line>=2.5) mu*=1.15; more=overdispersedTailGE(Math.floor(line)+1,mu,sigma); engine="beta_binomial_walks_allowed_sigma_command_decay"; }
   else if(prop==="earned_runs"){ const erRate=exposureRate(rows,"earned_runs","batters_faced",0.1079,300); const ha=exposureRate(rows,"hits_allowed","batters_faced",0.2152,300); const wa=exposureRate(rows,"walks_allowed","batters_faced",0.09,300); const hr=exposureRate(rows,"home_runs_allowed","batters_faced",0.0297,300); const omega=clamp(0.45*(hr/0.0297)+0.35*(ha/0.2152)+0.20*(wa/0.09),0.65,1.60); more=overdispersedTailGE(Math.floor(line)+1,expBf*erRate*omega,1.55); engine="gamma_poisson_er_weighted_damage"; extra={omega,ha_per_bf:round(ha,4),wa_per_bf:round(wa,4),hr_per_bf:round(hr,4)}; }
   else if(prop==="runs_allowed"){ const erRate=exposureRate(rows,"earned_runs","batters_faced",0.1079,300); const unearnedRate=0.11734715736258086-0.10787883980977679; const ha=exposureRate(rows,"hits_allowed","batters_faced",0.2152,300); const wa=exposureRate(rows,"walks_allowed","batters_faced",0.09,300); const hr=exposureRate(rows,"home_runs_allowed","batters_faced",0.0297,300); const omega=clamp(0.45*(hr/0.0297)+0.35*(ha/0.2152)+0.20*(wa/0.09),0.65,1.60); const earnedMu=expBf*erRate*omega; const unearnedMu=expBf*unearnedRate; more=clamp(overdispersedTailGE(Math.floor(line)+1,earnedMu+unearnedMu,1.60),0,1); engine="dual_process_ra_negative_binomial_plus_unearned_poisson"; extra={omega,earned_mu:round(earnedMu,3),unearned_mu:round(unearnedMu,3)}; }
-  else if(prop==="pitcher_fantasy_score"||prop==="fantasy"){ const sourceMode=/PFS_SL|SLEEPER/i.test(String(formulaKey||sourceKey||"")) ? "SL" : "PP"; const vals=rows.map(r=>sourceFormulaPfs(r,sourceMode)); const season=avgArr(vals); const recentAvg=avgArr(recent.map(r=>sourceFormulaPfs(r,sourceMode)))||season; const mu=0.70*recentAvg+0.30*season; let sigma=line>=36.5?1.65:1.45; if(line>=45.5) sigma=1.85; more=overdispersedTailGE(Math.floor(line)+1,mu,sigma); engine=sourceMode==="SL"?"pfs_sl_correlated_workload_proxy_no_qs":"pfs_pp_correlated_workload_proxy_qs_same_iteration"; extra={source_pfs_mode:sourceMode,season_pfs:round(season,2),recent_pfs:round(recentAvg,2),qs_used:sourceMode==="PP",shared_workload_draw_required:true,monte_carlo_contract:"implemented_as_fast_deterministic_correlated_proxy_for_baseline_v2"}; }
+  else if(prop==="pitcher_fantasy_score"||prop==="fantasy"){
+    // v0.1.59: Baseline Base is source/app agnostic. Do not leak PrizePicks/Sleeper, wins, or QS.
+    // This is a component-only static proxy: outs + 3*K - 3*ER - H - BB.
+    const neutralPfs = (r)=> num(r.outs_recorded) + 3*num(r.strikeouts) - 3*num(r.earned_runs) - num(r.hits_allowed) - num(r.walks_allowed);
+    const vals=rows.map(neutralPfs);
+    const season=avgArr(vals);
+    const recentAvg=avgArr(recent.map(neutralPfs))||season;
+    const mu=0.70*recentAvg+0.30*season;
+    let sigma=line>=36.5?1.75:1.50; if(line>=45.5) sigma=1.95;
+    more=overdispersedTailGE(Math.floor(line)+1,mu,sigma);
+    engine="pfs_source_agnostic_component_proxy_no_win_no_qs";
+    extra={source_pfs_mode:"SOURCE_AGNOSTIC_COMPONENTS",season_component_pfs:round(season,2),recent_component_pfs:round(recentAvg,2),wins_used:false,qs_used:false,platform_formula_used:false,component_formula:"outs_recorded + 3*strikeouts - 3*earned_runs - hits_allowed - walks_allowed"};
+  }
   else if(prop==="pitches_thrown"){ const expPitch=blendedAvg(rows,"pitches",8); more=overdispersedTailGE(Math.floor(line)+1,expPitch,1.2); }
   const prob0=sideProbFromMore(more,side); const baseConf=Math.min(lockedSampleCap(games,prop),workloadCap(bucket),v2LineCap(prop,line,sourceKey)); const capped=applyLineSideCaps(prob0,baseConf,prop,line,side,rows,{workload_bucket:bucket,leash_profile:leash}); return {prob:capped.prob,confidence:capped.confidence,engine,games,workload_bucket:bucket,leash_profile:leash,sample_cap:lockedSampleCap(games,prop),workload_cap:workloadCap(bucket),line_cap:v2LineCap(prop,line,sourceKey),...extra}; }
 function modelRfiBaseline(values,line,side){ const hs=hitStatsFor(values,line,side); const prior=50; const m=50; const post=posteriorHeb(hs.hit,hs.miss,hs.push,prior,m); const games=values.length; return {prob:post==null?null:post/100,confidence:Math.min(lockedSampleCap(games,"rfi_nrfi"),55),engine:"rfi_binary_larger_sample_tiers",games,sample_cap:lockedSampleCap(games,"rfi_nrfi"),line_cap:55,direct:hs}; }
 async function lockedBaselineModel(env,row,line,side,entityType,profileNamespace,formulaKey){ const prop=String(row.canonical_prop_key||""); const modelKey=`${entityType}|baseline|${Number(row.mlb_player_id||0)}|${prop}|${line}|${side}|${profileNamespace}|${formulaKey}`; if(V2_BASELINE_MODEL_CACHE.has(modelKey)) return V2_BASELINE_MODEL_CACHE.get(modelKey); let result; if(prop==="rfi_nrfi"){ const vals=await loadValuesForHpRow(env,row); result=modelRfiBaseline(vals,line,side); }
   else { const rows=await loadBaselineModelRows(env,row,entityType); result=entityType==="pitcher"?modelPitcherComponent(rows,prop,line,side,null,formulaKey):modelHitterBaseline(rows,prop,line,side,null); }
   const hp=result.prob==null?null:round(clamp(result.prob*100,0,100),2); const conf=result.prob==null?5:round(clamp(result.confidence,1,95),2); const out={...result, baseline_hp_0_100:hp, baseline_confidence_0_100:conf, model_version:BASELINE_V2_FORMULA_VERSION, confidence_version:BASELINE_V2_CONFIDENCE_VERSION, binary_game_rate_replaced:true}; V2_BASELINE_MODEL_CACHE.set(modelKey,out); return out; }
+function historyOnlyHpOperationalBounds(prop, entityType, line, sample){
+  const p=String(prop||"").toLowerCase();
+  const et=String(entityType||"").toLowerCase();
+  const sampleN=Number(sample||0);
+  let floor=0.50, ceiling=99.50;
+  // Composite and pitcher props are wide-distribution estimates, not certainties.
+  if(p==="fantasy_score" || p==="pitcher_fantasy_score" || p==="fantasy" || et==="pitcher") { floor=1.00; ceiling=99.00; }
+  // Rare events can have tighter tails, but still cannot use 0.05/99.95 in history-only output.
+  if(p==="home_runs" || p==="triples" || p==="stolen_bases") { floor=0.25; ceiling=99.75; }
+  if(sampleN>0 && sampleN<20){ floor=Math.max(floor,3.00); ceiling=Math.min(ceiling,97.00); }
+  else if(sampleN>=20 && sampleN<40){ floor=Math.max(floor,1.50); ceiling=Math.min(ceiling,98.50); }
+  return {floor, ceiling};
+}
+
 function applyBaselineV2CalibrationGuard({prop, entityType, side, line, hp, confidence, hs, sampleTier}){
   if(hp==null) return {hp, confidence, adjusted:false, block_promotion:false, notes:{}};
-  const notes={floor_min_0_05_max_99_95:true, confidence_guard_version:"v0.1.42"};
+  const notes={floor_min_0_05_max_99_95_legacy:true, operational_envelope_version:"v0.1.59", confidence_guard_version:"v0.1.59"};
   let outHp=Number(hp);
   let outConf=Number(confidence||5);
   const raw=hs && hs.raw_rate_0_100!=null ? Number(hs.raw_rate_0_100) : null;
@@ -1849,6 +1875,31 @@ function applyBaselineV2CalibrationGuard({prop, entityType, side, line, hp, conf
     const blended=round(clamp(0.85*raw + 0.15*outHp,0.05,99.95),2);
     notes[`large_sample_${empiricalTrustLabel}_empirical_blend`]={sample,raw_rate_0_100:raw,before:outHp,after:blended,alpha_raw:0.85,alpha_model:0.15};
     outHp=blended; adjusted=true;
+  }
+
+  // v0.1.59: fantasy/composite tails were over-modeling away from direct game outcomes.
+  // Keep model signal, but force stabilized samples back toward empirical line clearance.
+  const compositeEmpiricalProp = (p==="fantasy_score" || p==="pitcher_fantasy_score" || p==="fantasy");
+  if(raw!=null && sample>=30 && compositeEmpiricalProp && Math.abs(outHp-raw)>8){
+    const alphaRaw = sample>=60 ? 0.70 : (sample>=40 ? 0.62 : 0.55);
+    const blended=round(clamp(alphaRaw*raw + (1-alphaRaw)*outHp,0.05,99.95),2);
+    notes.composite_empirical_anchor_v0_1_59={sample,raw_rate_0_100:raw,before:outHp,after:blended,alpha_raw:alphaRaw,alpha_model:round(1-alphaRaw,2),gap_before_0_100:round(Math.abs(outHp-raw),2)};
+    outHp=blended; adjusted=true;
+  }
+
+  // v0.1.59 emergency guard: any stabilized row still >25 points away from raw must visibly move toward raw.
+  if(raw!=null && sample>=40 && Math.abs(outHp-raw)>25){
+    const blended=round(clamp(0.80*raw + 0.20*outHp,0.05,99.95),2);
+    notes.stabilized_large_gap_emergency_empirical_anchor_v0_1_59={sample,raw_rate_0_100:raw,before:outHp,after:blended,alpha_raw:0.80,alpha_model:0.20,gap_before_0_100:round(Math.abs(outHp-raw),2)};
+    outHp=blended; adjusted=true;
+  }
+
+  // v0.1.59 operational envelope: history-only baseline cannot output near-certainty endpoints.
+  const bounds=historyOnlyHpOperationalBounds(p,et,line,sample);
+  const bounded=round(clamp(outHp,bounds.floor,bounds.ceiling),2);
+  if(bounded!==outHp){
+    notes.history_only_operational_hp_envelope_v0_1_59={sample,prop:p,entity_type:et,line:Number(line),before:outHp,after:bounded,floor:bounds.floor,ceiling:bounds.ceiling};
+    outHp=bounded; adjusted=true;
   }
 
   // v0.1.35: rare-event confidence cannot graduate like a common hit/no-hit prop.
@@ -2057,6 +2108,7 @@ async function baselineV5StageValidation(env,batchId,total){
   const counts=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT baseline_hp_row_id) AS distinct_ids, COUNT(*)-COUNT(DISTINCT baseline_hp_row_id) AS duplicates FROM player_baseline_hp_v2_stage WHERE batch_id=?`,batchId);
   const badRows=await first(env.SCORE_DB,`SELECT COUNT(*) AS bad_rows FROM player_baseline_hp_v2_stage WHERE batch_id=? AND (baseline_hp_row_id IS NULL OR player_type IS NULL OR player_id IS NULL OR player_name IS NULL OR canonical_prop_key IS NULL OR line_value IS NULL OR selected_side NOT IN ('more','less') OR baseline_hp_0_100 IS NULL OR baseline_hp_0_100 < 0 OR baseline_hp_0_100 > 100 OR raw_rate_0_100 IS NULL OR raw_rate_0_100 < 0 OR raw_rate_0_100 > 100 OR baseline_confidence_0_100 IS NULL OR baseline_confidence_0_100 < 0 OR baseline_confidence_0_100 > 100 OR non_push_sample IS NULL OR hit_count IS NULL OR miss_count IS NULL OR push_count IS NULL OR non_push_sample != hit_count + miss_count OR no_daily_context != 1 OR no_market_context != 1 OR no_scoring_context != 1)`,batchId);
   const pairs=await first(env.SCORE_DB,`WITH pairs AS (SELECT player_type, player_id, canonical_prop_key, line_value, COUNT(DISTINCT selected_side) AS sides, ROUND(SUM(baseline_hp_0_100),4) AS side_sum, SUM(push_count) AS pushes FROM player_baseline_hp_v2_stage WHERE batch_id=? GROUP BY player_type, player_id, canonical_prop_key, line_value) SELECT COUNT(*) AS pairs, COUNT(CASE WHEN sides != 2 THEN 1 END) AS bad_side_count_pairs, COUNT(CASE WHEN ABS(side_sum - 100) > 0.01 THEN 1 END) AS bad_side_sum_pairs, COUNT(CASE WHEN pushes != 0 THEN 1 END) AS push_pairs FROM pairs`,batchId);
+  const monotonic=await first(env.SCORE_DB,`SELECT COUNT(*) AS more_monotonic_violations FROM player_baseline_hp_v2_stage a JOIN player_baseline_hp_v2_stage b ON b.batch_id=a.batch_id AND b.player_type=a.player_type AND b.player_id=a.player_id AND b.canonical_prop_key=a.canonical_prop_key AND b.selected_side='more' AND b.line_value>a.line_value WHERE a.batch_id=? AND a.selected_side='more' AND b.baseline_hp_0_100>a.baseline_hp_0_100+0.01`,batchId);
   const problems=[];
   const rowCount=Number(counts&&counts.rows||0), dupes=Number(counts&&counts.duplicates||0), bad=Number(badRows&&badRows.bad_rows||0);
   if(Number(total||0)>0 && rowCount!==Number(total)) problems.push(`stage_rows_${rowCount}_expected_${total}`);
@@ -2065,7 +2117,8 @@ async function baselineV5StageValidation(env,batchId,total){
   if(Number(pairs&&pairs.bad_side_count_pairs||0)!==0) problems.push(`bad_side_count_pairs_${pairs.bad_side_count_pairs}`);
   if(Number(pairs&&pairs.bad_side_sum_pairs||0)!==0) problems.push(`bad_side_sum_pairs_${pairs.bad_side_sum_pairs}`);
   if(Number(pairs&&pairs.push_pairs||0)!==0) problems.push(`push_pairs_${pairs.push_pairs}`);
-  return {ok:problems.length===0, problems, rows:rowCount, distinct_ids:Number(counts&&counts.distinct_ids||0), duplicate_ids:dupes, bad_rows:bad, pair_audit:pairs||{}};
+  if(Number(monotonic&&monotonic.more_monotonic_violations||0)!==0) problems.push(`more_monotonic_violations_${monotonic.more_monotonic_violations}`);
+  return {ok:problems.length===0, problems, rows:rowCount, distinct_ids:Number(counts&&counts.distinct_ids||0), duplicate_ids:dupes, bad_rows:bad, pair_audit:pairs||{}, monotonic_audit:monotonic||{}};
 }
 
 async function runBaselineV2(env,input={}){
@@ -2108,19 +2161,31 @@ async function runBaselineV2(env,input={}){
   let lockedClassificationBefore=null;
   let reusedRunningBatch=false;
   if(!explicitBatchIdProvided && cursor===0){
-    const existing=await first(env.SCORE_DB,`SELECT batch_id, source_rows_read, rows_staged, issue_rows FROM player_baseline_hp_v2_batches WHERE request_id=? AND status IN ('running','partial_continue') ORDER BY datetime(updated_at) DESC LIMIT 1`,requestId);
-    if(existing && existing.batch_id){
+    const existing=await first(env.SCORE_DB,`SELECT batch_id, source_rows_read, rows_staged, issue_rows, worker_version FROM player_baseline_hp_v2_batches WHERE request_id=? AND status IN ('running','partial_continue') ORDER BY datetime(updated_at) DESC LIMIT 1`,requestId);
+    if(existing && existing.batch_id && String(existing.worker_version||"")===VERSION){
       batchId=String(existing.batch_id);
       const stageProgress=await first(env.SCORE_DB,`SELECT COUNT(*) AS staged FROM player_baseline_hp_v2_stage WHERE batch_id=?`,batchId);
       const issueProgress=await first(env.SCORE_DB,`SELECT COUNT(*) AS issues FROM player_baseline_hp_v2_issues WHERE batch_id=?`,batchId);
       cursor=Math.max(Number(existing.source_rows_read||0), Number(stageProgress&&stageProgress.staged||0)+Number(issueProgress&&issueProgress.issues||0));
       reusedRunningBatch=true;
+    } else if(existing && existing.batch_id){
+      // v0.1.59: stale v0.1.58 partial runs must not resume from dirty stage rows.
+      cursor=0;
+      reusedRunningBatch=false;
     }
   }
   async function heartbeatBaselineV2(extra={}){
     try{ await run(env.CONTROL_DB,`UPDATE control_job_queue SET updated_at=CURRENT_TIMESTAMP WHERE request_id=? AND status='running'`,requestId); }catch(_e){}
     try{ await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_batches SET worker_version=?, source_rows_read=?, rows_staged=(SELECT COUNT(*) FROM player_baseline_hp_v2_stage WHERE batch_id=?), issue_rows=(SELECT COUNT(*) FROM player_baseline_hp_v2_issues WHERE batch_id=?), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,VERSION,cursor,batchId,batchId,batchId); }catch(_e){}
     try{ await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET worker_version=?, rows_staged=(SELECT COUNT(*) FROM player_baseline_sanity_v2_stage WHERE batch_id=?), issue_rows=(SELECT COUNT(*) FROM player_baseline_hp_v2_issues WHERE batch_id=?), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,VERSION,batchId,batchId,batchId); }catch(_e){}
+  }
+  if(readOnlyClassificationBaseline && cursor>0){
+    const activeBatchVersion=await first(env.SCORE_DB,`SELECT worker_version, rows_promoted, history_rows FROM player_baseline_hp_v2_batches WHERE batch_id=?`,batchId);
+    if(activeBatchVersion && String(activeBatchVersion.worker_version||"")!==VERSION && Number(activeBatchVersion.rows_promoted||0)===0 && Number(activeBatchVersion.history_rows||0)===0){
+      // v0.1.59 takeover safety: reset stale v0.1.58 partial state rather than continuing dirty stage rows.
+      cursor=0;
+      reusedRunningBatch=false;
+    }
   }
   if(cursor===0 && !reusedRunningBatch){
     await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_sanity_v2_batches (batch_id,request_id,run_id,mode,status,worker_version,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,requestedV5Mode,"running",VERSION);
@@ -2226,7 +2291,8 @@ async function runBaselineV2(env,input={}){
     const sampleTier=sampleTierV2(model.games || hs.non_push_sample || values.length,r.canonical_prop_key);
     const roleProfile=entityType==="pitcher"?"V2_PITCHER_ENTITY":(entityType==="game_pair"?"V2_GAME_PAIR_ENTITY":"V2_HITTER_ENTITY");
     const canonicalKey=canonicalBaselineKey(r,line,side,profileNamespace,formulaKey);
-    const sanityId=`pbs_v2|${canonicalKey}`; const hpId=`pbhp_v2|${canonicalKey}`;
+    const hpId=readOnlyClassificationBaseline ? String(r.hp_v2_row_id || `pbhp_v2|${canonicalKey}`) : `pbhp_v2|${canonicalKey}`;
+    const sanityId=readOnlyClassificationBaseline ? `pbs_v2|${hpId}` : `pbs_v2|${canonicalKey}`;
     let confidence=round(clamp(model.baseline_confidence_0_100,1,95),2);
     let post=model.baseline_hp_0_100;
     const resolvedPlayerName=safeResolvedPlayerName(r);
@@ -2237,7 +2303,15 @@ async function runBaselineV2(env,input={}){
     if(calibrationGuard && calibrationGuard.block_promotion){
       stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_hp_v2_issues (issue_id,batch_id,source_baseline_row_id,severity,issue_code,issue_message,issue_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`cal_pending|${batchId}|${hpId}`,batchId,hpId,"WARN","CALIBRATION_PENDING_SAMPLE60_GAP_GT10","Sample >60 and calibrated HP differs from raw empirical rate by >10 points; block auto-promotion pending calibration audit",safeJson({row:{player_id:r.mlb_player_id,player_name:resolvedPlayerName,canonical_prop_key:r.canonical_prop_key,line_value:line,selected_side:side},trace})));
     }
-    if(post==null){ issues++; stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_hp_v2_issues (issue_id,batch_id,source_baseline_row_id,severity,issue_code,issue_message,issue_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(rid("pbhp_v2_issue"),batchId,sanityId,"BLOCK","V2_MODEL_NO_PROBABILITY","Locked baseline model could not emit probability",safeJson({row:r,trace}))); if(stageStatements.length>=stageBatchSize) await flushStageStatements(); continue; }
+    if(post==null){
+      issues++;
+      const fallbackRaw = hs.raw_rate_0_100==null ? 50 : Number(hs.raw_rate_0_100);
+      const fallbackBounds = historyOnlyHpOperationalBounds(r.canonical_prop_key, entityType, line, hs.non_push_sample);
+      post=round(clamp(fallbackRaw, fallbackBounds.floor, fallbackBounds.ceiling),2);
+      confidence=round(Math.min(Number(confidence||5), hs.non_push_sample>=20?10:5),2);
+      trace.fallback_probability_v0_1_59={reason:"model_no_probability",fallback_from_raw_rate:true,raw_rate_0_100:hs.raw_rate_0_100,post_hp_0_100:post,confidence_0_100:confidence,bounds:fallbackBounds};
+      stageStatements.push(env.SCORE_DB.prepare(`INSERT OR REPLACE INTO player_baseline_hp_v2_issues (issue_id,batch_id,source_baseline_row_id,severity,issue_code,issue_message,issue_json,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(`fallback|${batchId}|${hpId}`,batchId,hpId,"WARN","V2_MODEL_NO_PROBABILITY_FALLBACK_ROW_WRITTEN","Locked baseline model could not emit probability; wrote low-confidence raw/prior fallback row to preserve source_queue parity",safeJson({row:r,trace})));
+    }
     const stats=valueStats(values);
     const classification=readOnlyClassificationBaseline ? classificationFromLockedQueueJoinRow(r) : await classifyBaselineV5(env,r,line,side,entityType,calibratedModel,hs,stats);
     trace.classification_v5=classification;
@@ -2319,7 +2393,7 @@ async function runBaselineV2(env,input={}){
   if(readOnlyClassificationBaseline && !readonlyCompare.ok){ changed.push({table:"classification_readonly_guard",before:lockedClassificationBefore,after:lockedClassificationAfter,changed:readonlyCompare.changed}); }
   const grade=changed.length?"FAIL_MUTATION_GUARD":(actualIssueRows?"PASS_WITH_WARNINGS":"PASS");
   const cert=changed.length?"BASELINE_V5_HISTORY_BLOCKED_PRODUCTION_MUTATION":"BASELINE_V5_HISTORY_CERTIFIED_PARALLEL_READY";
-  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:requestedV5Mode,status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,raw_hp_v2_source_rows:rawHpV2SourceRows,null_only_source_rows:nullOnlySourceRows,source_hp_v2_batch_id:sourceHpV2BatchId,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:actualIssueRows,mutation_guard:{changed_tables:changed},reporting_fix_version:"v0.1.30_pitcher_workload_bf_source_soft_caps",read_all_hp_v2_current:readAllHpV2Current,canonical_group_by:logicalGroupBy,baseline_source_policy:"baseline_v5_history_only_static_base_delta_expansion_no_board_no_market_no_daily_no_app",fast_safe_chunk_policy:"all_current_fast50_source_queue_soft14_worker_guard",formula_version:BASELINE_V2_FORMULA_VERSION,confidence_version:BASELINE_V2_CONFIDENCE_VERSION,stage_shape_repair:stageShapeRepair,stage_validation:baselineStageValidation,classification_readonly_guard:readOnlyClassificationBaseline?{ok:readonlyCompare.ok,before:lockedClassificationBefore,after:lockedClassificationAfter,changed:readonlyCompare.changed}:null,pitcher_fantasy_scope:"source_agnostic_component_baseline_no_win_no_qs"});
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,source_hp_v2_batch_id:sourceHpV2BatchId,mode:requestedV5Mode,status:cert,certification:cert,certification_grade:grade,current_system_mutated:changed.length>0,source_rows_read:total,raw_hp_v2_source_rows:rawHpV2SourceRows,null_only_source_rows:nullOnlySourceRows,source_hp_v2_batch_id:sourceHpV2BatchId,rows_staged:staged,rows_promoted:staged,history_rows:staged,issue_rows:actualIssueRows,mutation_guard:{changed_tables:changed},reporting_fix_version:"v0.1.59_fresh_stage_sourcequeue_id_calibration_envelope",read_all_hp_v2_current:readAllHpV2Current,canonical_group_by:logicalGroupBy,baseline_source_policy:"baseline_v5_history_only_static_base_delta_expansion_no_board_no_market_no_daily_no_app",fast_safe_chunk_policy:"all_current_fast50_source_queue_soft14_worker_guard",formula_version:BASELINE_V2_FORMULA_VERSION,confidence_version:BASELINE_V2_CONFIDENCE_VERSION,stage_shape_repair:stageShapeRepair,stage_validation:baselineStageValidation,classification_readonly_guard:readOnlyClassificationBaseline?{ok:readonlyCompare.ok,before:lockedClassificationBefore,after:lockedClassificationAfter,changed:readonlyCompare.changed}:null,pitcher_fantasy_scope:"source_agnostic_component_baseline_no_win_no_qs_enforced_v0_1_59"});
   await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",staged,staged,staged,actualIssueRows,cert,grade,safeJson(output),batchId);
   await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_batches SET status=?, finished_at=CURRENT_TIMESTAMP, source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,changed.length?"blocked":"completed",total,staged,staged,staged,actualIssueRows,cert,grade,safeJson(output),batchId);
   output.ok=!changed.length; output.data_ok=!changed.length; return output;
