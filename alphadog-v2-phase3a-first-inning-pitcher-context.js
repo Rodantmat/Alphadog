@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.53-baseline-v5-classification-rescue-configurable-lineage-cap";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.54-baseline-v5-classification-rescue-near-finish-direct-source-queue";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -1244,56 +1244,108 @@ async function reconcileMissingSourceQueueRows(env,batchId,limit,options={}){
   const max=clamp(Number(limit||25),1,120);
   const playerTypeFilter=options.player_type ? String(options.player_type) : null;
   const deadlineMs=Number(options.deadline_ms||0);
-  const rows=await all(env.SCORE_DB,`
+
+  // v0.1.54: near-finish rescue must not globally scan 67k mostly-complete rows every tick.
+  // First identify only players whose classification row count is still ahead of source_queue,
+  // then diff exact hp_v2_row_id values in JS for those players. This remains source_queue-only,
+  // idempotent, and never deletes/rebuilds current, stage, history, scoring, or final board data.
+  const partialPlayers=await all(env.SCORE_DB,`
+    WITH c AS (
+      SELECT
+        player_type,
+        player_id,
+        MAX(player_name) AS player_name,
+        COUNT(*) AS current_rows
+      FROM player_baseline_classification_v5_current
+      WHERE batch_id=?
+        AND (? IS NULL OR player_type=?)
+      GROUP BY player_type, player_id
+    ),
+    q AS (
+      SELECT
+        factor_family AS player_type,
+        mlb_player_id AS player_id,
+        COUNT(*) AS queue_rows
+      FROM player_baseline_hp_v2_source_queue
+      WHERE batch_id=?
+        AND (? IS NULL OR factor_family=?)
+      GROUP BY factor_family, mlb_player_id
+    )
     SELECT
-      c.player_type,c.player_id,c.player_name,c.canonical_prop_key,c.line_value,c.selected_side,
-      c.games_sample,c.events_sample,c.classification_row_id,c.classification_json
-    FROM player_baseline_classification_v5_current c
-    WHERE c.batch_id=?
-      AND (? IS NULL OR c.player_type=?)
-      AND NOT EXISTS (
-        SELECT 1
-        FROM player_baseline_hp_v2_source_queue q
-        WHERE q.batch_id=c.batch_id
-          AND q.factor_family=c.player_type
-          AND q.mlb_player_id=c.player_id
-          AND q.canonical_prop_key=c.canonical_prop_key
-          AND q.board_line_value=c.line_value
-          AND q.selected_side=c.selected_side
-      )
-    ORDER BY c.player_type, c.player_id, c.canonical_prop_key, c.line_value, c.selected_side
-    LIMIT ?`,batchId,playerTypeFilter,playerTypeFilter,max);
+      c.player_type,
+      c.player_id,
+      c.player_name,
+      c.current_rows,
+      COALESCE(q.queue_rows,0) AS queue_rows,
+      c.current_rows - COALESCE(q.queue_rows,0) AS missing_rows
+    FROM c
+    LEFT JOIN q
+      ON q.player_type=c.player_type
+     AND q.player_id=c.player_id
+    WHERE c.current_rows > COALESCE(q.queue_rows,0)
+    ORDER BY missing_rows DESC, c.player_type, c.player_id
+    LIMIT ?`,batchId,playerTypeFilter,playerTypeFilter,batchId,playerTypeFilter,playerTypeFilter,Math.min(50,Math.max(1,max)));
+
   let inserted=0;
   const sample=[];
-  const seedCache=new Map();
-  for(const c of rows){
-    if(deadlineMs && Date.now()>=deadlineMs) break;
-    const playerType=String(c.player_type||"");
-    const playerId=Number(c.player_id||0);
-    const prop=String(c.canonical_prop_key||"");
-    const line=Number(c.line_value);
-    const side=String(c.selected_side||"");
-    const resolved=resolveLineInventory({canonical_prop_key:prop,source_key:null,factor_family:playerType,selected_side:side,line_value:line});
-    if(!playerType || !playerId || !Number.isFinite(line) || !resolved.profileNamespace || !resolved.sourceFormulaKey) continue;
-    const hpId=canonicalBaselineInventoryId(batchId,playerType,playerId,prop,line,side,resolved.profileNamespace,resolved.sourceFormulaKey);
-    const exists=await first(env.SCORE_DB,`SELECT 1 AS ok FROM player_baseline_hp_v2_source_queue WHERE batch_id=? AND hp_v2_row_id=? LIMIT 1`,batchId,hpId);
-    if(exists && exists.ok) continue;
-    if(deadlineMs && Date.now()>=deadlineMs) break;
-    const seedKey=`${playerType}|${playerId}`;
-    let seed=seedCache.get(seedKey);
-    if(!seedCache.has(seedKey)){
-      seed=await sourceQueueSeedForPlayer(env,batchId,playerType,playerId);
-      seedCache.set(seedKey,seed||null);
+  let candidates=0;
+  let playersScanned=0;
+
+  for(const p of partialPlayers){
+    if(inserted>=max || (deadlineMs && Date.now()>=deadlineMs)) break;
+    const playerType=String(p.player_type||"");
+    const playerId=Number(p.player_id||0);
+    if(!playerType || !playerId) continue;
+    playersScanned++;
+
+    const existingRows=await all(env.SCORE_DB,`
+      SELECT hp_v2_row_id
+      FROM player_baseline_hp_v2_source_queue
+      WHERE batch_id=?
+        AND factor_family=?
+        AND mlb_player_id=?`,batchId,playerType,playerId);
+    const existingIds=new Set(existingRows.map(r=>String(r.hp_v2_row_id||"")));
+
+    const currentRows=await all(env.SCORE_DB,`
+      SELECT
+        player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,
+        games_sample,events_sample,classification_row_id,classification_json
+      FROM player_baseline_classification_v5_current
+      WHERE batch_id=?
+        AND player_type=?
+        AND player_id=?
+      ORDER BY canonical_prop_key, line_value, selected_side`,batchId,playerType,playerId);
+
+    let seed=null;
+    let seedLoaded=false;
+    for(const c of currentRows){
+      if(inserted>=max || (deadlineMs && Date.now()>=deadlineMs)) break;
+      const prop=String(c.canonical_prop_key||"");
+      const line=Number(c.line_value);
+      const side=String(c.selected_side||"");
+      const resolved=resolveLineInventory({canonical_prop_key:prop,source_key:null,factor_family:playerType,selected_side:side,line_value:line});
+      if(!Number.isFinite(line) || !resolved.profileNamespace || !resolved.sourceFormulaKey) continue;
+      const hpId=canonicalBaselineInventoryId(batchId,playerType,playerId,prop,line,side,resolved.profileNamespace,resolved.sourceFormulaKey);
+      if(existingIds.has(hpId)) continue;
+      candidates++;
+      const exists=await first(env.SCORE_DB,`SELECT 1 AS ok FROM player_baseline_hp_v2_source_queue WHERE batch_id=? AND hp_v2_row_id=? LIMIT 1`,batchId,hpId);
+      if(exists && exists.ok){ existingIds.add(hpId); continue; }
+      if(!seedLoaded){
+        seed=await sourceQueueSeedForPlayer(env,batchId,playerType,playerId);
+        seedLoaded=true;
+      }
+      if(deadlineMs && Date.now()>=deadlineMs) break;
+      const sourceRows=Number((seed&&seed.source_hp_v2_rows)||c.events_sample||c.games_sample||0);
+      const scope=baselineFormulaScope({canonical_prop_key:prop},resolved.profileNamespace,resolved.sourceFormulaKey);
+      await env.SCORE_DB.prepare(`INSERT INTO player_baseline_hp_v2_source_queue (batch_id,hp_v2_row_id,source_key,source_keys,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,board_line_value,selected_side,factor_family,profile_namespace,source_formula_key,baseline_formula_scope,source_hp_v2_rows,source_hp_v2_batch_ids,source_game_pks) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(batchId,hpId,null,null,(seed&&seed.game_pk)||null,(seed&&seed.official_date)||null,playerId,safeResolvedPlayerName({mlb_player_id:playerId,player_name:c.player_name||p.player_name}),prop,line,side,playerType,resolved.profileNamespace,resolved.sourceFormulaKey,scope,sourceRows,null,(seed&&seed.source_game_pks)||(seed&&seed.game_pk)||null).run();
+      existingIds.add(hpId);
+      inserted++;
+      if(sample.length<25) sample.push({player_type:playerType,player_id:playerId,player_name:c.player_name||p.player_name,prop,line,side,hp_v2_row_id:hpId});
     }
-    if(deadlineMs && Date.now()>=deadlineMs) break;
-    const sourceRows=Number((seed&&seed.source_hp_v2_rows)||c.events_sample||c.games_sample||0);
-    const scope=baselineFormulaScope({canonical_prop_key:prop},resolved.profileNamespace,resolved.sourceFormulaKey);
-    await env.SCORE_DB.prepare(`INSERT INTO player_baseline_hp_v2_source_queue (batch_id,hp_v2_row_id,source_key,source_keys,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,board_line_value,selected_side,factor_family,profile_namespace,source_formula_key,baseline_formula_scope,source_hp_v2_rows,source_hp_v2_batch_ids,source_game_pks) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(batchId,hpId,null,null,(seed&&seed.game_pk)||null,(seed&&seed.official_date)||null,playerId,safeResolvedPlayerName({mlb_player_id:playerId,player_name:c.player_name}),prop,line,side,playerType,resolved.profileNamespace,resolved.sourceFormulaKey,scope,sourceRows,null,(seed&&seed.source_game_pks)||(seed&&seed.game_pk)||null).run();
-    inserted++;
-    if(sample.length<25) sample.push({player_type:playerType,player_id:playerId,player_name:c.player_name,prop,line,side,hp_v2_row_id:hpId});
   }
-  return {inserted, sample, candidates:rows.length, hard_cap:max, player_type_filter:playerTypeFilter};
+  return {inserted, sample, candidates, hard_cap:max, player_type_filter:playerTypeFilter, partial_players:partialPlayers.length, players_scanned:playersScanned, near_finish_direct_source_queue:true};
 }
+
 async function classifyAndInsertRescueItem(env,batchId,item,rescueTag){
   const r=item.row, line=item.line, side=item.side, entityType='pitcher';
   const values=await loadValuesForHpRow(env,r);
