@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.59-baseline-v5-base-fresh-stage-sourcequeue-id-calibration-tightening";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.60-baseline-v5-base-fresh-stage-cursor-realignment";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -2180,11 +2180,22 @@ async function runBaselineV2(env,input={}){
     try{ await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET worker_version=?, rows_staged=(SELECT COUNT(*) FROM player_baseline_sanity_v2_stage WHERE batch_id=?), issue_rows=(SELECT COUNT(*) FROM player_baseline_hp_v2_issues WHERE batch_id=?), updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,VERSION,batchId,batchId,batchId); }catch(_e){}
   }
   if(readOnlyClassificationBaseline && cursor>0){
-    const activeBatchVersion=await first(env.SCORE_DB,`SELECT worker_version, rows_promoted, history_rows FROM player_baseline_hp_v2_batches WHERE batch_id=?`,batchId);
+    const activeBatchVersion=await first(env.SCORE_DB,`SELECT worker_version, source_rows_read, rows_staged, rows_promoted, history_rows FROM player_baseline_hp_v2_batches WHERE batch_id=?`,batchId);
     if(activeBatchVersion && String(activeBatchVersion.worker_version||"")!==VERSION && Number(activeBatchVersion.rows_promoted||0)===0 && Number(activeBatchVersion.history_rows||0)===0){
-      // v0.1.59 takeover safety: reset stale v0.1.58 partial state rather than continuing dirty stage rows.
+      // v0.1.60 takeover safety: reset any older partial state rather than continuing dirty/stale rows or a stale continuation cursor.
       cursor=0;
       reusedRunningBatch=false;
+    } else if(activeBatchVersion && Number(activeBatchVersion.rows_promoted||0)===0 && Number(activeBatchVersion.history_rows||0)===0){
+      // v0.1.60: Control queue next_input can carry an old cursor after a hot patch/wake.
+      // The only trusted resume cursor for Baseline Base is actual fresh stage progress (+ logged issue rows),
+      // never stale input/output cursor state. This prevents skipping source_queue rows after a reset.
+      const stageProgress=await first(env.SCORE_DB,`SELECT COUNT(*) AS staged FROM player_baseline_hp_v2_stage WHERE batch_id=?`,batchId);
+      const issueProgress=await first(env.SCORE_DB,`SELECT COUNT(*) AS issues FROM player_baseline_hp_v2_issues WHERE batch_id=?`,batchId);
+      const trustedCursor=Number(stageProgress&&stageProgress.staged||0)+Number(issueProgress&&issueProgress.issues||0);
+      if(cursor>trustedCursor){
+        cursor=trustedCursor;
+        reusedRunningBatch=trustedCursor>0;
+      }
     }
   }
   if(cursor===0 && !reusedRunningBatch){
