@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.51-baseline-v5-classification-rescue-lineage-reconcile";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.52-baseline-v5-classification-rescue-timeout-safe-lineage";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -1240,15 +1240,17 @@ async function sourceQueueSeedForPlayer(env,batchId,playerType,playerId){
       AND mlb_player_id=?`,batchId,playerType,playerId);
 }
 
-async function reconcileMissingSourceQueueRows(env,batchId,limit){
-  const max=clamp(Number(limit||200),1,500);
+async function reconcileMissingSourceQueueRows(env,batchId,limit,options={}){
+  const max=clamp(Number(limit||25),1,40);
+  const playerTypeFilter=options.player_type ? String(options.player_type) : null;
+  const deadlineMs=Number(options.deadline_ms||0);
   const rows=await all(env.SCORE_DB,`
     SELECT
       c.player_type,c.player_id,c.player_name,c.canonical_prop_key,c.line_value,c.selected_side,
       c.games_sample,c.events_sample,c.classification_row_id,c.classification_json
     FROM player_baseline_classification_v5_current c
     WHERE c.batch_id=?
-      AND json_extract(c.classification_json,'$.rescue_source')='missing_classification_shape_only'
+      AND (? IS NULL OR c.player_type=?)
       AND NOT EXISTS (
         SELECT 1
         FROM player_baseline_hp_v2_source_queue q
@@ -1260,11 +1262,12 @@ async function reconcileMissingSourceQueueRows(env,batchId,limit){
           AND q.selected_side=c.selected_side
       )
     ORDER BY c.player_type, c.player_id, c.canonical_prop_key, c.line_value, c.selected_side
-    LIMIT ?`,batchId,max);
+    LIMIT ?`,batchId,playerTypeFilter,playerTypeFilter,max);
   let inserted=0;
   const sample=[];
   const seedCache=new Map();
   for(const c of rows){
+    if(deadlineMs && Date.now()>=deadlineMs) break;
     const playerType=String(c.player_type||"");
     const playerId=Number(c.player_id||0);
     const prop=String(c.canonical_prop_key||"");
@@ -1275,19 +1278,21 @@ async function reconcileMissingSourceQueueRows(env,batchId,limit){
     const hpId=canonicalBaselineInventoryId(batchId,playerType,playerId,prop,line,side,resolved.profileNamespace,resolved.sourceFormulaKey);
     const exists=await first(env.SCORE_DB,`SELECT 1 AS ok FROM player_baseline_hp_v2_source_queue WHERE batch_id=? AND hp_v2_row_id=? LIMIT 1`,batchId,hpId);
     if(exists && exists.ok) continue;
+    if(deadlineMs && Date.now()>=deadlineMs) break;
     const seedKey=`${playerType}|${playerId}`;
     let seed=seedCache.get(seedKey);
     if(!seedCache.has(seedKey)){
       seed=await sourceQueueSeedForPlayer(env,batchId,playerType,playerId);
       seedCache.set(seedKey,seed||null);
     }
+    if(deadlineMs && Date.now()>=deadlineMs) break;
     const sourceRows=Number((seed&&seed.source_hp_v2_rows)||c.events_sample||c.games_sample||0);
     const scope=baselineFormulaScope({canonical_prop_key:prop},resolved.profileNamespace,resolved.sourceFormulaKey);
     await env.SCORE_DB.prepare(`INSERT INTO player_baseline_hp_v2_source_queue (batch_id,hp_v2_row_id,source_key,source_keys,game_pk,official_date,mlb_player_id,player_name,canonical_prop_key,board_line_value,selected_side,factor_family,profile_namespace,source_formula_key,baseline_formula_scope,source_hp_v2_rows,source_hp_v2_batch_ids,source_game_pks) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(batchId,hpId,null,null,(seed&&seed.game_pk)||null,(seed&&seed.official_date)||null,playerId,safeResolvedPlayerName({mlb_player_id:playerId,player_name:c.player_name}),prop,line,side,playerType,resolved.profileNamespace,resolved.sourceFormulaKey,scope,sourceRows,null,(seed&&seed.source_game_pks)||(seed&&seed.game_pk)||null).run();
     inserted++;
     if(sample.length<25) sample.push({player_type:playerType,player_id:playerId,player_name:c.player_name,prop,line,side,hp_v2_row_id:hpId});
   }
-  return {inserted, sample, candidates:rows.length};
+  return {inserted, sample, candidates:rows.length, hard_cap:max, player_type_filter:playerTypeFilter};
 }
 async function classifyAndInsertRescueItem(env,batchId,item,rescueTag){
   const r=item.row, line=item.line, side=item.side, entityType='pitcher';
@@ -1319,8 +1324,10 @@ async function runBaselineV5ClassificationRescue(env,input={}){
   }
   if(!batchId) return baseOutput(input,{ok:false,data_ok:false,request_id:requestId,run_id:runId,mode:"baseline_v5_classification_rescue",status:"BASELINE_V5_CLASSIFICATION_RESCUE_BLOCKED_NO_BATCH",certification:"BASELINE_V5_CLASSIFICATION_RESCUE_BLOCKED_NO_BATCH",certification_grade:"BLOCKED"});
   const startedMs=Date.now();
-  const softYieldMs=clamp(Number(input.rescue_soft_yield_ms||12000),5000,18000);
-  const rowChunkSize=clamp(Number(input.rescue_row_chunk_size||200),1,500);
+  const softYieldMs=clamp(Number(input.rescue_soft_yield_ms||input.v2_soft_yield_ms||10000),5000,12000);
+  const rowChunkSize=clamp(Number(input.rescue_row_chunk_size||input.v2_chunk_size||input.v2_all_current_chunk_size||40),1,80);
+  const sourceQueueReconcileLimit=clamp(Number(input.source_queue_reconcile_limit||input.rescue_source_queue_reconcile_limit||25),1,40);
+  const deadlineMs=startedMs + Math.max(4000, Math.min(softYieldMs,10000));
   const beforeStage=await classificationShapeAudit(env,batchId,"player_baseline_classification_v5_stage");
   const beforeCurrent=await classificationShapeAudit(env,batchId,"player_baseline_classification_v5_current");
   const beforeUniverse=await classificationUniverseAudit(env,batchId);
@@ -1405,7 +1412,7 @@ async function runBaselineV5ClassificationRescue(env,input={}){
 
   if(inserted.length + historyRowsInserted < rowChunkSize && Date.now()-startedMs<softYieldMs){
     const remaining=Math.max(1,rowChunkSize-inserted.length-historyRowsInserted);
-    const queueReconcile=await reconcileMissingSourceQueueRows(env,batchId,Math.min(remaining,200));
+    const queueReconcile=await reconcileMissingSourceQueueRows(env,batchId,Math.min(remaining,sourceQueueReconcileLimit),{player_type:"pitcher",deadline_ms:deadlineMs});
     sourceQueueRowsInserted += Number(queueReconcile.inserted||0);
     sourceQueueReconcileSample.push(...(queueReconcile.sample||[]));
   }
@@ -1424,7 +1431,7 @@ async function runBaselineV5ClassificationRescue(env,input={}){
   const partial=!lineageComplete && repairedRows>0;
   const cert=lineageComplete?"BASELINE_V5_CLASSIFICATION_RESCUE_COMPLETED_UNIFIED_HITTER_PITCHER_LINEAGE_PASS":(partial?"BASELINE_V5_CLASSIFICATION_RESCUE_LINEAGE_PARTIAL_CONTINUE":"BASELINE_V5_CLASSIFICATION_RESCUE_BLOCKED_LINEAGE_REMAINS");
   const grade=lineageComplete?"PASS":(partial?"PARTIAL_CONTINUE":"BLOCKED");
-  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v5_classification_rescue",status:cert,certification:cert,certification_grade:grade,rescue_only:true,classification_only:true,lineage_reconcile_only:shapeComplete,partial_continue:partial,orchestrator_should_self_continue:partial,inserted_rows:inserted.length,inserted_sample:inserted.slice(0,50),history_rows_inserted:historyRowsInserted,history_reconcile_sample:historyReconcileSample.slice(0,50),skipped_sample:skipped.slice(0,50),source_queue_rows_inserted:sourceQueueRowsInserted,source_queue_reconcile_sample:sourceQueueReconcileSample.slice(0,50),source_queue_rows:sourceQueueRows,before_stage_audit:beforeStage,before_current_audit:beforeCurrent,before_universe_audit:beforeUniverse,after_stage_audit:afterStage,after_current_audit:afterCurrent,after_universe_audit:afterUniverse,rows_staged:stageRows,rows_promoted:currentRows,history_rows:historyRows,issue_rows:skipped.length,lineage_complete:lineageComplete,shape_complete:shapeComplete,no_board_context:true,no_market_context:true,no_daily_context:true,no_app_context:true,no_current_or_stage_delete:true,no_remine:true,allowed_downstream:lineageComplete?"run Baseline Base after rescue validation":"blocked until classification lineage is complete",formula_version:BASELINE_V2_FORMULA_VERSION,confidence_version:BASELINE_V2_CONFIDENCE_VERSION,next_input_json:partial?{...input,mode:"baseline_v5_classification_rescue",batch_id:batchId,request_id:requestId,run_id:runId,rescue_row_chunk_size:rowChunkSize,rescue_soft_yield_ms:softYieldMs}:null});
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v5_classification_rescue",status:cert,certification:cert,certification_grade:grade,rescue_only:true,classification_only:true,lineage_reconcile_only:shapeComplete,partial_continue:partial,orchestrator_should_self_continue:partial,inserted_rows:inserted.length,inserted_sample:inserted.slice(0,50),history_rows_inserted:historyRowsInserted,history_reconcile_sample:historyReconcileSample.slice(0,50),skipped_sample:skipped.slice(0,50),source_queue_rows_inserted:sourceQueueRowsInserted,source_queue_reconcile_sample:sourceQueueReconcileSample.slice(0,50),source_queue_reconcile_limit:sourceQueueReconcileLimit,source_queue_rows:sourceQueueRows,before_stage_audit:beforeStage,before_current_audit:beforeCurrent,before_universe_audit:beforeUniverse,after_stage_audit:afterStage,after_current_audit:afterCurrent,after_universe_audit:afterUniverse,rows_staged:stageRows,rows_promoted:currentRows,history_rows:historyRows,issue_rows:skipped.length,lineage_complete:lineageComplete,shape_complete:shapeComplete,no_board_context:true,no_market_context:true,no_daily_context:true,no_app_context:true,no_current_or_stage_delete:true,no_remine:true,allowed_downstream:lineageComplete?"run Baseline Base after rescue validation":"blocked until classification lineage is complete",formula_version:BASELINE_V2_FORMULA_VERSION,confidence_version:BASELINE_V2_CONFIDENCE_VERSION,next_input_json:partial?{...input,mode:"baseline_v5_classification_rescue",batch_id:batchId,request_id:requestId,run_id:runId,rescue_row_chunk_size:rowChunkSize,rescue_soft_yield_ms:softYieldMs,source_queue_reconcile_limit:sourceQueueReconcileLimit}:null});
   await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_batches SET source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,sourceQueueRows,stageRows,currentRows,historyRows,skipped.length,cert,grade,safeJson(output),batchId);
   await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,stageRows,currentRows,historyRows,skipped.length,cert,grade,safeJson(output),batchId);
   output.ok=lineageComplete || partial; output.data_ok=lineageComplete || partial; return output;
