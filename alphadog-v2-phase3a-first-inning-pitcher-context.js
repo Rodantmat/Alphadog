@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.52-baseline-v5-classification-rescue-timeout-safe-lineage";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.53-baseline-v5-classification-rescue-configurable-lineage-cap";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -1241,7 +1241,7 @@ async function sourceQueueSeedForPlayer(env,batchId,playerType,playerId){
 }
 
 async function reconcileMissingSourceQueueRows(env,batchId,limit,options={}){
-  const max=clamp(Number(limit||25),1,40);
+  const max=clamp(Number(limit||25),1,120);
   const playerTypeFilter=options.player_type ? String(options.player_type) : null;
   const deadlineMs=Number(options.deadline_ms||0);
   const rows=await all(env.SCORE_DB,`
@@ -1325,8 +1325,8 @@ async function runBaselineV5ClassificationRescue(env,input={}){
   if(!batchId) return baseOutput(input,{ok:false,data_ok:false,request_id:requestId,run_id:runId,mode:"baseline_v5_classification_rescue",status:"BASELINE_V5_CLASSIFICATION_RESCUE_BLOCKED_NO_BATCH",certification:"BASELINE_V5_CLASSIFICATION_RESCUE_BLOCKED_NO_BATCH",certification_grade:"BLOCKED"});
   const startedMs=Date.now();
   const softYieldMs=clamp(Number(input.rescue_soft_yield_ms||input.v2_soft_yield_ms||10000),5000,12000);
-  const rowChunkSize=clamp(Number(input.rescue_row_chunk_size||input.v2_chunk_size||input.v2_all_current_chunk_size||40),1,80);
-  const sourceQueueReconcileLimit=clamp(Number(input.source_queue_reconcile_limit||input.rescue_source_queue_reconcile_limit||25),1,40);
+  const rowChunkSize=clamp(Number(input.rescue_row_chunk_size||input.v2_chunk_size||input.v2_all_current_chunk_size||40),1,120);
+  const sourceQueueReconcileLimit=clamp(Number(input.source_queue_reconcile_limit||input.rescue_source_queue_reconcile_limit||25),1,120);
   const deadlineMs=startedMs + Math.max(4000, Math.min(softYieldMs,10000));
   const beforeStage=await classificationShapeAudit(env,batchId,"player_baseline_classification_v5_stage");
   const beforeCurrent=await classificationShapeAudit(env,batchId,"player_baseline_classification_v5_current");
