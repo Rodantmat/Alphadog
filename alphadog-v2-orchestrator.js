@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.334-baseline-v5-deployed-route-parity";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.335-baseline-base-rescue-route-parity";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12579,7 +12579,9 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   input.logical_worker_name = baselineV5Mode ? "alphadog-v2-baseline-v5" : "alphadog-v2-expansion-baseline-v2-heb";
   input.deployed_worker_slot = "alphadog-v2-phase3a-first-inning-pitcher-context";
   input.parallel_v2_only = true;
-  input.no_current_baseline_mutation = true;
+  const baselineV5BaseRescue = /^baseline_v5_base_rescue$/i.test(String(input.mode || input.expansion_mode || ""));
+  input.no_current_baseline_mutation = baselineV5BaseRescue ? false : true;
+  input.targeted_current_baseline_mutation = baselineV5BaseRescue ? true : !!input.targeted_current_baseline_mutation;
   input.no_current_sanity_mutation = true;
   input.no_scoring = true;
   input.no_final_board = true;
@@ -12669,7 +12671,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   const cert = String((output && output.certification) || (partial ? "BASELINE_V2_HEB_PARTIAL_CONTINUE" : (output && output.ok ? "BASELINE_V2_HEB_COMPLETED" : "BASELINE_V2_HEB_FAILED"))).slice(0,120);
   const rowsRead = Number(output && (output.source_rows_read || output.rows_read || 0));
   const rowsWritten = Number(output && (output.rows_written || output.rows_promoted || output.rows_staged || 0));
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:baselineV5Mode?"alphadog-v2-baseline-v5":"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, expansion_v2_hot_parity_short_yield_v0_2_328:true, expansion_v2_stale_dispatch_auto_rescue_v0_2_329:true, expansion_v2_timeout_safe_microchunks_v0_2_330:true, expansion_v2_fast50_timeout_safe_v0_2_331:true, expansion_v2_fast50_soft14_parity_v0_2_332:true, normalized_v2_chunk_size:input.v2_chunk_size, normalized_v2_all_current_chunk_size:input.v2_all_current_chunk_size, normalized_v2_soft_yield_ms:input.v2_soft_yield_ms, no_current_baseline_mutation:true, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:baselineV5Mode?"alphadog-v2-baseline-v5":"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, expansion_v2_hot_parity_short_yield_v0_2_328:true, expansion_v2_stale_dispatch_auto_rescue_v0_2_329:true, expansion_v2_timeout_safe_microchunks_v0_2_330:true, expansion_v2_fast50_timeout_safe_v0_2_331:true, expansion_v2_fast50_soft14_parity_v0_2_332:true, normalized_v2_chunk_size:input.v2_chunk_size, normalized_v2_all_current_chunk_size:input.v2_all_current_chunk_size, normalized_v2_soft_yield_ms:input.v2_soft_yield_ms, no_current_baseline_mutation:!baselineV5BaseRescue, targeted_current_baseline_mutation:baselineV5BaseRescue, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
 
   if (partial && nextInput) {
     const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));
