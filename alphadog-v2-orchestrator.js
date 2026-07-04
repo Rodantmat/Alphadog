@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.336-incremental-baseline-v5-delta-expansion-certifier";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.337-baseline-v5-delta-safe-cutoff";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -3946,6 +3946,7 @@ function childPassedIncrementalMorningFullRun(stage, child) {
     if (Number(output.issue_rows || 0) > 0) return { pass: false, reason: "baseline_v5_classification_delta_issue_rows_positive", issue_rows: output.issue_rows };
     if (Number(output.bad_pitcher_tier_rows || 0) > 0) return { pass: false, reason: "baseline_v5_classification_delta_bad_pitcher_tiers", bad_pitcher_tier_rows: output.bad_pitcher_tier_rows };
     if (output.no_daily_context !== true || output.no_market_context !== true || output.no_scoring_context !== true || output.no_final_board_context !== true) return { pass: false, reason: "baseline_v5_classification_delta_context_guard_missing" };
+    if (output.safe_effective_delta_cutoff_v0_1_71 !== true) return { pass: false, reason: "baseline_v5_classification_delta_missing_safe_effective_cutoff_guard" };
     return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.source_rows_read || 0, rows_written: output.rows_staged || 0, rows_promoted: output.rows_promoted || 0, external_calls: 0, output, baseline_v5_classification_delta_validated: true };
   }
   if (stage.mode === "baseline_v5_delta") {
@@ -3955,6 +3956,7 @@ function childPassedIncrementalMorningFullRun(stage, child) {
     const currentAudit = output.current_complement_audit || {};
     if (stageAudit.pass === false || currentAudit.pass === false) return { pass: false, reason: "baseline_v5_delta_complement_audit_failed", stage_complement_audit: stageAudit, current_complement_audit: currentAudit };
     if (output.no_daily_context !== true || output.no_market_context !== true || output.no_scoring_context !== true || output.no_final_board_context !== true) return { pass: false, reason: "baseline_v5_delta_context_guard_missing" };
+    if (output.safe_effective_delta_cutoff_v0_1_71 !== true) return { pass: false, reason: "baseline_v5_delta_missing_safe_effective_cutoff_guard" };
     return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.source_rows_read || 0, rows_written: output.rows_staged || 0, rows_promoted: output.rows_promoted || 0, external_calls: 0, output, baseline_v5_delta_validated: true };
   }
   const unsafeTrueKeys = ["source_table_mutation_performed", "scoring_performed", "ranking_performed", "final_board_write_performed", "final_board_write", "scoring_write_performed"];
@@ -4007,6 +4009,7 @@ function incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryC
     expansion_delta_hp_required: INCREMENTAL_MORNING_FULL_RUN_STAGES.some(s => s.stage_key === "expansion_delta_hp"),
     baseline_v5_classification_delta_required: INCREMENTAL_MORNING_FULL_RUN_STAGES.some(s => s.stage_key === "baseline_v5_classification_delta"),
     baseline_v5_delta_required: INCREMENTAL_MORNING_FULL_RUN_STAGES.some(s => s.stage_key === "baseline_v5_delta"),
+    baseline_v5_delta_requires_safe_effective_delta_date: true,
     expansion_baseline_full_run_included_after_delta: false,
     writes_expansion_baseline_tables_only: String(stage.phase_key || "") === "expansion_baseline" || String(stage.phase_key || "") === "player_baseline",
     expansion_delta_full_run: false,
