@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.71-baseline-v5-delta-safe-cutoff";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.72-line-inventory-qualified-columns";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -639,8 +639,8 @@ async function runLineInventory(env,input={}){
   await writeRun(env.SCORE_DB,'expansion_line_inventory_batches',`INSERT OR REPLACE INTO expansion_line_inventory_batches (batch_id,request_id,run_id,mode,status,worker_version,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,batchId,requestId,runId,'expansion_line_inventory','running',VERSION);
   await archiveAndClearCurrent(env.SCORE_DB,'expansion_line_inventory_current','expansion_line_inventory_history');
   await writeRun(env.SCORE_DB,'expansion_line_inventory_issues',`DELETE FROM expansion_line_inventory_issues WHERE batch_id=?`,batchId);
-  const inv=await all(env.SCORE_DB,`SELECT canonical_prop_key, source_key, COALESCE(factor_family,'unknown') AS factor_family, selected_side, board_line_value AS line_value,
-      COUNT(*) AS source_rows, COUNT(DISTINCT mlb_player_id) AS players,
+  const inv=await all(env.SCORE_DB,`SELECT hp.canonical_prop_key AS canonical_prop_key, hp.source_key AS source_key, COALESCE(hp.factor_family,'unknown') AS factor_family, hp.selected_side AS selected_side, hp.board_line_value AS line_value,
+      COUNT(*) AS source_rows, COUNT(DISTINCT hp.mlb_player_id) AS players,
       SUM(CASE WHEN source_line_id LIKE '%|standard|%' THEN 1 ELSE 0 END) AS standard_rows,
       SUM(CASE WHEN source_line_id LIKE '%|goblin|%' THEN 1 ELSE 0 END) AS goblin_rows,
       SUM(CASE WHEN source_line_id LIKE '%|demon|%' THEN 1 ELSE 0 END) AS demon_rows,
