@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.79-baseline-v5-stateful-delta-audit-like-safe";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.80-baseline-v5-state-reliability-rescue-targeted";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -1236,26 +1236,22 @@ function propValueFromRow(prop, r){
 function mForProp(prop){ const p=String(prop||""); if(p==="rfi_nrfi") return 50; if(p==="fantasy"||p==="fantasy_score"||p==="pitcher_fantasy_score"||p==="hits_runs_rbis") return 35; if(p==="pitches_thrown"||p==="pitcher_outs") return 20; if(p==="triples"||p==="home_runs"||p==="stolen_bases") return 100; return 25; }
 function sampleTierV2(n, prop, entityType=null){
   const sample=Number(n||0);
-  const p=String(prop||"");
-  const et=String(entityType||"").toLowerCase();
-  // RFI is binary/noisy and must use the locked larger-tier contract.
-  if(p==="rfi_nrfi"){
-    if(sample<5) return "TINY_SAMPLE";
-    if(sample<15) return "LOW_SAMPLE";
-    if(sample<30) return "MEDIUM_SAMPLE";
-    return "ESTABLISHED_SAMPLE";
-  }
-  // Baseline V5 pitcher tiers are position-aware and were rescue-locked.
-  if(et==="pitcher"){
-    if(sample<5) return "TINY_SAMPLE";
-    if(sample<10) return "DEVELOPING";
-    if(sample<15) return "ESTABLISHED";
-    return "ELITE";
-  }
+  // v0.1.80: true reliability tiers are sample-size bands only.
+  // Do not let pitcher 10-19 game samples graduate into ESTABLISHED/ELITE labels.
   if(sample<5) return "TINY_SAMPLE";
-  if(sample<20) return "DEVELOPING";
-  if(sample<50) return "ESTABLISHED";
-  return "ELITE";
+  if(sample<15) return "LOW_SAMPLE";
+  if(sample<30) return "MEDIUM_SAMPLE";
+  if(sample<50) return "ESTABLISHED_SAMPLE";
+  return "ELITE_SAMPLE";
+}
+function reliabilitySampleTierSql(sampleExpr){
+  return `CASE
+    WHEN COALESCE(${sampleExpr},0) < 5 THEN 'TINY_SAMPLE'
+    WHEN COALESCE(${sampleExpr},0) < 15 THEN 'LOW_SAMPLE'
+    WHEN COALESCE(${sampleExpr},0) < 30 THEN 'MEDIUM_SAMPLE'
+    WHEN COALESCE(${sampleExpr},0) < 50 THEN 'ESTABLISHED_SAMPLE'
+    ELSE 'ELITE_SAMPLE'
+  END`;
 }
 function propFamilyV2(prop, entity){ const p=String(prop||""); if(p==="fantasy"||p==="fantasy_score"||p==="pitcher_fantasy_score") return "V2_FANTASY_COMPOSITE"; if(p==="rfi_nrfi") return "V2_FIRST_INNING_RUNS"; if(p==="pitches_thrown"||p==="pitcher_outs") return "V2_PITCHER_VOLUME"; if(entity==="pitcher") return "V2_PITCHER_PROP"; if(p==="triples"||p==="home_runs"||p==="stolen_bases") return "V2_RARE_HITTER_EVENT"; return "V2_HITTER_PROP"; }
 function hitStatsFor(values,line,side){ return calcHpLine(values,line,side); }
@@ -2249,6 +2245,112 @@ async function runBaselineV5StatefulDelta(env,input={}){
 }
 
 
+async function baselineV5StateReliabilityAudit(env){
+  const hpTier=reliabilitySampleTierSql('non_push_sample');
+  const clsTier=reliabilitySampleTierSql('games_sample');
+  const hp=await first(env.SCORE_DB,`SELECT
+      COUNT(*) AS rows_checked,
+      SUM(CASE WHEN COALESCE(sample_profile,'') <> ${hpTier} THEN 1 ELSE 0 END) AS sample_profile_remap_needed,
+      SUM(CASE WHEN player_type='pitcher' AND COALESCE(non_push_sample,0) < 20 AND COALESCE(baseline_confidence_0_100,0) > 35 THEN 1 ELSE 0 END) AS pitcher_small_sample_conf_blockers,
+      SUM(CASE WHEN player_type='pitcher' AND COALESCE(non_push_sample,0) < 20 AND COALESCE(baseline_enriched_confidence_0_100,0) > 35 THEN 1 ELSE 0 END) AS pitcher_small_sample_enriched_conf_blockers,
+      SUM(CASE WHEN player_type='pitcher' AND sample_profile='ELITE' AND COALESCE(non_push_sample,0) < 30 THEN 1 ELSE 0 END) AS pitcher_bad_elite_profile_blockers,
+      SUM(CASE WHEN COALESCE(hit_count,0) + COALESCE(miss_count,0) <> COALESCE(non_push_sample,0) THEN 1 ELSE 0 END) AS bad_counter_rows,
+      SUM(CASE WHEN no_daily_context <> 1 OR no_market_context <> 1 OR no_scoring_context <> 1 OR no_final_board_context <> 1 THEN 1 ELSE 0 END) AS bad_context_rows
+    FROM player_baseline_v5_hp_state_current`);
+  const cls=await first(env.SCORE_DB,`SELECT
+      COUNT(*) AS rows_checked,
+      SUM(CASE WHEN COALESCE(sample_profile,'') <> ${clsTier} THEN 1 ELSE 0 END) AS sample_profile_remap_needed,
+      SUM(CASE WHEN player_type='pitcher' AND COALESCE(games_sample,0) < 20 AND COALESCE(classification_confidence_0_100,0) > 35 THEN 1 ELSE 0 END) AS pitcher_small_sample_conf_blockers,
+      SUM(CASE WHEN player_type='pitcher' AND sample_profile='ELITE' AND COALESCE(games_sample,0) < 30 THEN 1 ELSE 0 END) AS pitcher_bad_elite_profile_blockers,
+      SUM(CASE WHEN no_daily_context <> 1 OR no_market_context <> 1 OR no_scoring_context <> 1 OR no_final_board_context <> 1 THEN 1 ELSE 0 END) AS bad_context_rows
+    FROM player_baseline_v5_classification_state_current`);
+  const hpRemaining=Number(hp?.sample_profile_remap_needed||0)+Number(hp?.pitcher_small_sample_conf_blockers||0)+Number(hp?.pitcher_small_sample_enriched_conf_blockers||0)+Number(hp?.pitcher_bad_elite_profile_blockers||0)+Number(hp?.bad_counter_rows||0)+Number(hp?.bad_context_rows||0);
+  const clsRemaining=Number(cls?.sample_profile_remap_needed||0)+Number(cls?.pitcher_small_sample_conf_blockers||0)+Number(cls?.pitcher_bad_elite_profile_blockers||0)+Number(cls?.bad_context_rows||0);
+  return {hp,classification:cls,remaining_blockers:hpRemaining+clsRemaining,pass:hpRemaining===0 && clsRemaining===0};
+}
+
+async function runBaselineV5StateReliabilityRescue(env,input={},startedMs=Date.now(),softYieldMs=10000){
+  const hpTier=reliabilitySampleTierSql('non_push_sample');
+  const clsTier=reliabilitySampleTierSql('games_sample');
+  const requestId=String(input.request_id||rid('baseline_v5_classification_rescue'));
+  const runId=String(input.run_id||rid('run'));
+  const maxLoops=clamp(Number(input.state_reliability_max_loops||8),1,20);
+  const chunkSize=clamp(Number(input.state_reliability_chunk_size||input.rescue_state_chunk_size||2000),100,5000);
+  const before=await baselineV5StateReliabilityAudit(env);
+  let hpUpdatePasses=0, clsUpdatePasses=0;
+  for(let i=0;i<maxLoops && Date.now()-startedMs<softYieldMs;i++){
+    const pre=await baselineV5StateReliabilityAudit(env);
+    if(pre.pass) break;
+    const hpNeed=Number(pre.hp?.sample_profile_remap_needed||0)+Number(pre.hp?.pitcher_small_sample_conf_blockers||0)+Number(pre.hp?.pitcher_small_sample_enriched_conf_blockers||0)+Number(pre.hp?.pitcher_bad_elite_profile_blockers||0);
+    if(hpNeed>0 && Date.now()-startedMs<softYieldMs){
+      await run(env.SCORE_DB,`UPDATE player_baseline_v5_hp_state_current
+        SET sample_profile=${hpTier},
+            baseline_confidence_0_100=CASE WHEN player_type='pitcher' AND COALESCE(non_push_sample,0) < 20 AND COALESCE(baseline_confidence_0_100,0) > 35 THEN 35 ELSE baseline_confidence_0_100 END,
+            baseline_enriched_confidence_0_100=CASE WHEN player_type='pitcher' AND COALESCE(non_push_sample,0) < 20 AND COALESCE(baseline_enriched_confidence_0_100,0) > 35 THEN 35 ELSE baseline_enriched_confidence_0_100 END,
+            confidence_formula_version=?,
+            updated_at=CURRENT_TIMESTAMP
+        WHERE baseline_hp_row_id IN (
+          SELECT baseline_hp_row_id FROM player_baseline_v5_hp_state_current
+          WHERE COALESCE(sample_profile,'') <> ${hpTier}
+             OR (player_type='pitcher' AND COALESCE(non_push_sample,0) < 20 AND COALESCE(baseline_confidence_0_100,0) > 35)
+             OR (player_type='pitcher' AND COALESCE(non_push_sample,0) < 20 AND COALESCE(baseline_enriched_confidence_0_100,0) > 35)
+             OR (player_type='pitcher' AND sample_profile='ELITE' AND COALESCE(non_push_sample,0) < 30)
+          ORDER BY state_batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side
+          LIMIT ?
+        )`,`${VERSION}_state_reliability_rescue_confidence_35_cap`,chunkSize);
+      hpUpdatePasses++;
+    }
+    const mid=await baselineV5StateReliabilityAudit(env);
+    const clsNeed=Number(mid.classification?.sample_profile_remap_needed||0)+Number(mid.classification?.pitcher_small_sample_conf_blockers||0)+Number(mid.classification?.pitcher_bad_elite_profile_blockers||0);
+    if(clsNeed>0 && Date.now()-startedMs<softYieldMs){
+      await run(env.SCORE_DB,`UPDATE player_baseline_v5_classification_state_current
+        SET sample_profile=${clsTier},
+            classification_confidence_0_100=CASE WHEN player_type='pitcher' AND COALESCE(games_sample,0) < 20 AND COALESCE(classification_confidence_0_100,0) > 35 THEN 35 ELSE classification_confidence_0_100 END,
+            classification_formula_version=?,
+            updated_at=CURRENT_TIMESTAMP
+        WHERE classification_row_id IN (
+          SELECT classification_row_id FROM player_baseline_v5_classification_state_current
+          WHERE COALESCE(sample_profile,'') <> ${clsTier}
+             OR (player_type='pitcher' AND COALESCE(games_sample,0) < 20 AND COALESCE(classification_confidence_0_100,0) > 35)
+             OR (player_type='pitcher' AND sample_profile='ELITE' AND COALESCE(games_sample,0) < 30)
+          ORDER BY state_batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side
+          LIMIT ?
+        )`,`${VERSION}_state_reliability_rescue_profile_remap`,chunkSize);
+      clsUpdatePasses++;
+    }
+    const post=await baselineV5StateReliabilityAudit(env);
+    if(post.pass) break;
+    if(post.remaining_blockers>=pre.remaining_blockers && hpNeed===0 && clsNeed===0) break;
+  }
+  const after=await baselineV5StateReliabilityAudit(env);
+  return {
+    request_id:requestId,
+    run_id:runId,
+    mode:'baseline_v5_state_reliability_rescue',
+    pass:after.pass,
+    partial_continue:!after.pass,
+    hp_update_passes:hpUpdatePasses,
+    classification_update_passes:clsUpdatePasses,
+    chunk_size:chunkSize,
+    before,
+    after,
+    target_only:true,
+    state_tables_mutated:true,
+    hp_values_mutated:false,
+    counters_mutated:false,
+    source_tables_mutated:false,
+    production_current_tables_mutated:false,
+    history_tables_mutated:false,
+    full_recalculation:false,
+    no_daily_context:true,
+    no_market_context:true,
+    no_scoring_context:true,
+    no_final_board_context:true,
+    repair_contract:'remap sample_profile to true sample bands and cap pitcher sample<20 confidence at 35; preserve HP/count/source data'
+  };
+}
+
+
 async function runBaselineV5ClassificationRescue(env,input={}){
   await ensureSchema(env); await ensureBaselineV2Schema(env);
   const requestId=String(input.request_id||rid("baseline_v5_classification_rescue"));
@@ -2265,6 +2367,18 @@ async function runBaselineV5ClassificationRescue(env,input={}){
   const rowChunkSize=clamp(Number(input.rescue_row_chunk_size||input.v2_chunk_size||input.v2_all_current_chunk_size||40),1,120);
   const sourceQueueReconcileLimit=clamp(Number(input.source_queue_reconcile_limit||input.rescue_source_queue_reconcile_limit||25),1,120);
   const deadlineMs=startedMs + Math.max(4000, Math.min(softYieldMs,10000));
+  const stateReliabilityRescue=await runBaselineV5StateReliabilityRescue(env,input,startedMs,softYieldMs);
+  if(stateReliabilityRescue.partial_continue){
+    const cert="BASELINE_V5_CLASSIFICATION_RESCUE_STATE_RELIABILITY_PARTIAL_CONTINUE";
+    return baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v5_classification_rescue",status:cert,certification:cert,certification_grade:"PARTIAL_CONTINUE",rescue_only:true,targeted_state_reliability_rescue:true,partial_continue:true,orchestrator_should_self_continue:true,state_reliability_rescue:stateReliabilityRescue,next_input_json:{...input,mode:"baseline_v5_classification_rescue",batch_id:batchId,request_id:requestId,run_id:runId,rescue_row_chunk_size:rowChunkSize,rescue_soft_yield_ms:softYieldMs,state_reliability_chunk_size:stateReliabilityRescue.chunk_size}});
+  }
+  // v0.1.80 default rescue is intentionally target-only.  It fixes only the Baseline V5
+  // state reliability metadata proven bad by SQL.  Legacy classification lineage repair is
+  // opt-in so this button cannot unexpectedly mutate stage/current/history baseline rows.
+  if(input.enable_legacy_classification_lineage_rescue !== true){
+    const cert="BASELINE_V5_CLASSIFICATION_RESCUE_STATE_RELIABILITY_TARGETED_PASS";
+    return baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v5_classification_rescue",status:cert,certification:cert,certification_grade:"PASS",rescue_only:true,classification_only:false,targeted_state_reliability_rescue:true,state_reliability_rescue:stateReliabilityRescue,partial_continue:false,orchestrator_should_self_continue:false,target_only:true,state_tables_mutated:true,hp_values_mutated:false,counters_mutated:false,source_tables_mutated:false,production_current_tables_mutated:false,current_tables_mutated:false,history_tables_mutated:false,full_recalculation:false,no_current_or_stage_delete:true,no_remine:true,no_board_context:true,no_market_context:true,no_daily_context:true,no_app_context:true,allowed_downstream:"validate state reliability blockers are zero, then run next normal Baseline V5 stateful path only if needed"});
+  }
   const beforeStage=await classificationShapeAudit(env,batchId,"player_baseline_classification_v5_stage");
   const beforeCurrent=await classificationShapeAudit(env,batchId,"player_baseline_classification_v5_current");
   const beforeUniverse=await classificationUniverseAudit(env,batchId);
@@ -2391,7 +2505,7 @@ async function runBaselineV5ClassificationRescue(env,input={}){
   const partial=!lineageComplete && repairedRows>0;
   const cert=lineageComplete?"BASELINE_V5_CLASSIFICATION_RESCUE_COMPLETED_UNIFIED_HITTER_PITCHER_LINEAGE_PASS":(partial?"BASELINE_V5_CLASSIFICATION_RESCUE_LINEAGE_PARTIAL_CONTINUE":"BASELINE_V5_CLASSIFICATION_RESCUE_BLOCKED_LINEAGE_REMAINS");
   const grade=lineageComplete?"PASS":(partial?"PARTIAL_CONTINUE":"BLOCKED");
-  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v5_classification_rescue",status:cert,certification:cert,certification_grade:grade,rescue_only:true,classification_only:true,lineage_reconcile_only:shapeComplete && platoonTierComplete,partial_continue:partial,orchestrator_should_self_continue:partial,inserted_rows:inserted.length,inserted_sample:inserted.slice(0,50),hitter_platoon_tier_rows_repaired:hitterPlatoonTierRowsRepaired,hitter_platoon_tier_fast_pair_repair:true,hitter_platoon_tier_repair_sample:hitterPlatoonTierRepairSample.slice(0,50),hitter_platoon_tier_repair_skipped_sample:hitterPlatoonTierRepairSkippedSample.slice(0,50),history_rows_inserted:historyRowsInserted,history_reconcile_sample:historyReconcileSample.slice(0,50),skipped_sample:skipped.slice(0,50),source_queue_rows_inserted:sourceQueueRowsInserted,source_queue_reconcile_sample:sourceQueueReconcileSample.slice(0,50),source_queue_reconcile_limit:sourceQueueReconcileLimit,source_queue_rows:sourceQueueRows,before_stage_audit:beforeStage,before_current_audit:beforeCurrent,before_universe_audit:beforeUniverse,before_hitter_platoon_tier_audit:beforePlatoonTierAudit,after_stage_audit:afterStage,after_current_audit:afterCurrent,after_universe_audit:afterUniverse,after_hitter_platoon_tier_audit:afterPlatoonTierAudit,rows_staged:stageRows,rows_promoted:currentRows,history_rows:historyRows,issue_rows:skipped.length,lineage_complete:lineageComplete,shape_complete:shapeComplete,platoon_tier_complete:platoonTierComplete,targeted_existing_classification_row_repair:true,no_row_count_change_expected:true,no_source_queue_mutation_for_platoon_repair:true,no_board_context:true,no_market_context:true,no_daily_context:true,no_app_context:true,no_current_or_stage_delete:true,no_remine:true,allowed_downstream:lineageComplete?"run Baseline Base after rescue validation":"blocked until classification lineage and hitter platoon tier repair are complete",formula_version:BASELINE_V2_FORMULA_VERSION,confidence_version:BASELINE_V2_CONFIDENCE_VERSION,next_input_json:partial?{...input,mode:"baseline_v5_classification_rescue",batch_id:batchId,request_id:requestId,run_id:runId,rescue_row_chunk_size:rowChunkSize,rescue_soft_yield_ms:softYieldMs,source_queue_reconcile_limit:sourceQueueReconcileLimit}:null});
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v5_classification_rescue",status:cert,certification:cert,certification_grade:grade,rescue_only:true,classification_only:true,targeted_state_reliability_rescue:true,state_reliability_rescue:stateReliabilityRescue,lineage_reconcile_only:shapeComplete && platoonTierComplete,partial_continue:partial,orchestrator_should_self_continue:partial,inserted_rows:inserted.length,inserted_sample:inserted.slice(0,50),hitter_platoon_tier_rows_repaired:hitterPlatoonTierRowsRepaired,hitter_platoon_tier_fast_pair_repair:true,hitter_platoon_tier_repair_sample:hitterPlatoonTierRepairSample.slice(0,50),hitter_platoon_tier_repair_skipped_sample:hitterPlatoonTierRepairSkippedSample.slice(0,50),history_rows_inserted:historyRowsInserted,history_reconcile_sample:historyReconcileSample.slice(0,50),skipped_sample:skipped.slice(0,50),source_queue_rows_inserted:sourceQueueRowsInserted,source_queue_reconcile_sample:sourceQueueReconcileSample.slice(0,50),source_queue_reconcile_limit:sourceQueueReconcileLimit,source_queue_rows:sourceQueueRows,before_stage_audit:beforeStage,before_current_audit:beforeCurrent,before_universe_audit:beforeUniverse,before_hitter_platoon_tier_audit:beforePlatoonTierAudit,after_stage_audit:afterStage,after_current_audit:afterCurrent,after_universe_audit:afterUniverse,after_hitter_platoon_tier_audit:afterPlatoonTierAudit,rows_staged:stageRows,rows_promoted:currentRows,history_rows:historyRows,issue_rows:skipped.length,lineage_complete:lineageComplete,shape_complete:shapeComplete,platoon_tier_complete:platoonTierComplete,targeted_existing_classification_row_repair:true,no_row_count_change_expected:true,no_source_queue_mutation_for_platoon_repair:true,no_board_context:true,no_market_context:true,no_daily_context:true,no_app_context:true,no_current_or_stage_delete:true,no_remine:true,allowed_downstream:lineageComplete?"run Baseline Base after rescue validation":"blocked until classification lineage and hitter platoon tier repair are complete",formula_version:BASELINE_V2_FORMULA_VERSION,confidence_version:BASELINE_V2_CONFIDENCE_VERSION,next_input_json:partial?{...input,mode:"baseline_v5_classification_rescue",batch_id:batchId,request_id:requestId,run_id:runId,rescue_row_chunk_size:rowChunkSize,rescue_soft_yield_ms:softYieldMs,source_queue_reconcile_limit:sourceQueueReconcileLimit}:null});
   await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_batches SET source_rows_read=?, rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,sourceQueueRows,stageRows,currentRows,historyRows,skipped.length,cert,grade,safeJson(output),batchId);
   await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_batches SET rows_staged=?, rows_promoted=?, history_rows=?, issue_rows=?, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,stageRows,currentRows,historyRows,skipped.length,cert,grade,safeJson(output),batchId);
   output.ok=lineageComplete || partial; output.data_ok=lineageComplete || partial; return output;
