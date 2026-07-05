@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-base-hitter-game-logs";
-const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.20-parent-gap-contract-date-guard";
+const VERSION = "alphadog-v2-base-hitter-game-logs-v1.6.21-calendar-gap-scoped-game-repair";
 const JOB_KEY = "base-hitter-game-logs";
 
 const LOCKED_SOURCE_ENDPOINT_PATTERN = "/people/{playerId}/stats?stats=gameLog&group=hitting&season={season}";
@@ -2242,16 +2242,58 @@ async function getCalendarTallyHitterGapScope(env, inputJson = {}) {
 }
 
 async function stageDeltaRowsFromScopedGamePks(env, batchId, runId, sourceSeason, scope, fetchTimeoutMs, maxRows = 1200) {
-  return {
-    ok: true,
-    disabled: true,
-    version: VERSION,
-    reason: "calendar_scoped_repair_removed_from_hitter_worker",
-    external_calls: 0,
-    rows_staged: 0,
-    games_fetched: 0,
-    note: "Hitter game logs mining uses its own delta windows only; calendar/tally-scoped repair is not performed inside this worker."
-  };
+  const games = Array.isArray(scope && scope.gaps) ? scope.gaps : [];
+  if (!games.length) {
+    return { ok: true, version: VERSION, reason: "no_calendar_scoped_hitter_gaps", external_calls: 0, rows_staged: 0, games_fetched: 0, game_summaries: [] };
+  }
+  let externalCalls = 0;
+  let gamesFetched = 0;
+  let rowsStaged = 0;
+  let rowsSeen = 0;
+  const gameSummaries = [];
+  const errors = [];
+  for (const g of games) {
+    if (rowsStaged >= maxRows) break;
+    const gamePk = asInt(g.game_pk || g.gamePk, 0);
+    const gameDate = asText(g.official_date || g.game_date || g.gameDate || null, null);
+    if (!gamePk || !gameDate) {
+      errors.push({ game_pk: gamePk || null, official_date: gameDate, error: "missing_scoped_game_identity" });
+      continue;
+    }
+    await run(env.STATS_HITTER_DB, "DELETE FROM hitter_game_logs_stage WHERE batch_id=? AND game_pk=?", batchId, gamePk);
+    const payload = await fetchGameBoxscoreLikePayload(env, gamePk, fetchTimeoutMs);
+    externalCalls += Array.isArray(payload.attempts) ? payload.attempts.length : 1;
+    if (!payload.ok) {
+      errors.push({ game_pk: gamePk, official_date: gameDate, error: payload.error, attempts: payload.attempts });
+      return { ok: false, version: VERSION, scope: "calendar_tally_hitter_game_logs_gap", external_calls: externalCalls, rows_staged: rowsStaged, games_fetched: gamesFetched, error: payload.error || "game_payload_fetch_failed", failed_game_pk: gamePk, failed_attempts: payload.attempts, game_summaries: gameSummaries, errors };
+    }
+    const ctx = extractBoxscoreContextFromPayload(payload.body, gamePk, gameDate);
+    if (!ctx.has_boxscore_teams) {
+      errors.push({ game_pk: gamePk, official_date: gameDate, error: "missing_boxscore_teams", endpoint: payload.endpoint, label: payload.label });
+      return { ok: false, version: VERSION, scope: "calendar_tally_hitter_game_logs_gap", external_calls: externalCalls, rows_staged: rowsStaged, games_fetched: gamesFetched, error: "missing_boxscore_teams", failed_game_pk: gamePk, source_endpoint: payload.endpoint, source_label: payload.label, game_summaries: gameSummaries, errors };
+    }
+    let gameRows = 0;
+    for (const side of ["away", "home"]) {
+      const teamBox = ctx.boxTeams[side] || {};
+      const playersObj = teamBox.players || {};
+      for (const key of Object.keys(playersObj)) {
+        if (rowsStaged >= maxRows) break;
+        rowsSeen++;
+        const row = parseFeedBoxscoreHitterRow(playersObj[key], side, ctx.ids[side], side === "home" ? ctx.ids.away : ctx.ids.home, ctx.gamePk, ctx.gameDate, sourceSeason, batchId, runId, payload.endpoint);
+        if (!row) continue;
+        try {
+          await insertStageRow(env, row);
+        } catch (err) {
+          return { ok: false, version: VERSION, scope: "calendar_tally_hitter_game_logs_gap", external_calls: externalCalls, rows_staged: rowsStaged, games_fetched: gamesFetched, rows_seen: rowsSeen, error: `stage_insert_failed:${String(err && err.message ? err.message : err)}`, failed_game_pk: gamePk, source_endpoint: payload.endpoint, source_label: payload.label, game_summaries: gameSummaries, errors };
+        }
+        rowsStaged++;
+        gameRows++;
+      }
+    }
+    gamesFetched++;
+    gameSummaries.push({ game_pk: ctx.gamePk, game_date: ctx.gameDate, source_label: payload.label, rows_staged: gameRows, attempts: payload.attempts });
+  }
+  return { ok: errors.length === 0, version: VERSION, scope: "calendar_tally_hitter_game_logs_gap", external_calls: externalCalls, rows_seen: rowsSeen, rows_staged: rowsStaged, games_fetched: gamesFetched, game_summaries: gameSummaries.slice(0, 20), errors, calendar_gap_scoped_game_repair_v1_6_21: true };
 }
 
 function parentFullRunGapContractActive(inputJson = {}) {
@@ -2290,7 +2332,50 @@ async function getParentFullRunHitterGameLogGapPressure(env, inputJson = {}, ret
 }
 
 async function runCalendarTallyScopedHitterRepairIfNeeded(env, input, inputJson, baseGate) {
-  return null;
+  if (!parentFullRunGapContractActive(inputJson || {})) return null;
+  if (!env || !env.TEAM_DB || !env.STATS_HITTER_DB) return null;
+  const retainedDeltaGuard = await getCompletedRetainedDeltaGuard(env);
+  if (!retainedDeltaGuard || !retainedDeltaGuard.pass || !retainedDeltaGuard.latest_delta || !retainedDeltaGuard.latest_delta.batch_id) return null;
+  const gaps = await all(env.TEAM_DB, `SELECT DISTINCT game_pk, official_date, season, layer_key, coverage_status, coverage_grade, missing_reason
+    FROM mlb_game_data_coverage
+    WHERE layer_key='hitter_game_logs'
+      AND blocking_for_full_run=1
+      AND coverage_status='missing'
+      AND official_date >= ?
+    ORDER BY official_date, game_pk
+    LIMIT 8`, DEFAULT_DELTA_RESERVED_START_DATE);
+  if (!gaps.length) return null;
+  const latest = retainedDeltaGuard.latest_delta;
+  const batchId = latest.batch_id;
+  const runId = latest.run_id || input.run_id || rid("run_delta_calendar_gap_hitter_repair");
+  const sourceSeason = asInt(latest.source_season || (gaps[0] && gaps[0].season), DEFAULT_SOURCE_SEASON);
+  const fetchTimeoutMs = cap(inputJson.fetch_timeout_ms || DEFAULT_FETCH_TIMEOUT_MS, 3000, 15000);
+  const owner = asText(input.request_id, rid("delta_calendar_gap_hitter_repair_owner"));
+  const lock = await acquireBatchLock(env, batchId, owner, DEFAULT_LOCK_STALE_SECONDS);
+  if (!lock.ok) return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: "DELTA_HITTER_GAME_LOGS_CALENDAR_GAP_REPAIR_LOCK_BUSY", batch_id: batchId, mode: "delta_update", calendar_gap_scoped_game_repair_v1_6_21: true, continuation_required: true, orchestrator_should_self_continue: true, external_calls_performed: 0, rows_read: 0, rows_written: 0, lock };
+  try {
+    const scope = { gaps, total_gap_rows: gaps.length, selected_games: gaps.length, layer_key: "hitter_game_logs", source: "TEAM_DB.mlb_game_data_coverage" };
+    const stageRepair = await stageDeltaRowsFromScopedGamePks(env, batchId, runId, sourceSeason, scope, fetchTimeoutMs, 600);
+    if (!stageRepair.ok || asInt(stageRepair.rows_staged, 0) <= 0) {
+      await releaseBatchLock(env, batchId, owner);
+      return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "DELTA_HITTER_GAME_LOGS_CALENDAR_GAP_SCOPED_REPAIR_FAILED", certification: "DELTA_HITTER_GAME_LOGS_CALENDAR_GAP_SCOPED_REPAIR_FAILED", certification_grade: "DELTA_REPAIR_FAIL", batch_id: batchId, mode: "delta_update", calendar_gap_scoped_game_repair_v1_6_21: true, gap_scope: scope, stage_repair: stageRepair, continuation_required: false, rows_read: asInt(stageRepair.external_calls, 0), rows_written: asInt(stageRepair.rows_staged, 0), external_calls_performed: asInt(stageRepair.external_calls, 0), no_full_sweep: true };
+    }
+    const stage = await first(env.STATS_HITTER_DB, "SELECT COUNT(*) AS c, MIN(date(game_date)) AS min_game_date, MAX(date(game_date)) AS max_game_date FROM hitter_game_logs_stage WHERE batch_id=?", batchId);
+    const stageRows = asInt(stage && stage.c, 0);
+    await run(env.STATS_HITTER_DB, `UPDATE hitter_game_log_batches
+      SET rows_staged=?, status='DELTA_PROMOTING', certification_status='DELTA_HITTER_GAME_LOGS_CALENDAR_GAP_SCOPED_REPAIR_READY_TO_PROMOTE', certification_grade='DELTA_PASS', updated_at=CURRENT_TIMESTAMP
+      WHERE batch_id=?`, stageRows, batchId);
+    await run(env.STATS_HITTER_DB, "UPDATE hitter_game_log_cursor SET batch_id=?, run_id=?, status='DELTA_PROMOTING', next_run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE cursor_key=?", batchId, runId, DELTA_CURSOR_KEY);
+    const minGapDate = gaps.map(g => asText(g.official_date, null)).filter(Boolean).sort()[0] || DEFAULT_DELTA_RESERVED_START_DATE;
+    const maxGapDate = gaps.map(g => asText(g.official_date, null)).filter(Boolean).sort().pop() || minGapDate;
+    const windowInfo = { ok: true, delta_start_date: asText(latest.delta_start_date || DEFAULT_DELTA_RESERVED_START_DATE, DEFAULT_DELTA_RESERVED_START_DATE), delta_end_date: maxGapDate, latest_complete_game_date: maxGapDate, repair_plan: "CALENDAR_TALLY_SCOPED_HITTER_GAME_PK_REPAIR", min_gap_date: minGapDate, max_gap_date: maxGapDate, gap_game_pks: gaps.map(g => asInt(g.game_pk, 0)).filter(Boolean) };
+    const cert = await finalizeDeltaIfReady(env, batchId, runId, windowInfo, 0, baseGate, { ...inputJson, request_id: input.request_id || null, chain_id: input.chain_id || null });
+    await releaseBatchLock(env, batchId, owner);
+    return { ok: cert.pass, data_ok: cert.pass, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: cert.done ? cert.status : "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: cert.certification, certification_grade: cert.grade, batch_id: batchId, mode: "delta_update", calendar_gap_scoped_game_repair_v1_6_21: true, gap_scope: scope, stage_repair: stageRepair, rows_read: asInt(stageRepair.external_calls, 0), rows_written: asInt(stageRepair.rows_staged, 0) + asInt(cert.rows_promoted, 0), rows_staged: asInt(stageRepair.rows_staged, 0), rows_promoted: cert.rows_promoted || 0, stage_rows_after_clean: cert.stage_rows_after_clean, external_calls_performed: asInt(stageRepair.external_calls, 0), continuation_required: !cert.done, orchestrator_should_self_continue: !cert.done, manual_wake_required: false, no_browser_pump: true, no_full_sweep: true, final_checks: cert.checks, timestamp_utc: nowUtc() };
+  } catch (err) {
+    await releaseBatchLock(env, batchId, owner);
+    return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: input.request_id || null, chain_id: input.chain_id || null, status: "PARTIAL_CONTINUE_DELTA_HITTER_GAME_LOGS", certification: "DELTA_HITTER_GAME_LOGS_CALENDAR_GAP_SCOPED_REPAIR_RETRYABLE", batch_id: batchId, mode: "delta_update", calendar_gap_scoped_game_repair_v1_6_21: true, error: String(err && err.message ? err.message : err).slice(0, 900), continuation_required: true, orchestrator_should_self_continue: true, external_calls_performed: 0, rows_read: 0, rows_written: 0 };
+  }
 }
 
 async function runRetainedDeltaNewFinalDateIncrement(env, retainedDeltaGuard, latestCompleteGameDate, input, inputJson, baseGate) {
@@ -2620,12 +2705,12 @@ async function runDeltaUpdateTick(env, input, inputJson) {
       return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "DELTA_RETAINED_GAP_REPAIR_BLOCKED", certification: "DELTA_HITTER_GAME_LOGS_RETAINED_DELTA_INCONSISTENT_MANUAL_REVIEW", mode: "delta_update", base_integrity_gate: baseGate, repeat_full_delta_guard: preAnchorRetainedDeltaGuard, no_new_batch: true, no_mlb_calls: true, no_live_mutation: true, anchor_noop_blocked_until_retained_stage_live_parity: true, continuation_required: false };
     }
   }
-  const goldGate = await runHitterGameLogsGoldRepairGate(env, input, inputJson || {}, baseGate);
-  if (goldGate && goldGate.handled) return goldGate.output;
   if (!allowRepeatFullRefresh) {
     const calendarScopedRepair = await runCalendarTallyScopedHitterRepairIfNeeded(env, input, inputJson || {}, baseGate);
     if (calendarScopedRepair) return calendarScopedRepair;
   }
+  const goldGate = await runHitterGameLogsGoldRepairGate(env, input, inputJson || {}, baseGate);
+  if (goldGate && goldGate.handled) return goldGate.output;
   if (!allowRepeatFullRefresh) {
     const retainedGapGuard = await getCompletedRetainedDeltaGuard(env);
     const retainedMax = retainedGapGuard && retainedGapGuard.pass
