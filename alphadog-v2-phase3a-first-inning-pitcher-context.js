@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.80-baseline-v5-state-reliability-rescue-targeted";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.81-baseline-v5-base-rescue-state-target-wired";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -3273,6 +3273,82 @@ async function runBaselineV5BaseRescue(env, input={}) {
   const expectedConfLe5 = Number(input.expected_baseline_base_rescue_extreme_tail_conf_le_5 || BASELINE_V5_BASE_RESCUE_EXPECTED_CONF_LE_5);
   const confidenceVersion = String(input.baseline_base_rescue_confidence_version || BASELINE_V5_BASE_RESCUE_CONFIDENCE_VERSION);
   const maxUnitsPerTick = Math.max(1, Math.min(8, Number(input.baseline_base_rescue_max_units_per_tick || 4)));
+
+  // v0.1.81: The Control Room "Baseline Base Rescue" button is now wired to the
+  // proven Baseline V5 STATE reliability target by default.  This is intentionally
+  // target-only: no full baseline recalculation, no source delete, no old HP/current
+  // batch mutation, no factor/matrix/scoring/final-board mutation.  Legacy V2 current
+  // rescue can only run through an explicit opt-in flag.
+  if (input.enable_legacy_base_current_rescue !== true) {
+    const startedMs = Date.now();
+    const stateInput = {
+      ...input,
+      request_id: requestId,
+      run_id: runId,
+      mode: 'baseline_v5_base_rescue',
+      state_reliability_chunk_size: input.state_reliability_chunk_size || 5000,
+      state_reliability_max_loops: input.state_reliability_max_loops || 8
+    };
+    const stateReliabilityRescue = await runBaselineV5StateReliabilityRescue(
+      env,
+      stateInput,
+      startedMs,
+      clamp(Number(input.rescue_soft_yield_ms || input.v2_soft_yield_ms || 10000),5000,12000)
+    );
+    const cert = stateReliabilityRescue.pass
+      ? 'BASELINE_V5_BASE_RESCUE_CERTIFIED_V5_STATE_TARGETED_RELIABILITY_REPAIR_PASS'
+      : 'BASELINE_V5_BASE_RESCUE_V5_STATE_RELIABILITY_PARTIAL_CONTINUE';
+    const grade = stateReliabilityRescue.pass ? 'TARGETED_STATE_RESCUE_PASS' : 'PARTIAL_CONTINUE';
+    const output = baseOutput(input,{
+      request_id:requestId,
+      run_id:runId,
+      batch_id:'baseline_v5_state_current_target',
+      mode:'baseline_v5_base_rescue',
+      status:cert,
+      certification:cert,
+      certification_grade:grade,
+      rescue_only:true,
+      baseline_only:true,
+      expansion_only:true,
+      targeted_state_reliability_rescue:true,
+      state_reliability_rescue:stateReliabilityRescue,
+      partial_continue:!stateReliabilityRescue.pass,
+      orchestrator_should_self_continue:!stateReliabilityRescue.pass,
+      next_input_json:!stateReliabilityRescue.pass?{
+        ...input,
+        mode:'baseline_v5_base_rescue',
+        request_id:requestId,
+        run_id:runId,
+        state_reliability_chunk_size:stateReliabilityRescue.chunk_size || 5000,
+        state_reliability_max_loops:stateInput.state_reliability_max_loops
+      }:null,
+      target_only:true,
+      state_tables_mutated:true,
+      hp_values_mutated:false,
+      counters_mutated:false,
+      source_tables_mutated:false,
+      production_current_tables_mutated:false,
+      current_tables_mutated:false,
+      history_tables_mutated:false,
+      full_recalculation:false,
+      no_current_baseline_mutation:true,
+      no_current_or_stage_delete:true,
+      no_source_queue_mutation:true,
+      no_remine:true,
+      no_factor_mutation:true,
+      no_matrix_mutation:true,
+      no_scoring_mutation:true,
+      no_final_board_mutation:true,
+      no_scheduler_mutation:true,
+      no_board_context:true,
+      no_market_context:true,
+      no_daily_context:true,
+      no_app_context:true,
+      repair_contract:'Baseline Base Rescue button updates only player_baseline_v5_hp_state_current and player_baseline_v5_classification_state_current reliability metadata: true sample_profile bands and pitcher sample<20 confidence cap at 35; preserves HP, counters, samples, source events, production current/history.'
+    });
+    try { await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'expansion-baseline-v2', ?, ?, ?, ?, CURRENT_TIMESTAMP)", requestId, WORKER_NAME, 'INFO', cert.toLowerCase(), 'Baseline V5 Base Rescue state-target reliability repair tick completed', safeJson({certification:cert,certification_grade:grade,partial_continue:!stateReliabilityRescue.pass,state_reliability_rescue:stateReliabilityRescue}).slice(0,9000)); } catch(_e) {}
+    return output;
+  }
 
   const before = await baselineV5BaseRescueTotalRemaining(env, batchId);
   const beforeCurrentDistribution = await baselineV5BaseRescueDistribution(env, 'player_baseline_hp_v2_current', batchId);
