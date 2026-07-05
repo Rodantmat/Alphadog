@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.78-baseline-v5-stateful-delta-event-point-updates";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.79-baseline-v5-stateful-delta-audit-like-safe";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -2159,8 +2159,8 @@ async function runBaselineV5StatefulDelta(env,input={}){
     let hpStateBefore=await tableCount(env.SCORE_DB,'player_baseline_v5_hp_state_current');
     let clsStateBefore=await tableCount(env.SCORE_DB,'player_baseline_v5_classification_state_current');
     const dirtyState=await first(env.SCORE_DB,`SELECT
-        (SELECT COUNT(*) FROM player_baseline_v5_hp_state_current WHERE state_source LIKE 'STATEFUL_DELTA_%') AS hp_dirty,
-        (SELECT COUNT(*) FROM player_baseline_v5_classification_state_current WHERE state_source LIKE 'STATEFUL_DELTA_%') AS cls_dirty`);
+        (SELECT COUNT(*) FROM player_baseline_v5_hp_state_current WHERE substr(COALESCE(state_source,''),1,15)='STATEFUL_DELTA_') AS hp_dirty,
+        (SELECT COUNT(*) FROM player_baseline_v5_classification_state_current WHERE substr(COALESCE(state_source,''),1,15)='STATEFUL_DELTA_') AS cls_dirty`);
     const latestDeltaCertified=latestDelta && latestDelta.certification_grade==='PASS';
     const hasDeltaState=Number(dirtyState&&dirtyState.hp_dirty||0)>0 || Number(dirtyState&&dirtyState.cls_dirty||0)>0;
     const forceRehydrate=!!(input.force_state_rehydrate || input.rehydrate_state || input.reset_state_anchor);
@@ -2237,7 +2237,7 @@ async function runBaselineV5StatefulDelta(env,input={}){
   const clsStateAfter=await tableCount(env.SCORE_DB,'player_baseline_v5_classification_state_current');
   const changedHp=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT player_type||':'||player_id) AS players FROM player_baseline_v5_hp_state_current WHERE state_batch_id=?`,batchId);
   const changedCls=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT player_type||':'||player_id) AS players FROM player_baseline_v5_classification_state_current WHERE state_batch_id=?`,batchId);
-  const reclassified=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT player_type||':'||player_id) AS players FROM player_baseline_v5_classification_state_current WHERE state_batch_id=? AND state_source LIKE 'STATEFUL_DELTA_%CLASSIFICATION_UPDATED_NO_CURRENT_MUTATION'`,batchId);
+  const reclassified=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT player_type||':'||player_id) AS players FROM player_baseline_v5_classification_state_current WHERE state_batch_id=? AND state_source='STATEFUL_DELTA_EVENT_POINT_CLASSIFICATION_UPDATED_NO_CURRENT_MUTATION'`,batchId);
   const badPairs=Number(pairAudit&&pairAudit.bad_hp_pair_rows||0)+Number(pairAudit&&pairAudit.bad_sample_pair_rows||0);
   const pass=badPairs===0 && hpStateAfter===hpStateBefore && clsStateAfter===clsStateBefore && currentHp===67040 && currentCls===67040;
   const cert=pass?'BASELINE_V5_STATEFUL_DELTA_SHADOW_CERTIFIED_SAFE_CUTOFF_STATE_UPDATED_CHUNKED':'BASELINE_V5_STATEFUL_DELTA_SHADOW_BLOCKED_AUDIT_FAILED_CHUNKED';
