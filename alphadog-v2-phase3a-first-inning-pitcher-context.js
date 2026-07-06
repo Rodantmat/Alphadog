@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.83-baseline-v5-rescue-target-sanity-history-sync";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.84-baseline-v5-fast-scoped-rescue";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -2472,29 +2472,55 @@ async function baselineV5FetchClassificationUniverseRepairRows(env,batchId,limit
     ORDER BY c.player_id, c.canonical_prop_key, c.line_value, c.selected_side LIMIT ?`,batchId,max);
 }
 async function baselineV5ApplyClassificationUniverseRepair(env,batchId,input={},startedMs=Date.now(),softYieldMs=10000){
-  const rowLimit=clamp(Number(input.classification_universe_repair_row_chunk_size||input.rescue_row_chunk_size||40),1,120);
+  // v0.1.84: fast scoped repair. The dirty invariant is sample/source metadata drift only;
+  // do not remine/recompute per prop row. Copy the already-certified HP universe sample fields
+  // into classification current/history and source_queue for the exact dirty natural rows.
+  const rowLimit=clamp(Number(input.classification_universe_fast_chunk_size||input.classification_universe_repair_fast_chunk_size||240),50,300);
   const before=await baselineV5ClassificationUniverseRepairAudit(env,batchId);
-  let rowsRepaired=0, sourceQueueRowsUpdated=0, historyRowsRewritten=0; const sample=[];
+  let rowsRepaired=0, classCurrentRowsUpdated=0, classHistoryRowsUpdated=0, sourceQueueRowsUpdated=0; const sample=[];
   while(Date.now()-startedMs<softYieldMs){
-    const rows=await baselineV5FetchClassificationUniverseRepairRows(env,batchId,Math.min(rowLimit,40));
+    const rows=await all(env.SCORE_DB,`SELECT
+        c.classification_row_id,c.batch_id,c.player_type,c.player_id,c.player_name,c.canonical_prop_key,c.line_value,c.selected_side,c.classification_json,
+        h.non_push_sample AS hp_non_push_sample,h.sample_profile AS hp_sample_profile,
+        q.source_hp_v2_rows AS queue_source_rows
+      FROM player_baseline_classification_v5_current c
+      JOIN player_baseline_hp_v2_current h ON h.batch_id=c.batch_id AND h.player_type=c.player_type AND h.player_id=c.player_id AND h.canonical_prop_key=c.canonical_prop_key AND h.line_value=c.line_value AND h.selected_side=c.selected_side
+      LEFT JOIN player_baseline_hp_v2_source_queue q ON q.batch_id=c.batch_id AND q.factor_family=c.player_type AND q.mlb_player_id=c.player_id AND q.canonical_prop_key=c.canonical_prop_key AND q.board_line_value=c.line_value AND q.selected_side=c.selected_side
+      WHERE c.batch_id=? AND c.player_type='hitter'
+        AND (c.events_sample <> h.non_push_sample OR c.games_sample <> h.non_push_sample OR COALESCE(c.sample_profile,'') <> COALESCE(h.sample_profile,'') OR COALESCE(q.source_hp_v2_rows,-1) <> h.non_push_sample)
+      ORDER BY c.player_id,c.canonical_prop_key,c.line_value,c.selected_side
+      LIMIT ?`,batchId,rowLimit);
     if(!rows.length) break;
     for(const row of rows){
-      const maxDate=row.source_official_date ? String(row.source_official_date).slice(0,10) : null;
-      const payload=await baselineV5RecomputeClassificationForRow(env,row,batchId,maxDate,'baseline_v5_classification_current_universe_rescue_v0_1_82');
-      await insertClassificationV5Row(env,'player_baseline_classification_v5_current',payload,false);
-      await run(env.SCORE_DB,`DELETE FROM player_baseline_classification_v5_history WHERE batch_id=? AND classification_row_id=?`,batchId,payload.classification_row_id);
-      await insertClassificationV5Row(env,'player_baseline_classification_v5_history',payload,true);
-      historyRowsRewritten++;
-      const qRes=await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_source_queue SET source_hp_v2_rows=?, official_date=COALESCE(?,official_date), game_pk=COALESCE(?,game_pk), source_game_pks=COALESCE(?,source_game_pks) WHERE batch_id=? AND factor_family=? AND mlb_player_id=? AND canonical_prop_key=? AND board_line_value=? AND selected_side=?`,payload.events_sample,maxDate,row.source_game_pk||null,row.source_game_pk||null,batchId,payload.player_type,payload.player_id,payload.canonical_prop_key,payload.line_value,payload.selected_side);
+      const hpN=Number(row.hp_non_push_sample||0);
+      const hpSample=String(row.hp_sample_profile||'');
+      let cj={};
+      try{ cj=JSON.parse(String(row.classification_json||'{}'))||{}; }catch(_e){ cj={classification_json_parse_error_repaired_v0_1_84:true}; }
+      const nextJson=safeJson({...cj,games_sample:hpN,events_sample:hpN,sample_profile:hpSample,baseline_v5_fast_scoped_universe_sync_v0_1_84:true,repair_source:'hp_current_non_push_sample_and_sample_profile',no_hp_value_mutation:true,no_remine:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_final_board_context:true});
+      const curRes=await run(env.SCORE_DB,`UPDATE player_baseline_classification_v5_current
+        SET games_sample=?, events_sample=?, sample_profile=?, classification_json=?, updated_at=CURRENT_TIMESTAMP
+        WHERE batch_id=? AND classification_row_id=?
+          AND (games_sample<>? OR events_sample<>? OR COALESCE(sample_profile,'')<>COALESCE(?,''))`,hpN,hpN,hpSample,nextJson,batchId,row.classification_row_id,hpN,hpN,hpSample);
+      const histRes=await run(env.SCORE_DB,`UPDATE player_baseline_classification_v5_history
+        SET games_sample=?, events_sample=?, sample_profile=?, classification_json=?
+        WHERE batch_id=? AND classification_row_id=?
+          AND (games_sample<>? OR events_sample<>? OR COALESCE(sample_profile,'')<>COALESCE(?,''))`,hpN,hpN,hpSample,nextJson,batchId,row.classification_row_id,hpN,hpN,hpSample);
+      const qRes=await run(env.SCORE_DB,`UPDATE player_baseline_hp_v2_source_queue
+        SET source_hp_v2_rows=?
+        WHERE batch_id=? AND factor_family=? AND mlb_player_id=? AND canonical_prop_key=? AND board_line_value=? AND selected_side=?
+          AND COALESCE(source_hp_v2_rows,-1)<>?`,hpN,batchId,row.player_type,Number(row.player_id),row.canonical_prop_key,Number(row.line_value),row.selected_side,hpN);
+      const changed=Number(curRes&&curRes.meta&&curRes.meta.changes||0)+Number(histRes&&histRes.meta&&histRes.meta.changes||0)+Number(qRes&&qRes.meta&&qRes.meta.changes||0);
+      classCurrentRowsUpdated += Number(curRes&&curRes.meta&&curRes.meta.changes||0);
+      classHistoryRowsUpdated += Number(histRes&&histRes.meta&&histRes.meta.changes||0);
       sourceQueueRowsUpdated += Number(qRes&&qRes.meta&&qRes.meta.changes||0);
-      rowsRepaired++;
-      if(sample.length<25) sample.push({player_type:payload.player_type,player_id:payload.player_id,player_name:payload.player_name,prop:payload.canonical_prop_key,line:payload.line_value,side:payload.selected_side,events_sample:payload.events_sample,classification_profile_key:payload.classification_profile_key,max_date:maxDate});
+      if(changed>0) rowsRepaired++;
+      if(sample.length<25) sample.push({player_type:row.player_type,player_id:Number(row.player_id),player_name:row.player_name,prop:row.canonical_prop_key,line:Number(row.line_value),side:row.selected_side,events_sample:hpN,sample_profile:hpSample,queue_before:row.queue_source_rows==null?null:Number(row.queue_source_rows)});
       if(Date.now()-startedMs>=softYieldMs) break;
     }
-    if(rows.length<Math.min(rowLimit,40)) break;
+    if(rows.length<rowLimit) break;
   }
   const after=await baselineV5ClassificationUniverseRepairAudit(env,batchId);
-  return {before,after,rows_repaired:rowsRepaired,source_queue_rows_updated:sourceQueueRowsUpdated,history_rows_rewritten:historyRowsRewritten,sample,partial_continue:!after.pass,pass:after.pass,current_tables_mutated:rowsRepaired>0,history_tables_mutated:historyRowsRewritten>0,source_queue_mutated:sourceQueueRowsUpdated>0,repair_contract:'recompute hitter classification/source_queue from the same PA>=1 non-pitcher/non-runner history universe used by HP; preserve HP values and counters'};
+  return {before,after,rows_repaired:rowsRepaired,class_current_rows_updated:classCurrentRowsUpdated,class_history_rows_updated:classHistoryRowsUpdated,source_queue_rows_updated:sourceQueueRowsUpdated,sample,partial_continue:!after.pass,pass:after.pass,current_tables_mutated:classCurrentRowsUpdated>0,history_tables_mutated:classHistoryRowsUpdated>0,source_queue_mutated:sourceQueueRowsUpdated>0,hp_values_mutated:false,counters_mutated:false,full_recalculation:false,fast_scoped_direct_sync:true,repair_contract:'copy HP eligible-universe sample metadata into classification/source_queue for dirty hitter rows only; preserve HP probabilities, raw rates, counters, line inventory, board, market, daily, and scoring'};
 }
 async function baselineV5BaseProfileSyncAudit(env,batchId){
   const current=await first(env.SCORE_DB,`SELECT COUNT(*) AS joined_rows,
@@ -2570,7 +2596,12 @@ async function baselineV5ApplySanityHistoryBackfillFromCurrent(env,batchId,input
   let cursor=String(input.sanity_history_backfill_cursor||'');
   let started=!!input.sanity_history_backfill_started;
   let deletedExisting=false;
-  if(!started && (!!input.sanity_history_force_rebuild || Number(before&&before.current_rows||0)!==Number(before&&before.history_rows||0))){
+  const currentRowsBefore=Number(before&&before.current_rows||0);
+  const historyRowsBefore=Number(before&&before.history_rows||0);
+  const mustRebuildHistory=(!!input.sanity_history_force_rebuild || (currentRowsBefore>0 && currentRowsBefore!==historyRowsBefore));
+  // v0.1.84: v0.1.83 accidentally carried sanity_history_backfill_started=true
+  // through earlier phases. If no cursor exists and counts are dirty, rebuild from zero anyway.
+  if(mustRebuildHistory && (!started || !cursor)){
     await run(env.SCORE_DB,`DELETE FROM player_baseline_sanity_v2_history WHERE batch_id=?`,batchId);
     cursor=''; started=true; deletedExisting=true;
   }
@@ -2611,22 +2642,36 @@ async function baselineV5FetchStateClassificationUniverseRepairRows(env,limit){
   return await all(env.SCORE_DB,`SELECT c.*, h.non_push_sample AS hp_non_push_sample, h.sample_profile AS hp_sample_profile, h.last_processed_official_date AS state_max_date, h.last_processed_game_pk AS state_game_pk FROM player_baseline_v5_classification_state_current c JOIN player_baseline_v5_hp_state_current h ON h.player_type=c.player_type AND h.player_id=c.player_id AND h.canonical_prop_key=c.canonical_prop_key AND h.line_value=c.line_value AND h.selected_side=c.selected_side WHERE c.player_type='hitter' AND (c.events_sample <> h.non_push_sample OR c.games_sample <> h.non_push_sample OR c.sample_profile <> h.sample_profile) ORDER BY c.player_id,c.canonical_prop_key,c.line_value,c.selected_side LIMIT ?`,max);
 }
 async function baselineV5ApplyStateClassificationUniverseRepair(env,input={},startedMs=Date.now(),softYieldMs=10000){
-  const rowLimit=clamp(Number(input.state_classification_universe_repair_row_chunk_size||input.rescue_row_chunk_size||40),1,120);
-  let rowsRepaired=0; const sample=[];
+  // v0.1.84: fast scoped state sample repair. Copy HP state sample fields into
+  // classification state for dirty hitter rows; no HP value/counter mutation and no recompute.
+  const rowLimit=clamp(Number(input.state_classification_universe_fast_chunk_size||input.state_classification_universe_repair_fast_chunk_size||240),50,300);
+  let rowsRepaired=0, classStateRowsUpdated=0; const sample=[];
   while(Date.now()-startedMs<softYieldMs){
-    const rows=await baselineV5FetchStateClassificationUniverseRepairRows(env,Math.min(rowLimit,40));
+    const rows=await all(env.SCORE_DB,`SELECT c.classification_row_id,c.player_type,c.player_id,c.player_name,c.canonical_prop_key,c.line_value,c.selected_side,c.classification_formula_version,
+        h.non_push_sample AS hp_non_push_sample,h.sample_profile AS hp_sample_profile
+      FROM player_baseline_v5_classification_state_current c
+      JOIN player_baseline_v5_hp_state_current h ON h.player_type=c.player_type AND h.player_id=c.player_id AND h.canonical_prop_key=c.canonical_prop_key AND h.line_value=c.line_value AND h.selected_side=c.selected_side
+      WHERE c.player_type='hitter'
+        AND (c.events_sample <> h.non_push_sample OR c.games_sample <> h.non_push_sample OR COALESCE(c.sample_profile,'') <> COALESCE(h.sample_profile,''))
+      ORDER BY c.player_id,c.canonical_prop_key,c.line_value,c.selected_side
+      LIMIT ?`,rowLimit);
     if(!rows.length) break;
     for(const row of rows){
-      const maxDate=row.state_max_date ? String(row.state_max_date).slice(0,10) : null;
-      const payload=await baselineV5RecomputeClassificationForRow(env,{...row,source_game_pk:row.state_game_pk,source_official_date:maxDate},row.source_batch_id||row.state_batch_id||'',maxDate,'baseline_v5_state_classification_universe_rescue_v0_1_82');
-      let metrics={}; try{ metrics=(JSON.parse(payload.classification_json||'{}').metrics)||{}; }catch(_e){ metrics={}; }
-      await run(env.SCORE_DB,`UPDATE player_baseline_v5_classification_state_current SET classification_tier=?, classification_profile_key=?, sample_profile=?, volume_profile=?, lineup_profile=?, platoon_profile=?, usage_profile=?, volatility_profile=?, classification_confidence_0_100=?, games_sample=?, events_sample=?, pa_per_game=?, ab_ratio=?, avg_batting_order=?, split_delta_0_100=?, hitter_pa_sum_est=?, hitter_ab_sum_est=?, metric_hits_per_game=?, metric_walk_rate=?, metric_strikeout_rate=?, metric_split_rows=?, classification_formula_version=?, state_source='STATE_RESCUE_CLASSIFICATION_UNIVERSE_SYNC_NO_HP_VALUE_MUTATION', updated_at=CURRENT_TIMESTAMP WHERE classification_row_id=?`,payload.classification_tier,payload.classification_profile_key,payload.sample_profile,payload.volume_profile,payload.lineup_profile,payload.platoon_profile,payload.usage_profile,payload.volatility_profile,payload.classification_confidence_0_100,payload.games_sample,payload.events_sample,payload.pa_per_game,payload.ab_ratio,payload.avg_batting_order,payload.split_delta_0_100,(payload.pa_per_game==null||payload.games_sample==null)?null:round(Number(payload.pa_per_game)*Number(payload.games_sample),3),(payload.ab_ratio==null||payload.pa_per_game==null||payload.games_sample==null)?null:round(Number(payload.ab_ratio)*Number(payload.pa_per_game)*Number(payload.games_sample),3),metrics.hits_per_game||null,metrics.walk_rate||null,metrics.strikeout_rate||null,metrics.split_rows||0,`${VERSION}_state_classification_universe_sync`,row.classification_row_id);
-      rowsRepaired++; if(sample.length<25) sample.push({player_type:payload.player_type,player_id:payload.player_id,player_name:payload.player_name,prop:payload.canonical_prop_key,line:payload.line_value,side:payload.selected_side,events_sample:payload.events_sample,classification_profile_key:payload.classification_profile_key,max_date:maxDate});
+      const hpN=Number(row.hp_non_push_sample||0);
+      const hpSample=String(row.hp_sample_profile||'');
+      const res=await run(env.SCORE_DB,`UPDATE player_baseline_v5_classification_state_current
+        SET games_sample=?, events_sample=?, sample_profile=?, classification_formula_version=?, state_source='STATE_RESCUE_FAST_SAMPLE_SYNC_NO_HP_VALUE_MUTATION', updated_at=CURRENT_TIMESTAMP
+        WHERE classification_row_id=?
+          AND (games_sample<>? OR events_sample<>? OR COALESCE(sample_profile,'')<>COALESCE(?,''))`,hpN,hpN,hpSample,`${VERSION}_state_fast_sample_sync`,row.classification_row_id,hpN,hpN,hpSample);
+      const changes=Number(res&&res.meta&&res.meta.changes||0);
+      classStateRowsUpdated += changes;
+      if(changes>0) rowsRepaired++;
+      if(sample.length<25) sample.push({player_type:row.player_type,player_id:Number(row.player_id),player_name:row.player_name,prop:row.canonical_prop_key,line:Number(row.line_value),side:row.selected_side,events_sample:hpN,sample_profile:hpSample});
       if(Date.now()-startedMs>=softYieldMs) break;
     }
-    if(rows.length<Math.min(rowLimit,40)) break;
+    if(rows.length<rowLimit) break;
   }
-  return {rows_repaired:rowsRepaired,sample,repair_contract:'recompute dirty hitter state classification rows from PA>=1 hitter universe through each row last_processed_official_date; preserve HP values and counters'};
+  return {rows_repaired:rowsRepaired,class_state_rows_updated:classStateRowsUpdated,sample,hp_values_mutated:false,counters_mutated:false,fast_scoped_direct_sync:true,repair_contract:'copy HP state sample metadata into classification state for dirty hitter rows only; preserve HP values, counters, source dates, and line inventory'};
 }
 async function baselineV5ApplyStateProfileSyncRescue(env,input={},startedMs=Date.now(),softYieldMs=10000){
   const chunk=clamp(Number(input.state_profile_sync_chunk_size||input.state_reliability_chunk_size||2000),100,5000);
@@ -2662,7 +2707,7 @@ async function runBaselineV5ClassificationRescue(env,input={}){
   const targeted=await baselineV5RunTargetedUniverseStateSanityRescue(env,batchId,{...input,batch_id:batchId,request_id:requestId,run_id:runId},startedMs,softYieldMs);
   if(targeted.partial_continue){
     const cert="BASELINE_V5_CLASSIFICATION_RESCUE_TARGETED_SYNC_PARTIAL_CONTINUE";
-    return baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v5_classification_rescue",status:cert,certification:cert,certification_grade:"PARTIAL_CONTINUE",rescue_only:true,classification_only:true,targeted_state_reliability_rescue:true,targeted_rescue:targeted,target_batch_resolver:target,partial_continue:true,orchestrator_should_self_continue:true,current_tables_mutated:true,history_tables_mutated:true,source_queue_mutated:true,hp_values_mutated:false,counters_mutated:false,no_remine:true,no_board_context:true,no_market_context:true,no_daily_context:true,no_app_context:true,next_input_json:{...input,mode:"baseline_v5_classification_rescue",batch_id:batchId,request_id:requestId,run_id:runId,rescue_row_chunk_size:rowChunkSize,rescue_soft_yield_ms:softYieldMs,classification_universe_repair_row_chunk_size:input.classification_universe_repair_row_chunk_size||rowChunkSize,sanity_history_backfill_started:true,sanity_history_backfill_cursor:targeted.sanity_history_backfill&&targeted.sanity_history_backfill.next_cursor||input.sanity_history_backfill_cursor||''}});
+    return baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v5_classification_rescue",status:cert,certification:cert,certification_grade:"PARTIAL_CONTINUE",rescue_only:true,classification_only:true,targeted_state_reliability_rescue:true,targeted_rescue:targeted,target_batch_resolver:target,partial_continue:true,orchestrator_should_self_continue:true,current_tables_mutated:true,history_tables_mutated:true,source_queue_mutated:true,hp_values_mutated:false,counters_mutated:false,no_remine:true,no_board_context:true,no_market_context:true,no_daily_context:true,no_app_context:true,next_input_json:{...input,mode:"baseline_v5_classification_rescue",batch_id:batchId,request_id:requestId,run_id:runId,rescue_row_chunk_size:rowChunkSize,rescue_soft_yield_ms:softYieldMs,classification_universe_fast_chunk_size:input.classification_universe_fast_chunk_size||240,state_classification_universe_fast_chunk_size:input.state_classification_universe_fast_chunk_size||240,...(targeted.sanity_history_backfill?{sanity_history_backfill_started:true,sanity_history_backfill_cursor:targeted.sanity_history_backfill.next_cursor||input.sanity_history_backfill_cursor||''}:{sanity_history_backfill_started:false,sanity_history_backfill_cursor:''})}});
   }
   if(input.enable_legacy_classification_lineage_rescue !== true){
     const cert="BASELINE_V5_CLASSIFICATION_RESCUE_CERTIFIED_TARGETED_UNIVERSE_STATE_SANITY_PASS";
