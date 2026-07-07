@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.85-baseline-v5-bulk-scoped-rescue";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.86-baseline-v5-sanity-continuation-rescue";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -2589,10 +2589,10 @@ async function baselineV5ApplyBaseProfileSyncRescue(env,batchId,input={},started
 }
 
 async function baselineV5ApplySanityCurrentSyncFromHp(env,batchId,input={},startedMs=Date.now(),softYieldMs=10000){
-  // v0.1.85: bulk sync sanity_current from HP current. v0.1.84 row loop
-  // would be too slow for the 18,620 pitcher profile rows.
+  // v0.1.86: sanity-only continuation safety. Keep chunk small enough to avoid
+  // service-binding timeouts; the earlier rescue already fixed classification/source/state.
   const requested=Number(input.sanity_current_sync_chunk_size||input.base_profile_sync_chunk_size||0);
-  const chunk=clamp(Math.max(requested||0,3000),500,5000);
+  const chunk=clamp(Math.max(requested||0,800),200,1500);
   const sql=`UPDATE player_baseline_sanity_v2_current
     SET sanity_profile_key=(SELECT h.sanity_profile_key FROM player_baseline_hp_v2_current h WHERE h.batch_id=player_baseline_sanity_v2_current.batch_id AND ('pbs_v2|' || h.baseline_hp_row_id)=player_baseline_sanity_v2_current.baseline_row_id LIMIT 1),
         sample_profile=(SELECT h.sample_profile FROM player_baseline_hp_v2_current h WHERE h.batch_id=player_baseline_sanity_v2_current.batch_id AND ('pbs_v2|' || h.baseline_hp_row_id)=player_baseline_sanity_v2_current.baseline_row_id LIMIT 1),
@@ -2620,7 +2620,7 @@ async function baselineV5ApplySanityCurrentSyncFromHp(env,batchId,input={},start
 }
 
 async function baselineV5ApplySanityHistoryBackfillFromCurrent(env,batchId,input={},startedMs=Date.now(),softYieldMs=10000){
-  const chunk=clamp(Number(input.sanity_history_backfill_chunk_size||input.base_profile_sync_chunk_size||2500),100,5000);
+  const chunk=clamp(Number(input.sanity_history_backfill_chunk_size||input.base_profile_sync_chunk_size||1500),200,2500);
   const before=await first(env.SCORE_DB,`SELECT (SELECT COUNT(*) FROM player_baseline_sanity_v2_current WHERE batch_id=?) AS current_rows,(SELECT COUNT(*) FROM player_baseline_sanity_v2_history WHERE batch_id=?) AS history_rows`,batchId,batchId);
   let cursor=String(input.sanity_history_backfill_cursor||'');
   let started=!!input.sanity_history_backfill_started;
@@ -2654,16 +2654,54 @@ async function baselineV5ApplySanityHistoryBackfillFromCurrent(env,batchId,input
   return {before:before||{},after:after||{},deleted_existing_history_rows:deletedExisting,rows_inserted:rowsInserted,cursor,partial_continue:!pass,pass,history_tables_mutated:deletedExisting||rowsInserted>0,next_cursor:cursor,repair_contract:'rebuild sanity history for target batch from complete sanity current in ordered chunks; avoid anti-join scans on unindexed history table'};
 }
 
+async function baselineV5RunLightStateSampleProfileSync(env,batchId,input={},startedMs=Date.now(),softYieldMs=10000){
+  // v0.1.86: do not re-run the older heavyweight state reliability/confidence rescue
+  // inside Classification Rescue. SQL already proved the open blocker is sanity,
+  // while state sample/profile mismatches are zero. This light pass only repairs
+  // state sample/profile/key drift if it exists and never blocks on confidence caps.
+  const before=await baselineV5BaseProfileSyncAudit(env,batchId);
+  const b=before&&before.state||{};
+  const beforeDirty=Number(b.state_profile_mismatch_rows||0)+Number(b.state_model_mismatch_rows||0)+Number(b.state_sample_mismatch_rows||0);
+  let stateUniverseRepair={rows_repaired:0,class_state_rows_updated:0,pass:beforeDirty===0,partial_continue:false,skipped_when_clean:beforeDirty===0};
+  let stateProfileSync={rows_synced:0,pass:beforeDirty===0,partial_continue:false,skipped_when_clean:beforeDirty===0};
+  if(beforeDirty>0 && Date.now()-startedMs<softYieldMs){
+    stateUniverseRepair=await baselineV5ApplyStateClassificationUniverseRepair(env,{...input,batch_id:batchId},startedMs,softYieldMs);
+  }
+  if(beforeDirty>0 && Date.now()-startedMs<softYieldMs){
+    stateProfileSync=await baselineV5ApplyStateProfileSyncRescue(env,{...input,batch_id:batchId,state_profile_sync_chunk_size:Math.min(Number(input.state_profile_sync_chunk_size||800),1000)},startedMs,softYieldMs);
+  }
+  const after=await baselineV5BaseProfileSyncAudit(env,batchId);
+  const a=after&&after.state||{};
+  const afterDirty=Number(a.state_profile_mismatch_rows||0)+Number(a.state_model_mismatch_rows||0)+Number(a.state_sample_mismatch_rows||0);
+  return {
+    pass:afterDirty===0,
+    partial_continue:afterDirty>0,
+    before_state:b,
+    after_state:a,
+    state_classification_universe_repair:stateUniverseRepair,
+    state_profile_sync:stateProfileSync,
+    skipped_heavy_state_confidence_reliability:true,
+    confidence_repair_deferred:true,
+    repair_contract:'Classification Rescue only verifies/repairs state sample/profile/key parity; unrelated confidence-cap cleanup is not allowed to block sanity continuation.'
+  };
+}
+
 async function baselineV5RunTargetedUniverseStateSanityRescue(env,batchId,input={},startedMs=Date.now(),softYieldMs=10000){
   const classificationUniverseRepair=await baselineV5ApplyClassificationUniverseRepair(env,batchId,input,startedMs,softYieldMs);
   if(classificationUniverseRepair.partial_continue) return {classification_universe_repair:classificationUniverseRepair,partial_continue:true,stage:'classification_universe_repair'};
-  const stateReliabilityRescue=await runBaselineV5StateReliabilityRescue(env,{...input,batch_id:batchId},startedMs,softYieldMs);
-  if(stateReliabilityRescue.partial_continue) return {classification_universe_repair:classificationUniverseRepair,state_reliability_rescue:stateReliabilityRescue,partial_continue:true,stage:'state_reliability_rescue'};
+  const stateReliabilityRescue=await baselineV5RunLightStateSampleProfileSync(env,batchId,input,startedMs,softYieldMs);
+  if(stateReliabilityRescue.partial_continue) return {classification_universe_repair:classificationUniverseRepair,state_reliability_rescue:stateReliabilityRescue,partial_continue:true,stage:'state_sample_profile_sync'};
   const baseProfileSync=await baselineV5ApplyBaseProfileSyncRescue(env,batchId,input,startedMs,softYieldMs);
   const sanityCurrentSync=await baselineV5ApplySanityCurrentSyncFromHp(env,batchId,input,startedMs,softYieldMs);
+  if(Number(sanityCurrentSync.rows_synced||0)>0){
+    const sanityAuditAfter=await baselineV5BaseProfileSyncAudit(env,batchId);
+    if(Number(sanityAuditAfter&&sanityAuditAfter.sanity_current&&sanityAuditAfter.sanity_current.sanity_sample_vs_hp_mismatch_rows||0)>0 || Number(sanityAuditAfter&&sanityAuditAfter.sanity_current&&sanityAuditAfter.sanity_current.sanity_key_vs_hp_mismatch_rows||0)>0){
+      return {classification_universe_repair:classificationUniverseRepair,state_reliability_rescue:stateReliabilityRescue,base_profile_sync:baseProfileSync,sanity_current_sync:sanityCurrentSync,partial_continue:true,stage:'sanity_current_sync'};
+    }
+  }
   const sanityHistoryBackfill=await baselineV5ApplySanityHistoryBackfillFromCurrent(env,batchId,{...input,sanity_history_force_rebuild:Number(sanityCurrentSync.rows_synced||0)>0},startedMs,softYieldMs);
   const finalAudit=await baselineV5BaseProfileSyncAudit(env,batchId);
-  return {classification_universe_repair:classificationUniverseRepair,state_reliability_rescue:stateReliabilityRescue,base_profile_sync:baseProfileSync,sanity_current_sync:sanityCurrentSync,sanity_history_backfill:sanityHistoryBackfill,final_audit:finalAudit,partial_continue:!finalAudit.pass || sanityHistoryBackfill.partial_continue,pass:finalAudit.pass && sanityHistoryBackfill.pass,stage:(!finalAudit.pass?'final_audit':'complete')};
+  return {classification_universe_repair:classificationUniverseRepair,state_reliability_rescue:stateReliabilityRescue,base_profile_sync:baseProfileSync,sanity_current_sync:sanityCurrentSync,sanity_history_backfill:sanityHistoryBackfill,final_audit:finalAudit,partial_continue:!finalAudit.pass || sanityHistoryBackfill.partial_continue,pass:finalAudit.pass && sanityHistoryBackfill.pass,stage:(sanityCurrentSync.rows_synced>0?'sanity_current_sync':(sanityHistoryBackfill.partial_continue?'sanity_history_backfill':(!finalAudit.pass?'final_audit':'complete')))};
 }
 
 async function baselineV5FetchStateClassificationUniverseRepairRows(env,limit){
@@ -2732,7 +2770,7 @@ async function runBaselineV5ClassificationRescue(env,input={}){
   const targeted=await baselineV5RunTargetedUniverseStateSanityRescue(env,batchId,{...input,batch_id:batchId,request_id:requestId,run_id:runId},startedMs,softYieldMs);
   if(targeted.partial_continue){
     const cert="BASELINE_V5_CLASSIFICATION_RESCUE_TARGETED_SYNC_PARTIAL_CONTINUE";
-    return baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v5_classification_rescue",status:cert,certification:cert,certification_grade:"PARTIAL_CONTINUE",rescue_only:true,classification_only:true,targeted_state_reliability_rescue:true,targeted_rescue:targeted,target_batch_resolver:target,partial_continue:true,orchestrator_should_self_continue:true,current_tables_mutated:true,history_tables_mutated:true,source_queue_mutated:true,hp_values_mutated:false,counters_mutated:false,no_remine:true,no_board_context:true,no_market_context:true,no_daily_context:true,no_app_context:true,next_input_json:{...input,mode:"baseline_v5_classification_rescue",batch_id:batchId,request_id:requestId,run_id:runId,rescue_row_chunk_size:rowChunkSize,rescue_soft_yield_ms:softYieldMs,classification_universe_fast_chunk_size:900,state_classification_universe_fast_chunk_size:900,sanity_current_sync_chunk_size:3000,sanity_history_backfill_chunk_size:5000,...(targeted.sanity_history_backfill?{sanity_history_backfill_started:true,sanity_history_backfill_cursor:targeted.sanity_history_backfill.next_cursor||input.sanity_history_backfill_cursor||''}:{sanity_history_backfill_started:false,sanity_history_backfill_cursor:''})}});
+    return baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v5_classification_rescue",status:cert,certification:cert,certification_grade:"PARTIAL_CONTINUE",rescue_only:true,classification_only:true,targeted_state_reliability_rescue:true,targeted_rescue:targeted,target_batch_resolver:target,partial_continue:true,orchestrator_should_self_continue:true,current_tables_mutated:true,history_tables_mutated:true,source_queue_mutated:true,hp_values_mutated:false,counters_mutated:false,no_remine:true,no_board_context:true,no_market_context:true,no_daily_context:true,no_app_context:true,next_input_json:{...input,mode:"baseline_v5_classification_rescue",batch_id:batchId,request_id:requestId,run_id:runId,rescue_row_chunk_size:rowChunkSize,rescue_soft_yield_ms:softYieldMs,classification_universe_fast_chunk_size:900,state_classification_universe_fast_chunk_size:900,sanity_current_sync_chunk_size:800,sanity_history_backfill_chunk_size:1500,...(targeted.sanity_history_backfill?{sanity_history_backfill_started:true,sanity_history_backfill_cursor:targeted.sanity_history_backfill.next_cursor||input.sanity_history_backfill_cursor||''}:{sanity_history_backfill_started:false,sanity_history_backfill_cursor:''})}});
   }
   if(input.enable_legacy_classification_lineage_rescue !== true){
     const cert="BASELINE_V5_CLASSIFICATION_RESCUE_CERTIFIED_TARGETED_UNIVERSE_STATE_SANITY_PASS";
