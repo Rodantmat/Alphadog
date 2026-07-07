@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.88-baseline-v5-sanity-only-dirty-candidate-continuation";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.89-baseline-v5-confidence-reliability-rescue";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -55,7 +55,8 @@ const CANONICAL_PITCHER_BASELINE_LINES = Object.freeze({
 });
 
 const BASELINE_V5_BASE_RESCUE_TARGET_BATCH_ID = "player_baseline_v2_batch_mr1t5div_07sd4p";
-const BASELINE_V5_BASE_RESCUE_CONFIDENCE_VERSION = "baseline_v5_confidence_v0.5.3_history_sample_only_no_context_RESCUE_PITCHER_TIER_v1";
+const BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION = "baseline_v5_confidence_v0.5.4_reliability_sample_gap_volatility_no_line_cap";
+const BASELINE_V5_BASE_RESCUE_CONFIDENCE_VERSION = BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION;
 const BASELINE_V5_BASE_RESCUE_EXPECTED_ROWS = 18620;
 const BASELINE_V5_BASE_RESCUE_EXPECTED_PAIRS = 9310;
 const BASELINE_V5_BASE_RESCUE_EXPECTED_CONF_LE_5 = 266;
@@ -996,7 +997,7 @@ async function runHp(env,input={}){
 
 // ---------------- Parallel V2 HEB baseline system ----------------
 const BASELINE_V2_FORMULA_VERSION = "baseline_v5_history_hp_v0.5.3_direct_empirical_weak_smoothing_fast_player_safe";
-const BASELINE_V2_CONFIDENCE_VERSION = "baseline_v5_confidence_v0.5.3_history_sample_only_no_context";
+const BASELINE_V2_CONFIDENCE_VERSION = BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION;
 const V2_ENTITY_VALUE_CACHE = new Map();
 const V2_PROFILE_PRIOR_CACHE = new Map();
 const V2_GLOBAL_VALUE_CACHE = new Map();
@@ -1997,20 +1998,19 @@ function baselineV5StatefulOutcome(actual,line,side){
   const hit = sd==='less' ? (v<l?1:0) : (v>l?1:0);
   return {hit,miss:hit?0:1,push:0};
 }
-function baselineV5StatefulHpFromCounts({prop,entityType,line,side,hit,miss,push,oldConfidence}){
+function baselineV5StatefulHpFromCounts({prop,entityType,line,side,hit,miss,push,oldConfidence,volatilityProfile}){
   const h=Number(hit||0), m=Number(miss||0), ps=Number(push||0), n=h+m;
   const raw=n>0?round(100*h/n,2):null;
   let hp=weakSmoothedHistoryHp(h,m,prop,entityType,line);
   const bounds=historyOnlyHpOperationalBounds(prop,entityType,line,n);
   if(hp!=null) hp=round(clamp(hp,bounds.floor,bounds.ceiling),2);
-  const sampleCap=lockedSampleCap(n,prop);
-  const lineCap=v2LineCap(prop,line,null);
-  let confidence=round(clamp(Math.min(sampleCap,lineCap,n<20?15:(n<30?20:(n<40?25:65))),1,95),2);
+  const rawPriorGap = raw==null || hp==null ? 0 : round(raw-hp,2);
+  let confidence=baselineV5ReliabilityConfidence(n,rawPriorGap,volatilityProfile||'VOLATILITY_UNKNOWN');
   const sampleTier=sampleTierV2(n,prop,entityType);
   const guard=applyBaselineV2CalibrationGuard({prop,entityType,side,line,hp,confidence,hs:{hit:h,miss:m,push:ps,non_push_sample:n,raw_rate_0_100:raw},sampleTier});
   hp=guard.hp;
   confidence=baselineV5LockedDeltaConfidence(entityType,n,guard.confidence,oldConfidence);
-  return {baseline_hp_0_100:hp,raw_rate_0_100:raw,baseline_confidence_0_100:confidence,baseline_enriched_confidence_0_100:confidence,sample_profile:sampleTier,non_push_sample:n,hit_count:h,miss_count:m,push_count:ps,raw_prior_gap_0_100:raw==null||hp==null?null:round(raw-hp,2),guard};
+  return {baseline_hp_0_100:hp,raw_rate_0_100:raw,baseline_confidence_0_100:confidence,baseline_enriched_confidence_0_100:confidence,sample_profile:sampleTier,non_push_sample:n,hit_count:h,miss_count:m,push_count:ps,raw_prior_gap_0_100:raw==null||hp==null?null:rawPriorGap,guard};
 }
 function baselineV5StatefulClassFromRow(row, sourceRow){
   const entityType=String(row.player_type||'').toLowerCase();
@@ -2091,7 +2091,7 @@ async function baselineV5StatefulApplySourceRows(env,{batchId,watermarkDate,cuto
         const newHit=Number(r.hit_count||0)+out.hit;
         const newMiss=Number(r.miss_count||0)+out.miss;
         const newPush=Number(r.push_count||0)+out.push;
-        const calc=baselineV5StatefulHpFromCounts({prop,entityType:playerType,line:Number(r.line_value),side:String(r.selected_side||''),hit:newHit,miss:newMiss,push:newPush,oldConfidence:r.baseline_confidence_0_100});
+        const calc=baselineV5StatefulHpFromCounts({prop,entityType:playerType,line:Number(r.line_value),side:String(r.selected_side||''),hit:newHit,miss:newMiss,push:newPush,oldConfidence:r.baseline_confidence_0_100,volatilityProfile:r.volatility_profile});
         const clsMatch=classRows.find(c=>String(c.canonical_prop_key||'')===prop && Number(c.line_value)===Number(r.line_value) && String(c.selected_side||'')===String(r.selected_side||''));
         const clsCalcForHp=clsMatch ? baselineV5StatefulClassFromRow(clsMatch,src) : null;
         const nextSanityKey=clsCalcForHp&&clsCalcForHp.classification_profile_key?clsCalcForHp.classification_profile_key:r.sanity_profile_key;
@@ -3278,7 +3278,9 @@ function directHistoryOnlyBaselineModel(values, prop, line, side, entityType){
   if(hp!=null) hp=round(clamp(hp,bounds.floor,bounds.ceiling),2);
   const sampleCap=lockedSampleCap(n,prop);
   const lineCap=v2LineCap(prop,line,null);
-  const confidence=round(clamp(Math.min(sampleCap,lineCap,n<20?15:(n<30?20:(n<40?25:65))),1,95),2);
+  const rawPriorGap = hs.raw_rate_0_100==null || hp==null ? 0 : round(hs.raw_rate_0_100-hp,2);
+  const stats=valueStats(values||[]);
+  const confidence=baselineV5ReliabilityConfidence(n,rawPriorGap,stats.volatility_profile);
   const prior=weakHistoryPriorFor(prop,entityType,line,n);
   return {
     prob:hp==null?null:hp/100,
@@ -3290,6 +3292,10 @@ function directHistoryOnlyBaselineModel(values, prop, line, side, entityType){
     operational_bounds:bounds,
     sample_cap:sampleCap,
     line_cap:lineCap,
+    confidence_model:"reliability_sample_gap_volatility_no_line_cap",
+    confidence_raw_prior_gap_0_100:rawPriorGap,
+    confidence_volatility_profile:stats.volatility_profile,
+    line_cap_not_used_for_confidence:true,
     no_projection_model:true,
     no_match_context:true,
     no_park_weather_platoon_context:true
@@ -3717,6 +3723,82 @@ async function baselineV5StageValidation(env,batchId,total){
 }
 
 
+
+function baselineV5ReliabilityConfidence(sample, rawPriorGap=0, volatilityProfile="VOLATILITY_UNKNOWN"){
+  const n=Math.max(0,Number(sample||0));
+  let base=5;
+  if(n<5) base=5;
+  else if(n<10) base=8+((n-5)*1.75);
+  else if(n<15) base=35+((n-10)*2.5);
+  else if(n<20) base=50+((n-15)*3.0);
+  else if(n<30) base=55+((n-20)*0.5);
+  else if(n<40) base=60+((n-30)*0.5);
+  else base=65;
+  const g=Math.abs(Number(rawPriorGap==null?0:rawPriorGap));
+  let gapPenalty=0;
+  if(!Number.isFinite(g)) gapPenalty=8;
+  else if(g<=2) gapPenalty=0;
+  else if(g<=5) gapPenalty=4;
+  else if(g<=10) gapPenalty=8;
+  else if(g<=20) gapPenalty=14;
+  else gapPenalty=22;
+  const vol=String(volatilityProfile||'').toUpperCase();
+  let volPenalty=0;
+  if(vol==='VOLATILITY_EXTREME' || vol==='EXTREME') volPenalty=10;
+  else if(vol==='VOLATILITY_STRONG' || vol==='STRONG') volPenalty=6;
+  else if(vol==='VOLATILITY_MODERATE' || vol==='MODERATE') volPenalty=3;
+  let cap=70;
+  if(n<5) cap=5;
+  else if(n<10) cap=15;
+  else if(n<15) cap=45;
+  else if(n<20) cap=59;
+  else if(n<50) cap=65;
+  else cap=70;
+  return round(clamp(base-gapPenalty-volPenalty,5,cap),2);
+}
+
+function baselineV5ReliabilityConfidenceSql(sampleColumn, rawPriorGapColumn=null, volatilityColumn=null){
+  const n=`COALESCE(${sampleColumn},0)`;
+  const gap=rawPriorGapColumn?`ABS(COALESCE(${rawPriorGapColumn},0))`:`0`;
+  const vol=volatilityColumn?`UPPER(COALESCE(${volatilityColumn},''))`:`''`;
+  const base=`(CASE
+    WHEN ${n}<5 THEN 5
+    WHEN ${n}<10 THEN 8+((${n}-5)*1.75)
+    WHEN ${n}<15 THEN 35+((${n}-10)*2.5)
+    WHEN ${n}<20 THEN 50+((${n}-15)*3.0)
+    WHEN ${n}<30 THEN 55+((${n}-20)*0.5)
+    WHEN ${n}<40 THEN 60+((${n}-30)*0.5)
+    ELSE 65
+  END)`;
+  const gapPenalty=`(CASE
+    WHEN ${gap}<=2 THEN 0
+    WHEN ${gap}<=5 THEN 4
+    WHEN ${gap}<=10 THEN 8
+    WHEN ${gap}<=20 THEN 14
+    ELSE 22
+  END)`;
+  const volPenalty=`(CASE
+    WHEN ${vol} IN ('VOLATILITY_EXTREME','EXTREME') THEN 10
+    WHEN ${vol} IN ('VOLATILITY_STRONG','STRONG') THEN 6
+    WHEN ${vol} IN ('VOLATILITY_MODERATE','MODERATE') THEN 3
+    ELSE 0
+  END)`;
+  const cap=`(CASE
+    WHEN ${n}<5 THEN 5
+    WHEN ${n}<10 THEN 15
+    WHEN ${n}<15 THEN 45
+    WHEN ${n}<20 THEN 59
+    WHEN ${n}<50 THEN 65
+    ELSE 70
+  END)`;
+  return `ROUND(MAX(5, MIN(${cap}, ${base}-${gapPenalty}-${volPenalty})),2)`;
+}
+
+function baselineV5ReliabilityConfidenceDirtyPredicate(confColumn, sampleColumn, rawPriorGapColumn=null, volatilityColumn=null){
+  const expr=baselineV5ReliabilityConfidenceSql(sampleColumn,rawPriorGapColumn,volatilityColumn);
+  return `ROUND(COALESCE(${confColumn},-999),2)<>ROUND(${expr},2)`;
+}
+
 function baselineV5BaseRescueConfidenceSql(sampleColumn, confidenceColumn) {
   return `CASE
     WHEN ${confidenceColumn} <= 5 THEN 5
@@ -3908,6 +3990,103 @@ async function baselineV5BaseRescuePostParity(env, batchId) {
   return {hp_current:row||{},classification_current:classRow||{}};
 }
 
+
+async function baselineV5ConfidenceRescueAudit(env,batchId){
+  const hpExpr=baselineV5ReliabilityConfidenceSql('non_push_sample','raw_prior_gap_0_100','volatility_profile');
+  const clsExpr=baselineV5ReliabilityConfidenceSql('games_sample',null,'volatility_profile');
+  const hpCurrent=await first(env.SCORE_DB,`SELECT COUNT(*) AS dirty_rows FROM player_baseline_hp_v2_current WHERE batch_id=? AND (COALESCE(confidence_formula_version,'')<>? OR ${baselineV5ReliabilityConfidenceDirtyPredicate('baseline_confidence_0_100','non_push_sample','raw_prior_gap_0_100','volatility_profile')} OR ${baselineV5ReliabilityConfidenceDirtyPredicate('baseline_enriched_confidence_0_100','non_push_sample','raw_prior_gap_0_100','volatility_profile')} OR ROUND(COALESCE(soft_uncertainty_reserve_0_100,-999),2)<>ROUND(100-(${hpExpr}),2))`,batchId,BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION);
+  const hpHistory=await first(env.SCORE_DB,`SELECT COUNT(*) AS dirty_rows FROM player_baseline_hp_v2_history WHERE batch_id=? AND (COALESCE(confidence_formula_version,'')<>? OR ${baselineV5ReliabilityConfidenceDirtyPredicate('baseline_confidence_0_100','non_push_sample','raw_prior_gap_0_100','volatility_profile')} OR ${baselineV5ReliabilityConfidenceDirtyPredicate('baseline_enriched_confidence_0_100','non_push_sample','raw_prior_gap_0_100','volatility_profile')} OR ROUND(COALESCE(soft_uncertainty_reserve_0_100,-999),2)<>ROUND(100-(${hpExpr}),2))`,batchId,BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION);
+  const hpState=await first(env.SCORE_DB,`SELECT COUNT(*) AS dirty_rows FROM player_baseline_v5_hp_state_current WHERE source_batch_id=? AND (COALESCE(confidence_formula_version,'')<>? OR ${baselineV5ReliabilityConfidenceDirtyPredicate('baseline_confidence_0_100','non_push_sample','raw_prior_gap_0_100','volatility_profile')} OR ${baselineV5ReliabilityConfidenceDirtyPredicate('baseline_enriched_confidence_0_100','non_push_sample','raw_prior_gap_0_100','volatility_profile')})`,batchId,BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION);
+  const sanityCurrent=await first(env.SCORE_DB,`SELECT COUNT(*) AS dirty_rows FROM player_baseline_sanity_v2_current s JOIN player_baseline_hp_v2_current h ON h.batch_id=s.batch_id AND s.baseline_row_id='pbs_v2|' || h.baseline_hp_row_id WHERE s.batch_id=? AND ROUND(COALESCE(s.baseline_confidence_0_100,-999),2)<>ROUND(COALESCE(h.baseline_confidence_0_100,-999),2)`,batchId);
+  const sanityHistory=await first(env.SCORE_DB,`SELECT COUNT(*) AS dirty_rows FROM player_baseline_sanity_v2_history s JOIN player_baseline_hp_v2_history h ON h.batch_id=s.batch_id AND s.baseline_row_id='pbs_v2|' || h.baseline_hp_row_id WHERE s.batch_id=? AND ROUND(COALESCE(s.baseline_confidence_0_100,-999),2)<>ROUND(COALESCE(h.baseline_confidence_0_100,-999),2)`,batchId);
+  const classCurrent=await first(env.SCORE_DB,`SELECT COUNT(*) AS dirty_rows FROM player_baseline_classification_v5_current WHERE batch_id=? AND ${baselineV5ReliabilityConfidenceDirtyPredicate('classification_confidence_0_100','games_sample',null,'volatility_profile')}`,batchId);
+  const classHistory=await first(env.SCORE_DB,`SELECT COUNT(*) AS dirty_rows FROM player_baseline_classification_v5_history WHERE batch_id=? AND ${baselineV5ReliabilityConfidenceDirtyPredicate('classification_confidence_0_100','games_sample',null,'volatility_profile')}`,batchId);
+  const classState=await first(env.SCORE_DB,`SELECT COUNT(*) AS dirty_rows FROM player_baseline_v5_classification_state_current WHERE source_batch_id=? AND ${baselineV5ReliabilityConfidenceDirtyPredicate('classification_confidence_0_100','games_sample',null,'volatility_profile')}`,batchId);
+  const highSample=await first(env.SCORE_DB,`SELECT
+      (SELECT COUNT(*) FROM player_baseline_hp_v2_current WHERE batch_id=? AND non_push_sample>=50 AND ABS(raw_prior_gap_0_100)<=2 AND baseline_confidence_0_100<=5) AS hp_current_bad,
+      (SELECT COUNT(*) FROM player_baseline_hp_v2_history WHERE batch_id=? AND non_push_sample>=50 AND ABS(raw_prior_gap_0_100)<=2 AND baseline_confidence_0_100<=5) AS hp_history_bad,
+      (SELECT COUNT(*) FROM player_baseline_v5_hp_state_current WHERE source_batch_id=? AND non_push_sample>=50 AND ABS(raw_prior_gap_0_100)<=2 AND baseline_confidence_0_100<=5) AS hp_state_bad`,batchId,batchId,batchId);
+  const badRange=await first(env.SCORE_DB,`SELECT
+      (SELECT COUNT(*) FROM player_baseline_hp_v2_current WHERE batch_id=? AND (baseline_confidence_0_100 IS NULL OR baseline_enriched_confidence_0_100 IS NULL OR baseline_confidence_0_100<0 OR baseline_confidence_0_100>100 OR baseline_enriched_confidence_0_100<0 OR baseline_enriched_confidence_0_100>100)) AS hp_current_bad_range,
+      (SELECT COUNT(*) FROM player_baseline_hp_v2_history WHERE batch_id=? AND (baseline_confidence_0_100 IS NULL OR baseline_enriched_confidence_0_100 IS NULL OR baseline_confidence_0_100<0 OR baseline_confidence_0_100>100 OR baseline_enriched_confidence_0_100<0 OR baseline_enriched_confidence_0_100>100)) AS hp_history_bad_range,
+      (SELECT COUNT(*) FROM player_baseline_v5_hp_state_current WHERE source_batch_id=? AND (baseline_confidence_0_100 IS NULL OR baseline_enriched_confidence_0_100 IS NULL OR baseline_confidence_0_100<0 OR baseline_confidence_0_100>100 OR baseline_enriched_confidence_0_100<0 OR baseline_enriched_confidence_0_100>100)) AS hp_state_bad_range,
+      (SELECT COUNT(*) FROM player_baseline_classification_v5_current WHERE batch_id=? AND (classification_confidence_0_100 IS NULL OR classification_confidence_0_100<0 OR classification_confidence_0_100>100)) AS class_current_bad_range,
+      (SELECT COUNT(*) FROM player_baseline_classification_v5_history WHERE batch_id=? AND (classification_confidence_0_100 IS NULL OR classification_confidence_0_100<0 OR classification_confidence_0_100>100)) AS class_history_bad_range,
+      (SELECT COUNT(*) FROM player_baseline_v5_classification_state_current WHERE source_batch_id=? AND (classification_confidence_0_100 IS NULL OR classification_confidence_0_100<0 OR classification_confidence_0_100>100)) AS class_state_bad_range`,batchId,batchId,batchId,batchId,batchId,batchId);
+  const pairBad=await first(env.SCORE_DB,`SELECT COUNT(*) AS bad_rows FROM (SELECT h1.baseline_hp_0_100 + h2.baseline_hp_0_100 AS pair_sum FROM player_baseline_hp_v2_current h1 JOIN player_baseline_hp_v2_current h2 ON h2.batch_id=h1.batch_id AND h2.player_type=h1.player_type AND h2.player_id=h1.player_id AND h2.canonical_prop_key=h1.canonical_prop_key AND h2.line_value=h1.line_value AND h2.selected_side='less' WHERE h1.batch_id=? AND h1.selected_side='more') WHERE ABS(pair_sum-100)>0.001`,batchId);
+  const dirty={hp_current:Number(hpCurrent&&hpCurrent.dirty_rows||0),hp_history:Number(hpHistory&&hpHistory.dirty_rows||0),hp_state_current:Number(hpState&&hpState.dirty_rows||0),sanity_current:Number(sanityCurrent&&sanityCurrent.dirty_rows||0),sanity_history:Number(sanityHistory&&sanityHistory.dirty_rows||0),classification_current:Number(classCurrent&&classCurrent.dirty_rows||0),classification_history:Number(classHistory&&classHistory.dirty_rows||0),classification_state_current:Number(classState&&classState.dirty_rows||0)};
+  const dirty_total=Object.values(dirty).reduce((a,b)=>a+Number(b||0),0);
+  return {dirty,dirty_total,high_sample_low_gap_bad:highSample||{},bad_range:badRange||{},hp_pair_sum_bad_rows:Number(pairBad&&pairBad.bad_rows||0)};
+}
+
+async function baselineV5ConfidenceRescueUpdateHpTable(env, tableName, idCol, batchWhere, batchId, chunkSize){
+  const conf=baselineV5ReliabilityConfidenceSql('non_push_sample','raw_prior_gap_0_100','volatility_profile');
+  const reserve=`ROUND(100-(${conf}),2)`;
+  const whereDirty=`(${batchWhere}) AND (COALESCE(confidence_formula_version,'')<>? OR ${baselineV5ReliabilityConfidenceDirtyPredicate('baseline_confidence_0_100','non_push_sample','raw_prior_gap_0_100','volatility_profile')} OR ${baselineV5ReliabilityConfidenceDirtyPredicate('baseline_enriched_confidence_0_100','non_push_sample','raw_prior_gap_0_100','volatility_profile')} ${tableName==='player_baseline_v5_hp_state_current'?'':`OR ROUND(COALESCE(soft_uncertainty_reserve_0_100,-999),2)<>ROUND(100-(${conf}),2)`})`;
+  const sql = tableName==='player_baseline_v5_hp_state_current'
+    ? `UPDATE ${tableName} SET baseline_confidence_0_100=${conf}, baseline_enriched_confidence_0_100=${conf}, confidence_formula_version=?, updated_at=CURRENT_TIMESTAMP WHERE ${idCol} IN (SELECT ${idCol} FROM ${tableName} WHERE ${whereDirty} ORDER BY ${idCol} LIMIT ${chunkSize})`
+    : `UPDATE ${tableName} SET baseline_confidence_0_100=${conf}, baseline_enriched_confidence_0_100=${conf}, soft_uncertainty_reserve_0_100=${reserve}, confidence_formula_version=?, profile_notes_json=CASE WHEN profile_notes_json IS NULL OR profile_notes_json='' THEN profile_notes_json ELSE json_set(profile_notes_json,'$.baseline_confidence_0_100',${conf},'$.baseline_enriched_confidence_0_100',${conf},'$.soft_uncertainty_reserve_0_100',${reserve},'$.confidence_formula_version',?) END, updated_at=CURRENT_TIMESTAMP WHERE ${idCol} IN (SELECT ${idCol} FROM ${tableName} WHERE ${whereDirty} ORDER BY ${idCol} LIMIT ${chunkSize})`;
+  const binds = tableName==='player_baseline_v5_hp_state_current'
+    ? [BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION, batchId, BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION]
+    : [BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION, BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION, batchId, BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION];
+  // bind order: SET version(s), subquery batch predicate, subquery formula-version predicate.
+  const res=await run(env.SCORE_DB,sql,...binds);
+  return Number(res&&res.meta&&res.meta.changes||0);
+}
+
+async function baselineV5ConfidenceRescueSyncSanity(env, tableName, hpTableName, batchId, chunkSize){
+  const res=await run(env.SCORE_DB,`UPDATE ${tableName}
+    SET baseline_confidence_0_100=(SELECT h.baseline_confidence_0_100 FROM ${hpTableName} h WHERE h.batch_id=${tableName}.batch_id AND ${tableName}.baseline_row_id='pbs_v2|' || h.baseline_hp_row_id),
+        updated_at=CURRENT_TIMESTAMP
+    WHERE baseline_row_id IN (
+      SELECT s.baseline_row_id
+      FROM ${tableName} s
+      JOIN ${hpTableName} h ON h.batch_id=s.batch_id AND s.baseline_row_id='pbs_v2|' || h.baseline_hp_row_id
+      WHERE s.batch_id=? AND ROUND(COALESCE(s.baseline_confidence_0_100,-999),2)<>ROUND(COALESCE(h.baseline_confidence_0_100,-999),2)
+      ORDER BY s.baseline_row_id
+      LIMIT ${chunkSize}
+    )`,batchId);
+  return Number(res&&res.meta&&res.meta.changes||0);
+}
+
+async function baselineV5ConfidenceRescueUpdateClassificationTable(env, tableName, idCol, batchWhere, batchId, chunkSize){
+  const conf=baselineV5ReliabilityConfidenceSql('games_sample',null,'volatility_profile');
+  const sql=`UPDATE ${tableName}
+    SET classification_confidence_0_100=${conf},
+        ${tableName==='player_baseline_v5_classification_state_current'?'':`classification_json=CASE WHEN classification_json IS NULL OR classification_json='' THEN classification_json ELSE json_set(classification_json,'$.classification_confidence_0_100',${conf},'$.confidence_formula_version',?) END,`}
+        updated_at=CURRENT_TIMESTAMP
+    WHERE ${idCol} IN (
+      SELECT ${idCol} FROM ${tableName}
+      WHERE (${batchWhere}) AND ${baselineV5ReliabilityConfidenceDirtyPredicate('classification_confidence_0_100','games_sample',null,'volatility_profile')}
+      ORDER BY ${idCol}
+      LIMIT ${chunkSize}
+    )`;
+  const res=tableName==='player_baseline_v5_classification_state_current'
+    ? await run(env.SCORE_DB,sql,batchId)
+    : await run(env.SCORE_DB,sql,`${BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION}_classification`,batchId);
+  return Number(res&&res.meta&&res.meta.changes||0);
+}
+
+async function baselineV5RunConfidenceReliabilityRescue(env,batchId,input={},startedMs=Date.now(),softYieldMs=10000){
+  const chunkSize=Math.max(1000,Math.min(20000,Number(input.baseline_confidence_rescue_chunk_size||20000)));
+  const before=await baselineV5ConfidenceRescueAudit(env,batchId);
+  const updates=[];
+  let phase='audit';
+  if(before.dirty.hp_current>0){ phase='hp_current'; updates.push({phase,rows_updated:await baselineV5ConfidenceRescueUpdateHpTable(env,'player_baseline_hp_v2_current','baseline_hp_row_id','batch_id=?',batchId,chunkSize)}); }
+  else if(before.dirty.hp_history>0){ phase='hp_history'; updates.push({phase,rows_updated:await baselineV5ConfidenceRescueUpdateHpTable(env,'player_baseline_hp_v2_history','baseline_hp_row_id','batch_id=?',batchId,chunkSize)}); }
+  else if(before.dirty.hp_state_current>0){ phase='hp_state_current'; updates.push({phase,rows_updated:await baselineV5ConfidenceRescueUpdateHpTable(env,'player_baseline_v5_hp_state_current','baseline_hp_row_id','source_batch_id=?',batchId,chunkSize)}); }
+  else if(before.dirty.sanity_current>0){ phase='sanity_current'; updates.push({phase,rows_updated:await baselineV5ConfidenceRescueSyncSanity(env,'player_baseline_sanity_v2_current','player_baseline_hp_v2_current',batchId,chunkSize)}); }
+  else if(before.dirty.sanity_history>0){ phase='sanity_history'; updates.push({phase,rows_updated:await baselineV5ConfidenceRescueSyncSanity(env,'player_baseline_sanity_v2_history','player_baseline_hp_v2_history',batchId,chunkSize)}); }
+  else if(before.dirty.classification_current>0){ phase='classification_current'; updates.push({phase,rows_updated:await baselineV5ConfidenceRescueUpdateClassificationTable(env,'player_baseline_classification_v5_current','classification_row_id','batch_id=?',batchId,chunkSize)}); }
+  else if(before.dirty.classification_history>0){ phase='classification_history'; updates.push({phase,rows_updated:await baselineV5ConfidenceRescueUpdateClassificationTable(env,'player_baseline_classification_v5_history','classification_row_id','batch_id=?',batchId,chunkSize)}); }
+  else if(before.dirty.classification_state_current>0){ phase='classification_state_current'; updates.push({phase,rows_updated:await baselineV5ConfidenceRescueUpdateClassificationTable(env,'player_baseline_v5_classification_state_current','classification_row_id','source_batch_id=?',batchId,chunkSize)}); }
+  const after=await baselineV5ConfidenceRescueAudit(env,batchId);
+  const badRangeTotal=Object.values(after.bad_range||{}).reduce((a,b)=>a+Number(b||0),0);
+  const highSampleBadTotal=Object.values(after.high_sample_low_gap_bad||{}).reduce((a,b)=>a+Number(b||0),0);
+  const pass = after.dirty_total===0 && highSampleBadTotal===0 && badRangeTotal===0 && Number(after.hp_pair_sum_bad_rows||0)===0;
+  return {stage:pass?'complete':phase,before,updates,after,partial_continue:!pass,pass,chunk_size:chunkSize,confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,contract:{hp_values_mutated:false,counters_mutated:false,line_difficulty_confidence_caps_removed:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true},elapsed_ms:Date.now()-startedMs};
+}
+
 async function runBaselineV5BaseRescue(env, input={}) {
   const requestId = String(input.request_id || rid('baseline_v5_base_rescue'));
   const runId = String(input.run_id || rid('run'));
@@ -3918,6 +4097,21 @@ async function runBaselineV5BaseRescue(env, input={}) {
   const expectedConfLe5 = Number(input.expected_baseline_base_rescue_extreme_tail_conf_le_5 || BASELINE_V5_BASE_RESCUE_EXPECTED_CONF_LE_5);
   const confidenceVersion = String(input.baseline_base_rescue_confidence_version || BASELINE_V5_BASE_RESCUE_CONFIDENCE_VERSION);
   const maxUnitsPerTick = Math.max(1, Math.min(8, Number(input.baseline_base_rescue_max_units_per_tick || 4)));
+
+  // v0.1.89: Baseline Base Rescue is now confidence-reliability scoped by default.
+  // SQL proof showed structural parity is clean, but confidence still used hard line-difficulty caps.
+  // This path mutates confidence metadata only across HP/current/history/state, sanity mirrors, and classification confidence.
+  if (input.enable_legacy_base_current_rescue !== true && input.enable_state_sanity_rescue !== true) {
+    const startedMs=Date.now();
+    const softYieldMs=clamp(Number(input.rescue_soft_yield_ms || input.v2_soft_yield_ms || 10000),5000,12000);
+    const targeted=await baselineV5RunConfidenceReliabilityRescue(env,batchId,{...input,batch_id:batchId,request_id:requestId,run_id:runId,mode:'baseline_v5_base_rescue'},startedMs,softYieldMs);
+    const pass=targeted.pass===true;
+    const cert=pass?'BASELINE_V5_BASE_RESCUE_CERTIFIED_CONFIDENCE_RELIABILITY_NO_LINE_CAP_PASS':'BASELINE_V5_BASE_RESCUE_CONFIDENCE_RELIABILITY_PARTIAL_CONTINUE';
+    const grade=pass?'CONFIDENCE_RELIABILITY_RESCUE_PASS':'PARTIAL_CONTINUE';
+    const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:'baseline_v5_base_rescue',status:cert,certification:cert,certification_grade:grade,rescue_only:true,baseline_only:true,confidence_reliability_rescue:true,targeted_rescue:targeted,target_batch_resolver:target,partial_continue:!pass,orchestrator_should_self_continue:!pass,next_input_json:!pass?{...input,mode:'baseline_v5_base_rescue',batch_id:batchId,request_id:requestId,run_id:runId,baseline_confidence_rescue_chunk_size:targeted.chunk_size,baseline_base_rescue_confidence_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION}:null,current_tables_mutated:true,history_tables_mutated:true,state_tables_mutated:true,sanity_tables_mutated:true,classification_confidence_mutated:true,no_current_baseline_mutation:false,hp_values_mutated:false,counters_mutated:false,source_queue_mutated:false,no_source_queue_mutation:true,no_full_base_rerun:true,no_hp_math_recalculation:true,no_current_or_stage_delete:true,no_remine:true,no_factor_mutation:true,no_matrix_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true,no_scheduler_mutation:true,no_board_context:true,no_market_context:true,no_daily_context:true,no_app_context:true,confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,repair_contract:'Recompute confidence as reliability from sample size, raw/prior agreement, and volatility. Remove hard prop/line confidence caps. Preserve HP values, raw rates, hit/miss/push counts, line values, sides, source queues, scoring, final board, daily, and market.'});
+    try { await run(env.CONTROL_DB,"INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'expansion-baseline-v2', ?, ?, ?, ?, CURRENT_TIMESTAMP)", requestId, WORKER_NAME, 'INFO', cert.toLowerCase(), 'Baseline V5 Base Rescue confidence reliability tick completed', safeJson({certification:cert,certification_grade:grade,partial_continue:!pass,targeted_rescue:targeted}).slice(0,9000)); } catch(_e) {}
+    return output;
+  }
 
   // v0.1.81: The Control Room "Baseline Base Rescue" button is now wired to the
   // proven Baseline V5 STATE reliability target by default.  This is intentionally
@@ -4032,16 +4226,10 @@ async function runBaselineV5BaseRescue(env, input={}) {
 
 
 function baselineV5LockedPitcherConfidence(sample, modelConfidence, oldConfidence=null){
-  const n=Number(sample||0);
-  const old=oldConfidence==null?null:Number(oldConfidence);
-  if(old!=null && Number.isFinite(old) && old<=5) return 5;
-  if(n>=10 && n<15) return round(35 + ((n-10)*2.5),2);
-  if(n>=15) return round(Math.min(65, 50 + ((n-15)*3.0)),2);
-  return round(clamp(Number(modelConfidence||5),5,25),2);
+  return round(clamp(Number(modelConfidence||5),5,70),2);
 }
 function baselineV5LockedDeltaConfidence(entityType, sample, modelConfidence, oldConfidence=null){
-  if(String(entityType||'').toLowerCase()==='pitcher') return baselineV5LockedPitcherConfidence(sample,modelConfidence,oldConfidence);
-  return round(clamp(Number(modelConfidence||5),1,95),2);
+  return round(clamp(Number(modelConfidence||5),5,70),2);
 }
 async function latestCompletedBaselineV5BaseBatch(env){
   const row=await first(env.SCORE_DB,`SELECT batch_id, request_id, run_id, worker_version, rows_promoted, history_rows, updated_at
