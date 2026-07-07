@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.86-baseline-v5-sanity-continuation-rescue";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.87-baseline-v5-sanity-only-continuation";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -2754,6 +2754,182 @@ async function baselineV5ApplyStateProfileSyncRescue(env,input={},startedMs=Date
 }
 
 
+
+async function baselineV5SanityOnlyContinuationAudit(env,batchId){
+  const current=await first(env.SCORE_DB,`SELECT
+      COUNT(*) AS current_rows,
+      COUNT(DISTINCT baseline_row_id) AS distinct_current_rows,
+      SUM(CASE WHEN player_type='pitcher' AND sample_profile='DEVELOPING' THEN 1 ELSE 0 END) AS pitcher_developing_rows
+    FROM player_baseline_sanity_v2_current
+    WHERE batch_id=?`,batchId);
+  const history=await first(env.SCORE_DB,`SELECT
+      COUNT(*) AS history_rows,
+      COUNT(DISTINCT baseline_row_id) AS distinct_history_rows
+    FROM player_baseline_sanity_v2_history
+    WHERE batch_id=?`,batchId);
+  const pitcherSample=await first(env.SCORE_DB,`SELECT
+      COUNT(*) AS pitcher_sample_profile_mismatch_rows
+    FROM player_baseline_hp_v2_current h
+    JOIN player_baseline_sanity_v2_current s
+      ON s.batch_id=h.batch_id
+     AND s.baseline_row_id='pbs_v2|' || h.baseline_hp_row_id
+    WHERE h.batch_id=?
+      AND h.player_type='pitcher'
+      AND COALESCE(s.sample_profile,'')<>COALESCE(h.sample_profile,'')`,batchId);
+  return {
+    batch_id:batchId,
+    current_rows:Number(current&&current.current_rows||0),
+    distinct_current_rows:Number(current&&current.distinct_current_rows||0),
+    history_rows:Number(history&&history.history_rows||0),
+    distinct_history_rows:Number(history&&history.distinct_history_rows||0),
+    pitcher_developing_rows:Number(current&&current.pitcher_developing_rows||0),
+    pitcher_sample_profile_mismatch_rows:Number(pitcherSample&&pitcherSample.pitcher_sample_profile_mismatch_rows||0)
+  };
+}
+
+async function baselineV5CoreAlreadyFixedAudit(env,batchId){
+  const classCurrent=await first(env.SCORE_DB,`SELECT COUNT(*) AS c
+    FROM player_baseline_hp_v2_current h
+    JOIN player_baseline_classification_v5_current c
+      ON c.batch_id=h.batch_id
+     AND c.player_type=h.player_type
+     AND c.player_id=h.player_id
+     AND c.canonical_prop_key=h.canonical_prop_key
+     AND c.line_value=h.line_value
+     AND c.selected_side=h.selected_side
+    WHERE h.batch_id=? AND h.player_type='hitter' AND h.non_push_sample<>c.events_sample`,batchId);
+  const classHistory=await first(env.SCORE_DB,`SELECT COUNT(*) AS c
+    FROM player_baseline_hp_v2_history h
+    JOIN player_baseline_classification_v5_history c
+      ON c.batch_id=h.batch_id
+     AND c.player_type=h.player_type
+     AND c.player_id=h.player_id
+     AND c.canonical_prop_key=h.canonical_prop_key
+     AND c.line_value=h.line_value
+     AND c.selected_side=h.selected_side
+    WHERE h.batch_id=? AND h.player_type='hitter' AND h.non_push_sample<>c.events_sample`,batchId);
+  const sourceQueue=await first(env.SCORE_DB,`SELECT COUNT(*) AS c
+    FROM player_baseline_hp_v2_current h
+    JOIN player_baseline_hp_v2_source_queue q
+      ON q.batch_id=h.batch_id
+     AND q.factor_family=h.player_type
+     AND q.mlb_player_id=h.player_id
+     AND q.canonical_prop_key=h.canonical_prop_key
+     AND q.board_line_value=h.line_value
+     AND q.selected_side=h.selected_side
+    WHERE h.batch_id=? AND h.player_type='hitter' AND h.non_push_sample<>q.source_hp_v2_rows`,batchId);
+  const stateSample=await first(env.SCORE_DB,`SELECT COUNT(*) AS c
+    FROM player_baseline_v5_hp_state_current h
+    JOIN player_baseline_v5_classification_state_current c
+      ON c.player_type=h.player_type
+     AND c.player_id=h.player_id
+     AND c.canonical_prop_key=h.canonical_prop_key
+     AND c.line_value=h.line_value
+     AND c.selected_side=h.selected_side
+    WHERE h.non_push_sample<>c.events_sample`);
+  const stateProfile=await first(env.SCORE_DB,`SELECT COUNT(*) AS c
+    FROM player_baseline_v5_hp_state_current h
+    JOIN player_baseline_v5_classification_state_current c
+      ON c.player_type=h.player_type
+     AND c.player_id=h.player_id
+     AND c.canonical_prop_key=h.canonical_prop_key
+     AND c.line_value=h.line_value
+     AND c.selected_side=h.selected_side
+    WHERE h.sanity_profile_key<>c.classification_profile_key
+       OR h.baseline_hp_profile_key<>c.classification_profile_key || '_MODEL'`);
+  const out={
+    hitter_class_current_sample_mismatch_rows:Number(classCurrent&&classCurrent.c||0),
+    hitter_class_history_sample_mismatch_rows:Number(classHistory&&classHistory.c||0),
+    hitter_source_queue_sample_mismatch_rows:Number(sourceQueue&&sourceQueue.c||0),
+    hp_state_class_state_sample_mismatch_rows:Number(stateSample&&stateSample.c||0),
+    hp_state_class_state_profile_mismatch_rows:Number(stateProfile&&stateProfile.c||0)
+  };
+  out.pass=Object.values(out).every(v=>typeof v!=='number'||v===0);
+  return out;
+}
+
+async function baselineV5ApplyPitcherSanitySampleProfileOnly(env,batchId,input={},startedMs=Date.now(),softYieldMs=10000){
+  const requested=Number(input.sanity_current_sync_chunk_size||input.sanity_only_current_chunk_size||0);
+  const chunk=clamp(Math.max(requested||0,3000),500,6000);
+  const before=await baselineV5SanityOnlyContinuationAudit(env,batchId);
+  let eliteRows=0, establishedRows=0;
+  if(Number(before.pitcher_sample_profile_mismatch_rows||0)>0 && Date.now()-startedMs<softYieldMs){
+    const elite=await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_current
+      SET sample_profile='ELITE', updated_at=CURRENT_TIMESTAMP
+      WHERE batch_id=?
+        AND player_type='pitcher'
+        AND sample_profile<>'ELITE'
+        AND baseline_row_id IN (
+          SELECT 'pbs_v2|' || h.baseline_hp_row_id
+          FROM player_baseline_hp_v2_current h
+          WHERE h.batch_id=? AND h.player_type='pitcher' AND h.sample_profile='ELITE'
+          ORDER BY h.baseline_hp_row_id
+          LIMIT ?
+        )`,batchId,batchId,chunk);
+    eliteRows=Number(elite&&elite.meta&&elite.meta.changes||0);
+  }
+  if(Date.now()-startedMs<softYieldMs){
+    const established=await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_current
+      SET sample_profile='ESTABLISHED', updated_at=CURRENT_TIMESTAMP
+      WHERE batch_id=?
+        AND player_type='pitcher'
+        AND sample_profile<>'ESTABLISHED'
+        AND baseline_row_id IN (
+          SELECT 'pbs_v2|' || h.baseline_hp_row_id
+          FROM player_baseline_hp_v2_current h
+          WHERE h.batch_id=? AND h.player_type='pitcher' AND h.sample_profile='ESTABLISHED'
+          ORDER BY h.baseline_hp_row_id
+          LIMIT ?
+        )`,batchId,batchId,chunk);
+    establishedRows=Number(established&&established.meta&&established.meta.changes||0);
+  }
+  const after=await baselineV5SanityOnlyContinuationAudit(env,batchId);
+  const rowsSynced=eliteRows+establishedRows;
+  return {before,after,rows_synced:rowsSynced,elite_rows_synced:eliteRows,established_rows_synced:establishedRows,chunk_limit:chunk,partial_continue:Number(after.pitcher_sample_profile_mismatch_rows||0)>0,pass:Number(after.pitcher_sample_profile_mismatch_rows||0)===0,current_tables_mutated:rowsSynced>0,hp_values_mutated:false,counters_mutated:false,repair_contract:'sanity-only continuation: sync only pitcher sanity_current.sample_profile from HP current; events/games/keys already SQL-proven clean'};
+}
+
+async function baselineV5RunDirectSanityOnlyContinuation(env,batchId,input={},startedMs=Date.now(),softYieldMs=10000){
+  const before=await baselineV5SanityOnlyContinuationAudit(env,batchId);
+  const sanityCurrentSync=await baselineV5ApplyPitcherSanitySampleProfileOnly(env,batchId,input,startedMs,softYieldMs);
+  if(sanityCurrentSync.partial_continue){
+    return {batch_id:batchId,before,sanity_current_sync:sanityCurrentSync,partial_continue:true,pass:false,stage:'sanity_current_sample_profile_sync',sanity_only_continuation:true};
+  }
+  const historyInput={
+    ...input,
+    sanity_history_force_rebuild:!!input.sanity_history_force_rebuild || Number(sanityCurrentSync.rows_synced||0)>0,
+    sanity_history_backfill_chunk_size:clamp(Number(input.sanity_history_backfill_chunk_size||input.sanity_only_history_chunk_size||1000),500,1500)
+  };
+  const sanityHistoryBackfill=await baselineV5ApplySanityHistoryBackfillFromCurrent(env,batchId,historyInput,startedMs,softYieldMs);
+  const after=await baselineV5SanityOnlyContinuationAudit(env,batchId);
+  const core=(!sanityHistoryBackfill.partial_continue && Number(after.pitcher_sample_profile_mismatch_rows||0)===0 && Number(after.history_rows||0)===Number(after.current_rows||0))
+    ? await baselineV5CoreAlreadyFixedAudit(env,batchId)
+    : {pass:true,skipped_until_sanity_complete:true};
+  const pass=Number(after.pitcher_sample_profile_mismatch_rows||0)===0 && Number(after.current_rows||0)>0 && Number(after.history_rows||0)===Number(after.current_rows||0) && core.pass!==false;
+  return {
+    batch_id:batchId,
+    before,
+    sanity_current_sync:sanityCurrentSync,
+    sanity_history_backfill:sanityHistoryBackfill,
+    after,
+    core_fixed_audit:core,
+    partial_continue:!pass,
+    pass,
+    stage:sanityCurrentSync.rows_synced>0?'sanity_current_sample_profile_sync':(sanityHistoryBackfill.partial_continue?'sanity_history_backfill':(!pass?'final_sanity_only_audit':'complete')),
+    sanity_only_continuation:true,
+    hp_values_mutated:false,
+    counters_mutated:false,
+    no_classification_mutation:true,
+    no_source_queue_mutation:true,
+    no_state_mutation:true,
+    no_board_context:true,
+    no_market_context:true,
+    no_daily_context:true,
+    no_scoring_context:true,
+    no_final_board_context:true,
+    repair_contract:'direct sanity-only continuation; skip already-fixed classification/source/state and repair only sanity_current sample_profile plus sanity_history snapshot'
+  };
+}
+
 async function runBaselineV5ClassificationRescue(env,input={}){
   await ensureSchema(env); await ensureBaselineV2Schema(env);
   const requestId=String(input.request_id||rid("baseline_v5_classification_rescue"));
@@ -2764,6 +2940,18 @@ async function runBaselineV5ClassificationRescue(env,input={}){
   const startedMs=Date.now();
   let lastBaselineHeartbeatMs=startedMs;
   const softYieldMs=clamp(Number(input.rescue_soft_yield_ms||input.v2_soft_yield_ms||10000),5000,12000);
+  const sanityProbe=await baselineV5SanityOnlyContinuationAudit(env,batchId);
+  const sanityOnlyNeeded=Number(sanityProbe.current_rows||0)>0 && (Number(sanityProbe.pitcher_sample_profile_mismatch_rows||0)>0 || Number(sanityProbe.history_rows||0)!==Number(sanityProbe.current_rows||0));
+  const directSanityOnly=!!input.sanity_only_continuation || (sanityOnlyNeeded && Number(sanityProbe.current_rows||0)===67040);
+  if(directSanityOnly){
+    const targeted=await baselineV5RunDirectSanityOnlyContinuation(env,batchId,{...input,batch_id:batchId,request_id:requestId,run_id:runId,sanity_only_continuation:true},startedMs,softYieldMs);
+    if(targeted.partial_continue){
+      const cert="BASELINE_V5_CLASSIFICATION_RESCUE_SANITY_ONLY_PARTIAL_CONTINUE";
+      return baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v5_classification_rescue",status:cert,certification:cert,certification_grade:"PARTIAL_CONTINUE",rescue_only:true,classification_only:true,sanity_only_continuation:true,targeted_rescue:targeted,target_batch_resolver:target,partial_continue:true,orchestrator_should_self_continue:true,current_tables_mutated:targeted.sanity_current_sync&&targeted.sanity_current_sync.current_tables_mutated||false,history_tables_mutated:targeted.sanity_history_backfill&&targeted.sanity_history_backfill.history_tables_mutated||false,source_queue_mutated:false,state_tables_mutated:false,hp_values_mutated:false,counters_mutated:false,no_classification_mutation:true,no_source_queue_mutation:true,no_state_mutation:true,no_remine:true,no_board_context:true,no_market_context:true,no_daily_context:true,no_app_context:true,next_input_json:{...input,mode:"baseline_v5_classification_rescue",batch_id:batchId,request_id:requestId,run_id:runId,rescue_soft_yield_ms:softYieldMs,sanity_only_continuation:true,sanity_current_sync_chunk_size:3000,sanity_history_backfill_chunk_size:1000,sanity_history_backfill_started:targeted.sanity_history_backfill?true:!!input.sanity_history_backfill_started,sanity_history_backfill_cursor:targeted.sanity_history_backfill&&targeted.sanity_history_backfill.next_cursor||input.sanity_history_backfill_cursor||''}});
+    }
+    const cert=targeted.pass?"BASELINE_V5_CLASSIFICATION_RESCUE_CERTIFIED_SANITY_ONLY_CONTINUATION_PASS":"BASELINE_V5_CLASSIFICATION_RESCUE_SANITY_ONLY_BLOCKED_FINAL_AUDIT";
+    return baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:"baseline_v5_classification_rescue",status:cert,certification:cert,certification_grade:targeted.pass?"PASS":"BLOCKED",rescue_only:true,classification_only:true,sanity_only_continuation:true,targeted_rescue:targeted,target_batch_resolver:target,partial_continue:false,orchestrator_should_self_continue:false,current_tables_mutated:targeted.sanity_current_sync&&targeted.sanity_current_sync.current_tables_mutated||false,history_tables_mutated:targeted.sanity_history_backfill&&targeted.sanity_history_backfill.history_tables_mutated||false,source_queue_mutated:false,state_tables_mutated:false,hp_values_mutated:false,counters_mutated:false,no_classification_mutation:true,no_source_queue_mutation:true,no_state_mutation:true,no_remine:true,no_board_context:true,no_market_context:true,no_daily_context:true,no_app_context:true,allowed_downstream:targeted.pass?"run final validation; Classification/source/state were SQL-proven clean before sanity-only continuation":"blocked until final sanity-only audit is clean"});
+  }
   const rowChunkSize=clamp(Number(input.rescue_row_chunk_size||input.v2_chunk_size||input.v2_all_current_chunk_size||40),1,120);
   const sourceQueueReconcileLimit=clamp(Number(input.source_queue_reconcile_limit||input.rescue_source_queue_reconcile_limit||25),1,120);
   const deadlineMs=startedMs + Math.max(4000, Math.min(softYieldMs,10000));
