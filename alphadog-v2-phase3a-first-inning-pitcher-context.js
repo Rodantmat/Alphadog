@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.90-baseline-v5-confidence-reliability-fast-cursor-rescue";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.91-baseline-v5-confidence-mirror-tiny-cursor-rescue";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -4088,14 +4088,13 @@ async function baselineV5RunConfidenceReliabilityRescue(env,batchId,input={},sta
 }
 
 const BASELINE_V5_CONFIDENCE_FAST_PHASES = [
-  {phase:'hp_current', kind:'hp', table:'player_baseline_hp_v2_current', idCol:'baseline_hp_row_id', batchCol:'batch_id', reserve:true},
-  {phase:'hp_history', kind:'hp', table:'player_baseline_hp_v2_history', idCol:'baseline_hp_row_id', batchCol:'batch_id', reserve:true},
-  {phase:'hp_state_current', kind:'hp', table:'player_baseline_v5_hp_state_current', idCol:'baseline_hp_row_id', batchCol:'source_batch_id', reserve:false},
+  // v0.1.91: HP current/history/state were already repaired by v0.1.90 before D1 reset.
+  // This continuation is mirror-only and tiny-chunked to avoid D1 storage operation timeouts.
   {phase:'sanity_current', kind:'sanity', table:'player_baseline_sanity_v2_current', hpTable:'player_baseline_hp_v2_current', idCol:'baseline_row_id', batchCol:'batch_id'},
   {phase:'sanity_history', kind:'sanity', table:'player_baseline_sanity_v2_history', hpTable:'player_baseline_hp_v2_history', idCol:'baseline_row_id', batchCol:'batch_id'},
-  {phase:'classification_current', kind:'classification', table:'player_baseline_classification_v5_current', idCol:'classification_row_id', batchCol:'batch_id'},
-  {phase:'classification_history', kind:'classification', table:'player_baseline_classification_v5_history', idCol:'classification_row_id', batchCol:'batch_id'},
-  {phase:'classification_state_current', kind:'classification', table:'player_baseline_v5_classification_state_current', idCol:'classification_row_id', batchCol:'source_batch_id'}
+  {phase:'classification_current', kind:'classification', table:'player_baseline_classification_v5_current', hpTable:'player_baseline_hp_v2_current', idCol:'classification_row_id', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true},
+  {phase:'classification_history', kind:'classification', table:'player_baseline_classification_v5_history', hpTable:'player_baseline_hp_v2_history', idCol:'classification_row_id', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true},
+  {phase:'classification_state_current', kind:'classification', table:'player_baseline_v5_classification_state_current', hpTable:'player_baseline_v5_hp_state_current', idCol:'classification_row_id', batchCol:'source_batch_id', hpBatchCol:'source_batch_id', hasJson:false}
 ];
 
 function baselineV5ConfidenceFastPhaseIndex(phase){
@@ -4103,46 +4102,43 @@ function baselineV5ConfidenceFastPhaseIndex(phase){
   return idx>=0?idx:0;
 }
 
-async function baselineV5ConfidenceFastSelectIds(env,cfg,batchId,cursor,chunkSize){
-  const rows=await all(env.SCORE_DB,`SELECT ${cfg.idCol} AS id FROM ${cfg.table} WHERE ${cfg.batchCol}=? AND ${cfg.idCol}>? ORDER BY ${cfg.idCol} LIMIT ${chunkSize}`,batchId,String(cursor||''));
+function baselineV5MirrorMismatchSql(leftExpr,rightExpr){
+  return `ROUND(COALESCE(${leftExpr},-999),2)<>ROUND(COALESCE(${rightExpr},-999),2)`;
+}
+
+function baselineV5ConfidenceMirrorSelectSql(cfg, chunkSize){
+  if(cfg.kind==='sanity'){
+    return `SELECT s.${cfg.idCol} AS id
+      FROM ${cfg.table} s
+      JOIN ${cfg.hpTable} h
+        ON h.batch_id=s.batch_id
+       AND s.baseline_row_id='pbs_v2|' || h.baseline_hp_row_id
+      WHERE s.${cfg.batchCol}=?
+        AND ${baselineV5MirrorMismatchSql('s.baseline_confidence_0_100','h.baseline_confidence_0_100')}
+      ORDER BY s.${cfg.idCol}
+      LIMIT ${chunkSize}`;
+  }
+  return `SELECT c.${cfg.idCol} AS id
+    FROM ${cfg.table} c
+    JOIN ${cfg.hpTable} h
+      ON h.${cfg.hpBatchCol}=c.${cfg.batchCol}
+     AND h.player_type=c.player_type
+     AND h.player_id=c.player_id
+     AND h.canonical_prop_key=c.canonical_prop_key
+     AND h.line_value=c.line_value
+     AND h.selected_side=c.selected_side
+    WHERE c.${cfg.batchCol}=?
+      AND ${baselineV5MirrorMismatchSql('c.classification_confidence_0_100','h.baseline_confidence_0_100')}
+    ORDER BY c.${cfg.idCol}
+    LIMIT ${chunkSize}`;
+}
+
+async function baselineV5ConfidenceFastSelectIds(env,cfg,batchId,_cursor,chunkSize){
+  const rows=await all(env.SCORE_DB,baselineV5ConfidenceMirrorSelectSql(cfg,chunkSize),batchId);
   return rows||[];
 }
 
-async function baselineV5ConfidenceFastUpdateHp(env,cfg,batchId,cursor,chunkSize){
-  const conf=baselineV5ReliabilityConfidenceSql('non_push_sample','raw_prior_gap_0_100','volatility_profile');
-  if(cfg.reserve){
-    const reserve=`ROUND(100-(${conf}),2)`;
-    const sql=`UPDATE ${cfg.table}
-      SET baseline_confidence_0_100=${conf},
-          baseline_enriched_confidence_0_100=${conf},
-          soft_uncertainty_reserve_0_100=${reserve},
-          confidence_formula_version=?,
-          updated_at=CURRENT_TIMESTAMP
-      WHERE ${cfg.idCol} IN (
-        SELECT ${cfg.idCol} FROM ${cfg.table}
-        WHERE ${cfg.batchCol}=? AND ${cfg.idCol}>?
-        ORDER BY ${cfg.idCol}
-        LIMIT ${chunkSize}
-      )`;
-    const res=await run(env.SCORE_DB,sql,BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,batchId,String(cursor||''));
-    return Number(res&&res.meta&&res.meta.changes||0);
-  }
-  const sql=`UPDATE ${cfg.table}
-    SET baseline_confidence_0_100=${conf},
-        baseline_enriched_confidence_0_100=${conf},
-        confidence_formula_version=?,
-        updated_at=CURRENT_TIMESTAMP
-    WHERE ${cfg.idCol} IN (
-      SELECT ${cfg.idCol} FROM ${cfg.table}
-      WHERE ${cfg.batchCol}=? AND ${cfg.idCol}>?
-      ORDER BY ${cfg.idCol}
-      LIMIT ${chunkSize}
-    )`;
-  const res=await run(env.SCORE_DB,sql,BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,batchId,String(cursor||''));
-  return Number(res&&res.meta&&res.meta.changes||0);
-}
-
-async function baselineV5ConfidenceFastUpdateSanity(env,cfg,batchId,cursor,chunkSize){
+async function baselineV5ConfidenceFastUpdateSanity(env,cfg,batchId,chunkSize){
   const sql=`UPDATE ${cfg.table}
     SET baseline_confidence_0_100=(
           SELECT h.baseline_confidence_0_100
@@ -4153,77 +4149,81 @@ async function baselineV5ConfidenceFastUpdateSanity(env,cfg,batchId,cursor,chunk
         ),
         updated_at=CURRENT_TIMESTAMP
     WHERE ${cfg.idCol} IN (
-      SELECT ${cfg.idCol} FROM ${cfg.table}
-      WHERE ${cfg.batchCol}=? AND ${cfg.idCol}>?
-      ORDER BY ${cfg.idCol}
-      LIMIT ${chunkSize}
+      ${baselineV5ConfidenceMirrorSelectSql(cfg,chunkSize)}
     )`;
-  const res=await run(env.SCORE_DB,sql,batchId,String(cursor||''));
+  const res=await run(env.SCORE_DB,sql,batchId);
   return Number(res&&res.meta&&res.meta.changes||0);
 }
 
-async function baselineV5ConfidenceFastUpdateClassification(env,cfg,batchId,cursor,chunkSize){
-  const conf=baselineV5ReliabilityConfidenceSql('games_sample',null,'volatility_profile');
+async function baselineV5ConfidenceFastUpdateClassification(env,cfg,batchId,chunkSize){
+  const hpBatchCol=cfg.hpBatchCol;
+  const hpLookup=`SELECT h.baseline_confidence_0_100
+          FROM ${cfg.hpTable} h
+          WHERE h.${hpBatchCol}=${cfg.table}.${cfg.batchCol}
+            AND h.player_type=${cfg.table}.player_type
+            AND h.player_id=${cfg.table}.player_id
+            AND h.canonical_prop_key=${cfg.table}.canonical_prop_key
+            AND h.line_value=${cfg.table}.line_value
+            AND h.selected_side=${cfg.table}.selected_side
+          LIMIT 1`;
+  const jsonSet = cfg.hasJson
+    ? `classification_json=CASE WHEN classification_json IS NULL OR classification_json='' THEN classification_json ELSE json_set(classification_json,'$.classification_confidence_0_100',(${hpLookup}),'$.confidence_formula_version',?) END,`
+    : '';
   const sql=`UPDATE ${cfg.table}
-    SET classification_confidence_0_100=${conf},
+    SET classification_confidence_0_100=(${hpLookup}),
+        ${jsonSet}
         updated_at=CURRENT_TIMESTAMP
     WHERE ${cfg.idCol} IN (
-      SELECT ${cfg.idCol} FROM ${cfg.table}
-      WHERE ${cfg.batchCol}=? AND ${cfg.idCol}>?
-      ORDER BY ${cfg.idCol}
-      LIMIT ${chunkSize}
+      ${baselineV5ConfidenceMirrorSelectSql(cfg,chunkSize)}
     )`;
-  const res=await run(env.SCORE_DB,sql,batchId,String(cursor||''));
+  const res=cfg.hasJson
+    ? await run(env.SCORE_DB,sql,`${BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION}_mirror`,batchId)
+    : await run(env.SCORE_DB,sql,batchId);
   return Number(res&&res.meta&&res.meta.changes||0);
 }
 
 async function baselineV5RunConfidenceReliabilityFastCursorRescue(env,batchId,input={},startedMs=Date.now(),softYieldMs=10000){
-  const chunkSize=clamp(Number(input.baseline_confidence_fast_chunk_size||input.baseline_confidence_rescue_chunk_size||3000),250,5000);
-  let phaseIndex=baselineV5ConfidenceFastPhaseIndex(String(input.baseline_confidence_rescue_phase||'hp_current'));
-  let cursor=String(input.baseline_confidence_rescue_cursor||'');
+  const chunkSize=clamp(Number(input.baseline_confidence_fast_chunk_size||input.baseline_confidence_rescue_chunk_size||500),100,1000);
+  let phaseIndex=baselineV5ConfidenceFastPhaseIndex(String(input.baseline_confidence_rescue_phase||'sanity_current'));
   const updates=[];
   let guardLoops=0;
   while(phaseIndex<BASELINE_V5_CONFIDENCE_FAST_PHASES.length && guardLoops<3){
     guardLoops++;
     const cfg=BASELINE_V5_CONFIDENCE_FAST_PHASES[phaseIndex];
-    const ids=await baselineV5ConfidenceFastSelectIds(env,cfg,batchId,cursor,chunkSize);
+    const ids=await baselineV5ConfidenceFastSelectIds(env,cfg,batchId,'',chunkSize);
     if(ids.length===0){
       updates.push({phase:cfg.phase,rows_selected:0,rows_updated:0,phase_complete:true,skipped_empty:true});
       phaseIndex++;
-      cursor='';
       continue;
     }
     let rowsUpdated=0;
-    if(cfg.kind==='hp') rowsUpdated=await baselineV5ConfidenceFastUpdateHp(env,cfg,batchId,cursor,chunkSize);
-    else if(cfg.kind==='sanity') rowsUpdated=await baselineV5ConfidenceFastUpdateSanity(env,cfg,batchId,cursor,chunkSize);
-    else rowsUpdated=await baselineV5ConfidenceFastUpdateClassification(env,cfg,batchId,cursor,chunkSize);
-    const lastId=String(ids[ids.length-1].id||'');
+    if(cfg.kind==='sanity') rowsUpdated=await baselineV5ConfidenceFastUpdateSanity(env,cfg,batchId,chunkSize);
+    else rowsUpdated=await baselineV5ConfidenceFastUpdateClassification(env,cfg,batchId,chunkSize);
     const phaseComplete=ids.length<chunkSize;
     const nextPhaseIndex=phaseComplete?phaseIndex+1:phaseIndex;
     const pass=nextPhaseIndex>=BASELINE_V5_CONFIDENCE_FAST_PHASES.length;
     const nextPhase=pass?'complete':BASELINE_V5_CONFIDENCE_FAST_PHASES[nextPhaseIndex].phase;
-    const nextCursor=phaseComplete?'':lastId;
-    updates.push({phase:cfg.phase,rows_selected:ids.length,rows_updated:rowsUpdated,phase_complete:phaseComplete,cursor_start:cursor,cursor_end:lastId,next_phase:nextPhase,next_cursor:nextCursor});
+    updates.push({phase:cfg.phase,rows_selected:ids.length,rows_updated:rowsUpdated,phase_complete:phaseComplete,next_phase:nextPhase,first_id:String(ids[0]&&ids[0].id||''),last_id:String(ids[ids.length-1]&&ids[ids.length-1].id||'')});
     return {
       stage:pass?'complete':cfg.phase,
       phase:cfg.phase,
       next_phase:nextPhase,
-      cursor_start:cursor,
-      cursor_end:lastId,
-      next_cursor:nextCursor,
+      cursor_start:'',
+      cursor_end:String(ids[ids.length-1]&&ids[ids.length-1].id||''),
+      next_cursor:'',
       rows_selected:ids.length,
       rows_updated:rowsUpdated,
       updates,
       partial_continue:!pass,
       pass,
       chunk_size:chunkSize,
-      after:{dirty_total:pass?0:null,fast_cursor_mode:true,final_sql_audit_required:true},
+      after:{dirty_total:pass?0:null,mirror_only:true,tiny_dirty_chunk_mode:true,final_sql_audit_required:true},
       confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,
-      contract:{hp_values_mutated:false,counters_mutated:false,line_difficulty_confidence_caps_removed:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true,fast_cursor_no_global_audit:true},
+      contract:{hp_values_mutated:false,hp_tables_already_repaired_by_v0_1_90:true,counters_mutated:false,line_difficulty_confidence_caps_removed:true,mirrors_synced_to_hp_confidence:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true,fast_cursor_no_global_audit:true},
       elapsed_ms:Date.now()-startedMs
     };
   }
-  return {stage:'complete',phase:'complete',next_phase:'complete',rows_selected:0,rows_updated:0,updates,partial_continue:false,pass:true,chunk_size:chunkSize,after:{dirty_total:0,fast_cursor_mode:true,final_sql_audit_required:true},confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,elapsed_ms:Date.now()-startedMs};
+  return {stage:'complete',phase:'complete',next_phase:'complete',rows_selected:0,rows_updated:0,updates,partial_continue:false,pass:true,chunk_size:chunkSize,after:{dirty_total:0,mirror_only:true,tiny_dirty_chunk_mode:true,final_sql_audit_required:true},confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,elapsed_ms:Date.now()-startedMs};
 }
 
 
