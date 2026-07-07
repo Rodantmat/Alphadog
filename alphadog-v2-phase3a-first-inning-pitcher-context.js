@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.87-baseline-v5-sanity-only-continuation";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.88-baseline-v5-sanity-only-dirty-candidate-continuation";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -2636,17 +2636,24 @@ async function baselineV5ApplySanityHistoryBackfillFromCurrent(env,batchId,input
   }
   let rowsInserted=0;
   while(Date.now()-startedMs<softYieldMs){
+    const selected=await first(env.SCORE_DB,`SELECT COUNT(*) AS selected_rows, MAX(baseline_row_id) AS next_cursor FROM (
+      SELECT baseline_row_id
+      FROM player_baseline_sanity_v2_current
+      WHERE batch_id=? AND baseline_row_id>?
+      ORDER BY baseline_row_id LIMIT ?
+    )`,batchId,cursor,chunk);
+    const selectedRows=Number(selected&&selected.selected_rows||0);
+    const nextCursor=String(selected&&selected.next_cursor||'');
+    if(selectedRows<=0 || !nextCursor) break;
     const res=await run(env.SCORE_DB,`INSERT INTO player_baseline_sanity_v2_history (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,role_profile,prior_pool_key,sanity_profile_key,sample_profile,usage_profile,line_difficulty_profile,volatility_profile,baseline_drag_profile,confidence_drag_profile,variance_profile,games_sample,events_sample,baseline_confidence_0_100,line_baseline_json,distribution_shape_json,notes_json,created_at,updated_at,archived_at)
       SELECT baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,role_profile,prior_pool_key,sanity_profile_key,sample_profile,usage_profile,line_difficulty_profile,volatility_profile,baseline_drag_profile,confidence_drag_profile,variance_profile,games_sample,events_sample,baseline_confidence_0_100,line_baseline_json,distribution_shape_json,notes_json,created_at,updated_at,CURRENT_TIMESTAMP
       FROM player_baseline_sanity_v2_current
       WHERE batch_id=? AND baseline_row_id>?
       ORDER BY baseline_row_id LIMIT ?`,batchId,cursor,chunk);
     const changes=Number(res&&res.meta&&res.meta.changes||0);
-    rowsInserted += changes;
-    if(changes<=0) break;
-    const last=await first(env.SCORE_DB,`SELECT MAX(baseline_row_id) AS cursor FROM (SELECT baseline_row_id FROM player_baseline_sanity_v2_current WHERE batch_id=? AND baseline_row_id>? ORDER BY baseline_row_id LIMIT ?)`,batchId,cursor,changes);
-    cursor=String(last&&last.cursor||cursor);
-    if(changes<chunk) break;
+    rowsInserted += changes>0 ? changes : selectedRows;
+    cursor=nextCursor;
+    if(selectedRows<chunk) break;
   }
   const after=await first(env.SCORE_DB,`SELECT (SELECT COUNT(*) FROM player_baseline_sanity_v2_current WHERE batch_id=?) AS current_rows,(SELECT COUNT(*) FROM player_baseline_sanity_v2_history WHERE batch_id=?) AS history_rows`,batchId,batchId);
   const pass=Number(after&&after.current_rows||0)>0 && Number(after&&after.current_rows||0)===Number(after&&after.history_rows||0);
@@ -2853,39 +2860,90 @@ async function baselineV5ApplyPitcherSanitySampleProfileOnly(env,batchId,input={
   const chunk=clamp(Math.max(requested||0,3000),500,6000);
   const before=await baselineV5SanityOnlyContinuationAudit(env,batchId);
   let eliteRows=0, establishedRows=0;
-  if(Number(before.pitcher_sample_profile_mismatch_rows||0)>0 && Date.now()-startedMs<softYieldMs){
-    const elite=await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_current
-      SET sample_profile='ELITE', updated_at=CURRENT_TIMESTAMP
-      WHERE batch_id=?
-        AND player_type='pitcher'
-        AND sample_profile<>'ELITE'
-        AND baseline_row_id IN (
-          SELECT 'pbs_v2|' || h.baseline_hp_row_id
-          FROM player_baseline_hp_v2_current h
-          WHERE h.batch_id=? AND h.player_type='pitcher' AND h.sample_profile='ELITE'
-          ORDER BY h.baseline_hp_row_id
-          LIMIT ?
-        )`,batchId,batchId,chunk);
-    eliteRows=Number(elite&&elite.meta&&elite.meta.changes||0);
+  let eliteCandidateRows=0, establishedCandidateRows=0;
+  const beforeDirty=Number(before.pitcher_sample_profile_mismatch_rows||0);
+  if(beforeDirty>0 && Date.now()-startedMs<softYieldMs){
+    const eliteCandidates=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM (
+      SELECT s.baseline_row_id
+      FROM player_baseline_hp_v2_current h
+      JOIN player_baseline_sanity_v2_current s
+        ON s.batch_id=h.batch_id
+       AND s.baseline_row_id='pbs_v2|' || h.baseline_hp_row_id
+      WHERE h.batch_id=?
+        AND h.player_type='pitcher'
+        AND h.sample_profile='ELITE'
+        AND COALESCE(s.sample_profile,'')<>COALESCE(h.sample_profile,'')
+      ORDER BY h.baseline_hp_row_id
+      LIMIT ?
+    )`,batchId,chunk);
+    eliteCandidateRows=Number(eliteCandidates&&eliteCandidates.c||0);
+    if(eliteCandidateRows>0){
+      const elite=await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_current
+        SET sample_profile='ELITE', updated_at=CURRENT_TIMESTAMP
+        WHERE batch_id=?
+          AND player_type='pitcher'
+          AND baseline_row_id IN (
+            SELECT dirty.baseline_row_id FROM (
+              SELECT s.baseline_row_id
+              FROM player_baseline_hp_v2_current h
+              JOIN player_baseline_sanity_v2_current s
+                ON s.batch_id=h.batch_id
+               AND s.baseline_row_id='pbs_v2|' || h.baseline_hp_row_id
+              WHERE h.batch_id=?
+                AND h.player_type='pitcher'
+                AND h.sample_profile='ELITE'
+                AND COALESCE(s.sample_profile,'')<>COALESCE(h.sample_profile,'')
+              ORDER BY h.baseline_hp_row_id
+              LIMIT ?
+            ) dirty
+          )`,batchId,batchId,chunk);
+      eliteRows=Number(elite&&elite.meta&&elite.meta.changes||0);
+    }
   }
   if(Date.now()-startedMs<softYieldMs){
-    const established=await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_current
-      SET sample_profile='ESTABLISHED', updated_at=CURRENT_TIMESTAMP
-      WHERE batch_id=?
-        AND player_type='pitcher'
-        AND sample_profile<>'ESTABLISHED'
-        AND baseline_row_id IN (
-          SELECT 'pbs_v2|' || h.baseline_hp_row_id
-          FROM player_baseline_hp_v2_current h
-          WHERE h.batch_id=? AND h.player_type='pitcher' AND h.sample_profile='ESTABLISHED'
-          ORDER BY h.baseline_hp_row_id
-          LIMIT ?
-        )`,batchId,batchId,chunk);
-    establishedRows=Number(established&&established.meta&&established.meta.changes||0);
+    const establishedCandidates=await first(env.SCORE_DB,`SELECT COUNT(*) AS c FROM (
+      SELECT s.baseline_row_id
+      FROM player_baseline_hp_v2_current h
+      JOIN player_baseline_sanity_v2_current s
+        ON s.batch_id=h.batch_id
+       AND s.baseline_row_id='pbs_v2|' || h.baseline_hp_row_id
+      WHERE h.batch_id=?
+        AND h.player_type='pitcher'
+        AND h.sample_profile='ESTABLISHED'
+        AND COALESCE(s.sample_profile,'')<>COALESCE(h.sample_profile,'')
+      ORDER BY h.baseline_hp_row_id
+      LIMIT ?
+    )`,batchId,chunk);
+    establishedCandidateRows=Number(establishedCandidates&&establishedCandidates.c||0);
+    if(establishedCandidateRows>0){
+      const established=await run(env.SCORE_DB,`UPDATE player_baseline_sanity_v2_current
+        SET sample_profile='ESTABLISHED', updated_at=CURRENT_TIMESTAMP
+        WHERE batch_id=?
+          AND player_type='pitcher'
+          AND baseline_row_id IN (
+            SELECT dirty.baseline_row_id FROM (
+              SELECT s.baseline_row_id
+              FROM player_baseline_hp_v2_current h
+              JOIN player_baseline_sanity_v2_current s
+                ON s.batch_id=h.batch_id
+               AND s.baseline_row_id='pbs_v2|' || h.baseline_hp_row_id
+              WHERE h.batch_id=?
+                AND h.player_type='pitcher'
+                AND h.sample_profile='ESTABLISHED'
+                AND COALESCE(s.sample_profile,'')<>COALESCE(h.sample_profile,'')
+              ORDER BY h.baseline_hp_row_id
+              LIMIT ?
+            ) dirty
+          )`,batchId,batchId,chunk);
+      establishedRows=Number(established&&established.meta&&established.meta.changes||0);
+    }
   }
   const after=await baselineV5SanityOnlyContinuationAudit(env,batchId);
-  const rowsSynced=eliteRows+establishedRows;
-  return {before,after,rows_synced:rowsSynced,elite_rows_synced:eliteRows,established_rows_synced:establishedRows,chunk_limit:chunk,partial_continue:Number(after.pitcher_sample_profile_mismatch_rows||0)>0,pass:Number(after.pitcher_sample_profile_mismatch_rows||0)===0,current_tables_mutated:rowsSynced>0,hp_values_mutated:false,counters_mutated:false,repair_contract:'sanity-only continuation: sync only pitcher sanity_current.sample_profile from HP current; events/games/keys already SQL-proven clean'};
+  const afterDirty=Number(after.pitcher_sample_profile_mismatch_rows||0);
+  const measuredRowsSynced=Math.max(0,beforeDirty-afterDirty);
+  const rowsSynced=measuredRowsSynced || eliteRows+establishedRows;
+  const currentTablesMutated=rowsSynced>0 || afterDirty<beforeDirty;
+  return {before,after,rows_synced:rowsSynced,rows_synced_measured:measuredRowsSynced,elite_rows_synced:eliteRows,established_rows_synced:establishedRows,elite_candidate_rows:eliteCandidateRows,established_candidate_rows:establishedCandidateRows,chunk_limit:chunk,partial_continue:afterDirty>0,pass:afterDirty===0,current_tables_mutated:currentTablesMutated,hp_values_mutated:false,counters_mutated:false,repair_contract:'sanity-only continuation v0.1.88: select only still-dirty pitcher sanity_current rows before LIMIT; sync sample_profile from HP current; events/games/keys already SQL-proven clean'};
 }
 
 async function baselineV5RunDirectSanityOnlyContinuation(env,batchId,input={},startedMs=Date.now(),softYieldMs=10000){
