@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.97-baseline-v5-confidence-rowid-range-sweep";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.98-baseline-v5-aggregate-stateful-delta";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -2057,6 +2057,34 @@ function baselineV5StatefulClassFromRow(row, sourceRow){
   return {classification_tier:tier.tier_key,tier_number:tier.tier_number,classification_profile_key:`V5_${tier.tier_key}_${upperToken(prop)}_${lineIdToken(line)}_${side}`,sample_profile:sampleTierV2(games,prop,entityType),volume_profile:volumeProfile,lineup_profile:lineupProfile,platoon_profile:platoonProfile,usage_profile:volumeProfile,volatility_profile:volatilityProfile,classification_confidence_0_100:round(clamp(conf,1,95),2),games_sample:games,events_sample:games,pa_per_game:round(paPerGame,3),ab_ratio:round(abRatio,3),avg_batting_order:avgOrder==null?null:round(avgOrder,2),split_delta_0_100:splitDelta,hitter_pa_sum_est:round(newPa,4),hitter_ab_sum_est:round(newAb,4),metric_hits_per_game:round(hitRatePerGame,3),metric_walk_rate:round(walkRate,4),metric_strikeout_rate:round(soRate,4),metric_split_rows:Number(row.metric_split_rows||0)};
 }
 async function baselineV5StatefulSafeCutoff(env, watermarkDate){
+  // v0.1.98: The stateful baseline delta is allowed to consume only fully certified source days.
+  // Prefer the certifier coverage contract over raw MAX(game_date), then fall back to raw sources if coverage is unavailable.
+  try{
+    const required=['hitter_game_logs','pitcher_game_logs','team_game_logs','starter_history','bullpen_history','hitter_splits','pitcher_splits','hitter_metrics','pitcher_metrics'];
+    const values=required.map(x=>`('${x}')`).join(',');
+    const row=await first(env.TEAM_DB,`WITH required(layer_key) AS (VALUES ${values}),
+      dates AS (
+        SELECT official_date
+        FROM mlb_game_data_coverage
+        WHERE date(official_date)>date(?)
+        GROUP BY official_date
+      ), good AS (
+        SELECT d.official_date
+        FROM dates d
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM required r
+          LEFT JOIN mlb_game_data_coverage c
+            ON c.layer_key=r.layer_key
+           AND c.official_date=d.official_date
+           AND c.coverage_status='complete'
+           AND COALESCE(c.blocking_for_full_run,0)=0
+          WHERE c.layer_key IS NULL
+        )
+      )
+      SELECT MAX(official_date) AS max_game_date FROM good`, watermarkDate);
+    if(row&&row.max_game_date) return String(row.max_game_date).slice(0,10);
+  }catch(_){ /* fallback below */ }
   const h=await first(env.STATS_HITTER_DB,`SELECT MAX(game_date) AS max_game_date FROM hitter_game_logs WHERE date(game_date)>date(?)`,watermarkDate);
   const p=await first(env.STATS_PITCHER_DB,`SELECT MAX(game_date) AS max_game_date FROM pitcher_game_logs WHERE date(game_date)>date(?)`,watermarkDate);
   let s=null, t=null;
@@ -2066,50 +2094,225 @@ async function baselineV5StatefulSafeCutoff(env, watermarkDate){
   if(!dates.length) return null;
   return dates.sort()[0];
 }
-async function baselineV5StatefulApplySourceRows(env,{batchId,watermarkDate,cutoffDate,playerType,rows}){
-  let rawRowsRead=0, eventsInserted=0, hpRowsUpdated=0, classRowsUpdated=0, reclassified=0, skippedNoState=0, duplicateEventsSkipped=0;
-  const eventStmtSql=`INSERT OR IGNORE INTO player_baseline_v5_delta_events (event_id,state_batch_id,mode,player_type,player_id,game_pk,game_date,canonical_prop_key,actual_value,source_table,source_row_hash,event_action,processed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`;
-  for(const src of rows){
-    rawRowsRead++;
-    const playerId=Number(src.player_id||0); if(!playerId) continue;
-    // Event-driven, history-only state delta: fetch only this player, never hydrate or rewrite the 67,040-row state matrix.
-    const hpRows=await all(env.SCORE_DB,`SELECT * FROM player_baseline_v5_hp_state_current WHERE player_type=? AND player_id=?`,playerType,playerId);
-    const classRows=await all(env.SCORE_DB,`SELECT * FROM player_baseline_v5_classification_state_current WHERE player_type=? AND player_id=?`,playerType,playerId);
-    if(!hpRows.length && !classRows.length){ skippedNoState++; continue; }
-    const stmts=[];
-    const props=[...new Set(hpRows.map(r=>String(r.canonical_prop_key||'')))].filter(Boolean);
-    for(const prop of props){
-      const actual=propValueFromRow(prop,src);
-      if(actual==null || !Number.isFinite(Number(actual))) continue;
-      const sourceHash=baselineV5StatefulSourceHash([playerType,playerId,src.game_pk,src.game_date,prop,actual]);
-      const exists=await first(env.SCORE_DB,`SELECT event_id FROM player_baseline_v5_delta_events WHERE source_row_hash=? LIMIT 1`,sourceHash);
-      if(exists){ duplicateEventsSkipped++; continue; }
-      stmts.push(env.SCORE_DB.prepare(eventStmtSql).bind(rid('pbv5ev'),batchId,'baseline_v5_stateful_delta',playerType,playerId,String(src.game_pk||''),String(src.game_date||'').slice(0,10),prop,Number(actual),playerType==='hitter'?'STATS_HITTER_DB.hitter_game_logs':'TEAM_DB.starter_history',sourceHash,'ADD_NEW_GAME'));
-      eventsInserted++;
-      for(const r of hpRows.filter(x=>String(x.canonical_prop_key||'')===prop)){
-        const out=baselineV5StatefulOutcome(actual,r.line_value,r.selected_side); if(!out) continue;
-        const newHit=Number(r.hit_count||0)+out.hit;
-        const newMiss=Number(r.miss_count||0)+out.miss;
-        const newPush=Number(r.push_count||0)+out.push;
-        const calc=baselineV5StatefulHpFromCounts({prop,entityType:playerType,line:Number(r.line_value),side:String(r.selected_side||''),hit:newHit,miss:newMiss,push:newPush,oldConfidence:r.baseline_confidence_0_100,volatilityProfile:r.volatility_profile});
-        const clsMatch=classRows.find(c=>String(c.canonical_prop_key||'')===prop && Number(c.line_value)===Number(r.line_value) && String(c.selected_side||'')===String(r.selected_side||''));
-        const clsCalcForHp=clsMatch ? baselineV5StatefulClassFromRow(clsMatch,src) : null;
-        const nextSanityKey=clsCalcForHp&&clsCalcForHp.classification_profile_key?clsCalcForHp.classification_profile_key:r.sanity_profile_key;
-        stmts.push(env.SCORE_DB.prepare(`UPDATE player_baseline_v5_hp_state_current SET hit_count=?, miss_count=?, push_count=?, non_push_sample=?, raw_rate_0_100=?, baseline_hp_0_100=?, tier_prior_rate_0_100=?, raw_prior_gap_0_100=?, baseline_confidence_0_100=?, baseline_enriched_confidence_0_100=?, sample_profile=?, sanity_profile_key=?, baseline_hp_profile_key=?, role_profile=COALESCE(?,role_profile), volatility_profile=COALESCE(?,volatility_profile), variance_profile=COALESCE(?,variance_profile), state_batch_id=?, last_processed_official_date=?, last_processed_game_pk=?, state_source='STATEFUL_DELTA_EVENT_POINT_UPDATED_PROFILE_SYNC_NO_CURRENT_MUTATION', updated_at=CURRENT_TIMESTAMP WHERE player_type=? AND player_id=? AND canonical_prop_key=? AND line_value=? AND selected_side=?`).bind(calc.hit_count,calc.miss_count,calc.push_count,calc.non_push_sample,calc.raw_rate_0_100,calc.baseline_hp_0_100,calc.baseline_hp_0_100,calc.raw_prior_gap_0_100,calc.baseline_confidence_0_100,calc.baseline_enriched_confidence_0_100,calc.sample_profile,nextSanityKey,`${nextSanityKey}_MODEL`,clsCalcForHp&&clsCalcForHp.volume_profile||null,clsCalcForHp&&clsCalcForHp.volatility_profile||null,clsCalcForHp&&clsCalcForHp.volatility_profile||null,batchId,String(src.game_date||'').slice(0,10),String(src.game_pk||''),playerType,playerId,prop,Number(r.line_value),String(r.selected_side||'')));
-        hpRowsUpdated++;
+function baselineV5SqlPlaceholders(items){ return items.map(()=>'?').join(','); }
+function baselineV5StatefulChunk(items,size){ const out=[]; for(let i=0;i<items.length;i+=size) out.push(items.slice(i,i+size)); return out; }
+function baselineV5StatefulSourceKey(playerId,gamePk,gameDate){ return `${Number(playerId||0)}|${String(gamePk||'')}|${String(gameDate||'').slice(0,10)}`; }
+function baselineV5StatefulUniquePlayerIds(rows){ return [...new Set(rows.map(r=>Number(r.player_id||0)).filter(Boolean))]; }
+function baselineV5StatefulGroupByPlayer(rows){
+  const m=new Map();
+  for(const r of rows){ const id=Number(r.player_id||0); if(!id) continue; if(!m.has(id)) m.set(id,[]); m.get(id).push(r); }
+  return m;
+}
+async function baselineV5StatefulPlayerPage(env,{playerType,watermarkDate,cutoffDate,limit,offset}){
+  const lim=Math.max(1,Math.min(100,Number(limit||12))), off=Math.max(0,Number(offset||0));
+  if(playerType==='hitter'){
+    return await all(env.STATS_HITTER_DB,`SELECT player_id, COUNT(*) AS source_rows, MIN(game_date) AS min_game_date, MAX(game_date) AS max_game_date
+      FROM hitter_game_logs
+      WHERE date(game_date)>date(?) AND date(game_date)<=date(?)
+        AND COALESCE(pa,0)>=1
+        AND COALESCE(json_extract(raw_json,'$.player.position.type'),'') NOT IN ('Pitcher','Runner')
+      GROUP BY player_id
+      ORDER BY player_id
+      LIMIT ${lim} OFFSET ${off}`,watermarkDate,cutoffDate);
+  }
+  return await all(env.STATS_PITCHER_DB,`SELECT player_id, COUNT(*) AS source_rows, MIN(game_date) AS min_game_date, MAX(game_date) AS max_game_date
+    FROM pitcher_game_logs
+    WHERE date(game_date)>date(?) AND date(game_date)<=date(?)
+    GROUP BY player_id
+    ORDER BY player_id
+    LIMIT ${lim} OFFSET ${off}`,watermarkDate,cutoffDate);
+}
+async function baselineV5StatefulSourceRowsForPlayers(env,{playerType,watermarkDate,cutoffDate,playerIds}){
+  const ids=baselineV5StatefulUniquePlayerIds(playerIds.map(player_id=>({player_id})));
+  if(!ids.length) return [];
+  const ph=baselineV5SqlPlaceholders(ids);
+  if(playerType==='hitter'){
+    return await all(env.STATS_HITTER_DB,`SELECT player_id, game_pk, game_date, batting_order, pa, ab, hits, singles, doubles, triples, home_runs, runs, rbi, walks, strikeouts, stolen_bases, total_bases, raw_json
+      FROM hitter_game_logs
+      WHERE date(game_date)>date(?) AND date(game_date)<=date(?)
+        AND COALESCE(pa,0)>=1
+        AND COALESCE(json_extract(raw_json,'$.player.position.type'),'') NOT IN ('Pitcher','Runner')
+        AND player_id IN (${ph})
+      ORDER BY player_id, date(game_date), game_pk`,watermarkDate,cutoffDate,...ids);
+  }
+  return await all(env.STATS_PITCHER_DB,`SELECT player_id, game_pk, game_date, role, outs_recorded, batters_faced, hits_allowed, runs_allowed, earned_runs, walks_allowed, strikeouts, home_runs_allowed, pitches, raw_json
+    FROM pitcher_game_logs
+    WHERE date(game_date)>date(?) AND date(game_date)<=date(?)
+      AND player_id IN (${ph})
+    ORDER BY player_id, date(game_date), game_pk`,watermarkDate,cutoffDate,...ids);
+}
+async function baselineV5StatefulLatestMetricBatch(env,{playerType,cutoffDate}){
+  if(playerType==='hitter'){
+    return await first(env.STATS_HITTER_DB,`SELECT batch_id, input_latest_game_date
+      FROM hitter_metric_batches
+      WHERE certification_grade='DELTA_RECALC_PASS'
+        AND date(input_latest_game_date)<=date(?)
+      ORDER BY date(input_latest_game_date) DESC, datetime(finished_at) DESC, datetime(created_at) DESC
+      LIMIT 1`,cutoffDate);
+  }
+  return await first(env.STATS_PITCHER_DB,`SELECT batch_id, input_latest_game_date
+    FROM pitcher_metric_batches
+    WHERE certification_grade='DELTA_RECALC_PASS'
+      AND date(input_latest_game_date)<=date(?)
+    ORDER BY date(input_latest_game_date) DESC, datetime(finished_at) DESC, datetime(created_at) DESC
+    LIMIT 1`,cutoffDate);
+}
+async function baselineV5StatefulMetricRowsForPlayers(env,{playerType,cutoffDate,playerIds}){
+  const ids=baselineV5StatefulUniquePlayerIds(playerIds.map(player_id=>({player_id})));
+  if(!ids.length) return {batch:null, rows:[]};
+  const metricBatch=await baselineV5StatefulLatestMetricBatch(env,{playerType,cutoffDate});
+  if(!metricBatch||!metricBatch.batch_id) return {batch:null, rows:[]};
+  const ph=baselineV5SqlPlaceholders(ids);
+  if(playerType==='hitter'){
+    const rows=await all(env.STATS_HITTER_DB,`SELECT player_id, season, metric_window, games_count, pa_sum, ab_sum, hits_sum, walks_sum, strikeouts_sum, metrics_json
+      FROM hitter_metric_snapshots
+      WHERE source_metric_batch_id=?
+        AND metric_window='season_to_date'
+        AND player_id IN (${ph})`,metricBatch.batch_id,...ids);
+    return {batch:metricBatch, rows};
+  }
+  const rows=await all(env.STATS_PITCHER_DB,`SELECT player_id, season, metric_window, games_count, appearances_count, starts_count, outs_recorded_sum, batters_faced_sum, hits_allowed_sum, walks_allowed_sum, strikeouts_sum, runs_allowed_sum, earned_runs_sum, metrics_json
+    FROM pitcher_metric_snapshots
+    WHERE source_batch_id=?
+      AND metric_window='season_to_date'
+      AND player_id IN (${ph})`,metricBatch.batch_id,...ids);
+  return {batch:metricBatch, rows};
+}
+function baselineV5StatefulMetricMap(rows){ const m=new Map(); for(const r of rows||[]) m.set(Number(r.player_id||0),r); return m; }
+function baselineV5StatefulOrderContext(sourceRows){
+  let sum=0, rows=0;
+  for(const r of sourceRows||[]){ const v=normalizedBattingOrderValue(r.batting_order); if(v!=null&&Number.isFinite(Number(v))){ sum+=Number(v); rows++; } }
+  return {batting_order_sum:sum, batting_order_rows:rows};
+}
+function baselineV5StatefulClassFromCumulative(row, metricRow, sourceRows){
+  if(!metricRow) return null;
+  const entityType=String(row.player_type||'').toLowerCase();
+  const prop=String(row.canonical_prop_key||'');
+  const line=Number(row.line_value||0);
+  const side=String(row.selected_side||'more');
+  const splitDelta=Number(row.split_delta_0_100||0);
+  const volatilityProfile=String(row.volatility_profile||'VOLATILITY_UNKNOWN');
+  const oldConf=round(clamp(Number(row.classification_confidence_0_100||25),1,95),2);
+  if(entityType==='pitcher'){
+    const games=Math.max(0,Number(metricRow.starts_count||metricRow.games_count||0));
+    const outs=Number(metricRow.outs_recorded_sum||0);
+    const bf=Number(metricRow.batters_faced_sum||0);
+    const k=Number(metricRow.strikeouts_sum||0);
+    const bb=Number(metricRow.walks_allowed_sum||0);
+    const ha=Number(metricRow.hits_allowed_sum||0);
+    const outsPerStart=games?outs/games:0, bfPerStart=games?bf/games:0;
+    const kRate=bf?k/bf:0, bbRate=bf?bb/bf:0, haRate=bf?ha/bf:0;
+    const tier=pitcherTier({games,outsPerStart,bfPerStart,kRate,bbRate,haRate,splitDelta,prop,line,side});
+    const volumeProfile=outsPerStart>=18?'DEEP_STARTER':(outsPerStart>=15?'NORMAL_STARTER':(outsPerStart>=12?'LOW_WORKLOAD_STARTER':'SHORT_OR_UNSTABLE_WORKLOAD'));
+    const platoonProfile=Math.abs(splitDelta)>=6?(splitDelta<0?'SUPPRESSES_LEFT_MORE_THAN_RIGHT':'MORE_DAMAGE_VS_LEFT_THAN_RIGHT'):'NEUTRAL_OR_LOW_SPLIT_SIGNAL';
+    return {classification_tier:tier.tier_key,tier_number:tier.tier_number,classification_profile_key:`V5_${tier.tier_key}_${upperToken(prop)}_${lineIdToken(line)}_${side}`,sample_profile:sampleTierV2(games,prop,entityType),volume_profile:volumeProfile,lineup_profile:'PITCHER_NA',platoon_profile:platoonProfile,usage_profile:volumeProfile,volatility_profile:volatilityProfile,classification_confidence_0_100:baselineV5LockedDeltaConfidence('pitcher',games,oldConf,oldConf),games_sample:games,events_sample:games,pa_per_game:null,ab_ratio:null,avg_batting_order:null,split_delta_0_100:splitDelta,pitcher_outs_sum_est:round(outs,4),pitcher_bf_sum_est:round(bf,4),metric_outs_per_start:round(outsPerStart,2),metric_bf_per_start:round(bfPerStart,2),metric_k_rate:round(kRate,4),metric_bb_rate:round(bbRate,4),metric_ha_rate:round(haRate,4),metric_split_rows:Number(row.metric_split_rows||0)};
+  }
+  const games=Math.max(0,Number(metricRow.games_count||0));
+  const pa=Number(metricRow.pa_sum||0), ab=Number(metricRow.ab_sum||0), hits=Number(metricRow.hits_sum||0), walks=Number(metricRow.walks_sum||0), so=Number(metricRow.strikeouts_sum||0);
+  const oldGames=Math.max(0,Number(row.games_sample||0));
+  const oldAvgOrder=row.avg_batting_order==null?null:Number(row.avg_batting_order);
+  const order=baselineV5StatefulOrderContext(sourceRows||[]);
+  let avgOrder=oldAvgOrder;
+  if(order.batting_order_rows>0){
+    avgOrder=oldAvgOrder==null ? (order.batting_order_sum/order.batting_order_rows) : ((oldAvgOrder*oldGames)+order.batting_order_sum)/Math.max(1,oldGames+order.batting_order_rows);
+  }
+  const paPerGame=games?pa/games:0, abRatio=pa?ab/pa:0, hitRatePerGame=games?hits/games:0, walkRate=pa?walks/pa:0, soRate=pa?so/pa:0;
+  const tier=hitterTier12({games,paPerGame,abRatio,avgOrder:avgOrder||0,hitRatePerGame,walkRate,soRate,splitDelta,prop,line,side});
+  const lineupProfile=resolveLineupProfileFromOrder({avg_batting_order_normalized:avgOrder,batting_order_rows:avgOrder==null?0:games,batting_order_coverage:avgOrder==null?0:1});
+  const volumeProfile=paPerGame>=4.2?'HIGH_VOLUME':(paPerGame>=3.7?'EVERYDAY_CORE':(paPerGame>=2.0?'LOW_USAGE_OR_PARTIAL':'MICRO_USAGE'));
+  const platoonProfile=Math.abs(splitDelta)>=6?(splitDelta>0?'FAVORABLE_VS_LEFT_SHAPE':'FAVORABLE_VS_RIGHT_SHAPE'):'NEUTRAL_OR_LOW_SPLIT_SIGNAL';
+  return {classification_tier:tier.tier_key,tier_number:tier.tier_number,classification_profile_key:`V5_${tier.tier_key}_${upperToken(prop)}_${lineIdToken(line)}_${side}`,sample_profile:sampleTierV2(games,prop,entityType),volume_profile:volumeProfile,lineup_profile:lineupProfile,platoon_profile:platoonProfile,usage_profile:volumeProfile,volatility_profile:volatilityProfile,classification_confidence_0_100:round(clamp(oldConf,1,95),2),games_sample:games,events_sample:games,pa_per_game:round(paPerGame,3),ab_ratio:round(abRatio,3),avg_batting_order:avgOrder==null?null:round(avgOrder,2),split_delta_0_100:splitDelta,hitter_pa_sum_est:round(pa,4),hitter_ab_sum_est:round(ab,4),metric_hits_per_game:round(hitRatePerGame,3),metric_walk_rate:round(walkRate,4),metric_strikeout_rate:round(soRate,4),metric_split_rows:Number(row.metric_split_rows||0)};
+}
+async function baselineV5StatefulExistingEventHashes(env,hashes){
+  const out=new Set();
+  for(const part of baselineV5StatefulChunk([...new Set(hashes.filter(Boolean))],90)){
+    if(!part.length) continue;
+    const rows=await all(env.SCORE_DB,`SELECT source_row_hash FROM player_baseline_v5_delta_events WHERE source_row_hash IN (${baselineV5SqlPlaceholders(part)})`,...part);
+    for(const r of rows) out.add(String(r.source_row_hash||''));
+  }
+  return out;
+}
+async function baselineV5StatefulApplyPlayerAggregate(env,{batchId,watermarkDate,cutoffDate,playerType,playerIds}){
+  const ids=baselineV5StatefulUniquePlayerIds(playerIds.map(player_id=>({player_id})));
+  let rawRowsRead=0, eventsInserted=0, hpRowsUpdated=0, classRowsUpdated=0, reclassified=0, skippedNoState=0, duplicateEventsSkipped=0, playersProcessed=0, playersSkippedNoMetrics=0;
+  if(!ids.length) return {rawRowsRead,eventsInserted,hpRowsUpdated,classRowsUpdated,reclassified,skippedNoState,duplicateEventsSkipped,playersProcessed,playersSkippedNoMetrics,aggregate_differential:true};
+  const sourceRows=await baselineV5StatefulSourceRowsForPlayers(env,{playerType,watermarkDate,cutoffDate,playerIds:ids});
+  rawRowsRead=sourceRows.length;
+  const ph=baselineV5SqlPlaceholders(ids);
+  const hpRows=await all(env.SCORE_DB,`SELECT * FROM player_baseline_v5_hp_state_current WHERE player_type=? AND player_id IN (${ph}) ORDER BY player_id, canonical_prop_key, line_value, selected_side`,playerType,...ids);
+  const classRows=await all(env.SCORE_DB,`SELECT * FROM player_baseline_v5_classification_state_current WHERE player_type=? AND player_id IN (${ph}) ORDER BY player_id, canonical_prop_key, line_value, selected_side`,playerType,...ids);
+  const metricPack=await baselineV5StatefulMetricRowsForPlayers(env,{playerType,cutoffDate,playerIds:ids});
+  const metricMap=baselineV5StatefulMetricMap(metricPack.rows);
+  const sourceByPlayer=baselineV5StatefulGroupByPlayer(sourceRows);
+  const hpByPlayer=baselineV5StatefulGroupByPlayer(hpRows);
+  const classByPlayer=baselineV5StatefulGroupByPlayer(classRows);
+  const allEventRecords=[];
+  for(const id of ids){
+    const srcs=sourceByPlayer.get(id)||[];
+    const hps=hpByPlayer.get(id)||[];
+    const props=[...new Set(hps.map(r=>String(r.canonical_prop_key||'')))].filter(Boolean);
+    for(const src of srcs){
+      for(const prop of props){
+        const actual=propValueFromRow(prop,src);
+        if(actual==null || !Number.isFinite(Number(actual))) continue;
+        const hash=baselineV5StatefulSourceHash([playerType,id,src.game_pk,src.game_date,prop,actual]);
+        allEventRecords.push({player_id:id,source_key:baselineV5StatefulSourceKey(id,src.game_pk,src.game_date),game_pk:String(src.game_pk||''),game_date:String(src.game_date||'').slice(0,10),prop,actual:Number(actual),hash});
       }
     }
-    for(const r of classRows){
+  }
+  const existing=await baselineV5StatefulExistingEventHashes(env,allEventRecords.map(e=>e.hash));
+  const newEventRecords=allEventRecords.filter(e=>!existing.has(e.hash));
+  duplicateEventsSkipped=allEventRecords.length-newEventRecords.length;
+  const eventsByPlayer=new Map();
+  const eventStmtSql=`INSERT OR IGNORE INTO player_baseline_v5_delta_events (event_id,state_batch_id,mode,player_type,player_id,game_pk,game_date,canonical_prop_key,actual_value,source_table,source_row_hash,event_action,processed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`;
+  const stmts=[];
+  for(const e of newEventRecords){
+    if(!eventsByPlayer.has(e.player_id)) eventsByPlayer.set(e.player_id,[]);
+    eventsByPlayer.get(e.player_id).push(e);
+    stmts.push(env.SCORE_DB.prepare(eventStmtSql).bind(rid('pbv5ev'),batchId,'baseline_v5_stateful_delta',playerType,e.player_id,e.game_pk,e.game_date,e.prop,e.actual,playerType==='hitter'?'STATS_HITTER_DB.hitter_game_logs':'STATS_PITCHER_DB.pitcher_game_logs',e.hash,'ADD_NEW_GAME'));
+  }
+  eventsInserted=newEventRecords.length;
+  for(const id of ids){
+    const hps=hpByPlayer.get(id)||[];
+    const cls=classByPlayer.get(id)||[];
+    const srcs=sourceByPlayer.get(id)||[];
+    if(!hps.length&&!cls.length){ skippedNoState++; continue; }
+    playersProcessed++;
+    const playerEvents=eventsByPlayer.get(id)||[];
+    for(const r of hps){
+      const prop=String(r.canonical_prop_key||'');
+      let addHit=0, addMiss=0, addPush=0;
+      for(const e of playerEvents){
+        if(e.prop!==prop) continue;
+        const out=baselineV5StatefulOutcome(e.actual,r.line_value,r.selected_side); if(!out) continue;
+        addHit+=out.hit; addMiss+=out.miss; addPush+=out.push;
+      }
+      if(addHit===0&&addMiss===0&&addPush===0) continue;
+      const newHit=Number(r.hit_count||0)+addHit;
+      const newMiss=Number(r.miss_count||0)+addMiss;
+      const newPush=Number(r.push_count||0)+addPush;
+      const clsMatch=cls.find(c=>String(c.canonical_prop_key||'')===prop && Number(c.line_value)===Number(r.line_value) && String(c.selected_side||'')===String(r.selected_side||''));
+      const clsCalcForHp=clsMatch ? baselineV5StatefulClassFromCumulative(clsMatch,metricMap.get(id),srcs) : null;
+      const nextSanityKey=clsCalcForHp&&clsCalcForHp.classification_profile_key?clsCalcForHp.classification_profile_key:r.sanity_profile_key;
+      const calc=baselineV5StatefulHpFromCounts({prop,entityType:playerType,line:Number(r.line_value),side:String(r.selected_side||''),hit:newHit,miss:newMiss,push:newPush,oldConfidence:r.baseline_confidence_0_100,volatilityProfile:(clsCalcForHp&&clsCalcForHp.volatility_profile)||r.volatility_profile});
+      stmts.push(env.SCORE_DB.prepare(`UPDATE player_baseline_v5_hp_state_current SET hit_count=?, miss_count=?, push_count=?, non_push_sample=?, raw_rate_0_100=?, baseline_hp_0_100=?, tier_prior_rate_0_100=?, raw_prior_gap_0_100=?, baseline_confidence_0_100=?, baseline_enriched_confidence_0_100=?, sample_profile=?, sanity_profile_key=?, baseline_hp_profile_key=?, role_profile=COALESCE(?,role_profile), volatility_profile=COALESCE(?,volatility_profile), variance_profile=COALESCE(?,variance_profile), state_batch_id=?, last_processed_official_date=?, last_processed_game_pk=?, state_source='STATEFUL_DELTA_AGGREGATE_UPDATED_PROFILE_SYNC_NO_CURRENT_MUTATION', updated_at=CURRENT_TIMESTAMP WHERE player_type=? AND player_id=? AND canonical_prop_key=? AND line_value=? AND selected_side=?`).bind(calc.hit_count,calc.miss_count,calc.push_count,calc.non_push_sample,calc.raw_rate_0_100,calc.baseline_hp_0_100,calc.baseline_hp_0_100,calc.raw_prior_gap_0_100,calc.baseline_confidence_0_100,calc.baseline_enriched_confidence_0_100,calc.sample_profile,nextSanityKey,`${nextSanityKey}_MODEL`,clsCalcForHp&&clsCalcForHp.volume_profile||null,clsCalcForHp&&clsCalcForHp.volatility_profile||null,clsCalcForHp&&clsCalcForHp.volatility_profile||null,batchId,cutoffDate,'AGGREGATE_DELTA_WINDOW',playerType,id,prop,Number(r.line_value),String(r.selected_side||'')));
+      hpRowsUpdated++;
+    }
+    const metricRow=metricMap.get(id);
+    if(!metricRow && cls.length){ playersSkippedNoMetrics++; }
+    for(const r of cls){
+      const calc=baselineV5StatefulClassFromCumulative(r,metricRow,srcs);
+      if(!calc) continue;
       const beforeTier=String(r.classification_tier||''), beforeKey=String(r.classification_profile_key||'');
-      const calc=baselineV5StatefulClassFromRow(r,src);
       if(beforeTier!==calc.classification_tier || beforeKey!==calc.classification_profile_key) reclassified++;
-      stmts.push(env.SCORE_DB.prepare(`UPDATE player_baseline_v5_classification_state_current SET classification_tier=?, classification_profile_key=?, sample_profile=?, volume_profile=?, lineup_profile=?, platoon_profile=?, usage_profile=?, volatility_profile=?, classification_confidence_0_100=?, games_sample=?, events_sample=?, pa_per_game=?, ab_ratio=?, avg_batting_order=?, split_delta_0_100=?, hitter_pa_sum_est=?, hitter_ab_sum_est=?, pitcher_outs_sum_est=?, pitcher_bf_sum_est=?, metric_hits_per_game=?, metric_walk_rate=?, metric_strikeout_rate=?, metric_outs_per_start=?, metric_bf_per_start=?, metric_k_rate=?, metric_bb_rate=?, metric_ha_rate=?, metric_split_rows=?, state_batch_id=?, last_processed_official_date=?, last_processed_game_pk=?, state_source='STATEFUL_DELTA_EVENT_POINT_CLASSIFICATION_UPDATED_NO_CURRENT_MUTATION', updated_at=CURRENT_TIMESTAMP WHERE player_type=? AND player_id=? AND canonical_prop_key=? AND line_value=? AND selected_side=?`).bind(calc.classification_tier,calc.classification_profile_key,calc.sample_profile,calc.volume_profile,calc.lineup_profile,calc.platoon_profile,calc.usage_profile,calc.volatility_profile,calc.classification_confidence_0_100,calc.games_sample,calc.events_sample,calc.pa_per_game,calc.ab_ratio,calc.avg_batting_order,calc.split_delta_0_100,calc.hitter_pa_sum_est||null,calc.hitter_ab_sum_est||null,calc.pitcher_outs_sum_est||null,calc.pitcher_bf_sum_est||null,calc.metric_hits_per_game||null,calc.metric_walk_rate||null,calc.metric_strikeout_rate||null,calc.metric_outs_per_start||null,calc.metric_bf_per_start||null,calc.metric_k_rate||null,calc.metric_bb_rate||null,calc.metric_ha_rate||null,calc.metric_split_rows||0,batchId,String(src.game_date||'').slice(0,10),String(src.game_pk||''),playerType,playerId,String(r.canonical_prop_key||''),Number(r.line_value),String(r.selected_side||'')));
+      stmts.push(env.SCORE_DB.prepare(`UPDATE player_baseline_v5_classification_state_current SET classification_tier=?, classification_profile_key=?, sample_profile=?, volume_profile=?, lineup_profile=?, platoon_profile=?, usage_profile=?, volatility_profile=?, classification_confidence_0_100=?, games_sample=?, events_sample=?, pa_per_game=?, ab_ratio=?, avg_batting_order=?, split_delta_0_100=?, hitter_pa_sum_est=?, hitter_ab_sum_est=?, pitcher_outs_sum_est=?, pitcher_bf_sum_est=?, metric_hits_per_game=?, metric_walk_rate=?, metric_strikeout_rate=?, metric_outs_per_start=?, metric_bf_per_start=?, metric_k_rate=?, metric_bb_rate=?, metric_ha_rate=?, metric_split_rows=?, state_batch_id=?, last_processed_official_date=?, last_processed_game_pk=?, state_source='STATEFUL_DELTA_AGGREGATE_CLASSIFICATION_UPDATED_NO_CURRENT_MUTATION', updated_at=CURRENT_TIMESTAMP WHERE player_type=? AND player_id=? AND canonical_prop_key=? AND line_value=? AND selected_side=?`).bind(calc.classification_tier,calc.classification_profile_key,calc.sample_profile,calc.volume_profile,calc.lineup_profile,calc.platoon_profile,calc.usage_profile,calc.volatility_profile,calc.classification_confidence_0_100,calc.games_sample,calc.events_sample,calc.pa_per_game,calc.ab_ratio,calc.avg_batting_order,calc.split_delta_0_100,calc.hitter_pa_sum_est||null,calc.hitter_ab_sum_est||null,calc.pitcher_outs_sum_est||null,calc.pitcher_bf_sum_est||null,calc.metric_hits_per_game||null,calc.metric_walk_rate||null,calc.metric_strikeout_rate||null,calc.metric_outs_per_start||null,calc.metric_bf_per_start||null,calc.metric_k_rate||null,calc.metric_bb_rate||null,calc.metric_ha_rate||null,calc.metric_split_rows||0,batchId,cutoffDate,'AGGREGATE_DELTA_WINDOW',playerType,id,String(r.canonical_prop_key||''),Number(r.line_value),String(r.selected_side||'')));
       classRowsUpdated++;
     }
-    if(stmts.length) await batch(env.SCORE_DB,stmts,100);
   }
-  return {rawRowsRead,eventsInserted,hpRowsUpdated,classRowsUpdated,reclassified,skippedNoState,duplicateEventsSkipped,event_driven_point_updates:true,no_global_state_rewrite:true};
+  if(stmts.length) await batch(env.SCORE_DB,stmts,100);
+  return {rawRowsRead,eventsInserted,hpRowsUpdated,classRowsUpdated,reclassified,skippedNoState,duplicateEventsSkipped,playersProcessed,playersRequested:ids.length,playersSkippedNoMetrics,metric_batch_id:metricPack.batch&&metricPack.batch.batch_id||null,metric_input_latest_game_date:metricPack.batch&&metricPack.batch.input_latest_game_date||null,aggregate_differential:true,exact_metric_snapshot_sums:true,no_rate_reconstruction:true,no_global_state_rewrite:true};
 }
+
 
 async function baselineV5StatefulPartialOutput(input, fields){
   const next={...(fields.next_input_json||fields.next_input||{})};
@@ -2137,7 +2340,7 @@ async function baselineV5StatefulPartialOutput(input, fields){
 }
 
 async function baselineV5StatefulRetireStaleBatches(env){
-  const stale=await all(env.SCORE_DB,`SELECT batch_id FROM player_baseline_v5_state_batches WHERE mode='baseline_v5_stateful_delta' AND (status='running' OR certification_grade='RUNNING')`);
+  const stale=await all(env.SCORE_DB,`SELECT batch_id FROM player_baseline_v5_state_batches WHERE mode='baseline_v5_stateful_delta' AND (status IN ('running','partial_continue') OR certification_grade IN ('RUNNING','PARTIAL'))`);
   const ids=stale.map(r=>String(r.batch_id||'')).filter(Boolean);
   if(ids.length){
     const qs=ids.map(()=>'?').join(',');
@@ -2154,7 +2357,7 @@ async function runBaselineV5StatefulDelta(env,input={}){
   const batchId=String(input.batch_id||rid('baseline_v5_stateful_delta_batch'));
   const started=Date.now();
   const phase=String(input.stateful_delta_phase||input.delta_phase||'init');
-  const chunkSize=Math.max(1,Math.min(10,Number(input.stateful_delta_chunk_size||input.delta_chunk_size||5))); // source-row chunks; each row expands only to affected historical player/prop/line/side state rows
+  const chunkSize=Math.max(1,Math.min(25,Number(input.stateful_delta_player_chunk_size||input.stateful_delta_chunk_size||input.delta_chunk_size||12))); // v0.1.98 player chunks; each chunk applies aggregate differential deltas across all source rows for those players
 
   if(phase==='init'){
     const cleanup=await baselineV5StatefulRetireStaleBatches(env);
@@ -2214,32 +2417,34 @@ async function runBaselineV5StatefulDelta(env,input={}){
 
   if(phase==='process_hitter'){
     const offset=Math.max(0,Number(input.hitter_cursor_offset||0));
-    const rows=await all(env.STATS_HITTER_DB,`SELECT player_id, game_pk, game_date, batting_order, pa, ab, hits, singles, doubles, triples, home_runs, runs, rbi, walks, strikeouts, stolen_bases, total_bases, raw_json FROM hitter_game_logs WHERE date(game_date)>date(?) AND date(game_date)<=date(?) AND COALESCE(pa,0)>=1 AND COALESCE(json_extract(raw_json,'$.player.position.type'),'') NOT IN ('Pitcher','Runner') ORDER BY date(game_date), game_pk, player_id LIMIT ${chunkSize} OFFSET ${offset}`,watermarkDate,cutoffDate);
-    if(rows.length){
-      const res=await baselineV5StatefulApplySourceRows(env,{batchId,watermarkDate,cutoffDate,playerType:'hitter',rows});
-      const next={...input,stateful_delta_phase:'process_hitter',hitter_cursor_offset:offset+rows.length,stateful_delta_chunk_size:chunkSize};
-      const output=await baselineV5StatefulPartialOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,stateful_delta_phase:'process_hitter',source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,hitter_cursor_offset:offset+rows.length,chunk_size:chunkSize,rows_read:res.rawRowsRead,rows_written:res.eventsInserted+res.hpRowsUpdated+res.classRowsUpdated,hitter_delta:res,elapsed_ms:Date.now()-started,next_input_json:next});
-      await run(env.SCORE_DB,`UPDATE player_baseline_v5_state_batches SET status='partial_continue', certification='BASELINE_V5_STATEFUL_DELTA_HITTER_PARTIAL_CONTINUE', certification_grade='PARTIAL', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,safeJson(output),batchId);
+    const playerPage=await baselineV5StatefulPlayerPage(env,{playerType:'hitter',watermarkDate,cutoffDate,limit:chunkSize,offset});
+    if(playerPage.length){
+      const playerIds=playerPage.map(r=>Number(r.player_id||0)).filter(Boolean);
+      const res=await baselineV5StatefulApplyPlayerAggregate(env,{batchId,watermarkDate,cutoffDate,playerType:'hitter',playerIds});
+      const next={...input,stateful_delta_phase:'process_hitter',hitter_cursor_offset:offset+playerPage.length,stateful_delta_player_chunk_size:chunkSize,stateful_delta_chunk_size:chunkSize};
+      const output=await baselineV5StatefulPartialOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,stateful_delta_phase:'process_hitter',source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,hitter_cursor_offset:offset+playerPage.length,player_chunk_size:chunkSize,players_read:playerPage.length,rows_read:res.rawRowsRead,rows_written:res.eventsInserted+res.hpRowsUpdated+res.classRowsUpdated,hitter_delta:res,aggregate_differential_delta:true,elapsed_ms:Date.now()-started,next_input_json:next});
+      await run(env.SCORE_DB,`UPDATE player_baseline_v5_state_batches SET status='partial_continue', certification='BASELINE_V5_STATEFUL_DELTA_HITTER_AGGREGATE_PARTIAL_CONTINUE', certification_grade='PARTIAL', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,safeJson(output),batchId);
       return output;
     }
-    const next={...input,stateful_delta_phase:'process_pitcher',pitcher_cursor_offset:0,stateful_delta_chunk_size:chunkSize};
-    const output=await baselineV5StatefulPartialOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,stateful_delta_phase:'process_hitter_done',next_stateful_delta_phase:'process_pitcher',source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,hitter_cursor_offset:offset,rows_read:0,rows_written:0,elapsed_ms:Date.now()-started,next_input_json:next});
+    const next={...input,stateful_delta_phase:'process_pitcher',pitcher_cursor_offset:0,stateful_delta_player_chunk_size:chunkSize,stateful_delta_chunk_size:chunkSize};
+    const output=await baselineV5StatefulPartialOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,stateful_delta_phase:'process_hitter_done',next_stateful_delta_phase:'process_pitcher',source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,hitter_cursor_offset:offset,rows_read:0,rows_written:0,aggregate_differential_delta:true,elapsed_ms:Date.now()-started,next_input_json:next});
     await run(env.SCORE_DB,`UPDATE player_baseline_v5_state_batches SET output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,safeJson(output),batchId);
     return output;
   }
 
   if(phase==='process_pitcher'){
     const offset=Math.max(0,Number(input.pitcher_cursor_offset||0));
-    const rows=await all(env.TEAM_DB,`SELECT COALESCE(player_id, starter_player_id) AS player_id, game_pk, game_date, 'starter' AS role, outs_recorded, batters_faced, hits_allowed, runs_allowed, earned_runs, walks_allowed, strikeouts, home_runs_allowed, pitches, raw_json FROM starter_history WHERE started_game=1 AND date(game_date)>date(?) AND date(game_date)<=date(?) ORDER BY date(game_date), game_pk, COALESCE(player_id, starter_player_id) LIMIT ${chunkSize} OFFSET ${offset}`,watermarkDate,cutoffDate);
-    if(rows.length){
-      const res=await baselineV5StatefulApplySourceRows(env,{batchId,watermarkDate,cutoffDate,playerType:'pitcher',rows});
-      const next={...input,stateful_delta_phase:'process_pitcher',pitcher_cursor_offset:offset+rows.length,stateful_delta_chunk_size:chunkSize};
-      const output=await baselineV5StatefulPartialOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,stateful_delta_phase:'process_pitcher',source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,pitcher_cursor_offset:offset+rows.length,chunk_size:chunkSize,rows_read:res.rawRowsRead,rows_written:res.eventsInserted+res.hpRowsUpdated+res.classRowsUpdated,pitcher_delta:res,elapsed_ms:Date.now()-started,next_input_json:next});
-      await run(env.SCORE_DB,`UPDATE player_baseline_v5_state_batches SET status='partial_continue', certification='BASELINE_V5_STATEFUL_DELTA_PITCHER_PARTIAL_CONTINUE', certification_grade='PARTIAL', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,safeJson(output),batchId);
+    const playerPage=await baselineV5StatefulPlayerPage(env,{playerType:'pitcher',watermarkDate,cutoffDate,limit:chunkSize,offset});
+    if(playerPage.length){
+      const playerIds=playerPage.map(r=>Number(r.player_id||0)).filter(Boolean);
+      const res=await baselineV5StatefulApplyPlayerAggregate(env,{batchId,watermarkDate,cutoffDate,playerType:'pitcher',playerIds});
+      const next={...input,stateful_delta_phase:'process_pitcher',pitcher_cursor_offset:offset+playerPage.length,stateful_delta_player_chunk_size:chunkSize,stateful_delta_chunk_size:chunkSize};
+      const output=await baselineV5StatefulPartialOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,stateful_delta_phase:'process_pitcher',source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,pitcher_cursor_offset:offset+playerPage.length,player_chunk_size:chunkSize,players_read:playerPage.length,rows_read:res.rawRowsRead,rows_written:res.eventsInserted+res.hpRowsUpdated+res.classRowsUpdated,pitcher_delta:res,aggregate_differential_delta:true,elapsed_ms:Date.now()-started,next_input_json:next});
+      await run(env.SCORE_DB,`UPDATE player_baseline_v5_state_batches SET status='partial_continue', certification='BASELINE_V5_STATEFUL_DELTA_PITCHER_AGGREGATE_PARTIAL_CONTINUE', certification_grade='PARTIAL', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,safeJson(output),batchId);
       return output;
     }
-    const next={...input,stateful_delta_phase:'certify',stateful_delta_chunk_size:chunkSize};
-    const output=await baselineV5StatefulPartialOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,stateful_delta_phase:'process_pitcher_done',next_stateful_delta_phase:'certify',source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,pitcher_cursor_offset:offset,rows_read:0,rows_written:0,elapsed_ms:Date.now()-started,next_input_json:next});
+    const next={...input,stateful_delta_phase:'certify',stateful_delta_player_chunk_size:chunkSize,stateful_delta_chunk_size:chunkSize};
+    const output=await baselineV5StatefulPartialOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,stateful_delta_phase:'process_pitcher_done',next_stateful_delta_phase:'certify',source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,pitcher_cursor_offset:offset,rows_read:0,rows_written:0,aggregate_differential_delta:true,elapsed_ms:Date.now()-started,next_input_json:next});
     await run(env.SCORE_DB,`UPDATE player_baseline_v5_state_batches SET output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,safeJson(output),batchId);
     return output;
   }
@@ -2252,13 +2457,13 @@ async function runBaselineV5StatefulDelta(env,input={}){
   const clsStateAfter=await tableCount(env.SCORE_DB,'player_baseline_v5_classification_state_current');
   const changedHp=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT player_type||':'||player_id) AS players FROM player_baseline_v5_hp_state_current WHERE state_batch_id=?`,batchId);
   const changedCls=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT player_type||':'||player_id) AS players FROM player_baseline_v5_classification_state_current WHERE state_batch_id=?`,batchId);
-  const reclassified=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT player_type||':'||player_id) AS players FROM player_baseline_v5_classification_state_current WHERE state_batch_id=? AND state_source='STATEFUL_DELTA_EVENT_POINT_CLASSIFICATION_UPDATED_NO_CURRENT_MUTATION'`,batchId);
+  const reclassified=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT player_type||':'||player_id) AS players FROM player_baseline_v5_classification_state_current WHERE state_batch_id=? AND state_source='STATEFUL_DELTA_AGGREGATE_CLASSIFICATION_UPDATED_NO_CURRENT_MUTATION'`,batchId);
   const badPairs=Number(pairAudit&&pairAudit.bad_hp_pair_rows||0)+Number(pairAudit&&pairAudit.bad_sample_pair_rows||0);
   const syncAudit=await baselineV5StateReliabilityAudit(env);
   const pass=badPairs===0 && hpStateAfter===hpStateBefore && clsStateAfter===clsStateBefore && currentHp===67040 && currentCls===67040 && syncAudit.pass;
-  const cert=pass?'BASELINE_V5_STATEFUL_DELTA_SHADOW_CERTIFIED_SAFE_CUTOFF_STATE_UPDATED_CHUNKED_PROFILE_SYNC_GUARDED':'BASELINE_V5_STATEFUL_DELTA_SHADOW_BLOCKED_AUDIT_FAILED_CHUNKED_PROFILE_SYNC_GUARDED';
+  const cert=pass?'BASELINE_V5_STATEFUL_DELTA_AGGREGATE_CERTIFIED_SAFE_CUTOFF_STATE_UPDATED_PROFILE_SYNC_GUARDED':'BASELINE_V5_STATEFUL_DELTA_AGGREGATE_BLOCKED_AUDIT_FAILED_PROFILE_SYNC_GUARDED';
   const grade=pass?'PASS':'BLOCKED';
-  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:'baseline_v5_stateful_delta',status:cert,certification:cert,certification_grade:grade,data_ok:pass,source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,delta_events:deltaEvents,hp_state_rows_updated:Number(changedHp&&changedHp.rows||0),hp_state_players_updated:Number(changedHp&&changedHp.players||0),classification_state_rows_updated:Number(changedCls&&changedCls.rows||0),classification_state_players_updated:Number(changedCls&&changedCls.players||0),players_reclassified_shadow:Number(reclassified&&reclassified.players||0),classification_rows_reclassified_shadow:Number(reclassified&&reclassified.rows||0),hp_pair_audit:pairAudit,state_reliability_audit:syncAudit,hp_state_rows:hpStateAfter,classification_state_rows:clsStateAfter,hp_current_rows:currentHp,classification_current_rows:currentCls,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_final_board_context:true,full_run_integration:true,safe_cutoff_from_completed_source_layers:true,classification_delta_included:true,baseline_hp_delta_included:true,old_fake_delta_blocked:true,chunked_continuation:true,elapsed_ms:Date.now()-started});
+  const output=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode:'baseline_v5_stateful_delta',status:cert,certification:cert,certification_grade:grade,data_ok:pass,source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,delta_events:deltaEvents,hp_state_rows_updated:Number(changedHp&&changedHp.rows||0),hp_state_players_updated:Number(changedHp&&changedHp.players||0),classification_state_rows_updated:Number(changedCls&&changedCls.rows||0),classification_state_players_updated:Number(changedCls&&changedCls.players||0),players_reclassified_shadow:Number(reclassified&&reclassified.players||0),classification_rows_reclassified_shadow:Number(reclassified&&reclassified.rows||0),hp_pair_audit:pairAudit,state_reliability_audit:syncAudit,hp_state_rows:hpStateAfter,classification_state_rows:clsStateAfter,hp_current_rows:currentHp,classification_current_rows:currentCls,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_final_board_context:true,full_run_integration:true,safe_cutoff_from_completed_source_layers:true,classification_delta_included:true,baseline_hp_delta_included:true,old_fake_delta_blocked:true,aggregate_differential_delta:true, chunked_continuation:true,elapsed_ms:Date.now()-started});
   await run(env.SCORE_DB,`UPDATE player_baseline_v5_state_batches SET status=?, source_watermark_date=?, hp_state_rows=?, classification_state_rows=?, current_tables_mutated=0, history_tables_mutated=0, full_cumulative_history_recompute=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,cert,cutoffDate,hpStateAfter,clsStateAfter,cert,grade,safeJson(output),batchId);
   await run(env.SCORE_DB,`INSERT OR REPLACE INTO player_baseline_v5_state_audit (audit_id,state_batch_id,mode,audit_key,audit_status,audit_json,created_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP)`,rid('audit'),batchId,'baseline_v5_stateful_delta','stateful_delta_chunked_shadow_audit',pass?'PASS':'BLOCKED',safeJson({watermarkDate,cutoffDate,pairAudit,state_reliability_audit:syncAudit,deltaEvents,changedHp,changedCls,reclassified,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false}));
   return output;
