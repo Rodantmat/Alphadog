@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.96-baseline-v5-confidence-mirror-timeout-retry-safe";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.97-baseline-v5-confidence-rowid-range-sweep";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -4088,21 +4088,22 @@ async function baselineV5RunConfidenceReliabilityRescue(env,batchId,input={},sta
 }
 
 const BASELINE_V5_CONFIDENCE_FAST_PHASES = [
-  // v0.1.95: stop rescanning unindexed dirty joins.
-  // SQL proof: sanity_current is clean; sanity_history has the same 67,040 row universe but no indexes.
-  // This run creates targeted indexes one-at-a-time, then resumes remaining mirrors by rowid cursor.
+  // v0.1.97: speed repair by rowid-range sweep, not sparse dirty-row hunting.
+  // SQL proof: mirror tables and source HP/classification tables are indexed. The remaining cost was finding
+  // sparse dirty rows. Range sweep copies from already-clean source rows across bounded rowid windows, then
+  // relies on final SQL audit to certify zero residual mismatches.
   {phase:'ensure_idx_sanity_history_batch_row', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbs_v2_history_batch_row ON player_baseline_sanity_v2_history(batch_id, baseline_row_id)', chunkSize:0},
   {phase:'ensure_idx_hp_history_batch_row', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbh_v2_history_batch_hp_row ON player_baseline_hp_v2_history(batch_id, baseline_hp_row_id)', chunkSize:0},
-  {phase:'sanity_history', kind:'sanity_from_current', table:'player_baseline_sanity_v2_history', sourceTable:'player_baseline_sanity_v2_current', idCol:'rowid', batchCol:'batch_id', sourceBatchCol:'batch_id', valueCol:'baseline_confidence_0_100', chunkSize:100},
+  {phase:'sanity_history', kind:'sanity_from_current', table:'player_baseline_sanity_v2_history', sourceTable:'player_baseline_sanity_v2_current', idCol:'rowid', batchCol:'batch_id', sourceBatchCol:'batch_id', valueCol:'baseline_confidence_0_100', chunkSize:1200, maxChunkSize:2500},
   {phase:'ensure_idx_hp_current_class_key', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbh_v2_current_conf_key ON player_baseline_hp_v2_current(batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side)', chunkSize:0},
   {phase:'ensure_idx_class_current_key', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbc_v5_current_conf_key ON player_baseline_classification_v5_current(batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side)', chunkSize:0},
-  {phase:'classification_current', kind:'classification_from_hp', table:'player_baseline_classification_v5_current', hpTable:'player_baseline_hp_v2_current', idCol:'rowid', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true, chunkSize:50},
+  {phase:'classification_current', kind:'classification_from_hp', table:'player_baseline_classification_v5_current', hpTable:'player_baseline_hp_v2_current', idCol:'rowid', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true, chunkSize:600, maxChunkSize:1200},
   {phase:'ensure_idx_hp_history_class_key', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbh_v2_history_conf_key ON player_baseline_hp_v2_history(batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side)', chunkSize:0},
   {phase:'ensure_idx_class_history_key', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbc_v5_history_conf_key ON player_baseline_classification_v5_history(batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side)', chunkSize:0},
-  {phase:'classification_history', kind:'classification_from_hp', table:'player_baseline_classification_v5_history', hpTable:'player_baseline_hp_v2_history', idCol:'rowid', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true, chunkSize:50},
+  {phase:'classification_history', kind:'classification_from_hp', table:'player_baseline_classification_v5_history', hpTable:'player_baseline_hp_v2_history', idCol:'rowid', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true, chunkSize:600, maxChunkSize:1200},
   {phase:'ensure_idx_hp_state_class_key', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbv5_hp_state_conf_key ON player_baseline_v5_hp_state_current(source_batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side)', chunkSize:0},
   {phase:'ensure_idx_class_state_key', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbv5_cls_state_conf_key ON player_baseline_v5_classification_state_current(source_batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side)', chunkSize:0},
-  {phase:'classification_state_current', kind:'classification_from_hp', table:'player_baseline_v5_classification_state_current', hpTable:'player_baseline_v5_hp_state_current', idCol:'rowid', batchCol:'source_batch_id', hpBatchCol:'source_batch_id', hasJson:false, chunkSize:50}
+  {phase:'classification_state_current', kind:'classification_from_hp', table:'player_baseline_v5_classification_state_current', hpTable:'player_baseline_v5_hp_state_current', idCol:'rowid', batchCol:'source_batch_id', hpBatchCol:'source_batch_id', hasJson:false, chunkSize:800, maxChunkSize:1500}
 ];
 
 function baselineV5ConfidenceFastPhaseIndex(phase){
@@ -4188,8 +4189,129 @@ async function baselineV5ConfidenceSingleRowUpdateClassification(env, cfg, rows)
   return stmts.length;
 }
 
+function baselineV5ConfidenceRangeBatchWhere(cfg){
+  return cfg.batchCol==='source_batch_id' ? 'source_batch_id=?' : 'batch_id=?';
+}
+
+async function baselineV5ConfidenceRangePhaseMaxRowid(env,cfg,batchId){
+  const row=await first(env.SCORE_DB,`SELECT COALESCE(MAX(rowid),0) AS max_rowid FROM ${cfg.table} WHERE ${baselineV5ConfidenceRangeBatchWhere(cfg)}`,batchId);
+  return Number(row&&row.max_rowid||0);
+}
+
+async function baselineV5ConfidenceRangeRowsInWindow(env,cfg,batchId,lower,upper){
+  const row=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows FROM ${cfg.table} WHERE ${baselineV5ConfidenceRangeBatchWhere(cfg)} AND rowid>? AND rowid<=?`,batchId,lower,upper);
+  return Number(row&&row.rows||0);
+}
+
+async function baselineV5ConfidenceRangeDirtyInWindow(env,cfg,batchId,lower,upper){
+  if(cfg.kind==='sanity_from_current'){
+    const row=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows
+      FROM ${cfg.table} s
+      JOIN ${cfg.sourceTable} src
+        ON src.${cfg.sourceBatchCol}=s.${cfg.batchCol}
+       AND src.baseline_row_id=s.baseline_row_id
+      WHERE s.${cfg.batchCol}=?
+        AND s.rowid>?
+        AND s.rowid<=?
+        AND ${baselineV5MirrorMismatchSql('s.baseline_confidence_0_100',`src.${cfg.valueCol}`)}`,batchId,lower,upper);
+    return Number(row&&row.rows||0);
+  }
+  const row=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows
+    FROM ${cfg.table} c
+    JOIN ${cfg.hpTable} h
+      ON h.${cfg.hpBatchCol}=c.${cfg.batchCol}
+     AND h.player_type=c.player_type
+     AND h.player_id=c.player_id
+     AND h.canonical_prop_key=c.canonical_prop_key
+     AND h.line_value=c.line_value
+     AND h.selected_side=c.selected_side
+    WHERE c.${cfg.batchCol}=?
+      AND c.rowid>?
+      AND c.rowid<=?
+      AND ${baselineV5MirrorMismatchSql('c.classification_confidence_0_100','h.baseline_confidence_0_100')}`,batchId,lower,upper);
+  return Number(row&&row.rows||0);
+}
+
+async function baselineV5ConfidenceRangeUpdateSanity(env,cfg,batchId,lower,upper){
+  const res=await run(env.SCORE_DB,`UPDATE ${cfg.table}
+    SET baseline_confidence_0_100=(
+          SELECT src.${cfg.valueCol}
+          FROM ${cfg.sourceTable} src
+          WHERE src.${cfg.sourceBatchCol}=${cfg.table}.${cfg.batchCol}
+            AND src.baseline_row_id=${cfg.table}.baseline_row_id
+          LIMIT 1
+        ),
+        updated_at=CURRENT_TIMESTAMP
+    WHERE ${baselineV5ConfidenceRangeBatchWhere(cfg)}
+      AND rowid>?
+      AND rowid<=?
+      AND EXISTS (
+        SELECT 1
+        FROM ${cfg.sourceTable} src
+        WHERE src.${cfg.sourceBatchCol}=${cfg.table}.${cfg.batchCol}
+          AND src.baseline_row_id=${cfg.table}.baseline_row_id
+      )`,batchId,lower,upper);
+  return Number(res&&res.meta&&res.meta.changes||0);
+}
+
+async function baselineV5ConfidenceRangeUpdateClassification(env,cfg,batchId,lower,upper){
+  const targetSubquery=`SELECT h.baseline_confidence_0_100
+          FROM ${cfg.hpTable} h
+          WHERE h.${cfg.hpBatchCol}=${cfg.table}.${cfg.batchCol}
+            AND h.player_type=${cfg.table}.player_type
+            AND h.player_id=${cfg.table}.player_id
+            AND h.canonical_prop_key=${cfg.table}.canonical_prop_key
+            AND h.line_value=${cfg.table}.line_value
+            AND h.selected_side=${cfg.table}.selected_side
+          LIMIT 1`;
+  const existsSubquery=`SELECT 1
+        FROM ${cfg.hpTable} h
+        WHERE h.${cfg.hpBatchCol}=${cfg.table}.${cfg.batchCol}
+          AND h.player_type=${cfg.table}.player_type
+          AND h.player_id=${cfg.table}.player_id
+          AND h.canonical_prop_key=${cfg.table}.canonical_prop_key
+          AND h.line_value=${cfg.table}.line_value
+          AND h.selected_side=${cfg.table}.selected_side`;
+  const jsonSet = cfg.hasJson
+    ? `classification_json=CASE WHEN classification_json IS NULL OR classification_json='' OR json_valid(classification_json)=0 THEN classification_json ELSE json_set(classification_json,'$.classification_confidence_0_100',(${targetSubquery}),'$.confidence_formula_version',?) END,`
+    : '';
+  const sql=`UPDATE ${cfg.table}
+    SET classification_confidence_0_100=(${targetSubquery}),
+        ${jsonSet}
+        updated_at=CURRENT_TIMESTAMP
+    WHERE ${baselineV5ConfidenceRangeBatchWhere(cfg)}
+      AND rowid>?
+      AND rowid<=?
+      AND EXISTS (${existsSubquery})`;
+  const res = cfg.hasJson
+    ? await run(env.SCORE_DB,sql,`${BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION}_range_mirror`,batchId,lower,upper)
+    : await run(env.SCORE_DB,sql,batchId,lower,upper);
+  return Number(res&&res.meta&&res.meta.changes||0);
+}
+
+async function baselineV5ConfidenceRangeUpdatePhase(env,cfg,batchId,input,cursor){
+  const lower=Math.max(0,Number(cursor||0));
+  const maxRowid=await baselineV5ConfidenceRangePhaseMaxRowid(env,cfg,batchId);
+  if(!Number.isFinite(maxRowid) || maxRowid<=0 || lower>=maxRowid){
+    return {phase:cfg.phase,phase_complete:true,rows_selected:0,rows_updated:0,dirty_rows_repaired:0,cursor_start:String(lower),cursor_end:String(lower),max_rowid:maxRowid,next_cursor:'0'};
+  }
+  const requested=Number(input.baseline_confidence_range_sweep_size||input.baseline_confidence_rescue_range_size||0);
+  const defaultSize=Number(cfg.chunkSize||500);
+  const maxSize=Number(cfg.maxChunkSize||defaultSize);
+  const windowSize=clamp(requested||defaultSize,50,maxSize);
+  const upper=Math.min(maxRowid,lower+windowSize);
+  const rowsSelected=await baselineV5ConfidenceRangeRowsInWindow(env,cfg,batchId,lower,upper);
+  const dirtyBefore=rowsSelected>0?await baselineV5ConfidenceRangeDirtyInWindow(env,cfg,batchId,lower,upper):0;
+  let rowsUpdated=0;
+  if(rowsSelected>0){
+    if(cfg.kind==='sanity_from_current') rowsUpdated=await baselineV5ConfidenceRangeUpdateSanity(env,cfg,batchId,lower,upper);
+    else rowsUpdated=await baselineV5ConfidenceRangeUpdateClassification(env,cfg,batchId,lower,upper);
+  }
+  const phaseComplete=upper>=maxRowid;
+  return {phase:cfg.phase,phase_complete:phaseComplete,rows_selected:rowsSelected,rows_updated:rowsUpdated,dirty_rows_repaired:dirtyBefore,cursor_start:String(lower),cursor_end:String(upper),max_rowid:maxRowid,next_cursor:phaseComplete?'0':String(upper),range_size:windowSize};
+}
+
 async function baselineV5RunConfidenceReliabilityFastCursorRescue(env,batchId,input={},startedMs=Date.now(),softYieldMs=10000){
-  const requested=Number(input.baseline_confidence_fast_chunk_size||input.baseline_confidence_rescue_chunk_size||0);
   let phaseIndex=baselineV5ConfidenceFastPhaseIndex(String(input.baseline_confidence_rescue_phase||''));
   let cursor=String(input.baseline_confidence_rescue_cursor||'0');
   const updates=[];
@@ -4212,56 +4334,47 @@ async function baselineV5RunConfidenceReliabilityFastCursorRescue(env,batchId,in
         next_cursor:'0',
         rows_selected:0,
         rows_updated:0,
+        dirty_rows_repaired:0,
         updates,
         partial_continue:!pass,
         pass,
         chunk_size:0,
+        range_size:0,
         after:{dirty_total:pass?0:null,mirror_only:true,index_phase:true,final_sql_audit_required:true},
         confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,
-        contract:{hp_values_mutated:false,hp_tables_already_repaired_by_v0_1_90:true,sanity_current_already_repaired_by_v0_1_93:true,counters_mutated:false,line_difficulty_confidence_caps_removed:true,mirrors_synced_to_hp_confidence:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true,indexed_rowid_resume:true,timeout_retry_safe_microchunk:true,no_order_by_dirty_select:true,no_global_audit_before_progress:true},
+        contract:{hp_values_mutated:false,hp_tables_already_repaired_by_v0_1_90:true,sanity_current_already_repaired_by_v0_1_93:true,counters_mutated:false,line_difficulty_confidence_caps_removed:true,mirrors_synced_to_hp_confidence:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true,indexed_rowid_resume:true,rowid_range_sweep:true,timeout_retry_safe_microchunk:true,no_order_by_dirty_select:true,no_sparse_dirty_row_hunt:true,no_global_audit_before_progress:true},
         elapsed_ms:Date.now()-startedMs
       };
     }
-    const phaseChunkSize=clamp(requested||Number(cfg.chunkSize||50),10,Number(cfg.chunkSize||50));
-    const rows=await baselineV5ConfidenceFastSelectRows(env,cfg,batchId,phaseChunkSize,cursor);
-    if(rows.length===0){
-      updates.push({phase:cfg.phase,rows_selected:0,rows_updated:0,phase_complete:true,skipped_empty:true,cursor_start:String(cursor||'0')});
-      phaseIndex++;
-      cursor='0';
-      continue;
-    }
-    let rowsUpdated=0;
-    if(cfg.kind==='sanity_from_current') rowsUpdated=await baselineV5ConfidenceSingleRowUpdateColumn(env,cfg,rows);
-    else rowsUpdated=await baselineV5ConfidenceSingleRowUpdateClassification(env,cfg,rows);
-    const lastRid=String(rows[rows.length-1]&&rows[rows.length-1].rid||cursor||'0');
-    const phaseComplete=rows.length<phaseChunkSize;
-    const nextPhaseIndex=phaseComplete?phaseIndex+1:phaseIndex;
+    const phaseUpdate=await baselineV5ConfidenceRangeUpdatePhase(env,cfg,batchId,input,cursor);
+    updates.push({...phaseUpdate,next_phase:phaseUpdate.phase_complete?((phaseIndex+1>=BASELINE_V5_CONFIDENCE_FAST_PHASES.length)?'complete':BASELINE_V5_CONFIDENCE_FAST_PHASES[phaseIndex+1].phase):cfg.phase});
+    const nextPhaseIndex=phaseUpdate.phase_complete?phaseIndex+1:phaseIndex;
     const pass=nextPhaseIndex>=BASELINE_V5_CONFIDENCE_FAST_PHASES.length;
     const nextPhase=pass?'complete':BASELINE_V5_CONFIDENCE_FAST_PHASES[nextPhaseIndex].phase;
-    const nextCursor=phaseComplete?'0':lastRid;
-    updates.push({phase:cfg.phase,rows_selected:rows.length,rows_updated:rowsUpdated,phase_complete:phaseComplete,next_phase:nextPhase,cursor_start:String(cursor||'0'),cursor_end:lastRid,first_id:String(rows[0]&&rows[0].id||''),last_id:String(rows[rows.length-1]&&rows[rows.length-1].id||'')});
     return {
       stage:pass?'complete':cfg.phase,
       phase:cfg.phase,
       next_phase:nextPhase,
-      cursor_start:String(cursor||'0'),
-      cursor_end:lastRid,
-      next_cursor:nextCursor,
-      rows_selected:rows.length,
-      rows_updated:rowsUpdated,
+      cursor_start:phaseUpdate.cursor_start,
+      cursor_end:phaseUpdate.cursor_end,
+      next_cursor:phaseUpdate.next_cursor,
+      rows_selected:phaseUpdate.rows_selected,
+      rows_updated:phaseUpdate.rows_updated,
+      dirty_rows_repaired:phaseUpdate.dirty_rows_repaired,
+      max_rowid:phaseUpdate.max_rowid,
       updates,
       partial_continue:!pass,
       pass,
-      chunk_size:phaseChunkSize,
-      after:{dirty_total:pass?0:null,mirror_only:true,rowid_cursor_resume:true,final_sql_audit_required:true},
+      chunk_size:phaseUpdate.range_size,
+      range_size:phaseUpdate.range_size,
+      after:{dirty_total:pass?0:null,mirror_only:true,rowid_range_sweep:true,final_sql_audit_required:true},
       confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,
-      contract:{hp_values_mutated:false,hp_tables_already_repaired_by_v0_1_90:true,sanity_current_already_repaired_by_v0_1_93:true,counters_mutated:false,line_difficulty_confidence_caps_removed:true,mirrors_synced_to_hp_confidence:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true,no_joined_update:true,no_case_update:true,no_large_in_list:true,no_order_by_dirty_select:true,indexed_rowid_resume:true,timeout_retry_safe_microchunk:true,no_global_audit_before_progress:true},
+      contract:{hp_values_mutated:false,hp_tables_already_repaired_by_v0_1_90:true,sanity_current_already_repaired_by_v0_1_93:true,counters_mutated:false,line_difficulty_confidence_caps_removed:true,mirrors_synced_to_hp_confidence:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true,no_joined_update:false,no_case_update:true,no_large_in_list:true,no_order_by_dirty_select:true,indexed_rowid_resume:true,rowid_range_sweep:true,no_sparse_dirty_row_hunt:true,timeout_retry_safe_microchunk:true,no_global_audit_before_progress:true},
       elapsed_ms:Date.now()-startedMs
     };
   }
-  return {stage:'complete',phase:'complete',next_phase:'complete',rows_selected:0,rows_updated:0,updates,partial_continue:false,pass:true,chunk_size:0,after:{dirty_total:0,mirror_only:true,rowid_cursor_resume:true,final_sql_audit_required:true},confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,elapsed_ms:Date.now()-startedMs};
+  return {stage:'complete',phase:'complete',next_phase:'complete',rows_selected:0,rows_updated:0,dirty_rows_repaired:0,updates,partial_continue:false,pass:true,chunk_size:0,range_size:0,after:{dirty_total:0,mirror_only:true,rowid_range_sweep:true,final_sql_audit_required:true},confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,elapsed_ms:Date.now()-startedMs};
 }
-
 
 async function runBaselineV5BaseRescue(env, input={}) {
   const requestId = String(input.request_id || rid('baseline_v5_base_rescue'));
