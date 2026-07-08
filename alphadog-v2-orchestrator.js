@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.340-stateful-baseline-v5-delta-chunked-continuation";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.341-baseline-v5-base-rescue-timeout-retry";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -12692,8 +12692,43 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
     try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text||"").slice(0,900) }; }
   } catch (err) {
     const errText = String(err && err.message ? err.message : err);
+    const isBaselineV5BaseRescueTimeout = baselineV5BaseRescue && /service_binding_timeout|timeout_after|AbortError|timed out/i.test(errText);
     const isExpansionTimeout = expansionV2AllCurrent && /service_binding_timeout|timeout_after|AbortError|timed out/i.test(errText);
-    if (isExpansionTimeout) {
+    if (isBaselineV5BaseRescueTimeout) {
+      const retryChunk = Math.max(10, Math.min(50, Number(input.baseline_confidence_fast_chunk_size || input.baseline_confidence_rescue_chunk_size || 50)));
+      output = {
+        ok:true,
+        data_ok:true,
+        version:SYSTEM_VERSION,
+        processed_by:WORKER_NAME,
+        worker_name:row.worker_name,
+        job_key:row.job_key,
+        request_id:row.request_id,
+        chain_id:row.chain_id,
+        run_id:runId,
+        status:'BASELINE_V5_BASE_RESCUE_DISPATCH_TIMEOUT_RETRY_CONTINUE',
+        certification:'BASELINE_V5_BASE_RESCUE_DISPATCH_TIMEOUT_RETRY_CONTINUE',
+        certification_grade:'RECOVERED_PARTIAL_CONTINUE',
+        partial_continue:true,
+        orchestrator_should_self_continue:true,
+        continuation_required:true,
+        baseline_v5_base_rescue_timeout_retry:true,
+        dispatch_timeout_recovered:true,
+        timeout_error:errText,
+        run_after_delay_seconds:0,
+        next_input_json:{
+          ...input,
+          mode:'baseline_v5_base_rescue',
+          expansion_mode:'baseline_v5_base_rescue',
+          request_id:row.request_id,
+          chain_id:row.chain_id,
+          baseline_v5_base_rescue_timeout_retry:true,
+          no_restart_on_dispatch_timeout:true,
+          baseline_confidence_fast_chunk_size:retryChunk,
+          rescue_soft_yield_ms:Math.max(5000, Math.min(8000, Number(input.rescue_soft_yield_ms || input.v2_soft_yield_ms || 8000)))
+        }
+      };
+    } else if (isExpansionTimeout) {
       let resumeBatchId = input.batch_id || null;
       let durableCursor = Number(input.v2_cursor_offset || 0);
       let durableStageRows = 0;
@@ -12747,7 +12782,7 @@ async function processExpansionBaselineJob(env, row, runId, trigger) {
   const cert = String((output && output.certification) || (partial ? "BASELINE_V2_HEB_PARTIAL_CONTINUE" : (output && output.ok ? "BASELINE_V2_HEB_COMPLETED" : "BASELINE_V2_HEB_FAILED"))).slice(0,120);
   const rowsRead = Number(output && (output.source_rows_read || output.rows_read || 0));
   const rowsWritten = Number(output && (output.rows_written || output.rows_promoted || output.rows_staged || 0));
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:baselineV5Mode?"alphadog-v2-baseline-v5":"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, expansion_v2_hot_parity_short_yield_v0_2_328:true, expansion_v2_stale_dispatch_auto_rescue_v0_2_329:true, expansion_v2_timeout_safe_microchunks_v0_2_330:true, expansion_v2_fast50_timeout_safe_v0_2_331:true, expansion_v2_fast50_soft14_parity_v0_2_332:true, normalized_v2_chunk_size:input.v2_chunk_size, normalized_v2_all_current_chunk_size:input.v2_all_current_chunk_size, normalized_v2_soft_yield_ms:input.v2_soft_yield_ms, no_current_baseline_mutation:!baselineV5BaseRescue, targeted_current_baseline_mutation:baselineV5BaseRescue, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, logical_worker_name:baselineV5Mode?"alphadog-v2-baseline-v5":"alphadog-v2-expansion-baseline-v2-heb", deployed_worker_slot:"alphadog-v2-phase3a-first-inning-pitcher-context", parallel_v2_only:true, expansion_v2_hot_parity_short_yield_v0_2_328:true, expansion_v2_stale_dispatch_auto_rescue_v0_2_329:true, expansion_v2_timeout_safe_microchunks_v0_2_330:true, expansion_v2_fast50_timeout_safe_v0_2_331:true, expansion_v2_fast50_soft14_parity_v0_2_332:true, baseline_v5_base_rescue_timeout_retry_v0_2_341:true, normalized_v2_chunk_size:input.v2_chunk_size, normalized_v2_all_current_chunk_size:input.v2_all_current_chunk_size, normalized_v2_soft_yield_ms:input.v2_soft_yield_ms, no_current_baseline_mutation:!baselineV5BaseRescue, targeted_current_baseline_mutation:baselineV5BaseRescue, no_scoring:true, no_final_board_write:true, live_failed_sibling_resume_applied: !!(siblingResume && siblingResume.applied), live_failed_sibling_resume: siblingResume && siblingResume.applied ? { failed_child_request_id:siblingResume.failed_child_request_id, dynamic_v2_batch_id:siblingResume.dynamic_v2_batch_id, v2_cursor_offset:siblingResume.v2_cursor_offset, dynamic_v2_chunk_size:siblingResume.dynamic_v2_chunk_size, staged_rows:siblingResume.staged_rows } : null } };
 
   if (partial && nextInput) {
     const runAfterSeconds = Math.max(0, Math.min(30, Number(output.run_after_delay_seconds ?? 0)));

@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.95-baseline-v5-confidence-mirror-indexed-rowid-resume";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.96-baseline-v5-confidence-mirror-timeout-retry-safe";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -4093,16 +4093,16 @@ const BASELINE_V5_CONFIDENCE_FAST_PHASES = [
   // This run creates targeted indexes one-at-a-time, then resumes remaining mirrors by rowid cursor.
   {phase:'ensure_idx_sanity_history_batch_row', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbs_v2_history_batch_row ON player_baseline_sanity_v2_history(batch_id, baseline_row_id)', chunkSize:0},
   {phase:'ensure_idx_hp_history_batch_row', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbh_v2_history_batch_hp_row ON player_baseline_hp_v2_history(batch_id, baseline_hp_row_id)', chunkSize:0},
-  {phase:'sanity_history', kind:'sanity_from_current', table:'player_baseline_sanity_v2_history', sourceTable:'player_baseline_sanity_v2_current', idCol:'rowid', batchCol:'batch_id', sourceBatchCol:'batch_id', valueCol:'baseline_confidence_0_100', chunkSize:250},
+  {phase:'sanity_history', kind:'sanity_from_current', table:'player_baseline_sanity_v2_history', sourceTable:'player_baseline_sanity_v2_current', idCol:'rowid', batchCol:'batch_id', sourceBatchCol:'batch_id', valueCol:'baseline_confidence_0_100', chunkSize:100},
   {phase:'ensure_idx_hp_current_class_key', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbh_v2_current_conf_key ON player_baseline_hp_v2_current(batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side)', chunkSize:0},
   {phase:'ensure_idx_class_current_key', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbc_v5_current_conf_key ON player_baseline_classification_v5_current(batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side)', chunkSize:0},
-  {phase:'classification_current', kind:'classification_from_hp', table:'player_baseline_classification_v5_current', hpTable:'player_baseline_hp_v2_current', idCol:'rowid', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true, chunkSize:100},
+  {phase:'classification_current', kind:'classification_from_hp', table:'player_baseline_classification_v5_current', hpTable:'player_baseline_hp_v2_current', idCol:'rowid', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true, chunkSize:50},
   {phase:'ensure_idx_hp_history_class_key', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbh_v2_history_conf_key ON player_baseline_hp_v2_history(batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side)', chunkSize:0},
   {phase:'ensure_idx_class_history_key', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbc_v5_history_conf_key ON player_baseline_classification_v5_history(batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side)', chunkSize:0},
-  {phase:'classification_history', kind:'classification_from_hp', table:'player_baseline_classification_v5_history', hpTable:'player_baseline_hp_v2_history', idCol:'rowid', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true, chunkSize:100},
+  {phase:'classification_history', kind:'classification_from_hp', table:'player_baseline_classification_v5_history', hpTable:'player_baseline_hp_v2_history', idCol:'rowid', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true, chunkSize:50},
   {phase:'ensure_idx_hp_state_class_key', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbv5_hp_state_conf_key ON player_baseline_v5_hp_state_current(source_batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side)', chunkSize:0},
   {phase:'ensure_idx_class_state_key', kind:'ddl', ddl:'CREATE INDEX IF NOT EXISTS idx_pbv5_cls_state_conf_key ON player_baseline_v5_classification_state_current(source_batch_id, player_type, player_id, canonical_prop_key, line_value, selected_side)', chunkSize:0},
-  {phase:'classification_state_current', kind:'classification_from_hp', table:'player_baseline_v5_classification_state_current', hpTable:'player_baseline_v5_hp_state_current', idCol:'rowid', batchCol:'source_batch_id', hpBatchCol:'source_batch_id', hasJson:false, chunkSize:100}
+  {phase:'classification_state_current', kind:'classification_from_hp', table:'player_baseline_v5_classification_state_current', hpTable:'player_baseline_v5_hp_state_current', idCol:'rowid', batchCol:'source_batch_id', hpBatchCol:'source_batch_id', hasJson:false, chunkSize:50}
 ];
 
 function baselineV5ConfidenceFastPhaseIndex(phase){
@@ -4218,7 +4218,7 @@ async function baselineV5RunConfidenceReliabilityFastCursorRescue(env,batchId,in
         chunk_size:0,
         after:{dirty_total:pass?0:null,mirror_only:true,index_phase:true,final_sql_audit_required:true},
         confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,
-        contract:{hp_values_mutated:false,hp_tables_already_repaired_by_v0_1_90:true,sanity_current_already_repaired_by_v0_1_93:true,counters_mutated:false,line_difficulty_confidence_caps_removed:true,mirrors_synced_to_hp_confidence:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true,indexed_rowid_resume:true,no_order_by_dirty_select:true,no_global_audit_before_progress:true},
+        contract:{hp_values_mutated:false,hp_tables_already_repaired_by_v0_1_90:true,sanity_current_already_repaired_by_v0_1_93:true,counters_mutated:false,line_difficulty_confidence_caps_removed:true,mirrors_synced_to_hp_confidence:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true,indexed_rowid_resume:true,timeout_retry_safe_microchunk:true,no_order_by_dirty_select:true,no_global_audit_before_progress:true},
         elapsed_ms:Date.now()-startedMs
       };
     }
@@ -4255,7 +4255,7 @@ async function baselineV5RunConfidenceReliabilityFastCursorRescue(env,batchId,in
       chunk_size:phaseChunkSize,
       after:{dirty_total:pass?0:null,mirror_only:true,rowid_cursor_resume:true,final_sql_audit_required:true},
       confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,
-      contract:{hp_values_mutated:false,hp_tables_already_repaired_by_v0_1_90:true,sanity_current_already_repaired_by_v0_1_93:true,counters_mutated:false,line_difficulty_confidence_caps_removed:true,mirrors_synced_to_hp_confidence:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true,no_joined_update:true,no_case_update:true,no_large_in_list:true,no_order_by_dirty_select:true,indexed_rowid_resume:true,no_global_audit_before_progress:true},
+      contract:{hp_values_mutated:false,hp_tables_already_repaired_by_v0_1_90:true,sanity_current_already_repaired_by_v0_1_93:true,counters_mutated:false,line_difficulty_confidence_caps_removed:true,mirrors_synced_to_hp_confidence:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true,no_joined_update:true,no_case_update:true,no_large_in_list:true,no_order_by_dirty_select:true,indexed_rowid_resume:true,timeout_retry_safe_microchunk:true,no_global_audit_before_progress:true},
       elapsed_ms:Date.now()-startedMs
     };
   }
