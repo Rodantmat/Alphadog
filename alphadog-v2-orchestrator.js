@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.341-baseline-v5-base-rescue-timeout-retry";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.342-source-gap-repair-loop";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -2687,6 +2687,7 @@ async function processDailyFullRunJob(env, row, runId, trigger) {
 const INCREMENTAL_MORNING_FULL_RUN_LOCK_KEY = "INCREMENTAL_MORNING_FULL_RUN";
 const INCREMENTAL_MORNING_FULL_RUN_STALE_MINUTES = 60;
 const INCREMENTAL_MORNING_FULL_RUN_MAX_RETRIES_PER_STAGE = 2;
+const INCREMENTAL_MORNING_FULL_RUN_MAX_REPAIR_STAGE_ATTEMPTS = 8;
 
 const INCREMENTAL_MORNING_FULL_RUN_SCHEDULE_WINDOW_MINUTES = 15;
 const BOARD_FULL_RUN_SCHEDULE_WINDOW_MINUTES = 5;
@@ -3355,6 +3356,9 @@ const INCREMENTAL_MORNING_FULL_RUN_STAGES = [
   { stage_key: "bullpen_history_delta", job_key: "base-bullpen-history", worker_name: "alphadog-v2-base-bullpen-history", display_name: "Bullpen History Delta", visible_button: "BASE > Bullpen History", mode: "delta_update", layer_key: "bullpen_history", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "hitter_splits_delta", job_key: "base-hitter-splits", worker_name: "alphadog-v2-base-hitter-splits", display_name: "Hitter Splits Delta", visible_button: "DELTA > Hitter Splits", mode: "delta_update", layer_key: "hitter_splits", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_splits_delta", job_key: "base-pitcher-splits", worker_name: "alphadog-v2-base-pitcher-splits", display_name: "Pitcher Splits Delta", visible_button: "DELTA > Pitcher Splits", mode: "delta_update", layer_key: "pitcher_splits", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
+  // v0.2.342: source miners must not be trusted from their own PASS alone. Rerun Calendar/Tally after source mining,
+  // require zero blockers before metrics/expansion/baseline consumers, and if blockers remain route back to the owning miner.
+  { stage_key: "calendar_tally_source_repair_check", job_key: "delta-certifier", worker_name: "alphadog-v2-delta-certifier", display_name: "Calendar/Tally Source Repair Check", visible_button: "DELTA > Calendar", mode: "game_calendar_differential_check_update", worker_group: "Delta", phase_key: "incremental_base", priority: 4, calendar_tally_stage: "source_repair_check", require_zero_blocking_gaps: true, source_repair_check_before_consumers: true },
   { stage_key: "expansion_delta_mining", job_key: "expansion-baseline-full-run", worker_name: "alphadog-v2-phase3a-first-inning-pitcher-context", display_name: "Expansion Delta Mining", visible_button: "EXPANSION > Delta Mining", mode: "expansion_delta_mining", worker_group: "Delta", phase_key: "expansion_baseline", priority: 4, expansion_baseline_stage: "delta_mining", require_completed_final_calendar_tally: false, no_context_leakage_required: true },
   { stage_key: "hitter_metrics_affected_delta", job_key: "base-hitter-metrics", worker_name: "alphadog-v2-base-hitter-metrics", display_name: "Hitter Metrics Affected Delta", visible_button: "DELTA > Hitter Metrics", mode: "delta_recalculate_affected_players", layer_key: "hitter_metrics", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
   { stage_key: "pitcher_metrics_affected_delta", job_key: "base-pitcher-metrics", worker_name: "alphadog-v2-base-pitcher-metrics", display_name: "Pitcher Metrics Affected Delta", visible_button: "DELTA > Pitcher Metrics", mode: "delta_recalculate_affected_players", layer_key: "pitcher_metrics", worker_group: "Delta", phase_key: "incremental_base", priority: 4 },
@@ -4598,9 +4602,10 @@ async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheck
   if (!env.TEAM_DB || !env.CONTROL_DB || !parentRow || !finalCheckChild) return { ok:false, repairable:false, reason:"missing_env_or_rows" };
   const layerMap = incrementalMorningRepairableLayerMap();
   const gapRows = await all(env.TEAM_DB,
-    `SELECT layer_key, COUNT(*) AS gap_count, MIN(official_date) AS min_official_date, MAX(official_date) AS max_official_date
-     FROM mlb_game_coverage_gaps
-     WHERE gap_status='missing'
+    `SELECT layer_key, COUNT(DISTINCT game_pk) AS gap_count, MIN(official_date) AS min_official_date, MAX(official_date) AS max_official_date
+     FROM mlb_game_data_coverage
+     WHERE coverage_status='missing'
+       AND COALESCE(blocking_for_full_run,0)=1
        AND official_date IS NOT NULL
        AND official_date <= date('now')
      GROUP BY layer_key
@@ -4622,7 +4627,7 @@ async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheck
     "SELECT COUNT(*) AS attempts FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND job_key=? AND worker_name=?",
     parentRow.request_id, parentRow.chain_id, repairStage.job_key, repairStage.worker_name
   );
-  if (Number(totalRepairAttempts && totalRepairAttempts.attempts || 0) >= 4) {
+  if (Number(totalRepairAttempts && totalRepairAttempts.attempts || 0) >= INCREMENTAL_MORNING_FULL_RUN_MAX_REPAIR_STAGE_ATTEMPTS) {
     return { ok:true, repairable:false, reason:"repair_attempt_limit_exceeded", target_layer_key:String(target.layer_key || ""), target_stage_key:repairStage.stage_key, target_attempts:Number(totalRepairAttempts && totalRepairAttempts.attempts || 0), gap_rows:gapRows || [], repairable_gap_rows:repairable.map(r => ({ layer_key:r.layer_key, gap_count:r.gap_count, stage_key:r.stage.stage_key })) };
   }
   const laterRepair = await first(env.CONTROL_DB,
@@ -4881,7 +4886,7 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
         await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
         return output;
       }
-      if (stage.stage_key === "calendar_tally_final_check" && validation.reason === "final_calendar_tally_has_blocking_gaps") {
+      if (stage.job_key === "delta-certifier" && stage.require_zero_blocking_gaps === true && validation.reason === "final_calendar_tally_has_blocking_gaps") {
         const repairPlan = await getIncrementalMorningRepairableGapPlan(env, row, child);
         if (repairPlan && repairPlan.ok && repairPlan.repairable === false && (repairPlan.reason === "repair_child_noop_did_not_advance_gap_layer" || repairPlan.reason === "repair_attempt_limit_exceeded")) {
           const finalStatus = repairPlan.reason === "repair_attempt_limit_exceeded" ? "BLOCKED_INCREMENTAL_MORNING_FULL_RUN_REPAIR_ATTEMPT_LIMIT" : "BLOCKED_INCREMENTAL_MORNING_FULL_RUN_REPAIR_NOOP_STALE_SOURCE";
