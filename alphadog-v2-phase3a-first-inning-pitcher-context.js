@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.93-baseline-v5-confidence-mirror-single-row-rescue";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.94-baseline-v5-confidence-mirror-no-order-resume";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -4088,17 +4088,20 @@ async function baselineV5RunConfidenceReliabilityRescue(env,batchId,input={},sta
 }
 
 const BASELINE_V5_CONFIDENCE_FAST_PHASES = [
-  // v0.1.93: mirror-only continuation, no joined UPDATEs, no correlated UPDATEs, no multi-row CASE bind explosion.
-  // Select tiny dirty rows + target confidence first, then apply single-row prepared UPDATE statements in small batches.
-  // This avoids D1 storage resets and the SQLITE variable ceiling hit by v0.1.92 CASE chunks.
-  {phase:'sanity_current', kind:'sanity', table:'player_baseline_sanity_v2_current', hpTable:'player_baseline_hp_v2_current', idCol:'baseline_row_id', batchCol:'batch_id'},
-  {phase:'sanity_history', kind:'sanity', table:'player_baseline_sanity_v2_history', hpTable:'player_baseline_hp_v2_history', idCol:'baseline_row_id', batchCol:'batch_id'},
-  {phase:'classification_current', kind:'classification', table:'player_baseline_classification_v5_current', hpTable:'player_baseline_hp_v2_current', idCol:'classification_row_id', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true},
-  {phase:'classification_history', kind:'classification', table:'player_baseline_classification_v5_history', hpTable:'player_baseline_hp_v2_history', idCol:'classification_row_id', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true},
-  {phase:'classification_state_current', kind:'classification', table:'player_baseline_v5_classification_state_current', hpTable:'player_baseline_v5_hp_state_current', idCol:'classification_row_id', batchCol:'source_batch_id', hpBatchCol:'source_batch_id', hasJson:false}
+  // v0.1.94: resume after SQL-proven clean sanity_current.
+  // v0.1.93 finished sanity_current (0 remaining) but timed out on the first sanity_history dispatch.
+  // The timeout source was the mirror SELECT ordering/sorting dirty join rows before yielding.
+  // These phases intentionally omit sanity_current by default for this targeted completion run.
+  {phase:'sanity_history', kind:'sanity', table:'player_baseline_sanity_v2_history', hpTable:'player_baseline_hp_v2_history', idCol:'baseline_row_id', batchCol:'batch_id', chunkSize:50},
+  {phase:'classification_current', kind:'classification', table:'player_baseline_classification_v5_current', hpTable:'player_baseline_hp_v2_current', idCol:'classification_row_id', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true, chunkSize:25},
+  {phase:'classification_history', kind:'classification', table:'player_baseline_classification_v5_history', hpTable:'player_baseline_hp_v2_history', idCol:'classification_row_id', batchCol:'batch_id', hpBatchCol:'batch_id', hasJson:true, chunkSize:25},
+  {phase:'classification_state_current', kind:'classification', table:'player_baseline_v5_classification_state_current', hpTable:'player_baseline_v5_hp_state_current', idCol:'classification_row_id', batchCol:'source_batch_id', hpBatchCol:'source_batch_id', hasJson:false, chunkSize:50}
 ];
 
 function baselineV5ConfidenceFastPhaseIndex(phase){
+  // v0.1.94 defaults to sanity_history because v0.1.93 SQL-proved sanity_current clean.
+  // If a stale continuation sends sanity_current, advance to the current targeted start.
+  if(String(phase||'')==='sanity_current') return 0;
   const idx=BASELINE_V5_CONFIDENCE_FAST_PHASES.findIndex(p=>p.phase===phase);
   return idx>=0?idx:0;
 }
@@ -4116,7 +4119,6 @@ function baselineV5ConfidenceMirrorSelectSql(cfg, chunkSize){
        AND s.baseline_row_id='pbs_v2|' || h.baseline_hp_row_id
       WHERE s.${cfg.batchCol}=?
         AND ${baselineV5MirrorMismatchSql('s.baseline_confidence_0_100','h.baseline_confidence_0_100')}
-      ORDER BY s.${cfg.idCol}
       LIMIT ${chunkSize}`;
   }
   return `SELECT c.${cfg.idCol} AS id, h.baseline_confidence_0_100 AS target_conf
@@ -4130,7 +4132,6 @@ function baselineV5ConfidenceMirrorSelectSql(cfg, chunkSize){
      AND h.selected_side=c.selected_side
     WHERE c.${cfg.batchCol}=?
       AND ${baselineV5MirrorMismatchSql('c.classification_confidence_0_100','h.baseline_confidence_0_100')}
-    ORDER BY c.${cfg.idCol}
     LIMIT ${chunkSize}`;
 }
 
@@ -4181,15 +4182,15 @@ async function baselineV5ConfidenceCaseUpdateClassification(env, cfg, rows){
 }
 
 async function baselineV5RunConfidenceReliabilityFastCursorRescue(env,batchId,input={},startedMs=Date.now(),softYieldMs=10000){
-  const requested=Number(input.baseline_confidence_fast_chunk_size||input.baseline_confidence_rescue_chunk_size||25);
-  const chunkSize=clamp(requested,10,25);
-  let phaseIndex=baselineV5ConfidenceFastPhaseIndex(String(input.baseline_confidence_rescue_phase||'sanity_current'));
+  const requested=Number(input.baseline_confidence_fast_chunk_size||input.baseline_confidence_rescue_chunk_size||0);
+  let phaseIndex=baselineV5ConfidenceFastPhaseIndex(String(input.baseline_confidence_rescue_phase||'sanity_history'));
   const updates=[];
   let guardLoops=0;
   while(phaseIndex<BASELINE_V5_CONFIDENCE_FAST_PHASES.length && guardLoops<3){
     guardLoops++;
     const cfg=BASELINE_V5_CONFIDENCE_FAST_PHASES[phaseIndex];
-    const rows=await baselineV5ConfidenceFastSelectRows(env,cfg,batchId,chunkSize);
+    const phaseChunkSize=clamp(requested||Number(cfg.chunkSize||25),10,Number(cfg.chunkSize||25));
+    const rows=await baselineV5ConfidenceFastSelectRows(env,cfg,batchId,phaseChunkSize);
     if(rows.length===0){
       updates.push({phase:cfg.phase,rows_selected:0,rows_updated:0,phase_complete:true,skipped_empty:true});
       phaseIndex++;
@@ -4198,7 +4199,7 @@ async function baselineV5RunConfidenceReliabilityFastCursorRescue(env,batchId,in
     let rowsUpdated=0;
     if(cfg.kind==='sanity') rowsUpdated=await baselineV5ConfidenceCaseUpdateColumn(env,cfg.table,cfg.idCol,'baseline_confidence_0_100',rows);
     else rowsUpdated=await baselineV5ConfidenceCaseUpdateClassification(env,cfg,rows);
-    const phaseComplete=rows.length<chunkSize;
+    const phaseComplete=rows.length<phaseChunkSize;
     const nextPhaseIndex=phaseComplete?phaseIndex+1:phaseIndex;
     const pass=nextPhaseIndex>=BASELINE_V5_CONFIDENCE_FAST_PHASES.length;
     const nextPhase=pass?'complete':BASELINE_V5_CONFIDENCE_FAST_PHASES[nextPhaseIndex].phase;
@@ -4215,14 +4216,14 @@ async function baselineV5RunConfidenceReliabilityFastCursorRescue(env,batchId,in
       updates,
       partial_continue:!pass,
       pass,
-      chunk_size:chunkSize,
+      chunk_size:phaseChunkSize,
       after:{dirty_total:pass?0:null,mirror_only:true,single_row_update_mode:true,final_sql_audit_required:true},
       confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,
-      contract:{hp_values_mutated:false,hp_tables_already_repaired_by_v0_1_90:true,counters_mutated:false,line_difficulty_confidence_caps_removed:true,mirrors_synced_to_hp_confidence:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true,no_joined_update:true,no_case_update:true,no_large_in_list:true,no_global_audit_before_progress:true},
+      contract:{hp_values_mutated:false,hp_tables_already_repaired_by_v0_1_90:true,sanity_current_already_repaired_by_v0_1_93:true,counters_mutated:false,line_difficulty_confidence_caps_removed:true,mirrors_synced_to_hp_confidence:true,no_daily_context:true,no_market_context:true,no_scoring_context:true,no_board_context:true,no_joined_update:true,no_case_update:true,no_large_in_list:true,no_order_by_dirty_select:true,no_global_audit_before_progress:true},
       elapsed_ms:Date.now()-startedMs
     };
   }
-  return {stage:'complete',phase:'complete',next_phase:'complete',rows_selected:0,rows_updated:0,updates,partial_continue:false,pass:true,chunk_size:chunkSize,after:{dirty_total:0,mirror_only:true,single_row_update_mode:true,final_sql_audit_required:true},confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,elapsed_ms:Date.now()-startedMs};
+  return {stage:'complete',phase:'complete',next_phase:'complete',rows_selected:0,rows_updated:0,updates,partial_continue:false,pass:true,chunk_size:0,after:{dirty_total:0,mirror_only:true,single_row_update_mode:true,final_sql_audit_required:true},confidence_formula_version:BASELINE_V5_RELIABILITY_CONFIDENCE_VERSION,elapsed_ms:Date.now()-startedMs};
 }
 
 
