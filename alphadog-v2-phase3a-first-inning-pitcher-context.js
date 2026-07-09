@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.99-baseline-v5-certifier-owned-daily-delta";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.100-baseline-v5-daily-delta-state-schema-call-fix";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -2526,7 +2526,7 @@ async function baselineV5DailyUpsertCoverage(env,{kind,officialDate,batchId,requ
       represented_by_live=1, missing_reason=NULL, exception_reason=NULL, last_batch_id=excluded.last_batch_id, last_run_id=excluded.last_run_id,
       last_request_id=excluded.last_request_id, last_worker_name=excluded.last_worker_name, last_worker_version=excluded.last_worker_version,
       last_checked_at=CURRENT_TIMESTAMP, last_completed_at=CURRENT_TIMESTAMP, details_json=excluded.details_json, updated_at=CURRENT_TIMESTAMP`;
-  const details={baseline_v5_tally_owned_daily_delta_v0_1_99:true,kind,official_date:officialDate,batch_id:batchId,rows_updated:Number(rowsUpdated||0),players_updated:Number(playersUpdated||0),classification_before_hp_required:true};
+  const details={baseline_v5_tally_owned_daily_delta_v0_1_100:true,kind,official_date:officialDate,batch_id:batchId,rows_updated:Number(rowsUpdated||0),players_updated:Number(playersUpdated||0),classification_before_hp_required:true};
   const stmts=games.map(g=>env.TEAM_DB.prepare(stmt).bind(Number(g.game_pk),Number(g.season),String(g.official_date),layerKey,grade,Number(rowsUpdated||1),kind==='classification'?'classification_rows':'hp_rows',Number(playersUpdated||1),batchId,runId||null,requestId||null,WORKER_NAME,VERSION,safeJson(details)));
   await batch(env.TEAM_DB,stmts,40);
   await run(env.TEAM_DB,`DELETE FROM mlb_game_coverage_gaps WHERE official_date=? AND layer_key=?`,officialDate,layerKey);
@@ -2615,7 +2615,7 @@ async function baselineV5DailyApplyPlayerAggregate(env,{batchId,officialDate,pla
 }
 async function runBaselineV5DailyDelta(env,input={},kind='classification'){
   const started=Date.now();
-  await ensureBaselineV5StateTables(env);
+  await ensureBaselineV5StateSchema(env);
   const exactColumnAudit=await baselineV5EnsureDailyClassificationExactColumns(env);
   const requestId=String(input.request_id||rid(`baseline_v5_${kind}_daily_delta`));
   const runId=String(input.run_id||rid('run'));
