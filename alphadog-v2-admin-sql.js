@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-admin-sql";
-const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v1.0";
+const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v1.1-session-fix";
 const JOB_KEY = "admin-sql-mcp-bridge";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -232,49 +232,66 @@ function rpcError(id, code, message) {
   return { jsonrpc: "2.0", id, error: { code, message } };
 }
 
+function withSessionHeader(response, sessionId) {
+  if (!sessionId) return response;
+  const headers = new Headers(response.headers);
+  headers.set("Mcp-Session-Id", sessionId);
+  return new Response(response.body, { status: response.status, headers });
+}
+
 async function handleMcp(request, env) {
+  const incomingSessionId = request.headers.get("mcp-session-id") || null;
+
   if (!isAuthorized(request, env)) {
-    return jsonResponse({ ok: false, error: "Unauthorized. Provide 'Authorization: Bearer <ALPHADOG_ADMIN_TOKEN>'." }, 401);
+    return jsonResponse({ ok: false, error: "Unauthorized. Provide the token either as 'Authorization: Bearer <token>' or '?token=<token>' in the URL." }, 401);
   }
 
-  const body = await readJsonSafe(request);
-  const { id, method, params } = body || {};
+  let id = null;
+  try {
+    const body = await readJsonSafe(request);
+    id = body && body.id !== undefined ? body.id : null;
+    const method = body && body.method;
+    const params = body && body.params;
 
-  if (method === "initialize") {
-    return jsonResponse(rpcResult(id, {
-      protocolVersion: "2024-11-05",
-      capabilities: { tools: {} },
-      serverInfo: { name: WORKER_NAME, version: VERSION }
-    }));
+    if (method === "initialize") {
+      const sessionId = incomingSessionId || crypto.randomUUID();
+      const resp = jsonResponse(rpcResult(id, {
+        protocolVersion: "2024-11-05",
+        capabilities: { tools: {} },
+        serverInfo: { name: WORKER_NAME, version: VERSION }
+      }));
+      return withSessionHeader(resp, sessionId);
+    }
+
+    if (method === "notifications/initialized" || (typeof method === "string" && method.startsWith("notifications/"))) {
+      return new Response(null, { status: 202 });
+    }
+
+    if (method === "tools/list") {
+      return withSessionHeader(jsonResponse(rpcResult(id, { tools: TOOLS })), incomingSessionId);
+    }
+
+    if (method === "tools/call") {
+      const toolName = params && params.name;
+      const args = (params && params.arguments) || {};
+      let toolResult;
+
+      if (toolName === "run_sql") toolResult = await toolRunSql(env, args);
+      else if (toolName === "run_job") toolResult = await toolRunJob(env, args);
+      else if (toolName === "check_bindings") toolResult = await toolCheckBindings(env);
+      else return withSessionHeader(jsonResponse(rpcError(id, -32601, `Unknown tool: ${toolName}`)), incomingSessionId);
+
+      const resp = jsonResponse(rpcResult(id, {
+        content: [{ type: "text", text: JSON.stringify(toolResult, null, 2) }],
+        isError: toolResult && toolResult.ok === false
+      }));
+      return withSessionHeader(resp, incomingSessionId);
+    }
+
+    return withSessionHeader(jsonResponse(rpcError(id, -32601, `Unknown method: ${method}`)), incomingSessionId);
+  } catch (err) {
+    return jsonResponse(rpcError(id, -32000, `Bridge internal error: ${String(err && err.message ? err.message : err)}`), 200);
   }
-
-  if (method === "notifications/initialized") {
-    // Notifications have no id and expect no body reply in strict MCP, but
-    // returning 202 with empty body is safe for HTTP transport.
-    return new Response(null, { status: 202 });
-  }
-
-  if (method === "tools/list") {
-    return jsonResponse(rpcResult(id, { tools: TOOLS }));
-  }
-
-  if (method === "tools/call") {
-    const toolName = params && params.name;
-    const args = (params && params.arguments) || {};
-    let toolResult;
-
-    if (toolName === "run_sql") toolResult = await toolRunSql(env, args);
-    else if (toolName === "run_job") toolResult = await toolRunJob(env, args);
-    else if (toolName === "check_bindings") toolResult = await toolCheckBindings(env);
-    else return jsonResponse(rpcError(id, -32601, `Unknown tool: ${toolName}`));
-
-    return jsonResponse(rpcResult(id, {
-      content: [{ type: "text", text: JSON.stringify(toolResult, null, 2) }],
-      isError: toolResult && toolResult.ok === false
-    }));
-  }
-
-  return jsonResponse(rpcError(id, -32601, `Unknown method: ${method}`));
 }
 
 export default {
