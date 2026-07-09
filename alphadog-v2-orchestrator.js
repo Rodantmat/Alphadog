@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.348-daily-delta-source-and-baseline-repair-order";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.349-blocked-baseline-final-tally-proof";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -3884,10 +3884,25 @@ function childPassedIncrementalMorningFullRun(stage, child) {
   }
   if (childStatus !== "completed") return { pass: false, reason: "child_not_completed", child_status: childStatus, transient: isIncrementalFullRunTransientFailure(child, output) };
   if (!output || output.ok !== true) return { pass: false, reason: "child_output_ok_not_true", output_ok: output && output.ok, transient: isIncrementalFullRunTransientFailure(child, output) };
-  if (output.data_ok !== true) return { pass: false, reason: "child_data_ok_not_true", data_ok: output && output.data_ok, transient: isIncrementalFullRunTransientFailure(child, output) };
   const cert = String(output.certification || output.certification_status || "");
   const status = String(output.status || "");
+  const grade = String(output.certification_grade || "").toUpperCase();
   const hay = `${cert} ${status}`.toLowerCase();
+  if (output.data_ok !== true && (grade === "BLOCKED" || hay.includes("blocked"))) {
+    const cleanupRequired = hay.includes("contaminated_state_requires_cleanup");
+    return {
+      pass: false,
+      reason: cleanupRequired ? "baseline_v5_daily_delta_cleanup_required" : "child_certification_blocked",
+      blocked: true,
+      cleanup_required: cleanupRequired,
+      certification: cert,
+      status,
+      certification_grade: grade,
+      data_ok: output && output.data_ok,
+      transient: false
+    };
+  }
+  if (output.data_ok !== true) return { pass: false, reason: "child_data_ok_not_true", data_ok: output && output.data_ok, transient: isIncrementalFullRunTransientFailure(child, output) };
   if (!cert || hay.includes("dummy") || hay.includes("unsupported")) return { pass: false, reason: "missing_dummy_or_unsupported_certification", certification: cert, status };
   if (stage.job_key === "delta-certifier") {
     if (String(output.mode || "") !== "game_calendar_differential_check_update") return { pass: false, reason: "calendar_tally_wrong_mode", output_mode: output.mode };
@@ -5065,8 +5080,35 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
           }
         }
       }
-      const finalStatus = validation.reason === "child_stale_unfinished" ? "BLOCKED_INCREMENTAL_MORNING_FULL_RUN_CHILD_BLOCKED" : "FAILED_INCREMENTAL_MORNING_FULL_RUN_CHILD_FAILED";
-      const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: finalStatus, certification: finalStatus, certification_grade: finalStatus.startsWith("BLOCKED") ? "BLOCKED" : "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: validation.reason, child_error_code: child.error_code || null, child_error_message: child.error_message || null, last_output_preview: JSON.stringify(childOutput).slice(0, 1200), stages: [...stageReports, report], retry_exhausted: !!validation.transient, full_run_certified: false };
+      const baselineBlockedBeforeFinal = validation.blocked === true && (stage.stage_key === "baseline_v5_classification_daily_delta" || stage.stage_key === "baseline_v5_hp_daily_delta");
+      if (baselineBlockedBeforeFinal) {
+        const finalStageIndex = INCREMENTAL_MORNING_FULL_RUN_STAGES.findIndex(s => s.stage_key === "calendar_tally_final_check");
+        const finalStage = INCREMENTAL_MORNING_FULL_RUN_STAGES[finalStageIndex];
+        const finalAttempts = childRows.filter(c => incrementalFullRunStageKeyFromChild(c) === "calendar_tally_final_check");
+        let finalChild = finalAttempts.length ? finalAttempts[finalAttempts.length - 1] : null;
+        if (!finalChild) {
+          const enqueuedFinal = await enqueueIncrementalMorningFullRunChild(env, row, finalStage, finalStageIndex, 0);
+          const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:WORKER_NAME, job_key:row.job_key, request_id:row.request_id, chain_id:row.chain_id, mode:"incremental_morning_full_run", status:"PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_FINAL_TALLY_ENQUEUED_AFTER_BLOCKED_BASELINE_V5_CHILD", certification:"INCREMENTAL_MORNING_FULL_RUN_FINAL_TALLY_ENQUEUED_AFTER_BLOCKED_BASELINE_V5_CHILD", certification_grade:"PARTIAL", current_stage_key:"calendar_tally_final_check", blocked_stage_key:stage.stage_key, blocked_child_request_id:child.request_id, final_tally_child_request_id:enqueuedFinal.child_request_id, failed_reason:validation.reason, cleanup_required:validation.cleanup_required === true, stages:[...stageReports, { ...report, pass:false, wait:false, blocked:true, cleanup_required:validation.cleanup_required === true }, { stage_key:"calendar_tally_final_check", job_key:finalStage.job_key, child_request_id:enqueuedFinal.child_request_id, child_status:"pending", pass:null, reason:"final_tally_required_after_blocked_baseline_v5_child" }], continuation_required:true, orchestrator_should_self_continue:true, lock_held:true, final_tally_after_blocked_baseline_v5_child_v0_2_349:true, no_scoring:true, no_ranking:true, no_final_board:true };
+          await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'INCREMENTAL_MORNING_FULL_RUN_FINAL_TALLY_ENQUEUED_AFTER_BLOCKED_BASELINE_V5_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+          await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+          return output;
+        }
+        if (String(finalChild.status || "") === "pending" || String(finalChild.status || "") === "running" || String(finalChild.status || "") === "partial_continue") {
+          const output = { ok:true, data_ok:true, version:SYSTEM_VERSION, worker_name:WORKER_NAME, job_key:row.job_key, request_id:row.request_id, chain_id:row.chain_id, mode:"incremental_morning_full_run", status:"PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_FINAL_TALLY_AFTER_BLOCKED_BASELINE_V5_CHILD", certification:"INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_FINAL_TALLY_AFTER_BLOCKED_BASELINE_V5_CHILD", certification_grade:"PARTIAL", current_stage_key:"calendar_tally_final_check", blocked_stage_key:stage.stage_key, blocked_child_request_id:child.request_id, waiting_on_child_request_id:finalChild.request_id, waiting_on_child_status:finalChild.status, cleanup_required:validation.cleanup_required === true, stages:[...stageReports, { ...report, pass:false, wait:false, blocked:true, cleanup_required:validation.cleanup_required === true }, { stage_key:"calendar_tally_final_check", job_key:finalStage.job_key, child_request_id:finalChild.request_id, child_status:finalChild.status, pass:null, wait:true }], continuation_required:true, orchestrator_should_self_continue:true, lock_held:true, final_tally_after_blocked_baseline_v5_child_v0_2_349:true };
+          await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'INCREMENTAL_MORNING_FULL_RUN_WAITING_ON_FINAL_TALLY_AFTER_BLOCKED_BASELINE_V5_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+          await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+          return output;
+        }
+        const finalOutput = parseJsonSafeText(finalChild.output_json || "{}", {});
+        const finalStatus = "BLOCKED_INCREMENTAL_MORNING_FULL_RUN_BASELINE_V5_CLEANUP_REQUIRED_FINAL_TALLY_RECORDED";
+        const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:WORKER_NAME, job_key:row.job_key, request_id:row.request_id, chain_id:row.chain_id, mode:"incremental_morning_full_run", status:finalStatus, certification:finalStatus, certification_grade:"BLOCKED", failed_stage_key:stage.stage_key, failed_request_id:child.request_id, failed_reason:validation.reason, cleanup_required:validation.cleanup_required === true, final_tally_child_request_id:finalChild.request_id, final_tally_child_status:finalChild.status, final_tally_certification:finalOutput.certification || finalOutput.certification_status || null, final_tally_certification_grade:finalOutput.certification_grade || null, final_tally_output_status:finalOutput.status || null, final_tally_after_blocked_baseline_v5_child_v0_2_349:true, last_output_preview:JSON.stringify(childOutput).slice(0,1200), final_tally_output_preview:JSON.stringify(finalOutput).slice(0,1200), stages:[...stageReports, { ...report, pass:false, wait:false, blocked:true, cleanup_required:validation.cleanup_required === true }, { stage_key:"calendar_tally_final_check", job_key:finalStage.job_key, child_request_id:finalChild.request_id, child_status:finalChild.status, child_certification:finalOutput.certification || null, child_data_ok:finalOutput.data_ok === true, pass:false, wait:false, reason:"final_tally_recorded_after_blocked_baseline_v5_child" }], full_run_certified:false, continuation_required:false, orchestrator_should_self_continue:false, lock_held:false };
+        await releaseIncrementalMorningFullRunLock(env, row);
+        await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "baseline v5 cleanup required").slice(0, 900));
+        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "baseline v5 cleanup required").slice(0, 900), row.request_id);
+        return output;
+      }
+      const finalStatus = (validation.reason === "child_stale_unfinished" || validation.blocked === true) ? "BLOCKED_INCREMENTAL_MORNING_FULL_RUN_CHILD_BLOCKED" : "FAILED_INCREMENTAL_MORNING_FULL_RUN_CHILD_FAILED";
+      const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "incremental_morning_full_run", status: finalStatus, certification: finalStatus, certification_grade: finalStatus.startsWith("BLOCKED") ? "BLOCKED" : "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: validation.reason, child_error_code: child.error_code || null, child_error_message: child.error_message || null, last_output_preview: JSON.stringify(childOutput).slice(0, 1200), stages: [...stageReports, report], retry_exhausted: !!validation.transient, cleanup_required: validation.cleanup_required === true, full_run_certified: false };
       await releaseIncrementalMorningFullRunLock(env, row);
       await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus.startsWith("BLOCKED") ? "blocked" : "failed", finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "incremental full run child failed").slice(0, 900));
       await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", finalStatus.startsWith("BLOCKED") ? "blocked" : "failed", JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "incremental full run child failed").slice(0, 900), row.request_id);
