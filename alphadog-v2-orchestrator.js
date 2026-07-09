@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.346-baseline-v5-date-scoped-repair-loop";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.347-baseline-v5-prefinal-daily-gate";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -4382,6 +4382,71 @@ async function getIncrementalFullRunLayerBlockingGapCount(env, layerKey) {
   }
 }
 
+
+async function getBaselineV5PreFinalDailyGapPlan(env) {
+  if (!env.TEAM_DB) return { ok: false, repairable: false, reason: "TEAM_DB_missing" };
+  const row = await first(env.TEAM_DB, `
+    WITH base AS (
+      SELECT
+        official_date,
+        COUNT(DISTINCT CASE WHEN layer_key='baseline_v5_classification' THEN game_pk END) AS class_games,
+        COUNT(DISTINCT CASE WHEN layer_key='baseline_v5_hp' THEN game_pk END) AS hp_games,
+        SUM(CASE WHEN layer_key='baseline_v5_classification' AND coverage_status='complete' AND COALESCE(blocking_for_full_run,0)=0 THEN 1 ELSE 0 END) AS class_complete_rows,
+        SUM(CASE WHEN layer_key='baseline_v5_hp' AND coverage_status='complete' AND COALESCE(blocking_for_full_run,0)=0 THEN 1 ELSE 0 END) AS hp_complete_rows,
+        SUM(CASE WHEN layer_key='baseline_v5_classification' AND coverage_status='missing' AND COALESCE(blocking_for_full_run,0)=1 THEN 1 ELSE 0 END) AS class_missing_rows,
+        SUM(CASE WHEN layer_key='baseline_v5_hp' AND coverage_status='missing' AND COALESCE(blocking_for_full_run,0)=1 THEN 1 ELSE 0 END) AS hp_missing_rows
+      FROM mlb_game_data_coverage
+      WHERE layer_key IN ('baseline_v5_classification','baseline_v5_hp')
+        AND official_date IS NOT NULL
+        AND official_date <= date('now')
+      GROUP BY official_date
+    )
+    SELECT *
+    FROM base
+    WHERE COALESCE(class_missing_rows,0)>0 OR COALESCE(hp_missing_rows,0)>0
+    ORDER BY date(official_date) ASC
+    LIMIT 1`);
+  if (!row || !row.official_date) return { ok: true, repairable: false, reason: "no_baseline_v5_daily_blockers_before_final" };
+  const classMissing = Number(row.class_missing_rows || 0);
+  const hpMissing = Number(row.hp_missing_rows || 0);
+  const classComplete = Number(row.class_complete_rows || 0);
+  const classGames = Math.max(Number(row.class_games || 0), Number(row.hp_games || 0));
+  const officialDate = String(row.official_date).slice(0, 10);
+  if (classMissing > 0 || classComplete < classGames) {
+    const targetStage = INCREMENTAL_MORNING_FULL_RUN_STAGES.find(s => s.stage_key === 'baseline_v5_classification_daily_delta');
+    return { ok: true, repairable: true, target_stage: targetStage, official_date: officialDate, target_layer_key: 'baseline_v5_classification', reason: 'baseline_v5_classification_missing_before_final', coverage_row: row, action: 'enqueue_repair_stage' };
+  }
+  if (hpMissing > 0) {
+    const targetStage = INCREMENTAL_MORNING_FULL_RUN_STAGES.find(s => s.stage_key === 'baseline_v5_hp_daily_delta');
+    return { ok: true, repairable: true, target_stage: targetStage, official_date: officialDate, target_layer_key: 'baseline_v5_hp', reason: 'baseline_v5_hp_missing_before_final', coverage_row: row, action: 'enqueue_repair_stage' };
+  }
+  return { ok: true, repairable: false, reason: "baseline_v5_daily_rows_not_repairable", coverage_row: row };
+}
+
+async function enqueueIncrementalMorningBaselineV5PreFinalRepairChild(env, parentRow, repairStage, finalStage, runId, plan) {
+  const childRequestId = rid(repairStage.stage_key.replace(/-/g, "_"));
+  const finalIndex = INCREMENTAL_MORNING_FULL_RUN_STAGES.findIndex(s => s.stage_key === finalStage.stage_key);
+  const input = incrementalMorningFullRunChildInput(parentRow, repairStage, finalIndex, 0);
+  input.mode = repairStage.mode;
+  input.full_run_stage_key = repairStage.stage_key;
+  input.stage_key = repairStage.stage_key;
+  input.official_date = plan.official_date;
+  input.target_repair_layer_key = plan.target_layer_key;
+  input.baseline_v5_prefinal_daily_gate_v0_2_347 = true;
+  input.certifier_owned_daily_delta = true;
+  input.no_final_certifier_before_baseline_v5_day_pair = true;
+  input.created_at = nowIso();
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    childRequestId, parentRow.chain_id, parentRow.request_id, repairStage.job_key, repairStage.worker_name, repairStage.worker_group, repairStage.phase_key, repairStage.display_name, repairStage.priority, JSON.stringify(input)
+  );
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'incremental_morning_baseline_v5_prefinal_repair_enqueued', 'Final Calendar/Tally held until Baseline V5 classification/HP daily pair is complete for the next open date', ?, CURRENT_TIMESTAMP)",
+    parentRow.request_id, runId, WORKER_NAME, parentRow.job_key, JSON.stringify({ parent_request_id: parentRow.request_id, child_request_id: childRequestId, final_stage_key: finalStage.stage_key, repair_stage_key: repairStage.stage_key, official_date: plan.official_date, target_layer_key: plan.target_layer_key, reason: plan.reason, version: SYSTEM_VERSION })
+  );
+  return { child_request_id: childRequestId, input };
+}
+
 async function completeIncrementalFullRunNoGapLayerChild(env, parentRow, stage, stepIndex, runId, trigger, gapProof) {
   const childRequestId = rid(stage.stage_key.replace(/-/g, "_"));
   const input = incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, 0);
@@ -4796,6 +4861,16 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
 
   for (let i = 0; i < INCREMENTAL_MORNING_FULL_RUN_STAGES.length; i++) {
     const stage = INCREMENTAL_MORNING_FULL_RUN_STAGES[i];
+    if (stage.stage_key === 'calendar_tally_final_check') {
+      const baselinePlan = await getBaselineV5PreFinalDailyGapPlan(env);
+      if (baselinePlan && baselinePlan.ok && baselinePlan.repairable && baselinePlan.target_stage) {
+        const enqueued = await enqueueIncrementalMorningBaselineV5PreFinalRepairChild(env, row, baselinePlan.target_stage, stage, runId, baselinePlan);
+        const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: 'incremental_morning_full_run', status: 'PARTIAL_CONTINUE_INCREMENTAL_MORNING_FULL_RUN_BASELINE_V5_PREFINAL_REPAIR_ENQUEUED', certification: 'INCREMENTAL_MORNING_FULL_RUN_BASELINE_V5_PREFINAL_REPAIR_ENQUEUED', certification_grade: 'PARTIAL', current_stage_key: baselinePlan.target_stage.stage_key, current_stage_index: i, repair_child_request_id: enqueued.child_request_id, repair_official_date: baselinePlan.official_date, repair_layer_key: baselinePlan.target_layer_key, final_check_held_until_baseline_v5_daily_pair_complete: true, no_final_certifier_before_baseline_v5_day_pair: true, baseline_v5_prefinal_daily_gate_v0_2_347: true, repair_plan: baselinePlan, completed_stage_count: stageReports.length, total_stage_count: INCREMENTAL_MORNING_FULL_RUN_STAGES.length, stages: [...stageReports, { stage_key: baselinePlan.target_stage.stage_key, job_key: baselinePlan.target_stage.job_key, child_request_id: enqueued.child_request_id, child_status: 'pending', pass: null, reason: baselinePlan.reason, official_date: baselinePlan.official_date }], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true, no_browser_loop: true, no_scoring: true, no_ranking: true, no_final_board: true };
+        await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'INCREMENTAL_MORNING_FULL_RUN_BASELINE_V5_PREFINAL_REPAIR_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+        return output;
+      }
+    }
     const attempts = childRows.filter(c => incrementalFullRunStageKeyFromChild(c) === stage.stage_key || (!incrementalFullRunStageKeyFromChild(c) && c.job_key === stage.job_key));
     let child = attempts.length ? attempts[attempts.length - 1] : null;
     if (child) {
