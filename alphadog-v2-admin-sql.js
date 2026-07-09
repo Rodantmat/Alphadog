@@ -78,7 +78,10 @@ async function readJsonSafe(request) {
 
 function isAuthorized(request, env) {
   const auth = request.headers.get("authorization") || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+  const headerToken = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+  const url = new URL(request.url);
+  const queryToken = url.searchParams.get("token") || "";
+  const token = headerToken || queryToken;
   return Boolean(env.ALPHADOG_ADMIN_TOKEN) && token === env.ALPHADOG_ADMIN_TOKEN;
 }
 
