@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.100-baseline-v5-daily-delta-state-schema-call-fix";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.101-baseline-v5-coverage-after-audit";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -2669,7 +2669,6 @@ async function runBaselineV5DailyDelta(env,input={},kind='classification'){
   }
   const changedHp=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT player_type||':'||player_id) AS players FROM player_baseline_v5_hp_state_current WHERE state_batch_id=?`,batchId);
   const changedCls=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows, COUNT(DISTINCT player_type||':'||player_id) AS players FROM player_baseline_v5_classification_state_current WHERE state_batch_id=?`,batchId);
-  const coverage=await baselineV5DailyUpsertCoverage(env,{kind,officialDate,batchId,requestId,runId,rowsUpdated:kind==='classification'?Number(changedCls?.rows||0):Number(changedHp?.rows||0),playersUpdated:kind==='classification'?Number(changedCls?.players||0):Number(changedHp?.players||0)});
   const hpStateAfter=await tableCount(env.SCORE_DB,'player_baseline_v5_hp_state_current');
   const clsStateAfter=await tableCount(env.SCORE_DB,'player_baseline_v5_classification_state_current');
   const badCounters=await first(env.SCORE_DB,`SELECT COUNT(*) AS rows FROM player_baseline_v5_hp_state_current WHERE COALESCE(hit_count,0)+COALESCE(miss_count,0)<>COALESCE(non_push_sample,0)`);
@@ -2680,7 +2679,10 @@ async function runBaselineV5DailyDelta(env,input={},kind='classification'){
   const pass=hpStateAfter===67040 && clsStateAfter===67040 && Number(badCounters?.rows||0)===0 && (kind==='classification' || profileMismatchRows===0);
   const cert=pass?`${baselineV5DailyCertPrefix(kind)}_CERTIFIED_TALLY_COVERAGE_WRITTEN`:`${baselineV5DailyCertPrefix(kind)}_BLOCKED_AUDIT_FAILED`;
   const grade=pass?'PASS':'BLOCKED';
-  const out=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode,status:cert,certification:cert,certification_grade:grade,data_ok:pass,source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,official_date:officialDate,hp_state_rows:hpStateAfter,classification_state_rows:clsStateAfter,hp_state_rows_updated:Number(changedHp?.rows||0),classification_state_rows_updated:Number(changedCls?.rows||0),coverage_update:coverage,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false,certifier_owned_daily_delta:true,classification_before_hp_required:true,classification_delta_included:kind==='classification',baseline_hp_delta_included:kind==='hp',day_by_day_delta:true,oldest_to_newest_controlled_by_tally:true,aggregate_differential_delta:true,bad_counter_rows:Number(badCounters?.rows||0),profile_mismatch_rows:profileMismatchRows,profile_mismatch_allowed_until_hp_daily_delta:kind==='classification',elapsed_ms:Date.now()-started});
+  // v0.1.101: write calendar/tally coverage only after the daily audit passes. A blocked HP audit must
+  // never mark baseline_v5_hp complete, otherwise final_check can be tricked into a false PASS/NOOP.
+  const coverage=pass ? await baselineV5DailyUpsertCoverage(env,{kind,officialDate,batchId,requestId,runId,rowsUpdated:kind==='classification'?Number(changedCls?.rows||0):Number(changedHp?.rows||0),playersUpdated:kind==='classification'?Number(changedCls?.players||0):Number(changedHp?.players||0)}) : {layer_key:baselineV5DailyCoverageLayer(kind),official_date:officialDate,coverage_rows_written:0,coverage_skipped_due_to_blocked_audit:true};
+  const out=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode,status:cert,certification:cert,certification_grade:grade,data_ok:pass,source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,official_date:officialDate,hp_state_rows:hpStateAfter,classification_state_rows:clsStateAfter,hp_state_rows_updated:Number(changedHp?.rows||0),classification_state_rows_updated:Number(changedCls?.rows||0),coverage_update:coverage,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false,certifier_owned_daily_delta:true,classification_before_hp_required:true,classification_delta_included:kind==='classification',baseline_hp_delta_included:kind==='hp',day_by_day_delta:true,oldest_to_newest_controlled_by_tally:true,aggregate_differential_delta:true,bad_counter_rows:Number(badCounters?.rows||0),profile_mismatch_rows:profileMismatchRows,profile_mismatch_allowed_until_hp_daily_delta:kind==='classification',coverage_written_after_audit_pass_v0_1_101:true,elapsed_ms:Date.now()-started});
   await run(env.SCORE_DB,`UPDATE player_baseline_v5_state_batches SET status=?, source_watermark_date=?, hp_state_rows=?, classification_state_rows=?, current_tables_mutated=0, history_tables_mutated=0, full_cumulative_history_recompute=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,cert,officialDate,hpStateAfter,clsStateAfter,cert,grade,safeJson(out),batchId);
   return out;
 }

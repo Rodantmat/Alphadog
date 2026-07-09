@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.343-baseline-v5-certifier-owned-daily-delta";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.346-baseline-v5-date-scoped-repair-loop";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -4649,13 +4649,28 @@ async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheck
 
   const target = repairable[0];
   const repairStage = target.stage;
+  const targetOfficialDate = incrementalMorningIsoDate(target.min_official_date || target.official_date);
+  const isBaselineV5RepairStage = String(repairStage.layer_key || '').startsWith('baseline_v5_');
+  // v0.2.346: expansion-baseline-v2 hosts multiple Baseline V5 daily modes on the same worker.
+  // Count attempts by exact stage/mode AND official_date for baseline daily layers. Otherwise a prior
+  // classification date can exhaust a later HP/date repair and create a false repair-limit block.
   const totalRepairAttempts = await first(env.CONTROL_DB,
-    "SELECT COUNT(*) AS attempts FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND job_key=? AND worker_name=?",
-    parentRow.request_id, parentRow.chain_id, repairStage.job_key, repairStage.worker_name
+    `SELECT COUNT(*) AS attempts
+     FROM control_job_queue
+     WHERE parent_request_id=?
+       AND chain_id=?
+       AND job_key=?
+       AND worker_name=?
+       AND (json_extract(input_json,'$.stage_key')=? OR json_extract(input_json,'$.mode')=?)
+       AND (?=0 OR json_extract(input_json,'$.official_date')=?)`,
+    parentRow.request_id, parentRow.chain_id, repairStage.job_key, repairStage.worker_name, repairStage.stage_key, repairStage.mode, isBaselineV5RepairStage ? 1 : 0, targetOfficialDate
   );
   if (Number(totalRepairAttempts && totalRepairAttempts.attempts || 0) >= INCREMENTAL_MORNING_FULL_RUN_MAX_REPAIR_STAGE_ATTEMPTS) {
     return { ok:true, repairable:false, reason:"repair_attempt_limit_exceeded", target_layer_key:String(target.layer_key || ""), target_stage_key:repairStage.stage_key, target_attempts:Number(totalRepairAttempts && totalRepairAttempts.attempts || 0), gap_rows:gapRows || [], repairable_gap_rows:repairable.map(r => ({ layer_key:r.layer_key, gap_count:r.gap_count, stage_key:r.stage.stage_key })) };
   }
+  // v0.2.346: only a later child for the same target stage/mode/date counts as the repair for this gap.
+  // Without this, a later classification child was misread as the HP repair because both share
+  // job_key=expansion-baseline-v2 and worker=phase3a. That caused final_check to rerun before HP.
   const laterRepair = await first(env.CONTROL_DB,
     `SELECT request_id, status, output_json, error_code, error_message, created_at, finished_at
      FROM control_job_queue
@@ -4663,10 +4678,12 @@ async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheck
        AND chain_id=?
        AND job_key=?
        AND worker_name=?
+       AND (json_extract(input_json,'$.stage_key')=? OR json_extract(input_json,'$.mode')=?)
+       AND (?=0 OR json_extract(input_json,'$.official_date')=?)
        AND datetime(created_at) > datetime(?)
      ORDER BY datetime(created_at) DESC
      LIMIT 1`,
-    parentRow.request_id, parentRow.chain_id, repairStage.job_key, repairStage.worker_name, finalCheckChild.created_at || "1970-01-01 00:00:00"
+    parentRow.request_id, parentRow.chain_id, repairStage.job_key, repairStage.worker_name, repairStage.stage_key, repairStage.mode, isBaselineV5RepairStage ? 1 : 0, targetOfficialDate, finalCheckChild.created_at || "1970-01-01 00:00:00"
   );
   const laterFinal = await first(env.CONTROL_DB,
     `SELECT request_id, status, output_json, error_code, error_message, created_at, finished_at
@@ -4693,6 +4710,7 @@ async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheck
     unsupported_gap_rows: unsupported,
     target_stage: repairStage,
     target_layer_key: String(target.layer_key || ""),
+    target_official_date: targetOfficialDate || null,
     target_gap_count: Number(target.gap_count || 0),
     later_repair_child: laterRepair || null,
     later_repair_completed: repairCompleted,
@@ -4702,14 +4720,25 @@ async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheck
 }
 
 async function enqueueIncrementalMorningRepairChildFromFinalGaps(env, parentRow, repairStage, finalCheckChild, runId, plan) {
+  const targetOfficialDate = incrementalMorningIsoDate(plan && plan.target_official_date);
+  const isBaselineV5RepairStage = String(repairStage.layer_key || '').startsWith('baseline_v5_');
   const attemptCount = await first(env.CONTROL_DB,
-    "SELECT COUNT(*) AS attempts FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND job_key=? AND worker_name=?",
-    parentRow.request_id, parentRow.chain_id, repairStage.job_key, repairStage.worker_name
+    `SELECT COUNT(*) AS attempts
+     FROM control_job_queue
+     WHERE parent_request_id=?
+       AND chain_id=?
+       AND job_key=?
+       AND worker_name=?
+       AND (json_extract(input_json,'$.stage_key')=? OR json_extract(input_json,'$.mode')=?)
+       AND (?=0 OR json_extract(input_json,'$.official_date')=?)`,
+    parentRow.request_id, parentRow.chain_id, repairStage.job_key, repairStage.worker_name, repairStage.stage_key, repairStage.mode, isBaselineV5RepairStage ? 1 : 0, targetOfficialDate
   );
   const retryCount = Number(attemptCount && attemptCount.attempts || 0);
   const childRequestId = rid(repairStage.stage_key.replace(/-/g, "_"));
   const input = incrementalMorningFullRunChildInput(parentRow, repairStage, INCREMENTAL_MORNING_FULL_RUN_STAGES.findIndex(s => s.stage_key === repairStage.stage_key), retryCount);
   input.repair_enqueued_after_final_check_blockers = true;
+  if (isBaselineV5RepairStage && targetOfficialDate) input.official_date = targetOfficialDate;
+  input.target_official_date = targetOfficialDate || null;
   input.previous_final_check_request_id = finalCheckChild.request_id;
   input.repair_gap_plan_v0_2_277 = true;
   await run(env.CONTROL_DB,
