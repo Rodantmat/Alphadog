@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.103-baseline-v5-daily-equivalence-and-contamination-guard";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.104-baseline-v5-daily-partial-continuation-guard";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -2520,21 +2520,45 @@ function baselineV5DailyDateGte(a,b){
   const aa=String(a||'').slice(0,10), bb=String(b||'').slice(0,10);
   return /^\d{4}-\d{2}-\d{2}$/.test(aa) && /^\d{4}-\d{2}-\d{2}$/.test(bb) && aa>=bb;
 }
-async function baselineV5DailyContaminatedStateAudit(env,{kind,officialDate}){
+async function baselineV5DailyContaminatedStateAudit(env,{kind,officialDate,allowedPartialBatchId=null,allowedRequestId=null}){
   const table=kind==='classification'?'player_baseline_v5_classification_state_current':'player_baseline_v5_hp_state_current';
   const expectedMode=baselineV5DailyMode(kind);
   const idCol=kind==='classification'?'classification_row_id':'baseline_hp_row_id';
+  const allowBatch=allowedPartialBatchId?String(allowedPartialBatchId):'';
+  const allowReq=allowedRequestId?String(allowedRequestId):'';
   const row=await first(env.SCORE_DB,`SELECT
       COUNT(*) AS rows_checked,
-      SUM(CASE WHEN b.batch_id IS NULL OR COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS') OR COALESCE(b.mode,'')<>? THEN 1 ELSE 0 END) AS contaminated_rows,
-      MIN(CASE WHEN b.batch_id IS NULL OR COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS') OR COALESCE(b.mode,'')<>? THEN s.state_batch_id ELSE NULL END) AS sample_bad_batch_id,
-      MIN(CASE WHEN b.batch_id IS NULL OR COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS') OR COALESCE(b.mode,'')<>? THEN b.certification_grade ELSE NULL END) AS sample_bad_grade,
+      SUM(CASE WHEN (
+          b.batch_id IS NULL
+          OR COALESCE(b.mode,'')<>?
+          OR (
+             COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS')
+             AND NOT (s.state_batch_id=? AND b.request_id=? AND COALESCE(b.certification_grade,'')='PARTIAL')
+          )
+        ) THEN 1 ELSE 0 END) AS contaminated_rows,
+      MIN(CASE WHEN (
+          b.batch_id IS NULL
+          OR COALESCE(b.mode,'')<>?
+          OR (
+             COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS')
+             AND NOT (s.state_batch_id=? AND b.request_id=? AND COALESCE(b.certification_grade,'')='PARTIAL')
+          )
+        ) THEN s.state_batch_id ELSE NULL END) AS sample_bad_batch_id,
+      MIN(CASE WHEN (
+          b.batch_id IS NULL
+          OR COALESCE(b.mode,'')<>?
+          OR (
+             COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS')
+             AND NOT (s.state_batch_id=? AND b.request_id=? AND COALESCE(b.certification_grade,'')='PARTIAL')
+          )
+        ) THEN b.certification_grade ELSE NULL END) AS sample_bad_grade,
+      SUM(CASE WHEN s.state_batch_id=? AND b.request_id=? AND COALESCE(b.certification_grade,'')='PARTIAL' THEN 1 ELSE 0 END) AS allowed_partial_rows,
       COUNT(DISTINCT s.player_type || ':' || s.player_id) AS players,
       COUNT(DISTINCT s.canonical_prop_key) AS prop_keys
     FROM ${table} s
     LEFT JOIN player_baseline_v5_state_batches b ON b.batch_id=s.state_batch_id
-    WHERE s.last_processed_official_date=?`,expectedMode,expectedMode,expectedMode,officialDate);
-  return {kind,official_date:officialDate,table,expected_mode:expectedMode,id_column:idCol,rows_checked:Number(row&&row.rows_checked||0),contaminated_rows:Number(row&&row.contaminated_rows||0),sample_bad_batch_id:row&&row.sample_bad_batch_id||null,sample_bad_grade:row&&row.sample_bad_grade||null,players:Number(row&&row.players||0),prop_keys:Number(row&&row.prop_keys||0),pass:Number(row&&row.contaminated_rows||0)===0};
+    WHERE s.last_processed_official_date=?`,expectedMode,allowBatch,allowReq,expectedMode,allowBatch,allowReq,expectedMode,allowBatch,allowReq,allowBatch,allowReq,officialDate);
+  return {kind,official_date:officialDate,table,expected_mode:expectedMode,id_column:idCol,allowed_partial_batch_id:allowBatch||null,allowed_request_id:allowReq||null,rows_checked:Number(row&&row.rows_checked||0),allowed_partial_rows:Number(row&&row.allowed_partial_rows||0),contaminated_rows:Number(row&&row.contaminated_rows||0),sample_bad_batch_id:row&&row.sample_bad_batch_id||null,sample_bad_grade:row&&row.sample_bad_grade||null,players:Number(row&&row.players||0),prop_keys:Number(row&&row.prop_keys||0),pass:Number(row&&row.contaminated_rows||0)===0};
 }
 
 async function baselineV5DailySafeOpenDate(env,{kind,watermarkDate,cutoffDate}){
@@ -2788,10 +2812,11 @@ async function runBaselineV5DailyDelta(env,input={},kind='classification'){
       return baseOutput(input,{request_id:requestId,run_id:runId,mode,status:cert,certification:cert,certification_grade:'BLOCKED',data_ok:false,source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,official_date:officialDate,certifier_owned_daily_delta:true,classification_before_hp_required:true,classification_prereq_coverage:prereq,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false});
     }
   }
-  const contaminationAudit=await baselineV5DailyContaminatedStateAudit(env,{kind,officialDate});
+  const preselectedBatchId=String(input.batch_id||'');
+  const contaminationAudit=await baselineV5DailyContaminatedStateAudit(env,{kind,officialDate,allowedPartialBatchId:preselectedBatchId,allowedRequestId:requestId});
   if(contaminationAudit.contaminated_rows>0){
     const cert=`${baselineV5DailyCertPrefix(kind)}_BLOCKED_CONTAMINATED_STATE_REQUIRES_CLEANUP`;
-    return baseOutput(input,{request_id:requestId,run_id:runId,mode,status:cert,certification:cert,certification_grade:'BLOCKED',data_ok:false,source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,official_date:officialDate,certifier_owned_daily_delta:true,classification_before_hp_required:true,contaminated_state_audit:contaminationAudit,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false,baseline_v5_daily_equivalence_guard_v0_1_103:true});
+    return baseOutput(input,{request_id:requestId,run_id:runId,mode,status:cert,certification:cert,certification_grade:'BLOCKED',data_ok:false,source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,official_date:officialDate,certifier_owned_daily_delta:true,classification_before_hp_required:true,contaminated_state_audit:contaminationAudit,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false,baseline_v5_daily_equivalence_guard_v0_1_103:true,baseline_v5_daily_partial_continuation_guard_v0_1_104:true});
   }
   const existingCoverage=await baselineV5DailyDateCoverageComplete(env,{kind,officialDate});
   if(existingCoverage.complete && !(kind==='hp' && hpProfileRepairDate===officialDate)){
@@ -2848,7 +2873,7 @@ async function runBaselineV5DailyDelta(env,input={},kind='classification'){
   // v0.1.101: write calendar/tally coverage only after the daily audit passes. A blocked HP audit must
   // never mark baseline_v5_hp complete, otherwise final_check can be tricked into a false PASS/NOOP.
   const coverage=pass ? await baselineV5DailyUpsertCoverage(env,{kind,officialDate,batchId,requestId,runId,rowsUpdated:kind==='classification'?Number(changedCls?.rows||0):Number(changedHp?.rows||0),playersUpdated:kind==='classification'?Number(changedCls?.players||0):Number(changedHp?.players||0)}) : {layer_key:baselineV5DailyCoverageLayer(kind),official_date:officialDate,coverage_rows_written:0,coverage_skipped_due_to_blocked_audit:true};
-  const out=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode,status:cert,certification:cert,certification_grade:grade,data_ok:pass,source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,official_date:officialDate,hp_state_rows:hpStateAfter,classification_state_rows:clsStateAfter,hp_state_rows_updated:Number(changedHp?.rows||0),classification_state_rows_updated:Number(changedCls?.rows||0),coverage_update:coverage,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false,certifier_owned_daily_delta:true,classification_before_hp_required:true,classification_delta_included:kind==='classification',baseline_hp_delta_included:kind==='hp',day_by_day_delta:true,oldest_to_newest_controlled_by_tally:true,aggregate_differential_delta:true,bad_counter_rows:Number(badCounters?.rows||0),profile_mismatch_rows:profileMismatchRows,profile_mismatch_allowed_until_hp_daily_delta:kind==='classification',coverage_written_after_audit_pass_v0_1_101:true,idempotent_daily_coverage_guard_v0_1_102:true,hp_profile_sync_without_double_count_v0_1_102:kind==='hp',baseline_v5_daily_equivalence_guard_v0_1_103:true,classification_daily_metric_snapshot_or_event_ledger_idempotent_v0_1_103:kind==='classification',contaminated_state_audit:contaminationAudit,hp_profile_repair_date:hpProfileRepairDate||null,elapsed_ms:Date.now()-started});
+  const out=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode,status:cert,certification:cert,certification_grade:grade,data_ok:pass,source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,official_date:officialDate,hp_state_rows:hpStateAfter,classification_state_rows:clsStateAfter,hp_state_rows_updated:Number(changedHp?.rows||0),classification_state_rows_updated:Number(changedCls?.rows||0),coverage_update:coverage,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false,certifier_owned_daily_delta:true,classification_before_hp_required:true,classification_delta_included:kind==='classification',baseline_hp_delta_included:kind==='hp',day_by_day_delta:true,oldest_to_newest_controlled_by_tally:true,aggregate_differential_delta:true,bad_counter_rows:Number(badCounters?.rows||0),profile_mismatch_rows:profileMismatchRows,profile_mismatch_allowed_until_hp_daily_delta:kind==='classification',coverage_written_after_audit_pass_v0_1_101:true,idempotent_daily_coverage_guard_v0_1_102:true,hp_profile_sync_without_double_count_v0_1_102:kind==='hp',baseline_v5_daily_equivalence_guard_v0_1_103:true,baseline_v5_daily_partial_continuation_guard_v0_1_104:true,classification_daily_metric_snapshot_or_event_ledger_idempotent_v0_1_103:kind==='classification',contaminated_state_audit:contaminationAudit,hp_profile_repair_date:hpProfileRepairDate||null,elapsed_ms:Date.now()-started});
   await run(env.SCORE_DB,`UPDATE player_baseline_v5_state_batches SET status=?, source_watermark_date=?, hp_state_rows=?, classification_state_rows=?, current_tables_mutated=0, history_tables_mutated=0, full_cumulative_history_recompute=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,cert,officialDate,hpStateAfter,clsStateAfter,cert,grade,safeJson(out),batchId);
   return out;
 }
