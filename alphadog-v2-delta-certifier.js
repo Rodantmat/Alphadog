@@ -1,10 +1,10 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.2.9-preview-not-review-live-guard";
+const VERSION = "alphadog-v2-delta-certifier-v0.2.10-baseline-v5-tally-owned-daily-coverage";
 const JOB_KEY = "delta-certifier";
 const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
 const FULL_RUN_LOOKAHEAD_DAYS = 6;
 
-const ACTIVE_COVERAGE_LAYER_KEYS = [
+const SOURCE_COVERAGE_LAYER_KEYS = [
   "hitter_game_logs",
   "pitcher_game_logs",
   "team_game_logs",
@@ -15,9 +15,17 @@ const ACTIVE_COVERAGE_LAYER_KEYS = [
   "hitter_metrics",
   "pitcher_metrics"
 ];
+const BASELINE_V5_COVERAGE_LAYER_KEYS = [
+  "baseline_v5_classification",
+  "baseline_v5_hp"
+];
+const ACTIVE_COVERAGE_LAYER_KEYS = [...SOURCE_COVERAGE_LAYER_KEYS];
 
-function activeCoverageLayerKeys() {
-  return [...ACTIVE_COVERAGE_LAYER_KEYS];
+function activeCoverageLayerKeys(includeBaselineV5 = false) {
+  return includeBaselineV5 ? [...SOURCE_COVERAGE_LAYER_KEYS, ...BASELINE_V5_COVERAGE_LAYER_KEYS] : [...SOURCE_COVERAGE_LAYER_KEYS];
+}
+function sourceCoverageLayerKeys() {
+  return [...SOURCE_COVERAGE_LAYER_KEYS];
 }
 
 function nowUtc() { return new Date().toISOString(); }
@@ -72,7 +80,90 @@ function bindingSummary(env) {
     CONTROL_DB: !!env.CONTROL_DB,
     TEAM_DB: !!env.TEAM_DB,
     STATS_HITTER_DB: !!env.STATS_HITTER_DB,
-    STATS_PITCHER_DB: !!env.STATS_PITCHER_DB
+    STATS_PITCHER_DB: !!env.STATS_PITCHER_DB,
+    SCORE_DB: !!env.SCORE_DB
+  };
+}
+
+async function baselineV5LatestCertifiedWatermark(env) {
+  if (!env.SCORE_DB) return null;
+  const row = await first(env.SCORE_DB, `SELECT batch_id, source_watermark_date, certification, certification_grade, updated_at
+    FROM player_baseline_v5_state_batches
+    WHERE mode='baseline_v5_stateful_delta'
+      AND certification_grade='PASS'
+      AND COALESCE(current_tables_mutated,0)=0
+      AND COALESCE(history_tables_mutated,0)=0
+      AND COALESCE(full_cumulative_history_recompute,0)=0
+      AND source_watermark_date IS NOT NULL
+    ORDER BY date(source_watermark_date) DESC, datetime(updated_at) DESC
+    LIMIT 1`);
+  return row || null;
+}
+
+async function baselineV5ExistingCoverageMap(env, startDate, endDate) {
+  const rows = await all(env.TEAM_DB, `SELECT game_pk, official_date, layer_key, coverage_status, coverage_grade, blocking_for_full_run, last_batch_id, last_request_id, details_json
+    FROM mlb_game_data_coverage
+    WHERE official_date BETWEEN ? AND ?
+      AND layer_key IN ('baseline_v5_classification','baseline_v5_hp')`, startDate, endDate);
+  const m = new Map();
+  for (const r of rows) m.set(`${Number(r.game_pk)}|${String(r.layer_key)}`, r);
+  return m;
+}
+
+function baselineV5CoverageLayerFromState(layerKey, g, ctx = {}) {
+  const gamePk = Number(g.game_pk);
+  const officialDate = String(g.official_date || '').slice(0,10);
+  const existing = ctx.existingBaselineCoverage && ctx.existingBaselineCoverage.get(`${gamePk}|${layerKey}`);
+  const latest = ctx.latestBaselinePass || null;
+  const latestDate = latest && latest.source_watermark_date ? String(latest.source_watermark_date).slice(0,10) : null;
+  const currentOrFutureNonFinal = !!ctx.currentOrFutureNonFinal;
+  const calendarExceptionNoStatsExpected = !!ctx.calendarExceptionNoStatsExpected;
+  const liveSourceRowsForGame = Number(ctx.liveSourceRowsForGame || 0);
+  if (calendarExceptionNoStatsExpected) {
+    return postponedRescheduledExceptionLayer(layerKey, g, liveSourceRowsForGame, { baseline_v5_tally_owned_layer_v0_2_10: true });
+  }
+  if (currentOrFutureNonFinal) {
+    return scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, { baseline_v5_tally_owned_layer_v0_2_10: true, waiting_for_source_day_before_baseline_v5: true });
+  }
+  if (existing && String(existing.coverage_status) === 'complete' && Number(existing.blocking_for_full_run || 0) === 0) {
+    return {
+      layerKey,
+      status: 'complete',
+      grade: String(existing.coverage_grade || (layerKey === 'baseline_v5_classification' ? 'PASS_BASELINE_V5_CLASSIFICATION_DAILY_DELTA' : 'PASS_BASELINE_V5_HP_DAILY_DELTA')),
+      blocking: 0,
+      liveRows: Number(existing.live_rows || 1),
+      entityCount: Number(existing.live_entity_count || 1),
+      expectedRows: 1,
+      missingRows: 0,
+      reason: null,
+      details: { baseline_v5_tally_owned_layer_v0_2_10: true, preserved_completed_daily_coverage: true, previous_last_batch_id: existing.last_batch_id || null, previous_last_request_id: existing.last_request_id || null }
+    };
+  }
+  if (latestDate && officialDate <= latestDate) {
+    return {
+      layerKey,
+      status: 'complete',
+      grade: layerKey === 'baseline_v5_classification' ? 'PASS_INHERITED_CERTIFIED_BASELINE_V5_CLASSIFICATION_STATE' : 'PASS_INHERITED_CERTIFIED_BASELINE_V5_HP_STATE',
+      blocking: 0,
+      liveRows: 1,
+      entityCount: 1,
+      expectedRows: 1,
+      missingRows: 0,
+      reason: null,
+      details: { baseline_v5_tally_owned_layer_v0_2_10: true, inherited_from_latest_certified_state: true, certified_state_batch_id: latest.batch_id || null, certified_watermark_date: latestDate }
+    };
+  }
+  return {
+    layerKey,
+    status: 'missing',
+    grade: 'MISSING_BASELINE_V5_DAILY_DELTA_BLOCKER',
+    blocking: 1,
+    liveRows: 0,
+    entityCount: 0,
+    expectedRows: 1,
+    missingRows: 1,
+    reason: layerKey === 'baseline_v5_classification' ? 'MISSING_BASELINE_V5_CLASSIFICATION_DAILY_DELTA_FOR_CERTIFIED_SOURCE_GAME' : 'MISSING_BASELINE_V5_HP_DAILY_DELTA_FOR_CERTIFIED_CLASSIFICATION_GAME',
+    details: { baseline_v5_tally_owned_layer_v0_2_10: true, certifier_owned_baseline_v5_gap: true, latest_certified_watermark_date: latestDate }
   };
 }
 
@@ -957,8 +1048,9 @@ function postponedRescheduledExceptionLayer(layerKey, g, liveSourceRowsForGame, 
   };
 }
 
-async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
-  const activeLayers = activeCoverageLayerKeys();
+async function rebuildCoverage(env, batchId, requestId, startDate, endDate, options = {}) {
+  const includeBaselineV5Coverage = options && options.includeBaselineV5Coverage === true;
+  const activeLayers = activeCoverageLayerKeys(includeBaselineV5Coverage);
   const currentOfficialDate = dateOnlyForTimeZone(new Date(), "America/Los_Angeles");
   const games = await all(env.TEAM_DB, `SELECT
       game_pk,
@@ -1000,6 +1092,8 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
   const starterTeamCounts = await groupedGameCounts(env, "TEAM_DB", "starter_history", "team_id", startDate, endDate);
   const bullpenCounts = await groupedGameCounts(env, "TEAM_DB", "bullpen_history", "pitcher_id", startDate, endDate);
   const snapshotTemplates = await snapshotLayerTemplateStatuses(env);
+  const latestBaselinePass = includeBaselineV5Coverage ? await baselineV5LatestCertifiedWatermark(env) : null;
+  const existingBaselineCoverage = includeBaselineV5Coverage ? await baselineV5ExistingCoverageMap(env, startDate, endDate) : new Map();
 
   const coverageSql = `INSERT INTO mlb_game_data_coverage (
         game_pk, season, official_date, layer_key, layer_family, coverage_scope, coverage_status, coverage_grade, blocking_for_full_run,
@@ -1100,6 +1194,9 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
           addLayer(g, postponedRescheduledExceptionLayer(layerKey, g, liveSourceRowsForGame));
         }
       }
+      if (includeBaselineV5Coverage) {
+        for (const layerKey of BASELINE_V5_COVERAGE_LAYER_KEYS) addLayer(g, baselineV5CoverageLayerFromState(layerKey, g, { latestBaselinePass, existingBaselineCoverage, calendarExceptionNoStatsExpected: true, currentOrFutureNonFinal, liveSourceRowsForGame }));
+      }
     } else if (!evaluateLiveLayers) {
       for (const layerKey of activeLayers) {
         if (officialDatePast) {
@@ -1127,6 +1224,9 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
           }));
         }
       }
+      if (includeBaselineV5Coverage) {
+        for (const layerKey of BASELINE_V5_COVERAGE_LAYER_KEYS) addLayer(g, baselineV5CoverageLayerFromState(layerKey, g, { latestBaselinePass, existingBaselineCoverage, calendarExceptionNoStatsExpected: false, currentOrFutureNonFinal, liveSourceRowsForGame }));
+      }
     } else {
       const overrideDetails = {
         calendar_is_available_for_stats: Number(g.is_available_for_stats || 0),
@@ -1153,6 +1253,9 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate) {
       addLayer(g, bullpen.rows > 0 ? { layerKey: "bullpen_history", status: "complete", grade: "PASS", blocking: 0, liveRows: bullpen.rows, entityCount: bullpen.entities, expectedRows: null, missingRows: 0, reason: null, details: { ...bullpen, ...overrideDetails } } : (currentOrFutureNonFinal ? waitLayer("bullpen_history", 0, { waiting_for_bullpen_history_rows_v0_2_2: true }) : { layerKey: "bullpen_history", status: "missing", grade: "MISSING_BLOCKER", blocking: 1, liveRows: 0, entityCount: 0, expectedRows: null, missingRows: null, reason: "MISSING_BULLPEN_HISTORY_REPRESENTATION_FOR_FINAL_OR_LIVE_EVIDENCED_GAME_PK", details: { ...bullpen, ...overrideDetails } }));
       for (const snapshotLayerKey of ["hitter_splits", "pitcher_splits", "hitter_metrics", "pitcher_metrics"]) {
         addLayer(g, snapshotLayerFromTemplateOrWaiting(snapshotLayerKey, String(g.official_date), snapshotTemplates, currentOrFutureNonFinal, g, liveSourceRowsForGame, overrideDetails));
+      }
+      if (includeBaselineV5Coverage) {
+        for (const layerKey of BASELINE_V5_COVERAGE_LAYER_KEYS) addLayer(g, baselineV5CoverageLayerFromState(layerKey, g, { latestBaselinePass, existingBaselineCoverage, calendarExceptionNoStatsExpected: false, currentOrFutureNonFinal, liveSourceRowsForGame }));
       }
     }
     if (coverageStatements.length >= 80) {
@@ -1483,7 +1586,7 @@ async function handleCoverageAudit(input, env) {
     open_gap_rows_after_resolution: coverage.open_gap_rows_after_resolution,
     stale_gap_resolution_sample: coverage.stale_gap_resolution_sample,
     scoped_delete_then_rebuild_current_window_v0_1_6: coverage.scoped_delete_then_rebuild_current_window_v0_1_6,
-    layer_keys_checked: activeCoverageLayerKeys(),
+    layer_keys_checked: activeCoverageLayerKeys(false),
     missing_game_layer_count: coverage.blockingGaps,
     blocking_gap_count: coverage.blockingGaps,
     gaps_sample: coverage.gapsSample,
@@ -1520,6 +1623,7 @@ async function handleFullRunGapContractCheck(input, env) {
   const endDate = coverageWindow.end_date;
   const calendarTallyStage = String(nested.calendar_tally_stage || input.calendar_tally_stage || "");
   const requireZeroBlockingGaps = nested.require_zero_blocking_gaps === true || input.require_zero_blocking_gaps === true;
+  const includeBaselineV5Coverage = calendarTallyStage === "final_check" || nested.include_baseline_v5_coverage === true || input.include_baseline_v5_coverage === true;
 
   await ensureCoverageTables(env);
 
@@ -1529,7 +1633,7 @@ async function handleFullRunGapContractCheck(input, env) {
 
   // v0.2.5: Final full-run gate must rebuild the coverage matrix from current live tables
   // before reading blockers. Otherwise old precheck rows can survive after children have mined/promoted.
-  const coverageRebuild = await rebuildCoverage(env, batchId, requestId, startDate, endDate);
+  const coverageRebuild = await rebuildCoverage(env, batchId, requestId, startDate, endDate, { includeBaselineV5Coverage });
 
   const currentOfficialDate = dateOnlyForTimeZone(new Date(), "America/Los_Angeles");
   const forcedPastGapUpdate = await run(env.TEAM_DB, `
@@ -1614,7 +1718,7 @@ async function handleFullRunGapContractCheck(input, env) {
     bad_identity_rows_in_range: Number(badIdentity?.bad_rows || 0),
     coverage_checked: true,
     coverage_rows_written: coverageRows,
-    active_layer_count: Number(coverageSummary?.layers || activeCoverageLayerKeys().length),
+    active_layer_count: Number(coverageSummary?.layers || activeCoverageLayerKeys(includeBaselineV5Coverage).length),
     expected_coverage_rows: coverageRebuild.expected_coverage_rows,
     actual_coverage_rows: coverageRebuild.actual_coverage_rows,
     latest_batch_coverage_rows: coverageRebuild.latest_batch_coverage_rows,
@@ -1623,7 +1727,8 @@ async function handleFullRunGapContractCheck(input, env) {
     coverage_rows_with_null_checked_at: coverageRebuild.coverage_rows_with_null_checked_at,
     coverage_rows_with_null_status_grade: coverageRebuild.coverage_rows_with_null_status_grade,
     coverage_ownership_clean: coverageRebuild.coverage_ownership_clean && !ownershipFailed,
-    layer_keys_checked: activeCoverageLayerKeys(),
+    layer_keys_checked: activeCoverageLayerKeys(includeBaselineV5Coverage),
+    baseline_v5_tally_layers_included: includeBaselineV5Coverage,
     layer_coverage_summary: layerSummary,
     missing_game_layer_count: missingGameLayerCount,
     blocking_gap_count: blockingGapCount,
@@ -1766,7 +1871,7 @@ async function handleCalendarDifferentialCheck(input, env) {
     open_gap_rows_after_resolution: coverage.open_gap_rows_after_resolution,
     stale_gap_resolution_sample: coverage.stale_gap_resolution_sample,
     scoped_delete_then_rebuild_current_window_v0_1_6: coverage.scoped_delete_then_rebuild_current_window_v0_1_6,
-    layer_keys_checked: activeCoverageLayerKeys(),
+    layer_keys_checked: activeCoverageLayerKeys(false),
     layer_coverage_summary: layerSummary,
     missing_game_layer_count: coverage.blockingGaps,
     blocking_gap_count: coverage.blockingGaps,
