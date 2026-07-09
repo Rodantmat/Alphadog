@@ -2,6 +2,7 @@ ALPHADOG V2 DUMMY WORKERS PACK
 Version: alphadog-v2-dummy-workers-v0.1
 Date: 2026-05-17
 Files: 116 dummy Worker JS files
+.
 
 PURPOSE
 These are dummy/shell Workers for the fresh AlphaDog v2 parallel environment.
