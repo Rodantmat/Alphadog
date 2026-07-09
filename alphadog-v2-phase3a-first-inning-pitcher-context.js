@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.108-baseline-v5-hp-open-day-current-pair-audit";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.109-baseline-v5-hp-anchor-restore-branch-fix";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -2353,7 +2353,7 @@ async function baselineV5DailyRetireStaleOrphanBatches(env,{kind,officialDate,re
   const mode=baselineV5DailyMode(kind);
   const ymd=String(officialDate||'').slice(0,10);
   const req=String(requestId||'');
-  const out={kind,official_date:ymd,stale_daily_orphan_batches_retired:0,retired_batch_ids:[],classification_state_rows_deleted:0,hp_state_rows_deleted:0,delta_event_rows_deleted:0,baseline_v5_daily_timeout_orphan_guard_v0_1_107:true,baseline_v5_hp_open_day_current_pair_audit_v0_1_108:true};
+  const out={kind,official_date:ymd,stale_daily_orphan_batches_retired:0,retired_batch_ids:[],classification_state_rows_deleted:0,hp_state_rows_deleted:0,delta_event_rows_deleted:0,baseline_v5_daily_timeout_orphan_guard_v0_1_107:true,baseline_v5_hp_open_day_current_pair_audit_v0_1_108:true,baseline_v5_hp_anchor_restore_branch_fix_v0_1_109:true};
   if(!ymd || !mode) return out;
   const like=`%\"official_date\":\"${ymd}\"%`;
   const stale=await all(env.SCORE_DB,`SELECT batch_id, request_id, status, certification_grade, updated_at
@@ -2668,7 +2668,7 @@ async function baselineV5DailyUpsertCoverage(env,{kind,officialDate,batchId,requ
 
 async function baselineV5DailyRestoreMissingStateAnchors(env,{kind,batchId,officialDate,playerType,playerIds}){
   const ids=baselineV5StatefulUniquePlayerIds(playerIds.map(player_id=>({player_id})));
-  const out={kind,player_type:playerType,players_checked:ids.length,classification_anchor_rows_restored:0,hp_anchor_rows_restored:0,baseline_v5_daily_state_anchor_restore_v0_1_106:true};
+  const out={kind,player_type:playerType,players_checked:ids.length,classification_anchor_rows_restored:0,hp_anchor_rows_restored:0,baseline_v5_daily_state_anchor_restore_v0_1_106:true,baseline_v5_hp_anchor_restore_branch_fix_v0_1_109:kind==='hp'};
   if(!ids.length) return out;
   for(const part of baselineV5StatefulChunk(ids,80)){
     const ph=baselineV5SqlPlaceholders(part);
@@ -2704,7 +2704,8 @@ async function baselineV5DailyRestoreMissingStateAnchors(env,{kind,batchId,offic
         FROM player_baseline_classification_v5_current
         WHERE player_type=? AND player_id IN (${ph})`,batchId,baselineV5YmdAdd(officialDate,-1),playerType,...part);
       out.classification_anchor_rows_restored += Number(res?.meta?.changes||0);
-    } else if(kind==='hp'){
+    }
+    if(kind==='hp'){
       const res=await run(env.SCORE_DB,`INSERT OR IGNORE INTO player_baseline_v5_hp_state_current (
           baseline_hp_row_id,state_key,source_batch_id,state_batch_id,player_type,player_id,player_name,canonical_prop_key,prop_family,line_value,selected_side,
           baseline_hp_0_100,raw_rate_0_100,tier_prior_rate_0_100,raw_prior_gap_0_100,baseline_confidence_0_100,baseline_enriched_confidence_0_100,
@@ -2842,7 +2843,7 @@ async function baselineV5DailyApplyPlayerAggregate(env,{batchId,officialDate,pla
     }
   }
   if(stmts.length) await batch(env.SCORE_DB,stmts,100);
-  return {kind,official_date:officialDate,rawRowsRead,eventsInserted,hpRowsUpdated,classRowsUpdated,reclassified,playersProcessed,playersRequested:ids.length,playersSkippedNoMetrics,duplicateEventsSkipped,metric_batch_id:hydrateAudit&&hydrateAudit.metric_batch_id||null,metric_input_latest_game_date:hydrateAudit&&hydrateAudit.watermark_date||null,exact_sum_hydration:hydrateAudit,anchorRestore,classification_before_hp_required:true,certifier_owned_daily_delta:true,exact_metric_snapshot_sums:kind==='classification',exact_hit_miss_push_counters:kind==='hp',baseline_v5_daily_state_anchor_restore_v0_1_106:true,baseline_v5_hp_open_day_current_pair_audit_v0_1_108:true};
+  return {kind,official_date:officialDate,rawRowsRead,eventsInserted,hpRowsUpdated,classRowsUpdated,reclassified,playersProcessed,playersRequested:ids.length,playersSkippedNoMetrics,duplicateEventsSkipped,metric_batch_id:hydrateAudit&&hydrateAudit.metric_batch_id||null,metric_input_latest_game_date:hydrateAudit&&hydrateAudit.watermark_date||null,exact_sum_hydration:hydrateAudit,anchorRestore,classification_before_hp_required:true,certifier_owned_daily_delta:true,exact_metric_snapshot_sums:kind==='classification',exact_hit_miss_push_counters:kind==='hp',baseline_v5_daily_state_anchor_restore_v0_1_106:true,baseline_v5_hp_open_day_current_pair_audit_v0_1_108:true,baseline_v5_hp_anchor_restore_branch_fix_v0_1_109:true};
 }
 
 async function baselineV5DailyDateCoverageComplete(env,{kind,officialDate}){
@@ -2984,7 +2985,7 @@ async function runBaselineV5DailyDelta(env,input={},kind='classification'){
   // v0.1.101: write calendar/tally coverage only after the daily audit passes. A blocked HP audit must
   // never mark baseline_v5_hp complete, otherwise final_check can be tricked into a false PASS/NOOP.
   const coverage=pass ? await baselineV5DailyUpsertCoverage(env,{kind,officialDate,batchId,requestId,runId,rowsUpdated:kind==='classification'?Number(changedCls?.rows||0):Number(changedHp?.rows||0),playersUpdated:kind==='classification'?Number(changedCls?.players||0):Number(changedHp?.players||0)}) : {layer_key:baselineV5DailyCoverageLayer(kind),official_date:officialDate,coverage_rows_written:0,coverage_skipped_due_to_blocked_audit:true};
-  const out=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode,status:cert,certification:cert,certification_grade:grade,data_ok:pass,source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,official_date:officialDate,hp_state_rows:hpStateAfter,classification_state_rows:clsStateAfter,hp_state_rows_updated:changedHpRows,classification_state_rows_updated:changedClsRows,coverage_update:coverage,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false,certifier_owned_daily_delta:true,classification_before_hp_required:true,classification_delta_included:kind==='classification',baseline_hp_delta_included:kind==='hp',day_by_day_delta:true,oldest_to_newest_controlled_by_tally:true,aggregate_differential_delta:true,bad_counter_rows:Number(badCounters?.rows||0),profile_mismatch_rows:profileMismatchRows,profile_mismatch_allowed_until_hp_daily_delta:kind==='classification',coverage_written_after_audit_pass_v0_1_101:true,idempotent_daily_coverage_guard_v0_1_102:true,hp_profile_sync_without_double_count_v0_1_102:kind==='hp',baseline_v5_daily_equivalence_guard_v0_1_103:true,baseline_v5_daily_partial_continuation_guard_v0_1_104:true,baseline_v5_classification_audit_hp_open_day_guard_v0_1_105:true,baseline_v5_daily_state_anchor_restore_v0_1_106:true,baseline_v5_daily_timeout_orphan_guard_v0_1_107:true,baseline_v5_hp_open_day_current_pair_audit_v0_1_108:true,stale_daily_cleanup:staleDailyCleanup,classification_audit_pass:classificationAuditPass,hp_audit_pass:hpAuditPass,hp_missing_class_pair_rows:hpMissingClassPairRows,classification_daily_metric_snapshot_or_event_ledger_idempotent_v0_1_103:kind==='classification',contaminated_state_audit:contaminationAudit,hp_profile_repair_date:hpProfileRepairDate||null,elapsed_ms:Date.now()-started});
+  const out=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode,status:cert,certification:cert,certification_grade:grade,data_ok:pass,source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,official_date:officialDate,hp_state_rows:hpStateAfter,classification_state_rows:clsStateAfter,hp_state_rows_updated:changedHpRows,classification_state_rows_updated:changedClsRows,coverage_update:coverage,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false,certifier_owned_daily_delta:true,classification_before_hp_required:true,classification_delta_included:kind==='classification',baseline_hp_delta_included:kind==='hp',day_by_day_delta:true,oldest_to_newest_controlled_by_tally:true,aggregate_differential_delta:true,bad_counter_rows:Number(badCounters?.rows||0),profile_mismatch_rows:profileMismatchRows,profile_mismatch_allowed_until_hp_daily_delta:kind==='classification',coverage_written_after_audit_pass_v0_1_101:true,idempotent_daily_coverage_guard_v0_1_102:true,hp_profile_sync_without_double_count_v0_1_102:kind==='hp',baseline_v5_daily_equivalence_guard_v0_1_103:true,baseline_v5_daily_partial_continuation_guard_v0_1_104:true,baseline_v5_classification_audit_hp_open_day_guard_v0_1_105:true,baseline_v5_daily_state_anchor_restore_v0_1_106:true,baseline_v5_daily_timeout_orphan_guard_v0_1_107:true,baseline_v5_hp_open_day_current_pair_audit_v0_1_108:true,baseline_v5_hp_anchor_restore_branch_fix_v0_1_109:true,stale_daily_cleanup:staleDailyCleanup,classification_audit_pass:classificationAuditPass,hp_audit_pass:hpAuditPass,hp_missing_class_pair_rows:hpMissingClassPairRows,classification_daily_metric_snapshot_or_event_ledger_idempotent_v0_1_103:kind==='classification',contaminated_state_audit:contaminationAudit,hp_profile_repair_date:hpProfileRepairDate||null,elapsed_ms:Date.now()-started});
   await run(env.SCORE_DB,`UPDATE player_baseline_v5_state_batches SET status=?, source_watermark_date=?, hp_state_rows=?, classification_state_rows=?, current_tables_mutated=0, history_tables_mutated=0, full_cumulative_history_recompute=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,cert,officialDate,hpStateAfter,clsStateAfter,cert,grade,safeJson(out),batchId);
   return out;
 }
