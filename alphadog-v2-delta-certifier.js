@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.2.10-baseline-v5-tally-owned-daily-coverage";
+const VERSION = "alphadog-v2-delta-certifier-v0.2.11-baseline-v5-preserve-completed-daily-coverage";
 const JOB_KEY = "delta-certifier";
 const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
 const FULL_RUN_LOOKAHEAD_DAYS = 6;
@@ -1076,6 +1076,13 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate, opti
 
   await run(env.TEAM_DB, `DELETE FROM mlb_game_coverage_gaps WHERE batch_id=?`, batchId);
 
+  // v0.2.11: baseline-v5 daily coverage is produced by baseline workers before final_check.
+  // Snapshot completed baseline-v5 coverage BEFORE the scoped coverage rebuild deletes/reinserts rows.
+  // Otherwise final_check erases just-written baseline_v5_classification / baseline_v5_hp completions
+  // and reopens the same day as a repairable blocker.
+  const latestBaselinePass = includeBaselineV5Coverage ? await baselineV5LatestCertifiedWatermark(env) : null;
+  const existingBaselineCoverage = includeBaselineV5Coverage ? await baselineV5ExistingCoverageMap(env, startDate, endDate) : new Map();
+
   // Critical v0.1.6 ownership fix:
   // Differential calendar updates may be incremental, but coverage tally ownership must be a full current-window matrix.
   // Delete only the scoped current calendar window + explicit known layer set, then rebuild every game_pk + layer_key.
@@ -1092,8 +1099,6 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate, opti
   const starterTeamCounts = await groupedGameCounts(env, "TEAM_DB", "starter_history", "team_id", startDate, endDate);
   const bullpenCounts = await groupedGameCounts(env, "TEAM_DB", "bullpen_history", "pitcher_id", startDate, endDate);
   const snapshotTemplates = await snapshotLayerTemplateStatuses(env);
-  const latestBaselinePass = includeBaselineV5Coverage ? await baselineV5LatestCertifiedWatermark(env) : null;
-  const existingBaselineCoverage = includeBaselineV5Coverage ? await baselineV5ExistingCoverageMap(env, startDate, endDate) : new Map();
 
   const coverageSql = `INSERT INTO mlb_game_data_coverage (
         game_pk, season, official_date, layer_key, layer_family, coverage_scope, coverage_status, coverage_grade, blocking_for_full_run,
