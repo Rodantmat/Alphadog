@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.349-blocked-baseline-final-tally-proof";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.350-source-repair-core-source-gate";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -4644,7 +4644,7 @@ async function reconcileIncrementalCalendarTallyChildFromBatches(env, parentRow,
 
 
 const INCREMENTAL_MORNING_SOURCE_REPAIR_LAYER_KEYS = new Set([
-  'hitter_game_logs','pitcher_game_logs','team_game_logs','starter_history','bullpen_history','hitter_splits','pitcher_splits','hitter_metrics','pitcher_metrics'
+  'hitter_game_logs','pitcher_game_logs','team_game_logs','starter_history','bullpen_history','hitter_splits','pitcher_splits'
 ]);
 const INCREMENTAL_MORNING_BASELINE_V5_REPAIR_LAYER_KEYS = new Set(['baseline_v5_classification','baseline_v5_hp']);
 function incrementalMorningRepairScopeFromFinalCheckChild(finalCheckChild) {

@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.2.12-baseline-v5-validated-daily-coverage";
+const VERSION = "alphadog-v2-delta-certifier-v0.2.13-source-repair-core-source-only";
 const JOB_KEY = "delta-certifier";
 const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
 const FULL_RUN_LOOKAHEAD_DAYS = 6;
@@ -14,6 +14,15 @@ const SOURCE_COVERAGE_LAYER_KEYS = [
   "pitcher_splits",
   "hitter_metrics",
   "pitcher_metrics"
+];
+const SOURCE_REPAIR_CORE_LAYER_KEYS = [
+  "hitter_game_logs",
+  "pitcher_game_logs",
+  "team_game_logs",
+  "starter_history",
+  "bullpen_history",
+  "hitter_splits",
+  "pitcher_splits"
 ];
 const BASELINE_V5_COVERAGE_LAYER_KEYS = [
   "baseline_v5_classification",
@@ -1711,7 +1720,7 @@ async function handleFullRunGapContractCheck(input, env) {
   const coverageRows = Number(coverageSummary?.coverage_rows || 0);
   const blockingGapCount = Number(coverageSummary?.blocking_gap_count || 0);
   const missingGameLayerCount = blockingGapCount;
-  const sourceLayerSet = new Set(SOURCE_COVERAGE_LAYER_KEYS);
+  const sourceLayerSet = new Set(calendarTallyStage === "source_repair_check" ? SOURCE_REPAIR_CORE_LAYER_KEYS : SOURCE_COVERAGE_LAYER_KEYS);
   const sourceLayerBlockingGapCount = (layerSummary || []).filter(r => sourceLayerSet.has(String(r.layer_key || '')) && Number(r.blocking_for_full_run || 0) === 1).reduce((sum,r)=>sum+Number(r.rows||0),0);
   const baselineV5LayerBlockingGapCount = (layerSummary || []).filter(r => BASELINE_V5_COVERAGE_LAYER_KEYS.includes(String(r.layer_key || '')) && Number(r.blocking_for_full_run || 0) === 1).reduce((sum,r)=>sum+Number(r.rows||0),0);
   const calendarRows = Number(calendarSummary?.calendar_rows || 0);
@@ -1791,6 +1800,7 @@ async function handleFullRunGapContractCheck(input, env) {
     source_layer_blocking_gap_count: sourceLayerBlockingGapCount,
     baseline_v5_layer_blocking_gap_count: baselineV5LayerBlockingGapCount,
     source_repair_check_source_only_safe_v0_2_12: calendarTallyStage === "source_repair_check",
+    source_repair_check_core_source_only_v0_2_13: calendarTallyStage === "source_repair_check",
     past_incomplete_gap_count: Number(coverageSummary?.past_incomplete_gap_count || 0),
     current_official_date: currentOfficialDate,
     forced_past_gap_update_changes: Number(forcedPastGapUpdate?.meta?.changes || 0),
