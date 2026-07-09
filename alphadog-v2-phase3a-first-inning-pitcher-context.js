@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.105-baseline-v5-classification-audit-hp-open-day-guard";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.1.106-baseline-v5-daily-state-anchor-restore";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
   "expansion-baseline-sanity",
@@ -2631,6 +2631,72 @@ async function baselineV5DailyUpsertCoverage(env,{kind,officialDate,batchId,requ
   await run(env.TEAM_DB,`DELETE FROM mlb_game_coverage_gaps WHERE official_date=? AND layer_key=?`,officialDate,layerKey);
   return {layer_key:layerKey,official_date:officialDate,games_marked:games.length,coverage_rows_written:stmts.length,grade};
 }
+
+async function baselineV5DailyRestoreMissingStateAnchors(env,{kind,batchId,officialDate,playerType,playerIds}){
+  const ids=baselineV5StatefulUniquePlayerIds(playerIds.map(player_id=>({player_id})));
+  const out={kind,player_type:playerType,players_checked:ids.length,classification_anchor_rows_restored:0,hp_anchor_rows_restored:0,baseline_v5_daily_state_anchor_restore_v0_1_106:true};
+  if(!ids.length) return out;
+  for(const part of baselineV5StatefulChunk(ids,80)){
+    const ph=baselineV5SqlPlaceholders(part);
+    if(kind==='classification'){
+      const res=await run(env.SCORE_DB,`INSERT OR IGNORE INTO player_baseline_v5_classification_state_current (
+          classification_row_id,state_key,source_batch_id,state_batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,
+          classification_tier,classification_profile_key,sample_profile,volume_profile,lineup_profile,platoon_profile,usage_profile,volatility_profile,
+          classification_confidence_0_100,games_sample,events_sample,pa_per_game,ab_ratio,avg_batting_order,split_delta_0_100,
+          hitter_pa_sum_est,hitter_ab_sum_est,pitcher_outs_sum_est,pitcher_bf_sum_est,metric_hits_per_game,metric_walk_rate,metric_strikeout_rate,
+          metric_outs_per_start,metric_bf_per_start,metric_k_rate,metric_bb_rate,metric_ha_rate,metric_split_rows,classification_formula_version,
+          no_daily_context,no_market_context,no_scoring_context,no_final_board_context,last_processed_official_date,last_processed_game_pk,state_source,state_hydrated_at,updated_at)
+        SELECT
+          classification_row_id,
+          player_type || '|' || player_id || '|' || canonical_prop_key || '|' || line_value || '|' || selected_side AS state_key,
+          batch_id, ?, player_type, player_id, player_name, canonical_prop_key, line_value, selected_side,
+          classification_tier, classification_profile_key, sample_profile, volume_profile, lineup_profile, platoon_profile, usage_profile, volatility_profile,
+          classification_confidence_0_100, games_sample, events_sample, pa_per_game, ab_ratio, avg_batting_order, split_delta_0_100,
+          CASE WHEN pa_per_game IS NOT NULL AND games_sample IS NOT NULL THEN ROUND(pa_per_game*games_sample,4) ELSE NULL END,
+          CASE WHEN pa_per_game IS NOT NULL AND ab_ratio IS NOT NULL AND games_sample IS NOT NULL THEN ROUND(pa_per_game*ab_ratio*games_sample,4) ELSE NULL END,
+          CASE WHEN json_extract(classification_json,'$.metrics.outs_per_start') IS NOT NULL AND games_sample IS NOT NULL THEN ROUND(json_extract(classification_json,'$.metrics.outs_per_start')*games_sample,4) ELSE NULL END,
+          CASE WHEN json_extract(classification_json,'$.metrics.bf_per_start') IS NOT NULL AND games_sample IS NOT NULL THEN ROUND(json_extract(classification_json,'$.metrics.bf_per_start')*games_sample,4) ELSE NULL END,
+          json_extract(classification_json,'$.metrics.hits_per_game'),
+          json_extract(classification_json,'$.metrics.walk_rate'),
+          json_extract(classification_json,'$.metrics.strikeout_rate'),
+          json_extract(classification_json,'$.metrics.outs_per_start'),
+          json_extract(classification_json,'$.metrics.bf_per_start'),
+          json_extract(classification_json,'$.metrics.k_rate'),
+          json_extract(classification_json,'$.metrics.bb_rate'),
+          json_extract(classification_json,'$.metrics.ha_rate'),
+          json_extract(classification_json,'$.metrics.split_rows'),
+          'baseline_v5_classification_current_locked_shape',
+          1,1,1,1, ?, 'DAILY_STATE_ANCHOR_RESTORE', 'ANCHOR_RESTORED_FROM_player_baseline_classification_v5_current_NO_PRODUCTION_CURRENT_MUTATION', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        FROM player_baseline_classification_v5_current
+        WHERE player_type=? AND player_id IN (${ph})`,batchId,baselineV5YmdAdd(officialDate,-1),playerType,...part);
+      out.classification_anchor_rows_restored += Number(res?.meta?.changes||0);
+    } else if(kind==='hp'){
+      const res=await run(env.SCORE_DB,`INSERT OR IGNORE INTO player_baseline_v5_hp_state_current (
+          baseline_hp_row_id,state_key,source_batch_id,state_batch_id,player_type,player_id,player_name,canonical_prop_key,prop_family,line_value,selected_side,
+          baseline_hp_0_100,raw_rate_0_100,tier_prior_rate_0_100,raw_prior_gap_0_100,baseline_confidence_0_100,baseline_enriched_confidence_0_100,
+          sample_profile,role_profile,sanity_profile_key,volatility_profile,variance_profile,line_difficulty_profile,baseline_hp_profile_key,
+          non_push_sample,hit_count,miss_count,push_count,prior_strength,prior_alpha,prior_beta,formula_version,confidence_formula_version,
+          no_daily_context,no_market_context,no_scoring_context,no_final_board_context,last_processed_official_date,last_processed_game_pk,state_source,state_hydrated_at,updated_at)
+        SELECT
+          baseline_hp_row_id,
+          player_type || '|' || player_id || '|' || canonical_prop_key || '|' || line_value || '|' || selected_side AS state_key,
+          batch_id, ?, player_type, player_id, player_name, canonical_prop_key, prop_family, line_value, selected_side,
+          baseline_hp_0_100, raw_rate_0_100, tier_prior_rate_0_100, raw_prior_gap_0_100, baseline_confidence_0_100, baseline_enriched_confidence_0_100,
+          sample_profile, role_profile, sanity_profile_key, volatility_profile, variance_profile, line_difficulty_profile, baseline_hp_profile_key,
+          non_push_sample, hit_count, miss_count, push_count, prior_strength,
+          CASE WHEN canonical_prop_key='rfi_nrfi' THEN 0.50 ELSE 0.25 END AS prior_alpha,
+          CASE WHEN canonical_prop_key='rfi_nrfi' THEN 0.50 ELSE 0.25 END AS prior_beta,
+          formula_version, confidence_formula_version,
+          COALESCE(no_daily_context,1), COALESCE(no_market_context,1), COALESCE(no_scoring_context,1), 1,
+          ?, 'DAILY_STATE_ANCHOR_RESTORE', 'ANCHOR_RESTORED_FROM_player_baseline_hp_v2_current_NO_PRODUCTION_CURRENT_MUTATION', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        FROM player_baseline_hp_v2_current
+        WHERE player_type=? AND player_id IN (${ph})`,batchId,baselineV5YmdAdd(officialDate,-1),playerType,...part);
+      out.hp_anchor_rows_restored += Number(res?.meta?.changes||0);
+    }
+  }
+  return out;
+}
+
 async function baselineV5DailyApplyPlayerAggregate(env,{batchId,officialDate,playerType,playerIds,kind}){
   const ids=baselineV5StatefulUniquePlayerIds(playerIds.map(player_id=>({player_id})));
   if(!ids.length) return {rawRowsRead:0,eventsInserted:0,hpRowsUpdated:0,classRowsUpdated:0,reclassified:0,playersProcessed:0,playersRequested:0,playersSkippedNoMetrics:0,kind,official_date:officialDate};
@@ -2638,6 +2704,7 @@ async function baselineV5DailyApplyPlayerAggregate(env,{batchId,officialDate,pla
   const sourceRows=await baselineV5StatefulSourceRowsForPlayers(env,{playerType,watermarkDate:prevDate,cutoffDate:officialDate,playerIds:ids});
   const rawRowsRead=sourceRows.length;
   const ph=baselineV5SqlPlaceholders(ids);
+  const anchorRestore=await baselineV5DailyRestoreMissingStateAnchors(env,{kind,batchId,officialDate,playerType,playerIds:ids});
   const hydrateAudit=kind==='classification' ? await baselineV5DailyHydrateExactClassStatsForPlayers(env,{playerType,watermarkDate:baselineV5YmdAdd(officialDate,-1),playerIds:ids}) : null;
   const classRows=await all(env.SCORE_DB,`SELECT * FROM player_baseline_v5_classification_state_current WHERE player_type=? AND player_id IN (${ph}) ORDER BY player_id, canonical_prop_key, line_value, selected_side`,playerType,...ids);
   const sourceByPlayer=baselineV5StatefulGroupByPlayer(sourceRows);
@@ -2741,7 +2808,7 @@ async function baselineV5DailyApplyPlayerAggregate(env,{batchId,officialDate,pla
     }
   }
   if(stmts.length) await batch(env.SCORE_DB,stmts,100);
-  return {kind,official_date:officialDate,rawRowsRead,eventsInserted,hpRowsUpdated,classRowsUpdated,reclassified,playersProcessed,playersRequested:ids.length,playersSkippedNoMetrics,duplicateEventsSkipped,metric_batch_id:hydrateAudit&&hydrateAudit.metric_batch_id||null,metric_input_latest_game_date:hydrateAudit&&hydrateAudit.watermark_date||null,exact_sum_hydration:hydrateAudit,classification_before_hp_required:true,certifier_owned_daily_delta:true,exact_metric_snapshot_sums:kind==='classification',exact_hit_miss_push_counters:kind==='hp'};
+  return {kind,official_date:officialDate,rawRowsRead,eventsInserted,hpRowsUpdated,classRowsUpdated,reclassified,playersProcessed,playersRequested:ids.length,playersSkippedNoMetrics,duplicateEventsSkipped,metric_batch_id:hydrateAudit&&hydrateAudit.metric_batch_id||null,metric_input_latest_game_date:hydrateAudit&&hydrateAudit.watermark_date||null,exact_sum_hydration:hydrateAudit,anchorRestore,classification_before_hp_required:true,certifier_owned_daily_delta:true,exact_metric_snapshot_sums:kind==='classification',exact_hit_miss_push_counters:kind==='hp',baseline_v5_daily_state_anchor_restore_v0_1_106:true};
 }
 
 async function baselineV5DailyDateCoverageComplete(env,{kind,officialDate}){
@@ -2878,7 +2945,7 @@ async function runBaselineV5DailyDelta(env,input={},kind='classification'){
   // v0.1.101: write calendar/tally coverage only after the daily audit passes. A blocked HP audit must
   // never mark baseline_v5_hp complete, otherwise final_check can be tricked into a false PASS/NOOP.
   const coverage=pass ? await baselineV5DailyUpsertCoverage(env,{kind,officialDate,batchId,requestId,runId,rowsUpdated:kind==='classification'?Number(changedCls?.rows||0):Number(changedHp?.rows||0),playersUpdated:kind==='classification'?Number(changedCls?.players||0):Number(changedHp?.players||0)}) : {layer_key:baselineV5DailyCoverageLayer(kind),official_date:officialDate,coverage_rows_written:0,coverage_skipped_due_to_blocked_audit:true};
-  const out=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode,status:cert,certification:cert,certification_grade:grade,data_ok:pass,source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,official_date:officialDate,hp_state_rows:hpStateAfter,classification_state_rows:clsStateAfter,hp_state_rows_updated:changedHpRows,classification_state_rows_updated:changedClsRows,coverage_update:coverage,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false,certifier_owned_daily_delta:true,classification_before_hp_required:true,classification_delta_included:kind==='classification',baseline_hp_delta_included:kind==='hp',day_by_day_delta:true,oldest_to_newest_controlled_by_tally:true,aggregate_differential_delta:true,bad_counter_rows:Number(badCounters?.rows||0),profile_mismatch_rows:profileMismatchRows,profile_mismatch_allowed_until_hp_daily_delta:kind==='classification',coverage_written_after_audit_pass_v0_1_101:true,idempotent_daily_coverage_guard_v0_1_102:true,hp_profile_sync_without_double_count_v0_1_102:kind==='hp',baseline_v5_daily_equivalence_guard_v0_1_103:true,baseline_v5_daily_partial_continuation_guard_v0_1_104:true,baseline_v5_classification_audit_hp_open_day_guard_v0_1_105:true,classification_audit_pass:classificationAuditPass,hp_audit_pass:hpAuditPass,classification_daily_metric_snapshot_or_event_ledger_idempotent_v0_1_103:kind==='classification',contaminated_state_audit:contaminationAudit,hp_profile_repair_date:hpProfileRepairDate||null,elapsed_ms:Date.now()-started});
+  const out=baseOutput(input,{request_id:requestId,run_id:runId,batch_id:batchId,mode,status:cert,certification:cert,certification_grade:grade,data_ok:pass,source_watermark_date:watermarkDate,target_cutoff_date:cutoffDate,official_date:officialDate,hp_state_rows:hpStateAfter,classification_state_rows:clsStateAfter,hp_state_rows_updated:changedHpRows,classification_state_rows_updated:changedClsRows,coverage_update:coverage,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:false,certifier_owned_daily_delta:true,classification_before_hp_required:true,classification_delta_included:kind==='classification',baseline_hp_delta_included:kind==='hp',day_by_day_delta:true,oldest_to_newest_controlled_by_tally:true,aggregate_differential_delta:true,bad_counter_rows:Number(badCounters?.rows||0),profile_mismatch_rows:profileMismatchRows,profile_mismatch_allowed_until_hp_daily_delta:kind==='classification',coverage_written_after_audit_pass_v0_1_101:true,idempotent_daily_coverage_guard_v0_1_102:true,hp_profile_sync_without_double_count_v0_1_102:kind==='hp',baseline_v5_daily_equivalence_guard_v0_1_103:true,baseline_v5_daily_partial_continuation_guard_v0_1_104:true,baseline_v5_classification_audit_hp_open_day_guard_v0_1_105:true,baseline_v5_daily_state_anchor_restore_v0_1_106:true,classification_audit_pass:classificationAuditPass,hp_audit_pass:hpAuditPass,classification_daily_metric_snapshot_or_event_ledger_idempotent_v0_1_103:kind==='classification',contaminated_state_audit:contaminationAudit,hp_profile_repair_date:hpProfileRepairDate||null,elapsed_ms:Date.now()-started});
   await run(env.SCORE_DB,`UPDATE player_baseline_v5_state_batches SET status=?, source_watermark_date=?, hp_state_rows=?, classification_state_rows=?, current_tables_mutated=0, history_tables_mutated=0, full_cumulative_history_recompute=0, certification=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,cert,officialDate,hpStateAfter,clsStateAfter,cert,grade,safeJson(out),batchId);
   return out;
 }
