@@ -1,4 +1,4 @@
-const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.347-baseline-v5-prefinal-daily-gate";
+const SYSTEM_VERSION = "alphadog-v2-orchestrator-v0.2.348-daily-delta-source-and-baseline-repair-order";
 const WORKER_NAME = "alphadog-v2-orchestrator";
 // v0.2.165: non-scoring dispatch paths must never reference an undefined scoring-only flag.
 const isSimulationJob = false; // GLOBAL_NON_SCORING_SIMULATION_JOB_FLAG_V0_2_165
@@ -3892,10 +3892,12 @@ function childPassedIncrementalMorningFullRun(stage, child) {
   if (stage.job_key === "delta-certifier") {
     if (String(output.mode || "") !== "game_calendar_differential_check_update") return { pass: false, reason: "calendar_tally_wrong_mode", output_mode: output.mode };
     if (Number(output.coverage_rows_written || 0) <= 0) return { pass: false, reason: "calendar_tally_no_coverage_rows_written", coverage_rows_written: output.coverage_rows_written };
-    const blockingGapCount = Number(output.blocking_gap_count || 0);
-    const missingGameLayerCount = Number(output.missing_game_layer_count || 0);
-    if (stage.require_zero_blocking_gaps && (blockingGapCount > 0 || missingGameLayerCount > 0 || hay.includes("with_blockers"))) {
-      return { pass: false, reason: "final_calendar_tally_has_blocking_gaps", blocking_gap_count: blockingGapCount, missing_game_layer_count: missingGameLayerCount, certification: cert, status };
+    let blockingGapCount = Number(output.blocking_gap_count || 0);
+    let missingGameLayerCount = Number(output.missing_game_layer_count || 0);
+    if (stage.source_repair_check_before_consumers === true && output.source_layer_blocking_gap_count != null) blockingGapCount = Number(output.source_layer_blocking_gap_count || 0);
+    if (stage.source_repair_check_before_consumers === true && output.source_layer_missing_game_layer_count != null) missingGameLayerCount = Number(output.source_layer_missing_game_layer_count || 0);
+    if (stage.require_zero_blocking_gaps && (blockingGapCount > 0 || missingGameLayerCount > 0 || (stage.source_repair_check_before_consumers !== true && hay.includes("with_blockers")))) {
+      return { pass: false, reason: "final_calendar_tally_has_blocking_gaps", blocking_gap_count: blockingGapCount, missing_game_layer_count: missingGameLayerCount, certification: cert, status, source_repair_check_source_only: stage.source_repair_check_before_consumers === true };
     }
     return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.source_game_count || 0, rows_written: output.coverage_rows_written || 0, blocking_gap_count: blockingGapCount, missing_game_layer_count: missingGameLayerCount, output };
   }
@@ -4625,6 +4627,23 @@ async function reconcileIncrementalCalendarTallyChildFromBatches(env, parentRow,
 }
 
 
+
+const INCREMENTAL_MORNING_SOURCE_REPAIR_LAYER_KEYS = new Set([
+  'hitter_game_logs','pitcher_game_logs','team_game_logs','starter_history','bullpen_history','hitter_splits','pitcher_splits','hitter_metrics','pitcher_metrics'
+]);
+const INCREMENTAL_MORNING_BASELINE_V5_REPAIR_LAYER_KEYS = new Set(['baseline_v5_classification','baseline_v5_hp']);
+function incrementalMorningRepairScopeFromFinalCheckChild(finalCheckChild) {
+  const input = parseJsonSafeText(finalCheckChild && finalCheckChild.input_json || "{}", {});
+  const stage = String(input.calendar_tally_stage || input.full_run_stage_key || input.stage_key || "");
+  if (stage === 'source_repair_check' || stage === 'calendar_tally_source_repair_check') return 'source_only';
+  return 'all';
+}
+function incrementalMorningLayerAllowedForRepairScope(layerKey, scope) {
+  const layer = String(layerKey || '');
+  if (scope === 'source_only') return INCREMENTAL_MORNING_SOURCE_REPAIR_LAYER_KEYS.has(layer);
+  return INCREMENTAL_MORNING_SOURCE_REPAIR_LAYER_KEYS.has(layer) || INCREMENTAL_MORNING_BASELINE_V5_REPAIR_LAYER_KEYS.has(layer);
+}
+
 function incrementalMorningRepairableLayerMap() {
   const map = new Map();
   for (const st of INCREMENTAL_MORNING_FULL_RUN_STAGES) {
@@ -4682,6 +4701,7 @@ function incrementalMorningRepairChildTerminalNoop(repairOutput, targetGap) {
 async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheckChild) {
   if (!env.TEAM_DB || !env.CONTROL_DB || !parentRow || !finalCheckChild) return { ok:false, repairable:false, reason:"missing_env_or_rows" };
   const layerMap = incrementalMorningRepairableLayerMap();
+  const repairScope = incrementalMorningRepairScopeFromFinalCheckChild(finalCheckChild);
   const gapRows = await all(env.TEAM_DB,
     `SELECT layer_key, COUNT(DISTINCT game_pk) AS gap_count, MIN(official_date) AS min_official_date, MAX(official_date) AS max_official_date
      FROM mlb_game_data_coverage
@@ -4696,11 +4716,11 @@ async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheck
   const unsupported = [];
   for (const g of gapRows || []) {
     const layer = String(g.layer_key || "");
-    if (layerMap.has(layer)) repairable.push({ ...g, stage: layerMap.get(layer) });
-    else unsupported.push(g);
+    if (layerMap.has(layer) && incrementalMorningLayerAllowedForRepairScope(layer, repairScope)) repairable.push({ ...g, stage: layerMap.get(layer) });
+    else unsupported.push({ ...g, repair_scope: repairScope });
   }
-  if (!repairable.length) return { ok:true, repairable:false, reason:"no_repairable_gap_rows", gap_rows:gapRows || [], unsupported_gap_rows:unsupported };
-  if (unsupported.length) return { ok:true, repairable:false, reason:"unsupported_gap_layers_present", gap_rows:gapRows || [], unsupported_gap_rows:unsupported, repairable_gap_rows:repairable.map(r => ({ layer_key:r.layer_key, gap_count:r.gap_count })) };
+  if (!repairable.length) return { ok:true, repairable:false, reason:"no_repairable_gap_rows", repair_scope:repairScope, gap_rows:gapRows || [], unsupported_gap_rows:unsupported };
+  if (unsupported.length) return { ok:true, repairable:false, reason:"unsupported_gap_layers_present", repair_scope:repairScope, gap_rows:gapRows || [], unsupported_gap_rows:unsupported, repairable_gap_rows:repairable.map(r => ({ layer_key:r.layer_key, gap_count:r.gap_count })) };
   const baselineLayerPriority = layer => layer === "baseline_v5_classification" ? 1 : (layer === "baseline_v5_hp" ? 2 : 0);
   repairable.sort((a,b) => {
     const ad = String(a.min_official_date || "9999-12-31");
@@ -4731,7 +4751,7 @@ async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheck
     parentRow.request_id, parentRow.chain_id, repairStage.job_key, repairStage.worker_name, repairStage.stage_key, repairStage.mode, isBaselineV5RepairStage ? 1 : 0, targetOfficialDate
   );
   if (Number(totalRepairAttempts && totalRepairAttempts.attempts || 0) >= INCREMENTAL_MORNING_FULL_RUN_MAX_REPAIR_STAGE_ATTEMPTS) {
-    return { ok:true, repairable:false, reason:"repair_attempt_limit_exceeded", target_layer_key:String(target.layer_key || ""), target_stage_key:repairStage.stage_key, target_attempts:Number(totalRepairAttempts && totalRepairAttempts.attempts || 0), gap_rows:gapRows || [], repairable_gap_rows:repairable.map(r => ({ layer_key:r.layer_key, gap_count:r.gap_count, stage_key:r.stage.stage_key })) };
+    return { ok:true, repairable:false, reason:"repair_attempt_limit_exceeded", target_layer_key:String(target.layer_key || ""), target_stage_key:repairStage.stage_key, target_attempts:Number(totalRepairAttempts && totalRepairAttempts.attempts || 0), repair_scope:repairScope, gap_rows:gapRows || [], repairable_gap_rows:repairable.map(r => ({ layer_key:r.layer_key, gap_count:r.gap_count, stage_key:r.stage.stage_key })) };
   }
   // v0.2.346: only a later child for the same target stage/mode/date counts as the repair for this gap.
   // Without this, a later classification child was misread as the HP repair because both share
@@ -4765,11 +4785,12 @@ async function getIncrementalMorningRepairableGapPlan(env, parentRow, finalCheck
   const repairCompleted = !!(laterRepair && laterRepair.status === "completed" && laterRepairOutput && laterRepairOutput.ok === true && laterRepairOutput.data_ok === true);
   const terminalNoop = repairCompleted ? incrementalMorningRepairChildTerminalNoop(laterRepairOutput, target) : { terminal:false };
   if (terminalNoop && terminalNoop.terminal) {
-    return { ok:true, repairable:false, reason:"repair_child_noop_did_not_advance_gap_layer", terminal_noop_livelock_guard_v0_2_281:true, target_layer_key:String(target.layer_key || ""), target_stage_key:repairStage.stage_key, target_job_key:repairStage.job_key, target_worker_name:repairStage.worker_name, target_gap_count:Number(target.gap_count || 0), gap_rows:gapRows || [], repairable_gap_rows:repairable.map(r => ({ layer_key:r.layer_key, gap_count:Number(r.gap_count || 0), stage_key:r.stage.stage_key, job_key:r.stage.job_key, min_official_date:r.min_official_date, max_official_date:r.max_official_date })), later_repair_child:laterRepair || null, later_repair_terminal_noop:terminalNoop };
+    return { ok:true, repairable:false, reason:"repair_child_noop_did_not_advance_gap_layer", terminal_noop_livelock_guard_v0_2_281:true, target_layer_key:String(target.layer_key || ""), target_stage_key:repairStage.stage_key, target_job_key:repairStage.job_key, target_worker_name:repairStage.worker_name, target_gap_count:Number(target.gap_count || 0), repair_scope:repairScope, gap_rows:gapRows || [], repairable_gap_rows:repairable.map(r => ({ layer_key:r.layer_key, gap_count:Number(r.gap_count || 0), stage_key:r.stage.stage_key, job_key:r.stage.job_key, min_official_date:r.min_official_date, max_official_date:r.max_official_date })), later_repair_child:laterRepair || null, later_repair_terminal_noop:terminalNoop };
   }
   return {
     ok:true,
     repairable:true,
+    repair_scope: repairScope,
     gap_rows:gapRows || [],
     repairable_gap_rows: repairable.map(r => ({ layer_key:r.layer_key, gap_count:Number(r.gap_count || 0), stage_key:r.stage.stage_key, job_key:r.stage.job_key, min_official_date:r.min_official_date, max_official_date:r.max_official_date })),
     unsupported_gap_rows: unsupported,

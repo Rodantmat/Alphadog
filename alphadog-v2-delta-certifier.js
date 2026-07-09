@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.2.11-baseline-v5-preserve-completed-daily-coverage";
+const VERSION = "alphadog-v2-delta-certifier-v0.2.12-baseline-v5-validated-daily-coverage";
 const JOB_KEY = "delta-certifier";
 const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
 const FULL_RUN_LOOKAHEAD_DAYS = 6;
@@ -110,34 +110,66 @@ async function baselineV5ExistingCoverageMap(env, startDate, endDate) {
   return m;
 }
 
+
+async function baselineV5DailyStateValidityMap(env, startDate, endDate) {
+  const out = new Map();
+  if (!env.SCORE_DB) return out;
+  const cls = await all(env.SCORE_DB, `SELECT
+      c.last_processed_official_date AS official_date,
+      COUNT(*) AS rows,
+      COUNT(DISTINCT c.player_type || ':' || c.player_id) AS players,
+      SUM(CASE WHEN b.batch_id IS NULL OR COALESCE(b.mode,'')<>'baseline_v5_classification_daily_delta' OR COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS') THEN 1 ELSE 0 END) AS bad_batch_rows,
+      MIN(CASE WHEN b.batch_id IS NULL OR COALESCE(b.mode,'')<>'baseline_v5_classification_daily_delta' OR COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS') THEN c.state_batch_id ELSE NULL END) AS sample_bad_batch_id
+    FROM player_baseline_v5_classification_state_current c
+    LEFT JOIN player_baseline_v5_state_batches b ON b.batch_id=c.state_batch_id
+    WHERE c.last_processed_official_date BETWEEN ? AND ?
+    GROUP BY c.last_processed_official_date`, startDate, endDate);
+  for (const r of cls || []) {
+    const date = String(r.official_date || '').slice(0,10);
+    const bad = Number(r.bad_batch_rows || 0);
+    out.set(`${date}|baseline_v5_classification`, { valid: Number(r.rows || 0) > 0 && bad === 0, rows: Number(r.rows || 0), players: Number(r.players || 0), bad_batch_rows: bad, sample_bad_batch_id: r.sample_bad_batch_id || null, daily_state_validated_v0_2_12: true });
+  }
+  const hp = await all(env.SCORE_DB, `SELECT
+      h.last_processed_official_date AS official_date,
+      COUNT(*) AS rows,
+      COUNT(DISTINCT h.player_type || ':' || h.player_id) AS players,
+      SUM(CASE WHEN b.batch_id IS NULL OR COALESCE(b.mode,'')<>'baseline_v5_hp_daily_delta' OR COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS') THEN 1 ELSE 0 END) AS bad_batch_rows,
+      SUM(CASE WHEN COALESCE(h.sanity_profile_key,'')<>COALESCE(c.classification_profile_key,'') OR COALESCE(h.baseline_hp_profile_key,'')<>COALESCE(c.classification_profile_key,'') || '_MODEL' THEN 1 ELSE 0 END) AS profile_mismatch_rows,
+      MIN(CASE WHEN b.batch_id IS NULL OR COALESCE(b.mode,'')<>'baseline_v5_hp_daily_delta' OR COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS') THEN h.state_batch_id ELSE NULL END) AS sample_bad_batch_id
+    FROM player_baseline_v5_hp_state_current h
+    LEFT JOIN player_baseline_v5_classification_state_current c
+      ON c.player_type=h.player_type
+     AND c.player_id=h.player_id
+     AND c.canonical_prop_key=h.canonical_prop_key
+     AND c.line_value=h.line_value
+     AND c.selected_side=h.selected_side
+    LEFT JOIN player_baseline_v5_state_batches b ON b.batch_id=h.state_batch_id
+    WHERE h.last_processed_official_date BETWEEN ? AND ?
+    GROUP BY h.last_processed_official_date`, startDate, endDate);
+  for (const r of hp || []) {
+    const date = String(r.official_date || '').slice(0,10);
+    const bad = Number(r.bad_batch_rows || 0);
+    const mismatch = Number(r.profile_mismatch_rows || 0);
+    out.set(`${date}|baseline_v5_hp`, { valid: Number(r.rows || 0) > 0 && bad === 0 && mismatch === 0, rows: Number(r.rows || 0), players: Number(r.players || 0), bad_batch_rows: bad, profile_mismatch_rows: mismatch, sample_bad_batch_id: r.sample_bad_batch_id || null, daily_state_validated_v0_2_12: true });
+  }
+  return out;
+}
+
 function baselineV5CoverageLayerFromState(layerKey, g, ctx = {}) {
   const gamePk = Number(g.game_pk);
   const officialDate = String(g.official_date || '').slice(0,10);
   const existing = ctx.existingBaselineCoverage && ctx.existingBaselineCoverage.get(`${gamePk}|${layerKey}`);
+  const dailyState = ctx.baselineV5DailyStateValidity && ctx.baselineV5DailyStateValidity.get(`${officialDate}|${layerKey}`);
   const latest = ctx.latestBaselinePass || null;
   const latestDate = latest && latest.source_watermark_date ? String(latest.source_watermark_date).slice(0,10) : null;
   const currentOrFutureNonFinal = !!ctx.currentOrFutureNonFinal;
   const calendarExceptionNoStatsExpected = !!ctx.calendarExceptionNoStatsExpected;
   const liveSourceRowsForGame = Number(ctx.liveSourceRowsForGame || 0);
   if (calendarExceptionNoStatsExpected) {
-    return postponedRescheduledExceptionLayer(layerKey, g, liveSourceRowsForGame, { baseline_v5_tally_owned_layer_v0_2_10: true });
+    return postponedRescheduledExceptionLayer(layerKey, g, liveSourceRowsForGame, { baseline_v5_tally_owned_layer_v0_2_12: true });
   }
   if (currentOrFutureNonFinal) {
-    return scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, { baseline_v5_tally_owned_layer_v0_2_10: true, waiting_for_source_day_before_baseline_v5: true });
-  }
-  if (existing && String(existing.coverage_status) === 'complete' && Number(existing.blocking_for_full_run || 0) === 0) {
-    return {
-      layerKey,
-      status: 'complete',
-      grade: String(existing.coverage_grade || (layerKey === 'baseline_v5_classification' ? 'PASS_BASELINE_V5_CLASSIFICATION_DAILY_DELTA' : 'PASS_BASELINE_V5_HP_DAILY_DELTA')),
-      blocking: 0,
-      liveRows: Number(existing.live_rows || 1),
-      entityCount: Number(existing.live_entity_count || 1),
-      expectedRows: 1,
-      missingRows: 0,
-      reason: null,
-      details: { baseline_v5_tally_owned_layer_v0_2_10: true, preserved_completed_daily_coverage: true, previous_last_batch_id: existing.last_batch_id || null, previous_last_request_id: existing.last_request_id || null }
-    };
+    return scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, { baseline_v5_tally_owned_layer_v0_2_12: true, waiting_for_source_day_before_baseline_v5: true });
   }
   if (latestDate && officialDate <= latestDate) {
     return {
@@ -150,7 +182,21 @@ function baselineV5CoverageLayerFromState(layerKey, g, ctx = {}) {
       expectedRows: 1,
       missingRows: 0,
       reason: null,
-      details: { baseline_v5_tally_owned_layer_v0_2_10: true, inherited_from_latest_certified_state: true, certified_state_batch_id: latest.batch_id || null, certified_watermark_date: latestDate }
+      details: { baseline_v5_tally_owned_layer_v0_2_12: true, inherited_from_latest_certified_state: true, certified_state_batch_id: latest.batch_id || null, certified_watermark_date: latestDate }
+    };
+  }
+  if (dailyState && dailyState.valid === true) {
+    return {
+      layerKey,
+      status: 'complete',
+      grade: layerKey === 'baseline_v5_classification' ? 'PASS_BASELINE_V5_CLASSIFICATION_DAILY_DELTA' : 'PASS_BASELINE_V5_HP_DAILY_DELTA',
+      blocking: 0,
+      liveRows: Number(dailyState.rows || 1),
+      entityCount: Number(dailyState.players || 1),
+      expectedRows: 1,
+      missingRows: 0,
+      reason: null,
+      details: { baseline_v5_tally_owned_layer_v0_2_12: true, validated_daily_state_coverage: true, daily_state: dailyState, previous_last_batch_id: existing && existing.last_batch_id || null, previous_last_request_id: existing && existing.last_request_id || null }
     };
   }
   return {
@@ -158,12 +204,12 @@ function baselineV5CoverageLayerFromState(layerKey, g, ctx = {}) {
     status: 'missing',
     grade: 'MISSING_BASELINE_V5_DAILY_DELTA_BLOCKER',
     blocking: 1,
-    liveRows: 0,
-    entityCount: 0,
+    liveRows: dailyState ? Number(dailyState.rows || 0) : 0,
+    entityCount: dailyState ? Number(dailyState.players || 0) : 0,
     expectedRows: 1,
     missingRows: 1,
-    reason: layerKey === 'baseline_v5_classification' ? 'MISSING_BASELINE_V5_CLASSIFICATION_DAILY_DELTA_FOR_CERTIFIED_SOURCE_GAME' : 'MISSING_BASELINE_V5_HP_DAILY_DELTA_FOR_CERTIFIED_CLASSIFICATION_GAME',
-    details: { baseline_v5_tally_owned_layer_v0_2_10: true, certifier_owned_baseline_v5_gap: true, latest_certified_watermark_date: latestDate }
+    reason: layerKey === 'baseline_v5_classification' ? 'MISSING_OR_INVALID_BASELINE_V5_CLASSIFICATION_DAILY_DELTA_FOR_CERTIFIED_SOURCE_GAME' : 'MISSING_OR_INVALID_BASELINE_V5_HP_DAILY_DELTA_FOR_CERTIFIED_CLASSIFICATION_GAME',
+    details: { baseline_v5_tally_owned_layer_v0_2_12: true, certifier_owned_baseline_v5_gap: true, latest_certified_watermark_date: latestDate, daily_state: dailyState || null, existing_completed_coverage_rejected_unless_state_valid_v0_2_12: existing && String(existing.coverage_status) === 'complete' }
   };
 }
 
@@ -1082,6 +1128,7 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate, opti
   // and reopens the same day as a repairable blocker.
   const latestBaselinePass = includeBaselineV5Coverage ? await baselineV5LatestCertifiedWatermark(env) : null;
   const existingBaselineCoverage = includeBaselineV5Coverage ? await baselineV5ExistingCoverageMap(env, startDate, endDate) : new Map();
+  const baselineV5DailyStateValidity = includeBaselineV5Coverage ? await baselineV5DailyStateValidityMap(env, startDate, endDate) : new Map();
 
   // Critical v0.1.6 ownership fix:
   // Differential calendar updates may be incremental, but coverage tally ownership must be a full current-window matrix.
@@ -1200,7 +1247,7 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate, opti
         }
       }
       if (includeBaselineV5Coverage) {
-        for (const layerKey of BASELINE_V5_COVERAGE_LAYER_KEYS) addLayer(g, baselineV5CoverageLayerFromState(layerKey, g, { latestBaselinePass, existingBaselineCoverage, calendarExceptionNoStatsExpected: true, currentOrFutureNonFinal, liveSourceRowsForGame }));
+        for (const layerKey of BASELINE_V5_COVERAGE_LAYER_KEYS) addLayer(g, baselineV5CoverageLayerFromState(layerKey, g, { latestBaselinePass, existingBaselineCoverage, baselineV5DailyStateValidity, calendarExceptionNoStatsExpected: true, currentOrFutureNonFinal, liveSourceRowsForGame }));
       }
     } else if (!evaluateLiveLayers) {
       for (const layerKey of activeLayers) {
@@ -1230,7 +1277,7 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate, opti
         }
       }
       if (includeBaselineV5Coverage) {
-        for (const layerKey of BASELINE_V5_COVERAGE_LAYER_KEYS) addLayer(g, baselineV5CoverageLayerFromState(layerKey, g, { latestBaselinePass, existingBaselineCoverage, calendarExceptionNoStatsExpected: false, currentOrFutureNonFinal, liveSourceRowsForGame }));
+        for (const layerKey of BASELINE_V5_COVERAGE_LAYER_KEYS) addLayer(g, baselineV5CoverageLayerFromState(layerKey, g, { latestBaselinePass, existingBaselineCoverage, baselineV5DailyStateValidity, calendarExceptionNoStatsExpected: false, currentOrFutureNonFinal, liveSourceRowsForGame }));
       }
     } else {
       const overrideDetails = {
@@ -1260,7 +1307,7 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate, opti
         addLayer(g, snapshotLayerFromTemplateOrWaiting(snapshotLayerKey, String(g.official_date), snapshotTemplates, currentOrFutureNonFinal, g, liveSourceRowsForGame, overrideDetails));
       }
       if (includeBaselineV5Coverage) {
-        for (const layerKey of BASELINE_V5_COVERAGE_LAYER_KEYS) addLayer(g, baselineV5CoverageLayerFromState(layerKey, g, { latestBaselinePass, existingBaselineCoverage, calendarExceptionNoStatsExpected: false, currentOrFutureNonFinal, liveSourceRowsForGame }));
+        for (const layerKey of BASELINE_V5_COVERAGE_LAYER_KEYS) addLayer(g, baselineV5CoverageLayerFromState(layerKey, g, { latestBaselinePass, existingBaselineCoverage, baselineV5DailyStateValidity, calendarExceptionNoStatsExpected: false, currentOrFutureNonFinal, liveSourceRowsForGame }));
       }
     }
     if (coverageStatements.length >= 80) {
@@ -1664,6 +1711,9 @@ async function handleFullRunGapContractCheck(input, env) {
   const coverageRows = Number(coverageSummary?.coverage_rows || 0);
   const blockingGapCount = Number(coverageSummary?.blocking_gap_count || 0);
   const missingGameLayerCount = blockingGapCount;
+  const sourceLayerSet = new Set(SOURCE_COVERAGE_LAYER_KEYS);
+  const sourceLayerBlockingGapCount = (layerSummary || []).filter(r => sourceLayerSet.has(String(r.layer_key || '')) && Number(r.blocking_for_full_run || 0) === 1).reduce((sum,r)=>sum+Number(r.rows||0),0);
+  const baselineV5LayerBlockingGapCount = (layerSummary || []).filter(r => BASELINE_V5_COVERAGE_LAYER_KEYS.includes(String(r.layer_key || '')) && Number(r.blocking_for_full_run || 0) === 1).reduce((sum,r)=>sum+Number(r.rows||0),0);
   const calendarRows = Number(calendarSummary?.calendar_rows || 0);
   const ownershipFailed = coverageRows <= 0 || calendarRows <= 0 || Number(badIdentity?.bad_rows || 0) > 0;
   const status = ownershipFailed
@@ -1737,6 +1787,10 @@ async function handleFullRunGapContractCheck(input, env) {
     layer_coverage_summary: layerSummary,
     missing_game_layer_count: missingGameLayerCount,
     blocking_gap_count: blockingGapCount,
+    source_layer_missing_game_layer_count: sourceLayerBlockingGapCount,
+    source_layer_blocking_gap_count: sourceLayerBlockingGapCount,
+    baseline_v5_layer_blocking_gap_count: baselineV5LayerBlockingGapCount,
+    source_repair_check_source_only_safe_v0_2_12: calendarTallyStage === "source_repair_check",
     past_incomplete_gap_count: Number(coverageSummary?.past_incomplete_gap_count || 0),
     current_official_date: currentOfficialDate,
     forced_past_gap_update_changes: Number(forcedPastGapUpdate?.meta?.changes || 0),
