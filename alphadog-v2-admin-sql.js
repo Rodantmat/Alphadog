@@ -346,6 +346,20 @@ export default {
       });
     }
 
+    if (method === "GET" && path === "/debug-auth") {
+      const authOk = isAuthorized(request, env);
+      const url2 = new URL(request.url);
+      const queryToken = url2.searchParams.get("token") || "";
+      return jsonResponse({
+        authorized: authOk,
+        token_provided: Boolean(queryToken),
+        token_provided_length: queryToken.length,
+        admin_token_secret_present: Boolean(env.ALPHADOG_ADMIN_TOKEN),
+        admin_token_secret_length: env.ALPHADOG_ADMIN_TOKEN ? env.ALPHADOG_ADMIN_TOKEN.length : 0,
+        note: "Lengths are shown, not values, so you can spot a copy-paste mismatch (extra space, missing character, etc) without exposing the token."
+      });
+    }
+
     if (method === "POST" && (path === "/mcp" || path === "/")) {
       return handleMcp(request, env);
     }
