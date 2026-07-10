@@ -7236,11 +7236,16 @@ async function runClassificationV6Tick(env, input = {}) {
   const entity = propConfig.entity;
   const sourceTable = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
   const sourceDb = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
-  const idRows = await all(sourceDb, `SELECT DISTINCT player_id FROM ${sourceTable} WHERE player_id IS NOT NULL`);
-  const allPlayerIds = idRows.map(r => Number(r.player_id)).filter(Boolean);
+  let allPlayerIds;
+  if (Array.isArray(input.player_ids_override)) {
+    allPlayerIds = input.player_ids_override.map(Number).filter(Boolean);
+  } else {
+    const idRows = await all(sourceDb, `SELECT DISTINCT player_id FROM ${sourceTable} WHERE player_id IS NOT NULL`);
+    allPlayerIds = idRows.map(r => Number(r.player_id)).filter(Boolean);
+  }
 
   const cursor = Math.max(0, Number(input.cursor_offset || 0));
-  const chunkSize = Math.max(10, Number(opLimits.chunk_size_rows || 40));
+  const chunkSize = Array.isArray(input.player_ids_override) ? allPlayerIds.length : Math.max(10, Number(opLimits.chunk_size_rows || 40));
   const slice = allPlayerIds.slice(cursor, cursor + chunkSize);
 
   const snapshots = await loadAllMetricSnapshots(env, entity, slice);
