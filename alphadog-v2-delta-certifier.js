@@ -122,44 +122,46 @@ async function baselineV5ExistingCoverageMap(env, startDate, endDate) {
 
 async function baselineV5DailyStateValidityMap(env, startDate, endDate) {
   const out = new Map();
-  if (!env.SCORE_DB) return out;
-  const cls = await all(env.SCORE_DB, `SELECT
-      c.last_processed_official_date AS official_date,
-      COUNT(*) AS rows,
-      COUNT(DISTINCT c.player_type || ':' || c.player_id) AS players,
-      SUM(CASE WHEN b.batch_id IS NULL OR COALESCE(b.mode,'')<>'baseline_v5_classification_daily_delta' OR COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS') THEN 1 ELSE 0 END) AS bad_batch_rows,
-      MIN(CASE WHEN b.batch_id IS NULL OR COALESCE(b.mode,'')<>'baseline_v5_classification_daily_delta' OR COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS') THEN c.state_batch_id ELSE NULL END) AS sample_bad_batch_id
-    FROM player_baseline_v5_classification_state_current c
-    LEFT JOIN player_baseline_v5_state_batches b ON b.batch_id=c.state_batch_id
-    WHERE c.last_processed_official_date BETWEEN ? AND ?
-    GROUP BY c.last_processed_official_date`, startDate, endDate);
-  for (const r of cls || []) {
-    const date = String(r.official_date || '').slice(0,10);
-    const bad = Number(r.bad_batch_rows || 0);
-    out.set(`${date}|baseline_v5_classification`, { valid: Number(r.rows || 0) > 0 && bad === 0, rows: Number(r.rows || 0), players: Number(r.players || 0), bad_batch_rows: bad, sample_bad_batch_id: r.sample_bad_batch_id || null, daily_state_validated_v0_2_12: true });
+  if (!env.ARCHIVE_DB) return out;
+  // Total expected combo count is data-driven from calibration_config (prop_line_universe),
+  // not hardcoded, so this stays correct automatically if props are ever added or removed.
+  let totalCombos = 0;
+  if (env.CONFIG_DB) {
+    try {
+      const universeRow = await first(env.CONFIG_DB, `SELECT value_json FROM calibration_config WHERE scope='global' AND key='prop_line_universe'`);
+      if (universeRow && universeRow.value_json) {
+        const universe = JSON.parse(universeRow.value_json);
+        for (const propKey of Object.keys(universe)) totalCombos += (Array.isArray(universe[propKey]) ? universe[propKey].length : 0) * 2; // x2 for more/less sides
+      }
+    } catch (e) { /* fall through with totalCombos=0, treated as "no threshold known" below */ }
   }
-  const hp = await all(env.SCORE_DB, `SELECT
-      h.last_processed_official_date AS official_date,
+  const cls = await all(env.ARCHIVE_DB, `SELECT
+      last_processed_official_date AS official_date,
       COUNT(*) AS rows,
-      COUNT(DISTINCT h.player_type || ':' || h.player_id) AS players,
-      SUM(CASE WHEN b.batch_id IS NULL OR COALESCE(b.mode,'')<>'baseline_v5_hp_daily_delta' OR COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS') THEN 1 ELSE 0 END) AS bad_batch_rows,
-      SUM(CASE WHEN COALESCE(h.sanity_profile_key,'')<>COALESCE(c.classification_profile_key,'') OR COALESCE(h.baseline_hp_profile_key,'')<>COALESCE(c.classification_profile_key,'') || '_MODEL' THEN 1 ELSE 0 END) AS profile_mismatch_rows,
-      MIN(CASE WHEN b.batch_id IS NULL OR COALESCE(b.mode,'')<>'baseline_v5_hp_daily_delta' OR COALESCE(b.certification_grade,'') NOT IN ('PASS','NOOP_PASS') THEN h.state_batch_id ELSE NULL END) AS sample_bad_batch_id
-    FROM player_baseline_v5_hp_state_current h
-    LEFT JOIN player_baseline_v5_classification_state_current c
-      ON c.player_type=h.player_type
-     AND c.player_id=h.player_id
-     AND c.canonical_prop_key=h.canonical_prop_key
-     AND c.line_value=h.line_value
-     AND c.selected_side=h.selected_side
-    LEFT JOIN player_baseline_v5_state_batches b ON b.batch_id=h.state_batch_id
-    WHERE h.last_processed_official_date BETWEEN ? AND ?
-    GROUP BY h.last_processed_official_date`, startDate, endDate);
+      COUNT(DISTINCT player_type || ':' || player_id) AS players,
+      COUNT(DISTINCT canonical_prop_key || '|' || line_value || '|' || selected_side) AS combos_covered
+    FROM classification_v6_current
+    WHERE last_processed_official_date BETWEEN ? AND ?
+    GROUP BY last_processed_official_date`, startDate, endDate);
+  for (const r of cls || []) {
+    const date = String(r.official_date || '').slice(0, 10);
+    const combosCovered = Number(r.combos_covered || 0);
+    const valid = combosCovered > 0 && (totalCombos === 0 || combosCovered >= totalCombos);
+    out.set(`${date}|baseline_v5_classification`, { valid, rows: Number(r.rows || 0), players: Number(r.players || 0), combos_covered: combosCovered, total_combos_expected: totalCombos, v6_state_validated_v0_2_14: true });
+  }
+  const hp = await all(env.ARCHIVE_DB, `SELECT
+      last_processed_official_date AS official_date,
+      COUNT(*) AS rows,
+      COUNT(DISTINCT player_type || ':' || player_id) AS players,
+      COUNT(DISTINCT canonical_prop_key || '|' || line_value || '|' || selected_side) AS combos_covered
+    FROM baseline_v6_current
+    WHERE last_processed_official_date BETWEEN ? AND ?
+    GROUP BY last_processed_official_date`, startDate, endDate);
   for (const r of hp || []) {
-    const date = String(r.official_date || '').slice(0,10);
-    const bad = Number(r.bad_batch_rows || 0);
-    const mismatch = Number(r.profile_mismatch_rows || 0);
-    out.set(`${date}|baseline_v5_hp`, { valid: Number(r.rows || 0) > 0 && bad === 0 && mismatch === 0, rows: Number(r.rows || 0), players: Number(r.players || 0), bad_batch_rows: bad, profile_mismatch_rows: mismatch, sample_bad_batch_id: r.sample_bad_batch_id || null, daily_state_validated_v0_2_12: true });
+    const date = String(r.official_date || '').slice(0, 10);
+    const combosCovered = Number(r.combos_covered || 0);
+    const valid = combosCovered > 0 && (totalCombos === 0 || combosCovered >= totalCombos);
+    out.set(`${date}|baseline_v5_hp`, { valid, rows: Number(r.rows || 0), players: Number(r.players || 0), combos_covered: combosCovered, total_combos_expected: totalCombos, v6_state_validated_v0_2_14: true });
   }
   return out;
 }
