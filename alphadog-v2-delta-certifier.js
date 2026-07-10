@@ -1106,7 +1106,6 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate, opti
   // Snapshot completed baseline-v5 coverage BEFORE the scoped coverage rebuild deletes/reinserts rows.
   // Otherwise final_check erases just-written baseline_v5_classification / baseline_v5_hp completions
   // and reopens the same day as a repairable blocker.
-  const latestBaselinePass = includeBaselineV5Coverage ? await baselineV5LatestCertifiedWatermark(env) : null;
   const existingBaselineCoverage = includeBaselineV5Coverage ? await baselineV5ExistingCoverageMap(env, startDate, endDate) : new Map();
   const baselineV5DailyStateValidity = includeBaselineV5Coverage ? await baselineV5DailyStateValidityMap(env, startDate, endDate) : new Map();
 
