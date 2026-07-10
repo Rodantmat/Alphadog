@@ -6830,6 +6830,32 @@ function hpFromCountModel(mean, lineValue, side, dispersion) {
   return side === "more" ? (1 - pUnder) : pUnder;
 }
 
+// Abramowitz-Stegun erf approximation, needed for the Normal CDF below.
+function erf(x) {
+  const sign = x >= 0 ? 1 : -1;
+  x = Math.abs(x);
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
+  const t = 1/(1+p*x);
+  const y = 1 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+function normalCDF(x, mean, stddev) {
+  if (!(stddev > 0)) return x >= mean ? 1 : 0;
+  const z = (x - mean) / (stddev * Math.sqrt(2));
+  return 0.5 * (1 + erf(z));
+}
+// Composite scores with negative-weighted components (e.g. pitcher_fantasy_score subtracts
+// earned runs and walks allowed) can legitimately go negative for a bad outing — Poisson/NB
+// require a non-negative rate, so forcing them here was mathematically invalid. Normal is the
+// correct model for a continuous, potentially-negative composite score.
+function hpFromNormalModel(mean, lineValue, side, stddev) {
+  const pUnder = normalCDF(lineValue, mean, stddev);
+  return side === "more" ? (1 - pUnder) : pUnder;
+}
+function propCanGoNegative(propConfig) {
+  return !!(propConfig && propConfig.weights && Object.values(propConfig.weights).some(w => Number(w) < 0));
+}
+
 async function runBaselineV6ComputeTierPriors(env, propKey, lineValue, side) {
   const rows = await all(env.ARCHIVE_DB,
     `SELECT tier_key, AVG(metric_value) avg_rate, COUNT(*) tier_n FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? GROUP BY tier_key`,
