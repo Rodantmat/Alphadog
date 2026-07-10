@@ -6888,13 +6888,23 @@ async function runBaselineV6Tick(env, input = {}) {
   const usesNormalModel = propCanGoNegative(propMapForModel[propKey]);
 
   const cursor = Math.max(0, Number(input.cursor_offset || 0));
-  const chunkSize = Math.max(10, Number(opLimits.chunk_size_rows || 300));
+  const chunkSize = Array.isArray(input.player_ids_override) ? input.player_ids_override.length : Math.max(10, Number(opLimits.chunk_size_rows || 300));
 
-  const classRows = await all(env.ARCHIVE_DB,
-    `SELECT player_type, player_id, player_name, tier_key, metric_value, games_sample
-     FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?
-     ORDER BY player_id LIMIT ? OFFSET ?`,
-    propKey, lineValue, side, chunkSize, cursor);
+  const classRows = Array.isArray(input.player_ids_override)
+    ? await (async () => {
+        if (!input.player_ids_override.length) return [];
+        const ids = input.player_ids_override.map(Number).filter(Boolean);
+        const placeholders = ids.map(() => "?").join(",");
+        return await all(env.ARCHIVE_DB,
+          `SELECT player_type, player_id, player_name, tier_key, metric_value, games_sample
+           FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? AND player_id IN (${placeholders})`,
+          propKey, lineValue, side, ...ids);
+      })()
+    : await all(env.ARCHIVE_DB,
+        `SELECT player_type, player_id, player_name, tier_key, metric_value, games_sample
+         FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?
+         ORDER BY player_id LIMIT ? OFFSET ?`,
+        propKey, lineValue, side, chunkSize, cursor);
 
   const stmts = [];
   for (const p of classRows) {
