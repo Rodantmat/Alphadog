@@ -6584,7 +6584,7 @@ function buildComboList(propLineUniverse) {
 // and next_input_json to keep going, or omits them when the entire universe is done.
 // Orchestrator re-enqueues and re-calls with exactly next_input_json as the next input —
 // no orchestrator.js changes required, this worker just has to honor the existing contract.
-async function runClassificationV6Base(env, input = {}) {
+async function runClassificationV6BaseSingleStep(env, input = {}) {
   await ensureCalibrationConfigLoaded(env);
   const requestId = String(input.request_id || rid("classification_v6_base"));
   const runId = String(input.run_id || rid("run"));
