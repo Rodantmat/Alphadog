@@ -7050,6 +7050,173 @@ async function runBaselineV6BaseSingleStep(env, input = {}) {
   return output;
 }
 
+// ==== DAILY DELTA — classification and baseline, affected players only ====
+// Locked design: delta does NOT recompute population stats (mean/stddev/dispersion) —
+// those stay cached from the last base/refresh, since recomputing them daily (especially
+// dispersion, which scans full game logs) would defeat the purpose of a cheap delta.
+// Only the players whose data actually changed today get recomputed, against that stable
+// population baseline. Both classification and baseline use the SAME affected-player
+// detection (new game log entry on the target date) — a player's rate changed, so their
+// HP needs recomputing regardless of whether their discrete tier bucket also crossed a line.
+async function getAffectedPlayerIds(env, entity, targetDate) {
+  const db = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  const table = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
+  const rows = await all(db, `SELECT DISTINCT player_id FROM ${table} WHERE game_date = ?`, targetDate);
+  return rows.map(r => Number(r.player_id)).filter(Boolean);
+}
+
+async function runClassificationV6DeltaDailySingleStep(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("classification_v6_delta"));
+  const runId = String(input.run_id || rid("run"));
+  const officialDate = String(input.official_date || "");
+  if (!officialDate) return { ok: false, error: "official_date is required for daily delta." };
+
+  const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
+  const combos = buildComboList(propLineUniverse);
+  const comboIndex = Math.max(0, Number(input.combo_index || 0));
+  const batchId = String(input.batch_id || rid("classification_v6_delta_batch"));
+
+  if (comboIndex >= combos.length) {
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
+      status: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_COMPLETED",
+      certification: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE",
+      certification_grade: "PASS", total_combos: combos.length, official_date: officialDate, batch_id: batchId,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const combo = combos[comboIndex];
+  const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const propConfig = propMap[combo.canonical_prop_key];
+  const entity = propConfig ? propConfig.entity : "hitter";
+  const affectedIds = await getAffectedPlayerIds(env, entity, officialDate);
+
+  const statsKey = `${combo.canonical_prop_key}|${String(combo.line_value).replace(".", "p")}|${combo.selected_side}`;
+  const cachedStats = await first(env.ARCHIVE_DB, `SELECT stats_key FROM classification_v6_population_stats WHERE stats_key=?`, statsKey);
+  if (!cachedStats) {
+    // First time this combo has ever been seen (shouldn't normally happen if base ran first) — compute stats once.
+    await runClassificationV6ComputeStats(env, { canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value, selected_side: combo.selected_side });
+  }
+
+  let tickResult = { rows_written: 0, reclassified_rows: 0 };
+  if (affectedIds.length > 0) {
+    tickResult = await runClassificationV6Tick(env, {
+      batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
+      selected_side: combo.selected_side, official_date: officialDate, player_ids_override: affectedIds
+    });
+    if (!tickResult.ok) {
+      return {
+        ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
+        status: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_TICK_FAILED", error: tickResult.error, combo_index: comboIndex, combo
+      };
+    }
+  }
+
+  const nextComboIndex = comboIndex + 1;
+  const allDone = nextComboIndex >= combos.length;
+  const output = {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
+    request_id: requestId, run_id: runId, batch_id: batchId, official_date: officialDate,
+    status: allDone ? "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_COMPLETED" : "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_PARTIAL_CONTINUE",
+    certification: allDone ? "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE" : "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_CERTIFIED_COMBO_IN_PROGRESS",
+    certification_grade: allDone ? "PASS" : "PARTIAL",
+    combo_index: comboIndex, total_combos: combos.length, current_combo: combo,
+    affected_players: affectedIds.length, rows_written: tickResult.rows_written, reclassified_rows: tickResult.reclassified_rows,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+  if (!allDone) {
+    output.partial_continue = true;
+    output.orchestrator_should_self_continue = true;
+    output.next_input_json = { mode: "baseline_v5_classification_daily_delta", request_id: requestId, run_id: runId, batch_id: batchId, combo_index: nextComboIndex, official_date: officialDate };
+  }
+  return output;
+}
+
+async function runClassificationV6DeltaDaily(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 18000;
+  let currentInput = input;
+  let lastOutput = null;
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runClassificationV6DeltaDailySingleStep(env, currentInput);
+    if (!lastOutput.ok) return lastOutput;
+    if (!lastOutput.partial_continue) return lastOutput;
+    currentInput = lastOutput.next_input_json;
+  }
+  return lastOutput;
+}
+
+async function runBaselineV6DeltaDailySingleStep(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("baseline_v6_delta"));
+  const runId = String(input.run_id || rid("run"));
+  const officialDate = String(input.official_date || "");
+  if (!officialDate) return { ok: false, error: "official_date is required for daily delta." };
+
+  const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
+  const combos = buildComboList(propLineUniverse);
+  const comboIndex = Math.max(0, Number(input.combo_index || 0));
+  const batchId = String(input.batch_id || rid("baseline_v6_delta_batch"));
+
+  if (comboIndex >= combos.length) {
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_hp_daily_delta",
+      status: "BASELINE_V5_HP_DAILY_DELTA_COMPLETED", certification: "BASELINE_V5_HP_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE",
+      certification_grade: "PASS", total_combos: combos.length, official_date: officialDate, batch_id: batchId,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const combo = combos[comboIndex];
+  const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const propConfig = propMap[combo.canonical_prop_key];
+  const entity = propConfig ? propConfig.entity : "hitter";
+  const affectedIds = await getAffectedPlayerIds(env, entity, officialDate);
+
+  let tickResult = { rows_written: 0 };
+  if (affectedIds.length > 0) {
+    tickResult = await runBaselineV6Tick(env, {
+      batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
+      selected_side: combo.selected_side, official_date: officialDate, player_ids_override: affectedIds
+    });
+  }
+
+  const nextComboIndex = comboIndex + 1;
+  const allDone = nextComboIndex >= combos.length;
+  const output = {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_hp_daily_delta",
+    request_id: requestId, run_id: runId, batch_id: batchId, official_date: officialDate,
+    status: allDone ? "BASELINE_V5_HP_DAILY_DELTA_COMPLETED" : "BASELINE_V5_HP_DAILY_DELTA_PARTIAL_CONTINUE",
+    certification: allDone ? "BASELINE_V5_HP_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE" : "BASELINE_V5_HP_DAILY_DELTA_CERTIFIED_COMBO_IN_PROGRESS",
+    certification_grade: allDone ? "PASS" : "PARTIAL",
+    combo_index: comboIndex, total_combos: combos.length, current_combo: combo,
+    affected_players: affectedIds.length, rows_written: tickResult.rows_written,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+  if (!allDone) {
+    output.partial_continue = true;
+    output.orchestrator_should_self_continue = true;
+    output.next_input_json = { mode: "baseline_v5_hp_daily_delta", request_id: requestId, run_id: runId, batch_id: batchId, combo_index: nextComboIndex, official_date: officialDate };
+  }
+  return output;
+}
+
+async function runBaselineV6DeltaDaily(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 18000;
+  let currentInput = input;
+  let lastOutput = null;
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runBaselineV6DeltaDailySingleStep(env, currentInput);
+    if (!lastOutput.ok) return lastOutput;
+    if (!lastOutput.partial_continue) return lastOutput;
+    currentInput = lastOutput.next_input_json;
+  }
+  return lastOutput;
+}
+
 async function runBaselineV6Base(env, input = {}) {
   const startMs = Date.now();
   const timeBudgetMs = 18000;
