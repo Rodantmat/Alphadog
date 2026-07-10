@@ -274,9 +274,60 @@ async function toolGithubGetFile(env, args) {
   return { ok: true, path, sha: r.data.sha, size: r.data.size, content };
 }
 
+async function toolGithubPutFileViaGitDataApi(env, args) {
+  const { path, content, message } = args;
+  const branch = env.GITHUB_BRANCH || "main";
+
+  const refResp = await githubRequest(env, "GET", `/git/refs/heads/${encodeURIComponent(branch)}`);
+  if (!refResp.ok) return { ok: false, status: refResp.status, error: refResp.data, stage: "get_ref" };
+  const commitSha = refResp.data.object.sha;
+
+  const commitResp = await githubRequest(env, "GET", `/git/commits/${commitSha}`);
+  if (!commitResp.ok) return { ok: false, status: commitResp.status, error: commitResp.data, stage: "get_commit" };
+  const baseTreeSha = commitResp.data.tree.sha;
+
+  const blobResp = await githubRequest(env, "POST", `/git/blobs`, { content: b64EncodeUtf8(content), encoding: "base64" });
+  if (!blobResp.ok) return { ok: false, status: blobResp.status, error: blobResp.data, stage: "create_blob" };
+  const blobSha = blobResp.data.sha;
+
+  const treeResp = await githubRequest(env, "POST", `/git/trees`, {
+    base_tree: baseTreeSha,
+    tree: [{ path, mode: "100644", type: "blob", sha: blobSha }]
+  });
+  if (!treeResp.ok) return { ok: false, status: treeResp.status, error: treeResp.data, stage: "create_tree" };
+  const newTreeSha = treeResp.data.sha;
+
+  const newCommitResp = await githubRequest(env, "POST", `/git/commits`, {
+    message: message || `Update ${path} via Claude MCP bridge (large file, Git Data API)`,
+    tree: newTreeSha,
+    parents: [commitSha]
+  });
+  if (!newCommitResp.ok) return { ok: false, status: newCommitResp.status, error: newCommitResp.data, stage: "create_commit" };
+  const newCommitSha = newCommitResp.data.sha;
+
+  const updateRefResp = await githubRequest(env, "PATCH", `/git/refs/heads/${encodeURIComponent(branch)}`, { sha: newCommitSha });
+  if (!updateRefResp.ok) return { ok: false, status: updateRefResp.status, error: updateRefResp.data, stage: "update_ref" };
+
+  return {
+    ok: true,
+    status: 200,
+    commit_sha: newCommitSha,
+    file_sha: blobSha,
+    note: "Pushed via Git Data API (large file path). Your existing GitHub Actions auto-deploy will now run.",
+    fetched_via: "git_data_api"
+  };
+}
+
 async function toolGithubPutFile(env, args) {
   const { path, content, message, sha } = args || {};
   if (!path || content === undefined) return { ok: false, error: "Missing path or content." };
+
+  // Contents API has roughly the same ~1MB practical ceiling on both read and write.
+  // Above that, use the Git Data API (blob -> tree -> commit -> ref) instead.
+  if (content.length > 900000) {
+    return await toolGithubPutFileViaGitDataApi(env, { path, content, message });
+  }
+
   const branch = env.GITHUB_BRANCH || "main";
 
   let existingSha = sha;
