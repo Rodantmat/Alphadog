@@ -41,7 +41,8 @@ def make_config(worker_name, include_services=False):
         cfg["compatibility_flags"] = ["nodejs_compat"]
         cfg["services"] = [
             {"binding": "CONTROL_ROOM", "service": "alphadog-v2-control-room"},
-            {"binding": "PHASE3A_WORKER", "service": "alphadog-v2-phase3a-first-inning-pitcher-context"}
+            {"binding": "PHASE3A_WORKER", "service": "alphadog-v2-phase3a-first-inning-pitcher-context"},
+            {"binding": "ORCHESTRATOR_WORKER", "service": "alphadog-v2-orchestrator"}
         ]
         cfg["durable_objects"] = {
             "bindings": [
