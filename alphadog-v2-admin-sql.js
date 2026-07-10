@@ -361,10 +361,11 @@ export class AlphadogMcp extends McpAgent {
 
     this.server.tool(
       "run_job",
-      "Enqueue a job on the AlphaDog orchestrator via the Control Room, the same way its dashboard buttons do. Returns the immediate response, not the finished job result — use run_sql afterward to check status/output tables.",
+      "Enqueue a job on the AlphaDog orchestrator via the Control Room, the same way its dashboard buttons do. Set target='PHASE3A_WORKER' to call the phase3a-first-inning-pitcher-context worker directly instead (useful for testing modes not yet registered in Control Room's job registry). Returns the immediate response, not the finished job result — use run_sql afterward to check status/output tables.",
       {
-        job: z.string().describe("The job key exactly as used by the Control Room buttons, e.g. 'orchestrator_enqueue_score_prep'."),
-        extra: z.record(z.any()).optional().describe("Optional extra fields merged into the request body sent to /tasks/run.")
+        job: z.string().describe("The job key (Control Room) or mode string (direct worker call)."),
+        extra: z.record(z.any()).optional().describe("Optional extra fields merged into the request body."),
+        target: z.enum(["CONTROL_ROOM", "PHASE3A_WORKER"]).optional().describe("Which service to call. Defaults to CONTROL_ROOM.")
       },
       async (args) => {
         const result = await toolRunJob(this.env, args);
