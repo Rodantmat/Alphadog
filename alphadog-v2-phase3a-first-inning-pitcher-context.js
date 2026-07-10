@@ -6537,8 +6537,8 @@ async function runMode(env,input={}){
   if(mode==="expansion_baseline_certifier" || mode==="expansion-baseline-certifier") return certifier(env,input);
   if(mode==="expansion_baseline_full_run" || mode==="expansion-baseline-full-run") return fullRun(env,input);
   if(mode==="baseline_v5_state_hydrate") return runBaselineV5StateHydrate(env,input);
-  if(mode==="baseline_v5_classification_daily_delta") return runBaselineV5DailyDelta(env,input,"classification");
-  if(mode==="baseline_v5_hp_daily_delta") return runBaselineV5DailyDelta(env,input,"hp");
+  if(mode==="baseline_v5_classification_daily_delta") return runClassificationV6DeltaDaily(env,input);
+  if(mode==="baseline_v5_hp_daily_delta") return runBaselineV6DeltaDaily(env,input);
   if(mode==="baseline_v5_stateful_delta") return runBaselineV5StatefulDelta(env,input);
   if(mode==="baseline_v5_classification_rescue") return runBaselineV5ClassificationRescue(env,input);
   if(mode==="baseline_v5_base_rescue") return runBaselineV5BaseRescue(env,input);
