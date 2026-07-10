@@ -6525,6 +6525,7 @@ async function fullRun(env,input={}){
 
 async function runMode(env,input={}){
   await ensureSchema(env);
+  await ensureCalibrationConfigLoaded(env);
   const mode=String(input.mode || input.expansion_mode || input.job_key || "expansion_baseline_full_run");
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
