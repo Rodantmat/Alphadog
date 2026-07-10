@@ -7065,6 +7065,19 @@ async function runBaselineV6BaseSingleStep(env, input = {}) {
 // population baseline. Both classification and baseline use the SAME affected-player
 // detection (new game log entry on the target date) — a player's rate changed, so their
 // HP needs recomputing regardless of whether their discrete tier bucket also crossed a line.
+// Auto-determines the next date to process, watermark-style: finds the latest date already
+// recorded in the given _current table, then finds the earliest date AFTER that with real
+// game log data available. Matches the pattern the orchestrator actually calls with — it does
+// NOT pass an explicit official_date, the worker is expected to figure out what's next itself.
+async function determineNextDeltaDate(env, currentTable) {
+  const watermarkRow = await first(env.ARCHIVE_DB, `SELECT MAX(last_processed_official_date) wm FROM ${currentTable}`);
+  const watermark = (watermarkRow && watermarkRow.wm) ? String(watermarkRow.wm).slice(0, 10) : "1900-01-01";
+  const hitterNext = await first(env.STATS_HITTER_DB, `SELECT MIN(game_date) d FROM hitter_game_logs WHERE game_date > ?`, watermark);
+  const pitcherNext = await first(env.STATS_PITCHER_DB, `SELECT MIN(game_date) d FROM pitcher_game_logs WHERE game_date > ?`, watermark);
+  const candidates = [hitterNext && hitterNext.d, pitcherNext && pitcherNext.d].filter(Boolean).sort();
+  return candidates.length ? candidates[0] : null;
+}
+
 async function getAffectedPlayerIds(env, entity, targetDate) {
   const db = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
   const table = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
