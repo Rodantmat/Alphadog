@@ -6589,6 +6589,7 @@ async function runClassificationV6Base(env, input = {}) {
   const requestId = String(input.request_id || rid("classification_v6_base"));
   const runId = String(input.run_id || rid("run"));
   const officialDate = String(input.official_date || "");
+  const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 40, tick_timeout_ms: 20000, max_retries: 3 });
 
   const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
   const combos = buildComboList(propLineUniverse);
