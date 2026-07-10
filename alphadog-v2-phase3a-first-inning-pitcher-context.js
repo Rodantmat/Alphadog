@@ -6753,6 +6753,43 @@ function estimateDispersion(mean, variance) {
   if (!(variance > mean) || mean <= 0) return Infinity;
   return (mean * mean) / (variance - mean);
 }
+// Correct, pooled estimate of within-player game-to-game overdispersion — NOT the spread of
+// different players' average rates (that reflects skill heterogeneity, which tiering already
+// handles). This pulls each player's own real per-game log, computes their own mean/variance
+// across their own games, then pools those individual estimates weighted by games played.
+async function estimatePooledDispersionFromGameLogs(env, propKey) {
+  const gameLogMap = await getCalibrationValue(env, "global", "prop_game_log_map", {});
+  const gcfg = gameLogMap[propKey];
+  if (!gcfg) return { dispersion: Infinity, note: "no_game_log_map_entry" };
+
+  const db = gcfg.entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  let expr;
+  if (gcfg.weights) {
+    expr = gcfg.fields.map(f => `(${Number(gcfg.weights[f] || 1)}*${f})`).join("+");
+  } else {
+    expr = gcfg.fields[0];
+  }
+
+  const rows = await all(db,
+    `SELECT player_id, COUNT(*) games, AVG(${expr}) mean_i, AVG((${expr})*(${expr})) mean_sq_i
+     FROM ${gcfg.table} GROUP BY player_id HAVING games >= 8`);
+
+  let weightedExcessSum = 0, weightedMeanSum = 0, totalGames = 0;
+  for (const r of rows) {
+    const games = Number(r.games);
+    const meanI = Number(r.mean_i);
+    const varI = Number(r.mean_sq_i) - meanI * meanI;
+    weightedExcessSum += games * (varI - meanI);
+    weightedMeanSum += games * meanI;
+    totalGames += games;
+  }
+  if (totalGames === 0) return { dispersion: Infinity, note: "no_qualifying_players" };
+
+  const pooledMean = weightedMeanSum / totalGames;
+  const pooledExcess = weightedExcessSum / totalGames;
+  const dispersion = (pooledExcess > 0 && pooledMean > 0) ? (pooledMean * pooledMean) / pooledExcess : Infinity;
+  return { dispersion, pooled_mean: pooledMean, pooled_excess_variance: pooledExcess, players_used: rows.length, note: "computed_from_real_game_logs" };
+}
 function negBinomialPMF(k, mean, dispersion) {
   const r = dispersion;
   if (!isFinite(r) || r <= 0) return poissonPMF(k, mean);
