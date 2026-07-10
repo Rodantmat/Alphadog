@@ -156,8 +156,6 @@ function baselineV5CoverageLayerFromState(layerKey, g, ctx = {}) {
   const officialDate = String(g.official_date || '').slice(0,10);
   const existing = ctx.existingBaselineCoverage && ctx.existingBaselineCoverage.get(`${gamePk}|${layerKey}`);
   const dailyState = ctx.baselineV5DailyStateValidity && ctx.baselineV5DailyStateValidity.get(`${officialDate}|${layerKey}`);
-  const latest = ctx.latestBaselinePass || null;
-  const latestDate = latest && latest.source_watermark_date ? String(latest.source_watermark_date).slice(0,10) : null;
   const currentOrFutureNonFinal = !!ctx.currentOrFutureNonFinal;
   const calendarExceptionNoStatsExpected = !!ctx.calendarExceptionNoStatsExpected;
   const liveSourceRowsForGame = Number(ctx.liveSourceRowsForGame || 0);
@@ -166,20 +164,6 @@ function baselineV5CoverageLayerFromState(layerKey, g, ctx = {}) {
   }
   if (currentOrFutureNonFinal) {
     return scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, { baseline_v5_tally_owned_layer_v0_2_12: true, waiting_for_source_day_before_baseline_v5: true });
-  }
-  if (latestDate && officialDate <= latestDate) {
-    return {
-      layerKey,
-      status: 'complete',
-      grade: layerKey === 'baseline_v5_classification' ? 'PASS_INHERITED_CERTIFIED_BASELINE_V5_CLASSIFICATION_STATE' : 'PASS_INHERITED_CERTIFIED_BASELINE_V5_HP_STATE',
-      blocking: 0,
-      liveRows: 1,
-      entityCount: 1,
-      expectedRows: 1,
-      missingRows: 0,
-      reason: null,
-      details: { baseline_v5_tally_owned_layer_v0_2_12: true, inherited_from_latest_certified_state: true, certified_state_batch_id: latest.batch_id || null, certified_watermark_date: latestDate }
-    };
   }
   if (dailyState && dailyState.valid === true) {
     return {
