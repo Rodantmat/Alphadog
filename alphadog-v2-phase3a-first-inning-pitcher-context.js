@@ -6611,9 +6611,33 @@ async function runClassificationV6Base(env, input = {}) {
 
   // Fresh combo (cursor 0): (re)compute population stats for it first — cheap, one pass.
   if (cursorOffset === 0) {
-    const statsResult = await runClassificationV6ComputeStats(env, {
-      canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value, selected_side: combo.selected_side
-    });
+    let statsResult;
+    try {
+      statsResult = await runClassificationV6ComputeStats(env, {
+        canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value, selected_side: combo.selected_side
+      });
+    } catch (err) {
+      const maxRetries = Math.max(1, Number((opLimits && opLimits.max_retries) || 3));
+      const retryCount = Math.max(0, Number(input.retry_count || 0));
+      if (retryCount >= maxRetries) {
+        return {
+          ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+          status: "CLASSIFICATION_V6_BASE_STATS_FAILED", error: `Stats computation failed after ${maxRetries} retries: ${String(err && err.message ? err.message : err)}`,
+          combo_index: comboIndex, combo
+        };
+      }
+      return {
+        ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+        status: "CLASSIFICATION_V6_BASE_PARTIAL_CONTINUE", certification: "CLASSIFICATION_V6_BASE_STATS_TRANSIENT_RETRY",
+        certification_grade: "PARTIAL", combo_index: comboIndex, total_combos: combos.length,
+        partial_continue: true, orchestrator_should_self_continue: true,
+        transient_error: String(err && err.message ? err.message : err),
+        next_input_json: {
+          mode: "baseline_v5_classification_base", request_id: requestId, run_id: runId, batch_id: batchId,
+          combo_index: comboIndex, cursor_offset: 0, official_date: officialDate, retry_count: retryCount + 1
+        }
+      };
+    }
     if (!statsResult.ok) {
       return {
         ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
