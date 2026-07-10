@@ -7114,7 +7114,7 @@ async function runClassificationV6ComputeStats(env, input = {}) {
   const stats = computePopulationStats(rates);
   let dispersion;
   const existingDispersionRow = await first(env.ARCHIVE_DB,
-    `SELECT population_dispersion FROM classification_v6_population_stats WHERE canonical_prop_key=? AND population_dispersion IS NOT NULL LIMIT 1`,
+    `SELECT population_dispersion FROM classification_v6_population_stats WHERE canonical_prop_key=? LIMIT 1`,
     propKey);
   if (existingDispersionRow) {
     dispersion = existingDispersionRow.population_dispersion;
