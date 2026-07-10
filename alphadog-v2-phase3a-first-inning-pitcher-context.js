@@ -5391,9 +5391,9 @@ function priorStrengthForSample(sample, cfg, multiplier=1.0){
 // Confidence = how many effective observations back this number (real sample + prior pseudo-count),
 // mapped to a 5-95 scale with a saturating curve. Grows with sample size, never flat, never
 // silently defaulting to 5 regardless of data — the bug this replaces did exactly that.
-function sampleAwareConfidence(sample, cfg){
+function sampleAwareConfidence(sample, cfg, multiplier=1.0){
   const n = Math.max(0, Number(sample||0));
-  const priorStrength = priorStrengthForSample(n, cfg);
+  const priorStrength = priorStrengthForSample(n, cfg, multiplier);
   const effectiveN = n + priorStrength;
   const conf = 95 * (1 - Math.exp(-effectiveN/25));
   return round(clamp(conf, 5, 95), 2);
