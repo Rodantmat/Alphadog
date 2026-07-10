@@ -6709,6 +6709,26 @@ async function runClassificationV6BaseSingleStep(env, input = {}) {
   return output;
 }
 
+// Looping wrapper: internally drives multiple single-step ticks per external call, up to a
+// wall-clock time budget, instead of returning after just one tick. Same contract to the
+// caller (partial_continue / next_input_json) — just does much more real work per round trip.
+// Useful for direct/manual invocation; orchestrator's own cadence still works fine with this too,
+// it'll just see fewer, chunkier partial_continue steps.
+async function runClassificationV6Base(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 18000; // stay safely under Workers CPU/wall-clock limits per invocation
+  let currentInput = input;
+  let lastOutput = null;
+
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runClassificationV6BaseSingleStep(env, currentInput);
+    if (!lastOutput.ok) return lastOutput;
+    if (!lastOutput.partial_continue) return lastOutput; // fully done
+    currentInput = lastOutput.next_input_json;
+  }
+  return lastOutput;
+}
+
 // ==== BASELINE V6 — HP% and confidence, built on top of classification_v6 ====
 // Locked design: confidence is computed ONLY here, never in classification.
 // Reuses each player's already-computed recency-blended rate (classification_v6_current.metric_value)
