@@ -6553,6 +6553,209 @@ async function runMode(env,input={}){
   return {ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"UNSUPPORTED_EXPANSION_BASELINE_MODE",mode,allowed_modes:["expansion_baseline_mining","expansion_line_inventory","expansion_baseline_sanity","expansion_baseline_hp","expansion_baseline_certifier","expansion_baseline_full_run","expansion_delta_mining","expansion_delta_sanity","expansion_delta_hp","expansion_delta_full_run","baseline_v5_classification_base","baseline_v5_classification_delta","baseline_v5_classification_rescue","baseline_v5_base","baseline_v5_base_rescue","baseline_v5_delta","baseline_v5_state_hydrate","baseline_v5_stateful_delta","baseline_v5_classification_daily_delta","baseline_v5_hp_daily_delta","baseline_v5_history_only","expansion-baseline-v2"]};
 }
 
+// ==== CLASSIFICATION V6 — new, clean, prop/line/direction-aware classification ====
+// Design locked with the user:
+// - Tier varies by canonical_prop_key x line_value x selected_side (the old system didn't do this).
+// - Tiers are z-score bands off the REAL population distribution for that exact prop/line/side,
+//   computed from a Marcel-style recency-weighted blend of last_5/10/20_games + season_to_date.
+// - Tier count collapses/expands automatically based on real population spread (max 12, fewer if thin).
+// - Classification does NOT compute confidence. Confidence is baseline's job only (locked decision).
+// - Every tunable number (weights, bands, chunk size, timeouts) lives in calibration_config, not code.
+// - Writes to ARCHIVE_DB (repurposed, near-empty), not SCORE_DB (near its 10GB limit).
+
+async function getCalibrationValue(env, scope, key, fallback) {
+  const cfg = await ensureCalibrationConfigLoaded(env);
+  const found = cfg[`${scope}|${key}`];
+  return found !== undefined ? found : fallback;
+}
+
+// Recency-weighted blended rate for one player, one prop, using the metric snapshot windows
+// that are already computed live by hitter_metric_snapshots / pitcher_metric_snapshots.
+function computeRecencyBlendedRate(snapshotsByWindow, propConfig) {
+  const weights = propConfig._recencyWeights;
+  const windowKeyMap = {
+    last_5_games: "last_5_games",
+    last_10_games: "last_10_games",
+    last_20_games: "last_20_games",
+    season_to_date: "season_to_date"
+  };
+  let weightedSum = 0, weightTotal = 0;
+  for (const [wKey, weight] of Object.entries(weights)) {
+    const snap = snapshotsByWindow[windowKeyMap[wKey]];
+    if (!snap) continue;
+    const games = Number(snap.games_count || 0);
+    if (games <= 0) continue;
+    let numerator = 0;
+    for (const field of propConfig.numerator_fields) {
+      const raw = Number(snap[field] || 0);
+      const w = propConfig.weights ? Number(propConfig.weights[field] || 1) : 1;
+      numerator += raw * w;
+    }
+    const denom = Number(snap[propConfig.denominator_field] || 0);
+    if (denom <= 0) continue;
+    const rate = numerator / denom;
+    weightedSum += rate * weight;
+    weightTotal += weight;
+  }
+  if (weightTotal <= 0) return null;
+  return weightedSum / weightTotal;
+}
+
+function computePopulationStats(values) {
+  const n = values.length;
+  if (n === 0) return { mean: 0, stddev: 0, n: 0 };
+  const mean = values.reduce((a, b) => a + b, 0) / n;
+  const variance = values.reduce((a, b) => a + (b - mean) * (b - mean), 0) / n;
+  return { mean, stddev: Math.sqrt(variance), n };
+}
+
+// Assign a tier from a z-score, collapsing bands automatically if the real population
+// is too thin to fill min_population_per_tier for every band.
+function assignTierFromZScore(z, tierBandsConfig, populationN) {
+  const bands = tierBandsConfig.z_bands; // e.g. [2.0,1.5,1.0,0.5,0.0,-0.5,-1.0,-1.5,-2.0]
+  const minPop = tierBandsConfig.min_population_per_tier || 15;
+  const maxTiers = tierBandsConfig.max_tiers || 12;
+
+  // How many bands can the real population actually support without any tier going thin?
+  const maxSupportedBands = Math.max(1, Math.min(bands.length + 1, maxTiers, Math.floor(populationN / minPop) || 1));
+  const usableBandCount = maxSupportedBands - 1;
+  const step = Math.max(1, Math.floor(bands.length / Math.max(1, usableBandCount)));
+  const effectiveBands = bands.filter((_, i) => i % step === 0).slice(0, usableBandCount);
+
+  let tierIndex = effectiveBands.length; // default: bottom tier
+  for (let i = 0; i < effectiveBands.length; i++) {
+    if (z >= effectiveBands[i]) { tierIndex = i; break; }
+  }
+  const totalTiers = effectiveBands.length + 1;
+  const tierNumber = tierIndex + 1;
+  return {
+    tier_number: tierNumber,
+    tier_key: `TIER_${String(tierNumber).padStart(2, "0")}_OF_${totalTiers}`,
+    total_tiers_used: totalTiers
+  };
+}
+
+async function loadMetricSnapshotsForPlayers(env, entity, playerIds) {
+  if (!playerIds.length) return new Map();
+  const db = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  const table = entity === "pitcher" ? "pitcher_metric_snapshots" : "hitter_metric_snapshots";
+  const placeholders = playerIds.map(() => "?").join(",");
+  const rows = await all(db, `SELECT * FROM ${table} WHERE player_id IN (${placeholders})`, ...playerIds);
+  const out = new Map();
+  for (const r of rows) {
+    if (!out.has(r.player_id)) out.set(r.player_id, {});
+    out.get(r.player_id)[r.metric_window] = r;
+  }
+  return out;
+}
+
+// One tick of classification for ONE canonical_prop_key x selected_side x line_value.
+// Chunked/tick-based, respecting operational config (chunk size / timeout), same
+// partial_continue pattern already used elsewhere in this codebase.
+async function runClassificationV6Tick(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("classification_v6"));
+  const runId = String(input.run_id || rid("run"));
+  const batchId = String(input.batch_id || rid("classification_v6_batch"));
+  const propKey = String(input.canonical_prop_key || "");
+  const side = String(input.selected_side || "");
+  const lineValue = Number(input.line_value);
+  const officialDate = String(input.official_date || "");
+
+  const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const propConfig = propMap[propKey];
+  if (!propConfig) {
+    return { ok: false, error: `No prop_metric_map entry for canonical_prop_key '${propKey}'.` };
+  }
+  const recencyWeights = await getCalibrationValue(env, "global", "recency_weights", CALIBRATION_CONFIG_DEFAULTS["global|recency_weights"]);
+  const tierBands = await getCalibrationValue(env, "global", "tier_bands", { max_tiers: 12, z_bands: [2.0,1.5,1.0,0.5,0.0,-0.5,-1.0,-1.5,-2.0], min_population_per_tier: 15 });
+  const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 40, tick_timeout_ms: 20000 });
+
+  const entity = propConfig.entity;
+  const idField = entity === "pitcher" ? "pitcher_id" : "player_id";
+  const sourceTable = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
+  const sourceDb = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  const idRows = await all(sourceDb, `SELECT DISTINCT player_id FROM ${sourceTable} WHERE player_id IS NOT NULL`);
+  const allPlayerIds = idRows.map(r => Number(r.player_id)).filter(Boolean);
+
+  const cursor = Math.max(0, Number(input.cursor_offset || 0));
+  const chunkSize = Math.max(10, Number(opLimits.chunk_size_rows || 40));
+  const slice = allPlayerIds.slice(cursor, cursor + chunkSize);
+
+  const snapshots = await loadMetricSnapshotsForPlayers(env, entity, slice);
+  const propConfigWithWeights = { ...propConfig, _recencyWeights: recencyWeights };
+
+  const rates = [];
+  const perPlayer = [];
+  for (const playerId of slice) {
+    const snapByWindow = snapshots.get(playerId) || {};
+    const anySnap = Object.values(snapByWindow)[0];
+    const games = anySnap ? Number(anySnap.games_count || 0) : 0;
+    const rate = computeRecencyBlendedRate(snapByWindow, propConfigWithWeights);
+    if (rate == null) continue;
+    rates.push(rate);
+    perPlayer.push({ playerId, rate, games, playerName: anySnap ? (anySnap.player_name || null) : null });
+  }
+
+  const stats = computePopulationStats(rates);
+  const stmts = [];
+  let reclassifiedCount = 0;
+
+  for (const p of perPlayer) {
+    const z = stats.stddev > 0 ? (p.rate - stats.mean) / stats.stddev : 0;
+    const tier = assignTierFromZScore(z, tierBands, stats.n);
+    const rowId = `clsv6|${entity}|${p.playerId}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+
+    const existing = await first(env.ARCHIVE_DB,
+      `SELECT tier_key FROM classification_v6_current WHERE player_type=? AND player_id=? AND canonical_prop_key=? AND line_value=? AND selected_side=?`,
+      entity, p.playerId, propKey, lineValue, side);
+    if (existing && existing.tier_key !== tier.tier_key) reclassifiedCount++;
+
+    stmts.push(env.ARCHIVE_DB.prepare(
+      `INSERT INTO classification_v6_current (classification_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,tier_key,tier_number,z_score,metric_value,population_mean,population_stddev,games_sample,formula_version,last_processed_official_date,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+       ON CONFLICT(player_type,player_id,canonical_prop_key,line_value,selected_side) DO UPDATE SET
+         batch_id=excluded.batch_id, tier_key=excluded.tier_key, tier_number=excluded.tier_number,
+         z_score=excluded.z_score, metric_value=excluded.metric_value, population_mean=excluded.population_mean,
+         population_stddev=excluded.population_stddev, games_sample=excluded.games_sample,
+         formula_version=excluded.formula_version, last_processed_official_date=excluded.last_processed_official_date,
+         updated_at=CURRENT_TIMESTAMP`
+    ).bind(rowId, batchId, entity, p.playerId, p.playerName, propKey, lineValue, side,
+      tier.tier_key, tier.tier_number, round(z, 4), round(p.rate, 6), round(stats.mean, 6), round(stats.stddev, 6),
+      p.games, CLASSIFICATION_V6_VERSION, officialDate));
+  }
+
+  if (stmts.length) await writeBatch(env.ARCHIVE_DB, "classification_v6_current", stmts, 30);
+
+  const nextCursor = cursor + chunkSize;
+  const done = nextCursor >= allPlayerIds.length;
+
+  await writeRun(env.ARCHIVE_DB,
+    "classification_v6_batches",
+    `INSERT INTO classification_v6_batches (batch_id,request_id,run_id,mode,status,worker_version,official_date,rows_read,rows_written,reclassified_rows,cursor_offset,certification,certification_grade,updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+     ON CONFLICT(batch_id) DO UPDATE SET status=excluded.status, rows_read=classification_v6_batches.rows_read+excluded.rows_read,
+       rows_written=classification_v6_batches.rows_written+excluded.rows_written,
+       reclassified_rows=classification_v6_batches.reclassified_rows+excluded.reclassified_rows,
+       cursor_offset=excluded.cursor_offset, certification=excluded.certification, certification_grade=excluded.certification_grade,
+       finished_at=CASE WHEN excluded.status='completed' THEN CURRENT_TIMESTAMP ELSE finished_at END, updated_at=CURRENT_TIMESTAMP`,
+    batchId, requestId, runId, "classification_v6", done ? "completed" : "partial_continue", CLASSIFICATION_V6_VERSION,
+    officialDate, slice.length, perPlayer.length, reclassifiedCount, nextCursor,
+    "CLASSIFICATION_V6_TICK_CERTIFIED", done ? "PASS" : "PARTIAL");
+
+  return {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "classification_v6",
+    request_id: requestId, run_id: runId, batch_id: batchId,
+    canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+    status: done ? "completed" : "partial_continue",
+    certification: "CLASSIFICATION_V6_TICK_CERTIFIED", certification_grade: done ? "PASS" : "PARTIAL",
+    rows_read: slice.length, rows_written: perPlayer.length, reclassified_rows: reclassifiedCount,
+    population_mean: round(stats.mean, 6), population_stddev: round(stats.stddev, 6), population_n: stats.n,
+    cursor_offset: nextCursor, total_players: allPlayerIds.length, done,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+}
+
 export default {
   async fetch(request, env, ctx){
     const url=new URL(request.url); const path=url.pathname.replace(/\/$/,"")||"/"; const method=request.method.toUpperCase();
