@@ -6636,23 +6636,75 @@ function assignTierFromZScore(z, tierBandsConfig, populationN) {
   };
 }
 
-async function loadMetricSnapshotsForPlayers(env, entity, playerIds) {
-  if (!playerIds.length) return new Map();
+async function loadAllMetricSnapshots(env, entity, playerIds) {
   const db = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
   const table = entity === "pitcher" ? "pitcher_metric_snapshots" : "hitter_metric_snapshots";
-  const placeholders = playerIds.map(() => "?").join(",");
-  const rows = await all(db, `SELECT * FROM ${table} WHERE player_id IN (${placeholders})`, ...playerIds);
   const out = new Map();
-  for (const r of rows) {
-    if (!out.has(r.player_id)) out.set(r.player_id, {});
-    out.get(r.player_id)[r.metric_window] = r;
+  const chunkSize = 90; // stay well under D1's bound-parameter limit
+  for (let i = 0; i < playerIds.length; i += chunkSize) {
+    const chunk = playerIds.slice(i, i + chunkSize);
+    const placeholders = chunk.map(() => "?").join(",");
+    const rows = await all(db, `SELECT * FROM ${table} WHERE player_id IN (${placeholders})`, ...chunk);
+    for (const r of rows) {
+      if (!out.has(r.player_id)) out.set(r.player_id, {});
+      out.get(r.player_id)[r.metric_window] = r;
+    }
   }
   return out;
 }
 
-// One tick of classification for ONE canonical_prop_key x selected_side x line_value.
-// Chunked/tick-based, respecting operational config (chunk size / timeout), same
-// partial_continue pattern already used elsewhere in this codebase.
+// PASS 1: compute the population mean/stddev ONCE across every eligible player for this
+// exact prop/line/side, and cache it. This must never be computed per-chunk — every
+// chunk has to score against the SAME population baseline or tier boundaries drift
+// between chunks, which is wrong.
+async function runClassificationV6ComputeStats(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const propKey = String(input.canonical_prop_key || "");
+  const side = String(input.selected_side || "");
+  const lineValue = Number(input.line_value);
+
+  const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const propConfig = propMap[propKey];
+  if (!propConfig) return { ok: false, error: `No prop_metric_map entry for canonical_prop_key '${propKey}'.` };
+  const recencyWeights = await getCalibrationValue(env, "global", "recency_weights", CALIBRATION_CONFIG_DEFAULTS["global|recency_weights"]);
+
+  const entity = propConfig.entity;
+  const sourceTable = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
+  const sourceDb = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  const idRows = await all(sourceDb, `SELECT DISTINCT player_id FROM ${sourceTable} WHERE player_id IS NOT NULL`);
+  const allPlayerIds = idRows.map(r => Number(r.player_id)).filter(Boolean);
+
+  const snapshots = await loadAllMetricSnapshots(env, entity, allPlayerIds);
+  const propConfigWithWeights = { ...propConfig, _recencyWeights: recencyWeights };
+
+  const rates = [];
+  for (const playerId of allPlayerIds) {
+    const snapByWindow = snapshots.get(playerId) || {};
+    const rate = computeRecencyBlendedRate(snapByWindow, propConfigWithWeights);
+    if (rate != null) rates.push(rate);
+  }
+  const stats = computePopulationStats(rates);
+  const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+
+  await run(env.ARCHIVE_DB,
+    `INSERT INTO classification_v6_population_stats (stats_key,canonical_prop_key,line_value,selected_side,population_mean,population_stddev,population_n,computed_at)
+     VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+     ON CONFLICT(stats_key) DO UPDATE SET population_mean=excluded.population_mean, population_stddev=excluded.population_stddev,
+       population_n=excluded.population_n, computed_at=CURRENT_TIMESTAMP`,
+    statsKey, propKey, lineValue, side, stats.mean, stats.stddev, stats.n);
+
+  return {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "classification_v6_compute_stats",
+    canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+    population_mean: round(stats.mean, 6), population_stddev: round(stats.stddev, 6), population_n: stats.n,
+    total_players_scanned: allPlayerIds.length,
+    certification: "CLASSIFICATION_V6_STATS_CERTIFIED", certification_grade: "PASS"
+  };
+}
+
+// PASS 2: chunked tier assignment against the CACHED population stats from pass 1.
+// Also batches the existing-tier lookup for the whole chunk in one query instead of
+// one query per player (real inefficiency found during testing, fixed here).
 async function runClassificationV6Tick(env, input = {}) {
   await ensureCalibrationConfigLoaded(env);
   const requestId = String(input.request_id || rid("classification_v6"));
@@ -6665,15 +6717,19 @@ async function runClassificationV6Tick(env, input = {}) {
 
   const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
   const propConfig = propMap[propKey];
-  if (!propConfig) {
-    return { ok: false, error: `No prop_metric_map entry for canonical_prop_key '${propKey}'.` };
-  }
+  if (!propConfig) return { ok: false, error: `No prop_metric_map entry for canonical_prop_key '${propKey}'.` };
   const recencyWeights = await getCalibrationValue(env, "global", "recency_weights", CALIBRATION_CONFIG_DEFAULTS["global|recency_weights"]);
   const tierBands = await getCalibrationValue(env, "global", "tier_bands", { max_tiers: 12, z_bands: [2.0,1.5,1.0,0.5,0.0,-0.5,-1.0,-1.5,-2.0], min_population_per_tier: 15 });
   const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 40, tick_timeout_ms: 20000 });
 
+  const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+  const cachedStats = await first(env.ARCHIVE_DB, `SELECT * FROM classification_v6_population_stats WHERE stats_key=?`, statsKey);
+  if (!cachedStats) {
+    return { ok: false, error: `No cached population stats for ${statsKey}. Run classification_v6_compute_stats first.` };
+  }
+  const stats = { mean: cachedStats.population_mean, stddev: cachedStats.population_stddev, n: cachedStats.population_n };
+
   const entity = propConfig.entity;
-  const idField = entity === "pitcher" ? "pitcher_id" : "player_id";
   const sourceTable = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
   const sourceDb = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
   const idRows = await all(sourceDb, `SELECT DISTINCT player_id FROM ${sourceTable} WHERE player_id IS NOT NULL`);
@@ -6683,10 +6739,9 @@ async function runClassificationV6Tick(env, input = {}) {
   const chunkSize = Math.max(10, Number(opLimits.chunk_size_rows || 40));
   const slice = allPlayerIds.slice(cursor, cursor + chunkSize);
 
-  const snapshots = await loadMetricSnapshotsForPlayers(env, entity, slice);
+  const snapshots = await loadAllMetricSnapshots(env, entity, slice);
   const propConfigWithWeights = { ...propConfig, _recencyWeights: recencyWeights };
 
-  const rates = [];
   const perPlayer = [];
   for (const playerId of slice) {
     const snapByWindow = snapshots.get(playerId) || {};
@@ -6694,11 +6749,19 @@ async function runClassificationV6Tick(env, input = {}) {
     const games = anySnap ? Number(anySnap.games_count || 0) : 0;
     const rate = computeRecencyBlendedRate(snapByWindow, propConfigWithWeights);
     if (rate == null) continue;
-    rates.push(rate);
     perPlayer.push({ playerId, rate, games, playerName: anySnap ? (anySnap.player_name || null) : null });
   }
 
-  const stats = computePopulationStats(rates);
+  // Batched existing-tier lookup for the whole chunk (one query, not N queries).
+  const existingTiers = new Map();
+  if (perPlayer.length) {
+    const idPlaceholders = perPlayer.map(() => "?").join(",");
+    const existingRows = await all(env.ARCHIVE_DB,
+      `SELECT player_id, tier_key FROM classification_v6_current WHERE player_type=? AND canonical_prop_key=? AND line_value=? AND selected_side=? AND player_id IN (${idPlaceholders})`,
+      entity, propKey, lineValue, side, ...perPlayer.map(p => p.playerId));
+    for (const r of existingRows) existingTiers.set(r.player_id, r.tier_key);
+  }
+
   const stmts = [];
   let reclassifiedCount = 0;
 
@@ -6707,10 +6770,7 @@ async function runClassificationV6Tick(env, input = {}) {
     const tier = assignTierFromZScore(z, tierBands, stats.n);
     const rowId = `clsv6|${entity}|${p.playerId}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
 
-    const existing = await first(env.ARCHIVE_DB,
-      `SELECT tier_key FROM classification_v6_current WHERE player_type=? AND player_id=? AND canonical_prop_key=? AND line_value=? AND selected_side=?`,
-      entity, p.playerId, propKey, lineValue, side);
-    if (existing && existing.tier_key !== tier.tier_key) reclassifiedCount++;
+    if (existingTiers.has(p.playerId) && existingTiers.get(p.playerId) !== tier.tier_key) reclassifiedCount++;
 
     stmts.push(env.ARCHIVE_DB.prepare(
       `INSERT INTO classification_v6_current (classification_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,tier_key,tier_number,z_score,metric_value,population_mean,population_stddev,games_sample,formula_version,last_processed_official_date,updated_at)
@@ -6733,8 +6793,8 @@ async function runClassificationV6Tick(env, input = {}) {
 
   await writeRun(env.ARCHIVE_DB,
     "classification_v6_batches",
-    `INSERT INTO classification_v6_batches (batch_id,request_id,run_id,mode,status,worker_version,official_date,rows_read,rows_written,reclassified_rows,cursor_offset,certification,certification_grade,updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+    `INSERT INTO classification_v6_batches (batch_id,request_id,run_id,mode,status,worker_version,official_date,rows_read,rows_written,reclassified_rows,cursor_offset,certification,certification_grade,cached_population_mean,cached_population_stddev,cached_population_n,stats_computed_at,updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
      ON CONFLICT(batch_id) DO UPDATE SET status=excluded.status, rows_read=classification_v6_batches.rows_read+excluded.rows_read,
        rows_written=classification_v6_batches.rows_written+excluded.rows_written,
        reclassified_rows=classification_v6_batches.reclassified_rows+excluded.reclassified_rows,
@@ -6742,7 +6802,8 @@ async function runClassificationV6Tick(env, input = {}) {
        finished_at=CASE WHEN excluded.status='completed' THEN CURRENT_TIMESTAMP ELSE finished_at END, updated_at=CURRENT_TIMESTAMP`,
     batchId, requestId, runId, "classification_v6", done ? "completed" : "partial_continue", CLASSIFICATION_V6_VERSION,
     officialDate, slice.length, perPlayer.length, reclassifiedCount, nextCursor,
-    "CLASSIFICATION_V6_TICK_CERTIFIED", done ? "PASS" : "PARTIAL");
+    "CLASSIFICATION_V6_TICK_CERTIFIED", done ? "PASS" : "PARTIAL",
+    stats.mean, stats.stddev, stats.n, cachedStats.computed_at);
 
   return {
     ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "classification_v6",
