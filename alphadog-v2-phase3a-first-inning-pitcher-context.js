@@ -6775,10 +6775,10 @@ function hpFromCountModel(mean, lineValue, side, dispersion) {
 
 async function runBaselineV6ComputeTierPriors(env, propKey, lineValue, side) {
   const rows = await all(env.ARCHIVE_DB,
-    `SELECT tier_key, AVG(metric_value) avg_rate FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? GROUP BY tier_key`,
+    `SELECT tier_key, AVG(metric_value) avg_rate, COUNT(*) tier_n FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? GROUP BY tier_key`,
     propKey, lineValue, side);
   const priors = {};
-  for (const r of rows) priors[r.tier_key] = r.avg_rate;
+  for (const r of rows) priors[r.tier_key] = { avg_rate: r.avg_rate, tier_n: r.tier_n };
   return priors;
 }
 
