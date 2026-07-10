@@ -201,6 +201,44 @@ async function toolGithubPatchFile(env, args) {
   });
 }
 
+async function toolGithubGrepFile(env, args) {
+  const { path, pattern, context_lines, max_matches } = args || {};
+  if (!path || !pattern) return { ok: false, error: "Missing path or pattern." };
+  const current = await toolGithubGetFile(env, { path });
+  if (!current.ok) return { ok: false, error: "Could not read file.", details: current };
+  if (!current.content) return { ok: false, error: "File has no content or is empty." };
+
+  const lines = current.content.split("\n");
+  const ctx = Math.max(0, Number(context_lines) || 3);
+  const maxMatches = Math.max(1, Math.min(Number(max_matches) || 20, 50));
+
+  let regex;
+  try { regex = new RegExp(pattern); } catch (e) { return { ok: false, error: `Invalid regex pattern: ${e.message}` }; }
+
+  const matches = [];
+  for (let i = 0; i < lines.length && matches.length < maxMatches; i++) {
+    if (regex.test(lines[i])) {
+      const start = Math.max(0, i - ctx);
+      const end = Math.min(lines.length, i + ctx + 1);
+      matches.push({
+        matched_line_number: i + 1,
+        snippet: lines.slice(start, end).map((l, idx) => `${start + idx + 1}: ${l}`).join("\n")
+      });
+    }
+  }
+
+  return {
+    ok: true,
+    path,
+    file_size: current.size,
+    total_lines: lines.length,
+    pattern,
+    match_count: matches.length,
+    truncated_at_max_matches: matches.length >= maxMatches,
+    matches
+  };
+}
+
 async function toolCheckBindings(env) {
   return {
     ok: true,
