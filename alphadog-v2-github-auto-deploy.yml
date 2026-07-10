@@ -70,8 +70,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Wrangler
-        run: npm install -D wrangler
+      - name: Install dependencies (wrangler + worker packages)
+        run: npm install
 
       - name: Validate required GitHub secrets
         shell: bash

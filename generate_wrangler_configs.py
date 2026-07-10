@@ -34,6 +34,22 @@ def make_config(worker_name, include_services=False):
         cfg["services"] = [
             {"binding": "ORCHESTRATOR_WORKER", "service": "alphadog-v2-orchestrator"}
         ]
+    if worker_name == "alphadog-v2-admin-sql":
+        # This worker doubles as the Claude MCP bridge (agents/MCP SDK).
+        # Same reason as control-room above: this must live in the generator
+        # or it gets wiped on every deploy before Wrangler even runs.
+        cfg["compatibility_flags"] = ["nodejs_compat"]
+        cfg["services"] = [
+            {"binding": "CONTROL_ROOM", "service": "alphadog-v2-control-room"}
+        ]
+        cfg["durable_objects"] = {
+            "bindings": [
+                {"name": "MCP_OBJECT", "class_name": "AlphadogMcp"}
+            ]
+        }
+        cfg["migrations"] = [
+            {"tag": "v1", "new_sqlite_classes": ["AlphadogMcp"]}
+        ]
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}

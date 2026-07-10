@@ -1,0 +1,12 @@
+{
+  "name": "alphadog-v2-workers",
+  "private": true,
+  "devDependencies": {
+    "wrangler": "*"
+  },
+  "dependencies": {
+    "agents": "*",
+    "@modelcontextprotocol/sdk": "*",
+    "zod": "*"
+  }
+}
