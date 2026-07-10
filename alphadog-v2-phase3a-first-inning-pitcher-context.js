@@ -7085,6 +7085,28 @@ async function getAffectedPlayerIds(env, entity, targetDate) {
   return rows.map(r => Number(r.player_id)).filter(Boolean);
 }
 
+// Self-healing: even when there's nothing NEW to compute, verify the most recently processed
+// date actually has its coverage record written in the certifier's ledger. If a previous run
+// was interrupted or a coverage write was missed for any reason, this repairs it here instead
+// of silently leaving a gap the certifier can never see closed.
+async function reconcileDailyDeltaCoverage(env, { kind, currentTable, requestId, runId }) {
+  const watermarkRow = await first(env.ARCHIVE_DB, `SELECT MAX(last_processed_official_date) wm FROM ${currentTable}`);
+  const watermark = (watermarkRow && watermarkRow.wm) ? String(watermarkRow.wm).slice(0, 10) : null;
+  if (!watermark) return null;
+  const layerKey = baselineV5DailyCoverageLayer(kind);
+  const totalGames = await first(env.TEAM_DB, `SELECT COUNT(*) n FROM mlb_game_calendar WHERE official_date=?`, watermark);
+  if (!totalGames || Number(totalGames.n || 0) <= 0) return null;
+  const existingCoverage = await first(env.TEAM_DB,
+    `SELECT COUNT(*) n FROM mlb_game_data_coverage WHERE official_date=? AND layer_key=? AND coverage_status='complete' AND COALESCE(blocking_for_full_run,0)=0`,
+    watermark, layerKey);
+  if (Number(existingCoverage.n || 0) >= Number(totalGames.n || 0)) return null; // already covered, nothing to repair
+  const rowCountForDate = await first(env.ARCHIVE_DB, `SELECT COUNT(*) n FROM ${currentTable} WHERE last_processed_official_date=?`, watermark);
+  return await baselineV5DailyUpsertCoverage(env, {
+    kind, officialDate: watermark, batchId: rid(`${kind}_v6_delta_reconcile_batch`), requestId, runId,
+    rowsUpdated: Number(rowCountForDate.n || 0), playersUpdated: Number(rowCountForDate.n || 0)
+  });
+}
+
 async function runClassificationV6DeltaDailySingleStep(env, input = {}) {
   await ensureCalibrationConfigLoaded(env);
   const requestId = String(input.request_id || rid("classification_v6_delta"));
