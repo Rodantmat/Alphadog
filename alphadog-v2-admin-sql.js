@@ -3,7 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
 const WORKER_NAME = "alphadog-v2-admin-sql";
-const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v2.0-sdk";
+const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v2.1-github-tools";
 const JOB_KEY = "admin-sql-mcp-bridge";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -180,6 +180,116 @@ async function toolCheckBindings(env) {
   };
 }
 
+// ---- GitHub file read/write, using the GITHUB_TOKEN secret already on this worker ----
+
+function b64EncodeUtf8(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  bytes.forEach((b) => { binary += String.fromCharCode(b); });
+  return btoa(binary);
+}
+
+function b64DecodeUtf8(b64) {
+  const binary = atob(String(b64 || "").replace(/\n/g, ""));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+function encodeRepoPath(path) {
+  return String(path || "").split("/").filter(Boolean).map(encodeURIComponent).join("/");
+}
+
+async function githubRequest(env, method, path, body) {
+  if (!env.GITHUB_TOKEN || !env.GITHUB_OWNER || !env.GITHUB_REPO) {
+    return { ok: false, status: 0, data: { error: "GITHUB_TOKEN / GITHUB_OWNER / GITHUB_REPO not configured on this worker." } };
+  }
+  const url = `https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}${path}`;
+  const resp = await fetch(url, {
+    method,
+    headers: {
+      "Authorization": `Bearer ${env.GITHUB_TOKEN}`,
+      "Accept": "application/vnd.github+json",
+      "User-Agent": "Alphadog-MCP-Bridge",
+      "X-GitHub-Api-Version": "2022-11-28",
+      ...(body ? { "Content-Type": "application/json" } : {})
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const text = await resp.text();
+  let parsed;
+  try { parsed = JSON.parse(text); } catch { parsed = text; }
+  return { status: resp.status, ok: resp.ok, data: parsed };
+}
+
+async function toolGithubGetFile(env, args) {
+  const { path } = args || {};
+  if (!path) return { ok: false, error: "Missing path." };
+  const branch = env.GITHUB_BRANCH || "main";
+  const r = await githubRequest(env, "GET", `/contents/${encodeRepoPath(path)}?ref=${encodeURIComponent(branch)}`);
+  if (!r.ok) return { ok: false, status: r.status, error: r.data };
+  if (Array.isArray(r.data)) return { ok: false, error: "That path is a directory, not a file. Use github_list_dir instead." };
+  const content = r.data.content ? b64DecodeUtf8(r.data.content) : null;
+  return { ok: true, path, sha: r.data.sha, size: r.data.size, content };
+}
+
+async function toolGithubPutFile(env, args) {
+  const { path, content, message, sha } = args || {};
+  if (!path || content === undefined) return { ok: false, error: "Missing path or content." };
+  const branch = env.GITHUB_BRANCH || "main";
+
+  let existingSha = sha;
+  if (!existingSha) {
+    const existing = await githubRequest(env, "GET", `/contents/${encodeRepoPath(path)}?ref=${encodeURIComponent(branch)}`);
+    if (existing.ok && existing.data && existing.data.sha) existingSha = existing.data.sha;
+  }
+
+  const body = {
+    message: message || `Update ${path} via Claude MCP bridge`,
+    content: b64EncodeUtf8(content),
+    branch
+  };
+  if (existingSha) body.sha = existingSha;
+
+  const r = await githubRequest(env, "PUT", `/contents/${encodeRepoPath(path)}`, body);
+  return {
+    ok: r.ok,
+    status: r.status,
+    commit_sha: r.data && r.data.commit ? r.data.commit.sha : null,
+    file_sha: r.data && r.data.content ? r.data.content.sha : null,
+    note: r.ok ? "Pushed to branch. Your existing GitHub Actions auto-deploy will now run." : null,
+    response: r.ok ? undefined : r.data
+  };
+}
+
+async function toolGithubListDir(env, args) {
+  const path = (args && args.path) || "";
+  const branch = env.GITHUB_BRANCH || "main";
+  const r = await githubRequest(env, "GET", `/contents/${encodeRepoPath(path)}?ref=${encodeURIComponent(branch)}`);
+  if (!r.ok) return { ok: false, status: r.status, error: r.data };
+  const entries = Array.isArray(r.data)
+    ? r.data.map((e) => ({ name: e.name, path: e.path, type: e.type, size: e.size }))
+    : [{ name: r.data.name, path: r.data.path, type: r.data.type, size: r.data.size }];
+  return { ok: true, path: path || "/", entries };
+}
+
+async function toolGithubListWorkflowRuns(env, args) {
+  const perPage = (args && args.per_page) || 5;
+  const r = await githubRequest(env, "GET", `/actions/runs?per_page=${encodeURIComponent(perPage)}`);
+  if (!r.ok) return { ok: false, status: r.status, error: r.data };
+  const runs = (r.data.workflow_runs || []).map((w) => ({
+    id: w.id,
+    name: w.name,
+    status: w.status,
+    conclusion: w.conclusion,
+    head_branch: w.head_branch,
+    head_sha: w.head_sha,
+    created_at: w.created_at,
+    html_url: w.html_url
+  }));
+  return { ok: true, runs };
+}
+
 // ---- The actual MCP server, built on Cloudflare's official SDK ----------
 
 export class AlphadogMcp extends McpAgent {
@@ -227,6 +337,69 @@ export class AlphadogMcp extends McpAgent {
       },
       async (args) => {
         const result = await toolRunJob(this.env, args);
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          isError: result.ok === false
+        };
+      }
+    );
+
+    this.server.tool(
+      "github_get_file",
+      "Read a file's current content from the repo (branch = GITHUB_BRANCH secret, default 'main').",
+      {
+        path: z.string().describe("File path within the repo, e.g. 'alphadog-v2-admin-sql.js'.")
+      },
+      async (args) => {
+        const result = await toolGithubGetFile(this.env, args);
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          isError: result.ok === false
+        };
+      }
+    );
+
+    this.server.tool(
+      "github_put_file",
+      "Create or update a file in the repo and commit it directly to the branch. This will trigger the existing GitHub Actions auto-deploy workflow, same as a manual commit would.",
+      {
+        path: z.string().describe("File path within the repo to write."),
+        content: z.string().describe("Full new text content of the file."),
+        message: z.string().optional().describe("Commit message. Defaults to a generic one if omitted."),
+        sha: z.string().optional().describe("Blob sha of the file being replaced, if known. If omitted, it's looked up automatically.")
+      },
+      async (args) => {
+        const result = await toolGithubPutFile(this.env, args);
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          isError: result.ok === false
+        };
+      }
+    );
+
+    this.server.tool(
+      "github_list_dir",
+      "List files in a directory of the repo (or the repo root if path is omitted).",
+      {
+        path: z.string().optional().describe("Directory path within the repo. Omit for repo root.")
+      },
+      async (args) => {
+        const result = await toolGithubListDir(this.env, args);
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          isError: result.ok === false
+        };
+      }
+    );
+
+    this.server.tool(
+      "github_list_workflow_runs",
+      "Check the status of recent GitHub Actions workflow runs (deploys), most recent first.",
+      {
+        per_page: z.number().optional().describe("How many recent runs to return. Defaults to 5.")
+      },
+      async (args) => {
+        const result = await toolGithubListWorkflowRuns(this.env, args);
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           isError: result.ok === false
