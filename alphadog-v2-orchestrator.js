@@ -4167,6 +4167,12 @@ async function enqueueIncrementalMorningFullRunChild(env, parentRow, stage, step
   const input = inputOverride && typeof inputOverride === "object"
     ? inputOverride
     : incrementalMorningFullRunChildInput(parentRow, stage, stepIndex, retryCount);
+  // v0.2.351: guarantee the stage key is always correct, even when inputOverride bypasses the
+  // normal builder above. Without this, a retry could be misidentified via job_key-fallback
+  // matching against a sibling stage that happens to share the same job_key/worker.
+  input.full_run_stage_key = stage.stage_key;
+  input.stage_key = stage.stage_key;
+  input.stage_index = stepIndex;
   await run(env.CONTROL_DB,
     "INSERT INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
     childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, stage.priority, JSON.stringify(input)
