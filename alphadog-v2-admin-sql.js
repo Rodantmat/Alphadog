@@ -472,7 +472,7 @@ export class AlphadogMcp extends McpAgent {
       {
         job: z.string().describe("The job key (Control Room) or mode string (direct worker call)."),
         extra: z.record(z.any()).optional().describe("Optional extra fields merged into the request body."),
-        target: z.enum(["CONTROL_ROOM", "PHASE3A_WORKER"]).optional().describe("Which service to call. Defaults to CONTROL_ROOM.")
+        target: z.enum(["CONTROL_ROOM", "PHASE3A_WORKER", "ORCHESTRATOR_WORKER"]).optional().describe("Which service to call. Defaults to CONTROL_ROOM.")
       },
       async (args) => {
         const result = await toolRunJob(this.env, args);
