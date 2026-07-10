@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-admin-sql";
-const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v1.2-cors-fix";
+const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v1.3-oauth";
 const JOB_KEY = "admin-sql-mcp-bridge";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -310,6 +310,85 @@ export default {
 
     if (method === "OPTIONS") {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
+    }
+
+    // ---- Minimal auto-approving OAuth so the Connectors "Connect" button works ----
+
+    if (method === "GET" && path === "/.well-known/oauth-protected-resource") {
+      return jsonResponse({
+        resource: `${url.origin}/mcp`,
+        authorization_servers: [url.origin]
+      });
+    }
+
+    if (method === "GET" && path === "/.well-known/oauth-authorization-server") {
+      return jsonResponse({
+        issuer: url.origin,
+        authorization_endpoint: `${url.origin}/authorize`,
+        token_endpoint: `${url.origin}/token`,
+        registration_endpoint: `${url.origin}/register`,
+        response_types_supported: ["code"],
+        grant_types_supported: ["authorization_code", "refresh_token"],
+        token_endpoint_auth_methods_supported: ["none"],
+        code_challenge_methods_supported: ["S256", "plain"]
+      });
+    }
+
+    if (method === "POST" && path === "/register") {
+      const input = await readJsonSafe(request);
+      return jsonResponse({
+        client_id: "alphadog-bridge-client",
+        client_id_issued_at: Math.floor(Date.now() / 1000),
+        redirect_uris: input.redirect_uris || [],
+        token_endpoint_auth_method: "none",
+        grant_types: ["authorization_code", "refresh_token"],
+        response_types: ["code"]
+      }, 201);
+    }
+
+    if (method === "GET" && path === "/authorize") {
+      const redirectUri = url.searchParams.get("redirect_uri");
+      const state = url.searchParams.get("state") || "";
+      if (!redirectUri) {
+        return jsonResponse({ ok: false, error: "Missing redirect_uri" }, 400);
+      }
+      // Single-user bridge: auto-approve immediately, no login screen.
+      // The "code" IS the admin token itself, base64'd, so /token can hand it straight back.
+      const code = btoa(env.ALPHADOG_ADMIN_TOKEN || "");
+      const redirect = new URL(redirectUri);
+      redirect.searchParams.set("code", code);
+      if (state) redirect.searchParams.set("state", state);
+      return Response.redirect(redirect.toString(), 302);
+    }
+
+    if (method === "POST" && path === "/token") {
+      const contentType = request.headers.get("content-type") || "";
+      let params;
+      if (contentType.includes("application/json")) {
+        params = await readJsonSafe(request);
+      } else {
+        const text = await request.text();
+        params = Object.fromEntries(new URLSearchParams(text));
+      }
+      const grantType = params.grant_type;
+      let accessToken = null;
+
+      if (grantType === "authorization_code" && params.code) {
+        try { accessToken = atob(params.code); } catch { accessToken = null; }
+      } else if (grantType === "refresh_token" && params.refresh_token) {
+        try { accessToken = atob(params.refresh_token); } catch { accessToken = null; }
+      }
+
+      if (!accessToken || accessToken !== env.ALPHADOG_ADMIN_TOKEN) {
+        return jsonResponse({ error: "invalid_grant" }, 400);
+      }
+
+      return jsonResponse({
+        access_token: accessToken,
+        token_type: "Bearer",
+        expires_in: 31536000,
+        refresh_token: btoa(env.ALPHADOG_ADMIN_TOKEN || "")
+      });
     }
 
     if (method === "GET" && path === "/") {
