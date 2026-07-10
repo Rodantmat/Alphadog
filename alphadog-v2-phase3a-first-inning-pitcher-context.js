@@ -6548,7 +6548,8 @@ async function runMode(env,input={}){
   if(mode==="classification_v6_compute_stats") return runClassificationV6ComputeStats(env,input);
   if(mode==="classification_v6_tick" || mode==="classification_v6") return runClassificationV6Tick(env,input);
   if(mode==="baseline_v5_classification_base") return runClassificationV6Base(env,input);
-  if(mode==="baseline_v5_base" || mode==="baseline_v5_history_only" || mode==="baseline_v2_heb" || mode==="expansion_baseline_v2" || mode==="expansion-baseline-v2" || mode==="expansion-baseline-v2-full-run") return runBaselineV2(env,input);
+  if(mode==="baseline_v5_base") return runBaselineV6Base(env,input);
+  if(mode==="baseline_v5_history_only" || mode==="baseline_v2_heb" || mode==="expansion_baseline_v2" || mode==="expansion-baseline-v2" || mode==="expansion-baseline-v2-full-run") return runBaselineV2(env,input);
   const jobKey = String(input.job_key || "");
   if (jobKey === "phase3a-first-inning-pitcher-context" || mode === "phase3a-first-inning-pitcher-context" || mode === "legacy_dummy") {
     return {ok:true,data_ok:true,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,job_key:jobKey || "phase3a-first-inning-pitcher-context",status:"LEGACY_DUMMY_SLOT_READY_NO_MUTATION",certification:"LEGACY_DUMMY_SLOT_READY_NO_MUTATION",rows_read:0,rows_written:0,writes_performed:0,external_calls_performed:0,expansion_only:false,baseline_only:false,no_current_baseline_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true};
