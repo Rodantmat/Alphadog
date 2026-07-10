@@ -143,22 +143,30 @@ async function toolRunJob(env, args) {
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
-  const binding = target === "PHASE3A_WORKER" ? env.PHASE3A_WORKER : env.CONTROL_ROOM;
-  const bindingName = target === "PHASE3A_WORKER" ? "PHASE3A_WORKER" : "CONTROL_ROOM";
+  const bindingMap = { CONTROL_ROOM: env.CONTROL_ROOM, PHASE3A_WORKER: env.PHASE3A_WORKER, ORCHESTRATOR_WORKER: env.ORCHESTRATOR_WORKER };
+  const bindingName = target && bindingMap[target] !== undefined ? target : "CONTROL_ROOM";
+  const binding = bindingMap[bindingName];
   if (!binding) {
     return { ok: false, error: `${bindingName} service binding is not configured on this worker.` };
   }
 
-  const body = target === "PHASE3A_WORKER"
-    ? { mode: job, ...(extra && typeof extra === "object" ? extra : {}) }
-    : {
-        job,
-        slate_mode: "AUTO_BY_GAME_DATE_TIME",
-        backend_only: true,
-        source: "claude_mcp_bridge",
-        ...(extra && typeof extra === "object" ? extra : {})
-      };
-  const path = target === "PHASE3A_WORKER" ? "https://internal/run" : "https://internal/tasks/run";
+  let body, path;
+  if (bindingName === "PHASE3A_WORKER") {
+    body = { mode: job, ...(extra && typeof extra === "object" ? extra : {}) };
+    path = "https://internal/run";
+  } else if (bindingName === "ORCHESTRATOR_WORKER") {
+    body = { max_jobs: 5, ...(extra && typeof extra === "object" ? extra : {}) };
+    path = "https://internal/tick";
+  } else {
+    body = {
+      job,
+      slate_mode: "AUTO_BY_GAME_DATE_TIME",
+      backend_only: true,
+      source: "claude_mcp_bridge",
+      ...(extra && typeof extra === "object" ? extra : {})
+    };
+    path = "https://internal/tasks/run";
+  }
 
   try {
     const resp = await binding.fetch(path, {
