@@ -6900,6 +6900,16 @@ async function runBaselineV6Base(env, input = {}) {
   return output;
 }
 
+async function getRecencyWeightsForProp(env, propKey) {
+  const profiles = await getCalibrationValue(env, "global", "prop_recency_profile", {});
+  const globalDefault = await getCalibrationValue(env, "global", "recency_weights", CALIBRATION_CONFIG_DEFAULTS["global|recency_weights"]);
+  const profile = profiles[propKey];
+  return {
+    recency_weights: profile ? profile.recency_weights : globalDefault,
+    prior_strength_multiplier: profile ? Number(profile.prior_strength_multiplier || 1.0) : 1.0
+  };
+}
+
 async function getCalibrationValue(env, scope, key, fallback) {
   const cfg = await ensureCalibrationConfigLoaded(env);
   const found = cfg[`${scope}|${key}`];
