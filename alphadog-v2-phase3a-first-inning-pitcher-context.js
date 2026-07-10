@@ -6772,10 +6772,10 @@ async function runBaselineV6Tick(env, input = {}) {
   const stmts = [];
   for (const p of classRows) {
     const tierMean = tierPriors[p.tier_key] != null ? tierPriors[p.tier_key] : p.metric_value;
-    const priorStrength = priorStrengthForSample(p.games_sample, cfg);
+    const priorStrength = priorStrengthForSample(p.games_sample, cfg, priorStrengthMultiplier);
     const shrunkRate = (p.games_sample * p.metric_value + priorStrength * tierMean) / (p.games_sample + priorStrength);
     const hp = hpFromPoisson(shrunkRate, lineValue, side);
-    const confidence = sampleAwareConfidence(p.games_sample, cfg);
+    const confidence = sampleAwareConfidence(p.games_sample, cfg, priorStrengthMultiplier);
     const rowId = `blv6|${p.player_type}|${p.player_id}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
 
     stmts.push(env.ARCHIVE_DB.prepare(
