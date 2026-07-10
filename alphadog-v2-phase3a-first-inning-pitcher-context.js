@@ -7089,8 +7089,20 @@ async function runClassificationV6DeltaDailySingleStep(env, input = {}) {
   await ensureCalibrationConfigLoaded(env);
   const requestId = String(input.request_id || rid("classification_v6_delta"));
   const runId = String(input.run_id || rid("run"));
-  const officialDate = String(input.official_date || "");
-  if (!officialDate) return { ok: false, error: "official_date is required for daily delta." };
+  let officialDate = String(input.official_date || "");
+  if (!officialDate) {
+    const nextDate = await determineNextDeltaDate(env, "classification_v6_current");
+    if (!nextDate) {
+      return {
+        ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
+        status: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_NOOP_ALL_DAYS_ALREADY_COVERED",
+        certification: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_NOOP_ALL_DAYS_ALREADY_COVERED",
+        certification_grade: "NOOP_PASS", current_tables_mutated: false, history_tables_mutated: false,
+        no_daily_context: true, no_market_context: true, no_scoring_context: true
+      };
+    }
+    officialDate = nextDate;
+  }
 
   const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
   const combos = buildComboList(propLineUniverse);
