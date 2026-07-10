@@ -6910,7 +6910,7 @@ async function runBaselineV6Tick(env, input = {}) {
   };
 }
 
-async function runBaselineV6Base(env, input = {}) {
+async function runBaselineV6BaseSingleStep(env, input = {}) {
   await ensureCalibrationConfigLoaded(env);
   const requestId = String(input.request_id || rid("baseline_v6_base"));
   const runId = String(input.run_id || rid("run"));
