@@ -6944,10 +6944,17 @@ async function runBaselineV6Tick(env, input = {}) {
   if (stmts.length) await writeBatch(env.ARCHIVE_DB, "baseline_v6_current", stmts, 30);
 
   const nextCursor = cursor + chunkSize;
-  const totalForCombo = await first(env.ARCHIVE_DB,
+  const done = Array.isArray(input.player_ids_override)
+    ? true
+    : (await (async () => {
+        const totalForCombo = await first(env.ARCHIVE_DB,
+          `SELECT COUNT(*) n FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?`,
+          propKey, lineValue, side);
+        return nextCursor >= Number(totalForCombo.n);
+      })());
+  const totalForCombo = Array.isArray(input.player_ids_override) ? { n: input.player_ids_override.length } : await first(env.ARCHIVE_DB,
     `SELECT COUNT(*) n FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?`,
     propKey, lineValue, side);
-  const done = nextCursor >= Number(totalForCombo.n);
 
   return {
     ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v6",
