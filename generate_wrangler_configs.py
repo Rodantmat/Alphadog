@@ -40,7 +40,8 @@ def make_config(worker_name, include_services=False):
         # or it gets wiped on every deploy before Wrangler even runs.
         cfg["compatibility_flags"] = ["nodejs_compat"]
         cfg["services"] = [
-            {"binding": "CONTROL_ROOM", "service": "alphadog-v2-control-room"}
+            {"binding": "CONTROL_ROOM", "service": "alphadog-v2-control-room"},
+            {"binding": "PHASE3A_WORKER", "service": "alphadog-v2-phase3a-first-inning-pitcher-context"}
         ]
         cfg["durable_objects"] = {
             "bindings": [
