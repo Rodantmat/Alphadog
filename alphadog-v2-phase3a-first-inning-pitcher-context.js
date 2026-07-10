@@ -7097,7 +7097,9 @@ async function runClassificationV6DeltaDailySingleStep(env, input = {}) {
         ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
         status: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_NOOP_ALL_DAYS_ALREADY_COVERED",
         certification: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_NOOP_ALL_DAYS_ALREADY_COVERED",
-        certification_grade: "NOOP_PASS", current_tables_mutated: false, history_tables_mutated: false,
+        certification_grade: "NOOP_PASS", certifier_owned_daily_delta: true, day_by_day_delta: true,
+        current_tables_mutated: false, history_tables_mutated: false, full_cumulative_history_recompute: false,
+        coverage_update: { coverage_rows_written: 0 },
         no_daily_context: true, no_market_context: true, no_scoring_context: true
       };
     }
