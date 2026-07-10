@@ -7002,6 +7002,21 @@ async function runBaselineV6BaseSingleStep(env, input = {}) {
   return output;
 }
 
+async function runBaselineV6Base(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 18000;
+  let currentInput = input;
+  let lastOutput = null;
+
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runBaselineV6BaseSingleStep(env, currentInput);
+    if (!lastOutput.ok) return lastOutput;
+    if (!lastOutput.partial_continue) return lastOutput;
+    currentInput = lastOutput.next_input_json;
+  }
+  return lastOutput;
+}
+
 async function getRecencyWeightsForProp(env, propKey) {
   const profiles = await getCalibrationValue(env, "global", "prop_recency_profile", {});
   const globalDefault = await getCalibrationValue(env, "global", "recency_weights", CALIBRATION_CONFIG_DEFAULTS["global|recency_weights"]);
