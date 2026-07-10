@@ -6709,6 +6709,195 @@ async function runClassificationV6Base(env, input = {}) {
   return output;
 }
 
+// ==== BASELINE V6 — HP% and confidence, built on top of classification_v6 ====
+// Locked design: confidence is computed ONLY here, never in classification.
+// Reuses each player's already-computed recency-blended rate (classification_v6_current.metric_value)
+// rather than recomputing it — one source of truth, no duplicated work.
+// Rate -> probability via Poisson (real, standard model for count-based sports events),
+// after shrinking the raw rate toward the player's own TIER mean (not grand population mean —
+// hierarchical/empirical-Bayes style shrinkage, same principle as real Marcel projections).
+
+function lnFactorial(n) {
+  let sum = 0;
+  for (let i = 2; i <= n; i++) sum += Math.log(i);
+  return sum;
+}
+function poissonPMF(k, lambda) {
+  if (lambda <= 0) return k === 0 ? 1 : 0;
+  return Math.exp(-lambda + k * Math.log(lambda) - lnFactorial(k));
+}
+function poissonCDF(k, lambda) {
+  let sum = 0;
+  for (let i = 0; i <= k; i++) sum += poissonPMF(i, lambda);
+  return Math.min(1, Math.max(0, sum));
+}
+// Standard sports line convention: line 1.5 means "more" = 2+, "under" = 0-1.
+function hpFromPoisson(lambda, lineValue, side) {
+  const threshold = Math.floor(lineValue);
+  const pUnder = poissonCDF(threshold, lambda);
+  return side === "more" ? (1 - pUnder) : pUnder;
+}
+
+async function runBaselineV6ComputeTierPriors(env, propKey, lineValue, side) {
+  const rows = await all(env.ARCHIVE_DB,
+    `SELECT tier_key, AVG(metric_value) avg_rate FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? GROUP BY tier_key`,
+    propKey, lineValue, side);
+  const priors = {};
+  for (const r of rows) priors[r.tier_key] = r.avg_rate;
+  return priors;
+}
+
+async function runBaselineV6Tick(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const batchId = String(input.batch_id || rid("baseline_v6_batch"));
+  const propKey = String(input.canonical_prop_key || "");
+  const side = String(input.selected_side || "");
+  const lineValue = Number(input.line_value);
+  const officialDate = String(input.official_date || "");
+  const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 300 });
+  const cfg = CALIBRATION_CONFIG_CACHE || CALIBRATION_CONFIG_DEFAULTS;
+
+  const tierPriors = await runBaselineV6ComputeTierPriors(env, propKey, lineValue, side);
+
+  const cursor = Math.max(0, Number(input.cursor_offset || 0));
+  const chunkSize = Math.max(10, Number(opLimits.chunk_size_rows || 300));
+
+  const classRows = await all(env.ARCHIVE_DB,
+    `SELECT player_type, player_id, player_name, tier_key, metric_value, games_sample
+     FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?
+     ORDER BY player_id LIMIT ? OFFSET ?`,
+    propKey, lineValue, side, chunkSize, cursor);
+
+  const stmts = [];
+  for (const p of classRows) {
+    const tierMean = tierPriors[p.tier_key] != null ? tierPriors[p.tier_key] : p.metric_value;
+    const priorStrength = priorStrengthForSample(p.games_sample, cfg);
+    const shrunkRate = (p.games_sample * p.metric_value + priorStrength * tierMean) / (p.games_sample + priorStrength);
+    const hp = hpFromPoisson(shrunkRate, lineValue, side);
+    const confidence = sampleAwareConfidence(p.games_sample, cfg);
+    const rowId = `blv6|${p.player_type}|${p.player_id}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+
+    stmts.push(env.ARCHIVE_DB.prepare(
+      `INSERT INTO baseline_v6_current (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,tier_key,hit_probability_0_100,confidence_0_100,non_push_sample,prior_strength,recency_blended_rate_0_100,formula_version,last_processed_official_date,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+       ON CONFLICT(player_type,player_id,canonical_prop_key,line_value,selected_side) DO UPDATE SET
+         batch_id=excluded.batch_id, tier_key=excluded.tier_key, hit_probability_0_100=excluded.hit_probability_0_100,
+         confidence_0_100=excluded.confidence_0_100, non_push_sample=excluded.non_push_sample, prior_strength=excluded.prior_strength,
+         recency_blended_rate_0_100=excluded.recency_blended_rate_0_100, formula_version=excluded.formula_version,
+         last_processed_official_date=excluded.last_processed_official_date, updated_at=CURRENT_TIMESTAMP`
+    ).bind(rowId, batchId, p.player_type, p.player_id, p.player_name, propKey, lineValue, side,
+      p.tier_key, round(hp * 100, 2), round(confidence, 2), p.games_sample, round(priorStrength, 2),
+      round(shrunkRate * 100, 4), CLASSIFICATION_V6_VERSION, officialDate));
+  }
+  if (stmts.length) await writeBatch(env.ARCHIVE_DB, "baseline_v6_current", stmts, 30);
+
+  const nextCursor = cursor + chunkSize;
+  const totalForCombo = await first(env.ARCHIVE_DB,
+    `SELECT COUNT(*) n FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?`,
+    propKey, lineValue, side);
+  const done = nextCursor >= Number(totalForCombo.n);
+
+  return {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v6",
+    canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+    rows_read: classRows.length, rows_written: stmts.length, cursor_offset: nextCursor,
+    total_for_combo: Number(totalForCombo.n), done,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+}
+
+async function runBaselineV6Base(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("baseline_v6_base"));
+  const runId = String(input.run_id || rid("run"));
+  const officialDate = String(input.official_date || "");
+  const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 300, max_retries: 3 });
+
+  const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
+  const combos = buildComboList(propLineUniverse);
+
+  const comboIndex = Math.max(0, Number(input.combo_index || 0));
+  const cursorOffset = Math.max(0, Number(input.cursor_offset || 0));
+  const batchId = String(input.batch_id || rid("baseline_v6_base_batch"));
+
+  if (comboIndex >= combos.length) {
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+      status: "BASELINE_V6_BASE_COMPLETED", certification: "BASELINE_V6_BASE_CERTIFIED_ALL_COMBOS_COMPLETE",
+      certification_grade: "PASS", total_combos: combos.length, batch_id: batchId,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const combo = combos[comboIndex];
+  const maxRetries = Math.max(1, Number((opLimits && opLimits.max_retries) || 3));
+  const retryCount = Math.max(0, Number(input.retry_count || 0));
+
+  let tickResult;
+  try {
+    tickResult = await runBaselineV6Tick(env, {
+      batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
+      selected_side: combo.selected_side, official_date: officialDate, cursor_offset: cursorOffset
+    });
+  } catch (err) {
+    if (retryCount >= maxRetries) {
+      return {
+        ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+        status: "BASELINE_V6_BASE_TICK_FAILED", error: `Failed after ${maxRetries} retries: ${String(err && err.message ? err.message : err)}`,
+        combo_index: comboIndex, combo
+      };
+    }
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+      status: "BASELINE_V6_BASE_PARTIAL_CONTINUE", certification: "BASELINE_V6_BASE_TRANSIENT_RETRY",
+      certification_grade: "PARTIAL", combo_index: comboIndex, total_combos: combos.length,
+      partial_continue: true, orchestrator_should_self_continue: true,
+      transient_error: String(err && err.message ? err.message : err),
+      next_input_json: {
+        mode: "baseline_v5_base", request_id: requestId, run_id: runId, batch_id: batchId,
+        combo_index: comboIndex, cursor_offset: cursorOffset, official_date: officialDate, retry_count: retryCount + 1
+      }
+    };
+  }
+
+  if (!tickResult.ok) {
+    return {
+      ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+      status: "BASELINE_V6_BASE_TICK_FAILED", error: tickResult.error, combo_index: comboIndex, combo
+    };
+  }
+
+  const comboDone = tickResult.done;
+  const nextComboIndex = comboDone ? comboIndex + 1 : comboIndex;
+  const nextCursorOffset = comboDone ? 0 : tickResult.cursor_offset;
+  const nextBatchId = comboDone ? rid("baseline_v6_base_batch") : batchId;
+  const allDone = comboDone && nextComboIndex >= combos.length;
+
+  const output = {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+    request_id: requestId, run_id: runId, batch_id: batchId,
+    status: allDone ? "BASELINE_V6_BASE_COMPLETED" : "BASELINE_V6_BASE_PARTIAL_CONTINUE",
+    certification: allDone ? "BASELINE_V6_BASE_CERTIFIED_ALL_COMBOS_COMPLETE" : "BASELINE_V6_BASE_CERTIFIED_COMBO_IN_PROGRESS",
+    certification_grade: allDone ? "PASS" : "PARTIAL",
+    combo_index: comboIndex, total_combos: combos.length,
+    current_combo: combo, combo_done: comboDone,
+    rows_read: tickResult.rows_read, rows_written: tickResult.rows_written,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+
+  if (!allDone) {
+    output.partial_continue = true;
+    output.orchestrator_should_self_continue = true;
+    output.next_input_json = {
+      mode: "baseline_v5_base",
+      request_id: requestId, run_id: runId, batch_id: nextBatchId,
+      combo_index: nextComboIndex, cursor_offset: nextCursorOffset, official_date: officialDate, retry_count: 0
+    };
+  }
+
+  return output;
+}
+
 async function getCalibrationValue(env, scope, key, fallback) {
   const cfg = await ensureCalibrationConfigLoaded(env);
   const found = cfg[`${scope}|${key}`];
