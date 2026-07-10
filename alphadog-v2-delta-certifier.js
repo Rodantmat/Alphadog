@@ -94,21 +94,6 @@ function bindingSummary(env) {
   };
 }
 
-async function baselineV5LatestCertifiedWatermark(env) {
-  if (!env.SCORE_DB) return null;
-  const row = await first(env.SCORE_DB, `SELECT batch_id, source_watermark_date, certification, certification_grade, updated_at
-    FROM player_baseline_v5_state_batches
-    WHERE mode='baseline_v5_stateful_delta'
-      AND certification_grade='PASS'
-      AND COALESCE(current_tables_mutated,0)=0
-      AND COALESCE(history_tables_mutated,0)=0
-      AND COALESCE(full_cumulative_history_recompute,0)=0
-      AND source_watermark_date IS NOT NULL
-    ORDER BY date(source_watermark_date) DESC, datetime(updated_at) DESC
-    LIMIT 1`);
-  return row || null;
-}
-
 async function baselineV5ExistingCoverageMap(env, startDate, endDate) {
   const rows = await all(env.TEAM_DB, `SELECT game_pk, official_date, layer_key, coverage_status, coverage_grade, blocking_for_full_run, last_batch_id, last_request_id, details_json
     FROM mlb_game_data_coverage
