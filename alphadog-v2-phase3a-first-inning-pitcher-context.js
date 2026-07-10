@@ -6831,8 +6831,8 @@ async function runBaselineV6Tick(env, input = {}) {
   const { prior_strength_multiplier: priorStrengthMultiplier } = await getRecencyWeightsForProp(env, propKey);
 
   const tierPriors = await runBaselineV6ComputeTierPriors(env, propKey, lineValue, side);
-  const tierBandsCfg = await getCalibrationValue(env, "global", "tier_bands", { min_population_per_tier: 15 });
-  const tierBlendK = Math.max(1, Number(tierBandsCfg.min_population_per_tier || 15));
+  const tierBlendCfg = await getCalibrationValue(env, "global", "tier_blend_constant", { k: 5 });
+  const tierBlendK = Math.max(1, Number(tierBlendCfg.k || 5));
   const statsKeyForCombo = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
   const popStats = await first(env.ARCHIVE_DB, `SELECT population_mean, population_dispersion FROM classification_v6_population_stats WHERE stats_key=?`, statsKeyForCombo);
   const populationMean = popStats ? popStats.population_mean : null;
