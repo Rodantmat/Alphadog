@@ -7064,7 +7064,7 @@ async function runClassificationV6Tick(env, input = {}) {
   const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
   const propConfig = propMap[propKey];
   if (!propConfig) return { ok: false, error: `No prop_metric_map entry for canonical_prop_key '${propKey}'.` };
-  const recencyWeights = await getCalibrationValue(env, "global", "recency_weights", CALIBRATION_CONFIG_DEFAULTS["global|recency_weights"]);
+  const { recency_weights: recencyWeights } = await getRecencyWeightsForProp(env, propKey);
   const tierBands = await getCalibrationValue(env, "global", "tier_bands", { max_tiers: 12, z_bands: [2.0,1.5,1.0,0.5,0.0,-0.5,-1.0,-1.5,-2.0], min_population_per_tier: 15 });
   const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 40, tick_timeout_ms: 20000 });
 
