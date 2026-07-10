@@ -6565,6 +6565,105 @@ async function runMode(env,input={}){
 // - Every tunable number (weights, bands, chunk size, timeouts) lives in calibration_config, not code.
 // - Writes to ARCHIVE_DB (repurposed, near-empty), not SCORE_DB (near its 10GB limit).
 
+// Build the flat, ordered list of every (canonical_prop_key, line_value, selected_side)
+// combination the Base job needs to classify, from the configured universe.
+function buildComboList(propLineUniverse) {
+  const combos = [];
+  for (const [propKey, lines] of Object.entries(propLineUniverse)) {
+    for (const lineValue of lines) {
+      combos.push({ canonical_prop_key: propKey, line_value: lineValue, selected_side: "more" });
+      combos.push({ canonical_prop_key: propKey, line_value: lineValue, selected_side: "less" });
+    }
+  }
+  return combos;
+}
+
+// The actual "Classification Base" job. Wired to orchestrator's existing generic
+// continuation contract for job_key=expansion-baseline-v2: returns partial_continue:true
+// and next_input_json to keep going, or omits them when the entire universe is done.
+// Orchestrator re-enqueues and re-calls with exactly next_input_json as the next input —
+// no orchestrator.js changes required, this worker just has to honor the existing contract.
+async function runClassificationV6Base(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("classification_v6_base"));
+  const runId = String(input.run_id || rid("run"));
+  const officialDate = String(input.official_date || "");
+
+  const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
+  const combos = buildComboList(propLineUniverse);
+
+  const comboIndex = Math.max(0, Number(input.combo_index || 0));
+  const cursorOffset = Math.max(0, Number(input.cursor_offset || 0));
+  const batchId = String(input.batch_id || rid("classification_v6_base_batch"));
+
+  if (comboIndex >= combos.length) {
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+      status: "CLASSIFICATION_V6_BASE_COMPLETED", certification: "CLASSIFICATION_V6_BASE_CERTIFIED_ALL_COMBOS_COMPLETE",
+      certification_grade: "PASS", total_combos: combos.length, batch_id: batchId,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const combo = combos[comboIndex];
+
+  // Fresh combo (cursor 0): (re)compute population stats for it first — cheap, one pass.
+  if (cursorOffset === 0) {
+    const statsResult = await runClassificationV6ComputeStats(env, {
+      canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value, selected_side: combo.selected_side
+    });
+    if (!statsResult.ok) {
+      return {
+        ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+        status: "CLASSIFICATION_V6_BASE_STATS_FAILED", error: statsResult.error, combo_index: comboIndex, combo
+      };
+    }
+  }
+
+  const tickResult = await runClassificationV6Tick(env, {
+    batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
+    selected_side: combo.selected_side, official_date: officialDate, cursor_offset: cursorOffset
+  });
+
+  if (!tickResult.ok) {
+    return {
+      ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+      status: "CLASSIFICATION_V6_BASE_TICK_FAILED", error: tickResult.error, combo_index: comboIndex, combo
+    };
+  }
+
+  const comboDone = tickResult.done;
+  const nextComboIndex = comboDone ? comboIndex + 1 : comboIndex;
+  const nextCursorOffset = comboDone ? 0 : tickResult.cursor_offset;
+  const nextBatchId = comboDone ? rid("classification_v6_base_batch") : batchId;
+  const allDone = comboDone && nextComboIndex >= combos.length;
+
+  const output = {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+    request_id: requestId, run_id: runId, batch_id: batchId,
+    status: allDone ? "CLASSIFICATION_V6_BASE_COMPLETED" : "CLASSIFICATION_V6_BASE_PARTIAL_CONTINUE",
+    certification: allDone ? "CLASSIFICATION_V6_BASE_CERTIFIED_ALL_COMBOS_COMPLETE" : "CLASSIFICATION_V6_BASE_CERTIFIED_COMBO_IN_PROGRESS",
+    certification_grade: allDone ? "PASS" : "PARTIAL",
+    combo_index: comboIndex, total_combos: combos.length,
+    current_combo: combo, combo_done: comboDone,
+    rows_read: tickResult.rows_read, rows_written: tickResult.rows_written, reclassified_rows: tickResult.reclassified_rows,
+    population_mean: tickResult.population_mean, population_stddev: tickResult.population_stddev, population_n: tickResult.population_n,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+
+  if (!allDone) {
+    output.partial_continue = true;
+    output.orchestrator_should_self_continue = true;
+    output.next_input_json = {
+      mode: "baseline_v5_classification_base",
+      request_id: requestId, run_id: runId, batch_id: nextBatchId,
+      combo_index: nextComboIndex, cursor_offset: nextCursorOffset, official_date: officialDate
+    };
+  }
+
+  return output;
+}
+
 async function getCalibrationValue(env, scope, key, fallback) {
   const cfg = await ensureCalibrationConfigLoaded(env);
   const found = cfg[`${scope}|${key}`];
