@@ -6892,13 +6892,20 @@ async function runBaselineV6Tick(env, input = {}) {
 
   const classRows = Array.isArray(input.player_ids_override)
     ? await (async () => {
-        if (!input.player_ids_override.length) return [];
         const ids = input.player_ids_override.map(Number).filter(Boolean);
-        const placeholders = ids.map(() => "?").join(",");
-        return await all(env.ARCHIVE_DB,
-          `SELECT player_type, player_id, player_name, tier_key, metric_value, games_sample
-           FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? AND player_id IN (${placeholders})`,
-          propKey, lineValue, side, ...ids);
+        if (!ids.length) return [];
+        const out = [];
+        const idChunkSize = 90;
+        for (let i = 0; i < ids.length; i += idChunkSize) {
+          const idSlice = ids.slice(i, i + idChunkSize);
+          const placeholders = idSlice.map(() => "?").join(",");
+          const rows = await all(env.ARCHIVE_DB,
+            `SELECT player_type, player_id, player_name, tier_key, metric_value, games_sample
+             FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? AND player_id IN (${placeholders})`,
+            propKey, lineValue, side, ...idSlice);
+          out.push(...rows);
+        }
+        return out;
       })()
     : await all(env.ARCHIVE_DB,
         `SELECT player_type, player_id, player_name, tier_key, metric_value, games_sample
