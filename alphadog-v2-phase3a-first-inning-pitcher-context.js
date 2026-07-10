@@ -6731,10 +6731,45 @@ function poissonCDF(k, lambda) {
   for (let i = 0; i <= k; i++) sum += poissonPMF(i, lambda);
   return Math.min(1, Math.max(0, sum));
 }
+// Log-Gamma via Lanczos approximation — needed for Negative Binomial with non-integer dispersion.
+function lnGamma(x) {
+  const g = 7;
+  const c = [
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7
+  ];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lnGamma(1 - x);
+  x -= 1;
+  let a = c[0];
+  const t = x + g + 0.5;
+  for (let i = 1; i < g + 2; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+// NB variance = mean + mean^2/r. Solve for r from REAL observed population mean/variance.
+// If the population is not overdispersed (variance <= mean), r -> Infinity, which is the
+// Poisson limit — meaning we only add overdispersion where the real data actually shows it.
+function estimateDispersion(mean, variance) {
+  if (!(variance > mean) || mean <= 0) return Infinity;
+  return (mean * mean) / (variance - mean);
+}
+function negBinomialPMF(k, mean, dispersion) {
+  const r = dispersion;
+  if (!isFinite(r) || r <= 0) return poissonPMF(k, mean);
+  const logP = lnGamma(k + r) - lnGamma(r) - lnGamma(k + 1) + r * Math.log(r / (r + mean)) + k * Math.log(mean / (r + mean));
+  return Math.exp(logP);
+}
+function negBinomialCDF(k, mean, dispersion) {
+  let sum = 0;
+  for (let i = 0; i <= k; i++) sum += negBinomialPMF(i, mean, dispersion);
+  return Math.min(1, Math.max(0, sum));
+}
 // Standard sports line convention: line 1.5 means "more" = 2+, "under" = 0-1.
-function hpFromPoisson(lambda, lineValue, side) {
+// Uses Negative Binomial when the real population shows overdispersion, Poisson otherwise —
+// not a blanket assumption either way, driven by what the actual data looks like.
+function hpFromCountModel(mean, lineValue, side, dispersion) {
   const threshold = Math.floor(lineValue);
-  const pUnder = poissonCDF(threshold, lambda);
+  const pUnder = isFinite(dispersion) && dispersion > 0 ? negBinomialCDF(threshold, mean, dispersion) : poissonCDF(threshold, mean);
   return side === "more" ? (1 - pUnder) : pUnder;
 }
 
