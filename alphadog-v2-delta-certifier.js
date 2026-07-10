@@ -1256,7 +1256,7 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate, opti
         }
       }
       if (includeBaselineV5Coverage) {
-        for (const layerKey of BASELINE_V5_COVERAGE_LAYER_KEYS) addLayer(g, baselineV5CoverageLayerFromState(layerKey, g, { latestBaselinePass, existingBaselineCoverage, baselineV5DailyStateValidity, calendarExceptionNoStatsExpected: false, currentOrFutureNonFinal, liveSourceRowsForGame }));
+        for (const layerKey of BASELINE_V5_COVERAGE_LAYER_KEYS) addLayer(g, baselineV5CoverageLayerFromState(layerKey, g, { existingBaselineCoverage, baselineV5DailyStateValidity, calendarExceptionNoStatsExpected: false, currentOrFutureNonFinal, liveSourceRowsForGame }));
       }
     } else {
       const overrideDetails = {
