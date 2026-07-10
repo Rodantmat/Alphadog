@@ -7064,14 +7064,15 @@ async function runClassificationV6ComputeStats(env, input = {}) {
     if (rate != null) rates.push(rate);
   }
   const stats = computePopulationStats(rates);
+  const dispersion = estimateDispersion(stats.mean, stats.stddev * stats.stddev);
   const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
 
   await run(env.ARCHIVE_DB,
-    `INSERT INTO classification_v6_population_stats (stats_key,canonical_prop_key,line_value,selected_side,population_mean,population_stddev,population_n,computed_at)
-     VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+    `INSERT INTO classification_v6_population_stats (stats_key,canonical_prop_key,line_value,selected_side,population_mean,population_stddev,population_n,population_dispersion,computed_at)
+     VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
      ON CONFLICT(stats_key) DO UPDATE SET population_mean=excluded.population_mean, population_stddev=excluded.population_stddev,
-       population_n=excluded.population_n, computed_at=CURRENT_TIMESTAMP`,
-    statsKey, propKey, lineValue, side, stats.mean, stats.stddev, stats.n);
+       population_n=excluded.population_n, population_dispersion=excluded.population_dispersion, computed_at=CURRENT_TIMESTAMP`,
+    statsKey, propKey, lineValue, side, stats.mean, stats.stddev, stats.n, isFinite(dispersion) ? dispersion : null);
 
   return {
     ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "classification_v6_compute_stats",
