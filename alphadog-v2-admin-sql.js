@@ -3,7 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
 const WORKER_NAME = "alphadog-v2-admin-sql";
-const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v2.3-direct-worker-target";
+const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v2.4-large-file-git-data-api";
 const JOB_KEY = "admin-sql-mcp-bridge";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
