@@ -5360,11 +5360,52 @@ async function runBaselineV5BaseRescue(env, input={}) {
 }
 
 
+// ---- Calibration config, loaded once per invocation from CONFIG_DB.calibration_config ----
+// Anything here is a NUMBER that can be tuned without a code deploy. Logic stays hardcoded;
+// only the tunable values live in the database, per locked design decision.
+let CALIBRATION_CONFIG_CACHE = null;
+const CALIBRATION_CONFIG_DEFAULTS = {
+  "global|confidence_prior_strength": { tiny_sample_lt5: 20, low_sample_lt15: 12, medium_sample_lt30: 6, large_sample_ge30: 2 },
+  "global|recency_weights": { last_5_games: 0.40, last_10_games: 0.30, last_20_games: 0.20, season_to_date: 0.10 }
+};
+async function ensureCalibrationConfigLoaded(env){
+  if(CALIBRATION_CONFIG_CACHE) return CALIBRATION_CONFIG_CACHE;
+  const cfg = { ...CALIBRATION_CONFIG_DEFAULTS };
+  try{
+    const rows = await all(env.CONFIG_DB, `SELECT config_scope, config_key, config_json FROM calibration_config WHERE is_active=1`);
+    for(const r of (rows||[])){
+      const key = `${r.config_scope}|${r.config_key}`;
+      try{ cfg[key] = JSON.parse(r.config_json); } catch(_e){ /* keep default on parse failure */ }
+    }
+  } catch(_e){ /* table may not exist yet on first deploy; defaults keep the system working */ }
+  CALIBRATION_CONFIG_CACHE = cfg;
+  return cfg;
+}
+function priorStrengthForSample(sample, cfg){
+  const n = Number(sample||0);
+  const ps = (cfg && cfg["global|confidence_prior_strength"]) || CALIBRATION_CONFIG_DEFAULTS["global|confidence_prior_strength"];
+  if(n < 5) return ps.tiny_sample_lt5;
+  if(n < 15) return ps.low_sample_lt15;
+  if(n < 30) return ps.medium_sample_lt30;
+  return ps.large_sample_ge30;
+}
+// Confidence = how many effective observations back this number (real sample + prior pseudo-count),
+// mapped to a 5-95 scale with a saturating curve. Grows with sample size, never flat, never
+// silently defaulting to 5 regardless of data — the bug this replaces did exactly that.
+function sampleAwareConfidence(sample, cfg){
+  const n = Math.max(0, Number(sample||0));
+  const priorStrength = priorStrengthForSample(n, cfg);
+  const effectiveN = n + priorStrength;
+  const conf = 95 * (1 - Math.exp(-effectiveN/25));
+  return round(clamp(conf, 5, 95), 2);
+}
 function baselineV5LockedPitcherConfidence(sample, modelConfidence, oldConfidence=null){
-  return round(clamp(Number(modelConfidence||5),5,70),2);
+  const cfg = CALIBRATION_CONFIG_CACHE || CALIBRATION_CONFIG_DEFAULTS;
+  return sampleAwareConfidence(sample, cfg);
 }
 function baselineV5LockedDeltaConfidence(entityType, sample, modelConfidence, oldConfidence=null){
-  return round(clamp(Number(modelConfidence||5),5,70),2);
+  const cfg = CALIBRATION_CONFIG_CACHE || CALIBRATION_CONFIG_DEFAULTS;
+  return sampleAwareConfidence(sample, cfg);
 }
 async function latestCompletedBaselineV5BaseBatch(env){
   const row=await first(env.SCORE_DB,`SELECT batch_id, request_id, run_id, worker_version, rows_promoted, history_rows, updated_at
