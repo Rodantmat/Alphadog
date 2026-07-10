@@ -555,6 +555,24 @@ export class AlphadogMcp extends McpAgent {
         };
       }
     );
+
+    this.server.tool(
+      "github_grep_file",
+      "Search inside a repo file server-side, returning only matching lines plus surrounding context — never the whole file. Use this for files too large to ever safely return in full (multi-hundred-KB+ files). pattern is a JS regex string.",
+      {
+        path: z.string().describe("File path within the repo to search."),
+        pattern: z.string().describe("Regex pattern to search for (JS regex syntax, no slashes)."),
+        context_lines: z.number().optional().describe("Lines of context before/after each match. Default 3."),
+        max_matches: z.number().optional().describe("Max matches to return. Default 20, capped at 50.")
+      },
+      async (args) => {
+        const result = await toolGithubGrepFile(this.env, args);
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          isError: result.ok === false
+        };
+      }
+    );
   }
 }
 
