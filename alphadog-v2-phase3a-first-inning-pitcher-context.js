@@ -6880,9 +6880,12 @@ async function runBaselineV6Tick(env, input = {}) {
   const tierBlendCfg = await getCalibrationValue(env, "global", "tier_blend_constant", { k: 5 });
   const tierBlendK = Math.max(1, Number(tierBlendCfg.k || 5));
   const statsKeyForCombo = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
-  const popStats = await first(env.ARCHIVE_DB, `SELECT population_mean, population_dispersion FROM classification_v6_population_stats WHERE stats_key=?`, statsKeyForCombo);
+  const popStats = await first(env.ARCHIVE_DB, `SELECT population_mean, population_stddev, population_dispersion FROM classification_v6_population_stats WHERE stats_key=?`, statsKeyForCombo);
   const populationMean = popStats ? popStats.population_mean : null;
+  const populationStddev = popStats ? popStats.population_stddev : null;
   const dispersion = popStats ? popStats.population_dispersion : null;
+  const propMapForModel = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const usesNormalModel = propCanGoNegative(propMapForModel[propKey]);
 
   const cursor = Math.max(0, Number(input.cursor_offset || 0));
   const chunkSize = Math.max(10, Number(opLimits.chunk_size_rows || 300));
