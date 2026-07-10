@@ -6621,10 +6621,28 @@ async function runClassificationV6Base(env, input = {}) {
     }
   }
 
-  const tickResult = await runClassificationV6Tick(env, {
-    batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
-    selected_side: combo.selected_side, official_date: officialDate, cursor_offset: cursorOffset
-  });
+  const tickResult = await (async () => {
+    const maxRetries = Math.max(1, Number(opLimits.max_retries || 3));
+    const retryCount = Math.max(0, Number(input.retry_count || 0));
+    try {
+      return await runClassificationV6Tick(env, {
+        batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
+        selected_side: combo.selected_side, official_date: officialDate, cursor_offset: cursorOffset
+      });
+    } catch (err) {
+      if (retryCount >= maxRetries) {
+        return { ok: false, error: `Failed after ${maxRetries} retries: ${String(err && err.message ? err.message : err)}` };
+      }
+      // Transient failure (e.g. D1 storage reset) — signal a retry of the SAME chunk, not a hard failure.
+      return {
+        ok: true, data_ok: true, retrying: true, retry_count: retryCount + 1,
+        transient_error: String(err && err.message ? err.message : err),
+        done: false, cursor_offset: cursorOffset,
+        population_mean: null, population_stddev: null, population_n: null,
+        rows_read: 0, rows_written: 0, reclassified_rows: 0
+      };
+    }
+  })();
 
   if (!tickResult.ok) {
     return {
