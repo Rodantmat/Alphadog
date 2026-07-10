@@ -7112,8 +7112,16 @@ async function runClassificationV6ComputeStats(env, input = {}) {
     if (rate != null) rates.push(rate);
   }
   const stats = computePopulationStats(rates);
-  const dispersionResult = await estimatePooledDispersionFromGameLogs(env, propKey);
-  const dispersion = dispersionResult.dispersion;
+  let dispersion;
+  const existingDispersionRow = await first(env.ARCHIVE_DB,
+    `SELECT population_dispersion FROM classification_v6_population_stats WHERE canonical_prop_key=? AND population_dispersion IS NOT NULL LIMIT 1`,
+    propKey);
+  if (existingDispersionRow) {
+    dispersion = existingDispersionRow.population_dispersion;
+  } else {
+    const dispersionResult = await estimatePooledDispersionFromGameLogs(env, propKey);
+    dispersion = dispersionResult.dispersion;
+  }
   const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
 
   await run(env.ARCHIVE_DB,
