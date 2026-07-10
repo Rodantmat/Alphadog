@@ -6756,6 +6756,7 @@ async function runBaselineV6Tick(env, input = {}) {
   const officialDate = String(input.official_date || "");
   const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 300 });
   const cfg = CALIBRATION_CONFIG_CACHE || CALIBRATION_CONFIG_DEFAULTS;
+  const { prior_strength_multiplier: priorStrengthMultiplier } = await getRecencyWeightsForProp(env, propKey);
 
   const tierPriors = await runBaselineV6ComputeTierPriors(env, propKey, lineValue, side);
 
