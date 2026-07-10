@@ -1,6 +1,6 @@
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
-const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.7.1-baseline-looping";
+const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.7.2-normal-model-negative-composites";
 const CLASSIFICATION_V6_VERSION = "classification-v6-z-score-tier-engine-v1.0";
 const EXPANSION_JOB_KEYS = new Set([
   "expansion-baseline-mining",
