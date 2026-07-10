@@ -3,7 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
 const WORKER_NAME = "alphadog-v2-admin-sql";
-const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v2.1-github-tools";
+const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v2.2-patch-file-tool";
 const JOB_KEY = "admin-sql-mcp-bridge";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -168,6 +168,32 @@ async function toolRunJob(env, args) {
   } catch (err) {
     return { ok: false, error: String(err && err.message ? err.message : err) };
   }
+}
+
+async function toolGithubPatchFile(env, args) {
+  const { path, old_str, new_str, message } = args || {};
+  if (!path || old_str === undefined || new_str === undefined) {
+    return { ok: false, error: "Missing path, old_str, or new_str." };
+  }
+  const current = await toolGithubGetFile(env, { path });
+  if (!current.ok) return { ok: false, error: "Could not read current file.", details: current };
+
+  const content = current.content || "";
+  const occurrences = content.split(old_str).length - 1;
+  if (occurrences === 0) {
+    return { ok: false, error: "old_str not found in file. No changes made." };
+  }
+  if (occurrences > 1) {
+    return { ok: false, error: `old_str matches ${occurrences} times, must be unique. No changes made.` };
+  }
+
+  const updatedContent = content.replace(old_str, new_str);
+  return await toolGithubPutFile(env, {
+    path,
+    content: updatedContent,
+    message: message || `Patch ${path} via Claude MCP bridge (server-side find/replace)`,
+    sha: current.sha
+  });
 }
 
 async function toolCheckBindings(env) {
@@ -400,6 +426,24 @@ export class AlphadogMcp extends McpAgent {
       },
       async (args) => {
         const result = await toolGithubListWorkflowRuns(this.env, args);
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          isError: result.ok === false
+        };
+      }
+    );
+
+    this.server.tool(
+      "github_patch_file",
+      "Find-and-replace inside a repo file entirely server-side (the old and new content never pass through the calling context). Use this instead of github_get_file + github_put_file for files too large to round-trip through a chat context. old_str must match exactly once in the current file.",
+      {
+        path: z.string().describe("File path within the repo to patch."),
+        old_str: z.string().describe("Exact string to find. Must be unique in the file."),
+        new_str: z.string().describe("String to replace it with."),
+        message: z.string().optional().describe("Commit message.")
+      },
+      async (args) => {
+        const result = await toolGithubPatchFile(this.env, args);
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           isError: result.ok === false
