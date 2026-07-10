@@ -7151,6 +7151,13 @@ async function runClassificationV6DeltaDailySingleStep(env, input = {}) {
   const nextComboIndex = comboIndex + 1;
   const allDone = nextComboIndex >= combos.length;
   const cumulativeRowsWritten = Math.max(0, Number(input.cumulative_rows_written || 0)) + Number(tickResult.rows_written || 0);
+  let coverageResult = null;
+  if (allDone) {
+    coverageResult = await baselineV5DailyUpsertCoverage(env, {
+      kind: "classification", officialDate, batchId, requestId, runId,
+      rowsUpdated: cumulativeRowsWritten, playersUpdated: cumulativeRowsWritten
+    });
+  }
   const output = {
     ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
     request_id: requestId, run_id: runId, batch_id: batchId, official_date: officialDate,
@@ -7159,7 +7166,7 @@ async function runClassificationV6DeltaDailySingleStep(env, input = {}) {
     certification_grade: allDone ? "PASS" : "PARTIAL",
     certifier_owned_daily_delta: true, day_by_day_delta: true, classification_delta_included: true,
     current_tables_mutated: false, history_tables_mutated: false, full_cumulative_history_recompute: false,
-    coverage_update: { coverage_rows_written: Math.max(1, cumulativeRowsWritten) },
+    coverage_update: { coverage_rows_written: Math.max(1, cumulativeRowsWritten) }, coverage_result: coverageResult,
     combo_index: comboIndex, total_combos: combos.length, current_combo: combo,
     affected_players: affectedIds.length, rows_written: tickResult.rows_written, reclassified_rows: tickResult.reclassified_rows,
     no_daily_context: true, no_market_context: true, no_scoring_context: true
