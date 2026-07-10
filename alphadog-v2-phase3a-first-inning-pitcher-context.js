@@ -6906,7 +6906,9 @@ async function runBaselineV6Tick(env, input = {}) {
       : rawTierMean;
     const priorStrength = priorStrengthForSample(p.games_sample, cfg, priorStrengthMultiplier);
     const shrunkRate = (p.games_sample * p.metric_value + priorStrength * blendedTierPrior) / (p.games_sample + priorStrength);
-    const hp = hpFromCountModel(shrunkRate, lineValue, side, dispersion);
+    const hp = usesNormalModel
+      ? hpFromNormalModel(shrunkRate, lineValue, side, populationStddev)
+      : hpFromCountModel(shrunkRate, lineValue, side, dispersion);
     const confidence = sampleAwareConfidence(p.games_sample, cfg, priorStrengthMultiplier);
     const rowId = `blv6|${p.player_type}|${p.player_id}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
 
