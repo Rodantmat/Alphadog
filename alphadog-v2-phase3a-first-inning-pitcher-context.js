@@ -7012,7 +7012,7 @@ async function runClassificationV6ComputeStats(env, input = {}) {
   const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
   const propConfig = propMap[propKey];
   if (!propConfig) return { ok: false, error: `No prop_metric_map entry for canonical_prop_key '${propKey}'.` };
-  const recencyWeights = await getCalibrationValue(env, "global", "recency_weights", CALIBRATION_CONFIG_DEFAULTS["global|recency_weights"]);
+  const { recency_weights: recencyWeights } = await getRecencyWeightsForProp(env, propKey);
 
   const entity = propConfig.entity;
   const sourceTable = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
