@@ -7112,7 +7112,8 @@ async function runClassificationV6ComputeStats(env, input = {}) {
     if (rate != null) rates.push(rate);
   }
   const stats = computePopulationStats(rates);
-  const dispersion = estimateDispersion(stats.mean, stats.stddev * stats.stddev);
+  const dispersionResult = await estimatePooledDispersionFromGameLogs(env, propKey);
+  const dispersion = dispersionResult.dispersion;
   const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
 
   await run(env.ARCHIVE_DB,
