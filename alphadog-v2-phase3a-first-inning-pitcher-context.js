@@ -6676,7 +6676,8 @@ async function runClassificationV6Base(env, input = {}) {
     output.next_input_json = {
       mode: "baseline_v5_classification_base",
       request_id: requestId, run_id: runId, batch_id: nextBatchId,
-      combo_index: nextComboIndex, cursor_offset: nextCursorOffset, official_date: officialDate
+      combo_index: nextComboIndex, cursor_offset: nextCursorOffset, official_date: officialDate,
+      retry_count: tickResult.retrying ? Number(tickResult.retry_count || 0) : 0
     };
   }
 
