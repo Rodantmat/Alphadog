@@ -260,6 +260,16 @@ async function toolGithubGetFile(env, args) {
   const r = await githubRequest(env, "GET", `/contents/${encodeRepoPath(path)}?ref=${encodeURIComponent(branch)}`);
   if (!r.ok) return { ok: false, status: r.status, error: r.data };
   if (Array.isArray(r.data)) return { ok: false, error: "That path is a directory, not a file. Use github_list_dir instead." };
+
+  // Contents API caps out around 1MB and returns content:null for larger files.
+  // Fall back to the Git Blobs API, which supports much larger files, using the sha we already have.
+  if (!r.data.content && r.data.sha) {
+    const blob = await githubRequest(env, "GET", `/git/blobs/${r.data.sha}`);
+    if (!blob.ok) return { ok: false, status: blob.status, error: blob.data, note: "Contents API returned null content and Blobs API fallback also failed." };
+    const content = blob.data.content ? b64DecodeUtf8(blob.data.content) : null;
+    return { ok: true, path, sha: r.data.sha, size: r.data.size, content, fetched_via: "git_blobs_api_fallback" };
+  }
+
   const content = r.data.content ? b64DecodeUtf8(r.data.content) : null;
   return { ok: true, path, sha: r.data.sha, size: r.data.size, content };
 }
