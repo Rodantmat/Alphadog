@@ -139,24 +139,29 @@ async function toolRunSql(env, args) {
 }
 
 async function toolRunJob(env, args) {
-  const { job, extra } = args || {};
+  const { job, extra, target } = args || {};
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
-  if (!env.CONTROL_ROOM) {
-    return { ok: false, error: "CONTROL_ROOM service binding is not configured on this worker. Add a service binding named CONTROL_ROOM pointing at alphadog-v2-control-room in wrangler config." };
+  const binding = target === "PHASE3A_WORKER" ? env.PHASE3A_WORKER : env.CONTROL_ROOM;
+  const bindingName = target === "PHASE3A_WORKER" ? "PHASE3A_WORKER" : "CONTROL_ROOM";
+  if (!binding) {
+    return { ok: false, error: `${bindingName} service binding is not configured on this worker.` };
   }
 
-  const body = {
-    job,
-    slate_mode: "AUTO_BY_GAME_DATE_TIME",
-    backend_only: true,
-    source: "claude_mcp_bridge",
-    ...(extra && typeof extra === "object" ? extra : {})
-  };
+  const body = target === "PHASE3A_WORKER"
+    ? { mode: job, ...(extra && typeof extra === "object" ? extra : {}) }
+    : {
+        job,
+        slate_mode: "AUTO_BY_GAME_DATE_TIME",
+        backend_only: true,
+        source: "claude_mcp_bridge",
+        ...(extra && typeof extra === "object" ? extra : {})
+      };
+  const path = target === "PHASE3A_WORKER" ? "https://internal/run" : "https://internal/tasks/run";
 
   try {
-    const resp = await env.CONTROL_ROOM.fetch("https://internal/tasks/run", {
+    const resp = await binding.fetch(path, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body)
