@@ -7081,8 +7081,9 @@ async function runClassificationV6Tick(env, input = {}) {
   const perPlayer = [];
   for (const playerId of slice) {
     const snapByWindow = snapshots.get(playerId) || {};
-    const anySnap = Object.values(snapByWindow)[0];
-    const games = anySnap ? Number(anySnap.games_count || 0) : 0;
+    const seasonSnap = snapByWindow["season_to_date"];
+    const anySnap = seasonSnap || Object.values(snapByWindow)[0];
+    const games = seasonSnap ? Number(seasonSnap.games_count || 0) : (anySnap ? Number(anySnap.games_count || 0) : 0);
     const rate = computeRecencyBlendedRate(snapByWindow, propConfigWithWeights);
     if (rate == null) continue;
     perPlayer.push({ playerId, rate, games, playerName: anySnap ? (anySnap.player_name || null) : null });
