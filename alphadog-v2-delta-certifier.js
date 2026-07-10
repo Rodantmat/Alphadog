@@ -189,7 +189,7 @@ function baselineV5CoverageLayerFromState(layerKey, g, ctx = {}) {
     expectedRows: 1,
     missingRows: 1,
     reason: layerKey === 'baseline_v5_classification' ? 'MISSING_OR_INVALID_BASELINE_V5_CLASSIFICATION_DAILY_DELTA_FOR_CERTIFIED_SOURCE_GAME' : 'MISSING_OR_INVALID_BASELINE_V5_HP_DAILY_DELTA_FOR_CERTIFIED_CLASSIFICATION_GAME',
-    details: { baseline_v5_tally_owned_layer_v0_2_12: true, certifier_owned_baseline_v5_gap: true, latest_certified_watermark_date: latestDate, daily_state: dailyState || null, existing_completed_coverage_rejected_unless_state_valid_v0_2_12: existing && String(existing.coverage_status) === 'complete' }
+    details: { baseline_v5_tally_owned_layer_v0_2_12: true, certifier_owned_baseline_v5_gap: true, daily_state: dailyState || null, existing_completed_coverage_rejected_unless_state_valid_v0_2_12: existing && String(existing.coverage_status) === 'complete', v6_state_validated_v0_2_14: true }
   };
 }
 
