@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-delta-certifier";
-const VERSION = "alphadog-v2-delta-certifier-v0.2.13-source-repair-core-source-only";
+const VERSION = "alphadog-v2-delta-certifier-v0.2.14-v6-state-validated";
 const JOB_KEY = "delta-certifier";
 const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
 const FULL_RUN_LOOKAHEAD_DAYS = 6;
