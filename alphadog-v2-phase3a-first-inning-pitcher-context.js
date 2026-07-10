@@ -104,7 +104,7 @@ function baseIdentity(env){
   return {
     ok:true,data_ok:true,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,
     status:"EXPANSION_BASELINE_WORKER_READY",timestamp_utc:nowUtc(),
-    expansion_only:true,baseline_only:true,write_whitelist:"^expansion_",
+    expansion_only:true,baseline_only:true,write_whitelist:"^(expansion_|classification_v6_|baseline_v6_)",
     no_current_baseline_mutation:true,no_factor_mutation:true,no_matrix_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true,no_scheduler_mutation:true,no_full_run_integration:true,
     binding_summary:{required_db_bindings_present:allTrue(db),db_bindings:db,vars}
   };
