@@ -6897,14 +6897,20 @@ async function runClassificationV6Tick(env, input = {}) {
     perPlayer.push({ playerId, rate, games, playerName: anySnap ? (anySnap.player_name || null) : null });
   }
 
-  // Batched existing-tier lookup for the whole chunk (one query, not N queries).
+  // Batched existing-tier lookup, chunked to stay under D1's bound-parameter limit
+  // (same 90-per-query pattern as loadAllMetricSnapshots — this broke once already
+  // when chunk_size_rows was raised without updating this query too).
   const existingTiers = new Map();
   if (perPlayer.length) {
-    const idPlaceholders = perPlayer.map(() => "?").join(",");
-    const existingRows = await all(env.ARCHIVE_DB,
-      `SELECT player_id, tier_key FROM classification_v6_current WHERE player_type=? AND canonical_prop_key=? AND line_value=? AND selected_side=? AND player_id IN (${idPlaceholders})`,
-      entity, propKey, lineValue, side, ...perPlayer.map(p => p.playerId));
-    for (const r of existingRows) existingTiers.set(r.player_id, r.tier_key);
+    const idChunkSize = 90;
+    for (let i = 0; i < perPlayer.length; i += idChunkSize) {
+      const idSlice = perPlayer.slice(i, i + idChunkSize);
+      const idPlaceholders = idSlice.map(() => "?").join(",");
+      const existingRows = await all(env.ARCHIVE_DB,
+        `SELECT player_id, tier_key FROM classification_v6_current WHERE player_type=? AND canonical_prop_key=? AND line_value=? AND selected_side=? AND player_id IN (${idPlaceholders})`,
+        entity, propKey, lineValue, side, ...idSlice.map(p => p.playerId));
+      for (const r of existingRows) existingTiers.set(r.player_id, r.tier_key);
+    }
   }
 
   const stmts = [];
