@@ -6623,7 +6623,7 @@ async function runClassificationV6Base(env, input = {}) {
   }
 
   const tickResult = await (async () => {
-    const maxRetries = Math.max(1, Number(opLimits.max_retries || 3));
+    const maxRetries = Math.max(1, Number((opLimits && opLimits.max_retries) || 3));
     const retryCount = Math.max(0, Number(input.retry_count || 0));
     try {
       return await runClassificationV6Tick(env, {
