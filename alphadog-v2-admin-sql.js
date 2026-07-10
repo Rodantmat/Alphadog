@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-admin-sql";
-const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v1.1-session-fix";
+const VERSION = "alphadog-v2-admin-sql-mcp-bridge-v1.2-cors-fix";
 const JOB_KEY = "admin-sql-mcp-bridge";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
@@ -13,12 +13,20 @@ function nowUtc() {
   return new Date().toISOString();
 }
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, Mcp-Session-Id",
+  "Access-Control-Expose-Headers": "Mcp-Session-Id"
+};
+
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
     status,
     headers: {
       "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store"
+      "cache-control": "no-store",
+      ...CORS_HEADERS
     }
   });
 }
@@ -264,7 +272,7 @@ async function handleMcp(request, env) {
     }
 
     if (method === "notifications/initialized" || (typeof method === "string" && method.startsWith("notifications/"))) {
-      return new Response(null, { status: 202 });
+      return new Response(null, { status: 202, headers: CORS_HEADERS });
     }
 
     if (method === "tools/list") {
@@ -299,6 +307,10 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, "") || "/";
     const method = request.method.toUpperCase();
+
+    if (method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: CORS_HEADERS });
+    }
 
     if (method === "GET" && path === "/") {
       return jsonResponse(baseIdentity(env));
