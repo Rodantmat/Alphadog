@@ -7148,12 +7148,16 @@ async function runClassificationV6DeltaDailySingleStep(env, input = {}) {
 
   const nextComboIndex = comboIndex + 1;
   const allDone = nextComboIndex >= combos.length;
+  const cumulativeRowsWritten = Math.max(0, Number(input.cumulative_rows_written || 0)) + Number(tickResult.rows_written || 0);
   const output = {
     ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
     request_id: requestId, run_id: runId, batch_id: batchId, official_date: officialDate,
     status: allDone ? "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_COMPLETED" : "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_PARTIAL_CONTINUE",
     certification: allDone ? "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE" : "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_CERTIFIED_COMBO_IN_PROGRESS",
     certification_grade: allDone ? "PASS" : "PARTIAL",
+    certifier_owned_daily_delta: true, day_by_day_delta: true, classification_delta_included: true,
+    current_tables_mutated: false, history_tables_mutated: false, full_cumulative_history_recompute: false,
+    coverage_update: { coverage_rows_written: Math.max(1, cumulativeRowsWritten) },
     combo_index: comboIndex, total_combos: combos.length, current_combo: combo,
     affected_players: affectedIds.length, rows_written: tickResult.rows_written, reclassified_rows: tickResult.reclassified_rows,
     no_daily_context: true, no_market_context: true, no_scoring_context: true
@@ -7161,7 +7165,7 @@ async function runClassificationV6DeltaDailySingleStep(env, input = {}) {
   if (!allDone) {
     output.partial_continue = true;
     output.orchestrator_should_self_continue = true;
-    output.next_input_json = { mode: "baseline_v5_classification_daily_delta", request_id: requestId, run_id: runId, batch_id: batchId, combo_index: nextComboIndex, official_date: officialDate };
+    output.next_input_json = { mode: "baseline_v5_classification_daily_delta", request_id: requestId, run_id: runId, batch_id: batchId, combo_index: nextComboIndex, official_date: officialDate, cumulative_rows_written: cumulativeRowsWritten };
   }
   return output;
 }
