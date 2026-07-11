@@ -1733,7 +1733,7 @@ export default {
         job_key: JOB_KEY,
         status: "READY",
         binding_summary: bindingSummary(env),
-        purpose: "Board Prep enrichment only. Reads PrizePicks/Sleeper current boards plus REF/TEAM calendar and writes SCORE_DB prepared rows. Does not mutate market boards, score, rank, or write final board.",
+        purpose: "Board Prep enrichment only. Reads PrizePicks/Sleeper/Underdog current boards plus REF/TEAM calendar and writes SCORE_DB prepared rows. Does not mutate market boards, score, rank, or write final board.",
         timestamp_utc: nowIso()
       });
     }
