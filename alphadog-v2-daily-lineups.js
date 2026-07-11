@@ -168,6 +168,37 @@ async function deriveLineupFromRecentGame(env, teamId, beforeDate) {
   }));
 }
 
+function buildDerivedLineupPreviewRows(gamePk, calendar, side, derivedCandidates) {
+  const sidePrefix = side === "home" ? "home" : "away";
+  const teamId = intOrNull(calendar[`${sidePrefix}_team_id`]);
+  const teamName = calendar[`${sidePrefix}_team_name`] || null;
+  const rows = [];
+  for (const player of (derivedCandidates || [])) {
+    rows.push({
+      dry_run_only: false,
+      live_gated_write_candidate: true,
+      target_table: "daily_lineups_current",
+      game_pk: intOrNull(gamePk),
+      official_date: calendar.official_date || null,
+      game_time_utc: calendar.game_time_utc || null,
+      team_side: side,
+      team_id: teamId,
+      team_name: teamName,
+      player_id: intOrNull(player.player_id),
+      player_name: player.player_name || null,
+      lineup_slot: intOrNull(player.lineup_slot),
+      batting_order_code: null,
+      bat_side: null,
+      active_position: null,
+      lineup_status: "derived_likely_lineup",
+      source_endpoint: `internal:hitter_game_logs:${player.source_game_date || "unknown"}`,
+      write_gate: "derived_fallback_from_recent_actual_lineup",
+      write_enabled: true
+    });
+  }
+  return rows;
+}
+
 async function ensureDailyLineupTables(env) {
   const db = env.DAILY_DB;
   await execRun(db, `
