@@ -8,7 +8,7 @@
   "DEFAULT_DAY_SCOPE": "TODAY_TOMORROW",
   "DEFAULT_SLATE_MODE": "AUTO",
   "ODDS_API_BASE_URL": "https://api.the-odds-api.com/v4",
-  "PARLAY_API_BASE_URL": "https://parlay-api.com/v4",
+  "PARLAY_API_BASE_URL": "https://parlay-api.com/v1",
   "MLB_API_BASE_URL": "https://statsapi.mlb.com/api/v1",
   "OPENWEATHER_BASE_URL": "https://api.openweathermap.org/data/2.5",
   "OPENWEATHER_ONECALL_BASE_URL": "https://api.openweathermap.org/data/3.0",
