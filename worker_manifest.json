@@ -2,7 +2,6 @@
   "version": "alphadog-v2-cloudflare-automation-pack-v0.1",
   "workers": [
     "alphadog-v2-control-room",
-    "alphadog-v2-orchestrator",
     "alphadog-v2-admin-sql",
     "alphadog-v2-safe-cleaner",
     "alphadog-v2-system-health",
