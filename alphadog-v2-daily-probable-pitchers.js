@@ -401,6 +401,8 @@ function deriveLikelyStarter(recentStarts, targetDateText) {
   candidates.sort((a, b) => a.rotation_fit_score - b.rotation_fit_score || b.starts_in_window - a.starts_in_window);
   return candidates[0];
 }
+
+async function loadCalendarRows(env, gamePks) {
   const ids = [...gamePks].filter(Boolean).map(Number);
   if (!ids.length) return new Map();
   const rows = [];
