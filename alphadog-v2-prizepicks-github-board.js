@@ -740,9 +740,10 @@ async function stageRows(env, rows) {
   // atomic D1 batch() transaction - only the sequencing between independent chunks changed, not
   // the write semantics within a chunk. This is the real fix for multi-minute staging/promotion
   // times on large boards: sequential round-trips were the bottleneck, not the data volume itself.
-  const results = await Promise.all(chunks.map(chunk =>
-    env.MARKET_DB.batch(chunk.map(r => env.MARKET_DB.prepare(sql).bind(r.stage_id, r.batch_id, r.source_key, r.slate_date, r.fetched_at, r.projection_id, r.player_id, r.player_name, r.team, r.opponent, r.league, r.stat_type, r.line_score, r.description, r.start_time, r.raw_projection_json, r.parse_status, r.parse_error, r.certification_status)))
-  ));
+  const results = await runWithBoundedConcurrency(chunks, chunk =>
+    env.MARKET_DB.batch(chunk.map(r => env.MARKET_DB.prepare(sql).bind(r.stage_id, r.batch_id, r.source_key, r.slate_date, r.fetched_at, r.projection_id, r.player_id, r.player_name, r.team, r.opponent, r.league, r.stat_type, r.line_score, r.description, r.start_time, r.raw_projection_json, r.parse_status, r.parse_error, r.certification_status))),
+    D1_WRITE_CONCURRENCY
+  );
   const inserted = results.reduce((sum, chunkResult, i) => sum + chunks[i].length, 0);
   return { wrote_table: "prizepicks_board_stage", inserted_rows: inserted, chunk_size: STAGE_INSERT_CHUNK_SIZE, chunk_count: chunks.length, parallel_chunks: true };
 }
