@@ -1070,7 +1070,11 @@ function prepareSleeperRows(rows, ref, calendar, batchId, now) {
     // then replace source time with the internal MLB calendar time.
     const cal = resolveCalendarByTeamNames(calendar, rawDate, rawHome, rawAway, null);
     const playerName = safeStr(r.player_name || raw.player);
-    const playerRes = resolvePlayer(ref, playerName, cal.game);
+    const preliminaryPropKey = safeStr(r.canonical_prop_key || raw.market);
+    const sleeperComboMarket = isComboMarketRow({ playerName, propKey: preliminaryPropKey, payloadJson: r.row_payload_json, rawJson: r.raw_line_json });
+    const playerRes = sleeperComboMarket
+      ? { status: "unsupported", confidence: "combo_market_unsupported", block_reason: "combo_market_unsupported", player: null, candidate_count: 0 }
+      : resolvePlayer(ref, playerName, cal.game);
     const side = teamSideForPlayer(ref, playerRes.player, cal.game);
 
     const mergedPayload = {
