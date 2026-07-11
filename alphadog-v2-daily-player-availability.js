@@ -823,6 +823,7 @@ async function runAvailability(env, input) {
   await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1 SET source_failures=?, external_calls=?, status=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, (sources.sourceFailures || []).length, Number(sources.externalCalls || 0), sources.source_deadline_hit ? 'running_source_deadline_fallback' : 'running_sources_completed', batchId);
   const sourceSnapshotAt = nowUtc();
 
+  const recentAppearanceMap = await loadRecentAppearances(env, playerIds, windowStart);
   const results = [];
   const activeTeamFailures = new Set(sources.sourceFailures.filter((f) => f.hard).map((f) => intOrNull(f.teamId)).filter((v) => v !== null));
   for (const row of prepared) {
@@ -840,7 +841,8 @@ async function runAvailability(env, input) {
       ilMap: teamMlbId ? sources.ilByTeam.get(teamMlbId) : null,
       txMap: teamMlbId ? sources.txByTeam.get(teamMlbId) : null,
       peopleMap: sources.people,
-      staticPlayer: staticByMlbId.get(intOrNull(row.resolved_mlb_player_id)) || null
+      staticPlayer: staticByMlbId.get(intOrNull(row.resolved_mlb_player_id)) || null,
+      recentAppearanceConfirmed: recentAppearanceMap.has(intOrNull(row.resolved_mlb_player_id))
     };
     const classification = classify(row, context);
     const key = `dpav1_${row.official_date}_${row.official_game_pk}_${row.resolved_mlb_player_id}_${teamMlbId || "unknown"}`;
