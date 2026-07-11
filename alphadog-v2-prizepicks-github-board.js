@@ -1022,7 +1022,7 @@ async function fetchGithubContentsMetadata(source, env, refOverride = null, labe
   const ref = refOverride || source.branch;
   const apiUrl = buildGithubContentsApiUrlForRef(source.owner, source.repo, ref, source.path);
   try {
-    const res = await fetch(withCacheBust(apiUrl, `contents_${label}`), { method: "GET", headers: githubHeaders(env) });
+    const res = await fetch(withCacheBust(apiUrl, `contents_${label}`), { method: "GET", headers: githubHeaders(env), signal: timeoutSignal(GITHUB_FETCH_TIMEOUT_MS) });
     const text = await res.text();
     let parsed = null;
     try { parsed = JSON.parse(text); } catch (_) {}
