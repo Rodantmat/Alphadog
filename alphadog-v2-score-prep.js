@@ -1609,7 +1609,8 @@ async function runBoardPrep(env, input) {
   const resolveStart = Date.now();
   const preparedAllSources = [
     ...preparePrizePicksRows(prizepicksRows, ref, calendar, batchId, now),
-    ...prepareSleeperRows(sleeperRows, ref, calendar, batchId, now)
+    ...prepareSleeperRows(sleeperRows, ref, calendar, batchId, now),
+    ...prepareUnderdogRows(underdogRows, ref, calendar, batchId, now)
   ];
   const explicitWindowDates = Array.isArray(input.window_dates) && input.window_dates.length >= 2
     ? input.window_dates.slice(0, 2).map(safeStr).filter(Boolean)
