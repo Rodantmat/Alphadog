@@ -16172,6 +16172,48 @@ async function processOneUnlocked(env, trigger) {
     }
   }
 
+  // v0.2.2: Hot-drain Board Full Run before generic queue work, mirroring the same pattern
+  // already proven for Daily Context, Incremental Morning, and Market Scoring Full Run.
+  // Board Full Run was explicitly excluded from this hot-lane system historically (see the
+  // market-scoring-full-run comment below: "Board refresh is intentionally not part of this
+  // chain"), which was fine while Board Full Run was simple. Now that it has 4 real stages
+  // (PrizePicks, Sleeper, Score Prep, Underdog), it needs the same early priority as the other
+  // top-level full-run chains - a first attempt placed this hot lane right before the generic
+  // fallback query, but that still left it starved behind ~15 other specialized hot lanes that
+  // fire on every single tick. Verified this exact query against real, live stuck data before
+  // writing this: a score-prep child starved for many minutes was correctly found by this shape.
+  if (!row) {
+    row = await first(env.CONTROL_DB,
+      `SELECT request_id, chain_id, job_key, worker_name, status, tick_count, input_json FROM (
+        SELECT c.request_id, c.chain_id, c.job_key, c.worker_name, c.status, c.tick_count, c.input_json, c.created_at, c.run_after
+        FROM control_job_queue p
+        JOIN control_job_queue c ON c.parent_request_id = p.request_id AND c.chain_id = p.chain_id
+        WHERE p.job_key='board-full-run'
+          AND p.worker_name='alphadog-v2-orchestrator'
+          AND p.status IN ('pending','running','partial_continue')
+          AND p.finished_at IS NULL
+          AND c.status IN ('pending','partial_continue')
+          AND c.finished_at IS NULL
+          AND datetime(COALESCE(c.run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+        UNION ALL
+        SELECT p.request_id, p.chain_id, p.job_key, p.worker_name, p.status, p.tick_count, p.input_json, p.created_at, p.run_after
+        FROM control_job_queue p
+        WHERE p.job_key='board-full-run'
+          AND p.worker_name='alphadog-v2-orchestrator'
+          AND p.status IN ('pending','partial_continue')
+          AND p.finished_at IS NULL
+          AND datetime(COALESCE(p.run_after, CURRENT_TIMESTAMP)) <= datetime(CURRENT_TIMESTAMP)
+          AND NOT EXISTS (
+            SELECT 1 FROM control_job_queue c2
+            WHERE c2.parent_request_id = p.request_id AND c2.chain_id = p.chain_id
+              AND c2.status IN ('pending','running','partial_continue') AND c2.finished_at IS NULL
+          )
+      )
+      ORDER BY datetime(COALESCE(run_after, CURRENT_TIMESTAMP)) ASC, datetime(created_at) ASC
+      LIMIT 1`
+    );
+  }
+
   // v0.2.207: Hot-drain top-level Daily Full Run before its component chains.
   // This parent owns the day-level order: Daily Context Full Run, Board Full Run,
   // then Market/Scoring Full Run. Children remain hard parent boundaries; this
