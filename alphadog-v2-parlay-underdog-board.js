@@ -886,10 +886,14 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
   );
   await insertStageRows(env, stageRows);
 
-  let promotion = null;
-  if (mappingBlockedRows === 0 && invalidRows === 0) {
-    promotion = await promoteBoardInventory(env, batchId, stageRows, fetchedAt);
-  }
+  // Per-row promotion (not all-or-nothing): promote whatever rows are correctly mapped and
+  // certified, regardless of whether other rows on the same board have unmapped/unsupported
+  // stat types. promoteBoardInventory already filters its own certifiedRows to only rows with
+  // parse_status === "parsed_stage_only_canonical_mapping_audited", so this naturally excludes
+  // unmapped rows without needing any other change. This matches how PrizePicks and Sleeper
+  // already behave - use what's understood, flag the rest, don't block everything over a few
+  // unrecognized stat types.
+  const promotion = await promoteBoardInventory(env, batchId, stageRows, fetchedAt);
 
   return {
     batch_id: batchId,
