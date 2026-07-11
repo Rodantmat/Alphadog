@@ -1594,16 +1594,16 @@ async function runBoardPrep(env, input) {
   await controlRunHeartbeat(env, input, "SCORE_PREP_WORKER_STARTED", 0, 0, { batch_id: batchId });
 
   const loadStart = Date.now();
-  const [{ prizepicksRows, sleeperRows }, ref] = await Promise.all([
+  const [{ prizepicksRows, sleeperRows, underdogRows }, ref] = await Promise.all([
     loadMarketRows(env),
     loadReference(env)
   ]);
-  const dates = collectCalendarDates(prizepicksRows, sleeperRows);
+  const dates = collectCalendarDates(prizepicksRows, sleeperRows, underdogRows);
   const calendar = await loadCalendar(env, dates, ref);
   timing.load_ms = Date.now() - loadStart;
-  await updatePrepBatchCheckpoint(env, batchId, "LOADED_BOARD_SOURCES", "SCORE_BOARD_PREP_SOURCES_LOADED", { prizepicks_rows: prizepicksRows.length, sleeper_rows: sleeperRows.length, calendar_candidate_dates: dates, timing_ms: timing });
-  await controlLog(env, input, "INFO", "score_prep_sources_loaded", "Score Prep loaded board sources and reference/calendar context", { batch_id: batchId, prizepicks_rows: prizepicksRows.length, sleeper_rows: sleeperRows.length, calendar_dates: dates, timing_ms: timing });
-  await controlRunHeartbeat(env, input, "SCORE_PREP_SOURCES_LOADED", prizepicksRows.length + sleeperRows.length, 0, { batch_id: batchId, timing_ms: timing });
+  await updatePrepBatchCheckpoint(env, batchId, "LOADED_BOARD_SOURCES", "SCORE_BOARD_PREP_SOURCES_LOADED", { prizepicks_rows: prizepicksRows.length, sleeper_rows: sleeperRows.length, underdog_rows: underdogRows.length, calendar_candidate_dates: dates, timing_ms: timing });
+  await controlLog(env, input, "INFO", "score_prep_sources_loaded", "Score Prep loaded board sources and reference/calendar context", { batch_id: batchId, prizepicks_rows: prizepicksRows.length, sleeper_rows: sleeperRows.length, underdog_rows: underdogRows.length, calendar_dates: dates, timing_ms: timing });
+  await controlRunHeartbeat(env, input, "SCORE_PREP_SOURCES_LOADED", prizepicksRows.length + sleeperRows.length + underdogRows.length, 0, { batch_id: batchId, timing_ms: timing });
   const now = new Date();
 
   const resolveStart = Date.now();
