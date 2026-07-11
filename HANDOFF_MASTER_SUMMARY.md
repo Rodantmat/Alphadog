@@ -18,7 +18,7 @@ Rodolfo owns AlphaDog, an MLB player-prop hit-probability system on Cloudflare W
 **Old system ("Frankenstein", v5/v2)** — still running for layers not yet replaced: expansion mining (RFI/NRFI, some prop line inventory), and everything downstream of baseline (board, daily context, market, matrix, enrichment, final scoring). This is exactly what the NEXT PHASE (below) addresses.
 
 ## THIS SESSION'S REAL WORK: GETTING THE FULL DELTA PIPELINE ACTUALLY RELIABLE
-This took far longer than expected — многие real, distinct bugs, each found by testing, not assumed. Full detail in `LIVING_LOG.md`; here's the essential map so you don't repeat any of this work:
+This took far longer than expected — several real, distinct bugs, each found by testing, not assumed. Full detail in `LIVING_LOG.md`; here's the essential map so you don't repeat any of this work:
 
 ### Bug 1 — daily delta didn't know its own target date
 `runClassificationV6DeltaDaily`/`runBaselineV6DeltaDaily` originally required an explicit `official_date` input, but the orchestrator never passes one (it expects the worker to self-determine, matching the old system's pattern). Fixed with `determineNextDeltaDate()` — a watermark-based lookup (last processed date in the `_current` table, then earliest newer date with real game log data).
