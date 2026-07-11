@@ -321,6 +321,10 @@
       "service": "alphadog-v2-parlay-sleeper-board"
     },
     {
+      "binding": "PARLAY_UNDERDOG_BOARD_WORKER",
+      "service": "alphadog-v2-parlay-underdog-board"
+    },
+    {
       "binding": "MARKET_NORMALIZER_WORKER",
       "service": "alphadog-v2-market-normalizer"
     },
