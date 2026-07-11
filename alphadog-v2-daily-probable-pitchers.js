@@ -688,14 +688,14 @@ async function writeStarterRows(env, batchId, rows, previousMap, counters) {
       starter_status, starter_confidence, source_status, game_status, abstract_game_state, detailed_state,
       previous_starter_player_id, previous_starter_name, change_detected, scratch_flag, opener_flag, bulk_pitcher_flag,
       tbd_flag, unavailable_flag, hand_missing_flag, prepared_board_relevant, prepared_board_pickable_rows,
-      first_seen_at, last_seen_at, changed_at, raw_json, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, COALESCE((SELECT created_at FROM daily_starters_current WHERE current_key=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)`,
+      first_seen_at, last_seen_at, changed_at, raw_json, data_source_level, is_temporary_derived, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, COALESCE((SELECT created_at FROM daily_starters_current WHERE current_key=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)`,
       r.current_key, batchId, r.source_key, r.source_endpoint, r.source_snapshot_at, r.game_pk, r.official_date, r.game_time_utc,
       r.team_id, r.team_name, r.opponent_team_id, r.opponent_team_name, r.is_home, r.starter_player_id, r.starter_name, r.starter_hand,
       r.starter_status, r.starter_confidence, r.source_status, r.game_status, r.abstract_game_state, r.detailed_state,
       r.previous_starter_player_id, r.previous_starter_name, r.change_detected, r.scratch_flag, r.opener_flag, r.bulk_pitcher_flag,
       r.tbd_flag, r.unavailable_flag, r.hand_missing_flag, r.prepared_board_relevant, r.prepared_board_pickable_rows,
-      firstSeen, changedAt, r.raw_json, r.current_key);
+      firstSeen, changedAt, r.raw_json, r.data_source_level, r.is_temporary_derived, r.current_key);
 
     await run(env.DAILY_DB, `INSERT INTO daily_starters_snapshots (
       snapshot_id, batch_id, current_key, game_pk, team_id, starter_player_id, starter_name, starter_hand,
