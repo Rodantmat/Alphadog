@@ -611,9 +611,9 @@ async function clearUnpromotedUnderdogStage(env) {
 
 async function insertStageRows(env, stageRows) {
   const chunkSize = 80;
-  for (let i = 0; i < stageRows.length; i += chunkSize) {
-    const chunk = stageRows.slice(i, i + chunkSize);
-    await env.MARKET_DB.batch(chunk.map(row => env.MARKET_DB.prepare(`INSERT INTO underdog_board_stage (
+  const chunks = [];
+  for (let i = 0; i < stageRows.length; i += chunkSize) chunks.push(stageRows.slice(i, i + chunkSize));
+  await Promise.all(chunks.map(chunk => env.MARKET_DB.batch(chunk.map(row => env.MARKET_DB.prepare(`INSERT INTO underdog_board_stage (
       stage_id, batch_id, source_key, slate_date, fetched_at, source_event_id, source_line_id, source_player_id,
       player_name, team, opponent, league, sport, source_stat_name, canonical_prop_key, line_value, side, price,
       decimal_price, is_pickable, start_time, raw_line_json, parse_status, parse_error, certification_status
@@ -622,8 +622,7 @@ async function insertStageRows(env, stageRows) {
         row.stage_id, row.batch_id, row.source_key, row.slate_date, row.fetched_at, row.source_event_id, row.source_line_id, row.source_player_id,
         row.player_name, row.team, row.opponent, row.league, row.sport, row.source_stat_name, row.canonical_prop_key, row.line_value, row.side, row.price,
         row.decimal_price, row.is_pickable, row.start_time, row.raw_line_json, row.parse_status, row.parse_error, row.certification_status
-      )));
-  }
+      ))));
 }
 
 
