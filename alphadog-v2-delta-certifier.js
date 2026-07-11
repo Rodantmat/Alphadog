@@ -3,6 +3,12 @@ const VERSION = "alphadog-v2-delta-certifier-v0.2.15-v6-state-validated-clean";
 const JOB_KEY = "delta-certifier";
 const DEFAULT_DELTA_RESERVED_START_DATE = "2026-05-19";
 const FULL_RUN_LOOKAHEAD_DAYS = 6;
+// The actual date the classification_v6/baseline_v6 base was built. Any date strictly before
+// this was fully handled by the prior system and is not something the new v6 daily delta is
+// responsible for recomputing - treating it as an open gap would force the delta pipeline to
+// walk backward through the entire season one day at a time, which is not what "daily delta"
+// means. This must be updated only if the base is ever fully rebuilt from an earlier date.
+const BASELINE_V6_CUTOVER_DATE = "2026-07-08";
 
 const SOURCE_COVERAGE_LAYER_KEYS = [
   "hitter_game_logs",
