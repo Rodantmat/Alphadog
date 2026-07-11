@@ -999,7 +999,7 @@ function buildGithubContentsApiUrlForRef(owner, repo, ref, path) {
 async function fetchGithubRefHead(source, env) {
   const url = buildGithubRefApiUrl(source.owner, source.repo, source.branch);
   try {
-    const res = await fetch(withCacheBust(url, "ref_head"), { method: "GET", headers: githubHeaders(env) });
+    const res = await fetch(withCacheBust(url, "ref_head"), { method: "GET", headers: githubHeaders(env), signal: timeoutSignal(GITHUB_FETCH_TIMEOUT_MS) });
     const text = await res.text();
     let parsed = null;
     try { parsed = JSON.parse(text); } catch (_) {}
