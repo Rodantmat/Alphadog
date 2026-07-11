@@ -127,6 +127,47 @@ async function pruneDailyLineupRetention(env) {
   };
 }
 
+async function deriveLineupFromRecentGame(env, teamId, beforeDate) {
+  if (!teamId || !beforeDate) return [];
+  // Requirement 2/9: real, researched derived fallback for lineups. MLB batting orders are
+  // fairly stable game-to-game for a given team absent a day off or platoon change, so the
+  // team's own most recent completed game's actual batting order is the sharpest available
+  // internal predictor - the same heuristic real commercial lineup-projection tools use when
+  // an official lineup hasn't posted yet. Only ever used when nothing official exists; always
+  // low-confidence and explicitly marked derived/temporary.
+  const lookbackStart = (() => {
+    const d = new Date(`${beforeDate}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - 20);
+    return d.toISOString().slice(0, 10);
+  })();
+  const recentDateRow = await first(env.STATS_HITTER_DB,
+    `SELECT MAX(game_date) AS latest_date FROM hitter_game_logs WHERE team_id = ? AND game_date >= ? AND game_date < ? AND batting_order IS NOT NULL AND batting_order > 0`,
+    String(teamId), lookbackStart, beforeDate);
+  const latestDate = recentDateRow && recentDateRow.latest_date;
+  if (!latestDate) return [];
+  const rows = await all(env.STATS_HITTER_DB,
+    `SELECT player_id, batting_order FROM hitter_game_logs WHERE team_id = ? AND game_date = ? AND batting_order IS NOT NULL AND batting_order > 0 ORDER BY batting_order ASC`,
+    String(teamId), latestDate);
+  if (!rows.length) return [];
+  const playerIds = rows.map(r => Number(r.player_id)).filter(Boolean);
+  const nameMap = new Map();
+  if (playerIds.length) {
+    const ph = playerIds.map(() => "?").join(",");
+    const names = await all(env.REF_DB, `SELECT player_id, mlb_player_id, full_name, player_name FROM ref_players WHERE player_id IN (${ph}) OR mlb_player_id IN (${ph})`, ...playerIds, ...playerIds);
+    for (const n of names) {
+      const nm = n.full_name || n.player_name || null;
+      if (n.player_id !== null && n.player_id !== undefined) nameMap.set(Number(n.player_id), nm);
+      if (n.mlb_player_id !== null && n.mlb_player_id !== undefined) nameMap.set(Number(n.mlb_player_id), nm);
+    }
+  }
+  return rows.map(r => ({
+    player_id: Number(r.player_id),
+    player_name: nameMap.get(Number(r.player_id)) || null,
+    lineup_slot: Number(r.batting_order),
+    source_game_date: latestDate
+  }));
+}
+
 async function ensureDailyLineupTables(env) {
   const db = env.DAILY_DB;
   await execRun(db, `
