@@ -11023,6 +11023,7 @@ const DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS = 120;
 const DAILY_CONTEXT_FULL_RUN_STALE_CHILD_RETRY_MAX = 1;
 
 const DAILY_CONTEXT_FULL_RUN_STAGES = [
+  { stage_key: "daily_context_certifier_first_pass", job_key: "daily-certifier", worker_name: "alphadog-v2-daily-certifier", display_name: "Daily Context Readiness Certifier (First Pass)", visible_button: "DAILY JOBS > Context Cert (First Pass)", mode: "daily_context_full_run_certifier_first_pass", worker_group: "Daily", phase_key: "daily", priority: 5 },
   { stage_key: "daily_starters", job_key: "daily-probable-pitchers", worker_name: "alphadog-v2-daily-probable-pitchers", display_name: "Daily Starters", visible_button: "DAILY JOBS > Starters", mode: "daily_context_full_run_starters", worker_group: "Daily", phase_key: "daily", priority: 5 },
   { stage_key: "daily_lineups", job_key: "daily-lineups", worker_name: "alphadog-v2-daily-lineups", display_name: "Daily Lineups", visible_button: "DAILY JOBS > Lineups", mode: "daily_context_full_run_lineups", worker_group: "Daily", phase_key: "daily", priority: 5 },
   { stage_key: "daily_player_availability", job_key: "daily-player-availability", worker_name: "alphadog-v2-daily-player-availability", display_name: "Daily Player Availability", visible_button: "DAILY JOBS > Availability", mode: "daily_context_full_run_player_availability", worker_group: "Daily", phase_key: "daily", priority: 5 },
