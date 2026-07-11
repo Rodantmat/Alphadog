@@ -692,7 +692,7 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
   const chunkSize = 80;
   const currentChunks = [];
   for (let i = 0; i < promotableRows.length; i += chunkSize) currentChunks.push(promotableRows.slice(i, i + chunkSize));
-  await Promise.all(currentChunks.map(chunk => env.MARKET_DB.batch(chunk.map(row => env.MARKET_DB.prepare(`INSERT INTO sleeper_board_current (
+  await runWithBoundedConcurrency(currentChunks, chunk => env.MARKET_DB.batch(chunk.map(row => env.MARKET_DB.prepare(`INSERT INTO sleeper_board_current (
       current_row_id, batch_id, source_key, slate_date, source_event_id, source_line_id, source_player_id,
       player_name, team, opponent, league, sport, source_stat_name, canonical_prop_key, line_value, side,
       price, decimal_price, is_pickable, start_time, raw_line_json, row_payload_json, promoted_at, updated_at
@@ -701,7 +701,7 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
         rid("sleeper_current"), batchId, row.source_key, row.slate_date, row.source_event_id, row.source_line_id, row.source_player_id,
         row.player_name, row.team, row.opponent, row.league, row.sport, row.source_stat_name, row.canonical_prop_key, row.line_value, row.side,
         row.price, row.decimal_price, row.is_pickable, row.start_time, row.raw_line_json, rowPayloadForCurrent(row)
-      )))));
+      ))), D1_WRITE_CONCURRENCY);
 
   if (expectedCurrentRows > 0) {
     await run(env.MARKET_DB, `INSERT OR REPLACE INTO sleeper_board_active_batches (
