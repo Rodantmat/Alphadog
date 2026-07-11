@@ -52,6 +52,17 @@ def make_config(worker_name, include_services=False):
         cfg["migrations"] = [
             {"tag": "v1", "new_sqlite_classes": ["AlphadogMcp"]}
         ]
+    if worker_name == "alphadog-v2-parlay-underdog-board":
+        # Same reason as control-room/admin-sql above: worker-specific vars must live in the
+        # generator or they get wiped on every deploy before Wrangler even runs. NOTE: the
+        # Sleeper board worker (alphadog-v2-parlay-sleeper-board) has this same unprotected gap
+        # already - not fixed here (out of scope for this change), but worth knowing about.
+        cfg["vars"] = dict(VARS)
+        cfg["vars"]["PARLAY_UNDERDOG_PROBE_ENDPOINT"] = "/sports/baseball_mlb/props?bookmakers=underdog"
+        cfg["vars"]["PARLAY_API_UNDERDOG_ENDPOINT"] = "/sports/baseball_mlb/props?bookmakers=underdog"
+        cfg["vars"]["PARLAY_API_AUTH_HEADER_NAME"] = "X-API-Key"
+        cfg["vars"]["PARLAY_API_AUTH_HEADER_PREFIX"] = ""
+        cfg["vars"]["UNDERDOG_PROVIDER"] = "PARLAY_API"
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
