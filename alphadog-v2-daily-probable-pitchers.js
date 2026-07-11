@@ -896,6 +896,8 @@ async function runDailyStarters(request, env) {
       starters_tbd: tbd,
       starters_changed: changed,
       actual_starters_found: actualStarted,
+      derived_starters_used: derivedStarters,
+      real_starters_confirmed: realStarters,
       warning_rows: warningRows,
       blocking_rows: blockingRows,
       rows_written: counters.rows_written,
