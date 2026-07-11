@@ -1123,6 +1123,96 @@ function prepareSleeperRows(rows, ref, calendar, batchId, now) {
   return out;
 }
 
+function prepareUnderdogRows(rows, ref, calendar, batchId, now) {
+  const out = [];
+  for (const r of rows) {
+    const raw = safeJsonParse(r.raw_line_json, {});
+    const payload = safeJsonParse(r.row_payload_json, {});
+    const rawHome = safeStr(raw.home_team || payload.home_team);
+    const rawAway = safeStr(raw.away_team || payload.away_team);
+    const rawDate = safeStr(raw.game_date) || dateOnlyFromAnyTime(raw.commence_time || r.start_time);
+    const rawCommence = safeStr(raw.commence_time || r.start_time);
+
+    // Same reasoning as Sleeper: Underdog's commence_time (via the same ParlayAPI structure)
+    // can be a provider placeholder. Calendar grounding must use official_date + raw team pair,
+    // then replace source time with the internal MLB calendar time.
+    const cal = resolveCalendarByTeamNames(calendar, rawDate, rawHome, rawAway, null);
+    const playerName = safeStr(r.player_name || raw.player);
+    const playerRes = resolvePlayer(ref, playerName, cal.game);
+    const side = teamSideForPlayer(ref, playerRes.player, cal.game);
+
+    const mergedPayload = {
+      ...(payload || {}),
+      source_key: "parlay_underdog",
+      source_market: safeStr(raw.market || r.source_stat_name),
+      market_key: safeStr(raw.market_key || r.source_stat_name),
+      over_price: raw.over_price ?? null,
+      under_price: raw.under_price ?? null,
+      implied_probability: raw.implied_probability ?? null,
+      is_dfs_flat_payout: raw.is_dfs_flat_payout ?? null,
+      dfs_normalized: raw.dfs_normalized ?? null,
+      last_update: raw.last_update || null,
+      home_team: rawHome || null,
+      away_team: rawAway || null,
+      bookmaker: raw.bookmaker || "underdog",
+      bookmaker_title: raw.bookmaker_title || "Underdog",
+      source_commence_time_replaced_by_calendar: Boolean(cal.game),
+      raw_home_team: rawHome || null,
+      raw_away_team: rawAway || null,
+      raw_commence_time: rawCommence || null,
+      raw_last_update: raw.last_update || null,
+      source_pickable_inventory_only: true,
+      source_prices: {
+        side: r.side || null,
+        price: r.price ?? null,
+        decimal_price: r.decimal_price ?? null,
+        over_price: raw.over_price ?? null,
+        under_price: raw.under_price ?? null,
+        implied_probability: raw.implied_probability ?? null
+      }
+    };
+
+    const underdogSourcePropName = safeStr(r.source_stat_name || raw.market_key || raw.market);
+    const underdogPropKey = sleeperPreparedPropKeyForResolvedPlayer({
+      rawPropKey: safeStr(r.canonical_prop_key || raw.market),
+      sourcePropName: underdogSourcePropName,
+      rawMarketKey: raw.market_key,
+      player: playerRes.player
+    });
+
+    if (underdogPropKey !== safeStr(r.canonical_prop_key || raw.market)) {
+      mergedPayload.canonical_prop_role_remap = {
+        from: safeStr(r.canonical_prop_key || raw.market),
+        to: underdogPropKey,
+        reason: "underdog_player_walks_resolved_pitcher_to_walks_allowed",
+        source_market_key: underdogSourcePropName,
+        resolved_player_primary_position: playerRes.player ? playerRes.player.primary_position : null
+      };
+    }
+
+    out.push(preparedRowBase({
+      batchId,
+      sourceKey: SOURCE_UNDERDOG,
+      sourceRowId: sourceKeyForRow(SOURCE_UNDERDOG, r),
+      sourceEventId: safeStr(r.source_event_id || raw.event_id),
+      projectionId: null,
+      playerName,
+      propKey: underdogPropKey,
+      sourcePropName: underdogSourcePropName,
+      lineValue: r.line_value ?? raw.line,
+      sourceStartTime: rawCommence || safeStr(r.start_time),
+      sourcePickable: 1,
+      rawJson: r.raw_line_json || raw,
+      payloadJson: mergedPayload,
+      calendarResolution: cal,
+      playerResolution: playerRes,
+      side,
+      now
+    }));
+  }
+  return out;
+}
+
 function summarizeBySource(rows) {
   const map = new Map();
   for (const r of rows) {
