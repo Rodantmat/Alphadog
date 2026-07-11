@@ -622,7 +622,7 @@ async function insertStageRows(env, stageRows) {
         row.stage_id, row.batch_id, row.source_key, row.slate_date, row.fetched_at, row.source_event_id, row.source_line_id, row.source_player_id,
         row.player_name, row.team, row.opponent, row.league, row.sport, row.source_stat_name, row.canonical_prop_key, row.line_value, row.side, row.price,
         row.decimal_price, row.is_pickable, row.start_time, row.raw_line_json, row.parse_status, row.parse_error, row.certification_status
-      ))));
+      )))));
 }
 
 
