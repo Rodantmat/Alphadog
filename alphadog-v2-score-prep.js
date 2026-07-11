@@ -936,7 +936,17 @@ function preparedRowBase({ batchId, sourceKey, sourceRowId, sourceEventId, proje
 async function loadMarketRows(env) {
   const prizepicksRows = await allRows(env.MARKET_DB, "SELECT * FROM prizepicks_board_current");
   const sleeperRows = await allRows(env.MARKET_DB, "SELECT * FROM sleeper_board_current");
-  const underdogRows = await allRows(env.MARKET_DB, "SELECT * FROM underdog_board_current");
+  // underdog_board_current is only created when the Underdog worker itself first runs, and
+  // Underdog is positioned after score-prep in the board-full-run sequence (deliberately, since
+  // it's a newer, less-proven source - see the board-full-run stage ordering). A missing table
+  // here means "no Underdog data promoted yet", which is zero rows, not an error.
+  let underdogRows = [];
+  try {
+    underdogRows = await allRows(env.MARKET_DB, "SELECT * FROM underdog_board_current");
+  } catch (err) {
+    const message = String(err && err.message ? err.message : err);
+    if (!/no such table/i.test(message)) throw err;
+  }
   return { prizepicksRows, sleeperRows, underdogRows };
 }
 
