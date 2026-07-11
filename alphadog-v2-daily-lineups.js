@@ -1249,12 +1249,22 @@ async function runSourceProbe(env, input) {
     warnings.push(...preparedSummary.warnings);
     blockers.push(...preparedSummary.blockers);
 
-    const lineupWritePreviewRows = [
+    const officialLineupPreviewRows = [
       ...buildLineupWritePreviewRows(gamePk, calendar, "home", homeValidation),
       ...buildLineupWritePreviewRows(gamePk, calendar, "away", awayValidation)
     ];
+    let derivedLineupPreviewRows = [];
+    if (homeValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.home_team_id)) {
+      const homeDerived = await deriveLineupFromRecentGame(env, calendar.home_team_id, calendar.official_date || todayStr);
+      derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "home", homeDerived));
+    }
+    if (awayValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.away_team_id)) {
+      const awayDerived = await deriveLineupFromRecentGame(env, calendar.away_team_id, calendar.official_date || todayStr);
+      derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "away", awayDerived));
+    }
+    const lineupWritePreviewRows = [...officialLineupPreviewRows, ...derivedLineupPreviewRows];
     const availabilityWritePreviewRows = buildAvailabilityWritePreviewRows(gamePk, calendar, preparedSummary);
-    const lineupWriteReady = lineupWritePreviewRows.length > 0 && (homeValidation.lineup_status === "posted_lineup" || awayValidation.lineup_status === "posted_lineup");
+    const lineupWriteReady = lineupWritePreviewRows.length > 0 && (homeValidation.lineup_status === "posted_lineup" || awayValidation.lineup_status === "posted_lineup" || derivedLineupPreviewRows.length > 0);
 
     games.push({
       game_pk: gamePk,
