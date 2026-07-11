@@ -685,7 +685,7 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
         rid("sleeper_current"), batchId, row.source_key, row.slate_date, row.source_event_id, row.source_line_id, row.source_player_id,
         row.player_name, row.team, row.opponent, row.league, row.sport, row.source_stat_name, row.canonical_prop_key, row.line_value, row.side,
         row.price, row.decimal_price, row.is_pickable, row.start_time, row.raw_line_json, rowPayloadForCurrent(row)
-      ))));
+      )))));
 
   if (expectedCurrentRows > 0) {
     await run(env.MARKET_DB, `INSERT OR REPLACE INTO sleeper_board_active_batches (
