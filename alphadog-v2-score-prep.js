@@ -4,6 +4,7 @@ const JOB_KEY = "score-prep";
 const SOURCE_PRIZEPICKS = "prizepicks";
 const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
 const SOURCE_SLEEPER = "sleeper";
+const SOURCE_UNDERDOG = "parlay_underdog";
 const INSERT_CHUNK_SIZE = 75;
 const WRITE_ROWS_PER_INVOCATION = 20000; // v0.2.19: Score Prep is proven to finish ~5-8k rows inside service-binding budget; disable chunk resume race.
 
