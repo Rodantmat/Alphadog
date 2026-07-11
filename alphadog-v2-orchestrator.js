@@ -16924,6 +16924,16 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isParlayUnderdogBoardJob(row)) {
+    const output = await processParlayUnderdogBoardJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_parlay_underdog_board_job" : "failed_one_parlay_underdog_board_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
 
   if (isDailyProbablePitchersJob(row)) {
     const output = await processDailyProbablePitchersJob(env, row, runId, trigger);
