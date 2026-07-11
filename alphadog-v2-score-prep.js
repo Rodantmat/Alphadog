@@ -879,7 +879,7 @@ function preparedRowBase({ batchId, sourceKey, sourceRowId, sourceEventId, proje
   const blockReasons = buildBlockReasons({ sourcePickable, sourceKey, calendarResolution, playerResolution, side, game, now });
   const pickableSafe = blockReasons.length === 0 ? 1 : 0;
   const sourceTimeStatus = game
-    ? (sourceKey === SOURCE_SLEEPER ? "source_time_replaced_by_calendar" : "source_time_verified_by_calendar")
+    ? (sourceKey === SOURCE_SLEEPER || sourceKey === SOURCE_UNDERDOG ? "source_time_replaced_by_calendar" : "source_time_verified_by_calendar")
     : (sourceStartTime ? "source_time_unverified" : "source_time_missing");
   const startTimeConfidence = game ? "official_calendar" : (sourceStartTime ? "source_time_only_unverified" : "missing_time");
   const matchupStatus = calendarResolution.status;
