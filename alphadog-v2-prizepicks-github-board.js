@@ -1110,7 +1110,7 @@ function summarizeCandidateJsonText(text) {
 async function fetchTextCandidate(url, env, label, headers = null, metadata = null) {
   const started = Date.now();
   try {
-    const res = await fetch(withCacheBust(url, label), { method: "GET", headers: headers || githubHeaders(env, "application/vnd.github.raw+json, application/json, text/plain, */*") });
+    const res = await fetch(withCacheBust(url, label), { method: "GET", headers: headers || githubHeaders(env, "application/vnd.github.raw+json, application/json, text/plain, */*"), signal: timeoutSignal(GITHUB_FETCH_TIMEOUT_MS) });
     const text = await res.text();
     const summary = summarizeCandidateJsonText(text);
     return {
