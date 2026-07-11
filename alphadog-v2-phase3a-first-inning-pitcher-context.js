@@ -7070,8 +7070,10 @@ async function runBaselineV6BaseSingleStep(env, input = {}) {
 // game log data available. Matches the pattern the orchestrator actually calls with — it does
 // NOT pass an explicit official_date, the worker is expected to figure out what's next itself.
 async function determineNextDeltaDate(env, currentTable) {
+  const BASELINE_V6_CUTOVER_DATE = "2026-07-08"; // must match the certifier's cutover constant
   const watermarkRow = await first(env.ARCHIVE_DB, `SELECT MAX(last_processed_official_date) wm FROM ${currentTable}`);
-  const watermark = (watermarkRow && watermarkRow.wm) ? String(watermarkRow.wm).slice(0, 10) : "1900-01-01";
+  let watermark = (watermarkRow && watermarkRow.wm) ? String(watermarkRow.wm).slice(0, 10) : "1900-01-01";
+  if (watermark < BASELINE_V6_CUTOVER_DATE) watermark = BASELINE_V6_CUTOVER_DATE;
   const hitterNext = await first(env.STATS_HITTER_DB, `SELECT MIN(game_date) d FROM hitter_game_logs WHERE game_date > ?`, watermark);
   const pitcherNext = await first(env.STATS_PITCHER_DB, `SELECT MIN(game_date) d FROM pitcher_game_logs WHERE game_date > ?`, watermark);
   const candidates = [hitterNext && hitterNext.d, pitcherNext && pitcherNext.d].filter(Boolean).sort();
