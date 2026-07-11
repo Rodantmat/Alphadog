@@ -354,6 +354,45 @@ async function runCertifier(env, input) {
   const umpire = await all(env.DAILY_DB, "SELECT * FROM daily_umpire_context_current WHERE official_date IN (?, ?)", today, tomorrow);
   const batches = await readLatestBatchMap(env);
 
+  // Requirement 4/3: classify the real slate shape from calendar-verified prepared-board
+  // games (not a naive date lookup), then compute a real/derived/temporary/missing tally per
+  // layer per date, and purge any game whose window has already passed (Requirement 8).
+  const todayGamePkSet = new Set(prepared.filter(r => r.official_date === today).map(r => String(r.official_game_pk)));
+  const tomorrowGamePkSet = new Set(prepared.filter(r => r.official_date === tomorrow).map(r => String(r.official_game_pk)));
+  const slateShape = determineSlateShape(todayGamePkSet.size, tomorrowGamePkSet.size);
+
+  async function tallyForDate(targetDate) {
+    const preparedForDate = prepared.filter(r => r.official_date === targetDate);
+    const gamesForDate = games.filter(g => g.official_date === targetDate);
+    const gamePksForDate = [...new Set(preparedForDate.map(r => String(r.official_game_pk)))];
+    const teamKeysForDate = [];
+    for (const g of gamesForDate) { teamKeysForDate.push(`${g.game_pk}:${g.home_team_id}`); teamKeysForDate.push(`${g.game_pk}:${g.away_team_id}`); }
+    const playerKeysForDate = [...new Set(preparedForDate.filter(r => r.resolved_mlb_player_id).map(r => `${r.official_game_pk}:${r.resolved_mlb_player_id}`))];
+    const layerSpecs = [
+      { key: "starters", rows: starters.filter(r => r.official_date === targetDate), expected: gamePksForDate, keyFn: r => String(r.game_pk) },
+      { key: "weather", rows: weather.filter(r => r.official_date === targetDate), expected: gamePksForDate, keyFn: r => String(r.game_pk) },
+      { key: "umpire", rows: umpire.filter(r => r.official_date === targetDate), expected: gamePksForDate, keyFn: r => String(r.game_pk) },
+      { key: "bullpen", rows: bullpen.filter(r => r.official_date === targetDate), expected: teamKeysForDate, keyFn: r => `${r.game_pk}:${r.team_id}` },
+      { key: "schedule_spot", rows: schedule.filter(r => r.official_date === targetDate), expected: teamKeysForDate, keyFn: r => `${r.game_pk}:${r.team_id}` },
+      { key: "lineups", rows: lineups.filter(r => r.official_date === targetDate), expected: playerKeysForDate, keyFn: r => `${r.game_pk}:${r.player_id}` },
+      { key: "player_availability", rows: availability.filter(r => r.official_date === targetDate), expected: playerKeysForDate, keyFn: r => `${r.game_pk}:${r.mlb_player_id || r.player_id}` }
+    ];
+    const tallies = {};
+    for (const spec of layerSpecs) {
+      const t = computeLayerTally(spec.rows, spec.expected, spec.keyFn);
+      await writeTally(env, batchId, targetDate, slateShape, spec.key, t);
+      tallies[spec.key] = t;
+    }
+    return tallies;
+  }
+  const tallyToday = await tallyForDate(today);
+  const tallyTomorrow = await tallyForDate(tomorrow);
+  await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_context_slate_current (slate_date,batch_id,slate_shape,game_count,computed_at,created_at,updated_at) VALUES (?,?,?,?,?,COALESCE((SELECT created_at FROM daily_context_slate_current WHERE slate_date=?), CURRENT_TIMESTAMP),CURRENT_TIMESTAMP)`, today, batchId, slateShape, todayGamePkSet.size, nowUtc(), today);
+  await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_context_slate_current (slate_date,batch_id,slate_shape,game_count,computed_at,created_at,updated_at) VALUES (?,?,?,?,?,COALESCE((SELECT created_at FROM daily_context_slate_current WHERE slate_date=?), CURRENT_TIMESTAMP),CURRENT_TIMESTAMP)`, tomorrow, batchId, slateShape, tomorrowGamePkSet.size, nowUtc(), tomorrow);
+
+  const expiredGamePks = games.filter(g => isGameStartedExpiredOrUnavailable(g, null)).map(g => g.game_pk);
+  const purgeResult = await purgeExpiredGameLayers(env, expiredGamePks);
+
   const starterByGame = mapBy(starters, r => String(r.game_pk));
   const lineupByPlayerGame = mapBy(lineups, r => `${r.game_pk}:${r.player_id}`);
   const availByPlayerGame = mapBy(availability, r => `${r.game_pk}:${r.mlb_player_id || r.player_id}`);
