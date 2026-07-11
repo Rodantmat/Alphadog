@@ -380,6 +380,12 @@ function isParlaySleeperBoardJob(row) {
   return job === "parlay-sleeper-board" && worker === "alphadog-v2-parlay-sleeper-board";
 }
 
+function isParlayUnderdogBoardJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "parlay-underdog-board" && worker === "alphadog-v2-parlay-underdog-board";
+}
+
 function isBaseHitterGameLogsJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
