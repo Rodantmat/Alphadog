@@ -1121,6 +1121,13 @@ async function rebuildCoverage(env, batchId, requestId, startDate, endDate, opti
   const gapsSample = [];
 
   await run(env.TEAM_DB, `DELETE FROM mlb_game_coverage_gaps WHERE batch_id=?`, batchId);
+  // Directly enforce the invariant: pre-cutover dates are always settled for baseline_v5
+  // layers, regardless of which batch_id wrote the stale gap row or when. This guarantees
+  // no leftover gap row for these layers/dates can ever survive a certifier run, rather than
+  // depending on resolveStaleCoverageGaps' more general matching to eventually catch it.
+  if (includeBaselineV5Coverage) {
+    await run(env.TEAM_DB, `DELETE FROM mlb_game_coverage_gaps WHERE layer_key IN ('baseline_v5_classification','baseline_v5_hp') AND official_date < ?`, BASELINE_V6_CUTOVER_DATE);
+  }
 
   // v0.2.11: baseline-v5 daily coverage is produced by baseline workers before final_check.
   // Snapshot completed baseline-v5 coverage BEFORE the scoped coverage rebuild deletes/reinserts rows.
