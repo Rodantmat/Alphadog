@@ -1254,12 +1254,13 @@ async function runSourceProbe(env, input) {
       ...buildLineupWritePreviewRows(gamePk, calendar, "away", awayValidation)
     ];
     let derivedLineupPreviewRows = [];
+    const derivedFallbackDate = calendar.official_date || retentionDatesToKeep()[0];
     if (homeValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.home_team_id)) {
-      const homeDerived = await deriveLineupFromRecentGame(env, calendar.home_team_id, calendar.official_date || todayStr);
+      const homeDerived = await deriveLineupFromRecentGame(env, calendar.home_team_id, derivedFallbackDate);
       derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "home", homeDerived));
     }
     if (awayValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.away_team_id)) {
-      const awayDerived = await deriveLineupFromRecentGame(env, calendar.away_team_id, calendar.official_date || todayStr);
+      const awayDerived = await deriveLineupFromRecentGame(env, calendar.away_team_id, derivedFallbackDate);
       derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "away", awayDerived));
     }
     const lineupWritePreviewRows = [...officialLineupPreviewRows, ...derivedLineupPreviewRows];
