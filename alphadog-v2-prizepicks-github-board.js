@@ -718,14 +718,17 @@ async function insertBatchPending(env, batchId, source, fetchedAt, slateDate, ht
 
 async function stageRows(env, rows) {
   const sql = "INSERT INTO prizepicks_board_stage (stage_id, batch_id, source_key, slate_date, fetched_at, projection_id, player_id, player_name, team, opponent, league, stat_type, line_score, description, start_time, raw_projection_json, parse_status, parse_error, certification_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-  let inserted = 0;
-  for (let i = 0; i < rows.length; i += STAGE_INSERT_CHUNK_SIZE) {
-    const chunk = rows.slice(i, i + STAGE_INSERT_CHUNK_SIZE);
-    const statements = chunk.map(r => env.MARKET_DB.prepare(sql).bind(r.stage_id, r.batch_id, r.source_key, r.slate_date, r.fetched_at, r.projection_id, r.player_id, r.player_name, r.team, r.opponent, r.league, r.stat_type, r.line_score, r.description, r.start_time, r.raw_projection_json, r.parse_status, r.parse_error, r.certification_status));
-    await env.MARKET_DB.batch(statements);
-    inserted += chunk.length;
-  }
-  return { wrote_table: "prizepicks_board_stage", inserted_rows: inserted, chunk_size: STAGE_INSERT_CHUNK_SIZE };
+  const chunks = [];
+  for (let i = 0; i < rows.length; i += STAGE_INSERT_CHUNK_SIZE) chunks.push(rows.slice(i, i + STAGE_INSERT_CHUNK_SIZE));
+  // Fire all chunk batches concurrently instead of one at a time. Each chunk is still its own
+  // atomic D1 batch() transaction - only the sequencing between independent chunks changed, not
+  // the write semantics within a chunk. This is the real fix for multi-minute staging/promotion
+  // times on large boards: sequential round-trips were the bottleneck, not the data volume itself.
+  const results = await Promise.all(chunks.map(chunk =>
+    env.MARKET_DB.batch(chunk.map(r => env.MARKET_DB.prepare(sql).bind(r.stage_id, r.batch_id, r.source_key, r.slate_date, r.fetched_at, r.projection_id, r.player_id, r.player_name, r.team, r.opponent, r.league, r.stat_type, r.line_score, r.description, r.start_time, r.raw_projection_json, r.parse_status, r.parse_error, r.certification_status)))
+  ));
+  const inserted = results.reduce((sum, chunkResult, i) => sum + chunks[i].length, 0);
+  return { wrote_table: "prizepicks_board_stage", inserted_rows: inserted, chunk_size: STAGE_INSERT_CHUNK_SIZE, chunk_count: chunks.length, parallel_chunks: true };
 }
 
 async function finalizeBatch(env, batchId, cert) {
