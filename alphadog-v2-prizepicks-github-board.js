@@ -253,7 +253,8 @@ async function triggerPrizePicksSourceRefresh(env, source, input, reason) {
         "user-agent": "AlphaDog-v2 PrizePicks Source Refresh Dispatcher",
         "x-github-api-version": "2022-11-28"
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: timeoutSignal(GITHUB_FETCH_TIMEOUT_MS)
     });
     const text = await res.text();
     return {
