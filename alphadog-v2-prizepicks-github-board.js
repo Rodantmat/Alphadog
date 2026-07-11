@@ -46,6 +46,16 @@ function deterministicStageId(batchId, projectionId, index) {
 }
 
 
+const GITHUB_FETCH_TIMEOUT_MS = 12000;
+
+function timeoutSignal(ms) {
+  // AbortSignal.timeout is native to the Workers runtime - no manual AbortController/setTimeout
+  // plumbing needed. This is the actual root fix for the hang: every fetch() call in this worker
+  // previously had no timeout at all, so a single slow GitHub response could hang the entire
+  // invocation indefinitely with nothing to bound it.
+  return AbortSignal.timeout(ms);
+}
+
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
     status,
