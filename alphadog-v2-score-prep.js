@@ -1393,6 +1393,7 @@ WHERE prep_batch_id = ?`, [batchId]);
     prepared_rows: Number(totalRow.prepared_rows || 0),
     prizepicks_rows: Number(totalRow.prizepicks_rows || 0),
     sleeper_rows: Number(totalRow.sleeper_rows || 0),
+    underdog_rows: Number(totalRow.underdog_rows || 0),
     pickable_safe_rows: Number(totalRow.pickable_safe_rows || 0),
     blocked_rows: Number(totalRow.blocked_rows || 0),
     started_rows: Number(totalRow.started_rows || 0),
