@@ -1519,10 +1519,11 @@ ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
   return { totals, bySource: finalBySource, sleeperEvents: finalSleeperEvents, insertedCurrentRows: totals.prepared_rows };
 }
 function computeTotals(rows) {
-  let prizepicks_rows = 0, sleeper_rows = 0, pickable_safe_rows = 0, blocked_rows = 0, unresolved_player_rows = 0, matchup_unresolved_rows = 0, started_rows = 0, source_unpickable_rows = 0, player_team_conflict_rows = 0;
+  let prizepicks_rows = 0, sleeper_rows = 0, underdog_rows = 0, pickable_safe_rows = 0, blocked_rows = 0, unresolved_player_rows = 0, matchup_unresolved_rows = 0, started_rows = 0, source_unpickable_rows = 0, player_team_conflict_rows = 0;
   for (const r of rows) {
     if (r.source_key === SOURCE_PRIZEPICKS) prizepicks_rows += 1;
     if (r.source_key === SOURCE_SLEEPER) sleeper_rows += 1;
+    if (r.source_key === SOURCE_UNDERDOG) underdog_rows += 1;
     if (r.pickable_safe === 1) pickable_safe_rows += 1;
     else blocked_rows += 1;
     if (r.player_match_status === "unresolved") unresolved_player_rows += 1;
@@ -1537,6 +1538,7 @@ function computeTotals(rows) {
     prepared_rows: rows.length,
     prizepicks_rows,
     sleeper_rows,
+    underdog_rows,
     pickable_safe_rows,
     blocked_rows,
     started_rows,
