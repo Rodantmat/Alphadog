@@ -1315,6 +1315,7 @@ async function fetchGithubJsonBySha(source, env) {
   externalCalls.count += 2;
   metadataList.push(branchMeta);
 
+  let commitMeta = null;
   if (head && head.ok && head.commit_sha) {
     commitMeta = await fetchGithubContentsMetadata(source, env, head.commit_sha, "head_commit_contents");
     externalCalls.count++;
