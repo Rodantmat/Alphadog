@@ -703,11 +703,17 @@ function classify(row, context) {
       transaction_warning_flag = 1;
       issues.push({ issue_type: "recent_transaction_not_active", issue_severity: "warning", reason: "Recent transaction exists while player is not on active roster.", details: compactTx(latestTx) });
     }
+  } else if (context.recentAppearanceConfirmed) {
+    availability_status = "active_available";
+    roster_status = "derived_recent_appearance";
+    availability_confidence = "LOW_DERIVED_RECENT_APPEARANCE_FALLBACK";
+    reason = "Player is absent from active, injuredList, and 40-man endpoints for expected team, but has a real, recent game-log appearance for this team within the last 10 days.";
+    issues.push({ issue_type: "missing_roster_record_recent_appearance_confirmed", issue_severity: "warning", reason });
   } else {
     availability_status = "source_missing";
     roster_status = "unknown";
     availability_confidence = "BLOCKED_SOURCE_MISSING";
-    reason = "Player is absent from active, injuredList, and 40-man endpoints for expected team.";
+    reason = "Player is absent from active, injuredList, and 40-man endpoints for expected team, and has no recent game-log appearance to fall back on.";
     source_missing_flag = 1;
     issues.push({ issue_type: "missing_roster_record", issue_severity: "blocker", reason });
   }
