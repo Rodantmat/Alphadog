@@ -113,6 +113,70 @@ function addIssueAggregate(issueMap, batchId, p, teamId, issue, cls, sev) {
   if (row.samples.length < 8 && p.prepared_row_id) row.samples.push(p.prepared_row_id);
 }
 
+// Requirement 4: a slate can be entirely today, split across today+tomorrow, or entirely
+// tomorrow (e.g. an off-day today, or very late games effectively belonging to tomorrow's
+// context-mining window). Classified from the real, calendar-verified prepared-board games,
+// not a naive date lookup.
+function determineSlateShape(todayGameCount, tomorrowGameCount) {
+  if (todayGameCount > 0 && tomorrowGameCount > 0) return "split_today_tomorrow";
+  if (todayGameCount > 0 && tomorrowGameCount === 0) return "same_day_only";
+  if (todayGameCount === 0 && tomorrowGameCount > 0) return "next_day_only";
+  return "no_games";
+}
+
+// Requirement 3: per-layer tally of real/derived/temporary/missing coverage against the
+// expected unit count for that layer on that date. "Expected units" differs by layer scope:
+// game-scoped layers (weather, umpire) expect one row per distinct game_pk; team-scoped
+// layers (bullpen, schedule spot) expect one row per distinct team appearance (2 per game);
+// player-scoped layers (starters, lineups, availability) expect one row per relevant player
+// or per starter slot. This function is intentionally generic over any row array + expected
+// key set, since each layer's own key shape differs.
+function computeLayerTally(rows, expectedKeys, keyFn) {
+  const rowByKey = new Map();
+  for (const r of rows) rowByKey.set(keyFn(r), r);
+  let real = 0, derived = 0, temporary = 0, unclassified = 0, missing = 0;
+  for (const k of expectedKeys) {
+    const r = rowByKey.get(k);
+    if (!r) { missing++; continue; }
+    const level = String(r.data_source_level || "unknown").toLowerCase();
+    if (Number(r.is_temporary_derived) === 1) temporary++;
+    if (level === "real") real++;
+    else if (level === "derived") derived++;
+    else unclassified++;
+  }
+  return {
+    expected_units: expectedKeys.length, real_units: real, derived_units: derived,
+    temporary_units: temporary, unclassified_units: unclassified, missing_units: missing,
+    complete_flag: (missing === 0 && unclassified === 0) ? 1 : 0
+  };
+}
+
+async function writeTally(env, batchId, officialDate, slateShape, layerKey, tally) {
+  const tallyKey = `${officialDate}|${layerKey}`;
+  await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_context_tally_current (tally_key,batch_id,official_date,slate_shape,layer_key,expected_units,real_units,derived_units,temporary_units,unclassified_units,missing_units,complete_flag,last_computed_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,COALESCE((SELECT created_at FROM daily_context_tally_current WHERE tally_key=?), CURRENT_TIMESTAMP),CURRENT_TIMESTAMP)`,
+    tallyKey, batchId, officialDate, slateShape, layerKey, tally.expected_units, tally.real_units, tally.derived_units, tally.temporary_units, tally.unclassified_units, tally.missing_units, tally.complete_flag, nowUtc(), tallyKey);
+}
+
+// Requirement 8: single active set only, no stale data. A game whose window has passed
+// (final/postponed/cancelled, or live and past its calendar-verified start) must have its
+// per-layer context rows purged, not retained. This purges precisely by game_pk across all
+// 7 real layer tables, rather than relying only on each worker's own broader date-window
+// retention - a game can go final mid-window (e.g. an early getaway-day game) well before the
+# date itself rolls out of the today/tomorrow retention window.
+async function purgeExpiredGameLayers(env, expiredGamePks) {
+  if (!expiredGamePks.length) return { purged_game_count: 0, per_table: {} };
+  const ph = expiredGamePks.map(() => "?").join(",");
+  const tables = ["daily_starters_current", "daily_lineups_current", "daily_player_availability_current_v1", "daily_game_weather_current", "daily_bullpen_availability_current", "daily_team_schedule_spot_current", "daily_umpire_context_current"];
+  const perTable = {};
+  for (const t of tables) {
+    try {
+      const res = await run(env.DAILY_DB, `DELETE FROM ${t} WHERE game_pk IN (${ph})`, ...expiredGamePks);
+      perTable[t] = res && res.meta ? res.meta.changes : null;
+    } catch (e) { perTable[t] = { error: String(e && e.message ? e.message : e) }; }
+  }
+  return { purged_game_count: expiredGamePks.length, per_table: perTable };
+}
+
 async function ensureSchema(env) {
   await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_context_readiness_batches (
     batch_id TEXT PRIMARY KEY,
