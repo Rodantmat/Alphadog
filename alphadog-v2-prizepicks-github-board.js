@@ -1308,13 +1308,13 @@ async function fetchGithubJsonBySha(source, env) {
   const candidates = [];
   const metadataList = [];
 
-  const branchMeta = await fetchGithubContentsMetadata(source, env, source.branch, "branch_contents");
-  externalCalls.count++;
+  const [branchMeta, head] = await Promise.all([
+    fetchGithubContentsMetadata(source, env, source.branch, "branch_contents"),
+    fetchGithubRefHead(source, env)
+  ]);
+  externalCalls.count += 2;
   metadataList.push(branchMeta);
 
-  const head = await fetchGithubRefHead(source, env);
-  externalCalls.count++;
-  let commitMeta = null;
   if (head && head.ok && head.commit_sha) {
     commitMeta = await fetchGithubContentsMetadata(source, env, head.commit_sha, "head_commit_contents");
     externalCalls.count++;
