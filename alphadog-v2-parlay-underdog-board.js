@@ -42,7 +42,18 @@ const UNDERDOG_MARKET_KEY_TO_CANONICAL_PROP_KEY = {
   player_outs: "pitcher_outs",
   player_pitcher_strikeouts: "pitcher_strikeouts",
   player_strike_outs: "pitcher_strikeouts",
-  player_first_inning_runs: "rfi_nrfi"
+  player_first_inning_runs: "rfi_nrfi",
+  // Added after auditing real, live Underdog data (2026-07-11): these are the actual
+  // market_key strings Underdog uses, confirmed against raw payloads, not guessed.
+  player_batter_walks: "walks",
+  player_walks_allowed: "walks_allowed",
+  player_points: "fantasy_score"
+  // Deliberately NOT mapped: "player_strikeouts" - real data shows this means "1st Inn.
+  // Strikeouts" (first-inning only), not full-game strikeouts. Mapping it to the existing
+  // pitcher_strikeouts key would silently corrupt data by conflating a narrow first-inning
+  // stat with the full-game total. "player_1st_inn._batters_faced" and
+  // "player_1st_inn._pitch_count" are real, legitimate single-player props but have no
+  // matching canonical_prop_key yet - adding one is a taxonomy decision, not a mapping fix.
 };
 const DEFAULT_PARLAY_API_AUTH_HEADER_NAME = "X-API-Key";
 const DEFAULT_PARLAY_API_AUTH_HEADER_PREFIX = "";
