@@ -209,6 +209,35 @@ async function ensureSchema(env) {
   await run(env.DAILY_DB, "CREATE INDEX IF NOT EXISTS idx_daily_context_readiness_current_player ON daily_context_readiness_current(player_id, game_pk)");
   await run(env.DAILY_DB, "CREATE INDEX IF NOT EXISTS idx_daily_context_readiness_issues_batch ON daily_context_readiness_issues(batch_id)");
   await run(env.DAILY_DB, "CREATE INDEX IF NOT EXISTS idx_daily_context_readiness_issues_date ON daily_context_readiness_issues(official_date)");
+  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_context_tally_current (
+    tally_key TEXT PRIMARY KEY,
+    batch_id TEXT,
+    official_date TEXT,
+    slate_shape TEXT,
+    layer_key TEXT,
+    expected_units INTEGER DEFAULT 0,
+    real_units INTEGER DEFAULT 0,
+    derived_units INTEGER DEFAULT 0,
+    temporary_units INTEGER DEFAULT 0,
+    unclassified_units INTEGER DEFAULT 0,
+    missing_units INTEGER DEFAULT 0,
+    complete_flag INTEGER DEFAULT 0,
+    last_computed_at TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_context_slate_current (
+    slate_date TEXT PRIMARY KEY,
+    batch_id TEXT,
+    slate_shape TEXT,
+    game_count INTEGER DEFAULT 0,
+    expired_game_count INTEGER DEFAULT 0,
+    purged_game_count INTEGER DEFAULT 0,
+    computed_at TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await run(env.DAILY_DB, "CREATE INDEX IF NOT EXISTS idx_daily_context_tally_current_date ON daily_context_tally_current(official_date, layer_key)");
 }
 
 async function readPreparedRows(env) {
