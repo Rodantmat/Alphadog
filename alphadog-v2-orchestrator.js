@@ -615,8 +615,8 @@ const BOARD_FULL_RUN_STALE_MINUTES = 20;
 const BOARD_FULL_RUN_STAGES = [
   { stage_key: "board_prizepicks_refresh", job_key: "prizepicks-github-board", worker_name: "alphadog-v2-prizepicks-github-board", display_name: "PrizePicks Board Refresh", visible_button: "BOARD > PrizePicks", mode: "board_full_run_prizepicks_refresh", worker_group: "Board", phase_key: "board", priority: 4 },
   { stage_key: "board_sleeper_refresh", job_key: "parlay-sleeper-board", worker_name: "alphadog-v2-parlay-sleeper-board", display_name: "Sleeper Board Refresh", visible_button: "BOARD > Sleeper", mode: "board_full_run_sleeper_refresh", worker_group: "Board", phase_key: "board", priority: 4 },
-  { stage_key: "board_underdog_refresh", job_key: "parlay-underdog-board", worker_name: "alphadog-v2-parlay-underdog-board", display_name: "Underdog Board Refresh", visible_button: "BOARD > Underdog", mode: "board_full_run_underdog_refresh", worker_group: "Board", phase_key: "board", priority: 4 },
-  { stage_key: "score_prep_enrichment", job_key: "score-prep", worker_name: "alphadog-v2-score-prep", display_name: "Score Prep Board Enrichment", visible_button: "SCORE PREP > Board Enrichment", mode: "board_full_run_score_prep_enrichment", worker_group: "Score", phase_key: "score_prep", priority: 5 }
+  { stage_key: "score_prep_enrichment", job_key: "score-prep", worker_name: "alphadog-v2-score-prep", display_name: "Score Prep Board Enrichment", visible_button: "SCORE PREP > Board Enrichment", mode: "board_full_run_score_prep_enrichment", worker_group: "Score", phase_key: "score_prep", priority: 5 },
+  { stage_key: "board_underdog_refresh", job_key: "parlay-underdog-board", worker_name: "alphadog-v2-parlay-underdog-board", display_name: "Underdog Board Refresh", visible_button: "BOARD > Underdog", mode: "board_full_run_underdog_refresh", worker_group: "Board", phase_key: "board", priority: 6 }
 ];
 
 function boardFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
