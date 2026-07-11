@@ -816,6 +816,14 @@ async function runDailyStarters(request, env) {
 
     const previousRows = await all(env.DAILY_DB, "SELECT current_key, starter_player_id, starter_name, first_seen_at, changed_at FROM daily_starters_current");
     const previousMap = new Map(previousRows.map(r => [r.current_key, r]));
+    const relevantTeamIds = new Set();
+    for (const g of relevantGames) {
+      for (const side of ["away", "home"]) {
+        const tid = g?.teams?.[side]?.team?.id;
+        if (tid) relevantTeamIds.add(String(tid));
+      }
+    }
+    const recentStartersByTeam = await loadRecentTeamStarters(env, [...relevantTeamIds], window.start);
     const rows = [];
     const snapshotAt = nowUtc();
 
@@ -827,6 +835,8 @@ async function runDailyStarters(request, env) {
         const preparedTeamCount = prep.teamCounts.get(`${gamePk}:${teamId}`) || 0;
         const currentKey = `${gamePk}_${teamId}`;
         const actual = actualMap.get(`${gamePk}:${side}`) || null;
+        const gameDate = calendar?.official_date || game.officialDate || dateOnly(game.gameDate) || window.start;
+        const derivedCandidate = deriveLikelyStarter(recentStartersByTeam.get(String(teamId)), gameDate);
         rows.push(rowFromTeamSide({
           game,
           calendar,
@@ -837,7 +847,8 @@ async function runDailyStarters(request, env) {
           refHand: refHands,
           peopleHand: peopleHands,
           sourceEndpoint: endpoint,
-          snapshotAt
+          snapshotAt,
+          derivedCandidate
         }));
       }
     }
