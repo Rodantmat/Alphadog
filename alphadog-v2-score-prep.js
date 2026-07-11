@@ -924,16 +924,22 @@ function preparedRowBase({ batchId, sourceKey, sourceRowId, sourceEventId, proje
 async function loadMarketRows(env) {
   const prizepicksRows = await allRows(env.MARKET_DB, "SELECT * FROM prizepicks_board_current");
   const sleeperRows = await allRows(env.MARKET_DB, "SELECT * FROM sleeper_board_current");
-  return { prizepicksRows, sleeperRows };
+  const underdogRows = await allRows(env.MARKET_DB, "SELECT * FROM underdog_board_current");
+  return { prizepicksRows, sleeperRows, underdogRows };
 }
 
-function collectCalendarDates(prizepicksRows, sleeperRows) {
+function collectCalendarDates(prizepicksRows, sleeperRows, underdogRows) {
   const dates = new Set();
   for (const r of prizepicksRows) {
     const d = dateOnlyFromAnyTime(r.start_time);
     if (d) dates.add(d);
   }
   for (const r of sleeperRows) {
+    const raw = safeJsonParse(r.raw_line_json, {});
+    const d = safeStr(raw.game_date) || dateOnlyFromAnyTime(raw.commence_time || r.start_time);
+    if (d) dates.add(d);
+  }
+  for (const r of underdogRows || []) {
     const raw = safeJsonParse(r.raw_line_json, {});
     const d = safeStr(raw.game_date) || dateOnlyFromAnyTime(raw.commence_time || r.start_time);
     if (d) dates.add(d);
