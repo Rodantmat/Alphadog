@@ -390,6 +390,7 @@ CREATE TABLE IF NOT EXISTS score_board_prep_batches (
   certification_grade TEXT,
   prizepicks_rows INTEGER DEFAULT 0,
   sleeper_rows INTEGER DEFAULT 0,
+  underdog_rows INTEGER DEFAULT 0,
   prepared_rows INTEGER DEFAULT 0,
   pickable_safe_rows INTEGER DEFAULT 0,
   blocked_rows INTEGER DEFAULT 0,
