@@ -746,10 +746,12 @@ async function finalizeBatch(env, batchId, cert) {
 async function insertCurrentRows(env, rows, batchId, slateDate) {
   const validRows = rows.filter(r => r.is_mlb && r.parse_status === "valid");
   const sql = "INSERT INTO prizepicks_board_current (current_row_id, batch_id, source_key, slate_date, projection_id, player_id, player_name, team, opponent, league, stat_type, line_score, description, start_time, board_time, end_time, game_id, event_type, status, projection_type, odds_type, source_line_type, payout_variant, is_goblin, is_demon, is_standard, pickable_flag, raw_projection_json, row_payload_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-  let inserted = 0;
-  for (let i = 0; i < validRows.length; i += STAGE_INSERT_CHUNK_SIZE) {
-    const chunk = validRows.slice(i, i + STAGE_INSERT_CHUNK_SIZE);
-    const statements = chunk.map(r => env.MARKET_DB.prepare(sql).bind(
+  const chunks = [];
+  for (let i = 0; i < validRows.length; i += STAGE_INSERT_CHUNK_SIZE) chunks.push(validRows.slice(i, i + STAGE_INSERT_CHUNK_SIZE));
+  // Same fix as stageRows: fire chunk batches concurrently instead of sequentially. Each chunk
+  // remains its own atomic transaction.
+  await Promise.all(chunks.map(chunk =>
+    env.MARKET_DB.batch(chunk.map(r => env.MARKET_DB.prepare(sql).bind(
       `pp_current_${batchId}_${String(r.projection_id || r.stage_id).replace(/[^a-zA-Z0-9_\-]/g, "_")}`,
       batchId,
       SOURCE_KEY,
@@ -779,11 +781,10 @@ async function insertCurrentRows(env, rows, batchId, slateDate) {
       r.pickable_flag,
       r.raw_projection_json,
       r.row_payload_json
-    ));
-    await env.MARKET_DB.batch(statements);
-    inserted += chunk.length;
-  }
-  return { wrote_table: "prizepicks_board_current", batch_id: batchId, slate_date: slateDate, inserted_rows: inserted, chunk_size: STAGE_INSERT_CHUNK_SIZE };
+    )))
+  ));
+  const inserted = validRows.length;
+  return { wrote_table: "prizepicks_board_current", batch_id: batchId, slate_date: slateDate, inserted_rows: inserted, chunk_size: STAGE_INSERT_CHUNK_SIZE, chunk_count: chunks.length, parallel_chunks: true };
 }
 
 async function clearActivePrizePicksBoardForStaleSource(env, batchId, slateDate, cert, timing) {
