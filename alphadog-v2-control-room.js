@@ -1922,7 +1922,7 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
       visible_button: "BOARD > Full Run",
       mode: "board_full_run",
       created_at: now,
-      approved_chain_order: ["prizepicks-github-board", "parlay-sleeper-board", "score-prep", "parlay-underdog-board"],
+      approved_chain_order: ["prizepicks-github-board", "parlay-sleeper-board", "parlay-underdog-board", "score-prep"],
       child_modes: {
         "prizepicks-github-board": "board_full_run_prizepicks_refresh",
         "parlay-sleeper-board": "board_full_run_sleeper_refresh",
