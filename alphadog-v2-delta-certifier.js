@@ -168,6 +168,20 @@ function baselineV5CoverageLayerFromState(layerKey, g, ctx = {}) {
   if (calendarExceptionNoStatsExpected) {
     return postponedRescheduledExceptionLayer(layerKey, g, liveSourceRowsForGame, { baseline_v5_tally_owned_layer_v0_2_12: true });
   }
+  if (officialDate && officialDate < BASELINE_V6_CUTOVER_DATE) {
+    return {
+      layerKey,
+      status: 'complete',
+      grade: layerKey === 'baseline_v5_classification' ? 'PASS_PRE_CUTOVER_HISTORICALLY_SETTLED' : 'PASS_PRE_CUTOVER_HISTORICALLY_SETTLED',
+      blocking: 0,
+      liveRows: 1,
+      entityCount: 1,
+      expectedRows: 1,
+      missingRows: 0,
+      reason: null,
+      details: { baseline_v5_tally_owned_layer_v0_2_12: true, pre_v6_cutover_date: true, v6_cutover_date: BASELINE_V6_CUTOVER_DATE, not_recomputed_by_v6_daily_delta: true }
+    };
+  }
   if (currentOrFutureNonFinal) {
     return scheduledNotReadyLayer(layerKey, g, liveSourceRowsForGame, { baseline_v5_tally_owned_layer_v0_2_12: true, waiting_for_source_day_before_baseline_v5: true });
   }
