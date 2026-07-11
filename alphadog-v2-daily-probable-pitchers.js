@@ -377,7 +377,7 @@ async function loadRecentTeamStarters(env, teamIds, beforeDate) {
 // (started at least once in the last ~15 team games), exclude anyone who started too recently
 // to reasonably start again (under 3 days rest) and prefer whoever is furthest into a plausible
 // rest window. This is intentionally conservative - low confidence, explicitly derived/temporary,
-# always replaced the moment a real probable pitcher is announced.
+// always replaced the moment a real probable pitcher is announced.
 function deriveLikelyStarter(recentStarts, targetDateText) {
   if (!recentStarts || !recentStarts.length) return null;
   const byPlayer = new Map();
