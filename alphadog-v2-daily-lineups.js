@@ -292,7 +292,9 @@ function collectLineupWriteRows(games, batchId, fetchedAtUtc) {
   const rows = [];
   for (const game of games || []) {
     for (const row of (game.lineup_write_preview_sample || [])) {
-      if (row.lineup_status !== "posted_lineup") continue;
+      const isOfficial = row.lineup_status === "posted_lineup";
+      const isDerived = row.lineup_status === "derived_likely_lineup";
+      if (!isOfficial && !isDerived) continue;
       const gamePk = intOrNull(row.game_pk);
       const slot = intOrNull(row.lineup_slot);
       const playerId = intOrNull(row.player_id);
@@ -312,10 +314,12 @@ function collectLineupWriteRows(games, batchId, fetchedAtUtc) {
         batting_order_code: row.batting_order_code || null,
         bat_side: row.bat_side || null,
         active_position: row.active_position || null,
-        lineup_status: "posted_lineup",
-        confidence_label: "OFFICIAL_BATTING_ORDER_POSTED",
-        source_endpoint: row.source_endpoint || "/api/v1/game/{gamePk}/boxscore",
-        source_mode: "boxscore_batting_order",
+        lineup_status: isOfficial ? "posted_lineup" : "derived_likely_lineup",
+        confidence_label: isOfficial ? "OFFICIAL_BATTING_ORDER_POSTED" : "LOW_DERIVED_FROM_RECENT_LINEUP",
+        source_endpoint: row.source_endpoint || (isOfficial ? "/api/v1/game/{gamePk}/boxscore" : "internal:hitter_game_logs"),
+        source_mode: isOfficial ? "boxscore_batting_order" : "derived_recent_lineup",
+        data_source_level: isOfficial ? "real" : "derived",
+        is_temporary_derived: isOfficial ? 0 : 1,
         fetched_at_utc: fetchedAtUtc
       });
     }
