@@ -105,8 +105,8 @@ Sleeper has returned zero MLB rows on every attempt all day (10 consecutive trie
 
 ## NEXT PHASE — EXPLICITLY SCOPED BY RODOLFO
 Board is now done. Next in his stated order:
-1. ~~Board~~ — DONE, this update.
-2. **Daily context** — start here next.
+1. ~~Board~~ — DONE, prior update.
+2. **Daily context** — IN PROGRESS, full spec below. Start any resumed work by reading the "DAILY CONTEXT UPGRADE" section in full before touching anything.
 3. **Market**
 4. **Prop factor miner** — he flagged explicitly that he doesn't know what this component does; it was built by a different AI assistant previously. Read its actual code before assuming its purpose from the name.
 5. **Matrix**
@@ -115,9 +115,54 @@ Board is now done. Next in his stated order:
 8. **Final score**
 9. **Final board**
 
-**Critical design boundary, carries forward unchanged:** classification_v6/baseline_v6 are HISTORY-ONLY. Board's `score_board_prepared_current` is similarly a clean, resolved-but-unenriched leg table — daily context/market/matchup adjustments belong in the NEXT phase's own tables, reading from these, not writing back into them.
+**Critical design boundary, carries forward unchanged:** classification_v6/baseline_v6 are HISTORY-ONLY. Board's `score_board_prepared_current` is similarly a clean, resolved-but-unenriched leg table. Daily Context's own output tables (below) are likewise read-from, not written-back-into, by everything downstream.
 
-**Suggested approach, consistent with what's worked twice now:** for each component, (1) read the real deployed code first, (2) check what it currently reads/writes and whether that still makes sense, (3) verify with real data whether it's actually correct right now — don't assume a working-looking piece is correctly wired, (4) fix what's actually broken and verify the same way, (5) update this doc before moving on.
+## DAILY CONTEXT UPGRADE — FULL SPEC (locked-in requirements as of 2026-07-11, before any implementation)
+This is a large, multi-phase upgrade. Full requirements captured here BEFORE implementation started, per explicit instruction, so the spec survives even if this session is interrupted mid-work. If you are resuming this: check "DAILY CONTEXT — PROGRESS LOG" (appended below this section as work happens) for what's actually been done vs. what's still spec-only.
+
+### Why this upgrade, in plain terms
+Daily Context mines a set of per-game/per-player data layers (weather, lineups, probable pitchers, bullpen availability, player availability, game status, etc.) needed to make the eventual hit-probability calculation realistic. Right now these layers were built/scoped against the OLD Board setup (no Underdog). They also have no shared, coordinated notion of "did we get real data for this layer today, partial data, or none at all" — each miner just does its own thing with no cross-layer tally or certifier oversight, unlike the delta pipeline which now has a certifier tracking exactly this. This upgrade brings Daily Context up to the same standard, plus adds a genuinely new capability: internal derived fallbacks so a missing external layer doesn't leave a hole in what's needed downstream.
+
+### Requirement 1 — Revise all Daily Context steps against the NEW Board (with Underdog)
+Every existing Daily Context worker was scoped/tested when Board only had PrizePicks + Sleeper. Underdog is now a real, producing source. Each Daily Context worker needs to be re-checked for any assumption tied to the old 2-source Board shape (e.g. anything reading board tables directly, anything with hardcoded source lists, anything computing "which games matter today" that might not account for Underdog's own event/team-name conventions).
+
+### Requirement 2 — Derived (internally-calculated) fallback per layer, and it must be TEMPORARY
+For each Daily Context data layer, when the miner finds partial or no real/external data for that layer on a given slate, it should compute and store an internally-derived fallback value instead of leaving a gap — using whatever real internal data we already have (season stats, recent form, established patterns, roster/depth-chart data, historical tendencies, etc. — sharpest logic available per layer, to be designed per-layer in Phase 4/5 below).
+**Critical behavior, applies to every layer without exception:** a derived value is explicitly marked as derived/temporary (not real). The NEXT time the miner runs for that same slate/game/player, if real external data has since become available, the real data REPLACES the derived value. Derived is always provisional, real always wins the moment it's available. This must be a clean, uniform, reusable pattern — not reinvented per-layer ad hoc.
+
+### Requirement 3 — A certifier, modeled on the delta certifier, but for Daily Context
+The delta certifier (see PRIOR SESSION'S WORK above) tracks calendar/tally state for the classification/baseline pipeline. Daily Context needs the equivalent: a certifier that works off the **current slate** (not a rolling season window — Daily Context is inherently "what's happening around today/tomorrow's games," not historical) and keeps a **tally per layer** of: real/external data present, derived/fallback data present, partial coverage, complete coverage, and whether a given row is currently temporary (derived) or has since been confirmed with real data. It controls/reports this fresh every run — this is the mechanism that lets miners know what's still a gap and what's already covered (derived or real).
+
+### Requirement 4 — Slate shape complexity the certifier must handle
+A "slate" for Daily Context purposes can be: entirely today's games, split across today AND tomorrow (a real, common MLB scheduling pattern — e.g. some games start very late today, effectively becoming "tomorrow's slate" for context-mining purposes, or a genuine day-after slate already needs pre-mining), or entirely tomorrow's games (e.g. an off-day today). The certifier's calendar/tally logic must correctly identify and handle all three shapes — this is NOT a simple "today's date" lookup like some of the delta pipeline's simpler mechanisms; it needs the same kind of real calendar-awareness that the Board's Score Prep step already has (official game date/time resolution, not source-reported timestamps).
+
+### Requirement 5 — Miners must be adjusted to consume the certifier's gap/tally output
+Currently each Daily Context miner runs on its own. After this upgrade, miners need to read the certifier's current tally to know what's a real gap (needs real mining attempt), what's currently derived (safe to leave as-is unless a real mining attempt is due), and what's already complete/real (skip). This is the same coordination model as the delta pipeline's certifier-driven gap detection, adapted to Daily Context's per-slate (not per-season) scope.
+
+### Requirement 6 — Downstream contract: every layer must carry what later phases need
+Every Daily Context layer's real, derived, and partial output must include whatever fields the NEXT phases genuinely need: prop factor miner, matrix, enrichment, final hit-probability calculation, final score, final board. This needs to be checked per-layer as each one is revised (Phase 4/5 below) — don't assume the current output shape already covers this; verify against what those later phases actually read (many of those phases haven't been touched yet this cycle, so this may mean designing forward for contracts that don't fully exist yet — flag explicitly wherever a downstream consumer's real needs aren't yet knowable and a reasonable placeholder/superset of fields is being used instead).
+
+### Requirement 7 — Research: are there additional daily-context data types worth mining?
+Open research question, explicitly requested: beyond the current layers (weather, lineups, probable pitchers, bullpen availability, player availability, game status, schedule), are there other real, useful daily-context data types that would make the eventual hit-probability calculation more reliable/realistic/assertive? Use real external research (reliable, established sources/methodologies) to find and evaluate candidates, then lock a decision (adopt + build, or explicitly decline with reasoning) before moving to implementation for any newly-adopted layer.
+
+### Requirement 8 — Data retention: single active set only, no base/history, expired-game purge
+Daily Context tables should hold exactly one current, active set of data — no historical/base table needed (unlike classification_v6/baseline_v6 which are intentionally historical). When a game's window has passed (game is final/expired), that game's Daily Context rows must be purged, not retained. The certifier for each specific layer's worker owns this purge decision/logic (find the best trigger — e.g. tied to the same official-game-status/calendar-verified mechanism Score Prep already uses — don't invent a separate, parallel notion of "expired" if a reliable one already exists elsewhere in the system).
+
+### Requirement 9 — Lock the derived/partial/no-data logic per layer
+Whatever fallback logic gets designed per layer (Requirement 2) needs to be a deliberate, researched, "locked" (finalized, not tentative) piece of logic — same bar as the delta pipeline's calibration work. Use external research where it strengthens the approach (established sabermetric/forecasting methods, reliable public methodologies) rather than inventing something untested from scratch.
+
+### Phases, in the order Rodolfo specified (do not reorder without a real reason, and log it here if you do)
+1. **System and layer recognition** — read the real, current code for all Daily Context miner workers, the orchestrator's Daily Context stage/chain logic, and the existing `alphadog-v2-daily-certifier.js`. Understand what exists today before changing anything.
+2. **Research and lock additional external daily-context data candidates** (Requirement 7) — decide what, if anything, gets added as a new layer before revising the existing ones, since a new layer may affect how the certifier's tally/schema is designed.
+3. **Revise/adjust the certifier to run FIRST** in the chain, owning the tally/calendar per layer and per data-level (external/derived/partial/complete/temporary) for the current slate (Requirements 3-4).
+4. **Work the existing miner workers one by one**: revise each against the new Board/Underdog reality (Requirement 1), wire it to read/write the certifier's tally (Requirement 5), design and build that layer's specific derived fallback (Requirement 2, researched per Requirement 9), confirm its output carries what downstream needs (Requirement 6). Test each worker individually before moving to the next — do not batch multiple untested workers together.
+5. **For any new layer(s) locked in step 2**: build the mining logic + worker + fallback logic for each, same rigor, same individual testing, before integrating into the full chain.
+6. **Adjust the certifier to run a FINAL pass** at the end of the chain too — closing out and noting remaining gaps/conditions so the next run picks up correctly (mirrors the delta certifier's `final_check` role).
+7. **Assemble the full run**: certifier at the beginning (tally/gap detection) AND the end (final pass/close-out), all revised/new miners in between, tested as a whole chain, not just individually.
+
+### DAILY CONTEXT — PROGRESS LOG (update this as each phase actually completes; do not mark anything done here until it's been verified against real data, not just deployed)
+- Phase 1 (recognition): IN PROGRESS as of this doc update.
+- Phases 2-7: NOT STARTED.
 
 ## HOW TO WORK WITH THIS PERSON (patterns that worked all session)
 - `github_patch_file` for edits to large files (`alphadog-v2-orchestrator.js` is 1.29MB+, too large for `github_get_file`'s fallback — `github_patch_file` still works via the Git Data API path automatically; you can't pull the whole file back to syntax-check locally, so rely on the GitHub Actions deploy succeeding plus targeted `github_grep_file` checks of exactly what you changed).
