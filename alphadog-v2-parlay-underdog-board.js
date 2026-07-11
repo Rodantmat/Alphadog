@@ -681,9 +681,9 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
   await run(env.MARKET_DB, "DELETE FROM underdog_board_active_batches WHERE source_key=?", SOURCE_KEY);
 
   const chunkSize = 80;
-  for (let i = 0; i < promotableRows.length; i += chunkSize) {
-    const chunk = promotableRows.slice(i, i + chunkSize);
-    await env.MARKET_DB.batch(chunk.map(row => env.MARKET_DB.prepare(`INSERT INTO underdog_board_current (
+  const currentChunks = [];
+  for (let i = 0; i < promotableRows.length; i += chunkSize) currentChunks.push(promotableRows.slice(i, i + chunkSize));
+  await Promise.all(currentChunks.map(chunk => env.MARKET_DB.batch(chunk.map(row => env.MARKET_DB.prepare(`INSERT INTO underdog_board_current (
       current_row_id, batch_id, source_key, slate_date, source_event_id, source_line_id, source_player_id,
       player_name, team, opponent, league, sport, source_stat_name, canonical_prop_key, line_value, side,
       price, decimal_price, is_pickable, start_time, raw_line_json, row_payload_json, promoted_at, updated_at
@@ -692,8 +692,7 @@ async function promoteBoardInventory(env, batchId, stageRows, fetchedAt) {
         rid("underdog_current"), batchId, row.source_key, row.slate_date, row.source_event_id, row.source_line_id, row.source_player_id,
         row.player_name, row.team, row.opponent, row.league, row.sport, row.source_stat_name, row.canonical_prop_key, row.line_value, row.side,
         row.price, row.decimal_price, row.is_pickable, row.start_time, row.raw_line_json, rowPayloadForCurrent(row)
-      )));
-  }
+      ))));
 
   if (expectedCurrentRows > 0) {
     await run(env.MARKET_DB, `INSERT OR REPLACE INTO underdog_board_active_batches (
