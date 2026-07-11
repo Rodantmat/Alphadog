@@ -4914,7 +4914,18 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
         return output;
       }
     }
-    const attempts = childRows.filter(c => incrementalFullRunStageKeyFromChild(c) === stage.stage_key || (!incrementalFullRunStageKeyFromChild(c) && c.job_key === stage.job_key));
+    const attempts = childRows.filter(c => {
+      const childStageKey = incrementalFullRunStageKeyFromChild(c);
+      if (childStageKey) return childStageKey === stage.stage_key;
+      if (c.job_key !== stage.job_key) return false;
+      // Fallback for children missing a stage_key: job_key alone is not a safe match when
+      // multiple stages share the same job_key (e.g. classification/HP both use
+      // expansion-baseline-v2). Require the child's own mode to match this stage's mode too.
+      const childInput = parseJsonSafeText(c.input_json || "{}", {});
+      const childOutput = parseJsonSafeText(c.output_json || "{}", {});
+      const childMode = String(childInput.mode || childOutput.mode || "");
+      return !stage.mode || childMode === stage.mode;
+    });
     let child = attempts.length ? attempts[attempts.length - 1] : null;
     if (child) {
       child = await reconcileIncrementalCalendarTallyChildFromBatches(env, row, stage, child);
