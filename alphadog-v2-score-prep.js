@@ -404,6 +404,17 @@ CREATE TABLE IF NOT EXISTS score_board_prep_batches (
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 )`).run();
 
+  // v0.2.21: safe migration for the already-existing production table. CREATE TABLE IF NOT
+  // EXISTS above is a no-op once the table already exists, so a new column must be added
+  // explicitly. Check first via PRAGMA rather than assuming ALTER TABLE is safe to run blind.
+  try {
+    const existingCols = await allRows(env.SCORE_DB, "PRAGMA table_info(score_board_prep_batches)");
+    const hasUnderdogCol = existingCols.some(c => String(c.name) === "underdog_rows");
+    if (!hasUnderdogCol) {
+      await env.SCORE_DB.prepare("ALTER TABLE score_board_prep_batches ADD COLUMN underdog_rows INTEGER DEFAULT 0").run();
+    }
+  } catch (_) { /* best-effort migration guard; ensureScoreTables is called on every run */ }
+
   await env.SCORE_DB.prepare(`
 CREATE TABLE IF NOT EXISTS score_board_prepared_current (
   prepared_row_id TEXT PRIMARY KEY,
