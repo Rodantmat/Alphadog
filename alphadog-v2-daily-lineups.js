@@ -385,13 +385,14 @@ async function writeConfirmedLineupsIfGateOpen(env, summary, cert, writeSafety) 
         lineup_row_id, batch_id, game_pk, official_date, game_time_utc, team_side,
         team_id, team_name, player_id, player_name, lineup_slot, batting_order_code,
         bat_side, active_position, lineup_status, confidence_label, source_endpoint,
-        source_mode, fetched_at_utc, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        source_mode, data_source_level, is_temporary_derived, fetched_at_utc, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `,
       row.lineup_row_id, row.batch_id, row.game_pk, row.official_date, row.game_time_utc,
       row.team_side, row.team_id, row.team_name, row.player_id, row.player_name,
       row.lineup_slot, row.batting_order_code, row.bat_side, row.active_position,
-      row.lineup_status, row.confidence_label, row.source_endpoint, row.source_mode, row.fetched_at_utc
+      row.lineup_status, row.confidence_label, row.source_endpoint, row.source_mode,
+      row.data_source_level, row.is_temporary_derived, row.fetched_at_utc
     );
   }
 
