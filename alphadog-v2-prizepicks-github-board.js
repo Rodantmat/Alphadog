@@ -56,6 +56,22 @@ function timeoutSignal(ms) {
   return AbortSignal.timeout(ms);
 }
 
+const D1_WRITE_CONCURRENCY = 6;
+
+async function runWithBoundedConcurrency(items, worker, concurrency) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  async function runOne() {
+    while (nextIndex < items.length) {
+      const i = nextIndex++;
+      results[i] = await worker(items[i], i);
+    }
+  }
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, runOne);
+  await Promise.all(workers);
+  return results;
+}
+
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
     status,
