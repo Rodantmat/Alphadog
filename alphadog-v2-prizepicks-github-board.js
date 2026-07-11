@@ -1145,7 +1145,7 @@ async function fetchTextCandidate(url, env, label, headers = null, metadata = nu
 async function fetchBlobCandidate(blobUrl, source, env, label, metadata = null) {
   const started = Date.now();
   try {
-    const res = await fetch(withCacheBust(blobUrl, label), { method: "GET", headers: githubHeaders(env) });
+    const res = await fetch(withCacheBust(blobUrl, label), { method: "GET", headers: githubHeaders(env), signal: timeoutSignal(GITHUB_FETCH_TIMEOUT_MS) });
     const body = await res.text();
     let parsed = null;
     try { parsed = JSON.parse(body); } catch (_) {}
