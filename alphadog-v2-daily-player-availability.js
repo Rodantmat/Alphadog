@@ -572,6 +572,26 @@ function isFortyManActiveFallback(forty, people, expectedTeamMlbId) {
   return true;
 }
 
+async function loadRecentAppearances(env, playerIds, beforeDate) {
+  const ids = [...new Set((playerIds || []).filter(Boolean).map(Number))];
+  const set = new Set();
+  if (!ids.length) return set;
+  const lookbackStart = addDays(beforeDate || todayPt(), -10);
+  for (let i = 0; i < ids.length; i += 40) {
+    const chunk = ids.slice(i, i + 40);
+    const ph = chunk.map(() => "?").join(",");
+    try {
+      const hitterRows = await all(env.STATS_HITTER_DB, `SELECT DISTINCT player_id FROM hitter_game_logs WHERE player_id IN (${ph}) AND game_date >= ? AND game_date < ?`, ...chunk, lookbackStart, beforeDate || todayPt());
+      for (const r of hitterRows) set.add(Number(r.player_id));
+    } catch (_) { /* table read failure should not block classification */ }
+    try {
+      const pitcherRows = await all(env.STATS_PITCHER_DB, `SELECT DISTINCT player_id FROM pitcher_game_logs WHERE player_id IN (${ph}) AND game_date >= ? AND game_date < ?`, ...chunk, lookbackStart, beforeDate || todayPt());
+      for (const r of pitcherRows) set.add(Number(r.player_id));
+    } catch (_) { /* table read failure should not block classification */ }
+  }
+  return set;
+}
+
 function classify(row, context) {
   const playerId = intOrNull(row.resolved_mlb_player_id);
   const teamMlbId = context.teamMlbId;
