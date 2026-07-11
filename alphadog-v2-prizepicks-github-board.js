@@ -767,7 +767,7 @@ async function insertCurrentRows(env, rows, batchId, slateDate) {
   for (let i = 0; i < validRows.length; i += STAGE_INSERT_CHUNK_SIZE) chunks.push(validRows.slice(i, i + STAGE_INSERT_CHUNK_SIZE));
   // Same fix as stageRows: fire chunk batches concurrently instead of sequentially. Each chunk
   // remains its own atomic transaction.
-  await Promise.all(chunks.map(chunk =>
+  await runWithBoundedConcurrency(chunks, chunk =>
     env.MARKET_DB.batch(chunk.map(r => env.MARKET_DB.prepare(sql).bind(
       `pp_current_${batchId}_${String(r.projection_id || r.stage_id).replace(/[^a-zA-Z0-9_\-]/g, "_")}`,
       batchId,
@@ -798,8 +798,9 @@ async function insertCurrentRows(env, rows, batchId, slateDate) {
       r.pickable_flag,
       r.raw_projection_json,
       r.row_payload_json
-    )))
-  ));
+    ))),
+    D1_WRITE_CONCURRENCY
+  );
   const inserted = validRows.length;
   return { wrote_table: "prizepicks_board_current", batch_id: batchId, slate_date: slateDate, inserted_rows: inserted, chunk_size: STAGE_INSERT_CHUNK_SIZE, chunk_count: chunks.length, parallel_chunks: true };
 }
