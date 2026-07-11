@@ -4984,7 +4984,7 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
           childNoopProof = precheckProof;
         }
       }
-      if (!enqueued && stage.layer_key) {
+      if (!enqueued && stage.layer_key && stage.stage_key !== "baseline_v5_classification_daily_delta" && stage.stage_key !== "baseline_v5_hp_daily_delta") {
         const gapProof = await getIncrementalFullRunLayerBlockingGapCount(env, stage.layer_key);
         if (gapProof.ok && gapProof.noop_safe === true) {
           enqueued = await completeIncrementalFullRunNoGapLayerChild(env, row, stage, i, runId, trigger, gapProof);
