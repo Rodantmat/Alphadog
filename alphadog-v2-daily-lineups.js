@@ -149,7 +149,17 @@ async function deriveLineupFromRecentGame(env, teamId, beforeDate) {
     `SELECT player_id, batting_order FROM hitter_game_logs WHERE team_id = ? AND game_date = ? AND batting_order IS NOT NULL AND batting_order > 0 ORDER BY batting_order ASC`,
     String(teamId), latestDate);
   if (!rows.length) return [];
-  const playerIds = rows.map(r => Number(r.player_id)).filter(Boolean);
+  // MLB's batting_order is a 3-digit code: slot*100 + substitution_index (e.g. 300 = slot 3
+  // starter, 301 = slot 3's first substitute). Dividing by 100 gives the real 1-9 slot; since
+  // rows are already ordered ascending, the first row seen per slot is the primary starter.
+  const bySlot = new Map();
+  for (const r of rows) {
+    const slot = Math.floor(Number(r.batting_order) / 100);
+    if (slot < 1 || slot > 9) continue;
+    if (!bySlot.has(slot)) bySlot.set(slot, Number(r.player_id));
+  }
+  const slotRows = [...bySlot.entries()].map(([slot, playerId]) => ({ player_id: playerId, batting_order: slot })).sort((a, b) => a.batting_order - b.batting_order);
+  const playerIds = slotRows.map(r => r.player_id).filter(Boolean);
   const nameMap = new Map();
   if (playerIds.length) {
     const ph = playerIds.map(() => "?").join(",");
