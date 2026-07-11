@@ -5086,7 +5086,7 @@ async function processIncrementalMorningFullRunJob(env, row, runId, trigger) {
           }
         }
       }
-      const baselineBlockedBeforeFinal = validation.blocked === true && (stage.stage_key === "baseline_v5_classification_daily_delta" || stage.stage_key === "baseline_v5_hp_daily_delta");
+      const baselineBlockedBeforeFinal = stage.stage_key !== "calendar_tally_final_check";
       if (baselineBlockedBeforeFinal) {
         const finalStageIndex = INCREMENTAL_MORNING_FULL_RUN_STAGES.findIndex(s => s.stage_key === "calendar_tally_final_check");
         const finalStage = INCREMENTAL_MORNING_FULL_RUN_STAGES[finalStageIndex];
