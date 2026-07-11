@@ -649,11 +649,17 @@ function classify(row, context) {
         transaction_warning_flag = 1;
         issues.push({ issue_type: "recent_transaction_active", issue_severity: "warning", reason: "Recent transaction exists but 40-man active fallback confirms player on expected team.", details: compactTx(latestTx) });
       }
+    } else if (context.recentAppearanceConfirmed) {
+      availability_status = "active_available";
+      roster_status = "derived_recent_appearance";
+      availability_confidence = "LOW_DERIVED_RECENT_APPEARANCE_FALLBACK";
+      reason = "Official active roster source failed and no 40-man active fallback confirmed availability, but the player has a real, recent game-log appearance for this team within the last 10 days.";
+      issues.push({ issue_type: "active_roster_gap_recent_appearance_confirmed", issue_severity: "warning", reason });
     } else {
       availability_status = "source_missing";
       roster_status = "unknown";
       availability_confidence = "BLOCKED_SOURCE_MISSING";
-      reason = "Official active roster source failed for expected team and no safe 40-man active fallback confirmed availability.";
+      reason = "Official active roster source failed for expected team and no safe 40-man active fallback or recent game-log appearance confirmed availability.";
       source_missing_flag = 1;
       issues.push({ issue_type: "active_roster_source_failed", issue_severity: "blocker", reason });
     }
