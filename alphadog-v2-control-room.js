@@ -1960,7 +1960,7 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
       ctx.waitUntil(callOrchestrator(env, "/pump", { source:"control_room_board_full_run_enqueue", max_cycles:6, max_jobs_per_cycle:1, max_ms:45000, max_pump_chains:12, no_browser_loop:true, cron_rescue_only:true, backend_budget_loop_requested:true }));
     }
 
-    return jsonResponse({ ok: true, data_ok: true, version, job, status: "queued", request_id: requestId, chain_id: chainId, visible_button: "BOARD > Full Run", queued_job_key: "board-full-run", queued_worker_name: "alphadog-v2-orchestrator", approved_chain_order: input.approved_chain_order, backend_chain_only: true, auto_pump_triggered: true, browser_auto_pump: false, note: "Queued Board Full Run: PrizePicks, Sleeper, Score Prep enrichment, then Underdog. This does not run Incremental Morning Full Run, static, base/delta, scoring, ranking, or final board." });
+    return jsonResponse({ ok: true, data_ok: true, version, job, status: "queued", request_id: requestId, chain_id: chainId, visible_button: "BOARD > Full Run", queued_job_key: "board-full-run", queued_worker_name: "alphadog-v2-orchestrator", approved_chain_order: input.approved_chain_order, backend_chain_only: true, auto_pump_triggered: true, browser_auto_pump: false, note: "Queued Board Full Run: PrizePicks, Sleeper, Underdog, then Score Prep enrichment. This does not run Incremental Morning Full Run, static, base/delta, scoring, ranking, or final board." });
   }
 
 
