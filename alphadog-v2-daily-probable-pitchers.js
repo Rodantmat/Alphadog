@@ -566,7 +566,7 @@ async function pruneGameScopedDailyStarterTables(env, keepGamePks, batchId, rete
     batchId, retention.start, retention.end, retention.start, retention.end);
 }
 
-function rowFromTeamSide({ game, calendar, side, previous, preparedTeamCount, actual, refHand, peopleHand, sourceEndpoint, snapshotAt }) {
+function rowFromTeamSide({ game, calendar, side, previous, preparedTeamCount, actual, refHand, peopleHand, sourceEndpoint, snapshotAt, derivedCandidate }) {
   const gamePk = Number(game.gamePk);
   const teamObj = game?.teams?.[side]?.team || {};
   const oppSide = side === "away" ? "home" : "away";
@@ -576,19 +576,21 @@ function rowFromTeamSide({ game, calendar, side, previous, preparedTeamCount, ac
   const flags = noteFlags(note);
   const rawPitcherId = probable?.id ? Number(probable.id) : null;
   const actualId = actual?.id || null;
-  const starterId = actualId || rawPitcherId || null;
+  const officialStarterId = actualId || rawPitcherId || null;
+  const usingDerived = !officialStarterId && !!derivedCandidate;
+  const starterId = officialStarterId || (usingDerived ? derivedCandidate.player_id : null);
   const ref = starterId ? refHand.get(starterId) : null;
   const person = starterId ? peopleHand.get(starterId) : null;
-  const hand = actual?.hand || extractPitchHand(probable) || ref?.hand || person?.hand || null;
-  const starterName = actual?.name || probable?.fullName || ref?.name || person?.name || null;
+  const hand = actual?.hand || extractPitchHand(probable) || ref?.hand || person?.hand || (usingDerived ? derivedCandidate.throws : null) || null;
+  const starterName = actual?.name || probable?.fullName || ref?.name || person?.name || (usingDerived ? derivedCandidate.name : null) || null;
   const abs = String(game?.status?.abstractGameState || calendar?.abstract_game_state || "");
   const detail = String(game?.status?.detailedState || calendar?.detailed_state || "");
   const previousId = previous?.starter_player_id ? Number(previous.starter_player_id) : null;
   const previousName = previous?.starter_name || null;
   const pregame = statusIsPregame(game);
-  const changed = !!(previousId && starterId && previousId !== starterId && pregame);
+  const changed = !!(previousId && officialStarterId && previousId !== officialStarterId && pregame);
   const scratch = flags.scratch || changed;
-  const tbd = !starterId;
+  const tbd = !officialStarterId && !usingDerived;
   const unavailable = false;
   let starterStatus = "probable";
   let confidence = "MEDIUM_OFFICIAL_PROBABLE";
@@ -596,6 +598,9 @@ function rowFromTeamSide({ game, calendar, side, previous, preparedTeamCount, ac
   if (actualId) {
     starterStatus = "actual_started";
     confidence = "HIGH_OFFICIAL_ACTUAL_STARTED";
+  } else if (usingDerived) {
+    starterStatus = "derived_likely_starter";
+    confidence = "LOW_DERIVED_ROTATION_PREDICTION";
   } else if (tbd) {
     starterStatus = "tbd";
     confidence = "LOW_TBD";
@@ -645,7 +650,9 @@ function rowFromTeamSide({ game, calendar, side, previous, preparedTeamCount, ac
     hand_missing_flag: boolInt(!!starterId && !hand),
     prepared_board_relevant: boolInt(preparedTeamCount > 0),
     prepared_board_pickable_rows: preparedTeamCount || 0,
-    raw_json: safeString({ side, probablePitcher: probable, actualStarter: actual, note })
+    data_source_level: starterId ? (usingDerived ? "derived" : "real") : "unknown",
+    is_temporary_derived: boolInt(usingDerived),
+    raw_json: safeString({ side, probablePitcher: probable, actualStarter: actual, note, derived_candidate: usingDerived ? derivedCandidate : null })
   };
 }
 
