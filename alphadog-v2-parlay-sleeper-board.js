@@ -868,10 +868,10 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
   );
   await insertStageRows(env, stageRows);
 
-  let promotion = null;
-  if (mappingBlockedRows === 0 && invalidRows === 0) {
-    promotion = await promoteBoardInventory(env, batchId, stageRows, fetchedAt);
-  }
+  // Per-row promotion (not all-or-nothing) - same policy as Underdog: promote whatever rows
+  // are correctly mapped and certified, regardless of unmapped stat types elsewhere on the
+  // board. promoteBoardInventory already filters to only fully-mapped, certified rows.
+  const promotion = await promoteBoardInventory(env, batchId, stageRows, fetchedAt);
 
   return {
     batch_id: batchId,
