@@ -1501,10 +1501,10 @@ ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
   const finishAt = nowIso();
   await env.SCORE_DB.prepare(`INSERT OR REPLACE INTO score_board_prep_batches (
     batch_id, worker_name, worker_version, mode, status, certification_status, certification_grade,
-    prizepicks_rows, sleeper_rows, prepared_rows, pickable_safe_rows, blocked_rows,
+    prizepicks_rows, sleeper_rows, underdog_rows, prepared_rows, pickable_safe_rows, blocked_rows,
     unresolved_player_rows, matchup_unresolved_rows, started_rows, source_json, certification_json,
     started_at, finished_at, updated_at
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .bind(
       batchId,
       WORKER_NAME,
@@ -1515,6 +1515,7 @@ ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
       totals.blocked_rows > 0 ? "PREP_PASS_WITH_BLOCK_FLAGS" : "PREP_PASS",
       totals.prizepicks_rows,
       totals.sleeper_rows,
+      totals.underdog_rows,
       totals.prepared_rows,
       totals.pickable_safe_rows,
       totals.blocked_rows,
