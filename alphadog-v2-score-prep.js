@@ -1354,6 +1354,7 @@ SELECT
   COUNT(*) AS prepared_rows,
   SUM(CASE WHEN source_key = 'prizepicks' THEN 1 ELSE 0 END) AS prizepicks_rows,
   SUM(CASE WHEN source_key = 'sleeper' THEN 1 ELSE 0 END) AS sleeper_rows,
+  SUM(CASE WHEN source_key = 'parlay_underdog' THEN 1 ELSE 0 END) AS underdog_rows,
   SUM(CASE WHEN pickable_safe = 1 THEN 1 ELSE 0 END) AS pickable_safe_rows,
   SUM(CASE WHEN pickable_safe = 0 THEN 1 ELSE 0 END) AS blocked_rows,
   SUM(CASE WHEN player_match_status = 'unresolved' THEN 1 ELSE 0 END) AS unresolved_player_rows,
