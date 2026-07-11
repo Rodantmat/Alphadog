@@ -162,7 +162,7 @@ async function writeTally(env, batchId, officialDate, slateShape, layerKey, tall
 // per-layer context rows purged, not retained. This purges precisely by game_pk across all
 // 7 real layer tables, rather than relying only on each worker's own broader date-window
 // retention - a game can go final mid-window (e.g. an early getaway-day game) well before the
-# date itself rolls out of the today/tomorrow retention window.
+// date itself rolls out of the today/tomorrow retention window.
 async function purgeExpiredGameLayers(env, expiredGamePks) {
   if (!expiredGamePks.length) return { purged_game_count: 0, per_table: {} };
   const ph = expiredGamePks.map(() => "?").join(",");
