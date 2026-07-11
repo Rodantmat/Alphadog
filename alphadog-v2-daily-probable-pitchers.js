@@ -864,6 +864,8 @@ async function runDailyStarters(request, env) {
     const tbd = rows.filter(r => r.tbd_flag).length;
     const changed = rows.filter(r => r.change_detected).length;
     const actualStarted = rows.filter(r => r.starter_status === "actual_started").length;
+    const derivedStarters = rows.filter(r => r.is_temporary_derived === 1).length;
+    const realStarters = rows.filter(r => r.data_source_level === "real").length;
 
     const certification = blockingRows > 0 ? "DAILY_STARTERS_COMPLETED_WITH_BLOCKERS" : "DAILY_STARTERS_CERTIFIED_REFRESHED";
     const grade = blockingRows > 0 ? "WARN_BLOCKERS" : "PASS";
