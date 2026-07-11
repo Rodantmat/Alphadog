@@ -170,7 +170,7 @@ async function deriveLineupFromRecentGame(env, teamId, beforeDate) {
       if (n.mlb_player_id !== null && n.mlb_player_id !== undefined) nameMap.set(Number(n.mlb_player_id), nm);
     }
   }
-  return rows.map(r => ({
+  return slotRows.map(r => ({
     player_id: Number(r.player_id),
     player_name: nameMap.get(Number(r.player_id)) || null,
     lineup_slot: Number(r.batting_order),
