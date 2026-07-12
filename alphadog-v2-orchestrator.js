@@ -18515,8 +18515,17 @@ async function rescueStaleShadowV2DispatchStartedForResume(env, trigger) {
   };
 }
 
-async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle = 1, maxMs = 65000, ctx = null, requestUrl = null, pumpDepth = 0, maxPumpChains = 12) {
+async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle = 1, maxMs = 65000, ctx = null, requestUrl = null, pumpDepth = 0, maxPumpChains = 12, chainStartedAt = null) {
   const started = Date.now();
+  // REAL ROOT CAUSE FOUND (live Cloudflare Tail Worker capture): "waitUntil() tasks did not
+  // complete within the allowed time after invocation end and have been cancelled." This proves
+  // the runtime silently kills the recursive waitUntil self-continuation chain based on TOTAL
+  // cumulative wall time since the chain started - not per-hop time, which is what depth/
+  // maxChains/deadlineMs actually bounded before this fix. A chain of several short, individually
+  // safe hops could still add up past that ceiling. chainStart tracks the true chain age across
+  // every recursive hop so we can stop BEFORE Cloudflare cancels us, instead of after.
+  const chainStart = chainStartedAt || started;
+  const CHAIN_TOTAL_WALL_CEILING_MS = 30000;
   const cycles = [];
   const hardCycles = Math.max(1, Math.min(Number(maxCycles || 10), 18));
   // v0.2.22: one job per cycle is intentional. It prevents overlapping same-row dispatches
