@@ -646,6 +646,7 @@ async function runUmpireContext(env, input) {
     await heartbeatUmpireQueue(env, requestId, batchId, "batch_created", { window_start: retention.start, window_end: retention.end, source_fetch_timeout_ms: 2500 });
     const previous = await getPreviousCurrent(env, retention);
     prePrune = await pruneRetention(env, retention);
+    await pruneAssignmentHistory(env);
     prepared = await getPreparedGameRows(env, retention);
     gamePks = [...new Set(prepared.map(r => Number(r.official_game_pk)).filter(Boolean))];
     calendars = await getCalendar(env, gamePks);
