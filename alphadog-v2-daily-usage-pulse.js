@@ -660,7 +660,7 @@ async function fetchRefMetricsAssignmentsHtml(env) {
     if (!loginResult.ok) return { ok: false, reason: loginResult.reason };
     cookie = loginResult.cookie;
   }
-  const resp = await fetch(REFMETRICS_ASSIGNMENTS_URL, { headers: { cookie, "user-agent": REFMETRICS_USER_AGENT } });
+  const resp = await refMetricsFetch(REFMETRICS_ASSIGNMENTS_URL, { headers: { cookie, "user-agent": REFMETRICS_USER_AGENT } });
   const html = await resp.text();
   const looksLoggedOut = html.includes('auth-panel-title">Sign in');
   if (!resp.ok || looksLoggedOut) {
