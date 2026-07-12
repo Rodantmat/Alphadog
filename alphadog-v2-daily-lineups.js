@@ -1588,6 +1588,21 @@ export default {
 
     if (method === "POST" && (path === "/run" || path === "/source-probe")) {
       const input = await readJsonSafe(request);
+      if (input.probe_savant_csv === true) {
+        const framingUrl = "https://baseballsavant.mlb.com/leaderboard/catcher-framing?gameType=Regular&minPitches=q&minResults=1&seasonEnd=2026&seasonStart=2026&type=catcher&csv=true";
+        const poptimeUrl = "https://baseballsavant.mlb.com/leaderboard/poptime?year=2026&min2b=5&min3b=0&csv=true";
+        const [framing, poptime] = await Promise.all([
+          fetchTextWithTimeout(framingUrl, "AlphaDog-v2-Savant-Probe/0.1"),
+          fetchTextWithTimeout(poptimeUrl, "AlphaDog-v2-Savant-Probe/0.1")
+        ]);
+        const analyze = (res) => {
+          const text = res.text || "";
+          const firstLine = text.split("\n")[0] || "";
+          const looksLikeCsv = firstLine.includes(",") && !firstLine.toLowerCase().includes("<!doctype") && !firstLine.toLowerCase().includes("<html");
+          return { ok: res.ok, http_status: res.http_status, response_bytes: res.response_bytes || 0, looks_like_csv: looksLikeCsv, first_line_preview: firstLine.slice(0, 300), first_400_chars: text.slice(0, 400) };
+        };
+        return jsonResponse({ ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "diagnostic_savant_probe_only", framing: analyze(framing), poptime: analyze(poptime), rows_written: 0, writes_performed: 0, timestamp_utc: nowUtc() });
+      }
       const mode = String(input.mode || "source_probe");
       if (mode !== "source_probe" && mode !== "orchestrator_exact_daily_lineups_source_probe") {
         return jsonResponse({
