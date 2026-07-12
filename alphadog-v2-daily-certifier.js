@@ -77,7 +77,7 @@ function baseIdentity(env) {
 function mapBy(rows, keyFn) { const m = new Map(); for (const r of rows) { const k = keyFn(r); if (!m.has(k)) m.set(k, []); m.get(k).push(r); } return m; }
 function one(map, key) { const v = map.get(String(key)); return v && v.length ? v[0] : null; }
 function normalizeProp(prop) { return String(prop || "").toLowerCase(); }
-function isPitcherProp(prop) { const p = normalizeProp(prop); return p.includes("pitcher") || p.includes("strikeouts") || p.includes("outs") || p.includes("earned_runs") || p.includes("hits_allowed") || p.includes("walks_allowed") || p.includes("runs_allowed"); }
+function isPitcherProp(prop) { const p = normalizeProp(prop); return p.includes("pitcher") || p.includes("earned_runs") || p.includes("hits_allowed") || p.includes("walks_allowed") || p.includes("runs_allowed"); }
 function isHitterProp(prop) { return !isPitcherProp(prop); }
 function layerStatus(value, fallback = "missing") { return value ? String(value) : fallback; }
 function isUnavailableAvailability(a) {
