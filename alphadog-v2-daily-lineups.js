@@ -209,6 +209,82 @@ function buildDerivedLineupPreviewRows(gamePk, calendar, side, derivedCandidates
   return rows;
 }
 
+function parseCsvLine(line) {
+  const out = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuotes = false;
+      } else cur += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { out.push(cur); cur = ""; }
+      else cur += c;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+function parseCsv(text) {
+  const lines = String(text || "").split(/\r?\n/).filter(l => l.length);
+  if (!lines.length) return [];
+  const headers = parseCsvLine(lines[0]);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCsvLine(lines[i]);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = cols[idx]; });
+    rows.push(row);
+  }
+  return rows;
+}
+async function refreshCatcherReferenceIfStale(env, seasonYear) {
+  const stale = await first(env.REF_DB, `SELECT MAX(refreshed_at) AS latest FROM ref_catcher_framing_poptime`);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  // Requirement: real, reliable, repeatable, easy free source. Baseball Savant is MLB's own
+  // official Statcast portal (not a third-party scrape target) and exposes season-level
+  // leaderboards as direct CSV downloads - confirmed via a real diagnostic fetch returning
+  // clean CSV with real MLB player IDs matching our own system exactly. Season aggregates
+  // change slowly, so this only re-fetches when the cached data is over 20 hours old.
+  const framingUrl = `https://baseballsavant.mlb.com/leaderboard/catcher-framing?gameType=Regular&minPitches=q&minResults=1&seasonEnd=${seasonYear}&seasonStart=${seasonYear}&type=catcher&csv=true`;
+  const poptimeUrl = `https://baseballsavant.mlb.com/leaderboard/poptime?year=${seasonYear}&min2b=5&min3b=0&csv=true`;
+  const [framingRes, poptimeRes] = await Promise.all([
+    fetchTextWithTimeout(framingUrl, "AlphaDog-v2-Catcher-Reference/0.1"),
+    fetchTextWithTimeout(poptimeUrl, "AlphaDog-v2-Catcher-Reference/0.1")
+  ]);
+  if (!framingRes.ok && !poptimeRes.ok) return { refreshed: false, reason: "both_sources_failed", framing_status: framingRes.http_status, poptime_status: poptimeRes.http_status };
+  const framingRows = framingRes.ok ? parseCsv(framingRes.text) : [];
+  const poptimeRows = poptimeRes.ok ? parseCsv(poptimeRes.text) : [];
+  const merged = new Map();
+  for (const r of framingRows) {
+    const pid = intOrNull(r.id);
+    if (!pid) continue;
+    merged.set(pid, { player_id: pid, player_name: r.name || null, framing_runs_total: Number(r.rv_tot) || null, framing_pct_total: r.pct_tot !== undefined ? Number(r.pct_tot) : null, framing_pitches: intOrNull(r.pitches) });
+  }
+  for (const r of poptimeRows) {
+    const pid = intOrNull(r.entity_id);
+    if (!pid) continue;
+    const existing = merged.get(pid) || { player_id: pid, player_name: r.entity_name || null };
+    existing.pop_time_2b_sba = r.pop_2b_sba !== undefined && r.pop_2b_sba !== "" ? Number(r.pop_2b_sba) : null;
+    existing.pop_time_2b_sba_count = intOrNull(r.pop_2b_sba_count);
+    existing.pop_time_3b_sba = r.pop_3b_sba !== undefined && r.pop_3b_sba !== "" ? Number(r.pop_3b_sba) : null;
+    merged.set(pid, existing);
+  }
+  let written = 0;
+  for (const row of merged.values()) {
+    await execRun(env.REF_DB, `INSERT OR REPLACE INTO ref_catcher_framing_poptime (player_id, player_name, season, framing_runs_total, framing_pct_total, framing_pitches, pop_time_2b_sba, pop_time_2b_sba_count, pop_time_3b_sba, source_key, refreshed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'baseball_savant_csv_export', CURRENT_TIMESTAMP)`,
+      row.player_id, row.player_name, seasonYear, row.framing_runs_total ?? null, row.framing_pct_total ?? null, row.framing_pitches ?? null, row.pop_time_2b_sba ?? null, row.pop_time_2b_sba_count ?? null, row.pop_time_3b_sba ?? null);
+    written++;
+  }
+  return { refreshed: true, catchers_written: written, framing_rows: framingRows.length, poptime_rows: poptimeRows.length, framing_ok: framingRes.ok, poptime_ok: poptimeRes.ok };
+}
+
 async function ensureDailyLineupTables(env) {
   const db = env.DAILY_DB;
   await execRun(db, `
