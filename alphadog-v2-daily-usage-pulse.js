@@ -580,6 +580,19 @@ async function deriveUmpireViaGeminiSearch(env, target) {
 const REFMETRICS_LOGIN_URL = "https://www.refmetrics.com/login";
 const REFMETRICS_ASSIGNMENTS_URL = "https://www.refmetrics.com/baseball/mlb/umpire-assignments";
 const REFMETRICS_USER_AGENT = "Mozilla/5.0 (compatible; AlphaDogBot/1.0)";
+const REFMETRICS_FETCH_TIMEOUT_MS = 8000;
+async function refMetricsFetch(url, opts) {
+  // All external fetches in this file are timeout-bounded except this one was missed when
+  // first built - fixed now for consistency, so a hung RefMetrics response can never block the
+  // whole worker invocation the way the pre-existing starters-worker bug did.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("refmetrics_fetch_timeout"), REFMETRICS_FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...opts, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function decodeHtmlEntities(s) {
   return String(s || "")
