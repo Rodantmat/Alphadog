@@ -495,7 +495,9 @@ function deriveSpot({ game, teamId, side, preparedRows, maps, sources, batchId, 
   if (doubleheaderRecent) fatigue += 1;
   if (venueChanged) fatigue += 1;
   if (["long", "cross_country"].includes(bucket)) fatigue += 1;
-  if (timezoneTransition) fatigue += 1;
+  if (westwardTravel) fatigue += 1;
+  if (eastwardTravel) fatigue += 2;
+  if (eastwardTravel && awayToHome) fatigue += 1;
   if (earlyAfterNight) fatigue += 2;
   let risk = fatigue >= 6 ? "high" : (fatigue >= 3 ? "moderate" : "low");
   let status = fatigue >= 6 ? "high_pressure" : (fatigue >= 3 ? "moderate_pressure" : (daysRest !== null && daysRest >= 1 ? "rested" : "normal"));
