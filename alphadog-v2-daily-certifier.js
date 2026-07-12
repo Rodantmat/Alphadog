@@ -390,7 +390,7 @@ async function runCertifier(env, input) {
       { key: "umpire", rows: umpire.filter(r => r.official_date === targetDate), expected: gamePksForDate, keyFn: r => String(r.game_pk) },
       { key: "bullpen", rows: bullpen.filter(r => r.official_date === targetDate), expected: teamKeysForDate, keyFn: r => `${r.game_pk}:${r.team_id}` },
       { key: "schedule_spot", rows: schedule.filter(r => r.official_date === targetDate), expected: teamKeysForDate, keyFn: r => `${r.game_pk}:${r.team_id}` },
-      { key: "lineups", rows: lineups.filter(r => r.official_date === targetDate), expected: playerKeysForDate, keyFn: r => `${r.game_pk}:${r.player_id}` },
+      { key: "lineups", rows: lineups.filter(r => r.official_date === targetDate), expected: hitterKeysForDate, keyFn: r => `${r.game_pk}:${r.player_id}` },
       { key: "player_availability", rows: availability.filter(r => r.official_date === targetDate), expected: playerKeysForDate, keyFn: r => `${r.game_pk}:${r.mlb_player_id || r.player_id}` }
     ];
     const tallies = {};
