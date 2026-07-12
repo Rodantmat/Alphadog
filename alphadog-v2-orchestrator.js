@@ -5913,6 +5913,31 @@ async function enqueueMarketFullRunChild(env, parentRow, stage, stepIndex, retry
   return { child_request_id: childRequestId };
 }
 
+function marketFullRunChildInputRetryCount(child) {
+  try {
+    const input = JSON.parse((child && child.input_json) || "{}");
+    return Number(input.retry_count || 0);
+  } catch (_) {
+    return 0;
+  }
+}
+
+// Real reliability gap found via live-data audit: a single transient timeout on one certifier
+// call (a genuine, occasional Cloudflare service-binding timeout, same class fixed elsewhere
+// this session) permanently failed the entire Market Full Run with zero retry, since the only
+// existing retry path covered children that go stale WHILE STILL ACTIVE, not ones that already
+// reached a terminal "failed" status via a caught dispatch exception. This mirrors Daily Context
+// Full Run's proven transient-retry pattern: one same-stage retry for a clearly transient
+// failure signature, not for real, deterministic failures like a missing service binding.
+function marketFullRunChildTransientRetryAllowed(stage, child, validation, output) {
+  if (!stage || !child || !validation || validation.pass || validation.wait) return false;
+  const retryCount = marketFullRunChildInputRetryCount(child);
+  if (retryCount >= 1) return false;
+  const hay = String(`${validation.reason || ""} ${child.status || ""} ${child.error_code || ""} ${child.error_message || ""} ${output && output.status || ""} ${output && output.error || ""} ${output && output.certification || ""}`).toLowerCase();
+  if (hay.includes("missing_service_binding") || hay.includes("unsupported")) return false;
+  return hay.includes("service_binding_timeout") || hay.includes("worker_dispatch_exception") || hay.includes("timeout_after_") || hay.includes("aborterror") || hay.includes("network") || hay.includes("temporar");
+}
+
 function marketFullRunChildPassed(stage, child) {
   if (!child) return { pass: false, wait: false, reason: "child_missing" };
   const childStatus = String(child.status || "");
