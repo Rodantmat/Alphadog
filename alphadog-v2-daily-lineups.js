@@ -1421,6 +1421,7 @@ async function runSourceProbe(env, input) {
     chain_id: input.chain_id || null,
     started_at: startedAt,
     completed_at: nowUtc(),
+    savant_diagnostic: savantDiagnostic,
     source_probe_lane: sourceLane,
     mlb_api_base_url_raw: rawSourceBase,
     mlb_api_origin_used: sourceBase,
