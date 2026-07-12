@@ -739,7 +739,10 @@ async function runUmpireContext(env, input) {
       sourceFailures += Number(probe.source_failures || 0);
       const prev = previous.get(`${target.official_date}|${target.game_pk}`) || null;
       const recentCrew = probe.found ? null : await findRecentCrewForVenue(env, target.home_team_id, target.official_date);
-      const classified = classifyTarget(target, probe, prev, recentCrew);
+      const needsGeminiFallback = !probe.found && !(recentCrew && recentCrew.home_plate_umpire_id) && geminiCallsUsed < GEMINI_UMPIRE_MAX_CALLS_PER_RUN;
+      const geminiPrediction = needsGeminiFallback ? await deriveUmpireViaGeminiSearch(env, target) : null;
+      if (needsGeminiFallback) { geminiCallsUsed += 1; externalCalls += 1; if (geminiPrediction && geminiPrediction.found) geminiDerivedCount += 1; }
+      const classified = classifyTarget(target, probe, prev, recentCrew, geminiPrediction);
       if (probe.found) { assignmentsFound += 1; await recordAssignmentHistory(env, target, probe); }
       if (classified.missing) assignmentsMissing += 1;
       if (classified.pending) assignmentsPending += 1;
