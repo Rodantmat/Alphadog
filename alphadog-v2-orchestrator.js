@@ -123,6 +123,16 @@ const EXACT_WORKER_SERVICE_TIMEOUT_MS = 75000;
 // under that real ceiling so the orchestrator's OWN AbortController-based timeout fires first,
 // turning an invisible fatal platform kill into an ordinary, recoverable stale-child retry.
 const DAILY_CONTEXT_EXACT_WORKER_TIMEOUT_MS = 20000;
+// Same real root cause as above, different job: the market hitter/pitcher prop-context worker
+// (alphadog-v2-market-line-shape-classifier.js) has its own carefully-bounded internal fetch
+// budget for backend-chain runs (20s fetch budget, 24s internal timeout) - but the orchestrator's
+// OWN wait for that worker's response had no explicit timeout at all, meaning it used the 75s
+// default (EXACT_WORKER_SERVICE_TIMEOUT_MS). That 75s ceiling is what let the orchestrator's own
+// invocation get killed by the real ~30s platform ceiling while waiting on a live ParlayAPI
+// fetch, which is almost certainly why "backend chain skip live fetch entirely" was added as a
+// workaround instead of just fixing this timeout. 25s gives the worker's own 24s internal
+// timeout a moment to return cleanly before the orchestrator's own wait would time out first.
+const MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS = 25000;
 const SCORE_PREP_SERVICE_TIMEOUT_MS = 90000;
 
 function timeoutSignal(ms) {
