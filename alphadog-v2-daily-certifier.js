@@ -97,6 +97,14 @@ function isGameStartedExpiredOrUnavailable(game, preparedGameTimeUtc) {
   if (Number(game.is_cancelled) === 1 || Number(game.is_postponed) === 1 || Number(game.is_final) === 1) return true;
   return false;
 }
+// Purely informational (used only in a diagnostic details_json field below, never in any
+// purge/expiry decision) - whether a game's scheduled start time has passed.
+function gameHasReachedStart(game, preparedGameTimeUtc) {
+  const rawTime = preparedGameTimeUtc || (game && game.game_time_utc) || null;
+  const startMs = rawTime ? new Date(rawTime).getTime() : NaN;
+  if (!Number.isFinite(startMs)) return false;
+  return Date.now() >= (startMs - 15 * 60 * 1000);
+}
 function addIssueAggregate(issueMap, batchId, p, teamId, issue, cls, sev) {
   const key = [p.official_date, p.official_game_pk, teamId || "", p.resolved_mlb_player_id || "", issue.layer || "unknown", cls, sev, issue.type || "unknown"].join("|");
   let row = issueMap.get(key);
