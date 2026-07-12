@@ -11523,15 +11523,21 @@ function dailyContextStageSupportsSidecarRescue(stage) {
 
 function dailyContextFullRunStageStaleSeconds(stage) {
   const key = String(stage && stage.job_key || "");
-  // v0.2.214: Daily Context children are service-binding backed and some stages
-  // legitimately need more than the old generic 120s guard. Keep fast stages
-  // bounded, but give external-call-heavy sidecars a fair terminal window before
-  // rescue/retry. This does not pass incomplete rows; it only delays stale rescue.
-  if (key === "daily-team-schedule-spot") return 900;
-  if (key === "daily-weather") return 360;
-  if (key === "daily-bullpen-availability") return 420;
-  if (key === "daily-umpire-context") return 360;
-  if (key === "daily-player-availability") return 180;
+  // FIXED (real reliability issue, found via live investigation): these thresholds were set
+  // far too high relative to actual measured performance - team-schedule-spot and
+  // bullpen-availability are 100% internal (zero external calls, verified by direct code
+  // read) and normally complete in ~15-25s, yet were given the LONGEST stale-rescue windows
+  // (900s/420s) of any stage - backwards, and directly caused a real 15-minute stall with a
+  // batch that had written zero rows (a genuine stuck worker, not legitimately slow work).
+  // Tightened to real, evidence-based values so a genuine hang gets rescued in under 2
+  // minutes instead of up to 15. This does not pass incomplete rows; it only speeds up
+  // rescue/retry - dailyContextStageSupportsSidecarRescue still requires real, complete
+  // sidecar data before treating a stale child as recovered.
+  if (key === "daily-team-schedule-spot") return 60;
+  if (key === "daily-weather") return 90;
+  if (key === "daily-bullpen-availability") return 60;
+  if (key === "daily-umpire-context") return 120;
+  if (key === "daily-player-availability") return 90;
   return DAILY_CONTEXT_FULL_RUN_STALE_CHILD_SECONDS;
 }
 
