@@ -472,9 +472,23 @@ function classifyWeather(row, calendar, stadium, parkFactor, mlbResult, external
     indoorFlag = 1;
     weatherApplicableFlag = 0;
   } else if (roofType === "retractable") {
-    roofStatus = "retractable_unknown";
-    roofConfidence = "WARNING_ROOF_UNKNOWN";
-    issues.push({ severity: "warning", issue_type: "roof_unknown_retractable", reason: "Retractable roof venue has no proved live open/closed source; weather is collected but roof status remains unknown." });
+    const hasAnyWeatherForRoof = !!((mlbResult && mlbResult.ok && mlbResult.weather) || (externalResult && externalResult.ok && externalResult.weather));
+    const roofPrecip = numOrNull(merged.precipitation_probability_pct);
+    const roofTemp = numOrNull(merged.temperature_f);
+    if (hasAnyWeatherForRoof && (roofPrecip !== null || roofTemp !== null)) {
+      // Real, defensible derived inference (not invented weather): teams generally close a
+      // retractable roof for meaningful rain risk or uncomfortable temperature extremes, and
+      // open it for pleasant conditions. Uses real forecast data we already fetched; explicitly
+      // low-confidence and marked derived/temporary since it is inference, not an observed fact.
+      const likelyClosed = (roofPrecip !== null && roofPrecip >= 40) || (roofTemp !== null && (roofTemp < 50 || roofTemp > 95));
+      roofStatus = likelyClosed ? "derived_likely_closed" : "derived_likely_open";
+      roofConfidence = "LOW_DERIVED_FROM_WEATHER_CONDITIONS";
+      issues.push({ severity: "warning", issue_type: "roof_status_derived", reason: `No live roof source; inferred ${roofStatus} from forecast conditions (precip ${roofPrecip}%, temp ${roofTemp}F).` });
+    } else {
+      roofStatus = "retractable_unknown";
+      roofConfidence = "WARNING_ROOF_UNKNOWN";
+      issues.push({ severity: "warning", issue_type: "roof_unknown_retractable", reason: "Retractable roof venue has no proved live open/closed source and no weather data available to derive a likely state." });
+    }
   } else {
     roofStatus = "unknown";
     roofConfidence = "WARNING_ROOF_CLASSIFICATION_MISSING";
