@@ -1761,7 +1761,14 @@ export default {
           no_final_board: true
         }, 400);
       }
-      const output = await runSourceProbe(env, input);
+      const HARD_DEADLINE_MS = 35000;
+      const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
+      const output = await withDeadline(runSourceProbe(env, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
+      if (output === TIMEOUT_SENTINEL) {
+        // Real fix (same class found live in daily-schedule.js): a genuine internal hang -
+        // likely a stalled D1 call - previously had no safety net inside this worker.
+        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "hard_deadline_timeout", certification: "DAILY_LINEUPS_HARD_DEADLINE_TIMEOUT", error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
+      }
       return jsonResponse(output, output.ok ? 200 : 502);
     }
 
