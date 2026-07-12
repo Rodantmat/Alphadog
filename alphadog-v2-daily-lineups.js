@@ -1259,8 +1259,6 @@ function certificationFrom(games, sourceFailures, discovery, writeHardBlocks = [
 async function runSourceProbe(env, input) {
   const startedAt = nowUtc();
   const catcherBatchId = compactId("daily_catcher_ctx_batch");
-  const catcherRefRows = await all(env.REF_DB, `SELECT player_id, player_name, framing_runs_total, framing_pct_total, pop_time_2b_sba FROM ref_catcher_framing_poptime`);
-  const catcherRefMap = new Map(catcherRefRows.map(r => [Number(r.player_id), r]));
   const rawSourceBase = String(env.MLB_API_BASE_URL || DEFAULT_MLB_BASE_URL).replace(/\/$/, "");
   const sourceBase = normalizeMlbOrigin(rawSourceBase);
   const userAgent = env.MLB_API_USER_AGENT || "AlphaDogDailyLineupsSourceProbe/0.1.8";
