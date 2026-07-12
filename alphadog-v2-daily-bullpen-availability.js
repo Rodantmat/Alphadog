@@ -431,6 +431,8 @@ function classifyTarget(target, bullpenRows, recentCalendarRows) {
   if (pitches2 >= 130) issues.push({ severity: "warning", issue_type: "bullpen_high_risk_two_day_load", reason: "Team bullpen pitches last 2 days reached high-risk threshold." });
   if (highUsage > 0) issues.push({ severity: "warning", issue_type: "high_usage_relievers", reason: "One or more relievers reached conservative recent pitch-load thresholds." });
   if (backToBack > 0) issues.push({ severity: "warning", issue_type: "back_to_back_relievers", reason: "One or more relievers appeared on back-to-back recent dates." });
+  if (closerRecentUsage) issues.push({ severity: "warning", issue_type: "closer_recent_usage", reason: "Team's closer recorded a save within the last 2 days and may be unavailable or a lower-leverage option today." });
+  if (setupRecentUsage) issues.push({ severity: "warning", issue_type: "setup_recent_usage", reason: "A recent setup/hold reliever pitched within the last 2 days." });
   if (doubleheaderRecent) issues.push({ severity: "warning", issue_type: "doubleheader_recent", reason: "Recent calendar rows indicate doubleheader context." });
   let score = 0;
   if (pitches1 >= 80) score += 35;
@@ -442,6 +444,8 @@ function classifyTarget(target, bullpenRows, recentCalendarRows) {
   score += Math.min(20, highUsage * 5);
   score += Math.min(20, backToBack * 8);
   score += Math.min(15, likelyUnavailable * 5);
+  if (closerRecentUsage) score += 12;
+  if (setupRecentUsage) score += 6;
   if (doubleheaderRecent) score += 10;
   score = Math.max(0, Math.min(100, score));
   const blockers = issues.filter(i => i.severity === "blocker").length;
