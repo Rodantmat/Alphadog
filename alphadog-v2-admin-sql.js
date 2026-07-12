@@ -143,7 +143,7 @@ async function toolRunJob(env, args) {
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
-  if (job === "cloudflare_worker_logs") {
+  if (job === "worker_invocation_logs") {
     // Real diagnostic: Cloudflare's GraphQL Analytics API (workersInvocationsAdaptive dataset)
     // records the actual outcome of every Worker invocation - including exceededCpu, canceled,
     // exception, scriptNotFound - which lets us confirm or rule out a platform-level kill during
