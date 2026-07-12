@@ -372,6 +372,18 @@ function isOddsApiHitterPropContextJob(row) {
   return job === "oddsapi-reference" && worker === "alphadog-v2-oddsapi-reference";
 }
 
+function isMarketCertifierJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "market-certifier" && worker === "alphadog-v2-market-certifier";
+}
+
+function isMarketFullRunJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "market-full-run" && worker === "alphadog-v2-orchestrator";
+}
+
 function isPrizePicksGithubBoardJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
