@@ -1,5 +1,5 @@
 # ALPHADOG HANDOFF — MASTER SUMMARY (read this first, then LIVING_LOG.md for full history)
-Updated 2026-07-12 (Daily Context Upgrade — Phases 1-7 substantially complete, Control Room/orchestrator parity audit done, full-run live verification in progress). If you are a new Claude instance picking this up: read this whole document before touching anything.
+Updated 2026-07-12 (later same day — Daily Context full-run reliability made real, root-caused, and fixed; umpire tier reorder + RefMetrics integration shipped; new Cloudflare Tail Worker diagnostic tool built). If you are a new Claude instance picking this up: read this whole document before touching anything, then read the new section below dated this update before assuming the "FULL RUN LIVE VERIFICATION - IN PROGRESS" section further down is still the current state — it isn't; it's superseded by what follows.
 
 ## QUICK ORIENTATION — WHERE THINGS STAND RIGHT NOW
 - **Board phase**: DONE (prior session). PrizePicks + Underdog reliable; Sleeper returns 0 MLB rows for real, confirmed, external reasons (see "THE SLEEPER SITUATION" below) - not a defect, nothing to fix.
