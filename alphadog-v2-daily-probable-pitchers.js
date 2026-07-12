@@ -502,25 +502,37 @@ async function fetchActualStarterMap(env, games, counters, options = {}) {
   if (!options.enabled) return out;
   const limit = Number.isFinite(Number(options.limit)) ? Math.max(0, Math.min(MAX_LIVE_FEED_CALLS, Number(options.limit))) : MAX_LIVE_FEED_CALLS;
   const candidates = games.filter(g => statusIsLiveOrFinal(g)).slice(0, limit);
-  for (const game of candidates) {
-    const gamePk = Number(game.gamePk);
-    const url = liveFeedUrl(gamePk);
-    counters.external_calls++;
-    counters.live_feed_games_checked++;
-    const res = await fetchJson(url, env);
-    if (!res.ok) continue;
-    const box = res.json?.liveData?.boxscore?.teams || {};
-    for (const side of ["away", "home"]) {
-      const id = box?.[side]?.pitchers?.[0] ? Number(box[side].pitchers[0]) : null;
-      if (!id) continue;
-      const playerObj = box?.[side]?.players?.[`ID${id}`] || null;
-      out.set(`${gamePk}:${side}`, {
-        id,
-        name: playerObj?.person?.fullName || null,
-        hand: extractPitchHand(playerObj?.person) || extractPitchHand(playerObj)
-      });
+  // Hardening (found live during a 45s service-binding timeout investigation): even with the
+  // per-call 8s timeout now on fetchJson, up to 20 fully-sequential calls could still add up to
+  // more than the 45s dispatch budget if several happen to be slow at once (busy evening hours
+  // with many live games are exactly when this loop has the most candidates). Bounded
+  // concurrency (6 at a time, same pattern already proven for Board) keeps the real-world worst
+  // case well inside budget without changing what data is fetched.
+  const CONCURRENCY = 6;
+  let cursor = 0;
+  async function worker() {
+    while (cursor < candidates.length) {
+      const game = candidates[cursor++];
+      const gamePk = Number(game.gamePk);
+      const url = liveFeedUrl(gamePk);
+      counters.external_calls++;
+      counters.live_feed_games_checked++;
+      const res = await fetchJson(url, env);
+      if (!res.ok) continue;
+      const box = res.json?.liveData?.boxscore?.teams || {};
+      for (const side of ["away", "home"]) {
+        const id = box?.[side]?.pitchers?.[0] ? Number(box[side].pitchers[0]) : null;
+        if (!id) continue;
+        const playerObj = box?.[side]?.players?.[`ID${id}`] || null;
+        out.set(`${gamePk}:${side}`, {
+          id,
+          name: playerObj?.person?.fullName || null,
+          hand: extractPitchHand(playerObj?.person) || extractPitchHand(playerObj)
+        });
+      }
     }
   }
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, candidates.length) }, () => worker()));
   return out;
 }
 
