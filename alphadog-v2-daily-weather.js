@@ -1080,7 +1080,15 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       try {
-        return jsonResponse(await runWeather(env, input));
+        const HARD_DEADLINE_MS = 35000;
+        const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
+        const out = await withDeadline(runWeather(env, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
+        if (out === TIMEOUT_SENTINEL) {
+          // Real fix (same class found live in daily-schedule.js): a genuine internal hang -
+          // likely a stalled D1 call - previously had no safety net inside this worker.
+          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "hard_deadline_timeout", certification: "DAILY_WEATHER_HARD_DEADLINE_TIMEOUT", error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
+        }
+        return jsonResponse(out);
       } catch (err) {
         return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception_terminal", certification: "DAILY_WEATHER_EXCEPTION_TERMINAL", error: String(err && err.stack ? err.stack : err), timestamp_utc: nowUtc(), no_score_db_mutation: true, no_board_mutation: true });
       }
