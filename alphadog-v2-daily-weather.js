@@ -619,14 +619,14 @@ async function writeGame(env, batchId, record) {
       prepared_board_relevant, prepared_board_pickable_rows, weather_status, weather_confidence, source_key, source_endpoint, source_snapshot_at,
       forecast_time_utc, forecast_offset_minutes, temperature_f, feels_like_f, humidity_pct, pressure_mb, wind_speed_mph, wind_gust_mph,
       wind_direction_degrees, wind_direction_cardinal, wind_context, precipitation_probability_pct, precipitation_type, rain_risk_flag, delay_risk_flag,
-      roof_type, roof_status, roof_confidence, indoor_flag, retractable_roof_flag, weather_applicable_flag, park_weather_notes,
+      roof_type, roof_status, roof_confidence, indoor_flag, retractable_roof_flag, weather_applicable_flag, data_source_level, is_temporary_derived, park_weather_notes,
       first_seen_at, last_seen_at, changed_at, raw_json, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT first_seen_at FROM daily_game_weather_current WHERE game_pk=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, COALESCE(?, (SELECT changed_at FROM daily_game_weather_current WHERE game_pk=?)), ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`).bind(
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT first_seen_at FROM daily_game_weather_current WHERE game_pk=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, COALESCE(?, (SELECT changed_at FROM daily_game_weather_current WHERE game_pk=?)), ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`).bind(
       weatherKey, batchId, record.game_pk, record.official_date, record.game_time_utc, record.venue_id, record.venue_name, record.home_team_id, record.away_team_id,
       record.prepared_board_relevant, record.prepared_board_pickable_rows, record.weather_status, record.weather_confidence, record.source_key, record.source_endpoint, record.source_snapshot_at,
       record.forecast_time_utc, record.forecast_offset_minutes, record.temperature_f, record.feels_like_f, record.humidity_pct, record.pressure_mb, record.wind_speed_mph, record.wind_gust_mph,
       record.wind_direction_degrees, record.wind_direction_cardinal, record.wind_context, record.precipitation_probability_pct, record.precipitation_type, record.rain_risk_flag, record.delay_risk_flag,
-      record.roof_type, record.roof_status, record.roof_confidence, record.indoor_flag, record.retractable_roof_flag, record.weather_applicable_flag, record.park_weather_notes,
+      record.roof_type, record.roof_status, record.roof_confidence, record.indoor_flag, record.retractable_roof_flag, record.weather_applicable_flag, record.data_source_level, record.is_temporary_derived, record.park_weather_notes,
       record.game_pk, changedAt, record.game_pk, rawText
     ),
     env.DAILY_DB.prepare(`INSERT INTO daily_game_weather_snapshots (snapshot_id, batch_id, game_pk, official_date, venue_id, source_key, source_snapshot_at, forecast_time_utc, temperature_f, wind_speed_mph, wind_direction_degrees, precipitation_probability_pct, roof_status, weather_status, raw_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(
