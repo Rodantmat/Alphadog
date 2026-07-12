@@ -175,14 +175,10 @@ async function toolRunJob(env, args) {
               sum {
                 requests
                 errors
-                cpuTimeUs
-                wallTimeUs
               }
               quantiles {
                 cpuTimeP50
                 cpuTimeP99
-                wallTimeP50
-                wallTimeP99
               }
             }
           }
