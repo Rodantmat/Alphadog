@@ -1251,9 +1251,24 @@ async function runMarketSourceProbe(env, input = {}) {
 
   await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status='running_expanded_game_team_markets', odds_api_events_mapped=?, odds_api_game_odds_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", oddsWrite.mappedEvents || 0, oddsWrite.gameOddsRows || 0, batchId);
   await controlHeartbeat(env, requestId, runId, 'running_expanded_game_team_markets', { batch_id: batchId, odds_api_events_mapped: oddsWrite.mappedEvents || 0, odds_api_game_odds_rows: oddsWrite.gameOddsRows || 0 });
-  const expanded = (odds.ok && oddsWrite.mappedEvents > 0 && hasRemainingBudget(deadlineMs, MARKET_TEAMS_EXPANDED_MIN_REMAINING_MS))
+  // Real credit-budget scoping (locked-in decision, not a guess): confirmed via ParlayAPI's real
+  // x-requests-last header that a full-markets bulk call costs ~3 credits, and OddsAPI's own docs
+  // confirm expanded markets (team_totals/alternate_spreads/alternate_totals) only exist at the
+  // per-event endpoint (verified live: the bulk endpoint 422s on these market keys), so they
+  // cannot be folded into the cheap bulk core-markets call. To fit 3x/day core-market runs plus
+  // real expanded-market data inside the free 500-credit/month tier without any extra accounts,
+  // expanded markets run at most once per official date (checked against real rows already
+  // written today, not just a time-of-day guess) and capped to MARKET_TEAMS_EXPANDED_DEFAULT_MAX_EVENTS
+  // event. force_expanded_markets_rerun=true bypasses this for manual testing.
+  const forceExpandedRerun = String(input.force_expanded_markets_rerun || "").toLowerCase() === "true";
+  let expandedAlreadyRanToday = false;
+  if (!forceExpandedRerun) {
+    const alreadyRan = await first(env.MARKET_DB, `SELECT COUNT(*) AS c FROM market_context_probe_game_team_market_expansion WHERE official_date = ? AND support_status = 'SUPPORTED_WITH_ROWS'`, today);
+    expandedAlreadyRanToday = Number(alreadyRan && alreadyRan.c || 0) > 0;
+  }
+  const expanded = (!expandedAlreadyRanToday && odds.ok && oddsWrite.mappedEvents > 0 && hasRemainingBudget(deadlineMs, MARKET_TEAMS_EXPANDED_MIN_REMAINING_MS))
     ? await probeExpandedGameTeamMarkets(env, batchId, slateWindowKey, oddsWrite.mappedEventsList || [], odds.bookmaker_targets || "", { deadlineMs, requestId, runId })
-    : { externalCalls: 0, expansionRows: 0, expandedGameOddsRows: 0, normalizedRows: [], marketKeys: expandedGameTeamMarketKeys(env), byMarket: {}, expansionFailures: [], skipped: true, skipped_reason: odds.ok && oddsWrite.mappedEvents > 0 ? "worker_time_budget_or_no_room_for_expanded_markets" : "no_featured_mapping_for_expanded_markets", remaining_ms: remainingBudgetMs(deadlineMs) };
+    : { externalCalls: 0, expansionRows: 0, expandedGameOddsRows: 0, normalizedRows: [], marketKeys: expandedGameTeamMarketKeys(env), byMarket: {}, expansionFailures: [], skipped: true, skipped_reason: expandedAlreadyRanToday ? "expanded_markets_already_ran_today_credit_budget_scoping" : (odds.ok && oddsWrite.mappedEvents > 0 ? "worker_time_budget_or_no_room_for_expanded_markets" : "no_featured_mapping_for_expanded_markets"), remaining_ms: remainingBudgetMs(deadlineMs) };
   if (expanded.skipped && expanded.skipped_reason && odds.ok && oddsWrite.mappedEvents > 0) {
     warningCount += 1;
     await writeIssue(env, batchId, slateWindowKey, today, "WARNING", "ODDS_API_EXPANDED_GAME_TEAM_MARKETS_SKIPPED_FOR_TIME_BUDGET", null, null, ODDS_API_SOURCE_KEY, "Expanded game/team markets were skipped or capped to keep Market Teams terminal-safe inside the full-run service-binding budget", { skipped_reason: expanded.skipped_reason, remaining_ms: expanded.remaining_ms || null, featured_game_odds_rows: oddsWrite.gameOddsRows || 0, mapped_events: oddsWrite.mappedEvents || 0 });
