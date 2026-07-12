@@ -705,8 +705,24 @@ function classifyTarget(target, probe, previous, recentCrew, geminiPrediction, r
     sourceStatus = "source_available_no_umpire_path";
     assignmentStatus = "missing";
     issues.push({ severity: "warning", issue_type: "source_available_no_umpire_path", reason: "Official MLB source returned an officials-like array, but no home plate umpire role was identified." });
+  } else if (pregame && refMetricsPrediction && refMetricsPrediction.found) {
+    // Tier 2 (new, real direct source): RefMetrics free-account umpire assignment board,
+    // fetched and parsed directly (login handled server-side, credentials in CONFIG_DB, never
+    // in source). This is a real, currently-listed assignment from a specialist site, not an
+    // LLM guess - preferred over Gemini and over our own internal derivation. Still marked
+    // derived/temporary since it's not our own official MLB source and could reflect a
+    // pre-game-day projection rather than a locked assignment; always overwritten the instant
+    // our own official MLB source reports it directly.
+    status = "derived_from_refmetrics_direct";
+    confidence = "MEDIUM_DERIVED_FROM_REFMETRICS_DIRECT";
+    sourceStatus = "derived_from_refmetrics_direct";
+    assignmentStatus = "derived";
+    derivedUmpireId = null;
+    derivedUmpireName = refMetricsPrediction.umpire_name;
+    isDerived = 1;
+    issues.push({ severity: "warning", issue_type: "umpire_derived_from_refmetrics", reason: "No official pregame source yet; derived from RefMetrics' current umpire assignment board (real, credentialed direct fetch, not an LLM guess)." });
   } else if (pregame && geminiPrediction && geminiPrediction.found) {
-    // Requirement 2/9, tier 2 (per explicit instruction, checked before internal derived
+    // Requirement 2/9, tier 3 (per explicit instruction, checked before internal derived
     // history): no official assignment yet - fall back to a Gemini + Google Search grounded
     // "most likely" prediction (see deriveUmpireViaGeminiSearch above), since it can pull from
     // live, current specialist sources and is expected to be more precise than our own narrow
