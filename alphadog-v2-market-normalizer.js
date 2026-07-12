@@ -1263,7 +1263,8 @@ async function runMarketSourceProbe(env, input = {}) {
   const forceExpandedRerun = String(input.force_expanded_markets_rerun || "").toLowerCase() === "true";
   let expandedAlreadyRanToday = false;
   if (!forceExpandedRerun) {
-    const alreadyRan = await first(env.MARKET_DB, `SELECT COUNT(*) AS c FROM market_context_probe_game_team_market_expansion WHERE official_date = ? AND support_status = 'SUPPORTED_WITH_ROWS'`, today);
+    const alreadyRanRows = await all(env.MARKET_DB, `SELECT COUNT(*) AS c FROM market_context_probe_game_team_market_expansion WHERE official_date = ? AND support_status = 'SUPPORTED_WITH_ROWS'`, today);
+    const alreadyRan = alreadyRanRows[0];
     expandedAlreadyRanToday = Number(alreadyRan && alreadyRan.c || 0) > 0;
   }
   const expanded = (!expandedAlreadyRanToday && odds.ok && oddsWrite.mappedEvents > 0 && hasRemainingBudget(deadlineMs, MARKET_TEAMS_EXPANDED_MIN_REMAINING_MS))
