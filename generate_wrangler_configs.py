@@ -27,6 +27,12 @@ def make_config(worker_name, include_services=False):
     }
     if worker_name == "alphadog-v2-orchestrator":
         cfg["triggers"] = {"crons": ORCHESTRATOR_CRONS}
+        # Real diagnostic: stream every invocation's true outcome (success/exception/
+        # exceededCpu/canceled), including service-binding-triggered ones inside waitUntil
+        # chains, to alphadog-v2-tail-logger for later querying - the GraphQL Analytics API
+        # does not surface these at all (confirmed live: known-successful service-bound
+        # invocations show zero rows there).
+        cfg["tail_consumers"] = [{"service": "alphadog-v2-tail-logger"}]
     if worker_name == "alphadog-v2-control-room":
         # Required for ORCHESTRATOR > Wake / Control Room hot-start.
         # The GitHub workflow regenerates wrangler files before deploy, so this binding
