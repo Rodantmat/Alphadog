@@ -546,6 +546,12 @@ function cleanPlayerCandidate(value) {
   if (!norm || ["odd", "even", "over", "under", "yes", "no"].includes(norm)) return null;
   if (/^(hits?|rbis?|runs?|singles?|doubles?|triples?|home\s*runs?|stolen\s*bases?|walks?|total\s*bases?|(?:total\s+)?strikeouts?|(?:total\s+)?pitcher\s*strikeouts?|(?:total\s+)?pitching\s*outs?|(?:total\s+)?pitcher\s*outs?|outs\s*recorded|hits\s*allowed|walks\s*allowed|earned\s*runs(?:\s*allowed)?|runs\s*allowed)$/i.test(raw)) return null;
   if (/^to\s+record\s+\d+\+/i.test(raw)) return null;
+  // Real gap found via live-data audit (bovada, confirmed): bovada's own threshold-style rows put
+  // a bare "3+ Strikeouts" / "6+ Strikeouts" label in the player field itself (no "to record"
+  // phrasing), which the existing fanduel-shaped check above didn't catch, so it was passing
+  // straight through as a literal (wrong) "player name" before this function's caller ever got a
+  // chance to fall back to the real player name embedded in the market title instead.
+  if (/^\d+\+\s*(hits?|rbis?|runs?|singles?|doubles?|triples?|home\s*runs?|stolen\s*bases?|walks?|total\s*bases?|(?:total\s+)?strikeouts?|(?:total\s+)?pitcher\s*strikeouts?|(?:total\s+)?pitching\s*outs?|(?:total\s+)?pitcher\s*outs?|outs\s*recorded|hits\s*allowed|walks\s*allowed|earned\s*runs(?:\s*allowed)?|runs\s*allowed)$/i.test(raw)) return null;
   if (/^[+-]?\d+(?:\.\d+)?$/.test(raw)) return null;
   return raw.replace(/\s+\([A-Z]{2,4}\)$/, "").trim();
 }
