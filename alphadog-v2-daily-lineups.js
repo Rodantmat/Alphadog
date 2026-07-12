@@ -1267,6 +1267,8 @@ async function runSourceProbe(env, input) {
 
   const anchors = await getPreparedGameAnchors(env);
   const catcherRefreshResult = await refreshCatcherReferenceIfStale(env, new Date().getUTCFullYear());
+  const catcherRefRows = await all(env.REF_DB, `SELECT player_id, player_name, framing_runs_total, framing_pct_total, pop_time_2b_sba FROM ref_catcher_framing_poptime`);
+  const catcherRefMap = new Map(catcherRefRows.map(r => [Number(r.player_id), r]));
   const preparedGamePks = uniqInts(anchors.map((r) => r.official_game_pk));
   const [preparedCalendarRows, preparedPlayers, calendarProbeRows, teamMap] = await Promise.all([
     getCalendarRows(env, preparedGamePks),
