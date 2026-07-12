@@ -633,7 +633,7 @@ async function loginRefMetrics(env) {
     const csrfMatch = getHtml.match(/id="csrf_token"[^>]*value="([^"]+)"/);
     if (!initCookie || !csrfMatch) { await saveRefMetricsSession(env, null, null, false, "login_page_missing_cookie_or_csrf"); return { ok: false, reason: "login_page_missing_cookie_or_csrf" }; }
     const body = `csrf_token=${encodeURIComponent(csrfMatch[1])}&username_or_email=${encodeURIComponent(creds.username)}&password=${encodeURIComponent(creds.password)}&submit=Sign+In`;
-    const postResp = await fetch(REFMETRICS_LOGIN_URL, {
+    const postResp = await refMetricsFetch(REFMETRICS_LOGIN_URL, {
       method: "POST",
       redirect: "manual",
       headers: { "content-type": "application/x-www-form-urlencoded", "cookie": initCookie, "user-agent": REFMETRICS_USER_AGENT },
