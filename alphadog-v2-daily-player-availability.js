@@ -760,8 +760,9 @@ async function writeResults(env, batchId, rows) {
       player_id, mlb_player_id, player_name, team_abbreviation, team_id, team_mlb_id, opponent_abbreviation, opponent_mlb_id,
       availability_status, roster_status, availability_confidence,
       active_roster_flag, injured_list_flag, forty_man_flag, transaction_warning_flag, transaction_block_flag, team_mismatch_flag, source_missing_flag,
+      data_source_level, is_temporary_derived,
       prepared_board_relevant, prepared_board_pickable_rows, source_endpoints_json, transaction_summary, transaction_date, reason, evaluation_json, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(official_date, game_pk, mlb_player_id, team_mlb_id) DO UPDATE SET
       availability_key=excluded.availability_key,
       batch_id=excluded.batch_id,
@@ -784,6 +785,8 @@ async function writeResults(env, batchId, rows) {
       transaction_block_flag=excluded.transaction_block_flag,
       team_mismatch_flag=excluded.team_mismatch_flag,
       source_missing_flag=excluded.source_missing_flag,
+      data_source_level=excluded.data_source_level,
+      is_temporary_derived=excluded.is_temporary_derived,
       prepared_board_pickable_rows=excluded.prepared_board_pickable_rows,
       source_endpoints_json=excluded.source_endpoints_json,
       transaction_summary=excluded.transaction_summary,
@@ -805,6 +808,7 @@ async function writeResults(env, batchId, rows) {
         intOrNull(r.resolved_player_id), intOrNull(r.resolved_mlb_player_id), r.player_name || null, normTeam(r.team), item.team_id || null, item.team_mlb_id, normTeam(r.opponent), item.opponent_mlb_id,
         c.availability_status, c.roster_status, c.availability_confidence,
         c.flags.active_roster_flag, c.flags.injured_list_flag, c.flags.forty_man_flag, c.flags.transaction_warning_flag, c.flags.transaction_block_flag, c.flags.team_mismatch_flag, c.flags.source_missing_flag,
+        c.data_source_level, c.is_temporary_derived,
         Number(r.prepared_board_pickable_rows || 0), safeJson(item.source_endpoints, 3000), c.latestTx ? `${c.latestTx.typeCode || ""} ${c.latestTx.typeDesc || ""}: ${c.latestTx.description || ""}`.slice(0, 900) : null, c.latestTx ? (c.latestTx.date || c.latestTx.effectiveDate || null) : null, c.reason, safeJson(c.evaluation, 9000)
       ));
       current++;
