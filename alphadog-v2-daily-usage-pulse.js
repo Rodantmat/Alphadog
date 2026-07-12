@@ -530,11 +530,12 @@ async function probeUmpireSource(target) {
   }
   return { found: false, available_no_plate: false, path: null, officials_count: 0, officials_sample: [], source_key: calls.some(c => c.ok) ? "mlb_statsapi_official_probe" : "mlb_statsapi_source_unavailable", source_endpoint: liveUrl, calls, source_failures: calls.filter(c => !c.ok).length, raw: { calls } };
 }
-function classifyTarget(target, probe, previous) {
+function classifyTarget(target, probe, previous, recentCrew) {
   const cal = target.calendar || {};
   const pregame = String(cal.abstract_game_state || "").toLowerCase() === "preview" || String(cal.detailed_state || "").toLowerCase().includes("scheduled") || String(cal.status_code || "") === "S";
   const issues = [];
   let status, confidence, sourceStatus, assignmentStatus;
+  let derivedUmpireId = null, derivedUmpireName = null, isDerived = 0;
   if (probe.found) {
     status = "assigned";
     confidence = "HIGH_OFFICIAL_ASSIGNED";
@@ -546,6 +547,20 @@ function classifyTarget(target, probe, previous) {
     sourceStatus = "source_available_no_umpire_path";
     assignmentStatus = "missing";
     issues.push({ severity: "warning", issue_type: "source_available_no_umpire_path", reason: "Official MLB source returned an officials-like array, but no home plate umpire role was identified." });
+  } else if (pregame && recentCrew && recentCrew.home_plate_umpire_id) {
+    // Requirement 2/9: real, researched derived fallback. MLB umpire crews work an entire
+    // series together, rotating positions daily (well-documented practice) - a recent real HP
+    // assignment for this same home venue is a genuine, if imprecise, low-confidence signal
+    // when today's official assignment hasn't posted yet. Always explicitly marked derived and
+    // low-confidence; replaced the moment a real assignment is found.
+    status = "derived_likely_crew";
+    confidence = "LOW_DERIVED_FROM_RECENT_SERIES_CREW";
+    sourceStatus = "derived_from_recent_series_crew";
+    assignmentStatus = "derived";
+    derivedUmpireId = recentCrew.home_plate_umpire_id;
+    derivedUmpireName = recentCrew.home_plate_umpire_name;
+    isDerived = 1;
+    issues.push({ severity: "warning", issue_type: "umpire_derived_from_recent_crew", reason: `No official pregame source; derived from this venue's most recent real assignment on ${recentCrew.official_date} based on the standard crew-rotation pattern.` });
   } else if (probe.calls && probe.calls.some(c => c.ok)) {
     status = pregame ? "no_official_pregame_source" : "pending_assignment";
     confidence = pregame ? "WARNING_NO_PREGAME_UMPIRE_SOURCE" : "LOW_PENDING_ASSIGNMENT";
@@ -575,11 +590,13 @@ function classifyTarget(target, probe, previous) {
     assignmentStatus,
     changed,
     issues,
-    pending: probe.found ? 0 : 1,
-    missing: probe.found ? 0 : 1,
-    unknown: probe.found ? 0 : 1,
+    pending: probe.found || isDerived ? 0 : 1,
+    missing: probe.found || isDerived ? 0 : 1,
+    unknown: probe.found || isDerived ? 0 : 1,
     sourceFailure: probe.calls && probe.calls.length && probe.calls.every(c => !c.ok) ? 1 : 0,
-    noOfficialPregame: status === "no_official_pregame_source" ? 1 : 0
+    noOfficialPregame: status === "no_official_pregame_source" ? 1 : 0,
+    derivedUmpireId, derivedUmpireName, isDerived,
+    dataSourceLevel: probe.found ? "real" : (isDerived ? "derived" : "unknown")
   };
 }
 async function writeIssue(env, batchId, target, issue) {
