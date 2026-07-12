@@ -138,10 +138,41 @@ async function toolRunSql(env, args) {
   }
 }
 
+async function toolGeminiDirectTest(env, extra) {
+  // TEMPORARY diagnostic scaffold, not part of the real pipeline - added solely to test
+  // whether Gemini can serve as a reliable derived-umpire-fallback source. Calls Gemini
+  // directly using the GEMINI_API_KEY secret already present on this worker. Should be
+  // removed (or left inert) once the umpire-fallback question is answered.
+  if (!env.GEMINI_API_KEY) return { ok: false, error: "GEMINI_API_KEY not configured on this worker." };
+  const prompt = (extra && extra.prompt) || "Say hello.";
+  const model = (extra && extra.model) || "gemini-2.0-flash";
+  const useGrounding = !!(extra && extra.use_search_grounding);
+  const body = {
+    contents: [{ parts: [{ text: prompt }] }],
+    ...(useGrounding ? { tools: [{ google_search: {} }] } : {})
+  };
+  try {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const text = await resp.text();
+    let parsed;
+    try { parsed = JSON.parse(text); } catch { parsed = text; }
+    return { ok: resp.ok, http_status: resp.status, model, use_search_grounding: useGrounding, response: parsed };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function toolRunJob(env, args) {
   const { job, extra, target } = args || {};
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
+  }
+  if (job === "gemini_direct_test") {
+    return await toolGeminiDirectTest(env, extra);
   }
   const bindingMap = { CONTROL_ROOM: env.CONTROL_ROOM, PHASE3A_WORKER: env.PHASE3A_WORKER, ORCHESTRATOR_WORKER: env.ORCHESTRATOR_WORKER };
   const bindingName = target && bindingMap[target] !== undefined ? target : "CONTROL_ROOM";
