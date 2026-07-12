@@ -143,6 +143,69 @@ async function toolRunJob(env, args) {
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
+  if (job === "cloudflare_worker_logs") {
+    // Real diagnostic: Cloudflare's GraphQL Analytics API (workersInvocationsAdaptive dataset)
+    // records the actual outcome of every Worker invocation - including exceededCpu, canceled,
+    // exception, scriptNotFound - which lets us confirm or rule out a platform-level kill during
+    // the daily-context-full-run freezes, instead of inferring it from silence alone.
+    const token = env.CLOUDFLARE_API_TOKEN;
+    const accountId = env.CLOUDFLARE_ACCOUNT_ID;
+    if (!token || !accountId) {
+      return { ok: false, error: "CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID not present on this worker's environment yet." };
+    }
+    const scriptName = (extra && extra.script_name) || "alphadog-v2-orchestrator";
+    const minutesBack = Number((extra && extra.minutes_back) || 30);
+    const limit = Number((extra && extra.limit) || 100);
+    const now = new Date();
+    const start = new Date(now.getTime() - minutesBack * 60000);
+    const query = `
+      query WorkerLogs($accountTag: string!, $scriptName: string!, $start: Time!, $end: Time!, $limit: Int!) {
+        viewer {
+          accounts(filter: { accountTag: $accountTag }) {
+            workersInvocationsAdaptive(
+              limit: $limit,
+              filter: { scriptName: $scriptName, datetime_geq: $start, datetime_leq: $end }
+              orderBy: [datetime_DESC]
+            ) {
+              dimensions {
+                datetime
+                scriptName
+                outcome
+                status
+              }
+              sum {
+                requests
+                errors
+                cpuTimeUs
+                wallTimeUs
+              }
+              quantiles {
+                cpuTimeP50
+                cpuTimeP99
+                wallTimeP50
+                wallTimeP99
+              }
+            }
+          }
+        }
+      }`;
+    const variables = { accountTag: accountId, scriptName, start: start.toISOString(), end: now.toISOString(), limit };
+    try {
+      const resp = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+        method: "POST",
+        headers: { "authorization": `Bearer ${token}`, "content-type": "application/json" },
+        body: JSON.stringify({ query, variables })
+      });
+      const text = await resp.text();
+      let json = null;
+      try { json = JSON.parse(text); } catch (_) {}
+      if (!resp.ok) return { ok: false, http_status: resp.status, body: text.slice(0, 2000) };
+      const rows = json?.data?.viewer?.accounts?.[0]?.workersInvocationsAdaptive || null;
+      return { ok: true, script_name: scriptName, window_start: start.toISOString(), window_end: now.toISOString(), row_count: rows ? rows.length : 0, rows, raw_errors: json?.errors || null };
+    } catch (err) {
+      return { ok: false, error: String(err && err.message ? err.message : err) };
+    }
+  }
   if (job === "direct_worker_probe") {
     // TEMPORARY diagnostic - direct fetch to a worker's public workers.dev URL, bypassing
     // the orchestrator's queue/dedup entirely, to isolate whether a stall is inside the
