@@ -1448,7 +1448,18 @@ async function runPlayerPropContext(env, input = {}) {
   await ensureSchema(env);
   const preparedRows = await loadPreparedRows(env, today, tomorrow, config);
   const backendSequence = isBackendMarketSequence(input);
-  if (backendSequence && input.force_parlay_live_fetch !== true && input.allow_parlay_live_fetch !== true && String(input.parlay_live_fetch || "").toLowerCase() !== "true" && input.full_market_prop_evidence_scan !== true) {
+  // REAL FIX (root-caused against live evidence: automated Market Full Run's last two hitter/
+  // pitcher prop-context runs both wrote parlay_inventory_rows_seen=0 while the certification
+  // text falsely read "EVIDENCE_WRITTEN"). This early gate used to skip the live ParlayAPI fetch
+  // for every backend-chain run outright, because a past orchestrator-side dispatch had no
+  // explicit timeout (75s default) and could get platform-killed mid-fetch, manifesting as a
+  // hang. That is now fixed on both sides: the orchestrator's own wait for this worker is now
+  // bounded at 25000ms (MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS), and this worker's own backend-
+  // chain fetch path was already safely sized to fit inside that (MARKET_FULL_BACKEND_FETCH_
+  // BUDGET_MS=20000, MARKET_FULL_BACKEND_FETCH_TIMEOUT_MS=24000, with a clean non-throwing
+  // fallback on timeout) - it just was never allowed to run. Backend-chain runs now always
+  // proceed to the real, bounded live fetch below instead of skipping outright.
+  if (false) {
     return await runBackendFastTerminalPlayerPropContext(env, input, config, preparedRows, today, tomorrow, slateWindowKey, retention, requestId, runId, batchId, startedMs);
   }
   const existingRunningBatch = await findRecoverablePlayerPropBatch(env, requestId, config, slateWindowKey);
