@@ -70,6 +70,11 @@ async function all(db, sql, ...binds) {
   return res.results || [];
 }
 
+async function first(db, sql, ...binds) {
+  const rows = await all(db, sql, ...binds);
+  return rows[0] || null;
+}
+
 async function execRun(db, sql, ...binds) {
   const stmt = db.prepare(sql);
   return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
