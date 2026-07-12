@@ -1963,6 +1963,59 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
     return jsonResponse({ ok: true, data_ok: true, version, job, status: "queued", request_id: requestId, chain_id: chainId, visible_button: "BOARD > Full Run", queued_job_key: "board-full-run", queued_worker_name: "alphadog-v2-orchestrator", approved_chain_order: input.approved_chain_order, backend_chain_only: true, auto_pump_triggered: true, browser_auto_pump: false, note: "Queued Board Full Run: PrizePicks, Sleeper, Underdog, then Score Prep enrichment. This does not run Incremental Morning Full Run, static, base/delta, scoring, ranking, or final board." });
   }
 
+  if (job === "orchestrator_enqueue_market_full_run") {
+    const existing = await env.CONTROL_DB.prepare(
+      "SELECT request_id, chain_id, status, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE job_key = 'market-full-run' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL ORDER BY datetime(created_at) DESC LIMIT 1"
+    ).first();
+
+    if (existing) {
+      return jsonResponse({ ok: true, data_ok: true, version, job, status: "already_queued", request_id: existing.request_id, existing, visible_button: "MARKET > Full Run", backend_chain_only: true, auto_pump_triggered: false, browser_auto_pump: false, note: "Existing Market Full Run parent queue row found. Do not enqueue a duplicate. Use ORCHESTRATOR > Wake / Logs / Queue to continue or inspect." });
+    }
+
+    const requestId = "market_full_run_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+    const chainId = "chain_market_full_run_" + Date.now().toString(36);
+    const input = {
+      source: "control_room",
+      visible_button: "MARKET > Full Run",
+      mode: "market_full_run",
+      created_at: now,
+      approved_chain_order: ["market_certifier_first_pass", "market_teams", "market_hitters", "market_pitchers", "market_certifier_last_pass"],
+      stop_on_first_failed_stage: false,
+      backend_chain_only: true,
+      no_browser_auto_pump: true,
+      no_control_room_to_orchestrator_fetch: true,
+      no_generic_dispatch: true,
+      no_delta_full_run: true,
+      no_incremental_morning_full_run: true,
+      no_static_work: true,
+      no_base_delta_workers: true,
+      no_board_refresh: true,
+      no_factor_or_matrix_or_scoring: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
+      no_old_production_touch: true
+    };
+
+    await env.CONTROL_DB.prepare(
+      "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'market-full-run', 'alphadog-v2-orchestrator', 'Market', 'market', 'Market Full Run: Certifier, Teams, Hitters, Pitchers, Certifier', 'pending', 5, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+    ).bind(requestId, chainId, JSON.stringify(input)).run();
+
+    await env.CONTROL_DB.prepare(
+      "INSERT OR IGNORE INTO control_locks (lock_key, lock_flag, updated_at) VALUES ('MARKET_FULL_RUN', 0, CURRENT_TIMESTAMP)"
+    ).run();
+
+    await env.CONTROL_DB.prepare(
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'alphadog-v2-control-room', 'orchestrator_enqueue_market_full_run', 'INFO', 'queued_market_full_run', 'Queued Market Full Run parent backend chain job', ?, CURRENT_TIMESTAMP)"
+    ).bind(requestId, JSON.stringify({request_id:requestId, chain_id:chainId, visible_button:"MARKET > Full Run", approved_chain_order:input.approved_chain_order, backend_chain_only:true})).run();
+
+    if (ctx && typeof ctx.waitUntil === "function") {
+      ctx.waitUntil(callOrchestrator(env, "/pump", { source:"control_room_market_full_run_enqueue", max_cycles:6, max_jobs_per_cycle:1, max_ms:45000, max_pump_chains:12, no_browser_loop:true, cron_rescue_only:true, backend_budget_loop_requested:true }));
+    }
+
+    return jsonResponse({ ok: true, data_ok: true, version, job, status: "queued", request_id: requestId, chain_id: chainId, visible_button: "MARKET > Full Run", queued_job_key: "market-full-run", queued_worker_name: "alphadog-v2-orchestrator", approved_chain_order: input.approved_chain_order, backend_chain_only: true, auto_pump_triggered: true, browser_auto_pump: false, note: "Queued Market Full Run: Certifier (first pass) finds gaps, then Teams/Hitters/Pitchers mine real market data, then Certifier (last pass) closes readiness and parsing-quality tally. Does not run factors, matrix, scoring, ranking, or final board." });
+  }
+
 
   if (job === "orchestrator_enqueue_market_scoring_full_run") {
     const existing = await env.CONTROL_DB.prepare(
