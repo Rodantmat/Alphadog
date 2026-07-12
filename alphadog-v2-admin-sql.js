@@ -146,20 +146,27 @@ async function toolRunJob(env, args) {
   if (job === "raw_fetch_test") {
     // TEMPORARY diagnostic scaffold - checking whether a target URL's data is present in
     // server-rendered HTML (fetchable from a Cloudflare Worker) vs. client-side JS rendered
-    // (which a plain fetch() cannot see). Not part of the real pipeline.
+    // (which a plain fetch() cannot see), and testing cookie/CSRF login flows. Not part of the
+    // real pipeline. Never logs/echoes credential values beyond what the caller explicitly sends.
     const url2 = extra && extra.url;
     if (!url2) return { ok: false, error: "Missing extra.url" };
     try {
-      const resp = await fetch(url2, { headers: { "user-agent": "Mozilla/5.0 (compatible; AlphaDogResearch/1.0)" } });
+      const method = (extra && extra.method) || "GET";
+      const headers = Object.assign({ "user-agent": "Mozilla/5.0 (compatible; AlphaDogResearch/1.0)" }, (extra && extra.headers) || {});
+      const fetchOpts = { method, headers, redirect: (extra && extra.redirect) || "manual" };
+      if (extra && extra.body) fetchOpts.body = extra.body;
+      const resp = await fetch(url2, fetchOpts);
       const text = await resp.text();
+      const setCookie = resp.headers.get("set-cookie");
+      const location = resp.headers.get("location");
       if (extra && extra.find_around_marker) {
         const idx = text.indexOf(extra.find_around_marker);
-        if (idx === -1) return { ok: true, http_status: resp.status, length: text.length, marker_found: false };
+        if (idx === -1) return { ok: true, http_status: resp.status, length: text.length, marker_found: false, set_cookie: setCookie, location };
         const start = Math.max(0, idx - Number(extra.before || 500));
-        return { ok: true, http_status: resp.status, length: text.length, marker_found: true, marker_index: idx, snippet: text.slice(start, idx + Number(extra.after || 1500)) };
+        return { ok: true, http_status: resp.status, length: text.length, marker_found: true, marker_index: idx, set_cookie: setCookie, location, snippet: text.slice(start, idx + Number(extra.after || 1500)) };
       }
       const containsMarker = extra && extra.contains_marker ? text.includes(extra.contains_marker) : null;
-      return { ok: resp.ok, http_status: resp.status, length: text.length, contains_marker: containsMarker, snippet: text.slice(Number(extra.start || 0), Number(extra.start || 0) + Number(extra.chars || 2000)) };
+      return { ok: resp.ok, http_status: resp.status, length: text.length, contains_marker: containsMarker, set_cookie: setCookie, location, snippet: text.slice(Number(extra.start || 0), Number(extra.start || 0) + Number(extra.chars || 2000)) };
     } catch (err) {
       return { ok: false, error: String(err && err.message ? err.message : err) };
     }
