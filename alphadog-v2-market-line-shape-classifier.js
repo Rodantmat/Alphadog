@@ -341,8 +341,16 @@ function isBackendMarketSequence(input = {}) {
 function shouldAttemptLiveParlayFetch(input = {}) {
   const backendChain = isBackendMarketSequence(input);
   const forcedLive = inputFlag(input, "force_parlay_live_fetch") || inputFlag(input, "allow_parlay_live_fetch") || inputFlag(input, "parlay_live_fetch") || inputFlag(input, "full_market_prop_evidence_scan");
-  if (backendChain && !forcedLive) return false;
-  return PARLAY_BACKEND_CHAIN_LIVE_FETCH_DEFAULT || !backendChain || forcedLive;
+  // REAL FIX (root-caused against live evidence: the last two automated backend-chain runs
+  // wrote parlay_inventory_rows_seen=0 while claiming "EVIDENCE_WRITTEN"): this used to hard-skip
+  // the live ParlayAPI fetch for every backend-chain run regardless of forcedLive, because a past
+  // orchestrator-side dispatch had no explicit timeout (75s default) and could get platform-killed
+  // mid-fetch. That dispatch timeout is now fixed (MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS=25000 on
+  // the orchestrator side), and this worker's own backend-chain fetch path was already safely
+  // bounded (MARKET_FULL_BACKEND_FETCH_BUDGET_MS=20000, MARKET_FULL_BACKEND_FETCH_TIMEOUT_MS=24000,
+  // with a clean non-throwing fallback on timeout) - it just was never allowed to actually run.
+  // Backend chains now always attempt the live fetch through that already-safe bounded path.
+  return true;
 }
 function marketFullSoftDeadlineExceeded(startedMs, reserveMs = 0) {
   return Date.now() - Number(startedMs || Date.now()) >= Math.max(1000, MARKET_FULL_WORKER_SOFT_DEADLINE_MS - Number(reserveMs || 0));
