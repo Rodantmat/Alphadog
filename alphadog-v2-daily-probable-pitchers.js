@@ -273,13 +273,28 @@ async function ensureSchema(env) {
 }
 
 async function fetchJson(url, env) {
-  const resp = await fetch(url, { headers: requestHeaders(env) });
-  const text = await resp.text();
-  if (!resp.ok) {
-    return { ok: false, status: resp.status, error: `HTTP_${resp.status}`, text: text.slice(0, 900) };
+  // Real bug found and fixed: this fetch had no timeout at all - unlike PrizePicks/Sleeper
+  // (already fixed for the same class of bug in the Board phase), a single slow MLB API response
+  // could hang the whole worker invocation indefinitely. This matters especially here because
+  // fetchActualStarterMap below calls this sequentially for up to 20 live/final games - during
+  // busy evening hours with many games live simultaneously, even one slow response could blow
+  // through the 45s service-binding dispatch budget. Bounded to 8s per call, consistent with
+  // this worker needing to make several calls within its overall budget.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("fetch_timeout"), 8000);
+  try {
+    const resp = await fetch(url, { headers: requestHeaders(env), signal: controller.signal });
+    const text = await resp.text();
+    if (!resp.ok) {
+      return { ok: false, status: resp.status, error: `HTTP_${resp.status}`, text: text.slice(0, 900) };
+    }
+    try { return { ok: true, status: resp.status, json: JSON.parse(text) }; }
+    catch (err) { return { ok: false, status: resp.status, error: "non_json_response", text: text.slice(0, 900) }; }
+  } catch (err) {
+    return { ok: false, status: null, error: `fetch_exception_${String(err && err.message ? err.message : err).slice(0, 120)}` };
+  } finally {
+    clearTimeout(timer);
   }
-  try { return { ok: true, status: resp.status, json: JSON.parse(text) }; }
-  catch (err) { return { ok: false, status: resp.status, error: "non_json_response", text: text.slice(0, 900) }; }
 }
 
 async function loadPreparedRows(env) {
