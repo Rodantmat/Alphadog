@@ -530,7 +530,54 @@ async function probeUmpireSource(target) {
   }
   return { found: false, available_no_plate: false, path: null, officials_count: 0, officials_sample: [], source_key: calls.some(c => c.ok) ? "mlb_statsapi_official_probe" : "mlb_statsapi_source_unavailable", source_endpoint: liveUrl, calls, source_failures: calls.filter(c => !c.ok).length, raw: { calls } };
 }
-function classifyTarget(target, probe, previous, recentCrew) {
+const GEMINI_UMPIRE_MODEL = "gemini-2.5-flash";
+const GEMINI_UMPIRE_TIMEOUT_MS = 12000;
+const GEMINI_UMPIRE_MAX_CALLS_PER_RUN = 10;
+async function deriveUmpireViaGeminiSearch(env, target) {
+  // Tier-3 derived fallback (Requirement 2/9): when neither an official assignment nor our
+  // own recent-crew-history derivation is available, ask Gemini (with Google Search grounding)
+  // for a "most likely" umpire, sourced from real specialist umpire-tracking sites. Explicitly
+  // a third-tier, low-confidence, temporary signal - never treated as real, never written to
+  // daily_umpire_assignment_history (that table is reserved for confirmed real assignments only,
+  // so LLM guesses can never contaminate the crew-rotation derivation used by other games/runs).
+  if (!env.GEMINI_API_KEY) return { found: false, reason: "gemini_api_key_not_configured" };
+  const prompt = `Who is the home plate umpire for the MLB game between the ${target.away_team_name} and the ${target.home_team_name} on ${target.official_date} at ${target.venue_name}? Search for the real, current, most likely umpire crew assignment (published crew rotation/schedule sites are useful even if not officially confirmed by MLB). Respond with ONLY a single JSON object, no other text, no markdown fences, in exactly this shape: {"umpire_name": string or null, "confidence": "anticipated" or "unconfirmed" or "unknown", "source_note": a short plain-text note on where this came from or why it's unknown}. If you cannot find any real, specific candidate name, set umpire_name to null and confidence to "unknown" rather than inventing a name.`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("gemini_umpire_fallback_timeout"), GEMINI_UMPIRE_TIMEOUT_MS);
+  try {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_UMPIRE_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], tools: [{ google_search: {} }] }),
+      signal: controller.signal
+    });
+    if (!resp.ok) return { found: false, reason: `gemini_http_${resp.status}` };
+    const data = await resp.json();
+    const cand = data && data.candidates && data.candidates[0];
+    const text = cand && cand.content && cand.content.parts && cand.content.parts[0] ? cand.content.parts[0].text : "";
+    const cleaned = String(text || "").trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+    let parsed;
+    try { parsed = JSON.parse(cleaned); } catch (_) { return { found: false, reason: "gemini_response_not_parseable_json", raw_text: cleaned.slice(0, 500) }; }
+    const name = parsed && typeof parsed.umpire_name === "string" ? parsed.umpire_name.trim() : null;
+    if (!name || name.length < 3 || /unknown|null|n\/a/i.test(name)) {
+      return { found: false, reason: "gemini_no_candidate_name", source_note: (parsed && parsed.source_note) || null };
+    }
+    const groundingChunks = (cand.groundingMetadata && cand.groundingMetadata.groundingChunks) || [];
+    return {
+      found: true,
+      umpire_name: name,
+      confidence_label: parsed.confidence || "unconfirmed",
+      source_note: parsed.source_note || null,
+      grounding_source_count: groundingChunks.length,
+      model: GEMINI_UMPIRE_MODEL
+    };
+  } catch (err) {
+    return { found: false, reason: `gemini_exception_${String(err && err.message ? err.message : err).slice(0, 120)}` };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+function classifyTarget(target, probe, previous, recentCrew, geminiPrediction) {
   const cal = target.calendar || {};
   const pregame = String(cal.abstract_game_state || "").toLowerCase() === "preview" || String(cal.detailed_state || "").toLowerCase().includes("scheduled") || String(cal.status_code || "") === "S";
   const issues = [];
