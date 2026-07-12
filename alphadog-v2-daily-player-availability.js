@@ -990,7 +990,15 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       try {
-        return jsonResponse(await runAvailability(env, input));
+        const HARD_DEADLINE_MS = 35000;
+        const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
+        const out = await withDeadline(runAvailability(env, input), HARD_DEADLINE_MS, () => TIMEOUT_SENTINEL);
+        if (out === TIMEOUT_SENTINEL) {
+          // Real fix (same class found live in daily-schedule.js): a genuine internal hang -
+          // likely a stalled D1 call - previously had no safety net inside this worker.
+          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "hard_deadline_timeout", certification: "DAILY_PLAYER_AVAILABILITY_HARD_DEADLINE_TIMEOUT", error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
+        }
+        return jsonResponse(out);
       } catch (err) {
         const message = String(err && err.stack ? err.stack : err);
         let cleanup = null;
