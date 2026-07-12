@@ -333,8 +333,8 @@ async function runCertifier(env, input) {
     readLatestBatch(env, "market_pitcher_prop_line_context")
   ]);
   const teamCoverage = await readTeamOddsGameCoverage(env, today, tomorrow);
-  const hitterTally = extractPropParsingTally(hitterBatch);
-  const pitcherTally = extractPropParsingTally(pitcherBatch);
+  const hitterTally = await computePropParsingTally(env, hitterBatch && hitterBatch.batch_id);
+  const pitcherTally = await computePropParsingTally(env, pitcherBatch && pitcherBatch.batch_id);
 
   const tallyStatements = [];
   await writeParsingTallyForLayer(env, batchId, today, "hitter_prop_lines", hitterTally.per_source, tallyStatements);
