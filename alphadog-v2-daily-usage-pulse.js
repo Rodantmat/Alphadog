@@ -627,7 +627,7 @@ async function loginRefMetrics(env) {
   const creds = await getRefMetricsCredentials(env);
   if (!creds || !creds.username || !creds.password) return { ok: false, reason: "no_credentials_configured" };
   try {
-    const getResp = await fetch(REFMETRICS_LOGIN_URL, { headers: { "user-agent": REFMETRICS_USER_AGENT } });
+    const getResp = await refMetricsFetch(REFMETRICS_LOGIN_URL, { headers: { "user-agent": REFMETRICS_USER_AGENT } });
     const getHtml = await getResp.text();
     const initCookie = extractSetCookieValue(getResp.headers.get("set-cookie"));
     const csrfMatch = getHtml.match(/id="csrf_token"[^>]*value="([^"]+)"/);
