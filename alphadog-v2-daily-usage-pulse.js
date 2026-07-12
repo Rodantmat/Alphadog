@@ -666,7 +666,7 @@ async function fetchRefMetricsAssignmentsHtml(env) {
   if (!resp.ok || looksLoggedOut) {
     const loginResult = await loginRefMetrics(env);
     if (!loginResult.ok) return { ok: false, reason: `session_invalid_relogin_failed_${loginResult.reason}` };
-    const retryResp = await fetch(REFMETRICS_ASSIGNMENTS_URL, { headers: { cookie: loginResult.cookie, "user-agent": REFMETRICS_USER_AGENT } });
+    const retryResp = await refMetricsFetch(REFMETRICS_ASSIGNMENTS_URL, { headers: { cookie: loginResult.cookie, "user-agent": REFMETRICS_USER_AGENT } });
     return { ok: retryResp.ok, html: await retryResp.text() };
   }
   return { ok: true, html };
