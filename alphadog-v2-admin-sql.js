@@ -170,7 +170,6 @@ async function toolRunJob(env, args) {
               dimensions {
                 datetime
                 scriptName
-                outcome
                 status
               }
               sum {
