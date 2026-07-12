@@ -143,6 +143,21 @@ async function toolRunJob(env, args) {
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
+  if (job === "raw_fetch_test") {
+    // TEMPORARY diagnostic scaffold - checking whether a target URL's data is present in
+    // server-rendered HTML (fetchable from a Cloudflare Worker) vs. client-side JS rendered
+    // (which a plain fetch() cannot see). Not part of the real pipeline.
+    const url2 = extra && extra.url;
+    if (!url2) return { ok: false, error: "Missing extra.url" };
+    try {
+      const resp = await fetch(url2, { headers: { "user-agent": "Mozilla/5.0 (compatible; AlphaDogResearch/1.0)" } });
+      const text = await resp.text();
+      const containsMarker = extra && extra.contains_marker ? text.includes(extra.contains_marker) : null;
+      return { ok: resp.ok, http_status: resp.status, length: text.length, contains_marker: containsMarker, snippet: text.slice(Number(extra.start || 0), Number(extra.start || 0) + Number(extra.chars || 2000)) };
+    } catch (err) {
+      return { ok: false, error: String(err && err.message ? err.message : err) };
+    }
+  }
   const bindingMap = { CONTROL_ROOM: env.CONTROL_ROOM, PHASE3A_WORKER: env.PHASE3A_WORKER, ORCHESTRATOR_WORKER: env.ORCHESTRATOR_WORKER };
   const bindingName = target && bindingMap[target] !== undefined ? target : "CONTROL_ROOM";
   const binding = bindingMap[bindingName];
