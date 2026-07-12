@@ -143,6 +143,49 @@ async function toolRunJob(env, args) {
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
+  if (job === "market_source_probe_raw") {
+    // Real diagnostic: direct, raw fetch against a market/odds provider using this worker's
+    // already-bound real credentials (ODDS_API_KEY / PARLAY_API_KEY), bypassing all pipeline
+    // parsing/staging logic entirely. Used to compare providers' real, live game-level and
+    // player-prop-level coverage before deciding which one the Market phase should mine from.
+    const provider = String((extra && extra.provider) || "parlay").toLowerCase();
+    const path = String((extra && extra.path) || "").trim();
+    if (!path) return { ok: false, error: "extra.path is required, e.g. '/sports/baseball_mlb/odds?regions=us&markets=h2h'" };
+    let baseUrl, headers;
+    if (provider === "parlay") {
+      if (!env.PARLAY_API_KEY) return { ok: false, error: "PARLAY_API_KEY not present on this worker's environment." };
+      baseUrl = String(env.PARLAY_API_BASE_URL || "https://parlay-api.com/v1").replace(/\/+$/, "");
+      headers = { "X-API-Key": env.PARLAY_API_KEY, "accept": "application/json" };
+    } else if (provider === "oddsapi") {
+      if (!env.ODDS_API_KEY) return { ok: false, error: "ODDS_API_KEY not present on this worker's environment." };
+      baseUrl = String(env.ODDS_API_BASE_URL || "https://api.the-odds-api.com/v4").replace(/\/+$/, "");
+      const sep = path.includes("?") ? "&" : "?";
+      headers = { "accept": "application/json" };
+      // OddsAPI uses an apiKey query param rather than a header.
+      const fullUrl = `${baseUrl}${path}${sep}apiKey=${encodeURIComponent(env.ODDS_API_KEY)}`;
+      try {
+        const resp = await fetch(fullUrl, { method: "GET", headers });
+        const text = await resp.text();
+        let json = null;
+        try { json = JSON.parse(text); } catch (_) {}
+        return { ok: resp.ok, http_status: resp.status, provider, path, body_preview: json ? JSON.stringify(json).slice(0, 6000) : text.slice(0, 3000), array_length: Array.isArray(json) ? json.length : null };
+      } catch (err) {
+        return { ok: false, error: String(err && err.message ? err.message : err) };
+      }
+    } else {
+      return { ok: false, error: "extra.provider must be 'parlay' or 'oddsapi'" };
+    }
+    const fullUrl = `${baseUrl}${path}`;
+    try {
+      const resp = await fetch(fullUrl, { method: "GET", headers });
+      const text = await resp.text();
+      let json = null;
+      try { json = JSON.parse(text); } catch (_) {}
+      return { ok: resp.ok, http_status: resp.status, provider, path, body_preview: json ? JSON.stringify(json).slice(0, 6000) : text.slice(0, 3000), array_length: Array.isArray(json) ? json.length : null };
+    } catch (err) {
+      return { ok: false, error: String(err && err.message ? err.message : err) };
+    }
+  }
   if (job === "worker_invocation_logs") {
     // Real diagnostic: Cloudflare's GraphQL Analytics API (workersInvocationsAdaptive dataset)
     // records the actual outcome of every Worker invocation - including exceededCpu, canceled,
