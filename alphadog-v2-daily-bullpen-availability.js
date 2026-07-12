@@ -460,7 +460,7 @@ function classifyTarget(target, bullpenRows, recentCalendarRows) {
   else if (games3 === 0) { status = "rested"; risk = "low"; grade = "PASS"; confidence = "MEDIUM_RECENT_HISTORY_OFFDAY_CONTEXT"; }
   return {
     games1, games2, games3, pitches1, pitches2, pitches3, outs1, outs2, outs3, pitchers1, pitchers2, pitchers3,
-    highUsage, backToBack, likelyUnavailable, doubleheaderRecent,
+    highUsage, backToBack, likelyUnavailable, doubleheaderRecent, closerRecentUsage, setupRecentUsage,
     restedRelieverCount: Math.max(0, pitcherIds.length - likelyUnavailable), unknownRelieverCount: 0,
     fatigueScore: score, status, risk, grade, confidence, issues, pitcherRisk
   };
