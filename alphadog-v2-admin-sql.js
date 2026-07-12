@@ -172,8 +172,26 @@ async function toolRunJob(env, args) {
       } catch (err) {
         return { ok: false, error: String(err && err.message ? err.message : err) };
       }
+    } else if (provider === "oddspapi") {
+      const cred = await first(env.CONFIG_DB, "SELECT password FROM config_external_credentials WHERE credential_key='oddspapi_api_key'");
+      const apiKey = cred && cred.password;
+      if (!apiKey) return { ok: false, error: "oddspapi_api_key not present in CONFIG_DB.config_external_credentials." };
+      baseUrl = "https://api.oddspapi.io/v4";
+      const sep = path.includes("?") ? "&" : "?";
+      const fullUrl = `${baseUrl}${path}${sep}apiKey=${encodeURIComponent(apiKey)}`;
+      try {
+        const resp = await fetch(fullUrl, { method: "GET", headers: { "accept": "application/json" } });
+        const text = await resp.text();
+        let json = null;
+        try { json = JSON.parse(text); } catch (_) {}
+        const headerDump = {};
+        for (const [k, v] of resp.headers.entries()) headerDump[k] = v;
+        return { ok: resp.ok, http_status: resp.status, provider, path, body_preview: json ? JSON.stringify(json).slice(0, 6000) : text.slice(0, 3000), array_length: Array.isArray(json) ? json.length : null, headers: headerDump };
+      } catch (err) {
+        return { ok: false, error: String(err && err.message ? err.message : err) };
+      }
     } else {
-      return { ok: false, error: "extra.provider must be 'parlay' or 'oddsapi'" };
+      return { ok: false, error: "extra.provider must be 'parlay', 'oddsapi', or 'oddspapi'" };
     }
     const fullUrl = `${baseUrl}${path}`;
     try {
