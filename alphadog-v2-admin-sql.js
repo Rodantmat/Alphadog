@@ -173,8 +173,8 @@ async function toolRunJob(env, args) {
         return { ok: false, error: String(err && err.message ? err.message : err) };
       }
     } else if (provider === "oddspapi") {
-      const cred = await first(env.CONFIG_DB, "SELECT password FROM config_external_credentials WHERE credential_key='oddspapi_api_key'");
-      const apiKey = cred && cred.password;
+      const credRow = await env.CONFIG_DB.prepare("SELECT password FROM config_external_credentials WHERE credential_key='oddspapi_api_key'").first();
+      const apiKey = credRow && credRow.password;
       if (!apiKey) return { ok: false, error: "oddspapi_api_key not present in CONFIG_DB.config_external_credentials." };
       baseUrl = "https://api.oddspapi.io/v4";
       const sep = path.includes("?") ? "&" : "?";
