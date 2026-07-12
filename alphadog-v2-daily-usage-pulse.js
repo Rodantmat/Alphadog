@@ -594,26 +594,14 @@ function classifyTarget(target, probe, previous, recentCrew, geminiPrediction) {
     sourceStatus = "source_available_no_umpire_path";
     assignmentStatus = "missing";
     issues.push({ severity: "warning", issue_type: "source_available_no_umpire_path", reason: "Official MLB source returned an officials-like array, but no home plate umpire role was identified." });
-  } else if (pregame && recentCrew && recentCrew.home_plate_umpire_id) {
-    // Requirement 2/9: real, researched derived fallback. MLB umpire crews work an entire
-    // series together, rotating positions daily (well-documented practice) - a recent real HP
-    // assignment for this same home venue is a genuine, if imprecise, low-confidence signal
-    // when today's official assignment hasn't posted yet. Always explicitly marked derived and
-    // low-confidence; replaced the moment a real assignment is found.
-    status = "derived_likely_crew";
-    confidence = "LOW_DERIVED_FROM_RECENT_SERIES_CREW";
-    sourceStatus = "derived_from_recent_series_crew";
-    assignmentStatus = "derived";
-    derivedUmpireId = recentCrew.home_plate_umpire_id;
-    derivedUmpireName = recentCrew.home_plate_umpire_name;
-    isDerived = 1;
-    issues.push({ severity: "warning", issue_type: "umpire_derived_from_recent_crew", reason: `No official pregame source; derived from this venue's most recent real assignment on ${recentCrew.official_date} based on the standard crew-rotation pattern.` });
   } else if (pregame && geminiPrediction && geminiPrediction.found) {
-    // Requirement 2/9, tier 3: neither an official assignment nor our own recent-crew history
-    // was available - fall back to a Gemini + Google Search grounded "most likely" prediction
-    // (see deriveUmpireViaGeminiSearch above). Explicitly low-confidence and temporary; never
+    // Requirement 2/9, tier 2 (per explicit instruction, checked before internal derived
+    // history): no official assignment yet - fall back to a Gemini + Google Search grounded
+    // "most likely" prediction (see deriveUmpireViaGeminiSearch above), since it can pull from
+    // live, current specialist sources and is expected to be more precise than our own narrow
+    // same-venue-recent-history heuristic. Explicitly low-confidence and temporary; never
     // written to daily_umpire_assignment_history; always overwritten the instant a real
-    // assignment or our own crew-history derivation becomes available on a later run.
+    // assignment becomes available on a later run.
     status = "derived_likely_llm_search";
     confidence = "LOW_DERIVED_FROM_LLM_SEARCH_GROUNDING";
     sourceStatus = "derived_from_llm_search_grounding";
@@ -621,7 +609,22 @@ function classifyTarget(target, probe, previous, recentCrew, geminiPrediction) {
     derivedUmpireId = null;
     derivedUmpireName = geminiPrediction.umpire_name;
     isDerived = 1;
-    issues.push({ severity: "warning", issue_type: "umpire_derived_from_llm_search", reason: `No official pregame source and no recent-crew history for this venue; derived via Gemini + Google Search grounding (${geminiPrediction.confidence_label || "unconfirmed"}${geminiPrediction.source_note ? ": " + geminiPrediction.source_note : ""}).` });
+    issues.push({ severity: "warning", issue_type: "umpire_derived_from_llm_search", reason: `No official pregame source; derived via Gemini + Google Search grounding (${geminiPrediction.confidence_label || "unconfirmed"}${geminiPrediction.source_note ? ": " + geminiPrediction.source_note : ""}).` });
+  } else if (pregame && recentCrew && recentCrew.home_plate_umpire_id) {
+    // Requirement 2/9, tier 3 (last resort): no official assignment and Gemini didn't return a
+    // usable candidate - fall back to our own internal crew-rotation-history derivation. MLB
+    // umpire crews work an entire series together, rotating positions daily (well-documented
+    // practice) - a recent real HP assignment for this same home venue is a genuine, if
+    // imprecise, low-confidence signal. Always explicitly marked derived and low-confidence;
+    // replaced the moment a real assignment is found.
+    status = "derived_likely_crew";
+    confidence = "LOW_DERIVED_FROM_RECENT_SERIES_CREW";
+    sourceStatus = "derived_from_recent_series_crew";
+    assignmentStatus = "derived";
+    derivedUmpireId = recentCrew.home_plate_umpire_id;
+    derivedUmpireName = recentCrew.home_plate_umpire_name;
+    isDerived = 1;
+    issues.push({ severity: "warning", issue_type: "umpire_derived_from_recent_crew", reason: `No official pregame source and no usable Gemini candidate; derived from this venue's most recent real assignment on ${recentCrew.official_date} based on the standard crew-rotation pattern.` });
   } else if (probe.calls && probe.calls.some(c => c.ok)) {
     status = pregame ? "no_official_pregame_source" : "pending_assignment";
     confidence = pregame ? "WARNING_NO_PREGAME_UMPIRE_SOURCE" : "LOW_PENDING_ASSIGNMENT";
