@@ -885,6 +885,8 @@ async function runWeather(env, input) {
         indoor_flag: classified.indoor_flag,
         retractable_roof_flag: classified.retractable_roof_flag,
         weather_applicable_flag: classified.weather_applicable_flag,
+        data_source_level: classified.data_source_level,
+        is_temporary_derived: classified.is_temporary_derived,
         park_weather_notes: classified.park_weather_notes,
         issues: classified.issues,
         raw_json: {
