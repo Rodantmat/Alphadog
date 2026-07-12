@@ -698,7 +698,7 @@ async function runUmpireContext(env, input) {
   let gamePks = [];
   let calendars = [];
   let targets = [];
-  let currentWritten = 0, snapshotWritten = 0, issuesWritten = 0, assignmentsFound = 0, assignmentsMissing = 0, assignmentsPending = 0, assignmentsChanged = 0, sourceFailures = 0, unknownUmpireCount = 0, externalCalls = 0;
+  let currentWritten = 0, snapshotWritten = 0, issuesWritten = 0, assignmentsFound = 0, assignmentsMissing = 0, assignmentsPending = 0, assignmentsChanged = 0, sourceFailures = 0, unknownUmpireCount = 0, externalCalls = 0, geminiCallsUsed = 0, geminiDerivedCount = 0;
   const summaries = [];
   const results = [];
   try {
