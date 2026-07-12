@@ -1169,19 +1169,6 @@ async function runSourceProbe(env, input) {
   }
 
   const startingPageFetch = await fetchTextWithTimeout(MLB_STARTING_LINEUPS_URL, userAgent);
-  const savantFramingUrl = "https://baseballsavant.mlb.com/leaderboard/catcher-framing?gameType=Regular&minPitches=q&minResults=1&seasonEnd=2026&seasonStart=2026&type=catcher&csv=true";
-  const savantPoptimeUrl = "https://baseballsavant.mlb.com/leaderboard/poptime?year=2026&min2b=5&min3b=0&csv=true";
-  const [savantFraming, savantPoptime] = await Promise.all([
-    fetchTextWithTimeout(savantFramingUrl, "AlphaDog-v2-Savant-Probe/0.1"),
-    fetchTextWithTimeout(savantPoptimeUrl, "AlphaDog-v2-Savant-Probe/0.1")
-  ]);
-  const analyzeSavant = (res) => {
-    const text = res.text || "";
-    const firstLine = text.split("\n")[0] || "";
-    const looksLikeCsv = firstLine.includes(",") && !firstLine.toLowerCase().includes("<!doctype") && !firstLine.toLowerCase().includes("<html");
-    return { ok: res.ok, http_status: res.http_status, response_bytes: res.response_bytes || 0, looks_like_csv: looksLikeCsv, first_line_preview: firstLine.slice(0, 300), first_400_chars: text.slice(0, 400) };
-  };
-  const savantDiagnostic = { framing: analyzeSavant(savantFraming), poptime: analyzeSavant(savantPoptime) };
   const startingPageAnalysis = analyzeStartingLineupsPage(startingPageFetch.text, sourceRows, preparedPlayers);
   const discovery = {
     ...preparedScheduleDiscovery,
