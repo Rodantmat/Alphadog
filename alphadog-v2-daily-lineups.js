@@ -1536,6 +1536,29 @@ export default {
       return jsonResponse(baseIdentity(env));
     }
 
+    if (method === "GET" && path === "/diagnostic-savant") {
+      const framingUrl = "https://baseballsavant.mlb.com/leaderboard/catcher-framing?gameType=Regular&minPitches=q&minResults=1&seasonEnd=2026&seasonStart=2026&type=catcher&csv=true";
+      const poptimeUrl = "https://baseballsavant.mlb.com/leaderboard/poptime?year=2026&min2b=5&min3b=0&csv=true";
+      const [framing, poptime] = await Promise.all([
+        fetchTextWithTimeout(framingUrl, "AlphaDog-v2-Savant-Probe/0.1"),
+        fetchTextWithTimeout(poptimeUrl, "AlphaDog-v2-Savant-Probe/0.1")
+      ]);
+      const analyze = (res) => {
+        const text = res.text || "";
+        const firstLine = text.split("\n")[0] || "";
+        const looksLikeCsv = firstLine.includes(",") && !firstLine.toLowerCase().includes("<!doctype") && !firstLine.toLowerCase().includes("<html");
+        return {
+          ok: res.ok,
+          http_status: res.http_status,
+          response_bytes: res.response_bytes || 0,
+          looks_like_csv: looksLikeCsv,
+          first_line_preview: firstLine.slice(0, 300),
+          first_400_chars: text.slice(0, 400)
+        };
+      };
+      return jsonResponse({ ok: true, route: "/diagnostic-savant", framing: analyze(framing), poptime: analyze(poptime), timestamp_utc: nowUtc() });
+    }
+
     if (method === "GET" && path === "/health") {
       const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
       const vars = varPresence(env, EXPECTED_VARS);
