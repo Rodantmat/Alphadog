@@ -117,6 +117,7 @@
     "alphadog-v2-score-fantasy",
     "alphadog-v2-score-final-board",
     "alphadog-v2-score-audit",
-    "alphadog-v2-orchestrator"
+    "alphadog-v2-orchestrator",
+    "alphadog-v2-tail-logger"
   ]
 }
