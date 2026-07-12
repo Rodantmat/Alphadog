@@ -577,7 +577,118 @@ async function deriveUmpireViaGeminiSearch(env, target) {
     clearTimeout(timer);
   }
 }
-function classifyTarget(target, probe, previous, recentCrew, geminiPrediction) {
+const REFMETRICS_LOGIN_URL = "https://www.refmetrics.com/login";
+const REFMETRICS_ASSIGNMENTS_URL = "https://www.refmetrics.com/baseball/mlb/umpire-assignments";
+const REFMETRICS_USER_AGENT = "Mozilla/5.0 (compatible; AlphaDogBot/1.0)";
+
+function decodeHtmlEntities(s) {
+  return String(s || "")
+    .replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+}
+function extractSetCookieValue(setCookieHeader) {
+  if (!setCookieHeader) return null;
+  const m = setCookieHeader.match(/^([^;]+);/);
+  return m ? m[1] : setCookieHeader;
+}
+async function getRefMetricsCredentials(env) {
+  return await first(env.CONFIG_DB, `SELECT username, password FROM config_external_credentials WHERE credential_key='refmetrics_login'`);
+}
+async function getCachedRefMetricsSession(env) {
+  const row = await first(env.CONFIG_DB, `SELECT cookie_value, expires_at FROM config_external_sessions WHERE site_key='refmetrics.com'`);
+  if (!row || !row.cookie_value) return null;
+  if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) return null;
+  return row.cookie_value;
+}
+async function saveRefMetricsSession(env, cookieValue, expiresAt, ok, err) {
+  await run(env.CONFIG_DB, `INSERT INTO config_external_sessions (site_key, cookie_value, obtained_at, expires_at, last_login_ok, last_error, updated_at) VALUES ('refmetrics.com', ?, CURRENT_TIMESTAMP, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(site_key) DO UPDATE SET cookie_value=excluded.cookie_value, obtained_at=CURRENT_TIMESTAMP, expires_at=excluded.expires_at, last_login_ok=excluded.last_login_ok, last_error=excluded.last_error, updated_at=CURRENT_TIMESTAMP`,
+    cookieValue, expiresAt, ok ? 1 : 0, err || null);
+}
+async function loginRefMetrics(env) {
+  // Real, credentialed login (free account, stored in CONFIG_DB, never in source/repo). Uses a
+  // Flask-style CSRF-protected login form: GET the login page for a session cookie + csrf_token,
+  // then POST credentials with that same cookie. A successful login returns 302 with a new,
+  // authenticated session cookie (observed to last ~30 days) which we cache to avoid re-logging
+  // in on every run.
+  const creds = await getRefMetricsCredentials(env);
+  if (!creds || !creds.username || !creds.password) return { ok: false, reason: "no_credentials_configured" };
+  try {
+    const getResp = await fetch(REFMETRICS_LOGIN_URL, { headers: { "user-agent": REFMETRICS_USER_AGENT } });
+    const getHtml = await getResp.text();
+    const initCookie = extractSetCookieValue(getResp.headers.get("set-cookie"));
+    const csrfMatch = getHtml.match(/id="csrf_token"[^>]*value="([^"]+)"/);
+    if (!initCookie || !csrfMatch) { await saveRefMetricsSession(env, null, null, false, "login_page_missing_cookie_or_csrf"); return { ok: false, reason: "login_page_missing_cookie_or_csrf" }; }
+    const body = `csrf_token=${encodeURIComponent(csrfMatch[1])}&username_or_email=${encodeURIComponent(creds.username)}&password=${encodeURIComponent(creds.password)}&submit=Sign+In`;
+    const postResp = await fetch(REFMETRICS_LOGIN_URL, {
+      method: "POST",
+      redirect: "manual",
+      headers: { "content-type": "application/x-www-form-urlencoded", "cookie": initCookie, "user-agent": REFMETRICS_USER_AGENT },
+      body
+    });
+    const newCookie = extractSetCookieValue(postResp.headers.get("set-cookie"));
+    if (postResp.status !== 302 || !newCookie) {
+      await saveRefMetricsSession(env, null, null, false, `login_failed_status_${postResp.status}`);
+      return { ok: false, reason: `login_failed_status_${postResp.status}` };
+    }
+    const expiresAt = new Date(Date.now() + 20 * 24 * 3600 * 1000).toISOString();
+    await saveRefMetricsSession(env, newCookie, expiresAt, true, null);
+    return { ok: true, cookie: newCookie };
+  } catch (err) {
+    const msg = String(err && err.message ? err.message : err).slice(0, 200);
+    await saveRefMetricsSession(env, null, null, false, msg);
+    return { ok: false, reason: msg };
+  }
+}
+async function fetchRefMetricsAssignmentsHtml(env) {
+  let cookie = await getCachedRefMetricsSession(env);
+  if (!cookie) {
+    const loginResult = await loginRefMetrics(env);
+    if (!loginResult.ok) return { ok: false, reason: loginResult.reason };
+    cookie = loginResult.cookie;
+  }
+  const resp = await fetch(REFMETRICS_ASSIGNMENTS_URL, { headers: { cookie, "user-agent": REFMETRICS_USER_AGENT } });
+  const html = await resp.text();
+  const looksLoggedOut = html.includes('auth-panel-title">Sign in');
+  if (!resp.ok || looksLoggedOut) {
+    const loginResult = await loginRefMetrics(env);
+    if (!loginResult.ok) return { ok: false, reason: `session_invalid_relogin_failed_${loginResult.reason}` };
+    const retryResp = await fetch(REFMETRICS_ASSIGNMENTS_URL, { headers: { cookie: loginResult.cookie, "user-agent": REFMETRICS_USER_AGENT } });
+    return { ok: retryResp.ok, html: await retryResp.text() };
+  }
+  return { ok: true, html };
+}
+function parseRefMetricsAssignments(html) {
+  const rows = [];
+  const trRegex = /<tr>([\s\S]*?)<\/tr>/g;
+  let m;
+  while ((m = trRegex.exec(html))) {
+    const block = m[1];
+    const teamLinks = [...block.matchAll(/team-profiles\?team=[^"]+"[^>]*>([^<]+)<\/a>/g)];
+    if (teamLinks.length < 2) continue;
+    const home = decodeHtmlEntities(teamLinks[0][1].trim());
+    const away = decodeHtmlEntities(teamLinks[1][1].trim());
+    const umpMatch = block.match(/umpire-profiles\?official=[^"]+"[^>]*>([^<]+)<\/a>/);
+    rows.push({ home, away, hp_name: umpMatch ? decodeHtmlEntities(umpMatch[1].trim()) : null });
+  }
+  return rows;
+}
+let refMetricsRunCache = null; // per-invocation cache so the page is fetched once per worker run, not once per game
+async function deriveUmpireViaRefMetrics(env, target) {
+  try {
+    if (refMetricsRunCache === null) {
+      const result = await fetchRefMetricsAssignmentsHtml(env);
+      refMetricsRunCache = result.ok ? parseRefMetricsAssignments(result.html) : [];
+      if (!result.ok) return { found: false, reason: `refmetrics_fetch_failed_${result.reason}` };
+    }
+    const match = refMetricsRunCache.find(r => r.home === target.home_team_name && r.away === target.away_team_name);
+    if (!match || !match.hp_name) return { found: false, reason: "refmetrics_no_assignment_listed" };
+    return { found: true, umpire_name: match.hp_name };
+  } catch (err) {
+    return { found: false, reason: `refmetrics_exception_${String(err && err.message ? err.message : err).slice(0, 120)}` };
+  }
+}
+function classifyTarget(target, probe, previous, recentCrew, geminiPrediction, refMetricsPrediction) {
   const cal = target.calendar || {};
   const pregame = String(cal.abstract_game_state || "").toLowerCase() === "preview" || String(cal.detailed_state || "").toLowerCase().includes("scheduled") || String(cal.status_code || "") === "S";
   const issues = [];
