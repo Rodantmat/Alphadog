@@ -74,6 +74,17 @@ async function first(db, sql, ...binds) {
   const rows = await all(db, sql, ...binds);
   return rows[0] || null;
 }
+async function withDeadline(promise, ms, fallbackValue) {
+  let timer = null;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise(resolve => { timer = setTimeout(() => resolve(typeof fallbackValue === "function" ? fallbackValue() : fallbackValue), Math.max(500, Number(ms || 5000))); })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 async function execRun(db, sql, ...binds) {
   const stmt = db.prepare(sql);
