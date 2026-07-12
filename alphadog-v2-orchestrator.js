@@ -114,7 +114,15 @@ async function run(db, sql, ...binds) {
 }
 
 const EXACT_WORKER_SERVICE_TIMEOUT_MS = 75000;
-const DAILY_CONTEXT_EXACT_WORKER_TIMEOUT_MS = 45000;
+// REAL ROOT CAUSE (confirmed via live Cloudflare Tail Worker capture): the orchestrator's own
+// invocation gets killed by the platform at ~30s of wall time when synchronously awaiting a
+// child response - independent of anything in JS. The old 45000ms value here meant the
+// orchestrator would keep waiting past that real ceiling on any child that took ~28s+ (which is
+// routine - starters/lineups/certifier all take 14-30s normally), guaranteeing an eventual
+// platform-level kill outright instead of a clean, catchable JS timeout. This must stay safely
+// under that real ceiling so the orchestrator's OWN AbortController-based timeout fires first,
+// turning an invisible fatal platform kill into an ordinary, recoverable stale-child retry.
+const DAILY_CONTEXT_EXACT_WORKER_TIMEOUT_MS = 20000;
 const SCORE_PREP_SERVICE_TIMEOUT_MS = 90000;
 
 function timeoutSignal(ms) {
