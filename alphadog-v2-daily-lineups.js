@@ -285,6 +285,47 @@ async function refreshCatcherReferenceIfStale(env, seasonYear) {
   return { refreshed: true, catchers_written: written, framing_rows: framingRows.length, poptime_rows: poptimeRows.length, framing_ok: framingRes.ok, poptime_ok: poptimeRes.ok };
 }
 
+async function writeCatcherContext(env, batchId, gamePk, calendar, side, validation, refMap) {
+  const mapped = Array.isArray(validation && validation.mapped_players) ? validation.mapped_players : [];
+  const catcher = mapped.find(p => String(p.position) === "2");
+  if (!catcher) return null;
+  const sidePrefix = side === "home" ? "home" : "away";
+  const teamId = intOrNull(calendar[`${sidePrefix}_team_id`]);
+  const teamName = calendar[`${sidePrefix}_team_name`] || null;
+  const ref = refMap.get(Number(catcher.player_id)) || null;
+  const key = `${calendar.official_date}_${gamePk}_${side}`;
+  const metricsAvailable = !!(ref && (ref.framing_runs_total !== null || ref.pop_time_2b_sba !== null));
+  const row = {
+    catcher_context_key: key,
+    batch_id: batchId,
+    official_date: calendar.official_date || null,
+    game_pk: gamePk,
+    game_time_utc: calendar.game_time_utc || null,
+    team_side: side,
+    team_id: teamId,
+    team_name: teamName,
+    player_id: intOrNull(catcher.player_id),
+    player_name: catcher.player_name || null,
+    catcher_status: "assigned_from_posted_lineup",
+    catcher_confidence: "HIGH_OFFICIAL_LINEUP_POSITION",
+    framing_runs_total: ref ? ref.framing_runs_total : null,
+    framing_pct_total: ref ? ref.framing_pct_total : null,
+    pop_time_2b_sba: ref ? ref.pop_time_2b_sba : null,
+    metrics_available_flag: metricsAvailable ? 1 : 0,
+    source_key: "boxscore_lineup_position+baseball_savant_csv_export",
+    source_endpoint: "/api/v1/game/{gamePk}/boxscore",
+    data_source_level: "real",
+    is_temporary_derived: 0,
+    raw_json: safeJsonStringify({ catcher, ref })
+  };
+  await execRun(env.DAILY_DB, `INSERT OR REPLACE INTO daily_catcher_context_current (catcher_context_key, batch_id, official_date, game_pk, game_time_utc, team_side, team_id, team_name, player_id, player_name, catcher_status, catcher_confidence, framing_runs_total, framing_pct_total, pop_time_2b_sba, metrics_available_flag, source_key, source_endpoint, data_source_level, is_temporary_derived, first_seen_at, last_seen_at, raw_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT first_seen_at FROM daily_catcher_context_current WHERE catcher_context_key=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, ?, COALESCE((SELECT created_at FROM daily_catcher_context_current WHERE catcher_context_key=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)`,
+    row.catcher_context_key, row.batch_id, row.official_date, row.game_pk, row.game_time_utc, row.team_side, row.team_id, row.team_name, row.player_id, row.player_name, row.catcher_status, row.catcher_confidence, row.framing_runs_total, row.framing_pct_total, row.pop_time_2b_sba, row.metrics_available_flag, row.source_key, row.source_endpoint, row.data_source_level, row.is_temporary_derived, row.catcher_context_key, row.raw_json, row.catcher_context_key);
+  return row;
+}
+function safeJsonStringify(value) {
+  try { return JSON.stringify(value).slice(0, 3000); } catch (_) { return null; }
+}
+
 async function ensureDailyLineupTables(env) {
   const db = env.DAILY_DB;
   await execRun(db, `
