@@ -236,7 +236,36 @@ async function ensureSchema(env) {
   )`);
   await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_daily_umpire_issues_batch ON daily_umpire_context_issues(batch_id)`);
   await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_daily_umpire_issues_date ON daily_umpire_context_issues(official_date)`);
+  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_umpire_assignment_history (
+    history_key TEXT PRIMARY KEY,
+    official_date TEXT,
+    home_team_id INTEGER,
+    venue_id INTEGER,
+    game_pk INTEGER,
+    home_plate_umpire_id INTEGER,
+    home_plate_umpire_name TEXT,
+    crew_umpire_ids_json TEXT,
+    recorded_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_daily_umpire_history_venue_date ON daily_umpire_assignment_history(home_team_id, official_date)`);
   await run(env.DAILY_DB, `INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('daily_umpire_context_v0_1_0', ?, CURRENT_TIMESTAMP, 'Daily Context Phase 7 umpire context source-probe tables with today/tomorrow volatile retention')`, VERSION);
+}
+async function pruneAssignmentHistory(env) {
+  const cutoff = addDays(todayPt(), -10);
+  await run(env.DAILY_DB, `DELETE FROM daily_umpire_assignment_history WHERE official_date < ?`, cutoff);
+}
+async function recordAssignmentHistory(env, target, probe) {
+  if (!probe.found || !probe.home_plate_umpire_id) return;
+  const key = `${target.official_date}_${target.home_team_id}_${target.game_pk}`;
+  const crewIds = (probe.officials_sample || []).map(o => o.id).filter(Boolean);
+  await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_umpire_assignment_history (history_key, official_date, home_team_id, venue_id, game_pk, home_plate_umpire_id, home_plate_umpire_name, crew_umpire_ids_json, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    key, target.official_date, target.home_team_id, target.venue_id, target.game_pk, probe.home_plate_umpire_id, probe.home_plate_umpire_name, safeJson(crewIds, 500));
+}
+async function findRecentCrewForVenue(env, homeTeamId, beforeDate) {
+  const lookbackStart = addDays(beforeDate, -4);
+  const row = await first(env.DAILY_DB, `SELECT home_plate_umpire_id, home_plate_umpire_name, crew_umpire_ids_json, official_date FROM daily_umpire_assignment_history WHERE home_team_id = ? AND official_date >= ? AND official_date < ? ORDER BY official_date DESC LIMIT 1`,
+    homeTeamId, lookbackStart, beforeDate);
+  return row || null;
 }
 
 async function pruneRetention(env, retention) {
