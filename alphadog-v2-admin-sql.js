@@ -143,6 +143,26 @@ async function toolRunJob(env, args) {
   if (!job || typeof job !== "string") {
     return { ok: false, error: "Missing job string." };
   }
+  if (job === "direct_worker_probe") {
+    // TEMPORARY diagnostic - direct fetch to a worker's public workers.dev URL, bypassing
+    // the orchestrator's queue/dedup entirely, to isolate whether a stall is inside the
+    // worker itself or inside the orchestrator's dispatch/response-handling.
+    const url2 = extra && extra.url;
+    if (!url2) return { ok: false, error: "Missing extra.url" };
+    const method = (extra && extra.method) || "GET";
+    const body = extra && extra.body;
+    const started = Date.now();
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort("probe_timeout"), Number(extra.timeout_ms || 40000));
+      const resp = await fetch(url2, { method, headers: { "content-type": "application/json" }, body, signal: controller.signal });
+      clearTimeout(timer);
+      const text = await resp.text();
+      return { ok: resp.ok, http_status: resp.status, elapsed_ms: Date.now() - started, body: text.slice(0, 3000) };
+    } catch (err) {
+      return { ok: false, error: String(err && err.message ? err.message : err), elapsed_ms: Date.now() - started };
+    }
+  }
   const bindingMap = { CONTROL_ROOM: env.CONTROL_ROOM, PHASE3A_WORKER: env.PHASE3A_WORKER, ORCHESTRATOR_WORKER: env.ORCHESTRATOR_WORKER };
   const bindingName = target && bindingMap[target] !== undefined ? target : "CONTROL_ROOM";
   const binding = bindingMap[bindingName];
