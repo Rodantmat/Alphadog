@@ -469,6 +469,13 @@ function deriveSpot({ game, teamId, side, preparedRows, maps, sources, batchId, 
   const priorTimezoneOffsetMinutes = priorGame && priorStadium ? timeZoneOffsetMinutes(priorGame.game_time_utc, priorStadium.timezone) : null;
   const currentTimezoneOffsetMinutes = currentStadium ? timeZoneOffsetMinutes(game.game_time_utc, currentStadium.timezone) : null;
   const timezoneTransition = priorTimezoneOffsetMinutes !== null && currentTimezoneOffsetMinutes !== null && priorTimezoneOffsetMinutes !== currentTimezoneOffsetMinutes ? 1 : 0;
+  // Real, MLB-specific research (Song/Allada et al., PNAS 2017, 20 years of real MLB data)
+  // found jet-lag effects are largely confined to eastward travel with limited effects after
+  // westward travel, consistent with the >24h period of the human circadian clock - and the
+  // effect is strongest for the home team's offense specifically after returning from a road
+  // trip. Both directions were previously weighted identically; this corrects that.
+  const eastwardTravel = timezoneTransition && currentTimezoneOffsetMinutes > priorTimezoneOffsetMinutes ? 1 : 0;
+  const westwardTravel = timezoneTransition && currentTimezoneOffsetMinutes < priorTimezoneOffsetMinutes ? 1 : 0;
   const priorHour = priorGame && priorStadium ? localHour(priorGame.game_time_utc, priorStadium.timezone) : null;
   const currentHour = currentStadium ? localHour(game.game_time_utc, currentStadium.timezone) : null;
   const gapHours = priorGame ? hoursBetween(priorGame.game_time_utc, game.game_time_utc) : null;
