@@ -11622,7 +11622,7 @@ async function requeueDailyContextStaleChild(env, parentRow, stage, child, stage
     runId, parentRow.request_id, parentRow.chain_id, parentRow.job_key, parentRow.worker_name, stageReports.length + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output)
   );
   await run(env.CONTROL_DB,
-    "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
+    "UPDATE control_job_queue SET status='pending', priority=1, run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?",
     JSON.stringify(output), parentRow.request_id
   );
   await run(env.CONTROL_DB,
