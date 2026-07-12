@@ -1385,6 +1385,9 @@ async function runSourceProbe(env, input) {
     warnings.push(...preparedSummary.warnings);
     blockers.push(...preparedSummary.blockers);
 
+    const homeCatcherRow = await writeCatcherContext(env, catcherBatchId, gamePk, calendar, "home", homeValidation, catcherRefMap);
+    const awayCatcherRow = await writeCatcherContext(env, catcherBatchId, gamePk, calendar, "away", awayValidation, catcherRefMap);
+
     const officialLineupPreviewRows = [
       ...buildLineupWritePreviewRows(gamePk, calendar, "home", homeValidation),
       ...buildLineupWritePreviewRows(gamePk, calendar, "away", awayValidation)
