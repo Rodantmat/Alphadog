@@ -85,16 +85,16 @@ function isUnavailableAvailability(a) {
   const s = String(a.availability_status || a.roster_status || "").toLowerCase();
   return a.transaction_block_flag === 1 || a.injured_list_flag === 1 || s.includes("optioned") || s.includes("inactive") || s.includes("injured") || s.includes("blocked") || s.includes("unavailable") || s.includes("not_active");
 }
-function gameHasReachedStart(game, preparedGameTimeUtc) {
-  const rawTime = preparedGameTimeUtc || (game && game.game_time_utc) || null;
-  const startMs = rawTime ? new Date(rawTime).getTime() : NaN;
-  if (!Number.isFinite(startMs)) return false;
-  return Date.now() >= (startMs - 15 * 60 * 1000);
-}
 function isGameStartedExpiredOrUnavailable(game, preparedGameTimeUtc) {
   if (!game) return false;
+  // Requirement 8 means a game whose window has passed - i.e. it's actually over
+  // (final/postponed/cancelled). A live, in-progress game is the opposite of expired -
+  // it's exactly when daily context data matters most. The prior version also purged any
+  // game that was live and past its start time, which is true of every live game by
+  // definition (a game can't be live before it starts) - this wiped real, needed data for
+  // every in-progress game the moment it went live. Fixed: only genuinely-finished games
+  // are purged now.
   if (Number(game.is_cancelled) === 1 || Number(game.is_postponed) === 1 || Number(game.is_final) === 1) return true;
-  if ((Number(game.is_live) === 1 || String(game.detailed_state || "").toLowerCase().includes("in progress")) && gameHasReachedStart(game, preparedGameTimeUtc)) return true;
   return false;
 }
 function addIssueAggregate(issueMap, batchId, p, teamId, issue, cls, sev) {
