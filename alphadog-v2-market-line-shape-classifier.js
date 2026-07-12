@@ -617,6 +617,17 @@ function extractPlayerNameDeep(row, currentPlayerName, marketRaw) {
 function canonicalFromMarket(marketRaw, marketKey, config = modeConfig()) {
   const rawNorm = normalizeText(marketRaw);
   const rawKey = rawNorm.replace(/ /g, "_");
+  // Real bug found via live-data audit: vendors (confirmed on bet365 via ParlayAPI) can send an
+  // ambiguous machine market_key ("player_strikeouts") shared by BOTH hitter-strikeout props and
+  // pitcher-strikeout props, while their own human-readable market title correctly says "Hitter
+  // Strikeouts" or "Pitcher Strikeouts". The regex checks below correctly used the title-preferred
+  // marketRaw and would skip a hitter-titled row - but execution then fell through to the generic
+  // static PITCHER_MARKET_KEY_TO_PROP/HITTER_MARKET_KEY_TO_PROP lookup at the bottom of this
+  // function, which keys off the raw machine market_key alone and reintroduced the exact same
+  // misclassification via a second path. This guard rejects the row outright whenever the title
+  // explicitly names the other role, before either path can mislabel it.
+  if (config.prop_family === "pitcher" && /\bhitter\b|\bbatter\b/.test(rawNorm)) return { canonical: null, market_key: marketKey || String(marketRaw || ""), reason: "title_explicitly_names_opposite_role_hitter_batter_rejected_in_pitcher_mode" };
+  if (config.prop_family === "hitter" && /\bpitcher\b|\bpitching\b/.test(rawNorm)) return { canonical: null, market_key: marketKey || String(marketRaw || ""), reason: "title_explicitly_names_opposite_role_pitcher_rejected_in_hitter_mode" };
   if (config.prop_family === "pitcher") {
     if (/^(?:total\s+)?(?:pitcher\s+)?strikeouts?$/.test(rawNorm) || rawKey === "player_strikeouts") return { canonical: "pitcher_strikeouts", market_key: "player_pitcher_strikeouts", reason: "pitcher_strikeouts_alias" };
     if (/^(?:(?:total\s+)?pitching\s+outs?|(?:total\s+)?pitcher\s+outs?|outs\s+recorded|outs)$/.test(rawNorm)) return { canonical: "pitcher_outs", market_key: "player_pitcher_outs", reason: "pitcher_outs_alias" };
