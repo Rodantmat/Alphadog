@@ -252,26 +252,35 @@ function isPitcherProp(prop) {
   return p.includes("pitcher") || p.includes("earned_runs") || p.includes("hits_allowed") || p.includes("walks_allowed") || p.includes("runs_allowed");
 }
 
-// Reads the real per-source-key parsing detail out of a market-line-shape-classifier batch's
-// own output_json (source_key_status_counts / book_counts_normalized / normalization_status_
-// counts) rather than recomputing it - that worker already computes this correctly per run,
-// the certifier's job is to tally and track it over time, not duplicate the parsing logic.
-function extractPropParsingTally(batchRow) {
-  if (!batchRow) return { rows_seen: 0, per_source: {} };
-  const output = parseObjectSafe(batchRow.output_json);
-  const rowsSeen = Number(output.parlay_inventory_rows_seen || 0);
-  const sourceStatusCounts = (output.parlay_api && output.parlay_api.external_resolver_summary && output.parlay_api.external_resolver_summary.source_key_status_counts) || {};
+// Real per-bookmaker parsing tally, computed directly from the persisted evidence rows rather
+// than the worker's own output_json summary. This is deliberately robust to which internal code
+// path the worker took (standalone rich-summary run vs. backend-chain fast-terminal run) since
+// both write the same real per-row mapping_status into market_context_probe_player_props - that
+// is the one place genuinely safe to depend on. mapping_status buckets:
+//   matched_*                                          -> real match to a real board leg
+//   external_valid_player_resolved_not_on_prepared_board -> real player/prop, just not on our board
+//                                                          (a coverage gap, not a parsing failure)
+//   quarantined_*                                      -> genuine parsing/normalization failure
+//   anything else (no_prepared_match_*, ambiguous_*)   -> true, unexplained non-match
+async function computePropParsingTally(env, batchId) {
+  if (!batchId) return { rows_seen: 0, per_source: {} };
+  const rows = await all(env.MARKET_DB, `SELECT source_key, mapping_status, COUNT(*) AS c FROM market_context_probe_player_props WHERE batch_id = ? GROUP BY source_key, mapping_status`, batchId);
   const perSource = {};
-  for (const [sourceKey, counts] of Object.entries(sourceStatusCounts)) {
-    perSource[sourceKey] = {
-      rows_seen: Number(counts.rows || 0),
-      rows_matched_to_board: Number(counts.board_matched_rows || 0),
-      rows_external_valid_unanchored: Number(counts.external_valid_unanchored_rows || 0),
-      rows_quarantined: Number(counts.quarantined_rows || 0),
-      rows_true_unmatched: Number(counts.true_hard_unmatched_rows || 0)
-    };
+  let rowsSeen = 0;
+  for (const r of rows) {
+    const sourceKey = String(r.source_key || "unknown");
+    const status = String(r.mapping_status || "");
+    const count = Number(r.c || 0);
+    rowsSeen += count;
+    if (!perSource[sourceKey]) perSource[sourceKey] = { rows_seen: 0, rows_matched_to_board: 0, rows_external_valid_unanchored: 0, rows_quarantined: 0, rows_true_unmatched: 0 };
+    perSource[sourceKey].rows_seen += count;
+    if (status.startsWith("matched_")) perSource[sourceKey].rows_matched_to_board += count;
+    else if (status === "external_valid_player_resolved_not_on_prepared_board") perSource[sourceKey].rows_external_valid_unanchored += count;
+    else if (status.startsWith("quarantined_")) perSource[sourceKey].rows_quarantined += count;
+    else perSource[sourceKey].rows_true_unmatched += count;
   }
-  return { rows_seen: rowsSeen, per_source: perSource, normalized_total: Number((output.parlay_api && output.parlay_api.normalized_player_prop_rows) || 0) };
+  return { rows_seen: rowsSeen, per_source: perSource };
+}
 }
 
 async function writeParsingTallyForLayer(env, batchId, officialDate, layerKey, perSourceTally, statements) {
