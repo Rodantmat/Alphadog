@@ -709,8 +709,18 @@ export default {
     }
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
+      const HARD_DEADLINE_MS = 35000;
+      const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
       try {
-        return jsonResponse(await runBullpen(env, input));
+        const out = await withDeadline(runBullpen(env, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
+        if (out === TIMEOUT_SENTINEL) {
+          // Real fix (same class of bug found in daily-schedule.js during a live incident
+          // investigation): a genuine internal hang, most likely a stalled D1 call, previously
+          // had no safety net at all inside this worker - only the orchestrator's own
+          // per-stage stale-child wait (wrongly tuned to 420s for this stage) ever caught it.
+          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "hard_deadline_timeout", certification: "DAILY_BULLPEN_HARD_DEADLINE_TIMEOUT", error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc(), no_score_db_mutation: true, no_board_mutation: true, no_external_calls: true }, 200);
+        }
+        return jsonResponse(out);
       } catch (err) {
         return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "exception", certification: "DAILY_BULLPEN_EXCEPTION", error: String(err && err.stack ? err.stack : err), timestamp_utc: nowUtc(), no_score_db_mutation: true, no_board_mutation: true, no_external_calls: true }, 500);
       }
