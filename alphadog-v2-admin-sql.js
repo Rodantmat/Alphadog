@@ -144,6 +144,18 @@ async function toolGeminiDirectTest(env, extra) {
   // directly using the GEMINI_API_KEY secret already present on this worker. Should be
   // removed (or left inert) once the umpire-fallback question is answered.
   if (!env.GEMINI_API_KEY) return { ok: false, error: "GEMINI_API_KEY not configured on this worker." };
+  if (extra && extra.list_models) {
+    try {
+      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${env.GEMINI_API_KEY}`);
+      const text = await resp.text();
+      let parsed;
+      try { parsed = JSON.parse(text); } catch { parsed = text; }
+      const names = parsed && parsed.models ? parsed.models.map(m => m.name).filter(n => /flash|pro/.test(n)) : parsed;
+      return { ok: resp.ok, http_status: resp.status, models: names };
+    } catch (err) {
+      return { ok: false, error: String(err && err.message ? err.message : err) };
+    }
+  }
   const prompt = (extra && extra.prompt) || "Say hello.";
   const model = (extra && extra.model) || "gemini-2.0-flash";
   const useGrounding = !!(extra && extra.use_search_grounding);
