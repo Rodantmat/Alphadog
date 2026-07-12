@@ -11317,6 +11317,11 @@ async function buildDailyContextCertifierSidecarRecoveryOutput(env, requestId, s
   return output;
 }
 
+function isServiceBindingTimeoutLike(text) {
+  const hay = String(text || "").toLowerCase();
+  return hay.includes("service_binding_timeout") || hay.includes("worker_dispatch_exception") || hay.includes("timeout_after_") || hay.includes("aborterror") || hay.includes("network") || hay.includes("temporar") || hay.includes("timeout");
+}
+
 async function buildDailyLineupsSidecarRecoveryOutput(env, requestId, stage) {
   if (!env || !env.DAILY_DB || !requestId) return null;
   let batch = null;
