@@ -790,8 +790,39 @@ export default {
     }
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
+      const HARD_DEADLINE_MS = 35000;
+      const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
       try {
-        const out = await refreshWindow(env, input || {});
+        const out = await withDeadline(refreshWindow(env, input || {}), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
+        if (out === TIMEOUT_SENTINEL) {
+          // Real fix (found via live investigation): a genuine internal hang - most likely a
+          // stalled D1 call, since nothing else in this worker is unbounded - previously had no
+          // safety net at all inside the worker itself; the ONLY thing that ever caught it was
+          // the orchestrator's own per-stage "stale child" wait, which for this stage was
+          // (wrongly) tuned to 900 seconds. This hard deadline means a hang now surfaces as a
+          // clean, fast, honest error within 35s instead of silence for up to 15 minutes.
+          let terminalized = null;
+          try {
+            const runningRows = await all(env.DAILY_DB, `SELECT batch_id, status FROM daily_team_schedule_spot_batches WHERE request_id=? AND status LIKE 'running%'`, input.request_id || null);
+            terminalized = [];
+            for (const row of runningRows) {
+              const current = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_team_schedule_spot_current WHERE batch_id=?`, row.batch_id);
+              terminalized.push({ batch_id: row.batch_id, previous_status: row.status, preserved_current_rows: Number(current?.c || 0) });
+            }
+            await run(env.DAILY_DB, `UPDATE daily_team_schedule_spot_batches
+              SET status='failed_hard_deadline_timeout',
+                  certification_status='DAILY_TEAM_SCHEDULE_SPOT_HARD_DEADLINE_TIMEOUT',
+                  certification_grade='FAIL',
+                  certification_reason=?,
+                  completed_at=CURRENT_TIMESTAMP,
+                  updated_at=CURRENT_TIMESTAMP
+              WHERE request_id=? AND status LIKE 'running%'`,
+              `Worker hard deadline of ${HARD_DEADLINE_MS}ms exceeded; likely stalled internal call (D1 or otherwise). No incomplete rows were passed as valid.`,
+              input.request_id || null
+            );
+          } catch (_) {}
+          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "hard_deadline_timeout", certification: "DAILY_TEAM_SCHEDULE_SPOT_HARD_DEADLINE_TIMEOUT", error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`, preserved_sidecars: terminalized, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
+        }
         return jsonResponse(out, out.data_ok ? 200 : 200);
       } catch (err) {
         const message = String(err && err.stack ? err.stack : err);
