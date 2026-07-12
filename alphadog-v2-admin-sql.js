@@ -152,6 +152,12 @@ async function toolRunJob(env, args) {
     try {
       const resp = await fetch(url2, { headers: { "user-agent": "Mozilla/5.0 (compatible; AlphaDogResearch/1.0)" } });
       const text = await resp.text();
+      if (extra && extra.find_around_marker) {
+        const idx = text.indexOf(extra.find_around_marker);
+        if (idx === -1) return { ok: true, http_status: resp.status, length: text.length, marker_found: false };
+        const start = Math.max(0, idx - Number(extra.before || 500));
+        return { ok: true, http_status: resp.status, length: text.length, marker_found: true, marker_index: idx, snippet: text.slice(start, idx + Number(extra.after || 1500)) };
+      }
       const containsMarker = extra && extra.contains_marker ? text.includes(extra.contains_marker) : null;
       return { ok: resp.ok, http_status: resp.status, length: text.length, contains_marker: containsMarker, snippet: text.slice(Number(extra.start || 0), Number(extra.start || 0) + Number(extra.chars || 2000)) };
     } catch (err) {
