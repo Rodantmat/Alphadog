@@ -320,14 +320,16 @@ async function ensureSchema(env) {
   )`);
   await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_daily_team_schedule_spot_issues_date ON daily_team_schedule_spot_issues(official_date)`);
 }
-async function applyRetention(env, window) {
-  // Volatile context tables are run-replacement tables, not forever history.
-  // Each refresh clears prior current/snapshot/issue rows for the active PT today+tomorrow window
-  // and also removes any rows outside that window. Batch rows remain retained for small audit metadata.
-  for (const table of ["daily_team_schedule_spot_current", "daily_team_schedule_spot_snapshots", "daily_team_schedule_spot_issues"]) {
-    await run(env.DAILY_DB, `DELETE FROM ${table} WHERE official_date IS NULL OR official_date IN (?, ?) OR official_date NOT IN (?, ?)`, window.start, window.end, window.start, window.end);
-  }
-}
+// NOTE: the old applyRetention() dead-code function that lived here was removed
+// (v0.1.9 cleanup). It was never called anywhere in this file (verified by full-file
+// grep before removal) so it had zero runtime impact, but its DELETE statement was a
+// real tautology - `official_date IN (start,end) OR official_date NOT IN (start,end)`
+// is true for every non-null date, so had it ever been wired up it would have wiped
+// every row in all 3 tables on every run, not just rows outside the window (contrary to
+// its own comment). Retention is correctly handled by the two functions actually in use:
+// clearVolatileWindowBeforeWrite() (clears only the window's own rows immediately before
+// they're rewritten) and applyPostWriteRetention() (prunes rows outside the window only
+// after a successful write) - both below, both already correct, no behavior change here.
 async function loadSources(env, window) {
   const lookbackStart = addDays(window.start, -7);
   const lookaheadEnd = addDays(window.end, 1);
