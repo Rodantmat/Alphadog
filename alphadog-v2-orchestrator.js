@@ -17100,6 +17100,26 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isMarketCertifierJob(row)) {
+    const output = await processMarketCertifierJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_market_certifier_job" : "failed_one_market_certifier_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
+  if (isMarketFullRunJob(row)) {
+    const output = await processMarketFullRunJob(env, row, runId, trigger);
+    return {
+      status: output && output.status === "completed" ? "completed_one_market_full_run_job" : (output && output.ok ? "partial_continue_market_full_run_job" : "failed_one_market_full_run_job"),
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isMarketSourceHealthJob(row)) {
     const output = await processMarketSourceHealthJob(env, row, runId, trigger);
     return {
