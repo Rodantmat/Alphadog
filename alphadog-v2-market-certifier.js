@@ -281,7 +281,6 @@ async function computePropParsingTally(env, batchId) {
   }
   return { rows_seen: rowsSeen, per_source: perSource };
 }
-}
 
 async function writeParsingTallyForLayer(env, batchId, officialDate, layerKey, perSourceTally, statements) {
   for (const [sourceKey, counts] of Object.entries(perSourceTally)) {
