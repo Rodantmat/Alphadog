@@ -676,8 +676,9 @@ async function runUmpireContext(env, input) {
       externalCalls += probe.calls ? probe.calls.length : 0;
       sourceFailures += Number(probe.source_failures || 0);
       const prev = previous.get(`${target.official_date}|${target.game_pk}`) || null;
-      const classified = classifyTarget(target, probe, prev);
-      if (probe.found) assignmentsFound += 1;
+      const recentCrew = probe.found ? null : await findRecentCrewForVenue(env, target.home_team_id, target.official_date);
+      const classified = classifyTarget(target, probe, prev, recentCrew);
+      if (probe.found) { assignmentsFound += 1; await recordAssignmentHistory(env, target, probe); }
       if (classified.missing) assignmentsMissing += 1;
       if (classified.pending) assignmentsPending += 1;
       if (classified.changed) assignmentsChanged += 1;
