@@ -531,8 +531,8 @@ async function probeUmpireSource(target) {
   return { found: false, available_no_plate: false, path: null, officials_count: 0, officials_sample: [], source_key: calls.some(c => c.ok) ? "mlb_statsapi_official_probe" : "mlb_statsapi_source_unavailable", source_endpoint: liveUrl, calls, source_failures: calls.filter(c => !c.ok).length, raw: { calls } };
 }
 const GEMINI_UMPIRE_MODEL = "gemini-2.5-flash";
-const GEMINI_UMPIRE_TIMEOUT_MS = 12000;
-const GEMINI_UMPIRE_MAX_CALLS_PER_RUN = 10;
+const GEMINI_UMPIRE_TIMEOUT_MS = 6000;
+const GEMINI_UMPIRE_MAX_CALLS_PER_RUN = 4;
 async function deriveUmpireViaGeminiSearch(env, target) {
   // Tier-3 derived fallback (Requirement 2/9): when neither an official assignment nor our
   // own recent-crew-history derivation is available, ask Gemini (with Google Search grounding)
