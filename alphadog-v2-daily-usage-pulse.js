@@ -942,6 +942,7 @@ async function runUmpireContext(env, input) {
       assignments_changed: assignmentsChanged,
       gemini_fallback_calls_used: geminiCallsUsed,
       gemini_fallback_derived_count: geminiDerivedCount,
+      refmetrics_derived_count: refMetricsDerivedCount,
       source_failures: sourceFailures,
       blocker_count: blockerN,
       warning_count: warningN,
