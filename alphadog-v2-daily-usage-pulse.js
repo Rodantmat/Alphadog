@@ -879,6 +879,7 @@ async function runUmpireContext(env, input) {
       const needsGeminiFallback = !probe.found && !(refMetricsPrediction && refMetricsPrediction.found) && geminiCallsUsed < GEMINI_UMPIRE_MAX_CALLS_PER_RUN;
       const geminiPrediction = needsGeminiFallback ? await deriveUmpireViaGeminiSearch(env, target) : null;
       if (needsGeminiFallback) { geminiCallsUsed += 1; externalCalls += 1; if (geminiPrediction && geminiPrediction.found) geminiDerivedCount += 1; }
+      if (refMetricsPrediction && refMetricsPrediction.found) refMetricsDerivedCount += 1;
       const classified = classifyTarget(target, probe, prev, recentCrew, geminiPrediction, refMetricsPrediction);
       if (probe.found) { assignmentsFound += 1; await recordAssignmentHistory(env, target, probe); }
       if (classified.missing) assignmentsMissing += 1;
