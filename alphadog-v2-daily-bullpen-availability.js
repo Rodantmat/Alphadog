@@ -372,6 +372,12 @@ function relieverMetrics(rows, teamId, officialDate, pitcherId) {
   const dates = new Set(three.map(r => dateOnly(r.game_date)).filter(Boolean));
   const yesterday = addDays(officialDate, -1);
   const twoBack = addDays(officialDate, -2);
+  // Real closer/setup detection: a save or hold recorded in a recent actual appearance is a
+  // direct, factual signal of high-leverage usage - not an inference. Research on real bullpen
+  // fatigue tracking confirms this matters materially more than aggregate team pitch counts,
+  // since elite/high-leverage arms now absorb roughly half of all bullpen innings league-wide.
+  const recentSaves = sumRows(two, "saves");
+  const recentHolds = sumRows(two, "holds");
   return {
     pitches1: sumRows(one, "pitches"), pitches2: sumRows(two, "pitches"), pitches3: sumRows(three, "pitches"),
     outs1: sumRows(one, "outs_recorded"), outs2: sumRows(two, "outs_recorded"), outs3: sumRows(three, "outs_recorded"),
@@ -379,6 +385,9 @@ function relieverMetrics(rows, teamId, officialDate, pitcherId) {
     backToBack: dates.has(yesterday) && dates.has(twoBack) ? 1 : 0,
     highPitch: sumRows(one, "pitches") >= 25 || sumRows(two, "pitches") >= 35 ? 1 : 0,
     likelyUnavailable: (dates.has(yesterday) && dates.has(twoBack)) || sumRows(one, "pitches") >= 35 || sumRows(two, "pitches") >= 45 || distinctCount(three, "game_pk") >= 3 ? 1 : 0,
+    recentSaves, recentHolds,
+    isRecentCloser: recentSaves > 0 ? 1 : 0,
+    isRecentSetup: recentHolds > 0 ? 1 : 0,
     dates: Array.from(dates).sort()
   };
 }
