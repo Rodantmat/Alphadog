@@ -417,6 +417,8 @@ function classifyTarget(target, bullpenRows, recentCalendarRows) {
   const highUsage = pitcherRisk.filter(p => p.metrics.highPitch).length;
   const backToBack = pitcherRisk.filter(p => p.metrics.backToBack).length;
   const likelyUnavailable = pitcherRisk.filter(p => p.metrics.likelyUnavailable).length;
+  const closerRecentUsage = pitcherRisk.some(p => p.metrics.isRecentCloser) ? 1 : 0;
+  const setupRecentUsage = pitcherRisk.some(p => p.metrics.isRecentSetup) ? 1 : 0;
   const doubleheaderRecent = recentCal.some(r => String(r.doubleheader || "").toUpperCase() !== "N" || Number(r.game_number || 1) > 1) ? 1 : 0;
   const issues = [];
   if (games3 === 0 && finalRecentGames.length === 0) {
