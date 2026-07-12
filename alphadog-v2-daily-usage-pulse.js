@@ -817,6 +817,7 @@ async function writeTarget(env, batchId, target, probe, classified, sourceSnapsh
 }
 
 async function runUmpireContext(env, input) {
+  refMetricsRunCache = null;
   await ensureSchema(env);
   const requestId = input.request_id || rid("daily_umpire_req");
   const batchId = rid("daily_umpire_batch");
