@@ -553,8 +553,14 @@ function extractPlayerFromMarketLabel(value) {
   const text = String(value || "").trim();
   if (!text) return null;
   const patterns = [
-    /^(?:total\s+hits\s*,?\s+runs\s+(?:and\s+)?rbis?|hits\s+runs\s+(?:and\s+)?rbis?|total\s+bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|hitter\s+walks?|(?:total\s+)?(?:pitcher\s+)?strikeouts?|(?:total\s+)?pitching\s+outs?|(?:total\s+)?pitcher\s+outs?|outs\s+recorded|hits\s+allowed|walks\s+allowed|earned\s+runs(?:\s+allowed)?|runs\s+allowed)\s+-\s+(.+?)(?:\s+\([A-Z]{2,4}\))?$/i,
-    /^(.+?)\s+-\s+(?:total\s+hits\s*,?\s+runs\s+(?:and\s+)?rbis?|hits\s+runs\s+(?:and\s+)?rbis?|total\s+bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|(?:total\s+)?(?:pitcher\s+)?strikeouts?|(?:total\s+)?pitching\s+outs?|(?:total\s+)?pitcher\s+outs?|outs\s+recorded|hits\s+allowed|walks\s+allowed|earned\s+runs(?:\s+allowed)?|runs\s+allowed)$/i
+    // Real gap found via live-data audit (bovada, confirmed): alt-line vendor titles like
+    // "Alternate Strikeouts - Michael Lorenzen (COL)" and "Total Hits Allowed - Michael Lorenzen
+    // (COL)" weren't recognized because the stat-type alternation required an exact prefix match -
+    // "Alternate " wasn't accepted at all, and "total " was only optional for strikeouts/outs, not
+    // for hits/walks/earned-runs/runs allowed. Added (?:alternate\s+)? broadly and made the
+    // existing (?:total\s+)? apply to every stat type instead of just strikeouts/outs.
+    /^(?:alternate\s+)?(?:total\s+)?(?:hits\s*,?\s+runs\s+(?:and\s+)?rbis?|hits\s+runs\s+(?:and\s+)?rbis?|bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|hitter\s+walks?|(?:pitcher\s+)?strikeouts?|pitching\s+outs?|pitcher\s+outs?|outs\s+recorded|hits\s+allowed|walks\s+allowed|earned\s+runs(?:\s+allowed)?|runs\s+allowed)\s+-\s+(.+?)(?:\s+\([A-Z]{2,4}\))?$/i,
+    /^(.+?)\s+-\s+(?:alternate\s+)?(?:total\s+)?(?:hits\s*,?\s+runs\s+(?:and\s+)?rbis?|hits\s+runs\s+(?:and\s+)?rbis?|bases|hits?|rbis?|runs?|singles?|doubles?|triples?|home\s+runs?|stolen\s+bases?|walks?|(?:pitcher\s+)?strikeouts?|pitching\s+outs?|pitcher\s+outs?|outs\s+recorded|hits\s+allowed|walks\s+allowed|earned\s+runs(?:\s+allowed)?|runs\s+allowed)$/i
   ];
   for (const re of patterns) {
     const m = text.match(re);
