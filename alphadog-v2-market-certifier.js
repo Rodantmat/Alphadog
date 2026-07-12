@@ -312,6 +312,16 @@ async function runCertifier(env, input) {
   const tomorrow = ptDate(1);
   await ensureSchema(env);
 
+  // Real gap found via ongoing-reliability audit: market_parsing_tally_history had no retention
+  // logic at all and would grow unbounded forever (one row per layer/source on every certifier
+  // run, indefinitely). Keep a real, useful trend window (last 30 days) instead of everything
+  // since inception - enough to see real per-source parsing-quality trends over time without
+  // the table growing without bound.
+  await run(env.MARKET_DB, "DELETE FROM market_parsing_tally_history WHERE datetime(recorded_at) < datetime('now', '-30 days')");
+  // Also bound the batches/audit table the same way - keep last 60 days of batch metadata for
+  // audit purposes, not forever.
+  await run(env.MARKET_DB, "DELETE FROM market_certifier_batches WHERE datetime(created_at) < datetime('now', '-60 days')");
+
   await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_certifier_batches (batch_id,request_id,run_id,worker_name,worker_version,job_key,mode,status,window_start,window_end,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
     batchId, input.request_id || null, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "market_context_readiness_refresh", "running", today, tomorrow, startedAt);
 
