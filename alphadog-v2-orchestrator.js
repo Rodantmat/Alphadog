@@ -5824,6 +5824,169 @@ async function processMarketHitterPropContextJob(env, row, runId, trigger) {
 }
 
 
+async function processMarketCertifierJob(env, row, runId, trigger) {
+  if (!env.MARKET_CERTIFIER_WORKER || typeof env.MARKET_CERTIFIER_WORKER.fetch !== "function") {
+    const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_service_binding", certification:"MARKET_CERTIFIER_SERVICE_BINDING_MISSING", trigger, note:"Exact dispatch requires MARKET_CERTIFIER_WORKER service binding. Do not generic-dispatch this worker." };
+    await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_market_certifier_service_binding', 'MARKET_CERTIFIER_WORKER service binding is missing')", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output));
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_market_certifier_service_binding', error_message='MARKET_CERTIFIER_WORKER service binding is missing' WHERE request_id=?", JSON.stringify(output), row.request_id);
+    return output;
+  }
+  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const input = { request_id: row.request_id, chain_id: row.chain_id, run_id: runId, job_key: row.job_key, worker_name: row.worker_name, trigger, mode: rowInput.mode || "market_context_readiness_refresh", input_json: rowInput };
+  const started = Date.now();
+  let output; let httpStatus = null;
+  try {
+    const resp = await serviceBindingFetch(env.MARKET_CERTIFIER_WORKER, "https://internal.alphadog-v2-market-certifier/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "market_certifier", MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS);
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
+  } catch (err) {
+    output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) };
+  }
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const rowsRead = Number(output && output.rows_read ? output.rows_read : 0);
+  const rowsWritten = Number(output && output.rows_written ? output.rows_written : 0);
+  const certification = String((output && (output.certification || output.certification_status)) || (ok ? "market_certifier_completed" : "market_certifier_failed")).slice(0,120);
+  const queueStatus = ok ? "completed" : "failed";
+  const runStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "market_certifier_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Market Certifier worker failed").slice(0,900);
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, selected_worker_slot:"alphadog-v2-market-certifier", no_external_calls:true, no_board_mutation:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true, no_matrix_builder:true } };
+  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, runStatus, dataOk ? 1 : 0, certification, rowsRead, rowsWritten, 0, Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'market_certifier_dispatch_completed', 'Orchestrator completed exact Market Certifier dispatch', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, certification, rows_read: rowsRead, rows_written: rowsWritten, dispatch: cappedOutput.orchestrator_dispatch }));
+  return cappedOutput;
+}
+
+const MARKET_FULL_RUN_STAGES = [
+  { stage_key: "market_certifier_first_pass", job_key: "market-certifier", worker_name: "alphadog-v2-market-certifier", display_name: "Market Context Certifier (First Pass)", visible_button: "MARKET CONTEXT > Full Run", mode: "market_full_run_certifier_first_pass", worker_group: "Market", phase_key: "market", priority: 5 },
+  { stage_key: "market_teams", job_key: "market-normalizer", worker_name: "alphadog-v2-market-normalizer", display_name: "Market Teams / Game Odds", visible_button: "MARKET CONTEXT > Teams", mode: "market_teams_game_odds", worker_group: "Market", phase_key: "market", priority: 5 },
+  { stage_key: "market_hitters", job_key: "market-line-shape-classifier", worker_name: "alphadog-v2-market-line-shape-classifier", display_name: "Market Hitter Prop Lines", visible_button: "MARKET CONTEXT > Hitters", mode: "market_hitter_prop_line_context", worker_group: "Market", phase_key: "market", priority: 5 },
+  { stage_key: "market_pitchers", job_key: "market-line-shape-classifier", worker_name: "alphadog-v2-market-line-shape-classifier", display_name: "Market Pitcher Prop Lines", visible_button: "MARKET CONTEXT > Pitchers", mode: "market_pitcher_prop_line_context", worker_group: "Market", phase_key: "market", priority: 5 },
+  { stage_key: "market_certifier_last_pass", job_key: "market-certifier", worker_name: "alphadog-v2-market-certifier", display_name: "Market Context Certifier", visible_button: "MARKET CONTEXT > Full Run", mode: "market_full_run_certifier_last_pass", worker_group: "Market", phase_key: "market", priority: 5 }
+];
+const MARKET_FULL_RUN_STALE_CHILD_SECONDS = 120;
+const MARKET_FULL_RUN_STALE_CHILD_RETRY_MAX = 1;
+
+function marketFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
+  return {
+    source: "market_full_run_parent",
+    parent_request_id: parentRow.request_id,
+    parent_chain_id: parentRow.chain_id,
+    chain_id: parentRow.chain_id,
+    stage_key: stage.stage_key,
+    stage_index: stepIndex,
+    stage_count: MARKET_FULL_RUN_STAGES.length,
+    retry_count: retryCount,
+    visible_button: stage.visible_button,
+    mode: stage.mode,
+    approved_chain_order: MARKET_FULL_RUN_STAGES.map(s => s.stage_key),
+    stop_on_first_failed_stage: false,
+    backend_chain_only: true,
+    no_browser_loop: true,
+    backend_scheduled_continuation: true,
+    no_generic_dispatch: true,
+    created_at: nowIso()
+  };
+}
+
+async function enqueueMarketFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0) {
+  const childRequestId = rid(`market_full_run_${stage.stage_key}`);
+  const input = marketFullRunChildInput(parentRow, stage, stepIndex, retryCount);
+  await run(env.CONTROL_DB,
+    "INSERT OR IGNORE INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 1, 1, ?, datetime('now'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, JSON.stringify(input)
+  );
+  return { child_request_id: childRequestId };
+}
+
+function marketFullRunChildPassed(stage, child) {
+  if (!child) return { pass: false, wait: false, reason: "child_missing" };
+  const childStatus = String(child.status || "");
+  if (["pending", "running", "partial_continue"].includes(childStatus) && !child.finished_at) {
+    return { pass: false, wait: true, reason: "child_active", child_status: childStatus };
+  }
+  const output = parseJsonSafeText(child.output_json || "{}", {});
+  if (childStatus !== "completed") return { pass: false, reason: "child_not_completed", child_status: childStatus, child_error_code: child.error_code || null, child_error_message: child.error_message || null };
+  if (!output || output.ok !== true) return { pass: false, reason: "child_output_ok_not_true", output_ok: output && output.ok };
+  return { pass: true, certification: output.certification || output.certification_status || null, status: output.status || null, output };
+}
+
+async function processMarketFullRunJob(env, row, runId, trigger) {
+  const started = Date.now();
+  const parentInput = parseJsonSafeText(row.input_json || "{}", {});
+  const childRows = await all(env.CONTROL_DB,
+    "SELECT request_id, chain_id, parent_request_id, job_key, worker_name, status, error_code, error_message, output_json, input_json, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE parent_request_id=? AND chain_id=? ORDER BY datetime(created_at) ASC",
+    row.request_id, row.chain_id
+  );
+  const stageReports = [];
+  for (let i = 0; i < MARKET_FULL_RUN_STAGES.length; i++) {
+    const stage = MARKET_FULL_RUN_STAGES[i];
+    const stageChildren = childRows.filter(c => {
+      const childInput = parseJsonSafeText(c.input_json || "{}", {});
+      return String(childInput.stage_key || "") === stage.stage_key;
+    });
+    const child = stageChildren[stageChildren.length - 1] || null;
+
+    if (!child) {
+      const enqueued = await enqueueMarketFullRunChild(env, row, stage, i, 0);
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_full_run", status: "PARTIAL_CONTINUE_MARKET_FULL_RUN_CHILD_ENQUEUED", certification: "MARKET_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: MARKET_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, approved_chain_order: MARKET_FULL_RUN_STAGES.map(s => s.stage_key), stages: stageReports };
+      await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'MARKET_FULL_RUN_CHILD_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', priority=1, run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      return output;
+    }
+
+    const validation = marketFullRunChildPassed(stage, child);
+    const childOutput = parseJsonSafeText(child.output_json || "{}", {});
+    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || childOutput.certification_status || null, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, rows_read: childOutput.prepared_rows_read || childOutput.rows_read || 0, rows_written: childOutput.rows_written || 0, external_calls: childOutput.external_calls_performed || childOutput.external_calls || 0 };
+
+    if (validation.wait) {
+      const staleChild = await first(env.CONTROL_DB,
+        "SELECT request_id FROM control_job_queue WHERE request_id=? AND status IN ('running','pending','queued','partial_continue') AND finished_at IS NULL AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-' || ? || ' seconds') LIMIT 1",
+        child.request_id, MARKET_FULL_RUN_STALE_CHILD_SECONDS
+      );
+      if (staleChild) {
+        const retryCount = (() => { try { return Number(JSON.parse(child.input_json || "{}").retry_count || 0); } catch (_) { return 0; } })();
+        if (retryCount < MARKET_FULL_RUN_STALE_CHILD_RETRY_MAX) {
+          await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP, error_code=COALESCE(error_code,'market_full_run_stale_child_replaced'), error_message=COALESCE(error_message,'Market Full Run child became stale; replaced with one same-stage retry.') WHERE request_id=? AND finished_at IS NULL", child.request_id);
+          const enqueued = await enqueueMarketFullRunChild(env, row, stage, i, retryCount + 1);
+          const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_full_run", status: "PARTIAL_CONTINUE_MARKET_FULL_RUN_STALE_CHILD_RETRY_ENQUEUED", certification: "MARKET_FULL_RUN_STALE_CHILD_RETRY_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, retry_child_request_id: enqueued.child_request_id, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true };
+          await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'MARKET_FULL_RUN_STALE_CHILD_RETRY_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+          await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', priority=1, run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+          return output;
+        }
+        const finalStatus = "FAILED_MARKET_FULL_RUN_STALE_CHILD_RETRY_EXHAUSTED";
+        const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, stages: [...stageReports, report] };
+        await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), "Market Full Run child stale after retry budget exhausted");
+        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", JSON.stringify(output), finalStatus.toLowerCase(), "Market Full Run child stale after retry budget exhausted", row.request_id);
+        return output;
+      }
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_full_run", status: "PARTIAL_CONTINUE_MARKET_FULL_RUN_WAITING_ON_CHILD", certification: "MARKET_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true };
+      await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'MARKET_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', priority=1, run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      return output;
+    }
+
+    if (!validation.pass) {
+      const finalStatus = "FAILED_MARKET_FULL_RUN_CHILD_FAILED";
+      const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: validation.reason, stages: [...stageReports, report] };
+      await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "market full run child failed").slice(0,900));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "market full run child failed").slice(0,900), row.request_id);
+      return output;
+    }
+
+    stageReports.push(report);
+  }
+
+  const finalStatus = "MARKET_FULL_RUN_CERTIFIED";
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "market_full_run", status: "completed", certification: finalStatus, certification_grade: "PASS", stages: stageReports, total_stage_count: MARKET_FULL_RUN_STAGES.length, completed_stage_count: stageReports.length, no_scoring: true, no_ranking: true, no_final_board: true, no_matrix_builder: true };
+  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, MARKET_FULL_RUN_STAGES.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=? WHERE request_id=?", JSON.stringify(output), row.request_id);
+  return output;
+}
+
+
 async function processOddsApiHitterPropContextJob(env, row, runId, trigger) {
   if (!env.ODDSAPI_REFERENCE_WORKER || typeof env.ODDSAPI_REFERENCE_WORKER.fetch !== "function") {
     const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_service_binding", certification:"ODDSAPI_HITTER_PROP_CONTEXT_SERVICE_BINDING_MISSING", trigger, note:"Exact dispatch requires ODDSAPI_REFERENCE_WORKER service binding. Do not generic-dispatch this worker." };
