@@ -547,7 +547,18 @@ export default {
     if (method === "POST" && path === "/diagnostic") return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", writes_performed: 0, external_calls_performed: 0 });
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      try { return jsonResponse(await runCertifier(env, input)); }
+      const HARD_DEADLINE_MS = 35000;
+      const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
+      try {
+        const out = await withDeadline(runCertifier(env, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
+        if (out === TIMEOUT_SENTINEL) {
+          // Real fix (same class found live in daily-schedule.js): a genuine internal hang -
+          // likely a stalled D1 call - previously had no safety net inside this worker. The
+          // certifier runs twice per full-run chain, so this matters doubly here.
+          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "hard_deadline_timeout", certification: "DAILY_CERTIFIER_HARD_DEADLINE_TIMEOUT", error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
+        }
+        return jsonResponse(out);
+      }
       catch (e) {
         return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "failed", certification: "DAILY_CONTEXT_READINESS_FAILED", error: String(e && e.message ? e.message : e), stack_preview: String(e && e.stack ? e.stack : "").slice(0, 900), external_calls: 0, external_calls_performed: 0 }, 500);
       }
