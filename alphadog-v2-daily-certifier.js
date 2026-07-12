@@ -376,6 +376,14 @@ async function runCertifier(env, input) {
     const teamKeysForDate = [];
     for (const g of gamesForDate) { teamKeysForDate.push(`${g.game_pk}:${g.home_team_id}`); teamKeysForDate.push(`${g.game_pk}:${g.away_team_id}`); }
     const playerKeysForDate = [...new Set(preparedForDate.filter(r => r.resolved_mlb_player_id).map(r => `${r.official_game_pk}:${r.resolved_mlb_player_id}`))];
+    // Bug fix: the lineups layer only ever writes rows for the 9 starting batters per team -
+    // it never covers pitchers (Starters covers those) or bench/relief players not in today's
+    // starting 9. Reusing the full playerKeysForDate (which includes pitcher-prop players) as
+    // the lineups denominator overstated "missing" by exactly the pitcher count on the board.
+    // hitterKeysForDate excludes pitcher-only prop rows so the lineups tally is measured
+    // against what the layer can actually cover. player_availability legitimately covers both
+    // hitters and pitchers, so it correctly keeps using the full playerKeysForDate.
+    const hitterKeysForDate = [...new Set(preparedForDate.filter(r => r.resolved_mlb_player_id && isHitterProp(r.canonical_prop_key)).map(r => `${r.official_game_pk}:${r.resolved_mlb_player_id}`))];
     const layerSpecs = [
       { key: "starters", rows: starters.filter(r => r.official_date === targetDate), expected: gamePksForDate, keyFn: r => String(r.game_pk) },
       { key: "weather", rows: weather.filter(r => r.official_date === targetDate), expected: gamePksForDate, keyFn: r => String(r.game_pk) },
