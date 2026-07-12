@@ -272,6 +272,17 @@ async function ensureSchema(env) {
   )`);
 }
 
+async function withDeadline(promise, ms, fallbackValue) {
+  let timer = null;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise(resolve => { timer = setTimeout(() => resolve(typeof fallbackValue === "function" ? fallbackValue() : fallbackValue), Math.max(500, Number(ms || 5000))); })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 async function fetchJson(url, env) {
   // Real bug found and fixed: this fetch had no timeout at all - unlike PrizePicks/Sleeper
   // (already fixed for the same class of bug in the Board phase), a single slow MLB API response
