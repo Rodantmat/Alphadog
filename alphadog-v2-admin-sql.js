@@ -181,7 +181,9 @@ async function toolRunJob(env, args) {
       const text = await resp.text();
       let json = null;
       try { json = JSON.parse(text); } catch (_) {}
-      return { ok: resp.ok, http_status: resp.status, provider, path, body_preview: json ? JSON.stringify(json).slice(0, 6000) : text.slice(0, 3000), array_length: Array.isArray(json) ? json.length : null };
+      const headerDump = {};
+      for (const [k, v] of resp.headers.entries()) headerDump[k] = v;
+      return { ok: resp.ok, http_status: resp.status, provider, path, body_preview: json ? JSON.stringify(json).slice(0, 6000) : text.slice(0, 3000), array_length: Array.isArray(json) ? json.length : null, headers: headerDump };
     } catch (err) {
       return { ok: false, error: String(err && err.message ? err.message : err) };
     }
