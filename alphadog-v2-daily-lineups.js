@@ -1219,6 +1219,7 @@ async function runSourceProbe(env, input) {
   const todayUtc = nowUtc().slice(0, 10);
 
   const anchors = await getPreparedGameAnchors(env);
+  const catcherRefreshResult = await refreshCatcherReferenceIfStale(env, new Date().getUTCFullYear());
   const preparedGamePks = uniqInts(anchors.map((r) => r.official_game_pk));
   const [preparedCalendarRows, preparedPlayers, calendarProbeRows, teamMap] = await Promise.all([
     getCalendarRows(env, preparedGamePks),
