@@ -17250,7 +17250,31 @@ async function processOneUnlocked(env, trigger) {
   }
 
   if (isDailyContextFullRunJob(row)) {
-    const output = await processDailyContextFullRunJob(env, row, runId, trigger);
+    // Real fix (found via live investigation): processDailyContextFullRunJob acquires the
+    // GLOBAL_ORCHESTRATOR lock internally, then makes several D1 calls before ever reaching
+    // the actual worker dispatch. None of those D1 calls were timeout-protected (unlike
+    // external HTTP fetches, which already go through serviceBindingFetch's own bounded
+    // timeout). A single stalled D1 call here would hang this whole tick silently AND leave
+    // the lock held, since the release logic never gets reached - explaining the observed
+    // symptom exactly (child status frozen, lock frozen, zero errors, only self-healing via
+    // the lock's own multi-minute expiry). Wrapping with a hard deadline here and explicitly
+    // releasing the lock on timeout turns a multi-minute silent stall into a ~55s bounded,
+    // logged failure that the next tick can immediately retry.
+    let output;
+    try {
+      output = await promiseWithTimeout(processDailyContextFullRunJob(env, row, runId, trigger), 55000, "daily_context_full_run_job_hard_deadline");
+    } catch (err) {
+      try {
+        await releaseLock(env, `owner_${runId}`, "IDLE");
+      } catch (_) {}
+      try {
+        await run(env.CONTROL_DB,
+          "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'daily-context-full-run', 'ERROR', 'daily_context_full_run_hard_deadline_exceeded', 'Daily Context Full Run job processing exceeded its own hard deadline - likely a stalled D1 call somewhere before worker dispatch. Lock forcibly released so the next tick can retry immediately instead of waiting for lock expiry.', ?, CURRENT_TIMESTAMP)",
+          WORKER_NAME, JSON.stringify({ request_id: row.request_id, chain_id: row.chain_id, error: String(err && err.message ? err.message : err), version: SYSTEM_VERSION })
+        );
+      } catch (_) {}
+      output = { ok: false, data_ok: false, status: "DAILY_CONTEXT_FULL_RUN_HARD_DEADLINE_EXCEEDED", error: String(err && err.message ? err.message : err), lock_forcibly_released: true };
+    }
     const rawStatus = String((output && output.status) || "").toLowerCase();
     const status = rawStatus.includes("partial_continue") || output && output.orchestrator_should_self_continue
       ? "partial_continue_daily_context_full_run_job"
