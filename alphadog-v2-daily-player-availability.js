@@ -731,8 +731,12 @@ function classify(row, context) {
     source_snippets: { active: compactRosterRow(active), injured_list: compactRosterRow(il), forty_man: compactRosterRow(forty), people: compactPeople(people) }
   };
 
+  const isDerivedTier = roster_status === "forty_man_active_fallback" || roster_status === "derived_recent_appearance";
+  const dataSourceLevel = availability_status === "source_missing" ? "unknown" : (isDerivedTier ? "derived" : "real");
   return {
     availability_status, roster_status, availability_confidence, reason,
+    data_source_level: dataSourceLevel,
+    is_temporary_derived: isDerivedTier ? 1 : 0,
     flags: {
       active_roster_flag: activeFlag ? 1 : 0,
       injured_list_flag: ilFlag ? 1 : 0,
