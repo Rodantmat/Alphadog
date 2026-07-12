@@ -18525,9 +18525,17 @@ async function pump(env, trigger = "auto_pump", maxCycles = 10, maxJobsPerCycle 
   // Wall-clock budget, not CPU budget. Each service-binding tick remains bounded by the worker.
   // This lets the backend drain several micro-ticks in one orchestrator ownership window instead
   // of waiting for the 5-minute cron cadence.
-  const deadlineMs = Math.max(15000, Math.min(Number(maxMs || 65000), 75000));
+  // TIGHTENED (real investigation, live GraphQL analytics data): confirmed the actual cron-
+  // triggered invocations are healthy (status: success, low CPU, in every sample checked) - the
+  // multi-minute freezes never show up as their own invocation at all, meaning they're happening
+  // inside this same long-lived waitUntil chain, past whatever ceiling Cloudflare enforces on
+  // background execution duration. The self-imposed 75s ceiling here was almost certainly too
+  // generous relative to that real platform limit. Shortened chain depth and wall-clock budget
+  // so a background chain reliably stays short-lived, and leans on the proven-reliable 5-minute
+  // cron tick to pick up the remaining chain instead of gambling on one long chain surviving.
+  const deadlineMs = Math.max(8000, Math.min(Number(maxMs || 20000), 25000));
   const depth = Math.max(0, Math.min(Number(pumpDepth || 0), 20));
-  const maxChains = Math.max(0, Math.min(Number(maxPumpChains || 12), 80));
+  const maxChains = Math.max(0, Math.min(Number(maxPumpChains || 12), 6));
 
   for (let i = 0; i < hardCycles; i++) {
     if (Date.now() - started >= deadlineMs) {
