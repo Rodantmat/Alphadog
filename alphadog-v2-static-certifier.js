@@ -188,7 +188,7 @@ async function certify(env, input = {}) {
     const aliasesStage = await tableCount(env.REF_DB, "ref_player_aliases_stage");
     const rostersStage = await tableCount(env.REF_DB, "ref_rosters_stage");
     const batch = (await tableExists(env.REF_DB, "static_players_batches")) ? await first(env.REF_DB, `SELECT batch_id, status, players_staged, aliases_staged, rosters_staged, teams_covered, duplicate_mlb_ids, missing_mlb_player_id, missing_name, certification_status, promoted_at, cleaned_at
-      FROM static_players_batches ORDER BY datetime(updated_at) DESC LIMIT 1`) : null;
+      FROM static_players_batches WHERE status='promoted' ORDER BY datetime(updated_at) DESC LIMIT 1`) : null;
     const batchOk = !!batch && String(batch.status || "") === "promoted" && !!batch.promoted_at && !!batch.cleaned_at && n(batch, "teams_covered") === 30 && n(batch, "duplicate_mlb_ids") === 0 && n(batch, "missing_mlb_player_id") === 0 && n(batch, "missing_name") === 0;
     const pass = playersStage === 0 && aliasesStage === 0 && rostersStage === 0 && batchOk;
     return passCheck("Static Players staging cleanup", pass, { ref_players_stage: playersStage, ref_player_aliases_stage: aliasesStage, ref_rosters_stage: rostersStage }, { latest_batch: batch });
