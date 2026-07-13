@@ -344,7 +344,7 @@ async function runWorker(env, input) {
     await batchRun(env.MARKET_DB, `INSERT INTO market_context_probe_player_props (probe_row_id, batch_id, slate_window_key, official_date, prepared_row_id, source_key, source_event_id, source_line_id, game_pk, resolved_mlb_player_id, source_player_name, canonical_prop_key, source_market_key, line_value, price_american, price_decimal, outcome_side, mapping_status, coverage_status, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, propRows, 50);
   }
   if (gameOddsRows.length) {
-    await batchRun(env.MARKET_DB, `INSERT INTO market_context_probe_game_odds (game_odds_row_id, batch_id, slate_window_key, official_date, game_pk, source_event_id, home_team, away_team, commence_time_utc, bookmaker_key, market_key, outcome_name, line_point, price_american, price_decimal, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, gameOddsRows, 50);
+    await batchRun(env.MARKET_DB, `INSERT INTO market_context_probe_game_odds (probe_row_id, batch_id, slate_window_key, official_date, game_pk, source_key, source_event_id, source_commence_time_utc, source_home_team, source_away_team, bookmaker_key, bookmaker_title, market_key, market_last_update, outcome_name, outcome_side, price_american, point, mapping_status, mapping_confidence, raw_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, gameOddsRows, 50);
   }
 
   const sourceKeys = Object.keys(bookStats);
