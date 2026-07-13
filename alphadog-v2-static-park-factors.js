@@ -590,6 +590,7 @@ async function runStaticParkFactors(env, input = {}) {
   }
 
   const rowsWritten = await writeRows(env, finalRows);
+  const totalProcessed = rowsWritten.written + rowsWritten.unchanged;
   const activeAfter = await all(env.REF_DB, `SELECT
       COUNT(*) AS active_rows,
       COUNT(DISTINCT stadium_id) AS distinct_stadiums,
