@@ -8754,6 +8754,36 @@ async function processBaseStarterHistoryJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
+async function processHistoricalSeasonBackfillJob(env, row, runId, trigger) {
+  const started = Date.now();
+  if (!env.STATIC_ROSTERS_WORKER || typeof env.STATIC_ROSTERS_WORKER.fetch !== "function") {
+    const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "blocked_missing_service_binding", certification: "HISTORICAL_SEASON_BACKFILL_SERVICE_BINDING_MISSING", trigger };
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_static_rosters_service_binding', error_message='STATIC_ROSTERS_WORKER service binding is missing' WHERE request_id=?", JSON.stringify(output), row.request_id);
+    return output;
+  }
+  const input = { request_id: row.request_id, chain_id: row.chain_id, job_key: row.job_key, worker_name: row.worker_name, trigger, input_json: (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })() };
+  let output; let httpStatus = null;
+  try {
+    const resp = await env.STATIC_ROSTERS_WORKER.fetch("https://internal.alphadog-v2-static-rosters/run", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); } catch (_) { output = { ok: false, data_ok: false, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) }; }
+  } catch (err) {
+    output = { ok: false, data_ok: false, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+  }
+  const ok = !!(output && output.ok);
+  const partialContinue = !!(output && output.continuation_required === true);
+  const queueStatus = partialContinue ? "pending" : (ok ? "completed" : "failed");
+  const cappedOutput = { ...output, orchestrator_dispatch: { version: SYSTEM_VERSION, processed_by: WORKER_NAME, exact_worker_only: true, trigger, http_status: httpStatus, elapsed_ms: Date.now() - started, isolated_standalone_backfill_tool: true } };
+  if (partialContinue) {
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify({ ...input, input_json: output.continuation_input_json || input.input_json }), JSON.stringify(cappedOutput), row.request_id);
+  } else {
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), ok ? null : "historical_season_backfill_failed", ok ? null : String((output && (output.error || output.status)) || "failed").slice(0, 900), row.request_id);
+  }
+  await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, ?, 'historical_season_backfill_dispatch_completed', 'Orchestrator completed standalone historical season backfill dispatch', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, ok ? "INFO" : "ERROR", JSON.stringify({ request_id: row.request_id, status: queueStatus, partial_continue: partialContinue }));
+  return cappedOutput;
+}
+
 async function processStaticTeamsJob(env, row, runId, trigger) {
   if (!env.STATIC_TEAMS_WORKER || typeof env.STATIC_TEAMS_WORKER.fetch !== "function") {
     const output = {
