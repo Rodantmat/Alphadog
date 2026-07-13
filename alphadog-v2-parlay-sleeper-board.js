@@ -905,7 +905,7 @@ async function runHistoricalPropsProbe(env, input) {
   const auth = authConfig(env);
   if (!auth.ok) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "auth_not_configured", block_reason: auth.block_reason, timestamp_utc: nowUtc() };
   const base = String(env.PARLAY_API_BASE_URL || DEFAULT_PARLAY_API_BASE_URL).replace(/\/+$/, "");
-  const date = String(input.date || ptDate ? ptDate(0) : new Date().toISOString().slice(0, 10));
+  const date = String(input.date || new Date().toISOString().slice(0, 10));
 
   const headers = new Headers({ accept: "application/json", "user-agent": "AlphaDog-v2-Parlay-Historical-Probe/0.1" });
   auth.apply(headers, env);
