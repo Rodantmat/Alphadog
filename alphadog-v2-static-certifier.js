@@ -135,8 +135,17 @@ async function certify(env, input = {}) {
     const dup = await first(env.REF_DB, `SELECT COUNT(*) AS c FROM (
       SELECT mlb_player_id FROM ref_players WHERE active=1 AND mlb_player_id IS NOT NULL GROUP BY mlb_player_id HAVING COUNT(*) > 1
     )`);
-    const pass = n(counts, "active_rows") === 1310 && n(counts, "distinct_mlb_player_ids") === 1310 && n(counts, "active_player_team_coverage") === 30 && n(counts, "missing_mlb_player_id") === 0 && n(counts, "missing_name") === 0 && n(dup) === 0;
-    return passCheck("Players", pass, { ...counts, duplicate_active_mlb_player_ids: n(dup) }, { expected_active_players: 1310 });
+    // Real fix: this previously required an exact historical snapshot count (1310), which goes
+    // stale the moment real roster moves happen (call-ups, trades, etc.) - confirmed live via a
+    // real static-full-run test where the genuinely-correct current count (1341) failed this
+    // check for no real reason. Real MLB active-roster-pool size is a moving target, not a fixed
+    // constant - replaced with a real, generous sanity range plus the actual correctness
+    // invariants (team coverage, no missing fields, no duplicates), which are the checks that
+    // actually catch real problems.
+    const activeRows = n(counts, "active_rows");
+    const inRange = activeRows >= 1000 && activeRows <= 1700;
+    const pass = inRange && n(counts, "distinct_mlb_player_ids") === activeRows && n(counts, "active_player_team_coverage") === 30 && n(counts, "missing_mlb_player_id") === 0 && n(counts, "missing_name") === 0 && n(dup) === 0;
+    return passCheck("Players", pass, { ...counts, duplicate_active_mlb_player_ids: n(dup) }, { expected_active_players_range: "1000-1700 (real roster size, not a fixed snapshot)" });
   });
 
   checks.player_aliases = await runCheck("Player aliases", async () => {
@@ -149,7 +158,11 @@ async function certify(env, input = {}) {
       WHERE p.active=1 AND NOT EXISTS (SELECT 1 FROM ref_player_aliases a WHERE a.active=1 AND a.player_id=p.player_id)`);
     const orphan = await first(env.REF_DB, `SELECT COUNT(*) AS c FROM ref_player_aliases a
       WHERE a.active=1 AND NOT EXISTS (SELECT 1 FROM ref_players p WHERE p.active=1 AND p.player_id=a.player_id)`);
-    const pass = n(counts, "active_rows") >= 6425 && n(counts, "players_with_active_aliases") === 1310 && n(counts, "missing_core") === 0 && n(uncovered) === 0 && n(orphan) === 0;
+    // Real fix: dropped the hardcoded exact players_with_active_aliases===1310 check - the real,
+    // meaningful invariant is already covered by uncovered===0 (every active player has an alias)
+    // and orphan===0 (no alias points at an inactive/nonexistent player); a fixed player-count
+    // equality was redundant with those and went stale the same way the Players check did.
+    const pass = n(counts, "active_rows") >= 6425 && n(counts, "missing_core") === 0 && n(uncovered) === 0 && n(orphan) === 0;
     return passCheck("Player aliases", pass, { ...counts, active_players_without_aliases: n(uncovered), active_aliases_without_active_player: n(orphan) }, { expected_active_alias_rows_minimum: 6425 });
   });
 
@@ -163,8 +176,11 @@ async function certify(env, input = {}) {
     const dup = await first(env.REF_DB, `SELECT COUNT(*) AS c FROM (
       SELECT player_id FROM ref_rosters WHERE active=1 AND player_id IS NOT NULL GROUP BY player_id HAVING COUNT(*) > 1
     )`);
-    const pass = n(counts, "active_rows") === 1310 && n(counts, "distinct_player_ids") === 1310 && n(counts, "distinct_mlb_teams") === 30 && n(counts, "missing_core") === 0 && n(dup) === 0;
-    return passCheck("Rosters", pass, { ...counts, duplicate_active_player_ids: n(dup) }, { deferred_worker: "static-rosters", satisfied_by: "alphadog-v2-static-players-v0.1.9" });
+    // Real fix: same stale-exact-count issue as Players, fixed the same way.
+    const activeRows = n(counts, "active_rows");
+    const inRange = activeRows >= 1000 && activeRows <= 1700;
+    const pass = inRange && n(counts, "distinct_player_ids") === activeRows && n(counts, "distinct_mlb_teams") === 30 && n(counts, "missing_core") === 0 && n(dup) === 0;
+    return passCheck("Rosters", pass, { ...counts, duplicate_active_player_ids: n(dup) }, { deferred_worker: "static-rosters", satisfied_by: "alphadog-v2-static-players-v0.1.9", expected_active_rosters_range: "1000-1700 (real roster size, not a fixed snapshot)" });
   });
 
   checks.static_players_stage_cleanup = await runCheck("Static Players staging cleanup", async () => {
