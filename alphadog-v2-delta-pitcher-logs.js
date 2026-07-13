@@ -46,6 +46,14 @@ async function runProbe(env, input) {
     return { ok: false, data_ok: false, error: "no_oddspapi_api_key_configured", note: "Expected a row in CONFIG_DB.config_external_credentials with credential_key='oddspapi_api_key'" };
   }
 
+  // Real, minimal sanity check FIRST: is the key valid at the account level at all?
+  const accountUrl = `${ODDSPAPI_BASE_URL}/account?apiKey=${encodeURIComponent(apiKey)}`;
+  const accountRes = await fetchJson(accountUrl);
+
+  // Also try the sports endpoint (should be the lowest-friction real endpoint - just a list, no filters)
+  const sportsUrl = `${ODDSPAPI_BASE_URL}/sports?apiKey=${encodeURIComponent(apiKey)}`;
+  const sportsRes = await fetchJson(sportsUrl);
+
   const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
   const fromDate = String(inputJson.from_date || "2025-06-01");
   const toDate = String(inputJson.to_date || "2025-06-08");
