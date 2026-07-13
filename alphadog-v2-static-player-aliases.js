@@ -124,7 +124,7 @@ export default {
         return jsonResponse({
           ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, job_key: JOB_KEY,
           status: "DIAGNOSTIC_FETCH_COMPLETED", certification: "DIAGNOSTIC_ONLY_NOT_WRITTEN",
-          source_url: fetched.url, http_status: fetched.http_status, row_count: fetched.row_count,
+          source_url: fetched.url, http_status: fetched.http_status, row_count: fetched.row_count, fetch_mode: fetched.fetch_mode,
           sample_rows: fetched.rows.slice(0, 3),
           real_field_names_from_first_row: fetched.rows.length ? Object.keys(fetched.rows[0]) : [],
           rows_written: 0, external_calls_performed: 1,
