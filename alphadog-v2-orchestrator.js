@@ -8912,6 +8912,10 @@ async function processStaticDefensiveQualityJob(env, row, runId, trigger) {
   return genericSimpleWorkerDispatch(env, row, runId, trigger, "DELTA_BULLPEN_UPDATE_WORKER", "alphadog-v2-delta-bullpen-update", "STATIC_DEFENSIVE_QUALITY");
 }
 
+async function processCatcherReferenceHistoricalBackfillJob(env, row, runId, trigger) {
+  return genericSimpleWorkerDispatch(env, row, runId, trigger, "DELTA_HITTER_LOGS_WORKER", "alphadog-v2-delta-hitter-logs", "CATCHER_REFERENCE_HISTORICAL_BACKFILL");
+}
+
 async function processStaticCertifierJob(env, row, runId, trigger) {
   // Real, previously-missing function - confirmed via a live static-full-run test that crashed
   // with "processStaticCertifierJob is not defined" on the final stage. isStaticCertifierJob and
