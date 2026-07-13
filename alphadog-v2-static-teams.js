@@ -236,9 +236,37 @@ function buildAliases(team, sourceKey) {
   return aliases;
 }
 
+async function loadCurrentTeamsSnapshot(env) {
+  const rows = await all(env.REF_DB, "SELECT team_id, mlb_team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code, league, division, active FROM ref_teams");
+  const map = new Map();
+  for (const r of rows) map.set(String(r.team_id), r);
+  return map;
+}
+
+function teamHasRealChange(current, teamId, team) {
+  if (!current) return true;
+  return String(current.mlb_team_id || "") !== String(team.id || "")
+    || String(current.abbreviation || "") !== String(team.abbreviation || "")
+    || String(current.full_name || "") !== String(team.name || "")
+    || String(current.nickname || "") !== String(team.teamName || "")
+    || String(current.location_name || "") !== String(team.locationName || "")
+    || String(current.short_name || "") !== String(team.shortName || "")
+    || String(current.team_code || "") !== String(team.teamCode || "")
+    || String(current.file_code || "") !== String(team.fileCode || "")
+    || String(current.league || "") !== String(team.league || "")
+    || String(current.division || "") !== String(team.division || "")
+    || Number(current.active || 0) !== 1;
+}
+
 async function upsertTeams(env, teams, sourceKey) {
   let teamRowsWritten = 0;
   let aliasesWritten = 0;
+  let teamRowsUnchanged = 0;
+  // Real differential redesign: load the current ref_teams snapshot once and skip the actual
+  // UPSERT for any team whose real, meaningful fields haven't changed since last run. Teams data
+  // is close to fully static (rebrands/relocations are rare, real events), so on a normal week
+  // this should skip all 30 writes rather than blindly re-writing an identical row every time.
+  const currentSnapshot = await loadCurrentTeamsSnapshot(env);
 
   for (const team of teams) {
     const teamId = `mlb_${team.id}`;
