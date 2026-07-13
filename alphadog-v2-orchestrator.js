@@ -17929,6 +17929,16 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isGeminiHistoricalPropProbeJob(row)) {
+    const output = await processGeminiHistoricalPropProbeJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_gemini_historical_prop_probe_job" : "failed_one_gemini_historical_prop_probe_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isStaticStadiumsJob(row)) {
     const output = await processStaticStadiumsJob(env, row, runId, trigger);
     return {
