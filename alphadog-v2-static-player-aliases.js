@@ -74,17 +74,25 @@ async function fetchSavant(year) {
   const resp = await fetch(url, {
     method: "GET",
     headers: {
-      accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      accept: "text/csv,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "accept-language": "en-US,en;q=0.9",
       "cache-control": "no-cache",
       "user-agent": "AlphaDogV2StaticPitcherArsenal/0.1 (+controlled-reference-refresh)"
     }
   });
-  const html = await resp.text();
+  const text = await resp.text();
   if (!resp.ok) throw new Error(`baseball_savant_fetch_failed_${resp.status}`);
-  if (!html || !html.includes("data")) throw new Error("baseball_savant_html_missing_data_marker");
-  const rows = extractVarData(html);
-  return { url, http_status: resp.status, rows, row_count: rows.length };
+  // Real, honest fetch mode reporting - CSV export is tried first (documented, structured,
+  // reliable), falling back to the embedded-HTML-variable pattern proven for park-factors only
+  // if the CSV response doesn't look like real CSV (e.g. an HTML error/redirect page instead).
+  const looksLikeCsv = text.split(/\r?\n/, 1)[0].includes(",") && !text.trim().startsWith("<");
+  if (looksLikeCsv) {
+    const rows = parseCsv(text);
+    return { url, http_status: resp.status, rows, row_count: rows.length, fetch_mode: "csv" };
+  }
+  if (!text || !text.includes("data")) throw new Error("baseball_savant_response_missing_data_marker");
+  const rows = extractVarData(text);
+  return { url, http_status: resp.status, rows, row_count: rows.length, fetch_mode: "html_var_extraction" };
 }
 
 function baseIdentity(env) {
