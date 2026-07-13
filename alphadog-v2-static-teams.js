@@ -270,6 +270,36 @@ async function upsertTeams(env, teams, sourceKey) {
 
   for (const team of teams) {
     const teamId = `mlb_${team.id}`;
+    const current = currentSnapshot.get(teamId);
+    if (!teamHasRealChange(current, teamId, team)) {
+      teamRowsUnchanged += 1;
+      for (const alias of buildAliases(team, sourceKey)) {
+        await run(env.REF_DB, `INSERT INTO ref_team_aliases (
+          alias_key, team_id, mlb_team_id, alias_value, alias_normalized, alias_type, source_key, confidence, active, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(alias_key) DO UPDATE SET
+          team_id=excluded.team_id,
+          mlb_team_id=excluded.mlb_team_id,
+          alias_value=excluded.alias_value,
+          alias_normalized=excluded.alias_normalized,
+          alias_type=excluded.alias_type,
+          source_key=excluded.source_key,
+          confidence=excluded.confidence,
+          active=1,
+          updated_at=CURRENT_TIMESTAMP`,
+          alias.alias_key,
+          alias.team_id,
+          alias.mlb_team_id,
+          alias.alias_value,
+          alias.alias_normalized,
+          alias.alias_type,
+          alias.source_key,
+          alias.confidence
+        );
+        aliasesWritten += 1;
+      }
+      continue;
+    }
     await run(env.REF_DB, `INSERT INTO ref_teams (
       team_id, mlb_team_id, abbreviation, full_name, nickname, location_name, short_name, team_code, file_code, league, division, active, source_key, raw_json, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, CURRENT_TIMESTAMP)
