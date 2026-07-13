@@ -458,6 +458,9 @@ Rodolfo's explicit ask: verify whether the existing daily delta full run (classi
   - Inserted the real, permanent schedule row: `job_key='static-full-run'`, `day_of_week='Mon'`, `local_time='02:00'`, `timezone='America/Los_Angeles'`, `schedule_type='weekly'`.
   - **Real, separate structural bug caught and fixed during this edit**: my first attempt at replacing the old broken function left its original body orphaned (dangling outside any function declaration) after the signature line got replaced - a genuine syntax error that broke the deploy. Caught immediately (deploy failure), diagnosed by re-reading the file structure directly, and fixed by removing the entire orphaned block cleanly.
   - **Verified**: deploy succeeded, `day_of_week` column confirmed present via direct schema check, a real post-deploy orchestrator cycle ran clean with no errors (`no_due_jobs`, correct given it isn't Monday 2am Pacific yet). Honest caveat: this confirms the code is syntactically sound and runs without crashing, but the manual-wake test path doesn't exercise Cloudflare's actual `scheduled()`-cron-triggered code path specifically - that gets its first real exercise on the next real cron tick, same as any other scheduled job in this system.
+- Phase 3 (historical backfill): NOT STARTED.
+- Phase 4 (new factor mining layers - pitcher arsenal, defensive quality): NOT STARTED.
+- Phase 6 (Daily Delta roster-adjustment check): NOT STARTED.
 - Phase 7 (orchestrator-based testing for scheduled items): PARTIALLY DONE as part of the differential work above (static-teams live-tested through the orchestrator; static-players live-tested through the orchestrator in a prior update).
 - Phase 8 (resume Final Scoring Sequence): NOT STARTED.
 
