@@ -17673,6 +17673,36 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isContextHistorySnapshotJob(row)) {
+    const output = await processContextHistorySnapshotJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_context_history_snapshot_job" : "failed_one_context_history_snapshot_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
+  if (isContextHistoryCertifierJob(row)) {
+    const output = await processContextHistoryCertifierJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_context_history_certifier_job" : "failed_one_context_history_certifier_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
+  if (isContextHistoryFullRunJob(row)) {
+    const output = await processContextHistoryFullRunJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_context_history_full_run_job" : "failed_one_context_history_full_run_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isStaticStadiumsJob(row)) {
     const output = await processStaticStadiumsJob(env, row, runId, trigger);
     return {
