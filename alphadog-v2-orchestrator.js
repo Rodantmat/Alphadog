@@ -19274,7 +19274,7 @@ export default {
   async scheduled(event, env, ctx) {
     const cronExpression = event && event.cron ? String(event.cron) : "unknown";
     ctx.waitUntil((async () => {
-      await enqueueStaticPlayersWeeklyIfDue(env, cronExpression);
+      await enqueueScheduledStaticFullRunIfDue(env, cronExpression);
       await enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpression);
       await enqueueScheduledDailyFullRunIfDue(env, cronExpression);
       await enqueueScheduledBoardFullRunIfDue(env, cronExpression);
