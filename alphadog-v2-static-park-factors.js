@@ -606,7 +606,7 @@ async function runStaticParkFactors(env, input = {}) {
     WHERE season_year=? AND active=1 AND source_key LIKE 'baseball_savant_statcast_park_factors_2025%'`, SEASON_YEAR);
 
   const rollingSplit = finalRows.reduce((acc, r) => { acc[r.rolling_window] = (acc[r.rolling_window] || 0) + 1; return acc; }, {});
-  const certified = rowsWritten === 30 && activeAfter[0] && Number(activeAfter[0].active_rows) === 30 && Number(activeAfter[0].distinct_stadiums) === 30 && Number(activeAfter[0].distinct_teams) === 30 && Number(activeAfter[0].distinct_venues) === 30;
+  const certified = totalProcessed === 30 && activeAfter[0] && Number(activeAfter[0].active_rows) === 30 && Number(activeAfter[0].distinct_stadiums) === 30 && Number(activeAfter[0].distinct_teams) === 30 && Number(activeAfter[0].distinct_venues) === 30;
 
   return base(env, {
     ok: certified,
