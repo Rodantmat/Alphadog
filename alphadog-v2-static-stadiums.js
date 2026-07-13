@@ -454,7 +454,7 @@ async function upsertStadiums(env, stadiums, sourceKey) {
     }
   }
 
-  return { stadium_rows_written: stadiumRowsWritten, alias_rows_written: aliasesWritten, stale_deactivation_mode: "deactivate_source_then_reactivate_current_rows" };
+  return { stadium_rows_written: stadiumRowsWritten, alias_rows_written: aliasesWritten, stadium_rows_unchanged_skipped: stadiumRowsUnchanged, stale_deactivation_mode: "deactivate_source_then_reactivate_current_rows" };
 }
 
 async function counts(env) {
