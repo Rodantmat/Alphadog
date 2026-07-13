@@ -16128,6 +16128,89 @@ async function recoverStalePrizePicksGithubBoardDispatchStartedJobs(env, trigger
   return { recovered, rows: staleRows };
 }
 
+const CONTEXT_HISTORY_FULL_RUN_SCHEDULE_WINDOW_MINUTES = 15;
+
+function pacificDateAddDays(pt, days) {
+  // Real, DST-safe date arithmetic: build a UTC-midpoint Date from the real Pacific y/m/d parts
+  // (noon UTC avoids any DST-edge rollover ambiguity), shift by real days, then re-render through
+  // the same Pacific Intl.DateTimeFormat used everywhere else in this file for consistency.
+  const base = new Date(Date.UTC(Number(pt.year), Number(pt.month) - 1, Number(pt.day), 12, 0, 0));
+  base.setUTCDate(base.getUTCDate() + days);
+  const shifted = pacificNowParts(base);
+  return shifted.ymd_dash;
+}
+
+async function enqueueScheduledContextHistoryFullRunIfDue(env, cronExpression = "unknown") {
+  await ensureConfigScheduledJobsTable(env);
+
+  const pt = pacificNowParts(new Date());
+  const scheduleRows = await all(env.CONFIG_DB,
+    `SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, dedupe_scope, input_json, notes
+     FROM config_scheduled_jobs
+     WHERE enabled=1
+       AND job_key='context-history-full-run'
+       AND schedule_type='daily'
+       AND timezone='America/Los_Angeles'
+     ORDER BY local_time, schedule_id`
+  );
+
+  const results = [];
+  for (const schedule of scheduleRows) {
+    const parsedTime = parseScheduledLocalTimeHHMM(schedule.local_time);
+    const basePayload = {
+      ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: "context-history-full-run",
+      mode: "scheduled_context_history_full_run_config_scan", cron_expression: cronExpression, schedule_id: schedule.schedule_id,
+      schedule_local_time: schedule.local_time, schedule_type: schedule.schedule_type, schedule_timezone: schedule.timezone,
+      pacific_date: pt.ymd_dash, pacific_time: pt.local_time,
+      approved_window_minutes: CONTEXT_HISTORY_FULL_RUN_SCHEDULE_WINDOW_MINUTES,
+      context_history_full_run_only: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true
+    };
+
+    if (!parsedTime) {
+      results.push({ ...basePayload, ok: false, data_ok: false, status: "BLOCKED_SCHEDULED_CONTEXT_HISTORY_FULL_RUN_BAD_LOCAL_TIME", reason: "local_time must be HH:MM" });
+      continue;
+    }
+
+    const inWindow = isPacificScheduleWindowDue(pt, parsedTime, CONTEXT_HISTORY_FULL_RUN_SCHEDULE_WINDOW_MINUTES);
+    // Real target date is "yesterday" Pacific - by the scheduled run time (e.g. 3am Pacific),
+    // yesterday's real games are certain to be complete and box score data available; running
+    // for "today" would be premature and mostly empty.
+    const targetDate = pacificDateAddDays(pt, -1);
+    const scheduledKey = `context_history_full_run_${targetDate}_PT`;
+    if (!inWindow) {
+      results.push({ ...basePayload, status: "SCHEDULED_CONTEXT_HISTORY_FULL_RUN_NOT_DUE", scheduled_key: scheduledKey, target_date: targetDate });
+      continue;
+    }
+
+    const existingRows = await all(env.CONTROL_DB,
+      `SELECT request_id, chain_id, status, finished_at, error_code, error_message FROM control_job_queue
+       WHERE job_key='context-history-full-run' AND worker_name='alphadog-v2-orchestrator' AND json_extract(input_json,'$.scheduled_key')=?
+       ORDER BY datetime(created_at) DESC LIMIT 10`,
+      scheduledKey
+    );
+    const active = existingRows.find(r => ["pending", "running", "partial_continue"].includes(String(r.status || "")) && !r.finished_at);
+    if (active) { results.push({ ...basePayload, status: "SCHEDULED_CONTEXT_HISTORY_FULL_RUN_NOOP_ACTIVE_EXISTS", scheduled_key: scheduledKey, target_date: targetDate, existing_request_id: active.request_id }); continue; }
+    const completed = existingRows.find(r => String(r.status || "") === "completed");
+    if (completed) { results.push({ ...basePayload, status: "SCHEDULED_CONTEXT_HISTORY_FULL_RUN_NOOP_ALREADY_COMPLETED", scheduled_key: scheduledKey, target_date: targetDate, existing_request_id: completed.request_id }); continue; }
+    const failed = existingRows.find(r => ["failed", "blocked", "error"].includes(String(r.status || "")) || r.error_code);
+    if (failed) { results.push({ ...basePayload, ok: false, data_ok: false, status: "BLOCKED_SCHEDULED_CONTEXT_HISTORY_FULL_RUN_SAME_KEY_FAILED_REQUIRES_REVIEW", scheduled_key: scheduledKey, target_date: targetDate, existing_request_id: failed.request_id }); continue; }
+
+    const configInput = parseJsonSafeText(schedule.input_json || "{}", {});
+    const requestId = scheduledKey;
+    const chainId = `chain_${scheduledKey}`;
+    const input = { ...configInput, source: "orchestrator_auto_clock_config_scheduled", visible_button: "AUTO > Context History Daily", scheduled_key: scheduledKey, target_date: targetDate, context_history_full_run_only: true, no_scoring: true, no_ranking: true, no_final_board: true, no_old_production_touch: true };
+
+    const insertScheduled = await run(env.CONTROL_DB,
+      "INSERT OR IGNORE INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'context-history-full-run', 'alphadog-v2-orchestrator', 'Context', 'context_history', 'Scheduled Context History Full Run (Daily)', 'pending', 8, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+      requestId, chainId, JSON.stringify(input)
+    );
+    const insertedScheduledRows = Number(insertScheduled && insertScheduled.meta && insertScheduled.meta.changes || 0);
+    results.push({ ...basePayload, status: insertedScheduledRows > 0 ? "SCHEDULED_CONTEXT_HISTORY_FULL_RUN_QUEUED" : "SCHEDULED_CONTEXT_HISTORY_FULL_RUN_NOOP_RACE_ALREADY_INSERTED", scheduled_key: scheduledKey, target_date: targetDate, request_id: requestId, chain_id: chainId });
+  }
+
+  return { ok: true, mode: "scheduled_context_history_full_run_config_scan", cron_expression: cronExpression, pacific_date: pt.ymd_dash, pacific_time: pt.local_time, schedules_read: scheduleRows.length, queued_count: results.filter(r => r.status === "SCHEDULED_CONTEXT_HISTORY_FULL_RUN_QUEUED").length, results };
+}
+
 const STATIC_FULL_RUN_SCHEDULE_WINDOW_MINUTES = 15;
 
 async function enqueueScheduledStaticFullRunIfDue(env, cronExpression = "unknown") {
