@@ -585,6 +585,12 @@ function isOddspapiMlbHistoricalPropsProbeJob(row) {
   return job === "oddspapi-mlb-historical-props-probe" && worker === "alphadog-v2-delta-pitcher-logs";
 }
 
+function isGeminiHistoricalPropProbeJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "gemini-historical-prop-probe" && worker === "alphadog-v2-delta-hitter-metrics";
+}
+
 function isStaticStadiumsJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
