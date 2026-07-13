@@ -1185,17 +1185,17 @@ async function runFactorMining(request, env) {
     const grade = partial ? "PARTIAL_CONTINUE" : (noEligible ? "NO_DATA_PASS" : (summary.blocked_rows > 0 ? "PASS_WITH_BLOCKED_ROWS" : (summary.warning_rows > 0 ? "PASS_WITH_WARNINGS" : "PASS")));
     const invocationElapsedMs = Date.now() - invocationStartedMs;
     const output = buildPropFactorOutput({ input, family, mode, batchId, runId, dates, status, certification, grade, prepared, expectedRows, summary, processedThisInvocation, remainingRows, preparedDiagnostics, ctx, partial, timeboxBreak, invocationElapsedMs, resumeFastPath });
-    await run(env.SCORE_DB, `UPDATE prop_factor_batches SET status=?, prepared_rows_read=?, eligible_rows=?, packets_written=?, blocked_rows=?, warning_rows=?, issue_rows=?, missing_factor_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    await run(env.SCORING_DB, `UPDATE prop_factor_batches SET status=?, prepared_rows_read=?, eligible_rows=?, packets_written=?, blocked_rows=?, warning_rows=?, issue_rows=?, missing_factor_rows=?, certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
       status, prepared.length, summary.packet_prepared_rows, summary.packets, summary.blocked_rows, summary.warning_rows, summary.issue_rows, summary.missing_factor_rows, certification, grade, JSON.stringify(output), batchId);
     return jsonResponse(output);
   } catch (err) {
     const error = String(err && err.stack ? err.stack : err);
     const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, mode, factor_family:family, status:"prop_factor_miner_failed", certification:"PROP_FACTOR_PACKETS_FAILED", certification_grade:"FAIL", batch_id:batchId, run_id:runId, error, partial_batch_cleaned:true, no_scoring:true, no_ranking:true, no_final_board:true, no_matrix_builder:true };
     const packetTable = family === "pitcher" ? "prop_factor_pitcher_packets" : "prop_factor_hitter_packets";
-    await run(env.SCORE_DB, `DELETE FROM ${packetTable} WHERE batch_id=?`, batchId);
-    await run(env.SCORE_DB, `DELETE FROM prop_factor_issues WHERE batch_id=?`, batchId);
-    await run(env.SCORE_DB, `DELETE FROM prop_factor_coverage_current WHERE latest_batch_id=?`, batchId);
-    await run(env.SCORE_DB, `UPDATE prop_factor_batches SET status='failed', certification_status='PROP_FACTOR_PACKETS_FAILED', certification_grade='FAIL', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, JSON.stringify(output), batchId);
+    await run(env.SCORING_DB, `DELETE FROM ${packetTable} WHERE batch_id=?`, batchId);
+    await run(env.SCORING_DB, `DELETE FROM prop_factor_issues WHERE batch_id=?`, batchId);
+    await run(env.SCORING_DB, `DELETE FROM prop_factor_coverage_current WHERE latest_batch_id=?`, batchId);
+    await run(env.SCORING_DB, `UPDATE prop_factor_batches SET status='failed', certification_status='PROP_FACTOR_PACKETS_FAILED', certification_grade='FAIL', output_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, JSON.stringify(output), batchId);
     return jsonResponse(output, 500);
   }
 }
