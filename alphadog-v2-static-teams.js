@@ -441,6 +441,8 @@ async function runStaticTeams(input, env) {
     rows_read: teams.length,
     rows_written: writes.team_rows_written + writes.alias_rows_written,
     teams_written: writes.team_rows_written,
+    teams_unchanged_skipped: writes.team_rows_unchanged_skipped || 0,
+    differential_note: "teams_written is the honest count of teams whose real fields actually changed and were rewritten; teams_unchanged_skipped were verified identical to current data and not rewritten.",
     aliases_written: writes.alias_rows_written,
     external_calls_performed: fetchInfo ? 1 : 0,
     elapsed_ms: Date.now() - started,
