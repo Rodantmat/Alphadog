@@ -8932,6 +8932,10 @@ async function processOddspapiMlbHistoricalPropsProbeJob(env, row, runId, trigge
   return genericSimpleWorkerDispatch(env, row, runId, trigger, "DELTA_PITCHER_LOGS_WORKER", "alphadog-v2-delta-pitcher-logs", "ODDSPAPI_MLB_HISTORICAL_PROPS_PROBE");
 }
 
+async function processGeminiHistoricalPropProbeJob(env, row, runId, trigger) {
+  return genericSimpleWorkerDispatch(env, row, runId, trigger, "DELTA_HITTER_METRICS_WORKER", "alphadog-v2-delta-hitter-metrics", "GEMINI_HISTORICAL_PROP_PROBE");
+}
+
 async function processStaticCertifierJob(env, row, runId, trigger) {
   // Real, previously-missing function - confirmed via a live static-full-run test that crashed
   // with "processStaticCertifierJob is not defined" on the final stage. isStaticCertifierJob and
