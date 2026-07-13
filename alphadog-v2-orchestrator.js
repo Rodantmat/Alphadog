@@ -3958,6 +3958,49 @@ function staticFullRunChildInput(parentRow, stage, stepIndex) {
   };
 }
 
+async function processStaticFullRunJob(env, row, runId, trigger) {
+  // Real, previously-missing function: the dispatch switch already called this by name and the two
+  // helper functions it needs (childPassedStaticFullRun, staticFullRunChildInput) already existed,
+  // but this actual orchestrating function was never written - confirmed via a real live test that
+  // crashed with "processStaticFullRunJob is not defined" before this was added. Modeled on the
+  // proven, live-verified processContextHistoryFullRunJob pattern elsewhere in this file.
+  const started = Date.now();
+  const stageReports = [];
+  for (let i = 0; i < STATIC_FULL_RUN_STAGES.length; i++) {
+    const stage = STATIC_FULL_RUN_STAGES[i];
+    const children = await all(env.CONTROL_DB, "SELECT request_id, status, output_json, error_code, error_message FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND job_key=? ORDER BY datetime(created_at) ASC", row.request_id, row.chain_id, stage.job_key);
+    const child = children.length ? children[children.length - 1] : null;
+
+    if (!child) {
+      const childRequestId = rid(`${stage.job_key}_${row.request_id}`);
+      const childInput = staticFullRunChildInput(row, stage, i);
+      await run(env.CONTROL_DB, "INSERT INTO control_job_queue (request_id, parent_request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'Static', 'static', ?, 'pending', 3, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+        childRequestId, row.request_id, row.chain_id, stage.job_key, stage.worker_name, stage.display_name, JSON.stringify(childInput));
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, status: "PARTIAL_CONTINUE_STATIC_FULL_RUN_CHILD_ENQUEUED", certification: "STATIC_FULL_RUN_CHILD_ENQUEUED", current_stage_key: stage.job_key, enqueued_child_request_id: childRequestId, completed_stage_count: stageReports.length, total_stage_count: STATIC_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true };
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=? WHERE request_id=?", JSON.stringify(output), row.request_id);
+      return output;
+    }
+
+    if (child.status === "pending" || child.status === "running") {
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, status: "PARTIAL_CONTINUE_STATIC_FULL_RUN_WAITING_ON_CHILD", waiting_on_child_request_id: child.request_id, current_stage_key: stage.job_key, continuation_required: true, orchestrator_should_self_continue: true };
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+5 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=? WHERE request_id=?", JSON.stringify(output), row.request_id);
+      return output;
+    }
+
+    const verdict = childPassedStaticFullRun(stage, child);
+    if (!verdict.pass) {
+      const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, status: "FAILED_STATIC_FULL_RUN_CHILD_FAILED", failed_stage_key: stage.job_key, failed_request_id: child.request_id, failure_reason: verdict.reason, stages: stageReports };
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='static_full_run_child_failed', error_message=? WHERE request_id=?", JSON.stringify(output), String(verdict.reason || "child failed validation").slice(0, 900), row.request_id);
+      return output;
+    }
+    stageReports.push({ stage_key: stage.job_key, job_key: stage.job_key, child_request_id: child.request_id, certification: verdict.certification || null, rows_written: verdict.rows_written || 0 });
+  }
+
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, status: "COMPLETED_STATIC_FULL_RUN", certification: "STATIC_FULL_RUN_CERTIFIED", stages: stageReports, elapsed_ms: Date.now() - started };
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=? WHERE request_id=?", JSON.stringify(output), row.request_id);
+  return output;
+}
+
 function incrementalFullRunStageKeyFromChild(child) {
   const input = parseJsonSafeText(child && child.input_json || "{}", {});
   return String(input.full_run_stage_key || input.stage_key || "");
