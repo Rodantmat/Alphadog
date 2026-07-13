@@ -623,7 +623,7 @@ async function loadChunkPrerequisites(env, dates, chunkRows, globalCtx) {
   const gamePks = uniqueNonEmpty(chunkRows.map(r => r.official_game_pk));
   const marketBatchIds = uniqueNonEmpty(globalCtx.marketBatchIds || []);
 
-  const factorCoverageRows = await allByIn(env.SCORE_DB,
+  const factorCoverageRows = await allByIn(env.SCORING_DB,
     `SELECT coverage_key,factor_family,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,normalized_factor_lane,factor_status,factor_grade,packet_id,latest_batch_id,latest_checked_at,blocking_for_matrix,missing_reason,details_json,official_date,updated_at FROM prop_factor_coverage_current WHERE prepared_row_id IN`,
     preparedIds,
     `AND official_date IN (?, ?)`, [today, tomorrow]);
@@ -632,10 +632,10 @@ async function loadChunkPrerequisites(env, dates, chunkRows, globalCtx) {
   const hitterPacketIds = uniqueNonEmpty(factorCoverageRows.filter(r => r.factor_family === "hitter").map(r => r.packet_id));
   const pitcherPacketIds = uniqueNonEmpty(factorCoverageRows.filter(r => r.factor_family === "pitcher").map(r => r.packet_id));
   const packetColumns = `packet_id,batch_id,prepared_row_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,team_id,opponent_team_id,is_home,canonical_prop_key,normalized_factor_lane,board_line_value,factor_status,factor_grade,readiness_status,market_context_status,daily_context_status,base_metric_status,missing_factor_count,warning_count,blocker_count,details_json,created_at,updated_at`;
-  const hitterPackets = latestBy(await allByIn(env.SCORE_DB, `SELECT ${packetColumns} FROM prop_factor_hitter_packets WHERE packet_id IN`, hitterPacketIds), r => key(r.packet_id));
-  const pitcherPackets = latestBy(await allByIn(env.SCORE_DB, `SELECT ${packetColumns} FROM prop_factor_pitcher_packets WHERE packet_id IN`, pitcherPacketIds), r => key(r.packet_id));
+  const hitterPackets = latestBy(await allByIn(env.SCORING_DB, `SELECT ${packetColumns} FROM prop_factor_hitter_packets WHERE packet_id IN`, hitterPacketIds), r => key(r.packet_id));
+  const pitcherPackets = latestBy(await allByIn(env.SCORING_DB, `SELECT ${packetColumns} FROM prop_factor_pitcher_packets WHERE packet_id IN`, pitcherPacketIds), r => key(r.packet_id));
 
-  const factorIssuesRows = await allByIn(env.SCORE_DB,
+  const factorIssuesRows = await allByIn(env.SCORING_DB,
     `SELECT * FROM prop_factor_issues WHERE prepared_row_id IN`,
     preparedIds,
     `AND official_date IN (?, ?)`, [today, tomorrow]);
