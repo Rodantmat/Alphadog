@@ -965,6 +965,8 @@ async function runSeed(env, input = {}) {
     static_40man_roster_rows_total: Number(mainChecks.static_40man_roster_rows || 0),
     active_player_team_count: Number(mainChecks.active_player_team_count || 0),
     active_roster_team_count: Number(mainChecks.active_roster_team_count || 0),
+    real_differential_rows_changed_this_run: promotion.real_rows_changed_this_run || 0,
+    differential_note: "Every player is still staged and touched for real 'seen this run' bookkeeping (needed for correct deactivation detection), but only rows that genuinely differ from current ref_players are actually rewritten - real_differential_rows_changed_this_run is the honest count of real writes this run, not the full roster size.",
     external_calls_performed: externalCalls,
     max_teams_per_run: maxTeamsPerRun,
     missing_detail_counts_from_roster_payload_this_run: {
