@@ -297,7 +297,89 @@ A genuine end-to-end test of the Daily Context Full Run chain was launched exact
 
 **A real, useful pattern observed about this system's self-continuation timing, worth knowing before assuming something is broken**: after each manual `orchestrator_tick` wake, the response often reports `self_continue_scheduled: true` with a short delay (e.g. 2500ms), meaning the backend schedules its OWN next continuation automatically - but this genuinely takes real wall-clock time (the `GLOBAL_ORCHESTRATOR` lock is held for up to 5 minutes per acquisition), and repeatedly manually re-pumping while a real background cycle is already holding the lock just returns `lock_busy` (correct, safe behavior preventing double-processing, not a bug). The right approach when this happens: wait a meaningful amount of time (60-120+ seconds) and re-check via a lightweight SQL status query rather than repeatedly re-pumping - matches the D1/worker-timeout-awareness lesson already documented in "HOW TO WORK WITH THIS PERSON" below.
 
-## PROP FACTOR MINER / MATRIX - REAL NAMING CONFUSION TO BE AWARE OF (found while reviewing Control Room, not yet investigated further)
+## UPDATE 2026-07-12 (LATER) — FINAL SCORING SYSTEM: FULL SCOPE LOCKED BEFORE ANY IMPLEMENTATION
+
+Rodolfo has now scoped the entire remaining pipeline: Prop Factor Miner → Matrix Builder → Enrichment → Final Hit Probability → Final Score → Final Board. This section captures his full requirements verbatim/faithfully, in full, before any code is touched — same discipline as the Daily Context spec above. If you are picking this up: read this whole section before assuming any phase below is done just because a later note says "in progress."
+
+### Phase order (do not reorder without a real reason, log it here if you do)
+1. Prop Factor Miner — pre-existing, built by a different AI assistant (ChatGPT). Rodolfo is explicit he doesn't know what it does or whether it's still needed. Must be mapped/understood first. Only keep/adjust if still necessary given the system's real upgrades since. If kept, must cover all prop-line expansion plus the new Board and every other adjustment made this session.
+2. Matrix Builder — same treatment: pre-existing ChatGPT-built, understand first, adjust or retire only if justified.
+3. Enrichment — the deep, critical phase (full spec below).
+4. Final Hit Probability calculation.
+5. Final Score.
+6. Final Board.
+
+### Enrichment — full requirements (the most complex phase, needs the most research)
+Purpose: works like classification_v6/baseline_v6's tiering approach, but for how a specific factor influences a specific leg. Needs deep, locked research to establish the right number of profiles/tiers — same rigor as classification_v6's z-score tiering work.
+
+**Required dimensionality — no flattening, no summarizing, fully microscopic:**
+- Split by player tier (multiple tiers, not just 2-3).
+- Split by prop line.
+- Split by variation/direction of that prop line (over/under, alt lines, etc.).
+- Split by each raw factor (weather, lineups, umpire, bullpen, park, schedule spot, catcher context, etc. — all daily-context and market-context factors, game-level and player-level).
+- Split by the specific factor's own variation (e.g. weather: rainy/windy at multiple intensity levels, very warm, humid, dry, etc. — not just "bad weather/good weather").
+- Cross-product: factor × variation × player tier × prop line × prop-line variation/direction. Every leg of the cross-product needs its own locked logic — not a shared/generic bucket.
+
+**Reliability/confidence weighting requirement:**
+Every enrichment factor's influence must be weighted by the reliability of the underlying data feeding it: how much data is available for that specific factor, how fresh it is, whether it's real or derived (ties directly into the `data_source_level`/`is_temporary_derived` tri-state built into Daily Context and Market Context this session), and any other data-quality dimension that matters. This weighting affects both confidence and hit-probability percentage. Needs real, researched logic and weights (external research into established reliability-weighting/forecasting methods, not invented from scratch), and an explicit decision on WHERE the weighting applies — enrichment itself, or final hit-probability calculation — that decision must be made and recorded, not left ambiguous.
+
+**Performance/complexity mitigation — the "preset dictionary" approach:**
+Given the true scale of factor × variation × tier × prop-line × direction is enormous, Rodolfo's explicit design: pre-build a full, locked framework covering every possible scenario in advance (a big one-time research/design effort), rather than calculating novel logic per-leg at runtime. Concretely:
+- For each raw factor, enumerate every real variation it can take (e.g. weather: rain/wind at multiple levels, heat, humidity, dryness, and so on).
+- For each variation, lock the logic split by player tier.
+- Within each player tier, lock the logic split by prop line.
+- Within each prop line, lock the logic split by variation/direction.
+- Repeat this same full structure for every other raw factor (lineups, umpire, bullpen, schedule spot, park, catcher context, market/odds-adjacent factors, etc.).
+This produces an extensive, pre-designed base framework covering every real scenario. At actual run time, scoped to the current slate/board, Enrichment's real-time job is reduced to a classification/lookup: identify which pre-locked logic applies to each leg for each relevant factor × player-tier × prop-line × variation/direction combination — the heavy design work is already done, run-time is just qualification, not fresh computation. This mirrors the classification_v6 pattern (heavy tiering/calibration work done once, applied cheaply per-run).
+
+### Final Hit Probability calculation
+Uses the enrichment phase's classified logic/metrics to calculate each leg's real hit probability. Confidence is recalculated here too, using the same logic/reliability-weighting approach used in the baseline (classification_v6/baseline_v6), not reinvented.
+
+### Final Score
+Each leg gets a score from confidence vs. final hit-probability percentage (the specific scoring formula/curve is not yet locked — needs its own research/lock when this phase is reached).
+
+### Final Board — explicit selection rules (locked, verbatim)
+Base inclusion rule: only legs with final hit probability over 65% are eligible at all.
+On top of the 65% floor, quotas that qualify regardless of relative rank within that pool (a leg can satisfy multiple quotas simultaneously — no exclusivity):
+- Best 5 legs of each individual prop line
+- Best 15 legs of unders
+- Best 20 legs of overs
+- Best 20 goblins
+- Best 5 demons
+- Best 10 regular (standard) lines
+- Best 20 legs of each app/source
+Quotas are soft ceilings, not hard requirements — if fewer legs than a quota's number exist (e.g. fewer than 10 regular lines total), include all that exist, don't pad or lower the 65% floor to fill a quota.
+
+### Resource-efficiency requirements, locked
+- Every phase from here on must consume Daily Context's and Market Context's real output (both game-level and player-level) — no separate/duplicate mining.
+- Started/live games' legs are never calculated by this pipeline (matches the existing `pickable_safe`/`calendar_matched` exclusion pattern already used everywhere upstream).
+
+### New certifier + new full run required for this entire sequence
+Same bar as Daily Context and Market Context's certifiers: covers orchestrator wiring, Control Room (worker + static HTML) parity, all miner/calculator workers in this sequence, and everything behind it. Build this the same way the Market Certifier/Market Full Run was just built and hardened this session (transient-retry, priority-tiebreak-safe, real per-layer tally) — do not regress on any of the reliability lessons just learned there.
+
+### Process requirements, explicit, non-negotiable
+- Break the work into multiple micro-phases (not one big build).
+- Extensive, reliable-source online research required per phase — reference real, established systems/methodologies, not invented logic. Enrichment specifically needs an extremely exhaustive research pass to lock the right number of profiles/tiers before any code is written.
+- No flattening, no summarizing anywhere in this pipeline — full custom, microscopic-level granularity, and the design must remain customizable at that same granularity going forward.
+- After the research/lock phases (a few hours of work), Board, Daily Context, and Market Context must all be refreshed so the rest of the build works against genuinely current data.
+- Only move to the next phase/worker once the current one is fully correct with no further improvement identified — do not batch multiple unverified phases together (same discipline as Daily Context Phase 4's one-worker-at-a-time rule).
+- Do not deviate from this locked structure. Any deviation or workaround requires his explicit approval before proceeding — do not just make a reasonable-seeming substitution and proceed.
+
+### Sequence for this build, as instructed
+1. Document this plan in full here (this section — done).
+2. Recognition phase: map what already exists for Prop Factor Miner and Matrix Builder (real code, not filename/assumption — same "deployed slot vs. logical name" trap already flagged below in the "PROP FACTOR MINER / MATRIX - REAL NAMING CONFUSION" section; verify current behavior against the CURRENT system, not what it may have been built against originally).
+3. Deep research + lock scope for each phase individually, Enrichment above all needing the most exhaustive pass.
+4. Refresh Board/Daily Context/Market Context once research/lock is done, before building.
+5. Build phase by phase, one at a time, verified with real data before moving on.
+
+### PROGRESS LOG (update as work actually happens; nothing marked done until verified against real data)
+- Documentation: COMPLETE (this section).
+- Recognition (Prop Factor Miner + Matrix Builder real code): NOT STARTED.
+- Research/lock (per phase): NOT STARTED.
+- Board/Daily Context/Market Context refresh: NOT STARTED (deferred until after research/lock, per explicit sequencing).
+- Build: NOT STARTED.
+
+
 `alphadog-v2-control-room.js`'s own debug config reveals that the "FACTORS" and "MATRIX" buttons Rodolfo will eventually use for the next phase are **deployed to repurposed worker slots with different names than their logical function**: `prop_factor_deployed_slot: "alphadog-v2-phase2b-recent-form"` (logical worker: `alphadog-v2-prop-factor-miner`), and `matrix_deployed_slot: "alphadog-v2-phase2b-certifier"` (logical worker: `alphadog-v2-prop-matrix-builder`). This is the same kind of "deployed slot vs. logical name" mismatch already flagged for Daily Context's Umpire worker (`alphadog-v2-daily-usage-pulse.js` = `daily-umpire-context`) - a recurring pattern in this codebase. When Rodolfo's stated next phase (Prop Factor Miner, which he's explicitly said he doesn't understand and was built by a different assistant) is reached, read `alphadog-v2-phase2b-recent-form.js` and `alphadog-v2-phase2b-certifier.js` by their real deployed content, not by filename assumption.
 
 
