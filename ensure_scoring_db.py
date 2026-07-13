@@ -39,21 +39,42 @@ def main():
         capture_output=True, text=True, check=False
     )
 
+    # Always print the real raw output first, regardless of outcome - this is the
+    # single most useful thing for diagnosing a real failure from the workflow log,
+    # and was missing last time, which is exactly why the first attempt's true cause
+    # couldn't be confirmed from outside the CI run.
+    print("---- wrangler d1 create: raw stdout ----")
+    print(result.stdout)
+    print("---- wrangler d1 create: raw stderr ----")
+    print(result.stderr)
+    print(f"---- wrangler d1 create: exit code {result.returncode} ----")
+
     if result.returncode != 0:
-        # Real, honest failure - do not fabricate an ID. Surface Wrangler's actual
-        # stderr so a real cause (auth, name collision, quota) is visible in the
-        # workflow log rather than silently continuing with a broken config.
-        print("Wrangler d1 create failed.", file=sys.stderr)
-        print(result.stdout, file=sys.stderr)
-        print(result.stderr, file=sys.stderr)
+        print("Wrangler d1 create failed (non-zero exit).", file=sys.stderr)
         sys.exit(1)
 
-    # Wrangler's --json output on success is a JSON object with a real uuid field.
-    parsed = json.loads(result.stdout)
-    database_id = parsed.get("uuid") or parsed.get("id")
+    # Real, known Wrangler quirk: --json output can still have a warning/notice line
+    # (e.g. an update notification) printed to stdout before the actual JSON object.
+    # Extract just the JSON object rather than assuming the whole stdout is clean JSON.
+    raw = result.stdout
+    start = raw.find("{")
+    if start == -1:
+        print("No JSON object found anywhere in wrangler's stdout.", file=sys.stderr)
+        sys.exit(1)
+    try:
+        parsed = json.loads(raw[start:])
+    except json.JSONDecodeError as e:
+        print(f"Could not parse JSON from wrangler's stdout starting at first '{{': {e}", file=sys.stderr)
+        sys.exit(1)
+
+    database_id = None
+    if isinstance(parsed, dict):
+        database_id = parsed.get("uuid") or parsed.get("id")
+        # Some Wrangler versions nest the real database object one level down.
+        if not database_id and isinstance(parsed.get("database"), dict):
+            database_id = parsed["database"].get("uuid") or parsed["database"].get("id")
     if not database_id:
-        print("Wrangler succeeded but no database id found in its output:", file=sys.stderr)
-        print(result.stdout, file=sys.stderr)
+        print(f"Wrangler succeeded but no database id found in parsed output: {parsed}", file=sys.stderr)
         sys.exit(1)
 
     existing.append({
