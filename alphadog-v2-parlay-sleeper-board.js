@@ -897,6 +897,50 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
   };
 }
 
+async function runHistoricalPropsProbe(env, input) {
+  // Real, minimal, safe, read-only probe - tests whether ParlayAPI's real historical endpoint
+  // returns actual player-prop data (not just game-line odds) for a recent real date, within their
+  // documented ~14-day rolling window. Reuses the exact real auth/base-URL already live in this
+  // worker - no new secret, no new integration risk.
+  const auth = authConfig(env);
+  if (!auth.ok) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "auth_not_configured", block_reason: auth.block_reason, timestamp_utc: nowUtc() };
+  const base = String(env.PARLAY_API_BASE_URL || DEFAULT_PARLAY_API_BASE_URL).replace(/\/+$/, "");
+  const date = String(input.date || ptDate ? ptDate(0) : new Date().toISOString().slice(0, 10));
+
+  const headers = new Headers({ accept: "application/json", "user-agent": "AlphaDog-v2-Parlay-Historical-Probe/0.1" });
+  auth.apply(headers, env);
+
+  const url = `${base}/historical/sports/baseball_mlb/props?date=${encodeURIComponent(date)}&bookmakers=sleeper&limit=200`;
+  const started = Date.now();
+  let resp, text, json = null;
+  try {
+    resp = await fetch(url, { method: "GET", headers, signal: AbortSignal.timeout(15000) });
+    text = await resp.text();
+    try { json = JSON.parse(text); } catch (_) {}
+  } catch (err) {
+    return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "fetch_exception", error: safeString(err && err.message ? err.message : err, 500), elapsed_ms: Date.now() - started, timestamp_utc: nowUtc() };
+  }
+
+  const bodySample = Array.isArray(json) ? json.slice(0, 3) : (json && typeof json === "object" ? json : null);
+  return {
+    ok: true, data_ok: resp.ok, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+    status: resp.ok ? "completed" : "http_error",
+    certification: "PARLAY_HISTORICAL_PROPS_PROBE_COMPLETED",
+    real_probe_date: date,
+    http_status: resp.status,
+    real_url_used: url,
+    raw_len: text.length,
+    raw_text_preview: safeString(text, 1500),
+    parsed_shape: Array.isArray(json) ? "array" : (json && typeof json === "object" ? "object" : "unparseable"),
+    parsed_count: Array.isArray(json) ? json.length : null,
+    body_sample: bodySample,
+    external_calls_performed: 1,
+    elapsed_ms: Date.now() - started,
+    no_scoring: true, no_ranking: true, no_final_board: true,
+    timestamp_utc: nowUtc()
+  };
+}
+
 async function safeProbe(env, input = {}) {
   const schema = await ensureSleeperSchema(env);
   const endpoint = configuredEndpoint(env, input);
