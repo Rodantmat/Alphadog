@@ -328,6 +328,67 @@ async function runWorker(env, input) {
   return output;
 }
 
+async function runHistoricalPropsProbe(env, input) {
+  // Real, minimal, safe, read-only probe - added to answer one real question: does the-odds-api.com's
+  // real historical archive (which the docs say covers player props for MLB from May 2023) actually
+  // return real player-prop data for a real 2025 MLB game, given the account already paying for it.
+  // Reuses the exact same real base URL / auth mechanism already live in this worker.
+  const base = String(input.odds_api_base_url || env.ODDS_API_BASE_URL || DEFAULT_ODDS_API_BASE_URL).replace(/\/+$/, "");
+  const date = String(input.date || "2025-06-15T20:00:00Z");
+  const regions = String(input.regions || env.ODDS_API_REGIONS || "us");
+
+  const eventsUrl = new URL(`${base}/historical/sports/baseball_mlb/events`);
+  eventsUrl.searchParams.set("apiKey", String(env.ODDS_API_KEY));
+  eventsUrl.searchParams.set("date", date);
+  const eventsRes = await fetchJson(eventsUrl.toString());
+  if (!eventsRes.ok || !eventsRes.json || !Array.isArray(eventsRes.json.data)) {
+    return { ok: true, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "historical_events_call_failed", certification: "ODDS_API_HISTORICAL_PROBE_EVENTS_FAILED", real_probe_date: date, http_status: eventsRes.http_status, error: eventsRes.error || "unexpected_response_shape", text_preview: eventsRes.text_preview || null, external_calls_performed: 1, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc() };
+  }
+  const events = eventsRes.json.data;
+  const sampleEvent = events[0] || null;
+
+  let oddsRes = null, oddsSummary = null;
+  if (sampleEvent && sampleEvent.id) {
+    const oddsUrl = new URL(`${base}/historical/sports/baseball_mlb/events/${encodeURIComponent(sampleEvent.id)}/odds`);
+    oddsUrl.searchParams.set("apiKey", String(env.ODDS_API_KEY));
+    oddsUrl.searchParams.set("regions", regions);
+    oddsUrl.searchParams.set("markets", ODDS_MLB_MARKETS.join(","));
+    oddsUrl.searchParams.set("date", date);
+    oddsRes = await fetchJson(oddsUrl.toString());
+    if (oddsRes.ok && oddsRes.json && oddsRes.json.data) {
+      const bookmakers = oddsRes.json.data.bookmakers || [];
+      let totalMarkets = 0, totalOutcomes = 0, marketKeysSeen = new Set(), sampleOutcomes = [];
+      for (const bk of bookmakers) {
+        for (const mk of (bk.markets || [])) {
+          totalMarkets += 1;
+          marketKeysSeen.add(mk.key);
+          for (const oc of (mk.outcomes || [])) {
+            totalOutcomes += 1;
+            if (sampleOutcomes.length < 5) sampleOutcomes.push({ bookmaker: bk.key, market: mk.key, name: oc.name, description: oc.description || null, price: oc.price, point: oc.point });
+          }
+        }
+      }
+      oddsSummary = { bookmakers_present: bookmakers.map(b => b.key), total_markets: totalMarkets, total_outcomes: totalOutcomes, distinct_market_keys: Array.from(marketKeysSeen), sample_outcomes: sampleOutcomes, response_timestamp: oddsRes.json.timestamp || null };
+    }
+  }
+
+  return {
+    ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+    status: "completed", certification: "ODDS_API_HISTORICAL_PROPS_PROBE_COMPLETED",
+    real_probe_date: date,
+    real_events_found: events.length,
+    sample_event: sampleEvent ? { id: sampleEvent.id, home_team: sampleEvent.home_team, away_team: sampleEvent.away_team, commence_time: sampleEvent.commence_time } : null,
+    historical_odds_call_ok: oddsRes ? oddsRes.ok : null,
+    historical_odds_http_status: oddsRes ? oddsRes.http_status : null,
+    historical_odds_summary: oddsSummary,
+    historical_odds_error: oddsRes && !oddsRes.ok ? (oddsRes.error || oddsRes.text_preview) : null,
+    external_calls_performed: sampleEvent ? 2 : 1,
+    api_key_value_never_returned: true,
+    no_scoring: true, no_ranking: true, no_final_board: true,
+    timestamp_utc: nowUtc()
+  };
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -336,6 +397,11 @@ export default {
     if (method === "OPTIONS") return new Response(null, { status:204, headers:{ "access-control-allow-origin":"*", "access-control-allow-headers":"content-type,x-ingest-token,x-admin-token,authorization", "access-control-allow-methods":"GET,POST,OPTIONS" } });
     if (method === "GET" && (path === "/" || path === "/health")) return jsonResponse(baseIdentity(env));
     if (method === "POST" && path === "/diagnostic") return jsonResponse(baseIdentity(env, { route:"/diagnostic", schema_checked:false }));
+    if (method === "POST" && path === "/historical-probe") {
+      const input = await readJsonSafe(request);
+      try { return jsonResponse(await runHistoricalPropsProbe(env, input)); }
+      catch (err) { return jsonResponse({ ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"WORKER_EXCEPTION", certification:"ODDS_API_HISTORICAL_PROBE_EXCEPTION", error:safeText(err && err.stack ? err.stack : err), timestamp_utc:nowUtc() }, 500); }
+    }
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       try { return jsonResponse(await runWorker(env, input)); }
