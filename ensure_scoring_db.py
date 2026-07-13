@@ -23,6 +23,22 @@ from pathlib import Path
 BINDINGS_FILE = Path("cloudflare_d1_bindings.json")
 NEW_BINDING_NAME = "SCORING_DB"
 NEW_DATABASE_NAME = "alphadog-v2-scoring-db"
+DEBUG_LOG = Path("scoring_db_debug.log")
+_debug_lines = []
+
+
+def dbg(line):
+    print(line)
+    _debug_lines.append(line)
+
+
+def flush_debug():
+    # Real workaround for a real constraint: the assistant operating this system has
+    # no direct access to GitHub Actions run logs. Writing full diagnostic output to a
+    # committed file (regardless of success/failure) lets the real cause of any
+    # failure here be read back directly afterward, the same way every other
+    # diagnostic in this system is verified against real data rather than assumed.
+    DEBUG_LOG.write_text("\n".join(_debug_lines) + "\n", encoding="utf-8")
 
 
 def main():
