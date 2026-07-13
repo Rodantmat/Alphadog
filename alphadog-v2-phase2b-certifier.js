@@ -835,18 +835,18 @@ function addIssue(issues, batchId, matrixId, row, severity, issueType, reason, d
   issues.push({ issue_id: rid("pmi"), batch_id: batchId, matrix_id: matrixId, prepared_row_id: row.prepared_row_id, game_pk: row.official_game_pk, mlb_player_id: row.resolved_mlb_player_id || row.resolved_player_id, canonical_prop_key: row.canonical_prop_key, severity, issue_type: issueType, reason, details: compactIssueDetails(issueType, reason, details || {}), official_date: row.official_date });
 }
 async function insertMatrixRows(env, matrixRows, issueRows, coverageRows) {
-  await batch(env.SCORE_DB, matrixRows.map(r => env.SCORE_DB.prepare(`INSERT OR REPLACE INTO prop_matrix_current (matrix_id,batch_id,prepared_row_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,team_id,opponent_team_id,is_home,canonical_prop_key,board_line_value,prop_side,factor_family,factor_packet_id,factor_status,market_game_context_status,market_prop_context_status,daily_readiness_status,matrix_status,matrix_grade,blocking_for_scoring,warning_count,blocker_count,missing_component_count,matrix_payload_json,details_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(
+  await batch(env.SCORING_DB, matrixRows.map(r => env.SCORING_DB.prepare(`INSERT OR REPLACE INTO prop_matrix_current (matrix_id,batch_id,prepared_row_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,team_id,opponent_team_id,is_home,canonical_prop_key,board_line_value,prop_side,factor_family,factor_packet_id,factor_status,market_game_context_status,market_prop_context_status,daily_readiness_status,matrix_status,matrix_grade,blocking_for_scoring,warning_count,blocker_count,missing_component_count,matrix_payload_json,details_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(
     r.matrix_id, r.batch_id, r.prepared_row_id, r.source_line_id || null, r.source_key, r.game_pk, r.official_date, r.official_game_time_utc, r.mlb_player_id, r.player_name, r.team_id || null, r.opponent_team_id || null, r.is_home === undefined ? null : r.is_home, r.canonical_prop_key, r.board_line_value, r.prop_side || null, r.factor_family, r.factor_packet_id || null, r.factor_status, r.market_game_context_status, r.market_prop_context_status, r.daily_readiness_status, r.matrix_status, r.matrix_grade, r.blocking_for_scoring ? 1 : 0, r.warning_count || 0, r.blocker_count || 0, r.missing_component_count || 0, boundedJson(r.matrix_payload || {}, 4200), boundedJson(r.details || {}, 2600)
   )), 35);
-  await batch(env.SCORE_DB, issueRows.map(i => env.SCORE_DB.prepare(`INSERT OR REPLACE INTO prop_matrix_issues (issue_id,batch_id,matrix_id,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,severity,issue_type,reason,details_json,official_date,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+  await batch(env.SCORING_DB, issueRows.map(i => env.SCORING_DB.prepare(`INSERT OR REPLACE INTO prop_matrix_issues (issue_id,batch_id,matrix_id,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,severity,issue_type,reason,details_json,official_date,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
     i.issue_id, i.batch_id, i.matrix_id, i.prepared_row_id, i.game_pk, i.mlb_player_id, i.canonical_prop_key, i.severity, i.issue_type, i.reason, boundedJson(i.details || {}, 900), i.official_date
   )), 40);
-  await batch(env.SCORE_DB, coverageRows.map(c => env.SCORE_DB.prepare(`INSERT OR REPLACE INTO prop_matrix_coverage_current (coverage_key,prepared_row_id,matrix_id,matrix_status,matrix_grade,blocking_for_scoring,latest_batch_id,latest_checked_at,missing_reason,details_json,official_date,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(
+  await batch(env.SCORING_DB, coverageRows.map(c => env.SCORING_DB.prepare(`INSERT OR REPLACE INTO prop_matrix_coverage_current (coverage_key,prepared_row_id,matrix_id,matrix_status,matrix_grade,blocking_for_scoring,latest_batch_id,latest_checked_at,missing_reason,details_json,official_date,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(
     c.coverage_key, c.prepared_row_id, c.matrix_id, c.matrix_status, c.matrix_grade, c.blocking_for_scoring ? 1 : 0, c.latest_batch_id, c.latest_checked_at, c.missing_reason || null, boundedJson(c.details || {}, 700), c.official_date
   )), 40);
 }
 async function summarizeMatrixBatch(env, batchId) {
-  const row = await first(env.SCORE_DB, `SELECT
+  const row = await first(env.SCORING_DB, `SELECT
       COUNT(*) AS matrix_rows_written,
       SUM(CASE WHEN matrix_status='matrix_ready' THEN 1 ELSE 0 END) AS matrix_ready_rows,
       SUM(CASE WHEN matrix_status='matrix_ready_with_warnings' THEN 1 ELSE 0 END) AS matrix_ready_with_warnings_rows,
@@ -858,7 +858,7 @@ async function summarizeMatrixBatch(env, batchId) {
       SUM(CASE WHEN blocker_count > 0 OR blocking_for_scoring=1 THEN 1 ELSE 0 END) AS blocker_rows,
       SUM(CASE WHEN missing_component_count > 0 THEN 1 ELSE 0 END) AS missing_component_rows
     FROM prop_matrix_current WHERE batch_id=?`, batchId);
-  const issues = await first(env.SCORE_DB, `SELECT COUNT(*) AS issue_rows FROM prop_matrix_issues WHERE batch_id=?`, batchId);
+  const issues = await first(env.SCORING_DB, `SELECT COUNT(*) AS issue_rows FROM prop_matrix_issues WHERE batch_id=?`, batchId);
   const clean = row || {};
   return {
     matrix_rows_written: Number(clean.matrix_rows_written || 0),
