@@ -3943,7 +3943,7 @@ function staticFullRunChildInput(parentRow, stage, stepIndex) {
     parent_chain_id: parentRow.chain_id,
     stage_index: stepIndex,
     approved_static_full_run_order: STATIC_FULL_RUN_STAGES.map(s => s.job_key),
-    deferred_workers_skipped: ["static-rosters", "static-player-aliases"],
+    deferred_workers_skipped: [],
     backend_scheduled_continuation: true,
     no_browser_auto_pump: true,
     no_control_room_to_orchestrator_fetch: true,
