@@ -33,7 +33,7 @@ async function fetchJson(url) {
     const text = await resp.text();
     let json = null;
     try { json = JSON.parse(text); } catch (_) {}
-    return { ok: resp.ok, http_status: resp.status, json, raw_len: text.length };
+    return { ok: resp.ok, http_status: resp.status, json, raw_len: text.length, raw_text_safe: text.slice(0, 500) };
   } catch (err) {
     return { ok: false, error: String(err && err.message ? err.message : err) };
   }
