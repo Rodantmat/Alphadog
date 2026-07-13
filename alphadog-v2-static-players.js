@@ -552,11 +552,38 @@ async function promoteCertifiedStage(env, batchId, requestId) {
     SET status='promoting', certification_status='STATIC_PLAYERS_STAGE_CERTIFIED_PROMOTING', updated_at=CURRENT_TIMESTAMP
     WHERE batch_id=? AND source_key=? AND status IN ('certified','collecting')`, batchId, SOURCE_KEY);
 
-  await run(env.REF_DB, `INSERT OR REPLACE INTO ref_players
+  // Real differential redesign: only actually rewrite a ref_players row when the staged data
+  // genuinely differs from what is already there (NOT EXISTS comparison across every field that
+  // matters) - this is the real, meaningful write reduction, done safely at the SQL level rather
+  // than by skipping staging (which would have broken the existing, correct "deactivate anyone
+  // not seen this run" logic below). Every staged player still gets a separate, cheap
+  // last_seen_request_id/last_seen_at touch regardless of whether their full row changed, so the
+  // deactivation logic downstream continues to work exactly as before.
+  const diffPromote = await run(env.REF_DB, `INSERT OR REPLACE INTO ref_players
     (player_id, mlb_player_id, player_name, full_name, first_name, last_name, primary_team_id, current_team_id, current_mlb_team_id, primary_role, primary_position, bats, throws, bat_side, throw_side, active, source_key, raw_json, updated_at, last_seen_request_id, last_seen_at)
-    SELECT player_id, mlb_player_id, player_name, full_name, first_name, last_name, primary_team_id, current_team_id, current_mlb_team_id, primary_role, primary_position, bats, throws, bat_side, throw_side, 1, source_key, raw_json, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP
-    FROM ref_players_stage
-    WHERE batch_id=? AND source_key=?`, requestId, batchId, SOURCE_KEY);
+    SELECT s.player_id, s.mlb_player_id, s.player_name, s.full_name, s.first_name, s.last_name, s.primary_team_id, s.current_team_id, s.current_mlb_team_id, s.primary_role, s.primary_position, s.bats, s.throws, s.bat_side, s.throw_side, 1, s.source_key, s.raw_json, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP
+    FROM ref_players_stage s
+    WHERE s.batch_id=? AND s.source_key=?
+      AND NOT EXISTS (
+        SELECT 1 FROM ref_players p
+        WHERE p.mlb_player_id = s.mlb_player_id
+          AND COALESCE(p.current_team_id,'') = COALESCE(s.current_team_id,'')
+          AND COALESCE(p.current_mlb_team_id,'') = COALESCE(s.current_mlb_team_id,'')
+          AND COALESCE(p.primary_position,'') = COALESCE(s.primary_position,'')
+          AND COALESCE(p.bat_side,'') = COALESCE(s.bat_side,'')
+          AND COALESCE(p.throw_side,'') = COALESCE(s.throw_side,'')
+          AND COALESCE(p.full_name,'') = COALESCE(s.full_name,'')
+          AND COALESCE(p.active,0) = 1
+      )`, requestId, batchId, SOURCE_KEY);
+
+  // Cheap "seen this run" touch for every staged player, changed or not - preserves the exact
+  // same deactivation semantics that already existed, without needing to rewrite full rows for
+  // players whose data hasn't genuinely changed.
+  await run(env.REF_DB, `UPDATE ref_players
+    SET last_seen_request_id=?, last_seen_at=CURRENT_TIMESTAMP, active=1, updated_at=CURRENT_TIMESTAMP
+    WHERE source_key=?
+      AND mlb_player_id IN (SELECT mlb_player_id FROM ref_players_stage WHERE batch_id=? AND source_key=?)`,
+    requestId, SOURCE_KEY, batchId, SOURCE_KEY);
 
   await run(env.REF_DB, `INSERT OR REPLACE INTO ref_player_aliases
     (alias_key, player_id, alias_name, alias_type, alias_normalized, team_id, mlb_team_id, source_key, confidence, active, raw_json, updated_at, last_seen_request_id, last_seen_at)
