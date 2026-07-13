@@ -240,37 +240,53 @@ async function runWorker(env, input) {
     await writeIssue(env, batchId, slateWindowKey, today, "BLOCKER", "ODDS_API_KEY_MISSING", null, null, SOURCE_KEY_PREFIX, "ODDS_API_KEY missing", {});
   }
   if (!preparedRows.length) {
-    blockerCount++;
-    await writeIssue(env, batchId, slateWindowKey, today, "BLOCKER", "NO_PREPARED_SAFE_HITTER_ROWS", null, null, SOURCE_KEY_PREFIX, "No pickable safe hitter prepared rows for today/tomorrow", { today, tomorrow });
+    await writeIssue(env, batchId, slateWindowKey, today, "WARNING", "NO_PREPARED_BOARD_ROWS_COMPREHENSIVE_CAPTURE_STILL_RUNS", null, null, SOURCE_KEY_PREFIX, "No pickable safe prepared rows for today/tomorrow; comprehensive capture (all markets, all real events) still runs independent of board matching", { today, tomorrow });
   }
+
+  // Comprehensive fallback market set: every prop key this worker knows about, used whenever
+  // a real event has no specific prepared-board match (or no board exists at all that day).
+  // This ensures daily capture is never gated behind PrizePicks board population.
+  const ALL_MARKET_KEYS = new Set(Object.keys(MARKET_TO_PROP));
 
   let eventsSeen = 0, eventsMapped = 0, eventCalls = 0, rowsWritten = 0, matchedRows = 0, unmatchedRows = 0;
   const propRows = [];
+  const gameOddsRows = [];
   const matchedCoverageSet = new Set();
   const bookStats = {};
   const eventSummaries = [];
   let eventsFetch = { ok:false, skipped:true };
-  if (sourceHas(env, "ODDS_API_KEY") && preparedRows.length) {
+  if (sourceHas(env, "ODDS_API_KEY")) {
     const eventUrl = buildEventsUrl(env, input);
     eventsFetch = await fetchJson(eventUrl.url, Number(env.ODDS_API_FETCH_TIMEOUT_MS || 12000));
     eventCalls += 1;
     const events = Array.isArray(eventsFetch.json) ? eventsFetch.json : [];
     eventsSeen = events.length;
-    const matchedEvents = [];
+    const allMatchedEvents = [];
     for (const ev of events) {
       const m = eventMatcher(ev);
-      if (m.game && indexes.byGame.has(String(m.game.game_pk))) {
-        matchedEvents.push({ ev, match:m });
+      allMatchedEvents.push({ ev, match:m });
+      // Real, comprehensive game-level odds capture (h2h/spreads/totals) - independent of prepared board.
+      const books = Array.isArray(ev.bookmakers) ? ev.bookmakers : [];
+      for (const book of books) {
+        for (const market of (book.markets || [])) {
+          for (const out of (market.outcomes || [])) {
+            gameOddsRows.push([rid("mcp_game_odds"), batchId, slateWindowKey, (m.game && m.game.official_date) || null, (m.game && m.game.game_pk) || null, ev.id || null, ev.home_team || null, ev.away_team || null, ev.commence_time || null, book.key || null, market.key || null, out.name || null, numberOrNull(out.point), numberOrNull(out.price), americanToDecimal(out.price), safeJson(out, 1500)]);
+          }
+        }
       }
     }
+    const matchedEvents = allMatchedEvents.filter(item => item.match.game && indexes.byGame.has(String(item.match.game.game_pk)));
     const maxEvents = Math.max(0, Math.min(40, Number(input.max_events || env.ODDS_API_HITTER_MAX_EVENTS || 24)));
-    const selectedEvents = matchedEvents.slice(0, maxEvents);
+    // Comprehensive mode: if there's no prepared board today, still fetch full props for every real event found.
+    const eventsForPropFetch = preparedRows.length ? matchedEvents : allMatchedEvents.filter(item => item.match.game);
+    const selectedEvents = eventsForPropFetch.slice(0, maxEvents);
     eventsMapped = selectedEvents.length;
     if (!eventsFetch.ok) { warningCount++; await writeIssue(env, batchId, slateWindowKey, today, "WARNING", "ODDS_API_EVENTS_FETCH_FAILED", null, null, SOURCE_KEY_PREFIX, "Odds API events fetch failed", { http_status:eventsFetch.http_status, response_preview:eventsFetch.text_preview, error:eventsFetch.error || null, endpoint:safeEndpoint(eventUrl.url) }); }
-    if (eventsFetch.ok && !selectedEvents.length) { blockerCount++; await writeIssue(env, batchId, slateWindowKey, today, "BLOCKER", "ODDS_API_EVENTS_UNMAPPED", null, null, SOURCE_KEY_PREFIX, "Odds API returned no event mapped to prepared today/tomorrow hitter games", { events_seen:eventsSeen, prepared_games:[...indexes.byGame.keys()].length }); }
+    if (eventsFetch.ok && !selectedEvents.length) { warningCount++; await writeIssue(env, batchId, slateWindowKey, today, "WARNING", "ODDS_API_EVENTS_UNMAPPED", null, null, SOURCE_KEY_PREFIX, "Odds API returned no real calendar-matched event for today/tomorrow", { events_seen:eventsSeen, prepared_games:[...indexes.byGame.keys()].length }); }
     for (const item of selectedEvents) {
-      const wantedMarketKeys = new Set(indexes.byGame.get(String(item.match.game.game_pk)).map(p => PROP_TO_MARKET[p.canonical_prop_key]).filter(Boolean));
-      const url = buildEventPropsUrl(env, input, item.ev.id, wantedMarketKeys.size ? wantedMarketKeys : indexes.wantedMarketKeys, eventUrl.bookmakers);
+      const boardWanted = indexes.byGame.has(String(item.match.game.game_pk)) ? new Set(indexes.byGame.get(String(item.match.game.game_pk)).map(p => PROP_TO_MARKET[p.canonical_prop_key]).filter(Boolean)) : new Set();
+      const wantedMarketKeys = boardWanted.size ? boardWanted : ALL_MARKET_KEYS;
+      const url = buildEventPropsUrl(env, input, item.ev.id, wantedMarketKeys, eventUrl.bookmakers);
       const fetched = await fetchJson(url, Number(env.ODDS_API_FETCH_TIMEOUT_MS || 12000));
       eventCalls += 1;
       eventSummaries.push({ event_id:item.ev.id, game_pk:item.match.game.game_pk, endpoint:safeEndpoint(url), http_status:fetched.http_status, ok:fetched.ok });
