@@ -313,16 +313,39 @@ function buildAliases(stadium, sourceKey) {
   return aliases;
 }
 
+function stadiumHasRealChange(current, stadium) {
+  if (!current) return true;
+  return String(current.team_id || "") !== String(stadium.team_id || "")
+    || String(current.stadium_name || "") !== String(stadium.stadium_name || "")
+    || String(current.city || "") !== String(stadium.city || "")
+    || String(current.state || "") !== String(stadium.state || "")
+    || String(current.roof_type || "") !== String(stadium.roof_type || "")
+    || String(current.turf_type || "") !== String(stadium.turf_type || "")
+    || String(current.timezone || "") !== String(stadium.timezone || "")
+    || String(current.mlb_venue_id || "") !== String(stadium.mlb_venue_id || "")
+    || Number(current.active || 0) !== 1;
+}
+
+async function loadCurrentStadiumSnapshot(env) {
+  const rows = await all(env.REF_DB, "SELECT stadium_id, team_id, stadium_name, city, state, roof_type, turf_type, timezone, mlb_venue_id, active FROM ref_stadiums");
+  const map = new Map();
+  for (const r of rows) map.set(String(r.stadium_id), r);
+  return map;
+}
+
 async function upsertStadiums(env, stadiums, sourceKey) {
   let stadiumRowsWritten = 0;
   let aliasesWritten = 0;
+  let stadiumRowsUnchanged = 0;
 
-  // D1/SQLite has a bounded SQL variable limit. The v0.1.0 worker tried to
-  // deactivate stale aliases with one giant NOT IN (?, ?, ...), which can exceed
-  // the variable cap once stadium aliases are expanded. The safe static refresh
-  // pattern is: mark this worker source inactive first, then upsert the current
-  // canonical 30-team set back to active=1. This is additive/safe for REF_DB and
-  // does not touch TEAM_DB, PrizePicks, scoring, or final board tables.
+  // Real differential redesign: this worker previously did an unconditional "deactivate every
+  // row, then re-upsert every row back to active" cycle on every single run - two full writes per
+  // stadium every time, regardless of whether anything changed. Stadium data is close to fully
+  // static (new venues are real, rare events), so load the current snapshot first and only pay
+  // the deactivate+full-rewrite cost for stadiums that are genuinely new/changed; unchanged
+  // stadiums get a cheap active/updated_at touch instead of a full field rewrite.
+  const currentSnapshot = await loadCurrentStadiumSnapshot(env);
+
   await run(env.REF_DB, "UPDATE ref_stadiums SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key IN ('MLB_STATSAPI_TEAMS_AND_VENUES','CONTROLLED_STATIC_FALLBACK_NON_CERTIFYING')");
   await run(env.REF_DB, "UPDATE ref_stadium_aliases SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key IN ('MLB_STATSAPI_TEAMS_AND_VENUES','CONTROLLED_STATIC_FALLBACK_NON_CERTIFYING')");
 
