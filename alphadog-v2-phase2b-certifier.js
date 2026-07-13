@@ -284,6 +284,10 @@ function normalizeSourceKeyForSideRules(sourceKey, payload) {
   const rowSource = String(sourceKey || "").toLowerCase();
   if (rowSource === "sleeper" || payloadSource.includes("sleeper")) return "sleeper";
   if (rowSource === "prizepicks" || payloadSource.includes("prizepicks")) return "prizepicks";
+  // Real source_key confirmed via live data audit: Underdog board rows are keyed
+  // "parlay_underdog", not "underdog" - this exact mismatch was the reason every
+  // Underdog leg fell through to side_availability_unclear (blocked) below.
+  if (rowSource === "parlay_underdog" || rowSource === "underdog" || payloadSource.includes("underdog")) return "underdog";
   return rowSource || payloadSource || "unknown";
 }
 function numOrNull(v) {
