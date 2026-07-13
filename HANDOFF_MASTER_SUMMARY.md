@@ -388,6 +388,56 @@ Same bar as Daily Context and Market Context's certifiers: covers orchestrator w
 - Build: NOT STARTED.
 
 
+## UPDATE 2026-07-13 — PRE-SCORING INFRASTRUCTURE PHASE: LOCKED PLAN BEFORE IMPLEMENTATION
+
+Rodolfo has paused the Final Scoring Sequence build to do foundational infrastructure/data work first, explicitly acknowledging this delays Scoring but wants it "100% ready for whatever comes, including next year's season." Full scope below, locked before implementation, same discipline as every other phase in this document.
+
+### Real database inventory check (done before allocating anything)
+`check_bindings` revealed a binding not yet used anywhere in this session's recognition work: `CONTEXT_DB` (`alphadog-v2-context-db`, real id `ca44e9a7-0624-4ac7-857e-5e2af70c6b8f`). Checked directly, not assumed: contains dormant, empty `context_packets`/`context_factor_scores` tables (0 rows each - almost certainly an abandoned earlier ChatGPT-era precursor to the Prop Factor Miner/Matrix Builder that now live in SCORE_DB) alongside **live, real data** in `expansion_first_inning_*` tables (1,428 + 2,856 real rows - the RFI/NRFI "expansion" system, confirmed still-live per earlier handoff notes on RFI/NRFI). Total DB size ~22MB - by far the lowest-usage real database in the account. Do NOT touch/rename the live `expansion_first_inning_*` tables; safe to add new tables here for backfill data.
+
+### Database allocation decision, locked
+1. **CONTEXT_DB** - repurposed to hold the historical backfill / expanded static reference data (multi-season game logs, weather, market, umpire, pitcher-arsenal, defensive-quality, catcher-framing history). Matches Rodolfo's own framing: "the previous season and historic data is static data."
+2. **New, dedicated database for the Scoring system** (Enrichment, Final HP, Final Score, Final Board) - genuinely separate from everything else, provisioned fresh, explicitly for future growth/scale isolation per Rodolfo's request. Real mechanism found (not assumed): `cloudflare_d1_bindings.json` is the single source of truth consumed by `generate_wrangler_configs.py`, which binds every listed D1 database to every worker uniformly (no per-worker filtering) - adding one new entry here makes it available everywhere automatically. `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` are already present as GitHub Actions secrets and Wrangler is already installed in the deploy workflow, so provisioning happens via a real, idempotent Wrangler CLI step added to the existing deploy workflow (checks if the binding already exists in the committed JSON first; only creates + commits a new one if missing) - no manual Cloudflare dashboard step needed from Rodolfo.
+
+### Full phase sequence, locked (do not reorder without a real reason, log it here if you do)
+
+**Phase 1 - Infrastructure**
+1a. Add the new Scoring database via the idempotent Wrangler-CLI deploy-workflow step described above; confirm the new binding (working name: `SCORING_DB`) is live via `check_bindings`.
+1b. No new provisioning needed for CONTEXT_DB reuse (already exists, already bound) - just build new tables into it in Phase 3.
+
+**Phase 2 - Recognition: Static Full Run's real current structure**
+Read the real, current static-phase workers (teams, stadiums, park factors, players, prop taxonomy, static certifier, static-full-run orchestration/stage wiring) before designing the differential redesign - same "understand before changing" discipline as every other phase.
+
+**Phase 3 - Historical backfill (direct, no orchestrator - fastest correct path per Rodolfo's explicit instruction)**
+Done as one-off scripts/direct SQL, not scheduled/orchestrated jobs, since these never need to run again once complete:
+- 3a. Real historical actual outcomes (hitter/pitcher game logs) for prior season(s) via MLB StatsAPI - the actual training labels; contextual backfill is useless without this.
+- 3b. Real historical weather via Open-Meteo `/v1/archive` (free, no key, ERA5 back to 1940) for every backfilled historical game date/venue.
+- 3c. Real historical game-level market context via ParlayAPI's historical/closing-lines endpoint (paid per-call, real data) - game-level only (implied team runs/totals); historical prop lines are not needed for training per the rate-model design already locked.
+- 3d. Real historical umpire assignments via Gemini + Google Search grounding (the one legitimate case for LLM-assisted lookup - retrieving/citing real public record, not estimating) - bounded, one-time backfill, not a recurring operational dependency.
+- 3e. Real historical pitcher arsenal/stuff, defensive quality (Outs Above Average), and catcher framing/pop-time via Baseball Savant's year-parameterized leaderboards (same trusted, already-proven, free, non-paywalled source as this session's existing Catcher Context work) - single mechanism covers all three plus extends catcher framing's own history.
+- Real fatigue-factor backfill (bullpen/schedule-spot) needs no external call at all - recomputed directly from 3a's own historical box-score data using the existing computation logic, just pointed at historical dates instead of "today."
+- Real question to check before executing at volume, not assumed: Baseball Savant's practical rate-limit/volume tolerance for a multi-season, multi-leaderboard backfill.
+
+**Phase 4 - New ongoing mining layers for the genuinely new factors**
+Rodolfo's instruction: adjust mining to where it actually belongs; only build a new Daily Context layer if the factor is genuinely daily-context-shaped. Real call, made explicitly: pitcher arsenal, defensive quality (OAA), and catcher framing are all season-level, slow-changing aggregates (matches how Catcher Context's framing/pop-time already works - refreshed only when >20h stale) - these belong as **static/reference data**, not a new per-day Daily Context mining layer. Plan: extend the existing reference-refresh pattern (same as `REF_DB.ref_catcher_framing_poptime`) with two new tables (pitcher arsenal, defensive quality), refreshed on the same slow cadence; extend the existing per-game join pattern (same as `DAILY_DB.daily_catcher_context_current`) to surface today's real starters/lineup against these new reference tables for daily consumption. Full orchestrator/certifier wiring only where a genuine daily join step is needed (the per-game join), not for the slow-changing reference refresh itself.
+
+**Phase 5 - Static Full Run: differential redesign + real weekly schedule**
+Rodolfo's explicit, standalone ask, been "postponed" until now: the Static Full Run currently re-mines its whole universe every run; needs to become differential (detect and mine only what's actually changed - roster moves, new/retired players, updated reference values - not a full re-mine), and needs a real weekly schedule at 2:00 AM Pacific. Real, already-existing infrastructure found: `ORCHESTRATOR_CRONS` in `generate_wrangler_configs.py` already includes a weekly Monday cron (`"0 3 * * 1"`, UTC) - needs verification of what it currently triggers and correction to the real Pacific-2am-equivalent UTC time (accounting for DST) if it's meant to be this job, or a new cron slot added if not. Full recognition of the current static-full-run code required before designing the differential logic - not assumed from the phase name alone.
+
+**Phase 6 - Daily Delta Full Run: roster-adjustment backfill check**
+Rodolfo's explicit ask: verify whether the existing daily delta full run (classification_v6/baseline_v6 pipeline) correctly picks up roster changes (trades, call-ups, etc.) for players already in its rolling data, or whether stale team/roster assignments could persist. Real investigation required before assuming either way; patch only if a real gap is found.
+
+**Phase 7 - Testing discipline, explicit and locked**
+- Anything from Phase 3 (backfill) that will never run again on a schedule: done directly (SQL/scripts), no orchestrator involvement, fastest correct path - per Rodolfo's explicit instruction.
+- Anything that will have a recurring scheduled run (the fixed Static Full Run above all): needs real orchestrator-based testing before being considered done - same rigor as every other phase/full-run built this session.
+
+**Phase 8 - Resume the Final Scoring Sequence** exactly where it was paused, once Phases 1-7 are real and verified.
+
+### PROGRESS LOG (update as work actually happens; nothing marked done until verified against real data)
+- Plan documentation: COMPLETE (this section).
+- Phase 1 (database infrastructure): IN PROGRESS.
+- Phases 2-8: NOT STARTED.
+
 `alphadog-v2-control-room.js`'s own debug config reveals that the "FACTORS" and "MATRIX" buttons Rodolfo will eventually use for the next phase are **deployed to repurposed worker slots with different names than their logical function**: `prop_factor_deployed_slot: "alphadog-v2-phase2b-recent-form"` (logical worker: `alphadog-v2-prop-factor-miner`), and `matrix_deployed_slot: "alphadog-v2-phase2b-certifier"` (logical worker: `alphadog-v2-prop-matrix-builder`). This is the same kind of "deployed slot vs. logical name" mismatch already flagged for Daily Context's Umpire worker (`alphadog-v2-daily-usage-pulse.js` = `daily-umpire-context`) - a recurring pattern in this codebase. When Rodolfo's stated next phase (Prop Factor Miner, which he's explicitly said he doesn't understand and was built by a different assistant) is reached, read `alphadog-v2-phase2b-recent-form.js` and `alphadog-v2-phase2b-certifier.js` by their real deployed content, not by filename assumption.
 
 
