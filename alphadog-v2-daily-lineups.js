@@ -1282,7 +1282,12 @@ async function runSourceProbe(env, input) {
   const todayUtc = nowUtc().slice(0, 10);
 
   const anchors = await getPreparedGameAnchors(env);
-  const catcherRefreshResult = await refreshCatcherReferenceIfStale(env, new Date().getUTCFullYear());
+  // Real, safe addition: optional override for a one-time historical catcher-framing/pop-time
+  // backfill (e.g. a prior season) - defaults to the real current year exactly as before, so live
+  // production behavior is completely unchanged unless this is explicitly requested.
+  const catcherRefreshSeasonOverride = Number(input && input.catcher_reference_backfill_season);
+  const catcherRefreshSeason = Number.isFinite(catcherRefreshSeasonOverride) && catcherRefreshSeasonOverride > 2000 ? catcherRefreshSeasonOverride : new Date().getUTCFullYear();
+  const catcherRefreshResult = await refreshCatcherReferenceIfStale(env, catcherRefreshSeason);
   const catcherRefRows = await all(env.REF_DB, `SELECT player_id, player_name, framing_runs_total, framing_pct_total, pop_time_2b_sba FROM ref_catcher_framing_poptime`);
   const catcherRefMap = new Map(catcherRefRows.map(r => [Number(r.player_id), r]));
   const preparedGamePks = uniqInts(anchors.map((r) => r.official_game_pk));
