@@ -16132,70 +16132,8 @@ async function enqueueScheduledStaticFullRunIfDue(env, cronExpression = "unknown
 }
 
 
-  const active = await first(env.CONTROL_DB,
-    "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key='static-players' AND worker_name='alphadog-v2-static-players' AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
-  );
 
-  if (active) {
-    return { enqueued: false, reason: "active_static_players_job_exists", active_request_id: active.request_id, active_status: active.status };
-  }
 
-  const recentComplete = await first(env.CONTROL_DB,
-    "SELECT request_id, finished_at FROM control_job_queue WHERE job_key='static-players' AND worker_name='alphadog-v2-static-players' AND status='completed' AND datetime(finished_at) >= datetime('now','-6 days') ORDER BY datetime(finished_at) DESC LIMIT 1"
-  );
-
-  if (recentComplete) {
-    return { enqueued: false, reason: "recent_static_players_completion_exists", recent_request_id: recentComplete.request_id, recent_finished_at: recentComplete.finished_at };
-  }
-
-  const isWeeklyStaticCron = String(cronExpression || "") === "0 3 * * 1";
-  const hasNeverCompleted = !(await first(env.CONTROL_DB,
-    "SELECT request_id FROM control_job_queue WHERE job_key='static-players' AND worker_name='alphadog-v2-static-players' AND status='completed' LIMIT 1"
-  ));
-
-  if (!isWeeklyStaticCron && !hasNeverCompleted) {
-    return { enqueued: false, reason: "not_static_players_weekly_cron", cron: cronExpression || null };
-  }
-
-  const requestId = rid("static_players_auto");
-  const chainId = rid("chain");
-  const input = {
-    source: "orchestrator_auto_clock",
-    visible_button: "AUTO > Static Players Weekly",
-    mode: "static_players_40man_identity_seed",
-    created_at: nowIso(),
-    source_name: "MLB StatsAPI 40-man roster endpoint",
-    source_mode: "ref_teams_driven_mlb_statsapi_40man_roster",
-    endpoint_pattern: "/teams/{mlb_team_id}/roster/40Man",
-    allowed_writes: ["REF_DB.ref_players", "REF_DB.ref_player_aliases", "REF_DB.ref_rosters"],
-    no_26man_only_scope: true,
-    no_every_minor_leaguer_scope: true,
-    no_person_detail_hydration_in_v0_1_0: true,
-    no_prizepicks_board_mutation: true,
-    no_prizepicks_alias_guessing: true,
-    no_sleeper_alias_guessing: true,
-    no_opponent_backfill: true,
-    no_scoring: true,
-    no_ranking: true,
-    no_final_board_write: true,
-      writes_shadow_table_only: isSimulationJob,
-    auto_scheduled: true,
-    cron_expression: cronExpression || null,
-    max_teams_per_run: 3
-  };
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'static-players', 'alphadog-v2-static-players', 'Static', 'static', 'Static MLB Player 40-Man Identity Seed', 'pending', 5, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-    requestId, chainId, JSON.stringify(input)
-  );
-
-  await run(env.CONTROL_DB,
-    "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'static-players', 'INFO', 'static_players_auto_clock_enqueued', 'Auto-clock queued Static Players MLB StatsAPI 40-man identity seed job', ?, CURRENT_TIMESTAMP)",
-    requestId, WORKER_NAME, JSON.stringify({ request_id: requestId, chain_id: chainId, cron: cronExpression || null, version: SYSTEM_VERSION })
-  );
-
-  return { enqueued: true, request_id: requestId, chain_id: chainId };
-}
 
 
 async function claimSelectedQueueRowForDispatch(env, row, trigger) {
