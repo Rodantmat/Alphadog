@@ -88,7 +88,7 @@ async function fetchSavant(year) {
   const looksLikeCsv = text.split(/\r?\n/, 1)[0].includes(",") && !text.trim().startsWith("<");
   if (looksLikeCsv) {
     const rows = parseCsv(text);
-    return { url, http_status: resp.status, rows, row_count: rows.length, fetch_mode: "csv" };
+    return { url, http_status: resp.status, rows, row_count: rows.length, fetch_mode: "csv", raw_text_sample: text.slice(0, 400) };
   }
   if (!text || !text.includes("data")) throw new Error("baseball_savant_response_missing_data_marker");
   const rows = extractVarData(text);
