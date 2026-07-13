@@ -604,8 +604,8 @@ async function loadGlobalPrerequisites(env, dates, preparedRows) {
   const latestMarketByMode = latestBy(marketBatches, r => key(r.mode));
   const marketBatchIds = uniqueNonEmpty([...latestMarketByMode.values()].map(r => r.batch_id));
 
-  const latestHitterBatch = await first(env.SCORE_DB, `SELECT * FROM prop_factor_batches WHERE factor_family='hitter' AND (window_start IN (?, ?) OR window_end IN (?, ?)) ORDER BY datetime(updated_at) DESC LIMIT 1`, today, tomorrow, today, tomorrow);
-  const latestPitcherBatch = await first(env.SCORE_DB, `SELECT * FROM prop_factor_batches WHERE factor_family='pitcher' AND (window_start IN (?, ?) OR window_end IN (?, ?)) ORDER BY datetime(updated_at) DESC LIMIT 1`, today, tomorrow, today, tomorrow);
+  const latestHitterBatch = await first(env.SCORING_DB, `SELECT * FROM prop_factor_batches WHERE factor_family='hitter' AND (window_start IN (?, ?) OR window_end IN (?, ?)) ORDER BY datetime(updated_at) DESC LIMIT 1`, today, tomorrow, today, tomorrow);
+  const latestPitcherBatch = await first(env.SCORING_DB, `SELECT * FROM prop_factor_batches WHERE factor_family='pitcher' AND (window_start IN (?, ?) OR window_end IN (?, ?)) ORDER BY datetime(updated_at) DESC LIMIT 1`, today, tomorrow, today, tomorrow);
 
   const freshness = {
     prepared: { rows: prepCount, games: prepGames, players: prepPlayers, prop_keys: prepPropKeys, max_updated_at: preparedMaxUpdatedAt },
