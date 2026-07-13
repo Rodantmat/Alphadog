@@ -17889,6 +17889,16 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isCatcherReferenceHistoricalBackfillJob(row)) {
+    const output = await processCatcherReferenceHistoricalBackfillJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_catcher_reference_historical_backfill_job" : "failed_one_catcher_reference_historical_backfill_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isStaticStadiumsJob(row)) {
     const output = await processStaticStadiumsJob(env, row, runId, trigger);
     return {
