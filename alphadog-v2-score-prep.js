@@ -455,6 +455,20 @@ CREATE TABLE IF NOT EXISTS score_board_prepared_current (
 )`).run();
 
   await env.SCORE_DB.prepare(`
+CREATE TABLE IF NOT EXISTS score_board_unresolved_player_log (
+  log_id TEXT PRIMARY KEY,
+  batch_id TEXT,
+  source_key TEXT,
+  player_name TEXT,
+  player_name_normalized TEXT,
+  canonical_prop_key TEXT,
+  match_status TEXT,
+  official_date TEXT,
+  logged_at TEXT DEFAULT CURRENT_TIMESTAMP
+)`).run();
+  await env.SCORE_DB.prepare("CREATE INDEX IF NOT EXISTS idx_score_board_unresolved_player_log_date ON score_board_unresolved_player_log(logged_at)").run();
+
+  await env.SCORE_DB.prepare(`
 CREATE TABLE IF NOT EXISTS score_board_prepared_stage (
   stage_row_id TEXT PRIMARY KEY,
   prepared_row_id TEXT NOT NULL,
