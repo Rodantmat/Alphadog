@@ -221,7 +221,12 @@ async function certify(env, input = {}) {
       FROM ref_prop_aliases WHERE source_key='prizepicks_github'
       GROUP BY source_key, normalized_market_name HAVING row_count > 1 OR prop_count > 1
     )`);
-    const pass = n(aliasCounts, "prizepicks_alias_rows") === 20 && n(aliasCounts, "distinct_source_market_names") === 20 && n(aliasCounts, "missing_core") === 0 && board.length === 20 && unmapped.length === 0 && n(dup) === 0;
+    // Real fix: dropped the hardcoded exact board.length===20 check - the real, meaningful
+    // invariant is unmapped.length===0 (every real, currently-active board stat type has a
+    // mapping), not a fixed count of distinct stat types, which fluctuates with whatever props are
+    // genuinely on the board at any given moment (confirmed live: real current count is 16, not a
+    // fixed 20, with zero unmapped types - a real pass, not a real gap).
+    const pass = n(aliasCounts, "prizepicks_alias_rows") === 20 && n(aliasCounts, "distinct_source_market_names") === 20 && n(aliasCounts, "missing_core") === 0 && unmapped.length === 0 && n(dup) === 0;
     return passCheck("Prop aliases", pass, { ...aliasCounts, active_prizepicks_board_stat_types: board.length, unmapped_board_stat_types: unmapped.length, dangerous_duplicate_aliases: n(dup) }, { unmapped_board_stats: unmapped });
   });
 
