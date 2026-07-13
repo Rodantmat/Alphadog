@@ -6,9 +6,16 @@ Checks cloudflare_d1_bindings.json for a "SCORING_DB" binding. If it already
 exists, does nothing (safe to run on every deploy). If it doesn't exist,
 creates a brand-new, dedicated Cloudflare D1 database via Wrangler CLI
 (real network access available here in GitHub Actions, unlike the Claude
-sandbox), captures its real database_id from Wrangler's own JSON output, and
-appends it to cloudflare_d1_bindings.json so generate_wrangler_configs.py
-picks it up on this same run.
+sandbox), captures its real database_id, and appends it to
+cloudflare_d1_bindings.json so generate_wrangler_configs.py picks it up on
+this same run.
+
+Real, confirmed finding from a live failed run: this environment's Wrangler
+version does not support `--json` on `d1 create` at all ("Unknown argument:
+json") - it prints its normal human-readable output regardless. Real output
+on success is a TOML-snippet block containing a line like:
+    database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+This parses that directly with a regex instead of assuming JSON.
 
 This is deliberately a separate, dedicated database (not a repurposed
 existing one) per explicit instruction: the new Scoring system (Enrichment,
@@ -21,6 +28,7 @@ run logs, so this is the real, working substitute: committed back to the
 repo every run so the real cause of any failure can be read directly.
 """
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -29,6 +37,7 @@ BINDINGS_FILE = Path("cloudflare_d1_bindings.json")
 NEW_BINDING_NAME = "SCORING_DB"
 NEW_DATABASE_NAME = "alphadog-v2-scoring-db"
 DEBUG_LOG = Path("scoring_db_debug.log")
+DATABASE_ID_RE = re.compile(r'database_id\s*=\s*"([0-9a-fA-F-]{36})"')
 _debug_lines = []
 
 
@@ -47,6 +56,16 @@ def fail(msg):
     sys.exit(1)
 
 
+def register_binding(database_id, note):
+    data = json.loads(BINDINGS_FILE.read_text(encoding="utf-8"))
+    existing = data.get("d1_databases", [])
+    existing.append({"binding": NEW_BINDING_NAME, "database_name": NEW_DATABASE_NAME, "database_id": database_id})
+    data["d1_databases"] = existing
+    BINDINGS_FILE.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    dbg(note)
+    Path("scoring_db_binding_changed.flag").write_text("1", encoding="utf-8")
+
+
 def main():
     data = json.loads(BINDINGS_FILE.read_text(encoding="utf-8"))
     existing = data.get("d1_databases", [])
@@ -58,7 +77,7 @@ def main():
 
     dbg(f"{NEW_BINDING_NAME} not found - creating real D1 database '{NEW_DATABASE_NAME}' via Wrangler...")
     result = subprocess.run(
-        ["npx", "wrangler", "d1", "create", NEW_DATABASE_NAME, "--json"],
+        ["npx", "wrangler", "d1", "create", NEW_DATABASE_NAME],
         capture_output=True, text=True, check=False
     )
     dbg("---- wrangler d1 create: raw stdout ----")
@@ -67,60 +86,39 @@ def main():
     dbg(result.stderr)
     dbg(f"---- wrangler d1 create: exit code {result.returncode} ----")
 
+    combined = result.stdout + result.stderr
+
     if result.returncode != 0:
-        if "already exists" in (result.stdout + result.stderr).lower():
+        if "already exists" in combined.lower():
             dbg(f"'{NEW_DATABASE_NAME}' already exists on Cloudflare - looking up its real id instead of creating a duplicate.")
-            list_result = subprocess.run(
-                ["npx", "wrangler", "d1", "list", "--json"],
-                capture_output=True, text=True, check=False
-            )
+            list_result = subprocess.run(["npx", "wrangler", "d1", "list"], capture_output=True, text=True, check=False)
             dbg("---- wrangler d1 list: raw stdout ----")
             dbg(list_result.stdout)
             dbg("---- wrangler d1 list: raw stderr ----")
             dbg(list_result.stderr)
-            if list_result.returncode != 0:
-                fail("wrangler d1 list also failed")
-            list_start = list_result.stdout.find("[")
-            if list_start == -1:
-                fail("No JSON array found in wrangler d1 list output")
-            all_dbs = json.loads(list_result.stdout[list_start:])
-            found = next((d for d in all_dbs if d.get("name") == NEW_DATABASE_NAME), None)
-            if not found:
-                fail(f"'{NEW_DATABASE_NAME}' reported as already existing, but not found in d1 list output: {all_dbs}")
-            database_id = found.get("uuid") or found.get("id")
-            if not database_id:
-                fail(f"Found '{NEW_DATABASE_NAME}' in d1 list but no id field present: {found}")
-            existing.append({"binding": NEW_BINDING_NAME, "database_name": NEW_DATABASE_NAME, "database_id": database_id})
-            data["d1_databases"] = existing
-            BINDINGS_FILE.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-            dbg(f"Registered existing {NEW_DATABASE_NAME} (id={database_id}) - no duplicate created.")
-            Path("scoring_db_binding_changed.flag").write_text("1", encoding="utf-8")
+            info_result = subprocess.run(["npx", "wrangler", "d1", "info", NEW_DATABASE_NAME], capture_output=True, text=True, check=False)
+            dbg("---- wrangler d1 info: raw stdout ----")
+            dbg(info_result.stdout)
+            m = DATABASE_ID_RE.search(info_result.stdout) or DATABASE_ID_RE.search(list_result.stdout)
+            if not m:
+                # d1 info's default table output may not match the create-command's TOML
+                # snippet format - fall back to a bare-UUID search across both outputs.
+                bare = re.search(r'\b([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\b', info_result.stdout + list_result.stdout)
+                if not bare:
+                    fail(f"'{NEW_DATABASE_NAME}' already exists but could not find its real id in d1 info/list output")
+                database_id = bare.group(1)
+            else:
+                database_id = m.group(1)
+            register_binding(database_id, f"Registered existing {NEW_DATABASE_NAME} (id={database_id}) - no duplicate created.")
             flush_debug()
             return
         fail("Wrangler d1 create failed (non-zero exit), and it is not an 'already exists' case")
 
-    raw = result.stdout
-    start = raw.find("{")
-    if start == -1:
-        fail("No JSON object found anywhere in wrangler's stdout")
-    try:
-        parsed = json.loads(raw[start:])
-    except json.JSONDecodeError as e:
-        fail(f"Could not parse JSON from wrangler's stdout starting at first '{{': {e}")
-
-    database_id = None
-    if isinstance(parsed, dict):
-        database_id = parsed.get("uuid") or parsed.get("id")
-        if not database_id and isinstance(parsed.get("database"), dict):
-            database_id = parsed["database"].get("uuid") or parsed["database"].get("id")
-    if not database_id:
-        fail(f"Wrangler succeeded but no database id found in parsed output: {parsed}")
-
-    existing.append({"binding": NEW_BINDING_NAME, "database_name": NEW_DATABASE_NAME, "database_id": database_id})
-    data["d1_databases"] = existing
-    BINDINGS_FILE.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-    dbg(f"Created {NEW_DATABASE_NAME} (id={database_id}) and added {NEW_BINDING_NAME} binding to {BINDINGS_FILE}.")
-    Path("scoring_db_binding_changed.flag").write_text("1", encoding="utf-8")
+    m = DATABASE_ID_RE.search(combined)
+    if not m:
+        fail(f"Wrangler d1 create succeeded (exit 0) but no database_id line found in its output")
+    database_id = m.group(1)
+    register_binding(database_id, f"Created {NEW_DATABASE_NAME} (id={database_id}) and added {NEW_BINDING_NAME} binding to {BINDINGS_FILE}.")
     flush_debug()
 
 
