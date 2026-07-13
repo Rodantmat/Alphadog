@@ -890,6 +890,7 @@ async function runMatrixBuilder(request, env) {
   const dates = Array.isArray(input.window_dates) && input.window_dates.length >= 2 ? input.window_dates.slice(0, 2) : ptTodayTomorrow();
   const dbPresence = reqDb(env);
   if (!allTrue(dbPresence)) return jsonResponse({ ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, status:"blocked_missing_db_binding", missing_bindings:Object.entries(dbPresence).filter(([,v])=>!v).map(([k])=>k) }, 500);
+  await loadTaxonomyClassifier(env);
 
   await ensureSchema(env);
   const runId = input.run_id || rid("run");
