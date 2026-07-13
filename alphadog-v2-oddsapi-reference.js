@@ -53,6 +53,15 @@ const REQUIRED_DB_BINDINGS = ["MARKET_DB", "SCORE_DB", "TEAM_DB", "REF_DB", "CON
 const OPTIONAL_DB_BINDINGS = ["CONFIG_DB"];
 
 function nowUtc() { return new Date().toISOString(); }
+async function resolveOddsApiKey(env) {
+  if (env.CONFIG_DB) {
+    try {
+      const row = await env.CONFIG_DB.prepare("SELECT password FROM config_external_credentials WHERE credential_key='the_odds_api_key'").first();
+      if (row && row.password && String(row.password).trim()) return String(row.password).trim();
+    } catch (_) { /* fall through to secret */ }
+  }
+  return env.ODDS_API_KEY ? String(env.ODDS_API_KEY) : null;
+}
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
 function jsonResponse(body, status = 200) { return new Response(JSON.stringify(body, null, 2), { status, headers: { "content-type":"application/json; charset=utf-8", "cache-control":"no-store", "access-control-allow-origin":"*", "access-control-allow-headers":"content-type,x-ingest-token,x-admin-token,authorization", "access-control-allow-methods":"GET,POST,OPTIONS" } }); }
 function safeText(v, max = 900) { const s = v === undefined || v === null ? "" : String(v); return s.length > max ? s.slice(0, max) + "...TRUNCATED" : s; }
