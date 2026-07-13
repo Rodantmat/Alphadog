@@ -15986,7 +15986,152 @@ async function recoverStalePrizePicksGithubBoardDispatchStartedJobs(env, trigger
   return { recovered, rows: staleRows };
 }
 
-async function enqueueStaticPlayersWeeklyIfDue(env, cronExpression) {
+const STATIC_FULL_RUN_SCHEDULE_WINDOW_MINUTES = 15;
+
+async function enqueueScheduledStaticFullRunIfDue(env, cronExpression = "unknown") {
+  await ensureConfigScheduledJobsTable(env);
+
+  const pt = pacificNowParts(new Date());
+  const scheduleRows = await all(env.CONFIG_DB,
+    `SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type, day_of_week, dedupe_scope, input_json, notes
+     FROM config_scheduled_jobs
+     WHERE enabled=1
+       AND job_key='static-full-run'
+       AND schedule_type='weekly'
+       AND timezone='America/Los_Angeles'
+     ORDER BY local_time, schedule_id`
+  );
+
+  const results = [];
+  for (const schedule of scheduleRows) {
+    const parsedTime = parseScheduledLocalTimeHHMM(schedule.local_time);
+    const basePayload = {
+      ok: true,
+      data_ok: true,
+      version: SYSTEM_VERSION,
+      worker_name: WORKER_NAME,
+      job_key: "static-full-run",
+      mode: "scheduled_static_full_run_config_scan",
+      cron_expression: cronExpression,
+      schedule_id: schedule.schedule_id,
+      schedule_local_time: schedule.local_time,
+      schedule_day_of_week: schedule.day_of_week,
+      schedule_type: schedule.schedule_type,
+      schedule_timezone: schedule.timezone,
+      pacific_date: pt.ymd_dash,
+      pacific_time: pt.local_time,
+      pacific_weekday: pt.weekday,
+      approved_window_minutes: STATIC_FULL_RUN_SCHEDULE_WINDOW_MINUTES,
+      static_full_run_only: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
+      no_old_production_touch: true
+    };
+
+    if (!parsedTime) {
+      const payload = { ...basePayload, ok: false, data_ok: false, status: "BLOCKED_SCHEDULED_STATIC_FULL_RUN_BAD_LOCAL_TIME", reason: "local_time must be HH:MM" };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'static-full-run', 'ERROR', 'scheduled_static_full_run_bad_local_time', 'Scheduled Static Full Run row has invalid local_time', ?, CURRENT_TIMESTAMP)",
+        WORKER_NAME, JSON.stringify(payload)
+      );
+      results.push(payload);
+      continue;
+    }
+
+    const dayOfWeekMatches = String(schedule.day_of_week || "").trim().toLowerCase() === String(pt.weekday || "").trim().toLowerCase();
+    if (!dayOfWeekMatches) {
+      results.push({ ...basePayload, status: "SCHEDULED_STATIC_FULL_RUN_NOT_DUE_WRONG_DAY", configured_day_of_week: schedule.day_of_week, pacific_weekday: pt.weekday });
+      continue;
+    }
+
+    const scheduledKey = `static_full_run_${pt.ymd_key}_${parsedTime.key}_PT`;
+    const inWindow = isPacificScheduleWindowDue(pt, parsedTime, STATIC_FULL_RUN_SCHEDULE_WINDOW_MINUTES);
+    if (!inWindow) {
+      results.push({ ...basePayload, status: "SCHEDULED_STATIC_FULL_RUN_NOT_DUE", scheduled_key: scheduledKey });
+      continue;
+    }
+
+    const existingRows = await all(env.CONTROL_DB,
+      `SELECT request_id, chain_id, status, created_at, started_at, finished_at, updated_at, error_code, error_message
+       FROM control_job_queue
+       WHERE job_key='static-full-run'
+         AND worker_name='alphadog-v2-orchestrator'
+         AND json_extract(input_json,'$.scheduled_key')=?
+       ORDER BY datetime(created_at) DESC
+       LIMIT 10`,
+      scheduledKey
+    );
+
+    const active = existingRows.find(r => ["pending", "running", "partial_continue"].includes(String(r.status || "")) && !r.finished_at);
+    if (active) {
+      const payload = { ...basePayload, status: "SCHEDULED_STATIC_FULL_RUN_NOOP_ACTIVE_EXISTS", scheduled_key: scheduledKey, existing_request_id: active.request_id, existing_chain_id: active.chain_id, existing_status: active.status };
+      results.push(payload);
+      continue;
+    }
+
+    const completed = existingRows.find(r => String(r.status || "") === "completed");
+    if (completed) {
+      const payload = { ...basePayload, status: "SCHEDULED_STATIC_FULL_RUN_NOOP_ALREADY_COMPLETED", scheduled_key: scheduledKey, existing_request_id: completed.request_id, existing_chain_id: completed.chain_id, existing_status: completed.status };
+      results.push(payload);
+      continue;
+    }
+
+    const failed = existingRows.find(r => ["failed", "blocked", "error"].includes(String(r.status || "")) || r.error_code);
+    if (failed) {
+      const payload = { ...basePayload, ok: false, data_ok: false, status: "BLOCKED_SCHEDULED_STATIC_FULL_RUN_SAME_KEY_FAILED_REQUIRES_REVIEW", scheduled_key: scheduledKey, existing_request_id: failed.request_id, existing_chain_id: failed.chain_id, existing_status: failed.status, existing_error_code: failed.error_code || null, existing_error_message: failed.error_message || null };
+      await run(env.CONTROL_DB,
+        "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'static-full-run', 'ERROR', 'scheduled_static_full_run_blocked_failed_same_key', 'Scheduled Static Full Run blocked because same scheduled key failed/blocked and requires review', ?, CURRENT_TIMESTAMP)",
+        failed.request_id, WORKER_NAME, JSON.stringify(payload)
+      );
+      results.push(payload);
+      continue;
+    }
+
+    const configInput = parseJsonSafeText(schedule.input_json || "{}", {});
+    const requestId = scheduledKey;
+    const chainId = `chain_${scheduledKey}`;
+    const input = {
+      ...configInput,
+      source: "orchestrator_auto_clock_config_scheduled",
+      visible_button: "AUTO > Static Full Run Weekly",
+      scheduled_key: scheduledKey,
+      approved_chain_order: STATIC_FULL_RUN_STAGES.map(s => s.job_key),
+      static_full_run_only: true,
+      no_scoring: true,
+      no_ranking: true,
+      no_final_board: true,
+      no_old_production_touch: true
+    };
+
+    const insertScheduled = await run(env.CONTROL_DB,
+      "INSERT OR IGNORE INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'static-full-run', 'alphadog-v2-orchestrator', 'Static', 'static', 'Scheduled Static Full Run Backend Chain (Weekly)', 'pending', 8, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+      requestId, chainId, JSON.stringify(input)
+    );
+    const insertedScheduledRows = Number(insertScheduled && insertScheduled.meta && insertScheduled.meta.changes || 0);
+    const payload = { ...basePayload, status: insertedScheduledRows > 0 ? "SCHEDULED_STATIC_FULL_RUN_QUEUED" : "SCHEDULED_STATIC_FULL_RUN_NOOP_RACE_ALREADY_INSERTED", scheduled_key: scheduledKey, request_id: requestId, chain_id: chainId, queued_job_key: "static-full-run", queued_worker_name: WORKER_NAME, approved_chain_order: input.approved_chain_order, backend_chain_only: true };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, 'static-full-run', 'INFO', 'scheduled_static_full_run_queued', 'Scheduled Static Full Run parent backend chain job queued from CONFIG_DB weekly schedule', ?, CURRENT_TIMESTAMP)",
+      requestId, WORKER_NAME, JSON.stringify(payload)
+    );
+    results.push(payload);
+  }
+
+  return {
+    ok: true,
+    mode: "scheduled_static_full_run_config_scan",
+    cron_expression: cronExpression,
+    pacific_date: pt.ymd_dash,
+    pacific_time: pt.local_time,
+    pacific_weekday: pt.weekday,
+    schedules_read: scheduleRows.length,
+    queued_count: results.filter(r => r.status === "SCHEDULED_STATIC_FULL_RUN_QUEUED").length,
+    blocked_count: results.filter(r => r.ok === false || String(r.status || "").startsWith("BLOCKED_")).length,
+    results
+  };
+}
+
+
   const active = await first(env.CONTROL_DB,
     "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key='static-players' AND worker_name='alphadog-v2-static-players' AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
   );
