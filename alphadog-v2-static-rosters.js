@@ -138,13 +138,13 @@ async function insertHitterRow(env, r, batchId, runId) {
     player_id, game_pk, season, game_date, team_id, opponent_team_id, is_home, batting_order,
     pa, ab, hits, singles, doubles, triples, home_runs, runs, rbi, walks, strikeouts, stolen_bases, total_bases,
     raw_json, source_key, source_confidence, updated_at, group_type, data_feed_key, source_endpoint, source_season, source_game_type,
-    ingestion_mode, batch_id, run_id, certification_status, certification_grade, certified_at, promoted_at, created_at, player_name
-  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,'hitting','historical_backfill',?,?,'R','historical_backfill',?,?,'HISTORICAL_BACKFILL_CERTIFIED','BASE_PASS',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?)`,
+    ingestion_mode, batch_id, run_id, certification_status, certification_grade, certified_at, promoted_at, created_at
+  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,'hitting','historical_backfill',?,?,'R','historical_backfill',?,?,'HISTORICAL_BACKFILL_CERTIFIED','BASE_PASS',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
     r.player_id, r.game_pk, r.season, r.game_date, r.team_id, r.opponent_team_id, r.is_home, r.batting_order,
     r.pa, r.ab, r.hits, r.singles, r.doubles, r.triples, r.home_runs, r.runs, r.rbi, r.walks, r.strikeouts, r.stolen_bases, r.total_bases,
     r.raw_json, HITTER_SOURCE_KEY, "SOURCE_LOCKED_STATSAPI_GAMELOG_HITTING_HISTORICAL",
     `${mlbBaseUrl(env)}/people/${r.player_id}/stats?stats=gameLog&group=hitting&season=${r.season}`, r.season,
-    batchId, runId, r.player_name
+    batchId, runId
   );
 }
 
