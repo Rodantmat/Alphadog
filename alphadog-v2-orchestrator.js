@@ -543,6 +543,24 @@ function isHistoricalSeasonBackfillJob(row) {
   return job === "historical-season-backfill" && worker === "alphadog-v2-static-rosters";
 }
 
+function isContextHistorySnapshotJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "context-history-snapshot" && worker === "alphadog-v2-static-player-identity";
+}
+
+function isContextHistoryCertifierJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "context-history-certifier" && worker === "alphadog-v2-static-team-context";
+}
+
+function isContextHistoryFullRunJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "context-history-full-run" && worker === "alphadog-v2-orchestrator";
+}
+
 function isStaticStadiumsJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
