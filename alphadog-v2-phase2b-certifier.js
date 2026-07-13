@@ -1140,7 +1140,7 @@ async function runMatrixBuilder(request, env) {
 
     await insertMatrixRows(env, matrixRows, issues, coverageRows);
     const checkpoint = await summarizeMatrixBatch(env, batchId);
-    await run(env.SCORE_DB, `UPDATE prop_matrix_batches SET status=?, prepared_rows_read=?, eligible_rows=?, matrix_rows_written=?, issue_rows=?, warning_rows=?, blocker_rows=?, missing_component_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
+    await run(env.SCORING_DB, `UPDATE prop_matrix_batches SET status=?, prepared_rows_read=?, eligible_rows=?, matrix_rows_written=?, issue_rows=?, warning_rows=?, blocker_rows=?, missing_component_rows=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
       "running_chunked", prepared.length, prepared.length, checkpoint.matrix_rows_written, checkpoint.issue_rows, checkpoint.warning_rows, checkpoint.blocker_rows, checkpoint.missing_component_rows, batchId);
   }
 
