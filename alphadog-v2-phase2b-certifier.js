@@ -211,14 +211,33 @@ async function controlLifecyclePartial(env, input = {}, output = {}) {
 function classifyProp(propKey, sourcePropName) {
   const keyLc = String(propKey || "").toLowerCase();
   const sourceName = String(sourcePropName || "").toLowerCase();
-  if (DEFERRED_PROPS.has(keyLc)) return { family: "deferred", normalized_lane: keyLc, supported: false, reason: "PROP_DEFERRED_PENDING_SEPARATE_DESIGN" };
-  if (keyLc === "fantasy" && sourceName.includes("hitter")) return { family: "hitter", normalized_lane: "hitter_fantasy", supported: true };
-  if (HITTER_PROPS.has(keyLc)) return { family: "hitter", normalized_lane: keyLc === "fantasy_score" ? "hitter_fantasy" : keyLc, supported: true };
-  if (PITCHER_PROPS.has(keyLc)) {
-    const lane = keyLc === "pitching_outs" ? "pitcher_outs" : (keyLc === "earned_runs_allowed" ? "earned_runs" : keyLc);
-    return { family: "pitcher", normalized_lane: lane, supported: true };
+  const taxonomyMap = TAXONOMY_CACHE;
+  if (!taxonomyMap || !taxonomyMap.has(keyLc)) return { family: "unknown", normalized_lane: keyLc || null, supported: false, reason: "UNSUPPORTED_PROP_KEY_NOT_IN_TAXONOMY" };
+  const family = taxonomyMap.get(keyLc);
+  if (family === "deferred") return { family: "deferred", normalized_lane: keyLc, supported: false, reason: "PROP_DEFERRED_PENDING_SEPARATE_DESIGN" };
+  if (family === "ambiguous_disambiguate_by_source_name") {
+    const isPitcherFantasy = sourceName.includes("pitch");
+    return { family: isPitcherFantasy ? "pitcher" : "hitter", normalized_lane: isPitcherFantasy ? "pitcher_fantasy" : "hitter_fantasy", supported: true };
   }
-  return { family: "unknown", normalized_lane: keyLc || null, supported: false, reason: "UNSUPPORTED_PROP_KEY_PENDING_FACTOR_DESIGN" };
+  const lane = keyLc === "pitching_outs" ? "pitcher_outs" : (keyLc === "earned_runs_allowed" ? "earned_runs" : keyLc);
+  return { family, normalized_lane: lane, supported: true };
+}
+let TAXONOMY_CACHE = null;
+async function loadTaxonomyClassifier(env) {
+  if (TAXONOMY_CACHE) return TAXONOMY_CACHE;
+  const rows = await all(env.CONFIG_DB, "SELECT prop_key, player_side FROM config_prop_taxonomy");
+  const map = new Map();
+  for (const r of rows) {
+    const side = String(r.player_side || "").toLowerCase();
+    let family;
+    if (side === "hitter") family = "hitter";
+    else if (side === "pitcher" || side === "game_pitcher") family = "pitcher";
+    else if (side === "pitcher_combo") family = "deferred";
+    else family = "ambiguous_disambiguate_by_source_name";
+    map.set(String(r.prop_key || "").toLowerCase(), family);
+  }
+  TAXONOMY_CACHE = map;
+  return map;
 }
 function isStale(batch, preparedMaxUpdatedAt) {
   if (!batch || !preparedMaxUpdatedAt) return true;
