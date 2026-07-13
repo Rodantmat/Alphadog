@@ -1155,10 +1155,15 @@ export default {
 
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const output = await safeProbe(env, {
+      const flattened = {
         ...(input || {}),
         ...((input && input.input_json && typeof input.input_json === "object") ? input.input_json : {})
-      });
+      };
+      if (flattened.mode === "historical_props_probe") {
+        try { return jsonResponse(await runHistoricalPropsProbe(env, flattened)); }
+        catch (err) { return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "WORKER_EXCEPTION", error: safeString(err && err.stack ? err.stack : err, 900), timestamp_utc: nowUtc() }, 500); }
+      }
+      const output = await safeProbe(env, flattened);
       return jsonResponse({
         ...output,
         request_id: input.request_id || null,
