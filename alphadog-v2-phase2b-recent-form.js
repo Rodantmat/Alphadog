@@ -491,19 +491,19 @@ function expectedFactorPreparedRows(prepared, family) {
 }
 async function findRunningPropFactorBatch(env, requestId, family) {
   if (!requestId) return null;
-  return first(env.SCORE_DB, `SELECT batch_id, request_id, run_id, worker_version, mode, factor_family, status, window_start, window_end, prepared_rows_read, eligible_rows, packets_written
+  return first(env.SCORING_DB, `SELECT batch_id, request_id, run_id, worker_version, mode, factor_family, status, window_start, window_end, prepared_rows_read, eligible_rows, packets_written
     FROM prop_factor_batches
     WHERE request_id=? AND factor_family=? AND status IN ('running','partial_continue','partial_continue_factor_packets_chunk_written')
     ORDER BY datetime(updated_at) DESC
     LIMIT 1`, requestId, family);
 }
 async function getCoveredPreparedIds(env, batchId, family) {
-  const rows = await all(env.SCORE_DB, `SELECT prepared_row_id FROM prop_factor_coverage_current WHERE latest_batch_id=? AND factor_family=?`, batchId, family);
+  const rows = await all(env.SCORING_DB, `SELECT prepared_row_id FROM prop_factor_coverage_current WHERE latest_batch_id=? AND factor_family=?`, batchId, family);
   return new Set(rows.map(r => String(r.prepared_row_id || "")).filter(Boolean));
 }
 async function summarizeFactorBatch(env, batchId, family) {
   const packetTable = family === "pitcher" ? "prop_factor_pitcher_packets" : "prop_factor_hitter_packets";
-  const packetSummary = await first(env.SCORE_DB, `SELECT
+  const packetSummary = await first(env.SCORING_DB, `SELECT
       COUNT(*) AS packets,
       COUNT(DISTINCT prepared_row_id) AS packet_prepared_rows,
       COUNT(DISTINCT game_pk) AS games,
@@ -514,13 +514,13 @@ async function summarizeFactorBatch(env, batchId, family) {
       SUM(CASE WHEN missing_factor_count > 0 THEN 1 ELSE 0 END) AS missing_factor_rows
     FROM ${packetTable}
     WHERE batch_id=?`, batchId);
-  const coverageSummary = await first(env.SCORE_DB, `SELECT
+  const coverageSummary = await first(env.SCORING_DB, `SELECT
       COUNT(*) AS coverage_rows,
       COUNT(DISTINCT prepared_row_id) AS coverage_prepared_rows,
       SUM(CASE WHEN blocking_for_matrix=1 THEN 1 ELSE 0 END) AS coverage_blocked_rows
     FROM prop_factor_coverage_current
     WHERE latest_batch_id=? AND factor_family=?`, batchId, family);
-  const issueSummary = await first(env.SCORE_DB, `SELECT COUNT(*) AS issue_rows FROM prop_factor_issues WHERE batch_id=?`, batchId);
+  const issueSummary = await first(env.SCORING_DB, `SELECT COUNT(*) AS issue_rows FROM prop_factor_issues WHERE batch_id=?`, batchId);
   return {
     packets:Number(packetSummary && packetSummary.packets || 0),
     packet_prepared_rows:Number(packetSummary && packetSummary.packet_prepared_rows || 0),
