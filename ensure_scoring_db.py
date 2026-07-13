@@ -37,7 +37,7 @@ BINDINGS_FILE = Path("cloudflare_d1_bindings.json")
 NEW_BINDING_NAME = "SCORING_DB"
 NEW_DATABASE_NAME = "alphadog-v2-scoring-db"
 DEBUG_LOG = Path("scoring_db_debug.log")
-DATABASE_ID_RE = re.compile(r'database_id\s*=\s*"([0-9a-fA-F-]{36})"')
+DATABASE_ID_RE = re.compile(r'database_id["\']?\s*[:=]\s*["\']([0-9a-fA-F-]{36})["\']')
 _debug_lines = []
 
 
