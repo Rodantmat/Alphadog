@@ -18,7 +18,13 @@ const ODDS_MLB_MARKETS = [
   "batter_triples",
   "batter_walks",
   "batter_strikeouts",
-  "batter_stolen_bases"
+  "batter_stolen_bases",
+  "pitcher_strikeouts",
+  "pitcher_hits_allowed",
+  "pitcher_walks",
+  "pitcher_earned_runs",
+  "pitcher_outs",
+  "pitcher_record_a_win"
 ];
 const MARKET_TO_PROP = {
   batter_hits: "hits",
@@ -32,8 +38,15 @@ const MARKET_TO_PROP = {
   batter_triples: "triples",
   batter_walks: "walks",
   batter_strikeouts: "hitter_strikeouts",
-  batter_stolen_bases: "stolen_bases"
+  batter_stolen_bases: "stolen_bases",
+  pitcher_strikeouts: "pitcher_strikeouts",
+  pitcher_hits_allowed: "hits_allowed",
+  pitcher_walks: "walks_allowed",
+  pitcher_earned_runs: "earned_runs",
+  pitcher_outs: "pitcher_outs",
+  pitcher_record_a_win: "pitcher_record_a_win"
 };
+const GAME_LEVEL_MARKETS = ["h2h", "spreads", "totals"];
 const PROP_TO_MARKET = Object.fromEntries(Object.entries(MARKET_TO_PROP).map(([k, v]) => [v, k]));
 const HITTER_PROP_KEYS = Object.keys(PROP_TO_MARKET);
 const REQUIRED_DB_BINDINGS = ["MARKET_DB", "SCORE_DB", "TEAM_DB", "REF_DB", "CONTROL_DB"];
