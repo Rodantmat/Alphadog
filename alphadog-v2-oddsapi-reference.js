@@ -72,7 +72,7 @@ function americanToDecimal(american) { const n = numberOrNull(american); if (n =
 function outcomeSide(name) { const n = normalizeText(name); if (n === "over" || n.startsWith("over ")) return "over"; if (n === "under" || n.startsWith("under ")) return "under"; if (n === "yes") return "over"; if (n === "no") return "under"; return null; }
 function safeHost(url) { try { return new URL(url).host; } catch (_) { return null; } }
 function safeEndpoint(url) { try { const u = new URL(url); u.searchParams.set("apiKey", "REDACTED"); return u.toString(); } catch (_) { return "invalid_url"; } }
-function sourceKeyForBook(bookKey) { return `${SOURCE_KEY_PREFIX}_${normalizeText(bookKey || "unknown_book").replace(/ /g, "_")}_hitter_props`; }
+function sourceKeyForBook(bookKey) { return `${SOURCE_KEY_PREFIX}_${normalizeText(bookKey || "unknown_book").replace(/ /g, "_")}_props`; }
 function gamePairKey(home, away) { return [normalizeText(home), normalizeText(away)].sort().join("|"); }
 function baseIdentity(env, extra = {}) {
   const required = bindingPresence(env, REQUIRED_DB_BINDINGS);
