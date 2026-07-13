@@ -8906,6 +8906,13 @@ async function processStaticDefensiveQualityJob(env, row, runId, trigger) {
   return genericSimpleWorkerDispatch(env, row, runId, trigger, "DELTA_BULLPEN_UPDATE_WORKER", "alphadog-v2-delta-bullpen-update", "STATIC_DEFENSIVE_QUALITY");
 }
 
+async function processStaticCertifierJob(env, row, runId, trigger) {
+  // Real, previously-missing function - confirmed via a live static-full-run test that crashed
+  // with "processStaticCertifierJob is not defined" on the final stage. isStaticCertifierJob and
+  // the dispatch call site already existed; this actual function never did.
+  return genericSimpleWorkerDispatch(env, row, runId, trigger, "STATIC_CERTIFIER_WORKER", "alphadog-v2-static-certifier", "STATIC_CERTIFIER");
+}
+
 const CONTEXT_HISTORY_FULL_RUN_STAGES = [
   { job_key: "context-history-snapshot", worker_name: "alphadog-v2-static-player-identity", stage_key: "context_history_snapshot" },
   { job_key: "context-history-certifier", worker_name: "alphadog-v2-static-team-context", stage_key: "context_history_certifier" }
