@@ -221,8 +221,9 @@ async function runWorker(env, input) {
   const runId = input.run_id || null;
   let warningCount = 0;
   let blockerCount = 0;
-  await run(env.MARKET_DB, "DELETE FROM market_context_probe_player_props WHERE slate_window_key=? AND source_key LIKE 'odds_api_%_hitter_props'", slateWindowKey);
-  await run(env.MARKET_DB, "DELETE FROM market_context_probe_coverage WHERE slate_window_key=? AND source_key LIKE 'odds_api_%_hitter_props'", slateWindowKey);
+  await run(env.MARKET_DB, "DELETE FROM market_context_probe_player_props WHERE slate_window_key=? AND source_key LIKE 'odds_api_%_props'", slateWindowKey);
+  await run(env.MARKET_DB, "DELETE FROM market_context_probe_coverage WHERE slate_window_key=? AND source_key LIKE 'odds_api_%_props'", slateWindowKey);
+  await run(env.MARKET_DB, "DELETE FROM market_context_probe_game_odds WHERE slate_window_key=?", slateWindowKey);
   await run(env.MARKET_DB, "DELETE FROM market_context_probe_issues WHERE slate_window_key=? AND source_key LIKE 'odds_api%'", slateWindowKey);
 
   const preparedRows = await loadPreparedRows(env, today, tomorrow);
