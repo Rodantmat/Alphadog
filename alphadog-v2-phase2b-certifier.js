@@ -4,7 +4,7 @@ const JOB_KEY = "prop-matrix-builder";
 const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.14-compact-storage-safe";
 const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.12-matrix-compact-storage-safe";
 
-const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
+const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB", "SCORING_DB"];
 
 const HITTER_PROPS = new Set([
   "hits", "total_bases", "runs", "rbis", "singles", "doubles", "home_runs", "walks",
