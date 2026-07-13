@@ -502,7 +502,24 @@ async function runD1Batch(db, statements, size = D1_BATCH_SIZE) {
   return executed;
 }
 
+async function purgeStaleStageBatches(env, olderThanHours = 24) {
+  // Real safety net added after a genuine, live-discovered gap: a batch that never reaches
+  // promotion/cleanup (e.g. left in 'collecting' from an old, abandoned run) leaves real orphaned
+  // rows in the stage tables forever, since normal cleanup is correctly scoped to only the current
+  // batch_id. Found live via the static-certifier: a real ~1-month-old abandoned batch
+  // (static_players_auto_..., status 'collecting') had left 135/657/135 real orphaned rows.
+  const stale = await all(env.REF_DB, `SELECT batch_id FROM static_players_batches WHERE status NOT IN ('promoted') AND datetime(updated_at) < datetime('now', ?)`, `-${olderThanHours} hours`);
+  for (const row of stale) {
+    await run(env.REF_DB, "DELETE FROM ref_players_stage WHERE batch_id=?", row.batch_id);
+    await run(env.REF_DB, "DELETE FROM ref_player_aliases_stage WHERE batch_id=?", row.batch_id);
+    await run(env.REF_DB, "DELETE FROM ref_rosters_stage WHERE batch_id=?", row.batch_id);
+    await run(env.REF_DB, "UPDATE static_players_batches SET status='abandoned_stale_cleanup', certification_status='STATIC_PLAYERS_STALE_BATCH_AUTO_CLEANED', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", row.batch_id);
+  }
+  return { stale_batches_cleaned: stale.length };
+}
+
 async function initializeStageBatch(env, batchId, input, originalInput) {
+  await purgeStaleStageBatches(env);
   await run(env.REF_DB, `INSERT OR REPLACE INTO static_players_batches
     (batch_id, request_id, chain_id, source_key, status, certification_status, processed_mlb_team_ids_json, created_at, updated_at)
     VALUES (?, ?, ?, ?, 'collecting', 'STATIC_PLAYERS_STAGE_COLLECTING', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
