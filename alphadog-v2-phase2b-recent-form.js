@@ -976,15 +976,15 @@ async function flushFactorChunks(env, family, batchId, packetChunk, issueChunk, 
 
 async function finalizeExistingPropFactorEvidenceForRequest(env, input, family, mode, dates) {
   const requestId = input && input.request_id;
-  if (!requestId || !env || !env.SCORE_DB) return null;
+  if (!requestId || !env || !env.SCORING_DB) return null;
   const packetTable = family === "pitcher" ? "prop_factor_pitcher_packets" : "prop_factor_hitter_packets";
-  const batchRow = await first(env.SCORE_DB, `SELECT batch_id, request_id, run_id, worker_version, mode, factor_family, status, window_start, window_end, prepared_rows_read
+  const batchRow = await first(env.SCORING_DB, `SELECT batch_id, request_id, run_id, worker_version, mode, factor_family, status, window_start, window_end, prepared_rows_read
     FROM prop_factor_batches
     WHERE request_id=? AND factor_family=? AND status='running'
     ORDER BY datetime(updated_at) DESC
     LIMIT 1`, requestId, family);
   if (!batchRow || !batchRow.batch_id) return null;
-  const packetSummary = await first(env.SCORE_DB, `SELECT
+  const packetSummary = await first(env.SCORING_DB, `SELECT
       COUNT(*) AS packets,
       COUNT(DISTINCT prepared_row_id) AS prepared_rows,
       COUNT(DISTINCT game_pk) AS games,
@@ -999,9 +999,9 @@ async function finalizeExistingPropFactorEvidenceForRequest(env, input, family, 
     WHERE batch_id=?`, batchRow.batch_id);
   const packets = Number(packetSummary && packetSummary.packets || 0);
   if (!packets) return null;
-  const issueSummary = await first(env.SCORE_DB, `SELECT COUNT(*) AS issue_rows FROM prop_factor_issues WHERE batch_id=?`, batchRow.batch_id);
+  const issueSummary = await first(env.SCORING_DB, `SELECT COUNT(*) AS issue_rows FROM prop_factor_issues WHERE batch_id=?`, batchRow.batch_id);
   const issueRows = Number(issueSummary && issueSummary.issue_rows || 0);
-  await run(env.SCORE_DB, `INSERT OR REPLACE INTO prop_factor_coverage_current (
+  await run(env.SCORING_DB, `INSERT OR REPLACE INTO prop_factor_coverage_current (
       coverage_key,factor_family,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,normalized_factor_lane,
       factor_status,factor_grade,packet_id,latest_batch_id,latest_checked_at,blocking_for_matrix,missing_reason,details_json,official_date,created_at,updated_at
     )
