@@ -910,7 +910,7 @@ async function runHistoricalPropsProbe(env, input) {
   const headers = new Headers({ accept: "application/json", "user-agent": "AlphaDog-v2-Parlay-Historical-Probe/0.1" });
   auth.apply(headers, env);
 
-  const url = `${base}/historical/sports/baseball_mlb/odds?date=${encodeURIComponent(date)}&bookmakers=sleeper&markets=player_hits,player_total_bases,player_home_runs&regions=us`;
+  const url = `${base}/historical/sports/baseball_mlb/odds?date=${encodeURIComponent(date)}&markets=player_hits,player_total_bases,player_home_runs&regions=us`;
   const started = Date.now();
   let resp, text, json = null;
   try {
