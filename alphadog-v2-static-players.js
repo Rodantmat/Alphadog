@@ -627,7 +627,7 @@ async function promoteCertifiedStage(env, batchId, requestId) {
     await run(env.REF_DB, `UPDATE static_players_batches
       SET status='promotion_failed', certification_status='STATIC_PLAYERS_MAIN_CERTIFICATION_FAILED_AFTER_PROMOTION', error_json=?, updated_at=CURRENT_TIMESTAMP
       WHERE batch_id=?`, JSON.stringify({ mainChecks }).slice(0, RAW_JSON_LIMIT), batchId);
-    return { promoted: false, mainChecks };
+    return { promoted: false, mainChecks, real_rows_changed_this_run: (diffPromote && diffPromote.meta && diffPromote.meta.changes) || 0 };
   }
 
   await run(env.REF_DB, "DELETE FROM ref_players_stage WHERE batch_id=?", batchId);
