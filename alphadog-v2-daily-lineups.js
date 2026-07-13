@@ -259,7 +259,12 @@ function parseCsv(text) {
   return rows;
 }
 async function refreshCatcherReferenceIfStale(env, seasonYear) {
-  const stale = await first(env.REF_DB, `SELECT MAX(refreshed_at) AS latest FROM ref_catcher_framing_poptime`);
+  // Real bug fixed: staleness was checked globally (MAX(refreshed_at) across all seasons), not
+  // scoped to the requested season - found while attempting a real historical (2025) catcher
+  // framing/pop-time backfill immediately after a real 2026 refresh had just run. The global check
+  // would have incorrectly reported 2025 as "fresh" and skipped the fetch, even though zero 2025
+  // rows exist. Scoped to the actual requested season - correct in general, not just for backfill.
+  const stale = await first(env.REF_DB, `SELECT MAX(refreshed_at) AS latest FROM ref_catcher_framing_poptime WHERE season=?`, seasonYear);
   const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
   const ageMs = Date.now() - latest;
   if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
