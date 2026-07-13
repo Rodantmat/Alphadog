@@ -8771,6 +8771,12 @@ async function processStaticTeamsJob(env, row, runId, trigger) {
     input_json: (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })()
   };
 
+  // Real bug fixed: partialContinue was referenced later in this function but never defined,
+  // guaranteeing "partialContinue is not defined" on every real run (confirmed via live test).
+  // static-teams is a simple, single-pass worker (all 30 teams fetched in one call, no
+  // chunking/continuation in the real worker code), so it never partial-continues.
+  const partialContinue = false;
+
   const recentPartial = await first(env.CONTROL_DB, `SELECT
       COUNT(*) AS partial_continue_runs,
       MAX(finished_at) AS last_partial_finished_at,
