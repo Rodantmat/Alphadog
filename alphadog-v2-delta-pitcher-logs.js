@@ -54,6 +54,10 @@ async function runProbe(env, input) {
   const sportsUrl = `${ODDSPAPI_BASE_URL}/sports?apiKey=${encodeURIComponent(apiKey)}`;
   const sportsRes = await fetchJson(sportsUrl);
 
+  // Real, new endpoint from official docs shared by the user - test independently, different endpoint entirely
+  const settlementsUrl = `${ODDSPAPI_BASE_URL}/settlements?apiKey=${encodeURIComponent(apiKey)}&fixtureId=id1000000761280685`;
+  const settlementsRes = await fetchJson(settlementsUrl);
+
   const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
   const fromDate = String(inputJson.from_date || "2025-06-01");
   const toDate = String(inputJson.to_date || "2025-06-08");
