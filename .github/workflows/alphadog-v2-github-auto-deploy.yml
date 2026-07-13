@@ -87,18 +87,16 @@ jobs:
       - name: Ensure Scoring DB exists (idempotent, real D1 provisioning)
         run: python ensure_scoring_db.py
 
-      - name: Commit Scoring DB binding if it changed
+      - name: Commit Scoring DB binding/debug log
         if: always()
         shell: bash
         run: |
-          if [ -f scoring_db_binding_changed.flag ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add cloudflare_d1_bindings.json
-            git commit -m "Auto: register new SCORING_DB D1 binding" || true
-            git push || true
-            rm -f scoring_db_binding_changed.flag
-          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add cloudflare_d1_bindings.json scoring_db_debug.log 2>/dev/null || true
+          git commit -m "Auto: Scoring DB provisioning attempt (binding + debug log)" || true
+          git push || true
+          rm -f scoring_db_binding_changed.flag
 
       - name: Regenerate Wrangler configs
         run: python generate_wrangler_configs.py
