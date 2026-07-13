@@ -4,7 +4,7 @@ const JOB_KEY = "prop-factor-miner";
 const SYSTEM_VERSION = "alphadog-v2-prop-factor-miner-v0.1.19-expansion-baseline-consumption";
 const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-recent-form-v0.2.19-expansion-baseline-consumption";
 
-const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB"];
+const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB", "SCORING_DB"];
 
 const HITTER_PACKET_FLUSH_SIZE = 100;
 const PITCHER_PACKET_FLUSH_SIZE = 250;
