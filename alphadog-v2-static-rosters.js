@@ -462,8 +462,9 @@ export default {
 
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
+      const innerInput = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
       try {
-        const output = await runBackfill(env, input);
+        const output = innerInput.mode === "team_bullpen_backfill" ? await runTeamBullpenBackfill(env, input) : await runBackfill(env, input);
         return jsonResponse(output, output.ok ? 200 : 400);
       } catch (err) {
         return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: LOGICAL_WORKER_NAME, error: String(err && err.stack ? err.stack : err) }, 500);
