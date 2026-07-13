@@ -186,20 +186,25 @@ async function runSnapshot(env, input) {
     externalCalls += 1;
     if (!fetched.ok) { gamesError += 1; perGameSummary.push({ game_pk: game.game_pk, status: "fetch_error", error: fetched.error || fetched.http_status }); continue; }
     const venueId = fetched.json && fetched.json.gameData && fetched.json.gameData.venue ? asInt(fetched.json.gameData.venue.id) : null;
+    // Real fix: always derive official_date from the real MLB feed response itself
+    // (gameData.datetime.officialDate), not from the caller-supplied date - the explicit game_pks
+    // override path has no reliable per-game date to pass in (a single request can cover games
+    // spanning several real dates), and this is more robust in general regardless of input mode.
+    const officialDate = String((fetched.json && fetched.json.gameData && fetched.json.gameData.datetime && fetched.json.gameData.datetime.officialDate) || game.official_date || "");
     const weather = extractWeather(fetched.json);
     const umpire = extractUmpire(fetched.json);
     if (!weather && !umpire) { gamesNoData += 1; perGameSummary.push({ game_pk: game.game_pk, status: "no_data" }); continue; }
     if (weather) {
       await run(env.CONTEXT_DB, `INSERT OR REPLACE INTO context_history_game_weather (game_pk, official_date, venue_id, home_team_id, temp_f, condition, wind_speed_mph, wind_direction_cardinal, wind_context, source_key, raw_json, captured_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
-        game.game_pk, game.official_date, venueId, game.home_team_id, weather.temp_f, weather.condition, weather.wind_speed_mph, weather.wind_direction_cardinal, weather.wind_context, MLB_SOURCE_KEY, JSON.stringify(weather).slice(0, 3000));
+        game.game_pk, officialDate, venueId, game.home_team_id, weather.temp_f, weather.condition, weather.wind_speed_mph, weather.wind_direction_cardinal, weather.wind_context, MLB_SOURCE_KEY, JSON.stringify(weather).slice(0, 3000));
       weatherWritten += 1;
     }
     if (umpire) {
       await run(env.CONTEXT_DB, `INSERT OR REPLACE INTO context_history_game_umpire (game_pk, official_date, venue_id, home_team_id, home_plate_umpire_id, home_plate_umpire_name, crew_umpire_ids_json, source_key, raw_json, captured_at) VALUES (?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
-        game.game_pk, game.official_date, venueId, game.home_team_id, umpire.home_plate_umpire_id, umpire.home_plate_umpire_name, umpire.crew_umpire_ids_json, MLB_SOURCE_KEY, JSON.stringify(umpire).slice(0, 2000));
+        game.game_pk, officialDate, venueId, game.home_team_id, umpire.home_plate_umpire_id, umpire.home_plate_umpire_name, umpire.crew_umpire_ids_json, MLB_SOURCE_KEY, JSON.stringify(umpire).slice(0, 2000));
       umpireWritten += 1;
     }
-    perGameSummary.push({ game_pk: game.game_pk, status: "written", weather: !!weather, umpire: !!umpire });
+    perGameSummary.push({ game_pk: game.game_pk, status: "written", weather: !!weather, umpire: !!umpire, official_date: officialDate });
   }
 
   const remaining = Math.max(0, remainingGames.length - gamesThisRun.length);
