@@ -2766,6 +2766,12 @@ function pacificNowParts(date = new Date()) {
   const year = String(parts.year || "");
   const month = String(parts.month || "");
   const day = String(parts.day || "");
+  // Added for real weekly scheduling support (static-full-run): a genuine Pacific-timezone-aware
+  // weekday, computed via Intl the same DST-safe way as the rest of this function, rather than a
+  // fixed UTC cron day-of-week which would silently drift by a day near midnight during DST
+  // transitions.
+  const weekdayFormatter = new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", weekday: "short" });
+  const weekday = weekdayFormatter.format(date);
   return {
     year,
     month,
@@ -2773,6 +2779,7 @@ function pacificNowParts(date = new Date()) {
     hour,
     minute,
     second,
+    weekday,
     ymd_dash: `${year}-${month}-${day}`,
     ymd_key: `${year}_${month}_${day}`,
     local_time: `${pad2(hour)}:${pad2(minute)}:${pad2(second)}`
