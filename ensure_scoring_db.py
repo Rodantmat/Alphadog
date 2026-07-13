@@ -50,6 +50,47 @@ def main():
     print(f"---- wrangler d1 create: exit code {result.returncode} ----")
 
     if result.returncode != 0:
+        # Real possibility given the first attempt's outcome is genuinely unknown from
+        # outside the CI run: the database may have actually been created before an
+        # earlier version of this script failed later (e.g. during the git commit-back
+        # step), leaving a real, orphaned-but-live database that a blind retry would
+        # either error on ("already exists") or, worse, duplicate. Check for that
+        # specific real case before giving up.
+        if "already exists" in (result.stdout + result.stderr).lower():
+            print(f"'{NEW_DATABASE_NAME}' already exists on Cloudflare - looking up its real id instead of creating a duplicate.")
+            list_result = subprocess.run(
+                ["npx", "wrangler", "d1", "list", "--json"],
+                capture_output=True, text=True, check=False
+            )
+            print("---- wrangler d1 list: raw stdout ----")
+            print(list_result.stdout)
+            if list_result.returncode != 0:
+                print("wrangler d1 list also failed.", file=sys.stderr)
+                print(list_result.stderr, file=sys.stderr)
+                sys.exit(1)
+            list_start = list_result.stdout.find("[")
+            if list_start == -1:
+                print("No JSON array found in wrangler d1 list output.", file=sys.stderr)
+                sys.exit(1)
+            all_dbs = json.loads(list_result.stdout[list_start:])
+            found = next((d for d in all_dbs if d.get("name") == NEW_DATABASE_NAME), None)
+            if not found:
+                print(f"'{NEW_DATABASE_NAME}' reported as already existing, but not found in d1 list output: {all_dbs}", file=sys.stderr)
+                sys.exit(1)
+            database_id = found.get("uuid") or found.get("id")
+            if not database_id:
+                print(f"Found '{NEW_DATABASE_NAME}' in d1 list but no id field present: {found}", file=sys.stderr)
+                sys.exit(1)
+            existing.append({
+                "binding": NEW_BINDING_NAME,
+                "database_name": NEW_DATABASE_NAME,
+                "database_id": database_id
+            })
+            data["d1_databases"] = existing
+            BINDINGS_FILE.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+            print(f"Registered existing {NEW_DATABASE_NAME} (id={database_id}) - no duplicate created.")
+            Path("scoring_db_binding_changed.flag").write_text("1", encoding="utf-8")
+            return
         print("Wrangler d1 create failed (non-zero exit).", file=sys.stderr)
         sys.exit(1)
 
