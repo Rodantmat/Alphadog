@@ -106,6 +106,7 @@ async function runProbe(env, input) {
     status: "completed", certification: "ODDSPAPI_MLB_HISTORICAL_PROPS_PROBE_COMPLETED",
     account_check: { http_status: accountRes.http_status, ok: accountRes.ok, raw_preview: accountRes.raw_text_safe },
     sports_check: { http_status: sportsRes.http_status, ok: sportsRes.ok, raw_preview: sportsRes.raw_text_safe, is_array: Array.isArray(sportsRes.json), count: Array.isArray(sportsRes.json) ? sportsRes.json.length : null },
+    settlements_check: { http_status: settlementsRes.http_status, ok: settlementsRes.ok, raw_preview: settlementsRes.raw_text_safe },
     real_probe_window: { from_date: fromDate, to_date: toDate },
     real_fixtures_found: fixtures.length,
     real_fixtures_with_odds: withOdds.length,
