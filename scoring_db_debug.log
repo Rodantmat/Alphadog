@@ -1,0 +1,46 @@
+SCORING_DB not found - creating real D1 database 'alphadog-v2-scoring-db' via Wrangler...
+---- wrangler d1 create: raw stdout ----
+
+wrangler d1 create <name>
+
+Creates a new D1 database, and provides the binding and UUID that you will put in your config file
+
+POSITIONALS
+  name  The name of the new D1 database  [string] [required]
+
+GLOBAL FLAGS
+  -c, --config          Path to Wrangler configuration file  [string]
+      --cwd             Run as if Wrangler was started in the specified directory instead of the current working directory  [string]
+  -e, --env             Environment to use for operations, and for selecting .env and .dev.vars files  [string]
+      --env-file        Path to an .env file to load - can be specified multiple times - values from earlier files are overridden by values in later files  [array]
+  -h, --help            Show help  [boolean]
+      --install-skills  Install Cloudflare skills for detected AI coding agents before running the command  [boolean] [default: false]
+      --profile         Use a specific auth profile  [string]
+  -v, --version         Show version number  [boolean]
+
+OPTIONS
+      --location       A hint for the primary location of the new DB. Options:
+                       	weur: Western Europe
+                       	eeur: Eastern Europe
+                       	apac: Asia Pacific
+                       	oc: Oceania
+                       	wnam: Western North America
+                       	enam: Eastern North America
+  [string] [choices: "weur", "eeur", "apac", "oc", "wnam", "enam"]
+      --jurisdiction   The location to restrict the D1 database to run and store data within to comply with local regulations. Note that if jurisdictions are set, the location hint is ignored. Options:
+                       	eu: The European Union
+                       	fedramp: FedRAMP-compliant data centers  [string] [choices: "eu", "fedramp"]
+      --use-remote     Use a remote binding when adding the newly created resource to your config  [boolean]
+      --update-config  Automatically update your config file with the newly added resource  [boolean]
+      --binding        The binding name of this resource in your Worker  [string]
+
+This command acts on remote D1 Databases.
+
+---- wrangler d1 create: raw stderr ----
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mUnknown argument: json[0m
+
+
+🪵  Logs were written to "/home/runner/.config/.wrangler/logs/wrangler-2026-07-13_02-51-06_022.log"
+
+---- wrangler d1 create: exit code 1 ----
+FAIL: Wrangler d1 create failed (non-zero exit), and it is not an 'already exists' case
