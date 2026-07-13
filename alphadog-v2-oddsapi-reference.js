@@ -656,33 +656,35 @@ async function runHistoricalPropsProbe(env, input) {
 
 export default {
   async fetch(request, env, ctx) {
+    const resolvedKey = await resolveOddsApiKey(env);
+    const effectiveEnv = { ...env, ODDS_API_KEY: resolvedKey };
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, "") || "/";
     const method = request.method.toUpperCase();
     if (method === "OPTIONS") return new Response(null, { status:204, headers:{ "access-control-allow-origin":"*", "access-control-allow-headers":"content-type,x-ingest-token,x-admin-token,authorization", "access-control-allow-methods":"GET,POST,OPTIONS" } });
-    if (method === "GET" && (path === "/" || path === "/health")) return jsonResponse(baseIdentity(env));
-    if (method === "POST" && path === "/diagnostic") return jsonResponse(baseIdentity(env, { route:"/diagnostic", schema_checked:false }));
+    if (method === "GET" && (path === "/" || path === "/health")) return jsonResponse(baseIdentity(effectiveEnv));
+    if (method === "POST" && path === "/diagnostic") return jsonResponse(baseIdentity(effectiveEnv, { route:"/diagnostic", schema_checked:false }));
     if (method === "POST" && path === "/historical-probe") {
       const input = await readJsonSafe(request);
-      try { return jsonResponse(await runHistoricalPropsProbe(env, input)); }
+      try { return jsonResponse(await runHistoricalPropsProbe(effectiveEnv, input)); }
       catch (err) { return jsonResponse({ ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"WORKER_EXCEPTION", certification:"ODDS_API_HISTORICAL_PROBE_EXCEPTION", error:safeText(err && err.stack ? err.stack : err), timestamp_utc:nowUtc() }, 500); }
     }
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       const innerInput = input.input_json && typeof input.input_json === "object" ? input.input_json : input;
       if (innerInput.mode === "historical_props_probe") {
-        try { return jsonResponse(await runHistoricalPropsProbe(env, innerInput)); }
+        try { return jsonResponse(await runHistoricalPropsProbe(effectiveEnv, innerInput)); }
         catch (err) { return jsonResponse({ ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"WORKER_EXCEPTION", certification:"ODDS_API_HISTORICAL_PROBE_EXCEPTION", error:safeText(err && err.stack ? err.stack : err), timestamp_utc:nowUtc() }, 500); }
       }
       if (innerInput.mode === "historical_backfill_2025") {
-        try { return jsonResponse(await runHistoricalBackfill2025(env, innerInput)); }
+        try { return jsonResponse(await runHistoricalBackfill2025(effectiveEnv, innerInput)); }
         catch (err) { return jsonResponse({ ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"WORKER_EXCEPTION", certification:"MARKET_HISTORICAL_BACKFILL_EXCEPTION", error:safeText(err && err.stack ? err.stack : err), timestamp_utc:nowUtc() }, 500); }
       }
       if (innerInput.mode === "historical_backfill_2025_pitchers") {
-        try { return jsonResponse(await runHistoricalBackfillPitchers2025(env, innerInput)); }
+        try { return jsonResponse(await runHistoricalBackfillPitchers2025(effectiveEnv, innerInput)); }
         catch (err) { return jsonResponse({ ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"WORKER_EXCEPTION", certification:"MARKET_HISTORICAL_PITCHER_BACKFILL_EXCEPTION", error:safeText(err && err.stack ? err.stack : err), timestamp_utc:nowUtc() }, 500); }
       }
-      try { return jsonResponse(await runWorker(env, input)); }
+      try { return jsonResponse(await runWorker(effectiveEnv, input)); }
       catch (err) { return jsonResponse({ ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"WORKER_EXCEPTION", certification:"ODDSAPI_HITTER_PROP_CONTEXT_EXCEPTION", error:safeText(err && err.stack ? err.stack : err), timestamp_utc:nowUtc() }, 500); }
     }
     return jsonResponse({ ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, status:"NOT_FOUND", allowed_routes:["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc:nowUtc() }, 404);
