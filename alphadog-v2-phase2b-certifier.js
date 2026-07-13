@@ -1189,8 +1189,8 @@ export default {
       catch (err) {
         const failOutput = { ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, request_id:inputForLifecycle.request_id || null, run_id:inputForLifecycle.run_id || null, status:"prop_matrix_builder_exception", certification:"PROP_MATRIX_BUILDER_EXCEPTION", certification_grade:"FAILED", error:String(err && err.stack ? err.stack : err), external_calls:0, no_scoring:true, no_ranking:true, no_final_board:true };
         try {
-          if (env && env.SCORE_DB && (inputForLifecycle.request_id || inputForLifecycle.run_id)) {
-            await run(env.SCORE_DB, `UPDATE prop_matrix_batches
+          if (env && env.SCORING_DB && (inputForLifecycle.request_id || inputForLifecycle.run_id)) {
+            await run(env.SCORING_DB, `UPDATE prop_matrix_batches
               SET status='failed_runtime_exception', certification_status='PROP_MATRIX_BUILDER_EXCEPTION', certification_grade='FAILED', output_json=?, updated_at=CURRENT_TIMESTAMP
               WHERE status LIKE 'running%' AND (request_id=? OR run_id=?)`, JSON.stringify(failOutput), inputForLifecycle.request_id || null, inputForLifecycle.run_id || null);
           }
