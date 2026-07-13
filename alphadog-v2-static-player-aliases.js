@@ -26,7 +26,29 @@ function savantUrl(year) {
   u.searchParams.set("minPitches", "q");
   u.searchParams.set("sort", "4");
   u.searchParams.set("sortDir", "desc");
+  u.searchParams.set("csv", "true");
   return u.toString();
+}
+
+function parseCsv(text) {
+  const lines = String(text || "").trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",").map(h => h.trim());
+  return lines.slice(1).map(line => {
+    // Real, minimal CSV parse - handles simple quoted fields (Savant CSV exports are not complex).
+    const values = [];
+    let cur = "", inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQuotes = !inQuotes; continue; }
+      if (c === "," && !inQuotes) { values.push(cur); cur = ""; continue; }
+      cur += c;
+    }
+    values.push(cur);
+    const row = {};
+    headers.forEach((h, i) => { row[h] = values[i] !== undefined ? values[i] : null; });
+    return row;
+  });
 }
 
 function extractVarData(html) {
