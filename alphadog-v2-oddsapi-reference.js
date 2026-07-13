@@ -516,6 +516,10 @@ export default {
         try { return jsonResponse(await runHistoricalPropsProbe(env, innerInput)); }
         catch (err) { return jsonResponse({ ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"WORKER_EXCEPTION", certification:"ODDS_API_HISTORICAL_PROBE_EXCEPTION", error:safeText(err && err.stack ? err.stack : err), timestamp_utc:nowUtc() }, 500); }
       }
+      if (innerInput.mode === "historical_backfill_2025") {
+        try { return jsonResponse(await runHistoricalBackfill2025(env, innerInput)); }
+        catch (err) { return jsonResponse({ ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"WORKER_EXCEPTION", certification:"MARKET_HISTORICAL_BACKFILL_EXCEPTION", error:safeText(err && err.stack ? err.stack : err), timestamp_utc:nowUtc() }, 500); }
+      }
       try { return jsonResponse(await runWorker(env, input)); }
       catch (err) { return jsonResponse({ ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"WORKER_EXCEPTION", certification:"ODDSAPI_HITTER_PROP_CONTEXT_EXCEPTION", error:safeText(err && err.stack ? err.stack : err), timestamp_utc:nowUtc() }, 500); }
     }
