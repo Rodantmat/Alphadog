@@ -19478,6 +19478,7 @@ export default {
     const cronExpression = event && event.cron ? String(event.cron) : "unknown";
     ctx.waitUntil((async () => {
       await enqueueScheduledStaticFullRunIfDue(env, cronExpression);
+      await enqueueScheduledContextHistoryFullRunIfDue(env, cronExpression);
       await enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpression);
       await enqueueScheduledDailyFullRunIfDue(env, cronExpression);
       await enqueueScheduledBoardFullRunIfDue(env, cronExpression);
