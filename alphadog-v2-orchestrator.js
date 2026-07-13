@@ -537,6 +537,12 @@ function isStaticTeamsJob(row) {
   return job === "static-teams" && worker === "alphadog-v2-static-teams";
 }
 
+function isHistoricalSeasonBackfillJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "historical-season-backfill" && worker === "alphadog-v2-static-rosters";
+}
+
 function isStaticStadiumsJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
