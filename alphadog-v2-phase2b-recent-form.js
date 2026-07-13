@@ -400,25 +400,25 @@ async function ensureSchema(env) {
     `CREATE INDEX IF NOT EXISTS idx_prop_factor_coverage_batch_family ON prop_factor_coverage_current(latest_batch_id, factor_family)`,
     `CREATE INDEX IF NOT EXISTS idx_prop_factor_coverage_batch_prepared ON prop_factor_coverage_current(latest_batch_id, prepared_row_id)`
   ];
-  await batch(env.SCORE_DB, ddl.map(sql => env.SCORE_DB.prepare(sql)), 10);
+  await batch(env.SCORING_DB, ddl.map(sql => env.SCORING_DB.prepare(sql)), 10);
 }
 
 async function retentionCleanup(env, dates, family) {
   const [today, tomorrow] = dates;
-  await run(env.SCORE_DB, "DELETE FROM prop_factor_hitter_packets WHERE official_date NOT IN (?, ?)", today, tomorrow);
-  await run(env.SCORE_DB, "DELETE FROM prop_factor_pitcher_packets WHERE official_date NOT IN (?, ?)", today, tomorrow);
-  await run(env.SCORE_DB, "DELETE FROM prop_factor_issues WHERE official_date IS NOT NULL AND official_date NOT IN (?, ?)", today, tomorrow);
-  await run(env.SCORE_DB, "DELETE FROM prop_factor_coverage_current WHERE official_date NOT IN (?, ?)", today, tomorrow);
-  await run(env.SCORE_DB, "DELETE FROM prop_factor_batches WHERE window_start NOT IN (?, ?) AND window_end NOT IN (?, ?)", today, tomorrow, today, tomorrow);
+  await run(env.SCORING_DB, "DELETE FROM prop_factor_hitter_packets WHERE official_date NOT IN (?, ?)", today, tomorrow);
+  await run(env.SCORING_DB, "DELETE FROM prop_factor_pitcher_packets WHERE official_date NOT IN (?, ?)", today, tomorrow);
+  await run(env.SCORING_DB, "DELETE FROM prop_factor_issues WHERE official_date IS NOT NULL AND official_date NOT IN (?, ?)", today, tomorrow);
+  await run(env.SCORING_DB, "DELETE FROM prop_factor_coverage_current WHERE official_date NOT IN (?, ?)", today, tomorrow);
+  await run(env.SCORING_DB, "DELETE FROM prop_factor_batches WHERE window_start NOT IN (?, ?) AND window_end NOT IN (?, ?)", today, tomorrow, today, tomorrow);
   const packetTable = family === "pitcher" ? "prop_factor_pitcher_packets" : "prop_factor_hitter_packets";
-  await run(env.SCORE_DB, `DELETE FROM ${packetTable} WHERE official_date IN (?, ?)`, today, tomorrow);
-  await run(env.SCORE_DB, "DELETE FROM prop_factor_issues WHERE factor_family=? AND official_date IN (?, ?)", family, today, tomorrow);
-  await run(env.SCORE_DB, "DELETE FROM prop_factor_coverage_current WHERE factor_family=? AND official_date IN (?, ?)", family, today, tomorrow);
+  await run(env.SCORING_DB, `DELETE FROM ${packetTable} WHERE official_date IN (?, ?)`, today, tomorrow);
+  await run(env.SCORING_DB, "DELETE FROM prop_factor_issues WHERE factor_family=? AND official_date IN (?, ?)", family, today, tomorrow);
+  await run(env.SCORING_DB, "DELETE FROM prop_factor_coverage_current WHERE factor_family=? AND official_date IN (?, ?)", family, today, tomorrow);
 }
 
 async function markStaleRunningBatches(env, dates, family, reason = "STALE_RUNNING_BATCH_MARKED_FAILED_BEFORE_NEW_RUN") {
   const [today, tomorrow] = dates;
-  await run(env.SCORE_DB, `UPDATE prop_factor_batches
+  await run(env.SCORING_DB, `UPDATE prop_factor_batches
     SET status='failed_stale_interrupted',
         certification_status=?,
         certification_grade='FAIL_STALE_INTERRUPTED',
