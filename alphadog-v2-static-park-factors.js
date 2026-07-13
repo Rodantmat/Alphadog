@@ -439,10 +439,43 @@ function validateRows(rows, activeStadiums) {
   return { ok: errors.length === 0, errors, warnings };
 }
 
+function parkFactorHasRealChange(current, r) {
+  if (!current) return true;
+  const numEq = (a, b) => Number(a) === Number(b) || (a === null && b === null);
+  return String(current.stadium_id || "") !== String(r.stadium_id || "")
+    || String(current.team_id || "") !== String(r.team_id || "")
+    || !numEq(current.run_factor, r.run_factor)
+    || !numEq(current.hr_factor, r.hr_factor)
+    || !numEq(current.lhb_run_factor, r.lhb_run_factor)
+    || !numEq(current.rhb_run_factor, r.rhb_run_factor)
+    || !numEq(current.lhb_hr_factor, r.lhb_hr_factor)
+    || !numEq(current.rhb_hr_factor, r.rhb_hr_factor)
+    || Number(current.active || 0) !== 1;
+}
+
+async function loadCurrentParkFactorSnapshot(env) {
+  const rows = await all(env.REF_DB, "SELECT park_factor_id, stadium_id, team_id, run_factor, hr_factor, lhb_run_factor, rhb_run_factor, lhb_hr_factor, rhb_hr_factor, active FROM ref_park_factors");
+  const map = new Map();
+  for (const row of rows) map.set(String(row.park_factor_id), row);
+  return map;
+}
+
 async function writeRows(env, rows) {
+  // Real differential redesign: same pattern as static-teams/static-stadiums. Park factors are
+  // real Statcast-derived numbers that can legitimately drift a little as more games are played
+  // (unlike team/stadium identity, which is nearly static) - so some real writes here are
+  // expected, but a still-identical refresh should not force a full rewrite either.
+  const currentSnapshot = await loadCurrentParkFactorSnapshot(env);
+  let unchanged = 0;
   await run(env.REF_DB, "UPDATE ref_park_factors SET active=0, updated_at=CURRENT_TIMESTAMP WHERE season_year=? AND source_key LIKE 'baseball_savant_statcast_park_factors_2025%'", SEASON_YEAR);
   let written = 0;
   for (const r of rows) {
+    const current = currentSnapshot.get(String(r.park_factor_id));
+    if (!parkFactorHasRealChange(current, r)) {
+      unchanged += 1;
+      await run(env.REF_DB, "UPDATE ref_park_factors SET active=1, updated_at=CURRENT_TIMESTAMP WHERE park_factor_id=?", r.park_factor_id);
+      continue;
+    }
     await run(env.REF_DB, `INSERT OR REPLACE INTO ref_park_factors (
       park_factor_id, stadium_id, mlb_venue_id, team_id, park_name, season_year,
       run_factor, hr_factor, lhb_run_factor, rhb_run_factor, lhb_hr_factor, rhb_hr_factor,
@@ -454,7 +487,7 @@ async function writeRows(env, rows) {
     );
     written++;
   }
-  return written;
+  return { written, unchanged };
 }
 
 async function runStaticParkFactors(env, input = {}) {
