@@ -339,6 +339,110 @@ const HISTORICAL_BACKFILL_2025_DATES = [
 const HISTORICAL_BACKFILL_CORE_MARKETS = ["batter_hits", "batter_total_bases", "batter_home_runs", "batter_hits_runs_rbis"];
 const HISTORICAL_BACKFILL_CREDITS_PER_EVENT = HISTORICAL_BACKFILL_CORE_MARKETS.length * 10; // regions=us => 1 region
 
+const HISTORICAL_BACKFILL_PITCHER_MARKETS = ["pitcher_strikeouts", "pitcher_hits_allowed", "pitcher_walks", "pitcher_earned_runs"];
+const HISTORICAL_BACKFILL_PITCHER_CREDITS_PER_EVENT = HISTORICAL_BACKFILL_PITCHER_MARKETS.length * 10;
+
+async function runHistoricalBackfillPitchers2025(env, input) {
+  if (!env.ODDS_API_KEY) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "odds_api_key_missing", timestamp_utc: nowUtc() };
+  const base = String(input.odds_api_base_url || env.ODDS_API_BASE_URL || DEFAULT_ODDS_API_BASE_URL).replace(/\/+$/, "");
+  const budgetCap = Number(input.credits_budget_cap || 8000);
+  const batchId = String(input.batch_id || `market_historical_2025_pitchers_${Date.now()}`);
+
+  let progress = await env.MARKET_DB.prepare("SELECT * FROM market_historical_backfill_progress WHERE progress_key = ?").bind("market_historical_2025_pitchers").first();
+  if (!progress) {
+    await env.MARKET_DB.prepare(
+      "INSERT INTO market_historical_backfill_progress (progress_key, batch_id, total_dates_planned, dates_processed, games_processed, games_no_data, games_error, credits_used_estimate, credits_budget_cap, status, remaining_dates_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)"
+    ).bind("market_historical_2025_pitchers", batchId, HISTORICAL_BACKFILL_2025_DATES.length, 0, 0, 0, 0, 0, budgetCap, "pending", JSON.stringify(HISTORICAL_BACKFILL_2025_DATES)).run();
+    progress = await env.MARKET_DB.prepare("SELECT * FROM market_historical_backfill_progress WHERE progress_key = ?").bind("market_historical_2025_pitchers").first();
+  }
+
+  if (progress.status === "completed" || progress.status === "budget_exhausted") {
+    return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: progress.status, certification: "MARKET_HISTORICAL_PITCHER_BACKFILL_ALREADY_DONE", progress, continuation_required: false, timestamp_utc: nowUtc() };
+  }
+
+  const remainingDates = JSON.parse(progress.remaining_dates_json || "[]");
+  if (remainingDates.length === 0) {
+    await env.MARKET_DB.prepare("UPDATE market_historical_backfill_progress SET status='completed', updated_at=CURRENT_TIMESTAMP WHERE progress_key='market_historical_2025_pitchers'").run();
+    return { ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "completed", certification: "MARKET_HISTORICAL_PITCHER_BACKFILL_COMPLETED", continuation_required: false, timestamp_utc: nowUtc() };
+  }
+
+  const date = remainingDates[0];
+  const nextRemaining = remainingDates.slice(1);
+  let creditsUsedThisTick = 0;
+  let gamesProcessed = 0, gamesNoData = 0, gamesError = 0;
+  const insertStmts = [];
+
+  const eventsUrl = new URL(`${base}/historical/sports/baseball_mlb/events`);
+  eventsUrl.searchParams.set("apiKey", String(env.ODDS_API_KEY));
+  eventsUrl.searchParams.set("date", `${date}T20:00:00Z`);
+  const eventsRes = await fetchJson(eventsUrl.toString());
+  creditsUsedThisTick += 1;
+
+  const events = (eventsRes.ok && eventsRes.json && Array.isArray(eventsRes.json.data)) ? eventsRes.json.data : [];
+
+  for (const ev of events) {
+    if (Number(progress.credits_used_estimate) + creditsUsedThisTick + HISTORICAL_BACKFILL_PITCHER_CREDITS_PER_EVENT > budgetCap) break;
+    const oddsUrl = new URL(`${base}/historical/sports/baseball_mlb/events/${encodeURIComponent(ev.id)}/odds`);
+    oddsUrl.searchParams.set("apiKey", String(env.ODDS_API_KEY));
+    oddsUrl.searchParams.set("regions", "us");
+    oddsUrl.searchParams.set("markets", HISTORICAL_BACKFILL_PITCHER_MARKETS.join(","));
+    oddsUrl.searchParams.set("date", `${date}T20:00:00Z`);
+    const oddsRes = await fetchJson(oddsUrl.toString());
+    creditsUsedThisTick += HISTORICAL_BACKFILL_PITCHER_CREDITS_PER_EVENT;
+
+    if (!oddsRes.ok || !oddsRes.json || !oddsRes.json.data) { gamesError += 1; continue; }
+    const bookmakers = oddsRes.json.data.bookmakers || [];
+    if (bookmakers.length === 0) { gamesNoData += 1; continue; }
+    gamesProcessed += 1;
+    for (const bk of bookmakers) {
+      for (const mk of (bk.markets || [])) {
+        for (const oc of (mk.outcomes || [])) {
+          const rowId = `pitcher_${ev.id}_${bk.key}_${mk.key}_${normalizeText(oc.name)}_${normalizeText(oc.description || "")}`.slice(0, 190);
+          insertStmts.push(env.MARKET_DB.prepare(
+            "INSERT OR REPLACE INTO market_historical_props_2025 (row_id, batch_id, official_date, odds_api_event_id, home_team, away_team, commence_time_utc, bookmaker_key, market_key, player_name, outcome_name, line_point, price_american, snapshot_timestamp, raw_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+          ).bind(rowId, batchId, date, ev.id, ev.home_team || null, ev.away_team || null, ev.commence_time || null, bk.key, mk.key, oc.description || null, oc.name || null, oc.point ?? null, oc.price ?? null, oddsRes.json.timestamp || null, JSON.stringify(oc)));
+        }
+      }
+    }
+  }
+
+  if (insertStmts.length > 0) {
+    const CHUNK_SIZE = 80;
+    for (let i = 0; i < insertStmts.length; i += CHUNK_SIZE) {
+      await env.MARKET_DB.batch(insertStmts.slice(i, i + CHUNK_SIZE));
+    }
+  }
+
+  const newCreditsUsed = Number(progress.credits_used_estimate) + creditsUsedThisTick;
+  const budgetExhausted = newCreditsUsed >= budgetCap;
+  const newStatus = budgetExhausted ? "budget_exhausted" : (nextRemaining.length === 0 ? "completed" : "partial_continue");
+
+  await env.MARKET_DB.prepare(
+    "UPDATE market_historical_backfill_progress SET dates_processed = dates_processed + 1, games_processed = games_processed + ?, games_no_data = games_no_data + ?, games_error = games_error + ?, credits_used_estimate = ?, status = ?, last_date_processed = ?, remaining_dates_json = ?, updated_at = CURRENT_TIMESTAMP WHERE progress_key = 'market_historical_2025_pitchers'"
+  ).bind(gamesProcessed, gamesNoData, gamesError, newCreditsUsed, newStatus, date, JSON.stringify(budgetExhausted ? [] : nextRemaining)).run();
+
+  return {
+    ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY,
+    status: newStatus,
+    certification: newStatus === "budget_exhausted" ? "MARKET_HISTORICAL_PITCHER_BACKFILL_BUDGET_EXHAUSTED" : (newStatus === "completed" ? "MARKET_HISTORICAL_PITCHER_BACKFILL_COMPLETED" : "MARKET_HISTORICAL_PITCHER_BACKFILL_PARTIAL_CONTINUE"),
+    batch_id: batchId,
+    date_processed: date,
+    real_events_found: events.length,
+    games_processed_this_date: gamesProcessed,
+    games_no_data_this_date: gamesNoData,
+    games_error_this_date: gamesError,
+    rows_written_this_tick: insertStmts.length,
+    credits_used_this_tick: creditsUsedThisTick,
+    credits_used_total: newCreditsUsed,
+    credits_budget_cap: budgetCap,
+    dates_remaining: nextRemaining.length,
+    continuation_required: newStatus === "partial_continue",
+    continuation_input_json: newStatus === "partial_continue" ? { batch_id: batchId, credits_budget_cap: budgetCap } : null,
+    no_scoring: true, no_ranking: true, no_final_board: true,
+    timestamp_utc: nowUtc()
+  };
+}
+
 async function runHistoricalBackfill2025(env, input) {
   if (!env.ODDS_API_KEY) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "odds_api_key_missing", timestamp_utc: nowUtc() };
   const base = String(input.odds_api_base_url || env.ODDS_API_BASE_URL || DEFAULT_ODDS_API_BASE_URL).replace(/\/+$/, "");
