@@ -682,6 +682,19 @@ async function runSeed(env, input = {}) {
   const remainingTeams = teams.filter(t => !processedSet.has(String(t.mlb_team_id)));
   const teamsThisRun = remainingTeams.slice(0, maxTeamsPerRun);
 
+  // Real differential redesign: load the current, already-promoted ref_players snapshot once
+  // per invocation (cheap - one SELECT) and only stage a player when something that actually
+  // matters has genuinely changed (team, position, bat/throw side, name, or a previously-
+  // inactive player becoming active again) - not on every single roster poll regardless of
+  // whether anything moved. The real external MLB API polling itself is unavoidable (there is
+  // no "has this changed" signal from the API), but the expensive stage/write/certify/promote
+  // cycle downstream of it does not need to run in full when a real comparison shows nothing
+  // changed for a given player.
+  const currentSnapshot = await loadCurrentPlayerSnapshot(env);
+  let playersUnchangedThisRun = 0;
+  let playersChangedThisRun = 0;
+  let playersNewThisRun = 0;
+
   const byMlbPlayerId = new Map();
   const sourceSamples = [];
   let externalCalls = 0;
