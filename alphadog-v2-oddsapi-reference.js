@@ -279,7 +279,7 @@ async function runWorker(env, input) {
       for (const book of books) {
         for (const market of (book.markets || [])) {
           for (const out of (market.outcomes || [])) {
-            gameOddsRows.push([rid("mcp_game_odds"), batchId, slateWindowKey, (m.game && m.game.official_date) || null, (m.game && m.game.game_pk) || null, ev.id || null, ev.home_team || null, ev.away_team || null, ev.commence_time || null, book.key || null, market.key || null, out.name || null, numberOrNull(out.point), numberOrNull(out.price), americanToDecimal(out.price), safeJson(out, 1500)]);
+            gameOddsRows.push([rid("mcp_game_odds"), batchId, slateWindowKey, (m.game && m.game.official_date) || null, (m.game && m.game.game_pk) || null, sourceKeyForBook(book.key), ev.id || null, ev.commence_time || null, ev.home_team || null, ev.away_team || null, book.key || null, book.title || null, market.key || null, market.last_update || null, out.name || null, outcomeSide(out.name), numberOrNull(out.price), numberOrNull(out.point), m.game ? "matched_calendar_game" : "unmatched_no_calendar_game", m.confidence || null, safeJson(out, 1500)]);
           }
         }
       }
