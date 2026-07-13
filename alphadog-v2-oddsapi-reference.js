@@ -403,7 +403,12 @@ async function runHistoricalBackfill2025(env, input) {
     }
   }
 
-  if (insertStmts.length > 0) await env.MARKET_DB.batch(insertStmts);
+  if (insertStmts.length > 0) {
+    const CHUNK_SIZE = 80;
+    for (let i = 0; i < insertStmts.length; i += CHUNK_SIZE) {
+      await env.MARKET_DB.batch(insertStmts.slice(i, i + CHUNK_SIZE));
+    }
+  }
 
   const newCreditsUsed = Number(progress.credits_used_estimate) + creditsUsedThisTick;
   const budgetExhausted = newCreditsUsed >= budgetCap;
