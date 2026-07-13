@@ -8776,7 +8776,7 @@ async function processHistoricalSeasonBackfillJob(env, row, runId, trigger) {
   const queueStatus = partialContinue ? "pending" : (ok ? "completed" : "failed");
   const cappedOutput = { ...output, orchestrator_dispatch: { version: SYSTEM_VERSION, processed_by: WORKER_NAME, exact_worker_only: true, trigger, http_status: httpStatus, elapsed_ms: Date.now() - started, isolated_standalone_backfill_tool: true } };
   if (partialContinue) {
-    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify({ ...input, input_json: output.continuation_input_json || input.input_json }), JSON.stringify(cappedOutput), row.request_id);
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output.continuation_input_json || input.input_json), JSON.stringify(cappedOutput), row.request_id);
   } else {
     await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), ok ? null : "historical_season_backfill_failed", ok ? null : String((output && (output.error || output.status)) || "failed").slice(0, 900), row.request_id);
   }
