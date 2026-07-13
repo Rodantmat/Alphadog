@@ -8802,6 +8802,94 @@ async function processHistoricalSeasonBackfillJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
+async function genericSimpleWorkerDispatch(env, row, runId, trigger, serviceBindingName, workerUrlSlug, errorPrefix) {
+  const started = Date.now();
+  const binding = env[serviceBindingName];
+  if (!binding || typeof binding.fetch !== "function") {
+    const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, processed_by: WORKER_NAME, worker_name: row.worker_name, job_key: row.job_key, status: "blocked_missing_service_binding", certification: `${errorPrefix}_SERVICE_BINDING_MISSING`, trigger };
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", JSON.stringify(output), `missing_${serviceBindingName.toLowerCase()}`, `${serviceBindingName} service binding is missing`, row.request_id);
+    return output;
+  }
+  const input = { request_id: row.request_id, chain_id: row.chain_id, job_key: row.job_key, worker_name: row.worker_name, trigger, input_json: (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })() };
+  let output; let httpStatus = null;
+  try {
+    const resp = await binding.fetch(`https://internal.${workerUrlSlug}/run`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); } catch (_) { output = { ok: false, data_ok: false, status: "worker_non_json_response", http_status: httpStatus, response_preview: String(text || "").slice(0, 900) }; }
+  } catch (err) {
+    output = { ok: false, data_ok: false, status: "worker_dispatch_exception", error: String(err && err.message ? err.message : err) };
+  }
+  const ok = !!(output && output.ok);
+  const partialContinue = !!(output && output.continuation_required === true);
+  const queueStatus = partialContinue ? "pending" : (ok ? "completed" : "failed");
+  const cappedOutput = { ...output, orchestrator_dispatch: { version: SYSTEM_VERSION, processed_by: WORKER_NAME, exact_worker_only: true, trigger, http_status: httpStatus, elapsed_ms: Date.now() - started } };
+  if (partialContinue) {
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output.continuation_input_json || input.input_json), JSON.stringify(cappedOutput), row.request_id);
+  } else {
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), ok ? null : `${errorPrefix.toLowerCase()}_failed`, ok ? null : String((output && (output.error || output.status)) || "failed").slice(0, 900), row.request_id);
+  }
+  return cappedOutput;
+}
+
+async function processContextHistorySnapshotJob(env, row, runId, trigger) {
+  return genericSimpleWorkerDispatch(env, row, runId, trigger, "STATIC_PLAYER_IDENTITY_WORKER", "alphadog-v2-static-player-identity", "CONTEXT_HISTORY_SNAPSHOT");
+}
+
+async function processContextHistoryCertifierJob(env, row, runId, trigger) {
+  return genericSimpleWorkerDispatch(env, row, runId, trigger, "STATIC_TEAM_CONTEXT_WORKER", "alphadog-v2-static-team-context", "CONTEXT_HISTORY_CERTIFIER");
+}
+
+const CONTEXT_HISTORY_FULL_RUN_STAGES = [
+  { job_key: "context-history-snapshot", worker_name: "alphadog-v2-static-player-identity", stage_key: "context_history_snapshot" },
+  { job_key: "context-history-certifier", worker_name: "alphadog-v2-static-team-context", stage_key: "context_history_certifier" }
+];
+
+async function processContextHistoryFullRunJob(env, row, runId, trigger) {
+  const started = Date.now();
+  const parentInput = parseJsonSafeText(row.input_json || "{}", {});
+  const targetDate = String(parentInput.target_date || parentInput.date || "");
+  if (!targetDate) {
+    const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, status: "BLOCKED_CONTEXT_HISTORY_FULL_RUN_NO_TARGET_DATE", error: "parent input_json.target_date is required" };
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='no_target_date', error_message='target_date required' WHERE request_id=?", JSON.stringify(output), row.request_id);
+    return output;
+  }
+
+  const stageReports = [];
+  for (let i = 0; i < CONTEXT_HISTORY_FULL_RUN_STAGES.length; i++) {
+    const stage = CONTEXT_HISTORY_FULL_RUN_STAGES[i];
+    const children = await all(env.CONTROL_DB, "SELECT request_id, status, output_json, error_code, error_message FROM control_job_queue WHERE parent_request_id=? AND chain_id=? AND job_key=? ORDER BY datetime(created_at) ASC", row.request_id, row.chain_id, stage.job_key);
+    const child = children.length ? children[children.length - 1] : null;
+
+    if (!child) {
+      const childRequestId = rid(`${stage.job_key}_${row.request_id}`);
+      await run(env.CONTROL_DB, "INSERT INTO control_job_queue (request_id, parent_request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'Context', 'context_history', ?, 'pending', 3, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+        childRequestId, row.request_id, row.chain_id, stage.job_key, stage.worker_name, `Context History Full Run - ${stage.stage_key}`, JSON.stringify({ start_date: targetDate, end_date: targetDate, chunk_size_games: 10 }));
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, status: "PARTIAL_CONTINUE_CONTEXT_HISTORY_CHILD_ENQUEUED", certification: "CONTEXT_HISTORY_CHILD_ENQUEUED", current_stage_key: stage.stage_key, enqueued_child_request_id: childRequestId, completed_stage_count: stageReports.length, total_stage_count: CONTEXT_HISTORY_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true };
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=? WHERE request_id=?", JSON.stringify(output), row.request_id);
+      return output;
+    }
+
+    const childOutput = parseJsonSafeText(child.output_json || "{}", {});
+    if (child.status === "pending" || child.status === "running") {
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, status: "PARTIAL_CONTINUE_CONTEXT_HISTORY_WAITING_ON_CHILD", waiting_on_child_request_id: child.request_id, current_stage_key: stage.stage_key, continuation_required: true, orchestrator_should_self_continue: true };
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+5 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=? WHERE request_id=?", JSON.stringify(output), row.request_id);
+      return output;
+    }
+    if (child.status !== "completed" || childOutput.ok !== true) {
+      const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, status: "FAILED_CONTEXT_HISTORY_FULL_RUN_CHILD_FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, stages: stageReports };
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='context_history_child_failed', error_message=? WHERE request_id=?", JSON.stringify(output), String(child.error_message || "child failed").slice(0, 900), row.request_id);
+      return output;
+    }
+    stageReports.push({ stage_key: stage.stage_key, job_key: stage.job_key, child_request_id: child.request_id, certification: childOutput.certification || null });
+  }
+
+  const finalCert = stageReports[stageReports.length - 1];
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, status: "COMPLETED_CONTEXT_HISTORY_FULL_RUN", certification: "CONTEXT_HISTORY_FULL_RUN_CERTIFIED", target_date: targetDate, stages: stageReports, elapsed_ms: Date.now() - started };
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=? WHERE request_id=?", JSON.stringify(output), row.request_id);
+  return output;
+}
+
 async function processStaticTeamsJob(env, row, runId, trigger) {
   if (!env.STATIC_TEAMS_WORKER || typeof env.STATIC_TEAMS_WORKER.fetch !== "function") {
     const output = {
