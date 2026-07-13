@@ -5405,6 +5405,7 @@ async function processStaticPropTaxonomyJob(env, row, runId, trigger) {
   }
 
   const started = Date.now();
+  const partialContinue = false;
   let output;
   let httpStatus = null;
 
