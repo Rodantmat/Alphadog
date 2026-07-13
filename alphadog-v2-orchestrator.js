@@ -8856,6 +8856,10 @@ async function processStaticPitcherArsenalJob(env, row, runId, trigger) {
   return genericSimpleWorkerDispatch(env, row, runId, trigger, "STATIC_PLAYER_ALIASES_WORKER", "alphadog-v2-static-player-aliases", "STATIC_PITCHER_ARSENAL");
 }
 
+async function processStaticDefensiveQualityJob(env, row, runId, trigger) {
+  return genericSimpleWorkerDispatch(env, row, runId, trigger, "DELTA_BULLPEN_UPDATE_WORKER", "alphadog-v2-delta-bullpen-update", "STATIC_DEFENSIVE_QUALITY");
+}
+
 const CONTEXT_HISTORY_FULL_RUN_STAGES = [
   { job_key: "context-history-snapshot", worker_name: "alphadog-v2-static-player-identity", stage_key: "context_history_snapshot" },
   { job_key: "context-history-certifier", worker_name: "alphadog-v2-static-team-context", stage_key: "context_history_certifier" }
