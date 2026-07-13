@@ -175,7 +175,7 @@ async function runSnapshot(env, input) {
   // a real live test where 6 real games were silently skipped and the run incorrectly reported
   // "completed". Always take from the front of the freshly-filtered remaining list instead; no
   // offset needed since already-captured games are never returned again.
-  const remainingGames = await chooseGamesForRange(env, startDate, endDate);
+  const remainingGames = await chooseGamesForRange(env, startDate, endDate, explicitGamePks);
   const gamesThisRun = remainingGames.slice(0, chunkSize);
 
   let externalCalls = 0, weatherWritten = 0, umpireWritten = 0, gamesNoData = 0, gamesError = 0;
