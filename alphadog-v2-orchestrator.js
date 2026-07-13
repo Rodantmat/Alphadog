@@ -3473,6 +3473,8 @@ const STATIC_FULL_RUN_STAGES = [
   { job_key: "static-park-factors", worker_name: "alphadog-v2-static-park-factors", display_name: "Static Park Factors", visible_button: "STATIC > Park Factors" },
   { job_key: "static-players", worker_name: "alphadog-v2-static-players", display_name: "Static Players", visible_button: "STATIC > Players" },
   { job_key: "static-prop-taxonomy", worker_name: "alphadog-v2-static-prop-taxonomy", display_name: "Static Prop Taxonomy", visible_button: "STATIC > Prop Taxonomy" },
+  { job_key: "static-pitcher-arsenal", worker_name: "alphadog-v2-static-player-aliases", display_name: "Static Pitcher Arsenal", visible_button: "STATIC > Pitcher Arsenal" },
+  { job_key: "static-defensive-quality", worker_name: "alphadog-v2-delta-bullpen-update", display_name: "Static Defensive Quality", visible_button: "STATIC > Defensive Quality" },
   { job_key: "static-certifier", worker_name: "alphadog-v2-static-certifier", display_name: "Static Certifier", visible_button: "STATIC > Certifier" }
 ];
 
