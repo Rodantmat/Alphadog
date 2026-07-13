@@ -19,33 +19,16 @@ function bindingPresence(env, names) { const out = {}; for (const n of names) ou
 function allTrue(obj) { return Object.values(obj).every(Boolean); }
 async function readJsonSafe(request) { try { return await request.json(); } catch { return {}; } }
 
-const STRATEGIES = [
-  {
-    key: "recap_article_repeat_date2",
-    label: "Repeat recap-article strategy on a DIFFERENT real date (repeatability check)",
-    prompt: `Find a real sports betting recap or "prop bets today" article from a site like DocSports, RotoBaller, Lineups.com, or SI Betting, that discusses MLB player props from real games on 2025-08-01. I'm looking for a real article that quotes actual player-prop line values (like "Over 1.5 total bases") for a specific real player. Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null, "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}.`
-  },
-  {
-    key: "recap_article_multi_player_same_date",
-    label: "Ask for MULTIPLE players' real props from one recap article (efficiency test)",
-    prompt: `Find a real MLB player-props recap/picks article (from DocSports, RotoBaller, Lineups.com, SI Betting, or similar) covering real games on 2025-06-15. List EVERY real player-prop line value you can find in that one real article (player name, prop type, line value - not just one player). Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null (list all real props found, semicolon separated), "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}.`
-  },
-  {
-    key: "docsports_direct_site_search",
-    label: "Search DocSports.com directly by name (since it's confirmed to work) for a new date",
-    prompt: `Search specifically on docsports.com for a real MLB player prop picks article for games on 2025-07-08. Tell me the real player name(s), prop type(s), and line value(s) mentioned in that specific real article if you can find it. Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null, "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}.`
-  },
-  {
-    key: "pitcher_strikeout_prop_recap",
-    label: "Try a different prop category: pitcher strikeout recap articles",
-    prompt: `Find a real sports betting article discussing pitcher strikeout prop bets for a real MLB starting pitcher on 2025-06-15 (any real game that day). I need the real pitcher's name and the real strikeout line value (e.g. "Over 5.5 strikeouts") from a real, specific source. Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null, "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}.`
-  },
-  {
-    key: "batch_five_dates_one_call",
-    label: "Efficiency test: ask for real props across 5 different dates in ONE call",
-    prompt: `For each of these 5 real MLB dates in 2025 - 2025-04-10, 2025-05-01, 2025-06-01, 2025-07-01, 2025-08-01 - try to find one real MLB player-prop recap/picks article (DocSports, RotoBaller, Lineups.com, SI Betting, etc.) and report one real specific player-prop line value from each if you can find it. Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null (one line per date, real findings only), "source_url": string or null (best one), "source_note": string, "confidence": "high" or "low" or "unknown"}.`
-  }
+const REAL_GAP_TEST_PLAYERS = [
+  "Paul Goldschmidt", "Mookie Betts", "Cedric Mullins", "Alec Bohm",
+  "Shea Langeliers", "TJ Friedl", "Spencer Torkelson", "Wyatt Langford"
 ];
+const STRATEGIES = REAL_GAP_TEST_PLAYERS.map((name, i) => ({
+  key: `gap_fill_${i}_${name.replace(/\s+/g, "_").toLowerCase()}`,
+  label: `Narrow scoped recap search: ${name} on 2025-04-20 (real backfill gap)`,
+  prompt: `Find a real sports betting recap or "prop bets today" article (from any real site - RotoGrinders, RotoWire, DocSports, RotoBaller, Lineups.com, SI Betting, Sportskeeda, etc.) that mentions a real player-prop line for ${name} for the real MLB game(s) on 2025-04-20. I need the real specific prop type and line value (and price if available). Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null, "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}. Set found to false if you cannot find a real, specific, sourced mention - do not invent one.`
+}));
+
 
 
 async function callGemini(env, prompt) {
