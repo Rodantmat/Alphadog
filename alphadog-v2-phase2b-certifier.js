@@ -894,7 +894,7 @@ async function runMatrixBuilder(request, env) {
 
   await ensureSchema(env);
   const runId = input.run_id || rid("run");
-  const sourceTables = { score_db:["score_board_prepared_current","prop_factor_coverage_current","prop_factor_hitter_packets","prop_factor_pitcher_packets","prop_factor_issues","prop_factor_batches"], market_db:["market_context_probe_batches","market_context_probe_coverage","market_context_probe_player_props","market_context_probe_game_market_summary"], daily_db:["daily_context_readiness_current","daily_context_readiness_batches"], team_db:["mlb_game_calendar"] };
+  const sourceTables = { scoring_db:["prop_matrix_batches","prop_matrix_current","prop_matrix_issues","prop_matrix_coverage_current","prop_factor_coverage_current","prop_factor_hitter_packets","prop_factor_pitcher_packets","prop_factor_issues","prop_factor_batches"], score_db:["score_board_prepared_current"], market_db:["market_context_probe_batches","market_context_probe_coverage","market_context_probe_player_props","market_context_probe_game_market_summary"], daily_db:["daily_context_readiness_current","daily_context_readiness_batches"], team_db:["mlb_game_calendar"] };
 
   const resumeBatch = await findResumeMatrixBatch(env, input, dates);
   let batchId;
@@ -902,17 +902,17 @@ async function runMatrixBuilder(request, env) {
   if (resumeBatch && resumeBatch.batch_id) {
     batchId = resumeBatch.batch_id;
     resumedExistingBatch = true;
-    await run(env.SCORE_DB, `UPDATE prop_matrix_batches SET run_id=?, worker_version=?, deployed_slot_version=?, status='running_chunked', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, runId, SYSTEM_VERSION, DEPLOYED_SLOT_VERSION, batchId);
+    await run(env.SCORING_DB, `UPDATE prop_matrix_batches SET run_id=?, worker_version=?, deployed_slot_version=?, status='running_chunked', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, runId, SYSTEM_VERSION, DEPLOYED_SLOT_VERSION, batchId);
   } else {
     await retentionCleanup(env, dates);
     batchId = rid("prop_matrix_batch");
-    await run(env.SCORE_DB, `INSERT OR REPLACE INTO prop_matrix_batches (batch_id,request_id,run_id,worker_name,worker_version,deployed_worker_slot,deployed_slot_version,mode,status,window_start,window_end,source_tables_checked_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+    await run(env.SCORING_DB, `INSERT OR REPLACE INTO prop_matrix_batches (batch_id,request_id,run_id,worker_name,worker_version,deployed_worker_slot,deployed_slot_version,mode,status,window_start,window_end,source_tables_checked_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
       batchId, input.request_id || null, runId, LOGICAL_WORKER_NAME, SYSTEM_VERSION, WORKER_NAME, DEPLOYED_SLOT_VERSION, "prop_matrix_build", "running", dates[0], dates[1], JSON.stringify(sourceTables));
   }
 
   const prepared = await getPreparedRows(env, dates);
   const globalCtx = await loadGlobalPrerequisites(env, dates, prepared);
-  const existingRows = await all(env.SCORE_DB, `SELECT prepared_row_id FROM prop_matrix_current WHERE batch_id=?`, batchId);
+  const existingRows = await all(env.SCORING_DB, `SELECT prepared_row_id FROM prop_matrix_current WHERE batch_id=?`, batchId);
   const existingPrepared = new Set(existingRows.map(r => String(r.prepared_row_id || "")).filter(Boolean));
   const remainingPrepared = prepared.filter(r => !existingPrepared.has(String(r.prepared_row_id || "")));
 
