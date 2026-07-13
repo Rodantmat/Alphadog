@@ -614,6 +614,24 @@ async function promoteCertifiedStage(env, batchId, requestId) {
   return { promoted: true, mainChecks };
 }
 
+function playerHasRealChange(current, fresh) {
+  if (!current) return true;
+  return String(current.current_team_id || "") !== String(fresh.current_team_id || "")
+    || String(current.current_mlb_team_id || "") !== String(fresh.current_mlb_team_id || "")
+    || String(current.primary_position || "") !== String(fresh.primary_position || "")
+    || String(current.bat_side || "") !== String(fresh.bat_side || "")
+    || String(current.throw_side || "") !== String(fresh.throw_side || "")
+    || String(current.full_name || "") !== String(fresh.full_name || "")
+    || Number(current.active || 0) !== 1;
+}
+
+async function loadCurrentPlayerSnapshot(env) {
+  const rows = await all(env.REF_DB, `SELECT mlb_player_id, current_team_id, current_mlb_team_id, primary_position, bat_side, throw_side, full_name, active FROM ref_players WHERE source_key=?`, SOURCE_KEY);
+  const map = new Map();
+  for (const r of rows) map.set(String(r.mlb_player_id), r);
+  return map;
+}
+
 async function runSeed(env, input = {}) {
   await ensureSchema(env);
 
