@@ -9206,6 +9206,10 @@ async function processStaticParkFactorsJob(env, row, runId, trigger) {
     input_json: (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })()
   };
 
+  // Same real bug, same fix as processStaticTeamsJob: partialContinue was referenced later in
+  // this function but never defined. static-park-factors is also a simple, single-pass worker.
+  const partialContinue = false;
+
   const recentPartial = await first(env.CONTROL_DB, `SELECT
       COUNT(*) AS partial_continue_runs,
       MAX(finished_at) AS last_partial_finished_at,
