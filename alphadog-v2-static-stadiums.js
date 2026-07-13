@@ -545,6 +545,8 @@ async function runStaticStadiums(input, env) {
     rows_read: stadiums.length,
     rows_written: writes.stadium_rows_written + writes.alias_rows_written,
     stadiums_written: writes.stadium_rows_written,
+    stadiums_unchanged_skipped: writes.stadium_rows_unchanged_skipped || 0,
+    differential_note: "stadiums_written is the honest count of stadiums whose real fields actually changed; stadiums_unchanged_skipped got a cheap reactivation touch only, not a full field rewrite.",
     aliases_written: writes.alias_rows_written,
     stale_deactivation_mode: writes.stale_deactivation_mode,
     external_calls_performed: fetchInfo ? fetchInfo.external_calls : 0,
