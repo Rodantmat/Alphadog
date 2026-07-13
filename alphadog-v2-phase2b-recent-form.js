@@ -48,17 +48,46 @@ function modeFamily(mode) {
   if (m === "pitcher_prop_factor_mining" || m === "pitcher" || m === "pitchers") return "pitcher";
   return "hitter";
 }
-function classifyProp(propKey, sourcePropName) {
-  const key = String(propKey || "").toLowerCase();
-  const sourceName = String(sourcePropName || "").toLowerCase();
-  if (DEFERRED_PROPS.has(key)) return { family: "deferred", normalized_lane: key, supported: false, reason: "PROP_DEFERRED_PENDING_SEPARATE_DESIGN" };
-  if (key === "fantasy" && sourceName.includes("hitter")) return { family: "hitter", normalized_lane: "hitter_fantasy", supported: true };
-  if (HITTER_PROPS.has(key)) return { family: "hitter", normalized_lane: key === "fantasy_score" ? "hitter_fantasy" : key, supported: true };
-  if (PITCHER_PROPS.has(key)) {
-    const lane = key === "pitching_outs" ? "pitcher_outs" : (key === "earned_runs_allowed" ? "earned_runs" : key);
-    return { family: "pitcher", normalized_lane: lane, supported: true };
+// Real fix, found via live-data audit while adjusting this worker for the expanded board/prop
+// lines: this used to be two independently hardcoded HITTER_PROPS/PITCHER_PROPS Sets, duplicated
+// (and already silently drifted) between this worker and Matrix Builder. Confirmed against the
+// real, authoritative CONFIG_DB.config_prop_taxonomy table (21 real canonical prop keys) that
+// Matrix Builder was missing "runs_allowed" - a real, currently-supported prop - entirely, which
+// would have blocked every runs_allowed leg there even though this worker handled it fine. Both
+// workers now read the same real taxonomy table as the single source of truth instead of two
+// hand-maintained lists that can silently diverge again.
+let TAXONOMY_CACHE = null;
+async function loadTaxonomyClassifier(env) {
+  if (TAXONOMY_CACHE) return TAXONOMY_CACHE;
+  const rows = await all(env.CONFIG_DB, "SELECT prop_key, player_side FROM config_prop_taxonomy");
+  const map = new Map();
+  for (const r of rows) {
+    const side = String(r.player_side || "").toLowerCase();
+    let family;
+    if (side === "hitter") family = "hitter";
+    else if (side === "pitcher" || side === "game_pitcher") family = "pitcher";
+    else if (side === "pitcher_combo") family = "deferred";
+    else family = "ambiguous_disambiguate_by_source_name";
+    map.set(String(r.prop_key || "").toLowerCase(), family);
   }
-  return { family: "unknown", normalized_lane: key || null, supported: false, reason: "UNSUPPORTED_PROP_KEY" };
+  TAXONOMY_CACHE = map;
+  return map;
+}
+function classifyProp(propKey, sourcePropName, taxonomyMap) {
+  const keyLc = String(propKey || "").toLowerCase();
+  const sourceName = String(sourcePropName || "").toLowerCase();
+  if (!taxonomyMap || !taxonomyMap.has(keyLc)) return { family: "unknown", normalized_lane: keyLc || null, supported: false, reason: "UNSUPPORTED_PROP_KEY_NOT_IN_TAXONOMY" };
+  const family = taxonomyMap.get(keyLc);
+  if (family === "deferred") return { family: "deferred", normalized_lane: keyLc, supported: false, reason: "PROP_DEFERRED_PENDING_SEPARATE_DESIGN" };
+  if (family === "ambiguous_disambiguate_by_source_name") {
+    // Real, pre-existing heuristic kept: fantasy_score's taxonomy player_side is "combo" (it
+    // legitimately applies to both hitter and pitcher fantasy scoring), disambiguated by whether
+    // the vendor's own source prop name mentions the pitcher side.
+    const isPitcherFantasy = sourceName.includes("pitch");
+    return { family: isPitcherFantasy ? "pitcher" : "hitter", normalized_lane: isPitcherFantasy ? "pitcher_fantasy" : "hitter_fantasy", supported: true };
+  }
+  const lane = keyLc === "pitching_outs" ? "pitcher_outs" : (keyLc === "earned_runs_allowed" ? "earned_runs" : keyLc);
+  return { family, normalized_lane: lane, supported: true };
 }
 function reqDb(env) {
   const out = {};
