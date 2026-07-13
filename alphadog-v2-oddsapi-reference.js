@@ -404,6 +404,11 @@ export default {
     }
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
+      const innerInput = input.input_json && typeof input.input_json === "object" ? input.input_json : input;
+      if (innerInput.mode === "historical_props_probe") {
+        try { return jsonResponse(await runHistoricalPropsProbe(env, innerInput)); }
+        catch (err) { return jsonResponse({ ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"WORKER_EXCEPTION", certification:"ODDS_API_HISTORICAL_PROBE_EXCEPTION", error:safeText(err && err.stack ? err.stack : err), timestamp_utc:nowUtc() }, 500); }
+      }
       try { return jsonResponse(await runWorker(env, input)); }
       catch (err) { return jsonResponse({ ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, status:"WORKER_EXCEPTION", certification:"ODDSAPI_HITTER_PROP_CONTEXT_EXCEPTION", error:safeText(err && err.stack ? err.stack : err), timestamp_utc:nowUtc() }, 500); }
     }
