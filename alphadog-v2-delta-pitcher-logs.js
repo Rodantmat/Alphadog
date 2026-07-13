@@ -54,7 +54,7 @@ async function runProbe(env, input) {
   const fixturesUrl = `${ODDSPAPI_BASE_URL}/fixtures?apiKey=${encodeURIComponent(apiKey)}&sportId=${MLB_SPORT_ID}&from=${fromDate}&to=${toDate}`;
   const fixturesRes = await fetchJson(fixturesUrl);
   if (!fixturesRes.ok || !Array.isArray(fixturesRes.json)) {
-    return { ok: true, data_ok: false, version: VERSION, worker_name: LOGICAL_WORKER_NAME, job_key: JOB_KEY, status: "fixtures_call_failed", certification: "ODDSPAPI_PROBE_FIXTURES_FAILED", http_status: fixturesRes.http_status, error: fixturesRes.error || "non_array_response", raw_len: fixturesRes.raw_len || 0, external_calls_performed: 1, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc() };
+    return { ok: true, data_ok: false, version: VERSION, worker_name: LOGICAL_WORKER_NAME, job_key: JOB_KEY, status: "fixtures_call_failed", certification: "ODDSPAPI_PROBE_FIXTURES_FAILED", http_status: fixturesRes.http_status, error: fixturesRes.error || "non_array_response", raw_len: fixturesRes.raw_len || 0, raw_text_safe: fixturesRes.raw_text_safe || null, external_calls_performed: 1, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc() };
   }
   const fixtures = fixturesRes.json;
   const withOdds = fixtures.filter(f => f && f.hasOdds);
