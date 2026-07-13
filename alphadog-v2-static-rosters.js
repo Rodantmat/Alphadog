@@ -358,7 +358,7 @@ async function runTeamBullpenBackfill(env, input) {
     season, games_total: gamePkList.length, games_processed_this_tick: gamesProcessed, games_error: gamesError,
     game_offset: offset, next_game_offset: nextOffset, games_remaining: remaining,
     rows_written: rowsWritten, rows_read: 0, external_calls_performed: externalCalls,
-    continuation_required: remaining > 0, orchestrator_should_self_continue: false,
+    continuation_required: remaining > 0, orchestrator_should_self_continue: remaining > 0,
     continuation_input_json: remaining > 0 ? { ...inputJson, batch_id: batchId, game_offset: nextOffset, season, game_pk_list: gamePkList } : null,
     per_game_summary_sample: perGameSummary.slice(0, 10),
     isolated_from_production_delta_pipeline: true,
