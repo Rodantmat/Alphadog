@@ -380,6 +380,7 @@ async function runHistoricalBackfillPitchers2025(env, input) {
 
   const events = (eventsRes.ok && eventsRes.json && Array.isArray(eventsRes.json.data)) ? eventsRes.json.data : [];
 
+  let lastOddsError = null;
   for (const ev of events) {
     if (Number(progress.credits_used_estimate) + creditsUsedThisTick + HISTORICAL_BACKFILL_PITCHER_CREDITS_PER_EVENT > budgetCap) break;
     const oddsUrl = new URL(`${base}/historical/sports/baseball_mlb/events/${encodeURIComponent(ev.id)}/odds`);
@@ -390,7 +391,7 @@ async function runHistoricalBackfillPitchers2025(env, input) {
     const oddsRes = await fetchJson(oddsUrl.toString());
     creditsUsedThisTick += HISTORICAL_BACKFILL_PITCHER_CREDITS_PER_EVENT;
 
-    if (!oddsRes.ok || !oddsRes.json || !oddsRes.json.data) { gamesError += 1; continue; }    const bookmakers = oddsRes.json.data.bookmakers || [];
+    if (!oddsRes.ok || !oddsRes.json || !oddsRes.json.data) { gamesError += 1; lastOddsError = { http_status: oddsRes.http_status, error: oddsRes.error || null, text_preview: oddsRes.text_preview || null, ok: oddsRes.ok, has_json: !!oddsRes.json, has_data: !!(oddsRes.json && oddsRes.json.data) }; continue; }    const bookmakers = oddsRes.json.data.bookmakers || [];
     if (bookmakers.length === 0) { gamesNoData += 1; continue; }
     gamesProcessed += 1;
     for (const bk of bookmakers) {
