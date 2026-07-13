@@ -355,22 +355,32 @@ function buildSideVariationContext(row) {
       sideAvailabilityStatus = "side_ready_two_sided";
       sideEligibilityReason = "PRIZEPICKS_STANDARD_TWO_SIDED";
     }
-  } else if (sourceKey === "sleeper") {
+  } else {
+    // Real fix, found via live-data audit while adjusting this worker for the expanded board:
+    // this used to be a hardcoded per-source name chain (prizepicks / sleeper / [nothing else]),
+    // so Underdog - which uses the real source_key "parlay_underdog", not "underdog" - fell
+    // through to side_availability_unclear (blocked) for every single leg, regardless of the
+    // fix above to normalizeSourceKeyForSideRules. Generalized to a real, price-based rule that
+    // works for Sleeper, Underdog, and any future two-sided-priced source without needing its
+    // name hardcoded here: if a source carries real over AND under prices, it's two-sided; one
+    // side present means that side only. PrizePicks stays special-cased above because its
+    // goblin/demon/standard rows are boosted one-directional projections, not real two-sided
+    // priced markets, so price presence alone would misclassify them.
     if (overPrice !== null && underPrice !== null) {
       sideMode = "two_sided";
       availableSides = ["more", "less"];
       sideAvailabilityStatus = "side_ready_two_sided";
-      sideEligibilityReason = "SLEEPER_OVER_UNDER_PRICES_PRESENT";
+      sideEligibilityReason = sourceKey === "sleeper" ? "SLEEPER_OVER_UNDER_PRICES_PRESENT" : (sourceKey === "underdog" ? "UNDERDOG_OVER_UNDER_PRICES_PRESENT" : "SOURCE_OVER_UNDER_PRICES_PRESENT");
     } else if (overPrice !== null) {
       sideMode = "more_only";
       availableSides = ["more"];
       sideAvailabilityStatus = "side_ready_more_only";
-      sideEligibilityReason = "SLEEPER_OVER_PRICE_ONLY";
+      sideEligibilityReason = sourceKey === "sleeper" ? "SLEEPER_OVER_PRICE_ONLY" : (sourceKey === "underdog" ? "UNDERDOG_OVER_PRICE_ONLY" : "SOURCE_OVER_PRICE_ONLY");
     } else if (underPrice !== null) {
       sideMode = "less_only";
       availableSides = ["less"];
       sideAvailabilityStatus = "side_ready_less_only";
-      sideEligibilityReason = "SLEEPER_UNDER_PRICE_ONLY";
+      sideEligibilityReason = sourceKey === "sleeper" ? "SLEEPER_UNDER_PRICE_ONLY" : (sourceKey === "underdog" ? "UNDERDOG_UNDER_PRICE_ONLY" : "SOURCE_UNDER_PRICE_ONLY");
     }
   }
 
