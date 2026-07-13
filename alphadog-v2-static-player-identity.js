@@ -184,12 +184,11 @@ async function runSnapshot(env, input) {
     perGameSummary.push({ game_pk: game.game_pk, status: "written", weather: !!weather, umpire: !!umpire });
   }
 
-  const nextOffset = offset + gamesThisRun.length;
-  const remaining = Math.max(0, allGames.length - nextOffset);
+  const remaining = Math.max(0, remainingGames.length - gamesThisRun.length);
 
   await run(env.CONTEXT_DB, `INSERT OR REPLACE INTO context_history_snapshot_batches (batch_id, target_date_start, target_date_end, status, games_total, games_processed, weather_written, umpire_written, games_no_data, games_error, external_calls, started_at, finished_at, updated_at)
     VALUES (?,?,?,?,?,?,?,?,?,?,?, COALESCE((SELECT started_at FROM context_history_snapshot_batches WHERE batch_id=?), CURRENT_TIMESTAMP), ?, CURRENT_TIMESTAMP)`,
-    batchId, startDate, endDate, remaining > 0 ? "partial_continue" : "completed", allGames.length, nextOffset, weatherWritten, umpireWritten, gamesNoData, gamesError, externalCalls, batchId, remaining > 0 ? null : nowUtc());
+    batchId, startDate, endDate, remaining > 0 ? "partial_continue" : "completed", remainingGames.length, gamesThisRun.length, weatherWritten, umpireWritten, gamesNoData, gamesError, externalCalls, batchId, remaining > 0 ? null : nowUtc());
 
   return {
     ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
@@ -197,11 +196,11 @@ async function runSnapshot(env, input) {
     status: remaining > 0 ? "partial_continue" : "completed",
     certification: remaining > 0 ? "CONTEXT_HISTORY_SNAPSHOT_PARTIAL_CONTINUE" : "CONTEXT_HISTORY_SNAPSHOT_COMPLETED",
     target_date_start: startDate, target_date_end: endDate,
-    games_total: allGames.length, games_processed_this_tick: gamesThisRun.length, games_no_data: gamesNoData, games_error: gamesError,
-    game_offset: offset, next_game_offset: nextOffset, games_remaining: remaining,
+    games_total: remainingGames.length, games_processed_this_tick: gamesThisRun.length, games_no_data: gamesNoData, games_error: gamesError,
+    games_remaining: remaining,
     weather_written: weatherWritten, umpire_written: umpireWritten, external_calls_performed: externalCalls,
     continuation_required: remaining > 0, orchestrator_should_self_continue: false,
-    continuation_input_json: remaining > 0 ? { ...inputJson, batch_id: batchId, game_offset: nextOffset, start_date: startDate, end_date: endDate } : null,
+    continuation_input_json: remaining > 0 ? { ...inputJson, batch_id: batchId, start_date: startDate, end_date: endDate } : null,
     per_game_summary_sample: perGameSummary.slice(0, 10),
     real_permanent_no_retention_pruning: true,
     no_scoring: true, no_ranking: true, no_final_board: true,
@@ -217,7 +216,7 @@ function baseIdentity(env) {
     status: "CONTEXT_HISTORY_SNAPSHOT_READY", timestamp_utc: nowUtc(),
     notes: [
       "Real, permanent historical weather+umpire archive - independent of and decoupled from the short-retention daily context tables.",
-      "POST /run with input_json: { start_date: 'YYYY-MM-DD', end_date: 'YYYY-MM-DD' (optional, defaults to start_date), game_offset, chunk_size_games }"
+      "POST /run with input_json: { start_date: 'YYYY-MM-DD', end_date: 'YYYY-MM-DD' (optional, defaults to start_date), chunk_size_games }"
     ],
     binding_summary: { required_db_bindings_present: allTrue(db), expected_vars_present: allTrue(vars) }
   };
