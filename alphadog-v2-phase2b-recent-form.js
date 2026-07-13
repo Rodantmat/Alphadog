@@ -73,9 +73,10 @@ async function loadTaxonomyClassifier(env) {
   TAXONOMY_CACHE = map;
   return map;
 }
-function classifyProp(propKey, sourcePropName, taxonomyMap) {
+function classifyProp(propKey, sourcePropName) {
   const keyLc = String(propKey || "").toLowerCase();
   const sourceName = String(sourcePropName || "").toLowerCase();
+  const taxonomyMap = TAXONOMY_CACHE;
   if (!taxonomyMap || !taxonomyMap.has(keyLc)) return { family: "unknown", normalized_lane: keyLc || null, supported: false, reason: "UNSUPPORTED_PROP_KEY_NOT_IN_TAXONOMY" };
   const family = taxonomyMap.get(keyLc);
   if (family === "deferred") return { family: "deferred", normalized_lane: keyLc, supported: false, reason: "PROP_DEFERRED_PENDING_SEPARATE_DESIGN" };
