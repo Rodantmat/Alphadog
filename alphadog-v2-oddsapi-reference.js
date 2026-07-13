@@ -431,6 +431,7 @@ async function runHistoricalBackfillPitchers2025(env, input) {
     events_call_ok: eventsRes.ok,
     events_call_error: eventsRes.error || null,
     events_call_raw_preview: (!eventsRes.ok || !Array.isArray(events.length ? events : (eventsRes.json && eventsRes.json.data))) ? eventsRes.text_preview : null,
+    last_odds_call_error: lastOddsError,
     real_events_found: events.length,
     games_processed_this_date: gamesProcessed,
     games_no_data_this_date: gamesNoData,
