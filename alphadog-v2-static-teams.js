@@ -361,7 +361,7 @@ async function upsertTeams(env, teams, sourceKey) {
     }
   }
 
-  return { team_rows_written: teamRowsWritten, alias_rows_written: aliasesWritten };
+  return { team_rows_written: teamRowsWritten, alias_rows_written: aliasesWritten, team_rows_unchanged_skipped: teamRowsUnchanged };
 }
 
 async function counts(env) {
