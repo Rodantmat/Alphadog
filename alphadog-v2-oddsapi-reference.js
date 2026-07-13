@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-oddsapi-reference";
-const VERSION = "alphadog-v2-oddsapi-reference-v0.1.1-batch-writes-memory-coverage";
+const VERSION = "alphadog-v2-oddsapi-reference-v0.2.1-db-key-comprehensive-capture";
 const JOB_KEY = "oddsapi-reference";
 const MODE = "market_hitter_prop_line_context_oddsapi";
 const SOURCE_KEY_PREFIX = "odds_api";
