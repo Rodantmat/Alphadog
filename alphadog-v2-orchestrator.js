@@ -8846,6 +8846,10 @@ async function processContextHistoryCertifierJob(env, row, runId, trigger) {
   return genericSimpleWorkerDispatch(env, row, runId, trigger, "STATIC_TEAM_CONTEXT_WORKER", "alphadog-v2-static-team-context", "CONTEXT_HISTORY_CERTIFIER");
 }
 
+async function processStaticPitcherArsenalJob(env, row, runId, trigger) {
+  return genericSimpleWorkerDispatch(env, row, runId, trigger, "STATIC_PLAYER_ALIASES_WORKER", "alphadog-v2-static-player-aliases", "STATIC_PITCHER_ARSENAL");
+}
+
 const CONTEXT_HISTORY_FULL_RUN_STAGES = [
   { job_key: "context-history-snapshot", worker_name: "alphadog-v2-static-player-identity", stage_key: "context_history_snapshot" },
   { job_key: "context-history-certifier", worker_name: "alphadog-v2-static-team-context", stage_key: "context_history_certifier" }
