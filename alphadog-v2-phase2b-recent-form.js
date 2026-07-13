@@ -938,23 +938,23 @@ function buildPacket(family, row, classification, ctx) {
 
 async function insertPacketAndIssueRows(env, family, batchId, packets, issues) {
   const packetTable = family === "pitcher" ? "prop_factor_pitcher_packets" : "prop_factor_hitter_packets";
-  const packetStmts = packets.map(p => env.SCORE_DB.prepare(`INSERT OR REPLACE INTO ${packetTable} (
+  const packetStmts = packets.map(p => env.SCORING_DB.prepare(`INSERT OR REPLACE INTO ${packetTable} (
     packet_id,batch_id,prepared_row_id,source_line_id,source_key,game_pk,official_date,official_game_time_utc,mlb_player_id,player_name,team_id,opponent_team_id,is_home,canonical_prop_key,normalized_factor_lane,board_line_value,factor_status,factor_grade,readiness_status,market_context_status,daily_context_status,base_metric_status,missing_factor_count,warning_count,blocker_count,factor_payload_json,details_json,created_at,updated_at)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(
     p.packet_id, batchId, p.row.prepared_row_id, p.source_line_id, p.row.source_key, p.row.official_game_pk, p.row.official_date, p.row.official_game_time_utc, p.row.resolved_mlb_player_id || p.row.resolved_player_id, p.row.player_name, String(p.team_id || ""), String(p.opponent_team_id || ""), p.is_home, p.row.canonical_prop_key, p.classification.normalized_lane, p.row.line_value, p.factor_status, p.factor_grade, p.readiness_status, p.market_context_status, p.daily_context_status, p.base_metric_status, p.missing_factor_count, p.warning_count, p.blocker_count, JSON.stringify(p.payload), JSON.stringify({ source_prop_name: p.row.source_prop_name, warnings: p.warnings, missing: p.missing })
   ));
-  await batch(env.SCORE_DB, packetStmts, 25);
-  const issueStmts = issues.map(i => env.SCORE_DB.prepare(`INSERT OR REPLACE INTO prop_factor_issues (issue_id,batch_id,factor_family,packet_id,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,severity,issue_type,reason,details_json,official_date,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+  await batch(env.SCORING_DB, packetStmts, 25);
+  const issueStmts = issues.map(i => env.SCORING_DB.prepare(`INSERT OR REPLACE INTO prop_factor_issues (issue_id,batch_id,factor_family,packet_id,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,severity,issue_type,reason,details_json,official_date,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
     i.issue_id, batchId, i.factor_family, i.packet_id || null, i.prepared_row_id || null, i.game_pk || null, i.mlb_player_id || null, i.canonical_prop_key || null, i.severity, i.issue_type, i.reason, JSON.stringify(i.details || {}), i.official_date || null
   ));
-  await batch(env.SCORE_DB, issueStmts, 25);
+  await batch(env.SCORING_DB, issueStmts, 25);
 }
 
 async function insertCoverageRows(env, batchId, coverageRows) {
-  const covStmts = coverageRows.map(c => env.SCORE_DB.prepare(`INSERT OR REPLACE INTO prop_factor_coverage_current (coverage_key,factor_family,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,normalized_factor_lane,factor_status,factor_grade,packet_id,latest_batch_id,latest_checked_at,blocking_for_matrix,missing_reason,details_json,official_date,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(
+  const covStmts = coverageRows.map(c => env.SCORING_DB.prepare(`INSERT OR REPLACE INTO prop_factor_coverage_current (coverage_key,factor_family,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,normalized_factor_lane,factor_status,factor_grade,packet_id,latest_batch_id,latest_checked_at,blocking_for_matrix,missing_reason,details_json,official_date,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(
     c.coverage_key, c.factor_family, c.prepared_row_id, c.game_pk, c.mlb_player_id, c.canonical_prop_key, c.normalized_factor_lane, c.factor_status, c.factor_grade, c.packet_id || null, batchId, nowIso(), c.blocking_for_matrix ? 1 : 0, c.missing_reason || null, JSON.stringify(c.details || {}), c.official_date
   ));
-  await batch(env.SCORE_DB, covStmts, 25);
+  await batch(env.SCORING_DB, covStmts, 25);
 }
 
 async function insertRows(env, family, batchId, packets, issues, coverageRows) {
