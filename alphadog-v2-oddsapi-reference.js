@@ -92,11 +92,11 @@ function baseIdentity(env, extra = {}) {
       reason_selected: "closest unused Market-family dummy already provisioned for Odds API reference work; separate from existing Parlay hitter worker and existing Teams odds worker"
     },
     docs_source_lock: {
-      official_odds_api_behavior: "MLB player props are event-level /events/{eventId}/odds markets; this worker fetches game events first, then event player-prop markets only for prepared today/tomorrow games"
+      official_odds_api_behavior: "MLB player props (hitter + pitcher, all 18 tracked markets) are event-level /events/{eventId}/odds markets; game-level odds (h2h/spreads/totals) come from the main /sports/baseball_mlb/odds call. This worker captures comprehensively for every real event on today/tomorrow's MLB calendar, independent of whether a prepared board (e.g. PrizePicks) exists that day."
     },
     bindings: { required, optional },
     secrets_present_only: { ODDS_API_KEY: sourceHas(env, "ODDS_API_KEY") },
-    boundaries: { hitter_player_props_only:true, odds_api_only:true, no_parlay_api_calls:true, no_prizepicks_board_mutation:true, no_sleeper_board_mutation:true, no_market_current_lines_writes:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true, no_matrix:true },
+    boundaries: { all_hitter_and_pitcher_props:true, game_level_odds_captured:true, odds_api_only:true, no_parlay_api_calls:true, no_prizepicks_board_mutation:true, no_sleeper_board_mutation:true, no_market_current_lines_writes:true, no_score_db_mutation:true, no_scoring:true, no_ranking:true, no_final_board:true, no_matrix:true },
     timestamp_utc: nowUtc(),
     ...extra
   };
