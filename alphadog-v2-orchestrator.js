@@ -17796,6 +17796,16 @@ async function processOneUnlocked(env, trigger) {
     };
   }
 
+  if (isStaticPitcherArsenalJob(row)) {
+    const output = await processStaticPitcherArsenalJob(env, row, runId, trigger);
+    return {
+      status: output && output.ok ? "completed_one_static_pitcher_arsenal_job" : "failed_one_static_pitcher_arsenal_job",
+      request_id: row.request_id,
+      run_id: runId,
+      output
+    };
+  }
+
   if (isStaticStadiumsJob(row)) {
     const output = await processStaticStadiumsJob(env, row, runId, trigger);
     return {
