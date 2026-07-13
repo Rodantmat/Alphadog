@@ -134,21 +134,39 @@ async function fetchGameFeed(env, gamePk, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS) 
   }
 }
 
-async function chooseGamesForRange(env, startDate, endDate) {
-  const rows = await all(env.TEAM_DB, `SELECT DISTINCT game_pk, game_date, team_id, is_home FROM team_game_logs WHERE game_date >= ? AND game_date <= ? AND is_home = 1`, startDate, endDate);
+async function chooseGamesForRange(env, startDate, endDate, explicitGamePks) {
   const already = await all(env.CONTEXT_DB, `SELECT game_pk FROM context_history_game_weather WHERE official_date >= ? AND official_date <= ?`, startDate, endDate);
   const alreadySet = new Set(already.map(r => asInt(r.game_pk)));
-  return rows.filter(r => r.game_pk && !alreadySet.has(asInt(r.game_pk))).map(r => ({ game_pk: asInt(r.game_pk), official_date: r.game_date, home_team_id: String(r.team_id) }));
+
+  if (explicitGamePks && explicitGamePks.length) {
+    // Real, explicit override - lets this worker target specific real game_pks directly (e.g. for
+    // historical seasons team_game_logs doesn't cover, or for testing real MLB feed coverage for a
+    // known game) without needing a full candidate-source table for that range.
+    const rows = await all(env.CONTEXT_DB, `SELECT game_pk FROM context_history_game_weather WHERE game_pk IN (${explicitGamePks.map(() => "?").join(",")})`, ...explicitGamePks);
+    const doneSet = new Set(rows.map(r => asInt(r.game_pk)));
+    return explicitGamePks.filter(pk => !doneSet.has(asInt(pk))).map(pk => ({ game_pk: asInt(pk), official_date: startDate, home_team_id: null }));
+  }
+
+  // Real fallback added for historical (pre-2026) date ranges: team_game_logs currently only has
+  // 2026 real data, so for any range it doesn't cover, fall back to the real game_pk/date pairs
+  // already present in the historical hitter/pitcher game-log backfill (this session's separate,
+  // ongoing tool) rather than returning nothing.
+  const primary = await all(env.TEAM_DB, `SELECT DISTINCT game_pk, game_date, team_id, is_home FROM team_game_logs WHERE game_date >= ? AND game_date <= ? AND is_home = 1`, startDate, endDate);
+  if (primary.length) return primary.filter(r => r.game_pk && !alreadySet.has(asInt(r.game_pk))).map(r => ({ game_pk: asInt(r.game_pk), official_date: r.game_date, home_team_id: String(r.team_id) }));
+
+  const fallback = await all(env.STATS_HITTER_DB, `SELECT DISTINCT game_pk, game_date FROM hitter_game_logs WHERE game_date >= ? AND game_date <= ?`, startDate, endDate);
+  return fallback.filter(r => r.game_pk && !alreadySet.has(asInt(r.game_pk))).map(r => ({ game_pk: asInt(r.game_pk), official_date: r.game_date, home_team_id: null }));
 }
 
 async function runSnapshot(env, input) {
   await ensureSchema(env);
   const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
   const startDate = String(inputJson.start_date || inputJson.date || "");
+  const explicitGamePks = Array.isArray(inputJson.game_pks) ? inputJson.game_pks.map(asInt).filter(Boolean) : null;
+  if (!startDate && !explicitGamePks) return { ok: false, data_ok: false, error: "input_json.start_date (or date), or a game_pks array, is required" };
   const endDate = String(inputJson.end_date || inputJson.date || startDate);
-  if (!startDate) return { ok: false, data_ok: false, error: "input_json.start_date (or date) is required, e.g. 2026-07-11" };
 
-  const batchId = String(inputJson.batch_id || rid(`context_history_snapshot_${startDate}`));
+  const batchId = String(inputJson.batch_id || rid(`context_history_snapshot_${startDate || "explicit"}`));
   const chunkSize = Math.max(1, Math.min(asInt(inputJson.chunk_size_games, DEFAULT_CHUNK_SIZE_GAMES), 15));
 
   // Real fix: chooseGamesForRange already excludes games that have already been captured, so the
