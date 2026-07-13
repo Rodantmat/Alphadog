@@ -294,7 +294,7 @@ async function insertBullpenRow(env, r, batchId, runId) {
     inherited_runners, inherited_runners_scored, holds, saves, blown_saves, raw_json, source_key,
     source_confidence, updated_at, source_endpoint, source_season, source_game_type, ingestion_mode,
     batch_id, run_id, certification_status, certification_grade, certified_at, promoted_at, created_at
-  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?,?,'R','historical_backfill',?,?,'HISTORICAL_BACKFILL_CERTIFIED','BASE_PASS',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?,?,'R','historical_backfill',?,?,'HISTORICAL_BACKFILL_CERTIFIED','BASE_PASS',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
     r.bullpen_key, r.team_id, r.game_date, r.game_pk, r.season, r.opponent_team_id, r.is_home, r.pitcher_id, r.pitcher_name,
     r.pitcher_hand, r.pitcher_role, r.relief_appearance, r.games_started, r.games_pitched, r.pitcher_order_index,
     r.bullpen_appearance_index, r.innings_pitched, r.innings_pitched_decimal, r.outs_recorded, r.batters_faced, r.pitches,
