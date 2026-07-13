@@ -149,11 +149,16 @@ async function runSnapshot(env, input) {
   if (!startDate) return { ok: false, data_ok: false, error: "input_json.start_date (or date) is required, e.g. 2026-07-11" };
 
   const batchId = String(inputJson.batch_id || rid(`context_history_snapshot_${startDate}`));
-  const offset = asInt(inputJson.game_offset, 0);
   const chunkSize = Math.max(1, Math.min(asInt(inputJson.chunk_size_games, DEFAULT_CHUNK_SIZE_GAMES), 15));
 
-  const allGames = await chooseGamesForRange(env, startDate, endDate);
-  const gamesThisRun = allGames.slice(offset, offset + chunkSize);
+  // Real fix: chooseGamesForRange already excludes games that have already been captured, so the
+  // candidate list genuinely shrinks between calls. An offset-based slice (allGames.slice(offset,
+  // offset+chunkSize)) breaks once the list is shorter than the accumulated offset - confirmed via
+  // a real live test where 6 real games were silently skipped and the run incorrectly reported
+  // "completed". Always take from the front of the freshly-filtered remaining list instead; no
+  // offset needed since already-captured games are never returned again.
+  const remainingGames = await chooseGamesForRange(env, startDate, endDate);
+  const gamesThisRun = remainingGames.slice(0, chunkSize);
 
   let externalCalls = 0, weatherWritten = 0, umpireWritten = 0, gamesNoData = 0, gamesError = 0;
   const perGameSummary = [];
