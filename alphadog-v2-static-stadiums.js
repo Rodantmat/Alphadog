@@ -350,6 +350,31 @@ async function upsertStadiums(env, stadiums, sourceKey) {
   await run(env.REF_DB, "UPDATE ref_stadium_aliases SET active=0, updated_at=CURRENT_TIMESTAMP WHERE source_key IN ('MLB_STATSAPI_TEAMS_AND_VENUES','CONTROLLED_STATIC_FALLBACK_NON_CERTIFYING')");
 
   for (const stadium of stadiums) {
+    const current = currentSnapshot.get(String(stadium.stadium_id));
+    if (!stadiumHasRealChange(current, stadium)) {
+      stadiumRowsUnchanged += 1;
+      // Cheap reactivation touch only - no full field rewrite for a real-verified-unchanged row.
+      await run(env.REF_DB, "UPDATE ref_stadiums SET active=1, updated_at=CURRENT_TIMESTAMP WHERE stadium_id=?", stadium.stadium_id);
+      for (const alias of buildAliases(stadium, sourceKey)) {
+        await run(env.REF_DB, `INSERT INTO ref_stadium_aliases (
+          alias_key, stadium_id, mlb_venue_id, alias_value, alias_normalized, alias_type, source_key, confidence, active, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(alias_key) DO UPDATE SET
+          stadium_id=excluded.stadium_id,
+          mlb_venue_id=excluded.mlb_venue_id,
+          alias_value=excluded.alias_value,
+          alias_normalized=excluded.alias_normalized,
+          alias_type=excluded.alias_type,
+          source_key=excluded.source_key,
+          confidence=excluded.confidence,
+          active=1,
+          updated_at=CURRENT_TIMESTAMP`,
+          alias.alias_key, alias.stadium_id, alias.mlb_venue_id, alias.alias_value, alias.alias_normalized, alias.alias_type, alias.source_key, alias.confidence
+        );
+        aliasesWritten += 1;
+      }
+      continue;
+    }
     const parkJson = {
       abbreviation: stadium.abbreviation,
       mlb_team_id: stadium.mlb_team_id,
