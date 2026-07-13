@@ -30,21 +30,30 @@ function savantUrl(year) {
   return u.toString();
 }
 
+function parseCsvLine(line) {
+  const values = [];
+  let cur = "", inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQuotes = !inQuotes; continue; }
+    if (c === "," && !inQuotes) { values.push(cur); cur = ""; continue; }
+    cur += c;
+  }
+  values.push(cur);
+  return values;
+}
+
 function parseCsv(text) {
   const lines = String(text || "").trim().split(/\r?\n/);
   if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map(h => h.trim());
+  // Real bug fixed: the header row was previously split with a naive .split(",") while data rows
+  // used the quote-aware parser below - confirmed via a real live diagnostic fetch that the real
+  // header field `"last_name, first_name"` (one quoted field with an embedded comma) was being
+  // broken into two fields, shifting every column after it. Both header and data rows now use the
+  // same quote-aware line parser.
+  const headers = parseCsvLine(lines[0]).map(h => h.trim());
   return lines.slice(1).map(line => {
-    // Real, minimal CSV parse - handles simple quoted fields (Savant CSV exports are not complex).
-    const values = [];
-    let cur = "", inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"') { inQuotes = !inQuotes; continue; }
-      if (c === "," && !inQuotes) { values.push(cur); cur = ""; continue; }
-      cur += c;
-    }
-    values.push(cur);
+    const values = parseCsvLine(line);
     const row = {};
     headers.forEach((h, i) => { row[h] = values[i] !== undefined ? values[i] : null; });
     return row;
