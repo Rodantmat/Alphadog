@@ -21,36 +21,32 @@ async function readJsonSafe(request) { try { return await request.json(); } catc
 
 const STRATEGIES = [
   {
-    key: "direct_exact_ask",
-    label: "Direct ask for exact real line/price (control/baseline)",
-    prompt: `What was the FanDuel player-prop betting line for Ronald Acuna Jr. Doubles (Over/Under) for the real MLB game between the Atlanta Braves and Colorado Rockies on 2025-06-15? I need the real, specific line value and the real American odds price for the Over side, from a real, specific, cited source. Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null, "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}. If you cannot find a real, sourced answer, set found to false rather than inventing one.`
+    key: "recap_article_repeat_date2",
+    label: "Repeat recap-article strategy on a DIFFERENT real date (repeatability check)",
+    prompt: `Find a real sports betting recap or "prop bets today" article from a site like DocSports, RotoBaller, Lineups.com, or SI Betting, that discusses MLB player props from real games on 2025-08-01. I'm looking for a real article that quotes actual player-prop line values (like "Over 1.5 total bases") for a specific real player. Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null, "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}.`
   },
   {
-    key: "qualitative_direction_only",
-    label: "Lower bar: just ask market direction/sentiment, not exact price",
-    prompt: `For the real MLB game between the Atlanta Braves and Colorado Rockies on 2025-06-15, was Ronald Acuna Jr. generally considered likely or unlikely by sportsbooks to hit a double that game (i.e., was the market leaning Over or Under on a 0.5 doubles line, even approximately)? I don't need the exact price, just the real directional lean if you can find any real, sourced discussion of it. Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null, "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}.`
+    key: "recap_article_multi_player_same_date",
+    label: "Ask for MULTIPLE players' real props from one recap article (efficiency test)",
+    prompt: `Find a real MLB player-props recap/picks article (from DocSports, RotoBaller, Lineups.com, SI Betting, or similar) covering real games on 2025-06-15. List EVERY real player-prop line value you can find in that one real article (player name, prop type, line value - not just one player). Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null (list all real props found, semicolon separated), "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}.`
   },
   {
-    key: "recap_grades_article",
-    label: "Search for a real betting recap/grades article that might quote the line",
-    prompt: `Find a real sports betting recap, "bet grades", or "how our picks did" article from a site like Action Network, Covers.com, or similar, that discusses MLB player props from games on 2025-06-15 (Braves at Rockies, or any other real MLB game that day). I'm looking for any real article that quotes an actual player-prop line and price it was recommending or grading that day. Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null, "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}.`
+    key: "docsports_direct_site_search",
+    label: "Search DocSports.com directly by name (since it's confirmed to work) for a new date",
+    prompt: `Search specifically on docsports.com for a real MLB player prop picks article for games on 2025-07-08. Tell me the real player name(s), prop type(s), and line value(s) mentioned in that specific real article if you can find it. Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null, "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}.`
   },
   {
-    key: "viral_notable_game",
-    label: "Try a famous, highly-covered game instead of a random one (Ohtani 50/50 game)",
-    prompt: `On 2025-09-19, Shohei Ohtani hit a walk-off grand slam to clinch the NL West for the Dodgers. This was one of the most-covered MLB games of the 2025 season. Find a real, specific source that mentions what his player-prop betting lines were for that game (home runs, total bases, hits - any of these) on any real sportsbook (FanDuel, DraftKings, BetMGM, etc.), given how much real media coverage this specific game received. Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null, "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}.`
+    key: "pitcher_strikeout_prop_recap",
+    label: "Try a different prop category: pitcher strikeout recap articles",
+    prompt: `Find a real sports betting article discussing pitcher strikeout prop bets for a real MLB starting pitcher on 2025-06-15 (any real game that day). I need the real pitcher's name and the real strikeout line value (e.g. "Over 5.5 strikeouts") from a real, specific source. Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null, "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}.`
   },
   {
-    key: "reddit_social_screenshot",
-    label: "Search Reddit/social betting communities for screenshotted lines",
-    prompt: `Search Reddit communities like r/sportsbook, r/sportsbetting, or r/MLB for any real post or comment from around 2025-06-15 that screenshots or mentions actual MLB player-prop betting lines from that date (any player, any sportsbook). I'm looking for real, specific numbers people posted, not a general description. Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null, "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}.`
-  },
-  {
-    key: "aggregator_archive_page",
-    label: "Ask Gemini to identify a real, specific archive/aggregator page structure (not the data itself)",
-    prompt: `I need to find real historical MLB player-prop betting lines for the 2025 season (specific lines and prices, not just game odds). Rather than answering from memory, tell me: what is the single most promising REAL, currently-existing website or tool (free or paid) that a developer could use to look up an exact historical player-prop line for a specific date in 2025, with a real URL if you know one? Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null, "source_url": string or null, "source_note": string, "confidence": "high" or "low" or "unknown"}.`
+    key: "batch_five_dates_one_call",
+    label: "Efficiency test: ask for real props across 5 different dates in ONE call",
+    prompt: `For each of these 5 real MLB dates in 2025 - 2025-04-10, 2025-05-01, 2025-06-01, 2025-07-01, 2025-08-01 - try to find one real MLB player-prop recap/picks article (DocSports, RotoBaller, Lineups.com, SI Betting, etc.) and report one real specific player-prop line value from each if you can find it. Respond with ONLY a single JSON object: {"found": true or false, "answer": string or null (one line per date, real findings only), "source_url": string or null (best one), "source_note": string, "confidence": "high" or "low" or "unknown"}.`
   }
 ];
+
 
 async function callGemini(env, prompt) {
   const controller = new AbortController();
