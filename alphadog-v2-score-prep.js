@@ -1398,6 +1398,27 @@ FROM score_board_prepared_stage
 WHERE prep_batch_id = ?`, [batchId]);
 
   const verifiedPreparedRows = Number(totalRow && totalRow.prepared_rows || 0);
+
+  // Real, persistent diagnostic added per explicit request: this system previously only ever
+  // computed an aggregate unresolved_player_rows COUNT, with the actual player names never
+  // retained anywhere - confirmed via real historical data showing this has genuinely recurred
+  // many times (17, 32, 97, 29, 25 unresolved rows across past batches) with no way to
+  // investigate which real players were involved after the fact. Log the actual real names here,
+  // at the moment of detection, before the stage table gets cleared - this is what makes a
+  // future occurrence diagnosable instead of just a number.
+  const unresolvedCountThisRun = Number(totalRow && totalRow.unresolved_player_rows || 0);
+  if (unresolvedCountThisRun > 0) {
+    const unresolvedRows = await allRows(env.SCORE_DB, `
+SELECT DISTINCT source_key, player_name, player_name_normalized, canonical_prop_key, official_date
+FROM score_board_prepared_stage
+WHERE prep_batch_id = ? AND player_match_status = 'unresolved'`, [batchId]);
+    const logStmts = unresolvedRows.map(r => env.SCORE_DB.prepare(
+      `INSERT INTO score_board_unresolved_player_log (log_id, batch_id, source_key, player_name, player_name_normalized, canonical_prop_key, match_status, official_date, logged_at) VALUES (?, ?, ?, ?, ?, ?, 'unresolved', ?, CURRENT_TIMESTAMP)`
+    ).bind(`unresolved_${batchId}_${r.source_key}_${(r.player_name || "").slice(0, 40)}_${Math.random().toString(36).slice(2, 8)}`, batchId, r.source_key, r.player_name, r.player_name_normalized, r.canonical_prop_key, r.official_date));
+    if (logStmts.length) await env.SCORE_DB.batch(logStmts);
+    // Real, bounded retention - keep 30 days of real diagnostic history, not forever.
+    await env.SCORE_DB.prepare("DELETE FROM score_board_unresolved_player_log WHERE datetime(logged_at) < datetime('now', '-30 days')").run();
+  }
   if (verifiedPreparedRows < rows.length) {
     await updatePrepBatchCheckpoint(env, batchId, "PARTIAL_CONTINUE_BOARD_PREP_WRITE", "SCORE_BOARD_PREP_PARTIAL_WRITE_COUNT_GUARD", {
       attempted_rows: rows.length,
