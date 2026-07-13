@@ -1057,7 +1057,7 @@ async function finalizeExistingPropFactorEvidenceForRequest(env, input, family, 
     no_final_board:true,
     no_matrix_builder:true
   };
-  await run(env.SCORE_DB, `UPDATE prop_factor_batches
+  await run(env.SCORING_DB, `UPDATE prop_factor_batches
     SET status=?, prepared_rows_read=CASE WHEN COALESCE(prepared_rows_read,0)=0 THEN ? ELSE prepared_rows_read END,
         eligible_rows=?, packets_written=?, blocked_rows=?, warning_rows=?, issue_rows=?, missing_factor_rows=?,
         certification_status=?, certification_grade=?, output_json=?, updated_at=CURRENT_TIMESTAMP
