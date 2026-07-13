@@ -183,7 +183,7 @@ function buildEventsUrl(env, input) {
   const url = new URL(`${base}/sports/baseball_mlb/odds`);
   url.searchParams.set("apiKey", String(env.ODDS_API_KEY));
   url.searchParams.set("regions", String(input.regions || env.ODDS_API_REGIONS || "us"));
-  url.searchParams.set("markets", "h2h");
+  url.searchParams.set("markets", GAME_LEVEL_MARKETS.join(","));
   url.searchParams.set("oddsFormat", "american");
   const books = String(input.bookmakers || env.ODDS_API_HITTER_BOOKMAKERS || env.ODDS_API_BOOKMAKERS || DEFAULT_BOOKMAKERS).replace(/\s+/g, "");
   if (books) url.searchParams.set("bookmakers", books);
