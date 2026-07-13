@@ -1,74 +1,119 @@
 const WORKER_NAME = "alphadog-v2-delta-pitcher-logs";
-const VERSION = "alphadog-v2-dummy-workers-v0.1";
-const JOB_KEY = "delta-pitcher-logs";
+const LOGICAL_WORKER_NAME = "alphadog-v2-oddspapi-mlb-historical-props-probe";
+const VERSION = "alphadog-v2-oddspapi-probe-v0.1.0";
+const JOB_KEY = "oddspapi-mlb-historical-props-probe";
+
+// Real, safe, read-only probe worker - answers one real question with one real API call:
+// does OddsPapi.io's free-tier historical-odds endpoint actually have real MLB player-prop
+// coverage reaching back into the 2025 season (not just a recent rolling window)?
+// Reads the already-configured, real oddspapi_api_key from CONFIG_DB.config_external_credentials
+// server-side only - the raw key value is never returned in any response.
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
-const REQUIRED_SECRETS = ["ALPHADOG_ADMIN_TOKEN", "ALPHADOG_INTERNAL_TOKEN", "ODDS_API_KEY", "PARLAY_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_PRIZEPICKS_PATH", "MLB_API_USER_AGENT"];
-const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_VERSION", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON", "DEFAULT_DAY_SCOPE", "DEFAULT_SLATE_MODE", "ODDS_API_BASE_URL", "PARLAY_API_BASE_URL", "MLB_API_BASE_URL", "PRIZEPICKS_SOURCE_MODE", "MAX_TICK_MS", "MAX_API_CALLS_PER_TICK", "MAX_ROWS_PER_TICK", "LOCK_STALE_MINUTES", "WORKER_SAFE_MODE", "DEBUG_MODE", "MANUAL_SQL_ENABLED", "CONFIG_PHASE"];
+const ODDSPAPI_BASE_URL = "https://api.oddspapi.io/v4";
+const MLB_SPORT_ID = 13;
 
-function nowUtc() {
-  return new Date().toISOString();
-}
-
+function nowUtc() { return new Date().toISOString(); }
 function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body, null, 2), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store"
+  return new Response(JSON.stringify(body, null, 2), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
+}
+function bindingPresence(env, names) { const out = {}; for (const n of names) out[n] = Boolean(env && env[n]); return out; }
+function allTrue(obj) { return Object.values(obj).every(Boolean); }
+async function readJsonSafe(request) { try { return await request.json(); } catch { return {}; } }
+
+async function first(db, sql, ...binds) {
+  const stmt = db.prepare(sql);
+  const res = binds.length ? await stmt.bind(...binds).first() : await stmt.first();
+  return res || null;
+}
+
+async function fetchJson(url) {
+  try {
+    const resp = await fetch(url, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(20000) });
+    const text = await resp.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch (_) {}
+    return { ok: resp.ok, http_status: resp.status, json, raw_len: text.length };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+}
+
+async function runProbe(env, input) {
+  const cred = await first(env.CONFIG_DB, "SELECT password FROM config_external_credentials WHERE credential_key='oddspapi_api_key'");
+  const apiKey = cred && cred.password ? String(cred.password) : null;
+  if (!apiKey) {
+    return { ok: false, data_ok: false, error: "no_oddspapi_api_key_configured", note: "Expected a row in CONFIG_DB.config_external_credentials with credential_key='oddspapi_api_key'" };
+  }
+
+  const inputJson = input.input_json && typeof input.input_json === "object" ? input.input_json : {};
+  const fromDate = String(inputJson.from_date || "2025-06-01");
+  const toDate = String(inputJson.to_date || "2025-06-08");
+
+  // Step 1: real, minimal, free fixtures call for a real, narrow 2025 MLB date window
+  const fixturesUrl = `${ODDSPAPI_BASE_URL}/fixtures?apiKey=${encodeURIComponent(apiKey)}&sportId=${MLB_SPORT_ID}&from=${fromDate}&to=${toDate}`;
+  const fixturesRes = await fetchJson(fixturesUrl);
+  if (!fixturesRes.ok || !Array.isArray(fixturesRes.json)) {
+    return { ok: true, data_ok: false, version: VERSION, worker_name: LOGICAL_WORKER_NAME, job_key: JOB_KEY, status: "fixtures_call_failed", certification: "ODDSPAPI_PROBE_FIXTURES_FAILED", http_status: fixturesRes.http_status, error: fixturesRes.error || "non_array_response", raw_len: fixturesRes.raw_len || 0, external_calls_performed: 1, no_scoring: true, no_ranking: true, no_final_board: true, timestamp_utc: nowUtc() };
+  }
+  const fixtures = fixturesRes.json;
+  const withOdds = fixtures.filter(f => f && f.hasOdds);
+  const sampleFixture = withOdds[0] || fixtures[0] || null;
+
+  let historicalRes = null;
+  let historicalSummary = null;
+  if (sampleFixture && sampleFixture.fixtureId) {
+    const histUrl = `${ODDSPAPI_BASE_URL}/historical-odds?apiKey=${encodeURIComponent(apiKey)}&fixtureId=${encodeURIComponent(sampleFixture.fixtureId)}`;
+    historicalRes = await fetchJson(histUrl);
+    if (historicalRes.ok && historicalRes.json) {
+      const bookmakers = historicalRes.json.bookmakers ? Object.keys(historicalRes.json.bookmakers) : [];
+      let totalMarkets = 0, totalOutcomes = 0, totalPricePoints = 0, sampleTimestamps = [];
+      for (const bk of bookmakers) {
+        const markets = historicalRes.json.bookmakers[bk] && historicalRes.json.bookmakers[bk].markets ? historicalRes.json.bookmakers[bk].markets : {};
+        for (const marketId of Object.keys(markets)) {
+          totalMarkets += 1;
+          const outcomes = markets[marketId].outcomes || {};
+          for (const outcomeId of Object.keys(outcomes)) {
+            totalOutcomes += 1;
+            const players = outcomes[outcomeId].players || {};
+            for (const playerIdx of Object.keys(players)) {
+              const entries = Array.isArray(players[playerIdx]) ? players[playerIdx] : [players[playerIdx]];
+              totalPricePoints += entries.length;
+              for (const e of entries) { if (e && e.createdAt && sampleTimestamps.length < 5) sampleTimestamps.push(e.createdAt); }
+            }
+          }
+        }
+      }
+      historicalSummary = { bookmakers, total_markets: totalMarkets, total_outcomes: totalOutcomes, total_price_points: totalPricePoints, sample_timestamps: sampleTimestamps };
     }
-  });
-}
+  }
 
-function bindingPresence(env, names) {
-  const out = {};
-  for (const name of names) out[name] = Boolean(env && env[name]);
-  return out;
-}
-
-function varPresence(env, names) {
-  const out = {};
-  for (const name of names) out[name] = env && env[name] !== undefined && env[name] !== null && String(env[name]).length > 0;
-  return out;
-}
-
-function allTrue(obj) {
-  return Object.values(obj).every(Boolean);
+  return {
+    ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
+    request_id: input.request_id || null, chain_id: input.chain_id || null,
+    status: "completed", certification: "ODDSPAPI_MLB_HISTORICAL_PROPS_PROBE_COMPLETED",
+    real_probe_window: { from_date: fromDate, to_date: toDate },
+    real_fixtures_found: fixtures.length,
+    real_fixtures_with_odds: withOdds.length,
+    sample_fixture: sampleFixture ? { fixtureId: sampleFixture.fixtureId, participant1Name: sampleFixture.participant1Name, participant2Name: sampleFixture.participant2Name, startTime: sampleFixture.startTime, hasOdds: sampleFixture.hasOdds, statusName: sampleFixture.statusName } : null,
+    historical_call_ok: historicalRes ? historicalRes.ok : null,
+    historical_http_status: historicalRes ? historicalRes.http_status : null,
+    historical_summary: historicalSummary,
+    external_calls_performed: sampleFixture ? 2 : 1,
+    api_key_value_never_returned: true,
+    no_scoring: true, no_ranking: true, no_final_board: true,
+    timestamp_utc: nowUtc()
+  };
 }
 
 function baseIdentity(env) {
   const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-  const vars = varPresence(env, EXPECTED_VARS);
-  const secrets = varPresence(env, REQUIRED_SECRETS);
-
   return {
-    ok: true,
-    data_ok: true,
-    version: VERSION,
-    worker_name: WORKER_NAME,
-    job_key: JOB_KEY,
-    status: "DUMMY_READY",
-    timestamp_utc: nowUtc(),
-    phase: "alphadog-v2-config-bootstrap",
-    notes: [
-      "Dummy worker only.",
-      "No mining, scoring, external API calls, or production writes.",
-      "Use /health and /diagnostic to verify bindings/secrets/vars."
-    ],
-    binding_summary: {
-      required_db_bindings_present: allTrue(db),
-      expected_vars_present: allTrue(vars),
-      required_secrets_present: allTrue(secrets)
-    }
+    ok: true, data_ok: true, version: VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
+    status: "ODDSPAPI_PROBE_READY", timestamp_utc: nowUtc(),
+    notes: ["Real, read-only, single-purpose probe of OddsPapi.io's free-tier historical odds endpoint for real 2025 MLB player-prop depth.", "POST /run with input_json: { from_date: '2025-06-01', to_date: '2025-06-08' }"],
+    binding_summary: { required_db_bindings_present: allTrue(db) }
   };
-}
-
-async function readJsonSafe(request) {
-  try {
-    return await request.json();
-  } catch {
-    return {};
-  }
 }
 
 export default {
@@ -76,90 +121,17 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, "") || "/";
     const method = request.method.toUpperCase();
-
-    if (method === "GET" && path === "/") {
-      return jsonResponse(baseIdentity(env));
-    }
-
-    if (method === "GET" && path === "/health") {
-      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-      const vars = varPresence(env, EXPECTED_VARS);
-      const secrets = varPresence(env, REQUIRED_SECRETS);
-
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/health",
-        checks: {
-          db_bindings: db,
-          vars: vars,
-          secrets_present_only: secrets
-        },
-        safe_secret_note: "Secret values are intentionally never printed."
-      });
-    }
-
-    if (method === "POST" && path === "/diagnostic") {
-      const input = await readJsonSafe(request);
-      const db = bindingPresence(env, REQUIRED_DB_BINDINGS);
-      const vars = varPresence(env, EXPECTED_VARS);
-      const secrets = varPresence(env, REQUIRED_SECRETS);
-
-      return jsonResponse({
-        ...baseIdentity(env),
-        route: "/diagnostic",
-        input_echo_safe: {
-          request_id: input.request_id || null,
-          chain_id: input.chain_id || null,
-          job_key: input.job_key || null,
-          mode: input.mode || null
-        },
-        diagnostics: {
-          db_bindings: db,
-          vars: vars,
-          secrets_present_only: secrets
-        },
-        writes_performed: 0,
-        external_calls_performed: 0
-      });
-    }
-
+    if (method === "GET" && path === "/") return jsonResponse(baseIdentity(env));
+    if (method === "GET" && path === "/health") return jsonResponse({ ...baseIdentity(env), route: "/health" });
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-
-      return jsonResponse({
-        ok: true,
-        data_ok: true,
-        version: VERSION,
-        worker_name: WORKER_NAME,
-        job_key: input.job_key || JOB_KEY,
-        request_id: input.request_id || null,
-        chain_id: input.chain_id || null,
-        status: "DUMMY_READY",
-        certification: "DUMMY_ONLY_NOT_REAL_DATA",
-        rows_read: 0,
-        rows_written: 0,
-        next_action: "ADD_BINDINGS_SECRETS_VARS_AND_VERIFY_HEALTH",
-        block_downstream_reason: null,
-        output_json: {
-          dummy: true,
-          slate_date: input.slate_date || null,
-          mode: input.mode || null,
-          received_input_json: input.input_json || null
-        },
-        timestamp_utc: nowUtc(),
-        writes_performed: 0,
-        external_calls_performed: 0
-      });
+      try {
+        const output = await runProbe(env, input);
+        return jsonResponse(output, output.ok ? 200 : 400);
+      } catch (err) {
+        return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: LOGICAL_WORKER_NAME, error: String(err && err.stack ? err.stack : err) }, 500);
+      }
     }
-
-    return jsonResponse({
-      ok: false,
-      data_ok: false,
-      version: VERSION,
-      worker_name: WORKER_NAME,
-      status: "NOT_FOUND",
-      allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"],
-      timestamp_utc: nowUtc()
-    }, 404);
+    return jsonResponse({ ok: false, error: "not_found", allowed_routes: ["GET /", "GET /health", "POST /run"] }, 404);
   }
 };
