@@ -1165,7 +1165,7 @@ async function runMatrixBuilder(request, env) {
 
 function identity(env) {
   const db = reqDb(env);
-  return { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, status:"ready", internal_only:true, no_external_calls:true, no_scoring:true, no_ranking:true, no_final_board:true, side_variation_preservation:true, schema_owner:"SCORE_DB.prop_matrix_*", retention_policy:"today_tomorrow_only", required_db_bindings_present:allTrue(db), db_bindings:db };
+  return { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, status:"ready", internal_only:true, no_external_calls:true, no_scoring:true, no_ranking:true, no_final_board:true, side_variation_preservation:true, schema_owner:"SCORING_DB.prop_matrix_*", upstream_reads:"SCORE_DB.score_board_prepared_current, SCORING_DB.prop_factor_*", retention_policy:"today_tomorrow_only", required_db_bindings_present:allTrue(db), db_bindings:db };
 }
 export default {
   async fetch(request, env, ctx) {
