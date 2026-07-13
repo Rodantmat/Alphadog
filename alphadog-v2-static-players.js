@@ -638,7 +638,7 @@ async function promoteCertifiedStage(env, batchId, requestId) {
     SET status='promoted', certification_status='STATIC_PLAYERS_STAGE_CERTIFIED_PROMOTED_MAIN_CLEANED', promoted_at=CURRENT_TIMESTAMP, cleaned_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP
     WHERE batch_id=?`, batchId);
 
-  return { promoted: true, mainChecks };
+  return { promoted: true, mainChecks, real_rows_changed_this_run: (diffPromote && diffPromote.meta && diffPromote.meta.changes) || 0 };
 }
 
 function playerHasRealChange(current, fresh) {
