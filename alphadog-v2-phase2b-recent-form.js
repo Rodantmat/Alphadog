@@ -866,8 +866,11 @@ function buildPacket(family, row, classification, ctx) {
   const readinessStatus = readiness ? readiness.context_status : "missing";
   const marketStatus = market.status;
   const dailyStatus = readiness ? readiness.context_grade : "missing_current_readiness";
-  const expansionBaselineRows = ctx.expansionBaselineHp ? (ctx.expansionBaselineHp.get(key(playerId, row.canonical_prop_key, row.line_value)) || []) : [];
-  if ((row.canonical_prop_key === "pitcher_fantasy_score" || row.canonical_prop_key === "runs_allowed" || row.canonical_prop_key === "rfi_nrfi") && expansionBaselineRows.length === 0) warnings.push("expansion_baseline_hp_missing_for_prop_line");
+  const classificationV6Rows = ctx.classificationV6 ? (ctx.classificationV6.get(key(playerId, row.canonical_prop_key, row.line_value)) || []) : [];
+  const baselineV6Rows = ctx.baselineV6 ? (ctx.baselineV6.get(key(playerId, row.canonical_prop_key, row.line_value)) || []) : [];
+  if (baselineV6Rows.length === 0) warnings.push("baseline_v6_missing_for_prop_line");
+  const catcherCtx = ctx.catcherContext ? ctx.catcherContext.get(key(row.official_game_pk, opponentTeamId)) : null;
+  if (family === "pitcher" && !catcherCtx) warnings.push("catcher_context_missing");
   const baseMetricStatus = baseMetric ? `present_from_${baseMetricSource}` : "missing";
   const grade = gradeFromCounts(0, warnings.length, missing.length);
   const payload = {
@@ -896,7 +899,8 @@ function buildPacket(family, row, classification, ctx) {
       is_home: isHome
     },
     base_metrics: { season_summary: baseMetric, season_summary_source: baseMetricSource, legacy_summary_table_row: legacyMetric, snapshots, splits },
-    expansion_baseline_hp: { source_table: "SCORE_DB.expansion_player_baseline_hp_current", rows: expansionBaselineRows, row_count: expansionBaselineRows.length, consumed_by_factor_packet: expansionBaselineRows.length > 0 },
+    classification_v6: { source_table: "ARCHIVE_DB.classification_v6_current", rows: classificationV6Rows, row_count: classificationV6Rows.length },
+    baseline_v6: { source_table: "ARCHIVE_DB.baseline_v6_current", rows: baselineV6Rows, row_count: baselineV6Rows.length, consumed_by_factor_packet: baselineV6Rows.length > 0 },
     daily_context: {
       readiness,
       lineup,
@@ -911,7 +915,8 @@ function buildPacket(family, row, classification, ctx) {
       readiness_pitcher_availability: readinessPitcherAvailability,
       team_schedule: teamSchedule,
       opponent_schedule: opponentSchedule,
-      umpire
+      umpire,
+      catcher_context: catcherCtx
     },
     market_context: market,
     warning_flags: warnings,
