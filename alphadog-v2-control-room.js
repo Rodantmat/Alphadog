@@ -2052,6 +2052,9 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
 
 
   if (job === "orchestrator_enqueue_market_scoring_full_run") {
+    return jsonResponse({ ok: false, data_ok: false, version, job, status: "retired_2026_07_14", certification: "LEGACY_MARKET_SCORING_FULL_RUN_RETIRED", note: "This legacy combined Market+Scoring chain was retired 2026-07-14 after being confirmed inactive since 2026-06-30 (superseded by separate MARKET > Full Run and SCORING > Full Run, both of which now run automatically as part of SCORING > Daily Full). Use those instead." }, 410);
+  }
+  if (false) {
     const existing = await env.CONTROL_DB.prepare(
       "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key = 'market-scoring-full-run' AND status IN ('pending','running','partial_continue') ORDER BY datetime(created_at) DESC LIMIT 1"
     ).first();
