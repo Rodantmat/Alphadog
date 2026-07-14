@@ -726,8 +726,8 @@ function buildCurrentSql(url) {
     if (wanted.includes("more_only")) clauses.push("LOWER(COALESCE(f.payout_variant,'')) IN ('goblin','demon')");
     if (clauses.length) where.push(`(${clauses.join(" OR ")})`);
   }
-  if (minHp !== null && minHp !== "") { where.push("f.hit_probability_0_100 >= ?"); params.push(Number(minHp)); }
-  if (minScore !== null && minScore !== "") { where.push("f.overall_score_0_100 >= ?"); params.push(Number(minScore)); }
+  if (minHp !== null && minHp !== "") { where.push("f.estimated_hit_probability_0_100 >= ?"); params.push(Number(minHp)); }
+  if (minScore !== null && minScore !== "") { where.push("f.score_0_100 >= ?"); params.push(Number(minScore)); }
   if (date) { where.push("f.official_date = ?"); params.push(date); }
   const quotaLineTypeExpr = `CASE WHEN LOWER(COALESCE(f.source_key,''))='prizepicks' AND LOWER(COALESCE(f.payout_variant,''))='goblin' THEN 'goblin' WHEN LOWER(COALESCE(f.source_key,''))='prizepicks' AND LOWER(COALESCE(f.payout_variant,''))='demon' THEN 'demon' WHEN LOWER(COALESCE(f.source_key,''))='sleeper' AND LOWER(COALESCE(f.payout_variant,''))='more_only' THEN 'more_only' ELSE 'regular' END`;
   const baseSelect = `
