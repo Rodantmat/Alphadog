@@ -58,12 +58,29 @@ jobs:
             echo "=== train_models.py exit code: $? ==="
           } 2>&1 | tee -a data/workflow_run.log
 
-      - name: Commit trained models and full run log back to repo
+      - name: Real, unambiguous diagnostic dump (repo root, no path ambiguity)
+        if: always()
+        run: |
+          {
+            echo "=== pwd (repo root) ==="
+            pwd
+            echo "=== find gbdt_training - full real tree ==="
+            find gbdt_training -type f 2>&1
+            echo "=== git status ==="
+            git status
+            echo "=== git branch/HEAD state ==="
+            git branch -a
+            git rev-parse HEAD
+            git symbolic-ref -q HEAD || echo "DETACHED HEAD (no symbolic ref)"
+          } > GBDT_RUN_DIAGNOSTIC.txt 2>&1
+
+      - name: Commit trained models, full run log, and diagnostic back to repo
         if: always()
         run: |
           git config user.name "alphadog-gbdt-training-bot"
           git config user.email "actions@github.com"
-          git add gbdt_training/models/*.json gbdt_training/data/*.log 2>/dev/null || true
+          git add -f GBDT_RUN_DIAGNOSTIC.txt
+          git add -f gbdt_training/models/*.json gbdt_training/data/*.log 2>/dev/null || true
           git status
-          git diff --staged --quiet && echo "No changes to commit" || git commit -m "Real GBDT model retrain / run log $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git diff --staged --quiet && echo "No changes to commit" || git commit -m "Real GBDT model retrain / run log / diagnostic $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push origin HEAD:main
