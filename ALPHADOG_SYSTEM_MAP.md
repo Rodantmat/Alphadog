@@ -282,3 +282,46 @@ Still open:
 - [ ] Three manifest JSON files vs the two DB registries — relationship still unestablished.
 
 No writes, no deploys, no job runs performed in Phase 2 either — confirmed read-only.
+
+---
+
+## 9. THE MOST OVERLOADED FILE, FULLY MAPPED: `alphadog-v2-phase3a-first-inning-pitcher-context.js` (699KB, 7,631 lines)
+
+Found the top-level mode dispatcher (lines 6518–6555). It's a single flat `if(mode===...) return xFunction()` chain reached via at least 2 different entry job_keys (`expansion-baseline-full-run`, `expansion-baseline-v2`, plus more aliases below) from multiple full-run chains (Sections 2, 7.5). This single file is dramatically more overloaded than earlier sections suggested — **it's not 6 logical roles, it's closer to 24.**
+
+### Full mode → function map (verbatim from the dispatcher)
+| mode (all accepted aliases) | function called |
+|---|---|
+| `expansion_baseline_mining` / `expansion-baseline-mining` | `mineFirstInningContext()` |
+| `expansion_baseline_sanity` / `expansion-baseline-sanity` | `runSanity()` |
+| `expansion_baseline_hp` / `expansion-baseline-hp` | `runHp()` |
+| `expansion_delta_mining` / `expansion-delta-mining` | `runDeltaMining()` |
+| `expansion_delta_sanity` / `expansion-delta-sanity` | `runDeltaSanity()` |
+| `expansion_delta_hp` / `expansion-delta-hp` | `runDeltaHp()` |
+| `expansion_delta_full_run` / `expansion-delta-full-run` | `deltaFullRun()` |
+| `expansion_line_inventory` / `expansion-baseline-line-inventory` | `runLineInventory()` |
+| `expansion_baseline_certifier` / `expansion-baseline-certifier` | `certifier()` |
+| `expansion_baseline_full_run` / `expansion-baseline-full-run` | `fullRun()` — self-dispatches again internally to `deltaFullRun()` (default) or `fullRunFullDepth()` (if `force_full_baseline`/`full_depth_base`/`disable_delta_auto` flags set) |
+| `baseline_v5_state_hydrate` | `runBaselineV5StateHydrate()` |
+| `baseline_v5_classification_daily_delta` | `runClassificationV6DeltaDaily()` |
+| `baseline_v5_hp_daily_delta` | `runBaselineV6DeltaDaily()` |
+| `baseline_v5_stateful_delta` | `runBaselineV5StatefulDelta()` |
+| `baseline_v5_classification_rescue` | `runBaselineV5ClassificationRescue()` |
+| `baseline_v5_base_rescue` | `runBaselineV5BaseRescue()` |
+| `baseline_v5_classification_delta` / `baseline_v5_delta` | **BLOCKED — see below, does not run** |
+| `classification_v6_compute_stats` | `runClassificationV6ComputeStats()` |
+| `classification_v6_tick` / `classification_v6` | `runClassificationV6Tick()` |
+| `baseline_v6_tick` | `runBaselineV6Tick()` |
+| `baseline_v5_classification_base` | `runClassificationV6Base()` |
+| `baseline_v5_base` | `runBaselineV6Base()` |
+| `baseline_v5_history_only` / `baseline_v2_heb` / `expansion_baseline_v2` / `expansion-baseline-v2` / `expansion-baseline-v2-full-run` | `runBaselineV2()` — 5 different mode strings all collapse to the same function |
+| (fallback) `job_key === "phase3a-first-inning-pitcher-context"` OR `mode === "legacy_dummy"` | Returns a **hardcoded no-op**: `LEGACY_DUMMY_SLOT_READY_NO_MUTATION`, `rows_read:0, rows_written:0, writes_performed:0` |
+
+### Two findings worth calling out specifically
+
+**1. The file's own literal name/job_key is a dead stub.** If this worker is ever invoked with its own nominal job_key (`phase3a-first-inning-pitcher-context`) or no matching mode, it does nothing and returns a hardcoded "ready, no mutation" response. All real work happens under ~15 other job_key/mode aliases that have nothing to do with the file's name. This is the clearest evidence yet that **file names in this codebase are historical artifacts, not descriptions of current behavior** — a critical thing to internalize before any renaming/splitting during cleanup.
+
+**2. There's a deliberate, hardcoded safety block on a dangerous old mode.** `baseline_v5_classification_delta` / `baseline_v5_delta` do NOT run their handler — they immediately return `BASELINE_V5_OLD_AFFECTED_PLAYER_CUMULATIVE_DELTA_BLOCKED` with an explicit message: *"Old Baseline/Classification V5 delta reloads cumulative player history and is banned. Use baseline_v5_state_hydrate then baseline_v5_stateful_delta shadow/parity path."* This confirms the Control Room's "Old Class Δ Blocked" and "Old HP Δ Blocked" buttons (seen in Section 7.9's button inventory) are **intentional safety rails left in the UI as documentation of a banned path, not bugs or leftover dead buttons** — do not "fix" or re-enable these during cleanup.
+
+### What this means for the cleanup plan
+This file is the connective tissue between at least 3 things mapped so far: the Incremental Morning Full Run (Section 7.5), the Static Full Run's Expansion stages, and the "Final Scoring System" / Baseline V5 registry group. A safe refactor of this file would need to preserve every one of the ~24 mode branches and their exact string aliases (including the deliberately-blocked one), not just the ones currently exercised by the two full-run chains already mapped. **`[TODO]` next: read the actual function bodies for the newest/active-looking ones first** (`runBaselineV5StateHydrate`, `runBaselineV5StatefulDelta`, `runClassificationV6Tick`, `runBaselineV6Tick`, `runBaselineV2` — these look like the current "Final Scoring System" generation per the Control Room button names in Section 7.9) **before the clearly-legacy ones** (the plain `expansion_baseline_*` / `expansion_delta_*` set, which may themselves be superseded by the V5/V6 baseline generation the same way score-audit.js's Gen 1–3 were superseded — not yet confirmed, needs the same control_job_queue last-run check used in Sections 7.8/7.9).
