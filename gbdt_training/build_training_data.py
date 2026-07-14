@@ -134,7 +134,7 @@ def build_pitcher_training_table(d1, season):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--season", type=int, default=2025)
-    parser.add_argument("--out-dir", default="gbdt_training/data")
+    parser.add_argument("--out-dir", default="data")
     args = parser.parse_args()
 
     import os
