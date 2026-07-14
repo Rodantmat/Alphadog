@@ -38,10 +38,11 @@ jobs:
         working-directory: gbdt_training
         run: python train_models.py --season ${{ github.event.inputs.season || '2025' }}
 
-      - name: Commit trained models back to repo
+      - name: Commit trained models and debug logs back to repo
+        if: always()
         run: |
           git config user.name "alphadog-gbdt-training-bot"
           git config user.email "actions@github.com"
-          git add gbdt_training/models/*.json
-          git diff --staged --quiet && echo "No model changes to commit" || git commit -m "Real GBDT model retrain $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git add gbdt_training/models/*.json gbdt_training/data/*_debug.log 2>/dev/null || true
+          git diff --staged --quiet && echo "No changes to commit" || git commit -m "Real GBDT model retrain / debug log $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push
