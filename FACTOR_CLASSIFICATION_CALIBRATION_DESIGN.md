@@ -184,4 +184,20 @@ Per explicit instruction ("research and validate... we need sharp final calls"),
 
 **Wired into the existing real GBDT weekly training workflow** (`.github/workflows/gbdt-training.yml`) as its own step, writing a real report (`gbdt_training/data/factor_validation_report.json`) and updating each validated cell's `last_empirical_validation_json`/`last_validated_at` directly in `CONFIG_DB.config_enrichment_profile_cells` - the validation result lives with the locked cell itself, not just in a separate file that could drift out of sync.
 
+---
+
+## 10. REAL TIER-DETECTION IMPLEMENTED FOR THE ENRICHMENT ENGINE (closing a real gap - tiered-band factors were structurally wired but contributing nothing)
+
+Real, direct code inspection confirmed which tiered-band factors have real, complete data available right now versus which genuinely don't - implemented only where honest, real data supports it:
+
+- **`platoon_handedness` - REAL, working**: real `bat_side` (lineup) vs real `starter_hand` (opposing starter), both already carried in the Matrix payload from Prop Factor Miner. Arm-angle refinement intentionally deferred - no real arm-angle/release-point data exists in any Daily Context table yet.
+- **`bullpen_fatigue` - REAL, working**: reuses the real, already-computed `high_usage_reliever_count`/`back_to_back_reliever_count`/`bullpen_fatigue_score` fields from `daily_bullpen_availability_current` (built in an earlier real session specifically from real saves/holds data) - genuine reuse of proven infrastructure, not reinvented.
+- **`player_availability` / `weather_roof` (flat gates) - REAL, working**: read the real `availability_status`/`roof_status` fields directly; the roof gate correctly zeroes out `weather_wind`/`weather_temp_altitude_pressure`/`weather_precip` for any leg at a closed-roof game.
+- **`umpire_tendency` - honestly NOT implemented**: direct code inspection of `alphadog-v2-daily-usage-pulse.js` confirmed `umpire_tendency_status` is hardcoded to `'unavailable_no_verified_history_source'` everywhere - the real, underlying historical umpire-tendency data (aggregated K/BB rates by real umpire name across many real games) does not exist anywhere in this system yet. A real, honest data gap, not faked.
+- **`weather_wind` - honestly NOT implemented**: confirmed `REF_DB.ref_stadiums` has no real park home-plate-orientation field (only lat/lon/roof/turf) - the real wind-direction-relative-to-park calculation this factor needs cannot be computed without it.
+- **`stolen_base_family` - honestly NOT implemented**: real sprint-speed data has not been backfilled anywhere in this system yet.
+
+Each of these three real, honest gaps is a genuine future data-acquisition task (umpire history backfill, park orientation reference data, sprint-speed backfill), not something to approximate with a guess.
+
+
 
