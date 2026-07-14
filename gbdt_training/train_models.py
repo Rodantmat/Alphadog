@@ -150,7 +150,6 @@ def export_model_json(result, prop_key, family, out_dir):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--season", type=int, default=2025)
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--out-dir", default="models")
     args = parser.parse_args()
@@ -165,14 +164,14 @@ def main():
     os.makedirs(args.out_dir, exist_ok=True)
     try:
         dbg("Training real hitter models...")
-        hitter_df = pd.read_csv(f"{args.data_dir}/hitter_training_{args.season}.csv")
+        hitter_df = pd.read_csv(f"{args.data_dir}/hitter_training_multiseason.csv")
         for prop_key, outcome_col in HITTER_PROP_TO_OUTCOME_COLUMN.items():
             result = train_one_prop(hitter_df, outcome_col, HITTER_FEATURE_COLUMNS, prop_key)
             if result:
                 export_model_json(result, prop_key, "hitter", args.out_dir)
 
         dbg("Training real pitcher models...")
-        pitcher_df = pd.read_csv(f"{args.data_dir}/pitcher_training_{args.season}.csv")
+        pitcher_df = pd.read_csv(f"{args.data_dir}/pitcher_training_multiseason.csv")
         for prop_key, outcome_col in PITCHER_PROP_TO_OUTCOME_COLUMN.items():
             result = train_one_prop(pitcher_df, outcome_col, PITCHER_FEATURE_COLUMNS, prop_key)
             if result:
