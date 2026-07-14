@@ -2426,6 +2426,9 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
 
 
   if (job === "orchestrator_enqueue_final_board_v2") {
+    return jsonResponse({ ok: false, data_ok: false, version, job, status: "retired_2026_07_14", certification: "LEGACY_FINAL_BOARD_V2_RETIRED", note: "This legacy score-audit.js-based Final Board V2 was retired 2026-07-14 after being confirmed inactive since 2026-06-23 (superseded by the new dedicated Scoring Full Run chain, SCORING > Full Run / SCORING > Daily Full)." }, 410);
+  }
+  if (false) {
     const existing = await env.CONTROL_DB.prepare(
       "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key = 'final-board-v2' AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
     ).first();
