@@ -139,6 +139,10 @@ Real, exact plate-appearance/balls-in-play counts before a given rate stat relia
 
 **Locked design implication**: these exact real numbers become the actual sample-size denominators for each profile cell's real shrinkage weight in the calibration loop (Section 6) — not an arbitrary constant, and not uniform across props. A cell backing a K-rate-driven prop can trust its own real observed data far sooner than a cell backing an XBH-rate-driven prop, and the calibration loop's confidence weighting must scale accordingly, per prop, using these real, established reference points.
 
+---
+
+## 7. OPEN QUESTIONS NOT YET LOCKED (flag before implementation starts)
+
 
 - Exact real tier counts per factor that needs tiers (Weather-wind, Umpire, Platoon, Bullpen) — the research above gives real ranges (2-3 bands typically) but the final exact cut points need to be fit against real historical data, not guessed.
 - Calibration cadence — daily vs. weekly vs. hybrid — flagged as "whichever proves better empirically," not yet decided with real evidence.
