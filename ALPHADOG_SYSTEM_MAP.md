@@ -462,4 +462,43 @@ Checked `DAILY_DB` for calendar tables: `daily_slate_games` (game_key, slate_dat
 
 No writes, no deploys, no job runs performed — confirmed read-only investigation only.
 
+---
+
+## 14. THE THREE MANIFEST JSON FILES — RESOLVED: DEPLOYMENT SCAFFOLDING, NOT ROUTING TRUTH (do not use these for job_key questions)
+
+Read all three at repo root:
+- **`worker_manifest.json`** (4.7KB): flat array of 117 worker names, no other metadata. Used by deployment automation (`deploy_all_workers.py`, `github_mobile_deploy_workers.py`, `generate_wrangler_configs.py`) to know which workers to iterate over.
+- **`worker_manifest_schema_seed.json`** (4.6KB): near-identical list, 113 entries — missing `alphadog-v2-parlay-underdog-board`, `alphadog-v2-tail-logger`, `alphadog-v2-gbdt-auto-trigger` (added to the system after this snapshot was taken). Used by `apply_schema_all.py`/`verify_schema_all.py` to know which workers' D1 schemas to create/verify.
+- **`WORKER_MANIFEST.json`** (17.5KB, capitalized — different file from `worker_manifest.json`): richer, 118 entries, each `{worker_name, file, job_key}`. **Every single entry maps each physical file to its own literal, nominal job_key** — e.g. `alphadog-v2-phase3a-first-inning-pitcher-context.js` → `job_key: "phase3a-first-inning-pitcher-context"`, `alphadog-v2-static-rosters.js` → `job_key: "static-rosters"`, `alphadog-v2-market-source-health.js` → `job_key: "market-source-health"`.
+
+### The key finding: this file's job_key mappings are stale/aspirational, not what actually runs in production
+**Every one of this session's major findings about job_key reuse (Sections 2, 3, 7.5, 7.6, 9, 11.3) contradicts `WORKER_MANIFEST.json`'s 1:1 mapping.** For example, this manifest says `phase3a-first-inning-pitcher-context.js`'s job_key is literally `"phase3a-first-inning-pitcher-context"` — but Section 9 confirmed that job_key/mode combination is a dead no-op stub (`LEGACY_DUMMY_SLOT_READY_NO_MUTATION`), and the file's real, active job_keys are `expansion-baseline-full-run` and `expansion-baseline-v2` with ~24 mode branches. Same story for `static-rosters.js` (manifest says job_key `static-rosters`; Section 11.3 confirmed its real, active job_key is `historical-season-backfill`).
+
+**Conclusion: these three JSON files describe the system as originally scaffolded — one worker, one job, one file — before the extensive job_key/mode multiplexing this entire mapping effort has been uncovering was layered on top.** They're useful for exactly one purpose: confirming every physical file has a deployment pipeline (wrangler config + schema). **They should never be consulted to answer "what job_key does this worker actually handle" — only `CONFIG_DB.config_worker_definitions` / `CONTROL_DB.control_worker_registry` (Section 0) reflect current reality, and even those need cross-checking against the orchestrator's actual dispatch code (as this whole document has done), since Section 12 showed even the config tables can have live inconsistencies.**
+
+No writes, no deploys, no job runs performed — confirmed read-only investigation only.
+
+---
+
+## 15. MAPPING PHASE STATUS: SUBSTANTIALLY COMPLETE
+
+At this point, the mapping phase has covered:
+- Full worker/job_key/group registry (Section 0)
+- All 9 full-run orchestration chains, stage-by-stage (Sections 2, 7)
+- The two highest-risk files in the system: `phase3a-first-inning-pitcher-context.js` (Section 9) and `score-final-board.js` (Section 10)
+- Every previously-open "why isn't this worker wired in" gap, resolved (Section 11)
+- All 9 live cron schedules (Section 12), including a real live inconsistency flagged for Rodolfo's decision
+- A genuine architecture gap found and root-caused end-to-end at Rodolfo's request: the system's inability to distinguish legitimate zero-game days from real failures (Section 13)
+- The manifest files question, resolved (Section 14)
+
+**Remaining, lower-priority items not yet done, listed honestly:**
+- Full reads of the specific newer function bodies inside `phase3a-first-inning-pitcher-context.js` (`runBaselineV5StateHydrate`, `runBaselineV5StatefulDelta`, `runClassificationV6Tick`, `runBaselineV6Tick`, `runBaselineV2`) — Section 9 mapped what each mode dispatches to, but not the internal logic of each function.
+- `alphadog-v2-control-room.js`'s full routing/allowlist table beyond the specific entries already found (Sections 7.8, 7.9, 12).
+- The dozen-plus config tables listed in Section 5 (`config_scoring_profiles`, `config_enrichment_factors`, `config_metric_calibration_profiles`, etc.) — not yet individually inspected.
+- Purpose/design of `alphadog-v2-market-source-health.js`, `alphadog-v2-oddsapi-reference.js`, `alphadog-v2-tail-logger.js` — three files with no wrangler config found in the repo listing (Section 4-adjacent finding from this session), meaning they may not be independently deployed at all — worth checking before assuming they're live.
+
+This is a reasonable point to consider the mapping phase complete enough to begin discussing actual cleanup priorities, rather than continuing to map indefinitely. The highest-value remaining unknowns (the newer phase3a functions, and control-room's full routing table) can be read on-demand when the cleanup phase actually reaches those specific pieces, rather than needing to be front-loaded now.
+
+No writes, no deploys, no job runs performed at any point in this entire mapping session — confirmed fully read-only.
+
 No writes, no deploys, no job runs performed — confirmed read-only.
