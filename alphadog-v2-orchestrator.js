@@ -6473,6 +6473,38 @@ async function processScoringFullRunJob(env, row, runId, trigger) {
 }
 
 
+async function enqueueScheduledScoringFullRunIfDue(env, cronExpression = "unknown") {
+  await ensureConfigScheduledJobsTable(env);
+  const pt = pacificNowParts(new Date());
+  const scheduleRows = await all(env.CONFIG_DB,
+    `SELECT schedule_id, job_key, job_name, enabled, timezone, local_time, schedule_type
+     FROM config_scheduled_jobs
+     WHERE enabled=1 AND job_key='scoring-full-run' AND schedule_type='daily' AND timezone='America/Los_Angeles'
+     ORDER BY local_time, schedule_id`
+  );
+  const results = [];
+  for (const schedule of scheduleRows) {
+    const parsedTime = parseScheduledLocalTimeHHMM(schedule.local_time);
+    if (!parsedTime) continue;
+    const withinWindow = Number(pt.hour) === parsedTime.hour && Number(pt.minute) >= parsedTime.minute && Number(pt.minute) < parsedTime.minute + 5;
+    if (!withinWindow) continue;
+    const already = await first(env.CONTROL_DB,
+      "SELECT request_id FROM control_job_queue WHERE job_key='scoring-full-run' AND date(created_at) = ? LIMIT 1",
+      pt.ymd_dash
+    );
+    if (already) { results.push({ schedule_id: schedule.schedule_id, status: "already_queued_today" }); continue; }
+    const requestId = `scoring_full_run_scheduled_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    const chainId = `chain_${requestId}`;
+    const input = { source: "orchestrator_scheduled_cron", cron_expression: cronExpression, approved_chain_order: ["scoring_certifier_first_pass", "scoring_prop_factor_miner", "scoring_matrix_builder", "scoring_enrichment_engine", "scoring_engine", "scoring_hit_probability_board", "scoring_final_board", "scoring_certifier_last_pass"] };
+    await run(env.CONTROL_DB,
+      "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'scoring-full-run', 'alphadog-v2-orchestrator', 'Scoring', 'scoring', 'Scoring Full Run (Scheduled)', 'pending', 5, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+      requestId, chainId, JSON.stringify(input)
+    );
+    results.push({ schedule_id: schedule.schedule_id, status: "enqueued", request_id: requestId });
+  }
+  return results;
+}
+
 async function processOddsApiHitterPropContextJob(env, row, runId, trigger) {
   if (!env.ODDSAPI_REFERENCE_WORKER || typeof env.ODDSAPI_REFERENCE_WORKER.fetch !== "function") {
     const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_service_binding", certification:"ODDSAPI_HITTER_PROP_CONTEXT_SERVICE_BINDING_MISSING", trigger, note:"Exact dispatch requires ODDSAPI_REFERENCE_WORKER service binding. Do not generic-dispatch this worker." };
