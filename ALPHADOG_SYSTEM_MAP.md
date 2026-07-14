@@ -1,0 +1,1 @@
+$(cat /home/claude/ALPHADOG_SYSTEM_MAP.md)
