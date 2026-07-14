@@ -2503,6 +2503,9 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
 
 
   if (job === "orchestrator_enqueue_scoring_engine") {
+    return jsonResponse({ ok: false, data_ok: false, version, job, status: "retired_2026_07_14", certification: "LEGACY_SCORING_ENGINE_RETIRED", note: "This legacy score-audit.js-based Scoring Engine was retired 2026-07-14 after being confirmed inactive since 2026-06-14 (superseded by the new dedicated Scoring Full Run chain, SCORING > Full Run / SCORING > Daily Full)." }, 410);
+  }
+  if (false) {
     const existing = await env.CONTROL_DB.prepare(
       "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key = 'scoring-engine' AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
     ).first();
