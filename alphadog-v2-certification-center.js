@@ -1274,7 +1274,7 @@ async function apiHealth(env) {
     final_board_batch: finalBatch[0] || null,
     hp_board_batch: hpBatch[0] || null,
     semantics: {
-      rows_are: "Final Board V3 Shadow review board rows from SCORE_DB.v2_final_board_current.",
+      rows_are: "Final Board rows from SCORE_DB.score_final_board_current.",
       default_board: "Review-only shadow board ordered by rank_order; no production live activation.",
       hp_under_60: "Excluded upstream by Final Score V2 / Final Board V3 shadow contract.",
       no_live_claims: "live_playable remains zero until a separate live activation stage is certified."
