@@ -503,6 +503,26 @@ No writes, no deploys, no job runs performed at any point in this entire mapping
 
 ---
 
+## 17. IMPORTANT: DELETING THE 19 DUMMY SCORE WORKERS IS *NOT* A LOW-RISK CLEANUP — investigated before touching anything, did not proceed
+
+Before deleting the 19 confirmed-dead dummy per-prop Score files (Section 11.1), read the actual deploy pipeline (`alphadog-v2-github-auto-deploy.yml`, `generate_wrangler_configs.py`, `github_mobile_deploy_workers.py`) to understand the real consequence. **Glad I checked first — the naive assumption ("delete a harmless file, no risk") is wrong.**
+
+### How the pipeline actually works
+- `worker_manifest.json` (the flat 117-118-name list, Section 14) is the master list both deploy scripts read from.
+- `github_mobile_deploy_workers.py --scope changed` (the default, used on every push) diffs git for changed files and only deploys the specific worker(s) that changed — **except** if any file in a hardcoded `GLOBAL_REDEPLOY_FILES` set changed, in which case it deploys **every single worker in the manifest** (currently ~117). `worker_manifest.json` itself is in that set.
+- If a worker's `.js` file is deleted while its name is *still* listed in `worker_manifest.json`, the deploy script hard-fails immediately: `if not Path(f"{worker}.js").exists(): raise SystemExit(1)` — **this would break the entire deploy job**, not just that one worker.
+- So deleting a dummy file safely requires *also* removing its name from `worker_manifest.json` in the same commit — but doing that triggers the "global redeploy file changed" branch, meaning **all ~117 workers get redeployed**, not just the ones being cleaned up.
+
+### Why this changes the plan
+A full-fleet redeploy is a meaningfully bigger, riskier action than anything done in this session so far (every change today has been a single-worker, targeted deploy of just `control-room.js`, verified individually). Redeploying ~117 workers at once risks Cloudflare API rate limits, the 60-minute workflow timeout, or surfacing a latent issue in some other worker that hasn't been touched in weeks — for a cleanup whose only benefit is deleting files that are **already completely inert and harmless** (confirmed `DUMMY_READY`, never referenced, never run — Section 11.1). The risk/reward here is poor.
+
+### Decision: did not touch the 19 dummy files
+**Recommendation: leave them as permanently-dormant scaffolding rather than force a full-fleet redeploy to remove them.** They cost nothing sitting there — they're not referenced by the orchestrator, not referenced by Control Room, never run, never will be. If Rodolfo specifically wants them gone at some point, the safe way to do it would be as its own deliberate, planned action (ideally during a low-stakes window, with the expectation that it triggers a full redeploy of everything) — not bundled into routine cleanup.
+
+No writes, no deploys, no job runs performed — this was investigation only.
+
+---
+
 ## 16. CLEANUP PHASE — LOG OF ACTUAL CHANGES MADE (this section is the audit trail; update after every change)
 
 **Ground rule going forward:** unlike Sections 0–15 (100% read-only), everything below this line involves real, live edits to production code. Every entry records exact old_str/new_str, the commit_sha, and the verification performed — this is the equivalent of a manual backup: to undo any single change, reverse that specific old_str/new_str pair.
