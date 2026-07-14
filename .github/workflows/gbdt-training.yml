@@ -24,25 +24,42 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install real dependencies
-        run: pip install -r gbdt_training/requirements.txt
+      - name: Install real dependencies (full output captured, always committed)
+        run: |
+          mkdir -p gbdt_training/data
+          {
+            echo "=== pip install started $(date -u) ==="
+            pip install -r gbdt_training/requirements.txt
+            echo "=== pip install exit code: $? ==="
+            pip list
+          } 2>&1 | tee -a gbdt_training/data/workflow_run.log
 
-      - name: Pull real training data from D1
+      - name: Pull real training data from D1 (full output captured)
         working-directory: gbdt_training
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: python build_training_data.py --season ${{ github.event.inputs.season || '2025' }}
+        run: |
+          {
+            echo "=== build_training_data.py started $(date -u) ==="
+            python build_training_data.py --season ${{ github.event.inputs.season || '2025' }}
+            echo "=== build_training_data.py exit code: $? ==="
+          } 2>&1 | tee -a data/workflow_run.log
 
-      - name: Train real per-prop GBDT models
+      - name: Train real per-prop GBDT models (full output captured)
         working-directory: gbdt_training
-        run: python train_models.py --season ${{ github.event.inputs.season || '2025' }}
+        run: |
+          {
+            echo "=== train_models.py started $(date -u) ==="
+            python train_models.py --season ${{ github.event.inputs.season || '2025' }}
+            echo "=== train_models.py exit code: $? ==="
+          } 2>&1 | tee -a data/workflow_run.log
 
-      - name: Commit trained models and debug logs back to repo
+      - name: Commit trained models and full run log back to repo
         if: always()
         run: |
           git config user.name "alphadog-gbdt-training-bot"
           git config user.email "actions@github.com"
-          git add gbdt_training/models/*.json gbdt_training/data/*_debug.log 2>/dev/null || true
-          git diff --staged --quiet && echo "No changes to commit" || git commit -m "Real GBDT model retrain / debug log $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git add gbdt_training/models/*.json gbdt_training/data/*.log 2>/dev/null || true
+          git diff --staged --quiet && echo "No changes to commit" || git commit -m "Real GBDT model retrain / run log $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push
