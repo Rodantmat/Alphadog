@@ -1246,8 +1246,8 @@ async function apiHealth(env) {
            0 AS correlated_duplicate_rows, 0 AS low_sanity_primary_rows, 0 AS rare_more_primary_rows,
            issue_rows_written, certification_status, certification_grade,
            created_at AS started_at, updated_at AS finished_at, updated_at
-    FROM v2_final_board_batches
-    WHERE batch_id = ?
+    FROM score_final_board_batches
+    WHERE final_board_batch_id = ?
     LIMIT 1
   `, [current.final_board_batch_id]) : [];
   const hpBatch = current.source_final_score_batch_id ? await queryAll(env.SCORE_DB, `
