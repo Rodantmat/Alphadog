@@ -1,5 +1,8 @@
 name: AlphaDog v2 GBDT Model Training
 
+permissions:
+  contents: write
+
 on:
   schedule:
     # Weekly, Sunday 09:00 UTC (real, slow-changing player/context data does not need
