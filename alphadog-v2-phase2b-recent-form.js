@@ -1215,7 +1215,7 @@ async function runFactorMining(request, env) {
 
 function identity(env) {
   const db = reqDb(env);
-  return { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, status:"ready", internal_only:true, no_external_calls:true, no_scoring:true, no_ranking:true, no_final_board:true, schema_owner:"SCORING_DB.prop_factor_*", upstream_reads:"SCORE_DB.score_board_prepared_current, SCORE_DB.expansion_player_baseline_hp_current", retention_policy:"today_tomorrow_only", required_db_bindings_present:allTrue(db), db_bindings:db };
+  return { ok:true, data_ok:true, version:SYSTEM_VERSION, deployed_slot_version:DEPLOYED_SLOT_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, job_key:JOB_KEY, status:"ready", internal_only:true, no_external_calls:true, no_scoring:true, no_ranking:true, no_final_board:true, schema_owner:"SCORING_DB.prop_factor_*", upstream_reads:"SCORE_DB.score_board_prepared_current, ARCHIVE_DB.classification_v6_current, ARCHIVE_DB.baseline_v6_current, DAILY_DB.daily_catcher_context_current", retention_policy:"today_tomorrow_only", required_db_bindings_present:allTrue(db), db_bindings:db };
 }
 
 export default {
