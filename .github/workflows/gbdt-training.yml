@@ -64,5 +64,6 @@ jobs:
           git config user.name "alphadog-gbdt-training-bot"
           git config user.email "actions@github.com"
           git add gbdt_training/models/*.json gbdt_training/data/*.log 2>/dev/null || true
+          git status
           git diff --staged --quiet && echo "No changes to commit" || git commit -m "Real GBDT model retrain / run log $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push
+          git push origin HEAD:main
