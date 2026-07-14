@@ -501,4 +501,30 @@ This is a reasonable point to consider the mapping phase complete enough to begi
 
 No writes, no deploys, no job runs performed at any point in this entire mapping session — confirmed fully read-only.
 
+---
+
+## 16. CLEANUP PHASE — LOG OF ACTUAL CHANGES MADE (this section is the audit trail; update after every change)
+
+**Ground rule going forward:** unlike Sections 0–15 (100% read-only), everything below this line involves real, live edits to production code. Every entry records exact old_str/new_str, the commit_sha, and the verification performed — this is the equivalent of a manual backup: to undo any single change, reverse that specific old_str/new_str pair.
+
+**Backup basis (agreed with Rodolfo 2026-07-14):** full literal duplication of the 1.4MB orchestrator wasn't practical through available tools (any file-write requires the content to pass through the assistant's own context; a 1.4MB file is too large to do this safely). Instead: git's own commit history is the backup — every commit is a complete, byte-exact, permanently recoverable snapshot, restorable via GitHub's web UI. Pre-cleanup baseline commit: `182a23c18220ad320d169a931d5e2b935a707503` (last successful deploy before any cleanup edits, 2026-07-14 20:31 UTC).
+
+**"Parity" definition confirmed with Rodolfo:** two things must stay connected end-to-end for everything this cleanup keeps — (1) orchestrator ↔ worker dispatch (the job_key+worker_name exact-pairing guard functions, Sections 2/9), and (2) Control Room button ↔ `control-room.js` handler ↔ orchestrator ↔ actual worker, for every full run (one button per full run, one button per stage) and every individual worker job. Cleanup targets are things that fail this parity chain or are confirmed superseded/unused — never any of the 5 live full runs (Static, Incremental Morning, Board, Market, Scoring) or any individual worker's own direct job.
+
+### Change #1 (2026-07-14, commit `7243cae5`): Retired the legacy combined Market+Scoring Full Run handler
+- **What:** `alphadog-v2-control-room.js`, the `if (job === "orchestrator_enqueue_market_scoring_full_run")` handler (previously lines 2054–2499, 446 lines).
+- **Why safe to touch:** confirmed in Section 7.8 — inactive since 2026-06-30 (superseded by the separate `market-full-run` + `scoring-full-run` chains that now run automatically inside Daily Full Run), not part of any of the 5 live full runs, not any individual worker's own job.
+- **How:** did NOT attempt to delete the 446-line body (too much transcription risk for a block that size). Instead, inserted an immediate `return jsonResponse({...status:"retired_2026_07_14"...}, 410)` right after the opening `{`, followed by `if (false) { ... }` wrapping the original body — a single-line-safe change that makes the entire old block permanently unreachable and inert, with zero risk of brace mismatch since none of the original 446 lines were touched or retyped.
+- **UI:** relabeled the "Market Full" button to "Market Full (Retired)" with the `clean` (red) CSS class instead of `audit`, in both the embedded `CONTROL_ROOM_HTML` string (`alphadog-v2-control-room.js`) and the standalone `control_room.html` file, so it no longer looks like a live option.
+- **Verified (commit `a928e5d5`, both deploys succeeded):**
+  - `run_job('orchestrator_enqueue_market_scoring_full_run')` → confirmed returns HTTP 410 with the retirement message, no `control_job_queue` row created.
+  - `run_job('orchestrator_status')` → confirmed overall system healthy: `GLOBAL` lock idle, all locks released, real job history intact (including today's already-verified live Scoring Full Run chain, Section 2) — nothing else disturbed.
+- **Not yet done (left for a future pass, lower priority):** the original 446-line dead body still physically exists in the file (just unreachable) — true deletion of that text, plus the corresponding `MARKET_SCORING_FULL_RUN_STAGES` array and its ~1,268-line handler function inside `alphadog-v2-orchestrator.js` itself (Section 7.8), have NOT been touched yet. That's the orchestrator file itself — the highest-risk file in the system — and needs its own careful, isolated pass.
+
+### Found during this change, not yet acted on: a duplicate unreachable handler (separate from the above)
+While locating block boundaries, found **two** `if (job === "orchestrator_enqueue_scoring_engine")` handlers in `control-room.js` — one at (then-)line 2502, one at (then-)line 2843. Since the first one always ends in a `return`, the second is **already unreachable dead code**, unrelated to today's change. Not touched yet — flagged as the next clear, high-confidence cleanup candidate.
+
+### Also found during this change, not yet acted on: a live latent bug (separate issue, not part of cleanup)
+The `orchestrator_enqueue_daily_full_run` handler (the live "SCORING > Daily Full" button — the one actually used, including by the 7am cron) still has a stale conflict-check query: `SELECT ... FROM control_job_queue WHERE job_key IN ('daily-context-full-run','board-full-run','market-scoring-full-run') ...` — it checks for the OLD combined job_key, not the new `market-full-run`/`scoring-full-run`. Practical effect: if a standalone Market or Scoring Full Run is already active and someone taps "Daily Full", this stale check won't catch the conflict, potentially enqueuing a duplicate/competing parent chain. This is unrelated to today's retirement (it's a bug in a still-live, actively-used handler) — flagging for Rodolfo's awareness, not fixing without explicit direction since it touches the live Daily Full Run path.
+
 No writes, no deploys, no job runs performed — confirmed read-only.
