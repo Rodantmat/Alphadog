@@ -560,7 +560,30 @@ No writes, no deploys, no job runs performed — read-only investigation only.
 
 ---
 
-## 20. READ THE ACTUAL LOGIC BEHIND TODAY'S LIVE DAILY DELTA JOBS — `runClassificationV6DeltaDailySingleStep` (the real function behind `baseline_v5_classification_daily_delta`, confirmed active today in Section 9)
+## 21. MAJOR FINDING: `config_certification_rules` ALREADY DEFINES THE EXACT FIX SECTION 13 NEEDS — IT'S JUST COMPLETELY UNUSED
+
+While inspecting the remaining config tables (continuing Section 19), found something that directly connects to Rodolfo's own architecture-gap finding in Section 13.
+
+### The table already has the right design
+`config_certification_rules` (6 rows, all created 2026-05-19 — nearly two months ago) defines a `zero_rows_policy` per phase/job, explicitly distinguishing legitimate zero from real failure — **exactly the concept Section 13 found missing from `score-prep.js`**:
+| rule_key | job_key | zero_rows_policy |
+|---|---|---|
+| `cert_static_min_reference` | static-certifier | `valid_if_no_change` |
+| `cert_delta_no_fake_success` | delta-certifier | `valid_zero_only_if_no_finalized_games` |
+| `cert_daily_pickable_slate` | daily-certifier | `valid_zero_only_if_no_pickable_games` |
+| `cert_market_board_presence` | market-certifier | `valid_zero_only_if_no_board` |
+| `cert_context_required_packets` | certification-center | `suspicious` (zero is NOT assumed valid here — deliberately stricter) |
+| `cert_score_candidate_board` | **score-final-board** | **`valid_zero_only_if_no_eligible_lines`** |
+
+**That last row is precisely the fix Section 13 said was needed** — a policy that says "zero rows is fine, but only if there were genuinely no eligible lines" (i.e. no real games) — attached specifically to `job_key: score-final-board`.
+
+### But it's completely orphaned — confirmed via grep, not assumed
+Searched for `config_certification_rules` or `zero_rows_policy` across every file that plausibly should consult it: `alphadog-v2-score-prep.js` (0 matches), `alphadog-v2-score-final-board.js` (0 matches), `alphadog-v2-daily-certifier.js` (0 matches), `alphadog-v2-certification-center.js` — the very worker whose own job_key is referenced by one of these rules! — (0 matches), and `alphadog-v2-orchestrator.js`, the entire 1.4MB file (0 matches). **Nothing in the live codebase reads this table at all.** It was designed thoughtfully back in May, seeded with exactly the right policy for every relevant phase including the specific one needed today, and then never actually wired into any worker's logic.
+
+### Why this matters
+This changes the Section 13 fix from "design and build a new zero-vs-failure distinction mechanism" to **"wire up a mechanism that was already designed correctly two months ago and just needs to be consulted."** Concretely: `score-prep.js`'s zero-rows guard (line 1680, Section 13) could check `config_certification_rules` for `job_key='score-final-board'` (or its own equivalent rule, if one should be added for `score-prep` specifically — currently there isn't one; the closest existing row targets `score-final-board`, not `score-prep` itself), read `zero_rows_policy`, and apply the same `valid_zero_only_if_no_eligible_lines` logic already sitting in the config, rather than needing a bespoke new design. **Not implemented — this is a finding for Rodolfo's future direction, not something touched today.**
+
+No writes, no deploys, no job runs performed — read-only investigation only. — `runClassificationV6DeltaDailySingleStep` (the real function behind `baseline_v5_classification_daily_delta`, confirmed active today in Section 9)
 
 Continuing the mapping gap list: read the actual function body (not just the dispatch mapping) for the mode confirmed running today. Findings, all directly from code:
 
