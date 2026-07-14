@@ -249,8 +249,8 @@ Both are **reused** Static-group workers (not their nominal Static role) — sam
 ## 8. UPDATED GAP LIST (supersedes Section 5 where overlapping)
 
 Still open:
-- [ ] Confirm `MARKET_SCORING_FULL_RUN_STAGES` (Section 7.8) is truly dead/unreachable before any deletion.
-- [ ] Confirm fate of `daily-batting-orders`, `daily-confirmed-starters`, `daily-games-status`, `daily-roof-status`, `static-rosters` (Sections 7.4/7.6) — folded into siblings, dead, or called from elsewhere.
+- [x] ~~Confirm `MARKET_SCORING_FULL_RUN_STAGES` (Section 7.8) is truly dead/unreachable before any deletion.~~ RESOLVED: confirmed still live/wired (Control Room button + handler intact), but inactive since 2026-06-30. See Section 7.8/7.9. New TODO: check the other 11 score-audit.js-routed job_keys (Section 7.9) the same way before touching that file.
+- [ ] Confirm fate of `daily-batting-orders`, `daily-confirmed-starters`, `daily-games-status`, `daily-roof-status`, `static-rosters` (Sections 7.4/7.6) — folded into siblings, dead, or called from elsewhere. Note: `daily-games-status` DOES have a live Control Room button (`DAILY JOBS > Game Status` → `orchestrator_enqueue_daily_games_status`), found while investigating 7.8/7.9, so it's not orphaned — just not part of the Daily Context Full Run chain specifically. Still need to check the other 3.
 - [ ] Read the `mode`-based internal branching of the most-overloaded file, `alphadog-v2-phase3a-first-inning-pitcher-context.js` (699KB, ≥6 logical roles across 2+ job_keys) — highest-priority read for the next phase given how much of the Incremental Morning + Final Scoring System chains depend on it.
 - [ ] Full read of `alphadog-v2-score-final-board.js` (unchanged from Section 2).
 - [ ] Full read of `alphadog-v2-control-room.js` routing/allowlist table (unchanged from Section 2).
