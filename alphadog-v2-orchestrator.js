@@ -13212,6 +13212,7 @@ async function recoverStalePropMatrixBuilderJobs(env, trigger = "manual") {
 }
 
 const HEAVY_MARKET_SERVICE_BINDING_COOLDOWN_SECONDS = 2;
+const PROP_FACTOR_SERVICE_BINDING_COOLDOWN_SECONDS = 0; // v0.2.260: Prop Factor chunks are bounded and must hot-drain; cooldown yield stranded due pending rows.
 
 function marketHeavyCooldownCertification(jobKey) {
   return String(jobKey || "market_child").toUpperCase().replace(/[^A-Z0-9]+/g, "_") + "_SERVICE_BINDING_COOLDOWN_YIELD";
