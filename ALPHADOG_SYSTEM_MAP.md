@@ -583,7 +583,11 @@ Searched for `config_certification_rules` or `zero_rows_policy` across every fil
 ### Why this matters
 This changes the Section 13 fix from "design and build a new zero-vs-failure distinction mechanism" to **"wire up a mechanism that was already designed correctly two months ago and just needs to be consulted."** Concretely: `score-prep.js`'s zero-rows guard (line 1680, Section 13) could check `config_certification_rules` for `job_key='score-final-board'` (or its own equivalent rule, if one should be added for `score-prep` specifically — currently there isn't one; the closest existing row targets `score-final-board`, not `score-prep` itself), read `zero_rows_policy`, and apply the same `valid_zero_only_if_no_eligible_lines` logic already sitting in the config, rather than needing a bespoke new design. **Not implemented — this is a finding for Rodolfo's future direction, not something touched today.**
 
-No writes, no deploys, no job runs performed — read-only investigation only. — `runClassificationV6DeltaDailySingleStep` (the real function behind `baseline_v5_classification_daily_delta`, confirmed active today in Section 9)
+No writes, no deploys, no job runs performed — read-only investigation only.
+
+---
+
+## 20. READ THE ACTUAL LOGIC BEHIND TODAY'S LIVE DAILY DELTA JOBS — `runClassificationV6DeltaDailySingleStep` (the real function behind `baseline_v5_classification_daily_delta`, confirmed active today in Section 9)
 
 Continuing the mapping gap list: read the actual function body (not just the dispatch mapping) for the mode confirmed running today. Findings, all directly from code:
 
