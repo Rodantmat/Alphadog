@@ -965,7 +965,7 @@ async function resolveEngineProfileKey(env, engineBatchId) {
 
 async function latestHpBoardBatchForEngine(env, sourceEngineBatchId) {
   if (!sourceEngineBatchId) return null;
-  return await first(env.SCORE_DB, `
+  const dataRows = await first(env.SCORE_DB, `
     SELECT hp_board_batch_id, source_hp_batch_id, source_engine_batch_id,
            COUNT(*) AS rows,
            SUM(CASE WHEN estimated_hit_probability_0_100 >= 60 AND COALESCE(blocker_count,0)=0 THEN 1 ELSE 0 END) AS eligible_rows,
@@ -976,6 +976,17 @@ async function latestHpBoardBatchForEngine(env, sourceEngineBatchId) {
     ORDER BY datetime(MAX(created_at)) DESC
     LIMIT 1
   `, sourceEngineBatchId);
+  if (dataRows && dataRows.hp_board_batch_id) return dataRows;
+  const batchRow = await first(env.SCORE_DB, `
+    SELECT hp_board_batch_id, source_hp_batch_id, source_engine_batch_id
+    FROM hp_board_batches
+    WHERE source_engine_batch_id = ?
+      AND status = 'completed_hit_probability_current_estimates_written'
+    ORDER BY datetime(updated_at) DESC
+    LIMIT 1
+  `, sourceEngineBatchId);
+  if (!batchRow || !batchRow.hp_board_batch_id) return null;
+  return { hp_board_batch_id: batchRow.hp_board_batch_id, source_hp_batch_id: batchRow.source_hp_batch_id, source_engine_batch_id: batchRow.source_engine_batch_id, rows: 0, eligible_rows: 0, max_created_at: null };
 }
 
 async function fetchHpFinalBoardCandidateRows(env, sourceEngineBatchId, pageSize = 500) {
