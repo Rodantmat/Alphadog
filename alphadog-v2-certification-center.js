@@ -1156,12 +1156,12 @@ async function apiFilters(env) {
     SELECT COUNT(*) AS total_rows, COUNT(*) AS default_rows,
       SUM(CASE WHEN review_playable=1 THEN 1 ELSE 0 END) AS review_rows,
       SUM(CASE WHEN live_playable=1 THEN 1 ELSE 0 END) AS live_rows,
-      MIN(hit_probability_0_100) AS min_hp, MAX(hit_probability_0_100) AS max_hp,
-      MIN(overall_score_0_100) AS min_score, MAX(overall_score_0_100) AS max_score,
-      MIN(certainty_0_100) AS min_certainty, MAX(certainty_0_100) AS max_certainty,
+      MIN(estimated_hit_probability_0_100) AS min_hp, MAX(estimated_hit_probability_0_100) AS max_hp,
+      MIN(score_0_100) AS min_score, MAX(score_0_100) AS max_score,
+      MIN(confidence_0_100) AS min_certainty, MAX(confidence_0_100) AS max_certainty,
       MAX(updated_at) AS latest_updated_at
-    FROM v2_final_board_current
-    WHERE batch_id=(SELECT batch_id FROM v2_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
+    FROM score_final_board_current
+    WHERE final_board_batch_id=(SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
       AND review_playable=1 AND COALESCE(live_playable,0)=0
   `);
   const sourceMap = new Map();
