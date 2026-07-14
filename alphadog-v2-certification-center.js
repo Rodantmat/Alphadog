@@ -708,7 +708,7 @@ function buildCurrentSql(url) {
   inClause("f.canonical_prop_key", propKeys);
   inClause("f.source_key", sourceKeys);
   inClause("f.selected_side", selectedSides);
-  inClause("f.board_lane", boardTiers);
+  inClause("f.board_tier", boardTiers);
   if (propFamilies.length) {
     const clauses = [];
     for (const fam of propFamilies.map(v => String(v).toLowerCase())) {
