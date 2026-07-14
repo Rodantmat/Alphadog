@@ -20014,6 +20014,7 @@ export default {
       await enqueueScheduledStaticFullRunIfDue(env, cronExpression);
       await enqueueScheduledContextHistoryFullRunIfDue(env, cronExpression);
       await enqueueScheduledIncrementalMorningFullRunIfDue(env, cronExpression);
+      await enqueueScheduledScoringFullRunIfDue(env, cronExpression);
       await enqueueScheduledDailyFullRunIfDue(env, cronExpression);
       await enqueueScheduledBoardFullRunIfDue(env, cronExpression);
       await pump(env, `cron:${cronExpression}`, 10, 1, 65000, ctx, "https://alphadog-v2-orchestrator.rodolfoaamattos.workers.dev/scheduled", 0, 12);
