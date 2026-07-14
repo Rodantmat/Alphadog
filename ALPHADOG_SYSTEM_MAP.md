@@ -396,3 +396,28 @@ Checked `daily-batting-orders.js` (5,343 bytes), `daily-confirmed-starters.js` (
 All items from Sections 5 and 8 regarding "fate of daily-batting-orders/daily-confirmed-starters/daily-roof-status/static-rosters" and "the 21 Score per-prop workers" are now **RESOLVED**. Remaining open items: config tables list, the three manifest JSON files vs the two DB registries, `config_scheduled_jobs`, purpose of Context History Full Run (Section 7.7), and reading the remaining mode-branch function bodies inside `phase3a-first-inning-pitcher-context.js` (Section 9's final TODO).
 
 No writes, no deploys, no job runs performed — confirmed read-only.
+
+---
+
+## 12. `config_scheduled_jobs` (lives in **CONFIG_DB**, not CONTROL_DB — correction to prior assumption) — ALL 9 CRON SCHEDULES MAPPED, ONE LIVE INCONSISTENCY FLAGGED
+
+Only 9 rows total, one per schedule entry (a `job_key` can have multiple schedule rows at different times of day):
+
+| schedule_id | job_key | local_time (PT) | enabled | notes summary |
+|---|---|---|---|---|
+| board_full_run_0900_pt | board-full-run | 09:00 | **0** | Disabled 2026-06-09 — Board Full Run is now a sub-stage of Daily Full Run, not standalone |
+| board_full_run_1300_pt | board-full-run | 13:00 | **0** | same |
+| board_full_run_2200_pt | board-full-run | 22:00 | **0** | same |
+| context_history_full_run_daily_3am_pt | context-history-full-run | 03:00 | **1** | Created 2026-07-13 (yesterday). **Purpose resolved (was open in Section 7.7):** "Daily real weather+umpire permanent history capture for yesterday's completed games — independent of and safe alongside the live 2026 delta pipeline." |
+| **daily_full_run_0900_pt** | daily-full-run | **07:00** | **1 — SEE FLAG BELOW** | Note says `TEMP_DISABLED_2026_06_30_BASELINE_DEBUG` but `enabled=1` |
+| daily_full_run_1300_pt | daily-full-run | 13:00 | **0** | Same `TEMP_DISABLED_2026_06_30_BASELINE_DEBUG` note, and correctly `enabled=0` this time |
+| incremental_morning_full_run_0500_pt | incremental-morning-full-run | 06:00 | **1** | Re-enabled 2026-07-11 after certifier/orchestrator fixes; moved from 5am→6am per request |
+| sched_scoring_full_run_1 | scoring-full-run | 07:00 | **0** | Created TODAY 2026-07-14, but **disabled**. This is a standalone cron for the Scoring Full Run job_key by itself — separate from Scoring Full Run running automatically as sub-stage 4 of Daily Full Run (Section 7.1). Its notes list the same 8 stages mapped in Section 2, confirming this row does correspond to the same chain. |
+| static_full_run_weekly_monday_2am_pt | static-full-run | 02:00 (Mon only) | **1** | Created 2026-07-13 (yesterday) |
+
+### ⚠️ Flagged inconsistency, not fixed (this is a live config question for Rodolfo, not a code-mapping decision)
+**The `daily_full_run_0900_pt` schedule row has `enabled=1` while its own `notes` field says `TEMP_DISABLED_2026_06_30_BASELINE_DEBUG`.** Its sibling row (`daily_full_run_1300_pt`, same note, same `updated_at` timestamp `2026-06-30 18:13:55`) correctly has `enabled=0`. This looks like only one of the two rows actually got disabled when both were intended to be — i.e. **the 7:00 AM Pacific Daily Full Run cron is currently live and will fire automatically**, despite its own notes describing it as temporarily disabled for baseline debugging. Also worth noting the `schedule_id`/`job_name` still say "0900" while `local_time` has since been updated to `07:00` (matching the project's stated 7:00 AM schedule) — a separate, harmless naming/data mismatch, not a functional issue.
+
+**This wasn't touched — flagging only.** Before any orchestrator cleanup work touches the Daily Full Run chain, worth confirming with Rodolfo directly whether this cron *should* currently be live (i.e., was the "baseline debug" concern from 2026-06-30 actually resolved and the note is just stale?) or whether it's actually still supposed to be off and this is a real bug that's been silently running the full daily pipeline unintended for the past two weeks. Either way this is a one-line fix (`UPDATE config_scheduled_jobs SET enabled=0 WHERE schedule_id='daily_full_run_0900_pt'` or update/remove the stale note) — trivial to correct once Rodolfo confirms intent, but **not something to change without that confirmation**, since it could also be intentionally live and the note is simply outdated.
+
+No writes, no deploys, no job runs performed — confirmed read-only.
