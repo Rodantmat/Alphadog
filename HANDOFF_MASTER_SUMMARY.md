@@ -656,6 +656,8 @@ Real, working GBDT (gradient-boosted rate model) pipeline now exists, per the lo
 
 **Not yet done**: wiring `gbdt_inference.js` into the real Enrichment/Scoring worker to actually consume these trained models at inference time (this session built and verified the training half of the pipeline only). Historical `team_game_logs`/`bullpen_history` backfill for 2025 was still in progress as of this update (only through ~April), continuing automatically in the background — the bullpen-fatigue features used real but partial data for this training run; a full-season retrain once that backfill completes would be a reasonable, low-cost follow-up.
 
+**See also**: `FACTOR_CLASSIFICATION_CALIBRATION_DESIGN.md` (repo root) — a separate, deep-dive research and design document covering the actual Enrichment/Final Scoring architecture (a profile-based classification system, extended from `classification_v6`'s pattern with a new factor/factor-variation dimension, with this GBDT pipeline serving as one calibration signal — not a replacement for the profile system). Read that document in full before starting any Enrichment schema/implementation work; it supersedes any earlier, shallower factor notes.
+
 ### UPDATE, same session, minutes later — multi-season retrain + real, honest finding on rare-event props
 
 Per direct question ("are we using all the data", "how often does this run, won't it just retrain on the same frozen data") - both real, valid concerns:
