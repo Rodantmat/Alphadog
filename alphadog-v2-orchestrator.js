@@ -397,10 +397,10 @@ function isEnrichmentEngineJob(row) {
   const worker = String(row.worker_name || "");
   return job === "enrichment-engine" && worker === "alphadog-v2-phase2a-run-environment";
 }
-function isScoringEngineJob(row) {
+function isScoringEngineShadowJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
-  return job === "scoring-engine" && worker === "alphadog-v2-phase3a-certifier";
+  return job === "scoring-engine-shadow-v1" && worker === "alphadog-v2-phase3a-certifier";
 }
 function isHitProbabilityBoardJob(row) {
   const job = String(row.job_key || "");
