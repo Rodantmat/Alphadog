@@ -1090,6 +1090,8 @@ async function runFactorMining(request, env) {
   const requestedResumeBatchId = input.resume_batch_id || input.factor_batch_id || null;
   const resumeFastPath = input.factor_resume === true || !!requestedResumeBatchId;
   if (!resumeFastPath) await ensureSchema(env);
+  let batchId = null;
+  let runId = null;
 
   try {
     const preparedDiagnostics = resumeFastPath
