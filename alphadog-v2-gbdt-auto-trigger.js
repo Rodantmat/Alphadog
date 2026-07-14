@@ -31,15 +31,28 @@ async function findPendingRequest(env) {
   ).first();
 }
 
+async function resolveGithubPat(env) {
+  try {
+    const row = await env.CONFIG_DB.prepare(
+      "SELECT password FROM config_external_credentials WHERE credential_key='gbdt_auto_trigger_github_pat'"
+    ).first();
+    if (row && row.password) return row.password;
+  } catch (_) {
+    // CONFIG_DB read failed - fall through to env secret below rather than hard-failing.
+  }
+  return env.GBDT_AUTO_TRIGGER_GITHUB_PAT || null;
+}
+
 async function dispatchWorkflow(env, season) {
-  if (!env.GBDT_AUTO_TRIGGER_GITHUB_PAT || env.GBDT_AUTO_TRIGGER_GITHUB_PAT === "DISABLED") {
-    return { ok: false, error: "GBDT_AUTO_TRIGGER_GITHUB_PAT secret is missing or disabled" };
+  const pat = await resolveGithubPat(env);
+  if (!pat || pat === "DISABLED") {
+    return { ok: false, error: "No GitHub PAT available (checked CONFIG_DB.config_external_credentials, then env secret)" };
   }
   const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`;
   const resp = await fetch(url, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${env.GBDT_AUTO_TRIGGER_GITHUB_PAT}`,
+      "Authorization": `Bearer ${pat}`,
       "Accept": "application/vnd.github+json",
       "User-Agent": "AlphaDog-GBDT-AutoTrigger",
       "Content-Type": "application/json",
