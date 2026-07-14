@@ -1250,16 +1250,15 @@ async function apiHealth(env) {
     WHERE final_board_batch_id = ?
     LIMIT 1
   `, [current.final_board_batch_id]) : [];
-  const hpBatch = current.source_final_score_batch_id ? await queryAll(env.SCORE_DB, `
-    SELECT hp.batch_id, hp.worker_version, NULL AS profile_version, hp.status,
-           hp.source_v2_enrichment_batch_id AS source_score_enrichment_batch_id,
-           hp.source_rows_read AS expected_hp_rows, hp.rows_written AS hp_rows_written,
-           hp.hp_blocked_rows AS blocked_rows, 0 AS warning_rows, hp.issue_rows_written,
-           hp.certification_status, hp.certification_grade, hp.updated_at
-    FROM v2_hit_probability_batches hp
-    JOIN v2_final_score_batches fs ON fs.source_hp_v3_batch_id = hp.batch_id
-    WHERE fs.batch_id = ?
-    ORDER BY datetime(hp.updated_at) DESC
+  const hpBatch = current.source_engine_batch_id ? await queryAll(env.SCORE_DB, `
+    SELECT hp_board_batch_id AS batch_id, worker_version, profile_key AS profile_version, status,
+           source_engine_batch_id AS source_score_enrichment_batch_id,
+           source_rows_read AS expected_hp_rows, board_rows_written AS hp_rows_written,
+           0 AS blocked_rows, 0 AS warning_rows, issue_rows_written,
+           certification_status, certification_grade, updated_at
+    FROM hp_board_batches
+    WHERE source_engine_batch_id = ?
+    ORDER BY datetime(updated_at) DESC
     LIMIT 1
   `, [current.source_final_score_batch_id]) : [];
 
