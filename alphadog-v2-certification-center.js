@@ -1139,7 +1139,7 @@ async function apiFilters(env) {
       review_playable,
       live_playable,
       COUNT(*) AS rows,
-      MIN(hit_probability_0_100) AS min_hp,
+      MIN(estimated_hit_probability_0_100) AS min_hp,
       MAX(estimated_hit_probability_0_100) AS max_hp,
       MIN(score_0_100) AS min_score,
       MAX(score_0_100) AS max_score
