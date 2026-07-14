@@ -41,6 +41,7 @@ Changes not staged for commit:
 	modified:   gbdt_training/data/workflow_run.log
 	modified:   gbdt_training/models/hitter_doubles.json
 	modified:   gbdt_training/models/hitter_hits.json
+	modified:   gbdt_training/models/hitter_hits_runs_rbis.json
 	modified:   gbdt_training/models/hitter_hitter_strikeouts.json
 	modified:   gbdt_training/models/hitter_home_runs.json
 	modified:   gbdt_training/models/hitter_rbis.json
@@ -50,18 +51,22 @@ Changes not staged for commit:
 	modified:   gbdt_training/models/hitter_total_bases.json
 	modified:   gbdt_training/models/hitter_triples.json
 	modified:   gbdt_training/models/hitter_walks.json
+	modified:   gbdt_training/models/pitcher_earned_runs.json
+	modified:   gbdt_training/models/pitcher_hits_allowed.json
+	modified:   gbdt_training/models/pitcher_pitcher_outs.json
+	modified:   gbdt_training/models/pitcher_pitcher_strikeouts.json
+	modified:   gbdt_training/models/pitcher_runs_allowed.json
+	modified:   gbdt_training/models/pitcher_walks_allowed.json
 
 Untracked files:
   (use "git add <file>..." to include in what will be committed)
 	gbdt_training/__pycache__/
 	gbdt_training/data/hitter_training_multiseason.csv
 	gbdt_training/data/pitcher_training_multiseason.csv
-	gbdt_training/models/hitter_hits_runs_rbis.json
-	gbdt_training/models/pitcher_runs_allowed.json
 
 no changes added to commit (use "git add" and/or "git commit -a")
 === git branch/HEAD state ===
 * main
   remotes/origin/main
-8fd395a843cb1c46ba3e866e217bcabe3607cafc
+c1aee7c11de65c4528d35389e895cf7786e1aa90
 refs/heads/main
