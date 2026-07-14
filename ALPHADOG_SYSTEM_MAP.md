@@ -323,5 +323,35 @@ Found the top-level mode dispatcher (lines 6518–6555). It's a single flat `if(
 
 **2. There's a deliberate, hardcoded safety block on a dangerous old mode.** `baseline_v5_classification_delta` / `baseline_v5_delta` do NOT run their handler — they immediately return `BASELINE_V5_OLD_AFFECTED_PLAYER_CUMULATIVE_DELTA_BLOCKED` with an explicit message: *"Old Baseline/Classification V5 delta reloads cumulative player history and is banned. Use baseline_v5_state_hydrate then baseline_v5_stateful_delta shadow/parity path."* This confirms the Control Room's "Old Class Δ Blocked" and "Old HP Δ Blocked" buttons (seen in Section 7.9's button inventory) are **intentional safety rails left in the UI as documentation of a banned path, not bugs or leftover dead buttons** — do not "fix" or re-enable these during cleanup.
 
-### What this means for the cleanup plan
+### Confirmed via `control_job_queue` (checked this session): which of the ~24 modes are actually alive right now
+
+Unlike score-audit.js (Section 7.9), this file is **not** uniformly dormant — most of it is very much alive today. Two job_keys carry almost all the traffic, differentiated internally by `mode` (stored in `input_json`, not the `job_key` column — most of the individual job_key aliases like `expansion-baseline-mining`, `expansion-baseline-certifier`, `expansion-delta-mining`, etc. have **never once been submitted as their own job_key** in this table; they only exist as `mode` values under the two job_keys below):
+
+**`job_key='expansion-baseline-full-run'`** (205 total runs), by mode:
+| mode | runs | last run |
+|---|---|---|
+| `expansion_delta_hp` | 43 | **2026-07-14 (today, active)** |
+| `expansion_delta_sanity` | 39 | **2026-07-14 (today, active)** |
+| `expansion_line_inventory` | 42 | **2026-07-14 (today, active)** |
+| `expansion_delta_mining` | 42 | **2026-07-14 (today, active)** |
+| `baseline_v5_classification_delta` | 10 | 2026-07-05 — **this is the BLOCKED mode; these 10 "runs" all just hit the hardcoded block and did nothing, confirming the safety rail is still occasionally exercised (something/someone still submits it) and correctly rejected each time** |
+| `expansion_delta_full_run` | 10 | 2026-06-30 — dormant since the same date the old Market+Scoring/score-audit generation went dormant (Sections 7.8/7.9) |
+| `expansion_baseline_full_run` | 19 | 2026-06-28 — dormant, superseded by the 4 daily delta modes above |
+
+**`job_key='expansion-baseline-v2'`** (159 total runs), by mode:
+| mode | runs | last run |
+|---|---|---|
+| `baseline_v5_hp_daily_delta` | 37 | **2026-07-14 (today, active — the daily recurring job)** |
+| `baseline_v5_classification_daily_delta` | 41 | **2026-07-14 (today, active — the daily recurring job)** |
+| `baseline_v5_classification_base` | 8 | 2026-07-10 |
+| `baseline_v5_stateful_delta` | 14 | 2026-07-08 |
+| `baseline_v5_base_rescue` | 13 | 2026-07-08 |
+| `baseline_v5_classification_rescue` | 8 | 2026-07-07 |
+| `baseline_v5_state_hydrate` | 1 | 2026-07-05 — **only ever run once, total, ever** |
+| `baseline_v5_base` | 4 | 2026-07-03 |
+| `baseline_v2_heb` | 33 | 2026-07-01 — dormant, earliest/superseded generation |
+
+**Reading this correctly (important nuance, unlike the score-audit.js case): older last-run dates here do NOT necessarily mean dead/superseded.** This looks like the actual build-out timeline of the Baseline V5 system itself: `baseline_v2_heb` (7/1) → `baseline_v5_base` (7/3) → `baseline_v5_state_hydrate` (7/5, a one-time migration step, correctly never run again) → `baseline_v5_classification_rescue`/`base_rescue`/`stateful_delta` (7/7–7/8, occasional repair/bootstrap operations, not meant to run daily) → `baseline_v5_classification_base` (7/10) → the two `_daily_delta` modes, which are the ongoing daily-recurring pair still running today. **The "rescue" and "base"/"state_hydrate" modes are probably meant to be rare/on-demand, not dead — do not assume the same dormancy pattern found in Section 7.9 applies here without checking each mode's evident purpose from its name/handler first.**
+
+**Still genuinely unconfirmed/never-run as standalone job_keys:** `expansion-baseline-mining`, `expansion-baseline-sanity`, `expansion-baseline-hp` (only 3 runs total, last 2026-06-28, as its own job_key — separate from the `expansion_delta_hp` mode which IS active), `expansion-baseline-line-inventory`, `expansion-baseline-certifier`, `expansion-baseline-v2-full-run`, `expansion-delta-mining`/`-sanity`/`-hp`/`-full-run` as literal job_key strings. These may simply never be dispatched with job_key equal to their own mode name (i.e., always reached via the two umbrella job_keys with matching mode instead) — **`[TODO]`: distinguish "alternate spelling never used" from "actually orphaned" for these before any cleanup.**
 This file is the connective tissue between at least 3 things mapped so far: the Incremental Morning Full Run (Section 7.5), the Static Full Run's Expansion stages, and the "Final Scoring System" / Baseline V5 registry group. A safe refactor of this file would need to preserve every one of the ~24 mode branches and their exact string aliases (including the deliberately-blocked one), not just the ones currently exercised by the two full-run chains already mapped. **`[TODO]` next: read the actual function bodies for the newest/active-looking ones first** (`runBaselineV5StateHydrate`, `runBaselineV5StatefulDelta`, `runClassificationV6Tick`, `runBaselineV6Tick`, `runBaselineV2` — these look like the current "Final Scoring System" generation per the Control Room button names in Section 7.9) **before the clearly-legacy ones** (the plain `expansion_baseline_*` / `expansion_delta_*` set, which may themselves be superseded by the V5/V6 baseline generation the same way score-audit.js's Gen 1–3 were superseded — not yet confirmed, needs the same control_job_queue last-run check used in Sections 7.8/7.9).
