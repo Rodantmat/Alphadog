@@ -46,11 +46,11 @@ PITCHER_PROP_TO_OUTCOME_COLUMN = {
 }
 
 HITTER_FEATURE_COLUMNS = [
-    "is_home", "temperature_f", "wind_speed_mph", "humidity_pct", "indoor_flag",
+    "is_home", "temp_f", "wind_speed_mph",
     "bullpen_outs_prior_game", "bullpen_pitches_prior_game",
 ]
 PITCHER_FEATURE_COLUMNS = [
-    "is_home", "temperature_f", "wind_speed_mph", "humidity_pct", "indoor_flag",
+    "is_home", "temp_f", "wind_speed_mph",
 ]
 
 # Real, honest sample-size floor: below this many real rows, a GBDT is more likely to
@@ -153,21 +153,36 @@ def main():
     parser.add_argument("--out-dir", default="gbdt_training/models")
     args = parser.parse_args()
 
+    import traceback
+    debug_lines = []
+
+    def dbg(line):
+        print(line)
+        debug_lines.append(line)
+
     os.makedirs(args.out_dir, exist_ok=True)
+    try:
+        dbg("Training real hitter models...")
+        hitter_df = pd.read_csv(f"{args.data_dir}/hitter_training_{args.season}.csv")
+        for prop_key, outcome_col in HITTER_PROP_TO_OUTCOME_COLUMN.items():
+            result = train_one_prop(hitter_df, outcome_col, HITTER_FEATURE_COLUMNS, prop_key)
+            if result:
+                export_model_json(result, prop_key, "hitter", args.out_dir)
 
-    print("Training real hitter models...")
-    hitter_df = pd.read_csv(f"{args.data_dir}/hitter_training_{args.season}.csv")
-    for prop_key, outcome_col in HITTER_PROP_TO_OUTCOME_COLUMN.items():
-        result = train_one_prop(hitter_df, outcome_col, HITTER_FEATURE_COLUMNS, prop_key)
-        if result:
-            export_model_json(result, prop_key, "hitter", args.out_dir)
-
-    print("Training real pitcher models...")
-    pitcher_df = pd.read_csv(f"{args.data_dir}/pitcher_training_{args.season}.csv")
-    for prop_key, outcome_col in PITCHER_PROP_TO_OUTCOME_COLUMN.items():
-        result = train_one_prop(pitcher_df, outcome_col, PITCHER_FEATURE_COLUMNS, prop_key)
-        if result:
-            export_model_json(result, prop_key, "pitcher", args.out_dir)
+        dbg("Training real pitcher models...")
+        pitcher_df = pd.read_csv(f"{args.data_dir}/pitcher_training_{args.season}.csv")
+        for prop_key, outcome_col in PITCHER_PROP_TO_OUTCOME_COLUMN.items():
+            result = train_one_prop(pitcher_df, outcome_col, PITCHER_FEATURE_COLUMNS, prop_key)
+            if result:
+                export_model_json(result, prop_key, "pitcher", args.out_dir)
+    except Exception:
+        dbg("EXCEPTION:")
+        dbg(traceback.format_exc())
+        with open(f"{args.data_dir}/train_models_debug.log", "w") as f:
+            f.write("\n".join(debug_lines) + "\n")
+        raise
+    with open(f"{args.data_dir}/train_models_debug.log", "w") as f:
+        f.write("\n".join(debug_lines) + "\n")
 
 
 if __name__ == "__main__":
