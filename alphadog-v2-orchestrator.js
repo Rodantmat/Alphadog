@@ -384,6 +384,35 @@ function isMarketFullRunJob(row) {
   return job === "market-full-run" && worker === "alphadog-v2-orchestrator";
 }
 
+// Real, new Scoring Full Run pipeline (Enrichment -> Scoring Engine -> Hit Probability ->
+// Final Board), added per explicit instruction to build a certifier-bookended full run
+// mirroring the exact, proven Market Full Run pattern above.
+function isScoringFullRunCertifierJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "scoring-full-run-certifier" && worker === "alphadog-v2-phase3b-certifier";
+}
+function isEnrichmentEngineJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "enrichment-engine" && worker === "alphadog-v2-phase2a-run-environment";
+}
+function isScoringEngineJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "scoring-engine" && worker === "alphadog-v2-phase3a-certifier";
+}
+function isHitProbabilityBoardJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "hit-probability-board" && worker === "alphadog-v2-phase3c-certifier";
+}
+function isScoringFullRunJob(row) {
+  const job = String(row.job_key || "");
+  const worker = String(row.worker_name || "");
+  return job === "scoring-full-run" && worker === "alphadog-v2-orchestrator";
+}
+
 function isPrizePicksGithubBoardJob(row) {
   const job = String(row.job_key || "");
   const worker = String(row.worker_name || "");
