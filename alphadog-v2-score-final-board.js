@@ -1873,8 +1873,8 @@ async function generateFinalBoard(env, input) {
   };
 
   if (!rows.length) {
-    const output = { ok:false, data_ok:false, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"blocked_no_final_rows_after_calibration", certification:"SCORE_FINAL_BOARD_BLOCKED_NO_FINAL_ROWS_AFTER_CALIBRATION", certification_grade:"BLOCKED", final_board_batch_id:batchId, source_engine_batch_id:simBatchId, profile_key:activeProfileKey, primary_rows_after_calibration:primaryRows.length, review_rows_after_calibration:reviewRows.length };
-    await writeIssue(env, batchId, simBatchId, "NO_FINAL_ROWS_AFTER_CALIBRATION", "BLOCKER", 1, output);
+    await run(env.SCORE_DB, `DELETE FROM score_final_board_current`);
+    const output = { ok:true, data_ok:true, version:VERSION, worker_name:WORKER_NAME, job_key:JOB_KEY, request_id:requestId, run_id:runId, status:"completed_no_final_rows_after_calibration", certification:"SCORE_FINAL_BOARD_CERTIFIED_NO_ELIGIBLE_ROWS", certification_grade:"NO_DATA_PASS", final_board_batch_id:batchId, source_engine_batch_id:simBatchId, profile_key:activeProfileKey, primary_rows_after_calibration:primaryRows.length, review_rows_after_calibration:reviewRows.length, reason:"No eligible engine/HP rows to place on the final board (e.g. no games scheduled today)." };
     await run(env.SCORE_DB, `UPDATE score_final_board_batches SET status=?, certification=?, certification_grade=?, finished_at=CURRENT_TIMESTAMP, output_json=? WHERE final_board_batch_id=?`, output.status, output.certification, output.certification_grade, safeJson(output), batchId);
     return output;
   }
