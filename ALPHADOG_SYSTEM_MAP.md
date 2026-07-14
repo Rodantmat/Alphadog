@@ -151,3 +151,106 @@ Given the orchestrator is 1.4MB / 20,027 lines and cannot be fetched in full, th
 4. Cross-check every claim against real running data (CONTROL_DB `control_job_queue`, `control_worker_run_log`, actual table row counts) wherever possible — the registry describes intent, not necessarily current behavior.
 
 No writes, no deploys, no job runs performed to produce this document — confirmed read-only session.
+
+---
+
+## 7. PHASE 2 — ALL 9 FULL-RUN STAGE ARRAYS LOCATED AND MAPPED (2026-07-14, continuation)
+
+Found via a single grep for `const [A-Z_]*_STAGES = \[` across the orchestrator: there are exactly **9** stage arrays in the whole 20,027-line file. All 9 are now located and their stage lists captured. This closes out most of Section 5's gap list.
+
+### 7.1 Confirmed: the top-level "Daily Full Run" really is just an umbrella over 4 sub-chains
+`DAILY_FULL_RUN_STAGES` (line 2556) — exactly 4 stages, each of which re-dispatches back into the orchestrator itself (`worker_name: "alphadog-v2-orchestrator"` for all 4 — this parent chain doesn't call external workers directly, it calls its own other chain-runner functions):
+1. `board_full_run` (job_key `board-full-run`) → runs **Section 7.2 (Board Full Run)**
+2. `daily_context_full_run` (job_key `daily-context-full-run`) → runs **Section 7.4 (Daily Context Full Run)**
+3. `market_full_run` (job_key `market-full-run`) → runs **Section 7.3 (Market Full Run)**
+4. `scoring_full_run` (job_key `scoring-full-run`) → runs the **Scoring Full Run chain already mapped in Section 2**
+
+Explicit code comment at line 2557–2560 (v0.2.280) confirms a real fixed ordering bug: *"Board/Score Prep must run before Daily Context. Daily context sidecars filter by prepared-board pickable/current rows; running them before board refresh produced false VALID_ZERO/NOT_APPLICABLE for weather, bullpen, umpire, availability, and team schedule despite calendar/source availability."* — i.e. the 4-stage order (Board → Daily Context → Market → Scoring) is load-bearing, not arbitrary.
+
+### 7.2 Board Full Run (`BOARD_FULL_RUN_STAGES`, line 735) — 4 stages, fully mapped
+| stage_key | job_key | worker_name |
+|---|---|---|
+| board_prizepicks_refresh | prizepicks-github-board | alphadog-v2-prizepicks-github-board |
+| board_sleeper_refresh | parlay-sleeper-board | alphadog-v2-parlay-sleeper-board |
+| board_underdog_refresh | parlay-underdog-board | alphadog-v2-parlay-underdog-board |
+| score_prep_enrichment | score-prep | alphadog-v2-score-prep |
+
+Clean 1:1 mapping, no reuse tricks in this chain — matches project memory's "PrizePicks + Sleeper + Underdog + Score Prep" description exactly.
+
+### 7.3 Market Full Run (`MARKET_FULL_RUN_STAGES`, line 6019) — 5 stages, fully mapped
+| stage_key | job_key | worker_name |
+|---|---|---|
+| market_certifier_first_pass | market-certifier | alphadog-v2-market-certifier |
+| market_teams | market-normalizer | alphadog-v2-market-normalizer |
+| market_hitters | market-line-shape-classifier | alphadog-v2-market-line-shape-classifier |
+| market_pitchers | market-line-shape-classifier | alphadog-v2-market-line-shape-classifier (same file, mode-switched — hitter vs pitcher) |
+| market_certifier_last_pass | market-certifier | alphadog-v2-market-certifier |
+
+### 7.4 Daily Context Full Run (`DAILY_CONTEXT_FULL_RUN_STAGES`, line 11887) — 9 stages, 8 distinct workers
+| stage_key | job_key | worker_name |
+|---|---|---|
+| daily_context_certifier_first_pass | daily-certifier | alphadog-v2-daily-certifier |
+| daily_starters | daily-probable-pitchers | alphadog-v2-daily-probable-pitchers |
+| daily_lineups | daily-lineups | alphadog-v2-daily-lineups |
+| daily_player_availability | daily-player-availability | alphadog-v2-daily-player-availability |
+| daily_weather_roof | daily-weather | alphadog-v2-daily-weather |
+| daily_bullpen_availability | daily-bullpen-availability | alphadog-v2-daily-bullpen-availability |
+| daily_team_schedule_spot | daily-team-schedule-spot | alphadog-v2-daily-schedule |
+| daily_umpire_context | daily-umpire-context | alphadog-v2-daily-usage-pulse |
+| daily_context_certifier | daily-certifier | alphadog-v2-daily-certifier |
+
+**Gap found:** the "04 Daily" registry group has 12 workers, but only 8 distinct ones appear in this chain. **`daily-batting-orders`, `daily-confirmed-starters`, `daily-games-status`, and `daily-roof-status` are registered workers that do NOT appear in the Daily Context Full Run stage list at all.** Working theory, not yet confirmed: `daily_weather_roof`'s display name ("Daily Weather / Roof") suggests roof status was folded into the weather worker rather than run standalone, and per the 2026-07-14 handoff, Catcher Context was folded into the Lineups worker — plausibly batting orders / confirmed starters were folded into `daily-lineups` / `daily-probable-pitchers` similarly. `daily-games-status` may belong to a different chain (calendar/board) rather than Daily Context. **`[TODO]`: confirm whether these 4 workers are (a) genuinely dead/orphaned, (b) called by a different trigger path not yet found, or (c) their functionality was absorbed into a sibling worker. Do not assume dead without checking control_job_queue history for these job_keys.**
+
+### 7.5 Incremental Morning Full Run (`INCREMENTAL_MORNING_FULL_RUN_STAGES`, line 3492) — 16 stages, richest chain found so far
+Order: Calendar/Tally precheck (delta-certifier) → 7 base-layer deltas (hitter/pitcher/team game logs, starter/bullpen history, hitter/pitcher splits) → Calendar/Tally source-repair recheck → 4 Expansion stages (delta mining, line inventory delta, delta sanity, delta HP) all running on **the same physical file, `alphadog-v2-phase3a-first-inning-pitcher-context`**, job_key `expansion-baseline-full-run` with 4 different `mode` values → hitter/pitcher metrics affected-delta → 2 Baseline V5 stages (classification daily delta, HP daily delta) **also on the same physical file**, job_key `expansion-baseline-v2` → Calendar/Tally final check.
+
+**This confirms `alphadog-v2-phase3a-first-inning-pitcher-context.js` (699KB) is the single most overloaded physical file found in this mapping so far** — it serves at least 6 distinct logical roles across 2 job_keys (`expansion-baseline-full-run` ×4 modes, `expansion-baseline-v2` ×2 modes) inside this one chain alone, on top of its "Final Scoring System" registry entry (job_key `expansion-baseline-v2-full-run`, per the `isExpansionBaselineJob` guard function found in Section 2's grep, which lists 6 total job_key aliases routing to this one file: `expansion-baseline-full-run`, `expansion-baseline-line-inventory`, `expansion-baseline-sanity`, `expansion-baseline-hp`, `expansion-baseline-v2`, `expansion-baseline-v2-full-run`). **Any cleanup of this file requires the most caution of any file in the system.**
+
+Explicit ordering-dependency comments found in code (v0.2.342, v0.2.343): source layers/expansion/metrics must fully complete before Baseline V5 classification runs; Baseline V5 HP delta requires Baseline V5 classification delta to have completed first; final Calendar/Tally blocks on both baseline layers. This is a real, deliberate dependency chain, not incidental ordering.
+
+### 7.6 Static Full Run (`STATIC_FULL_RUN_STAGES`, line 3518) — 8 stages, contains a cross-group reuse surprise
+| job_key | worker_name | Note |
+|---|---|---|
+| static-teams | alphadog-v2-static-teams | 1:1 |
+| static-stadiums | alphadog-v2-static-stadiums | 1:1 |
+| static-park-factors | alphadog-v2-static-park-factors | 1:1 |
+| static-players | alphadog-v2-static-players | 1:1 |
+| static-prop-taxonomy | alphadog-v2-static-prop-taxonomy | 1:1 |
+| static-pitcher-arsenal | **alphadog-v2-static-player-aliases** | Reused — "Static Pitcher Arsenal" is NOT its own file, it runs on the Player Aliases worker |
+| static-defensive-quality | **alphadog-v2-delta-bullpen-update** | Reused — and this one crosses group boundaries: a "Static" stage running on a "03 Delta" group worker |
+| static-certifier | alphadog-v2-static-certifier | 1:1 |
+
+**Gap found:** 3 of the 10 registered "01 Static" workers — `static-rosters`, `static-team-context`, `static-player-identity` — are NOT part of this Static Full Run chain. `static-player-identity` and `static-team-context` are however used elsewhere (see 7.7 below), so they're not orphaned, just not part of *this* chain. `static-rosters` has no known caller found yet — `[TODO]`.
+
+Also found a real historical bug note in code (line ~9298-9302): `processStaticCertifierJob` — the actual handler function — was missing entirely even though the dispatch-guard function and call site existed, causing a crash (`"processStaticCertifierJob is not defined"`) on the final stage of a live Static Full Run test. This has since been fixed (function now exists, confirmed present). Documented here as a precedent: **the codebase has a history of dispatch-guard/call-site being added before the actual handler function, i.e. "wired but not implemented" bugs are a known recurring failure mode in this system** — worth checking for elsewhere during cleanup.
+
+### 7.7 Context History Full Run (`CONTEXT_HISTORY_FULL_RUN_STAGES`, line 9305) — smallest chain, 2 stages
+| job_key | worker_name |
+|---|---|
+| context-history-snapshot | alphadog-v2-static-player-identity |
+| context-history-certifier | alphadog-v2-static-team-context |
+
+Both are **reused** Static-group workers (not their nominal Static role) — same multiplexing pattern again. Requires a `target_date` in parent input or fails fast (`BLOCKED_CONTEXT_HISTORY_FULL_RUN_NO_TARGET_DATE`). Purpose (why history snapshots are taken) not yet investigated — `[TODO]`.
+
+### 7.8 The old combined Market+Scoring chain (`MARKET_SCORING_FULL_RUN_STAGES`, line 1284) — likely dead code, NOT yet confirmed
+This is the pre-split legacy chain referenced in Rodolfo's own project memory ("Daily Full Run now has separate market-full-run and scoring-full-run stages, replacing the old combined stage"). Its handler code is large (spans roughly line 1284–2552) and its final output literals explicitly declare things like `legacy_scoring_engine_removed: true`, `old_scoring_system_removed_from_full_run: true` — i.e. **this chain itself represents an intermediate "v3 shadow" migration state that appears to have been superseded** by the now-separate `MARKET_FULL_RUN_STAGES` + `SCORING_FULL_RUN_STAGES`. The top-level `DAILY_FULL_RUN_STAGES` (Section 7.1) does NOT reference `market-scoring-full-run` as a stage job_key — it references `market-full-run` and `scoring-full-run` separately — **strongly suggesting this whole ~1,268-line block is dead code no longer reachable from the top-level parent chain.**
+
+**This is a strong cleanup candidate — likely the single largest deletable block in the orchestrator — but is NOT confirmed dead yet.** Before touching it: `[TODO]` (a) grep the Control Room / control_room.html for any button or route still submitting job_key `market-scoring-full-run`, (b) check `control_job_queue` history for any run of this job_key in recent weeks (not just today), (c) check `config_scheduled_jobs` for any cron entry still targeting it. Do not delete based on this session's inference alone.
+
+---
+
+## 8. UPDATED GAP LIST (supersedes Section 5 where overlapping)
+
+Still open:
+- [ ] Confirm `MARKET_SCORING_FULL_RUN_STAGES` (Section 7.8) is truly dead/unreachable before any deletion.
+- [ ] Confirm fate of `daily-batting-orders`, `daily-confirmed-starters`, `daily-games-status`, `daily-roof-status`, `static-rosters` (Sections 7.4/7.6) — folded into siblings, dead, or called from elsewhere.
+- [ ] Read the `mode`-based internal branching of the most-overloaded file, `alphadog-v2-phase3a-first-inning-pitcher-context.js` (699KB, ≥6 logical roles across 2+ job_keys) — highest-priority read for the next phase given how much of the Incremental Morning + Final Scoring System chains depend on it.
+- [ ] Full read of `alphadog-v2-score-final-board.js` (unchanged from Section 2).
+- [ ] Full read of `alphadog-v2-control-room.js` routing/allowlist table (unchanged from Section 2).
+- [ ] Purpose of Context History Full Run (Section 7.7) — why/when it's triggered.
+- [ ] The 21 "11 Score" per-prop workers — still not individually opened.
+- [ ] Config tables list (unchanged from Section 5).
+- [ ] `config_scheduled_jobs` — still not queried; needed to know what's actually scheduled vs merely defined.
+- [ ] Three manifest JSON files vs the two DB registries — relationship still unestablished.
+
+No writes, no deploys, no job runs performed in Phase 2 either — confirmed read-only.
