@@ -1200,7 +1200,7 @@ async function apiFilters(env) {
     worker_name: WORKER_NAME,
     logical_app: LOGICAL_APP,
     route: "/api/main-board/filters",
-    source_table: "SCORE_DB.v2_final_board_current",
+    source_table: "SCORE_DB.score_final_board_current",
     quota_contract: { enabled: true, min_per_prop_line: 5, min_goblin: 20, min_demon: 10, min_prizepicks_regular: 20, min_sleeper_regular: 20, min_less: 15, min_more: 20, legs_can_satisfy_multiple_quotas: true, availability_based: true },
     summary,
     prop_groups: { hitter: props.filter(p => p.prop_family === "hitter"), pitcher: props.filter(p => p.prop_family === "pitcher"), other: props.filter(p => p.prop_family !== "hitter" && p.prop_family !== "pitcher") },
