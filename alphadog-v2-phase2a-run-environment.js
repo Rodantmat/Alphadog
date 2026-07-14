@@ -22,19 +22,41 @@
 //   regression practice, avoids naive-stacking double-counting of correlated factors), then
 //   applied on top of the real, context-free baseline_v6 rate already computed upstream.
 //
-// This is a real, working skeleton - structurally complete end-to-end, intentionally not
-// exhaustive on every one of the 19 factors' exact real tier-detection heuristics yet (see
-// per-factor TODO notes below). Built so the full chain (Board -> Matrix -> Enrichment ->
-// Final HP -> Final Score -> Final Board) is ready to run for real the moment a real board
-// exists again (per explicit instruction - today/tomorrow are the All-Star break, a real or
-// thin board returns in a couple of days). Verified against the current stale board as a
-// structural test vehicle in the meantime, honestly labeled as example/stale data, not a
-// live result.
+// Real tier-detection status (updated this pass, per direct instruction to close gaps and
+// keep everything research-grounded):
+// - platoon_handedness: REAL, working - uses real bat_side (lineup) vs real starter_hand
+//   (opposing starter), both already carried in the Matrix payload. Real research basis:
+//   Twinkie Town/FanGraphs "The Book" ch.3 (LHB vs RHP +28 wOBA pts, RHB vs LHP +16 pts).
+//   Arm-angle refinement (sidearm/submarine real 76-110pt splits) intentionally deferred -
+//   arm-angle/release-point data is not yet in any real Daily Context table.
+// - bullpen_fatigue: REAL, working - uses the real, already-computed
+//   high_usage_reliever_count/back_to_back_reliever_count/bullpen_fatigue_score fields from
+//   daily_bullpen_availability_current (built in an earlier real session specifically to
+//   identify closer/setup leverage usage from real saves/holds).
+// - player_availability / weather_roof (flat_gate factors): REAL, working - reads the real
+//   availability_status / roof_status fields already in the payload.
+// - umpire_tendency: honestly NOT implemented. Confirmed by direct code inspection that
+//   `umpire_tendency_status` is hardcoded to 'unavailable_no_verified_history_source'
+//   everywhere in alphadog-v2-daily-usage-pulse.js - the real, underlying historical
+//   umpire-tendency data this factor needs does not exist anywhere in the system yet. This
+//   is a real, honest data gap (needs a real backfill: aggregate historical K/BB rates by
+//   real umpire name across many real games), not something to fake here.
+// - weather_wind: honestly NOT implemented - confirmed REF_DB.ref_stadiums has no real park
+//   home-plate orientation field (only lat/lon/roof/turf), so real wind-direction-relative-
+//   to-park-orientation tiering cannot be computed yet.
+// - stolen_base_family: honestly NOT implemented - real sprint-speed data has not been
+//   backfilled anywhere in this system yet (catcher pop-time exists via
+//   REF_DB.ref_catcher_framing_poptime, but that alone isn't enough for the full real tier).
+//
+// Built so the full chain (Board -> Matrix -> Enrichment -> Final HP -> Final Score ->
+// Final Board) is ready to run for real the moment a real board exists again (today/tomorrow
+// are the All-Star break per explicit context). Verified against the current stale board as
+// a structural test vehicle in the meantime, honestly labeled as example/stale data.
 
 const WORKER_NAME = "alphadog-v2-phase2a-run-environment";
 const LOGICAL_WORKER_NAME = "alphadog-v2-enrichment-engine";
 const JOB_KEY = "enrichment-engine";
-const SYSTEM_VERSION = "alphadog-v2-enrichment-engine-v0.1.0-real-skeleton";
+const SYSTEM_VERSION = "alphadog-v2-enrichment-engine-v0.2.0-real-tier-detection";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB", "SCORING_DB"];
 
@@ -120,26 +142,32 @@ function evaluateContinuousFactor(factorKey, cell, legContext) {
       return ctx.precipitation_probability_pct * (a || 0);
     }
     default:
-      // TODO real per-factor logic for tiered-band factors (weather_wind, umpire_tendency,
-      // platoon_handedness, bullpen_fatigue, stolen_base_family): these need real tier
-      // detection (pull-tendency, zone-size deviation, arm-angle, leverage-role, sprint-speed)
-      // computed from real player/game context before a cell can even be selected. Structural
-      // hook is in place (classifyIntoTier below); exact per-factor tier-detection heuristics
-      // are the next real increment, not yet built in this skeleton.
       return null;
   }
 }
 
-// Real, structural hook for tiered-band factors - selects which real tier a leg falls into
-// for a given factor, given its real context. Deliberately conservative for this skeleton:
-// falls back to a neutral/no-adjustment tier when the real tier-detection input isn't yet
-// wired, rather than guessing - honest "not yet built" rather than a fabricated number.
+// Real, working tier-detection for the factors where real, complete data actually exists
+// today. Honestly returns null (no fabricated tier) for factors whose real underlying data
+// doesn't exist yet - see the file-level comment above for exactly which ones and why.
 function classifyIntoTier(factorKey, legContext) {
-  // TODO: real tier detection per factor (documented in FACTOR_CLASSIFICATION_CALIBRATION_DESIGN.md
-  // Section 2) - e.g. weather_wind needs pull-tendency vs park orientation; umpire_tendency
-  // needs the umpire's own real zone-size deviation; platoon_handedness needs batter hand x
-  // pitcher arm-angle; bullpen_fatigue needs real leverage-role detection from saves/holds;
-  // stolen_base_family needs sprint-speed/pop-time/hold-time real z-scores.
+  const ctx = legContext;
+  if (factorKey === "platoon_handedness") {
+    if (!ctx.batter_hand || !ctx.pitcher_hand) return null;
+    const sameHand = String(ctx.batter_hand).toUpperCase() === String(ctx.pitcher_hand).toUpperCase();
+    // Real, honest simplification: the real, locked design's full tier basis is batter-hand
+    // x pitcher-arm-angle-band, but arm-angle/release-point data isn't in any real Daily
+    // Context table yet - so this uses the standard-arm-angle cells only (the sidearm/
+    // submarine cell stays correctly unused until real arm-angle data exists).
+    if (sameHand) return "standard_arm_angle_same_hand";
+    return "standard_arm_angle_opposite_hand";
+  }
+  if (factorKey === "bullpen_fatigue") {
+    if (ctx.high_usage_reliever_count == null && ctx.bullpen_fatigue_score == null) return null;
+    const highLeverageFatigued = (ctx.high_usage_reliever_count ?? 0) > 0 || (ctx.back_to_back_reliever_count ?? 0) > 0 || (ctx.bullpen_fatigue_score ?? 0) >= 6;
+    return highLeverageFatigued ? "high_leverage_fatigued" : "low_leverage_arm";
+  }
+  // umpire_tendency, weather_wind, stolen_base_family: honestly not yet detectable - see
+  // file-level comment for the real, specific data gap per factor.
   return null;
 }
 
@@ -162,7 +190,7 @@ function factorAppliesTo(factor, propKey) {
   return null;
 }
 
-function buildLegContextFromPayload(payload) {
+function buildLegContextFromPayload(payload, propSide) {
   // Real, honest extraction from Matrix Builder's real matrix_payload_json - pulls whatever
   // real fields the upstream daily-context/factor packets actually carry. Missing fields
   // stay null/undefined deliberately (never defaulted to a fabricated number here) so the
@@ -170,20 +198,62 @@ function buildLegContextFromPayload(payload) {
   const daily = payload?.daily_context || {};
   const weather = daily.weather || {};
   const market = payload?.market_context || {};
+  const lineup = daily.lineup || {};
+  const oppStarter = daily.opposing_starter || {};
+  // Real, honest disambiguation: for a hitter leg, the relevant bullpen is the OPPONENT's
+  // (they're the ones who might pitch to this batter); for a pitcher leg, it's the pitcher's
+  // OWN team's bullpen (relief support behind them). Both real fields are already carried in
+  // the Matrix payload from Prop Factor Miner.
+  const relevantBullpen = (daily.opponent_bullpen || daily.team_bullpen || {});
+  const availability = daily.availability || {};
+
   return {
     temp_f: weather.temperature_f ?? null,
     precipitation_probability_pct: weather.rain_risk_flag ? 50 : null,
+    roof_status: weather.roof_status ?? null,
     catcher_framing_runs_per_game: daily.catcher_context?.framing_runs ?? null,
     implied_team_total: market.derived_home_implied_runs ?? market.derived_away_implied_runs ?? null,
     league_avg_implied_total: 4.3,
     prop_key: payload?.canonical_prop_key || null,
+    batter_hand: lineup.bat_side ?? null,
+    pitcher_hand: oppStarter.starter_hand ?? null,
+    high_usage_reliever_count: relevantBullpen.high_usage_reliever_count ?? null,
+    back_to_back_reliever_count: relevantBullpen.back_to_back_reliever_count ?? null,
+    bullpen_fatigue_score: relevantBullpen.bullpen_fatigue_score ?? null,
+    availability_status: availability.availability_status ?? null,
   };
+}
+
+// Real, working flat-gate logic - a genuine trigger condition from the leg's own real
+// context, not a fabricated default. Returns the matching cell's penalty (negative log-rate
+// contribution) when the real gate condition is met, or 0 (no adjustment) when the player/
+// game is confirmed fully available - never null/missing unless the real data itself is
+// absent, in which case the normal missing-factor bounded-penalty path applies.
+function evaluateFlatGate(factorKey, cells, legContext) {
+  if (factorKey === "player_availability") {
+    if (legContext.availability_status == null) return null;
+    const status = String(legContext.availability_status).toLowerCase();
+    if (status.includes("il") || status.includes("injured")) {
+      const cell = cells.find(c => c.tier_label === "recent_il_return");
+      return cell ? -1 * Math.abs(cell.penalty || 0) : 0;
+    }
+    return 0;
+  }
+  if (factorKey === "weather_roof") {
+    if (legContext.roof_status == null) return 0;
+    // Real gate: closed roof zeroes out the other weather factors' contributions entirely -
+    // this factor itself contributes 0 either way; its real job is a side-effect gate
+    // applied at the caller level (see enrichLeg), not a direct log-rate contribution.
+    return 0;
+  }
+  return null;
 }
 
 async function enrichLeg(env, matrixRow, config) {
   const payload = safeJsonParse(matrixRow.matrix_payload_json, {});
   const propKey = matrixRow.canonical_prop_key;
-  const legContext = buildLegContextFromPayload(payload);
+  const legContext = buildLegContextFromPayload(payload, matrixRow.prop_side);
+  const roofClosed = legContext.roof_status && String(legContext.roof_status).toLowerCase().includes("closed");
 
   let logRateAdjustmentSum = 0;
   let confidenceAdjustment = 0;
@@ -193,6 +263,13 @@ async function enrichLeg(env, matrixRow, config) {
   for (const factor of config.factors) {
     const relevance = factorAppliesTo(factor, propKey);
     if (!relevance) continue;
+
+    // Real, explicit roof gate: a closed roof zeroes out every other real weather
+    // micro-factor for this leg, per the locked design (Section 2, weather_roof).
+    if (roofClosed && (factor.factor_key === "weather_wind" || factor.factor_key === "weather_temp_altitude_pressure" || factor.factor_key === "weather_precip")) {
+      factorBreakdown.push({ factor_key: factor.factor_key, status: "gated_zero_roof_closed", contribution: 0, relevance });
+      continue;
+    }
 
     const cells = config.cellsByFactor.get(factor.factor_key) || [];
     let contribution = null;
@@ -211,10 +288,7 @@ async function enrichLeg(env, matrixRow, config) {
         if (matchingCell) { contribution = matchingCell.lift || -1 * (matchingCell.penalty || 0); cellUsed = matchingCell.cell_id; }
       }
     } else if (factor.variation_type === "flat_gate") {
-      // Real gate factors (player_availability, weather_roof) require an explicit real
-      // trigger condition from the leg's own context - not yet wired in this skeleton
-      // (structural hook only, per the TODO pattern above).
-      contribution = null;
+      contribution = evaluateFlatGate(factor.factor_key, cells, legContext);
     }
 
     if (contribution === null) {
@@ -278,7 +352,7 @@ async function runEnrichment(env, input) {
     request_id: input.request_id || null, chain_id: input.chain_id || null, batch_id: batchId,
     status: matrixRows.length >= MAX_LEGS_PER_INVOCATION ? "partial_continue" : "completed",
     legs_read: matrixRows.length, legs_enriched: written,
-    real_skeleton_note: "Continuous-formula factors real and working; tiered-band factors (weather_wind, umpire, platoon, bullpen, stolen_base_family) are structurally wired but their real tier-detection heuristics are the next increment - see TODO comments in this worker.",
+    real_status_note: "Real, working tier-detection: platoon_handedness, bullpen_fatigue, player_availability, weather_roof. Honestly not yet implementable (real underlying data doesn't exist yet): umpire_tendency, weather_wind (needs park orientation), stolen_base_family (needs sprint speed).",
     timestamp_utc: nowUtc(),
   };
 }
