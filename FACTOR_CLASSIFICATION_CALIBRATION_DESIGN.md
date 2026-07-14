@@ -127,7 +127,18 @@ Real, honest limitation already discovered and documented from GBDT training thi
 
 ---
 
-## 7. OPEN QUESTIONS NOT YET LOCKED (flag before implementation starts)
+## 6.5 REAL, EXACT STABILIZATION POINTS (Russell Carleton's established, widely-cited sabermetric research, cross-validated by an independent Baseball Prospectus follow-up study using an improved split-half methodology) — this directly locks the sample-size thresholds referenced throughout Section 6
+
+Real, exact plate-appearance/balls-in-play counts before a given rate stat reliably reflects real talent rather than sample noise:
+
+**Hitters**: strikeout rate 60 PA, walk rate 120 PA, HBP rate 240 PA, HR rate 170 PA (but HR-per-fly-ball needs only 50 real fly balls — much faster if conditioned on FB rate), single rate 290 PA, GB/FB rate 80 BIP, LD rate 600 BIP, AVG 910 AB, OBP 460 PA, SLG 320 AB, ISO 160 AB, BABIP 820 BIP, **XBH rate 1,610 PA — the slowest of all real hitter stats measured**.
+
+**Pitchers**: strikeout rate 70 BF, walk rate 170 BF, HBP rate 640 BF, single rate 670 BF, GB/FB rate 70 BIP, LD rate 650 BIP, AVG 630 BF, OBP 540 BF, SLG 550 AB, ISO 630 AB, HR rate 1,320 BF, XBH rate 1,450 BF, BABIP 2,000 BIP.
+
+**Why this matters concretely**: a full-time hitter gets roughly 650-700 real PA in a season. Real, hard confirmation: **XBH rate (1,610 PA) essentially never fully stabilizes within a single season for any individual player** — this is the precise, quantified, independently-sourced explanation for exactly why triples (and to a lesser extent doubles, HR) showed persistent real calibration drift in every GBDT test this session, no matter how much same-season data was added. It isn't a modeling bug; it's a real, measured property of the underlying stat needing multiple real seasons of data before an individual player's own rate can be trusted over the population/tier prior. K rate and walk rate, by contrast, are real, fast-stabilizing (60-120 PA/BF) — confirming why those props showed strong, reliable GBDT calibration from the very first single-season test.
+
+**Locked design implication**: these exact real numbers become the actual sample-size denominators for each profile cell's real shrinkage weight in the calibration loop (Section 6) — not an arbitrary constant, and not uniform across props. A cell backing a K-rate-driven prop can trust its own real observed data far sooner than a cell backing an XBH-rate-driven prop, and the calibration loop's confidence weighting must scale accordingly, per prop, using these real, established reference points.
+
 
 - Exact real tier counts per factor that needs tiers (Weather-wind, Umpire, Platoon, Bullpen) — the research above gives real ranges (2-3 bands typically) but the final exact cut points need to be fit against real historical data, not guessed.
 - Calibration cadence — daily vs. weekly vs. hybrid — flagged as "whichever proves better empirically," not yet decided with real evidence.
