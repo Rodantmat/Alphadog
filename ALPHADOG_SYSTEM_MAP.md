@@ -154,25 +154,6 @@ No writes, no deploys, no job runs performed to produce this document — confir
 
 ---
 
-## 10. `alphadog-v2-score-final-board.js` (119KB, 2,158 lines) — LOGIC MAPPED, STILL NEVER EXERCISED ON REAL DATA
-
-This is the dedicated, single-purpose file at the end of the Scoring Full Run chain (Section 2, stage 7). Current version tag found in code: **"Final Board v0.1.33"**, design philosophy explicitly stated in its own log messages: *"HP is the reality gate; Engine score is preserved as trust/support score. HP is preserved and never inflated; score remains trust/support."* It reads the latest completed, certified batch from `hp_board_current` (locked) and the Scoring Engine, and writes `score_final_board_current`.
-
-### The pipeline, in order (all confirmed from actual code, not inferred):
-1. **Base visible rows**: rows from `hp_board_current` with `estimated_hit_probability >= 60` (constant not shown in this grep but referenced as the HP floor for base inclusion).
-2. **Source Market Cluster Dedupe** (`FINAL_BOARD_DEDUPE_SOURCE_MARKET_CLUSTER = true`): keeps one row per app/source + player + prop + line + side. Cross-app mirrors (same prop, different apps) are deliberately **not** removed — "cross-app mirrors are no longer removed because app floor coverage is required." **This is a hard blocker, not just a filter**: if `duplicateSourceMarketClusters > 0` after this step, the whole run stops and returns `SCORE_FINAL_BOARD_BLOCKED_SOURCE_MARKET_CLUSTER_DEDUPE_FAILURE` — i.e. finding duplicates it can't resolve halts the board rather than silently producing bad output.
-3. **Player Global Exposure**: explicitly downgraded from a hard cap to a **soft ledger/tiebreaker only** — "Final Board no longer cuts rows by player exposure. Exposure is a soft tiebreaker/ledger warning only; rows remain visible when they qualify or are needed by quota reserve." (`playerExposureSoftOverflow` is logged as a WARNING issue, not a rejection.)
-4. **Primary Cluster Cap**: `PRIMARY` tier is capped at **one row per player/game-slate cluster key**; anything over that is demoted to `REVIEW` (not deleted) — explicitly documented as "a diversification/correlation safety rail, not a quality killer or source quota."
-5. **Quota Reserve** (`FINAL_BOARD_QUOTA_RESERVE_MIN_HP = 45`, `FINAL_BOARD_QUOTA_RESERVE_MIN_SCORE = 50`): if the board is short of its floors — `FINAL_BOARD_PROP_FLOOR_PER_PROP = 5` (min rows per individual prop type), `FINAL_BOARD_SOURCE_FLOOR_PER_APP = 20` (min rows per source app), `FINAL_BOARD_VARIANT_FLOORS = {demon: 10, regular: 20, goblin: 20}` (min rows per payout-variant type) — it pulls additional candidates from the remaining pool (HP ≥ 45, score ≥ 50 minimum eligibility) and adds them, **but only ever as `REVIEW` tier, never `PRIMARY`** (`row.board_tier = "REVIEW"`, `row.live_playable = 0`, `row.review_playable = 1`, `source_candidate_tier: "HP_FIRST_QUOTA_RESERVE_REVIEW"`). This is the mechanism that guarantees minimum board coverage without artificially inflating confidence on marginal rows.
-6. Writes final rows to `score_final_board_current`, with per-row `board_tier` (PRIMARY/REVIEW), `live_playable`/`review_playable` flags, and a full `score_final_board_issues` audit trail (one row per check: dedupe results, exposure ledger, cluster cap demotions, HP-first source lock confirmation) — all via `writeIssue()`.
-
-### Why this matters for validation-before-locking (ties to Rodolfo's stated project principle: no value final without empirical validation)
-Every one of the specific numeric constants above — the 60/45/50 HP and score thresholds, the 5/20/10/20/20 floor counts — is a **hardcoded, as-yet-unvalidated policy choice** baked into v0.1.33. None of it has been exercised against real HP/score distributions yet (confirmed in Section "current state": `score_final_board_current` has 0 rows, last real board data is from 2026-07-12, pre-All-Star-break). **When real scoring resumes, this is the first place to check whether these specific floors/caps produce a sensible, well-distributed board** — not just whether the pipeline runs without erroring.
-
-No writes, no deploys performed to produce this section — read-only grep only.
-
----
-
 ## 7. PHASE 2 — ALL 9 FULL-RUN STAGE ARRAYS LOCATED AND MAPPED (2026-07-14, continuation)
 
 Found via a single grep for `const [A-Z_]*_STAGES = \[` across the orchestrator: there are exactly **9** stage arrays in the whole 20,027-line file. All 9 are now located and their stage lists captured. This closes out most of Section 5's gap list.
