@@ -539,6 +539,27 @@ At Rodolfo's request to prioritize safety, ran a comprehensive structural check 
 
 ---
 
+## 19. CONFIG TABLES INSPECTED (read-only) — CONFIRMED: REAL, SUBSTANTIVE CALIBRATION DATA, NOT SUPERFICIAL PLACEHOLDER CONFIG
+
+Continuing the mapping gap list (Section 15) with safe, read-only investigation. Checked all 15 remaining config tables' row counts, then read the substantive ones in full.
+
+### 4 of 15 tables are genuinely empty (not yet used): `config_scoring_profiles`, `config_scoring_rules`, `config_source_priority`, `config_refresh_windows` — confirmed empty, 0 rows each. Not flagged as concerning; likely superseded by other tables (e.g. `calibration_config` appears to be where the real active scoring-adjacent calibration actually lives) or genuinely not-yet-built.
+
+### `calibration_config` (9 rows) — the real, active calibration data driving Baseline V5 / Classification V6
+This is substantive, not superficial: **Marcel-style recency weighting**, **Beta-Binomial shrinkage confidence priors scaled by sample size**, a complete **prop_metric_map** covering all 21 canonical props (mapping each to its exact underlying DB sum fields, including composite weighted props like `fantasy_score`), **z-score tier-band logic** with automatic thin-sample merging, a **fixed prop_line_universe** (the exact lines classification tests against per prop), and — most notably — a **per-prop `prop_recency_profile`** with 5 distinct calibration profiles (A/B/C/D/E + blends) grounded explicitly in **cited external research** ("Carleton/Pavlidis stabilization research where directly available... reasoned by proxy elsewhere (labeled)") — i.e. the system is honest in its own config about which calibration choices are evidence-backed versus reasoned-by-analogy. This is exactly the "empirical validation" discipline described in the project's own stated principles, showing up concretely in the data, not just as an aspiration.
+
+### `config_metric_calibration_profiles` (5 rows) — confirmed to be pre-promotion staging, not live scoring weights
+Every single row explicitly declares `"no_scoring": true` and `"promotion_locked": true` in its own `profile_json`, with honest status labels (`draft`, `audit_only`, `sample_stage_calibration`, `base_rebuild_stage_locked`). **This is a different table from `calibration_config` above** — this one governs metric-readiness staging for the hitter/pitcher metrics build pipeline, explicitly locked from ever being used as scoring weights until promoted. Good discipline, nothing concerning.
+
+### `config_enrichment_factors` (19 rows) — the complete factor taxonomy behind the Enrichment Engine and `FACTOR_CLASSIFICATION_CALIBRATION_DESIGN.md`
+Full list, by family: `player_availability` (availability), `bullpen_fatigue` (bullpen), `catcher_framing`/`catcher_poptime_arm` (catcher), `defensive_quality_oaa` (defense), `lineup_slot`/`lineup_surrounding_quality` (lineup), `market_implied_total` (market), `opposing_pitcher_quality`/`platoon_handedness` (matchup), `park_factors` (park), `times_through_order` (pitcher_workload), `schedule_travel_fatigue` (schedule), `stolen_base_family` (stolen_base), `umpire_tendency` (umpire), `weather_precip`/`weather_roof`/`weather_temp_altitude_pressure`/`weather_wind` (weather).
+
+**This directly confirms and precisely locates the handoff's honest capability-flag claim**: exactly 5 of these 19 factors are marked `needs_tiers=1`/`variation_type="tiered_bands"` (`bullpen_fatigue`, `platoon_handedness`, `stolen_base_family`, `umpire_tendency`, `weather_wind`) — and per the 2026-07-14 handoff, only 2 of those 5 (`platoon_handedness`, `bullpen_fatigue`) are actually implemented, with the other 3 (`umpire_tendency`, `weather_wind`, `stolen_base_family`) honestly flagged as not-yet-implementable with available data. **The taxonomy itself is comprehensive and well-designed — the gap is narrow and precisely identified (3 of 19 factors), not a broad architectural hole.**
+
+No writes, no deploys, no job runs performed — read-only investigation only.
+
+---
+
 ## 16. CLEANUP PHASE — LOG OF ACTUAL CHANGES MADE (this section is the audit trail; update after every change)
 
 **Ground rule going forward:** unlike Sections 0–15 (100% read-only), everything below this line involves real, live edits to production code. Every entry records exact old_str/new_str, the commit_sha, and the verification performed — this is the equivalent of a manual backup: to undo any single change, reverse that specific old_str/new_str pair.
