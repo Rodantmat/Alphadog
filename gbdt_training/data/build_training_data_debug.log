@@ -1,5 +1,8 @@
+Pulling real weather/umpire context (spans all real historical dates)...
 Pulling real hitter training data for season 2025...
-Real hitter training rows: 44220
+  season 2025: 44220 real hitter rows
 Pulling real pitcher training data for season 2025...
-Real pitcher training rows: 17130
-Wrote data/hitter_training_2025.csv and data/pitcher_training_2025.csv
+  season 2025: 17130 real pitcher rows
+Real combined hitter training rows (all seasons): 44220
+Real combined pitcher training rows (all seasons): 17130
+Wrote data/hitter_training_multiseason.csv and data/pitcher_training_multiseason.csv
