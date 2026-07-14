@@ -1,0 +1,47 @@
+name: AlphaDog v2 GBDT Model Training
+
+on:
+  schedule:
+    # Weekly, Sunday 09:00 UTC (real, slow-changing player/context data does not need
+    # more frequent retraining - matches the locked design decision).
+    - cron: "0 9 * * 0"
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Season to train on"
+        required: false
+        default: "2025"
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install real dependencies
+        run: pip install -r gbdt_training/requirements.txt
+
+      - name: Pull real training data from D1
+        working-directory: gbdt_training
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: python build_training_data.py --season ${{ github.event.inputs.season || '2025' }}
+
+      - name: Train real per-prop GBDT models
+        working-directory: gbdt_training
+        run: python train_models.py --season ${{ github.event.inputs.season || '2025' }}
+
+      - name: Commit trained models back to repo
+        run: |
+          git config user.name "alphadog-gbdt-training-bot"
+          git config user.email "actions@github.com"
+          git add gbdt_training/models/*.json
+          git diff --staged --quiet && echo "No model changes to commit" || git commit -m "Real GBDT model retrain $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push
