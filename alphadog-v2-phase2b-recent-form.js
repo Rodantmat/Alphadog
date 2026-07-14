@@ -654,7 +654,7 @@ async function loadContext(env, dates) {
     pushMapArray(ctx.baselineV6, key(r.player_id, r.canonical_prop_key, r.line_value), r);
   }
   ctx.catcherContext = new Map();
-  for (const r of await all(env.DAILY_DB, "SELECT catcher_context_key, game_pk, official_date, team_id, catcher_player_id, catcher_name, framing_runs, strike_rate_shadow_zone, pop_time_seconds, arm_strength, metrics_available_flag, updated_at FROM daily_catcher_context_current WHERE official_date IN (?, ?)", dates[0], dates[1])) {
+  for (const r of await all(env.DAILY_DB, "SELECT catcher_context_key, game_pk, official_date, team_id, player_id AS catcher_player_id, player_name AS catcher_name, framing_runs_total AS framing_runs, framing_pct_total AS strike_rate_shadow_zone, pop_time_2b_sba AS pop_time_seconds, NULL AS arm_strength, metrics_available_flag, updated_at FROM daily_catcher_context_current WHERE official_date IN (?, ?)", dates[0], dates[1])) {
     ctx.catcherContext.set(key(r.game_pk, r.team_id), r);
   }
   ctx.refTeams = new Map();
