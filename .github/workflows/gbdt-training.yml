@@ -10,10 +10,10 @@ on:
     - cron: "0 9 * * 0"
   workflow_dispatch:
     inputs:
-      season:
-        description: "Season to train on"
+      seasons:
+        description: "Comma-separated seasons to combine (real, current season should always be included)"
         required: false
-        default: "2025"
+        default: "2025,2026"
 
 jobs:
   train:
