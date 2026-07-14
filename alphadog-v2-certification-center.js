@@ -1218,8 +1218,8 @@ async function apiHealth(env) {
   if (!env.SCORE_DB) return jsonResponse({ ok: false, error: "SCORE_DB binding missing", version: VERSION }, 500);
   const finalCurrent = await queryAll(env.SCORE_DB, `
     SELECT
-      batch_id AS final_board_batch_id,
-      source_final_score_v2_batch_id AS source_final_score_batch_id,
+      final_board_batch_id AS final_board_batch_id,
+      source_engine_batch_id AS source_final_score_batch_id,
       NULL AS source_hp_v2_batch_id,
       NULL AS source_score_enrichment_batch_id,
       COUNT(*) AS current_rows,
