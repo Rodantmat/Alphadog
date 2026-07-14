@@ -45,7 +45,7 @@ jobs:
         run: |
           {
             echo "=== build_training_data.py started $(date -u) ==="
-            python build_training_data.py --season ${{ github.event.inputs.season || '2025' }}
+            python build_training_data.py --seasons "${{ github.event.inputs.seasons || '2025,2026' }}"
             echo "=== build_training_data.py exit code: $? ==="
           } 2>&1 | tee -a data/workflow_run.log
 
@@ -54,7 +54,7 @@ jobs:
         run: |
           {
             echo "=== train_models.py started $(date -u) ==="
-            python train_models.py --season ${{ github.event.inputs.season || '2025' }}
+            python train_models.py
             echo "=== train_models.py exit code: $? ==="
           } 2>&1 | tee -a data/workflow_run.log
 
