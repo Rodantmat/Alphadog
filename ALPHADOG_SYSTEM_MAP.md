@@ -432,4 +432,34 @@ Checked `control_job_queue` for `job_key='daily-full-run'`, `source='config_sche
 
 **Net assessment: no actual harm.** This looks like a correct, defensive failure — the system protected existing good data rather than overwriting it with an empty All-Star-break board — not a bug in the scoring/board logic itself. **The only genuinely open question is still the `enabled=1`-vs-`TEMP_DISABLED` note contradiction**: worth Rodolfo confirming whether the cron being live right now is intentional (in which case the stale note should just be cleaned up) or not (in which case it should be explicitly disabled) — independent of today's specific All-Star-break-related failure, which would likely resolve itself once real games resume.
 
+---
+
+## 13. REAL ARCHITECTURE GAP CONFIRMED: THE SYSTEM CANNOT TELL "GENUINELY ZERO GAMES" FROM "SOMETHING BROKE" — flagged by Rodolfo, verified in code, not yet fixed
+
+Rodolfo's direct question after Section 12's finding: today's Board Full Run failure was caused by the All-Star break producing a real zero-pickable-board — but **is the system actually built to handle that scenario correctly**, or does it always treat zero as failure? Checked the code directly.
+
+### The gap, precisely located
+`alphadog-v2-score-prep.js`, line 1680: `if (!prepared.length) throw new Error("score_prep_zero_prepared_rows_guard_preserved_existing_current");` — **this throws unconditionally whenever prepared rows are zero, with no check for *why* they're zero.** It doesn't distinguish "genuinely no games scheduled today (All-Star break, off-day)" from "games are happening but a board source broke." Every zero outcome is treated as a failure, which is exactly what cascaded into today's `daily-full-run` → `board-full-run` → `score-prep` failure chain (Section 12).
+
+### Proof this is fixable — the pattern already exists correctly elsewhere in the system
+`alphadog-v2-daily-weather.js` (line 949-952) already solves this exact problem, correctly: `const noPickableSlate = prepared.length === 0; const dataOk = noPickableSlate || (coverageOk && blockerCount === 0); const certification = noPickableSlate ? "DAILY_WEATHER_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : ...; const grade = noPickableSlate ? "VALID_ZERO" : ...`. When there's nothing to check, it reports a clean `VALID_ZERO` pass (`data_ok: true`) instead of failing. **This is the same pattern referenced back in Section 7.1's v0.2.280 comment about "false VALID_ZERO/NOT_APPLICABLE" bugs** — so the concept of a legitimate zero-result state is well-established in this codebase's Daily Context layer. It just was never applied to `score-prep.js` at the Board layer.
+
+### Why score-prep can't just copy daily-weather's exact check — and what it actually needs
+`daily-weather.js`'s check works because it's a *downstream consumer* of already-prepared board rows — if its input is empty, that's automatically valid (nothing upstream to check). **`score-prep.js` is different: it's the worker that *produces* the prepared rows in the first place**, by reading raw PrizePicks/Sleeper/Underdog board data. It can't use "my input was empty" as its signal, because that's circular — the actual question it needs answered is **"were there real MLB games scheduled today at all, independent of whether any board source returned props for them?"** That requires an independent calendar source of truth, not just checking its own board-source inputs.
+
+### The calendar source of truth that *should* answer this exists in the schema — but is not being populated
+Checked `DAILY_DB` for calendar tables: `daily_slate_games` (game_key, slate_date, game_pk, teams, game_time, status, pickable_flag) and `daily_game_status_current` both look purpose-built for exactly this ("is there a real game today"). **Confirmed both are effectively dead data:**
+- `daily_slate_games`: **zero rows, ever** (`MAX(slate_date)` returns `NULL` — completely empty table).
+- `daily_game_status_current`: 2,411 rows, but **last updated 2026-05-26** — over 7 weeks stale.
+
+**This traces directly back to Section 7.4/7.9's earlier finding**: `daily-games-status` is a real, implemented worker (confirmed NOT a dummy stub, and it has a live Control Room button) — but it was never added to the automated Daily Context Full Run chain (Section 7.4), so nothing ever triggers it to actually run and keep these calendar tables fresh. **The root cause of today's gap isn't a missing feature in score-prep — it's that the one worker that could feed a real "games today" calendar signal has never been wired into any automated schedule.**
+
+### What an actual fix would need (documented here for the record — NOT implemented, per the mapping-only phase we're in)
+1. Get `daily-games-status` running on a real schedule (either add it to the Daily Context Full Run chain, Section 7.4, or give it its own cron in `config_scheduled_jobs`, Section 12) so `daily_slate_games`/`daily_game_status_current` actually reflect today's real MLB schedule.
+2. Modify `score-prep.js`'s zero-rows guard (line 1680) to check that calendar table first: if it confirms zero real games scheduled for today's window, return a `VALID_ZERO`-style pass (matching `daily-weather.js`'s existing pattern) instead of throwing. If the calendar shows real games scheduled and prepared rows are still zero, that should keep failing loudly, since that would be a genuine problem.
+
+**This is a real, well-evidenced gap worth fixing, but it's a functional code change — not something to make during this read-only mapping phase without Rodolfo's explicit go-ahead.** Flagging it here completes the investigation Rodolfo asked for; implementing it is a decision for the next phase.
+
+No writes, no deploys, no job runs performed — confirmed read-only investigation only.
+
 No writes, no deploys, no job runs performed — confirmed read-only.
