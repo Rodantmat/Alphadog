@@ -421,7 +421,6 @@ async function latestEngineBatchAnyStatus(env) {
   return await first(env.SCORE_DB, `
     SELECT batch_id, worker_version, status, certification, certification_grade, matrix_rows_read, score_rows_written, archive_rows_written, started_at, finished_at
     FROM scoring_engine_batches
-    WHERE score_rows_written > 0 OR matrix_rows_read > 0
     ORDER BY datetime(COALESCE(finished_at, started_at)) DESC, datetime(started_at) DESC
     LIMIT 1
   `);
