@@ -6240,9 +6240,7 @@ async function processEnrichmentEngineJob(env, row, runId, trigger) {
   return cappedOutput;
 }
 
-async function processScoringEngineJob(env, row, runId, trigger) {
-  if (!env.PHASE3A_CERTIFIER_WORKER || typeof env.PHASE3A_CERTIFIER_WORKER.fetch !== "function") {
-    const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_service_binding", certification:"SCORING_ENGINE_SERVICE_BINDING_MISSING", trigger };
+async function processScoringEngineShadowJob(env, row, runId, trigger) {
     await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_scoring_engine_service_binding', 'PHASE3A_CERTIFIER_WORKER service binding is missing')", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output));
     await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_scoring_engine_service_binding', error_message='PHASE3A_CERTIFIER_WORKER service binding is missing' WHERE request_id=?", JSON.stringify(output), row.request_id);
     return output;
