@@ -645,9 +645,17 @@ async function loadContext(env, dates) {
   ctx.pitcherSnapshots = new Map(); for (const r of await all(env.STATS_PITCHER_DB, "SELECT player_id, season, metric_window, config_profile_id, formula_version, games_count, appearances_count, starts_count, innings_pitched_sum, outs_recorded_sum, batters_faced_sum, pitches_sum, strikes_sum, hits_allowed_sum, runs_allowed_sum, earned_runs_sum, walks_allowed_sum, strikeouts_sum, home_runs_allowed_sum, era_calculated, whip_calculated, k_rate_calculated, bb_rate_calculated, hr_rate_calculated, k_minus_bb_rate_calculated, pitches_per_out_calculated, strikes_per_pitch_calculated, innings_per_appearance_calculated, sample_size_label, certification_grade, updated_at FROM pitcher_metric_snapshots WHERE season=2026")) pushMapArray(ctx.pitcherSnapshots, key(r.player_id), r);
   ctx.hitterSplits = new Map(); for (const r of await all(env.STATS_HITTER_DB, "SELECT player_id, season, split_key, split_code, split_description, pa, ab, hits, singles, doubles, home_runs, runs, rbi, walks, strikeouts, avg, obp, slg, ops, babip, certification_grade, source_snapshot_date, updated_at FROM hitter_splits WHERE season=2026")) pushMapArray(ctx.hitterSplits, key(r.player_id), r);
   ctx.pitcherSplits = new Map(); for (const r of await all(env.STATS_PITCHER_DB, "SELECT player_id, season, split_key, split_code, split_description, innings_pitched, innings_pitched_decimal, outs_recorded, batters_faced, hits_allowed, earned_runs, walks_allowed, strikeouts, era, whip, avg_against, obp_against, slg_against, ops_against, certification_grade, source_snapshot_date, updated_at FROM pitcher_splits WHERE season=2026")) pushMapArray(ctx.pitcherSplits, key(r.player_id), r);
-  ctx.expansionBaselineHp = new Map();
-  for (const r of await all(env.SCORE_DB, "SELECT batch_id, profile_namespace, source_data_family, source_table, source_formula_key, player_id, player_name, canonical_prop_key, line_value, selected_side, baseline_hp_0_100, raw_rate_0_100, baseline_confidence_0_100, sample_profile, non_push_sample, hit_count, miss_count, formula_version, confidence_formula_version, updated_at FROM expansion_player_baseline_hp_current")) {
-    pushMapArray(ctx.expansionBaselineHp, key(r.player_id, r.canonical_prop_key, r.line_value), r);
+  ctx.classificationV6 = new Map();
+  for (const r of await all(env.ARCHIVE_DB, "SELECT player_id, canonical_prop_key, line_value, selected_side, tier_key, tier_number, z_score, metric_value, population_mean, population_stddev, games_sample, formula_version FROM classification_v6_current")) {
+    pushMapArray(ctx.classificationV6, key(r.player_id, r.canonical_prop_key, r.line_value), r);
+  }
+  ctx.baselineV6 = new Map();
+  for (const r of await all(env.ARCHIVE_DB, "SELECT player_id, canonical_prop_key, line_value, selected_side, tier_key, hit_probability_0_100, confidence_0_100, hit_count, miss_count, push_count, non_push_sample, prior_strength, recency_blended_rate_0_100, formula_version FROM baseline_v6_current")) {
+    pushMapArray(ctx.baselineV6, key(r.player_id, r.canonical_prop_key, r.line_value), r);
+  }
+  ctx.catcherContext = new Map();
+  for (const r of await all(env.DAILY_DB, "SELECT catcher_context_key, game_pk, official_date, team_id, catcher_player_id, catcher_name, framing_runs, strike_rate_shadow_zone, pop_time_seconds, arm_strength, metrics_available_flag, updated_at FROM daily_catcher_context_current WHERE official_date IN (?, ?)", dates[0], dates[1])) {
+    ctx.catcherContext.set(key(r.game_pk, r.team_id), r);
   }
   ctx.refTeams = new Map();
   for (const r of await all(env.REF_DB, "SELECT team_id, mlb_team_id, abbreviation, full_name, nickname, short_name, team_code, file_code FROM ref_teams WHERE active=1")) {
