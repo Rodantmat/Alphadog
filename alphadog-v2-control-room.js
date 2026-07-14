@@ -951,6 +951,7 @@ async function runJob(request, env, ctx) {
       "orchestrator_enqueue_final_board_v2",
       "orchestrator_enqueue_score_final_board",
       "orchestrator_enqueue_market_scoring_full_run",
+      "orchestrator_enqueue_scoring_full_run",
       "orchestrator_enqueue_daily_full_run",
       "orchestrator_tick",
       "orchestrator_logs"
