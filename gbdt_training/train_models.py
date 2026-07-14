@@ -149,8 +149,8 @@ def export_model_json(result, prop_key, family, out_dir):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--season", type=int, default=2025)
-    parser.add_argument("--data-dir", default="gbdt_training/data")
-    parser.add_argument("--out-dir", default="gbdt_training/models")
+    parser.add_argument("--data-dir", default="data")
+    parser.add_argument("--out-dir", default="models")
     args = parser.parse_args()
 
     import traceback
