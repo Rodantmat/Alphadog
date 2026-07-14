@@ -153,3 +153,16 @@ Real, exact plate-appearance/balls-in-play counts before a given rate stat relia
 ---
 
 *This document should be read in full before any schema or implementation work begins on the Enrichment/Final Scoring rebuild. It supersedes any earlier, shallower factor-design notes referenced in `HANDOFF_MASTER_SUMMARY.md`'s GBDT section regarding "the full locked feature set."*
+
+---
+
+## 8. REAL MATERIALIZATION — SCHEMA NOW LIVE IN `CONFIG_DB`
+
+Per explicit instruction ("anything variable must reside in the database to be ready for calibration, that applies for all layers of the final scoring system phases"), three real tables are now live and populated, not just designed on paper:
+
+- **`config_enrichment_factors`** — registry of all 19 real, researched factors from Section 2, each row carrying its own real research notes directly (not only in this document, so the running system and its documentation can't silently drift apart).
+- **`config_enrichment_profile_cells`** — the actual granular scoring cells (factor × prop × tier × direction × variation band). Real, important schema correction made mid-build: every tunable numeric value gets its own dedicated column (`cap`, `penalty`, `lift`, `formula_coefficient_a/b/c`, `min_real_sample_threshold`) — never embedded as a literal number inside a `formula_expression` string, since that would defeat the calibration loop's ability to adjust a single real value directly.
+- **`enrichment_calibration_log`** — audit trail for the semi-automatic → automatic loop, with bootstrap-shrinkage and GBDT-cross-check fields ready per Section 6.
+
+As of this update: 30 real profile cells populated across 18 of 19 factors (the 19th, `catcher_poptime_arm`, deliberately has zero standalone cells — its real contribution lives inside `stolen_base_family`'s combined formula instead, per the design note in that factor's row). Coverage per factor is not yet exhaustive across every real prop×tier×direction combination — this is an intentionally incremental build, continuing factor-by-factor rather than attempting full coverage in one pass. The actual worker logic that reads these cells and applies them to a real leg has not yet been built as of this update.
+
