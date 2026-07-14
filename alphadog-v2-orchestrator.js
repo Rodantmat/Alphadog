@@ -17919,8 +17919,8 @@ async function processOneUnlocked(env, trigger) {
     return { ok: !!(output && output.ok), data_ok: !!(output && output.data_ok), version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, status: output && output.status || "unknown", output };
   }
 
-  if (isScoringEngineJob(row)) {
-    const output = await processScoringEngineJob(env, row, runId, trigger);
+  if (isScoringEngineShadowJob(row)) {
+    const output = await processScoringEngineShadowJob(env, row, runId, trigger);
     return { ok: !!(output && output.ok), data_ok: !!(output && output.data_ok), version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, status: output && output.status || "unknown", output };
   }
 
