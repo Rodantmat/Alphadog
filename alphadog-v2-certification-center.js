@@ -1233,9 +1233,9 @@ async function apiHealth(env) {
       MIN(certainty_0_100) AS min_certainty,
       MAX(certainty_0_100) AS max_certainty,
       MAX(updated_at) AS latest_updated_at
-    FROM v2_final_board_current
-    WHERE batch_id = (SELECT batch_id FROM v2_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
-    GROUP BY batch_id, source_final_score_v2_batch_id
+    FROM score_final_board_current
+    WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
+    GROUP BY final_board_batch_id, source_engine_batch_id
     ORDER BY latest_updated_at DESC
     LIMIT 1
   `);
