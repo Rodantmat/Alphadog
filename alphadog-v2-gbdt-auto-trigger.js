@@ -57,7 +57,7 @@ async function dispatchWorkflow(env, season) {
       "User-Agent": "AlphaDog-GBDT-AutoTrigger",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ ref: "main", inputs: { season: String(season) } }),
+    body: JSON.stringify({ ref: "main", inputs: { seasons: String(season) } }),
   });
   if (resp.status === 204) return { ok: true };
   const text = await resp.text().catch(() => "");
