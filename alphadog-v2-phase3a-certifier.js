@@ -20,7 +20,7 @@
 
 const WORKER_NAME = "alphadog-v2-phase3a-certifier";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
-const JOB_KEY = "scoring-engine";
+const JOB_KEY = "scoring-engine-shadow-v1";
 const SYSTEM_VERSION = "alphadog-v2-scoring-engine-v0.1.0-real-skeleton";
 const PROFILE_KEY = "ENRICHMENT_V1_REAL_SKELETON";
 
