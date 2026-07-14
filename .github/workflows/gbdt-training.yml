@@ -92,7 +92,7 @@ jobs:
           git config user.name "alphadog-gbdt-training-bot"
           git config user.email "actions@github.com"
           git add -f GBDT_RUN_DIAGNOSTIC.txt
-          git add -f gbdt_training/models/*.json gbdt_training/data/*.log 2>/dev/null || true
+          git add -f gbdt_training/models/*.json gbdt_training/data/*.log gbdt_training/data/*.json 2>/dev/null || true
           git status
           git diff --staged --quiet && echo "No changes to commit" || git commit -m "Real GBDT model retrain / run log / diagnostic $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push origin HEAD:main
