@@ -97,6 +97,11 @@
       "binding": "ARCHIVE_DB",
       "database_name": "alphadog-v2-archive-db",
       "database_id": "71f03ce3-1178-43b6-8228-33cb9803b589"
+    },
+    {
+      "binding": "SCORING_DB",
+      "database_name": "alphadog-v2-scoring-db",
+      "database_id": "584fd46e-cbe0-4005-9c1f-20a912c77dc5"
     }
   ]
 }
