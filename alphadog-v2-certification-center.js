@@ -1140,11 +1140,11 @@ async function apiFilters(env) {
       live_playable,
       COUNT(*) AS rows,
       MIN(hit_probability_0_100) AS min_hp,
-      MAX(hit_probability_0_100) AS max_hp,
-      MIN(overall_score_0_100) AS min_score,
-      MAX(overall_score_0_100) AS max_score
-    FROM v2_final_board_current
-    WHERE batch_id=(SELECT batch_id FROM v2_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
+      MAX(estimated_hit_probability_0_100) AS max_hp,
+      MIN(score_0_100) AS min_score,
+      MAX(score_0_100) AS max_score
+    FROM score_final_board_current
+    WHERE final_board_batch_id=(SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
       AND review_playable=1
       AND COALESCE(live_playable,0)=0
       AND official_date >= date('now')
