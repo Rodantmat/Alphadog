@@ -6281,7 +6281,7 @@ async function processHitProbabilityBoardJob(env, row, runId, trigger) {
   // produced in THIS same real chain run - read it from the prior real sibling stage's
   // output rather than guessing/using a stale batch.
   const priorEngineChild = await first(env.CONTROL_DB,
-    "SELECT output_json FROM control_job_queue WHERE chain_id=? AND job_key='scoring-engine' AND status='completed' ORDER BY datetime(updated_at) DESC LIMIT 1",
+    "SELECT output_json FROM control_job_queue WHERE chain_id=? AND job_key='scoring-engine-shadow-v1' AND status='completed' ORDER BY datetime(updated_at) DESC LIMIT 1",
     row.chain_id);
   const priorEngineOutput = parseJsonSafeText(priorEngineChild && priorEngineChild.output_json || "{}", {});
   const sourceEngineBatchId = priorEngineOutput.batch_id || rowInput.source_engine_batch_id || null;
