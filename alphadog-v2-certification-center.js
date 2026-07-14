@@ -1582,9 +1582,9 @@ async function apiPlayerProfile(env, url) {
   const ids = [p.player_id, p.mlb_player_id].filter(v=>v!=null && String(v)!=="");
   const q = ids.map(()=>"?").join(",");
   const legs = q ? await optionalQueryAll(env.SCORE_DB, `
-    SELECT board_v3_row_id AS final_board_row_id, source_key, rank_order, game_pk, official_date, json_extract(details_json, '$.game_context.game_time_utc') AS official_game_time_utc, mlb_player_id AS player_id, player_name, NULL AS team_id, NULL AS opponent_team_id, canonical_prop_key, line_value, selected_side, hit_probability_0_100 AS estimated_hit_probability_0_100, certainty_0_100 AS probability_confidence_0_100, overall_score_0_100 AS score_0_100, board_grade, board_lane
-    FROM v2_final_board_current
-    WHERE batch_id = (SELECT batch_id FROM v2_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
+    SELECT final_board_row_id, source_key, rank_order, game_pk, official_date, official_game_time_utc, mlb_player_id AS player_id, player_name, NULL AS team_id, NULL AS opponent_team_id, canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100, probability_confidence_0_100, score_0_100, score_grade AS board_grade, board_tier AS board_lane
+    FROM score_final_board_current
+    WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
       AND mlb_player_id IN (${q})
     ORDER BY rank_order ASC
     LIMIT 80
