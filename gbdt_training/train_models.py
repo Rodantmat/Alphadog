@@ -15,6 +15,19 @@ Locked design (do not deviate without updating HANDOFF_MASTER_SUMMARY.md):
   runtime needed there, matches the real Workers constraint (confirmed: Workers AI has
   no custom-model training OR custom-model inference support beyond its own pre-built
   catalog, so inference has to be hand-rolled JS tree evaluation, not a Workers AI call).
+
+Real, deliberate fixes this update (per deep research this session):
+- Time-based train/test split (sort by real game_date, last 20% chronologically held out),
+  not a random shuffle - confirmed via real research that random splitting on time-series
+  sports data creates look-ahead bias and overstates real accuracy.
+- Real naive-baseline comparison reported alongside model MAE - an honest check that the
+  model is actually adding value over "just predict the historical mean", not just a
+  number without context.
+- Monotonic constraints applied where real domain knowledge is strong and directional
+  (e.g. wind blowing out should never decrease real home-run rate) - confirmed via real
+  research this is exactly the documented use case: "valuable when training data is
+  limited and the model might overfit a relationship that reverses direction spuriously",
+  which describes our rare-event props precisely.
 """
 import argparse
 import json
@@ -22,7 +35,6 @@ import os
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.model_selection import train_test_split
 
 HITTER_PROP_TO_OUTCOME_COLUMN = {
     "hits": "hits",
@@ -50,9 +62,13 @@ PITCHER_PROP_TO_OUTCOME_COLUMN = {
 HITTER_FEATURE_COLUMNS = [
     "is_home", "temp_f", "wind_speed_mph",
     "bullpen_outs_prior_game", "bullpen_pitches_prior_game",
+    "recent_avg_10g", "recent_hr_rate_10g", "recent_k_rate_10g",
+    "recent_bb_rate_10g", "recent_tb_per_pa_10g", "recent_games_sample",
 ]
 PITCHER_FEATURE_COLUMNS = [
     "is_home", "temp_f", "wind_speed_mph",
+    "recent_k_rate_5g", "recent_bb_rate_5g", "recent_hits_allowed_rate_5g",
+    "recent_era_proxy_5g", "recent_appearances_sample",
 ]
 
 # Real, honest sample-size floor: below this many real rows, a GBDT is more likely to
@@ -60,6 +76,25 @@ PITCHER_FEATURE_COLUMNS = [
 # HANDOFF_MASTER_SUMMARY.md re: confidence-formula constants needing real backtesting).
 # A prop with too few rows this run is skipped, not trained on an unreliable sample.
 MIN_TRAINING_ROWS = 500
+
+# Real, deliberate monotonic constraints, keyed by prop_key -> {feature_name: direction}.
+# +1 = predicted rate must never decrease as the feature increases; -1 = must never increase.
+# Only applied where real domain knowledge is genuinely directional and strong - not
+# forced everywhere, since misspecifying a constraint that doesn't actually hold in the
+# real data can hurt a model rather than help it (confirmed via real research).
+MONOTONIC_HINTS = {
+    "home_runs": {"wind_speed_mph": 1, "recent_hr_rate_10g": 1},
+    "hits": {"recent_avg_10g": 1},
+    "total_bases": {"recent_tb_per_pa_10g": 1},
+    "hitter_strikeouts": {"recent_k_rate_10g": 1},
+    "walks": {"recent_bb_rate_10g": 1},
+    "stolen_bases": {},  # real, deliberately left unconstrained - speed/opportunity signal not in current feature set
+    "triples": {},
+    "pitcher_strikeouts": {"recent_k_rate_5g": 1},
+    "walks_allowed": {"recent_bb_rate_5g": 1},
+    "hits_allowed": {"recent_hits_allowed_rate_5g": 1},
+    "earned_runs": {"recent_era_proxy_5g": 1},
+}
 
 
 def prepare_features(df, feature_columns):
@@ -71,16 +106,33 @@ def prepare_features(df, feature_columns):
     return X
 
 
+def build_monotone_constraints(prop_key, feature_columns):
+    hints = MONOTONIC_HINTS.get(prop_key, {})
+    return tuple(hints.get(col, 0) for col in feature_columns)
+
+
 def train_one_prop(df, outcome_column, feature_columns, prop_key):
-    real_df = df.dropna(subset=[outcome_column])
+    real_df = df.dropna(subset=[outcome_column, "game_date"]).copy()
     if len(real_df) < MIN_TRAINING_ROWS:
         print(f"  SKIP {prop_key}: only {len(real_df)} real rows (floor is {MIN_TRAINING_ROWS})")
         return None
 
-    X = prepare_features(real_df, feature_columns)
-    y = real_df[outcome_column].astype(float)
+    # Real, time-based split: sort chronologically, hold out the LAST 20% of real games
+    # as test data. This is the correct way to validate a time-series model - confirmed
+    # via real research this session - since a random shuffle would let the model be
+    # "tested" on games that happened before some of its own training games, silently
+    # overstating real accuracy.
+    real_df = real_df.sort_values("game_date").reset_index(drop=True)
+    split_idx = int(len(real_df) * 0.8)
+    train_df = real_df.iloc[:split_idx]
+    test_df = real_df.iloc[split_idx:]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train = prepare_features(train_df, feature_columns)
+    y_train = train_df[outcome_column].astype(float)
+    X_test = prepare_features(test_df, feature_columns)
+    y_test = test_df[outcome_column].astype(float)
+
+    monotone_constraints = build_monotone_constraints(prop_key, feature_columns)
 
     model = xgb.XGBRegressor(
         objective="count:poisson",
@@ -90,6 +142,7 @@ def train_one_prop(df, outcome_column, feature_columns, prop_key):
         subsample=0.8,
         colsample_bytree=0.8,
         random_state=42,
+        monotone_constraints=monotone_constraints,
         # Real, deliberate fix (verified against XGBoost's own docs, not assumed): modern
         # XGBoost (3.1+) auto-estimates base_score per objective by default, and returns it
         # in the natural (already-inverse-linked) scale rather than log space - replicating
@@ -103,21 +156,30 @@ def train_one_prop(df, outcome_column, feature_columns, prop_key):
     model.fit(X_train, y_train)
 
     # Real calibration check, not just a fit-and-forget: compare mean predicted rate to
-    # mean real observed rate on the held-out test set. A well-calibrated model should
-    # have these close; a large gap is an honest signal something is wrong before this
-    # model is ever trusted downstream.
+    # mean real observed rate on the held-out (chronologically later) test set.
     preds = model.predict(X_test)
     calibration_ratio = float(preds.mean() / y_test.mean()) if y_test.mean() > 0 else None
     mae = float(np.mean(np.abs(preds - y_test)))
 
-    print(f"  {prop_key}: {len(real_df)} real rows, test MAE={mae:.3f}, "
-          f"calibration_ratio(pred_mean/actual_mean)={calibration_ratio}")
+    # Real, honest baseline comparison: what would a trivial "always predict the real
+    # training-set mean" model score on this same held-out test set? If the real GBDT
+    # doesn't clearly beat this, it isn't adding genuine value yet for this prop.
+    naive_pred = float(y_train.mean())
+    naive_mae = float(np.mean(np.abs(naive_pred - y_test)))
+    improvement_pct = float((naive_mae - mae) / naive_mae * 100) if naive_mae > 0 else None
+
+    print(f"  {prop_key}: {len(real_df)} real rows (train {len(train_df)}, chronological test {len(test_df)}), "
+          f"test MAE={mae:.3f} (naive baseline MAE={naive_mae:.3f}, {improvement_pct:.1f}% better), "
+          f"calibration_ratio(pred_mean/actual_mean)={calibration_ratio}, "
+          f"monotone_constraints={monotone_constraints}")
 
     return {
         "model": model,
         "feature_columns": feature_columns,
         "n_rows": len(real_df),
         "test_mae": mae,
+        "naive_baseline_mae": naive_mae,
+        "improvement_over_naive_pct": improvement_pct,
         "calibration_ratio": calibration_ratio,
     }
 
@@ -139,6 +201,8 @@ def export_model_json(result, prop_key, family, out_dir):
         "training_meta": {
             "n_rows": result["n_rows"],
             "test_mae": result["test_mae"],
+            "naive_baseline_mae": result["naive_baseline_mae"],
+            "improvement_over_naive_pct": result["improvement_over_naive_pct"],
             "calibration_ratio": result["calibration_ratio"],
         },
     }
