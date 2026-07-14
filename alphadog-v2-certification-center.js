@@ -1072,7 +1072,7 @@ async function apiDossier(env, url) {
       matrix_payload_json_snapshot: null,
       hp_display_notes_json: null
     },
-    dossier_context: { source_table: "SCORE_DB.v2_final_board_current", source_final_score_batch_id: selectedRaw.source_final_score_batch_id || null },
+    dossier_context: { source_table: "SCORE_DB.score_final_board_current", source_final_score_batch_id: selectedRaw.source_final_score_batch_id || null },
     dossier_sections: ["leg_identity", "v3_shadow_final_board", "source_lines", "other_player_legs"],
     writes_performed: 0,
     external_calls_performed: 0,
