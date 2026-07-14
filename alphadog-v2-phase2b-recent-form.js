@@ -1111,8 +1111,8 @@ async function runFactorMining(request, env) {
       await markStaleRunningBatches(env, dates, family);
       await retentionCleanup(env, dates, family);
     }
-    const batchId = resuming ? existingRunning.batch_id : rid(`prop_factor_${family}_batch`);
-    const runId = input.run_id || (existingRunning && existingRunning.run_id) || rid("run");
+    batchId = resuming ? existingRunning.batch_id : rid(`prop_factor_${family}_batch`);
+    runId = input.run_id || (existingRunning && existingRunning.run_id) || rid("run");
     if (!resuming) {
       await run(env.SCORING_DB, `INSERT OR REPLACE INTO prop_factor_batches (batch_id,request_id,run_id,worker_name,worker_version,deployed_worker_slot,deployed_slot_version,mode,factor_family,status,window_start,window_end,prepared_rows_read,source_tables_checked_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
         batchId, input.request_id || null, runId, LOGICAL_WORKER_NAME, SYSTEM_VERSION, WORKER_NAME, DEPLOYED_SLOT_VERSION, mode, family, "running", dates[0], dates[1], prepared.length, JSON.stringify({ score_db:["score_board_prepared_current"], archive_db:["classification_v6_current","baseline_v6_current"], market_db:["market_context_probe_coverage","market_context_probe_player_props","market_context_probe_game_market_summary"], daily_db:["daily_context_readiness_current","daily_lineups_current","daily_starters_current","daily_player_availability_current_v1","daily_game_weather_current","daily_bullpen_availability_current","daily_bullpen_pitcher_availability_current","daily_team_schedule_spot_current","daily_umpire_context_current","daily_catcher_context_current"], stats_hitter_db:["hitter_metric_snapshots(primary)","hitter_metrics(legacy_optional_empty_ok)","hitter_splits"], stats_pitcher_db:["pitcher_metric_snapshots(primary)","pitcher_metrics(legacy_optional_empty_ok)","pitcher_splits"], team_db:["mlb_game_calendar","mlb_game_data_coverage"], scoring_db:["prop_factor_batches","prop_factor_hitter_packets","prop_factor_pitcher_packets","prop_factor_issues","prop_factor_coverage_current"] })
