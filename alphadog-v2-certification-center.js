@@ -685,7 +685,7 @@ function rowToApi(row) {
 
 function buildCurrentSql(url) {
   const where = [
-    "f.batch_id = (SELECT batch_id FROM v2_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)",
+    "f.final_board_batch_id = (SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)",
     "f.review_playable = 1",
     "COALESCE(f.live_playable,0) = 0"
   ];
