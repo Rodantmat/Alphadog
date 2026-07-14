@@ -2560,7 +2560,8 @@ const DAILY_FULL_RUN_STAGES = [
   // and team schedule despite calendar/source availability.
   { stage_key: "board_full_run", job_key: "board-full-run", worker_name: "alphadog-v2-orchestrator", display_name: "Board Full Run", visible_button: "BOARD > Full Run", mode: "daily_full_run_board", worker_group: "Board", phase_key: "board", priority: 3 },
   { stage_key: "daily_context_full_run", job_key: "daily-context-full-run", worker_name: "alphadog-v2-orchestrator", display_name: "Daily Context Full Run", visible_button: "DAILY JOBS > Full Run", mode: "daily_full_run_daily_context", worker_group: "Daily", phase_key: "daily", priority: 3 },
-  { stage_key: "market_scoring_full_run", job_key: "market-scoring-full-run", worker_name: "alphadog-v2-orchestrator", display_name: "Market + Scoring Full Run", visible_button: "SCORING > Market Full", mode: "daily_full_run_market_scoring", worker_group: "12 Full Runs", phase_key: "daily_master", priority: 3 }
+  { stage_key: "market_full_run", job_key: "market-full-run", worker_name: "alphadog-v2-orchestrator", display_name: "Market Full Run", visible_button: "MARKET CONTEXT > Full Run", mode: "daily_full_run_market", worker_group: "Market", phase_key: "market", priority: 3 },
+  { stage_key: "scoring_full_run", job_key: "scoring-full-run", worker_name: "alphadog-v2-orchestrator", display_name: "Scoring Full Run", visible_button: "SCORING > Full Run", mode: "daily_full_run_scoring", worker_group: "Scoring", phase_key: "scoring", priority: 3 }
 ];
 
 function dailyFullRunStageKeyFromChild(child) {
