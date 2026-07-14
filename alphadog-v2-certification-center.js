@@ -953,9 +953,9 @@ async function apiDossier(env, url) {
       p.raw_source_json AS prepared_raw_source_json,
       p.row_payload_json AS prepared_row_payload_json
 
-    FROM v2_final_board_current f
+    FROM score_final_board_current f
     LEFT JOIN score_board_prepared_current p ON p.prepared_row_id=f.prepared_row_id
-    WHERE f.board_v3_row_id = ?
+    WHERE f.final_board_row_id = ?
     LIMIT 1
   `, [finalId]);
   const selectedRaw = selectedRows[0];
