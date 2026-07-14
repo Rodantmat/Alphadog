@@ -1963,6 +1963,39 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
     return jsonResponse({ ok: true, data_ok: true, version, job, status: "queued", request_id: requestId, chain_id: chainId, visible_button: "BOARD > Full Run", queued_job_key: "board-full-run", queued_worker_name: "alphadog-v2-orchestrator", approved_chain_order: input.approved_chain_order, backend_chain_only: true, auto_pump_triggered: true, browser_auto_pump: false, note: "Queued Board Full Run: PrizePicks, Sleeper, Underdog, then Score Prep enrichment. This does not run Incremental Morning Full Run, static, base/delta, scoring, ranking, or final board." });
   }
 
+  if (job === "orchestrator_enqueue_scoring_full_run") {
+    const existing = await env.CONTROL_DB.prepare(
+      "SELECT request_id, chain_id, status, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE job_key = 'scoring-full-run' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL ORDER BY datetime(created_at) DESC LIMIT 1"
+    ).first();
+
+    if (existing) {
+      return jsonResponse({ ok: true, data_ok: true, version, job, status: "already_running", request_id: existing.request_id, chain_id: existing.chain_id, existing_status: existing.status, note: "Scoring Full Run already active; not re-queued." });
+    }
+
+    const requestId = `scoring_full_run_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    const chainId = `chain_${requestId}`;
+    const input = {
+      source: "control_room_enqueue",
+      approved_chain_order: ["scoring_certifier_first_pass", "scoring_prop_factor_miner", "scoring_matrix_builder", "scoring_enrichment_engine", "scoring_engine", "scoring_hit_probability_board", "scoring_final_board", "scoring_certifier_last_pass"],
+      backend_chain_only: true,
+      no_browser_loop: true
+    };
+
+    await env.CONTROL_DB.prepare(
+      "INSERT INTO control_job_queue (request_id, chain_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, 'scoring-full-run', 'alphadog-v2-orchestrator', 'Scoring', 'scoring', 'Scoring Full Run: Certifier, Prop Factor Miner, Matrix, Enrichment, Scoring Engine, Hit Probability, Final Board, Certifier', 'pending', 5, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+    ).bind(requestId, chainId, JSON.stringify(input)).run();
+
+    await env.CONTROL_DB.prepare(
+      "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'alphadog-v2-control-room', 'orchestrator_enqueue_scoring_full_run', 'INFO', 'queued_scoring_full_run', 'Queued Scoring Full Run parent backend chain job', ?, CURRENT_TIMESTAMP)"
+    ).bind(requestId, JSON.stringify({request_id:requestId, chain_id:chainId, visible_button:"SCORING > Full Run", approved_chain_order:input.approved_chain_order, backend_chain_only:true})).run();
+
+    if (ctx && typeof ctx.waitUntil === "function" && env.ORCHESTRATOR_WORKER) {
+      ctx.waitUntil(env.ORCHESTRATOR_WORKER.fetch("https://internal.alphadog-v2-orchestrator/tick", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ source: "control_room_auto_pump_after_enqueue", wake_only: true, auto_pump: true, pump: true, max_cycles: 4, max_jobs_per_cycle: 1 }) }).catch(() => {}));
+    }
+
+    return jsonResponse({ ok: true, data_ok: true, version, job, status: "queued", request_id: requestId, chain_id: chainId, visible_button: "SCORING > Full Run", queued_job_key: "scoring-full-run", queued_worker_name: "alphadog-v2-orchestrator", approved_chain_order: input.approved_chain_order, backend_chain_only: true, auto_pump_triggered: true, browser_auto_pump: false, note: "Queued Scoring Full Run: Certifier, Prop Factor Miner, Matrix, Enrichment, Scoring Engine, Hit Probability, Final Board, Certifier." });
+  }
+
   if (job === "orchestrator_enqueue_market_full_run") {
     const existing = await env.CONTROL_DB.prepare(
       "SELECT request_id, chain_id, status, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE job_key = 'market-full-run' AND status IN ('pending','running','partial_continue') AND finished_at IS NULL ORDER BY datetime(created_at) DESC LIMIT 1"
