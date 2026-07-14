@@ -560,6 +560,24 @@ No writes, no deploys, no job runs performed — read-only investigation only.
 
 ---
 
+## 20. READ THE ACTUAL LOGIC BEHIND TODAY'S LIVE DAILY DELTA JOBS — `runClassificationV6DeltaDailySingleStep` (the real function behind `baseline_v5_classification_daily_delta`, confirmed active today in Section 9)
+
+Continuing the mapping gap list: read the actual function body (not just the dispatch mapping) for the mode confirmed running today. Findings, all directly from code:
+
+### A genuinely well-engineered incremental design, not hacky
+- **Watermark-based date advancement** (`determineNextDeltaDate`): finds the latest date already processed in `classification_v6_current`, then finds the next date with real game-log data after it — the orchestrator never has to pass an explicit date, the worker figures out what's next itself. Has an explicit hard cutover constant, `BASELINE_V6_CUTOVER_DATE = "2026-07-08"` — confirming Baseline V6 as a system only began real processing from July 8, 2026 onward, consistent with the build-out timeline already inferred in Section 9 from `control_job_queue` history.
+- **"Affected players only" recomputation**: only players with a new game-log entry on the target date get recomputed, against a stable, already-computed population baseline — explicitly *not* a full daily population recompute, which the code comments note "would defeat the purpose of a cheap delta." Both classification and HP baseline share this same affected-player detection.
+- **Self-healing coverage repair** (`reconcileDailyDeltaCoverage`): even when there's nothing new to compute, the function still verifies the most recently processed date's coverage ledger entry was actually written. If a prior run was interrupted mid-way and missed writing that record, this silently repairs the gap here rather than leaving a hole the certifier can never see closed.
+- **Honest NOOP handling**: when every day is already covered, returns a clean `BASELINE_V5_CLASSIFICATION_DAILY_DELTA_NOOP_ALL_DAYS_ALREADY_COVERED` / `NOOP_PASS` — the same "legitimate non-failure" pattern found missing from `score-prep.js` in Section 13, but present and working correctly here. Worth noting for whenever the Section 13 fix is made: this function is a second, independent proof the pattern is well-understood elsewhere in this codebase, not a one-off.
+- **Combo-based chunked processing**: iterates one prop×line×side combination per tick (`comboIndex` against the full `prop_line_universe` × side combo list from `calibration_config`, Section 19), with population stats cached per `stats_key` in `classification_v6_population_stats` (computed once, reused unless missing) — a real, deliberate pagination design for D1's row/time limits, not an afterthought.
+
+### Why this matters for any future orchestrator/file cleanup
+This confirms `alphadog-v2-phase3a-first-inning-pitcher-context.js` — already flagged in Section 9 as the most overloaded file in the system — contains, underneath that overload, genuinely solid, non-trivial engineering for the parts that are actively running today. Any future refactor of this file should treat this specific logic (watermarking, affected-player-only scope, self-healing coverage, chunked combo processing) as valuable to preserve exactly, not just dead weight to trim.
+
+No writes, no deploys, no job runs performed — read-only investigation only.
+
+---
+
 ## 16. CLEANUP PHASE — LOG OF ACTUAL CHANGES MADE (this section is the audit trail; update after every change)
 
 **Ground rule going forward:** unlike Sections 0–15 (100% read-only), everything below this line involves real, live edits to production code. Every entry records exact old_str/new_str, the commit_sha, and the verification performed — this is the equivalent of a manual backup: to undo any single change, reverse that specific old_str/new_str pair.
