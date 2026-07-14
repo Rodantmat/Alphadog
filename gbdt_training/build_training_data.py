@@ -18,9 +18,18 @@ combined (2025 + 2026 by default), not a single frozen season. Season 2025 is co
 and static - retraining on it alone, on a schedule, would produce the exact same result
 every single run (same data, same code, fixed random seed) - genuinely wasted compute.
 2026 is the real, current, ongoing season that gains new real games every week, which is
-what makes a weekly retraining cadence actually meaningful. Combining both also roughly
-triples real training volume, which should help the rare-event props (triples, home runs,
-stolen bases) that showed real calibration drift on the single-season 2025-only run.
+what makes a weekly retraining cadence actually meaningful.
+
+Real, deliberate design fix #2 (per deep research this session): added real, leak-safe
+trailing recent-form features (last-10-game rates for hitters, last-5-appearance rates
+for pitchers), computed with shift(1) BEFORE the rolling window so each row only ever
+sees real games strictly before its own date - confirmed via real research this is the
+correct, established way to avoid look-ahead bias in time-series feature engineering.
+This is the single highest-value addition per the locked design (a player's own current
+form is real, personalized signal no context feature can substitute for), and existing
+hitter_metric_snapshots/pitcher_metric_snapshots tables could NOT be used for this - they
+only hold today's current live snapshot, not a real historical time series of what the
+rate was on each past date.
 """
 import argparse
 import pandas as pd
@@ -121,6 +130,59 @@ def pull_reference(d1, season):
     return arsenal, defensive
 
 
+def add_hitter_recent_form(df, window=10):
+    """Real, leak-safe trailing recent-form features. Sorts each player's real games
+    chronologically, then uses shift(1) BEFORE the rolling window so the feature for any
+    given row only ever reflects real games strictly before that row's own game_date -
+    confirmed via real research this session as the correct way to avoid look-ahead bias.
+    Applied across the full combined multi-season frame so form carries over the real
+    2025->2026 season boundary (a player's true form doesn't reset at a calendar boundary).
+    """
+    df = df.sort_values(["player_id", "game_date", "game_pk"]).reset_index(drop=True)
+    grp = df.groupby("player_id")
+
+    for col in ["pa", "ab", "hits", "home_runs", "strikeouts", "walks", "total_bases"]:
+        shifted = grp[col].shift(1)
+        df[f"_roll_{col}"] = shifted.groupby(df["player_id"]).rolling(window, min_periods=1).sum().reset_index(level=0, drop=True)
+        df[f"_roll_games"] = grp.cumcount()  # real games played strictly before this row, per player
+
+    # Real, leak-safe rate features (guarded against div-by-zero with a real floor)
+    roll_pa = df["_roll_pa"].clip(lower=1)
+    roll_ab = df["_roll_ab"].clip(lower=1)
+    df["recent_avg_10g"] = df["_roll_hits"] / roll_ab
+    df["recent_hr_rate_10g"] = df["_roll_home_runs"] / roll_pa
+    df["recent_k_rate_10g"] = df["_roll_strikeouts"] / roll_pa
+    df["recent_bb_rate_10g"] = df["_roll_walks"] / roll_pa
+    df["recent_tb_per_pa_10g"] = df["_roll_total_bases"] / roll_pa
+    df["recent_games_sample"] = df["_roll_games"]
+
+    df = df.drop(columns=[c for c in df.columns if c.startswith("_roll_")])
+    return df
+
+
+def add_pitcher_recent_form(df, window=5):
+    """Real, leak-safe trailing recent-form features for pitchers - same shift(1)-before-
+    rolling technique as hitters, windowed over the last 5 real appearances instead of 10
+    games, since starters appear roughly once per 5 real days, not every game."""
+    df = df.sort_values(["player_id", "game_date", "game_pk"]).reset_index(drop=True)
+    grp = df.groupby("player_id")
+
+    for col in ["batters_faced", "outs_recorded", "strikeouts", "walks_allowed", "hits_allowed", "earned_runs"]:
+        shifted = grp[col].shift(1)
+        df[f"_roll_{col}"] = shifted.groupby(df["player_id"]).rolling(window, min_periods=1).sum().reset_index(level=0, drop=True)
+    df["_roll_appearances"] = grp.cumcount()
+
+    roll_bf = df["_roll_batters_faced"].clip(lower=1)
+    df["recent_k_rate_5g"] = df["_roll_strikeouts"] / roll_bf
+    df["recent_bb_rate_5g"] = df["_roll_walks_allowed"] / roll_bf
+    df["recent_hits_allowed_rate_5g"] = df["_roll_hits_allowed"] / roll_bf
+    df["recent_era_proxy_5g"] = (df["_roll_earned_runs"] * 9) / df["_roll_outs_recorded"].clip(lower=1).mul(1 / 3)
+    df["recent_appearances_sample"] = df["_roll_appearances"]
+
+    df = df.drop(columns=[c for c in df.columns if c.startswith("_roll_")])
+    return df
+
+
 def build_hitter_training_table(d1, season, weather, umpire):
     outcomes = pull_hitter_outcomes(d1, season)
     if outcomes.empty:
@@ -190,6 +252,13 @@ def main():
         pitcher_df = pd.concat(pitcher_frames, ignore_index=True) if pitcher_frames else pd.DataFrame()
         dbg(f"Real combined hitter training rows (all seasons): {len(hitter_df)}")
         dbg(f"Real combined pitcher training rows (all seasons): {len(pitcher_df)}")
+
+        dbg("Computing real, leak-safe trailing recent-form features...")
+        if not hitter_df.empty:
+            hitter_df = add_hitter_recent_form(hitter_df, window=10)
+        if not pitcher_df.empty:
+            pitcher_df = add_pitcher_recent_form(pitcher_df, window=5)
+        dbg("Recent-form features computed.")
 
         os.makedirs(args.out_dir, exist_ok=True)
         hitter_path = f"{args.out_dir}/hitter_training_multiseason.csv"
