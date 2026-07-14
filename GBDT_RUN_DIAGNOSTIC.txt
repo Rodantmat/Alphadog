@@ -3,6 +3,7 @@
 === find gbdt_training - full real tree ===
 gbdt_training/build_training_data.py
 gbdt_training/train_models.py
+gbdt_training/validate_factor_coefficients.py
 gbdt_training/models/pitcher_walks_allowed.json
 gbdt_training/models/hitter_home_runs.json
 gbdt_training/models/hitter_triples.json
@@ -26,7 +27,9 @@ gbdt_training/requirements.txt
 gbdt_training/__pycache__/d1_client.cpython-311.pyc
 gbdt_training/data/build_training_data_debug.log
 gbdt_training/data/workflow_run.log
+gbdt_training/data/factor_validation_debug.log
 gbdt_training/data/train_models_debug.log
+gbdt_training/data/factor_validation_report.json
 gbdt_training/data/pitcher_training_multiseason.csv
 gbdt_training/data/hitter_training_multiseason.csv
 === git status ===
@@ -37,7 +40,6 @@ Changes not staged for commit:
   (use "git add <file>..." to update what will be committed)
   (use "git restore <file>..." to discard changes in working directory)
 	modified:   GBDT_RUN_DIAGNOSTIC.txt
-	modified:   gbdt_training/data/build_training_data_debug.log
 	modified:   gbdt_training/data/workflow_run.log
 	modified:   gbdt_training/models/hitter_doubles.json
 	modified:   gbdt_training/models/hitter_hits.json
@@ -51,16 +53,12 @@ Changes not staged for commit:
 	modified:   gbdt_training/models/hitter_total_bases.json
 	modified:   gbdt_training/models/hitter_triples.json
 	modified:   gbdt_training/models/hitter_walks.json
-	modified:   gbdt_training/models/pitcher_earned_runs.json
-	modified:   gbdt_training/models/pitcher_hits_allowed.json
-	modified:   gbdt_training/models/pitcher_pitcher_outs.json
-	modified:   gbdt_training/models/pitcher_pitcher_strikeouts.json
-	modified:   gbdt_training/models/pitcher_runs_allowed.json
-	modified:   gbdt_training/models/pitcher_walks_allowed.json
 
 Untracked files:
   (use "git add <file>..." to include in what will be committed)
 	gbdt_training/__pycache__/
+	gbdt_training/data/factor_validation_debug.log
+	gbdt_training/data/factor_validation_report.json
 	gbdt_training/data/hitter_training_multiseason.csv
 	gbdt_training/data/pitcher_training_multiseason.csv
 
@@ -68,5 +66,5 @@ no changes added to commit (use "git add" and/or "git commit -a")
 === git branch/HEAD state ===
 * main
   remotes/origin/main
-5f3dd8791385631a8bd153e1caec9540ac93379c
+2591337f704386889f624dacae14581ab5b2d0ce
 refs/heads/main

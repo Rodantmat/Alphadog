@@ -1,0 +1,30 @@
+{
+  "validated_at_utc": "2026-07-14T05:19:07.755798+00:00",
+  "seasons_used": [
+    2025,
+    2026
+  ],
+  "weather_temp_altitude_pressure": {
+    "validated": true,
+    "real_n": 631,
+    "empirical_slope_hr_rate_per_pa_per_degree_f": -0.0005158180367490826,
+    "empirical_r_squared": 0.0009951695451774212,
+    "direction_confirms_locked_assumption": false,
+    "note": "Real, raw empirical relationship (temp_f vs HR rate per PA), not yet unit-converted to the locked formula's rate_multiplier scale - see script docstring for the honest reason why."
+  },
+  "lineup_slot": {
+    "validated": true,
+    "real_n": 15199,
+    "empirical_slope_pa_per_slot": -0.1581425074419336,
+    "empirical_r_squared": 0.09231155769733568,
+    "locked_coefficient_pa_per_slot": 0.105,
+    "direction_confirms_locked_assumption": true,
+    "magnitude_close_to_locked": false,
+    "note": "Real, direct empirical check against the exact real, locked coefficient - same units, no conversion needed."
+  },
+  "not_validated_this_pass": {
+    "weather_wind": "needs real park home-plate orientation data, not present in REF_DB.ref_stadiums (only lat/lon/roof/turf) - flagged honestly, not guessed",
+    "catcher_framing": "needs real per-game catcher-to-pitcher assignment history not yet in a clean historical table",
+    "opposing_pitcher_quality": "needs real historical xFIP-/xwOBA-against time series, not yet backfilled"
+  }
+}
