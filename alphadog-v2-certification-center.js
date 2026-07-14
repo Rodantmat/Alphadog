@@ -867,11 +867,11 @@ async function apiDossier(env, url) {
   if (!finalId) return jsonResponse({ ok: false, error: "final_board_row_id required", version: VERSION }, 400);
   const selectedRows = await queryAll(env.SCORE_DB, `
     SELECT 
-      f.board_v3_row_id AS final_board_row_id,
-      f.batch_id AS final_board_batch_id,
+      f.final_board_row_id AS final_board_row_id,
+      f.final_board_batch_id AS final_board_batch_id,
       NULL AS hp_board_batch_id,
-      f.source_final_score_v2_batch_id AS source_engine_batch_id,
-      f.source_final_score_v2_batch_id AS source_final_score_batch_id,
+      f.source_engine_batch_id AS source_engine_batch_id,
+      f.source_engine_batch_id AS source_final_score_batch_id,
       NULL AS source_hp_batch_id,
       NULL AS source_hp_v2_batch_id,
       NULL AS source_score_enrichment_batch_id,
