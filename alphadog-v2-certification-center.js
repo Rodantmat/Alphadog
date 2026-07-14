@@ -1260,7 +1260,7 @@ async function apiHealth(env) {
     WHERE source_engine_batch_id = ?
     ORDER BY datetime(updated_at) DESC
     LIMIT 1
-  `, [current.source_final_score_batch_id]) : [];
+  `, [current.source_engine_batch_id]) : [];
 
   return jsonResponse({
     ok: true,
