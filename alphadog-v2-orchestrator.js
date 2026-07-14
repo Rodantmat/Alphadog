@@ -1148,6 +1148,9 @@ async function processBoardFullRunJob(env, row, runId, trigger) {
 }
 
 
+const MARKET_SCORING_FULL_RUN_LOCK_KEY = "MARKET_SCORING_FULL_RUN";
+const MARKET_SCORING_FULL_RUN_CHILD_RUN_AFTER_SECONDS = 0;
+
 function isActiveControlQueueStatus(status) {
   return ["pending", "running", "partial_continue"].includes(String(status || ""));
 }
