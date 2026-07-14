@@ -13211,6 +13211,108 @@ async function recoverStalePropMatrixBuilderJobs(env, trigger = "manual") {
   return { recovered, reports, version: SYSTEM_VERSION };
 }
 
+const HEAVY_MARKET_SERVICE_BINDING_COOLDOWN_SECONDS = 2;
+
+function marketHeavyCooldownCertification(jobKey) {
+  return String(jobKey || "market_child").toUpperCase().replace(/[^A-Z0-9]+/g, "_") + "_SERVICE_BINDING_COOLDOWN_YIELD";
+}
+
+async function maybeYieldHeavyMarketChildCooldown(env, row, runId, input, rowInput, options = {}) {
+  const jobKey = String(row && row.job_key ? row.job_key : "");
+  const heavyJobs = new Set(["prop-matrix-builder", "score-enrichment-v1", "hit-probability-v2", "final-score-v1", "final-board-v2", "score-enrichment-v2-shadow", "hit-probability-v3-shadow", "final-score-v2-shadow", "final-board-v3-shadow"]);
+  if (!heavyJobs.has(jobKey)) return null;
+  const isShadowHeavyJob = jobKey === "score-enrichment-v2-shadow" || jobKey === "hit-probability-v3-shadow" || jobKey === "final-score-v2-shadow" || jobKey === "final-board-v3-shadow";
+  const chainId = String(row && row.chain_id ? row.chain_id : "");
+  const parentRequestId = String((rowInput && (rowInput.parent_request_id || rowInput.parentRequestId)) || "");
+  const fromMarketFull = chainId.includes("market_scoring_full_run") || parentRequestId.includes("market_scoring_full_run");
+  if (!fromMarketFull && !isShadowHeavyJob) return null;
+
+  const recent = await first(env.CONTROL_DB, `SELECT
+      COUNT(*) AS partial_continue_runs,
+      MAX(finished_at) AS last_partial_finished_at,
+      CAST((julianday(CURRENT_TIMESTAMP) - julianday(MAX(finished_at))) * 86400 AS INTEGER) AS seconds_since_last_partial
+    FROM control_job_runs
+    WHERE request_id=?
+      AND job_key=?
+      AND status='partial_continue'
+      AND finished_at IS NOT NULL`, row.request_id, row.job_key);
+  const partialRunCount = Number(recent && recent.partial_continue_runs || 0);
+  const secondsSinceLastPartial = recent && recent.seconds_since_last_partial !== null && recent.seconds_since_last_partial !== undefined ? Number(recent.seconds_since_last_partial) : 999999;
+  if (!(partialRunCount > 0 && secondsSinceLastPartial >= 0 && secondsSinceLastPartial < HEAVY_MARKET_SERVICE_BINDING_COOLDOWN_SECONDS)) return null;
+
+  const previous = await first(env.CONTROL_DB, `SELECT rows_read, rows_written, certification_status, output_json
+    FROM control_job_runs
+    WHERE request_id=? AND job_key=? AND status='partial_continue' AND finished_at IS NOT NULL
+    ORDER BY datetime(finished_at) DESC
+    LIMIT 1`, row.request_id, row.job_key);
+  let previousOutput = {};
+  try { previousOutput = JSON.parse(previous && previous.output_json || "{}"); } catch (_) { previousOutput = {}; }
+  const batchId = previousOutput.batch_id || previousOutput.v2_score_enrichment_batch_id || previousOutput.hp_v3_batch_id || previousOutput.final_score_v2_batch_id || previousOutput.final_board_v3_batch_id || previousOutput.matrix_batch_id || previousOutput.final_board_batch_id || previousOutput.hp_board_batch_id || previousOutput.source_engine_batch_id || (rowInput && (rowInput.resume_batch_id || rowInput.v2_enrichment_batch_id || rowInput.hp_v3_batch_id || rowInput.final_score_v2_batch_id || rowInput.final_board_v3_batch_id)) || null;
+  const cert = marketHeavyCooldownCertification(jobKey);
+  const rowsRead = Number(previousOutput.rows_read || previousOutput.prepared_rows_read || previousOutput.matrix_rows_read || previousOutput.source_rows_read || (previous && previous.rows_read) || 0);
+  const rowsWritten = Number(previousOutput.rows_written || previousOutput.matrix_rows_written || previousOutput.score_rows_written || previousOutput.probability_rows_written || previousOutput.board_rows_written || previousOutput.final_rows_written || (previous && previous.rows_written) || 0);
+  const output = {
+    ok: true,
+    data_ok: true,
+    version: SYSTEM_VERSION,
+    processed_by: WORKER_NAME,
+    worker_name: options.logical_worker_name || previousOutput.worker_name || row.worker_name,
+    deployed_worker_slot: options.deployed_worker_slot || previousOutput.deployed_worker_slot || null,
+    job_key: row.job_key,
+    request_id: row.request_id,
+    chain_id: row.chain_id,
+    run_id: runId,
+    mode: options.mode || previousOutput.mode || (input && input.mode) || null,
+    status: "PARTIAL_CONTINUE_HEAVY_MARKET_SERVICE_BINDING_COOLDOWN_YIELD",
+    certification: cert,
+    certification_grade: "PARTIAL_CONTINUE",
+    batch_id: batchId,
+    rows_read: rowsRead,
+    rows_written: rowsWritten,
+    partial_continue_runs_seen: partialRunCount,
+    seconds_since_last_partial: secondsSinceLastPartial,
+    heavy_service_binding_cooldown_seconds: HEAVY_MARKET_SERVICE_BINDING_COOLDOWN_SECONDS,
+    service_binding_limit_policy: "one_heavy_market_scoring_stage_dispatch_per_fresh_orchestrator_continuation",
+    official_service_binding_invocation_limit: 32,
+    official_service_binding_90pct_budget: 28,
+    alphadog_observed_heavy_dispatch_limit_override: true,
+    continuation_required: true,
+    orchestrator_should_self_continue: true,
+    previous_certification: previous && previous.certification_status || null,
+    previous_status: previousOutput.status || null,
+    previous_remaining_rows: previousOutput.remaining_rows || null,
+    no_external_api_calls: true,
+    no_source_board_mutation: true,
+    no_final_board_write: jobKey !== "score-final-board"
+  };
+  const nextInput = {
+    ...(rowInput || {}),
+    resume_batch_id: batchId || (rowInput && rowInput.resume_batch_id) || null,
+    continuation_from_request_id: row.request_id,
+    heavy_service_binding_cooldown_yield: true,
+    heavy_service_binding_cooldown_seconds: HEAVY_MARKET_SERVICE_BINDING_COOLDOWN_SECONDS
+  };
+  if (jobKey === "prop-matrix-builder") { nextInput.matrix_batch_id = batchId || nextInput.matrix_batch_id || null; nextInput.matrix_resume = true; }
+  if (jobKey === "score-enrichment-v2-shadow") { nextInput.v2_v3_shadow_resume = true; nextInput.resume_batch_id = batchId || nextInput.resume_batch_id || null; nextInput.v2_enrichment_batch_id = batchId || nextInput.v2_enrichment_batch_id || null; if (previousOutput.next_offset !== undefined) nextInput.v2_enrichment_offset = previousOutput.next_offset; }
+  if (jobKey === "hit-probability-v3-shadow") { nextInput.v2_v3_shadow_resume = true; nextInput.resume_batch_id = batchId || nextInput.resume_batch_id || null; nextInput.hp_v3_batch_id = batchId || nextInput.hp_v3_batch_id || null; if (previousOutput.next_offset !== undefined) nextInput.hp_v3_offset = previousOutput.next_offset; }
+  if (jobKey === "final-score-v2-shadow") { nextInput.v2_v3_shadow_resume = true; nextInput.resume_batch_id = batchId || nextInput.resume_batch_id || null; nextInput.final_score_v2_batch_id = batchId || nextInput.final_score_v2_batch_id || null; if (previousOutput.next_offset !== undefined) nextInput.final_score_v2_offset = previousOutput.next_offset; }
+  if (jobKey === "final-board-v3-shadow") { nextInput.v2_v3_shadow_resume = true; nextInput.resume_batch_id = batchId || nextInput.resume_batch_id || null; nextInput.final_board_v3_batch_id = batchId || nextInput.final_board_v3_batch_id || null; if (previousOutput.next_offset !== undefined) nextInput.final_board_v3_offset = previousOutput.next_offset; }
+  if (jobKey === "scoring-engine") { nextInput.scoring_engine_resume = true; }
+  if (jobKey === "hit-probability") { nextInput.hit_probability_resume = true; nextInput.hp_resume = true; }
+  if (jobKey === "score-final-board") { nextInput.final_board_resume = true; }
+
+  await run(env.CONTROL_DB,
+    "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?)",
+    runId, row.request_id, row.chain_id, row.job_key, row.worker_name, cert, rowsRead, rowsWritten, JSON.stringify(input || {}), JSON.stringify(output));
+  await run(env.CONTROL_DB,
+    "UPDATE control_job_queue SET status='pending', run_after=datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), finished_at=NULL, updated_at=CURRENT_TIMESTAMP, input_json=?, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=? AND status IN ('pending','running','partial_continue','completed')",
+    HEAVY_MARKET_SERVICE_BINDING_COOLDOWN_SECONDS, JSON.stringify(nextInput), JSON.stringify(output), row.request_id);
+  await run(env.CONTROL_DB,
+    "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'INFO', 'heavy_market_service_binding_cooldown_yield', 'Yielded heavy Market/Scoring child instead of starting another immediate service-binding dispatch inside the same hot continuation window', ?, CURRENT_TIMESTAMP)",
+    row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ request_id: row.request_id, job_key: row.job_key, batch_id: batchId, partialRunCount, secondsSinceLastPartial, cooldown_seconds: HEAVY_MARKET_SERVICE_BINDING_COOLDOWN_SECONDS, version: SYSTEM_VERSION }).slice(0, 9000));
+  return output;
+}
+
 async function processPropMatrixBuilderJob(env, row, runId, trigger) {
   if (!env.PHASE2B_CERTIFIER_WORKER || typeof env.PHASE2B_CERTIFIER_WORKER.fetch !== "function") {
     const output = {
