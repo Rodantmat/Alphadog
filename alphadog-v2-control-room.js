@@ -1083,6 +1083,10 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
   };
   if (shadowScoringJobs[job]) {
     const meta = shadowScoringJobs[job];
+    return jsonResponse({ ok: false, data_ok: false, version, job, status: "retired_2026_07_14", certification: "LEGACY_SHADOW_SCORING_RETIRED", visible_button: meta.visible_button, retired_job_key: meta.job_key, note: `This legacy score-audit.js-based ${meta.display_name} was retired 2026-07-14 after being confirmed inactive since 2026-06-30 (superseded by the new dedicated Scoring Full Run chain, SCORING > Full Run / SCORING > Daily Full).` }, 410);
+  }
+  if (false) {
+    const meta = shadowScoringJobs[job];
     const existing = await env.CONTROL_DB.prepare(
       "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key = ? AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
     ).bind(meta.job_key).first();
