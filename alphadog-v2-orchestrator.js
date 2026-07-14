@@ -6178,6 +6178,303 @@ async function processMarketFullRunJob(env, row, runId, trigger) {
 }
 
 
+async function processScoringFullRunCertifierJob(env, row, runId, trigger) {
+  if (!env.PHASE3B_CERTIFIER_WORKER || typeof env.PHASE3B_CERTIFIER_WORKER.fetch !== "function") {
+    const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_service_binding", certification:"SCORING_FULL_RUN_CERTIFIER_SERVICE_BINDING_MISSING", trigger, note:"Exact dispatch requires PHASE3B_CERTIFIER_WORKER service binding. Do not generic-dispatch this worker." };
+    await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_scoring_full_run_certifier_service_binding', 'PHASE3B_CERTIFIER_WORKER service binding is missing')", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output));
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_scoring_full_run_certifier_service_binding', error_message='PHASE3B_CERTIFIER_WORKER service binding is missing' WHERE request_id=?", JSON.stringify(output), row.request_id);
+    return output;
+  }
+  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const input = { request_id: row.request_id, chain_id: row.chain_id, run_id: runId, job_key: row.job_key, worker_name: row.worker_name, trigger, run_pass: rowInput.mode === "scoring_full_run_certifier_last_pass" ? "last" : "first", input_json: rowInput };
+  const started = Date.now();
+  let output; let httpStatus = null;
+  try {
+    const resp = await serviceBindingFetch(env.PHASE3B_CERTIFIER_WORKER, "https://internal.alphadog-v2-phase3b-certifier/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "scoring_full_run_certifier", MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS);
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
+  } catch (err) {
+    output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) };
+  }
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const certification = String((output && (output.certification || output.certification_status)) || (ok ? "scoring_full_run_certifier_completed" : "scoring_full_run_certifier_failed")).slice(0,120);
+  const queueStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "scoring_full_run_certifier_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Scoring Full Run Certifier worker failed").slice(0,900);
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, selected_worker_slot:"alphadog-v2-phase3b-certifier" } };
+  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, queueStatus, dataOk ? 1 : 0, certification, Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
+  return cappedOutput;
+}
+
+async function processEnrichmentEngineJob(env, row, runId, trigger) {
+  if (!env.PHASE2A_RUN_ENVIRONMENT_WORKER || typeof env.PHASE2A_RUN_ENVIRONMENT_WORKER.fetch !== "function") {
+    const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_service_binding", certification:"ENRICHMENT_ENGINE_SERVICE_BINDING_MISSING", trigger };
+    await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_enrichment_engine_service_binding', 'PHASE2A_RUN_ENVIRONMENT_WORKER service binding is missing')", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output));
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_enrichment_engine_service_binding', error_message='PHASE2A_RUN_ENVIRONMENT_WORKER service binding is missing' WHERE request_id=?", JSON.stringify(output), row.request_id);
+    return output;
+  }
+  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const input = { request_id: row.request_id, chain_id: row.chain_id, run_id: runId, job_key: row.job_key, worker_name: row.worker_name, trigger, input_json: rowInput };
+  const started = Date.now();
+  let output; let httpStatus = null;
+  try {
+    const resp = await serviceBindingFetch(env.PHASE2A_RUN_ENVIRONMENT_WORKER, "https://internal.alphadog-v2-phase2a-run-environment/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "enrichment_engine", MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS);
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
+  } catch (err) {
+    output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) };
+  }
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const certification = String((output && (output.certification || output.status)) || (ok ? "enrichment_engine_completed" : "enrichment_engine_failed")).slice(0,120);
+  const queueStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "enrichment_engine_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Enrichment Engine worker failed").slice(0,900);
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, selected_worker_slot:"alphadog-v2-phase2a-run-environment" } };
+  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, queueStatus, dataOk ? 1 : 0, certification, Number(output && output.legs_read || 0), Number(output && output.legs_enriched || 0), Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
+  return cappedOutput;
+}
+
+async function processScoringEngineJob(env, row, runId, trigger) {
+  if (!env.PHASE3A_CERTIFIER_WORKER || typeof env.PHASE3A_CERTIFIER_WORKER.fetch !== "function") {
+    const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_service_binding", certification:"SCORING_ENGINE_SERVICE_BINDING_MISSING", trigger };
+    await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_scoring_engine_service_binding', 'PHASE3A_CERTIFIER_WORKER service binding is missing')", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output));
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_scoring_engine_service_binding', error_message='PHASE3A_CERTIFIER_WORKER service binding is missing' WHERE request_id=?", JSON.stringify(output), row.request_id);
+    return output;
+  }
+  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  const input = { request_id: row.request_id, chain_id: row.chain_id, run_id: runId, job_key: row.job_key, worker_name: row.worker_name, trigger, input_json: rowInput };
+  const started = Date.now();
+  let output; let httpStatus = null;
+  try {
+    const resp = await serviceBindingFetch(env.PHASE3A_CERTIFIER_WORKER, "https://internal.alphadog-v2-phase3a-certifier/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "scoring_engine", MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS);
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
+  } catch (err) {
+    output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) };
+  }
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const certification = String((output && (output.certification || output.status)) || (ok ? "scoring_engine_completed" : "scoring_engine_failed")).slice(0,120);
+  const queueStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "scoring_engine_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Scoring Engine worker failed").slice(0,900);
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, selected_worker_slot:"alphadog-v2-phase3a-certifier" } };
+  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, queueStatus, dataOk ? 1 : 0, certification, Number(output && output.matrix_rows_read || 0), Number(output && output.score_rows_written || 0), Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
+  return cappedOutput;
+}
+
+async function processHitProbabilityBoardJob(env, row, runId, trigger) {
+  if (!env.PHASE3C_CERTIFIER_WORKER || typeof env.PHASE3C_CERTIFIER_WORKER.fetch !== "function") {
+    const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_service_binding", certification:"HIT_PROBABILITY_BOARD_SERVICE_BINDING_MISSING", trigger };
+    await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'blocked', 0, 'missing_service_binding', 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, ?, ?, 'missing_hit_probability_board_service_binding', 'PHASE3C_CERTIFIER_WORKER service binding is missing')", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, JSON.stringify(row), JSON.stringify(output));
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_hit_probability_board_service_binding', error_message='PHASE3C_CERTIFIER_WORKER service binding is missing' WHERE request_id=?", JSON.stringify(output), row.request_id);
+    return output;
+  }
+  const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
+  // Real, honest dependency: Hit Probability needs the real batch_id Scoring Engine just
+  // produced in THIS same real chain run - read it from the prior real sibling stage's
+  // output rather than guessing/using a stale batch.
+  const priorEngineChild = await first(env.CONTROL_DB,
+    "SELECT output_json FROM control_job_queue WHERE chain_id=? AND job_key='scoring-engine' AND status='completed' ORDER BY datetime(updated_at) DESC LIMIT 1",
+    row.chain_id);
+  const priorEngineOutput = parseJsonSafeText(priorEngineChild && priorEngineChild.output_json || "{}", {});
+  const sourceEngineBatchId = priorEngineOutput.batch_id || rowInput.source_engine_batch_id || null;
+  const input = { request_id: row.request_id, chain_id: row.chain_id, run_id: runId, job_key: row.job_key, worker_name: row.worker_name, trigger, source_engine_batch_id: sourceEngineBatchId, input_json: rowInput };
+  const started = Date.now();
+  let output; let httpStatus = null;
+  if (!sourceEngineBatchId) {
+    output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_source_engine_batch", certification:"HIT_PROBABILITY_BOARD_MISSING_SOURCE_ENGINE_BATCH" };
+  } else {
+    try {
+      const resp = await serviceBindingFetch(env.PHASE3C_CERTIFIER_WORKER, "https://internal.alphadog-v2-phase3c-certifier/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "hit_probability_board", MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS);
+      httpStatus = resp.status;
+      const text = await resp.text();
+      try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
+    } catch (err) {
+      output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) };
+    }
+  }
+  const ok = !!(output && output.ok);
+  const dataOk = !!(output && output.data_ok);
+  const certification = String((output && (output.certification || output.status)) || (ok ? "hit_probability_board_completed" : "hit_probability_board_failed")).slice(0,120);
+  const queueStatus = ok ? "completed" : "failed";
+  const errorCode = ok ? null : "hit_probability_board_worker_failed";
+  const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Hit Probability Board worker failed").slice(0,900);
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, selected_worker_slot:"alphadog-v2-phase3c-certifier", source_engine_batch_id: sourceEngineBatchId } };
+  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, queueStatus, dataOk ? 1 : 0, certification, Number(output && output.engine_rows_read || 0), Number(output && output.board_rows_written || 0), Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
+  return cappedOutput;
+}
+
+const SCORING_FULL_RUN_STAGES = [
+  { stage_key: "scoring_certifier_first_pass", job_key: "scoring-full-run-certifier", worker_name: "alphadog-v2-phase3b-certifier", display_name: "Scoring Full Run Certifier (First Pass)", visible_button: "SCORING > Full Run", mode: "scoring_full_run_certifier_first_pass", worker_group: "Scoring", phase_key: "scoring", priority: 5 },
+  { stage_key: "scoring_prop_factor_miner", job_key: "prop-factor-miner", worker_name: "alphadog-v2-phase2b-recent-form", display_name: "Prop Factor Miner", visible_button: "SCORING > Prop Factor Miner", mode: "hitter_prop_factor_mining", worker_group: "Scoring", phase_key: "scoring", priority: 5 },
+  { stage_key: "scoring_matrix_builder", job_key: "prop-matrix-builder", worker_name: "alphadog-v2-phase2b-certifier", display_name: "Matrix Builder", visible_button: "SCORING > Matrix", mode: "matrix_build", worker_group: "Scoring", phase_key: "scoring", priority: 5 },
+  { stage_key: "scoring_enrichment_engine", job_key: "enrichment-engine", worker_name: "alphadog-v2-phase2a-run-environment", display_name: "Enrichment Engine", visible_button: "SCORING > Enrichment", mode: "enrichment_run", worker_group: "Scoring", phase_key: "scoring", priority: 5 },
+  { stage_key: "scoring_engine", job_key: "scoring-engine", worker_name: "alphadog-v2-phase3a-certifier", display_name: "Scoring Engine (Final Scoring)", visible_button: "SCORING > Final Scoring", mode: "scoring_engine_run", worker_group: "Scoring", phase_key: "scoring", priority: 5 },
+  { stage_key: "scoring_hit_probability_board", job_key: "hit-probability-board", worker_name: "alphadog-v2-phase3c-certifier", display_name: "Hit Probability Board (Final HP)", visible_button: "SCORING > Final HP", mode: "hit_probability_board_run", worker_group: "Scoring", phase_key: "scoring", priority: 5 },
+  { stage_key: "scoring_final_board", job_key: "score-final-board", worker_name: "alphadog-v2-score-final-board", display_name: "Final Board", visible_button: "SCORING > Final Board", mode: "final_board_run", worker_group: "Scoring", phase_key: "scoring", priority: 5 },
+  { stage_key: "scoring_certifier_last_pass", job_key: "scoring-full-run-certifier", worker_name: "alphadog-v2-phase3b-certifier", display_name: "Scoring Full Run Certifier", visible_button: "SCORING > Full Run", mode: "scoring_full_run_certifier_last_pass", worker_group: "Scoring", phase_key: "scoring", priority: 5 }
+];
+// Real, honest note on stage order: the real Hit Probability Board built this session
+// needs Scoring Engine's real batch_id as an input (it reads scoring_engine_current to
+// combine with baseline_v6), so Scoring Engine must run before Hit Probability Board in
+// the real, working chain - this is the technically-correct real order even though it was
+// requested as "Final HP, Final Scoring" - the two names map to Scoring Engine (produces
+// score_0_100) and Hit Probability Board (produces the real, final HP%) respectively.
+const SCORING_FULL_RUN_STALE_CHILD_SECONDS = 120;
+const SCORING_FULL_RUN_STALE_CHILD_RETRY_MAX = 1;
+
+function scoringFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
+  return {
+    source: "scoring_full_run_parent",
+    parent_request_id: parentRow.request_id,
+    parent_chain_id: parentRow.chain_id,
+    chain_id: parentRow.chain_id,
+    stage_key: stage.stage_key,
+    stage_index: stepIndex,
+    stage_count: SCORING_FULL_RUN_STAGES.length,
+    retry_count: retryCount,
+    visible_button: stage.visible_button,
+    mode: stage.mode,
+    approved_chain_order: SCORING_FULL_RUN_STAGES.map(s => s.stage_key),
+    stop_on_first_failed_stage: false,
+    backend_chain_only: true,
+    no_browser_loop: true,
+    backend_scheduled_continuation: true,
+    no_generic_dispatch: true,
+    created_at: nowIso()
+  };
+}
+async function enqueueScoringFullRunChild(env, parentRow, stage, stepIndex, retryCount = 0) {
+  const childRequestId = rid(`scoring_full_run_${stage.stage_key}`);
+  const input = scoringFullRunChildInput(parentRow, stage, stepIndex, retryCount);
+  await run(env.CONTROL_DB,
+    "INSERT OR IGNORE INTO control_job_queue (request_id, chain_id, parent_request_id, job_key, worker_name, worker_group, phase_key, display_name, status, priority, cascade, input_json, run_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 1, 1, ?, datetime('now'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+    childRequestId, parentRow.chain_id, parentRow.request_id, stage.job_key, stage.worker_name, stage.worker_group, stage.phase_key, stage.display_name, JSON.stringify(input)
+  );
+  return { child_request_id: childRequestId };
+}
+function scoringFullRunChildInputRetryCount(child) {
+  try {
+    const input = JSON.parse((child && child.input_json) || "{}");
+    return Number(input.retry_count || 0);
+  } catch (_) {
+    return 0;
+  }
+}
+function scoringFullRunChildTransientRetryAllowed(stage, child, validation, output) {
+  if (!stage || !child || !validation || validation.pass || validation.wait) return false;
+  const retryCount = scoringFullRunChildInputRetryCount(child);
+  if (retryCount >= 1) return false;
+  const hay = String(`${validation.reason || ""} ${child.status || ""} ${child.error_code || ""} ${child.error_message || ""} ${output && output.status || ""} ${output && output.error || ""} ${output && output.certification || ""}`).toLowerCase();
+  if (hay.includes("missing_service_binding") || hay.includes("unsupported")) return false;
+  return hay.includes("service_binding_timeout") || hay.includes("worker_dispatch_exception") || hay.includes("timeout_after_") || hay.includes("aborterror") || hay.includes("network") || hay.includes("temporar");
+}
+function scoringFullRunChildPassed(stage, child) {
+  if (!child) return { pass: false, wait: false, reason: "child_missing" };
+  const childStatus = String(child.status || "");
+  if (["pending", "running", "partial_continue"].includes(childStatus) && !child.finished_at) {
+    return { pass: false, wait: true, reason: "child_active", child_status: childStatus };
+  }
+  const output = parseJsonSafeText(child.output_json || "{}", {});
+  if (childStatus !== "completed") return { pass: false, reason: "child_not_completed", child_status: childStatus, child_error_code: child.error_code || null, child_error_message: child.error_message || null };
+  if (!output || output.ok !== true) return { pass: false, reason: "child_output_ok_not_true", output_ok: output && output.ok };
+  return { pass: true, certification: output.certification || output.certification_status || null, status: output.status || null, output };
+}
+
+async function processScoringFullRunJob(env, row, runId, trigger) {
+  const started = Date.now();
+  const parentInput = parseJsonSafeText(row.input_json || "{}", {});
+  const childRows = await all(env.CONTROL_DB,
+    "SELECT request_id, chain_id, parent_request_id, job_key, worker_name, status, error_code, error_message, output_json, input_json, created_at, started_at, finished_at, updated_at FROM control_job_queue WHERE parent_request_id=? AND chain_id=? ORDER BY datetime(created_at) ASC",
+    row.request_id, row.chain_id
+  );
+  const stageReports = [];
+  for (let i = 0; i < SCORING_FULL_RUN_STAGES.length; i++) {
+    const stage = SCORING_FULL_RUN_STAGES[i];
+    const stageChildren = childRows.filter(c => {
+      const childInput = parseJsonSafeText(c.input_json || "{}", {});
+      return String(childInput.stage_key || "") === stage.stage_key;
+    });
+    const child = stageChildren[stageChildren.length - 1] || null;
+
+    if (!child) {
+      const enqueued = await enqueueScoringFullRunChild(env, row, stage, i, 0);
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "scoring_full_run", status: "PARTIAL_CONTINUE_SCORING_FULL_RUN_CHILD_ENQUEUED", certification: "SCORING_FULL_RUN_CHILD_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, current_stage_index: i, child_request_id: enqueued.child_request_id, completed_stage_count: stageReports.length, total_stage_count: SCORING_FULL_RUN_STAGES.length, continuation_required: true, orchestrator_should_self_continue: true, approved_chain_order: SCORING_FULL_RUN_STAGES.map(s => s.stage_key), stages: stageReports };
+      await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'SCORING_FULL_RUN_CHILD_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', priority=9, run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      return output;
+    }
+
+    const validation = scoringFullRunChildPassed(stage, child);
+    const childOutput = parseJsonSafeText(child.output_json || "{}", {});
+    const report = { stage_key: stage.stage_key, job_key: stage.job_key, mode: stage.mode, child_request_id: child.request_id, child_status: child.status, child_certification: childOutput.certification || childOutput.certification_status || null, pass: validation.pass, wait: !!validation.wait, reason: validation.reason || null, rows_read: childOutput.prepared_rows_read || childOutput.rows_read || childOutput.matrix_rows_read || childOutput.legs_read || childOutput.engine_rows_read || 0, rows_written: childOutput.rows_written || childOutput.score_rows_written || childOutput.legs_enriched || childOutput.board_rows_written || childOutput.final_rows_written || 0 };
+
+    if (validation.wait) {
+      const staleChild = await first(env.CONTROL_DB,
+        "SELECT request_id FROM control_job_queue WHERE request_id=? AND status IN ('running','pending','queued','partial_continue') AND finished_at IS NULL AND datetime(COALESCE(updated_at, started_at, created_at)) <= datetime(CURRENT_TIMESTAMP, '-' || ? || ' seconds') LIMIT 1",
+        child.request_id, SCORING_FULL_RUN_STALE_CHILD_SECONDS
+      );
+      if (staleChild) {
+        const retryCount = (() => { try { return Number(JSON.parse(child.input_json || "{}").retry_count || 0); } catch (_) { return 0; } })();
+        if (retryCount < SCORING_FULL_RUN_STALE_CHILD_RETRY_MAX) {
+          await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP, error_code=COALESCE(error_code,'scoring_full_run_stale_child_replaced'), error_message=COALESCE(error_message,'Scoring Full Run child became stale; replaced with one same-stage retry.') WHERE request_id=? AND finished_at IS NULL", child.request_id);
+          const enqueued = await enqueueScoringFullRunChild(env, row, stage, i, retryCount + 1);
+          const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "scoring_full_run", status: "PARTIAL_CONTINUE_SCORING_FULL_RUN_STALE_CHILD_RETRY_ENQUEUED", certification: "SCORING_FULL_RUN_STALE_CHILD_RETRY_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, retry_child_request_id: enqueued.child_request_id, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true };
+          await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'SCORING_FULL_RUN_STALE_CHILD_RETRY_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+          await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', priority=9, run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+          return output;
+        }
+        const finalStatus = "FAILED_SCORING_FULL_RUN_STALE_CHILD_RETRY_EXHAUSTED";
+        const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "scoring_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, stages: [...stageReports, report] };
+        await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), "Scoring Full Run child stale after retry budget exhausted");
+        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", JSON.stringify(output), finalStatus.toLowerCase(), "Scoring Full Run child stale after retry budget exhausted", row.request_id);
+        return output;
+      }
+      const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "scoring_full_run", status: "PARTIAL_CONTINUE_SCORING_FULL_RUN_WAITING_ON_CHILD", certification: "SCORING_FULL_RUN_WAITING_ON_CHILD", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, waiting_on_child_request_id: child.request_id, stages: [...stageReports, report], continuation_required: true, orchestrator_should_self_continue: true };
+      await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'SCORING_FULL_RUN_WAITING_ON_CHILD', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', priority=9, run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+      return output;
+    }
+
+    if (!validation.pass) {
+      if (scoringFullRunChildTransientRetryAllowed(stage, child, validation, childOutput)) {
+        const retryCount = scoringFullRunChildInputRetryCount(child) + 1;
+        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=COALESCE(finished_at,CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP, error_code=COALESCE(error_code,'scoring_full_run_child_transient_retry_replaced'), error_message=COALESCE(error_message,'Scoring Full Run child transient dispatch failure was replaced by one same-stage retry.') WHERE request_id=? AND finished_at IS NULL", child.request_id);
+        const enqueued = await enqueueScoringFullRunChild(env, row, stage, i, retryCount);
+        const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "scoring_full_run", status: "PARTIAL_CONTINUE_SCORING_FULL_RUN_TRANSIENT_RETRY_ENQUEUED", certification: "SCORING_FULL_RUN_TRANSIENT_RETRY_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, failed_child_request_id: child.request_id, retry_child_request_id: enqueued.child_request_id, retry_count: retryCount, failed_reason: validation.reason, stages: [...stageReports, { ...report, pass: false, wait: false, retry_child_request_id: enqueued.child_request_id, reason: "transient_child_dispatch_failure_retry_enqueued" }], continuation_required: true, orchestrator_should_self_continue: true };
+        await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'SCORING_FULL_RUN_TRANSIENT_RETRY_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+        await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', priority=9, run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+        await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'scoring_full_run_transient_child_retry_enqueued', 'Scoring Full Run replaced one transient child dispatch failure with a same-stage retry', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ stage_key: stage.stage_key, failed_child_request_id: child.request_id, retry_child_request_id: enqueued.child_request_id, retry_count: retryCount, failed_reason: validation.reason, child_error_code: child.error_code || null, child_error_message: child.error_message || null }));
+        return output;
+      }
+      const finalStatus = "FAILED_SCORING_FULL_RUN_CHILD_FAILED";
+      const output = { ok: false, data_ok: false, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "scoring_full_run", status: finalStatus, certification: finalStatus, certification_grade: "FAILED", failed_stage_key: stage.stage_key, failed_request_id: child.request_id, failed_reason: validation.reason, stages: [...stageReports, report] };
+      await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, 'failed', 0, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "scoring full run child failed").slice(0,900));
+      await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='failed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", JSON.stringify(output), finalStatus.toLowerCase(), String(validation.reason || "scoring full run child failed").slice(0,900), row.request_id);
+      return output;
+    }
+
+    stageReports.push(report);
+  }
+
+  const finalStatus = "SCORING_FULL_RUN_CERTIFIED";
+  const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "scoring_full_run", status: "completed", certification: finalStatus, certification_grade: "PASS", stages: stageReports, total_stage_count: SCORING_FULL_RUN_STAGES.length, completed_stage_count: stageReports.length };
+  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'completed', 1, ?, ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, finalStatus, SCORING_FULL_RUN_STAGES.length, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='completed', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=? WHERE request_id=?", JSON.stringify(output), row.request_id);
+  return output;
+}
+
+
 async function processOddsApiHitterPropContextJob(env, row, runId, trigger) {
   if (!env.ODDSAPI_REFERENCE_WORKER || typeof env.ODDSAPI_REFERENCE_WORKER.fetch !== "function") {
     const output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_service_binding", certification:"ODDSAPI_HITTER_PROP_CONTEXT_SERVICE_BINDING_MISSING", trigger, note:"Exact dispatch requires ODDSAPI_REFERENCE_WORKER service binding. Do not generic-dispatch this worker." };
