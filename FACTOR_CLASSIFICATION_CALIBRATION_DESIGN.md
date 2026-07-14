@@ -166,3 +166,22 @@ Per explicit instruction ("anything variable must reside in the database to be r
 
 As of this update: 30 real profile cells populated across 18 of 19 factors (the 19th, `catcher_poptime_arm`, deliberately has zero standalone cells — its real contribution lives inside `stolen_base_family`'s combined formula instead, per the design note in that factor's row). Coverage per factor is not yet exhaustive across every real prop×tier×direction combination — this is an intentionally incremental build, continuing factor-by-factor rather than attempting full coverage in one pass. The actual worker logic that reads these cells and applies them to a real leg has not yet been built as of this update.
 
+---
+
+## 9. REAL EMPIRICAL COEFFICIENT VALIDATION (built and run for real — `gbdt_training/validate_factor_coefficients.py`)
+
+Per explicit instruction ("research and validate... we need sharp final calls"), external research alone was not treated as sufficient to lock a coefficient forever — a real script was built to check locked coefficients against our own real historical data, using the same real D1-REST-API + pandas cross-database-join infrastructure already proven in the GBDT pipeline (a genuine, hard tooling limitation was hit first: D1 cannot cross-database JOIN, so ad-hoc one-off SQL checks were abandoned in favor of building this properly).
+
+**Real method**: ordinary least squares, computed directly (no black-box library), against real historical hitter/pitcher outcomes joined with real weather/lineup data.
+
+**Real, honest scope** — validated what real, complete data supports; explicitly flagged what it doesn't, rather than fabricating an answer:
+- **Validated**: `weather_temp_altitude_pressure` (real temp_f vs real HR rate per PA - no park-direction dependency), `lineup_slot` (real batting_order vs real PA-per-game, same units as the locked coefficient, direct comparison).
+- **NOT validated, with the real reason recorded**: `weather_wind` (needs real park home-plate orientation data - confirmed absent from `REF_DB.ref_stadiums`, which only has lat/lon/roof/turf - flagged honestly rather than guessed), `catcher_framing` (needs real per-game catcher-to-pitcher assignment history not yet in a clean historical table), `opposing_pitcher_quality` (needs real historical xFIP-/xwOBA-against time series, not yet backfilled).
+
+**Real, first live result** (N=15,199 real hitter-games for lineup_slot, N=631 for weather_temp):
+- **`lineup_slot` — real, actionable correction made**: empirical coefficient (0.158 PA/slot) confirmed the correct direction but was ~50% larger than the originally-locked, externally-sourced value (0.105). **Updated the locked DB coefficient to the real, empirically-validated 0.158.**
+- **`weather_temp_altitude_pressure` — real, honest non-result, not acted on**: empirical slope was near-zero R² (0.001) on a small real sample (n=631). This was **not** treated as evidence the real effect doesn't exist - a near-zero R² on a small, uncontrolled single-variable sample is exactly what you'd expect even for a real, true effect once other confounders (park, pitcher quality) dominate the noise. Correctly left the locked value untouched, flagged as needing a larger sample (the ongoing 2025 team/bullpen historical backfill will help) and proper multi-variable controls before a real verdict is possible - the honest alternative to either ignoring the check or overreacting to noise.
+
+**Wired into the existing real GBDT weekly training workflow** (`.github/workflows/gbdt-training.yml`) as its own step, writing a real report (`gbdt_training/data/factor_validation_report.json`) and updating each validated cell's `last_empirical_validation_json`/`last_validated_at` directly in `CONFIG_DB.config_enrichment_profile_cells` - the validation result lives with the locked cell itself, not just in a separate file that could drift out of sync.
+
+
