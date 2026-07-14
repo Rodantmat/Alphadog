@@ -12,6 +12,15 @@ Deliberately mirrors the locked design: GBDT predicts the underlying RATE per pr
 strikeouts, etc.), not booleans against any specific board line. The board line only
 matters later, at inference time, when the existing Poisson/NB conversion math turns a
 predicted rate into P(over line) for whatever line is actually on the board that day.
+
+Real, deliberate design fix (per explicit instruction): trains on MULTIPLE seasons
+combined (2025 + 2026 by default), not a single frozen season. Season 2025 is complete
+and static - retraining on it alone, on a schedule, would produce the exact same result
+every single run (same data, same code, fixed random seed) - genuinely wasted compute.
+2026 is the real, current, ongoing season that gains new real games every week, which is
+what makes a weekly retraining cadence actually meaningful. Combining both also roughly
+triples real training volume, which should help the rare-event props (triples, home runs,
+stolen bases) that showed real calibration drift on the single-season 2025-only run.
 """
 import argparse
 import pandas as pd
@@ -26,7 +35,13 @@ def pull_hitter_outcomes(d1, season):
         f"stolen_bases, total_bases FROM hitter_game_logs WHERE season={season}",
         order_by="game_pk, player_id",
     )
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        # Real derived outcome for the hits_runs_rbis combo prop - not a raw DB column,
+        # computed directly from the three real component columns already pulled above.
+        df["hits_runs_rbis"] = df["hits"].fillna(0) + df["runs"].fillna(0) + df["rbi"].fillna(0)
+        df["season"] = season
+    return df
 
 
 def pull_pitcher_outcomes(d1, season):
@@ -37,7 +52,10 @@ def pull_pitcher_outcomes(d1, season):
         f"strikeouts, home_runs_allowed, pitches FROM pitcher_game_logs WHERE season={season}",
         order_by="game_pk, player_id",
     )
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["season"] = season
+    return df
 
 
 def pull_weather_umpire(d1):
@@ -103,9 +121,10 @@ def pull_reference(d1, season):
     return arsenal, defensive
 
 
-def build_hitter_training_table(d1, season):
+def build_hitter_training_table(d1, season, weather, umpire):
     outcomes = pull_hitter_outcomes(d1, season)
-    weather, umpire = pull_weather_umpire(d1)
+    if outcomes.empty:
+        return outcomes
     team, bullpen_agg = pull_team_bullpen(d1, season)
     arsenal, _defensive = pull_reference(d1, season)
 
@@ -121,9 +140,10 @@ def build_hitter_training_table(d1, season):
     return df
 
 
-def build_pitcher_training_table(d1, season):
+def build_pitcher_training_table(d1, season, weather, umpire):
     outcomes = pull_pitcher_outcomes(d1, season)
-    weather, umpire = pull_weather_umpire(d1)
+    if outcomes.empty:
+        return outcomes
     _arsenal, defensive = pull_reference(d1, season)
 
     df = outcomes.merge(weather, on="game_pk", how="left")
@@ -133,9 +153,10 @@ def build_pitcher_training_table(d1, season):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--season", type=int, default=2025)
+    parser.add_argument("--seasons", default="2025,2026", help="Comma-separated list of seasons to combine")
     parser.add_argument("--out-dir", default="data")
     args = parser.parse_args()
+    seasons = [int(s.strip()) for s in args.seasons.split(",") if s.strip()]
 
     import os
     import traceback
@@ -147,17 +168,32 @@ def main():
 
     try:
         d1 = D1Client()
-        dbg(f"Pulling real hitter training data for season {args.season}...")
-        hitter_df = build_hitter_training_table(d1, args.season)
-        dbg(f"Real hitter training rows: {len(hitter_df)}")
+        dbg(f"Pulling real weather/umpire context (spans all real historical dates)...")
+        weather, umpire = pull_weather_umpire(d1)
 
-        dbg(f"Pulling real pitcher training data for season {args.season}...")
-        pitcher_df = build_pitcher_training_table(d1, args.season)
-        dbg(f"Real pitcher training rows: {len(pitcher_df)}")
+        hitter_frames = []
+        pitcher_frames = []
+        for season in seasons:
+            dbg(f"Pulling real hitter training data for season {season}...")
+            hdf = build_hitter_training_table(d1, season, weather, umpire)
+            dbg(f"  season {season}: {len(hdf)} real hitter rows")
+            if not hdf.empty:
+                hitter_frames.append(hdf)
+
+            dbg(f"Pulling real pitcher training data for season {season}...")
+            pdf = build_pitcher_training_table(d1, season, weather, umpire)
+            dbg(f"  season {season}: {len(pdf)} real pitcher rows")
+            if not pdf.empty:
+                pitcher_frames.append(pdf)
+
+        hitter_df = pd.concat(hitter_frames, ignore_index=True) if hitter_frames else pd.DataFrame()
+        pitcher_df = pd.concat(pitcher_frames, ignore_index=True) if pitcher_frames else pd.DataFrame()
+        dbg(f"Real combined hitter training rows (all seasons): {len(hitter_df)}")
+        dbg(f"Real combined pitcher training rows (all seasons): {len(pitcher_df)}")
 
         os.makedirs(args.out_dir, exist_ok=True)
-        hitter_path = f"{args.out_dir}/hitter_training_{args.season}.csv"
-        pitcher_path = f"{args.out_dir}/pitcher_training_{args.season}.csv"
+        hitter_path = f"{args.out_dir}/hitter_training_multiseason.csv"
+        pitcher_path = f"{args.out_dir}/pitcher_training_multiseason.csv"
         hitter_df.to_csv(hitter_path, index=False)
         pitcher_df.to_csv(pitcher_path, index=False)
         dbg(f"Wrote {hitter_path} and {pitcher_path}")
