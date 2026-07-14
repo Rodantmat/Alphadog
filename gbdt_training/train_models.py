@@ -36,6 +36,7 @@ HITTER_PROP_TO_OUTCOME_COLUMN = {
     "hitter_strikeouts": "strikeouts",
     "stolen_bases": "stolen_bases",
     "triples": "triples",
+    "hits_runs_rbis": "hits_runs_rbis",
 }
 PITCHER_PROP_TO_OUTCOME_COLUMN = {
     "pitcher_strikeouts": "strikeouts",
@@ -43,6 +44,7 @@ PITCHER_PROP_TO_OUTCOME_COLUMN = {
     "earned_runs": "earned_runs",
     "hits_allowed": "hits_allowed",
     "walks_allowed": "walks_allowed",
+    "runs_allowed": "runs_allowed",
 }
 
 HITTER_FEATURE_COLUMNS = [
