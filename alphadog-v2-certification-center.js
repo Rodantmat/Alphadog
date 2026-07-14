@@ -1437,9 +1437,9 @@ async function fetchBoardRowsByIds(env, ids) {
   const qs = clean.map(()=>"?").join(",");
   return await queryAll(env.SCORE_DB, `
     SELECT
-      f.board_v3_row_id AS board_row_id,
-      f.board_v3_row_id AS final_board_row_id,
-      f.batch_id,
+      f.final_board_row_id AS board_row_id,
+      f.final_board_row_id AS final_board_row_id,
+      f.final_board_batch_id AS batch_id,
       f.prepared_row_id,
       f.source_line_id,
       f.source_key,
@@ -1456,19 +1456,19 @@ async function fetchBoardRowsByIds(env, ids) {
       f.canonical_prop_key,
       f.line_value,
       f.selected_side,
-      f.hit_probability_0_100,
-      f.certainty_0_100,
-      f.overall_score_0_100,
-      f.board_grade,
+      f.estimated_hit_probability_0_100 AS hit_probability_0_100,
+      f.confidence_0_100 AS certainty_0_100,
+      f.score_0_100 AS overall_score_0_100,
+      f.score_grade AS board_grade,
       p.team,
       p.opponent,
       p.team_full_name,
       p.opponent_full_name,
       p.source_prop_name
-    FROM v2_final_board_current f
+    FROM score_final_board_current f
     LEFT JOIN score_board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
-    WHERE f.batch_id = (SELECT batch_id FROM v2_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
-      AND f.board_v3_row_id IN (${qs})
+    WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
+      AND f.final_board_row_id IN (${qs})
     ORDER BY f.rank_order ASC
   `, clean);
 }
