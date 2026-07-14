@@ -412,7 +412,6 @@ async function latestCompletedEngineBatch(env, requestedBatchId) {
     WHERE status = 'completed_scoring_current_rows_written'
       AND certification = 'SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS'
       AND certification_grade LIKE 'PASS%'
-      AND score_rows_written > 0
     ORDER BY datetime(finished_at) DESC, datetime(started_at) DESC
     LIMIT 1
   `);
