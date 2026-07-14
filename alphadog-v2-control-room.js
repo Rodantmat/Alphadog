@@ -2846,7 +2846,10 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
   }
 
 
-  if (job === "orchestrator_enqueue_scoring_engine") {
+  if (job === "orchestrator_enqueue_scoring_simulation") {
+    return jsonResponse({ ok: false, data_ok: false, version, job, status: "retired_2026_07_14", certification: "LEGACY_SCORING_SIMULATION_RETIRED", note: "This legacy score-audit.js-based Scoring Simulation (shadow strict-B vs hybrid control) was retired 2026-07-14 after being confirmed inactive since 2026-06-06. Note: prior to this fix, this button's job name (orchestrator_enqueue_scoring_simulation) did not match any handler condition here (which incorrectly checked for orchestrator_enqueue_scoring_engine, a copy-paste leftover) - this is now corrected. Superseded by the new dedicated Scoring Full Run chain." }, 410);
+  }
+  if (false) {
     const existing = await env.CONTROL_DB.prepare(
       "SELECT request_id, status, created_at, updated_at FROM control_job_queue WHERE job_key = 'scoring-engine-simulation' AND status IN ('pending','running') ORDER BY datetime(created_at) DESC LIMIT 1"
     ).first();
