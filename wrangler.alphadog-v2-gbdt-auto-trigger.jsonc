@@ -27,5 +27,10 @@
     "crons": [
       "* * * * *"
     ]
-  }
+  },
+  "tail_consumers": [
+    {
+      "service": "alphadog-v2-tail-logger"
+    }
+  ]
 }
