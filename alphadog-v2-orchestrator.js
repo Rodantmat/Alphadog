@@ -6247,8 +6247,6 @@ async function processScoringEngineShadowJob(env, row, runId, trigger) {
     await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='blocked', finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code='missing_scoring_engine_service_binding', error_message='PHASE3A_CERTIFIER_WORKER service binding is missing' WHERE request_id=?", JSON.stringify(output), row.request_id);
     return output;
   }
-    return output;
-  }
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
   const input = { request_id: row.request_id, chain_id: row.chain_id, run_id: runId, job_key: row.job_key, worker_name: row.worker_name, trigger, input_json: rowInput };
   const started = Date.now();
