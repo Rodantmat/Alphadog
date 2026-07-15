@@ -400,9 +400,9 @@ async function runCertifier(env, input) {
   // Requirement 4/3: classify the real slate shape from calendar-verified prepared-board
   // games (not a naive date lookup), then compute a real/derived/temporary/missing tally per
   // layer per date, and purge any game whose window has already passed (Requirement 8).
-  const todayGamePkSet = new Set(prepared.filter(r => r.official_date === today).map(r => String(r.official_game_pk)));
-  const tomorrowGamePkSet = new Set(prepared.filter(r => r.official_date === tomorrow).map(r => String(r.official_game_pk)));
-  const slateShape = determineSlateShape(todayGamePkSet.size, tomorrowGamePkSet.size);
+  const gamePkSetByDate = new Map(boardWindowDates.map(d => [d, new Set(prepared.filter(r => r.official_date === d).map(r => String(r.official_game_pk)))]));
+  const totalBoardGameCount = new Set(prepared.map(r => String(r.official_game_pk))).size;
+  const slateShape = totalBoardGameCount > 0 ? "board_scoped_multi_date" : "no_games";
 
   async function tallyForDate(targetDate) {
     const preparedForDate = prepared.filter(r => r.official_date === targetDate);
