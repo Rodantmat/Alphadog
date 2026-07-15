@@ -592,22 +592,22 @@ async function allByIn(db, prefix, values, suffix = "", extraBinds = []) {
   return out;
 }
 async function loadGlobalPrerequisites(env, dates, preparedRows) {
-  const [today, tomorrow] = dates;
+  const dateInClause = dates.map(() => "?").join(",");
   const preparedMaxUpdatedAt = preparedRows.reduce((m, r) => String(r.updated_at || "") > m ? String(r.updated_at || "") : m, "");
   const prepCount = preparedRows.length;
   const prepGames = new Set(preparedRows.map(r => r.official_game_pk)).size;
   const prepPlayers = new Set(preparedRows.map(r => r.resolved_mlb_player_id || r.resolved_player_id)).size;
   const prepPropKeys = new Set(preparedRows.map(r => r.canonical_prop_key)).size;
 
-  const dailyBatches = await all(env.DAILY_DB, `SELECT batch_id,status,window_start,window_end,certification_status,certification_grade,prepared_rows_read,current_rows_written,blocked_count,ready_with_warnings_count,ready_partial_enrichment_count,created_at,updated_at FROM daily_context_readiness_batches WHERE window_start IN (?, ?) OR window_end IN (?, ?) ORDER BY datetime(updated_at) DESC LIMIT 5`, today, tomorrow, today, tomorrow);
+  const dailyBatches = await all(env.DAILY_DB, `SELECT batch_id,status,window_start,window_end,certification_status,certification_grade,prepared_rows_read,current_rows_written,blocked_count,ready_with_warnings_count,ready_partial_enrichment_count,created_at,updated_at FROM daily_context_readiness_batches WHERE window_start IN (${dateInClause}) OR window_end IN (${dateInClause}) ORDER BY datetime(updated_at) DESC LIMIT 5`, ...dates, ...dates);
   const latestDailyBatch = dailyBatches[0] || null;
 
-  const marketBatches = await all(env.MARKET_DB, `SELECT batch_id,mode,slate_window_key,window_start_date,window_end_date,status,certification_status,certification_grade,prepared_rows_read,prepared_games_checked,prepared_players_checked,prepared_prop_keys_checked,created_at,updated_at FROM market_context_probe_batches WHERE window_start_date IN (?, ?) OR window_end_date IN (?, ?) ORDER BY datetime(updated_at) DESC`, today, tomorrow, today, tomorrow);
+  const marketBatches = await all(env.MARKET_DB, `SELECT batch_id,mode,slate_window_key,window_start_date,window_end_date,status,certification_status,certification_grade,prepared_rows_read,prepared_games_checked,prepared_players_checked,prepared_prop_keys_checked,created_at,updated_at FROM market_context_probe_batches WHERE window_start_date IN (${dateInClause}) OR window_end_date IN (${dateInClause}) ORDER BY datetime(updated_at) DESC`, ...dates, ...dates);
   const latestMarketByMode = latestBy(marketBatches, r => key(r.mode));
   const marketBatchIds = uniqueNonEmpty([...latestMarketByMode.values()].map(r => r.batch_id));
 
-  const latestHitterBatch = await first(env.SCORING_DB, `SELECT * FROM prop_factor_batches WHERE factor_family='hitter' AND (window_start IN (?, ?) OR window_end IN (?, ?)) ORDER BY datetime(updated_at) DESC LIMIT 1`, today, tomorrow, today, tomorrow);
-  const latestPitcherBatch = await first(env.SCORING_DB, `SELECT * FROM prop_factor_batches WHERE factor_family='pitcher' AND (window_start IN (?, ?) OR window_end IN (?, ?)) ORDER BY datetime(updated_at) DESC LIMIT 1`, today, tomorrow, today, tomorrow);
+  const latestHitterBatch = await first(env.SCORING_DB, `SELECT * FROM prop_factor_batches WHERE factor_family='hitter' AND (window_start IN (${dateInClause}) OR window_end IN (${dateInClause})) ORDER BY datetime(updated_at) DESC LIMIT 1`, ...dates, ...dates);
+  const latestPitcherBatch = await first(env.SCORING_DB, `SELECT * FROM prop_factor_batches WHERE factor_family='pitcher' AND (window_start IN (${dateInClause}) OR window_end IN (${dateInClause})) ORDER BY datetime(updated_at) DESC LIMIT 1`, ...dates, ...dates);
 
   const freshness = {
     prepared: { rows: prepCount, games: prepGames, players: prepPlayers, prop_keys: prepPropKeys, max_updated_at: preparedMaxUpdatedAt },
