@@ -304,9 +304,10 @@ async function ensureSchema(env) {
   await run(env.DAILY_DB, `INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('daily_game_weather_v0_1_0', ?, CURRENT_TIMESTAMP, 'Daily Context Phase 4 weather/roof/park-condition v2 tables')`, VERSION);
 }
 async function pruneRetention(env, retention, batchId) {
-  const current = await run(env.DAILY_DB, `DELETE FROM daily_game_weather_current WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
-  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_game_weather_snapshots WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
-  const issues = await run(env.DAILY_DB, `DELETE FROM daily_game_weather_issues WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
+  const inClause = retention.dates.map(() => "?").join(",");
+  const current = await run(env.DAILY_DB, `DELETE FROM daily_game_weather_current WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
+  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_game_weather_snapshots WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
+  const issues = await run(env.DAILY_DB, `DELETE FROM daily_game_weather_issues WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
   return {
     current_deleted: current && current.meta ? current.meta.changes : null,
     snapshots_deleted: snapshots && snapshots.meta ? snapshots.meta.changes : null,
