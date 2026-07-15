@@ -699,11 +699,11 @@ async function writeIssue(env, batchId, slateWindowKey, officialDate, severity, 
     rid("mcp_issue"), batchId, slateWindowKey, officialDate || null, severity, type, gamePk || null, preparedRowId || null, sourceKey || null, safeText(reason, 900), safeJson(details, 6000));
 }
 
-async function fetchOddsApiGameOdds(env) {
-  if (!sourceHas(env, "ODDS_API_KEY")) return { ok: false, missing_key: true, events: [], external_calls: 0, error: "ODDS_API_KEY missing" };
+async function fetchOddsApiGameOdds(env, apiKey) {
+  if (!apiKey) return { ok: false, missing_key: true, events: [], external_calls: 0, error: "ODDS_API_KEY missing" };
   const base = String(env.ODDS_API_BASE_URL || "https://api.the-odds-api.com/v4").replace(/\/+$/, "");
   const url = new URL(`${base}/sports/baseball_mlb/odds`);
-  url.searchParams.set("apiKey", String(env.ODDS_API_KEY));
+  url.searchParams.set("apiKey", apiKey);
   const bookmakerList = String(env.ODDS_API_BOOKMAKERS || "draftkings,fanduel,betmgm,caesars,espnbet,fanatics,bet365").replace(/\s+/g, "");
   if (bookmakerList) url.searchParams.set("bookmakers", bookmakerList);
   else url.searchParams.set("regions", String(env.ODDS_API_REGIONS || "us"));
