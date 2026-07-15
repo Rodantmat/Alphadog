@@ -195,6 +195,16 @@ function sourceHas(env, key) {
   const value = String(env[key]).trim();
   return value.length > 0 && value.toUpperCase() !== "DISABLED" && value.toUpperCase() !== "SET_ME";
 }
+async function resolveOddsApiKey(env) {
+  if (env.CONFIG_DB) {
+    try {
+      const row = await env.CONFIG_DB.prepare("SELECT password FROM config_external_credentials WHERE credential_key='the_odds_api_key'").first();
+      if (row && row.password && String(row.password).trim()) return String(row.password).trim();
+    } catch (_) { /* fall through to secret */ }
+  }
+  return env.ODDS_API_KEY ? String(env.ODDS_API_KEY) : null;
+}
+}
 
 function fetchTimeoutMs(env) {
   const n = Number(env && env.ODDS_API_FETCH_TIMEOUT_MS ? env.ODDS_API_FETCH_TIMEOUT_MS : 12000);
