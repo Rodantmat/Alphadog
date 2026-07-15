@@ -148,14 +148,17 @@ async function runScoringEngine(env, input) {
   }
   if (statements.length) await env.SCORE_DB.batch(statements);
 
+  const isPartial = enrichmentRows.length >= MAX_LEGS_PER_INVOCATION;
+  const status = isPartial ? "partial_continue" : "completed_scoring_current_rows_written";
   await run(env.SCORE_DB,
-    `UPDATE scoring_engine_batches SET status=?, certification=?, certification_grade=?, score_rows_written=?, finished_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
-    "completed_scoring_current_rows_written", "SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS", "PASS_REAL_SKELETON", written, batchId);
+    `UPDATE scoring_engine_batches SET status=?, certification=?, certification_grade=?, score_rows_written=?, finished_at=CASE WHEN ? THEN NULL ELSE CURRENT_TIMESTAMP END WHERE batch_id=?`,
+    status, "SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS", "PASS_REAL_SKELETON", written, isPartial ? 1 : 0, batchId);
 
   return {
     ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
     request_id: input.request_id || null, chain_id: input.chain_id || null, batch_id: batchId,
-    status: "completed_scoring_current_rows_written", certification: "SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS",
+    status, certification: "SCORING_ENGINE_CURRENT_CERTIFIED_SCORED_ROWS",
+    continuation_required: isPartial, orchestrator_should_self_continue: isPartial,
     matrix_rows_read: enrichmentRows.length, score_rows_written: written,
     real_skeleton_note: "Real, first-pass score/confidence formula based on Enrichment's factor coverage and rate-multiplier signal - not yet a full re-implementation of classification_v6's z-score/shrinkage math. Real, honest v1, ready to refine once real board data returns.",
     timestamp_utc: nowUtc(),
