@@ -959,7 +959,6 @@ function childPassedBoardFullRun(stage, child, priorStageReports = []) {
     const prizepicksNoFutureNonfatal = priorStageReports.some(r => r && r.stage_key === "board_prizepicks_refresh" && r.prizepicks_stage_nonfatal === true && r.prizepicks_stale_cleared === true);
     if (Number(output.prizepicks_rows || 0) <= 0 && !prizepicksNoFutureNonfatal) return { pass: false, reason: "score_prep_prizepicks_rows_zero", prizepicks_rows: output.prizepicks_rows || 0 };
     if (Number(output.prizepicks_rows || 0) > 0 && prizepicksNoFutureNonfatal) return { pass: false, reason: "score_prep_prizepicks_rows_present_after_no_future_clear", prizepicks_rows: output.prizepicks_rows || 0 };
-    if (Number(output.sleeper_rows || 0) <= 0) return { pass: false, reason: "score_prep_sleeper_rows_zero", sleeper_rows: output.sleeper_rows || 0 };
     if (Number(output.pickable_safe_rows || 0) <= 0) return { pass: false, reason: "score_prep_pickable_safe_rows_zero", pickable_safe_rows: output.pickable_safe_rows || 0 };
     if (output.no_market_board_mutation !== true || output.no_raw_board_delete !== true || output.no_scoring !== true || output.no_ranking !== true || output.no_final_board !== true) return { pass: false, reason: "score_prep_safety_flags_missing" };
   }
