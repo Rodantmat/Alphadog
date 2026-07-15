@@ -1461,10 +1461,17 @@ async function runPlayerPropContext(env, input = {}) {
   const requestId = input.request_id || rid(config.request_prefix);
   const runId = input.run_id || rid("run");
   const batchId = rid(config.batch_prefix);
-  const today = ptDate(0);
-  const tomorrow = ptDate(1);
+  // Fix (2026-07-15): board-scoped window instead of hardcoded today+tomorrow, same root
+  // cause and fix pattern as Daily Context certifier, score-prep, and Market Certifier.
+  // Excludes already-started games (real game time vs now) from mining expectations.
+  const nowIsoForWindow = new Date().toISOString();
+  const realBoardDateRowsPrelim = await all(env.SCORE_DB, `SELECT DISTINCT official_date FROM score_board_prepared_current WHERE pickable_safe = 1 AND official_game_time_utc IS NOT NULL AND official_game_time_utc > ?`, nowIsoForWindow);
+  const realBoardDatesPrelim = realBoardDateRowsPrelim.map(r => r.official_date).filter(Boolean);
+  const boardWindowDates = [...new Set([...realBoardDatesPrelim, ptDate(0), ptDate(1)])].sort();
+  const today = boardWindowDates[0];
+  const tomorrow = boardWindowDates[boardWindowDates.length - 1];
   const slateWindowKey = `${today}_${tomorrow}`;
-  const retention = { today, tomorrow, slate_window_key: slateWindowKey, policy: `only_today_tomorrow_rows_kept_for_${config.prop_family}_prop_line_context` };
+  const retention = { today, tomorrow, slate_window_key: slateWindowKey, board_window_dates: boardWindowDates, policy: `board_scoped_not_yet_started_games_only_for_${config.prop_family}_prop_line_context` };
   const required = bindingPresence(env, REQUIRED_DB_BINDINGS);
   const missingDb = Object.entries(required).filter(([, ok]) => !ok).map(([name]) => name);
   if (missingDb.length) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, run_id: runId, mode: config.mode, status: "blocked_missing_db_bindings", certification: `MARKET_${config.issue_prefix}_CONTEXT_BLOCKED_MISSING_DB_BINDINGS`, certification_grade: "BLOCKED", missing_db_bindings: missingDb, rows_read: 0, rows_written: 0, external_calls_performed: 0, retention, timestamp_utc: nowUtc() };
