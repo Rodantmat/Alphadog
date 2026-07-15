@@ -1209,6 +1209,8 @@ async function runMarketSourceProbe(env, input = {}) {
   let warningCount = 0;
   let blockerCount = 0;
   const retention = { today, tomorrow, slate_window_key: slateWindowKey, board_window_dates: boardWindowDates };
+  const resolvedOddsApiKey = await resolveOddsApiKey(env);
+  const hasOddsApiKey = Boolean(resolvedOddsApiKey);
 
   const required = bindingPresence(env, REQUIRED_DB_BINDINGS);
   const missingDb = Object.entries(required).filter(([, v]) => !v).map(([k]) => k);
