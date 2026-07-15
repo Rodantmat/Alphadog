@@ -5985,7 +5985,7 @@ const SCORING_FULL_RUN_STAGES = [
 // requested as "Final HP, Final Scoring" - the two names map to Scoring Engine (produces
 // score_0_100) and Hit Probability Board (produces the real, final HP%) respectively.
 const SCORING_FULL_RUN_STALE_CHILD_SECONDS = 120;
-const SCORING_FULL_RUN_STALE_CHILD_RETRY_MAX = 1;
+const SCORING_FULL_RUN_STALE_CHILD_RETRY_MAX = 2;
 
 function scoringFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
   return {
