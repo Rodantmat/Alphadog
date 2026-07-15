@@ -1332,7 +1332,7 @@ async function runMarketSourceProbe(env, input = {}) {
   };
 
   await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_context_probe_batches (batch_id, request_id, run_id, worker_name, worker_version, mode, slate_window_key, window_start_date, window_end_date, status, prepared_rows_read, prepared_games_checked, prepared_players_checked, prepared_prop_keys_checked, odds_api_config_present, odds_api_events_seen, odds_api_events_mapped, odds_api_game_odds_rows, parlay_inventory_rows_seen, parlay_props_mapped_to_prepared, parlay_coverage_grade, warning_count, blocker_count, certification_status, certification_grade, output_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-    batchId, requestId, runId, WORKER_NAME, VERSION, "market_teams_game_odds", slateWindowKey, today, tomorrow, status, preparedRows.length, gamePks.length, playerIds.length, propKeys.length, sourceHas(env, "ODDS_API_KEY") ? 1 : 0, oddsWrite.eventRows, oddsWrite.mappedEvents, oddsWrite.gameOddsRows + (expanded.expandedGameOddsRows || 0), 0, 0, "NOT_PROBED_BOARD_SOURCE_EXCLUDED", warningCount, blockerCount, certification, certificationGrade, safeJson(output, 9000));
+    batchId, requestId, runId, WORKER_NAME, VERSION, "market_teams_game_odds", slateWindowKey, today, tomorrow, status, preparedRows.length, gamePks.length, playerIds.length, propKeys.length, hasOddsApiKey ? 1 : 0, oddsWrite.eventRows, oddsWrite.mappedEvents, oddsWrite.gameOddsRows + (expanded.expandedGameOddsRows || 0), 0, 0, "NOT_PROBED_BOARD_SOURCE_EXCLUDED", warningCount, blockerCount, certification, certificationGrade, safeJson(output, 9000));
 
   const finalOutput = {
     ok: true,
