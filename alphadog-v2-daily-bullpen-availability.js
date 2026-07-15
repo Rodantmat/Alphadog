@@ -291,8 +291,9 @@ async function pruneRetention(env, retention) {
   };
 }
 async function retirePriorOperationalCurrentForWindow(env, retention, batchId) {
-  const current = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_current WHERE official_date IN (?, ?) AND (batch_id IS NULL OR batch_id <> ?)`, retention.start, retention.end, batchId);
-  const pitcher = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_pitcher_availability_current WHERE official_date IN (?, ?) AND (batch_id IS NULL OR batch_id <> ?)`, retention.start, retention.end, batchId);
+  const inClause = retention.dates.map(() => "?").join(",");
+  const current = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_current WHERE official_date IN (${inClause}) AND (batch_id IS NULL OR batch_id <> ?)`, ...retention.dates, batchId);
+  const pitcher = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_pitcher_availability_current WHERE official_date IN (${inClause}) AND (batch_id IS NULL OR batch_id <> ?)`, ...retention.dates, batchId);
   return {
     current_deleted: current && current.meta ? current.meta.changes : null,
     pitcher_current_deleted: pitcher && pitcher.meta ? pitcher.meta.changes : null,
