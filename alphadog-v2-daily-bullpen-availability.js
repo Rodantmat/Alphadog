@@ -316,9 +316,10 @@ async function getPreparedTeamRows(env, retention) {
       AND player_match_status = 'matched'
       AND official_game_pk IS NOT NULL
       AND official_game_time_utc IS NOT NULL
-      AND official_date IN (?, ?)
+      AND official_date IN (${retention.dates.map(() => "?").join(",")})
+      AND official_game_time_utc > ?
     GROUP BY official_game_pk, official_game_time_utc, official_date, team_full_name, opponent_full_name
-    ORDER BY official_game_time_utc, official_game_pk, team_full_name`, retention.start, retention.end);
+    ORDER BY official_game_time_utc, official_game_pk, team_full_name`, ...retention.dates, new Date().toISOString());
 }
 async function getCalendar(env, gamePks) {
   if (!gamePks.length) return [];
