@@ -78,9 +78,9 @@ async function runHitProbabilityBoard(env, input, sourceEngineBatchId) {
     `SELECT score_row_id, batch_id, matrix_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc,
             mlb_player_id, player_name, canonical_prop_key, line_value, selected_side, score_0_100, confidence_0_100, blocker_count
      FROM scoring_engine_current
-     WHERE matrix_id NOT IN (SELECT matrix_id FROM hp_board_current)
+     WHERE matrix_id NOT IN (SELECT matrix_id FROM hp_board_current WHERE hp_board_batch_id=?)
      ORDER BY matrix_id
-     LIMIT ?`, MAX_LEGS_PER_INVOCATION);
+     LIMIT ?`, hpBatchId, MAX_LEGS_PER_INVOCATION);
 
   const enrichmentByMatrix = new Map();
   const matrixIds = engineRows.map(r => r.matrix_id).filter(Boolean);
