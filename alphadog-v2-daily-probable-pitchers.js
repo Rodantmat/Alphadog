@@ -802,11 +802,14 @@ async function runDailyStarters(request, env) {
 
   let output = null;
   try {
-    const retention = retentionWindow();
+    const rawPreparedRowsPrelim = await loadPreparedRows(env);
+    const nowIsoForRetention = new Date().toISOString();
+    const notYetStartedDates = new Set(rawPreparedRowsPrelim.filter(r => !gameHasStartedForRetention(r, nowIsoForRetention)).map(r => dateOnly(r.official_date || r.official_game_time_utc)).filter(Boolean));
+    const retention = retentionWindow(notYetStartedDates);
     await pruneDateScopedDailyStarterTables(env, retention);
 
-    const rawPreparedRows = await loadPreparedRows(env);
-    const preparedRows = filterPreparedRowsForRetention(rawPreparedRows, retention);
+    const rawPreparedRows = rawPreparedRowsPrelim;
+    const preparedRows = filterPreparedRowsForRetention(rawPreparedRows, retention, nowIsoForRetention);
     const teamAliasMap = await loadTeamAliasMap(env);
     const prep = preparedMaps(preparedRows, teamAliasMap);
     const window = buildWindow(prep.dateSet);
