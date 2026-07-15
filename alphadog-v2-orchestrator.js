@@ -6028,7 +6028,7 @@ function scoringFullRunChildInputRetryCount(child) {
 function scoringFullRunChildTransientRetryAllowed(stage, child, validation, output) {
   if (!stage || !child || !validation || validation.pass || validation.wait) return false;
   const retryCount = scoringFullRunChildInputRetryCount(child);
-  if (retryCount >= 1) return false;
+  if (retryCount >= 2) return false;
   const hay = String(`${validation.reason || ""} ${child.status || ""} ${child.error_code || ""} ${child.error_message || ""} ${output && output.status || ""} ${output && output.error || ""} ${output && output.certification || ""}`).toLowerCase();
   if (hay.includes("missing_service_binding") || hay.includes("unsupported")) return false;
   return hay.includes("service_binding_timeout") || hay.includes("worker_dispatch_exception") || hay.includes("timeout_after_") || hay.includes("aborterror") || hay.includes("network") || hay.includes("temporar");
