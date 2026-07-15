@@ -950,7 +950,7 @@ async function runAvailability(env, input) {
     ...counts,
     window_start: windowStart,
     window_end: windowEnd,
-    retention_policy: "today_tomorrow_official_dates_only_current_latest_batch",
+    retention_policy: "board_scoped_not_yet_started_games_only_current_latest_batch",
     retention_date_start: retention.start,
     retention_date_end: retention.end,
     retention_pre_prune: preRetentionPrune,
