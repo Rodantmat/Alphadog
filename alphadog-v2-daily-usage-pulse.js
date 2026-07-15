@@ -281,9 +281,10 @@ async function findRecentCrewForVenue(env, homeTeamId, beforeDate) {
 }
 
 async function pruneRetention(env, retention) {
-  const currentOutside = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_current WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
-  const snapshotsOutside = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_snapshots WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
-  const issuesOutside = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_issues WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
+  const inClause = retention.dates.map(() => "?").join(",");
+  const currentOutside = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_current WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
+  const snapshotsOutside = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_snapshots WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
+  const issuesOutside = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_issues WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
   return {
     current_outside_deleted: currentOutside && currentOutside.meta ? currentOutside.meta.changes : null,
     snapshots_outside_deleted: snapshotsOutside && snapshotsOutside.meta ? snapshotsOutside.meta.changes : null,
