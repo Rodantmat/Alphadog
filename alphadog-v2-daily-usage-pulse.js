@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-usage-pulse";
-const VERSION = "alphadog-v2-daily-usage-pulse-v0.2.3-self-terminal-lifecycle";
+const VERSION = "alphadog-v2-daily-usage-pulse-v0.2.4-board-scoped-window";
 const JOB_KEY = "daily-umpire-context";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
