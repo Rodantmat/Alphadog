@@ -919,7 +919,7 @@ async function runMatrixBuilder(request, env) {
     await retentionCleanup(env, dates);
     batchId = rid("prop_matrix_batch");
     await run(env.SCORING_DB, `INSERT OR REPLACE INTO prop_matrix_batches (batch_id,request_id,run_id,worker_name,worker_version,deployed_worker_slot,deployed_slot_version,mode,status,window_start,window_end,source_tables_checked_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
-      batchId, input.request_id || null, runId, LOGICAL_WORKER_NAME, SYSTEM_VERSION, WORKER_NAME, DEPLOYED_SLOT_VERSION, "prop_matrix_build", "running", dates[0], dates[1], JSON.stringify(sourceTables));
+      batchId, input.request_id || null, runId, LOGICAL_WORKER_NAME, SYSTEM_VERSION, WORKER_NAME, DEPLOYED_SLOT_VERSION, "prop_matrix_build", "running", dates[0], dates[dates.length - 1], JSON.stringify(sourceTables));
   }
 
   const prepared = await getPreparedRows(env, dates);
