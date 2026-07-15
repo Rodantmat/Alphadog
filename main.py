@@ -407,7 +407,7 @@ def fetch_prizepicks_json() -> Tuple[Any, Dict[str, Any]]:
     attempts = int(os.getenv("PRIZEPICKS_FETCH_ATTEMPTS", "4" if proxy_url else "3"))
     sleep_seconds = float(os.getenv("PRIZEPICKS_FETCH_RETRY_SLEEP_SECONDS", "8" if proxy_url else "60"))
     captcha_cooldown_seconds = float(os.getenv("PRIZEPICKS_CAPTCHA_COOLDOWN_SECONDS", str(sleep_seconds)))
-    min_future_rows = int(os.getenv("PRIZEPICKS_MIN_FUTURE_ROWS", "1"))
+    min_future_rows = int(os.getenv("PRIZEPICKS_MIN_FUTURE_ROWS", "50"))
     override_urls = [u.strip() for u in os.getenv("PRIZEPICKS_PROJECTIONS_URLS", "").split(",") if u.strip()]
     urls = override_urls or PRIZEPICKS_MLB_PROJECTIONS_URLS
     headers = {
