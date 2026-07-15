@@ -803,7 +803,10 @@ async function runWeather(env, input) {
   let issuesWritten = 0;
   let externalCalls = 0;
   let sourceFailures = 0;
-  const retention = retentionWindowPt();
+  const nowIsoForWindow = new Date().toISOString();
+  const realBoardDateRows = await all(env.SCORE_DB, `SELECT DISTINCT official_date FROM score_board_prepared_current WHERE pickable_safe = 1 AND official_game_time_utc IS NOT NULL AND official_game_time_utc > ?`, nowIsoForWindow);
+  const realBoardDates = realBoardDateRows.map(r => r.official_date).filter(Boolean);
+  const retention = retentionWindowPt(realBoardDates);
 
   await ensureSchema(env);
   await run(env.DAILY_DB, `INSERT INTO daily_game_weather_batches (batch_id, request_id, run_id, worker_name, worker_version, job_key, mode, status, window_start, window_end, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, ?)`,
