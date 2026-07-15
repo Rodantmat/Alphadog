@@ -25,7 +25,7 @@ const SYSTEM_VERSION = "alphadog-v2-hit-probability-board-v0.1.0-real-skeleton";
 const PROFILE_KEY = "ENRICHMENT_V1_REAL_SKELETON";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB", "SCORING_DB", "ARCHIVE_DB"];
-const MAX_LEGS_PER_INVOCATION = 200;
+const MAX_LEGS_PER_INVOCATION = 100;
 
 function nowUtc() { return new Date().toISOString(); }
 function jsonResponse(body, status = 200) {
