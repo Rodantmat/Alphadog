@@ -620,7 +620,7 @@ async function loadGlobalPrerequisites(env, dates, preparedRows) {
   return { freshness, marketBatchIds };
 }
 async function loadChunkPrerequisites(env, dates, chunkRows, globalCtx) {
-  const [today, tomorrow] = dates;
+  const dateInClause = dates.map(() => "?").join(",");
   const preparedIds = uniqueNonEmpty(chunkRows.map(r => r.prepared_row_id));
   const gamePks = uniqueNonEmpty(chunkRows.map(r => r.official_game_pk));
   const marketBatchIds = uniqueNonEmpty(globalCtx.marketBatchIds || []);
@@ -628,7 +628,7 @@ async function loadChunkPrerequisites(env, dates, chunkRows, globalCtx) {
   const factorCoverageRows = await allByIn(env.SCORING_DB,
     `SELECT coverage_key,factor_family,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,normalized_factor_lane,factor_status,factor_grade,packet_id,latest_batch_id,latest_checked_at,blocking_for_matrix,missing_reason,details_json,official_date,updated_at FROM prop_factor_coverage_current WHERE prepared_row_id IN`,
     preparedIds,
-    `AND official_date IN (?, ?)`, [today, tomorrow]);
+    `AND official_date IN (${dateInClause})`, dates);
   const factorCoverage = latestBy(factorCoverageRows, r => key(r.prepared_row_id));
 
   const hitterPacketIds = uniqueNonEmpty(factorCoverageRows.filter(r => r.factor_family === "hitter").map(r => r.packet_id));
@@ -640,13 +640,13 @@ async function loadChunkPrerequisites(env, dates, chunkRows, globalCtx) {
   const factorIssuesRows = await allByIn(env.SCORING_DB,
     `SELECT * FROM prop_factor_issues WHERE prepared_row_id IN`,
     preparedIds,
-    `AND official_date IN (?, ?)`, [today, tomorrow]);
+    `AND official_date IN (${dateInClause})`, dates);
   const factorIssues = new Map(); for (const r of factorIssuesRows) pushMapArray(factorIssues, key(r.prepared_row_id), r);
 
   const readiness = latestBy(await allByIn(env.DAILY_DB,
     `SELECT readiness_key,batch_id,official_date,game_pk,game_time_utc,prepared_row_id,source_key,source_row_id,projection_id,player_id,player_name,team_id,opponent_team_id,canonical_prop_key,prepared_board_relevant,pickable_safe,context_status,context_grade,hard_blocker_count,warning_count,enrichment_gap_count,available_context_count,expected_context_count,starter_context_status,lineup_context_status,player_availability_status,weather_context_status,bullpen_context_status,schedule_spot_context_status,umpire_context_status,hard_block_reasons_json,warning_reasons_json,enrichment_gaps_json,details_json,updated_at FROM daily_context_readiness_current WHERE prepared_row_id IN`,
     preparedIds,
-    `AND official_date IN (?, ?)`, [today, tomorrow]), r => key(r.prepared_row_id));
+    `AND official_date IN (${dateInClause})`, dates), r => key(r.prepared_row_id));
 
   let marketCoverageRows = [];
   let playerPropSummaries = [];
