@@ -711,6 +711,23 @@ function resolveCalendarByTeamNames(calendar, officialDate, rawHome, rawAway, so
   }
   const candidates = calendar.pairMap.get(`${date}|${home}|${away}`) || [];
   if (candidates.length === 0) {
+    // Fix (2026-07-15): sources (confirmed live on Underdog) sometimes tag real games with a
+    // placeholder/incorrect date - e.g. every game in a slate stamped with the same generic
+    // commence_time, landing on a date with zero real MLB games (an off day, All-Star break,
+    // etc). Before giving up, search a nearby window of real dates for the exact same team
+    // pair. If found, trust the calendar's real date/time over the source's stated date -
+    // this is real, usable data that would otherwise be silently discarded every run.
+    const nearbyWindowDays = [-1, 1, 2, 3];
+    for (const offset of nearbyWindowDays) {
+      const nearbyDate = dateAddDays(date, offset);
+      const nearbyCandidates = calendar.pairMap.get(`${nearbyDate}|${home}|${away}`) || [];
+      if (nearbyCandidates.length === 1) {
+        return { status: "calendar_matched", confidence: "official_calendar_team_pair_date_corrected", game: nearbyCandidates[0], source_stated_date: date, corrected_official_date: nearbyDate };
+      }
+      if (nearbyCandidates.length > 1) {
+        return { status: "calendar_ambiguous", confidence: "multiple_calendar_games_same_team_pair_nearby_date", game: null, candidates: nearbyCandidates, source_stated_date: date };
+      }
+    }
     return { status: "calendar_unresolved", confidence: classifyCalendarNoMatch(calendar, date, rawHome, rawAway), game: null };
   }
   if (candidates.length === 1) return { status: "calendar_matched", confidence: "official_calendar_team_pair", game: candidates[0] };
