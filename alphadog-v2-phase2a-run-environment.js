@@ -326,16 +326,16 @@ async function enrichLeg(env, matrixRow, config) {
 
 async function runEnrichment(env, input) {
   const config = await loadEnrichmentConfig(env);
+  const batchId = input && input.chain_id ? `enrichment_batch_${input.chain_id}` : rid("enrichment_batch");
   const matrixRows = await all(env.SCORING_DB,
     `SELECT matrix_id, batch_id, canonical_prop_key, mlb_player_id, board_line_value, prop_side, matrix_payload_json
      FROM prop_matrix_current
      WHERE blocking_for_scoring=0
-       AND matrix_id NOT IN (SELECT matrix_id FROM enrichment_leg_current)
+       AND matrix_id NOT IN (SELECT matrix_id FROM enrichment_leg_current WHERE batch_id=?)
      ORDER BY matrix_id
-     LIMIT ?`, MAX_LEGS_PER_INVOCATION);
+     LIMIT ?`, batchId, MAX_LEGS_PER_INVOCATION);
 
   let written = 0;
-  const batchId = rid("enrichment_batch");
   const statements = [];
   const insertSql = `INSERT OR REPLACE INTO enrichment_leg_current
        (enrichment_id, matrix_id, batch_id, canonical_prop_key, mlb_player_id, board_line_value, prop_side,
