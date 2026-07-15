@@ -5960,13 +5960,14 @@ async function processHitProbabilityBoardJob(env, row, runId, trigger) {
   }
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
+  const isPartial = isPartialContinueOutput(output);
   const certification = String((output && (output.certification || output.status)) || (ok ? "hit_probability_board_completed" : "hit_probability_board_failed")).slice(0,120);
-  const queueStatus = ok ? "completed" : "failed";
+  const queueStatus = isPartial ? "pending" : (ok ? "completed" : "failed");
   const errorCode = ok ? null : "hit_probability_board_worker_failed";
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Hit Probability Board worker failed").slice(0,900);
   const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, selected_worker_slot:"alphadog-v2-phase3c-certifier", source_engine_batch_id: sourceEngineBatchId } };
   await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, queueStatus, dataOk ? 1 : 0, certification, Number(output && output.engine_rows_read || 0), Number(output && output.board_rows_written || 0), Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
-  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
+  await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CASE WHEN ?='pending' THEN NULL ELSE CURRENT_TIMESTAMP END, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
   return cappedOutput;
 }
 
