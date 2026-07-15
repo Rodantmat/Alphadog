@@ -433,7 +433,7 @@ async function markStaleRunningBatches(env, dates, family, reason = "STALE_RUNNI
 
 
 async function getPreparedSourceDiagnostics(env, dates) {
-  const [today, tomorrow] = dates;
+  const inClause = dates.map(() => "?").join(",");
   const currentByDateSource = await all(env.SCORE_DB, `SELECT
       official_date,
       source_key,
@@ -449,14 +449,14 @@ async function getPreparedSourceDiagnostics(env, dates) {
       COUNT(DISTINCT official_game_pk) AS games,
       COUNT(DISTINCT resolved_mlb_player_id) AS players
     FROM score_board_prepared_current
-    WHERE official_date IN (?, ?)
+    WHERE official_date IN (${inClause})
       AND pickable_safe=1
       AND matchup_status='calendar_matched'
       AND player_match_status='matched'
       AND official_game_pk IS NOT NULL
       AND official_game_time_utc IS NOT NULL
     GROUP BY official_date, source_key
-    ORDER BY official_date, source_key`, today, tomorrow);
+    ORDER BY official_date, source_key`, ...dates);
   return {
     current_table_by_date_source: currentByDateSource,
     eligible_window_by_date_source: eligibleByDateSource,
