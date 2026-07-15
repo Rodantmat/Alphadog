@@ -1478,7 +1478,7 @@ async function runPlayerPropContext(env, input = {}) {
   const missingDb = Object.entries(required).filter(([, ok]) => !ok).map(([name]) => name);
   if (missingDb.length) return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, request_id: requestId, run_id: runId, mode: config.mode, status: "blocked_missing_db_bindings", certification: `MARKET_${config.issue_prefix}_CONTEXT_BLOCKED_MISSING_DB_BINDINGS`, certification_grade: "BLOCKED", missing_db_bindings: missingDb, rows_read: 0, rows_written: 0, external_calls_performed: 0, retention, timestamp_utc: nowUtc() };
   await ensureSchema(env);
-  const preparedRows = await loadPreparedRows(env, today, tomorrow, config);
+  const preparedRows = await loadPreparedRows(env, boardWindowDates, config);
   const backendSequence = isBackendMarketSequence(input);
   // REAL FIX (root-caused against live evidence: automated Market Full Run's last two hitter/
   // pitcher prop-context runs both wrote parlay_inventory_rows_seen=0 while the certification
