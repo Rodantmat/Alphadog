@@ -332,20 +332,22 @@ async function runEnrichment(env, input) {
 
   let written = 0;
   const batchId = rid("enrichment_batch");
-  for (const row of matrixRows) {
-    const result = await enrichLeg(env, row, config);
-    await run(env.SCORING_DB,
-      `INSERT OR REPLACE INTO enrichment_leg_current
+  const statements = [];
+  const insertSql = `INSERT OR REPLACE INTO enrichment_leg_current
        (enrichment_id, matrix_id, batch_id, canonical_prop_key, mlb_player_id, board_line_value, prop_side,
         log_rate_adjustment, rate_multiplier, confidence_adjustment, factors_applied, factors_missing,
         factor_breakdown_json, created_at, updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
+  for (const row of matrixRows) {
+    const result = await enrichLeg(env, row, config);
+    statements.push(env.SCORING_DB.prepare(insertSql).bind(
       `enr_${row.matrix_id}`, row.matrix_id, batchId, result.canonical_prop_key, row.mlb_player_id, row.board_line_value, row.prop_side,
       result.log_rate_adjustment, result.rate_multiplier, result.confidence_adjustment, result.factors_applied, result.factors_missing,
       result.factor_breakdown_json
-    );
+    ));
     written++;
   }
+  if (statements.length) await env.SCORING_DB.batch(statements);
 
   return {
     ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
