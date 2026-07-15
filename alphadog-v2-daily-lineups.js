@@ -478,7 +478,8 @@ function collectLineupWriteRows(games, batchId, fetchedAtUtc) {
 
 async function writeConfirmedLineupsIfGateOpen(env, summary, cert, writeSafety) {
   const schemaReady = await ensureDailyLineupTables(env);
-  const retentionPrune = await pruneDailyLineupRetention(env);
+  const realBoardDates = [...new Set((summary.games || []).map(g => g && g.official_date).filter(Boolean))];
+  const retentionPrune = await pruneDailyLineupRetention(env, realBoardDates);
   const gateStatus = writeGateStatusFrom(summary.games, writeSafety.hard_blocks);
   const fetchedAt = nowUtc();
   const batchId = compactId(LINEUP_BATCH_PREFIX);
