@@ -90,13 +90,14 @@ async function ensureSchema(env) {
 
 async function runScoringEngine(env, input) {
   const batchId = rid("scoring_engine_batch");
-  const enrichmentRows = await all(env.SCORING_DB,
+  const alreadyScoredRows = await all(env.SCORE_DB, `SELECT DISTINCT matrix_id FROM scoring_engine_current`).catch(() => []);
+  const alreadyScoredIds = new Set(alreadyScoredRows.map(r => r.matrix_id));
+  const candidateRows = await all(env.SCORING_DB,
     `SELECT enrichment_id, matrix_id, batch_id, canonical_prop_key, mlb_player_id, board_line_value, prop_side,
             log_rate_adjustment, rate_multiplier, confidence_adjustment, factors_applied, factors_missing, factor_breakdown_json
      FROM enrichment_leg_current
-     WHERE matrix_id NOT IN (SELECT matrix_id FROM scoring_engine_current)
-     ORDER BY matrix_id
-     LIMIT ?`, MAX_LEGS_PER_INVOCATION);
+     ORDER BY matrix_id`);
+  const enrichmentRows = candidateRows.filter(r => !alreadyScoredIds.has(r.matrix_id)).slice(0, MAX_LEGS_PER_INVOCATION);
 
   await run(env.SCORE_DB,
     `INSERT INTO scoring_engine_batches (batch_id, profile_key, profile_version, worker_version, job_key, status, certification, certification_grade, matrix_rows_read, score_rows_written, archive_rows_written, thresholds_locked, archive_score_threshold, started_at)
