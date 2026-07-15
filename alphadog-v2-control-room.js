@@ -935,6 +935,7 @@ async function runJob(request, env, ctx) {
       "orchestrator_enqueue_market_context_source_probe",
       "orchestrator_enqueue_market_hitter_prop_context",
       "orchestrator_enqueue_market_pitcher_prop_context",
+      "orchestrator_enqueue_market_full_run",
       "orchestrator_enqueue_oddsapi_hitter_prop_context",
       "orchestrator_enqueue_prop_factor_hitters",
       "orchestrator_enqueue_prop_factor_pitchers",
