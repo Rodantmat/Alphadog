@@ -111,6 +111,14 @@ async function runHitProbabilityBoard(env, input, sourceEngineBatchId) {
     hpBatchId, SYSTEM_VERSION, PROFILE_KEY, "real_skeleton", "running", "SCORE_DB.scoring_engine_current + ARCHIVE_DB.baseline_v6_current", sourceEngineBatchId, engineRows.length, 0, 1, 1);
 
   let written = 0, primaryRows = 0, reviewRows = 0;
+  const statements = [];
+  const insertSql = `INSERT OR REPLACE INTO hp_board_current
+       (hp_board_row_id, hp_board_batch_id, source_engine_batch_id, prepared_row_id, matrix_id, source_line_id, profile_key, hp_profile_version,
+        source_key, game_pk, official_date, official_game_time_utc, mlb_player_id, player_name, canonical_prop_key, line_value, selected_side,
+        estimated_hit_probability_0_100, probability_confidence_0_100, probability_band, probability_grade,
+        score_0_100, score_grade, board_tier, live_playable, review_playable, hp_primary_playable, hp_review_playable, warning_count, blocker_count,
+        calibration_json, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
   for (const row of engineRows) {
     const enrichment = enrichmentByMatrix.get(row.matrix_id) || {};
     const baseline = baselineByPlayerProp.get(`${row.mlb_player_id}|${row.canonical_prop_key}|${row.line_value}`);
@@ -121,23 +129,17 @@ async function runHitProbabilityBoard(env, input, sourceEngineBatchId) {
     const primaryPlayable = hp >= 65 && row.confidence_0_100 >= 55 && (row.blocker_count || 0) === 0;
     if (primaryPlayable) primaryRows++; else reviewRows++;
 
-    await run(env.SCORE_DB,
-      `INSERT OR REPLACE INTO hp_board_current
-       (hp_board_row_id, hp_board_batch_id, source_engine_batch_id, prepared_row_id, matrix_id, source_line_id, profile_key, hp_profile_version,
-        source_key, game_pk, official_date, official_game_time_utc, mlb_player_id, player_name, canonical_prop_key, line_value, selected_side,
-        estimated_hit_probability_0_100, probability_confidence_0_100, probability_band, probability_grade,
-        score_0_100, score_grade, board_tier, live_playable, review_playable, hp_primary_playable, hp_review_playable, warning_count, blocker_count,
-        calibration_json, created_at, updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+    statements.push(env.SCORE_DB.prepare(insertSql).bind(
       `hp_${row.score_row_id}`, hpBatchId, sourceEngineBatchId, row.prepared_row_id || null, row.matrix_id, row.source_line_id || null, PROFILE_KEY, SYSTEM_VERSION,
       row.source_key || null, row.game_pk || null, row.official_date || null, row.official_game_time_utc || null,
       row.mlb_player_id, row.player_name, row.canonical_prop_key, row.line_value, row.selected_side,
       hp, row.confidence_0_100, hp >= 65 ? "playable" : "below_floor", gradeForProbability(hp),
       row.score_0_100, gradeForProbability(hp), primaryPlayable ? "PRIMARY" : "REVIEW", primaryPlayable ? 1 : 0, primaryPlayable ? 0 : 1, primaryPlayable ? 1 : 0, primaryPlayable ? 0 : 1, 0, row.blocker_count || 0,
       JSON.stringify({ real_skeleton: true, baseline_hp: baselineHp, rate_multiplier: enrichment.rate_multiplier ?? 1.0, note: "Real, first-pass HP combination - see file header for the honest scope note on the percentage-shift approximation used." })
-    );
+    ));
     written++;
   }
+  if (statements.length) await env.SCORE_DB.batch(statements);
 
   await run(env.SCORE_DB,
     `UPDATE hp_board_batches SET status=?, certification_status=?, certification_grade=?, board_rows_written=?, primary_rows=?, review_rows=?, updated_at=CURRENT_TIMESTAMP WHERE hp_board_batch_id=?`,
