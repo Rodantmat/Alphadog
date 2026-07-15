@@ -539,15 +539,15 @@ async function ensureSchema(env) {
   await batch(env.SCORING_DB, ddl.map(sql => env.SCORING_DB.prepare(sql)), 10);
 }
 async function retentionCleanup(env, dates) {
-  const [today, tomorrow] = dates;
-  await run(env.SCORING_DB, "DELETE FROM prop_matrix_current WHERE official_date NOT IN (?, ?)", today, tomorrow);
-  await run(env.SCORING_DB, "DELETE FROM prop_matrix_issues WHERE official_date IS NOT NULL AND official_date NOT IN (?, ?)", today, tomorrow);
-  await run(env.SCORING_DB, "DELETE FROM prop_matrix_coverage_current WHERE official_date NOT IN (?, ?)", today, tomorrow);
-  await run(env.SCORING_DB, "DELETE FROM prop_matrix_batches WHERE window_start NOT IN (?, ?) AND window_end NOT IN (?, ?)", today, tomorrow, today, tomorrow);
-  await run(env.SCORING_DB, "DELETE FROM prop_matrix_batches WHERE window_start IN (?, ?) OR window_end IN (?, ?)", today, tomorrow, today, tomorrow);
-  await run(env.SCORING_DB, "DELETE FROM prop_matrix_current WHERE official_date IN (?, ?)", today, tomorrow);
-  await run(env.SCORING_DB, "DELETE FROM prop_matrix_issues WHERE official_date IN (?, ?)", today, tomorrow);
-  await run(env.SCORING_DB, "DELETE FROM prop_matrix_coverage_current WHERE official_date IN (?, ?)", today, tomorrow);
+  const inClause = dates.map(() => "?").join(",");
+  await run(env.SCORING_DB, `DELETE FROM prop_matrix_current WHERE official_date NOT IN (${inClause})`, ...dates);
+  await run(env.SCORING_DB, `DELETE FROM prop_matrix_issues WHERE official_date IS NOT NULL AND official_date NOT IN (${inClause})`, ...dates);
+  await run(env.SCORING_DB, `DELETE FROM prop_matrix_coverage_current WHERE official_date NOT IN (${inClause})`, ...dates);
+  await run(env.SCORING_DB, `DELETE FROM prop_matrix_batches WHERE window_start NOT IN (${inClause}) AND window_end NOT IN (${inClause})`, ...dates, ...dates);
+  await run(env.SCORING_DB, `DELETE FROM prop_matrix_batches WHERE window_start IN (${inClause}) OR window_end IN (${inClause})`, ...dates, ...dates);
+  await run(env.SCORING_DB, `DELETE FROM prop_matrix_current WHERE official_date IN (${inClause})`, ...dates);
+  await run(env.SCORING_DB, `DELETE FROM prop_matrix_issues WHERE official_date IN (${inClause})`, ...dates);
+  await run(env.SCORING_DB, `DELETE FROM prop_matrix_coverage_current WHERE official_date IN (${inClause})`, ...dates);
 }
 async function getPreparedRows(env, dates) {
   return all(env.SCORE_DB, `SELECT prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
