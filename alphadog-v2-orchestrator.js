@@ -17707,17 +17707,20 @@ async function processOneUnlocked(env, trigger) {
 
   if (isEnrichmentEngineJob(row)) {
     const output = await processEnrichmentEngineJob(env, row, runId, trigger);
-    return { ok: !!(output && output.ok), data_ok: !!(output && output.data_ok), version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, status: output && output.status || "unknown", output };
+    const partial = isPartialContinueOutput(output);
+    return { ok: !!(output && output.ok), data_ok: !!(output && output.data_ok), version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, status: partial ? "partial_continue_enrichment_engine_job" : (output && output.ok ? "completed_one_enrichment_engine_job" : "failed_one_enrichment_engine_job"), output };
   }
 
   if (isScoringEngineShadowJob(row)) {
     const output = await processScoringEngineShadowJob(env, row, runId, trigger);
-    return { ok: !!(output && output.ok), data_ok: !!(output && output.data_ok), version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, status: output && output.status || "unknown", output };
+    const partial = isPartialContinueOutput(output);
+    return { ok: !!(output && output.ok), data_ok: !!(output && output.data_ok), version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, status: partial ? "partial_continue_scoring_engine_shadow_job" : (output && output.ok ? "completed_one_scoring_engine_shadow_job" : "failed_one_scoring_engine_shadow_job"), output };
   }
 
   if (isHitProbabilityBoardJob(row)) {
     const output = await processHitProbabilityBoardJob(env, row, runId, trigger);
-    return { ok: !!(output && output.ok), data_ok: !!(output && output.data_ok), version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, status: output && output.status || "unknown", output };
+    const partial = isPartialContinueOutput(output);
+    return { ok: !!(output && output.ok), data_ok: !!(output && output.data_ok), version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, status: partial ? "partial_continue_hit_probability_board_job" : (output && output.ok ? "completed_one_hit_probability_board_job" : "failed_one_hit_probability_board_job"), output };
   }
 
   if (isScoringFullRunJob(row)) {
