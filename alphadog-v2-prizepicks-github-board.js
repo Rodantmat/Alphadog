@@ -1644,6 +1644,20 @@ async function runBoardParseStageCertify(env, input = {}) {
       SOURCE_STALE_CERT
     );
   }
+  // Additive fix (2026-07-14): certification can fail with a nonzero-but-thin board (e.g. 1
+  // future-pickable row, well below mlb_rows_min_100) - this is distinct from the "all rows
+  // expired/stale" case above and was never triggering a rescrape. Fire the same GitHub
+  // repository_dispatch refresh for this case too, so a thin board self-heals on the next run
+  // instead of silently staying thin forever.
+  const sourceInsufficientRows = Boolean(!cert.passed && Array.isArray(cert.failed_checks) && cert.failed_checks.includes("mlb_rows_min_100") && Number(cert.future_pickable_rows || 0) > 0);
+  if (sourceInsufficientRows && !sourceRefreshDispatch) {
+    sourceRefreshDispatch = await triggerPrizePicksSourceRefresh(
+      env,
+      source,
+      { ...input, request_id: requestId, chain_id: chainId, slate_date: slateDate },
+      "source_certification_failed_insufficient_mlb_rows_below_min_100"
+    );
+  }
   const finalPassed = cert.passed && promotion.promoted;
   const finalHandled = finalPassed || sourceStaleHandled || sourceRefreshWaitPreserved;
   const finalCertification = finalPassed ? PROMOTION_CERT_PASS : (sourceStaleHandled ? SOURCE_STALE_CERT : (sourceRefreshWaitNoCurrent ? SOURCE_REFRESH_WAIT_NO_CURRENT_CERT : (sourceRefreshWaitPreserved ? SOURCE_REFRESH_WAIT_CERT : (cert.passed ? PROMOTION_CERT_FAIL : cert.certification_status))));
