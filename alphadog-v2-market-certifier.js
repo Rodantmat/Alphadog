@@ -298,8 +298,9 @@ async function writeParsingTallyForLayer(env, batchId, officialDate, layerKey, p
 // Reads real per-game team-odds coverage out of the market-normalizer batch's own coverage
 // object (game_context_present / missing), keyed by game_pk via the event_map table, rather
 // than re-deriving mapping logic that worker already owns.
-async function readTeamOddsGameCoverage(env, today, tomorrow) {
-  const rows = await all(env.MARKET_DB, `SELECT game_pk, mapping_status FROM market_context_probe_event_map WHERE slate_window_key = ? OR official_date IN (?, ?)`, `${today}_${tomorrow}`, today, tomorrow);
+async function readTeamOddsGameCoverage(env, boardWindowDates) {
+  const inClause = boardWindowDates.map(() => "?").join(",");
+  const rows = await all(env.MARKET_DB, `SELECT game_pk, mapping_status FROM market_context_probe_event_map WHERE official_date IN (${inClause})`, ...boardWindowDates);
   const covered = new Set();
   for (const r of rows) if (r.mapping_status === "mapped" && r.game_pk) covered.add(String(r.game_pk));
   return covered;
