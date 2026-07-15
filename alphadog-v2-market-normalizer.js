@@ -574,7 +574,8 @@ function preparedSelectColumns() {
       block_reason`;
 }
 
-async function loadPreparedRows(env, today, tomorrow) {
+async function loadPreparedRows(env, boardWindowDates) {
+  const inClause = boardWindowDates.map(() => "?").join(",");
   return all(env.SCORE_DB, `SELECT ${preparedSelectColumns()}
     FROM score_board_prepared_current
     WHERE pickable_safe = 1
@@ -582,9 +583,10 @@ async function loadPreparedRows(env, today, tomorrow) {
       AND player_match_status = 'matched'
       AND official_game_pk IS NOT NULL
       AND official_game_time_utc IS NOT NULL
-      AND official_date IN (?, ?)
+      AND official_date IN (${inClause})
+      AND official_game_time_utc > ?
     ORDER BY official_game_time_utc, official_game_pk, source_key, canonical_prop_key, player_name
-    LIMIT ${MAX_PREPARED_ROWS}`, today, tomorrow);
+    LIMIT ${MAX_PREPARED_ROWS}`, ...boardWindowDates, new Date().toISOString());
 }
 
 async function loadPreparedRowsAllForSource(env, today, tomorrow, sourceKey) {
