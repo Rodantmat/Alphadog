@@ -56,7 +56,7 @@
 const WORKER_NAME = "alphadog-v2-phase2a-run-environment";
 const LOGICAL_WORKER_NAME = "alphadog-v2-enrichment-engine";
 const JOB_KEY = "enrichment-engine";
-const SYSTEM_VERSION = "alphadog-v2-enrichment-engine-v0.2.0-real-tier-detection";
+const SYSTEM_VERSION = "alphadog-v2-enrichment-engine-v0.2.1-perf-row-cap-increase";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB", "SCORING_DB"];
 
