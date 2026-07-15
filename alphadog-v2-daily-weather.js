@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-weather";
-const VERSION = "alphadog-v2-daily-weather-v0.1.5-batched-compact-weather-writes";
+const VERSION = "alphadog-v2-daily-weather-v0.1.6-board-scoped-window";
 const JOB_KEY = "daily-weather";
 const MLB_SOURCE_KEY = "official_mlb_statsapi_live_feed_weather";
 const OPEN_METEO_SOURCE_KEY = "open_meteo_no_key_forecast";
