@@ -348,16 +348,39 @@ async function readLatestBatchMap(env) {
 async function runCertifier(env, input) {
   const startedAt = nowUtc();
   const batchId = rid("daily_context_readiness_batch");
-  const today = ptDate(0);
-  const tomorrow = ptDate(1);
   await ensureSchema(env);
 
-  await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_context_readiness_batches (batch_id,request_id,run_id,worker_name,worker_version,job_key,mode,status,window_start,window_end,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, batchId, input.request_id || null, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "daily_context_readiness_refresh_window", "running", today, tomorrow, startedAt);
+  // Fix (2026-07-15): the readiness window was hardcoded to exactly today+tomorrow
+  // (ptDate(0)/ptDate(1)), and every run actively purged readiness data for any other
+  // date. That silently broke whenever the real next games were more than 1 day out
+  // (e.g. All-Star break). The window must follow the real board: derive it from the
+  // actual distinct dates present in the prepared board, with today/tomorrow kept as a
+  // safety floor so a genuine no-games day still gets a ledger entry instead of going
+  // completely silent.
+  const preparedAllDates = await readPreparedRows(env);
+  const gamePksAllDates = [...new Set(preparedAllDates.map(r => r.official_game_pk).filter(v => v !== null && v !== undefined))];
+  const gamesAllDates = gamePksAllDates.length ? await all(env.TEAM_DB, `SELECT game_pk, official_date, game_time_utc, is_pregame, is_live, is_final, is_postponed, is_cancelled, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, detailed_state FROM mlb_game_calendar WHERE game_pk IN (${gamePksAllDates.map(() => "?").join(",")})`, ...gamePksAllDates) : [];
+  const gameMapAllDates = new Map(gamesAllDates.map(g => [String(g.game_pk), g]));
+  const nowIsoForStartCheck = nowUtc();
+  function gameHasStarted(gamePk) {
+    const g = gameMapAllDates.get(String(gamePk));
+    if (!g) return false;
+    if (Number(g.is_live) === 1 || Number(g.is_final) === 1 || Number(g.is_postponed) === 1 || Number(g.is_cancelled) === 1) return true;
+    if (g.game_time_utc && String(g.game_time_utc) <= nowIsoForStartCheck) return true;
+    return false;
+  }
+  const notYetStartedDates = [...new Set(preparedAllDates.filter(r => !gameHasStarted(r.official_game_pk)).map(r => r.official_date).filter(Boolean))];
+  const boardWindowDates = [...new Set([...notYetStartedDates, ptDate(0), ptDate(1)])].sort();
+  const today = boardWindowDates[0];
+  const tomorrow = boardWindowDates.length > 1 ? boardWindowDates[1] : ptDate(1);
+  const windowInClause = boardWindowDates.map(() => "?").join(",");
 
-  await run(env.DAILY_DB, "DELETE FROM daily_context_readiness_current WHERE official_date NOT IN (?, ?)", today, tomorrow);
-  await run(env.DAILY_DB, "DELETE FROM daily_context_readiness_issues WHERE official_date NOT IN (?, ?)", today, tomorrow);
-  await run(env.DAILY_DB, "DELETE FROM daily_context_readiness_current WHERE official_date IN (?, ?)", today, tomorrow);
-  await run(env.DAILY_DB, "DELETE FROM daily_context_readiness_issues WHERE official_date IN (?, ?)", today, tomorrow);
+  await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_context_readiness_batches (batch_id,request_id,run_id,worker_name,worker_version,job_key,mode,status,window_start,window_end,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, batchId, input.request_id || null, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "daily_context_readiness_refresh_window", "running", boardWindowDates[0], boardWindowDates[boardWindowDates.length - 1], startedAt);
+
+  await run(env.DAILY_DB, `DELETE FROM daily_context_readiness_current WHERE official_date NOT IN (${windowInClause})`, ...boardWindowDates);
+  await run(env.DAILY_DB, `DELETE FROM daily_context_readiness_issues WHERE official_date NOT IN (${windowInClause})`, ...boardWindowDates);
+  await run(env.DAILY_DB, `DELETE FROM daily_context_readiness_current WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
+  await run(env.DAILY_DB, `DELETE FROM daily_context_readiness_issues WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
 
   const prepared = await readPreparedRows(env);
   const gamePks = [...new Set(prepared.map(r => r.official_game_pk).filter(v => v !== null && v !== undefined))];
