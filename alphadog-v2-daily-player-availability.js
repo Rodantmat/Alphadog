@@ -372,6 +372,7 @@ async function pruneAvailabilityRetention(env, retention, latestBatchId = null) 
 }
 
 async function getPreparedPlayers(env, retention) {
+  const inClause = retention.dates.map(() => "?").join(",");
   return await all(env.SCORE_DB, `
     SELECT
       official_game_pk,
@@ -392,11 +393,12 @@ async function getPreparedPlayers(env, retention) {
       AND official_game_pk IS NOT NULL
       AND official_game_time_utc IS NOT NULL
       AND resolved_mlb_player_id IS NOT NULL
-      AND official_date IN (?, ?)
+      AND official_date IN (${inClause})
+      AND official_game_time_utc > ?
     GROUP BY official_game_pk, official_date, official_game_time_utc, team, opponent, resolved_player_id, resolved_mlb_player_id
     ORDER BY official_game_time_utc, official_game_pk, team, player_name
     LIMIT ${MAX_PREPARED_PLAYERS}
-  `, retention.start, retention.end);
+  `, ...retention.dates, new Date().toISOString());
 }
 async function getCalendar(env, gamePks) {
   if (!gamePks.length) return [];
