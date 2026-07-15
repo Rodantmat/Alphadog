@@ -82,19 +82,27 @@ async function runHitProbabilityBoard(env, input, sourceEngineBatchId) {
   const enrichmentByMatrix = new Map();
   const matrixIds = engineRows.map(r => r.matrix_id).filter(Boolean);
   if (matrixIds.length) {
-    const placeholders = matrixIds.map(() => "?").join(",");
-    const enrichmentRows = await all(env.SCORING_DB, `SELECT * FROM enrichment_leg_current WHERE matrix_id IN (${placeholders})`, ...matrixIds);
-    for (const e of enrichmentRows) enrichmentByMatrix.set(e.matrix_id, e);
+    const chunkSize = 90;
+    for (let i = 0; i < matrixIds.length; i += chunkSize) {
+      const chunk = matrixIds.slice(i, i + chunkSize);
+      const placeholders = chunk.map(() => "?").join(",");
+      const enrichmentRows = await all(env.SCORING_DB, `SELECT * FROM enrichment_leg_current WHERE matrix_id IN (${placeholders})`, ...chunk);
+      for (const e of enrichmentRows) enrichmentByMatrix.set(e.matrix_id, e);
+    }
   }
 
   const playerIds = [...new Set(engineRows.map(r => r.mlb_player_id).filter(Boolean))];
   const baselineByPlayerProp = new Map();
   if (playerIds.length) {
-    const placeholders = playerIds.map(() => "?").join(",");
-    const baselineRows = await all(env.ARCHIVE_DB,
-      `SELECT player_id, canonical_prop_key, line_value, hit_probability_0_100, confidence_0_100 FROM baseline_v6_current WHERE player_id IN (${placeholders})`,
-      ...playerIds);
-    for (const b of baselineRows) baselineByPlayerProp.set(`${b.player_id}|${b.canonical_prop_key}|${b.line_value}`, b);
+    const chunkSize = 90;
+    for (let i = 0; i < playerIds.length; i += chunkSize) {
+      const chunk = playerIds.slice(i, i + chunkSize);
+      const placeholders = chunk.map(() => "?").join(",");
+      const baselineRows = await all(env.ARCHIVE_DB,
+        `SELECT player_id, canonical_prop_key, line_value, hit_probability_0_100, confidence_0_100 FROM baseline_v6_current WHERE player_id IN (${placeholders})`,
+        ...chunk);
+      for (const b of baselineRows) baselineByPlayerProp.set(`${b.player_id}|${b.canonical_prop_key}|${b.line_value}`, b);
+    }
   }
 
   await run(env.SCORE_DB,
