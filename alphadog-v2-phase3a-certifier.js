@@ -130,7 +130,7 @@ async function runScoringEngine(env, input) {
   for (const er of enrichmentRows) {
     const matrixRow = matrixById.get(er.matrix_id) || {};
     const payload = safeJsonParse(matrixRow.matrix_payload_json, {});
-    const playerName = payload?.player_context?.player_name || null;
+    const playerName = payload?.prepared?.player_name || payload?.player_context?.player_name || null;
     const { score, confidence } = computeRealScoreAndConfidence(er);
     const scoreRowId = rid("score_row");
 
