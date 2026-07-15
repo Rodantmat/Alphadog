@@ -298,9 +298,10 @@ async function pruneRetention(env, retention) {
   };
 }
 async function postPruneRetention(env, retention) {
-  const current = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_current WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
-  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_snapshots WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
-  const issues = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_issues WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
+  const inClause = retention.dates.map(() => "?").join(",");
+  const current = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_current WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
+  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_snapshots WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
+  const issues = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_issues WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
   return {
     current_deleted: current && current.meta ? current.meta.changes : null,
     snapshots_deleted: snapshots && snapshots.meta ? snapshots.meta.changes : null,
