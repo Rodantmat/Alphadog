@@ -1253,7 +1253,7 @@ async function runMarketSourceProbe(env, input = {}) {
   const matcher = buildGameMatcher(calendarRows, teamAliases);
   await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status='running_fetching_featured_game_odds', certification_status='MARKET_TEAMS_GAME_ODDS_RUNNING_FETCHING_FEATURED', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", batchId);
   await controlHeartbeat(env, requestId, runId, 'running_fetching_featured_game_odds', { batch_id: batchId });
-  const odds = await fetchOddsApiGameOdds(env);
+  const odds = await fetchOddsApiGameOdds(env, resolvedOddsApiKey);
   externalCalls += odds.external_calls || 0;
   await run(env.MARKET_DB, "UPDATE market_context_probe_batches SET status='running_featured_game_odds_fetched', odds_api_events_seen=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?", Number((odds && odds.events && odds.events.length) || 0), batchId);
   await controlHeartbeat(env, requestId, runId, 'running_featured_game_odds_fetched', { batch_id: batchId, odds_api_events_seen: Number((odds && odds.events && odds.events.length) || 0) });
