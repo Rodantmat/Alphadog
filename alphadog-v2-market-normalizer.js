@@ -204,7 +204,6 @@ async function resolveOddsApiKey(env) {
   }
   return env.ODDS_API_KEY ? String(env.ODDS_API_KEY) : null;
 }
-}
 
 function fetchTimeoutMs(env) {
   const n = Number(env && env.ODDS_API_FETCH_TIMEOUT_MS ? env.ODDS_API_FETCH_TIMEOUT_MS : 12000);
