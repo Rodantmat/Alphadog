@@ -1084,7 +1084,16 @@ async function runFactorMining(request, env) {
   const input = await request.json().catch(() => ({}));
   const family = modeFamily(input.mode || input.factor_mode);
   const mode = family === "pitcher" ? "pitcher_prop_factor_mining" : "hitter_prop_factor_mining";
-  const dates = Array.isArray(input.window_dates) && input.window_dates.length >= 2 ? input.window_dates.slice(0, 2) : ptTodayTomorrow();
+  let dates;
+  if (Array.isArray(input.window_dates) && input.window_dates.length) {
+    dates = [...new Set(input.window_dates)].sort();
+  } else {
+    const nowIsoForWindow = new Date().toISOString();
+    const realBoardDateRows = await all(env.SCORE_DB, `SELECT DISTINCT official_date FROM score_board_prepared_current WHERE pickable_safe = 1 AND official_game_time_utc IS NOT NULL AND official_game_time_utc > ?`, nowIsoForWindow);
+    const realBoardDates = realBoardDateRows.map(r => r.official_date).filter(Boolean);
+    const floor = ptTodayTomorrow();
+    dates = [...new Set([...realBoardDates, ...floor])].sort();
+  }
   const dbPresence = reqDb(env);
   if (!allTrue(dbPresence)) return jsonResponse({ ok:false, data_ok:false, version:SYSTEM_VERSION, worker_name:LOGICAL_WORKER_NAME, deployed_worker_slot:WORKER_NAME, status:"blocked_missing_db_binding", missing_bindings:Object.entries(dbPresence).filter(([,v])=>!v).map(([k])=>k) }, 500);
   await loadTaxonomyClassifier(env);
