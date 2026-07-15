@@ -658,7 +658,10 @@ async function verifyVolatileWindowAfterWrite(env, window, batchId) {
 async function refreshWindow(env, input) {
   await ensureSchema(env);
   const started = nowUtc();
-  const window = retentionWindowPt();
+  const nowIsoForWindow = new Date().toISOString();
+  const realBoardDateRows = await all(env.SCORE_DB, `SELECT DISTINCT official_date FROM score_board_prepared_current WHERE pickable_safe = 1 AND official_game_time_utc IS NOT NULL AND official_game_time_utc > ?`, nowIsoForWindow);
+  const realBoardDates = realBoardDateRows.map(r => r.official_date).filter(Boolean);
+  const window = retentionWindowPt(realBoardDates);
   const batchId = rid("daily_team_schedule_spot_batch");
   const runId = input.run_id || rid("run");
   await clearVolatileWindowBeforeWrite(env, window);
