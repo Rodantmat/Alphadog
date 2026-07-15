@@ -276,10 +276,11 @@ async function ensureSchema(env) {
   await run(env.DAILY_DB, `INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('daily_bullpen_availability_v0_1_0', ?, CURRENT_TIMESTAMP, 'Daily Context Phase 5 bullpen availability internal-source tables')`, VERSION);
 }
 async function pruneRetention(env, retention) {
-  const current = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_current WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
-  const pitcher = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_pitcher_availability_current WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
-  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_snapshots WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
-  const issues = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_issues WHERE official_date IS NULL OR official_date NOT IN (?, ?)`, retention.start, retention.end);
+  const inClause = retention.dates.map(() => "?").join(",");
+  const current = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_current WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
+  const pitcher = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_pitcher_availability_current WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
+  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_snapshots WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
+  const issues = await run(env.DAILY_DB, `DELETE FROM daily_bullpen_availability_issues WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
   return {
     current_deleted: current && current.meta ? current.meta.changes : null,
     pitcher_current_deleted: pitcher && pitcher.meta ? pitcher.meta.changes : null,
