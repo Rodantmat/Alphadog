@@ -466,18 +466,20 @@ async function getPreparedSourceDiagnostics(env, dates) {
 }
 
 async function getPreparedRows(env, dates) {
+  const inClause = dates.map(() => "?").join(",");
   return all(env.SCORE_DB, `SELECT prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
       player_name, resolved_player_id, resolved_mlb_player_id, player_match_status, team, opponent,
       team_full_name, opponent_full_name, canonical_prop_key, source_prop_name, line_value, official_game_pk,
       official_game_time_utc, official_date, matchup_status, pickable_safe, prep_status, block_reason, row_payload_json
     FROM score_board_prepared_current
-    WHERE official_date IN (?, ?)
+    WHERE official_date IN (${inClause})
       AND pickable_safe=1
       AND matchup_status='calendar_matched'
       AND player_match_status='matched'
       AND official_game_pk IS NOT NULL
       AND official_game_time_utc IS NOT NULL
-    ORDER BY official_date, official_game_pk, resolved_mlb_player_id, canonical_prop_key, source_key`, dates[0], dates[1]);
+      AND official_game_time_utc > ?
+    ORDER BY official_date, official_game_pk, resolved_mlb_player_id, canonical_prop_key, source_key`, ...dates, new Date().toISOString());
 }
 
 function shouldConsiderPreparedRowForFamily(row, family) {
