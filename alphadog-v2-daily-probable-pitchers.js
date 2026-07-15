@@ -934,7 +934,7 @@ async function runDailyStarters(request, env) {
       run_id: runId,
       window_start: window.start,
       window_end: window.end,
-      retention_policy: "retain_only_pt_today_and_tomorrow",
+      retention_policy: "board_scoped_not_yet_started_games_only",
       source_endpoint: endpoint,
       prepared_rows_read: preparedRows.length,
       raw_prepared_rows_seen_before_retention_filter: rawPreparedRows.length,
