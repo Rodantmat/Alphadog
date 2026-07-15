@@ -308,9 +308,32 @@ async function readTeamOddsGameCoverage(env, today, tomorrow) {
 async function runCertifier(env, input) {
   const startedAt = nowUtc();
   const batchId = rid("market_certifier_batch");
-  const today = ptDate(0);
-  const tomorrow = ptDate(1);
   await ensureSchema(env);
+
+  // Fix (2026-07-15): board-scoped window instead of hardcoded today+tomorrow, same root
+  // cause and fix pattern as Daily Context certifier and score-prep. Also excludes games
+  // that have already started (real game time vs now; is_final/is_postponed/is_cancelled) -
+  // those legs are locked in and shouldn't be re-mined or block certification.
+  const preparedAllDates = await readPreparedRows(env);
+  const gamePksAllDates = [...new Set(preparedAllDates.map(r => r.official_game_pk).filter(Boolean))];
+  const gamesAllDates = gamePksAllDates.length ? await all(env.TEAM_DB, `SELECT game_pk, official_date, game_time_utc, is_final, is_postponed, is_cancelled FROM mlb_game_calendar WHERE game_pk IN (${gamePksAllDates.map(() => "?").join(",")})`, ...gamePksAllDates) : [];
+  const gameMapAllDates = new Map(gamesAllDates.map(g => [String(g.game_pk), g]));
+  const nowIsoForStartCheck = nowUtc();
+  function gameHasStarted(gamePk) {
+    const g = gameMapAllDates.get(String(gamePk));
+    if (!g) return false;
+    // Note: is_live is not used here - confirmed unreliable for future games (frequently
+    // stuck at 1 for games that haven't started). Real game time and terminal state flags
+    // are the trustworthy signals.
+    if (Number(g.is_final) === 1 || Number(g.is_postponed) === 1 || Number(g.is_cancelled) === 1) return true;
+    if (g.game_time_utc && String(g.game_time_utc) <= nowIsoForStartCheck) return true;
+    return false;
+  }
+  const notYetStartedDates = [...new Set(preparedAllDates.filter(r => !gameHasStarted(r.official_game_pk)).map(r => r.official_date).filter(Boolean))];
+  const boardWindowDates = [...new Set([...notYetStartedDates, ptDate(0), ptDate(1)])].sort();
+  const today = boardWindowDates[0];
+  const tomorrow = boardWindowDates.length > 1 ? boardWindowDates[1] : ptDate(1);
+  const windowInClause = boardWindowDates.map(() => "?").join(",");
 
   // Real gap found via ongoing-reliability audit: market_parsing_tally_history had no retention
   // logic at all and would grow unbounded forever (one row per layer/source on every certifier
@@ -323,19 +346,24 @@ async function runCertifier(env, input) {
   await run(env.MARKET_DB, "DELETE FROM market_certifier_batches WHERE datetime(created_at) < datetime('now', '-60 days')");
 
   await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_certifier_batches (batch_id,request_id,run_id,worker_name,worker_version,job_key,mode,status,window_start,window_end,started_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
-    batchId, input.request_id || null, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "market_context_readiness_refresh", "running", today, tomorrow, startedAt);
+    batchId, input.request_id || null, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "market_context_readiness_refresh", "running", boardWindowDates[0], boardWindowDates[boardWindowDates.length - 1], startedAt);
 
-  await run(env.MARKET_DB, "DELETE FROM market_context_readiness_current WHERE official_date NOT IN (?, ?)", today, tomorrow);
-  await run(env.MARKET_DB, "DELETE FROM market_context_readiness_issues WHERE official_date NOT IN (?, ?)", today, tomorrow);
-  await run(env.MARKET_DB, "DELETE FROM market_context_readiness_current WHERE official_date IN (?, ?)", today, tomorrow);
-  await run(env.MARKET_DB, "DELETE FROM market_context_readiness_issues WHERE official_date IN (?, ?)", today, tomorrow);
+  await run(env.MARKET_DB, `DELETE FROM market_context_readiness_current WHERE official_date NOT IN (${windowInClause})`, ...boardWindowDates);
+  await run(env.MARKET_DB, `DELETE FROM market_context_readiness_issues WHERE official_date NOT IN (${windowInClause})`, ...boardWindowDates);
+  await run(env.MARKET_DB, `DELETE FROM market_context_readiness_current WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
+  await run(env.MARKET_DB, `DELETE FROM market_context_readiness_issues WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
 
-  const prepared = await readPreparedRows(env);
+  const prepared = preparedAllDates.filter(r => !gameHasStarted(r.official_game_pk));
+  const skippedAlreadyStartedRows = preparedAllDates.length - prepared.length;
   const todayCount = prepared.filter(r => r.official_date === today).length;
   const tomorrowCount = prepared.filter(r => r.official_date === tomorrow).length;
-  const slateShape = determineSlateShape(todayCount, tomorrowCount);
+  const totalBoardGameCount = new Set(prepared.map(r => String(r.official_game_pk))).size;
+  const slateShape = totalBoardGameCount > 0 ? "board_scoped_multi_date" : "no_games";
   const gamePks = [...new Set(prepared.map(r => r.official_game_pk).filter(Boolean))];
-  await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_certifier_slate_current (slate_date,batch_id,slate_shape,game_count,computed_at,created_at,updated_at) VALUES (?,?,?,?,?,COALESCE((SELECT created_at FROM market_certifier_slate_current WHERE slate_date=?), CURRENT_TIMESTAMP),CURRENT_TIMESTAMP)`, today, batchId, slateShape, todayCount > 0 ? new Set(prepared.filter(r=>r.official_date===today).map(r=>r.official_game_pk)).size : 0, nowUtc(), today);
+  for (const d of boardWindowDates) {
+    const gameCountForDate = new Set(prepared.filter(r => r.official_date === d).map(r => r.official_game_pk)).size;
+    await run(env.MARKET_DB, `INSERT OR REPLACE INTO market_certifier_slate_current (slate_date,batch_id,slate_shape,game_count,computed_at,created_at,updated_at) VALUES (?,?,?,?,?,COALESCE((SELECT created_at FROM market_certifier_slate_current WHERE slate_date=?), CURRENT_TIMESTAMP),CURRENT_TIMESTAMP)`, d, batchId, slateShape, gameCountForDate, nowUtc(), d);
+  }
 
   const [teamBatch, hitterBatch, pitcherBatch] = await Promise.all([
     readLatestBatch(env, "market_teams_game_odds"),
