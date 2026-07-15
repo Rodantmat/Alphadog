@@ -1179,14 +1179,24 @@ async function runMarketSourceProbe(env, input = {}) {
   const deadlineMs = startedMs + marketTeamsWorkerBudgetMs(env);
   const requestId = input.request_id || null;
   const runId = input.run_id || null;
-  const today = ptDate(0);
-  const tomorrow = ptDate(1);
+  // Fix (2026-07-15): board-scoped window instead of hardcoded today+tomorrow, same root
+  // cause and fix pattern as Daily Context certifier, score-prep, and Market Certifier.
+  // today/tomorrow are kept as variable names (now the window's min/max) so the many
+  // existing downstream usages below don't all need individual changes; boardWindowDates
+  // is the real list used for actual date-membership queries. Already-started games
+  // (real game time vs now, or terminal state) are excluded - those legs are locked in.
+  const nowIsoForWindow = new Date().toISOString();
+  const realBoardDateRowsPrelim = await all(env.SCORE_DB, `SELECT DISTINCT official_date FROM score_board_prepared_current WHERE pickable_safe = 1 AND official_game_time_utc IS NOT NULL AND official_game_time_utc > ?`, nowIsoForWindow);
+  const realBoardDatesPrelim = realBoardDateRowsPrelim.map(r => r.official_date).filter(Boolean);
+  const boardWindowDates = [...new Set([...realBoardDatesPrelim, ptDate(0), ptDate(1)])].sort();
+  const today = boardWindowDates[0];
+  const tomorrow = boardWindowDates[boardWindowDates.length - 1];
   const slateWindowKey = `${today}_${tomorrow}`;
   const batchId = rid("market_context_probe_batch");
   let externalCalls = 0;
   let warningCount = 0;
   let blockerCount = 0;
-  const retention = { today, tomorrow, slate_window_key: slateWindowKey };
+  const retention = { today, tomorrow, slate_window_key: slateWindowKey, board_window_dates: boardWindowDates };
 
   const required = bindingPresence(env, REQUIRED_DB_BINDINGS);
   const missingDb = Object.entries(required).filter(([, v]) => !v).map(([k]) => k);
