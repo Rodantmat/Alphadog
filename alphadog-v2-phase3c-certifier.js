@@ -80,7 +80,7 @@ async function runHitProbabilityBoard(env, input, sourceEngineBatchId) {
      FROM scoring_engine_current
      WHERE matrix_id NOT IN (SELECT matrix_id FROM hp_board_current)
      ORDER BY matrix_id
-     LIMIT ?`, sourceEngineBatchId, sourceEngineBatchId, MAX_LEGS_PER_INVOCATION);
+     LIMIT ?`, MAX_LEGS_PER_INVOCATION);
 
   const enrichmentByMatrix = new Map();
   const matrixIds = engineRows.map(r => r.matrix_id).filter(Boolean);
