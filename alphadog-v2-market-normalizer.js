@@ -884,10 +884,10 @@ function expandedGameTeamMarketKeys(env) {
   return requested.filter(k => allowed.has(k) && !k.includes("batter") && !k.includes("pitcher") && !k.includes("player"));
 }
 
-async function fetchOddsApiEventMarket(env, eventId, marketKey, bookmakerList) {
+async function fetchOddsApiEventMarket(env, eventId, marketKey, bookmakerList, apiKey) {
   const base = String(env.ODDS_API_BASE_URL || "https://api.the-odds-api.com/v4").replace(/\/+$/, "");
   const url = new URL(`${base}/sports/baseball_mlb/events/${encodeURIComponent(eventId)}/odds`);
-  url.searchParams.set("apiKey", String(env.ODDS_API_KEY));
+  url.searchParams.set("apiKey", apiKey || "");
   if (bookmakerList) url.searchParams.set("bookmakers", bookmakerList);
   else url.searchParams.set("regions", String(env.ODDS_API_REGIONS || "us"));
   url.searchParams.set("markets", marketKey);
