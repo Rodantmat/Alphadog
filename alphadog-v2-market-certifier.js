@@ -333,7 +333,7 @@ async function runCertifier(env, input) {
   const notYetStartedDates = [...new Set(preparedAllDates.filter(r => !gameHasStarted(r.official_game_pk)).map(r => r.official_date).filter(Boolean))];
   const boardWindowDates = [...new Set([...notYetStartedDates, ptDate(0), ptDate(1)])].sort();
   const today = boardWindowDates[0];
-  const tomorrow = boardWindowDates.length > 1 ? boardWindowDates[1] : ptDate(1);
+  const tomorrow = boardWindowDates[boardWindowDates.length - 1];
   const windowInClause = boardWindowDates.map(() => "?").join(",");
 
   // Real gap found via ongoing-reliability audit: market_parsing_tally_history had no retention
