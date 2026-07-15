@@ -119,18 +119,19 @@ function d1Changes(result) {
   return Number(result && result.meta && result.meta.changes ? result.meta.changes : 0);
 }
 
-async function pruneDailyLineupRetention(env) {
-  const keepDates = retentionDatesToKeep();
+async function pruneDailyLineupRetention(env, extraDates = []) {
+  const keepDates = retentionDatesToKeep(new Date(), extraDates);
+  const inClause = keepDates.map(() => "?").join(",");
   const currentPrune = await execRun(env.DAILY_DB, `
     DELETE FROM daily_lineups_current
     WHERE official_date IS NULL
-       OR official_date NOT IN (?, ?)
-  `, keepDates[0], keepDates[1]);
+       OR official_date NOT IN (${inClause})
+  `, ...keepDates);
   const batchPrune = await execRun(env.DAILY_DB, `
     DELETE FROM daily_lineups_batches
     WHERE created_at IS NULL
-       OR substr(created_at, 1, 10) NOT IN (?, ?)
-  `, keepDates[0], keepDates[1]);
+       OR substr(created_at, 1, 10) NOT IN (${inClause})
+  `, ...keepDates);
   return {
     retention_prune_enabled: true,
     retention_window: RETENTION_WINDOW_LABEL,
