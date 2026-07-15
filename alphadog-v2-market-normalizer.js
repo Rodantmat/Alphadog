@@ -493,7 +493,7 @@ async function ensureSchema(env) {
   await run(env.MARKET_DB, "CREATE INDEX IF NOT EXISTS idx_mcp_game_team_market_expansion_batch_game ON market_context_probe_game_team_market_expansion(batch_id, game_pk, requested_market_key)");
 }
 
-async function pruneProbeWindow(env, today, tomorrow, slateWindowKey) {
+async function pruneProbeWindow(env, boardWindowDates, slateWindowKey) {
   const tables = [
     "market_context_probe_game_odds",
     "market_context_probe_player_props",
@@ -504,15 +504,16 @@ async function pruneProbeWindow(env, today, tomorrow, slateWindowKey) {
     "market_context_probe_game_market_summary",
     "market_context_probe_game_team_market_expansion"
   ];
+  const inClause = boardWindowDates.map(() => "?").join(",");
   const deleted = {};
   for (const table of tables) {
-    await run(env.MARKET_DB, `DELETE FROM ${table} WHERE slate_window_key <> ? OR official_date NOT IN (?, ?)`, slateWindowKey, today, tomorrow);
+    await run(env.MARKET_DB, `DELETE FROM ${table} WHERE slate_window_key <> ? OR official_date NOT IN (${inClause})`, slateWindowKey, ...boardWindowDates);
     await run(env.MARKET_DB, `DELETE FROM ${table} WHERE slate_window_key = ?`, slateWindowKey);
-    deleted[table] = "pruned_outside_today_tomorrow_and_replaced_current_window";
+    deleted[table] = "pruned_outside_board_window_and_replaced_current_window";
   }
   await run(env.MARKET_DB, "DELETE FROM market_context_probe_batches WHERE slate_window_key <> ?", slateWindowKey);
   await run(env.MARKET_DB, "DELETE FROM market_context_probe_batches WHERE slate_window_key = ?", slateWindowKey);
-  deleted.market_context_probe_batches = "pruned_outside_today_tomorrow_and_replaced_current_window";
+  deleted.market_context_probe_batches = "pruned_outside_board_window_and_replaced_current_window";
   return deleted;
 }
 
