@@ -365,7 +365,7 @@ async function runCertifier(env, input) {
   function gameHasStarted(gamePk) {
     const g = gameMapAllDates.get(String(gamePk));
     if (!g) return false;
-    if (Number(g.is_live) === 1 || Number(g.is_final) === 1 || Number(g.is_postponed) === 1 || Number(g.is_cancelled) === 1) return true;
+    if (Number(g.is_final) === 1 || Number(g.is_postponed) === 1 || Number(g.is_cancelled) === 1) return true;
     if (g.game_time_utc && String(g.game_time_utc) <= nowIsoForStartCheck) return true;
     return false;
   }
