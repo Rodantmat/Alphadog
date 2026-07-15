@@ -1667,8 +1667,8 @@ async function runBoardPrep(env, input) {
   ];
   const explicitWindowDates = Array.isArray(input.window_dates) && input.window_dates.length >= 2
     ? input.window_dates.slice(0, 2).map(safeStr).filter(Boolean)
-    : ptTodayTomorrow();
-  const currentWindowDateSet = new Set(explicitWindowDates);
+    : Array.from(dates);
+  const currentWindowDateSet = new Set(explicitWindowDates.length ? explicitWindowDates : ptTodayTomorrow());
   const prepared = preparedAllSources.filter(r => currentWindowDateSet.has(r.official_date));
   const staleExcluded = preparedAllSources.filter(r => !currentWindowDateSet.has(r.official_date));
   timing.resolve_ms = Date.now() - resolveStart;
