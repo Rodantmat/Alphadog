@@ -109,10 +109,10 @@ function formatDateInTimeZone(date, timeZone = RETENTION_TIMEZONE) {
   return `${map.year}-${map.month}-${map.day}`;
 }
 
-function retentionDatesToKeep(now = new Date()) {
+function retentionDatesToKeep(now = new Date(), extraDates = []) {
   const today = formatDateInTimeZone(now, RETENTION_TIMEZONE);
   const tomorrow = formatDateInTimeZone(new Date(now.getTime() + 24 * 60 * 60 * 1000), RETENTION_TIMEZONE);
-  return [today, tomorrow];
+  return [...new Set([today, tomorrow, ...(extraDates || []).filter(Boolean)])].sort();
 }
 
 function d1Changes(result) {
