@@ -104,9 +104,13 @@ async function runScoringEngine(env, input) {
   const matrixIds = enrichmentRows.map(r => r.matrix_id);
   const matrixById = new Map();
   if (matrixIds.length) {
-    const placeholders = matrixIds.map(() => "?").join(",");
-    const matrixRows = await all(env.SCORING_DB, `SELECT * FROM prop_matrix_current WHERE matrix_id IN (${placeholders})`, ...matrixIds);
-    for (const m of matrixRows) matrixById.set(m.matrix_id, m);
+    const chunkSize = 90;
+    for (let i = 0; i < matrixIds.length; i += chunkSize) {
+      const chunk = matrixIds.slice(i, i + chunkSize);
+      const placeholders = chunk.map(() => "?").join(",");
+      const matrixRows = await all(env.SCORING_DB, `SELECT * FROM prop_matrix_current WHERE matrix_id IN (${placeholders})`, ...chunk);
+      for (const m of matrixRows) matrixById.set(m.matrix_id, m);
+    }
   }
 
   for (const er of enrichmentRows) {
