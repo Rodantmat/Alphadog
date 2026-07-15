@@ -1013,7 +1013,8 @@ async function validateBoardFullRunFinalGuard(env, stageReports) {
   const scorePrizePicksRows = Number(scorePrizePicks && scorePrizePicks.rows || 0);
   const scoreSleeperRows = Number(scoreSleeper && scoreSleeper.rows || 0);
   const scoreTotalRows = Number(scoreTotal && scoreTotal.rows || 0);
-  const marketTotalRows = marketPrizePicksRows + marketSleeperRows;
+  const marketUnderdogRows = Number(marketUnderdog && marketUnderdog.rows || 0);
+  const marketTotalRows = marketPrizePicksRows + marketSleeperRows + marketUnderdogRows;
 
   const parity = {
     market_prizepicks_rows_raw_current: marketPrizePicksRows,
