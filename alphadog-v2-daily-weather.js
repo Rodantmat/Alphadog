@@ -318,6 +318,7 @@ async function pruneRetention(env, retention, batchId) {
   };
 }
 async function getPreparedGames(env, retention) {
+  const inClause = retention.dates.map(() => "?").join(",");
   return all(env.SCORE_DB, `SELECT
       official_game_pk,
       official_game_time_utc,
@@ -329,9 +330,10 @@ async function getPreparedGames(env, retention) {
       AND player_match_status = 'matched'
       AND official_game_pk IS NOT NULL
       AND official_game_time_utc IS NOT NULL
-      AND official_date IN (?, ?)
+      AND official_date IN (${inClause})
+      AND official_game_time_utc > ?
     GROUP BY official_game_pk, official_game_time_utc, official_date
-    ORDER BY official_game_time_utc`, retention.start, retention.end);
+    ORDER BY official_game_time_utc`, ...retention.dates, new Date().toISOString());
 }
 async function getCalendar(env, gamePks) {
   if (!gamePks.length) return [];
