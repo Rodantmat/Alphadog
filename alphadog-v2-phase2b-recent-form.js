@@ -417,7 +417,7 @@ async function retentionCleanup(env, dates, family) {
 }
 
 async function markStaleRunningBatches(env, dates, family, reason = "STALE_RUNNING_BATCH_MARKED_FAILED_BEFORE_NEW_RUN") {
-  const [today, tomorrow] = dates;
+  const inClause = dates.map(() => "?").join(",");
   await run(env.SCORING_DB, `UPDATE prop_factor_batches
     SET status='failed_stale_interrupted',
         certification_status=?,
@@ -426,9 +426,9 @@ async function markStaleRunningBatches(env, dates, family, reason = "STALE_RUNNI
         updated_at=CURRENT_TIMESTAMP
     WHERE factor_family=?
       AND status='running'
-      AND window_start IN (?, ?)
-      AND window_end IN (?, ?)`,
-    reason, SYSTEM_VERSION, reason, family, today, tomorrow, today, tomorrow);
+      AND window_start IN (${inClause})
+      AND window_end IN (${inClause})`,
+    reason, SYSTEM_VERSION, reason, family, ...dates, ...dates);
 }
 
 
