@@ -436,10 +436,11 @@ async function runCertifier(env, input) {
     }
     return tallies;
   }
-  const tallyToday = await tallyForDate(today);
-  const tallyTomorrow = await tallyForDate(tomorrow);
-  await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_context_slate_current (slate_date,batch_id,slate_shape,game_count,computed_at,created_at,updated_at) VALUES (?,?,?,?,?,COALESCE((SELECT created_at FROM daily_context_slate_current WHERE slate_date=?), CURRENT_TIMESTAMP),CURRENT_TIMESTAMP)`, today, batchId, slateShape, todayGamePkSet.size, nowUtc(), today);
-  await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_context_slate_current (slate_date,batch_id,slate_shape,game_count,computed_at,created_at,updated_at) VALUES (?,?,?,?,?,COALESCE((SELECT created_at FROM daily_context_slate_current WHERE slate_date=?), CURRENT_TIMESTAMP),CURRENT_TIMESTAMP)`, tomorrow, batchId, slateShape, tomorrowGamePkSet.size, nowUtc(), tomorrow);
+  const tallyByDate = {};
+  for (const d of boardWindowDates) {
+    tallyByDate[d] = await tallyForDate(d);
+    await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_context_slate_current (slate_date,batch_id,slate_shape,game_count,computed_at,created_at,updated_at) VALUES (?,?,?,?,?,COALESCE((SELECT created_at FROM daily_context_slate_current WHERE slate_date=?), CURRENT_TIMESTAMP),CURRENT_TIMESTAMP)`, d, batchId, slateShape, (gamePkSetByDate.get(d) || new Set()).size, nowUtc(), d);
+  }
 
   const expiredGamePks = games.filter(g => isGameStartedExpiredOrUnavailable(g, null)).map(g => g.game_pk);
   const purgeResult = await purgeExpiredGameLayers(env, expiredGamePks);
