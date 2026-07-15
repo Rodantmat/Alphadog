@@ -877,13 +877,14 @@ async function summarizeMatrixBatch(env, batchId) {
   };
 }
 async function findResumeMatrixBatch(env, input, dates) {
+  const windowEnd = dates[dates.length - 1];
   const requested = input.matrix_batch_id || input.resume_batch_id || null;
   if (requested) {
-    const row = await first(env.SCORING_DB, `SELECT * FROM prop_matrix_batches WHERE batch_id=? AND window_start=? AND window_end=? AND status LIKE 'running%' ORDER BY datetime(updated_at) DESC LIMIT 1`, requested, dates[0], dates[1]);
+    const row = await first(env.SCORING_DB, `SELECT * FROM prop_matrix_batches WHERE batch_id=? AND window_start=? AND window_end=? AND status LIKE 'running%' ORDER BY datetime(updated_at) DESC LIMIT 1`, requested, dates[0], windowEnd);
     if (row) return row;
   }
   if (input.request_id) {
-    return await first(env.SCORING_DB, `SELECT * FROM prop_matrix_batches WHERE request_id=? AND window_start=? AND window_end=? AND status LIKE 'running%' ORDER BY datetime(updated_at) DESC LIMIT 1`, input.request_id, dates[0], dates[1]);
+    return await first(env.SCORING_DB, `SELECT * FROM prop_matrix_batches WHERE request_id=? AND window_start=? AND window_end=? AND status LIKE 'running%' ORDER BY datetime(updated_at) DESC LIMIT 1`, input.request_id, dates[0], windowEnd);
   }
   return null;
 }
