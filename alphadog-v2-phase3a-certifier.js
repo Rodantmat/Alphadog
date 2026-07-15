@@ -100,9 +100,9 @@ async function runScoringEngine(env, input) {
   const enrichmentRows = candidateRows.filter(r => !alreadyScoredIds.has(r.matrix_id)).slice(0, MAX_LEGS_PER_INVOCATION);
 
   await run(env.SCORE_DB,
-    `INSERT INTO scoring_engine_batches (batch_id, profile_key, profile_version, worker_version, job_key, status, certification, certification_grade, matrix_rows_read, score_rows_written, archive_rows_written, thresholds_locked, archive_score_threshold, started_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
-    batchId, PROFILE_KEY, SYSTEM_VERSION, SYSTEM_VERSION, JOB_KEY, "running", "SCORING_ENGINE_STARTED", "RUNNING", enrichmentRows.length, 0, 0, 1, 70);
+    `INSERT OR REPLACE INTO scoring_engine_batches (batch_id, profile_key, profile_version, worker_version, job_key, status, certification, certification_grade, matrix_rows_read, score_rows_written, archive_rows_written, thresholds_locked, archive_score_threshold, started_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,COALESCE((SELECT started_at FROM scoring_engine_batches WHERE batch_id=?), CURRENT_TIMESTAMP))`,
+    batchId, PROFILE_KEY, SYSTEM_VERSION, SYSTEM_VERSION, JOB_KEY, "running", "SCORING_ENGINE_STARTED", "RUNNING", enrichmentRows.length, 0, 0, 1, 70, batchId);
 
   let written = 0;
   const matrixIds = enrichmentRows.map(r => r.matrix_id);
