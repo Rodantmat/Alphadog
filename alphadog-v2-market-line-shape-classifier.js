@@ -1229,26 +1229,27 @@ function bestPreparedMatch(sourceRow, index) {
   }
   return { status: "no_prepared_match_no_resolved_team_pair", row: null, rows: [], candidates: 0, choice_reason: "raw_team_pair_unresolved_or_absent" };
 }
-async function prunePlayerPropRows(env, today, tomorrow, slateWindowKey, config = modeConfig()) {
+async function prunePlayerPropRows(env, boardWindowDates, slateWindowKey, config = modeConfig()) {
   const deleted = {};
+  const inClause = boardWindowDates.map(() => "?").join(",");
   if (config.prop_family === "hitter") {
     for (const sourceKey of LEGACY_PARLAY_SOURCE_KEYS) {
-      await run(env.MARKET_DB, "DELETE FROM market_context_probe_player_props WHERE source_key = ? AND (slate_window_key <> ? OR official_date NOT IN (?, ?))", sourceKey, slateWindowKey, today, tomorrow);
+      await run(env.MARKET_DB, `DELETE FROM market_context_probe_player_props WHERE source_key = ? AND (slate_window_key <> ? OR official_date NOT IN (${inClause}))`, sourceKey, slateWindowKey, ...boardWindowDates);
       await run(env.MARKET_DB, "DELETE FROM market_context_probe_player_props WHERE source_key = ? AND slate_window_key = ?", sourceKey, slateWindowKey);
     }
   }
-  await run(env.MARKET_DB, `DELETE FROM market_context_probe_player_props WHERE source_key LIKE 'parlay_api_%_${config.source_suffix}' AND (slate_window_key <> ? OR official_date NOT IN (?, ?))`, slateWindowKey, today, tomorrow);
+  await run(env.MARKET_DB, `DELETE FROM market_context_probe_player_props WHERE source_key LIKE 'parlay_api_%_${config.source_suffix}' AND (slate_window_key <> ? OR official_date NOT IN (${inClause}))`, slateWindowKey, ...boardWindowDates);
   await run(env.MARKET_DB, `DELETE FROM market_context_probe_player_props WHERE source_key LIKE 'parlay_api_%_${config.source_suffix}' AND slate_window_key = ?`, slateWindowKey);
-  deleted.market_context_probe_player_props = `deleted_${config.prop_family}_parlay_source_rows_outside_or_current_today_tomorrow_window_all_books`;
-  await run(env.MARKET_DB, "DELETE FROM market_context_probe_coverage WHERE (coverage_grade LIKE ? OR details_json LIKE ?) AND (slate_window_key <> ? OR official_date NOT IN (?, ?))", `${config.coverage_prefix}_%`, `%"mode":"${config.mode}"%`, slateWindowKey, today, tomorrow);
+  deleted.market_context_probe_player_props = `deleted_${config.prop_family}_parlay_source_rows_outside_or_current_board_window_all_books`;
+  await run(env.MARKET_DB, `DELETE FROM market_context_probe_coverage WHERE (coverage_grade LIKE ? OR details_json LIKE ?) AND (slate_window_key <> ? OR official_date NOT IN (${inClause}))`, `${config.coverage_prefix}_%`, `%"mode":"${config.mode}"%`, slateWindowKey, ...boardWindowDates);
   await run(env.MARKET_DB, "DELETE FROM market_context_probe_coverage WHERE (coverage_grade LIKE ? OR details_json LIKE ?) AND slate_window_key = ?", `${config.coverage_prefix}_%`, `%"mode":"${config.mode}"%`, slateWindowKey);
   deleted.market_context_probe_coverage = `deleted_only_${config.prop_family}_prop_context_rows_no_teams_coverage_wipe`;
-  await run(env.MARKET_DB, "DELETE FROM market_context_probe_issues WHERE issue_type LIKE ? AND (slate_window_key <> ? OR official_date NOT IN (?, ?))", `${config.issue_prefix}_%`, slateWindowKey, today, tomorrow);
+  await run(env.MARKET_DB, `DELETE FROM market_context_probe_issues WHERE issue_type LIKE ? AND (slate_window_key <> ? OR official_date NOT IN (${inClause}))`, `${config.issue_prefix}_%`, slateWindowKey, ...boardWindowDates);
   await run(env.MARKET_DB, "DELETE FROM market_context_probe_issues WHERE issue_type LIKE ? AND slate_window_key = ?", `${config.issue_prefix}_%`, slateWindowKey);
   deleted.market_context_probe_issues = `deleted_only_${config.prop_family}_prop_issues`;
-  await run(env.MARKET_DB, "DELETE FROM market_context_probe_batches WHERE mode = ? AND (slate_window_key <> ? OR window_start_date NOT IN (?, ?) OR window_end_date NOT IN (?, ?))", config.mode, slateWindowKey, today, tomorrow, today, tomorrow);
+  await run(env.MARKET_DB, `DELETE FROM market_context_probe_batches WHERE mode = ? AND (slate_window_key <> ? OR window_start_date NOT IN (${inClause}) OR window_end_date NOT IN (${inClause}))`, config.mode, slateWindowKey, ...boardWindowDates, ...boardWindowDates);
   await run(env.MARKET_DB, "DELETE FROM market_context_probe_batches WHERE mode = ? AND slate_window_key = ?", config.mode, slateWindowKey);
-  deleted.market_context_probe_batches = `deleted_${config.prop_family}_prop_batches_outside_or_current_today_tomorrow_window`;
+  deleted.market_context_probe_batches = `deleted_${config.prop_family}_prop_batches_outside_or_current_board_window`;
   return deleted;
 }
 function selectBackendPropEvidenceRowsForTimebox(propRows, maxRows) {
