@@ -5984,7 +5984,7 @@ const SCORING_FULL_RUN_STAGES = [
 // the real, working chain - this is the technically-correct real order even though it was
 // requested as "Final HP, Final Scoring" - the two names map to Scoring Engine (produces
 // score_0_100) and Hit Probability Board (produces the real, final HP%) respectively.
-const SCORING_FULL_RUN_STALE_CHILD_SECONDS = 120;
+const SCORING_FULL_RUN_STALE_CHILD_SECONDS = 420;
 const SCORING_FULL_RUN_STALE_CHILD_RETRY_MAX = 1;
 
 function scoringFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
