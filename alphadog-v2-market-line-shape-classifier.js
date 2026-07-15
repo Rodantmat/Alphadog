@@ -1499,7 +1499,7 @@ async function runPlayerPropContext(env, input = {}) {
     const recovered = await finalizePlayerPropBatchFromEvidence(env, input, config, existingRunningBatch, preparedRows, today, tomorrow, slateWindowKey, retention, { skipped_current_window_prune_for_existing_running_batch: true }, "resume_existing_running_batch_with_written_evidence");
     if (recovered) return recovered;
   }
-  const prune = await prunePlayerPropRows(env, today, tomorrow, slateWindowKey, config);
+  const prune = await prunePlayerPropRows(env, boardWindowDates, slateWindowKey, config);
   const gamePks = [...new Set(preparedRows.map(r => Number(r.official_game_pk)).filter(Number.isFinite))];
   const playerIds = [...new Set(preparedRows.map(r => Number(r.resolved_mlb_player_id)).filter(Number.isFinite))];
   const propKeys = [...new Set(preparedRows.map(r => String(r.canonical_prop_key || "")).filter(Boolean))];
