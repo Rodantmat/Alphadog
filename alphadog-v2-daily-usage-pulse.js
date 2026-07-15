@@ -852,7 +852,10 @@ async function runUmpireContext(env, input) {
   const requestId = input.request_id || rid("daily_umpire_req");
   const batchId = rid("daily_umpire_batch");
   const sourceSnapshotAt = nowUtc();
-  const retention = retentionWindowPt();
+  const nowIsoForWindow = new Date().toISOString();
+  const realBoardDateRows = await all(env.SCORE_DB, `SELECT DISTINCT official_date FROM score_board_prepared_current WHERE pickable_safe = 1 AND official_game_time_utc IS NOT NULL AND official_game_time_utc > ?`, nowIsoForWindow);
+  const realBoardDates = realBoardDateRows.map(r => r.official_date).filter(Boolean);
+  const retention = retentionWindowPt(realBoardDates);
   let batchStarted = false;
   let prePrune = null;
   let prepared = [];
