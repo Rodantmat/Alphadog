@@ -351,13 +351,14 @@ async function ensureSchema(env) {
 
 async function pruneAvailabilityRetention(env, retention, latestBatchId = null) {
   const out = [];
+  const inClause = retention.dates.map(() => "?").join(",");
   async function del(table, sql, ...binds) {
     const r = await run(env.DAILY_DB, sql, ...binds);
     out.push({ table, changes: r?.meta?.changes ?? null });
   }
-  await del("daily_player_availability_current_v1_old_dates", `DELETE FROM daily_player_availability_current_v1 WHERE official_date NOT IN (?, ?)`, retention.start, retention.end);
-  await del("daily_player_availability_snapshots_v1_old_dates", `DELETE FROM daily_player_availability_snapshots_v1 WHERE official_date NOT IN (?, ?)`, retention.start, retention.end);
-  await del("daily_player_availability_issues_v1_old_dates", `DELETE FROM daily_player_availability_issues_v1 WHERE official_date NOT IN (?, ?)`, retention.start, retention.end);
+  await del("daily_player_availability_current_v1_old_dates", `DELETE FROM daily_player_availability_current_v1 WHERE official_date NOT IN (${inClause})`, ...retention.dates);
+  await del("daily_player_availability_snapshots_v1_old_dates", `DELETE FROM daily_player_availability_snapshots_v1 WHERE official_date NOT IN (${inClause})`, ...retention.dates);
+  await del("daily_player_availability_issues_v1_old_dates", `DELETE FROM daily_player_availability_issues_v1 WHERE official_date NOT IN (${inClause})`, ...retention.dates);
   if (latestBatchId) {
     await del("daily_player_availability_current_v1_previous_batches", `DELETE FROM daily_player_availability_current_v1 WHERE batch_id IS NULL OR batch_id <> ?`, latestBatchId);
   }
