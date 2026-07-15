@@ -575,9 +575,10 @@ function filterPreparedRowsForRetention(rows, retention, nowIso) {
 
 async function pruneDateScopedDailyStarterTables(env, retention) {
   // Tables with direct date columns can be pruned before the new run writes fresh rows.
-  await run(env.DAILY_DB, `DELETE FROM daily_starters_current WHERE official_date NOT IN (?, ?)`, retention.start, retention.end);
-  await run(env.DAILY_DB, `DELETE FROM daily_starters_stage WHERE official_date NOT IN (?, ?)`, retention.start, retention.end);
-  await run(env.DAILY_DB, `DELETE FROM daily_probable_pitchers WHERE slate_date NOT IN (?, ?)`, retention.start, retention.end);
+  const inClause = retention.dates.map(() => "?").join(",");
+  await run(env.DAILY_DB, `DELETE FROM daily_starters_current WHERE official_date NOT IN (${inClause})`, ...retention.dates);
+  await run(env.DAILY_DB, `DELETE FROM daily_starters_stage WHERE official_date NOT IN (${inClause})`, ...retention.dates);
+  await run(env.DAILY_DB, `DELETE FROM daily_probable_pitchers WHERE slate_date NOT IN (${inClause})`, ...retention.dates);
 }
 
 async function pruneGameScopedDailyStarterTables(env, keepGamePks, batchId, retention) {
