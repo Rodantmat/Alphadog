@@ -311,9 +311,10 @@ async function postPruneRetention(env, retention) {
   };
 }
 async function finalizeWindowReplacement(env, retention, batchId) {
-  const current = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_current WHERE official_date IN (?, ?) AND (batch_id IS NULL OR batch_id <> ?)`, retention.start, retention.end, batchId);
-  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_snapshots WHERE official_date IN (?, ?) AND (batch_id IS NULL OR batch_id <> ?)`, retention.start, retention.end, batchId);
-  const issues = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_issues WHERE official_date IN (?, ?) AND (batch_id IS NULL OR batch_id <> ?)`, retention.start, retention.end, batchId);
+  const inClause = retention.dates.map(() => "?").join(",");
+  const current = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_current WHERE official_date IN (${inClause}) AND (batch_id IS NULL OR batch_id <> ?)`, ...retention.dates, batchId);
+  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_snapshots WHERE official_date IN (${inClause}) AND (batch_id IS NULL OR batch_id <> ?)`, ...retention.dates, batchId);
+  const issues = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_issues WHERE official_date IN (${inClause}) AND (batch_id IS NULL OR batch_id <> ?)`, ...retention.dates, batchId);
   return {
     current_old_window_deleted_after_success: current && current.meta ? current.meta.changes : null,
     snapshots_old_window_deleted_after_success: snapshots && snapshots.meta ? snapshots.meta.changes : null,
