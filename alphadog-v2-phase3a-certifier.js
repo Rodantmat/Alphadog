@@ -129,7 +129,7 @@ async function runScoringEngine(env, input) {
         archive_eligible, archive_written, calculation_json, matrix_payload_json_snapshot,
         created_at, updated_at, matrix_status, blocking_for_scoring, warning_count, blocker_count, missing_component_count,
         confidence_0_100, confidence_status, live_playable, model_deferred, score_sort_0_100)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?,?,?,?,?,?,?,?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?,?,?,?,?,?,?,?,?,?)`,
       scoreRowId, batchId, er.matrix_id, matrixRow.prepared_row_id || null, matrixRow.source_line_id || null,
       matrixRow.source_key || null, matrixRow.game_pk || null, matrixRow.official_date || null, matrixRow.official_game_time_utc || null,
       er.mlb_player_id, playerName, er.canonical_prop_key, er.board_line_value, "two_sided", er.prop_side || "more",
