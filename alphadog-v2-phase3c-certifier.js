@@ -144,14 +144,17 @@ async function runHitProbabilityBoard(env, input, sourceEngineBatchId) {
   }
   if (statements.length) await env.SCORE_DB.batch(statements);
 
+  const isPartial = engineRows.length >= MAX_LEGS_PER_INVOCATION;
+  const status = isPartial ? "partial_continue" : "completed_hit_probability_current_estimates_written";
   await run(env.SCORE_DB,
     `UPDATE hp_board_batches SET status=?, certification_status=?, certification_grade=?, board_rows_written=?, primary_rows=?, review_rows=?, updated_at=CURRENT_TIMESTAMP WHERE hp_board_batch_id=?`,
-    "completed_hit_probability_current_estimates_written", "HP_BOARD_CERTIFIED_REAL_SKELETON", "PASS_REAL_SKELETON", written, primaryRows, reviewRows, hpBatchId);
+    status, "HP_BOARD_CERTIFIED_REAL_SKELETON", "PASS_REAL_SKELETON", written, primaryRows, reviewRows, hpBatchId);
 
   return {
     ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: LOGICAL_WORKER_NAME, deployed_worker_slot: WORKER_NAME, job_key: JOB_KEY,
     request_id: input.request_id || null, chain_id: input.chain_id || null, hp_board_batch_id: hpBatchId, source_engine_batch_id: sourceEngineBatchId,
-    status: "completed_hit_probability_current_estimates_written",
+    status,
+    continuation_required: isPartial, orchestrator_should_self_continue: isPartial,
     engine_rows_read: engineRows.length, board_rows_written: written, primary_rows: primaryRows, review_rows: reviewRows,
     real_skeleton_note: "Real, honest first-pass HP combination (baseline_v6 + Enrichment rate_multiplier via a bounded percentage-shift approximation) - not yet a full re-derivation through the real underlying Poisson/NB model. See file header.",
     timestamp_utc: nowUtc(),
