@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-daily-bullpen-availability";
-const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.12-atomic-core-batch-no-predelete";
+const VERSION = "alphadog-v2-daily-bullpen-availability-v0.1.13-board-scoped-window";
 const JOB_KEY = "daily-bullpen-availability";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB"];
