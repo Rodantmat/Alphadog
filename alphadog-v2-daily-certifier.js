@@ -382,18 +382,19 @@ async function runCertifier(env, input) {
   await run(env.DAILY_DB, `DELETE FROM daily_context_readiness_current WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
   await run(env.DAILY_DB, `DELETE FROM daily_context_readiness_issues WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
 
-  const prepared = await readPreparedRows(env);
+  const prepared = preparedAllDates.filter(r => !gameHasStarted(r.official_game_pk));
+  const skippedAlreadyStartedRows = preparedAllDates.length - prepared.length;
   const gamePks = [...new Set(prepared.map(r => r.official_game_pk).filter(v => v !== null && v !== undefined))];
-  const games = gamePks.length ? await all(env.TEAM_DB, `SELECT game_pk, official_date, game_time_utc, is_pregame, is_live, is_final, is_postponed, is_cancelled, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, detailed_state FROM mlb_game_calendar WHERE game_pk IN (${gamePks.map(() => "?").join(",")})`, ...gamePks) : [];
-  const gameMap = new Map(games.map(g => [String(g.game_pk), g]));
+  const games = gamesAllDates.filter(g => gamePks.includes(g.game_pk));
+  const gameMap = gameMapAllDates;
 
-  const starters = await all(env.DAILY_DB, "SELECT * FROM daily_starters_current WHERE official_date IN (?, ?)", today, tomorrow);
-  const lineups = await all(env.DAILY_DB, "SELECT * FROM daily_lineups_current WHERE official_date IN (?, ?)", today, tomorrow);
-  const availability = await all(env.DAILY_DB, "SELECT * FROM daily_player_availability_current_v1 WHERE official_date IN (?, ?)", today, tomorrow);
-  const weather = await all(env.DAILY_DB, "SELECT * FROM daily_game_weather_current WHERE official_date IN (?, ?)", today, tomorrow);
-  const bullpen = await all(env.DAILY_DB, "SELECT * FROM daily_bullpen_availability_current WHERE official_date IN (?, ?)", today, tomorrow);
-  const schedule = await all(env.DAILY_DB, "SELECT * FROM daily_team_schedule_spot_current WHERE official_date IN (?, ?)", today, tomorrow);
-  const umpire = await all(env.DAILY_DB, "SELECT * FROM daily_umpire_context_current WHERE official_date IN (?, ?)", today, tomorrow);
+  const starters = await all(env.DAILY_DB, `SELECT * FROM daily_starters_current WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
+  const lineups = await all(env.DAILY_DB, `SELECT * FROM daily_lineups_current WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
+  const availability = await all(env.DAILY_DB, `SELECT * FROM daily_player_availability_current_v1 WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
+  const weather = await all(env.DAILY_DB, `SELECT * FROM daily_game_weather_current WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
+  const bullpen = await all(env.DAILY_DB, `SELECT * FROM daily_bullpen_availability_current WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
+  const schedule = await all(env.DAILY_DB, `SELECT * FROM daily_team_schedule_spot_current WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
+  const umpire = await all(env.DAILY_DB, `SELECT * FROM daily_umpire_context_current WHERE official_date IN (${windowInClause})`, ...boardWindowDates);
   const batches = await readLatestBatchMap(env);
 
   // Requirement 4/3: classify the real slate shape from calendar-verified prepared-board
