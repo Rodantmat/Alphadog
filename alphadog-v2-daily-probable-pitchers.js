@@ -547,22 +547,30 @@ async function fetchActualStarterMap(env, games, counters, options = {}) {
   return out;
 }
 
-function retentionWindow() {
+function retentionWindow(dateSet) {
   const today = todayPt();
   const tomorrow = addDays(today, 1);
-  return { start: today, end: tomorrow, dates: [today, tomorrow], keepDates: new Set([today, tomorrow]) };
+  const realDates = dateSet && dateSet.size ? Array.from(dateSet).filter(Boolean).sort() : [];
+  const allDates = [...new Set([...realDates, today, tomorrow])].sort();
+  return { start: allDates[0], end: allDates[allDates.length - 1], dates: allDates, keepDates: new Set(allDates) };
 }
 
-function buildWindow(_dateSet) {
-  // Daily Starters is volatile daily context. It must only fetch/keep PT today + tomorrow.
-  // Calendar/Game Status remains owned by the calendar/tally layer; this worker does not
-  // need yesterday/+2 retention.
-  const retention = retentionWindow();
-  return { start: retention.start, end: retention.end, dates: retention.dates };
+function buildWindow(dateSet) {
+  // Fix (2026-07-15): must follow the real board window, not just today+tomorrow. The
+  // dateSet parameter (real distinct dates from not-yet-started prepared rows) is now
+  // actually used instead of being ignored; today/tomorrow remain a safety floor so a
+  // genuine no-games day still gets a window.
+  const retention = retentionWindow(dateSet);
+  return { start: retention.start, end: retention.end, dates: retention.dates, keepDates: retention.keepDates };
 }
 
-function filterPreparedRowsForRetention(rows, retention) {
-  return (rows || []).filter(r => retention.keepDates.has(dateOnly(r.official_date || r.official_game_time_utc)));
+function gameHasStartedForRetention(row, nowIso) {
+  const t = row && row.official_game_time_utc ? String(row.official_game_time_utc) : null;
+  return Boolean(t && t <= nowIso);
+}
+
+function filterPreparedRowsForRetention(rows, retention, nowIso) {
+  return (rows || []).filter(r => retention.keepDates.has(dateOnly(r.official_date || r.official_game_time_utc)) && !gameHasStartedForRetention(r, nowIso));
 }
 
 async function pruneDateScopedDailyStarterTables(env, retention) {
