@@ -90,7 +90,7 @@ async function ensureSchema(env) {
 
 async function runScoringEngine(env, input) {
   const batchId = input && input.chain_id ? `scoring_engine_batch_${input.chain_id}` : rid("scoring_engine_batch");
-  const alreadyScoredRows = await all(env.SCORE_DB, `SELECT DISTINCT matrix_id FROM scoring_engine_current`).catch(() => []);
+  const alreadyScoredRows = await all(env.SCORE_DB, `SELECT DISTINCT matrix_id FROM scoring_engine_current WHERE batch_id=?`, batchId).catch(() => []);
   const alreadyScoredIds = new Set(alreadyScoredRows.map(r => r.matrix_id));
   const candidateRows = await all(env.SCORING_DB,
     `SELECT enrichment_id, matrix_id, batch_id, canonical_prop_key, mlb_player_id, board_line_value, prop_side,
