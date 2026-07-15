@@ -109,9 +109,9 @@ async function runHitProbabilityBoard(env, input, sourceEngineBatchId) {
   }
 
   await run(env.SCORE_DB,
-    `INSERT INTO hp_board_batches (hp_board_batch_id, worker_version, profile_key, mode, status, source_table, source_engine_batch_id, source_rows_read, board_rows_written, thresholds_locked, no_true_probability_claims, created_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
-    hpBatchId, SYSTEM_VERSION, PROFILE_KEY, "real_skeleton", "running", "SCORE_DB.scoring_engine_current + ARCHIVE_DB.baseline_v6_current", sourceEngineBatchId, engineRows.length, 0, 1, 1);
+    `INSERT OR REPLACE INTO hp_board_batches (hp_board_batch_id, worker_version, profile_key, mode, status, source_table, source_engine_batch_id, source_rows_read, board_rows_written, thresholds_locked, no_true_probability_claims, created_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,COALESCE((SELECT created_at FROM hp_board_batches WHERE hp_board_batch_id=?), CURRENT_TIMESTAMP))`,
+    hpBatchId, SYSTEM_VERSION, PROFILE_KEY, "real_skeleton", "running", "SCORE_DB.scoring_engine_current + ARCHIVE_DB.baseline_v6_current", sourceEngineBatchId, engineRows.length, 0, 1, 1, hpBatchId);
 
   let written = 0, primaryRows = 0, reviewRows = 0;
   const statements = [];
