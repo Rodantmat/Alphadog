@@ -73,7 +73,7 @@ function computeRealHitProbability(baselineHp, rateMultiplier) {
 }
 
 async function runHitProbabilityBoard(env, input, sourceEngineBatchId) {
-  const hpBatchId = rid("hp_board_batch");
+  const hpBatchId = input && input.chain_id ? `hp_board_batch_${input.chain_id}` : rid("hp_board_batch");
   const engineRows = await all(env.SCORE_DB,
     `SELECT score_row_id, batch_id, matrix_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc,
             mlb_player_id, player_name, canonical_prop_key, line_value, selected_side, score_0_100, confidence_0_100, blocker_count
