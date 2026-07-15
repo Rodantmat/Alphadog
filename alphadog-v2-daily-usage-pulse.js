@@ -397,6 +397,7 @@ async function getPreviousCurrent(env, retention) {
   return new Map(rows.map(r => [`${dateOnly(r.official_date)}|${Number(r.game_pk)}`, r]));
 }
 async function getPreparedGameRows(env, retention) {
+  const inClause = retention.dates.map(() => "?").join(",");
   return all(env.SCORE_DB, `SELECT official_game_pk, official_game_time_utc, official_date, COUNT(*) AS prepared_board_pickable_rows
     FROM score_board_prepared_current
     WHERE pickable_safe = 1
@@ -404,9 +405,10 @@ async function getPreparedGameRows(env, retention) {
       AND player_match_status = 'matched'
       AND official_game_pk IS NOT NULL
       AND official_game_time_utc IS NOT NULL
-      AND official_date IN (?, ?)
+      AND official_date IN (${inClause})
+      AND official_game_time_utc > ?
     GROUP BY official_game_pk, official_game_time_utc, official_date
-    ORDER BY official_game_time_utc, official_game_pk`, retention.start, retention.end);
+    ORDER BY official_game_time_utc, official_game_pk`, ...retention.dates, new Date().toISOString());
 }
 async function getCalendar(env, gamePks) {
   if (!gamePks.length) return [];
