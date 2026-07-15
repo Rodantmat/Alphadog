@@ -991,6 +991,13 @@ async function validateBoardFullRunFinalGuard(env, stageReports) {
 
   const marketPrizePicks = await first(env.MARKET_DB, "SELECT COUNT(*) AS rows FROM prizepicks_board_current");
   const marketSleeper = await first(env.MARKET_DB, "SELECT COUNT(*) AS rows FROM sleeper_board_current");
+  let marketUnderdog = { rows: 0 };
+  try {
+    marketUnderdog = await first(env.MARKET_DB, "SELECT COUNT(*) AS rows FROM underdog_board_current");
+  } catch (err) {
+    const message = String(err && err.message ? err.message : err);
+    if (!/no such table/i.test(message)) throw err;
+  }
   const scorePrizePicks = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current WHERE source_key = 'prizepicks'");
   const scoreSleeper = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current WHERE source_key = 'sleeper'");
   const scoreTotal = await first(env.SCORE_DB, "SELECT COUNT(*) AS rows FROM score_board_prepared_current");
