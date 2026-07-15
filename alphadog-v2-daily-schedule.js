@@ -68,10 +68,11 @@ function todayPt() {
   for (const p of parts) m[p.type] = p.value;
   return `${m.year}-${m.month}-${m.day}`;
 }
-function retentionWindowPt() {
+function retentionWindowPt(extraDates = []) {
   const today = todayPt();
   const tomorrow = addDays(today, 1);
-  return { start: today, end: tomorrow, dates: [today, tomorrow] };
+  const dates = [...new Set([today, tomorrow, ...(extraDates || []).filter(Boolean)])].sort();
+  return { start: dates[0], end: dates[dates.length - 1], dates };
 }
 function localHour(iso, timezone) {
   if (!iso || !timezone) return null;
