@@ -60,7 +60,7 @@ const SYSTEM_VERSION = "alphadog-v2-enrichment-engine-v0.2.0-real-tier-detection
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB", "SCORING_DB"];
 
-const MAX_LEGS_PER_INVOCATION = 200;
+const MAX_LEGS_PER_INVOCATION = 600;
 
 function nowUtc() { return new Date().toISOString(); }
 function jsonResponse(body, status = 200) {
