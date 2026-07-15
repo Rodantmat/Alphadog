@@ -5884,8 +5884,9 @@ async function processEnrichmentEngineJob(env, row, runId, trigger) {
   }
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
+  const isPartial = isPartialContinueOutput(output);
   const certification = String((output && (output.certification || output.status)) || (ok ? "enrichment_engine_completed" : "enrichment_engine_failed")).slice(0,120);
-  const queueStatus = ok ? "completed" : "failed";
+  const queueStatus = isPartial ? "pending" : (ok ? "completed" : "failed");
   const errorCode = ok ? null : "enrichment_engine_worker_failed";
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Enrichment Engine worker failed").slice(0,900);
   const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, selected_worker_slot:"alphadog-v2-phase2a-run-environment" } };
