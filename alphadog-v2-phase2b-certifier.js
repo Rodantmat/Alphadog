@@ -930,7 +930,7 @@ async function runMatrixBuilder(request, env) {
 
   const requestedChunkSize = Number(input.chunk_size || 75);
   const chunkSize = Math.max(25, Math.min(75, Number.isFinite(requestedChunkSize) ? requestedChunkSize : 75));
-  const maxChunksPerInvocationRaw = Number(input.max_chunks_per_invocation || input.matrix_max_chunks_per_invocation || 6);
+  const maxChunksPerInvocationRaw = Number(input.max_chunks_per_invocation || input.matrix_max_chunks_per_invocation || 20);
   const maxChunksPerInvocation = Math.max(1, Math.min(20, Number.isFinite(maxChunksPerInvocationRaw) ? maxChunksPerInvocationRaw : 20));
   const maxRuntimeMsRaw = Number(input.max_runtime_ms || input.matrix_max_runtime_ms || 27000);
   const deadlineMs = Date.now() + Math.max(12000, Math.min(27000, Number.isFinite(maxRuntimeMsRaw) ? maxRuntimeMsRaw : 27000));
