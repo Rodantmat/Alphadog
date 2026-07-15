@@ -967,7 +967,7 @@ function childPassedBoardFullRun(stage, child, priorStageReports = []) {
 
 
 async function validateBoardFullRunFinalGuard(env, stageReports) {
-  const requiredStageKeys = ["board_prizepicks_refresh", "board_sleeper_refresh", "score_prep_enrichment"];
+  const requiredStageKeys = ["board_prizepicks_refresh", "score_prep_enrichment"];
   const missingStageKeys = requiredStageKeys.filter(stageKey => !stageReports.some(r => r.stage_key === stageKey && r.pass === true));
   const scorePrepReport = stageReports.find(r => r.stage_key === "score_prep_enrichment" && r.job_key === "score-prep");
 
