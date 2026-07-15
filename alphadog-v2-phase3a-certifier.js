@@ -113,15 +113,8 @@ async function runScoringEngine(env, input) {
     }
   }
 
-  for (const er of enrichmentRows) {
-    const matrixRow = matrixById.get(er.matrix_id) || {};
-    const payload = safeJsonParse(matrixRow.matrix_payload_json, {});
-    const playerName = payload?.player_context?.player_name || null;
-    const { score, confidence } = computeRealScoreAndConfidence(er);
-    const scoreRowId = rid("score_row");
-
-    await run(env.SCORE_DB,
-      `INSERT OR REPLACE INTO scoring_engine_current
+  const statements = [];
+  const insertSql = `INSERT OR REPLACE INTO scoring_engine_current
        (score_row_id, batch_id, matrix_id, prepared_row_id, source_line_id, source_key, game_pk, official_date, official_game_time_utc,
         mlb_player_id, player_name, canonical_prop_key, line_value, side_mode, selected_side,
         more_score_0_100, less_score_0_100, score_0_100, score_status, score_grade,
@@ -129,7 +122,15 @@ async function runScoringEngine(env, input) {
         archive_eligible, archive_written, calculation_json, matrix_payload_json_snapshot,
         created_at, updated_at, matrix_status, blocking_for_scoring, warning_count, blocker_count, missing_component_count,
         confidence_0_100, confidence_status, live_playable, model_deferred, score_sort_0_100)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?,?,?,?,?,?,?,?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?,?,?,?,?,?,?,?,?,?)`;
+  for (const er of enrichmentRows) {
+    const matrixRow = matrixById.get(er.matrix_id) || {};
+    const payload = safeJsonParse(matrixRow.matrix_payload_json, {});
+    const playerName = payload?.player_context?.player_name || null;
+    const { score, confidence } = computeRealScoreAndConfidence(er);
+    const scoreRowId = rid("score_row");
+
+    statements.push(env.SCORE_DB.prepare(insertSql).bind(
       scoreRowId, batchId, er.matrix_id, matrixRow.prepared_row_id || null, matrixRow.source_line_id || null,
       matrixRow.source_key || null, matrixRow.game_pk || null, matrixRow.official_date || null, matrixRow.official_game_time_utc || null,
       er.mlb_player_id, playerName, er.canonical_prop_key, er.board_line_value, "two_sided", er.prop_side || "more",
@@ -138,9 +139,10 @@ async function runScoringEngine(env, input) {
       score >= 70 ? 1 : 0, 0, JSON.stringify({ real_skeleton: true, factor_breakdown: safeJsonParse(er.factor_breakdown_json, []) }), matrixRow.matrix_payload_json || null,
       matrixRow.matrix_status || null, 0, 0, 0, 0,
       confidence, confidence >= 55 ? "confidence_ok" : "confidence_low", score >= 76 ? 1 : 0, 0, score
-    );
+    ));
     written++;
   }
+  if (statements.length) await env.SCORE_DB.batch(statements);
 
   await run(env.SCORE_DB,
     `UPDATE scoring_engine_batches SET status=?, certification=?, certification_grade=?, score_rows_written=?, finished_at=CURRENT_TIMESTAMP WHERE batch_id=?`,
