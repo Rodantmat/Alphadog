@@ -717,7 +717,7 @@ async function fetchOddsApiGameOdds(env, apiKey) {
     let parsed = null;
     try { parsed = JSON.parse(text); } catch (err) { return { ok: false, external_calls: 1, http_status: resp.status, parse_error: safeText(err.message), response_preview: safeText(text, 700), events: [], error: "odds_api_json_parse_failed", started_at: started, finished_at: nowUtc() }; }
     if (!resp.ok) return { ok: false, external_calls: 1, http_status: resp.status, events: [], error: "odds_api_http_error", response_preview: safeText(text, 900), started_at: started, finished_at: nowUtc() };
-    return { ok: true, external_calls: 1, http_status: resp.status, events: Array.isArray(parsed) ? parsed : [], bookmaker_targets: bookmakerList, endpoint_scope: "strong_sportsbook_reference_game_odds", started_at: started, finished_at: nowUtc() };
+    return { ok: true, external_calls: 1, http_status: resp.status, events: Array.isArray(parsed) ? parsed : [], bookmaker_targets: bookmakerList, endpoint_scope: "strong_sportsbook_reference_game_odds", raw_response_length: text.length, raw_response_preview: safeText(text, 1500), request_url_no_key: url.toString().replace(/apiKey=[^&]+/, "apiKey=REDACTED"), started_at: started, finished_at: nowUtc() };
   } catch (err) {
     return { ok: false, external_calls: 1, events: [], error: "odds_api_fetch_exception", message: safeText(err && err.message ? err.message : err), started_at: started, finished_at: nowUtc() };
   }
