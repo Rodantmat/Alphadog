@@ -576,7 +576,10 @@ async function runBullpen(env, input) {
   const requestId = input.request_id || rid("daily_bullpen_req");
   const batchId = rid("daily_bullpen_batch");
   const sourceSnapshotAt = nowUtc();
-  const retention = retentionWindowPt();
+  const nowIsoForWindow = new Date().toISOString();
+  const realBoardDateRows = await all(env.SCORE_DB, `SELECT DISTINCT official_date FROM score_board_prepared_current WHERE pickable_safe = 1 AND official_game_time_utc IS NOT NULL AND official_game_time_utc > ?`, nowIsoForWindow);
+  const realBoardDates = realBoardDateRows.map(r => r.official_date).filter(Boolean);
+  const retention = retentionWindowPt(realBoardDates);
   await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_bullpen_availability_batches (batch_id, request_id, run_id, worker_name, worker_version, job_key, mode, status, window_start, window_end, started_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "daily_bullpen_availability_refresh_window", retention.start, retention.end, sourceSnapshotAt);
   const prePrune = await pruneRetention(env, retention);
   let operationalCurrentRetire = null;
