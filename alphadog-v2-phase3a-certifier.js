@@ -21,7 +21,7 @@
 const WORKER_NAME = "alphadog-v2-phase3a-certifier";
 const LOGICAL_WORKER_NAME = "alphadog-v2-scoring-engine";
 const JOB_KEY = "scoring-engine-shadow-v1";
-const SYSTEM_VERSION = "alphadog-v2-scoring-engine-v0.1.0-real-skeleton";
+const SYSTEM_VERSION = "alphadog-v2-scoring-engine-v0.1.1-reverted-safe-cap";
 const PROFILE_KEY = "ENRICHMENT_V1_REAL_SKELETON";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB", "SCORING_DB", "ARCHIVE_DB"];
