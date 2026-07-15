@@ -1208,8 +1208,8 @@ async function runMarketSourceProbe(env, input = {}) {
   }
 
   await ensureSchema(env);
-  const prune = await pruneProbeWindow(env, today, tomorrow, slateWindowKey);
-  const preparedRows = await loadPreparedRows(env, today, tomorrow);
+  const prune = await pruneProbeWindow(env, boardWindowDates, slateWindowKey);
+  const preparedRows = await loadPreparedRows(env, boardWindowDates);
   const gamePks = [...new Set(preparedRows.map(r => Number(r.official_game_pk)).filter(Number.isFinite))];
   const playerIds = [...new Set(preparedRows.map(r => Number(r.resolved_mlb_player_id)).filter(Number.isFinite))];
   const propKeys = [...new Set(preparedRows.map(r => String(r.canonical_prop_key || "")).filter(Boolean))];
