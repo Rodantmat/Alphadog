@@ -110,7 +110,8 @@ function liveFeedActualsEnabled(input, env) {
 }
 
 async function ensureSchema(env) {
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_starters_batches (
+  await env.DAILY_DB.batch([
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_starters_batches (
     batch_id TEXT PRIMARY KEY,
     request_id TEXT,
     run_id TEXT,
@@ -145,9 +146,8 @@ async function ensureSchema(env) {
     completed_at TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_starters_current (
+  )`),
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_starters_current (
     current_key TEXT PRIMARY KEY,
     batch_id TEXT,
     source_key TEXT,
@@ -187,9 +187,8 @@ async function ensureSchema(env) {
     raw_json TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_starters_stage (
+  )`),
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_starters_stage (
     stage_id TEXT PRIMARY KEY,
     batch_id TEXT,
     current_key TEXT,
@@ -226,9 +225,8 @@ async function ensureSchema(env) {
     prepared_board_pickable_rows INTEGER DEFAULT 0,
     raw_json TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_starters_snapshots (
+  )`),
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_starters_snapshots (
     snapshot_id TEXT PRIMARY KEY,
     batch_id TEXT,
     current_key TEXT,
@@ -245,9 +243,8 @@ async function ensureSchema(env) {
     source_snapshot_at TEXT,
     raw_json TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_starters_issues (
+  )`),
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_starters_issues (
     issue_id TEXT PRIMARY KEY,
     batch_id TEXT,
     game_pk INTEGER,
@@ -259,9 +256,8 @@ async function ensureSchema(env) {
     details_json TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_probable_pitchers (
+  )`),
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_probable_pitchers (
     game_key TEXT PRIMARY KEY,
     slate_date TEXT,
     away_pitcher_id INTEGER,
@@ -270,7 +266,8 @@ async function ensureSchema(env) {
     confidence TEXT,
     raw_json TEXT,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
+  )`)
+  ]);
 }
 
 async function withDeadline(promise, ms, fallbackValue) {
