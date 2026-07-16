@@ -850,7 +850,10 @@ async function writeTarget(env, batchId, target, probe, classified, sourceSnapsh
 
 async function runUmpireContext(env, input) {
   refMetricsRunCache = null;
-  await ensureSchema(env);
+  if (!schemaEnsuredCache) {
+    await ensureSchema(env);
+    schemaEnsuredCache = true;
+  }
   const requestId = input.request_id || rid("daily_umpire_req");
   const batchId = input && input.chain_id ? `daily_umpire_batch_${input.chain_id}` : rid("daily_umpire_batch");
   const sourceSnapshotAt = nowUtc();
