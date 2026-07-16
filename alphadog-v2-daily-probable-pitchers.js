@@ -701,64 +701,66 @@ function rowFromTeamSide({ game, calendar, side, previous, preparedTeamCount, ac
   };
 }
 
-async function insertIssue(env, batchId, row, issueType, severity, reason, details = {}) {
-  await run(env.DAILY_DB, `INSERT INTO daily_starters_issues (issue_id, batch_id, game_pk, team_id, issue_status, issue_type, severity, reason, details_json, created_at, updated_at)
-    VALUES (?, ?, ?, ?, 'open', ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+function buildIssueStatement(env, batchId, row, issueType, severity, reason, details = {}) {
+  return env.DAILY_DB.prepare(`INSERT INTO daily_starters_issues (issue_id, batch_id, game_pk, team_id, issue_status, issue_type, severity, reason, details_json, created_at, updated_at)
+    VALUES (?, ?, ?, ?, 'open', ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`).bind(
     rid("daily_starters_issue"), batchId, row.game_pk || null, row.team_id || null, issueType, severity, reason, JSON.stringify(details));
 }
 
 async function writeStarterRows(env, batchId, rows, previousMap, counters) {
+  const statements = [];
   for (const r of rows) {
     const stageId = rid("daily_starters_stage");
-    await run(env.DAILY_DB, `INSERT INTO daily_starters_stage (
+    statements.push(env.DAILY_DB.prepare(`INSERT INTO daily_starters_stage (
       stage_id, batch_id, current_key, source_key, source_endpoint, source_snapshot_at, game_pk, official_date, game_time_utc,
       team_id, team_name, opponent_team_id, opponent_team_name, is_home, starter_player_id, starter_name, starter_hand,
       starter_status, starter_confidence, source_status, game_status, abstract_game_state, detailed_state,
       previous_starter_player_id, previous_starter_name, change_detected, scratch_flag, opener_flag, bulk_pitcher_flag,
       tbd_flag, unavailable_flag, hand_missing_flag, prepared_board_relevant, prepared_board_pickable_rows, raw_json, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`).bind(
       stageId, batchId, r.current_key, r.source_key, r.source_endpoint, r.source_snapshot_at, r.game_pk, r.official_date, r.game_time_utc,
       r.team_id, r.team_name, r.opponent_team_id, r.opponent_team_name, r.is_home, r.starter_player_id, r.starter_name, r.starter_hand,
       r.starter_status, r.starter_confidence, r.source_status, r.game_status, r.abstract_game_state, r.detailed_state,
       r.previous_starter_player_id, r.previous_starter_name, r.change_detected, r.scratch_flag, r.opener_flag, r.bulk_pitcher_flag,
-      r.tbd_flag, r.unavailable_flag, r.hand_missing_flag, r.prepared_board_relevant, r.prepared_board_pickable_rows, r.raw_json);
+      r.tbd_flag, r.unavailable_flag, r.hand_missing_flag, r.prepared_board_relevant, r.prepared_board_pickable_rows, r.raw_json));
 
     const prev = previousMap.get(r.current_key);
     const firstSeen = prev?.first_seen_at || nowUtc();
     const changedAt = r.change_detected ? nowUtc() : (prev?.changed_at || null);
 
-    await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_starters_current (
+    statements.push(env.DAILY_DB.prepare(`INSERT OR REPLACE INTO daily_starters_current (
       current_key, batch_id, source_key, source_endpoint, source_snapshot_at, game_pk, official_date, game_time_utc,
       team_id, team_name, opponent_team_id, opponent_team_name, is_home, starter_player_id, starter_name, starter_hand,
       starter_status, starter_confidence, source_status, game_status, abstract_game_state, detailed_state,
       previous_starter_player_id, previous_starter_name, change_detected, scratch_flag, opener_flag, bulk_pitcher_flag,
       tbd_flag, unavailable_flag, hand_missing_flag, prepared_board_relevant, prepared_board_pickable_rows,
       first_seen_at, last_seen_at, changed_at, raw_json, data_source_level, is_temporary_derived, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, COALESCE((SELECT created_at FROM daily_starters_current WHERE current_key=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, COALESCE((SELECT created_at FROM daily_starters_current WHERE current_key=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)`).bind(
       r.current_key, batchId, r.source_key, r.source_endpoint, r.source_snapshot_at, r.game_pk, r.official_date, r.game_time_utc,
       r.team_id, r.team_name, r.opponent_team_id, r.opponent_team_name, r.is_home, r.starter_player_id, r.starter_name, r.starter_hand,
       r.starter_status, r.starter_confidence, r.source_status, r.game_status, r.abstract_game_state, r.detailed_state,
       r.previous_starter_player_id, r.previous_starter_name, r.change_detected, r.scratch_flag, r.opener_flag, r.bulk_pitcher_flag,
       r.tbd_flag, r.unavailable_flag, r.hand_missing_flag, r.prepared_board_relevant, r.prepared_board_pickable_rows,
-      firstSeen, changedAt, r.raw_json, r.data_source_level, r.is_temporary_derived, r.current_key);
+      firstSeen, changedAt, r.raw_json, r.data_source_level, r.is_temporary_derived, r.current_key));
 
-    await run(env.DAILY_DB, `INSERT INTO daily_starters_snapshots (
+    statements.push(env.DAILY_DB.prepare(`INSERT INTO daily_starters_snapshots (
       snapshot_id, batch_id, current_key, game_pk, team_id, starter_player_id, starter_name, starter_hand,
       starter_status, starter_confidence, source_status, source_key, source_endpoint, source_snapshot_at, raw_json, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`).bind(
       rid("daily_starters_snapshot"), batchId, r.current_key, r.game_pk, r.team_id, r.starter_player_id, r.starter_name, r.starter_hand,
-      r.starter_status, r.starter_confidence, r.source_status, r.source_key, r.source_endpoint, r.source_snapshot_at, r.raw_json);
+      r.starter_status, r.starter_confidence, r.source_status, r.source_key, r.source_endpoint, r.source_snapshot_at, r.raw_json));
 
     counters.rows_written++;
     counters.snapshot_rows_written++;
 
-    if (r.tbd_flag && r.prepared_board_relevant) await insertIssue(env, batchId, r, "starter_tbd", "blocking", "Prepared-board-relevant team has no probable/actual starter from official source.", { current_key: r.current_key });
-    if (r.change_detected) await insertIssue(env, batchId, r, "starter_changed", "warning", "Starter player ID changed versus previous current snapshot before live/final state.", { previous_starter_player_id: r.previous_starter_player_id, starter_player_id: r.starter_player_id });
-    if (r.scratch_flag) await insertIssue(env, batchId, r, "starter_scratch_or_change", "warning", "Scratch/change detected from note text or previous snapshot comparison.", { starter_status: r.starter_status });
-    if (r.opener_flag) await insertIssue(env, batchId, r, "opener_expected", "warning", "Official note text indicates opener possibility.", {});
-    if (r.bulk_pitcher_flag) await insertIssue(env, batchId, r, "bulk_unclear", "warning", "Official note text indicates bulk/follower/limited pitch-count possibility.", {});
-    if (r.hand_missing_flag) await insertIssue(env, batchId, r, "starter_hand_missing", "warning", "Starter ID resolved but throw hand was not found in source/person hydrate/local REF lookup.", {});
+    if (r.tbd_flag && r.prepared_board_relevant) statements.push(buildIssueStatement(env, batchId, r, "starter_tbd", "blocking", "Prepared-board-relevant team has no probable/actual starter from official source.", { current_key: r.current_key }));
+    if (r.change_detected) statements.push(buildIssueStatement(env, batchId, r, "starter_changed", "warning", "Starter player ID changed versus previous current snapshot before live/final state.", { previous_starter_player_id: r.previous_starter_player_id, starter_player_id: r.starter_player_id }));
+    if (r.scratch_flag) statements.push(buildIssueStatement(env, batchId, r, "starter_scratch_or_change", "warning", "Scratch/change detected from note text or previous snapshot comparison.", { starter_status: r.starter_status }));
+    if (r.opener_flag) statements.push(buildIssueStatement(env, batchId, r, "opener_expected", "warning", "Official note text indicates opener possibility.", {}));
+    if (r.bulk_pitcher_flag) statements.push(buildIssueStatement(env, batchId, r, "bulk_unclear", "warning", "Official note text indicates bulk/follower/limited pitch-count possibility.", {}));
+    if (r.hand_missing_flag) statements.push(buildIssueStatement(env, batchId, r, "starter_hand_missing", "warning", "Starter ID resolved but throw hand was not found in source/person hydrate/local REF lookup.", {}));
   }
+  if (statements.length) await env.DAILY_DB.batch(statements);
 }
 
 async function updateLegacyProbable(env, batchId, rows, counters) {
