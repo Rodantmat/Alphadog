@@ -869,8 +869,8 @@ async function runAvailability(env, input) {
   const staticByMlbId = new Map(staticPlayers.map((r) => [intOrNull(r.mlb_player_id), r]));
   const officialDates = prepared.map((r) => r.official_date).filter(Boolean).sort();
   const masterChainSourceBudget = input.daily_context_full_run_child === true || input.full_daily_master_run === true || input.backend_chain_only === true || String(input.mode || "").includes("daily_context_full_run");
-  const windowStart = masterChainSourceBudget ? retention.start : addDays(officialDates[0] || todayPt(), -7);
-  const windowEnd = masterChainSourceBudget ? retention.end : (officialDates[officialDates.length - 1] || todayPt());
+  const windowStart = retention.start;
+  const windowEnd = retention.end;
   const teamIds = [...new Set(teamRows.map((r) => intOrNull(r.mlb_team_id)).filter((v) => v !== null))];
   await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1 SET window_start=?, window_end=?, teams_checked=?, status='running_sources_started', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, windowStart, windowEnd, teamIds.length, batchId);
   const sources = await withDeadline(
