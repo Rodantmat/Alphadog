@@ -1338,7 +1338,7 @@ async function runSourceProbe(env, input) {
   const startingPageFetch = await fetchTextWithTimeout(MLB_STARTING_LINEUPS_URL, userAgent);
   _tm.after_starting_page_fetch_ms = Date.now() - _t0;
   try {
-    await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_pipeline_timings', 'Concrete timing checkpoint', ?, CURRENT_TIMESTAMP)",
+    await execRun(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_pipeline_timings', 'Concrete timing checkpoint', ?, CURRENT_TIMESTAMP)",
       _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ timings: _tm, game_pks: sourceGamePks.length, prepared_players: preparedPlayers.length })).catch(() => {});
   } catch (_) {}
   const startingPageAnalysis = analyzeStartingLineupsPage(startingPageFetch.text, sourceRows, preparedPlayers);
