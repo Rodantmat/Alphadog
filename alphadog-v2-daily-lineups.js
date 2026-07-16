@@ -1290,7 +1290,7 @@ async function runSourceProbe(env, input) {
   const anchors = await getPreparedGameAnchors(env);
   _tm.after_anchors_ms = Date.now() - _t0;
   try {
-    await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_early_checkpoint', 'Immediate checkpoint after anchors', ?, CURRENT_TIMESTAMP)",
+    await execRun(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_early_checkpoint', 'Immediate checkpoint after anchors', ?, CURRENT_TIMESTAMP)",
       _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ after_anchors_ms: _tm.after_anchors_ms, anchors_count: anchors.length }));
   } catch (_) {}
   // Real, safe addition: optional override for a one-time historical catcher-framing/pop-time
