@@ -1382,7 +1382,11 @@ async function runSourceProbe(env, input) {
     const feedLiveUrl = buildMlbUrl(sourceBase, `/api/v1.1/game/${gamePk}/feed/live`);
 
     boxscoreCalls += 1;
-    const box = await fetchJsonWithRetry(boxscoreUrl, userAgent, MAX_ENDPOINT_RETRIES);
+    const needsFeedLive = probeFeedLive;
+    const [box, liveEarly] = await Promise.all([
+      fetchJsonWithRetry(boxscoreUrl, userAgent, MAX_ENDPOINT_RETRIES),
+      needsFeedLive ? fetchJsonWithRetry(feedLiveUrl, userAgent, MAX_ENDPOINT_RETRIES) : Promise.resolve(null)
+    ]);
     let boxscoreOk = !!(box.ok && box.json);
     let boxscoreTeams = boxscoreOk && box.json && box.json.teams ? box.json.teams : null;
     if (!boxscoreOk) {
@@ -1398,9 +1402,9 @@ async function runSourceProbe(env, input) {
     let feedLiveTimestamp = null;
     let live = null;
     let liveTeams = null;
-    if (probeFeedLive || !boxscoreOk) {
+    if (needsFeedLive || !boxscoreOk) {
       feedLiveCalls += 1;
-      live = await fetchJsonWithRetry(feedLiveUrl, userAgent, MAX_ENDPOINT_RETRIES);
+      live = needsFeedLive ? liveEarly : await fetchJsonWithRetry(feedLiveUrl, userAgent, MAX_ENDPOINT_RETRIES);
       feedLiveOk = !!(live.ok && live.json && live.json.gamePk === gamePk && live.json.liveData && live.json.liveData.boxscore);
       if (!feedLiveOk) {
         if (live.http_status === 404) warnings.push("feed_live_game_endpoint_not_initialized_http_404");
