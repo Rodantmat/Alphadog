@@ -851,11 +851,14 @@ async function writeTarget(env, batchId, target, probe, classified, sourceSnapsh
 }
 
 async function runUmpireContext(env, input) {
+  const _t0 = Date.now();
+  const _timings = {};
   refMetricsRunCache = null;
   if (!schemaEnsuredCache) {
     await ensureSchema(env);
     schemaEnsuredCache = true;
   }
+  _timings.after_ensure_schema_ms = Date.now() - _t0;
   const requestId = input.request_id || rid("daily_umpire_req");
   const batchId = input && input.chain_id ? `daily_umpire_batch_${input.chain_id}` : rid("daily_umpire_batch");
   const sourceSnapshotAt = nowUtc();
@@ -863,6 +866,7 @@ async function runUmpireContext(env, input) {
   const realBoardDateRows = await all(env.SCORE_DB, `SELECT DISTINCT official_date FROM score_board_prepared_current WHERE pickable_safe = 1 AND official_game_time_utc IS NOT NULL AND official_game_time_utc > ?`, nowIsoForWindow);
   const realBoardDates = realBoardDateRows.map(r => r.official_date).filter(Boolean);
   const retention = retentionWindowPt(realBoardDates);
+  _timings.after_real_board_dates_ms = Date.now() - _t0;
   let batchStarted = false;
   let prePrune = null;
   let prepared = [];
@@ -875,17 +879,26 @@ async function runUmpireContext(env, input) {
   try {
     await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_umpire_context_batches (batch_id, request_id, run_id, worker_name, worker_version, job_key, mode, status, window_start, window_end, started_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`, batchId, requestId, input.run_id || null, WORKER_NAME, VERSION, JOB_KEY, input.mode || "daily_umpire_context_refresh_window", retention.start, retention.end, sourceSnapshotAt);
     batchStarted = true;
-    await heartbeatUmpireQueue(env, requestId, batchId, "batch_created", { window_start: retention.start, window_end: retention.end, source_fetch_timeout_ms: 2500 });
+    _timings.after_batch_insert_ms = Date.now() - _t0;
+    await heartbeatUmpireQueue(env, requestId, batchId, "batch_created", { window_start: retention.start, window_end: retention.end, source_fetch_timeout_ms: 2500, timings_so_far: _timings });
+    _timings.after_first_heartbeat_ms = Date.now() - _t0;
     const previous = await getPreviousCurrent(env, retention);
+    _timings.after_get_previous_current_ms = Date.now() - _t0;
     prePrune = await pruneRetention(env, retention);
+    _timings.after_prune_retention_ms = Date.now() - _t0;
     await pruneAssignmentHistory(env);
+    _timings.after_prune_assignment_history_ms = Date.now() - _t0;
     prepared = await getPreparedGameRows(env, retention);
+    _timings.after_get_prepared_game_rows_ms = Date.now() - _t0;
     gamePks = [...new Set(prepared.map(r => Number(r.official_game_pk)).filter(Boolean))];
     calendars = await getCalendar(env, gamePks);
+    _timings.after_get_calendar_ms = Date.now() - _t0;
     targets = makeTargets(prepared, calendars);
     const MAX_GAMES_PER_INVOCATION = 30;
     const recentlyProcessed = await all(env.DAILY_DB,
       `SELECT game_pk FROM daily_umpire_context_current WHERE official_date IN (${retention.dates.map(() => "?").join(",")})`, ...retention.dates);
+    _timings.after_recently_processed_query_ms = Date.now() - _t0;
+    await heartbeatUmpireQueue(env, requestId, batchId, "pre_loop_timings", { timings_so_far: _timings, prepared_rows: prepared.length, game_pks: gamePks.length, targets_before_chunk: targets.length });
     const recentlyProcessedPks = new Set(recentlyProcessed.map(r => Number(r.game_pk)));
     const remainingTargets = targets.filter(t => !recentlyProcessedPks.has(Number(t.game_pk)));
     const totalRemainingBeforeChunk = remainingTargets.length;
