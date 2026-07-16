@@ -234,7 +234,8 @@ function compactPeople(row) {
 }
 
 async function ensureSchema(env) {
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_player_availability_batches_v1 (
+  await env.DAILY_DB.batch([
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_player_availability_batches_v1 (
     batch_id TEXT PRIMARY KEY,
     request_id TEXT,
     run_id TEXT,
@@ -269,8 +270,8 @@ async function ensureSchema(env) {
     completed_at TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_player_availability_current_v1 (
+  )`),
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_player_availability_current_v1 (
     availability_key TEXT PRIMARY KEY,
     batch_id TEXT,
     source_key TEXT,
@@ -306,8 +307,8 @@ async function ensureSchema(env) {
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(official_date, game_pk, mlb_player_id, team_mlb_id)
-  )`);
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_player_availability_snapshots_v1 (
+  )`),
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_player_availability_snapshots_v1 (
     snapshot_id TEXT PRIMARY KEY,
     batch_id TEXT,
     availability_key TEXT,
@@ -322,8 +323,8 @@ async function ensureSchema(env) {
     source_snapshot_at TEXT,
     source_payload_snippets TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_player_availability_issues_v1 (
+  )`),
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_player_availability_issues_v1 (
     issue_id TEXT PRIMARY KEY,
     batch_id TEXT,
     official_date TEXT,
@@ -336,18 +337,19 @@ async function ensureSchema(env) {
     details_json TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_current_game ON daily_player_availability_current_v1 (official_date, game_pk)`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_current_player ON daily_player_availability_current_v1 (mlb_player_id)`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_current_status ON daily_player_availability_current_v1 (availability_status)`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_snap_batch ON daily_player_availability_snapshots_v1 (batch_id)`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_issues_batch ON daily_player_availability_issues_v1 (batch_id)`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_issues_severity ON daily_player_availability_issues_v1 (issue_severity)`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_current_batch ON daily_player_availability_current_v1 (batch_id)`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_snap_date ON daily_player_availability_snapshots_v1 (official_date)`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_dpav1_issues_date ON daily_player_availability_issues_v1 (official_date)`);
-  await run(env.DAILY_DB, `INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, notes) VALUES ('schema_daily_player_availability_v1_sidecar', ?, 'Additive Daily Player Availability v1 sidecar tables; legacy daily_player_availability stub untouched')`, VERSION);
-  await run(env.DAILY_DB, `INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, notes) VALUES ('schema_daily_player_availability_v1_today_tomorrow_retention', ?, 'Daily Player Availability v1 retention: keep current rows for latest run only and retain snapshots/issues only for today and tomorrow official dates')`, VERSION);
+  )`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_dpav1_current_game ON daily_player_availability_current_v1 (official_date, game_pk)`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_dpav1_current_player ON daily_player_availability_current_v1 (mlb_player_id)`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_dpav1_current_status ON daily_player_availability_current_v1 (availability_status)`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_dpav1_snap_batch ON daily_player_availability_snapshots_v1 (batch_id)`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_dpav1_issues_batch ON daily_player_availability_issues_v1 (batch_id)`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_dpav1_issues_severity ON daily_player_availability_issues_v1 (issue_severity)`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_dpav1_current_batch ON daily_player_availability_current_v1 (batch_id)`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_dpav1_snap_date ON daily_player_availability_snapshots_v1 (official_date)`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_dpav1_issues_date ON daily_player_availability_issues_v1 (official_date)`),
+    env.DAILY_DB.prepare(`INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, notes) VALUES ('schema_daily_player_availability_v1_sidecar', ?, 'Additive Daily Player Availability v1 sidecar tables; legacy daily_player_availability stub untouched')`).bind(VERSION),
+    env.DAILY_DB.prepare(`INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, notes) VALUES ('schema_daily_player_availability_v1_today_tomorrow_retention', ?, 'Daily Player Availability v1 retention: keep current rows for latest run only and retain snapshots/issues only for today and tomorrow official dates')`).bind(VERSION)
+  ]);
 }
 
 async function pruneAvailabilityRetention(env, retention, latestBatchId = null) {
