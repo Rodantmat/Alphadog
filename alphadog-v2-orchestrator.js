@@ -6702,7 +6702,7 @@ async function processPrizePicksGithubBoardJob(env, row, runId, trigger) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    }, "prizepicks_github_board", 25000);
+    }, "prizepicks_github_board", 20000);
     httpStatus = resp.status;
     const text = await resp.text();
     try {
