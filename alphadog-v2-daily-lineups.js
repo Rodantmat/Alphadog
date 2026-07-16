@@ -1276,6 +1276,9 @@ function certificationFrom(games, sourceFailures, discovery, writeHardBlocks = [
 }
 
 async function runSourceProbe(env, input) {
+  const _t0 = Date.now();
+  const _tm = {};
+  const _requestId = (input && input.request_id) || compactId("daily_lineups_debug");
   const startedAt = nowUtc();
   const catcherBatchId = compactId("daily_catcher_ctx_batch");
   const rawSourceBase = String(env.MLB_API_BASE_URL || DEFAULT_MLB_BASE_URL).replace(/\/$/, "");
@@ -1285,12 +1288,14 @@ async function runSourceProbe(env, input) {
   const todayUtc = nowUtc().slice(0, 10);
 
   const anchors = await getPreparedGameAnchors(env);
+  _tm.after_anchors_ms = Date.now() - _t0;
   // Real, safe addition: optional override for a one-time historical catcher-framing/pop-time
   // backfill (e.g. a prior season) - defaults to the real current year exactly as before, so live
   // production behavior is completely unchanged unless this is explicitly requested.
   const catcherRefreshSeasonOverride = Number(input && input.catcher_reference_backfill_season);
   const catcherRefreshSeason = Number.isFinite(catcherRefreshSeasonOverride) && catcherRefreshSeasonOverride > 2000 ? catcherRefreshSeasonOverride : new Date().getUTCFullYear();
   const catcherRefreshResult = await refreshCatcherReferenceIfStale(env, catcherRefreshSeason);
+  _tm.after_catcher_refresh_ms = Date.now() - _t0;
   const catcherRefRows = await all(env.REF_DB, `SELECT player_id, player_name, framing_runs_total, framing_pct_total, pop_time_2b_sba FROM ref_catcher_framing_poptime`);
   const catcherRefMap = new Map(catcherRefRows.map(r => [Number(r.player_id), r]));
   const preparedGamePks = uniqInts(anchors.map((r) => r.official_game_pk));
@@ -1300,9 +1305,12 @@ async function runSourceProbe(env, input) {
     getCalendarOnlyProbeRows(env, todayUtc),
     getTeamMap(env)
   ]);
+  _tm.after_calendar_and_players_ms = Date.now() - _t0;
 
   const preparedScheduleDiscovery = await discoverOfficialSchedule(env, sourceBase, userAgent, preparedCalendarRows, "prepared");
+  _tm.after_prepared_schedule_discovery_ms = Date.now() - _t0;
   const calendarScheduleDiscovery = await discoverOfficialSchedule(env, sourceBase, userAgent, calendarProbeRows, "calendar_probe");
+  _tm.after_calendar_schedule_discovery_ms = Date.now() - _t0;
   const preparedBoardStale = preparedGamePks.length > 0 && preparedScheduleDiscovery.prepared_official_schedule_checked && Number(preparedScheduleDiscovery.prepared_official_schedule_anchor_hit_count || 0) < preparedGamePks.length;
 
   const usePreparedBoardLane = preparedGamePks.length > 0 && !preparedBoardStale && preparedCalendarRows.length > 0;
@@ -1319,6 +1327,11 @@ async function runSourceProbe(env, input) {
   }
 
   const startingPageFetch = await fetchTextWithTimeout(MLB_STARTING_LINEUPS_URL, userAgent);
+  _tm.after_starting_page_fetch_ms = Date.now() - _t0;
+  try {
+    await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_pipeline_timings', 'Concrete timing checkpoint', ?, CURRENT_TIMESTAMP)",
+      _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ timings: _tm, game_pks: sourceGamePks.length, prepared_players: preparedPlayers.length })).catch(() => {});
+  } catch (_) {}
   const startingPageAnalysis = analyzeStartingLineupsPage(startingPageFetch.text, sourceRows, preparedPlayers);
   const discovery = {
     ...preparedScheduleDiscovery,
