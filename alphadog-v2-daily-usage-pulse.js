@@ -898,9 +898,7 @@ async function runUmpireContext(env, input) {
     const recentlyProcessed = await all(env.DAILY_DB,
       `SELECT game_pk FROM daily_umpire_context_current WHERE official_date IN (${retention.dates.map(() => "?").join(",")})`, ...retention.dates);
     _timings.after_recently_processed_query_ms = Date.now() - _t0;
-    await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'umpire_debug_pre_loop_timings', 'Concrete timing checkpoint before per-game loop', ?, CURRENT_TIMESTAMP)",
-      requestId, WORKER_NAME, JOB_KEY, safeJson({ timings_so_far: _timings, prepared_rows: prepared.length, game_pks: gamePks.length, targets_before_chunk: targets.length }, 3000)).catch(() => {});
-    await heartbeatUmpireQueue(env, requestId, batchId, "pre_loop_timings", { timings_so_far: _timings, prepared_rows: prepared.length, game_pks: gamePks.length, targets_before_chunk: targets.length });
+    await heartbeatUmpireQueue(env, requestId, batchId, "pre_loop_timings", { prepared_rows: prepared.length, game_pks: gamePks.length, targets_before_chunk: targets.length });
     const recentlyProcessedPks = new Set(recentlyProcessed.map(r => Number(r.game_pk)));
     const remainingTargets = targets.filter(t => !recentlyProcessedPks.has(Number(t.game_pk)));
     const totalRemainingBeforeChunk = remainingTargets.length;
