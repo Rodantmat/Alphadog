@@ -837,7 +837,10 @@ async function runAvailability(env, input) {
   const batchId = rid("daily_player_availability_batch");
   const requestId = input.request_id || batchId;
   const runId = input.run_id || null;
-  await ensureSchema(env);
+  if (!schemaEnsuredCache) {
+    await ensureSchema(env);
+    schemaEnsuredCache = true;
+  }
   const nowIsoForWindow = new Date().toISOString();
   const realBoardDateRows = await all(env.SCORE_DB, `SELECT DISTINCT official_date FROM score_board_prepared_current WHERE pickable_safe = 1 AND official_game_time_utc IS NOT NULL AND official_game_time_utc > ?`, nowIsoForWindow);
   const realBoardDates = realBoardDateRows.map(r => r.official_date).filter(Boolean);
