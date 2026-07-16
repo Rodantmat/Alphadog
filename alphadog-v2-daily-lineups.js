@@ -1371,7 +1371,7 @@ async function runSourceProbe(env, input) {
   let feedLiveCalls = 0;
   let sourceFailures = 0;
 
-  for (const gamePk of sourceGamePks) {
+  async function processOneGame(gamePk) {
     const calendar = calendarByGame.get(gamePk) || { game_pk: gamePk };
     const gamePreparedPlayers = preparedByGame.get(gamePk) || [];
     const warnings = [];
@@ -1381,7 +1381,9 @@ async function runSourceProbe(env, input) {
     const boxscoreUrl = buildMlbUrl(sourceBase, `/api/v1/game/${gamePk}/boxscore`);
     const feedLiveUrl = buildMlbUrl(sourceBase, `/api/v1.1/game/${gamePk}/feed/live`);
 
-    boxscoreCalls += 1;
+    let localBoxscoreCalls = 1;
+    let localFeedLiveCalls = 0;
+    let localSourceFailures = 0;
     const needsFeedLive = probeFeedLive;
     const [box, liveEarly] = await Promise.all([
       fetchJsonWithRetry(boxscoreUrl, userAgent, MAX_ENDPOINT_RETRIES),
@@ -1392,7 +1394,7 @@ async function runSourceProbe(env, input) {
     if (!boxscoreOk) {
       if (box.http_status === 404) warnings.push("boxscore_game_endpoint_not_initialized_http_404");
       else {
-        sourceFailures += 1;
+        localSourceFailures += 1;
         blockers.push(`boxscore_fetch_failed_http_${box.http_status || "none"}`);
       }
     }
@@ -1403,7 +1405,7 @@ async function runSourceProbe(env, input) {
     let live = null;
     let liveTeams = null;
     if (needsFeedLive || !boxscoreOk) {
-      feedLiveCalls += 1;
+      localFeedLiveCalls += 1;
       live = needsFeedLive ? liveEarly : await fetchJsonWithRetry(feedLiveUrl, userAgent, MAX_ENDPOINT_RETRIES);
       feedLiveOk = !!(live.ok && live.json && live.json.gamePk === gamePk && live.json.liveData && live.json.liveData.boxscore);
       if (!feedLiveOk) {
@@ -1463,7 +1465,7 @@ async function runSourceProbe(env, input) {
     const availabilityWritePreviewRows = buildAvailabilityWritePreviewRows(gamePk, calendar, preparedSummary);
     const lineupWriteReady = lineupWritePreviewRows.length > 0 && (homeValidation.lineup_status === "posted_lineup" || awayValidation.lineup_status === "posted_lineup" || derivedLineupPreviewRows.length > 0);
 
-    games.push({
+    const gameResult = {
       game_pk: gamePk,
       probe_lane: sourceLane,
       official_date: calendar.official_date || null,
@@ -1517,7 +1519,20 @@ async function runSourceProbe(env, input) {
       derived_backup_status: preparedSummary.rosterValidated > 0 && homeValidation.batting_order_count === 0 && awayValidation.batting_order_count === 0 ? "PRE_LINEUP_ROSTER_VALIDATED" : null,
       warnings: warnings.slice(0, 80),
       blockers: blockers.slice(0, 80)
-    });
+    };
+    return { gameResult, localBoxscoreCalls, localFeedLiveCalls, localSourceFailures };
+  }
+
+  const CONCURRENCY = 6;
+  for (let i = 0; i < sourceGamePks.length; i += CONCURRENCY) {
+    const chunk = sourceGamePks.slice(i, i + CONCURRENCY);
+    const chunkResults = await Promise.all(chunk.map(gamePk => processOneGame(gamePk)));
+    for (const r of chunkResults) {
+      games.push(r.gameResult);
+      boxscoreCalls += r.localBoxscoreCalls;
+      feedLiveCalls += r.localFeedLiveCalls;
+      sourceFailures += r.localSourceFailures;
+    }
   }
 
   const writeSafety = evaluateWriteFrameworkSafety(games);
