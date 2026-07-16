@@ -872,6 +872,20 @@ async function runAvailability(env, input) {
   const windowStart = retention.start;
   const windowEnd = retention.end;
   const teamIds = [...new Set(teamRows.map((r) => intOrNull(r.mlb_team_id)).filter((v) => v !== null))];
+  const MAX_TEAMS_PER_INVOCATION = 10;
+  const alreadyDoneTeams = await all(env.DAILY_DB, `SELECT DISTINCT team_mlb_id FROM daily_player_availability_current_v1 WHERE batch_id=?`, batchId).catch(() => []);
+  const alreadyDoneTeamIds = new Set(alreadyDoneTeams.map(r => Number(r.team_mlb_id)));
+  const remainingTeamIds = teamIds.filter(id => !alreadyDoneTeamIds.has(id));
+  const totalRemainingTeamsBeforeChunk = remainingTeamIds.length;
+  const chunkTeamIds = remainingTeamIds.slice(0, MAX_TEAMS_PER_INVOCATION);
+  const isPartial = totalRemainingTeamsBeforeChunk > chunkTeamIds.length;
+  const chunkTeamIdSet = new Set(chunkTeamIds);
+  const preparedChunk = prepared.filter(r => {
+    const t = teamByAbbr.get(normTeam(r.team));
+    const tid = t ? intOrNull(t.mlb_team_id) : null;
+    return tid !== null && chunkTeamIdSet.has(tid);
+  });
+  const playerIdsChunk = [...new Set(preparedChunk.map((r) => intOrNull(r.resolved_mlb_player_id)).filter((v) => v !== null))];
   await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1 SET window_start=?, window_end=?, teams_checked=?, status='running_sources_started', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, windowStart, windowEnd, teamIds.length, batchId);
   const sources = await withDeadline(
     fetchSources(env, teamIds, playerIds, windowStart, windowEnd, { masterChainSourceBudget }),
