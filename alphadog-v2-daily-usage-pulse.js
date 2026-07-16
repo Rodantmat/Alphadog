@@ -867,6 +867,10 @@ async function runUmpireContext(env, input) {
   const realBoardDates = realBoardDateRows.map(r => r.official_date).filter(Boolean);
   const retention = retentionWindowPt(realBoardDates);
   _timings.after_real_board_dates_ms = Date.now() - _t0;
+  try {
+    await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'umpire_debug_early_timings', 'Concrete early timing checkpoint', ?, CURRENT_TIMESTAMP)",
+      requestId, WORKER_NAME, JOB_KEY, safeJson({ timings_so_far: _timings }, 1000));
+  } catch (_) {}
   let batchStarted = false;
   let prePrune = null;
   let prepared = [];
