@@ -968,18 +968,13 @@ async function runUmpireContext(env, input) {
       issuesWritten += classified.issues.length;
       results.push({ target, probe, classified });
       summaries.push({ game_pk: target.game_pk, official_date: target.official_date, home: target.home_team_name, away: target.away_team_name, prepared_rows: target.prepared_board_pickable_rows, status: classified.status, confidence: classified.confidence, source_status: classified.sourceStatus, home_plate_umpire_id: probe.home_plate_umpire_id || null, home_plate_umpire_name: probe.home_plate_umpire_name || null, assignment_source_path: probe.path || null, issues: classified.issues.length, calls: probe.calls ? probe.calls.map(c => ({ source_key: c.source_key, ok: c.ok, status: c.status, elapsed_ms: c.elapsed_ms, error: c.error || null })) : [] });
-      if (_loopGameIndex % 4 === 0 || _loopGameIndex === targets.length) {
-        await heartbeatUmpireBatch(env, batchId, { calendar_games_checked: calendars.length, prepared_games_checked: gamePks.length, prepared_rows_read: preparedRowsRead, games_checked: results.length, game_rows_written: 0, snapshot_rows_written: 0, assignments_found: assignmentsFound, assignments_missing: assignmentsMissing, assignments_pending: assignmentsPending, assignments_changed: assignmentsChanged, source_failures: sourceFailures, warning_count: issuesWritten, unknown_umpire_count: unknownUmpireCount, external_calls: externalCalls });
-        await heartbeatUmpireQueue(env, requestId, batchId, "probing_sources", { processed_games: results.length, total_games: targets.length, assignments_found: assignmentsFound, assignments_missing: assignmentsMissing, source_failures: sourceFailures, external_calls: externalCalls });
-      }
-    }
-
-    for (const result of results) {
-      const writes = await writeTarget(env, batchId, result.target, result.probe, result.classified, sourceSnapshotAt);
+      const writes = await writeTarget(env, batchId, target, probe, classified, sourceSnapshotAt);
       currentWritten += writes.current_written;
       snapshotWritten += writes.snapshot_written;
-      await heartbeatUmpireBatch(env, batchId, { calendar_games_checked: calendars.length, prepared_games_checked: gamePks.length, prepared_rows_read: preparedRowsRead, games_checked: targets.length, game_rows_written: currentWritten, snapshot_rows_written: snapshotWritten, assignments_found: assignmentsFound, assignments_missing: assignmentsMissing, assignments_pending: assignmentsPending, assignments_changed: assignmentsChanged, source_failures: sourceFailures, warning_count: issuesWritten, unknown_umpire_count: unknownUmpireCount, external_calls: externalCalls });
-      await heartbeatUmpireQueue(env, requestId, batchId, "writing_context", { game_rows_written: currentWritten, snapshot_rows_written: snapshotWritten, total_games: targets.length });
+      if (_loopGameIndex % 4 === 0 || _loopGameIndex === targets.length) {
+        await heartbeatUmpireBatch(env, batchId, { calendar_games_checked: calendars.length, prepared_games_checked: gamePks.length, prepared_rows_read: preparedRowsRead, games_checked: results.length, game_rows_written: currentWritten, snapshot_rows_written: snapshotWritten, assignments_found: assignmentsFound, assignments_missing: assignmentsMissing, assignments_pending: assignmentsPending, assignments_changed: assignmentsChanged, source_failures: sourceFailures, warning_count: issuesWritten, unknown_umpire_count: unknownUmpireCount, external_calls: externalCalls });
+        await heartbeatUmpireQueue(env, requestId, batchId, "probing_and_writing", { processed_games: results.length, total_games: targets.length, game_rows_written: currentWritten, assignments_found: assignmentsFound, assignments_missing: assignmentsMissing, source_failures: sourceFailures, external_calls: externalCalls });
+      }
     }
 
     const replacementCleanup = await finalizeWindowReplacement(env, retention, batchId);
