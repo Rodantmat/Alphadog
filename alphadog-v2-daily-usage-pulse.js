@@ -876,6 +876,14 @@ async function runUmpireContext(env, input) {
     gamePks = [...new Set(prepared.map(r => Number(r.official_game_pk)).filter(Boolean))];
     calendars = await getCalendar(env, gamePks);
     targets = makeTargets(prepared, calendars);
+    const MAX_GAMES_PER_INVOCATION = 6;
+    const recentlyProcessed = await all(env.DAILY_DB,
+      `SELECT game_pk FROM daily_umpire_context_current WHERE datetime(updated_at) > datetime('now', '-8 minutes')`);
+    const recentlyProcessedPks = new Set(recentlyProcessed.map(r => Number(r.game_pk)));
+    const remainingTargets = targets.filter(t => !recentlyProcessedPks.has(Number(t.game_pk)));
+    const totalRemainingBeforeChunk = remainingTargets.length;
+    targets = remainingTargets.slice(0, MAX_GAMES_PER_INVOCATION);
+    const isPartial = totalRemainingBeforeChunk > targets.length;
     const preparedRowsRead = prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0);
     await heartbeatUmpireBatch(env, batchId, { calendar_games_checked: calendars.length, prepared_games_checked: gamePks.length, prepared_rows_read: preparedRowsRead });
     await heartbeatUmpireQueue(env, requestId, batchId, "targets_built", { calendar_games_checked: calendars.length, prepared_games_checked: gamePks.length, prepared_rows_read: preparedRowsRead, games_checked: targets.length });
