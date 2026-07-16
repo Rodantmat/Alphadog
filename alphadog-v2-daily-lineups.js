@@ -350,7 +350,8 @@ function safeJsonStringify(value) {
 
 async function ensureDailyLineupTables(env) {
   const db = env.DAILY_DB;
-  await execRun(db, `
+  await db.batch([
+    db.prepare(`
     CREATE TABLE IF NOT EXISTS daily_lineups_batches (
       batch_id TEXT PRIMARY KEY,
       job_key TEXT,
@@ -373,8 +374,8 @@ async function ensureDailyLineupTables(env) {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
-  `);
-  await execRun(db, `
+  `),
+    db.prepare(`
     CREATE TABLE IF NOT EXISTS daily_lineups_current (
       lineup_row_id TEXT PRIMARY KEY,
       batch_id TEXT,
@@ -398,8 +399,8 @@ async function ensureDailyLineupTables(env) {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
-  `);
-  await execRun(db, `
+  `),
+    db.prepare(`
     CREATE TABLE IF NOT EXISTS daily_player_availability_current (
       availability_row_id TEXT PRIMARY KEY,
       batch_id TEXT,
@@ -422,11 +423,12 @@ async function ensureDailyLineupTables(env) {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
-  `);
-  await execRun(db, `CREATE INDEX IF NOT EXISTS idx_daily_lineups_current_game ON daily_lineups_current(game_pk, team_side, lineup_slot)`);
-  await execRun(db, `CREATE INDEX IF NOT EXISTS idx_daily_lineups_current_player ON daily_lineups_current(player_id, game_pk)`);
-  await execRun(db, `CREATE INDEX IF NOT EXISTS idx_daily_lineups_batches_created ON daily_lineups_batches(created_at)`);
-  await execRun(db, `CREATE INDEX IF NOT EXISTS idx_daily_availability_current_game ON daily_player_availability_current(game_pk, side, player_id)`);
+  `),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_lineups_current_game ON daily_lineups_current(game_pk, team_side, lineup_slot)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_lineups_current_player ON daily_lineups_current(player_id, game_pk)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_lineups_batches_created ON daily_lineups_batches(created_at)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_availability_current_game ON daily_player_availability_current(game_pk, side, player_id)`)
+  ]);
   return true;
 }
 
