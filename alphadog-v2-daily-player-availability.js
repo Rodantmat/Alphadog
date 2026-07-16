@@ -888,17 +888,17 @@ async function runAvailability(env, input) {
   const playerIdsChunk = [...new Set(preparedChunk.map((r) => intOrNull(r.resolved_mlb_player_id)).filter((v) => v !== null))];
   await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1 SET window_start=?, window_end=?, teams_checked=?, status='running_sources_started', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, windowStart, windowEnd, teamIds.length, batchId);
   const sources = await withDeadline(
-    fetchSources(env, teamIds, playerIds, windowStart, windowEnd, { masterChainSourceBudget }),
+    fetchSources(env, chunkTeamIds, playerIdsChunk, windowStart, windowEnd, { masterChainSourceBudget }),
     masterChainSourceBudget ? 14000 : SOURCE_DEADLINE_MS,
-    () => deadlineFallbackSources(teamIds, playerIds, windowStart, windowEnd)
+    () => deadlineFallbackSources(chunkTeamIds, playerIdsChunk, windowStart, windowEnd)
   );
   await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1 SET source_failures=?, external_calls=?, status=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, (sources.sourceFailures || []).length, Number(sources.externalCalls || 0), sources.source_deadline_hit ? 'running_source_deadline_fallback' : 'running_sources_completed', batchId);
   const sourceSnapshotAt = nowUtc();
 
-  const recentAppearanceMap = await loadRecentAppearances(env, playerIds, windowStart);
+  const recentAppearanceMap = await loadRecentAppearances(env, playerIdsChunk, windowStart);
   const results = [];
   const activeTeamFailures = new Set(sources.sourceFailures.filter((f) => f.hard).map((f) => intOrNull(f.teamId)).filter((v) => v !== null));
-  for (const row of prepared) {
+  for (const row of preparedChunk) {
     const team = teamByAbbr.get(normTeam(row.team));
     const opp = teamByAbbr.get(normTeam(row.opponent));
     const teamMlbId = team ? intOrNull(team.mlb_team_id) : null;
