@@ -877,7 +877,7 @@ async function runUmpireContext(env, input) {
     gamePks = [...new Set(prepared.map(r => Number(r.official_game_pk)).filter(Boolean))];
     calendars = await getCalendar(env, gamePks);
     targets = makeTargets(prepared, calendars);
-    const MAX_GAMES_PER_INVOCATION = 6;
+    const MAX_GAMES_PER_INVOCATION = 2;
     const recentlyProcessed = await all(env.DAILY_DB,
       `SELECT game_pk FROM daily_umpire_context_current WHERE datetime(updated_at) > datetime('now', '-8 minutes')`);
     const recentlyProcessedPks = new Set(recentlyProcessed.map(r => Number(r.game_pk)));
