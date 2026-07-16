@@ -1,6 +1,7 @@
 const WORKER_NAME = "alphadog-v2-daily-player-availability";
 const VERSION = "alphadog-v2-daily-player-availability-v0.1.9-master-chain-terminal-source-budget";
 const JOB_KEY = "daily-player-availability";
+let schemaEnsuredCache = false; // module-level cache so the sequential CREATE TABLE/INDEX statements only run once per warm isolate
 const SOURCE_KEY = "official_mlb_statsapi_roster_transactions_v1";
 const MAX_PREPARED_PLAYERS = 500;
 const PEOPLE_BATCH_SIZE = 50;
