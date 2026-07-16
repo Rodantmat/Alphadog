@@ -3341,7 +3341,8 @@ async function v12OrchestratorLocalBridge(job, env, ctx = null) {
       no_scoring: true,
       no_ranking: true,
       no_final_board: true,
-      no_old_production_touch: true
+      no_old_production_touch: true,
+      daily_context_full_run_child: true
     };
 
     await env.CONTROL_DB.prepare(
