@@ -6919,7 +6919,7 @@ async function processParlaySleeperBoardJob(env, row, runId, trigger) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    }, "parlay_sleeper_board", 25000);
+    }, "parlay_sleeper_board", 20000);
     httpStatus = resp.status;
     const text = await resp.text();
     try {
