@@ -7057,7 +7057,7 @@ async function processParlayUnderdogBoardJob(env, row, runId, trigger) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    }, "parlay_underdog_board", 25000);
+    }, "parlay_underdog_board", 20000);
     httpStatus = resp.status;
     const text = await resp.text();
     try {
