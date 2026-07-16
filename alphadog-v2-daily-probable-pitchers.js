@@ -847,7 +847,9 @@ async function runDailyStarters(request, env) {
     for (const d of schedule.json?.dates || []) {
       for (const g of d.games || []) games.push(g);
     }
+    const _t1 = Date.now();
     const calendarMap = await loadCalendarRows(env, new Set(games.map(g => Number(g.gamePk)).filter(Boolean)));
+    const _afterCalendarMs = Date.now() - _t1;
     const relevantGames = games.filter(g => {
       const gp = Number(g.gamePk);
       return prep.gameSet.size ? prep.gameSet.has(gp) || calendarMap.has(gp) : true;
@@ -862,14 +864,22 @@ async function runDailyStarters(request, env) {
     }
 
     const liveFeedActuals = liveFeedActualsEnabled(input, env);
+    const _afterLiveFeedEnabledCheckMs = Date.now() - _t1;
     const actualMap = await fetchActualStarterMap(env, relevantGames, counters, { enabled: liveFeedActuals });
+    const _afterLiveFeedMs = Date.now() - _t1;
     const allStarterIds = [...probableIds];
     for (const actual of actualMap.values()) {
       if (actual?.id) allStarterIds.push(Number(actual.id));
     }
     const refHands = await loadRefPlayerHands(env, allStarterIds);
+    const _afterRefHandsMs = Date.now() - _t1;
     const missingHandIds = collectStarterIdsForHandFill(relevantGames, actualMap, refHands);
     const peopleHands = await fetchPeopleHands(env, missingHandIds, counters);
+    const _afterPeopleHandsMs = Date.now() - _t1;
+    try {
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'starters_debug_pipeline_timings', 'Comprehensive pipeline timing checkpoint', ?, CURRENT_TIMESTAMP)",
+        requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ games_total: games.length, relevant_games: relevantGames.length, live_feed_enabled: liveFeedActuals, missing_hand_ids: missingHandIds.length, after_calendar_ms: _afterCalendarMs, after_live_feed_enabled_check_ms: _afterLiveFeedEnabledCheckMs, after_live_feed_ms: _afterLiveFeedMs, after_ref_hands_ms: _afterRefHandsMs, after_people_hands_ms: _afterPeopleHandsMs }));
+    } catch (_) {}
 
     const previousRows = await all(env.DAILY_DB, "SELECT current_key, starter_player_id, starter_name, first_seen_at, changed_at FROM daily_starters_current");
     const previousMap = new Map(previousRows.map(r => [r.current_key, r]));
