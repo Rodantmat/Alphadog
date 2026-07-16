@@ -101,7 +101,8 @@ function baseIdentity(env) {
 }
 
 async function ensureSchema(env) {
-  await run(env.MARKET_DB, `CREATE TABLE IF NOT EXISTS market_certifier_batches (
+  await batchRun(env.MARKET_DB, [
+    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS market_certifier_batches (
     batch_id TEXT PRIMARY KEY,
     request_id TEXT,
     run_id TEXT,
@@ -131,8 +132,8 @@ async function ensureSchema(env) {
     completed_at TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.MARKET_DB, `CREATE TABLE IF NOT EXISTS market_context_readiness_current (
+  )`),
+    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS market_context_readiness_current (
     readiness_key TEXT PRIMARY KEY,
     batch_id TEXT,
     official_date TEXT,
@@ -154,8 +155,8 @@ async function ensureSchema(env) {
     details_json TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.MARKET_DB, `CREATE TABLE IF NOT EXISTS market_context_readiness_issues (
+  )`),
+    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS market_context_readiness_issues (
     issue_id TEXT PRIMARY KEY,
     batch_id TEXT,
     official_date TEXT,
@@ -170,13 +171,8 @@ async function ensureSchema(env) {
     details_json TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  // The parsing-quality tracker: per layer, per real vendor source_key (bookmaker), how many
-  // rows were seen from the vendor vs successfully normalized (parsed into a canonical prop/
-  // player/line) vs matched to a real prepared-board row vs quarantined by a known parsing
-  // issue vs a true, unexplained non-match. This is what lets us see, over time, whether
-  // parsing is actually improving as fixes land, per source - not just "did the layer run".
-  await run(env.MARKET_DB, `CREATE TABLE IF NOT EXISTS market_parsing_tally_current (
+  )`),
+    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS market_parsing_tally_current (
     tally_key TEXT PRIMARY KEY,
     batch_id TEXT,
     official_date TEXT,
@@ -195,8 +191,8 @@ async function ensureSchema(env) {
     last_computed_at TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.MARKET_DB, `CREATE TABLE IF NOT EXISTS market_parsing_tally_history (
+  )`),
+    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS market_parsing_tally_history (
     history_id TEXT PRIMARY KEY,
     tally_key TEXT,
     official_date TEXT,
@@ -210,8 +206,8 @@ async function ensureSchema(env) {
     normalization_rate_pct REAL,
     match_rate_pct REAL,
     recorded_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.MARKET_DB, `CREATE TABLE IF NOT EXISTS market_certifier_slate_current (
+  )`),
+    env.MARKET_DB.prepare(`CREATE TABLE IF NOT EXISTS market_certifier_slate_current (
     slate_date TEXT PRIMARY KEY,
     batch_id TEXT,
     slate_shape TEXT,
@@ -219,12 +215,13 @@ async function ensureSchema(env) {
     computed_at TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.MARKET_DB, "CREATE INDEX IF NOT EXISTS idx_market_context_readiness_current_game ON market_context_readiness_current(official_date, game_pk)");
-  await run(env.MARKET_DB, "CREATE INDEX IF NOT EXISTS idx_market_context_readiness_current_player ON market_context_readiness_current(player_id, game_pk)");
-  await run(env.MARKET_DB, "CREATE INDEX IF NOT EXISTS idx_market_context_readiness_issues_batch ON market_context_readiness_issues(batch_id)");
-  await run(env.MARKET_DB, "CREATE INDEX IF NOT EXISTS idx_market_parsing_tally_current_layer ON market_parsing_tally_current(official_date, layer_key, source_key)");
-  await run(env.MARKET_DB, "CREATE INDEX IF NOT EXISTS idx_market_parsing_tally_history_layer ON market_parsing_tally_history(official_date, layer_key, source_key)");
+  )`),
+    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_market_context_readiness_current_game ON market_context_readiness_current(official_date, game_pk)"),
+    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_market_context_readiness_current_player ON market_context_readiness_current(player_id, game_pk)"),
+    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_market_context_readiness_issues_batch ON market_context_readiness_issues(batch_id)"),
+    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_market_parsing_tally_current_layer ON market_parsing_tally_current(official_date, layer_key, source_key)"),
+    env.MARKET_DB.prepare("CREATE INDEX IF NOT EXISTS idx_market_parsing_tally_history_layer ON market_parsing_tally_history(official_date, layer_key, source_key)")
+  ]);
 }
 
 function pct(part, whole) {
