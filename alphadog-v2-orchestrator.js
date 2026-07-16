@@ -11325,10 +11325,11 @@ async function processDailyUmpireContextJob(env, row, runId, trigger) {
   const rowsWritten = Number(output && (output.game_rows_written || output.rows_written) ? (output.game_rows_written || output.rows_written) : 0);
   const externalCalls = Number(output && (output.external_calls || output.external_calls_performed) ? (output.external_calls || output.external_calls_performed) : 0);
   const certification = String((output && output.certification) || (ok ? "daily_umpire_completed" : "daily_umpire_failed")).slice(0, 120);
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
-  const errorCode = ok ? null : "daily_umpire_context_worker_failed";
-  const errorMessage = ok ? null : String((output && (output.error || output.status || output.certification)) || "Daily Umpire Context worker failed").slice(0, 900);
+  const isPartial = !!(output && (output.status === "partial_continue" || output.continuation_required === true));
+  const queueStatus = isPartial ? "pending" : (ok ? "completed" : "failed");
+  const runStatus = isPartial ? "partial_continue" : (ok ? "completed" : "failed");
+  const errorCode = (ok || isPartial) ? null : "daily_umpire_context_worker_failed";
+  const errorMessage = (ok || isPartial) ? null : String((output && (output.error || output.status || output.certification)) || "Daily Umpire Context worker failed").slice(0, 900);
   const cappedOutput = {
     ...output,
     orchestrator_dispatch: {
