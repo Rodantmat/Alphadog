@@ -10344,8 +10344,8 @@ async function processDailyPlayerAvailabilityJob(env, row, runId, trigger) {
     );
   } else {
     await run(env.CONTROL_DB,
-      "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
-      queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
+      "UPDATE control_job_queue SET status=?, finished_at=CASE WHEN ? THEN NULL ELSE CURRENT_TIMESTAMP END, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?",
+      queueStatus, isPartial ? 1 : 0, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id
     );
   }
 
