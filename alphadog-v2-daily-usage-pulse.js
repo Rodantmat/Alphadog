@@ -705,6 +705,7 @@ function parseRefMetricsAssignments(html) {
   return rows;
 }
 let refMetricsRunCache = null; // per-invocation cache so the page is fetched once per worker run, not once per game
+let schemaEnsuredCache = false; // module-level cache so the 14 sequential CREATE TABLE/INDEX statements only run once per warm isolate, not on every single invocation
 async function deriveUmpireViaRefMetrics(env, target) {
   try {
     if (refMetricsRunCache === null) {
