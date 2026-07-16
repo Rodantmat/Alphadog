@@ -552,7 +552,7 @@ async function probeUmpireSource(target) {
 }
 const GEMINI_UMPIRE_MODEL = "gemini-2.5-flash";
 const GEMINI_UMPIRE_TIMEOUT_MS = 6000;
-const GEMINI_UMPIRE_MAX_CALLS_PER_RUN = 4;
+const GEMINI_UMPIRE_MAX_CALLS_PER_RUN = 0; // Disabled: 0% success rate across every real test in this debugging session, while consuming the dominant share of per-game time via its 6s timeout.
 async function deriveUmpireViaGeminiSearch(env, target) {
   // Tier-3 derived fallback (Requirement 2/9): when neither an official assignment nor our
   // own recent-crew-history derivation is available, ask Gemini (with Google Search grounding)
