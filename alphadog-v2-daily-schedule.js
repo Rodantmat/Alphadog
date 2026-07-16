@@ -1,6 +1,7 @@
 const WORKER_NAME = "alphadog-v2-daily-schedule";
 const VERSION = "alphadog-v2-daily-schedule-v0.1.9-board-scoped-window";
 const JOB_KEY = "daily-team-schedule-spot";
+let schemaEnsuredCache = false; // module-level cache so the sequential CREATE TABLE/INDEX statements only run once per warm isolate
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "TEAM_DB", "DAILY_DB", "SCORE_DB", "REF_DB"];
 const EXPECTED_VARS = ["SYSTEM_ENV", "SYSTEM_FAMILY", "SYSTEM_TIMEZONE", "ACTIVE_SPORT", "ACTIVE_SEASON"];
