@@ -5,6 +5,7 @@ const SOURCE_KEY = "official_mlb_statsapi_schedule_probable_pitcher";
 const MAX_PREPARED_ROWS = 5000;
 const MAX_PEOPLE_FALLBACK_CALLS = 250;
 const MAX_LIVE_FEED_CALLS = 10;
+let schemaEnsuredCache = false; // module-level cache so the sequential CREATE TABLE/INDEX statements only run once per warm isolate
 
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
