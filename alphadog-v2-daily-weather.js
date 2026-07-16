@@ -808,7 +808,10 @@ async function runWeather(env, input) {
   const realBoardDates = realBoardDateRows.map(r => r.official_date).filter(Boolean);
   const retention = retentionWindowPt(realBoardDates);
 
-  await ensureSchema(env);
+  if (!schemaEnsuredCache) {
+    await ensureSchema(env);
+    schemaEnsuredCache = true;
+  }
   await run(env.DAILY_DB, `INSERT INTO daily_game_weather_batches (batch_id, request_id, run_id, worker_name, worker_version, job_key, mode, status, window_start, window_end, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?, ?, ?)`,
     batchId, requestId, runId, WORKER_NAME, VERSION, input.job_key || JOB_KEY, input.mode || "daily_weather_refresh_window", retention.start, retention.end, startedAt
   );
