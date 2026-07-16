@@ -838,7 +838,7 @@ async function writeResults(env, batchId, rows) {
 async function runAvailability(env, input) {
   const _t0 = Date.now();
   const startedAt = nowUtc();
-  const batchId = rid("daily_player_availability_batch");
+  const batchId = input && input.chain_id ? `daily_player_availability_batch_${input.chain_id}` : rid("daily_player_availability_batch");
   const requestId = input.request_id || batchId;
   const runId = input.run_id || null;
   if (!schemaEnsuredCache) {
