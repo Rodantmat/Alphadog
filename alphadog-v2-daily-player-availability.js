@@ -959,16 +959,19 @@ async function runAvailability(env, input) {
   const dataOk = coverageOk && unresolvedHardSourceFailures === 0;
   const certification = dataOk ? (blockerCount ? "DAILY_PLAYER_AVAILABILITY_CERTIFIED_WITH_PLAYER_BLOCKERS" : "DAILY_PLAYER_AVAILABILITY_CERTIFIED_READY") : "DAILY_PLAYER_AVAILABILITY_FAILED_SOURCE_OR_COVERAGE";
   const grade = dataOk ? (blockerCount || warningCount ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL";
-  const status = dataOk ? "completed" : "failed_source_or_coverage";
+  const status = isPartial ? "partial_continue" : (dataOk ? "completed" : "failed_source_or_coverage");
   const output = {
-    ok: dataOk,
-    data_ok: dataOk,
+    ok: isPartial ? true : dataOk,
+    data_ok: isPartial ? true : dataOk,
     version: VERSION,
     worker_name: WORKER_NAME,
     job_key: JOB_KEY,
     request_id: requestId,
     batch_id: batchId,
     status,
+    continuation_required: isPartial,
+    orchestrator_should_self_continue: isPartial,
+    teams_remaining_after_chunk: Math.max(0, totalRemainingTeamsBeforeChunk - chunkTeamIds.length),
     certification,
     certification_grade: grade,
     certification_reason: dataOk ? "Every prepared-board relevant player received a v1 current and snapshot row; source blockers/warnings are recorded as sidecar issues." : "One or more hard active-roster source failures or coverage gaps occurred.",
