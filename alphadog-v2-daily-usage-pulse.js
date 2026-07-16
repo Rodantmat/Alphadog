@@ -375,14 +375,15 @@ async function heartbeatUmpireQueue(env, requestId, batchId, step, fields = {}) 
 async function finalizeControlLifecycleUmpire(env, requestId, output, rowsRead, rowsWritten, externalCalls) {
   if (!requestId || !env || !env.CONTROL_DB || !output) return;
   const ok = output.ok === true;
-  const queueStatus = ok ? "completed" : "failed";
-  const runStatus = ok ? "completed" : "failed";
+  const isPartial = output.status === "partial_continue" || output.continuation_required === true;
+  const queueStatus = isPartial ? "pending" : (ok ? "completed" : "failed");
+  const runStatus = isPartial ? "partial_continue" : (ok ? "completed" : "failed");
   const cert = String(output.certification || output.certification_status || (ok ? "completed" : "failed")).slice(0, 120);
-  const errCode = ok ? null : "daily_umpire_context_worker_failed";
-  const errMsg = ok ? null : String(output.error || output.certification || output.status || "worker failed").slice(0, 900);
+  const errCode = (ok || isPartial) ? null : "daily_umpire_context_worker_failed";
+  const errMsg = (ok || isPartial) ? null : String(output.error || output.certification || output.status || "worker failed").slice(0, 900);
   const out = safeJson(output, 14000);
   try {
-    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=? AND status IN ('pending','running','queued','partial_continue') AND finished_at IS NULL", queueStatus, out, errCode, errMsg, requestId);
+    await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CASE WHEN ? THEN NULL ELSE CURRENT_TIMESTAMP END, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=? AND status IN ('pending','running','queued','partial_continue') AND finished_at IS NULL", queueStatus, isPartial ? 1 : 0, out, errCode, errMsg, requestId);
     await run(env.CONTROL_DB, "UPDATE control_job_runs SET status=?, data_ok=?, certification_status=?, rows_read=?, rows_written=?, external_calls=?, finished_at=CURRENT_TIMESTAMP, elapsed_ms=CASE WHEN started_at IS NOT NULL THEN CAST((julianday(CURRENT_TIMESTAMP)-julianday(started_at))*86400000 AS INTEGER) ELSE 0 END, output_json=?, error_code=?, error_message=? WHERE request_id=? AND status='running' AND finished_at IS NULL", runStatus, ok ? 1 : 0, cert, Number(rowsRead || 0), Number(rowsWritten || 0), Number(externalCalls || 0), out, errCode, errMsg, requestId);
   } catch (_) {
     // Best-effort terminal handoff. The worker response remains source of truth for orchestrator dispatch.
