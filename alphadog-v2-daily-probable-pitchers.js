@@ -816,7 +816,13 @@ async function runDailyStarters(request, env) {
     const window = buildWindow(prep.dateSet);
     const endpoint = scheduleUrl(env, window.start, window.end);
     counters.external_calls++;
+    const _scheduleFetchStart = Date.now();
     const schedule = await fetchJson(endpoint, env);
+    const _scheduleFetchMs = Date.now() - _scheduleFetchStart;
+    try {
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'starters_debug_schedule_fetch_timing', 'Concrete timing for schedule fetch', ?, CURRENT_TIMESTAMP)",
+        requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ schedule_fetch_ms: _scheduleFetchMs, schedule_ok: schedule.ok, endpoint }));
+    } catch (_) {}
     if (!schedule.ok) {
       output = {
         ok: false,
