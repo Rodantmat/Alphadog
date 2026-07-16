@@ -1300,6 +1300,10 @@ async function runSourceProbe(env, input) {
   const catcherRefreshSeason = Number.isFinite(catcherRefreshSeasonOverride) && catcherRefreshSeasonOverride > 2000 ? catcherRefreshSeasonOverride : new Date().getUTCFullYear();
   const catcherRefreshResult = await refreshCatcherReferenceIfStale(env, catcherRefreshSeason);
   _tm.after_catcher_refresh_ms = Date.now() - _t0;
+  try {
+    await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_after_catcher_refresh', 'Checkpoint after catcher refresh', ?, CURRENT_TIMESTAMP)",
+      _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ after_catcher_refresh_ms: _tm.after_catcher_refresh_ms, refreshed: catcherRefreshResult && catcherRefreshResult.refreshed })).catch(() => {});
+  } catch (_) {}
   const catcherRefRows = await all(env.REF_DB, `SELECT player_id, player_name, framing_runs_total, framing_pct_total, pop_time_2b_sba FROM ref_catcher_framing_poptime`);
   const catcherRefMap = new Map(catcherRefRows.map(r => [Number(r.player_id), r]));
   const preparedGamePks = uniqInts(anchors.map((r) => r.official_game_pk));
