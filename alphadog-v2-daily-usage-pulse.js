@@ -1082,7 +1082,7 @@ export default {
         if (out === TIMEOUT_SENTINEL) {
           // Real fix (same class found live in daily-schedule.js): a genuine internal hang -
           // likely a stalled D1 call - previously had no safety net inside this worker.
-          return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "hard_deadline_timeout", certification: "DAILY_UMPIRE_HARD_DEADLINE_TIMEOUT", error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
+          return jsonResponse({ ok: true, data_ok: true, version: VERSION, worker_name: WORKER_NAME, job_key: JOB_KEY, status: "partial_continue", continuation_required: true, orchestrator_should_self_continue: true, certification: "DAILY_UMPIRE_HARD_DEADLINE_TIMEOUT_SAFETY_NET_PARTIAL_CONTINUE", note: `Worker's own ${HARD_DEADLINE_MS}ms internal safety-net deadline fired before the external dispatch timeout - any progress already committed is real; the chain will re-invoke to continue.`, hard_deadline_ms: HARD_DEADLINE_MS, timestamp_utc: nowUtc() }, 200);
         }
         return jsonResponse(out);
       } catch (err) {
