@@ -1451,14 +1451,14 @@ async function runSourceProbe(env, input) {
     ];
     let derivedLineupPreviewRows = [];
     const derivedFallbackDate = calendar.official_date || retentionDatesToKeep()[0];
-    if (homeValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.home_team_id)) {
-      const homeDerived = await deriveLineupFromRecentGame(env, calendar.home_team_id, derivedFallbackDate);
-      derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "home", homeDerived));
-    }
-    if (awayValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.away_team_id)) {
-      const awayDerived = await deriveLineupFromRecentGame(env, calendar.away_team_id, derivedFallbackDate);
-      derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "away", awayDerived));
-    }
+    const needHomeDerived = homeValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.home_team_id);
+    const needAwayDerived = awayValidation.lineup_status !== "posted_lineup" && intOrNull(calendar.away_team_id);
+    const [homeDerived, awayDerived] = await Promise.all([
+      needHomeDerived ? deriveLineupFromRecentGame(env, calendar.home_team_id, derivedFallbackDate) : Promise.resolve(null),
+      needAwayDerived ? deriveLineupFromRecentGame(env, calendar.away_team_id, derivedFallbackDate) : Promise.resolve(null)
+    ]);
+    if (needHomeDerived) derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "home", homeDerived));
+    if (needAwayDerived) derivedLineupPreviewRows.push(...buildDerivedLineupPreviewRows(gamePk, calendar, "away", awayDerived));
     const lineupWritePreviewRows = [...officialLineupPreviewRows, ...derivedLineupPreviewRows];
     const availabilityWritePreviewRows = buildAvailabilityWritePreviewRows(gamePk, calendar, preparedSummary);
     const lineupWriteReady = lineupWritePreviewRows.length > 0 && (homeValidation.lineup_status === "posted_lineup" || awayValidation.lineup_status === "posted_lineup" || derivedLineupPreviewRows.length > 0);
