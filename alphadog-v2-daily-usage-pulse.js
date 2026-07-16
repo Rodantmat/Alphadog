@@ -128,8 +128,9 @@ function baseIdentity(env) {
 }
 
 async function ensureSchema(env) {
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_schema_migrations (migration_key TEXT PRIMARY KEY, package_version TEXT NOT NULL, applied_at TEXT DEFAULT CURRENT_TIMESTAMP, notes TEXT)`);
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_umpire_context_batches (
+  await env.DAILY_DB.batch([
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_schema_migrations (migration_key TEXT PRIMARY KEY, package_version TEXT NOT NULL, applied_at TEXT DEFAULT CURRENT_TIMESTAMP, notes TEXT)`),
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_umpire_context_batches (
     batch_id TEXT PRIMARY KEY,
     request_id TEXT,
     run_id TEXT,
@@ -163,8 +164,8 @@ async function ensureSchema(env) {
     completed_at TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_umpire_context_current (
+  )`),
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_umpire_context_current (
     umpire_context_key TEXT PRIMARY KEY,
     batch_id TEXT,
     official_date TEXT,
@@ -211,11 +212,11 @@ async function ensureSchema(env) {
     raw_json TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.DAILY_DB, `CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_umpire_current_game ON daily_umpire_context_current(official_date, game_pk)`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_daily_umpire_current_status ON daily_umpire_context_current(umpire_context_status, umpire_context_confidence)`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_daily_umpire_current_date ON daily_umpire_context_current(official_date)`);
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_umpire_context_snapshots (
+  )`),
+    env.DAILY_DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_umpire_current_game ON daily_umpire_context_current(official_date, game_pk)`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_umpire_current_status ON daily_umpire_context_current(umpire_context_status, umpire_context_confidence)`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_umpire_current_date ON daily_umpire_context_current(official_date)`),
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_umpire_context_snapshots (
     snapshot_id TEXT PRIMARY KEY,
     batch_id TEXT,
     official_date TEXT,
@@ -230,10 +231,10 @@ async function ensureSchema(env) {
     details_json TEXT,
     raw_json TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_daily_umpire_snap_batch ON daily_umpire_context_snapshots(batch_id)`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_daily_umpire_snap_date ON daily_umpire_context_snapshots(official_date)`);
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_umpire_context_issues (
+  )`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_umpire_snap_batch ON daily_umpire_context_snapshots(batch_id)`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_umpire_snap_date ON daily_umpire_context_snapshots(official_date)`),
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_umpire_context_issues (
     issue_id TEXT PRIMARY KEY,
     batch_id TEXT,
     official_date TEXT,
@@ -245,10 +246,10 @@ async function ensureSchema(env) {
     details_json TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_daily_umpire_issues_batch ON daily_umpire_context_issues(batch_id)`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_daily_umpire_issues_date ON daily_umpire_context_issues(official_date)`);
-  await run(env.DAILY_DB, `CREATE TABLE IF NOT EXISTS daily_umpire_assignment_history (
+  )`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_umpire_issues_batch ON daily_umpire_context_issues(batch_id)`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_umpire_issues_date ON daily_umpire_context_issues(official_date)`),
+    env.DAILY_DB.prepare(`CREATE TABLE IF NOT EXISTS daily_umpire_assignment_history (
     history_key TEXT PRIMARY KEY,
     official_date TEXT,
     home_team_id INTEGER,
@@ -258,9 +259,10 @@ async function ensureSchema(env) {
     home_plate_umpire_name TEXT,
     crew_umpire_ids_json TEXT,
     recorded_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await run(env.DAILY_DB, `CREATE INDEX IF NOT EXISTS idx_daily_umpire_history_venue_date ON daily_umpire_assignment_history(home_team_id, official_date)`);
-  await run(env.DAILY_DB, `INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('daily_umpire_context_v0_1_0', ?, CURRENT_TIMESTAMP, 'Daily Context Phase 7 umpire context source-probe tables with today/tomorrow volatile retention')`, VERSION);
+  )`),
+    env.DAILY_DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_umpire_history_venue_date ON daily_umpire_assignment_history(home_team_id, official_date)`),
+    env.DAILY_DB.prepare(`INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('daily_umpire_context_v0_1_0', ?, CURRENT_TIMESTAMP, 'Daily Context Phase 7 umpire context source-probe tables with today/tomorrow volatile retention')`).bind(VERSION)
+  ]);
 }
 async function pruneAssignmentHistory(env) {
   const cutoff = addDays(todayPt(), -10);
