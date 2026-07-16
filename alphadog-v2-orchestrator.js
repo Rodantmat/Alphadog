@@ -6698,11 +6698,11 @@ async function processPrizePicksGithubBoardJob(env, row, runId, trigger) {
   let httpStatus = null;
 
   try {
-    const resp = await env.PRIZEPICKS_GITHUB_BOARD_WORKER.fetch("https://internal.alphadog-v2-prizepicks-github-board/run", {
+    const resp = await serviceBindingFetch(env.PRIZEPICKS_GITHUB_BOARD_WORKER, "https://internal.alphadog-v2-prizepicks-github-board/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    });
+    }, "prizepicks_github_board", 25000);
     httpStatus = resp.status;
     const text = await resp.text();
     try {
