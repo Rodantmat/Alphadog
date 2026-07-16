@@ -572,7 +572,10 @@ async function verifyCoreCoverage(env, batchId, targets) {
 }
 async function runBullpen(env, input) {
   const runStartedMs = Date.now();
-  await ensureSchema(env);
+  if (!schemaEnsuredCache) {
+    await ensureSchema(env);
+    schemaEnsuredCache = true;
+  }
   const requestId = input.request_id || rid("daily_bullpen_req");
   const batchId = rid("daily_bullpen_batch");
   const sourceSnapshotAt = nowUtc();
