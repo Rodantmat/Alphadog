@@ -1058,7 +1058,7 @@ export default {
     if (method === "GET" && (path === "/" || path === "/health")) return jsonResponse(health(env));
     if (method === "GET" && path === "/diagnostic") return jsonResponse({ ...health(env), diagnostic: "ready_for_orchestrator_exact_dispatch" });
     if (method === "POST" && path === "/run") {
-      const HARD_DEADLINE_MS = 35000;
+      const HARD_DEADLINE_MS = 16000;
       const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
       const out = await withDeadline(runDailyStarters(request, env), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
       if (out === TIMEOUT_SENTINEL) {
