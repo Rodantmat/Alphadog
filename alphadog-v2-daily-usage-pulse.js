@@ -943,11 +943,6 @@ async function runUmpireContext(env, input) {
       // derivation last. RefMetrics is tried first since it's a real, currently-listed
       // assignment, not an LLM guess; Gemini only runs if RefMetrics has nothing for this game.
       const refMetricsPrediction = probe.found ? null : await deriveUmpireViaRefMetrics(env, target);
-      const _afterRefMetricsMs = Date.now() - _g0;
-      if (_isFirstGame) {
-        await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'umpire_debug_first_game_timings', 'Per-game micro-timing for first game', ?, CURRENT_TIMESTAMP)",
-          requestId, WORKER_NAME, JOB_KEY, safeJson({ game_pk: target.game_pk, probe_found: probe.found, after_probe_ms: _afterProbeMs, after_recent_crew_ms: _afterRecentCrewMs, after_refmetrics_ms: _afterRefMetricsMs, refmetrics_found: !!(refMetricsPrediction && refMetricsPrediction.found) }, 1500)).catch(() => {});
-      }
       const hoursUntilGame = target.game_time_utc ? (new Date(target.game_time_utc).getTime() - Date.now()) / 3600000 : 999;
       const needsGeminiFallback = !probe.found && !(refMetricsPrediction && refMetricsPrediction.found) && geminiCallsUsed < GEMINI_UMPIRE_MAX_CALLS_PER_RUN && hoursUntilGame <= 36;
       const geminiPrediction = needsGeminiFallback ? await deriveUmpireViaGeminiSearch(env, target) : null;
