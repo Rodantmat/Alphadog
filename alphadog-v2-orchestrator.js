@@ -7053,11 +7053,11 @@ async function processParlayUnderdogBoardJob(env, row, runId, trigger) {
   let httpStatus = null;
 
   try {
-    const resp = await env.PARLAY_UNDERDOG_BOARD_WORKER.fetch("https://internal.alphadog-v2-parlay-underdog-board/run", {
+    const resp = await serviceBindingFetch(env.PARLAY_UNDERDOG_BOARD_WORKER, "https://internal.alphadog-v2-parlay-underdog-board/run", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input)
-    });
+    }, "parlay_underdog_board", 25000);
     httpStatus = resp.status;
     const text = await resp.text();
     try {
