@@ -4,7 +4,7 @@ const JOB_KEY = "daily-probable-pitchers";
 const SOURCE_KEY = "official_mlb_statsapi_schedule_probable_pitcher";
 const MAX_PREPARED_ROWS = 5000;
 const MAX_PEOPLE_FALLBACK_CALLS = 250;
-const MAX_LIVE_FEED_CALLS = 20;
+const MAX_LIVE_FEED_CALLS = 10;
 
 function nowUtc() { return new Date().toISOString(); }
 function rid(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
