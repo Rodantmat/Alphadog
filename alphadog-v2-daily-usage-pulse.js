@@ -954,16 +954,19 @@ async function runUmpireContext(env, input) {
     const dataOk = noPickableSlate || (coverageOk && blockerN === 0);
     const certification = noPickableSlate ? "DAILY_UMPIRE_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (dataOk ? (warningN ? "DAILY_UMPIRE_CERTIFIED_WITH_WARNINGS" : "DAILY_UMPIRE_CERTIFIED_READY") : "DAILY_UMPIRE_FAILED_BLOCKERS_OR_COVERAGE");
     const grade = noPickableSlate ? "VALID_ZERO" : (dataOk ? (warningN ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL");
-    const status = dataOk ? "completed" : "failed_blockers_or_coverage";
+    const status = isPartial ? "partial_continue" : (dataOk ? "completed" : "failed_blockers_or_coverage");
     const output = {
-      ok: dataOk,
-      data_ok: dataOk,
+      ok: isPartial ? true : dataOk,
+      data_ok: isPartial ? true : dataOk,
       version: VERSION,
       worker_name: WORKER_NAME,
       job_key: JOB_KEY,
       request_id: requestId,
       batch_id: batchId,
       status,
+      continuation_required: isPartial,
+      orchestrator_should_self_continue: isPartial,
+      games_remaining_after_chunk: Math.max(0, totalRemainingBeforeChunk - targets.length),
       certification,
       certification_grade: grade,
       certification_reason: noPickableSlate ? "No prepared-board pickable_safe games exist for today/tomorrow retention window." : (dataOk ? "Every prepared-board relevant game received an umpire context current and snapshot row; missing/pending assignments are warning-only in v0.1." : "One or more prepared-board relevant games had coverage gaps or blockers."),
