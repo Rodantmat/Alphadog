@@ -1802,7 +1802,7 @@ export default {
           no_final_board: true
         }, 400);
       }
-      const HARD_DEADLINE_MS = 15000;
+      const HARD_DEADLINE_MS = 18000;
       const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
       const output = await withDeadline(runSourceProbe(env, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
       if (output === TIMEOUT_SENTINEL) {
