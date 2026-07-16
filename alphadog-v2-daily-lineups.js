@@ -1315,10 +1315,11 @@ async function runSourceProbe(env, input) {
   ]);
   _tm.after_calendar_and_players_ms = Date.now() - _t0;
 
-  const preparedScheduleDiscovery = await discoverOfficialSchedule(env, sourceBase, userAgent, preparedCalendarRows, "prepared");
-  _tm.after_prepared_schedule_discovery_ms = Date.now() - _t0;
-  const calendarScheduleDiscovery = await discoverOfficialSchedule(env, sourceBase, userAgent, calendarProbeRows, "calendar_probe");
-  _tm.after_calendar_schedule_discovery_ms = Date.now() - _t0;
+  const [preparedScheduleDiscovery, calendarScheduleDiscovery] = await Promise.all([
+    discoverOfficialSchedule(env, sourceBase, userAgent, preparedCalendarRows, "prepared"),
+    discoverOfficialSchedule(env, sourceBase, userAgent, calendarProbeRows, "calendar_probe")
+  ]);
+  _tm.after_schedule_discovery_ms = Date.now() - _t0;
   const preparedBoardStale = preparedGamePks.length > 0 && preparedScheduleDiscovery.prepared_official_schedule_checked && Number(preparedScheduleDiscovery.prepared_official_schedule_anchor_hit_count || 0) < preparedGamePks.length;
 
   const usePreparedBoardLane = preparedGamePks.length > 0 && !preparedBoardStale && preparedCalendarRows.length > 0;
