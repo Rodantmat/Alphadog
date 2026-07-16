@@ -795,7 +795,10 @@ async function runDailyStarters(request, env) {
     legacy_rows_written: 0
   };
 
-  await ensureSchema(env);
+  if (!schemaEnsuredCache) {
+    await ensureSchema(env);
+    schemaEnsuredCache = true;
+  }
   await run(env.DAILY_DB, `INSERT INTO daily_starters_batches (batch_id, request_id, run_id, job_key, worker_name, worker_version, mode, status, started_at, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
     batchId, requestId, runId, JOB_KEY, WORKER_NAME, VERSION, mode, startedAt);
