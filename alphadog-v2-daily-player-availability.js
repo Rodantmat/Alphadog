@@ -836,6 +836,7 @@ async function writeResults(env, batchId, rows) {
 }
 
 async function runAvailability(env, input) {
+  const _t0 = Date.now();
   const startedAt = nowUtc();
   const batchId = rid("daily_player_availability_batch");
   const requestId = input.request_id || batchId;
@@ -856,6 +857,10 @@ async function runAvailability(env, input) {
   const teamAbbrs = [...new Set(prepared.flatMap((r) => [normTeam(r.team), normTeam(r.opponent)]).filter(Boolean))];
   const playerIds = [...new Set(prepared.map((r) => intOrNull(r.resolved_mlb_player_id)).filter((v) => v !== null))];
   await run(env.DAILY_DB, `UPDATE daily_player_availability_batches_v1 SET window_start=?, window_end=?, prepared_games_checked=?, prepared_rows_read=?, prepared_players_checked=?, status='running_prepared_loaded', updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`, retention.start, retention.end, gamePks.length, prepared.reduce((n, r) => n + Number(r.prepared_board_pickable_rows || 0), 0), playerIds.length, batchId);
+  try {
+    await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'availability_debug_pre_source_ms', 'Checkpoint before source fetch', ?, CURRENT_TIMESTAMP)",
+      requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ elapsed_ms: Date.now() - _t0, players: playerIds.length, teams: teamAbbrs.length, window_start: retention.start, window_end: retention.end, master_chain: input.daily_context_full_run_child === true }));
+  } catch (_) {}
   const calendars = await getCalendar(env, gamePks);
   const calendarByGame = new Map(calendars.map((r) => [intOrNull(r.game_pk), r]));
   const teamRows = await getTeams(env, teamAbbrs);
