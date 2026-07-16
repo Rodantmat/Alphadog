@@ -850,7 +850,7 @@ async function runUmpireContext(env, input) {
   refMetricsRunCache = null;
   await ensureSchema(env);
   const requestId = input.request_id || rid("daily_umpire_req");
-  const batchId = rid("daily_umpire_batch");
+  const batchId = input && input.chain_id ? `daily_umpire_batch_${input.chain_id}` : rid("daily_umpire_batch");
   const sourceSnapshotAt = nowUtc();
   const nowIsoForWindow = new Date().toISOString();
   const realBoardDateRows = await all(env.SCORE_DB, `SELECT DISTINCT official_date FROM score_board_prepared_current WHERE pickable_safe = 1 AND official_game_time_utc IS NOT NULL AND official_game_time_utc > ?`, nowIsoForWindow);
