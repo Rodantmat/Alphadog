@@ -1001,7 +1001,7 @@ export default {
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       try {
-        const HARD_DEADLINE_MS = 35000;
+        const HARD_DEADLINE_MS = 16000;
         const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
         const out = await withDeadline(runAvailability(env, input), HARD_DEADLINE_MS, () => TIMEOUT_SENTINEL);
         if (out === TIMEOUT_SENTINEL) {
