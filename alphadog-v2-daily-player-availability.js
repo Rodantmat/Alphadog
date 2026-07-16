@@ -850,7 +850,7 @@ async function runAvailability(env, input) {
   const realBoardDates = realBoardDateRows.map(r => r.official_date).filter(Boolean);
   const retention = retentionWindowPt(realBoardDates);
   const preRetentionPrune = await pruneAvailabilityRetention(env, retention, null);
-  await run(env.DAILY_DB, `INSERT INTO daily_player_availability_batches_v1 (batch_id, request_id, run_id, job_key, worker_name, worker_version, mode, status, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?)`, batchId, requestId, runId, input.job_key || JOB_KEY, WORKER_NAME, VERSION, input.mode || "daily_player_availability_refresh_window", startedAt);
+  await run(env.DAILY_DB, `INSERT OR REPLACE INTO daily_player_availability_batches_v1 (batch_id, request_id, run_id, job_key, worker_name, worker_version, mode, status, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'running', COALESCE((SELECT started_at FROM daily_player_availability_batches_v1 WHERE batch_id=?), ?))`, batchId, requestId, runId, input.job_key || JOB_KEY, WORKER_NAME, VERSION, input.mode || "daily_player_availability_refresh_window", batchId, startedAt);
 
   const prepared = await getPreparedPlayers(env, retention);
   const gamePks = [...new Set(prepared.map((r) => intOrNull(r.official_game_pk)).filter((v) => v !== null))];
