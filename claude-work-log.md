@@ -116,6 +116,20 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
   all three fixes from this check-in (score-prep chunking, board-full-run transient retry,
   prizepicks internal deadline) confirmed working together. Stepping back per Rodolfo's
   instruction - will check in periodically.
+  UPDATE ~03:04 UTC: CRITICAL BUG FOUND AND FIXED (Rodolfo flagged real log evidence showing
+  market-certifier child jobs created but NEVER dispatched - started_at stayed null across 3
+  consecutive attempts, each dying to the stale-retry timer without ever running, while the
+  market-full-run PARENT kept re-ticking successfully every ~6s). Root cause: parent chains
+  (market-full-run via daily-full-run) use priority=3, but MARKET_FULL_RUN_STAGES children used
+  priority=5. Since only one job dispatches per tick (ORDER BY priority ASC LIMIT 1), the parent
+  perpetually out-competed its own child for the single dispatch slot - a systemic bug, not
+  specific to market-certifier. Fixed: lowered all MARKET_FULL_RUN_STAGES priorities 5->2.
+  Proactively found and fixed the identical latent risk in DAILY_CONTEXT_FULL_RUN_STAGES too
+  (same 5 vs 3 mismatch, hadn't visibly triggered there yet but same exact risk). Deployed both.
+  CONFIRMED WORKING: market-certifier immediately got dispatched and completed successfully on
+  the very next tick after the fix deployed. Board Full Run and Daily Context Full Run both
+  already completed in this attempt; market-full-run now progressing correctly through its own
+  stages. Continuing to monitor this attempt given the severity of what was just fixed.
   UPDATE 2026-07-17 ~02:22 UTC: Attempt 3 (daily_full_run_mroacs6q_re1y6g) - Daily Context Full
   Run completed successfully (all 9 stages). Market Full Run then FAILED (stale child, retry
   budget exhausted) - same class of issue as the earlier lock-starvation bug. Root cause this
