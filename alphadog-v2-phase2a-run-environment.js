@@ -105,8 +105,14 @@ function evaluateContinuousFactor(factorKey, cell, legContext) {
       return ctx.catcher_framing_runs_per_game * (a || 0);
     }
     case "opposing_pitcher_quality": {
-      if (ctx.pitcher_xfip_minus == null) return null;
-      return (100 - ctx.pitcher_xfip_minus) * (a || 0);
+      // REAL FIX: pitcher_xfip_minus never had real data anywhere (ref_pitcher_arsenal has no
+      // such field) - this factor always returned null in production despite real Statcast
+      // data existing. Uses the real, now-wired usage-weighted run_value_per_100 aggregate:
+      // negative run_value_per_100 means the pitcher suppresses production (tougher matchup),
+      // so it's used directly (no sign flip needed) - a negative value here correctly produces
+      // a negative log-rate contribution (lower hit probability against a tough pitcher).
+      if (ctx.pitcher_run_value_per_100_weighted == null) return null;
+      return ctx.pitcher_run_value_per_100_weighted * (a || 0);
     }
     case "lineup_slot": {
       if (ctx.actual_slot == null) return null;
