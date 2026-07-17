@@ -5947,28 +5947,18 @@ async function processHitProbabilityBoardJob(env, row, runId, trigger) {
     return output;
   }
   const rowInput = (() => { try { return JSON.parse(row.input_json || "{}"); } catch (_) { return {}; } })();
-  // Real, honest dependency: Hit Probability needs the real batch_id Scoring Engine just
-  // produced in THIS same real chain run - read it from the prior real sibling stage's
-  // output rather than guessing/using a stale batch.
-  const priorEngineChild = await first(env.CONTROL_DB,
-    "SELECT output_json FROM control_job_queue WHERE chain_id=? AND job_key='scoring-engine-shadow-v1' AND status='completed' ORDER BY datetime(updated_at) DESC LIMIT 1",
-    row.chain_id);
-  const priorEngineOutput = parseJsonSafeText(priorEngineChild && priorEngineChild.output_json || "{}", {});
-  const sourceEngineBatchId = priorEngineOutput.batch_id || rowInput.source_engine_batch_id || null;
-  const input = { request_id: row.request_id, chain_id: row.chain_id, run_id: runId, job_key: row.job_key, worker_name: row.worker_name, trigger, source_engine_batch_id: sourceEngineBatchId, input_json: rowInput };
+  // REORDERED (2026-07-17): Hit Probability Board now runs BEFORE Scoring Engine and reads
+  // Matrix+Enrichment directly - it no longer depends on Scoring Engine's batch_id at all.
+  const input = { request_id: row.request_id, chain_id: row.chain_id, run_id: runId, job_key: row.job_key, worker_name: row.worker_name, trigger, input_json: rowInput };
   const started = Date.now();
   let output; let httpStatus = null;
-  if (!sourceEngineBatchId) {
-    output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"blocked_missing_source_engine_batch", certification:"HIT_PROBABILITY_BOARD_MISSING_SOURCE_ENGINE_BATCH" };
-  } else {
-    try {
-      const resp = await serviceBindingFetch(env.PHASE3C_CERTIFIER_WORKER, "https://internal.alphadog-v2-phase3c-certifier/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "hit_probability_board", MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS);
-      httpStatus = resp.status;
-      const text = await resp.text();
-      try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
-    } catch (err) {
-      output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) };
-    }
+  try {
+    const resp = await serviceBindingFetch(env.PHASE3C_CERTIFIER_WORKER, "https://internal.alphadog-v2-phase3c-certifier/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "hit_probability_board", MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS);
+    httpStatus = resp.status;
+    const text = await resp.text();
+    try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
+  } catch (err) {
+    output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_dispatch_exception", error:String(err && err.message ? err.message : err) };
   }
   const ok = !!(output && output.ok);
   const dataOk = !!(output && output.data_ok);
@@ -5977,8 +5967,8 @@ async function processHitProbabilityBoardJob(env, row, runId, trigger) {
   const queueStatus = isPartial ? "pending" : (ok ? "completed" : "failed");
   const errorCode = ok ? null : "hit_probability_board_worker_failed";
   const errorMessage = ok ? null : String((output && (output.error || output.status)) || "Hit Probability Board worker failed").slice(0,900);
-  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, selected_worker_slot:"alphadog-v2-phase3c-certifier", source_engine_batch_id: sourceEngineBatchId } };
-  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, queueStatus, dataOk ? 1 : 0, certification, Number(output && output.engine_rows_read || 0), Number(output && output.board_rows_written || 0), Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
+  const cappedOutput = { ...output, orchestrator_dispatch:{ version:SYSTEM_VERSION, processed_by:WORKER_NAME, exact_worker_only:true, trigger, http_status:httpStatus, elapsed_ms:Date.now()-started, selected_worker_slot:"alphadog-v2-phase3c-certifier" } };
+  await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json, error_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, queueStatus, dataOk ? 1 : 0, certification, Number(output && output.matrix_rows_read || 0), Number(output && output.board_rows_written || 0), Date.now()-started, JSON.stringify(input), JSON.stringify(cappedOutput), errorCode, errorMessage);
   await run(env.CONTROL_DB, "UPDATE control_job_queue SET status=?, finished_at=CASE WHEN ?='pending' THEN NULL ELSE CURRENT_TIMESTAMP END, updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=?, error_message=? WHERE request_id=?", queueStatus, queueStatus, JSON.stringify(cappedOutput), errorCode, errorMessage, row.request_id);
   return cappedOutput;
 }
