@@ -589,3 +589,16 @@ other prop/line pair affected, re-verified this pass.
 NO NEW BUG CLASSES FOUND THIS PASS. This counts as 1 of 2 required consecutive clean passes.
 Continuing to pass 6 with new angles: Scoring Engine final-score math, Final Board platform
 payload logic (goblin/demon/more-only), any remaining prop-factor-miner/matrix-builder angles.
+
+## PASS 6 - FOUND SOMETHING NEW, NOT A CLEAN PASS
+Scoring Engine final-score formula CONFIRMED CLEAN: verified 8/8 random hp_board_current rows
+match round(clamp(0.65*HP + 0.35*confidence, 1, 99)) exactly, zero deviation. No bug.
+NEW FINDING: score-final-board.js has ZERO references anywhere to is_goblin, is_demon, or
+more_only (confirmed via direct grep, zero matches). The underlying data DOES exist upstream
+(matrix_payload_json carries is_goblin/is_demon fields per the prepared payload, confirmed
+earlier in a payload dump) but Final Board never reads or carries these through to its output.
+This is a confirmed GAP against the original spec (Rodolfo required goblin/demon flags and
+"more only" side restriction for Sleeper/Underdog to be carried in Final Board's output) - not
+a broken calculation, a genuinely missing feature that still needs to be built.
+This pass found something new (the goblin/demon gap) - does NOT count as a clean pass.
+Continuing to pass 7 with new angles.
