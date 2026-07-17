@@ -1546,12 +1546,12 @@ async function runSourceProbe(env, input) {
     // most-recent-starting-catcher estimate for whichever side didn't get an official row,
     // rather than leaving that side permanently stale until a lineup posts.
     if (!homeCatcherRow && intOrNull(calendar.home_team_id)) {
-      const derivedHomeCatcher = await deriveCatcherFromRecentGame(env, calendar.home_team_id, calendar.official_date || retentionDatesToKeep()[0]);
-      if (derivedHomeCatcher) await writeDerivedCatcherContext(env, catcherBatchId, gamePk, calendar, "home", intOrNull(calendar.home_team_id), derivedHomeCatcher, catcherRefMap);
+      const derivedHomeCatcher = derivedCatcherMap.get(String(calendar.home_team_id));
+      if (derivedHomeCatcher) await writeDerivedCatcherContext(env, catcherBatchId, gamePk, calendar, "home", intOrNull(calendar.home_team_id), derivedHomeCatcher, catcherRefMap, derivedCatcherNameMap);
     }
     if (!awayCatcherRow && intOrNull(calendar.away_team_id)) {
-      const derivedAwayCatcher = await deriveCatcherFromRecentGame(env, calendar.away_team_id, calendar.official_date || retentionDatesToKeep()[0]);
-      if (derivedAwayCatcher) await writeDerivedCatcherContext(env, catcherBatchId, gamePk, calendar, "away", intOrNull(calendar.away_team_id), derivedAwayCatcher, catcherRefMap);
+      const derivedAwayCatcher = derivedCatcherMap.get(String(calendar.away_team_id));
+      if (derivedAwayCatcher) await writeDerivedCatcherContext(env, catcherBatchId, gamePk, calendar, "away", intOrNull(calendar.away_team_id), derivedAwayCatcher, catcherRefMap, derivedCatcherNameMap);
     }
 
     const officialLineupPreviewRows = [
