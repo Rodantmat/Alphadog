@@ -458,3 +458,14 @@ Completed the core architectural change per Rodolfo's confirmed spec:
    since HP Board no longer needs it.
 All 4 changes deployed and confirmed live via workflow run success. Testing each worker
 individually now before a full chain run.
+
+## UPDATE - HP BOARD REORDER TEST CONFIRMED WORKING
+hp_board_reorder_test_2 completed successfully (completed while app was disconnected - work
+preserved as designed). Confirmed: reordered HP Board worker correctly reads matrix+enrichment
+directly (no Scoring Engine dependency), computes final HP + final confidence, leaves
+score_0_100 NULL for the next stage as intended. primary_hp_threshold correctly shows 70.
+Per Rodolfo's explicit instruction: switching to enqueue-confirm-wait pattern instead of
+hand-monitoring long stages (app was getting stuck on long sleep-heavy turns). Enqueueing
+Scoring Engine test next (reads hp_board_current rows with score_0_100 IS NULL for this
+batch, computes Final Score = 0.65*HP + 0.35*confidence, writes back to hp_board_current).
+Will confirm it started, then stop and wait for Rodolfo's "continue".
