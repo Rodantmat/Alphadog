@@ -426,7 +426,7 @@ function classifyTarget(target, bullpenRows, recentCalendarRows) {
   const three = rowsInWindow(bullpenRows, target.team_id, target.official_date, 3);
   const recentCal = recentCalendarRows.filter(r => {
     const d = dateOnly(r.official_date);
-    return d >= addDays(target.official_date, -3) && d < target.official_date && (Number(r.home_team_id) === Number(target.team_id) || Number(r.away_team_id) === Number(target.team_id));
+    return d >= addDays(target.official_date, -21) && d < target.official_date && (Number(r.home_team_id) === Number(target.team_id) || Number(r.away_team_id) === Number(target.team_id));
   });
   const finalRecentGames = recentCal.filter(r => Number(r.is_final) === 1 || String(r.abstract_game_state || "").toLowerCase() === "final");
   const games1 = distinctCount(one, "game_pk");
