@@ -55,6 +55,12 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
   Per Rodolfo's instruction: NOT continuously monitoring this run. Will check in periodically
   instead of hanging/watching to avoid the app-freeze issue. Next check: whenever Rodolfo pings
   or via a spaced-out check-in.
+  UPDATE 2026-07-17 ~01:53 UTC: found score-prep genuinely stuck 23+ min at "running" during a
+  check-in. Root cause: SCORE_PREP_SERVICE_TIMEOUT_MS was 90000ms, far above the proven-safe
+  ~20s platform ceiling found repeatedly this session - the dispatch was silently killed with
+  no timeout ever firing, so the queue row never finalized. Fixed to 20000ms (worker's own
+  chunked partial_continue resume logic was already correctly wired, just needed the outer
+  timeout corrected). Cleared the stuck row, deployed, retrying now.
 
 ---
 
