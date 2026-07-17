@@ -406,6 +406,28 @@ order (Enrichment -> HP+confidence -> Score -> Final Board), (5) raise HP thresh
 (6) rebuild Final Board's platform-specific payload. Testing worker-by-worker as each is fixed,
 then one full daily run at the end. Per Rodolfo: no more full hand-monitoring of long stages -
 confirm start, then check in only at completion or on request.
+
+## UPDATE - MAJOR BUG FOUND AND FIXED: MISSING PITCHER FACTOR-MINING STAGE
+Verified board-scoped/not-started filtering first: CONFIRMED CORRECT in both prop-factor-miner
+and matrix-builder (both filter by official_game_time_utc > now at the individual row level,
+not just date level - real code inspection, no fix needed here).
+Then checked prop-key completeness. fantasy_score: verified 102/102 legs correctly present in
+prop_factor_hitter_packets (initial code-read concern about its taxonomy "combo" side was
+WRONG - checked against real data and found no issue, correctly abandoned this false lead).
+earned_runs: found 14 legs on the board but ZERO in prop_factor_pitcher_packets. Traced deeper:
+prop_factor_pitcher_packets table has ZERO rows EVER (empty table, no created_at at all).
+ROOT CAUSE CONFIRMED: SCORING_FULL_RUN_STAGES (the chain used all session) only had ONE
+prop-factor-miner stage (mode=hitter_prop_factor_mining) - the pitcher-mode stage was entirely
+missing, unlike the older DAILY_FULL_RUN-style stage array which correctly has both. This means
+ALL 8 pitcher-side prop types (earned_runs, hits_allowed, walks_allowed, pitcher_strikeouts,
+pitcher_outs, runs_allowed, pitcher_strikeouts_combo, rfi_nrfi) have NEVER received factor
+enrichment in any scoring-full-run this entire session.
+FIXED: added scoring_prop_factor_miner_pitcher stage to SCORING_FULL_RUN_STAGES
+(mode=pitcher_prop_factor_mining, factor_family=pitcher). Deployed and confirmed live.
+TESTED: ran a standalone pitcher-mode invocation - completed successfully, confirmed
+prop_factor_pitcher_packets now has real rows (56 rows / 5 distinct prop keys from one
+invocation alone, chunked - will complete fully in a real run). Fix is real and working.
+Continuing to the matrix-lookup data-loss bug next, then the HP/confidence/score reorder.
 UPDATE ~15:57 UTC: scoring_full_run_mrp479lu_ypl4b4 started. Certifier-first-pass completed
 cleanly. prop-factor-miner chunking normally, progressing steadily. No issues so far.
 UPDATE ~15:50 UTC: market_full_run_mrp3yegj_8wjrjn COMPLETED successfully - all 5 stages done
