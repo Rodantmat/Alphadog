@@ -344,6 +344,73 @@ async function writeCatcherContext(env, batchId, gamePk, calendar, side, validat
     row.catcher_context_key, row.batch_id, row.official_date, row.game_pk, row.game_time_utc, row.team_side, row.team_id, row.team_name, row.player_id, row.player_name, row.catcher_status, row.catcher_confidence, row.framing_runs_total, row.framing_pct_total, row.pop_time_2b_sba, row.metrics_available_flag, row.source_key, row.source_endpoint, row.data_source_level, row.is_temporary_derived, row.catcher_context_key, row.raw_json, row.catcher_context_key);
   return row;
 }
+
+// REAL FIX: writeCatcherContext above only ever writes when an OFFICIAL lineup is posted -
+// before that (which is most of the day for most games), it silently does nothing, leaving
+// daily_catcher_context_current stuck on a stale prior-day snapshot with zero refresh attempt.
+// This mirrors deriveLineupFromRecentGame's real, researched pattern: a team's most recent
+// starting catcher is the sharpest available predictor absent a rest day or roster move.
+// Always explicitly marked derived/temporary/low-confidence, and this table's own
+// is_temporary_derived flag already existed in schema for exactly this purpose - just never
+// populated with anything other than 0 until now. Per Rodolfo's standing instruction, this is
+// a genuinely temporary bridge: the very next run that sees an official lineup posted for this
+// game will overwrite this row via writeCatcherContext's own INSERT OR REPLACE, so real data
+// always wins the moment it's available - this fallback never blocks or delays that.
+async function deriveCatcherFromRecentGame(env, teamId, beforeDate) {
+  if (!teamId || !beforeDate) return null;
+  const lookbackStart = (() => {
+    const d = new Date(`${beforeDate}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - 20);
+    return d.toISOString().slice(0, 10);
+  })();
+  const recentDateRow = await first(env.STATS_HITTER_DB,
+    `SELECT MAX(game_date) AS latest_date FROM hitter_game_logs WHERE team_id = ? AND game_date >= ? AND game_date < ? AND played_catcher_flag = 1`,
+    String(teamId), lookbackStart, beforeDate);
+  const latestDate = recentDateRow && recentDateRow.latest_date;
+  if (!latestDate) return null;
+  const row = await first(env.STATS_HITTER_DB,
+    `SELECT player_id FROM hitter_game_logs WHERE team_id = ? AND game_date = ? AND played_catcher_flag = 1 ORDER BY pa DESC LIMIT 1`,
+    String(teamId), latestDate);
+  return row ? { player_id: Number(row.player_id), as_of_game_date: latestDate } : null;
+}
+
+async function writeDerivedCatcherContext(env, batchId, gamePk, calendar, side, teamId, derived, refMap) {
+  if (!derived || !derived.player_id) return null;
+  const sidePrefix = side === "home" ? "home" : "away";
+  const teamName = calendar[`${sidePrefix}_team_name`] || null;
+  const ref = refMap.get(Number(derived.player_id)) || null;
+  const key = `${calendar.official_date}_${gamePk}_${side}`;
+  const nameRow = await first(env.REF_DB, `SELECT full_name, player_name FROM ref_players WHERE player_id=? OR mlb_player_id=?`, derived.player_id, derived.player_id);
+  const playerName = (nameRow && (nameRow.full_name || nameRow.player_name)) || null;
+  const metricsAvailable = !!(ref && (ref.framing_runs_total !== null || ref.pop_time_2b_sba !== null));
+  const row = {
+    catcher_context_key: key,
+    batch_id: batchId,
+    official_date: calendar.official_date || null,
+    game_pk: gamePk,
+    game_time_utc: calendar.game_time_utc || null,
+    team_side: side,
+    team_id: teamId,
+    team_name: teamName,
+    player_id: derived.player_id,
+    player_name: playerName,
+    catcher_status: "derived_likely_starting_catcher",
+    catcher_confidence: "LOW_DERIVED_FROM_RECENT_GAME",
+    framing_runs_total: ref ? ref.framing_runs_total : null,
+    framing_pct_total: ref ? ref.framing_pct_total : null,
+    pop_time_2b_sba: ref ? ref.pop_time_2b_sba : null,
+    metrics_available_flag: metricsAvailable ? 1 : 0,
+    source_key: "derived_recent_game_played_catcher_flag+baseball_savant_csv_export",
+    source_endpoint: "internal:hitter_game_logs",
+    data_source_level: "derived",
+    is_temporary_derived: 1,
+    raw_json: safeJsonStringify({ derived, ref })
+  };
+  await execRun(env.DAILY_DB, `INSERT OR REPLACE INTO daily_catcher_context_current (catcher_context_key, batch_id, official_date, game_pk, game_time_utc, team_side, team_id, team_name, player_id, player_name, catcher_status, catcher_confidence, framing_runs_total, framing_pct_total, pop_time_2b_sba, metrics_available_flag, source_key, source_endpoint, data_source_level, is_temporary_derived, first_seen_at, last_seen_at, raw_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT first_seen_at FROM daily_catcher_context_current WHERE catcher_context_key=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP, ?, COALESCE((SELECT created_at FROM daily_catcher_context_current WHERE catcher_context_key=?), CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)`,
+    row.catcher_context_key, row.batch_id, row.official_date, row.game_pk, row.game_time_utc, row.team_side, row.team_id, row.team_name, row.player_id, row.player_name, row.catcher_status, row.catcher_confidence, row.framing_runs_total, row.framing_pct_total, row.pop_time_2b_sba, row.metrics_available_flag, row.source_key, row.source_endpoint, row.data_source_level, row.is_temporary_derived, row.catcher_context_key, row.raw_json, row.catcher_context_key);
+  return row;
+}
+
 function safeJsonStringify(value) {
   try { return JSON.stringify(value).slice(0, 3000); } catch (_) { return null; }
 }
