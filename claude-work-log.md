@@ -230,3 +230,5 @@ Given the remaining 5 workers (prop-matrix-builder, enrichment-engine, scoring-e
 hit-probability-board, score-final-board) each need 3x full-completion runs and several are
 also chunked, this individual-worker protocol will take significant additional time. Continuing
 systematically per Rodolfo's instruction.
+UPDATE ~04:09 UTC: prop-factor-miner 3/3 PASS confirmed (each run full chunked completion,
+~5-8 min across ~11 invocations). Moving to prop-matrix-builder next.
