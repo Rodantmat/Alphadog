@@ -294,6 +294,13 @@ needed, before retrying daily-full-run.
 Started full scoring-full-run chain: scoring_full_run_mrokst8o_pubp9m,
 chain_scoring_full_run_mrokst8o_pubp9m. First stage (scoring_certifier_first_pass) already
 dispatched and running. Monitoring for one full clean pass with no rescue needed.
+UPDATE ~06:54 UTC: prop-factor-miner (first stage after certifier) had a transient stall -
+first invocation got stuck at heartbeat-only status for ~5 min, then correctly detected as
+stale and auto-replaced with a same-stage retry (existing self-healing mechanism, same pattern
+seen throughout this session). Investigated per Rodolfo's request rather than assuming it was
+fine: confirmed the replacement retry is genuinely progressing (720/1939 rows written,
+normal chunking), not stuck again. No manual cancel/restart needed - this is the same one-off
+transient class of issue as previous board-worker stalls, not a new bug. Continuing to monitor.
 UPDATE ~06:30 UTC: run 2/3 completed. Per Rodolfo's instruction, accepting 2/3 as sufficient
 and moving to score-final-board next - skipping the 3rd run since the fix is already verified
 correct (exact row-count match on both prior runs). Before enqueueing, audited
