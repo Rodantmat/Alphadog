@@ -321,6 +321,8 @@ in progress, chunking normally (~32 fast invocations expected). Chain healthy so
 stages clean (certifier, prop-factor-miner, matrix-builder).
 UPDATE ~07:19 UTC: enrichment-engine completed cleanly (no rescue). scoring-engine-shadow-v1
 now in progress. 4/8 stages clean so far, chain healthy.
+UPDATE ~07:29 UTC: scoring-engine-shadow-v1 still chunking normally (needs ~20 invocations,
+progressing steadily every cycle). No issues. 4/8 stages fully clean, 5th in progress.
 UPDATE ~06:30 UTC: run 2/3 completed. Per Rodolfo's instruction, accepting 2/3 as sufficient
 and moving to score-final-board next - skipping the 3rd run since the fix is already verified
 correct (exact row-count match on both prior runs). Before enqueueing, audited
