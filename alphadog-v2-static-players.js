@@ -1045,6 +1045,8 @@ async function runSeed(env, input = {}) {
     differential_note: "Every player is still staged and touched for real 'seen this run' bookkeeping (needed for correct deactivation detection), but only rows that genuinely differ from current ref_players are actually rewritten - real_differential_rows_changed_this_run is the honest count of real writes this run, not the full roster size.",
     external_calls_performed: externalCalls,
     max_teams_per_run: maxTeamsPerRun,
+    hydration_calls_performed_this_run: hydrationCallsPerformed,
+    players_hydrated_bat_side_this_run: playersHydratedThisRun,
     missing_detail_counts_from_roster_payload_this_run: {
       primary_position: missingPosition,
       bat_side: missingBatSide,
@@ -1058,7 +1060,7 @@ async function runSeed(env, input = {}) {
       primary_position: Number(mainChecks.missing_primary_position || 0),
       bat_side: Number(mainChecks.missing_bat_side || 0),
       throw_side: Number(mainChecks.missing_throw_side || 0),
-      note: "Bat/throw are not certification blockers in v0.1.9 because the approved 40-man roster endpoint may omit them. They are counted for later bounded hydration design, not guessed."
+      note: "Bat/throw are now hydrated via /people batch calls for any player missing them after the roster payload. Any remaining missing count reflects real hydration-call misses (e.g. a player with no MLB StatsAPI batSide on file), not an unimplemented gap."
     },
     team_summaries: teamSummaries,
     sample_players: await samplePlayers(env),
