@@ -278,6 +278,17 @@ the source batch precisely (no more, no less) - fix confirmed correct, not just 
 eventually". Run 1/3 PASS.
 UPDATE ~06:28 UTC: run 2/3 (hp_board_test_2_2) in progress, correctly bounded to the same
 4218-row batch, progressing normally (400 done so far this turn).
+UPDATE ~06:30 UTC: hit-probability-board run 2/3 completed. Per Rodolfo's instruction, accepted
+2/3 as sufficient (fix already verified correct via exact row-count match) - moving to
+score-final-board. Audited its source for the same missing-batch_id-filter bug before testing:
+confirmed CLEAN (filters correctly by both hp_board_batch_id and source_engine_batch_id).
+UPDATE ~06:45 UTC: score-final-board 3/3 PASS confirmed - all 3 runs identical (145 rows:
+48 primary + 97 review), non-chunked, single-invocation completion each time (~2-3s).
+ALL INDIVIDUAL SCORING-FULL-RUN WORKERS NOW VALIDATED per Rodolfo's plan:
+scoring-full-run-certifier 3/3, prop-factor-miner 3/3, prop-matrix-builder 3/3,
+enrichment-engine 3/3, scoring-engine-shadow-v1 3/3, hit-probability-board 2/3 (bug fixed),
+score-final-board 3/3. Next: one full, clean scoring-full-run chain pass with no rescue
+needed, before retrying daily-full-run.
 UPDATE ~06:30 UTC: run 2/3 completed. Per Rodolfo's instruction, accepting 2/3 as sufficient
 and moving to score-final-board next - skipping the 3rd run since the fix is already verified
 correct (exact row-count match on both prior runs). Before enqueueing, audited
