@@ -642,3 +642,19 @@ work - noting this connection now so it isn't lost, but the pass-counting contin
 NOT a clean pass (this is a re-confirmation/deepening of already-known issues #4 and the
 player_name bug, not a brand-new defect class, but still surfaced new critical understanding).
 Continuing to pass 9.
+
+## PASS 9 - CLARIFIED EXACT FIX PATH FOR PLAYER_NAME BUG (not a new issue)
+Confirmed matrix_payload_json's truncation limit is actually 4200 chars (boundedJson(r.matrix_payload||{}, 4200) at line 841 of alphadog-v2-phase2b-certifier.js) - the earlier-seen
+4575-char payload still exceeds even this higher limit and gets truncated.
+IMPORTANT CLARIFICATION: prop_matrix_current has its OWN dedicated player_name COLUMN (see the
+INSERT statement's column list and r.player_name binding at line 840-841) - matrix-builder
+already correctly extracts and stores player_name as a real column, separate from and NEVER
+subject to the JSON truncation. Confirmed HP Board's own query already does `SELECT * FROM
+prop_matrix_current` (line 118 of alphadog-v2-phase3c-certifier.js), which DOES include this
+column. The bug at line 154 is that it ignores this available, reliable column and instead
+fragile-parses player_name out of the (sometimes-truncated) JSON payload via
+`payload?.prepared?.player_name`. EXACT, TRIVIAL FIX IDENTIFIED (not yet applied per Rodolfo's
+no-patching-until-clean-passes instruction): change line 154 to simply read
+`matrixRow.player_name` directly instead of parsing JSON.
+This is a clarification/deepening of the already-known player_name bug (pass 7), not a new
+issue class. Continuing to pass 10 with new samples/angles.
