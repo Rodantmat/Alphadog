@@ -374,10 +374,23 @@ function makeTargets(preparedRows, calendars) {
   }
   return targets.filter(t => t.team_id && t.game_pk && t.official_date);
 }
+// REAL FIX: the old fixed-calendar-day window (e.g. "last 3 calendar days") silently produces
+// false "team is rested" zeros whenever there's a real scheduling gap - All-Star break, a
+// playoff series gap, a rainout-heavy stretch. Confirmed live: 07-13/14/15 had zero real MLB
+// games (All-Star break), so a fixed 3-day window found nothing and reported every team as
+// fully rested, which is wrong - it should instead report each team's TRUE most recent bullpen
+// usage regardless of how many calendar days back that actually is. Changed to select the
+// team's last N DISTINCT game-dates with real appearances, not a fixed date range. The caller
+// must supply enough historical rows (see widened lookback in getBullpenRows below) to find
+// real last-appearance data even across a multi-day gap.
+function lastNGameDates(rows, teamId, beforeDateExclusive, n) {
+  const dates = [...new Set(rows.filter(r => String(r.team_id) === String(teamId) && dateOnly(r.game_date) < beforeDateExclusive).map(r => dateOnly(r.game_date)))];
+  dates.sort((a, b) => b.localeCompare(a));
+  return dates.slice(0, n);
+}
 function rowsInWindow(rows, teamId, endDate, days) {
-  const start = addDays(endDate, -days);
-  const endExclusive = endDate;
-  return rows.filter(r => String(r.team_id) === String(teamId) && dateOnly(r.game_date) >= start && dateOnly(r.game_date) < endExclusive);
+  const recentDates = new Set(lastNGameDates(rows, teamId, endDate, days));
+  return rows.filter(r => String(r.team_id) === String(teamId) && recentDates.has(dateOnly(r.game_date)));
 }
 function distinctCount(rows, field) { return new Set(rows.map(r => r[field]).filter(v => v !== undefined && v !== null && String(v).length)).size; }
 function sumRows(rows, field) { return rows.reduce((n, r) => n + toNum(r[field]), 0); }
