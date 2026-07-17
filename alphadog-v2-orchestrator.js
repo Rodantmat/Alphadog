@@ -5989,17 +5989,16 @@ const SCORING_FULL_RUN_STAGES = [
   { stage_key: "scoring_prop_factor_miner_pitcher", job_key: "prop-factor-miner", worker_name: "alphadog-v2-phase2b-recent-form", display_name: "Prop Factor Miner (Pitchers)", visible_button: "SCORING > Prop Factor Miner Pitchers", mode: "pitcher_prop_factor_mining", worker_group: "Scoring", phase_key: "scoring", priority: 2, factor_family: "pitcher" },
   { stage_key: "scoring_matrix_builder", job_key: "prop-matrix-builder", worker_name: "alphadog-v2-phase2b-certifier", display_name: "Matrix Builder", visible_button: "SCORING > Matrix", mode: "matrix_build", worker_group: "Scoring", phase_key: "scoring", priority: 2 },
   { stage_key: "scoring_enrichment_engine", job_key: "enrichment-engine", worker_name: "alphadog-v2-phase2a-run-environment", display_name: "Enrichment Engine", visible_button: "SCORING > Enrichment", mode: "enrichment_run", worker_group: "Scoring", phase_key: "scoring", priority: 2 },
-  { stage_key: "scoring_engine", job_key: "scoring-engine-shadow-v1", worker_name: "alphadog-v2-phase3a-certifier", display_name: "Scoring Engine (Final Scoring)", visible_button: "SCORING > Final Scoring", mode: "scoring_engine_run", worker_group: "Scoring", phase_key: "scoring", priority: 2 },
-  { stage_key: "scoring_hit_probability_board", job_key: "hit-probability-board", worker_name: "alphadog-v2-phase3c-certifier", display_name: "Hit Probability Board (Final HP)", visible_button: "SCORING > Final HP", mode: "hit_probability_board_run", worker_group: "Scoring", phase_key: "scoring", priority: 2 },
+  { stage_key: "scoring_hit_probability_board", job_key: "hit-probability-board", worker_name: "alphadog-v2-phase3c-certifier", display_name: "Hit Probability Board (Final HP + Confidence)", visible_button: "SCORING > Final HP", mode: "hit_probability_board_run", worker_group: "Scoring", phase_key: "scoring", priority: 2 },
+  { stage_key: "scoring_engine", job_key: "scoring-engine-shadow-v1", worker_name: "alphadog-v2-phase3a-certifier", display_name: "Scoring Engine (Final Score from HP+Confidence)", visible_button: "SCORING > Final Scoring", mode: "scoring_engine_run", worker_group: "Scoring", phase_key: "scoring", priority: 2 },
   { stage_key: "scoring_final_board", job_key: "score-final-board", worker_name: "alphadog-v2-score-final-board", display_name: "Final Board", visible_button: "SCORING > Final Board", mode: "final_board_run", worker_group: "Scoring", phase_key: "scoring", priority: 2 },
   { stage_key: "scoring_certifier_last_pass", job_key: "scoring-full-run-certifier", worker_name: "alphadog-v2-phase3b-certifier", display_name: "Scoring Full Run Certifier", visible_button: "SCORING > Full Run", mode: "scoring_full_run_certifier_last_pass", worker_group: "Scoring", phase_key: "scoring", priority: 2 }
 ];
-// Real, honest note on stage order: the real Hit Probability Board built this session
-// needs Scoring Engine's real batch_id as an input (it reads scoring_engine_current to
-// combine with baseline_v6), so Scoring Engine must run before Hit Probability Board in
-// the real, working chain - this is the technically-correct real order even though it was
-// requested as "Final HP, Final Scoring" - the two names map to Scoring Engine (produces
-// score_0_100) and Hit Probability Board (produces the real, final HP%) respectively.
+// REORDERED (2026-07-17) per Rodolfo's confirmed spec: Hit Probability Board now runs BEFORE
+// Scoring Engine. HP Board reads Matrix+Enrichment directly (no longer depends on Scoring
+// Engine's output) and computes final HP + final Confidence. Scoring Engine now reads HP
+// Board's finalized output and computes the Final Score FROM final HP + final Confidence,
+// writing it back into hp_board_current.score_0_100 so Final Board's read path is unchanged.
 const SCORING_FULL_RUN_STALE_CHILD_SECONDS = 300;
 const SCORING_FULL_RUN_STALE_CHILD_RETRY_MAX = 4;
 
