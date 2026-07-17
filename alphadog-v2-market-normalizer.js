@@ -503,28 +503,6 @@ async function ensureSchema(env) {
 }
 
 async function pruneProbeWindow(env, boardWindowDates, slateWindowKey) {
-  const tables = [
-    "market_context_probe_game_odds",
-    "market_context_probe_player_props",
-    "market_context_probe_event_map",
-    "market_context_probe_coverage",
-    "market_context_probe_issues",
-    "market_context_probe_book_market_status",
-    "market_context_probe_game_market_summary",
-    "market_context_probe_game_team_market_expansion"
-  ];
-  const inClause = boardWindowDates.map(() => "?").join(",");
-  const deleted = {};
-  for (const table of tables) {
-    await run(env.MARKET_DB, `DELETE FROM ${table} WHERE slate_window_key <> ? OR official_date NOT IN (${inClause})`, slateWindowKey, ...boardWindowDates);
-    await run(env.MARKET_DB, `DELETE FROM ${table} WHERE slate_window_key = ?`, slateWindowKey);
-    deleted[table] = "pruned_outside_board_window_and_replaced_current_window";
-  }
-  await run(env.MARKET_DB, "DELETE FROM market_context_probe_batches WHERE slate_window_key <> ?", slateWindowKey);
-  await run(env.MARKET_DB, "DELETE FROM market_context_probe_batches WHERE slate_window_key = ?", slateWindowKey);
-  deleted.market_context_probe_batches = "pruned_outside_board_window_and_replaced_current_window";
-  return deleted;
-}
 
 async function schemaStatus(env) {
   const tables = [
