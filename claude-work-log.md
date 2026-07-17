@@ -206,3 +206,19 @@ as market-full-run, self-healing) but is now correctly chunking through its norm
 process (180/1939 rows this invocation) - this is expected, healthy behavior, not a new bug.
 Board Full Run, Daily Context Full Run, and Market Full Run all remain complete. Chain is 3/4
 stages done overall.
+
+## 2026-07-17 ~03:40 UTC - PLAN CHANGE
+Attempt 6 (daily_full_run_mrobyfle_508nyp) ultimately FAILED at scoring_prop_factor_miner.
+Root cause (confirmed via Rodolfo's real log evidence): NOT a manual cancellation - the system's
+own logic did two things in sequence: (1) scoring-full-run's parent hit its own
+SCORING_FULL_RUN_STALE_CHILD_SECONDS=120/RETRY_MAX=2 threshold and failed on its own, even though
+prop-factor-miner was legitimately still mid-chunk (had just written 180/1939 rows, needs ~11
+invocations total to finish); (2) prop-factor-miner's next self-continuation attempt then found
+its parent already terminal and correctly self-cancelled as an orphan-safety measure. Root cause:
+the stale threshold didn't account for legitimate multi-invocation chunked progress. Fixed:
+raised to 300s/4 retries. Deployed.
+PLAN CHANGE per Rodolfo: switching to test each Scoring Full Run individual worker 3x clean
+first (scoring-full-run-certifier, prop-factor-miner, prop-matrix-builder, enrichment-engine,
+scoring-engine-shadow-v1, hit-probability-board, score-final-board), THEN one full clean
+scoring-full-run chain pass with no rescue needed, before attempting daily-full-run again.
+Starting now.
