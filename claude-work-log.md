@@ -534,3 +534,39 @@ morning's incremental_morning_full_run window) - this is a CALCULATION defect, n
 Per Rodolfo's explicit instruction: NO PATCH on the calibration issue until told. Continuing
 deep systemic research now - checking whether this is tier-oriented, sample-size-oriented, and
 how many more players/props are affected.
+
+## RUNNING TALLY - ALL CONFIRMED ISSUES ACROSS PASSES 1-4 (deep scrutiny ongoing)
+Per Rodolfo: continuing passes with different samples/angles until 2 CONSECUTIVE clean passes
+(zero new issues found) before any root-cause-correlation or patching work begins. 0 of 2
+clean passes achieved so far. Confirmed issues, each independently verified with real data:
+
+1. DIRECTION (side) BUG - alphadog-v2-phase3c-certifier.js line 133: baseline cache key
+   `player_id|prop_key|line_value` omits selected_side, so whichever of baseline's "more"/
+   "less" rows comes second in the unordered query silently overwrites the first in the Map.
+   Confirmed via exact math (Kuroda-Grauer HR, Halpin RBI, Stephenson runs, Freeman stolen_bases)
+   and via 100% (13/13) monotonicity violations across every multi-line combo tested. Scope:
+   ~100% of today's board (100% selected_side='more'), shared code so affects hitters AND
+   pitchers, all prop types.
+
+2. VARIATION (line) COVERAGE GAP - baseline_v6's precomputed line grid sometimes doesn't match
+   what the market offers (e.g. fantasy_score 9.5 needed, baseline only has 6.5/8.5/10.5).
+   Root cause of ~125/1926 "no_baseline_available" legs, concentrated in composite props.
+   Variation MATCHING logic itself confirmed correct (right line always paired with right line).
+
+3. SINGLES LINE=1.5 BASELINE INTERNAL INCONSISTENCY - more+less doesn't sum to ~100% (range
+   96.8-107.4) specifically at line 1.5 for "singles" (40 confirmed pairs). Every other prop/
+   line checked sums correctly. Root cause not yet isolated - minor severity vs #1.
+
+4. ENRICHMENT NOT DIFFERENTIATING BETWEEN PLAYERS (major) - rate_multiplier shows ZERO
+   variance within each prop type (confirmed: all 604 home_runs legs share identical
+   rate_multiplier=0.3295589610751891, factors_applied=1, factors_missing=9, verified across
+   10 random players). ROOT CAUSE CONFIRMED: prop_matrix_current's stored matrix_payload_json
+   is truncated ("compacted":true,"truncated":true,"original_chars":4575 - only a partial
+   preview retained). The daily_context/market_context fields enrichment needs live past the
+   truncation point, so enrichment sees them as missing for virtually every leg and falls back
+   to the same bounded missing-factor penalty uniformly. The enrichment layer is currently NOT
+   performing per-player/per-game differentiation - it applies one static value per prop type.
+
+Continuing to pass 5 now with new samples/angles: pitcher-side legs directly, Scoring Engine's
+final-score computation, Final Board's platform-specific payload (goblin/demon/more-only),
+remaining prop types for the baseline sum-to-100 check, other enrichment factor types.
