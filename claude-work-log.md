@@ -60,7 +60,9 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
   ~20s platform ceiling found repeatedly this session - the dispatch was silently killed with
   no timeout ever firing, so the queue row never finalized. Fixed to 20000ms (worker's own
   chunked partial_continue resume logic was already correctly wired, just needed the outer
-  timeout corrected). Cleared the stuck row, deployed, retrying now.
+  timeout corrected). Attempt 2 (daily_full_run_mro9gdmm_sntf34) ended up FAILED - my fix landed
+  just after the parent's retry budget had already exhausted from the stall, not before. Fix is
+  now correctly deployed for future attempts. Starting attempt 3 now.
 
 ---
 
