@@ -389,7 +389,7 @@ async function enrichLeg(env, matrixRow, config, legContext) {
     // not a real effect size. This bound prevents any single factor (working as designed or
     // misconfigured) from dominating/corrupting the final HP; it does not fix the underlying
     // coefficient, which needs separate domain review before being trusted at full strength.
-    const CONTRIBUTION_CLAMP = 0.5;
+    const CONTRIBUTION_CLAMP = 1.0;
     contribution = clampContribution(contribution, CONTRIBUTION_CLAMP);
 
     if (factor.signal_role === "confidence_modifier") {
