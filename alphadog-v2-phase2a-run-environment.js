@@ -372,6 +372,9 @@ function buildLegContextReal(matrixRow, ctxMaps) {
     bullpen_fatigue_score: relevantBullpen.bullpen_fatigue_score ?? null,
     availability_status: availability.availability_status ?? null,
     matchup_specific_oaa_probability_delta: ctxMaps.oaaProbabilityDeltaByTeam.get(String(oppTeamId)) ?? null,
+    umpire_strikeouts_delta_vs_league: ctxMaps.umpireTendencyByGame.get(String(gamePk))?.strikeouts_delta_vs_league ?? null,
+    umpire_walks_delta_vs_league: ctxMaps.umpireTendencyByGame.get(String(gamePk))?.walks_delta_vs_league ?? null,
+    umpire_runs_delta_vs_league: ctxMaps.umpireTendencyByGame.get(String(gamePk))?.runs_delta_vs_league ?? null,
   };
 }
 
