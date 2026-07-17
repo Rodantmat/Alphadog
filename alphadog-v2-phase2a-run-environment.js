@@ -217,11 +217,36 @@ async function loadRealLegContexts(env, matrixRows) {
 
   const weatherRows = await all(env.DAILY_DB, `SELECT game_pk, temperature_f, rain_risk_flag, roof_status FROM daily_game_weather_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   const lineupRows = playerIds.length ? await all(env.DAILY_DB, `SELECT game_pk, player_id, bat_side FROM daily_lineups_current WHERE game_pk IN (${gph}) AND player_id IN (${pph})`, ...gamePks, ...playerIds).catch(() => []) : [];
-  const starterRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, starter_hand FROM daily_starters_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
+  const starterRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, starter_hand, starter_player_id FROM daily_starters_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   const bullpenRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, high_usage_reliever_count, back_to_back_reliever_count, bullpen_fatigue_score FROM daily_bullpen_availability_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   const catcherRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, framing_runs_total FROM daily_catcher_context_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   const availRows = playerIds.length ? await all(env.DAILY_DB, `SELECT game_pk, mlb_player_id, availability_status FROM daily_player_availability_current_v1 WHERE game_pk IN (${gph}) AND mlb_player_id IN (${pph})`, ...gamePks, ...playerIds).catch(() => []) : [];
   const marketRows = await all(env.MARKET_DB, `SELECT game_pk, derived_home_implied_runs, derived_away_implied_runs FROM market_context_probe_game_market_summary WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
+
+  // REAL FIX: wire real pitcher-arsenal data (season-level Statcast per-pitch-type quality)
+  // into opposing_pitcher_quality, which previously always returned null/missing because the
+  // context loader never fetched it despite real, fresh data sitting in REF_DB. There's no
+  // literal xfip_minus field in ref_pitcher_arsenal (it wasn't real to begin with), so this
+  // computes a genuine, usage-weighted aggregate of run_value_per_100 across the starter's
+  // real pitch mix - lower/negative run_value_per_100 means the pitcher suppresses production
+  // (a tougher matchup), which is exactly the real signal this factor needs.
+  const starterPlayerIds = [...new Set(starterRows.map(r => r.starter_player_id).filter(Boolean))];
+  const arsenalRows = starterPlayerIds.length ? await all(env.REF_DB,
+    `SELECT mlb_player_id, run_value_per_100, pitch_usage FROM ref_pitcher_arsenal WHERE mlb_player_id IN (${starterPlayerIds.map(() => "?").join(",")}) AND active=1`,
+    ...starterPlayerIds).catch(() => []) : [];
+  const arsenalByPitcher = new Map();
+  for (const r of arsenalRows) {
+    const pid = String(r.mlb_player_id);
+    if (!arsenalByPitcher.has(pid)) arsenalByPitcher.set(pid, []);
+    arsenalByPitcher.get(pid).push(r);
+  }
+  const pitcherQualityByPitcherId = new Map();
+  for (const [pid, rows] of arsenalByPitcher.entries()) {
+    const totalUsage = rows.reduce((s, r) => s + (Number(r.pitch_usage) || 0), 0);
+    if (totalUsage <= 0) continue;
+    const weighted = rows.reduce((s, r) => s + ((Number(r.run_value_per_100) || 0) * (Number(r.pitch_usage) || 0)), 0) / totalUsage;
+    pitcherQualityByPitcherId.set(pid, weighted);
+  }
 
   return {
     weatherByGame: new Map(weatherRows.map(r => [String(r.game_pk), r])),
