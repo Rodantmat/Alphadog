@@ -241,6 +241,10 @@ phase - likely caused by very long single-turn bash sleep() calls (280s+) keepin
 for many minutes with no intermediate output. Switching to shorter wait increments (~60-90s)
 with more frequent natural turn-ends going forward, relying on the log + "continue" pattern
 rather than one giant uninterrupted tool-call chain per turn.
+UPDATE ~04:38 UTC: enrichment-engine run 3/3 PASS confirmed - it had already completed
+automatically during the gap between messages (cron kept working in the background),
+confirming nothing is lost when the app disconnects. enrichment-engine: 3/3 PASS confirmed.
+Moving to scoring-engine-shadow-v1 next.
 UPDATE ~04:38 UTC: enrichment-engine 3/3 PASS confirmed (each run ~32 fast invocations,
 ~250ms each, ~4-8 min total per run). All 3 runs completed correctly in the background during
 an app-freeze period on Rodolfo's end - recovered cleanly by checking this log and the real DB
