@@ -282,8 +282,10 @@ function buildLegContextReal(matrixRow, ctxMaps) {
   const gamePk = matrixRow.game_pk;
   const playerId = matrixRow.mlb_player_id;
   const isPitcherProp = factorFamilyForProp(matrixRow.canonical_prop_key) === "pitcher";
-  const ownTeamId = matrixRow.team_id;
-  const oppTeamId = matrixRow.opponent_team_id;
+  // CRITICAL FIX: matrixRow.team_id/opponent_team_id are abbreviations ("CWS"), but every
+  // lookup map above is keyed by the real numeric MLB team_id - normalize here before use.
+  const ownTeamId = ctxMaps.teamIdByAbbrev.get(String(matrixRow.team_id || "").toUpperCase()) ?? matrixRow.team_id;
+  const oppTeamId = ctxMaps.teamIdByAbbrev.get(String(matrixRow.opponent_team_id || "").toUpperCase()) ?? matrixRow.opponent_team_id;
   const weather = ctxMaps.weatherByGame.get(String(gamePk)) || {};
   const lineup = ctxMaps.lineupByGamePlayer.get(`${gamePk}|${playerId}`) || {};
   const oppStarter = ctxMaps.starterByGameTeam.get(`${gamePk}|${oppTeamId}`) || {};
