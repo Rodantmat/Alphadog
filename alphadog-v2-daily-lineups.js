@@ -1557,6 +1557,10 @@ async function runSourceProbe(env, input) {
   const umpireTendencyRefreshResult = await refreshUmpireTendencyIfStale(env);
   _tm.after_arsenal_and_defense_refresh_ms = Date.now() - _t0;
   try {
+    await execRun(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_umpire_tendency_refresh', 'Checkpoint after umpire tendency refresh', ?, CURRENT_TIMESTAMP)",
+      _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ umpireTendencyRefreshResult })).catch(() => {});
+  } catch (_) {}
+  try {
     await execRun(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_after_arsenal_defense_refresh', 'Checkpoint after arsenal/defense refresh', ?, CURRENT_TIMESTAMP)",
       _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ pitcherArsenalRefreshResult, defensiveQualityRefreshResult })).catch(() => {});
   } catch (_) {}
