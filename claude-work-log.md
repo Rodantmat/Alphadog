@@ -668,3 +668,15 @@ all appear to cluster around the same game/slate, suggesting an upstream board-p
 deduplication gap (score_board_prepared_current or its source ingestion) rather than a
 scoring-pipeline defect. Low severity compared to issues #1/#4/#5, but confirmed real and new.
 NOT a clean pass. Continuing to pass 11 with new angles.
+
+## PASS 11 - CONFIRMED CLEAN (design question flagged, not a bug)
+Investigated: 9 legs with HP>70% were marked hp_review_playable instead of hp_primary_playable,
+initially looked like a threshold bug. Checked the actual code (not assumed): line 178,
+`primaryPlayable = hp >= PRIMARY_HP_THRESHOLD(70) && confidence >= 55` - this is a deliberate,
+coded additional confidence gate, not a bug. All 9 "should-be-primary-by-HP-alone" legs had
+confidence in the 50-54 range, correctly failing this intentional gate. CONFIRMED WORKING AS
+CODED - no defect. Flagging as an open DESIGN QUESTION for Rodolfo (does the confirmed spec's
+"legs over 70% HP" for Final Board mean HP alone should be sufficient, or is this additional
+confidence>=55 requirement intended/desired) - this is a question, not a bug report.
+No new bugs found this pass, but pass 10 immediately prior found the duplicate-leg issue, so
+the 2-consecutive-clean-pass count resets to 0 again. Continuing to pass 12.
