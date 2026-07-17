@@ -966,7 +966,18 @@ async function runUmpireContext(env, input) {
       }
     }
 
-    const replacementCleanup = await finalizeWindowReplacement(env, retention, batchId);
+    // CRITICAL FIX: finalizeWindowReplacement deletes any existing row NOT matching this run's
+    // batch_id - but this run may have found ZERO targets simply because every game was already
+    // correctly processed by a recent prior batch (the "skip recently processed" optimization
+    // above), not because there's genuinely nothing to do. Running the destructive cleanup
+    // unconditionally in that case wipes out perfectly valid existing data with nothing to
+    // replace it - confirmed live: a run that found 0 new targets (all 12 games already
+    // processed moments earlier) deleted all 12 valid rows anyway. Only run replacement cleanup
+    // when this run actually wrote at least one new row - otherwise there is nothing to replace
+    // with, and the existing current rows must be left untouched.
+    const replacementCleanup = targets.length > 0
+      ? await finalizeWindowReplacement(env, retention, batchId)
+      : { skipped: true, reason: "zero_targets_this_run_preserving_existing_current_rows", current_old_window_deleted_after_success: 0, snapshots_old_window_deleted_after_success: 0, issues_old_window_deleted_after_success: 0, replacement_batch_id: batchId };
     await heartbeatUmpireQueue(env, requestId, batchId, "success_replacement_cleanup", { replacement_cleanup: replacementCleanup });
     const postPrune = await postPruneRetention(env, retention);
     const warningRow = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_umpire_context_issues WHERE batch_id=? AND severity='warning'`, batchId);
