@@ -229,6 +229,17 @@ async function loadRealLegContexts(env, matrixRows) {
   const availRows = playerIds.length ? await all(env.DAILY_DB, `SELECT game_pk, mlb_player_id, availability_status FROM daily_player_availability_current_v1 WHERE game_pk IN (${gph}) AND mlb_player_id IN (${pph})`, ...gamePks, ...playerIds).catch(() => []) : [];
   const marketRows = await all(env.MARKET_DB, `SELECT game_pk, derived_home_implied_runs, derived_away_implied_runs FROM market_context_probe_game_market_summary WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
 
+  // CRITICAL FIX: prop_matrix_current stores team_id/opponent_team_id as ABBREVIATIONS
+  // (e.g. "CWS", "TOR"), but every daily-context table above (starters, bullpen, catcher) uses
+  // the NUMERIC MLB team_id. This mismatch meant every one of these lookups
+  // (starterByGameTeam, bullpenByGameTeam, catcherByGameTeam) has been silently failing to
+  // match all along - confirmed live: platoon_handedness, bullpen_fatigue, and catcher_framing
+  // were all still showing "missing" despite their underlying daily tables having real,
+  // correct data (verified separately via direct queries). Real fix: fetch the real
+  // abbreviation->numeric mapping and normalize before every lookup.
+  const teamRows = await all(env.REF_DB, `SELECT mlb_team_id, abbreviation FROM ref_teams`).catch(() => []);
+  const teamIdByAbbrev = new Map(teamRows.map(r => [String(r.abbreviation).toUpperCase(), Number(r.mlb_team_id)]));
+
   // REAL FIX: wire real pitcher-arsenal data (season-level Statcast per-pitch-type quality)
   // into opposing_pitcher_quality, which previously always returned null/missing because the
   // context loader never fetched it despite real, fresh data sitting in REF_DB. There's no
