@@ -1,5 +1,5 @@
 const WORKER_NAME = "alphadog-v2-static-players";
-const VERSION = "alphadog-v2-static-players-v0.1.9-stage-certify-promote-clean";
+const VERSION = "alphadog-v2-static-players-v0.2.0-batside-hydration";
 const JOB_KEY = "static-players";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB"];
