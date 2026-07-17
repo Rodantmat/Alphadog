@@ -120,18 +120,47 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
     }
   }
 
+  // FIX #1 (direction bug): the baseline lookup must be keyed by side too, not just
+  // player+prop+line - baseline_v6 always stores BOTH a "more" and a "less" row per combo,
+  // and without selected_side in the key/lookup, whichever row happened to come back second
+  // from the DB silently overwrote the first, causing the wrong side's value to be used.
+  // FIX #2 (variation coverage gap): when the exact line isn't in baseline_v6 (its
+  // precomputed grid doesn't always match every line the market offers), fall back to the
+  // NEAREST available line for the same player+prop+side rather than losing the leg entirely.
   const playerIds = [...new Set(chunkRows.map(r => r.mlb_player_id).filter(Boolean))];
-  const baselineByPlayerProp = new Map();
+  const baselineByPlayerPropSide = new Map();
   if (playerIds.length) {
     const chunkSize = 90;
     for (let i = 0; i < playerIds.length; i += chunkSize) {
       const chunk = playerIds.slice(i, i + chunkSize);
       const placeholders = chunk.map(() => "?").join(",");
       const baselineRows = await all(env.ARCHIVE_DB,
-        `SELECT player_id, canonical_prop_key, line_value, hit_probability_0_100, confidence_0_100 FROM baseline_v6_current WHERE player_id IN (${placeholders})`,
+        `SELECT player_id, canonical_prop_key, line_value, selected_side, hit_probability_0_100, confidence_0_100 FROM baseline_v6_current WHERE player_id IN (${placeholders})`,
         ...chunk);
-      for (const b of baselineRows) baselineByPlayerProp.set(`${b.player_id}|${b.canonical_prop_key}|${b.line_value}`, b);
+      for (const b of baselineRows) {
+        const k = `${b.player_id}|${b.canonical_prop_key}|${b.selected_side}`;
+        if (!baselineByPlayerPropSide.has(k)) baselineByPlayerPropSide.set(k, []);
+        baselineByPlayerPropSide.get(k).push(b);
+      }
     }
+  }
+  function findBaseline(playerId, propKey, side, lineValue) {
+    const list = baselineByPlayerPropSide.get(`${playerId}|${propKey}|${side}`);
+    if (!list || !list.length) return null;
+    let best = null, bestDist = Infinity;
+    for (const b of list) {
+      const dist = Math.abs(Number(b.line_value) - Number(lineValue));
+      if (dist < bestDist) { bestDist = dist; best = b; }
+    }
+    return best ? { row: best, is_exact_line_match: bestDist === 0, line_distance: bestDist } : null;
+  }
+  // FIX #1 (compound gap): matrix-builder's own prop_side may now be explicitly set
+  // (more_only->more, less_only->less); enrichment's prop_side is carried through unchanged
+  // if set. If both are still null (older data / two-sided with no stronger-side selection
+  // logic built yet), default to "more" explicitly here so the side used for baseline lookup
+  // always matches the side recorded on the row - no more silent mismatch.
+  function determineSide(matrixRow, er) {
+    return matrixRow.prop_side || er.prop_side || "more";
   }
 
   await run(env.SCORE_DB,
@@ -150,9 +179,19 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
   for (const er of chunkRows) {
     const matrixRow = matrixById.get(er.matrix_id) || {};
+    // FIX #5: read player_name from the dedicated, never-truncated column matrix-builder
+    // already populates correctly, instead of parsing the (sometimes-truncated) JSON payload.
+    const playerName = matrixRow.player_name || null;
+    // FIX #6: extract goblin/demon/more-only payload data for Final Board to surface later.
     const payload = safeJsonParse(matrixRow.matrix_payload_json, {});
-    const playerName = payload?.prepared?.player_name || payload?.player_context?.player_name || null;
-    const baseline = baselineByPlayerProp.get(`${er.mlb_player_id}|${er.canonical_prop_key}|${er.board_line_value}`);
+    const isGoblin = Number(payload?.prepared?.is_goblin || 0) === 1;
+    const isDemon = Number(payload?.prepared?.is_demon || 0) === 1;
+    const sideMode = payload?.side_context?.side_mode || null;
+    const moreOnly = sideMode === "more_only";
+
+    const side = determineSide(matrixRow, er);
+    const baselineMatch = findBaseline(er.mlb_player_id, er.canonical_prop_key, side, er.board_line_value);
+    const baseline = baselineMatch ? baselineMatch.row : null;
     const baselineHp = baseline?.hit_probability_0_100 ?? null;
     const hp = computeRealHitProbability(baselineHp, er.rate_multiplier);
     if (hp == null) {
@@ -164,10 +203,10 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
       statements.push(env.SCORE_DB.prepare(insertSql).bind(
         `hp_${er.enrichment_id}`, hpBatchId, sourceMatrixBatchId || null, matrixRow.prepared_row_id || null, er.matrix_id, matrixRow.source_line_id || null, PROFILE_KEY, SYSTEM_VERSION,
         matrixRow.source_key || null, matrixRow.game_pk || null, matrixRow.official_date || null, matrixRow.official_game_time_utc || null,
-        er.mlb_player_id, matrixById.get(er.matrix_id)?.player_name || null, er.canonical_prop_key, er.board_line_value, er.prop_side || "more",
+        er.mlb_player_id, playerName, er.canonical_prop_key, er.board_line_value, side,
         null, null, "no_baseline_available", "BIN_0_NULL",
         null, null, "REVIEW", 0, 1, 0, 1, 0, 0,
-        JSON.stringify({ real_reordered: true, no_baseline_coverage: true, note: "No baseline_v6 row found for this player/prop/line combo - cannot compute HP without a baseline. Tracked here (not skipped silently) to avoid re-processing this leg on every future invocation." })
+        JSON.stringify({ real_reordered: true, no_baseline_coverage: true, is_goblin: isGoblin, is_demon: isDemon, side_mode: sideMode, more_only: moreOnly, note: "No baseline_v6 row found for this player/prop/line/side combo even after nearest-line fallback - cannot compute HP without a baseline. Tracked here (not skipped silently) to avoid re-processing this leg on every future invocation." })
       ));
       reviewRows++;
       written++;
@@ -181,10 +220,10 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
     statements.push(env.SCORE_DB.prepare(insertSql).bind(
       `hp_${er.enrichment_id}`, hpBatchId, sourceMatrixBatchId || null, matrixRow.prepared_row_id || null, er.matrix_id, matrixRow.source_line_id || null, PROFILE_KEY, SYSTEM_VERSION,
       matrixRow.source_key || null, matrixRow.game_pk || null, matrixRow.official_date || null, matrixRow.official_game_time_utc || null,
-      er.mlb_player_id, playerName, er.canonical_prop_key, er.board_line_value, er.prop_side || "more",
+      er.mlb_player_id, playerName, er.canonical_prop_key, er.board_line_value, side,
       hp, confidence, hp >= PRIMARY_HP_THRESHOLD ? "playable" : "below_floor", gradeForProbability(hp),
       null, null, primaryPlayable ? "PRIMARY" : "REVIEW", primaryPlayable ? 1 : 0, primaryPlayable ? 0 : 1, primaryPlayable ? 1 : 0, primaryPlayable ? 0 : 1, 0, 0,
-      JSON.stringify({ real_reordered: true, baseline_hp: baselineHp, baseline_confidence: baseline?.confidence_0_100 ?? null, rate_multiplier: er.rate_multiplier ?? 1.0, factors_applied: er.factors_applied || 0, factors_missing: er.factors_missing || 0, primary_hp_threshold: PRIMARY_HP_THRESHOLD, note: "Final HP + Final Confidence computed here, BEFORE Scoring Engine (reordered per spec). score_0_100 intentionally null until Scoring Engine (now running after this stage) fills it in from this row's final HP + final confidence." })
+      JSON.stringify({ real_reordered: true, baseline_hp: baselineHp, baseline_confidence: baseline?.confidence_0_100 ?? null, rate_multiplier: er.rate_multiplier ?? 1.0, factors_applied: er.factors_applied || 0, factors_missing: er.factors_missing || 0, primary_hp_threshold: PRIMARY_HP_THRESHOLD, is_exact_line_match: baselineMatch ? baselineMatch.is_exact_line_match : null, line_distance: baselineMatch ? baselineMatch.line_distance : null, is_goblin: isGoblin, is_demon: isDemon, side_mode: sideMode, more_only: moreOnly, note: "Final HP + Final Confidence computed here, BEFORE Scoring Engine (reordered per spec). score_0_100 intentionally null until Scoring Engine (now running after this stage) fills it in from this row's final HP + final confidence." })
     ));
     written++;
   }
@@ -204,6 +243,7 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
     matrix_rows_read: chunkRows.length, board_rows_written: written, primary_rows: primaryRows, review_rows: reviewRows,
     primary_hp_threshold: PRIMARY_HP_THRESHOLD,
     reordered_note: "This worker now runs BEFORE Scoring Engine (reads matrix+enrichment directly, no longer depends on Scoring Engine's output). Computes final HP AND final Confidence. score_0_100 intentionally left null for the reordered Scoring Engine stage to fill in.",
+    fixes_applied: ["direction_bug_side_keyed_baseline_lookup", "nearest_line_fallback", "player_name_from_dedicated_column", "goblin_demon_more_only_carried_in_calibration_json"],
     timestamp_utc: nowUtc(),
   };
 }
