@@ -32,7 +32,7 @@ const FINAL_BOARD_DEDUPE_SOURCE_MARKET_CLUSTER = true;
 const FINAL_BOARD_PROP_FLOOR_PER_PROP = 5;
 const FINAL_BOARD_SOURCE_FLOOR_PER_APP = 20;
 const FINAL_BOARD_VARIANT_FLOORS = { demon: 10, regular: 20, goblin: 20 };
-const FINAL_BOARD_QUOTA_RESERVE_MIN_HP = 45;
+const FINAL_BOARD_QUOTA_RESERVE_MIN_HP = 70;
 const FINAL_BOARD_QUOTA_RESERVE_MIN_SCORE = 50;
 function directEvidenceInfoFromBoardRow(row) {
   const calc = parseJsonObject(row.calculation_json);
