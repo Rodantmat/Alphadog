@@ -1010,7 +1010,7 @@ async function runUmpireContext(env, input) {
       games_remaining_after_chunk: Math.max(0, totalRemainingBeforeChunk - targets.length),
       certification,
       certification_grade: grade,
-      certification_reason: noPickableSlate ? "No prepared-board pickable_safe games exist for today/tomorrow retention window." : (dataOk ? "Every prepared-board relevant game received an umpire context current and snapshot row; missing/pending assignments are warning-only in v0.1." : "One or more prepared-board relevant games had coverage gaps or blockers."),
+      certification_reason: noPickableSlate ? "No prepared-board pickable_safe games exist for today/tomorrow retention window." : (allAlreadyProcessed ? "All prepared-board relevant games for this window were already correctly processed by a recent batch; existing current rows preserved untouched." : (dataOk ? "Every prepared-board relevant game received an umpire context current and snapshot row; missing/pending assignments are warning-only in v0.1." : "One or more prepared-board relevant games had coverage gaps or blockers.")),
       window_start: retention.start,
       window_end: retention.end,
       calendar_games_checked: calendars.length,
