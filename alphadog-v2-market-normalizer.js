@@ -503,6 +503,56 @@ async function ensureSchema(env) {
 }
 
 async function pruneProbeWindow(env, boardWindowDates, slateWindowKey) {
+  const tables = [
+    "market_context_probe_game_odds",
+    "market_context_probe_player_props",
+    "market_context_probe_event_map",
+    "market_context_probe_coverage",
+    "market_context_probe_issues",
+    "market_context_probe_book_market_status",
+    "market_context_probe_game_market_summary",
+    "market_context_probe_game_team_market_expansion"
+  ];
+  const inClause = boardWindowDates.map(() => "?").join(",");
+  const deleted = {};
+  for (const table of tables) {
+    await run(env.MARKET_DB, `DELETE FROM ${table} WHERE slate_window_key <> ? OR official_date NOT IN (${inClause})`, slateWindowKey, ...boardWindowDates);
+    await run(env.MARKET_DB, `DELETE FROM ${table} WHERE slate_window_key = ?`, slateWindowKey);
+    deleted[table] = "pruned_outside_board_window_and_replaced_current_window";
+  }
+  await run(env.MARKET_DB, "DELETE FROM market_context_probe_batches WHERE slate_window_key <> ?", slateWindowKey);
+  await run(env.MARKET_DB, "DELETE FROM market_context_probe_batches WHERE slate_window_key = ?", slateWindowKey);
+  deleted.market_context_probe_batches = "pruned_outside_board_window_and_replaced_current_window";
+  return deleted;
+}
+
+// REAL FIX (same class as the weather/umpire history fixes, per Rodolfo's direct instruction):
+// market_context_probe_game_odds gets fully wiped and rebuilt on every single invocation
+// (pruneProbeWindow deletes the current window before repopulating it) - confirmed live via
+// only 1 distinct official_date ever present despite real data flowing through daily. This
+// meant real market odds were never permanently retained anywhere - the existing
+// market_historical_props_2025 table only has a real, deliberately-sampled, credit-metered
+// backfill through 2025-09-20 (confirmed: paid Odds API, budget-capped, intentionally not
+// exhaustive - not something to re-run, per Rodolfo's explicit instruction to start saving
+// going forward instead). Copies real current odds rows into that same historical table
+// before this run's own prune wipes them - called every time this worker runs, capturing
+// whatever was written by the PREVIOUS run before it's cleared. Idempotent via a deterministic
+// key (date+event+bookmaker+market+outcome+point), not the ephemeral probe_row_id.
+async function permanentlyRecordConfirmedMarketOdds(env) {
+  const rows = await all(env.MARKET_DB, `SELECT official_date, source_event_id, source_home_team, source_away_team, source_commence_time_utc, bookmaker_key, market_key, outcome_name, price_american, point, market_last_update, raw_json FROM market_context_probe_game_odds WHERE mapping_status IS NOT NULL AND source_event_id IS NOT NULL`).catch(() => []);
+  if (!rows.length) return { copied: 0, checked: 0 };
+  let copied = 0;
+  const statements = [];
+  for (const r of rows) {
+    const rowId = `${r.official_date}|${r.source_event_id}|${r.bookmaker_key}|${r.market_key}|${r.outcome_name}|${r.point}`.slice(0, 200);
+    statements.push(env.MARKET_DB.prepare(`INSERT OR IGNORE INTO market_historical_props_2025 (row_id, batch_id, official_date, odds_api_event_id, home_team, away_team, commence_time_utc, bookmaker_key, market_key, player_name, outcome_name, line_point, price_american, snapshot_timestamp, raw_json, created_at) VALUES (?, 'permanent_daily_backfill_v0_1_0', ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`).bind(
+      rowId, r.official_date, r.source_event_id, r.source_home_team, r.source_away_team, r.source_commence_time_utc, r.bookmaker_key, r.market_key, r.outcome_name, r.point, r.price_american, r.market_last_update, r.raw_json
+    ));
+    copied++;
+  }
+  if (statements.length) await env.MARKET_DB.batch(statements);
+  return { copied, checked: rows.length };
+}
 
 async function schemaStatus(env) {
   const tables = [
