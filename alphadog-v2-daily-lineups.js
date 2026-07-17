@@ -132,15 +132,24 @@ async function pruneDailyLineupRetention(env, extraDates = []) {
     WHERE created_at IS NULL
        OR substr(created_at, 1, 10) NOT IN (${inClause})
   `, ...keepDates);
+  // REAL FIX: daily_catcher_context_current had ZERO retention pruning anywhere - confirmed
+  // live via stale rows accumulating back to 07-11 with no cleanup at all. Mirrors the same
+  // today/tomorrow retention window already proven correct for daily_lineups_current.
+  const catcherPrune = await execRun(env.DAILY_DB, `
+    DELETE FROM daily_catcher_context_current
+    WHERE official_date IS NULL
+       OR official_date NOT IN (${inClause})
+  `, ...keepDates);
   return {
     retention_prune_enabled: true,
     retention_window: RETENTION_WINDOW_LABEL,
     retention_timezone: RETENTION_TIMEZONE,
     retention_dates_kept: keepDates,
-    retention_tables_pruned: ["daily_lineups_current", "daily_lineups_batches"],
+    retention_tables_pruned: ["daily_lineups_current", "daily_lineups_batches", "daily_catcher_context_current"],
     batch_retention_basis: "daily_lineups_batches.created_at_date",
     lineup_rows_pruned: d1Changes(currentPrune),
-    batch_rows_pruned: d1Changes(batchPrune)
+    batch_rows_pruned: d1Changes(batchPrune),
+    catcher_context_rows_pruned: d1Changes(catcherPrune)
   };
 }
 
