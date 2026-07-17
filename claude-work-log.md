@@ -105,6 +105,12 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
   zero retries, even though the flag correctly identified it as recoverable. Fixed: added proper
   bounded retry (max 2) for transient failures, matching the pattern already proven for
   market-full-run. Both fixes deployed and confirmed live. Restarting attempt 5 now.
+  UPDATE ~02:35 UTC: Attempt 5 (daily_full_run_mrobotkm_yd2eh8) - prizepicks-github-board itself
+  got stuck 5+ minutes at the very first stage. Checked immediately: confirmed the SAME missing
+  internal-deadline pattern as underdog-board (zero overall bound on the /run handler). This is
+  now the THIRD board-source worker found with this exact gap this session. Applied the same
+  proven withDeadline() fix (15s internal deadline). Deployed and confirmed live. Restarting
+  attempt 6 now.
   UPDATE 2026-07-17 ~02:22 UTC: Attempt 3 (daily_full_run_mroacs6q_re1y6g) - Daily Context Full
   Run completed successfully (all 9 stages). Market Full Run then FAILED (stale child, retry
   budget exhausted) - same class of issue as the earlier lock-starvation bug. Root cause this
