@@ -234,6 +234,10 @@ UPDATE ~04:09 UTC: prop-factor-miner 3/3 PASS confirmed (each run full chunked c
 ~5-8 min across ~11 invocations). Moving to prop-matrix-builder next.
 UPDATE ~04:17 UTC: prop-matrix-builder 3/3 PASS confirmed (fast, ~2 invocations each,
 ~1-2 min per run). Moving to enrichment-engine next.
+UPDATE ~04:38 UTC: enrichment-engine 3/3 PASS confirmed (each run ~32 fast invocations,
+~250ms each, ~4-8 min total per run). All 3 runs completed correctly in the background during
+an app-freeze period on Rodolfo's end - recovered cleanly by checking this log and the real DB
+state first, no work lost, no duplicate re-triggering. Moving to scoring-engine-shadow-v1 next.
 UPDATE ~04:38 UTC: enrichment-engine 3/3 PASS confirmed (chunked, ~100 legs/invocation,
 several invocations per run, ~5-7 min each). Moving to scoring-engine-shadow-v1 next.
 NOTE: chat app disconnected/lost display mid-session again during this testing (confirmed via
