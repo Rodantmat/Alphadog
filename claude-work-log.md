@@ -90,6 +90,30 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
   work was genuinely still progressing (confirmed: the stale-retry's own market-certifier
   actually completed successfully, just ~4 min after the parent had already given up). Fixed:
   raised to 240s threshold / 3 retries. Deployed and confirmed live. Restarting attempt 4 now.
+  UPDATE ~02:28 UTC: Attempt 4 (daily_full_run_mrobhzc8_lrg6po) - underdog-board completed
+  cleanly (confirms the internal hard-deadline fix from the previous check-in genuinely works).
+  But board-full-run then failed at score-prep (real 20s timeout, properly caught this time -
+  not a silent hang). Investigated properly instead of just retrying blindly. Found TWO real,
+  compounding root causes: (1) score-prep's own WRITE_ROWS_PER_INVOCATION=20000 effectively
+  disabled its internal chunking, a value calibrated for the OLD 90s outer timeout that was
+  itself a bug I fixed earlier - once I correctly reduced the outer timeout to 20s, this stale
+  20000 setting no longer left enough time to finish in one shot. Fixed: reduced to 800 rows/
+  invocation so each invocation reliably completes within the real budget, relying on the
+  already-correctly-wired partial_continue resume to cover the rest. (2) board-full-run computes
+  a 'transient' flag (true for failed/blocked child status) but never actually used it anywhere -
+  a single timeout on the last stage always caused an immediate, permanent chain failure with
+  zero retries, even though the flag correctly identified it as recoverable. Fixed: added proper
+  bounded retry (max 2) for transient failures, matching the pattern already proven for
+  market-full-run. Both fixes deployed and confirmed live. Restarting attempt 5 now.
+  UPDATE 2026-07-17 ~02:22 UTC: Attempt 3 (daily_full_run_mroacs6q_re1y6g) - Daily Context Full
+  Run completed successfully (all 9 stages). Market Full Run then FAILED (stale child, retry
+  budget exhausted) - same class of issue as the earlier lock-starvation bug. Root cause this
+  time: MARKET_FULL_RUN_STALE_CHILD_SECONDS=120 and MARKET_FULL_RUN_STALE_CHILD_RETRY_MAX=1 -
+  with known lock-contention delays in this system, a single retry attempt can ALSO get delayed
+  past 120s under contention, exhausting the entire budget and permanently failing even though
+  work was genuinely still progressing (confirmed: the stale-retry's own market-certifier
+  actually completed successfully, just ~4 min after the parent had already given up). Fixed:
+  raised to 240s threshold / 3 retries. Deployed and confirmed live. Restarting attempt 4 now.
 
 ---
 
