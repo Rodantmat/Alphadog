@@ -819,6 +819,24 @@ async function runSeed(env, input = {}) {
   }
 
   const players = Array.from(byMlbPlayerId.values()).sort((a, b) => String(a.full_name).localeCompare(String(b.full_name)));
+
+  // REAL FIX: try the real hydration source for any player still missing bat_side/throw_side
+  // after the roster payload (which structurally never carries this field). This is the real
+  // primary source for handedness, not a fallback - only skipped if the player already has it.
+  const needsHydration = players.filter(p => (!p.bat_side || !p.throw_side) && p.mlb_player_id).map(p => p.mlb_player_id);
+  let hydrationCallsPerformed = 0;
+  let playersHydratedThisRun = 0;
+  if (needsHydration.length) {
+    const detailMap = await fetchPersonDetailsBatch(env, needsHydration);
+    hydrationCallsPerformed = Math.ceil(needsHydration.length / HYDRATION_IDS_PER_CALL);
+    for (const player of players) {
+      const detail = detailMap.get(String(player.mlb_player_id));
+      if (!detail) continue;
+      if (detail.bat_side && !player.bat_side) { player.bat_side = detail.bat_side; player.bats = detail.bat_side; playersHydratedThisRun += 1; }
+      if (detail.throw_side && !player.throw_side) { player.throw_side = detail.throw_side; player.throws = detail.throw_side; }
+    }
+  }
+
   const playerStatements = [];
   const aliasStatements = [];
   const rosterStatements = [];
