@@ -966,8 +966,9 @@ async function runWeather(env, input) {
     }
 
     const replacementCleanup = await finalizeWeatherWindowReplacement(env, retention, batchId);
+    const permanentWeatherBackfill = await permanentlyRecordConfirmedWeather(env).catch(() => ({ copied: 0, checked: 0, error: true }));
     const postRetentionPrune = await pruneRetention(env, retention, batchId);
-    await heartbeatWeather(env, requestId, batchId, "success_cleanup_complete", { replacement_cleanup: replacementCleanup, retention_post_prune: postRetentionPrune });
+    await heartbeatWeather(env, requestId, batchId, "success_cleanup_complete", { replacement_cleanup: replacementCleanup, retention_post_prune: postRetentionPrune, permanent_history_backfill: permanentWeatherBackfill });
     assertWeatherBudget(startedMs, "success_cleanup_complete");
 
     const blockerCount = records.reduce((n, r) => n + r.issues.filter(i => i.severity === "blocker").length, 0);
