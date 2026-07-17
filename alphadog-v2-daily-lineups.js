@@ -1470,6 +1470,11 @@ async function runSourceProbe(env, input) {
   const catcherRefreshSeason = Number.isFinite(catcherRefreshSeasonOverride) && catcherRefreshSeasonOverride > 2000 ? catcherRefreshSeasonOverride : new Date().getUTCFullYear();
   const catcherRefreshResult = await refreshCatcherReferenceIfStale(env, catcherRefreshSeason);
   _tm.after_catcher_refresh_ms = Date.now() - _t0;
+  // REAL FIX: same staleness-gated pattern, now also covering pitcher arsenal and defensive
+  // quality - these previously had zero ongoing refresh anywhere in the system.
+  const pitcherArsenalRefreshResult = await refreshPitcherArsenalIfStale(env, catcherRefreshSeason);
+  const defensiveQualityRefreshResult = await refreshDefensiveQualityIfStale(env, catcherRefreshSeason);
+  _tm.after_arsenal_and_defense_refresh_ms = Date.now() - _t0;
   try {
     await execRun(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_after_catcher_refresh', 'Checkpoint after catcher refresh', ?, CURRENT_TIMESTAMP)",
       _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ after_catcher_refresh_ms: _tm.after_catcher_refresh_ms, refreshed: catcherRefreshResult && catcherRefreshResult.refreshed })).catch(() => {});
