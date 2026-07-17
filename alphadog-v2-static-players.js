@@ -858,6 +858,7 @@ async function runSeed(env, input = {}) {
 
   const batchStatements = [...playerStatements, ...aliasStatements, ...rosterStatements];
   const d1BatchStatementsExecuted = await runD1Batch(env.REF_DB, batchStatements, D1_BATCH_SIZE);
+  externalCalls += hydrationCallsPerformed;
 
   const processedNow = Array.from(processedSet).filter(id => allMlbTeamIds.includes(id));
   const remainingAfter = teams.filter(t => !processedSet.has(String(t.mlb_team_id)));
