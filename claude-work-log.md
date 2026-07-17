@@ -130,6 +130,10 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
   the very next tick after the fix deployed. Board Full Run and Daily Context Full Run both
   already completed in this attempt; market-full-run now progressing correctly through its own
   stages. Continuing to monitor this attempt given the severity of what was just fixed.
+  UPDATE ~03:09 UTC: market_hitters ALSO completed cleanly right after certifier - fix holding
+  consistently across multiple stages now, not a one-off. Stepping back to periodic check-ins
+  per Rodolfo's standing instruction, given the critical bug is now resolved and verified with
+  real evidence across 2 consecutive stages.
   UPDATE 2026-07-17 ~02:22 UTC: Attempt 3 (daily_full_run_mroacs6q_re1y6g) - Daily Context Full
   Run completed successfully (all 9 stages). Market Full Run then FAILED (stale child, retry
   budget exhausted) - same class of issue as the earlier lock-starvation bug. Root cause this
