@@ -97,6 +97,7 @@ async function runScoringEngine(env, input) {
      FROM hp_board_current
      WHERE hp_board_batch_id=?
        AND score_0_100 IS NULL
+       AND estimated_hit_probability_0_100 IS NOT NULL
      ORDER BY hp_board_row_id
      LIMIT ?`, hpBatchId, MAX_LEGS_PER_INVOCATION);
 
