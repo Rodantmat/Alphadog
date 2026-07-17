@@ -560,6 +560,7 @@ async function runEnrichment(env, input) {
     status: matrixRows.length >= MAX_LEGS_PER_INVOCATION ? "partial_continue" : "completed",
     legs_read: matrixRows.length, legs_enriched: written,
     real_status_note: "FIXED: now reads real daily_context/market_context directly from source tables (daily_game_weather_current, daily_lineups_current, daily_starters_current, daily_bullpen_availability_current, daily_catcher_context_current, daily_player_availability_current_v1, market_context_probe_game_market_summary) instead of parsing matrix_payload_json, which never contained this structured data. Real, working tier-detection: platoon_handedness, bullpen_fatigue, player_availability, weather_roof. Honestly not yet implementable (real underlying data doesn't exist yet): umpire_tendency, weather_wind (needs park orientation), stolen_base_family (needs sprint speed).",
+    _debug_umpire: _debugUmpireInfo,
     timestamp_utc: nowUtc(),
   };
 }
