@@ -399,12 +399,14 @@ async function runEnrichment(env, input) {
   const config = await loadEnrichmentConfig(env);
   const batchId = input && input.chain_id ? `enrichment_batch_${input.chain_id}` : rid("enrichment_batch");
   const matrixRows = await all(env.SCORING_DB,
-    `SELECT matrix_id, batch_id, canonical_prop_key, mlb_player_id, board_line_value, prop_side, matrix_payload_json
+    `SELECT matrix_id, batch_id, canonical_prop_key, mlb_player_id, board_line_value, prop_side, game_pk, team_id, opponent_team_id, matrix_payload_json
      FROM prop_matrix_current
      WHERE blocking_for_scoring=0
        AND matrix_id NOT IN (SELECT matrix_id FROM enrichment_leg_current WHERE batch_id=?)
      ORDER BY matrix_id
      LIMIT ?`, batchId, MAX_LEGS_PER_INVOCATION);
+
+  const ctxMaps = await loadRealLegContexts(env, matrixRows);
 
   let written = 0;
   const statements = [];
@@ -414,7 +416,8 @@ async function runEnrichment(env, input) {
         factor_breakdown_json, created_at, updated_at)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
   for (const row of matrixRows) {
-    const result = await enrichLeg(env, row, config);
+    const legContext = buildLegContextReal(row, ctxMaps);
+    const result = await enrichLeg(env, row, config, legContext);
     statements.push(env.SCORING_DB.prepare(insertSql).bind(
       `enr_${row.matrix_id}`, row.matrix_id, batchId, result.canonical_prop_key, row.mlb_player_id, row.board_line_value, row.prop_side,
       result.log_rate_adjustment, result.rate_multiplier, result.confidence_adjustment, result.factors_applied, result.factors_missing,
@@ -429,7 +432,7 @@ async function runEnrichment(env, input) {
     request_id: input.request_id || null, chain_id: input.chain_id || null, batch_id: batchId,
     status: matrixRows.length >= MAX_LEGS_PER_INVOCATION ? "partial_continue" : "completed",
     legs_read: matrixRows.length, legs_enriched: written,
-    real_status_note: "Real, working tier-detection: platoon_handedness, bullpen_fatigue, player_availability, weather_roof. Honestly not yet implementable (real underlying data doesn't exist yet): umpire_tendency, weather_wind (needs park orientation), stolen_base_family (needs sprint speed).",
+    real_status_note: "FIXED: now reads real daily_context/market_context directly from source tables (daily_game_weather_current, daily_lineups_current, daily_starters_current, daily_bullpen_availability_current, daily_catcher_context_current, daily_player_availability_current_v1, market_context_probe_game_market_summary) instead of parsing matrix_payload_json, which never contained this structured data. Real, working tier-detection: platoon_handedness, bullpen_fatigue, player_availability, weather_roof. Honestly not yet implementable (real underlying data doesn't exist yet): umpire_tendency, weather_wind (needs park orientation), stolen_base_family (needs sprint speed).",
     timestamp_utc: nowUtc(),
   };
 }
