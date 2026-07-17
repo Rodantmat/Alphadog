@@ -376,6 +376,17 @@ async function enrichLeg(env, matrixRow, config, legContext) {
       continue;
     }
 
+    // SAFETY BOUND (found live, 2026-07-17): individual factor contributions are clamped to
+    // a sane log-rate range. Confirmed via live data that at least one config coefficient
+    // (weather_temp_altitude_pressure formula_coefficient_a=0.4) was previously masked by
+    // missing real weather data and, now that real data flows through, produces contributions
+    // of 8+ (a 3000x+ multiplier) for an ordinary ~20degF-from-70 day - clearly miscalibrated,
+    // not a real effect size. This bound prevents any single factor (working as designed or
+    // misconfigured) from dominating/corrupting the final HP; it does not fix the underlying
+    // coefficient, which needs separate domain review before being trusted at full strength.
+    const CONTRIBUTION_CLAMP = 0.5;
+    contribution = clampContribution(contribution, CONTRIBUTION_CLAMP);
+
     if (factor.signal_role === "confidence_modifier") {
       confidenceAdjustment += Math.max(-0.03, Math.min(0.03, contribution));
     } else {
