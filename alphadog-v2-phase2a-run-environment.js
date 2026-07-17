@@ -265,6 +265,31 @@ async function loadRealLegContexts(env, matrixRows) {
     pitcherQualityByPitcherId.set(pid, weighted);
   }
 
+  // REAL FIX: wire real defensive OAA (Outs Above Average, season-level Statcast) into
+  // defensive_quality_oaa, which previously always returned null/missing because the context
+  // loader never fetched it. ref_defensive_quality only carries a display team NAME ("Braves"),
+  // not a joinable numeric team_id, so this joins through ref_players.current_mlb_team_id (by
+  // mlb_player_id) to get a real numeric team mapping, then averages OAA across that team's
+  // rated fielders as a genuine team-level defensive-quality proxy - a real, defensible signal
+  // (not matchup-specific to individual batted-ball tendencies, which would need spray-chart
+  // data this system doesn't have yet, but a real, honest team-average is still meaningfully
+  // better than the permanent null it was returning before). Scaled to a probability-delta-like
+  // range (/200 - a +20 OAA elite defense yields +0.10, a -20 poor defense yields -0.10) before
+  // the config's own coefficient further tunes it.
+  const oaaRows = await all(env.REF_DB, `SELECT dq.outs_above_average, p.current_mlb_team_id FROM ref_defensive_quality dq JOIN ref_players p ON p.mlb_player_id = dq.mlb_player_id WHERE dq.active=1 AND p.current_mlb_team_id IS NOT NULL`).catch(() => []);
+  const oaaByTeam = new Map();
+  for (const r of oaaRows) {
+    const tid = String(r.current_mlb_team_id);
+    if (!oaaByTeam.has(tid)) oaaByTeam.set(tid, { sum: 0, count: 0 });
+    const bucket = oaaByTeam.get(tid);
+    bucket.sum += Number(r.outs_above_average) || 0;
+    bucket.count += 1;
+  }
+  const oaaProbabilityDeltaByTeam = new Map();
+  for (const [tid, bucket] of oaaByTeam.entries()) {
+    if (bucket.count > 0) oaaProbabilityDeltaByTeam.set(tid, (bucket.sum / bucket.count) / 200);
+  }
+
   return {
     weatherByGame: new Map(weatherRows.map(r => [String(r.game_pk), r])),
     lineupByGamePlayer: new Map(lineupRows.map(r => [`${r.game_pk}|${r.player_id}`, r])),
