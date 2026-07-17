@@ -1005,6 +1005,9 @@ async function runUmpireContext(env, input) {
       ? await finalizeWindowReplacement(env, retention, batchId)
       : { skipped: true, reason: "zero_targets_this_run_preserving_existing_current_rows", current_old_window_deleted_after_success: 0, snapshots_old_window_deleted_after_success: 0, issues_old_window_deleted_after_success: 0, replacement_batch_id: batchId };
     await heartbeatUmpireQueue(env, requestId, batchId, "success_replacement_cleanup", { replacement_cleanup: replacementCleanup });
+    // REAL FIX: permanently preserve real confirmed assignments before the 10-day rolling
+    // window ages them out - fixes the historical dataset being frozen with zero growth.
+    const permanentBackfill = await permanentlyRecordConfirmedAssignments(env).catch(() => ({ copied: 0, checked: 0, error: true }));
     const postPrune = await postPruneRetention(env, retention);
     const warningRow = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_umpire_context_issues WHERE batch_id=? AND severity='warning'`, batchId);
     const blockerRow = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_umpire_context_issues WHERE batch_id=? AND severity='blocker'`, batchId);
