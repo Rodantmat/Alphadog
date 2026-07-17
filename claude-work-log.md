@@ -775,3 +775,62 @@ already has) would resolve or substantially de-risk 3 of the 8 confirmed issues 
 
 ALL 8 ISSUES NOW HAVE CONFIRMED SCOPE AND ROOT CAUSE. Awaiting Rodolfo's go-ahead before any
 patching begins.
+
+## RECOVERY - APP DISCONNECTED MID-PATCH, RECONSTRUCTED REAL STATE FROM CODE (not from screenshot)
+Rodolfo reported the chat lost status again. Per standing rule, checked this log first - found
+NO record of any patching work, but real recent git commits existed that I had no memory of.
+Rather than trust the screenshot alone, verified the ACTUAL current code state directly via
+grep/read on every relevant file. Real, confirmed findings:
+
+CONFIRMED FULLY APPLIED AND WIRED:
+- Issue #1 (direction bug) + Issue #2 (variation coverage gap): FIXED TOGETHER in
+  alphadog-v2-phase3c-certifier.js via a new findBaseline(playerId, propKey, side, lineValue)
+  function - baseline cache is now correctly keyed by player|prop|SIDE (was missing side before),
+  and does a nearest-available-line fallback within that player+prop+side group instead of
+  losing the leg when the exact line isn't in baseline_v6. New determineSide(matrixRow, er)
+  reads matrix-builder's now-explicit prop_side first, then enrichment's, defaulting to "more"
+  only as a last resort (previously always defaulted with no real signal available at all).
+- Issue #1's other half: alphadog-v2-phase2b-certifier.js (matrix-builder) now sets an explicit
+  prop_side at row-build time: `prop_side: (sideVariation.side_mode === "less_only" ? "less" :
+  "more")` (line ~1090) - previously always null. This real signal now flows through to
+  enrichment_leg_current too (enrichment's INSERT now writes row.prop_side instead of leaving
+  it null - confirmed at alphadog-v2-phase2a-run-environment.js line 438).
+- Issue #4 (enrichment identical values) - IMPORTANT CORRECTION to earlier root-cause analysis:
+  the real cause was NOT truncation of daily_context/market_context fields as I'd concluded -
+  those keys never existed in Matrix Builder's actual payload structure at all (payload only
+  ever had prepared/side_context/variation_context/scoring_placeholders), so the old
+  buildLegContextFromPayload was looking for fields that were never there, truncated or not.
+  REAL FIX APPLIED: new loadRealLegContexts(env, matrixRows) function fetches real granular
+  daily-context and market-context data directly from the actual source tables
+  (daily_game_weather_current, daily_lineups_current, daily_starters_current,
+  daily_bullpen_availability_current, daily_catcher_context_current,
+  daily_player_availability_current_v1, market_context_probe_game_market_summary), batched by
+  game_pk/player_id - the same tables Prop Factor Miner/Matrix Builder already check for
+  readiness. runEnrichment now calls this and passes results through buildLegContextReal per
+  row instead of the old broken payload-parsing path. This should give genuinely per-player,
+  per-game differentiated enrichment instead of one static value per prop type.
+- Issue #5 (player_name NULL) - FIXED exactly as planned: HP Board now reads
+  `matrixRow.player_name` directly (the dedicated, never-truncated column) instead of parsing it
+  out of matrix_payload_json.
+
+CONFIRMED PARTIALLY APPLIED, INCOMPLETE (this is where the app disconnected):
+- Issue #6 (goblin/demon/more-only carry-through): HP Board's code now EXTRACTS isGoblin,
+  isDemon, sideMode, moreOnly from the matrix payload (lines ~186-190 of
+  alphadog-v2-phase3c-certifier.js) - but hp_board_current's schema has NO columns for any of
+  this (confirmed via direct schema read: no is_goblin/is_demon/more_only columns exist), and
+  the INSERT statement doesn't include them either. The extraction was written but never wired
+  to storage, and Final Board still has zero references to this data (unchanged from before).
+  THIS IS GENUINELY INCOMPLETE - needs: (1) ALTER TABLE hp_board_current to add columns,
+  (2) update the INSERT to include the extracted values, (3) wire Final Board to read and
+  carry them through to its output.
+
+NOT YET VERIFIED WITH REAL DATA: none of these fixes have been tested end-to-end yet since
+being applied. Given the scope of changes (matrix-builder, enrichment-engine, and HP Board all
+touched), a full fresh chain test is needed before considering any of issues #1/#2/#4/#5 truly
+resolved in practice, not just correct-looking in source.
+
+STILL NOT ADDRESSED AT ALL: Issue #3 (singles/1.5 low-sample sum-to-100), Issue #7 (duplicate
+legs, upstream ingestion), Issue #8 (FINAL_BOARD_QUOTA_RESERVE_MIN_HP still 45, not 70).
+
+NEXT: finish issue #6 (schema + wiring), then test all fixes with fresh data end-to-end before
+declaring any of them done.
