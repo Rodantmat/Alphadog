@@ -1347,6 +1347,7 @@ async function runMarketSourceProbe(env, input = {}) {
   const output = {
     retention,
     prune,
+    permanent_market_history_backfill: permanentMarketBackfill,
     prepared_rows_read: preparedRows.length,
     prepared_games_checked: gamePks.length,
     prepared_players_checked: playerIds.length,
