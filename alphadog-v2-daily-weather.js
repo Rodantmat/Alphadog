@@ -305,8 +305,39 @@ async function ensureSchema(env) {
   await run(env.DAILY_DB, `INSERT OR IGNORE INTO daily_schema_migrations (migration_key, package_version, applied_at, notes) VALUES ('daily_game_weather_v0_1_0', ?, CURRENT_TIMESTAMP, 'Daily Context Phase 4 weather/roof/park-condition v2 tables')`, VERSION);
 }
 async function pruneRetention(env, retention, batchId) {
+  const inClause = retention.dates.map(() => "?").join(",");
+  const current = await run(env.DAILY_DB, `DELETE FROM daily_game_weather_current WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
+  const snapshots = await run(env.DAILY_DB, `DELETE FROM daily_game_weather_snapshots WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
+  const issues = await run(env.DAILY_DB, `DELETE FROM daily_game_weather_issues WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
+  return {
+    current_deleted: current && current.meta ? current.meta.changes : null,
+    snapshots_deleted: snapshots && snapshots.meta ? snapshots.meta.changes : null,
+    issues_deleted: issues && issues.meta ? issues.meta.changes : null,
+    retention_date_start: retention.start,
+    retention_date_end: retention.end,
     protected_batch_id: batchId || null
   };
+}
+
+// REAL FIX (same class as the umpire history fix): CONTEXT_DB.context_history_game_weather was
+// completely static - last written 2026-07-12, with zero ongoing mechanism to add new games,
+// confirmed live. Copies real (non-derived, data_source_level='real') weather rows from
+// daily_game_weather_current into the permanent table before this worker's own today/tomorrow
+// retention prunes them away. Idempotent (game_pk primary key, INSERT OR IGNORE).
+async function permanentlyRecordConfirmedWeather(env) {
+  const rows = await all(env.DAILY_DB, `SELECT game_pk, official_date, venue_id, home_team_id, temperature_f, wind_speed_mph, wind_direction_cardinal, wind_context, source_key, raw_json FROM daily_game_weather_current WHERE data_source_level='real' AND temperature_f IS NOT NULL`).catch(() => []);
+  if (!rows.length) return { copied: 0, checked: 0 };
+  const gamePks = rows.map(r => r.game_pk);
+  const existingRows = await all(env.CONTEXT_DB, `SELECT game_pk FROM context_history_game_weather WHERE game_pk IN (${gamePks.map(() => "?").join(",")})`, ...gamePks).catch(() => []);
+  const existingPks = new Set(existingRows.map(r => Number(r.game_pk)));
+  const toInsert = rows.filter(r => !existingPks.has(Number(r.game_pk)));
+  let copied = 0;
+  for (const r of toInsert) {
+    await run(env.CONTEXT_DB, `INSERT OR IGNORE INTO context_history_game_weather (game_pk, official_date, venue_id, home_team_id, temp_f, condition, wind_speed_mph, wind_direction_cardinal, wind_context, source_key, raw_json, captured_at) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+      r.game_pk, r.official_date, r.venue_id, String(r.home_team_id || ""), Math.round(Number(r.temperature_f)), Math.round(Number(r.wind_speed_mph) || 0), r.wind_direction_cardinal, r.wind_context, r.source_key, r.raw_json).catch(() => {});
+    copied++;
+  }
+  return { copied, checked: rows.length };
 }
 async function getPreparedGames(env, retention) {
   const inClause = retention.dates.map(() => "?").join(",");
