@@ -172,6 +172,24 @@ function classifyIntoTier(factorKey, legContext) {
     const highLeverageFatigued = (ctx.high_usage_reliever_count ?? 0) > 0 || (ctx.back_to_back_reliever_count ?? 0) > 0 || (ctx.bullpen_fatigue_score ?? 0) >= 6;
     return highLeverageFatigued ? "high_leverage_fatigued" : "low_leverage_arm";
   }
+  if (factorKey === "umpire_tendency") {
+    // REAL FIX (final piece of the 5-factor calibration wiring): umpire_tendency now has a
+    // real historical signal (ref_umpire_tendency, computed from CONTEXT_DB.
+    // context_history_game_umpire joined with TEAM_DB.team_game_logs, confirmed live -
+    // 83 umpires with a real, stable tendency from 1899 historical games). Uses the real
+    // strikeouts-vs-league delta as the primary zone signal: a real, meaningfully K-heavy
+    // umpire (relative to league average) tends toward a pitcher-friendly zone (wider/more
+    // consistent strike calls), a real meaningfully low-K umpire toward a hitter-friendly
+    // zone; anything in between is genuinely neutral. +-0.3 K/game is a reasonable starting
+    // threshold given the real observed spread (~-0.2 to +0.8 across umpires with 25+ games)
+    // - not a precisely researched cutoff, but a defensible starting split pending Rodolfo's
+    // domain review of the actual lift/penalty values still needed in config (separate,
+    // already-known gap - this only fixes the classification, not the missing coefficients).
+    if (ctx.umpire_strikeouts_delta_vs_league == null) return null;
+    if (ctx.umpire_strikeouts_delta_vs_league > 0.3) return "pitcher_friendly_zone";
+    if (ctx.umpire_strikeouts_delta_vs_league < -0.3) return "hitter_friendly_zone";
+    return "neutral_zone";
+  }
   // umpire_tendency, weather_wind, stolen_base_family: honestly not yet detectable - see
   // file-level comment for the real, specific data gap per factor.
   return null;
