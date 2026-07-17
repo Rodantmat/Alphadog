@@ -1431,6 +1431,14 @@ async function runSourceProbe(env, input) {
     preparedByGame.get(pk).push(row);
   }
 
+  // REAL FIX (perf): batch-derive fallback catchers for every team in today's slate in ONE
+  // pass here, before per-game processing starts, rather than per-game awaits inside the loop
+  // (which caused a real hard_deadline_timeout - confirmed live). processOneGame below closes
+  // over these maps and does pure synchronous lookups, no additional DB calls.
+  const allTeamIdsToday = uniqInts(sourceRows.flatMap(r => [r.home_team_id, r.away_team_id]).filter(Boolean));
+  const derivedCatcherMap = await batchDeriveCatchers(env, allTeamIdsToday, todayUtc);
+  const derivedCatcherNameMap = await batchPlayerNames(env, [...derivedCatcherMap.values()].map(d => d.player_id));
+
   const startingPageFetch = await fetchTextWithTimeout(MLB_STARTING_LINEUPS_URL, userAgent);
   _tm.after_starting_page_fetch_ms = Date.now() - _t0;
   try {
