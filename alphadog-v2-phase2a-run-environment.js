@@ -322,10 +322,8 @@ function evaluateFlatGate(factorKey, cells, legContext) {
   return null;
 }
 
-async function enrichLeg(env, matrixRow, config) {
-  const payload = safeJsonParse(matrixRow.matrix_payload_json, {});
+async function enrichLeg(env, matrixRow, config, legContext) {
   const propKey = matrixRow.canonical_prop_key;
-  const legContext = buildLegContextFromPayload(payload, matrixRow.prop_side);
   const roofClosed = legContext.roof_status && String(legContext.roof_status).toLowerCase().includes("closed");
 
   let logRateAdjustmentSum = 0;
