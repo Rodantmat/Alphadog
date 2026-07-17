@@ -5676,8 +5676,8 @@ const MARKET_FULL_RUN_STAGES = [
   { stage_key: "market_pitchers", job_key: "market-line-shape-classifier", worker_name: "alphadog-v2-market-line-shape-classifier", display_name: "Market Pitcher Prop Lines", visible_button: "MARKET CONTEXT > Pitchers", mode: "market_pitcher_prop_line_context", worker_group: "Market", phase_key: "market", priority: 5 },
   { stage_key: "market_certifier_last_pass", job_key: "market-certifier", worker_name: "alphadog-v2-market-certifier", display_name: "Market Context Certifier", visible_button: "MARKET CONTEXT > Full Run", mode: "market_full_run_certifier_last_pass", worker_group: "Market", phase_key: "market", priority: 5 }
 ];
-const MARKET_FULL_RUN_STALE_CHILD_SECONDS = 120;
-const MARKET_FULL_RUN_STALE_CHILD_RETRY_MAX = 1;
+const MARKET_FULL_RUN_STALE_CHILD_SECONDS = 240;
+const MARKET_FULL_RUN_STALE_CHILD_RETRY_MAX = 3;
 
 function marketFullRunChildInput(parentRow, stage, stepIndex, retryCount = 0) {
   return {
