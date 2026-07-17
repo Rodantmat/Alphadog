@@ -993,3 +993,51 @@ is_temporary_derived=1) for games that still don't have official lineups - exact
 behavior. Old stale 07-11 through 07-16 rows are completely gone - retention pruning confirmed
 working too.
 Continuing to games-status and schedule miners next.
+
+## RODOLFO'S NEW CALIBRATION-SYSTEM FINDINGS: 5 FACTORS NEEDING LIVE WIRING
+Rodolfo relayed findings from the prior calibration-design session: 5 factors got dedicated
+historical backfill for training (pitcher arsenal, defensive OAA, catcher framing+poptime,
+historical weather, historical umpire). Investigated whether each is actually wired into LIVE
+scoring, not just training. Findings:
+- Catcher framing: ALREADY working live (confirmed earlier this session).
+- Pitcher arsenal (opposing_pitcher_quality) and Defensive OAA (defensive_quality_oaa): REAL,
+  fresh data existed in REF_DB (1076/517 rows) but the live enrichment context loader
+  (buildLegContextReal) never fetched ctx.pitcher_xfip_minus or
+  ctx.matchup_specific_oaa_probability_delta - confirmed via direct code read, these factors
+  ALWAYS returned null/missing in production despite real data sitting unused.
+- Historical weather: correctly training-only, live weather already handled separately and
+  confirmed clean - no live gap.
+- Historical umpire: MAJOR finding - CONTEXT_DB.context_history_game_umpire has REAL, substantial
+  data (2461 games, 92 distinct umpires, through 2026-07-12), directly contradicting an outdated
+  code comment claiming this data "does not exist anywhere in the system yet". But
+  umpire_tendency_status is still hardcoded to "unavailable" everywhere, AND the LIVE daily
+  umpire ASSIGNMENT itself is broken (0/12 games today have an assigned home_plate_umpire_id) -
+  two separate gaps needing fixing before this factor can work live.
+
+## ARCHITECTURE QUESTION RESOLVED: ref_pitcher_arsenal/ref_defensive_quality HAD ZERO ONGOING
+## REFRESH MECHANISM (Rodolfo's concern about static-vs-incremental cadence)
+Confirmed via config_scheduled_jobs (zero matches for arsenal/defensive/oaa) and via both
+tables' update timestamps being a single one-time batch - these were a manual backfill from the
+calibration session with no scheduled refresh at all, exactly the "will silently go stale
+forever" pattern Rodolfo flagged earlier for bat_side/catcher-context. Per Rodolfo's explicit
+instruction to resolve this now rather than later: these are season-level Statcast aggregates,
+same cadence as base-pitcher-metrics (already refreshed daily) - belongs on a real daily
+incremental refresh. Rather than a whole new dedicated worker (more moving parts), mirrored the
+exact proven refreshCatcherReferenceIfStale pattern already working correctly in
+daily-lineups.js: added refreshPitcherArsenalIfStale and refreshDefensiveQualityIfStale (same
+~20h self-gated staleness check, real Baseball Savant CSV leaderboard sources - pitch-arsenal-
+stats and outs_above_average - confirmed exact CSV field names by inspecting existing raw_json
+before writing the fetch/parse code, not guessing).
+TESTING FOUND AND FIXED 2 REAL BUGS in the new code before it worked: (1) used undefined
+compactJson (confused with a helper from a different file - fixed to the actual
+safeJsonStringify helper that exists in this file), (2) used undefined batchRun (this file has
+no such helper, batches are called directly via env.DB.batch() - fixed to call that directly).
+Both caused the ENTIRE daily-lineups worker to crash (worker_dispatch_exception), not just the
+new feature - a real regression risk, caught via careful retesting rather than assuming success.
+CONFIRMED FULLY WORKING after both fixes: ref_pitcher_arsenal went from 1076 to 3680 rows,
+ref_defensive_quality from 517 to 1018 rows, both updated 2026-07-17 22:09 (today) - real
+Baseball Savant data, correctly parsed and written.
+NEXT: wire ctx.pitcher_xfip_minus and ctx.matchup_specific_oaa_probability_delta into
+buildLegContextReal (enrichment's context loader) so these two factors stop returning
+null/missing in live scoring. Then: fix live umpire assignment, then build real umpire-tendency
+computation from the now-confirmed-real historical data.
