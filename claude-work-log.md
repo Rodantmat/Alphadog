@@ -245,6 +245,10 @@ UPDATE ~04:38 UTC: enrichment-engine run 3/3 PASS confirmed - it had already com
 automatically during the gap between messages (cron kept working in the background),
 confirming nothing is lost when the app disconnects. enrichment-engine: 3/3 PASS confirmed.
 Moving to scoring-engine-shadow-v1 next.
+UPDATE ~05:11 UTC: scoring-engine-shadow-v1 run 1/3 PASS confirmed (had already completed
+during an earlier cut-off turn - further confirms nothing is lost). Run 2/3 in progress,
+cron actively working it. Switched to short single-tick checks with quick turn-ends per
+Rodolfo's request, rather than long sleep chains.
 UPDATE ~04:38 UTC: enrichment-engine 3/3 PASS confirmed (each run ~32 fast invocations,
 ~250ms each, ~4-8 min total per run). All 3 runs completed correctly in the background during
 an app-freeze period on Rodolfo's end - recovered cleanly by checking this log and the real DB
