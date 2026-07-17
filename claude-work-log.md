@@ -474,3 +474,24 @@ working correctly (reads hp_board_current where score_0_100 IS NULL, computes Fi
 writes back). ~1926 total rows to process, chunking normally (~70-100/invocation). Stepping
 back now per Rodolfo's instruction - not hand-monitoring to completion. Will report/check next
 "continue".
+
+## UPDATE - INVESTIGATED HP BOARD 1864/1926 GAP (Rodolfo correctly questioned the 19-tick count)
+Rodolfo asked whether 19 ticks was enough to cover everything, or if it was just faster due to
+the reorder. Researched properly, no guessing:
+- hp_board_reorder_test_2 wrote 1864 rows (verified via direct SQL count), not 1926.
+- Traced the exact cause in source: HP Board's query does
+  `enrichment_leg_current e INNER JOIN prop_matrix_current m ON m.matrix_id = e.matrix_id` -
+  coverage is bounded by matching BOTH tables, not matrix alone.
+- Confirmed enrichment_leg_current's last write was 16:10:23, while the matrix batch used for
+  this test (matrix_verify_1) was rebuilt standalone at 18:12-18:14 - nearly 2 hours later.
+- Directly verified: exactly 1864 matrix_ids in the current matrix batch have a matching
+  enrichment_leg_current row (COUNT query) - matches HP Board's actual output exactly.
+CONCLUSION: HP Board's reorder logic is 100% correct relative to its real inputs - it processed
+every leg it could join to. The 62-row shortfall is a byproduct of testing HP Board standalone
+against a freshly-rebuilt matrix without also refreshing enrichment first (my testing sequence,
+not a code defect). In a real scoring-full-run chain, enrichment always runs immediately after
+matrix-builder from the same batch, so this staleness gap would not occur. Will confirm this
+with a full fresh chain run rather than assume.
+Scoring Engine reorder test (scoring_engine_reorder_test_1) still running via cron alone (26
+ticks as of 18:59, no manual ticks), progressing normally through the 1864 HP rows. Letting it
+run to completion or failure without interrupting, per Rodolfo's instruction.
