@@ -692,3 +692,17 @@ filtered out before reaching Final Board's real output - reduces real-world seve
 finding (still worth cleaning up upstream for efficiency/correctness, but likely not currently
 leg-losing or double-counting in the actual delivered board).
 NO NEW BUGS FOUND. Clean pass 1 of 2 required. Continuing to pass 13 for the second.
+
+## PASS 13 - FOUND UNACTIONED ITEM FROM ORIGINAL PLAN
+Verified Final Board's quota constants against what Rodolfo confirmed as intentional earlier
+this session: FINAL_BOARD_MAX_ROWS_PER_PLAYER_TOTAL=7, FINAL_BOARD_PROP_FLOOR_PER_PROP=5,
+FINAL_BOARD_SOURCE_FLOOR_PER_APP=20, FINAL_BOARD_VARIANT_FLOORS={demon:10,regular:20,goblin:20}
+- ALL MATCH exactly, confirmed clean.
+BUT: FINAL_BOARD_QUOTA_RESERVE_MIN_HP is still 45. The ORIGINAL early-session task list (see
+"Key Fixes To Apply" from the pipeline-reorder spec discussion) explicitly said this constant
+needed to be raised to 70 (same change as PRIMARY_HP_THRESHOLD, which WAS correctly updated to
+70 in HP Board). This Final Board constant was apparently missed/never actioned - still at its
+original 45 value (not even the old 60 mentioned in the plan, just untouched at 45).
+This is a genuine unactioned-plan-item, not a runtime bug in existing logic, but still a real
+gap against agreed work. NOT a clean pass. Continuing to pass 14 for the required 2nd
+consecutive clean pass.
