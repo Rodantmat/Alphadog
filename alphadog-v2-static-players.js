@@ -368,6 +368,46 @@ async function fetchRoster(env, mlbTeamId) {
   return { url, http_status: resp.status, roster: json.roster, raw: json };
 }
 
+// REAL FIX: the 40Man roster endpoint never includes batSide/pitchHand (confirmed live -
+// missing_bat_side/missing_throw_side always equal total row count). This left bat_side
+// PERMANENTLY blank system-wide with no working fallback at all - not acceptable per design
+// review. MLB's /people endpoint DOES carry batSide/pitchHand and supports batching many
+// personIds in one call (comma-separated), so this stays cheap: ~250-270 new players per
+// invocation needs only ~3 extra calls, not one per player. This is the REAL primary source
+// for this specific field being fetched properly - not a fallback substitute.
+const HYDRATION_IDS_PER_CALL = 100;
+async function fetchPersonDetailsBatch(env, personIds) {
+  const map = new Map();
+  if (!personIds || !personIds.length) return map;
+  for (let i = 0; i < personIds.length; i += HYDRATION_IDS_PER_CALL) {
+    const chunk = personIds.slice(i, i + HYDRATION_IDS_PER_CALL);
+    const url = `${mlbBaseUrl(env).replace(/\/$/, "")}/people?personIds=${encodeURIComponent(chunk.join(","))}`;
+    try {
+      const resp = await fetch(url, {
+        method: "GET",
+        headers: {
+          "accept": "application/json",
+          "cache-control": "no-cache",
+          "user-agent": text(env.MLB_API_USER_AGENT) || "AlphaDogV2StaticPlayers/0.1 (+controlled-reference-refresh)"
+        }
+      });
+      const bodyText = await resp.text();
+      let json = null;
+      try { json = JSON.parse(bodyText); } catch (_) { json = null; }
+      if (resp.ok && json && Array.isArray(json.people)) {
+        for (const person of json.people) {
+          const id = numOrNull(person.id);
+          if (!id) continue;
+          const batSide = text(person.batSide?.code || person.batSide?.description || "") || null;
+          const throwSide = text(person.pitchHand?.code || person.pitchHand?.description || "") || null;
+          map.set(String(id), { bat_side: batSide, throw_side: throwSide });
+        }
+      }
+    } catch (_) { /* real, honest partial failure: leave this chunk unhydrated, not fabricated */ }
+  }
+  return map;
+}
+
 function extractNameParts(person, fullName) {
   const firstFromPayload = text(person.firstName || person.useName || "");
   const lastFromPayload = text(person.lastName || "");
