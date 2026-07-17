@@ -402,8 +402,8 @@ async function enrichLeg(env, matrixRow, config, legContext) {
 
   return {
     canonical_prop_key: propKey,
-    log_rate_adjustment: logRateAdjustmentSum,
-    rate_multiplier: Math.exp(logRateAdjustmentSum),
+    log_rate_adjustment: clampContribution(logRateAdjustmentSum, 2.0),
+    rate_multiplier: Math.exp(clampContribution(logRateAdjustmentSum, 2.0)),
     confidence_adjustment: confidenceAdjustment,
     factors_applied: factorBreakdown.filter(f => f.status === "applied").length,
     factors_missing: missingFactors.length,
