@@ -885,3 +885,36 @@ distinct_vals=1 for every one). Investigated properly rather than assume the fix
 This is a genuine config-completeness gap requiring real domain-informed coefficients per
 factor+prop combination to fill in - not something to improvise without Rodolfo's input.
 Reported to Rodolfo, holding before continuing to HP Board/Final Board tests pending direction.
+
+## RODOLFO'S BROADER DIRECTIVE: EARLIEST-LAYER-FIRST + FALLBACK QUALITY AUDIT
+Rodolfo redirected: fix earliest pipeline layers first (daily-context/static miners before
+matrix/enrichment), and for EVERY worker with a fallback path, verify (1) it genuinely tries the
+real primary source first, not defaulting to fallback out of habit, and (2) when fallback IS
+used, the fallback data is actually USEFUL, not a blank/null placeholder that's worse than no
+data at all. Also flagged: stale data silently served as current is itself a bug requiring
+active refresh, not silent tolerance.
+
+## FOUND AND FIXED: bat_side/throw_side PERMANENTLY NULL (earliest static layer)
+Confirmed ref_players had 0/1433 rows with bat_side ever populated - not a bug in extraction
+logic (playerFromRosterEntry correctly attempts to read person.batSide) but a genuine, admitted,
+permanent gap: the 40Man roster endpoint being used structurally never includes batSide/
+pitchHand in its payload (confirmed via the worker's own honest self-reporting:
+"missing_bat_side": 1344/1344, "v0.1.9 remains bounded. It does not make person-detail
+hydration calls"). This was NOT a working fallback - it was a permanent blank with no attempt
+to get real data via any path, exactly the "worse than nothing" case Rodolfo described.
+FIXED: added fetchPersonDetailsBatch() using MLB's /people?personIds=id1,id2,... batch endpoint
+(up to 100 IDs per call) - this is genuinely bounded (a handful of extra calls per invocation,
+not one-call-per-player) and is a REAL primary-source fetch for this specific field, not a weak
+fallback. Wired into runSeed: for any player still missing bat_side/throw_side after the roster
+payload, batch-hydrate via this new call before staging. TESTED WITH REAL DATA: confirmed 100%
+success (42/42, 40/40, 46/46, 50/50, 43/43, 46/46) on every team processed after the fix
+deployed - direct SQL verification, not just a clean-looking response. Version bumped to v0.2.0.
+
+## NEXT: FRESH BOARD, THEN FULL FALLBACK-QUALITY AUDIT ACROSS ALL DAILY-CONTEXT MINERS
+Per Rodolfo's instruction: (1) run a fresh board-full-run now that static-players bat_side is
+fixed, (2) for every daily-context miner (weather, lineups, bullpen-availability, player-
+availability, probable-pitchers, games-status, schedule, catcher-context, umpire-context if
+present), test twice - once forcing/observing the real primary-source path, once forcing/
+observing the fallback path - and judge honestly whether each fallback is genuinely useful data
+or a placeholder that would corrupt downstream logic. Do NOT change code just to force a test;
+only test what exists and evaluate. Starting fresh board-full-run now.
