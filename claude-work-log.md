@@ -261,6 +261,18 @@ source scoring-engine batch as input (it reads scoring-engine's output), and a t
 standalone test has no such batch. Fixed by explicitly passing source_engine_batch_id pointing
 at the batch left behind by the last successful scoring-engine-shadow-v1 test. Now progressing
 normally (400/~2000 rows across 4 quick invocations this turn).
+UPDATE ~06:14 UTC: REAL BUG FOUND (Rodolfo correctly pushed back that the progress numbers
+looked wrong). Investigated properly: runHitProbabilityBoard's engine-rows read query had
+NO batch_id filter at all - it was reading from the ENTIRE scoring_engine_current table
+(17979 rows accumulated across every past test run this session), not just the current
+chain's ~4218-row batch. The sourceEngineBatchId parameter was already being passed into the
+function but never actually used in the WHERE clause - confirmed by direct code inspection.
+This is a genuine correctness bug that would also affect the real production chain (it would
+always reprocess the full historical backlog, not just the current run). Cancelled the
+in-flight test, cleaned up its partial hp_board_current/hp_board_batches rows, fixed by adding
+"WHERE batch_id=?" using the already-available parameter, deployed, confirmed live. Restarted
+hit-probability-board test 1/3 clean (hp_board_test_2_1) - now correctly bounded to just the
+4218-row source batch, progressing normally.
 UPDATE ~04:38 UTC: enrichment-engine 3/3 PASS confirmed (each run ~32 fast invocations,
 ~250ms each, ~4-8 min total per run). All 3 runs completed correctly in the background during
 an app-freeze period on Rodolfo's end - recovered cleanly by checking this log and the real DB
