@@ -919,6 +919,20 @@ async function stageOnlyRows(env, rows, sourceMeta, shape) {
   };
 }
 
+async function withDeadline(promise, ms, fallbackFactory) {
+  let timer = null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((resolve) => {
+        timer = setTimeout(() => resolve(typeof fallbackFactory === "function" ? fallbackFactory() : fallbackFactory), Math.max(1000, Number(ms) || 1000));
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function safeProbe(env, input = {}) {
   const schema = await ensureUnderdogSchema(env);
   const endpoint = configuredEndpoint(env, input);
