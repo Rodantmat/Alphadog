@@ -111,6 +111,11 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
   now the THIRD board-source worker found with this exact gap this session. Applied the same
   proven withDeadline() fix (15s internal deadline). Deployed and confirmed live. Restarting
   attempt 6 now.
+  UPDATE ~02:41 UTC: Attempt 6 (daily_full_run_mrobyfle_508nyp) - Board Full Run completed
+  cleanly, all 4 stages passed on the FIRST try (PrizePicks, Sleeper, Underdog, score-prep) -
+  all three fixes from this check-in (score-prep chunking, board-full-run transient retry,
+  prizepicks internal deadline) confirmed working together. Stepping back per Rodolfo's
+  instruction - will check in periodically.
   UPDATE 2026-07-17 ~02:22 UTC: Attempt 3 (daily_full_run_mroacs6q_re1y6g) - Daily Context Full
   Run completed successfully (all 9 stages). Market Full Run then FAILED (stale child, retry
   budget exhausted) - same class of issue as the earlier lock-starvation bug. Root cause this
