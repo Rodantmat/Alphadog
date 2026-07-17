@@ -1192,10 +1192,23 @@ export default {
 
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const output = await safeProbe(env, {
+      const HARD_DEADLINE_MS = 15000;
+      const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
+      const rawOutput = await withDeadline(safeProbe(env, {
         ...(input || {}),
         ...((input && input.input_json && typeof input.input_json === "object") ? input.input_json : {})
-      });
+      }), HARD_DEADLINE_MS, () => TIMEOUT_SENTINEL);
+      const output = rawOutput === TIMEOUT_SENTINEL ? {
+        ok: false,
+        data_ok: false,
+        version: VERSION,
+        worker_name: WORKER_NAME,
+        job_key: JOB_KEY,
+        status: "hard_deadline_timeout",
+        certification: "PARLAY_UNDERDOG_BOARD_HARD_DEADLINE_TIMEOUT",
+        error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`,
+        hard_deadline_ms: HARD_DEADLINE_MS
+      } : rawOutput;
       return jsonResponse({
         ...output,
         request_id: input.request_id || null,
