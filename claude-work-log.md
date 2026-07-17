@@ -81,6 +81,15 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
   chain (already past the board stage) - the next real board-full-run cycle (either later in
   this same daily-full-run, or a future one) will be the first live proof point. Will watch for
   it specifically.
+  UPDATE 2026-07-17 ~02:22 UTC: Attempt 3 (daily_full_run_mroacs6q_re1y6g) - Daily Context Full
+  Run completed successfully (all 9 stages). Market Full Run then FAILED (stale child, retry
+  budget exhausted) - same class of issue as the earlier lock-starvation bug. Root cause this
+  time: MARKET_FULL_RUN_STALE_CHILD_SECONDS=120 and MARKET_FULL_RUN_STALE_CHILD_RETRY_MAX=1 -
+  with known lock-contention delays in this system, a single retry attempt can ALSO get delayed
+  past 120s under contention, exhausting the entire budget and permanently failing even though
+  work was genuinely still progressing (confirmed: the stale-retry's own market-certifier
+  actually completed successfully, just ~4 min after the parent had already given up). Fixed:
+  raised to 240s threshold / 3 retries. Deployed and confirmed live. Restarting attempt 4 now.
 
 ---
 
