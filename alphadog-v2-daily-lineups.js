@@ -382,7 +382,7 @@ async function refreshDefensiveQualityIfStale(env, seasonYear) {
       intOrNull(r.outs_above_average_lateral_toward3bline), intOrNull(r.outs_above_average_lateral_toward1bline),
       intOrNull(r.outs_above_average_behind), intOrNull(r.outs_above_average_rhh), intOrNull(r.outs_above_average_lhh),
       pctFromFormatted(r.actual_success_rate_formatted), pctFromFormatted(r.adj_estimated_success_rate_formatted), pctFromFormatted(r.diff_success_rate_formatted),
-      "baseball_savant_outs_above_average_v0_1_0", compactJson({ csv_row: r })
+      "baseball_savant_outs_above_average_v0_1_0", safeJsonStringify({ csv_row: r })
     ));
     written++;
   }
