@@ -680,3 +680,15 @@ CODED - no defect. Flagging as an open DESIGN QUESTION for Rodolfo (does the con
 confidence>=55 requirement intended/desired) - this is a question, not a bug report.
 No new bugs found this pass, but pass 10 immediately prior found the duplicate-leg issue, so
 the 2-consecutive-clean-pass count resets to 0 again. Continuing to pass 12.
+
+## PASS 12 - CLEAN (1st of 2 needed)
+Checked applyGlobalPlayerExposureCap: confirmed via direct code read it's explicitly documented
+and coded as informational-only (cut_applied:false hardcoded, comment states "Rows are not
+removed merely because one player has many good legs"). Working exactly as intended, no bug.
+Also found Final Board has existing cluster-dedup logic keyed on "app/source + player + prop +
+line + side" (dedupeSourceMarketClusters-style, ~line 1378) - this is the EXACT key pattern of
+pass 10's duplicate-leg finding. This means those upstream duplicates are likely ALREADY being
+filtered out before reaching Final Board's real output - reduces real-world severity of that
+finding (still worth cleaning up upstream for efficiency/correctness, but likely not currently
+leg-losing or double-counting in the actual delivered board).
+NO NEW BUGS FOUND. Clean pass 1 of 2 required. Continuing to pass 13 for the second.
