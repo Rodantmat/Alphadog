@@ -1067,6 +1067,7 @@ async function runUmpireContext(env, input) {
       retention_policy: "non_destructive_probe_then_atomic_window_replacement_today_tomorrow_batches_retained_for_audit",
       retention_pre_prune: prePrune,
       successful_window_replacement_cleanup: replacementCleanup,
+      permanent_history_backfill: permanentBackfill,
       retention_post_prune: postPrune,
       source_fetch_timeout_ms: 2500,
       sidecar_tables: ["daily_umpire_context_current", "daily_umpire_context_snapshots", "daily_umpire_context_batches", "daily_umpire_context_issues"],
