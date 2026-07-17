@@ -1513,6 +1513,17 @@ async function runSourceProbe(env, input) {
       writeCatcherContext(env, catcherBatchId, gamePk, calendar, "home", homeValidation, catcherRefMap),
       writeCatcherContext(env, catcherBatchId, gamePk, calendar, "away", awayValidation, catcherRefMap)
     ]);
+    // REAL FIX: try the real, official source first (above) - only fall back to a derived
+    // most-recent-starting-catcher estimate for whichever side didn't get an official row,
+    // rather than leaving that side permanently stale until a lineup posts.
+    if (!homeCatcherRow && intOrNull(calendar.home_team_id)) {
+      const derivedHomeCatcher = await deriveCatcherFromRecentGame(env, calendar.home_team_id, calendar.official_date || retentionDatesToKeep()[0]);
+      if (derivedHomeCatcher) await writeDerivedCatcherContext(env, catcherBatchId, gamePk, calendar, "home", intOrNull(calendar.home_team_id), derivedHomeCatcher, catcherRefMap);
+    }
+    if (!awayCatcherRow && intOrNull(calendar.away_team_id)) {
+      const derivedAwayCatcher = await deriveCatcherFromRecentGame(env, calendar.away_team_id, calendar.official_date || retentionDatesToKeep()[0]);
+      if (derivedAwayCatcher) await writeDerivedCatcherContext(env, catcherBatchId, gamePk, calendar, "away", intOrNull(calendar.away_team_id), derivedAwayCatcher, catcherRefMap);
+    }
 
     const officialLineupPreviewRows = [
       ...buildLineupWritePreviewRows(gamePk, calendar, "home", homeValidation),
