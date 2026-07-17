@@ -200,3 +200,9 @@ Daily-full-run has now moved to its FINAL stage: scoring-full-run. Proactively f
 the IDENTICAL priority mismatch in SCORING_FULL_RUN_STAGES (all 8 stages were priority=5, same
 pattern as market/daily-context) before it could cause the same issue here. Deployed. Watching
 this final stage closely given its severity.
+UPDATE ~03:33 UTC: scoring-full-run progressing correctly now. Certifier-first-pass completed
+cleanly. prop-factor-miner needed 2 stale-retries before dispatch (same residual delay pattern
+as market-full-run, self-healing) but is now correctly chunking through its normal partial_continue
+process (180/1939 rows this invocation) - this is expected, healthy behavior, not a new bug.
+Board Full Run, Daily Context Full Run, and Market Full Run all remain complete. Chain is 3/4
+stages done overall.
