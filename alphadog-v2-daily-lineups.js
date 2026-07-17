@@ -316,6 +316,80 @@ async function refreshCatcherReferenceIfStale(env, seasonYear) {
   return { refreshed: true, catchers_written: written, framing_rows: framingRows.length, poptime_rows: poptimeRows.length, framing_ok: framingRes.ok, poptime_ok: poptimeRes.ok };
 }
 
+// REAL FIX: ref_pitcher_arsenal and ref_defensive_quality had ZERO ongoing refresh mechanism
+// anywhere in the system - confirmed live via config_scheduled_jobs (zero matches) and via
+// their update timestamps being a single one-time batch from a prior manual backfill. Left as
+// is, they would silently go stale forever with no active job to even notice, exactly the
+// pattern Rodolfo flagged for bat_side/catcher-context. These are season-level Statcast
+// aggregates - same update cadence as base-pitcher-metrics (already refreshed daily) - so they
+// belong on a real daily incremental refresh, not a one-time static load. Rather than stand up
+// a whole new dedicated worker + schedule entry (more moving parts, another failure point),
+// mirrors the exact proven refreshCatcherReferenceIfStale pattern already working correctly in
+// this same worker: self-gated staleness check (~daily), real Baseball Savant CSV leaderboard
+// source, called every time daily-lineups runs (which is frequent and reliable already).
+async function refreshPitcherArsenalIfStale(env, seasonYear) {
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_pitcher_arsenal WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/pitch-arsenal-stats?type=pitcher&pitchType=&year=${seasonYear}&team=&min=1&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Pitcher-Arsenal-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
+  const rows = parseCsv(res.text);
+  let written = 0;
+  const statements = [];
+  for (const r of rows) {
+    const pid = intOrNull(r.player_id);
+    if (!pid || !r.pitch_type) continue;
+    const arsenalId = `${pid}_${seasonYear}_${r.pitch_type}`;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_pitcher_arsenal (arsenal_id, mlb_player_id, player_name, team_abbreviation, season_year, pitch_type, pitch_name, run_value_per_100, run_value, pitches, pitch_usage, pa, ba, slg, woba, whiff_percent, k_percent, put_away, est_ba, est_slg, est_woba, hard_hit_percent, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
+      arsenalId, pid, r["last_name, first_name"] || null, r.team_name_alt || null, seasonYear, r.pitch_type, r.pitch_name || null,
+      Number(r.run_value_per_100) || null, intOrNull(r.run_value), intOrNull(r.pitches), Number(r.pitch_usage) || null, intOrNull(r.pa),
+      Number(r.ba) || null, Number(r.slg) || null, Number(r.woba) || null, Number(r.whiff_percent) || null, Number(r.k_percent) || null,
+      Number(r.put_away) || null, Number(r.est_ba) || null, Number(r.est_slg) || null, Number(r.est_woba) || null, Number(r.hard_hit_percent) || null,
+      "baseball_savant_pitch_arsenal_stats_v0_2_0", compactJson({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await batchRun(env.REF_DB, statements, 40);
+  return { refreshed: true, rows_written: written, source_rows: rows.length };
+}
+
+async function refreshDefensiveQualityIfStale(env, seasonYear) {
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_defensive_quality WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/outs_above_average?type=Fielder&startYear=${seasonYear}&endYear=${seasonYear}&split=no&team=&range=year&min=1&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Defensive-Quality-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
+  const rows = parseCsv(res.text);
+  let written = 0;
+  const statements = [];
+  function pctFromFormatted(v) {
+    if (v === undefined || v === null || v === "") return null;
+    const n = Number(String(v).replace("%", ""));
+    return Number.isFinite(n) ? n : null;
+  }
+  for (const r of rows) {
+    const pid = intOrNull(r.player_id);
+    const pos = r.primary_pos_formatted || null;
+    if (!pid) continue;
+    const qualityId = `${pid}_${seasonYear}_${pos || "ALL"}`;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_defensive_quality (quality_id, mlb_player_id, player_name, team_name, season_year, primary_position, fielding_runs_prevented, outs_above_average, oaa_infront, oaa_lateral_toward_3b, oaa_lateral_toward_1b, oaa_behind, oaa_vs_rhh, oaa_vs_lhh, actual_success_rate_pct, adj_estimated_success_rate_pct, diff_success_rate_pct, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
+      qualityId, pid, r["last_name, first_name"] || null, r.display_team_name || null, seasonYear, pos,
+      intOrNull(r.fielding_runs_prevented), intOrNull(r.outs_above_average), intOrNull(r.outs_above_average_infront),
+      intOrNull(r.outs_above_average_lateral_toward3bline), intOrNull(r.outs_above_average_lateral_toward1bline),
+      intOrNull(r.outs_above_average_behind), intOrNull(r.outs_above_average_rhh), intOrNull(r.outs_above_average_lhh),
+      pctFromFormatted(r.actual_success_rate_formatted), pctFromFormatted(r.adj_estimated_success_rate_formatted), pctFromFormatted(r.diff_success_rate_formatted),
+      "baseball_savant_outs_above_average_v0_1_0", compactJson({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await batchRun(env.REF_DB, statements, 40);
+  return { refreshed: true, rows_written: written, source_rows: rows.length };
+}
+
 async function writeCatcherContext(env, batchId, gamePk, calendar, side, validation, refMap) {
   const mapped = Array.isArray(validation && validation.mapped_players) ? validation.mapped_players : [];
   const catcher = mapped.find(p => String(p.position) === "2");
