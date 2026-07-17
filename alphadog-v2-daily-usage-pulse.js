@@ -984,10 +984,16 @@ async function runUmpireContext(env, input) {
     const blockerRow = await first(env.DAILY_DB, `SELECT COUNT(*) AS c FROM daily_umpire_context_issues WHERE batch_id=? AND severity='blocker'`, batchId);
     const warningN = Number(warningRow && warningRow.c || 0);
     const blockerN = Number(blockerRow && blockerRow.c || 0);
-    const noPickableSlate = prepared.length === 0 || targets.length === 0;
-    const coverageOk = noPickableSlate || (currentWritten === targets.length && snapshotWritten === targets.length);
-    const dataOk = noPickableSlate || (coverageOk && blockerN === 0);
-    const certification = noPickableSlate ? "DAILY_UMPIRE_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (dataOk ? (warningN ? "DAILY_UMPIRE_CERTIFIED_WITH_WARNINGS" : "DAILY_UMPIRE_CERTIFIED_READY") : "DAILY_UMPIRE_FAILED_BLOCKERS_OR_COVERAGE");
+    // REAL FIX: distinguish "genuinely no pickable games this window" from "every pickable
+    // game was already correctly processed by a recent batch" - these were being conflated
+    // into one noPickableSlate flag/message, which is misleading (and was the direct cause of
+    // a real data-loss bug fixed above - the destructive cleanup ran on the false assumption
+    // that "0 targets" always means "nothing real to protect").
+    const noPickableSlate = prepared.length === 0;
+    const allAlreadyProcessed = prepared.length > 0 && totalRemainingBeforeChunk === 0;
+    const coverageOk = noPickableSlate || allAlreadyProcessed || (currentWritten === targets.length && snapshotWritten === targets.length);
+    const dataOk = noPickableSlate || allAlreadyProcessed || (coverageOk && blockerN === 0);
+    const certification = noPickableSlate ? "DAILY_UMPIRE_NO_PICKABLE_SAFE_GAMES_IN_WINDOW" : (allAlreadyProcessed ? "DAILY_UMPIRE_ALL_GAMES_ALREADY_PROCESSED_THIS_WINDOW" : (dataOk ? (warningN ? "DAILY_UMPIRE_CERTIFIED_WITH_WARNINGS" : "DAILY_UMPIRE_CERTIFIED_READY") : "DAILY_UMPIRE_FAILED_BLOCKERS_OR_COVERAGE"));
     const grade = noPickableSlate ? "VALID_ZERO" : (dataOk ? (warningN ? "PASS_WITH_WARNINGS" : "PASS") : "FAIL");
     const status = isPartial ? "partial_continue" : (dataOk ? "completed" : "failed_blockers_or_coverage");
     const output = {
