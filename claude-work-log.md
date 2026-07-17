@@ -1105,3 +1105,34 @@ CONTEXT_DB.context_history_game_umpire.
 Also still open from earlier passes: Issue #3 (singles/1.5 low-sample sum-to-100), Issue #7
 (duplicate legs, upstream ingestion), Issue #8 (FINAL_BOARD_QUOTA_RESERVE_MIN_HP still 45),
 config-completeness gap for remaining flat prop types in config_enrichment_profile_cells.
+
+## LAST OF THE 5 CALIBRATION FACTORS: LIVE UMPIRE ASSIGNMENT - FOUND CRITICAL DATA-LOSS BUG
+Started investigating why daily_umpire_context_current showed 0/12 games with a real
+home_plate_umpire_id. First confirmed the worker itself (alphadog-v2-daily-usage-pulse.js,
+job_key daily-umpire-context) is already well-designed with a real multi-tier fallback chain:
+MLB official assignment -> RefMetrics (real, credentialed direct fetch of a specialist umpire-
+assignment site, login stored in CONFIG_DB) -> Gemini search-grounded guess (correctly disabled,
+0% real success rate found in an earlier session) -> internal same-venue recent-crew-rotation
+derivation. This is NOT a shallow/fake fallback chain - genuinely well thought out.
+Ran a fresh live test to see which tier was actually failing - found something far more serious
+instead: the test run reported "no pickable safe games" (0 targets) despite prepared_rows_read
+confirming 938 real prepared rows across 11 real games (independently verified via direct SQL -
+all 11 games and their calendar rows are genuinely there). ROOT CAUSE: the worker has a
+"skip games already processed by a recent batch" optimization (checks daily_umpire_context_current
+for existing rows this window and excludes those game_pks from new targets) - correct and
+efficient on its own. But the run's SUCCESS path unconditionally called
+finalizeWindowReplacement(), which deletes any existing row NOT matching the CURRENT run's
+batch_id - with ZERO new rows written this run (because everything was already correctly done),
+this deleted all 12 valid, real, already-correct rows and replaced them with nothing. Confirmed
+via direct DB check: table went from 12 real rows to 0 immediately after this "successful"
+run completed.
+FIXED (2 changes): (1) finalizeWindowReplacement now only runs when targets.length > 0 (this run
+actually wrote at least one new row) - otherwise skipped entirely, correctly preserving existing
+valid data untouched. (2) Split the previously-conflated noPickableSlate flag into two distinct,
+honestly-labeled states: genuinely-zero-games-in-window vs all-games-already-processed-by-a-
+recent-batch - these are very different situations and conflating them directly caused the
+misleading "no pickable safe games" message that obscured what was really happening (and
+arguably enabled the bug to go unnoticed, since the certification looked like a clean pass).
+NEXT: retest with real data to confirm the fix, then finish diagnosing why the live tiers
+(official/RefMetrics) aren't producing a real assignment for today's games in the first place -
+that was the original question before this data-loss bug was found and had to be fixed first.
