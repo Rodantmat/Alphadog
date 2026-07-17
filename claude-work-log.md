@@ -469,3 +469,8 @@ hand-monitoring long stages (app was getting stuck on long sleep-heavy turns). E
 Scoring Engine test next (reads hp_board_current rows with score_0_100 IS NULL for this
 batch, computes Final Score = 0.65*HP + 0.35*confidence, writes back to hp_board_current).
 Will confirm it started, then stop and wait for Rodolfo's "continue".
+CONFIRMED STARTED: scoring_engine_reorder_test_1 dispatched successfully, reordered logic
+working correctly (reads hp_board_current where score_0_100 IS NULL, computes Final Score,
+writes back). ~1926 total rows to process, chunking normally (~70-100/invocation). Stepping
+back now per Rodolfo's instruction - not hand-monitoring to completion. Will report/check next
+"continue".
