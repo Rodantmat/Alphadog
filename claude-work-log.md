@@ -495,3 +495,42 @@ with a full fresh chain run rather than assume.
 Scoring Engine reorder test (scoring_engine_reorder_test_1) still running via cron alone (26
 ticks as of 18:59, no manual ticks), progressing normally through the 1864 HP rows. Letting it
 run to completion or failure without interrupting, per Rodolfo's instruction.
+
+## UPDATE - RODOLFO CAUGHT A REAL STALL (40.3%->42.1% across ~50 ticks, correctly flagged as nonsense)
+Investigated with real data, no guessing: confirmed scored count frozen at exactly 784 across
+75+ additional ticks (tick_count 31->106). This was a genuine infinite loop, not slow progress.
+ROOT CAUSE: Scoring Engine's read query only filtered WHERE score_0_100 IS NULL, not excluding
+rows where estimated_hit_probability_0_100 IS NULL. The scoring loop does `if (score==null)
+continue` for null-HP rows, permanently skipping them without ever marking them done - so they
+get re-selected by ORDER BY hp_board_row_id LIMIT 100 every single invocation, forever. Confirmed
+exactly 125 such rows exist (83 fantasy_score, 26 hits_runs_rbis, 13 runs, 1 each home_runs/
+rbis/stolen_bases - concentrated in composite props).
+FIXED: added "AND estimated_hit_probability_0_100 IS NOT NULL" to the read query. Deployed,
+confirmed live. Verified with real data: scored count jumped 784->1084 (+300) in one tick cycle
+immediately after the fix, versus zero movement across 75+ ticks before it. These 125 null-HP
+legs will correctly remain unscored (cannot score without HP) rather than blocking the batch.
+
+## UPDATE - DEEP CALIBRATION SCRUTINY (BASELINE HP MISCALIBRATION)
+Sample-tested real legs across different prop types/tiers, cross-checked against real-world
+stats via web search (not guessed):
+- Joshua Kuroda-Grauer, home_runs 0.5+ more: baseline_v6 computed 99.08% "more" probability.
+  REAL WORLD (Baseball-Reference, confirmed): 0 home runs this season, 0 career, Power
+  scouting grade 40/80. A 99% single-game HR probability for a zero-HR-season player is
+  impossible.
+- Petey Halpin, rbis 0.5+ more: baseline_v6 computed 98.68% "more" probability. REAL WORLD
+  (Baseball-Reference/Wikipedia, confirmed): 1 RBI in his entire MLB season, .180-.194 AVG.
+  98.68% single-game RBI probability for a 1-RBI-season player is impossible.
+Both are recent MLB debutants/very small MLB sample sizes. Final HP after enrichment pulled
+these down (54.68% and 83.48% respectively) but both remain unrealistic given real performance.
+Traced the formula: hpFromCountModel (alphadog-v2-phase3a-first-inning-pitcher-context.js) uses
+a standard Poisson/Negative-Binomial CDF - the math itself is correct IF fed a realistic mean.
+The bug is upstream in the shrunkRate calculation (blend of player's own metric_value + a
+tier-prior, weighted by games_sample via priorStrengthForSample) - for very-low-games_sample
+rookies, this blend is producing wildly inflated means. Did NOT fully isolate the exact
+defective line within the time available - needs a dedicated dive into priorStrengthForSample/
+blendedTierPrior specifically for low-games_sample players next.
+Confirmed baseline_v6 freshness is healthy (last updated 13:29:08 today, matching this
+morning's incremental_morning_full_run window) - this is a CALCULATION defect, not staleness.
+Per Rodolfo's explicit instruction: NO PATCH on the calibration issue until told. Continuing
+deep systemic research now - checking whether this is tier-oriented, sample-size-oriented, and
+how many more players/props are affected.
