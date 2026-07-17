@@ -361,7 +361,10 @@ async function ensureSchema(env) {
     ["miss_count", "miss_count INTEGER"],
     ["push_count", "push_count INTEGER"],
     ["hp_source_board_tier", "hp_source_board_tier TEXT"],
-    ["hp_source_lane_reason", "hp_source_lane_reason TEXT"]
+    ["hp_source_lane_reason", "hp_source_lane_reason TEXT"],
+    ["is_goblin", "is_goblin INTEGER DEFAULT 0"],
+    ["is_demon", "is_demon INTEGER DEFAULT 0"],
+    ["is_more_only", "is_more_only INTEGER DEFAULT 0"]
   ];
   for (const [col, ddl] of extraCols) {
     await addColumnIfMissing(env.SCORE_DB, "score_final_board_current", col, ddl);
