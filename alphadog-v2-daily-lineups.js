@@ -365,32 +365,52 @@ async function writeCatcherContext(env, batchId, gamePk, calendar, side, validat
 // a genuinely temporary bridge: the very next run that sees an official lineup posted for this
 // game will overwrite this row via writeCatcherContext's own INSERT OR REPLACE, so real data
 // always wins the moment it's available - this fallback never blocks or delays that.
-async function deriveCatcherFromRecentGame(env, teamId, beforeDate) {
-  if (!teamId || !beforeDate) return null;
+// REAL FIX (perf): the original per-game deriveCatcherFromRecentGame added up to 2 sequential
+// DB round-trips per team needing a fallback, which pushed the worker over its own internal
+// deadline (confirmed live: hard_deadline_timeout at 18000ms). Replaced with one batched query
+// for ALL teams up front, reduced in-memory - the same pattern already used successfully for
+// catcherRefMap above.
+async function batchDeriveCatchers(env, teamIds, beforeDate) {
+  const map = new Map();
+  if (!teamIds.length) return map;
   const lookbackStart = (() => {
     const d = new Date(`${beforeDate}T12:00:00Z`);
     d.setUTCDate(d.getUTCDate() - 20);
     return d.toISOString().slice(0, 10);
   })();
-  const recentDateRow = await first(env.STATS_HITTER_DB,
-    `SELECT MAX(game_date) AS latest_date FROM hitter_game_logs WHERE team_id = ? AND game_date >= ? AND game_date < ? AND played_catcher_flag = 1`,
-    String(teamId), lookbackStart, beforeDate);
-  const latestDate = recentDateRow && recentDateRow.latest_date;
-  if (!latestDate) return null;
-  const row = await first(env.STATS_HITTER_DB,
-    `SELECT player_id FROM hitter_game_logs WHERE team_id = ? AND game_date = ? AND played_catcher_flag = 1 ORDER BY pa DESC LIMIT 1`,
-    String(teamId), latestDate);
-  return row ? { player_id: Number(row.player_id), as_of_game_date: latestDate } : null;
+  const ph = teamIds.map(() => "?").join(",");
+  const rows = await all(env.STATS_HITTER_DB,
+    `SELECT team_id, game_date, player_id, pa FROM hitter_game_logs WHERE played_catcher_flag=1 AND game_date >= ? AND game_date < ? AND team_id IN (${ph})`,
+    lookbackStart, beforeDate, ...teamIds.map(String));
+  for (const r of rows) {
+    const key = String(r.team_id);
+    const existing = map.get(key);
+    if (!existing || r.game_date > existing.as_of_game_date || (r.game_date === existing.as_of_game_date && Number(r.pa || 0) > Number(existing.pa || 0))) {
+      map.set(key, { player_id: Number(r.player_id), as_of_game_date: r.game_date, pa: Number(r.pa || 0) });
+    }
+  }
+  return map;
+}
+async function batchPlayerNames(env, playerIds) {
+  const map = new Map();
+  if (!playerIds.length) return map;
+  const ph = playerIds.map(() => "?").join(",");
+  const rows = await all(env.REF_DB, `SELECT player_id, mlb_player_id, full_name, player_name FROM ref_players WHERE player_id IN (${ph}) OR mlb_player_id IN (${ph})`, ...playerIds, ...playerIds);
+  for (const r of rows) {
+    const nm = r.full_name || r.player_name || null;
+    if (r.player_id !== null && r.player_id !== undefined) map.set(Number(r.player_id), nm);
+    if (r.mlb_player_id !== null && r.mlb_player_id !== undefined) map.set(Number(r.mlb_player_id), nm);
+  }
+  return map;
 }
 
-async function writeDerivedCatcherContext(env, batchId, gamePk, calendar, side, teamId, derived, refMap) {
+async function writeDerivedCatcherContext(env, batchId, gamePk, calendar, side, teamId, derived, refMap, nameMap) {
   if (!derived || !derived.player_id) return null;
   const sidePrefix = side === "home" ? "home" : "away";
   const teamName = calendar[`${sidePrefix}_team_name`] || null;
   const ref = refMap.get(Number(derived.player_id)) || null;
   const key = `${calendar.official_date}_${gamePk}_${side}`;
-  const nameRow = await first(env.REF_DB, `SELECT full_name, player_name FROM ref_players WHERE player_id=? OR mlb_player_id=?`, derived.player_id, derived.player_id);
-  const playerName = (nameRow && (nameRow.full_name || nameRow.player_name)) || null;
+  const playerName = (nameMap && nameMap.get(Number(derived.player_id))) || null;
   const metricsAvailable = !!(ref && (ref.framing_runs_total !== null || ref.pop_time_2b_sba !== null));
   const row = {
     catcher_context_key: key,
