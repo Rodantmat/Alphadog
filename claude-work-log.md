@@ -311,6 +311,11 @@ monitor/fix mode: checking periodically, investigating and fixing any real failu
 (not just blindly retrying), continuing for as long as possible this session. Cron runs on its
 own 1-minute schedule regardless of whether I'm actively watching, so the chain can progress
 even between my check-ins.
+UPDATE ~07:08 UTC: prop-factor-miner in the fresh run took an unusually long ~6 min on its
+first invocation (investigated deeply, checked for stale-retry triggers) but ultimately
+COMPLETED CLEANLY with zero rescue/retry needed - just genuinely slow this particular time,
+not stuck. Chain progressed to matrix-builder automatically. First stage of concern resolved
+with no code changes needed. Continuing to monitor toward one fully clean pass.
 UPDATE ~06:30 UTC: run 2/3 completed. Per Rodolfo's instruction, accepting 2/3 as sufficient
 and moving to score-final-board next - skipping the 3rd run since the fix is already verified
 correct (exact row-count match on both prior runs). Before enqueueing, audited
