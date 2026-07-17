@@ -246,6 +246,19 @@ async function loadRealLegContexts(env, matrixRows) {
   const catcherRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, framing_runs_total FROM daily_catcher_context_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   const availRows = playerIds.length ? await all(env.DAILY_DB, `SELECT game_pk, mlb_player_id, availability_status FROM daily_player_availability_current_v1 WHERE game_pk IN (${gph}) AND mlb_player_id IN (${pph})`, ...gamePks, ...playerIds).catch(() => []) : [];
   const marketRows = await all(env.MARKET_DB, `SELECT game_pk, derived_home_implied_runs, derived_away_implied_runs FROM market_context_probe_game_market_summary WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
+  // REAL FIX: today's real umpire assignment (whichever tier produced it - official/RefMetrics/
+  // derived, all already real per the daily-umpire-context worker) joined with real historical
+  // tendency (ref_umpire_tendency, computed from CONTEXT_DB.context_history_game_umpire +
+  // TEAM_DB.team_game_logs) - the final piece of the 5-factor calibration wiring.
+  const umpireAssignmentRows = await all(env.DAILY_DB, `SELECT game_pk, home_plate_umpire_id FROM daily_umpire_context_current WHERE game_pk IN (${gph}) AND home_plate_umpire_id IS NOT NULL`, ...gamePks).catch(() => []);
+  const umpireIds = [...new Set(umpireAssignmentRows.map(r => r.home_plate_umpire_id).filter(Boolean))];
+  const umpireTendencyRows = umpireIds.length ? await all(env.REF_DB, `SELECT umpire_id, strikeouts_delta_vs_league, walks_delta_vs_league, runs_delta_vs_league FROM ref_umpire_tendency WHERE umpire_id IN (${umpireIds.map(() => "?").join(",")})`, ...umpireIds).catch(() => []) : [];
+  const tendencyByUmpireId = new Map(umpireTendencyRows.map(r => [Number(r.umpire_id), r]));
+  const umpireTendencyByGame = new Map();
+  for (const r of umpireAssignmentRows) {
+    const tendency = tendencyByUmpireId.get(Number(r.home_plate_umpire_id));
+    if (tendency) umpireTendencyByGame.set(String(r.game_pk), tendency);
+  }
 
   // CRITICAL FIX: prop_matrix_current stores team_id/opponent_team_id as ABBREVIATIONS
   // (e.g. "CWS", "TOR"), but every daily-context table above (starters, bullpen, catcher) uses
