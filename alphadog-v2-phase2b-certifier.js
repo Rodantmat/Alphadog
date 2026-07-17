@@ -551,7 +551,7 @@ async function retentionCleanup(env, dates) {
 }
 async function getPreparedRows(env, dates) {
   const inClause = dates.map(() => "?").join(",");
-  return all(env.SCORE_DB, `SELECT prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
+  const rows = await all(env.SCORE_DB, `SELECT prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
       player_name, resolved_player_id, resolved_mlb_player_id, player_match_status, team, opponent,
       team_full_name, opponent_full_name, canonical_prop_key, source_prop_name, line_value, official_game_pk,
       official_game_time_utc, official_date, source_time_status, matchup_status, pickable_safe, prep_status, block_reason, row_payload_json,
@@ -564,7 +564,21 @@ async function getPreparedRows(env, dates) {
       AND official_game_pk IS NOT NULL
       AND official_game_time_utc IS NOT NULL
       AND official_game_time_utc > ?
-    ORDER BY official_date, official_game_pk, resolved_mlb_player_id, canonical_prop_key, source_key`, ...dates, new Date().toISOString());
+    ORDER BY official_date, official_game_pk, resolved_mlb_player_id, canonical_prop_key, source_key, created_at ASC`, ...dates, new Date().toISOString());
+  // FIX Issue #7 (duplicate legs): upstream ingestion can occasionally write the same real
+  // player+prop+line+source combo twice with two different source_row_ids (confirmed via
+  // live-data audit - two PrizePicks source_row_ids for one real line, created 2 seconds
+  // apart). Dedupe here, keeping the earliest-created row, so duplicates never become
+  // separate matrix_ids and propagate through enrichment/HP/scoring/final board.
+  const seen = new Set();
+  const deduped = [];
+  for (const r of rows) {
+    const dedupeKey = `${r.resolved_mlb_player_id || r.resolved_player_id}|${r.canonical_prop_key}|${r.line_value}|${r.source_key}|${r.official_game_pk}`;
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+    deduped.push(r);
+  }
+  return deduped;
 }
 function arrChunks(arr, size) {
   const out = [];
