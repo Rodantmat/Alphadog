@@ -234,6 +234,13 @@ UPDATE ~04:09 UTC: prop-factor-miner 3/3 PASS confirmed (each run full chunked c
 ~5-8 min across ~11 invocations). Moving to prop-matrix-builder next.
 UPDATE ~04:17 UTC: prop-matrix-builder 3/3 PASS confirmed (fast, ~2 invocations each,
 ~1-2 min per run). Moving to enrichment-engine next.
+UPDATE ~04:30 UTC: enrichment-engine run 1/3 PASS, run 2/3 PASS (each ~32 fast ~250ms
+invocations, ~4 min total). One more run needed.
+NOTE: Rodolfo flagged the mobile app repeatedly showing "Response incomplete" during this
+phase - likely caused by very long single-turn bash sleep() calls (280s+) keeping a turn open
+for many minutes with no intermediate output. Switching to shorter wait increments (~60-90s)
+with more frequent natural turn-ends going forward, relying on the log + "continue" pattern
+rather than one giant uninterrupted tool-call chain per turn.
 UPDATE ~04:38 UTC: enrichment-engine 3/3 PASS confirmed (each run ~32 fast invocations,
 ~250ms each, ~4-8 min total per run). All 3 runs completed correctly in the background during
 an app-freeze period on Rodolfo's end - recovered cleanly by checking this log and the real DB
