@@ -435,3 +435,26 @@ in ~6 minutes. Only one hiccup: market_hitters hit one clean, real 25s timeout (
 caught, not a silent hang) and self-healed via retry on the very next attempt - healthy
 behavior, not the earlier starvation bug. Rescue successful. Starting scoring-full-run next
 to complete the equivalent of today's daily-full-run without redoing board/daily-context.
+
+## 2026-07-17 ~18:23 UTC - PIPELINE REORDER IMPLEMENTED AND DEPLOYED
+Completed the core architectural change per Rodolfo's confirmed spec:
+1. SCORING_FULL_RUN_STAGES: swapped order so scoring_hit_probability_board now runs BEFORE
+   scoring_engine (was the reverse).
+2. alphadog-v2-phase3c-certifier.js (Hit Probability Board) REWRITTEN: now reads
+   prop_matrix_current + enrichment_leg_current directly (no longer depends on Scoring
+   Engine's output at all). Computes final HP (unchanged formula: baseline_v6 + enrichment
+   rate_multiplier) AND final Confidence (NEW - moved/adapted from Engine's old formula,
+   blends baseline_v6's own confidence with enrichment's real factor-coverage ratio).
+   PRIMARY_HP_THRESHOLD raised 65->70 per Rodolfo's instruction. score_0_100 intentionally
+   left NULL - filled in by the next stage.
+3. alphadog-v2-phase3a-certifier.js (Scoring Engine) REWRITTEN: now runs AFTER HP Board,
+   reads hp_board_current rows with score_0_100 IS NULL for this chain's hp_board_batch_id,
+   computes Final Score = round(0.65*HP + 0.35*confidence), writes it back into
+   hp_board_current.score_0_100 directly (UPDATE, same row) so Final Board's existing read
+   path is completely unchanged. Also writes a mirror row to scoring_engine_current for
+   audit/compatibility with anything else that might read that table.
+4. Orchestrator's processHitProbabilityBoardJob simplified: removed the now-obsolete lookup
+   of Scoring Engine's prior batch_id and the "blocked_missing_source_engine_batch" gate,
+   since HP Board no longer needs it.
+All 4 changes deployed and confirmed live via workflow run success. Testing each worker
+individually now before a full chain run.
