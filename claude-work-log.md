@@ -1225,3 +1225,45 @@ same pattern (recomputed from the now-growing historical dataset).
 DIRECT ANSWER TO RODOLFO: yes, all 5 factors are ready for daily use (self-gated ~daily refresh,
 confirmed working), and yes the data is now genuinely permanent - the one real gap (frozen
 umpire history) is fixed and confirmed growing with real data.
+
+## RODOLFO ASKED ABOUT OTHER HISTORICAL GAPS + BOARD/MARKET PERMANENT SAVING
+Checked context_history_game_weather (the sibling historical table to umpire): CONFIRMED SAME
+EXACT GAP - also static, last written 2026-07-12, zero ongoing growth mechanism. Applied the
+identical fix pattern in alphadog-v2-daily-weather.js: permanentlyRecordConfirmedWeather copies
+real (data_source_level='real') rows from daily_game_weather_current into the permanent table
+before this worker's own retention prunes them. NOTE: made and immediately caught a real
+mistake during this edit - a patch replacement accidentally deleted pruneRetention's function
+body (old_str included the full body, new_str only the signature) - caught it via a follow-up
+grep before testing, restored the body correctly alongside the new function. TESTED WITH REAL
+DATA: confirmed context_history_game_weather went from 2461 rows (max_date 07-12) to 2465 rows
+(max_date 07-17, today) - genuinely growing now.
+Then checked board/market permanent saving (Rodolfo's specific ask): found ARCHIVE_DB.
+archive_slate_snapshots and archive_market_snapshots exist with a clear schema for exactly this
+purpose but are BOTH completely empty (0 rows) - a real, confirmed gap with no writer anywhere
+in the codebase and no design notes. Reported this to Rodolfo before building anything, since
+the right snapshot cadence needed his input.
+RODOLFO CLARIFIED: this is the same known, deliberate situation as the calibration-session
+historical backfill - a real, credit-metered paid Odds API backfill was done for market data
+too (confirmed: MARKET_DB.market_historical_props_2025, 195287 rows, but only 2025-03-18 to
+2025-09-20 - stopped there due to real API cost, confirmed via market_historical_backfill_progress
+showing budget-capped, intentionally-sampled runs, not exhaustive). Rodolfo's instruction: don't
+worry about the historical gap or re-running the expensive backfill - just start permanently
+saving real data going forward from now on, same as the other factors.
+Found the live source: MARKET_DB.market_context_probe_game_odds gets fully wiped and rebuilt on
+every single invocation (pruneProbeWindow deletes the current window before repopulating it) -
+confirmed live via only 1 distinct official_date ever present despite real Odds API data
+flowing through daily (real bookmaker data confirmed in the raw response: FanDuel/DraftKings/
+ESPN Bet real odds for today's Yankees/Dodgers game, etc.). FIXED in
+alphadog-v2-market-normalizer.js: permanentlyRecordConfirmedMarketOdds copies real odds rows
+into the SAME existing market_historical_props_2025 table (reusing rather than fragmenting)
+before this run's own prune wipes them, keyed by a deterministic composite key (date+event+
+bookmaker+market+outcome+point) for idempotency. Same mistake happened again during this edit
+(accidentally deleted pruneProbeWindow's body) - caught and fixed the same way before testing.
+TESTED WITH REAL DATA (had to find the correct job_key first - "market-normalizer", not
+"market_teams"): confirmed permanent_market_history_backfill copied 310/310 real rows,
+market_historical_props_2025 now has 310 rows tagged batch_id='permanent_daily_backfill_v0_1_0'
+for today (2026-07-17) - real, live FanDuel/DraftKings/ESPN Bet odds now permanently retained.
+STILL OPEN: board itself (score_board_prepared_current / final board state) still has no
+permanent archive - archive_slate_snapshots remains empty. This is a separate piece from market
+odds and needs the same fix pattern applied to whichever board worker/stage is appropriate -
+not yet done, next up if Rodolfo wants it before the full run.
