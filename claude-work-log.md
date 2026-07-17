@@ -570,3 +570,22 @@ clean passes achieved so far. Confirmed issues, each independently verified with
 Continuing to pass 5 now with new samples/angles: pitcher-side legs directly, Scoring Engine's
 final-score computation, Final Board's platform-specific payload (goblin/demon/more-only),
 remaining prop types for the baseline sum-to-100 check, other enrichment factor types.
+
+## PASS 5 COMPLETE - NO NEW ISSUES (1 of 2 required clean passes)
+Investigated a serious-looking lead properly rather than assuming: enrichment_leg_current
+initially showed ZERO pitcher-prop rows (earned_runs, pitcher_outs, walks_allowed, hits_allowed,
+pitcher_strikeouts), which looked like pitcher legs were being completely excluded from the
+whole downstream pipeline (HP Board's INNER JOIN would silently drop them). Ran a fresh
+standalone enrichment invocation to test directly rather than report this as a confirmed bug -
+CORRECTLY RESOLVED as a staleness artifact: enrichment simply hadn't run since the pitcher
+matrix rows were created (same class as the earlier HP Board staleness false lead). Pitcher
+legs now enrich correctly (9-10/13-14 per prop type). NOT a bug - avoided over-reporting.
+Confirmed (not new): the enrichment "identical multiplier per prop type" issue (#4) also
+applies to pitcher props (distinct_multipliers=1 for all 4 pitcher props checked) - expected
+given the shared root cause (truncated matrix_payload_json), expands known scope but is not a
+new/separate bug class.
+Confirmed (not new): singles/1.5 sum-to-100 issue remains isolated to that one combo only - no
+other prop/line pair affected, re-verified this pass.
+NO NEW BUG CLASSES FOUND THIS PASS. This counts as 1 of 2 required consecutive clean passes.
+Continuing to pass 6 with new angles: Scoring Engine final-score math, Final Board platform
+payload logic (goblin/demon/more-only), any remaining prop-factor-miner/matrix-builder angles.
