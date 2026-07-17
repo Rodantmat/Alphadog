@@ -1780,9 +1780,36 @@ export default {
       const input = await readJsonSafe(request);
       return jsonResponse({ ...baseIdentity(env), route: "/diagnostic", input_echo_safe: { request_id: input.request_id || null, chain_id: input.chain_id || null, job_key: input.job_key || null, mode: input.mode || null }, diagnostics: { db_bindings: bindingPresence(env, REQUIRED_DB_BINDINGS), config_values_present: valuePresence(env, REQUIRED_CONFIG_VALUES), write_schema: await validateWriteSchema(env), github_source_config: await githubSourceConfig(env) }, writes_performed: 0, external_calls_performed: 0 });
     }
+async function withDeadline(promise, ms, fallbackFactory) {
+  let timer = null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((resolve) => {
+        timer = setTimeout(() => resolve(typeof fallbackFactory === "function" ? fallbackFactory() : fallbackFactory), Math.max(1000, Number(ms) || 1000));
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const output = await runBoardParseStageCertify(env, input);
+      const HARD_DEADLINE_MS = 15000;
+      const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
+      const rawOutput = await withDeadline(runBoardParseStageCertify(env, input), HARD_DEADLINE_MS, () => TIMEOUT_SENTINEL);
+      const output = rawOutput === TIMEOUT_SENTINEL ? {
+        ok: false,
+        data_ok: false,
+        version: VERSION,
+        worker_name: WORKER_NAME,
+        job_key: JOB_KEY,
+        status: "hard_deadline_timeout",
+        certification: "PRIZEPICKS_GITHUB_BOARD_HARD_DEADLINE_TIMEOUT",
+        error: `Worker exceeded its own ${HARD_DEADLINE_MS}ms internal deadline`,
+        hard_deadline_ms: HARD_DEADLINE_MS
+      } : rawOutput;
       return jsonResponse(output, 200);
     }
     return jsonResponse({ ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, status: "NOT_FOUND", allowed_routes: ["GET /", "GET /health", "POST /run", "POST /diagnostic"], timestamp_utc: nowUtc() }, 404);
