@@ -276,6 +276,7 @@ function buildLegContextReal(matrixRow, ctxMaps) {
   const catcher = ctxMaps.catcherByGameTeam.get(`${gamePk}|${oppTeamId}`) || {};
   const availability = ctxMaps.availByGamePlayer.get(`${gamePk}|${playerId}`) || {};
   const market = ctxMaps.marketByGame.get(String(gamePk)) || {};
+  const pitcherQuality = oppStarter.starter_player_id != null ? ctxMaps.pitcherQualityByPitcherId.get(String(oppStarter.starter_player_id)) : undefined;
 
   return {
     temp_f: weather.temperature_f ?? null,
@@ -287,6 +288,7 @@ function buildLegContextReal(matrixRow, ctxMaps) {
     prop_key: matrixRow.canonical_prop_key || null,
     batter_hand: lineup.bat_side ?? null,
     pitcher_hand: oppStarter.starter_hand ?? null,
+    pitcher_run_value_per_100_weighted: pitcherQuality ?? null,
     high_usage_reliever_count: relevantBullpen.high_usage_reliever_count ?? null,
     back_to_back_reliever_count: relevantBullpen.back_to_back_reliever_count ?? null,
     bullpen_fatigue_score: relevantBullpen.bullpen_fatigue_score ?? null,
