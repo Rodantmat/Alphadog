@@ -1083,3 +1083,25 @@ this exact recovery pattern has worked cleanly this session.
 NEXT: finish defensive_quality_oaa wiring (matchup_specific_oaa_probability_delta from the now-
 refreshing ref_defensive_quality table), then live umpire assignment fix, then umpire-tendency
 computation from the confirmed-real historical data.
+
+## DEFENSIVE_QUALITY_OAA WIRING COMPLETE AND CONFIRMED WORKING
+Wired matchup_specific_oaa_probability_delta: ref_defensive_quality only carries a display team
+NAME ("Braves"), not a joinable numeric team_id, so joined through ref_players.
+current_mlb_team_id (by mlb_player_id) to get a real numeric mapping, then averaged OAA across
+each team's rated fielders as a genuine team-level defensive-quality proxy, scaled to a
+probability-delta range (/200) before the config's own coefficient further tunes it. Wired into
+buildLegContextReal for the opposing team (oppTeamId, already normalized via the team-ID fix).
+TESTED WITH REAL DATA (test_oaa_wiring_1): confirmed defensive_quality_oaa now shows
+"status":"applied" with real, distinct contributions (0.0132, 0.0103) instead of the missing-
+bounded-penalty fallback it always returned before. opposing_pitcher_quality also confirmed
+showing real per-matchup variance in the same test. Both of the 2 factors flagged by Rodolfo's
+calibration-session findings as having real data but no live wiring are now genuinely live,
+alongside catcher_framing (already working). All 3 calibration-backfill factors now flow into
+live scoring.
+STILL OPEN: live umpire assignment (0/12 games today have an assigned home_plate_umpire_id -
+the live daily miner itself needs fixing before umpire_tendency can use the confirmed-real
+historical data), then building real umpire-tendency computation from
+CONTEXT_DB.context_history_game_umpire.
+Also still open from earlier passes: Issue #3 (singles/1.5 low-sample sum-to-100), Issue #7
+(duplicate legs, upstream ingestion), Issue #8 (FINAL_BOARD_QUOTA_RESERVE_MIN_HP still 45),
+config-completeness gap for remaining flat prop types in config_enrichment_profile_cells.
