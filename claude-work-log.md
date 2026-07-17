@@ -48,8 +48,13 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
   Run passed. Market Full Run FAILED (stale child, retry budget exhausted) - root cause: this was
   BEFORE the lock-starvation issue was found/fixed AND before individual market worker validation.
   Chain marked FAILED overall (error: child_not_completed).
-- NOT YET RETRIED. Will retry once Market Full Run (individual + chain) and Scoring Full Run
-  (individual + chain) are both independently validated 3/3 clean per Rodolfo's protocol.
+- Attempt 2: request_id daily_full_run_mro9gdmm_sntf34, chain_id chain_daily_full_run_mro9gdmm,
+  triggered 2026-07-17 ~01:30 UTC after Market Full Run (3/3) and Daily Context Full Run (3/3)
+  both formally validated. Confirmed started correctly: all 3 board sources completed cleanly
+  (including underdog, previously the flaky one - now fixed), on to score-prep as of last check.
+  Per Rodolfo's instruction: NOT continuously monitoring this run. Will check in periodically
+  instead of hanging/watching to avoid the app-freeze issue. Next check: whenever Rodolfo pings
+  or via a spaced-out check-in.
 
 ---
 
