@@ -289,6 +289,11 @@ scoring-full-run-certifier 3/3, prop-factor-miner 3/3, prop-matrix-builder 3/3,
 enrichment-engine 3/3, scoring-engine-shadow-v1 3/3, hit-probability-board 2/3 (bug fixed),
 score-final-board 3/3. Next: one full, clean scoring-full-run chain pass with no rescue
 needed, before retrying daily-full-run.
+
+## 2026-07-17 ~06:47 UTC - FULL CHAIN PASS STARTED
+Started full scoring-full-run chain: scoring_full_run_mrokst8o_pubp9m,
+chain_scoring_full_run_mrokst8o_pubp9m. First stage (scoring_certifier_first_pass) already
+dispatched and running. Monitoring for one full clean pass with no rescue needed.
 UPDATE ~06:30 UTC: run 2/3 completed. Per Rodolfo's instruction, accepting 2/3 as sufficient
 and moving to score-final-board next - skipping the 3rd run since the fix is already verified
 correct (exact row-count match on both prior runs). Before enqueueing, audited
