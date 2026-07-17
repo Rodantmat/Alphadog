@@ -63,6 +63,11 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
   timeout corrected). Attempt 2 (daily_full_run_mro9gdmm_sntf34) ended up FAILED - my fix landed
   just after the parent's retry budget had already exhausted from the stall, not before. Fix is
   now correctly deployed for future attempts. Starting attempt 3 now.
+  UPDATE ~02:02 UTC: Attempt 3 (daily_full_run_mroacs6q_re1y6g) - parlay-underdog-board stalled
+  again during board-full-run (recurring rare platform-level issue, same class as before; the
+  20s timeout wrapper fix from earlier in the session is confirmed still correctly in place in
+  source, this looks like a genuine intermittent platform stall rather than a code defect).
+  Manually cleared the stuck row; board-full-run resumed processing normally afterward.
 
 ---
 
