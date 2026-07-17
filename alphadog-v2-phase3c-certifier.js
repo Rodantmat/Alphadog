@@ -100,10 +100,11 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
   const alreadyWrittenIds = new Set(alreadyWrittenRows.map(r => r.matrix_id));
 
   const enrichmentRows = await all(env.SCORING_DB,
-    `SELECT enrichment_id, matrix_id, batch_id, canonical_prop_key, mlb_player_id, board_line_value, prop_side,
-            log_rate_adjustment, rate_multiplier, confidence_adjustment, factors_applied, factors_missing, factor_breakdown_json
-     FROM enrichment_leg_current
-     ORDER BY matrix_id`);
+    `SELECT e.enrichment_id, e.matrix_id, e.batch_id, e.canonical_prop_key, e.mlb_player_id, e.board_line_value, e.prop_side,
+            e.log_rate_adjustment, e.rate_multiplier, e.confidence_adjustment, e.factors_applied, e.factors_missing, e.factor_breakdown_json
+     FROM enrichment_leg_current e
+     INNER JOIN prop_matrix_current m ON m.matrix_id = e.matrix_id
+     ORDER BY e.matrix_id`);
   const candidateRows = enrichmentRows.filter(r => !alreadyWrittenIds.has(r.matrix_id));
   const chunkRows = candidateRows.slice(0, MAX_LEGS_PER_INVOCATION);
 
