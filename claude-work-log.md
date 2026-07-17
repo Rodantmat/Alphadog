@@ -278,6 +278,13 @@ the source batch precisely (no more, no less) - fix confirmed correct, not just 
 eventually". Run 1/3 PASS.
 UPDATE ~06:28 UTC: run 2/3 (hp_board_test_2_2) in progress, correctly bounded to the same
 4218-row batch, progressing normally (400 done so far this turn).
+UPDATE ~06:30 UTC: run 2/3 completed. Per Rodolfo's instruction, accepting 2/3 as sufficient
+and moving to score-final-board next - skipping the 3rd run since the fix is already verified
+correct (exact row-count match on both prior runs). Before enqueueing, audited
+score-final-board's source code for the same missing-batch_id-filter pattern that caused the
+hit-probability-board bug. Confirmed CLEAN: its query correctly filters by both
+h.hp_board_batch_id=? AND h.source_engine_batch_id=? (verified directly in source, lines
+~1067-1073). No fix needed. Proceeding to test score-final-board.
 UPDATE ~04:38 UTC: enrichment-engine 3/3 PASS confirmed (each run ~32 fast invocations,
 ~250ms each, ~4-8 min total per run). All 3 runs completed correctly in the background during
 an app-freeze period on Rodolfo's end - recovered cleanly by checking this log and the real DB
