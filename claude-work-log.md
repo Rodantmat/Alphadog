@@ -658,3 +658,13 @@ no-patching-until-clean-passes instruction): change line 154 to simply read
 `matrixRow.player_name` directly instead of parsing JSON.
 This is a clarification/deepening of the already-known player_name bug (pass 7), not a new
 issue class. Continuing to pass 10 with new samples/angles.
+
+## PASS 10 - NEW MINOR ISSUE: DUPLICATE LEGS FROM SAME SOURCE
+Found 5 groups where the identical player+prop+line+source combo has TWO distinct matrix_ids
+(different underlying source_line_ids, e.g. Andrew Benintendi hits 0.5 prizepicks appears as
+both source_line 13137237 and 13137248, same game). Confirmed real via direct row inspection,
+not a query/GROUP BY artifact. Scope is small (~10 legs / ~0.5% of the 1864-leg test board),
+all appear to cluster around the same game/slate, suggesting an upstream board-prep
+deduplication gap (score_board_prepared_current or its source ingestion) rather than a
+scoring-pipeline defect. Low severity compared to issues #1/#4/#5, but confirmed real and new.
+NOT a clean pass. Continuing to pass 11 with new angles.
