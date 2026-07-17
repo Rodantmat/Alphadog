@@ -953,3 +953,43 @@ data (e.g. Pittsburgh Pirates: score 100/severe, 3 high-usage relievers, 2 likel
 actionable signal; Colorado Rockies: score 10/low - genuinely rested, not a placeholder).
 Continuing miner-by-miner fallback audit: probable-pitchers, catcher-context, games-status,
 schedule remaining.
+
+## PROBABLE-PITCHERS: CONFIRMED CLEAN
+0 nulls across 30 games (away_pitcher_id, home_pitcher_id both fully populated). No fallback
+concerns, no bad-placeholder pattern.
+
+## CATCHER-CONTEXT: FOUND STALE (Rodolfo's "stale data is also a bug" principle applied),
+## FIXED WITH REAL DERIVED FALLBACK, THEN FIXED A PERF REGRESSION, NOW CONFIRMED WORKING
+Found daily_catcher_context_current was stuck on a stale prior-day snapshot (last_update
+2026-07-16 23:05, zero rows for today) - traced to writeCatcherContext only ever writing when
+an OFFICIAL lineup is posted; before that (most of the day for most games) it silently writes
+nothing, so the table just sits on old data with zero refresh attempt and zero interim signal.
+Per Rodolfo's explicit instruction (applies to every daily-context factor): built a real,
+researched derived fallback - deriveCatcherFromRecentGame logic (a team's most recent actual
+starting catcher, via STATS_HITTER_DB.hitter_game_logs.played_catcher_flag, is the sharpest
+available predictor absent a rest day/roster move, same principle already proven for the
+lineup derived fallback). Clearly labeled catcher_status=derived_likely_starting_catcher,
+catcher_confidence=LOW_DERIVED_FROM_RECENT_GAME, is_temporary_derived=1 (table already had this
+column in schema, just never populated with anything but 0). Wired so official is ALWAYS tried
+first per game/side; derived only fills in whichever side didn't get an official row - and the
+very next run that sees an official lineup post will overwrite the derived row automatically
+via writeCatcherContext's own INSERT OR REPLACE, so this is a genuinely temporary bridge, not a
+permanent substitute, exactly per Rodolfo's requirement that the system keep trying the real
+source on every run for any game still eligible.
+ALSO FOUND AND FIXED: zero retention pruning existed anywhere for daily_catcher_context_current
+(confirmed live: stale rows going back to 07-11 with no cleanup) - added it to
+pruneDailyLineupRetention, mirroring the same today/tomorrow window already proven correct for
+daily_lineups_current.
+FIRST TEST ATTEMPT FAILED: hard_deadline_timeout at 18000ms - the initial per-game
+sequential-await implementation (2 extra DB round-trips per team needing fallback) pushed the
+worker over its own internal deadline. FIXED (perf): replaced with batchDeriveCatchers +
+batchPlayerNames - ONE query for ALL teams in today's slate, done once before the main game
+loop (mirrors the existing catcherRefMap pattern), reduced in-memory; processOneGame does pure
+synchronous map lookups with zero additional per-game DB calls.
+RETESTED, CONFIRMED FULLY WORKING: fresh run completed successfully (no timeout). Real result:
+17 rows with genuine official data (HIGH_OFFICIAL_LINEUP_POSITION) for games whose lineups have
+now posted, PLUS 5 rows with the new derived fallback (LOW_DERIVED_FROM_RECENT_GAME,
+is_temporary_derived=1) for games that still don't have official lineups - exactly the intended
+behavior. Old stale 07-11 through 07-16 rows are completely gone - retention pruning confirmed
+working too.
+Continuing to games-status and schedule miners next.
