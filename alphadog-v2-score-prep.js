@@ -6,7 +6,7 @@ const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
 const SOURCE_SLEEPER = "sleeper";
 const SOURCE_UNDERDOG = "parlay_underdog";
 const INSERT_CHUNK_SIZE = 75;
-const WRITE_ROWS_PER_INVOCATION = 20000; // v0.2.19: Score Prep is proven to finish ~5-8k rows inside service-binding budget; disable chunk resume race.
+const WRITE_ROWS_PER_INVOCATION = 800; // Reduced from 20000 (which effectively disabled chunking) now that the outer SCORE_PREP_SERVICE_TIMEOUT_MS is correctly 20000ms instead of the old, platform-ceiling-exceeding 90000ms - this size reliably completes within the real budget, with partial_continue resume covering the remainder across invocations.
 
 function nowIso() {
   return new Date().toISOString();
