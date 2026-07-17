@@ -1247,6 +1247,7 @@ async function runMarketSourceProbe(env, input = {}) {
   }
 
   await ensureSchema(env);
+  const permanentMarketBackfill = await permanentlyRecordConfirmedMarketOdds(env).catch(() => ({ copied: 0, checked: 0, error: true }));
   const prune = await pruneProbeWindow(env, boardWindowDates, slateWindowKey);
   const preparedRows = await loadPreparedRows(env, boardWindowDates);
   const gamePks = [...new Set(preparedRows.map(r => Number(r.official_game_pk)).filter(Number.isFinite))];
