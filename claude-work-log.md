@@ -1136,3 +1136,26 @@ arguably enabled the bug to go unnoticed, since the certification looked like a 
 NEXT: retest with real data to confirm the fix, then finish diagnosing why the live tiers
 (official/RefMetrics) aren't producing a real assignment for today's games in the first place -
 that was the original question before this data-loss bug was found and had to be fixed first.
+
+## LIVE UMPIRE ASSIGNMENT CONFIRMED WORKING - DATA-LOSS FIX VERIFIED, NO FURTHER BUG
+Retested after the fix (test_umpire_live_2), starting from the wiped 0-row state: CONFIRMED
+BOTH things at once. (1) Data-loss fix verified: 11/11 games correctly written this time,
+"successful_window_replacement_cleanup" now correctly shows 0 deleted (nothing to wrongly wipe
+since real new rows were written), replacementCleanup no longer runs destructively on empty
+runs. (2) The live-assignment tiers themselves are genuinely working well: 10/11 games got a
+REAL, official MLB umpire assignment directly from live_feed.liveData.boxscore.officials (real
+names: Junior Valentine, Scott Barry, Chris Conroy, Nick Mahrley, Bruce Dreckman, Nestor Ceja,
+Jansen Visconti, Will Little, Bill Miller, Mark Ripperger), and the 1 remaining game correctly
+fell through to the RefMetrics real-credentialed-fetch tier as designed. CONCLUSION: the
+original "0/12 games have an assignment" finding from earlier today was simply because it was
+too early in the day for MLB to have posted assignments yet (same class of timing issue as
+lineups/catcher-context) - NOT a broken fetch. The only REAL bug in this whole path was the
+data-loss issue, now fixed. Live umpire assignment is confirmed genuinely working.
+
+## FINAL PIECE: BUILDING REAL UMPIRE-TENDENCY COMPUTATION
+All that remains for the 5th and last calibration factor: compute real historical K%/BB%/run-
+environment tendency per umpire from CONTEXT_DB.context_history_game_umpire (2461 games, 92
+umpires, confirmed real) joined with real game outcomes, then wire it into buildLegContextReal/
+classifyIntoTier for the umpire_tendency factor (currently hardcoded to "unavailable" both in
+daily_umpire_context_current's umpire_tendency_status field and in the enrichment engine).
+Starting this now.
