@@ -224,6 +224,7 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
       er.mlb_player_id, playerName, er.canonical_prop_key, er.board_line_value, side,
       hp, confidence, hp >= PRIMARY_HP_THRESHOLD ? "playable" : "below_floor", gradeForProbability(hp),
       null, null, primaryPlayable ? "PRIMARY" : "REVIEW", primaryPlayable ? 1 : 0, primaryPlayable ? 0 : 1, primaryPlayable ? 1 : 0, primaryPlayable ? 0 : 1, 0, 0,
+      isGoblin ? 1 : 0, isDemon ? 1 : 0, moreOnly ? 1 : 0,
       JSON.stringify({ real_reordered: true, baseline_hp: baselineHp, baseline_confidence: baseline?.confidence_0_100 ?? null, rate_multiplier: er.rate_multiplier ?? 1.0, factors_applied: er.factors_applied || 0, factors_missing: er.factors_missing || 0, primary_hp_threshold: PRIMARY_HP_THRESHOLD, is_exact_line_match: baselineMatch ? baselineMatch.is_exact_line_match : null, line_distance: baselineMatch ? baselineMatch.line_distance : null, is_goblin: isGoblin, is_demon: isDemon, side_mode: sideMode, more_only: moreOnly, note: "Final HP + Final Confidence computed here, BEFORE Scoring Engine (reordered per spec). score_0_100 intentionally null until Scoring Engine (now running after this stage) fills it in from this row's final HP + final confidence." })
     ));
     written++;
