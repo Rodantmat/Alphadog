@@ -859,3 +859,29 @@ Testing each touched worker individually with fresh data before considering any 
 matrix-builder (prop_side fix), enrichment-engine (real context loader), HP Board (direction +
 nearest-line + player_name + goblin/demon), Final Board (goblin/demon carry-through). Starting
 now.
+
+TEST_MATRIX_BUILDER_1: PASS - prop_matrix_batch_mrpexktv_kp5sph, 1921/1921 rows, prop_side='more'
+for all 1921 rows (was NULL for 100% before the fix). Confirmed real, non-null data now.
+
+TEST_ENRICHMENT_2: Code fix (loadRealLegContexts/buildLegContextReal) CONFIRMED CORRECT AND
+NECESSARY, but revealed a SECOND, DEEPER, PREVIOUSLY UNDISCOVERED root cause. rate_multiplier
+still shows zero variance per prop type after the fix (checked all 15 prop types in the batch,
+distinct_vals=1 for every one). Investigated properly rather than assume the fix failed:
+- Confirmed real source data DOES vary correctly (daily_game_weather_current has real, distinct
+  temperature_f/roof_status per game; the earlier "empty payload keys" theory was right and is
+  now fixed).
+- Found the REAL remaining cause: config_enrichment_profile_cells is essentially SKELETON/
+  EXAMPLE data - queried it directly: every continuous_formula/tiered_bands factor has only
+  1-3 total configured cells, each covering only 1-2 of the 16+ real prop types (e.g.
+  weather_temp_altitude_pressure has exactly ONE cell, configured only for "home_runs";
+  opposing_pitcher_quality only for "hits"; lineup_slot only for "runs", etc). The code's
+  fallback `cells.find(c => c.prop_key === propKey) || cells[0]` means for any prop NOT
+  explicitly configured (the vast majority), it silently reuses whatever arbitrary cell exists
+  for a DIFFERENT prop, applying mismatched coefficients regardless of the real per-game
+  context now being correctly loaded. Confirmed via direct comparison: two completely
+  different players (Alec Burleson, Corbin Carroll) produced byte-for-byte identical
+  factor_breakdown_json, including a weather cell explicitly labeled for "home_runs" being
+  applied to their "hits" legs.
+This is a genuine config-completeness gap requiring real domain-informed coefficients per
+factor+prop combination to fill in - not something to improvise without Rodolfo's input.
+Reported to Rodolfo, holding before continuing to HP Board/Final Board tests pending direction.
