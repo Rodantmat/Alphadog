@@ -331,6 +331,7 @@ async function loadRealLegContexts(env, matrixRows) {
     marketByGame: new Map(marketRows.map(r => [String(r.game_pk), r])),
     pitcherQualityByPitcherId,
     oaaProbabilityDeltaByTeam,
+    umpireTendencyByGame,
     teamIdByAbbrev
   };
 }
