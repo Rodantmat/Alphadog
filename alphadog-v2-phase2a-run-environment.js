@@ -533,6 +533,7 @@ async function runEnrichment(env, input) {
      LIMIT ?`, batchId, MAX_LEGS_PER_INVOCATION);
 
   const ctxMaps = await loadRealLegContexts(env, matrixRows);
+  const _debugUmpireInfo = { gamePks_sample: [...new Set(matrixRows.map(r => r.game_pk))].slice(0, 5), umpireTendencyByGame_size: ctxMaps.umpireTendencyByGame.size, umpireTendencyByGame_keys: [...ctxMaps.umpireTendencyByGame.keys()] };
 
   let written = 0;
   const statements = [];
