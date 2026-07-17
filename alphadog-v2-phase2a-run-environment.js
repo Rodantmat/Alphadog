@@ -339,6 +339,7 @@ function buildLegContextReal(matrixRow, ctxMaps) {
     back_to_back_reliever_count: relevantBullpen.back_to_back_reliever_count ?? null,
     bullpen_fatigue_score: relevantBullpen.bullpen_fatigue_score ?? null,
     availability_status: availability.availability_status ?? null,
+    matchup_specific_oaa_probability_delta: ctxMaps.oaaProbabilityDeltaByTeam.get(String(oppTeamId)) ?? null,
   };
 }
 
