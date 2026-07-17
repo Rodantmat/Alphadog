@@ -918,3 +918,38 @@ present), test twice - once forcing/observing the real primary-source path, once
 observing the fallback path - and judge honestly whether each fallback is genuinely useful data
 or a placeholder that would corrupt downstream logic. Do NOT change code just to force a test;
 only test what exists and evaluate. Starting fresh board-full-run now.
+
+## FRESH BOARD COMPLETE + WEATHER/PLAYER-AVAILABILITY AUDIT CLEAN
+Fresh board-full-run (fresh_board_full_run_1) completed all 4 stages cleanly (prizepicks,
+sleeper, underdog, score-prep). bat_side hydration fix confirmed 100% working on all teams
+processed post-deploy (test_static_players_batside_2, still finishing remaining teams via
+background cron). Weather audit: CONFIRMED CLEAN - real multi-source cascading (MLB feed +
+OpenWeather + OpenMeteo backup), roof-status inference for retractable roofs is defensible
+(uses real weather data, explicitly labeled low-confidence, never overrides real observed
+status). Player-availability: CONFIRMED CLEAN - real, meaningful statuses observed, no blank-
+placeholder pattern.
+
+## MAJOR FIX CONFIRMED: BULLPEN FATIGUE ALL-STAR-BREAK GAP (Rodolfo caught this live)
+Rodolfo correctly explained the real cause behind all-zero bullpen_fatigue_score/
+high_usage_reliever_count readings I'd flagged as suspicious: 2026-07-13/14/15 had ZERO real
+MLB games (All-Star break), confirmed via mlb_game_calendar (0 games each of those 3 dates,
+just 1 game - the All-Star Game itself - on 07-16). The worker's fixed "last 3 CALENDAR days"
+window found nothing during this gap and defaulted every team to "rested" (0), which is wrong -
+Rodolfo's key instruction: the system needs to be ready for scheduling gaps (All-Star break now,
+but also playoff series gaps, rainout stretches later) by using the team's last REAL games
+played, not a fixed calendar window.
+FIXED in alphadog-v2-daily-bullpen-availability.js:
+1. rowsInWindow() now selects the team's last N DISTINCT game-dates with real appearances
+   (lastNGameDates helper), not a fixed calendar-day cutoff - naturally finds real last
+   appearances regardless of how many calendar days back that is.
+2. Widened the raw source fetch window from 3 to 21 days back (both getBullpenRows and the
+   recentCal calendar-games check) so there's enough real historical data available to find
+   real last-appearance games across any realistic in-season gap.
+TESTED WITH REAL DATA: fresh run (test_bullpen_gap_fix_1) now shows rich, varied, real signal
+across all 18 teams - real scores (10 to 100), real statuses (normal/taxed/high_risk/depleted),
+real high_usage_reliever_count (0-3) and likely_unavailable_relievers (0-2) per team - a
+complete transformation from the prior all-zero placeholder result. Confirmed genuinely useful
+data (e.g. Pittsburgh Pirates: score 100/severe, 3 high-usage relievers, 2 likely unavailable -
+actionable signal; Colorado Rockies: score 10/low - genuinely rested, not a placeholder).
+Continuing miner-by-miner fallback audit: probable-pitchers, catcher-context, games-status,
+schedule remaining.
