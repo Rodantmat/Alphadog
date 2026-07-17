@@ -1625,7 +1625,8 @@ function boardRowBindValues(batchId, sourceEngineBatchId, rank, row, id) {
     row.hp_rank == null ? null : Number(row.hp_rank), row.hp_sort_0_100 == null ? null : Number(row.hp_sort_0_100),
     row.sample_size == null ? null : Number(row.sample_size), row.non_push_sample == null ? null : Number(row.non_push_sample),
     row.hit_count == null ? null : Number(row.hit_count), row.miss_count == null ? null : Number(row.miss_count), row.push_count == null ? null : Number(row.push_count),
-    row.hp_source_board_tier || null, row.hp_source_lane_reason || null
+    row.hp_source_board_tier || null, row.hp_source_lane_reason || null,
+    Number(row.is_goblin || 0), Number(row.is_demon || 0), Number(row.more_only || 0)
   ];
 }
 
