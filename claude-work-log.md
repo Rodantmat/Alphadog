@@ -1041,3 +1041,45 @@ NEXT: wire ctx.pitcher_xfip_minus and ctx.matchup_specific_oaa_probability_delta
 buildLegContextReal (enrichment's context loader) so these two factors stop returning
 null/missing in live scoring. Then: fix live umpire assignment, then build real umpire-tendency
 computation from the now-confirmed-real historical data.
+
+## RECOVERY - APP DISCONNECTED AGAIN MID-PATCH (2nd time this session), CONFIRMED NO LOSS
+Rodolfo reported the chat lost display again (screenshot showed a "Response incomplete" banner
+mid-patch, showing team-ID mapping work in progress that wasn't in this log yet). Per standing
+rule, checked this log first, then verified the ACTUAL deployed source directly rather than
+trust the screenshot or assume anything was lost.
+CONFIRMED FULLY COMPLETE AND DEPLOYED (nothing lost):
+- CRITICAL BUG FOUND AND FIXED (this was the work in progress when the app disconnected):
+  prop_matrix_current stores team_id/opponent_team_id as ABBREVIATIONS ("CWS", "TOR"), but every
+  daily-context table (daily_starters_current, daily_bullpen_availability_current,
+  daily_catcher_context_current) uses the NUMERIC MLB team_id. This silent mismatch meant
+  starterByGameTeam/bullpenByGameTeam/catcherByGameTeam lookups had been failing to match this
+  entire time despite all the real underlying data being correct - confirmed live:
+  platoon_handedness, bullpen_fatigue, and catcher_framing were all still showing "missing"
+  even after the loadRealLegContexts fix, purely due to this key-format mismatch.
+  FIXED: fetch REF_DB.ref_teams (abbreviation->numeric mapping) once per invocation, normalize
+  matrixRow.team_id/opponent_team_id to numeric via teamIdByAbbrev before every lookup in
+  buildLegContextReal (ownTeamId/oppTeamId). Confirmed via direct source read this was fully
+  applied everywhere it needed to be, not partial.
+- Pitcher-arsenal wiring for opposing_pitcher_quality ALSO fully complete: no real xfip_minus
+  field exists (that was never real), so this computes a genuine usage-weighted aggregate of
+  run_value_per_100 across the starter's real pitch mix from the now-refreshing
+  ref_pitcher_arsenal table - confirmed fully wired end to end (loadRealLegContexts fetches +
+  aggregates it, buildLegContextReal passes it through, evaluateContinuousFactor consumes it).
+STILL OPEN (correctly not yet done, confirmed via direct code read): defensive_quality_oaa's
+ctx.matchup_specific_oaa_probability_delta is referenced in evaluateContinuousFactor but never
+actually set anywhere in loadRealLegContexts/buildLegContextReal - this specific wiring is
+genuinely the next remaining step, not something lost.
+TESTED WITH REAL DATA to confirm the team-ID fix actually works (not just looks correct in
+source): fresh enrichment run (test_teamid_fix_1) shows REAL per-player variance now for
+several prop types that were previously stuck at 1 distinct value - hits (6 distinct
+rate_multipliers), home_runs (6), total_bases (6), walks (6), walks_allowed (4). Remaining flat
+prop types (doubles, earned_runs, fantasy_score, hits_allowed, hits_runs_rbis, pitcher_outs,
+rbis, runs, singles, stolen_bases) are the ALREADY-KNOWN separate config-completeness gap
+(config_enrichment_profile_cells skeleton data, needs Rodolfo's domain input) - not a new issue,
+not something this fix was expected to solve.
+CONFIRMS: the "Response incomplete" UI glitch did not lose any actual work - the underlying
+GitHub patches had already saved successfully before the display cut off. This is the 2nd time
+this exact recovery pattern has worked cleanly this session.
+NEXT: finish defensive_quality_oaa wiring (matchup_specific_oaa_probability_delta from the now-
+refreshing ref_defensive_quality table), then live umpire assignment fix, then umpire-tendency
+computation from the confirmed-real historical data.
