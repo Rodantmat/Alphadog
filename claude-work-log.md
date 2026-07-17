@@ -255,6 +255,12 @@ UPDATE ~05:29 UTC: run 3/3 still progressing steadily (100 rows/cycle), several 
 invocations needed given ~2000 total rows.
 UPDATE ~05:31 UTC: scoring-engine-shadow-v1 run 3/3 PASS confirmed. scoring-engine-shadow-v1:
 3/3 PASS overall. Moving to hit-probability-board next.
+UPDATE ~05:41 UTC: hit-probability-board first test attempt failed with
+"blocked_missing_source_engine_batch" - this is EXPECTED, not a bug: this worker requires a
+source scoring-engine batch as input (it reads scoring-engine's output), and a truly isolated
+standalone test has no such batch. Fixed by explicitly passing source_engine_batch_id pointing
+at the batch left behind by the last successful scoring-engine-shadow-v1 test. Now progressing
+normally (400/~2000 rows across 4 quick invocations this turn).
 UPDATE ~04:38 UTC: enrichment-engine 3/3 PASS confirmed (each run ~32 fast invocations,
 ~250ms each, ~4-8 min total per run). All 3 runs completed correctly in the background during
 an app-freeze period on Rodolfo's end - recovered cleanly by checking this log and the real DB
