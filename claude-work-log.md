@@ -319,6 +319,8 @@ with no code changes needed. Continuing to monitor toward one fully clean pass.
 UPDATE ~07:14 UTC: matrix-builder completed cleanly (no rescue needed). enrichment-engine now
 in progress, chunking normally (~32 fast invocations expected). Chain healthy so far: 3/8
 stages clean (certifier, prop-factor-miner, matrix-builder).
+UPDATE ~07:19 UTC: enrichment-engine completed cleanly (no rescue). scoring-engine-shadow-v1
+now in progress. 4/8 stages clean so far, chain healthy.
 UPDATE ~06:30 UTC: run 2/3 completed. Per Rodolfo's instruction, accepting 2/3 as sufficient
 and moving to score-final-board next - skipping the 3rd run since the fix is already verified
 correct (exact row-count match on both prior runs). Before enqueueing, audited
