@@ -354,3 +354,19 @@ several invocations per run, ~5-7 min each). Moving to scoring-engine-shadow-v1 
 NOTE: chat app disconnected/lost display mid-session again during this testing (confirmed via
 Rodolfo's screenshot) - this log successfully preserved all real progress across the gap with
 zero data loss or duplicated work, exactly as designed.
+
+## 2026-07-17 ~15:44 UTC - SCHEDULED DAILY-FULL-RUN RESCUE
+Scheduled 7AM PT daily-full-run (chain_daily_full_run_2026_07_17_0700_PT) failed at
+market-full-run again. Root cause: same residual dispatch-delay pattern as before - 3
+consecutive market-certifier attempts (14:11, 14:15, 14:19) each sat 4 min with started_at=null
+before being replaced by stale-retry; a 4th attempt eventually dispatched and completed
+cleanly at 14:29, but only AFTER the parent had already exhausted its retry budget and failed
+at 14:27. Verified the priority fix from earlier today is still correctly deployed (priority=2
+confirmed live in source) - this is NOT a regression of that bug, just the same intermittent
+residual delay observed before, this time unlucky enough to exhaust all 3 retries.
+Board Full Run and Daily Context Full Run both completed successfully in this chain (confirmed
+via real queue data) - no need to redo them. Rescuing efficiently: started a fresh standalone
+market_full_run (market_full_run_mrp3yegj_8wjrjn) rather than re-running the whole
+daily-full-run, to avoid wasting time redoing already-completed work. Will follow with
+scoring-full-run once market completes, to deliver the equivalent of a completed daily-full-run
+without redundant reprocessing. Monitoring now.
