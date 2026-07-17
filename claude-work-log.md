@@ -706,3 +706,72 @@ original 45 value (not even the old 60 mentioned in the plan, just untouched at 
 This is a genuine unactioned-plan-item, not a runtime bug in existing logic, but still a real
 gap against agreed work. NOT a clean pass. Continuing to pass 14 for the required 2nd
 consecutive clean pass.
+
+## COMPREHENSIVE SCOPE + ROOT CAUSE ANALYSIS - ALL 8 ISSUES (per Rodolfo's explicit request)
+Completed deep-dive scope and root-cause work on every issue via direct SQL/code investigation,
+not guessing. Full findings:
+
+ISSUE 1 (Direction bug) - DEEPER ROOT CAUSE FOUND: confirmed prop_side is NULL for 100% of BOTH
+prop_matrix_current (1926/1926) and enrichment_leg_current (4495/4495) rows - the "side" concept
+is never actually propagated anywhere downstream of board-prep. HP Board defaults to "more" via
+a hardcoded fallback (`er.prop_side || "more"`), then (due to the missing-selected_side cache
+key) grabs the WRONG baseline value. Found the matrix payload carries an intended design never
+implemented: side_context.scoring_side_rule = "evaluate_more_and_less_select_stronger..." -
+confirmed via grep that NEITHER enrichment-engine NOR HP-board reference this anywhere. Issue 1
+is actually a COMPOUND gap: (a) the intended dynamic side-selection logic was never built
+anywhere downstream, (b) the current default-to-more + wrong-cache-key combination produces
+wrong results. Scope: affects 100% of legs, all prop types, hitters and pitchers (confirmed
+exact-math on a real pitcher leg: Merrill Kelly hits_allowed, baseline more=89.49/less=10.51,
+observed final HP=1, only explainable by using "less").
+
+ISSUE 2 (Variation coverage gap) - ROOT CAUSE FOUND: baseline_v6/classification_v6 generates a
+fixed set of standard line increments per prop (not dynamically matched to whatever line the
+current board actually offers). Found a SEPARATE, more sophisticated "expansion_line_inventory"
+system already exists in the same codebase with explicit dynamic-generation support
+(hardcoded_line_lists_rejected:true, needs_dynamic_generation flag) - but this system feeds
+different tables (player_baseline_hp_v2_current / expansion_player_baseline_hp_current), NOT
+baseline_v6_current, which is what HP Board actually reads. The fix infrastructure may already
+partially exist but isn't wired to the active pipeline.
+
+ISSUE 3 (Singles/1.5 inconsistency) - ROOT CAUSE FOUND: confirmed via direct query that both
+sides show non_push_sample=1 (only one real observed data point). "More" and "less" are computed
+as two INDEPENDENT shrinkage calculations (not derived as complements of each other), so with
+only 1 real sample, small asymmetries between the two independent blends don't cancel to exactly
+100. This is a low-sample-size computation artifact, explaining why it's isolated to specific
+low-sample legs rather than being systemic.
+
+ISSUE 4 (Enrichment identical values) - Root cause already confirmed: boundedJson() naive
+string-slice truncation. Scope: confirmed to affect both hitters and pitchers, all prop types
+tested show zero variance in rate_multiplier.
+
+ISSUE 5 (player_name NULL 48.2%) - Same root cause as #4 (truncation). CRITICAL CLARIFICATION:
+prop_matrix_current already has a DEDICATED player_name COLUMN (separate from the JSON, never
+truncated, always correctly populated by matrix-builder). The bug is simply that HP Board's code
+(line 154) ignores this reliable column and instead re-parses player_name out of the
+(sometimes-truncated) JSON. Trivial, low-risk exact fix identified: use matrixRow.player_name
+directly.
+
+ISSUE 6 (Final Board missing goblin/demon/more-only) - DEEPER FINDING: confirmed prop_matrix_current
+has NO dedicated is_goblin/is_demon/more_only columns - this data lives ONLY inside
+matrix_payload_json, meaning it's exposed to the SAME truncation risk as #4/#5, not just a
+"needs wiring" gap. Real fix requires either fixing the truncation root cause first, or adding
+dedicated columns (matching the player_name pattern) as a robust carrier.
+
+ISSUE 7 (Duplicate legs) - ROOT CAUSE FOUND: confirmed via direct query that the two duplicate
+matrix_ids trace back to two distinct source_row_ids (13137237, 13137248) from the SAME
+prizepicks source, created 2 seconds apart in score_board_prepared_current. This is an upstream
+INGESTION-layer duplication (in prizepicks-github-board's feed parsing / board-prep write path,
+not the scoring pipeline), which never deduplicates on player+prop+line+source before writing.
+
+ISSUE 8 (Quota reserve constant not updated) - Simple, no further depth needed: confirmed via
+direct code read this is just an unactioned line-edit from the original plan, isolated to one
+constant, no wider scope.
+
+UNIFYING FINDING: Issues #4, #5, and #6 all trace back to or are placed at risk by the SAME
+single architectural root cause - matrix-builder's naive character-position JSON truncation
+(boundedJson) with zero field-boundary awareness. Fixing this at the source (either smarter
+truncation, size increase, or moving critical fields to dedicated columns like player_name
+already has) would resolve or substantially de-risk 3 of the 8 confirmed issues simultaneously.
+
+ALL 8 ISSUES NOW HAVE CONFIRMED SCOPE AND ROOT CAUSE. Awaiting Rodolfo's go-ahead before any
+patching begins.
