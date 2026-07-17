@@ -206,6 +206,7 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
         er.mlb_player_id, playerName, er.canonical_prop_key, er.board_line_value, side,
         null, null, "no_baseline_available", "BIN_0_NULL",
         null, null, "REVIEW", 0, 1, 0, 1, 0, 0,
+        isGoblin ? 1 : 0, isDemon ? 1 : 0, moreOnly ? 1 : 0,
         JSON.stringify({ real_reordered: true, no_baseline_coverage: true, is_goblin: isGoblin, is_demon: isDemon, side_mode: sideMode, more_only: moreOnly, note: "No baseline_v6 row found for this player/prop/line/side combo even after nearest-line fallback - cannot compute HP without a baseline. Tracked here (not skipped silently) to avoid re-processing this leg on every future invocation." })
       ));
       reviewRows++;
