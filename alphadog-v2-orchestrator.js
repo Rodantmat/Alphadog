@@ -1115,6 +1115,18 @@ async function processBoardFullRunJob(env, row, runId, trigger) {
     }
 
     if (!validation.pass) {
+      if (validation.transient === true) {
+        const retryCount = (() => { try { return Number(JSON.parse(child.input_json || "{}").retry_count || 0); } catch (_) { return 0; } })();
+        const BOARD_FULL_RUN_TRANSIENT_RETRY_MAX = 2;
+        if (retryCount < BOARD_FULL_RUN_TRANSIENT_RETRY_MAX) {
+          const enqueued = await enqueueBoardFullRunChild(env, row, stage, i, retryCount + 1);
+          const output = { ok: true, data_ok: true, version: SYSTEM_VERSION, worker_name: WORKER_NAME, job_key: row.job_key, request_id: row.request_id, chain_id: row.chain_id, mode: "board_full_run", status: "PARTIAL_CONTINUE_BOARD_FULL_RUN_TRANSIENT_RETRY_ENQUEUED", certification: "BOARD_FULL_RUN_TRANSIENT_RETRY_ENQUEUED", certification_grade: "PARTIAL", current_stage_key: stage.stage_key, retry_child_request_id: enqueued.child_request_id, retry_count: retryCount + 1, completed_stage_count: stageReports.length, total_stage_count: BOARD_FULL_RUN_STAGES.length, stages: [...stageReports, { ...report, transient_retry: true }], continuation_required: true, orchestrator_should_self_continue: true, lock_held: true };
+          await run(env.CONTROL_DB, "INSERT OR REPLACE INTO control_job_runs (run_id, request_id, chain_id, job_key, worker_name, status, data_ok, certification_status, rows_read, rows_written, external_calls, started_at, finished_at, elapsed_ms, input_json, output_json) VALUES (?, ?, ?, ?, ?, 'partial_continue', 1, 'BOARD_FULL_RUN_TRANSIENT_RETRY_ENQUEUED', ?, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)", runId, row.request_id, row.chain_id, row.job_key, row.worker_name, i + 1, Date.now() - started, JSON.stringify(parentInput), JSON.stringify(output));
+          await run(env.CONTROL_DB, "UPDATE control_job_queue SET status='pending', run_after=datetime('now','+3 seconds'), updated_at=CURRENT_TIMESTAMP, output_json=?, error_code=NULL, error_message=NULL WHERE request_id=?", JSON.stringify(output), row.request_id);
+          await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, run_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, ?, 'WARN', 'board_full_run_transient_retry_enqueued', 'Board Full Run replaced a transient child failure with a same-stage retry instead of failing the whole chain', ?, CURRENT_TIMESTAMP)", row.request_id, runId, WORKER_NAME, row.job_key, JSON.stringify({ stage_key: stage.stage_key, failed_child_request_id: child.request_id, retry_child_request_id: enqueued.child_request_id, retry_count: retryCount + 1, reason: validation.reason }));
+          return output;
+        }
+      }
       const isLastStage = i >= BOARD_FULL_RUN_STAGES.length - 1;
       if (!isLastStage) {
         stageReports.push({ ...report, skipped_forward: true, skip_reason: "stage_failed_but_not_last_letting_remaining_stages_run_on_available_data" });
