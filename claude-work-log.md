@@ -67,11 +67,20 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
   again during board-full-run (recurring rare platform-level issue, same class as before; the
   20s timeout wrapper fix from earlier in the session is confirmed still correctly in place in
   source, this looks like a genuine intermittent platform stall rather than a code defect).
-  Manually cleared the stuck row; board-full-run resumed processing normally afterward.
-  CONFIRMED: score-prep completed cleanly this attempt (proof the 20s timeout fix resolved that
-  stall). Board Full Run completed. Now into Daily Context Full Run (on certifier first pass,
-  running, as of 02:03 UTC). Stepping back from active monitoring again per Rodolfo's instruction -
-  will check in periodically.
+  UPDATE ~02:14 UTC: Rodolfo correctly pushed back on my earlier "rare platform stall" claim
+  (unproven) for parlay-underdog-board. Properly investigated: found the REAL root cause - the
+  worker itself had NO overall deadline wrapper on its /run handler (only one internal MLB-side
+  fetch call had an AbortSignal timeout). If any OTHER internal step hung, my caller-side
+  serviceBindingFetch timeout could not force a response, because a genuinely stuck server-side
+  process cannot be interrupted from the outside - only an internal deadline inside the worker
+  itself can guarantee a bounded response. Added the same proven withDeadline() wrapper pattern
+  used successfully in every other worker fixed this session, directly around safeProbe() inside
+  parlay-underdog-board.js's /run handler (15s internal deadline, returns a clean
+  hard_deadline_timeout response instead of hanging indefinitely). Deployed and confirmed live in
+  source. Could not cleanly re-test in isolation without disrupting the active daily-full-run
+  chain (already past the board stage) - the next real board-full-run cycle (either later in
+  this same daily-full-run, or a future one) will be the first live proof point. Will watch for
+  it specifically.
 
 ---
 
