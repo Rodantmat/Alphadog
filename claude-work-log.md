@@ -222,3 +222,11 @@ first (scoring-full-run-certifier, prop-factor-miner, prop-matrix-builder, enric
 scoring-engine-shadow-v1, hit-probability-board, score-final-board), THEN one full clean
 scoring-full-run chain pass with no rescue needed, before attempting daily-full-run again.
 Starting now.
+UPDATE ~03:52 UTC: scoring-full-run-certifier: 3/3 PASS (fast, ~700ms-3.7s each, worker
+correctly dispatches/completes regardless of upstream data completeness - "gaps" reflect
+real board state, not a certifier defect). prop-factor-miner: run 1/3 PASS - full chunked
+completion took ~5 minutes across ~11 invocations (180 rows/invocation, 1939 total rows).
+Given the remaining 5 workers (prop-matrix-builder, enrichment-engine, scoring-engine-shadow-v1,
+hit-probability-board, score-final-board) each need 3x full-completion runs and several are
+also chunked, this individual-worker protocol will take significant additional time. Continuing
+systematically per Rodolfo's instruction.
