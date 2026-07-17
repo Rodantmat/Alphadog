@@ -282,6 +282,32 @@ async function findRecentCrewForVenue(env, homeTeamId, beforeDate) {
   return row || null;
 }
 
+// REAL FIX: context_history_game_umpire (the permanent historical table umpire_tendency's
+// computation depends on) was a static, one-time snapshot from the prior calibration session
+// with ZERO ongoing mechanism to add new games - confirmed live: last written 4 days ago,
+// meaning the tendency computation would keep recomputing the same frozen dataset forever,
+// never learning from new games as the season progresses. daily_umpire_assignment_history
+// already captures every REAL (not derived) confirmed assignment (recordAssignmentHistory is
+// only ever called when probe.found === true), but only keeps a rolling 10-day window - this
+// copies those real, confirmed rows into the PERMANENT table before they age out, so the
+// historical dataset genuinely grows day by day going forward. Idempotent (game_pk primary
+// key, INSERT OR IGNORE) - never overwrites an existing permanent record.
+async function permanentlyRecordConfirmedAssignments(env) {
+  const rows = await all(env.DAILY_DB, `SELECT game_pk, official_date, home_team_id, home_plate_umpire_id, home_plate_umpire_name, crew_umpire_ids_json FROM daily_umpire_assignment_history WHERE home_plate_umpire_id IS NOT NULL`).catch(() => []);
+  if (!rows.length) return { copied: 0, checked: 0 };
+  const gamePks = rows.map(r => r.game_pk);
+  const existingRows = await all(env.CONTEXT_DB, `SELECT game_pk FROM context_history_game_umpire WHERE game_pk IN (${gamePks.map(() => "?").join(",")})`, ...gamePks).catch(() => []);
+  const existingPks = new Set(existingRows.map(r => Number(r.game_pk)));
+  const toInsert = rows.filter(r => !existingPks.has(Number(r.game_pk)));
+  let copied = 0;
+  for (const r of toInsert) {
+    await run(env.CONTEXT_DB, `INSERT OR IGNORE INTO context_history_game_umpire (game_pk, official_date, venue_id, home_team_id, home_plate_umpire_id, home_plate_umpire_name, crew_umpire_ids_json, source_key, raw_json, captured_at) VALUES (?, ?, NULL, ?, ?, ?, ?, 'daily_umpire_assignment_history_permanent_backfill_v0_1_0', NULL, CURRENT_TIMESTAMP)`,
+      r.game_pk, r.official_date, r.home_team_id, r.home_plate_umpire_id, r.home_plate_umpire_name, r.crew_umpire_ids_json).catch(() => {});
+    copied++;
+  }
+  return { copied, checked: rows.length };
+}
+
 async function pruneRetention(env, retention) {
   const inClause = retention.dates.map(() => "?").join(",");
   const currentOutside = await run(env.DAILY_DB, `DELETE FROM daily_umpire_context_current WHERE official_date IS NULL OR official_date NOT IN (${inClause})`, ...retention.dates);
