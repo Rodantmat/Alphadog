@@ -253,6 +253,8 @@ UPDATE ~05:19 UTC: scoring-engine-shadow-v1 run 2/3 PASS. Run 3/3 in progress, c
 cycling (100 rows/invocation, needs several invocations for ~2000 total matrix rows).
 UPDATE ~05:29 UTC: run 3/3 still progressing steadily (100 rows/cycle), several more
 invocations needed given ~2000 total rows.
+UPDATE ~05:31 UTC: scoring-engine-shadow-v1 run 3/3 PASS confirmed. scoring-engine-shadow-v1:
+3/3 PASS overall. Moving to hit-probability-board next.
 UPDATE ~04:38 UTC: enrichment-engine 3/3 PASS confirmed (each run ~32 fast invocations,
 ~250ms each, ~4-8 min total per run). All 3 runs completed correctly in the background during
 an app-freeze period on Rodolfo's end - recovered cleanly by checking this log and the real DB
