@@ -1159,3 +1159,40 @@ umpires, confirmed real) joined with real game outcomes, then wire it into build
 classifyIntoTier for the umpire_tendency factor (currently hardcoded to "unavailable" both in
 daily_umpire_context_current's umpire_tendency_status field and in the enrichment engine).
 Starting this now.
+
+## ALL 5 CALIBRATION FACTORS NOW COMPLETE - UMPIRE TENDENCY BUILT, DEBUGGED, AND CONFIRMED WORKING
+Built refreshUmpireTendencyIfStale in daily-lineups.js: real per-umpire historical K/BB/runs
+tendency vs league average, computed from CONTEXT_DB.context_history_game_umpire joined (in-
+memory, cross-DB) with TEAM_DB.team_game_logs, stored in new REF_DB.ref_umpire_tendency table.
+FIRST TEST: 0 umpires written despite the join running without error. Investigated properly
+rather than assume the underlying data was bad: confirmed both tables genuinely cover the same
+date range and game_pk range with real overlap (1899 of 2461 umpire-history games fall within
+team_game_logs' actual pk range, and spot-checked specific game_pks matched perfectly when
+queried directly). ROOT CAUSE FOUND: my own chunking used CHUNK=300 for the team_game_logs
+IN-clause lookup, likely exceeding D1's safe bound-parameter limit - the deliberate .catch(()=>[])
+on that query was silently swallowing what was actually a limit-exceeded failure for most
+chunks, not a real "no data" result. FIXED: reduced CHUNK to 90. RETESTED: league_games_used
+jumped from 61 to 1899 (matching the real overlap exactly), 83 of 92 umpires got a real,
+stable tendency signal (>=10 games each) with sensible variance. Wired into classifyIntoTier
+(tiered_bands factor, strikeouts_delta_vs_league classifying pitcher_friendly_zone/
+hitter_friendly_zone/neutral_zone at +-0.3 K/game, a defensible starting split pending
+Rodolfo's domain review same as the still-empty lift/penalty coefficients). Fetched today's
+real assigned umpire (daily_umpire_context_current) joined with their real tendency into
+loadRealLegContexts/buildLegContextReal. TESTED WITH REAL DATA: confirmed genuinely working -
+real examples "umpire_tendency","status":"applied","cell_id":"umpire_tendency__walks_allowed__hitter_friendly__under"
+and "...pitcher_strikeouts__pitcher_friendly__over" - correctly picks the real zone per game's
+actual umpire. Contribution shows 0 only because lift/penalty are still empty in config (same
+known, separate gap as other factors) - classification mechanism proven correct and real.
+
+## SUMMARY: ALL 5 FACTORS FROM RODOLFO'S CALIBRATION-SESSION FINDINGS NOW LIVE IN SCORING
+1. Catcher framing - already working. 2. Pitcher arsenal - wired, tested, real variance
+confirmed. 3. Defensive OAA - wired, tested, real variance confirmed. 4. Historical weather -
+correctly training-only, no live gap. 5. Umpire (assignment + tendency) - both built, a real
+data-loss bug found/fixed along the way, tested and confirmed end to end. All 3 new reference-
+data refreshes (arsenal, OAA, umpire tendency) have a proper ongoing ~daily self-gated refresh,
+resolving Rodolfo's static-vs-incremental architecture question - piggybacked on daily-lineups.js's
+proven pattern rather than new dedicated workers/schedules.
+STILL OPEN (separate from this work): config_enrichment_profile_cells completeness gap (most
+prop/factor combos still have null lift/penalty/coefficients - needs Rodolfo's domain input),
+Issue #3 (singles/1.5 low-sample sum-to-100), Issue #7 (duplicate legs, upstream ingestion),
+Issue #8 (FINAL_BOARD_QUOTA_RESERVE_MIN_HP still 45, should be 70).
