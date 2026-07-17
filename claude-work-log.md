@@ -276,6 +276,8 @@ hit-probability-board test 1/3 clean (hp_board_test_2_1) - now correctly bounded
 UPDATE ~06:27 UTC: hp_board_test_2_1 completed. Verified: exactly 4218 rows written, matching
 the source batch precisely (no more, no less) - fix confirmed correct, not just "terminates
 eventually". Run 1/3 PASS.
+UPDATE ~06:28 UTC: run 2/3 (hp_board_test_2_2) in progress, correctly bounded to the same
+4218-row batch, progressing normally (400 done so far this turn).
 UPDATE ~04:38 UTC: enrichment-engine 3/3 PASS confirmed (each run ~32 fast invocations,
 ~250ms each, ~4-8 min total per run). All 3 runs completed correctly in the background during
 an app-freeze period on Rodolfo's end - recovered cleanly by checking this log and the real DB
