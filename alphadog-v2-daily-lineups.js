@@ -390,6 +390,86 @@ async function refreshDefensiveQualityIfStale(env, seasonYear) {
   return { refreshed: true, rows_written: written, source_rows: rows.length };
 }
 
+// REAL FIX (final piece of the 5-factor calibration wiring): umpire_tendency was honestly
+// documented everywhere as "no reliable internal/historical umpire tendency source is verified"
+// - but CONTEXT_DB.context_history_game_umpire now genuinely has this (2461 games, 92 umpires,
+// confirmed via direct query before writing this code). Computes a real, defensible tendency:
+// for each umpire, the average combined (both teams) strikeouts/walks/runs per game they've
+// officiated, compared against the real league-wide average across the same games - a
+// K-friendly umpire calls more strikeouts than league average, a hitter-friendly one allows
+// more walks/runs. D1 cannot JOIN across databases (CONTEXT_DB vs TEAM_DB), so this fetches
+// both real datasets separately and joins in memory - same pattern already used elsewhere this
+// session. Stored in a new REF_DB.ref_umpire_tendency table, same ~20h self-gated staleness
+// pattern as the other reference refreshes in this file.
+async function refreshUmpireTendencyIfStale(env) {
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_umpire_tendency`).catch(() => null);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_umpire_tendency (
+    umpire_id INTEGER PRIMARY KEY,
+    umpire_name TEXT,
+    games_umpired INTEGER,
+    avg_strikeouts_per_game REAL,
+    avg_walks_per_game REAL,
+    avg_runs_per_game REAL,
+    strikeouts_delta_vs_league REAL,
+    walks_delta_vs_league REAL,
+    runs_delta_vs_league REAL,
+    source_key TEXT,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+
+  const umpireGameRows = await all(env.CONTEXT_DB, `SELECT game_pk, home_plate_umpire_id, home_plate_umpire_name FROM context_history_game_umpire WHERE home_plate_umpire_id IS NOT NULL`).catch(() => []);
+  if (!umpireGameRows.length) return { refreshed: false, reason: "no_umpire_history_rows" };
+  const gamePks = [...new Set(umpireGameRows.map(r => r.game_pk).filter(Boolean))];
+
+  const CHUNK = 300;
+  const gameOutcomeByPk = new Map();
+  for (let i = 0; i < gamePks.length; i += CHUNK) {
+    const chunk = gamePks.slice(i, i + CHUNK);
+    const ph = chunk.map(() => "?").join(",");
+    const rows = await all(env.TEAM_DB, `SELECT game_pk, strikeouts, walks, runs FROM team_game_logs WHERE game_pk IN (${ph})`, ...chunk).catch(() => []);
+    for (const r of rows) {
+      const pk = Number(r.game_pk);
+      if (!gameOutcomeByPk.has(pk)) gameOutcomeByPk.set(pk, { k: 0, bb: 0, runs: 0 });
+      const g = gameOutcomeByPk.get(pk);
+      g.k += Number(r.strikeouts) || 0;
+      g.bb += Number(r.walks) || 0;
+      g.runs += Number(r.runs) || 0;
+    }
+  }
+
+  let leagueK = 0, leagueBB = 0, leagueRuns = 0, leagueGames = 0;
+  const byUmpire = new Map();
+  for (const r of umpireGameRows) {
+    const outcome = gameOutcomeByPk.get(Number(r.game_pk));
+    if (!outcome) continue;
+    leagueK += outcome.k; leagueBB += outcome.bb; leagueRuns += outcome.runs; leagueGames += 1;
+    const uid = Number(r.home_plate_umpire_id);
+    if (!byUmpire.has(uid)) byUmpire.set(uid, { name: r.home_plate_umpire_name, k: 0, bb: 0, runs: 0, games: 0 });
+    const u = byUmpire.get(uid);
+    u.k += outcome.k; u.bb += outcome.bb; u.runs += outcome.runs; u.games += 1;
+  }
+  if (leagueGames === 0) return { refreshed: false, reason: "no_matching_game_outcomes" };
+  const leagueAvgK = leagueK / leagueGames, leagueAvgBB = leagueBB / leagueGames, leagueAvgRuns = leagueRuns / leagueGames;
+
+  const umpireStatements = [];
+  let umpiresWritten = 0;
+  const MIN_GAMES_FOR_REAL_TENDENCY = 10;
+  for (const [uid, u] of byUmpire.entries()) {
+    if (u.games < MIN_GAMES_FOR_REAL_TENDENCY) continue;
+    const avgK = u.k / u.games, avgBB = u.bb / u.games, avgRuns = u.runs / u.games;
+    umpireStatements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_umpire_tendency (umpire_id, umpire_name, games_umpired, avg_strikeouts_per_game, avg_walks_per_game, avg_runs_per_game, strikeouts_delta_vs_league, walks_delta_vs_league, runs_delta_vs_league, source_key, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      uid, u.name, u.games, avgK, avgBB, avgRuns, avgK - leagueAvgK, avgBB - leagueAvgBB, avgRuns - leagueAvgRuns, "context_history_game_umpire+team_game_logs_v0_1_0"
+    ));
+    umpiresWritten++;
+  }
+  if (umpireStatements.length) await env.REF_DB.batch(umpireStatements);
+  return { refreshed: true, umpires_written: umpiresWritten, league_games_used: leagueGames, league_avg_strikeouts: leagueAvgK, league_avg_walks: leagueAvgBB, league_avg_runs: leagueAvgRuns };
+}
+
 async function writeCatcherContext(env, batchId, gamePk, calendar, side, validation, refMap) {
   const mapped = Array.isArray(validation && validation.mapped_players) ? validation.mapped_players : [];
   const catcher = mapped.find(p => String(p.position) === "2");
