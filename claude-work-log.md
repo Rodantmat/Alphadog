@@ -273,6 +273,9 @@ in-flight test, cleaned up its partial hp_board_current/hp_board_batches rows, f
 "WHERE batch_id=?" using the already-available parameter, deployed, confirmed live. Restarted
 hit-probability-board test 1/3 clean (hp_board_test_2_1) - now correctly bounded to just the
 4218-row source batch, progressing normally.
+UPDATE ~06:27 UTC: hp_board_test_2_1 completed. Verified: exactly 4218 rows written, matching
+the source batch precisely (no more, no less) - fix confirmed correct, not just "terminates
+eventually". Run 1/3 PASS.
 UPDATE ~04:38 UTC: enrichment-engine 3/3 PASS confirmed (each run ~32 fast invocations,
 ~250ms each, ~4-8 min total per run). All 3 runs completed correctly in the background during
 an app-freeze period on Rodolfo's end - recovered cleanly by checking this log and the real DB
