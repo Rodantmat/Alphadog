@@ -190,6 +190,11 @@ function factorAppliesTo(factor, propKey) {
   return null;
 }
 
+function clampContribution(value, bound) {
+  if (value == null || !Number.isFinite(value)) return value;
+  return Math.max(-bound, Math.min(bound, value));
+}
+
 function factorFamilyForProp(propKey) {
   const pitcherProps = new Set(["pitcher_strikeouts", "pitcher_outs", "pitching_outs", "earned_runs", "earned_runs_allowed", "hits_allowed", "walks_allowed", "pitches_thrown", "rfi_nrfi"]);
   return pitcherProps.has(String(propKey || "")) ? "pitcher" : "hitter";
