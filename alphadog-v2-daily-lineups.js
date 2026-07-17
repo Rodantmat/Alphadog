@@ -425,7 +425,7 @@ async function refreshUmpireTendencyIfStale(env) {
   if (!umpireGameRows.length) return { refreshed: false, reason: "no_umpire_history_rows" };
   const gamePks = [...new Set(umpireGameRows.map(r => r.game_pk).filter(Boolean))];
 
-  const CHUNK = 300;
+  const CHUNK = 90;
   const gameOutcomeByPk = new Map();
   for (let i = 0; i < gamePks.length; i += CHUNK) {
     const chunk = gamePks.slice(i, i + CHUNK);
