@@ -370,6 +370,8 @@ market_full_run (market_full_run_mrp3yegj_8wjrjn) rather than re-running the who
 daily-full-run, to avoid wasting time redoing already-completed work. Will follow with
 scoring-full-run once market completes, to deliver the equivalent of a completed daily-full-run
 without redundant reprocessing. Monitoring now.
+UPDATE ~15:57 UTC: scoring_full_run_mrp479lu_ypl4b4 started. Certifier-first-pass completed
+cleanly. prop-factor-miner chunking normally, progressing steadily. No issues so far.
 UPDATE ~15:50 UTC: market_full_run_mrp3yegj_8wjrjn COMPLETED successfully - all 5 stages done
 in ~6 minutes. Only one hiccup: market_hitters hit one clean, real 25s timeout (properly
 caught, not a silent hang) and self-healed via retry on the very next attempt - healthy
