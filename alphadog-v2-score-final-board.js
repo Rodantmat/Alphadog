@@ -1046,6 +1046,9 @@ async function fetchHpFinalBoardCandidateRows(env, sourceEngineBatchId, pageSize
         h.selected_side,
         h.score_0_100,
         h.score_grade,
+        h.is_goblin,
+        h.is_demon,
+        h.is_more_only,
 
         e.profile_key,
         NULL AS source_scoring_worker_version,
