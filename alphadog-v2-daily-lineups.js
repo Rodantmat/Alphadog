@@ -351,7 +351,7 @@ async function refreshPitcherArsenalIfStale(env, seasonYear) {
     ));
     written++;
   }
-  if (statements.length) await batchRun(env.REF_DB, statements, 40);
+  if (statements.length) await env.REF_DB.batch(statements);
   return { refreshed: true, rows_written: written, source_rows: rows.length };
 }
 
