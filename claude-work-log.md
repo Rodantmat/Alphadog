@@ -188,3 +188,15 @@ for full diff history):
   extensive debug logging - does not appear to affect performance but could be pruned later.
 - Consider a permanent code-level fix for the job-priority-starvation issue (#8 above) rather
   than relying on manual priority overrides, if it recurs during production use.
+
+## 2026-07-17 ~03:29 UTC UPDATE
+market-full-run completed ALL 5 stages successfully within daily_full_run_mrobyfle_508nyp
+(certifier-first, teams, hitters, pitchers, certifier-last). Real observed pattern: the priority
+fix resolved the PERMANENT stuck state from before, but there was still an intermittent delay -
+2 of the 5 stages needed one stale-retry cycle (~4 min) before actually getting dispatched,
+rather than instant. Not ideal, but self-healing now instead of dying permanently. Root cause of
+the residual delay not fully isolated yet.
+Daily-full-run has now moved to its FINAL stage: scoring-full-run. Proactively found and fixed
+the IDENTICAL priority mismatch in SCORING_FULL_RUN_STAGES (all 8 stages were priority=5, same
+pattern as market/daily-context) before it could cause the same issue here. Deployed. Watching
+this final stage closely given its severity.
