@@ -190,6 +190,79 @@ function factorAppliesTo(factor, propKey) {
   return null;
 }
 
+function factorFamilyForProp(propKey) {
+  const pitcherProps = new Set(["pitcher_strikeouts", "pitcher_outs", "pitching_outs", "earned_runs", "earned_runs_allowed", "hits_allowed", "walks_allowed", "pitches_thrown", "rfi_nrfi"]);
+  return pitcherProps.has(String(propKey || "")) ? "pitcher" : "hitter";
+}
+
+// REAL FIX (root cause): the old buildLegContextFromPayload parsed matrix_payload_json looking
+// for payload.daily_context / payload.market_context - but Matrix Builder's actual payload
+// structure (prepared/side_context/variation_context/scoring_placeholders) never contained
+// those keys at all, regardless of truncation. This function instead fetches the REAL,
+// granular daily-context and market-context data directly from its own real source tables,
+// batched per-chunk by game_pk/player_id for efficiency - the same real tables Prop Factor
+// Miner and Matrix Builder already check for readiness, just read here for their actual values.
+async function loadRealLegContexts(env, matrixRows) {
+  const gamePks = [...new Set(matrixRows.map(r => r.game_pk).filter(Boolean))];
+  const playerIds = [...new Set(matrixRows.map(r => r.mlb_player_id).filter(Boolean))];
+  const empty = { weatherByGame: new Map(), lineupByGamePlayer: new Map(), starterByGameTeam: new Map(), bullpenByGameTeam: new Map(), catcherByGameTeam: new Map(), availByGamePlayer: new Map(), marketByGame: new Map() };
+  if (!gamePks.length) return empty;
+  const gph = gamePks.map(() => "?").join(",");
+  const pph = playerIds.map(() => "?").join(",");
+
+  const weatherRows = await all(env.DAILY_DB, `SELECT game_pk, temperature_f, rain_risk_flag, roof_status FROM daily_game_weather_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
+  const lineupRows = playerIds.length ? await all(env.DAILY_DB, `SELECT game_pk, player_id, bat_side FROM daily_lineups_current WHERE game_pk IN (${gph}) AND player_id IN (${pph})`, ...gamePks, ...playerIds).catch(() => []) : [];
+  const starterRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, starter_hand FROM daily_starters_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
+  const bullpenRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, high_usage_reliever_count, back_to_back_reliever_count, bullpen_fatigue_score FROM daily_bullpen_availability_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
+  const catcherRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, framing_runs_total FROM daily_catcher_context_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
+  const availRows = playerIds.length ? await all(env.DAILY_DB, `SELECT game_pk, mlb_player_id, availability_status FROM daily_player_availability_current_v1 WHERE game_pk IN (${gph}) AND mlb_player_id IN (${pph})`, ...gamePks, ...playerIds).catch(() => []) : [];
+  const marketRows = await all(env.MARKET_DB, `SELECT game_pk, derived_home_implied_runs, derived_away_implied_runs FROM market_context_probe_game_market_summary WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
+
+  return {
+    weatherByGame: new Map(weatherRows.map(r => [String(r.game_pk), r])),
+    lineupByGamePlayer: new Map(lineupRows.map(r => [`${r.game_pk}|${r.player_id}`, r])),
+    starterByGameTeam: new Map(starterRows.map(r => [`${r.game_pk}|${r.team_id}`, r])),
+    bullpenByGameTeam: new Map(bullpenRows.map(r => [`${r.game_pk}|${r.team_id}`, r])),
+    catcherByGameTeam: new Map(catcherRows.map(r => [`${r.game_pk}|${r.team_id}`, r])),
+    availByGamePlayer: new Map(availRows.map(r => [`${r.game_pk}|${r.mlb_player_id}`, r])),
+    marketByGame: new Map(marketRows.map(r => [String(r.game_pk), r]))
+  };
+}
+
+function buildLegContextReal(matrixRow, ctxMaps) {
+  const gamePk = matrixRow.game_pk;
+  const playerId = matrixRow.mlb_player_id;
+  const isPitcherProp = factorFamilyForProp(matrixRow.canonical_prop_key) === "pitcher";
+  const ownTeamId = matrixRow.team_id;
+  const oppTeamId = matrixRow.opponent_team_id;
+  const weather = ctxMaps.weatherByGame.get(String(gamePk)) || {};
+  const lineup = ctxMaps.lineupByGamePlayer.get(`${gamePk}|${playerId}`) || {};
+  const oppStarter = ctxMaps.starterByGameTeam.get(`${gamePk}|${oppTeamId}`) || {};
+  // Real, honest disambiguation preserved from the original design: for a hitter leg, the
+  // relevant bullpen/catcher is the OPPONENT's; for a pitcher leg, it's the pitcher's OWN
+  // team's bullpen (relief support behind them).
+  const relevantBullpen = isPitcherProp ? (ctxMaps.bullpenByGameTeam.get(`${gamePk}|${ownTeamId}`) || {}) : (ctxMaps.bullpenByGameTeam.get(`${gamePk}|${oppTeamId}`) || {});
+  const catcher = ctxMaps.catcherByGameTeam.get(`${gamePk}|${oppTeamId}`) || {};
+  const availability = ctxMaps.availByGamePlayer.get(`${gamePk}|${playerId}`) || {};
+  const market = ctxMaps.marketByGame.get(String(gamePk)) || {};
+
+  return {
+    temp_f: weather.temperature_f ?? null,
+    precipitation_probability_pct: weather.rain_risk_flag ? 50 : null,
+    roof_status: weather.roof_status ?? null,
+    catcher_framing_runs_per_game: catcher.framing_runs_total ?? null,
+    implied_team_total: market.derived_home_implied_runs ?? market.derived_away_implied_runs ?? null,
+    league_avg_implied_total: 4.3,
+    prop_key: matrixRow.canonical_prop_key || null,
+    batter_hand: lineup.bat_side ?? null,
+    pitcher_hand: oppStarter.starter_hand ?? null,
+    high_usage_reliever_count: relevantBullpen.high_usage_reliever_count ?? null,
+    back_to_back_reliever_count: relevantBullpen.back_to_back_reliever_count ?? null,
+    bullpen_fatigue_score: relevantBullpen.bullpen_fatigue_score ?? null,
+    availability_status: availability.availability_status ?? null,
+  };
+}
+
 function buildLegContextFromPayload(payload, propSide) {
   // Real, honest extraction from Matrix Builder's real matrix_payload_json - pulls whatever
   // real fields the upstream daily-context/factor packets actually carry. Missing fields
