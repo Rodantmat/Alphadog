@@ -175,8 +175,8 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
         source_key, game_pk, official_date, official_game_time_utc, mlb_player_id, player_name, canonical_prop_key, line_value, selected_side,
         estimated_hit_probability_0_100, probability_confidence_0_100, probability_band, probability_grade,
         score_0_100, score_grade, board_tier, live_playable, review_playable, hp_primary_playable, hp_review_playable, warning_count, blocker_count,
-        calibration_json, created_at, updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
+        is_goblin, is_demon, is_more_only, calibration_json, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
   for (const er of chunkRows) {
     const matrixRow = matrixById.get(er.matrix_id) || {};
     // FIX #5: read player_name from the dedicated, never-truncated column matrix-builder
