@@ -602,3 +602,23 @@ This is a confirmed GAP against the original spec (Rodolfo required goblin/demon
 a broken calculation, a genuinely missing feature that still needs to be built.
 This pass found something new (the goblin/demon gap) - does NOT count as a clean pass.
 Continuing to pass 7 with new angles.
+
+## PASS 7 - CRITICAL FINDING: ORIGINAL PLAYER_NAME BUG STILL PRESENT, UNFIXED
+Checked Final Board's read query for correctness: confirmed it correctly excludes null-score
+legs (h.score_0_100 IS NOT NULL) - clean, no bug there. But its filter also requires
+h.player_name IS NOT NULL - this is the SAME player_name NULL issue flagged at the very start
+of today's entire investigation (matrix-lookup data-loss bug, root cause #7 in the original
+spec discussion). CONFIRMED STILL PRESENT in the reordered code: 899 of 1864 legs (48.2%) have
+player_name=NULL in hp_board_current, meaning nearly half of all legs are silently dropped from
+Final Board regardless of HP/score quality. This was supposed to be fixed as part of today's
+work but was carried forward into the HP Board rewrite unaddressed.
+Traced the code: alphadog-v2-phase3c-certifier.js line 154 extracts player_name from the
+matrix_payload_json. Given the payload is confirmed truncated (see issue #4), whether
+player_name survives likely depends on where the truncation cutoff falls relative to that
+field in the JSON structure - this strongly suggests issues #4 and this player_name bug SHARE
+THE SAME ROOT CAUSE (matrix-builder's payload truncation/compaction logic), manifesting in two
+different ways. Not yet 100% confirmed they're the same root cause - needs verification in the
+root-cause-correlation phase once 2 clean passes are achieved.
+Also confirmed clean this pass: Scoring Engine's final-score formula (8/8 random samples match
+round(clamp(0.65*HP+0.35*confidence,1,99)) exactly).
+NOT a clean pass (major still-open issue found). Continuing to pass 8.
