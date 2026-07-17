@@ -605,7 +605,14 @@ async function runBullpen(env, input) {
   const calendars = await getCalendar(env, gamePks);
   const targets = makeTargets(prepared, calendars).filter(t => Number(t.prepared_board_pickable_rows || 0) > 0);
   const teamIds = [...new Set(targets.map(t => Number(t.team_id)).filter(Boolean))];
-  const minDate = targets.length ? targets.map(t => addDays(t.official_date, -3)).sort()[0] : addDays(retention.start, -3);
+  // REAL FIX: widened from 3 to 21 days back. The old 3-day fetch window meant that during any
+  // real scheduling gap (All-Star break, a playoff series gap, a rainout-heavy stretch) there
+  // was no historical data available at all for the last-N-real-games logic above to find -
+  // confirmed live: 2026-07-13/14/15 had zero real games (All-Star break), which produced false
+  // "fully rested" zeros for every team. 21 days safely covers any realistic in-season gap while
+  // the last-N-real-games selection (not this raw fetch bound) still correctly picks only the
+  // team's true most recent appearances, not stale data from weeks back.
+  const minDate = targets.length ? targets.map(t => addDays(t.official_date, -21)).sort()[0] : addDays(retention.start, -21);
   const maxDate = targets.length ? targets.map(t => addDays(t.official_date, -1)).sort().slice(-1)[0] : retention.end;
   const bullpenRows = await getBullpenRows(env, teamIds, minDate, maxDate);
   const recentCalendarRows = await getRecentCalendarRows(env, teamIds, minDate, maxDate);
