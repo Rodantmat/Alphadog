@@ -154,7 +154,24 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
     const baseline = baselineByPlayerProp.get(`${er.mlb_player_id}|${er.canonical_prop_key}|${er.board_line_value}`);
     const baselineHp = baseline?.hit_probability_0_100 ?? null;
     const hp = computeRealHitProbability(baselineHp, er.rate_multiplier);
-    if (hp == null) continue;
+    if (hp == null) {
+      // BUG FIX: previously this leg was skipped via continue without being tracked as
+      // written, which meant it got re-read and re-skipped on every subsequent invocation
+      // forever (a real infinite-loop found via live testing - board_rows_written got stuck
+      // at a fixed number across multiple consecutive invocations). Now write an explicit
+      // no-baseline placeholder row so this leg is correctly excluded from future chunks.
+      statements.push(env.SCORE_DB.prepare(insertSql).bind(
+        `hp_${er.enrichment_id}`, hpBatchId, sourceMatrixBatchId || null, matrixRow.prepared_row_id || null, er.matrix_id, matrixRow.source_line_id || null, PROFILE_KEY, SYSTEM_VERSION,
+        matrixRow.source_key || null, matrixRow.game_pk || null, matrixRow.official_date || null, matrixRow.official_game_time_utc || null,
+        er.mlb_player_id, matrixById.get(er.matrix_id)?.player_name || null, er.canonical_prop_key, er.board_line_value, er.prop_side || "more",
+        null, null, "no_baseline_available", "BIN_0_NULL",
+        null, null, "REVIEW", 0, 1, 0, 1, 0, 0,
+        JSON.stringify({ real_reordered: true, no_baseline_coverage: true, note: "No baseline_v6 row found for this player/prop/line combo - cannot compute HP without a baseline. Tracked here (not skipped silently) to avoid re-processing this leg on every future invocation." })
+      ));
+      reviewRows++;
+      written++;
+      continue;
+    }
     const confidence = computeFinalConfidence(baseline?.confidence_0_100, er);
 
     const primaryPlayable = hp >= PRIMARY_HP_THRESHOLD && confidence >= 55;
