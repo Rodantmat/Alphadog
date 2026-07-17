@@ -622,3 +622,23 @@ root-cause-correlation phase once 2 clean passes are achieved.
 Also confirmed clean this pass: Scoring Engine's final-score formula (8/8 random samples match
 round(clamp(0.65*HP+0.35*confidence,1,99)) exactly).
 NOT a clean pass (major still-open issue found). Continuing to pass 8.
+
+## PASS 8 - FOUND THE EXACT SHARED ROOT CAUSE OF ISSUES #4 AND THE PLAYER_NAME BUG
+Traced matrix-builder's payload compaction directly: function boundedJson(value, max=2400) in
+alphadog-v2-phase2b-certifier.js does a NAIVE STRING SLICE on the serialized JSON -
+`text.slice(0, Math.max(200, max-120))` - with zero awareness of JSON field/object boundaries.
+It truncates the full payload at an arbitrary character position (~2280 chars) whenever the
+full serialized payload exceeds 2400 chars.
+THIS MECHANICALLY EXPLAINS BOTH major issues found so far, not just a suspected correlation:
+- Issue #4 (enrichment applying identical values to every player): daily_context/market_context
+  fields get cut off whenever they serialize past the ~2280 char cutoff point for that leg.
+- Pass 7's player_name=NULL bug (48.2% of legs): player_name (nested under payload.prepared)
+  gets cut off whenever the "prepared" object is large enough, or ordered late enough in that
+  leg's specific JSON serialization, to fall past the same cutoff.
+Both are explained by the exact same naive-truncation defect, confirmed at the code level, not
+just circumstantially. This is a highly significant structural finding. Per Rodolfo's
+instruction, continuing to accumulate passes rather than jumping straight to root-cause/fix
+work - noting this connection now so it isn't lost, but the pass-counting continues.
+NOT a clean pass (this is a re-confirmation/deepening of already-known issues #4 and the
+player_name bug, not a brand-new defect class, but still surfaced new critical understanding).
+Continuing to pass 9.
