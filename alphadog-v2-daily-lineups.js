@@ -347,7 +347,7 @@ async function refreshPitcherArsenalIfStale(env, seasonYear) {
       Number(r.run_value_per_100) || null, intOrNull(r.run_value), intOrNull(r.pitches), Number(r.pitch_usage) || null, intOrNull(r.pa),
       Number(r.ba) || null, Number(r.slg) || null, Number(r.woba) || null, Number(r.whiff_percent) || null, Number(r.k_percent) || null,
       Number(r.put_away) || null, Number(r.est_ba) || null, Number(r.est_slg) || null, Number(r.est_woba) || null, Number(r.hard_hit_percent) || null,
-      "baseball_savant_pitch_arsenal_stats_v0_2_0", compactJson({ csv_row: r })
+      "baseball_savant_pitch_arsenal_stats_v0_2_0", safeJsonStringify({ csv_row: r })
     ));
     written++;
   }
