@@ -18,10 +18,11 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
   market_hitters, market_pitchers — ALL DONE, ALL PASS.
 - market-full-run (chain):
   - Run 1: PASS (~8.6 min, all 5 stages, request_id market_full_run_mro667j6_ns2ar1)
-  - Run 2: All 5 stages completed (request_id market_full_run_mro7knum_y79hl1) — parent
-    finalization pending final tick (was lock_busy at last check, competing with a separately
-    triggered scoring-full-run chain — see below). NEEDS RE-VERIFICATION this session.
-  - Run 3: NOT YET STARTED.
+  - Run 2: PASS confirmed (request_id market_full_run_mro7knum_y79hl1, certification
+    MARKET_FULL_RUN_CERTIFIED, grade PASS). Took much longer than run 1 (~35 min) purely due to
+    the lock-starvation issue below, not a code defect - once priority was fixed it completed
+    normally.
+  - Run 3: STARTING NOW.
 
 ### SCORING
 - Individual workers: NOT YET TESTED (my formal plan hasn't reached this yet).
