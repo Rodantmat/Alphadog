@@ -5,7 +5,7 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
 
 ---
 
-## 2026-07-17 01:15 UTC — Status Snapshot
+## 2026-07-17 01:20 UTC — Status Snapshot
 
 ### DAILY CONTEXT
 - Individual workers (3/3 clean runs each): daily-certifier, daily-probable-pitchers, daily-lineups,
@@ -26,22 +26,23 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
 
 ### SCORING
 - Individual workers: NOT YET TESTED (my formal plan hasn't reached this yet).
-- scoring-full-run (chain): A separate, NOT-Claude-initiated run is active —
+- scoring-full-run (chain): A separate, NOT-Claude-initiated run occurred -
   request_id scoring_full_run_mro71sux_228ucs, chain_id chain_scoring_full_run_mro71sux_228ucs,
   triggered via "SCORING > Full Run" button tap at 2026-07-17 00:22:42 (confirmed via
-  control_worker_run_log — visible_button field). Origin unconfirmed/disputed by Rodolfo.
-  Progress as of last check: stages 1-5 complete (certifier-first, prop-factor-miner,
-  matrix-builder, enrichment-engine, scoring-engine), stage 6 (hit-probability-board) in
-  progress via chunked partial_continue (~100 rows/cycle, ~4700+ rows written and growing).
-  Real, legitimate progress — not stuck. Was starving market-full-run of the GLOBAL_ORCHESTRATOR
-  lock (same job priority=1 vs market-full-run's priority=9 default). FIXED by manually setting
-  market_full_run_mro7knum_y79hl1's priority to 1 to compete fairly — this worked, market-full-run
-  advanced afterward.
+  control_worker_run_log - visible_button field). Origin unconfirmed/disputed by Rodolfo.
+  UPDATE: this run COMPLETED SUCCESSFULLY at 01:09:16, all 8 stages including final-board and
+  certifier-last-pass. Real proof the chain can complete end-to-end. This counts as informal
+  evidence but NOT as one of the formal 3 required scoring-full-run test runs per Rodolfo's
+  protocol (individual workers not yet tested first) - will still do the full
+  individual-worker-first + 3x chain protocol properly when we get there.
+  It WAS starving market-full-run of the GLOBAL_ORCHESTRATOR lock while active (its
+  priority=1 vs market-full-run's priority=9 default) - FIXED by manually setting
+  market_full_run_mro7knum_y79hl1's priority to 1 to compete fairly - this worked.
 
 ### DAILY FULL RUN (4-in-1: Board -> Daily Context -> Market -> Scoring)
 - Attempt 1: request_id daily_full_run_mro3kqqx_on0y25. Board Full Run passed (after clearing one
-  stuck parlay-underdog-board row — genuine platform stall, unrelated to code). Daily Context Full
-  Run passed. Market Full Run FAILED (stale child, retry budget exhausted) — root cause: this was
+  stuck parlay-underdog-board row - genuine platform stall, unrelated to code). Daily Context Full
+  Run passed. Market Full Run FAILED (stale child, retry budget exhausted) - root cause: this was
   BEFORE the lock-starvation issue was found/fixed AND before individual market worker validation.
   Chain marked FAILED overall (error: child_not_completed).
 - NOT YET RETRIED. Will retry once Market Full Run (individual + chain) and Scoring Full Run
@@ -49,7 +50,7 @@ Claude updates this log every time it starts, fixes, or completes ANY job — mi
 
 ---
 
-## KEY FIXES APPLIED THIS SESSION (for reference, not exhaustive — see git commit history on
+## KEY FIXES APPLIED THIS SESSION (for reference, not exhaustive - see git commit history on
 alphadog-v2-daily-usage-pulse.js, alphadog-v2-daily-probable-pitchers.js, alphadog-v2-daily-lineups.js,
 alphadog-v2-daily-player-availability.js, alphadog-v2-orchestrator.js, generate_wrangler_configs.py
 for full diff history):
@@ -62,12 +63,12 @@ for full diff history):
 4. daily-player-availability: fixed a real crash bug (undefined schemaEnsuredCache from an
    earlier incomplete deploy), batched schema creation, disconnected SOURCE_DEADLINE_MS safety
    net now properly wired, removed unnecessary 7-day lookback window, added real team-based
-   chunking + partial_continue (10 teams/invocation) since the work is genuinely large — not
+   chunking + partial_continue (10 teams/invocation) since the work is genuinely large - not
    forced into an artificial single-invocation deadline.
 5. Orchestrator: fixed missing timeout wrapper on parlay-underdog-board dispatch (was hanging
-   indefinitely, no bound at all) — added serviceBindingFetch with 20s timeout, same fix applied
+   indefinitely, no bound at all) - added serviceBindingFetch with 20s timeout, same fix applied
    to prizepicks-github-board and parlay-sleeper-board proactively.
-6. Orchestrator: restored 1-minute cron (from 5-minute) with real evidence this time — the
+6. Orchestrator: restored 1-minute cron (from 5-minute) with real evidence this time - the
    5-minute value was based on an earlier unproven assumption and was making every chain 5x
    slower without fixing the actual external-API timeout issues it was blamed for.
 7. Orchestrator: fixed daily-player-availability's dispatcher to correctly report partial_continue
@@ -80,8 +81,6 @@ for full diff history):
 ---
 
 ## OPEN QUESTIONS / TODO
-- Verify market-full-run run 2 actually finalized to "completed" status (was pending confirmation
-  when this log was created).
 - Run market-full-run run 3.
 - Test each Scoring Full Run individual worker 3x (scoring-full-run-certifier, prop-factor-miner,
   matrix-builder, enrichment-engine, scoring-engine-shadow-v1, hit-probability-board, final-board).
@@ -90,4 +89,6 @@ for full diff history):
 - Minor/deferred: lineups.js has 3 leftover debug-instrumentation log INSERT calls (harmless,
   low overhead, not yet cleaned up).
 - Minor/deferred: control_worker_run_log table is very large (500MB+) from this session's
-  extensive debug logging — does not appear to affect performance but could be pruned later.
+  extensive debug logging - does not appear to affect performance but could be pruned later.
+- Consider a permanent code-level fix for the job-priority-starvation issue (#8 above) rather
+  than relying on manual priority overrides, if it recurs during production use.
