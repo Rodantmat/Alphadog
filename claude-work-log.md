@@ -834,3 +834,28 @@ legs, upstream ingestion), Issue #8 (FINAL_BOARD_QUOTA_RESERVE_MIN_HP still 45, 
 
 NEXT: finish issue #6 (schema + wiring), then test all fixes with fresh data end-to-end before
 declaring any of them done.
+
+## ISSUE #6 NOW FULLY COMPLETE
+Added is_goblin/is_demon/is_more_only columns to hp_board_current, score_final_board_current,
+and score_final_board_history (all 3 tables, plus added to Final Board's auto-migration
+extraCols list for consistency). Updated HP Board's INSERT to write the values it already
+extracts. Updated Final Board's SELECT to read h.is_goblin/h.is_demon/h.is_more_only from
+hp_board_current. Found Final Board ALREADY had in-memory logic computing
+is_goblin/is_demon/more_only from hpCal (parsed calibration_json) into its row object - but
+traced the REAL write path (insertBoardRowsBatched -> boardInsertSql + boardRowBindValues) and
+confirmed these fields were being silently dropped before ever reaching the database (column
+list and bind values never included them). Fixed both boardInsertSql (added columns) and
+boardRowBindValues (added Number(row.is_goblin||0), Number(row.is_demon||0),
+Number(row.more_only||0) - note existing in-memory field is named "more_only" not
+"is_more_only", bound correctly to the is_more_only column). Confirmed via call-site grep that
+the older singular insertBoardRow function is dead code (zero call sites) - only
+insertBoardRowsBatched is actually used (called twice: once for score_final_board_history, once
+for score_final_board_current) - no need to fix the dead function.
+ISSUE #6 IS NOW FULLY WIRED END TO END: HP Board extracts + stores -> Final Board reads +
+carries through -> real INSERT writes it to both output tables.
+
+## STARTING INDIVIDUAL WORKER TESTS PER RODOLFO'S INSTRUCTION
+Testing each touched worker individually with fresh data before considering any fix proven:
+matrix-builder (prop_side fix), enrichment-engine (real context loader), HP Board (direction +
+nearest-line + player_name + goblin/demon), Final Board (goblin/demon carry-through). Starting
+now.
