@@ -1,8 +1,8 @@
 const WORKER_NAME = "alphadog-v2-phase2b-certifier";
 const LOGICAL_WORKER_NAME = "alphadog-v2-prop-matrix-builder";
 const JOB_KEY = "prop-matrix-builder";
-const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.14-compact-storage-safe";
-const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.12-matrix-compact-storage-safe";
+const SYSTEM_VERSION = "alphadog-v2-prop-matrix-builder-v0.1.15-dedup-and-explicit-side";
+const DEPLOYED_SLOT_VERSION = "alphadog-v2-phase2b-certifier-v0.2.13-dedup-and-explicit-side";
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "SCORE_DB", "SCORING_DB"];
 
