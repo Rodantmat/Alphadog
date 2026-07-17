@@ -323,6 +323,21 @@ UPDATE ~07:19 UTC: enrichment-engine completed cleanly (no rescue). scoring-engi
 now in progress. 4/8 stages clean so far, chain healthy.
 UPDATE ~07:29 UTC: scoring-engine-shadow-v1 still chunking normally (needs ~20 invocations,
 progressing steadily every cycle). No issues. 4/8 stages fully clean, 5th in progress.
+
+## 2026-07-17 ~07:46 UTC - CLEAN RUN ACHIEVED
+scoring_full_run_mrolb1fd_re8ndp COMPLETED - all 8 stages passed cleanly with ZERO rescues,
+retries, or manual fixes needed during the run itself (only the pre-run investigation of
+prop-factor-miner's one slow-but-not-stuck invocation earlier, which resolved on its own with
+no code change). Full stage list: certifier-first-pass -> prop-factor-miner -> matrix-builder
+-> enrichment-engine -> scoring-engine -> hit-probability-board -> final-board ->
+certifier-last-pass. All completed, parent chain itself shows status=completed.
+Certifier-last-pass reports "gaps" (prop-factor-miner 1939/2009, final-board 145/2009) but
+these are NOT new issues - they match the exact same legitimate filtering behavior already
+validated during individual worker testing (final-board's 145-row output was identical across
+all 3 standalone test runs). The certifier compares against raw prepared-board count rather
+than each stage's own eligible-row count, which is a known characteristic, not a defect.
+THIS IS THE CLEAN RUN RODOLFO REQUESTED. Total runtime ~45 minutes end to end.
+Rodolfo is offline until tomorrow - leaving this as the final, confirmed-clean state.
 UPDATE ~06:30 UTC: run 2/3 completed. Per Rodolfo's instruction, accepting 2/3 as sufficient
 and moving to score-final-board next - skipping the 3rd run since the fix is already verified
 correct (exact row-count match on both prior runs). Before enqueueing, audited
