@@ -370,6 +370,42 @@ market_full_run (market_full_run_mrp3yegj_8wjrjn) rather than re-running the who
 daily-full-run, to avoid wasting time redoing already-completed work. Will follow with
 scoring-full-run once market completes, to deliver the equivalent of a completed daily-full-run
 without redundant reprocessing. Monitoring now.
+
+## 2026-07-17 ~19:XX UTC - SCORING PIPELINE REDESIGN (SPEC CONFIRMED DIRECTLY BY RODOLFO)
+Searched transcripts thoroughly per Rodolfo's explicit instruction not to guess. Found the
+current implementation's chain order/stage definitions but NO prose design discussion of the
+specific confidence-adjustment-in-HP-stage logic, exact quota numbers, or the HP-then-score
+ordering requirement - matches what the earlier chat already told Rodolfo (numbers/logic likely
+never written down, or lost to compaction). Rodolfo confirmed the following as the authoritative
+spec for this session, to be treated as ground truth going forward:
+
+1. Prop-factor-miner -> matrix-builder: must process ALL board-scoped, not-yet-started legs.
+   Zero legs lost. Board-scoped/not-started filtering needs verification, not assumed correct.
+2. ALL prop lines must be covered - expanded props, fantasy score props, earned runs props, and
+   any prop types added later in development. None silently dropped from the pipeline.
+3. Enrichment: applies logic per layer/factor/variation/prop/side, feeding baseline adjustment.
+4. Hit Probability (FINAL): computed from baseline + enrichment adjustment for every not-started
+   board leg. Confidence is ALSO computed/adjusted at this stage (not left as a raw Engine
+   carry-through) using enrichment + daily context + market context data.
+5. Final Score: computed FROM final HP% + final confidence, produces a 0-100 number. Runs AFTER
+   HP is finalized (current implementation has Scoring Engine running BEFORE HP and computing an
+   independent trust score from Enrichment only - this is backwards per the confirmed spec and
+   needs to be reordered/rebuilt).
+6. Final Board: applies existing quotas AND includes any leg with HP > 70% (raised from 60%).
+   Must carry per-platform payload data for the UI/menu: goblin/demon flags, "more only" side
+   restriction for Sleeper/Underdog, plus HP%, confidence, and final score per leg.
+7. Root cause already found and confirmed before this spec discussion: matrix-builder's rows go
+   missing from prop_matrix_current by the time Scoring Engine reads them (matrix_id lookup
+   miss), causing player_name=NULL and silent exclusion from Final Board even for high-HP legs.
+   This must be fixed as part of this work, independent of the reorder.
+
+STARTING WORK NOW. Plan: (1) verify board-scoped/not-started filtering is correct, (2) verify
+prop-key completeness (expanded/fantasy/earned_runs) across prop-factor-miner, matrix-builder,
+enrichment, config_prop_taxonomy, (3) fix the matrix-lookup data-loss bug, (4) rebuild pipeline
+order (Enrichment -> HP+confidence -> Score -> Final Board), (5) raise HP threshold 60->70,
+(6) rebuild Final Board's platform-specific payload. Testing worker-by-worker as each is fixed,
+then one full daily run at the end. Per Rodolfo: no more full hand-monitoring of long stages -
+confirm start, then check in only at completion or on request.
 UPDATE ~15:57 UTC: scoring_full_run_mrp479lu_ypl4b4 started. Certifier-first-pass completed
 cleanly. prop-factor-miner chunking normally, progressing steadily. No issues so far.
 UPDATE ~15:50 UTC: market_full_run_mrp3yegj_8wjrjn COMPLETED successfully - all 5 stages done
