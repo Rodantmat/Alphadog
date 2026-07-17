@@ -301,6 +301,16 @@ seen throughout this session). Investigated per Rodolfo's request rather than as
 fine: confirmed the replacement retry is genuinely progressing (720/1939 rows written,
 normal chunking), not stuck again. No manual cancel/restart needed - this is the same one-off
 transient class of issue as previous board-worker stalls, not a new bug. Continuing to monitor.
+
+## 2026-07-17 ~06:56 UTC - FRESH RUN, AUTONOMOUS MODE
+Rodolfo requested a fully clean run with ZERO rescues (cancelled the prior attempt despite it
+having self-healed correctly, wanting a truly clean pass). Cancelled chain_scoring_full_run_mrokst8o_pubp9m,
+ran hard cleanup, started fresh: scoring_full_run_mrolb1fd_re8ndp / chain_scoring_full_run_mrolb1fd_re8ndp.
+Rodolfo is going offline until tomorrow and cannot manually tick. Operating in autonomous
+monitor/fix mode: checking periodically, investigating and fixing any real failures found
+(not just blindly retrying), continuing for as long as possible this session. Cron runs on its
+own 1-minute schedule regardless of whether I'm actively watching, so the chain can progress
+even between my check-ins.
 UPDATE ~06:30 UTC: run 2/3 completed. Per Rodolfo's instruction, accepting 2/3 as sufficient
 and moving to score-final-board next - skipping the 3rd run since the fix is already verified
 correct (exact row-count match on both prior runs). Before enqueueing, audited
