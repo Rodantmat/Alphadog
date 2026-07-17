@@ -232,3 +232,5 @@ also chunked, this individual-worker protocol will take significant additional t
 systematically per Rodolfo's instruction.
 UPDATE ~04:09 UTC: prop-factor-miner 3/3 PASS confirmed (each run full chunked completion,
 ~5-8 min across ~11 invocations). Moving to prop-matrix-builder next.
+UPDATE ~04:17 UTC: prop-matrix-builder 3/3 PASS confirmed (fast, ~2 invocations each,
+~1-2 min per run). Moving to enrichment-engine next.
