@@ -1196,3 +1196,32 @@ STILL OPEN (separate from this work): config_enrichment_profile_cells completene
 prop/factor combos still have null lift/penalty/coefficients - needs Rodolfo's domain input),
 Issue #3 (singles/1.5 low-sample sum-to-100), Issue #7 (duplicate legs, upstream ingestion),
 Issue #8 (FINAL_BOARD_QUOTA_RESERVE_MIN_HP still 45, should be 70).
+
+## RODOLFO'S QUESTION: IS THE NEW REFERENCE DATA GENUINELY PERMANENT? FOUND A REAL GAP
+Rodolfo asked directly whether the 5 new factors are ready for daily use AND whether the data
+is being saved permanently. Checked properly rather than assume yes: confirmed
+CONTEXT_DB.context_history_game_umpire (the permanent table umpire_tendency's computation
+depends on) was COMPLETELY STATIC - last written 2026-07-13, 4 days stale, with ZERO ongoing
+mechanism to add new games. This meant my "daily" umpire_tendency refresh would keep
+recomputing the exact same frozen 2461-game dataset forever, never learning from new games as
+the season progresses - a real, important gap Rodolfo was right to ask about.
+FOUND THE FIX PATH: daily_umpire_assignment_history already captures every REAL (not derived)
+confirmed assignment (recordAssignmentHistory only fires when probe.found===true) but only
+keeps a rolling 10-day window before aging entries out. Built
+permanentlyRecordConfirmedAssignments(env) in daily-usage-pulse.js: copies real, confirmed rows
+from that rolling window into the PERMANENT context_history_game_umpire table before they age
+out, idempotent (game_pk primary key, INSERT OR IGNORE). Wired to run every time daily-umpire-
+context runs (after replacement cleanup, regardless of whether new targets were processed this
+run - so it also correctly ran during the "all already processed" case, which is the common
+case). TESTED WITH REAL DATA: confirmed 11 of 18 real assignments newly copied,
+context_history_game_umpire went from 2461 rows (max_date 07-13) to 2472 rows (max_date 07-17,
+today) - the historical dataset is now genuinely growing day by day going forward, not static.
+The other 3 reference tables (ref_pitcher_arsenal, ref_defensive_quality,
+ref_catcher_framing_poptime) don't have this problem - they're direct season-aggregate
+snapshots (INSERT OR REPLACE keyed by player_id, refreshed in place daily) with no retention/
+deletion anywhere, so each refresh correctly keeps the latest current value permanently with no
+expiry - confirmed no pruning logic exists for any of them. ref_umpire_tendency itself is the
+same pattern (recomputed from the now-growing historical dataset).
+DIRECT ANSWER TO RODOLFO: yes, all 5 factors are ready for daily use (self-gated ~daily refresh,
+confirmed working), and yes the data is now genuinely permanent - the one real gap (frozen
+umpire history) is fixed and confirmed growing with real data.
