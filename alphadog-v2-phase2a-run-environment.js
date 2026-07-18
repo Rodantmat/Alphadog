@@ -392,7 +392,7 @@ async function loadRealLegContexts(env, matrixRows) {
   };
 }
 
-function buildLegContextReal(matrixRow, ctxMaps) {
+function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
   const gamePk = matrixRow.game_pk;
   const playerId = matrixRow.mlb_player_id;
   const isPitcherProp = factorFamilyForProp(matrixRow.canonical_prop_key) === "pitcher";
