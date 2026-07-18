@@ -1699,7 +1699,11 @@ async function runBoardPrep(env, input) {
   // fresh insert). This means capturing "before cleanup, after this run's insert" was already
   // too late - the real fix is to capture whatever is CURRENTLY there, unconditionally, at the
   // very start of this run, before this invocation writes anything at all.
-  await permanentlyRecordBoardLegs(env).catch(() => ({ copied: 0, checked: 0, error: true }));
+  const startCaptureResult = await permanentlyRecordBoardLegs(env).catch((err) => ({ copied: 0, checked: 0, error: true, error_message: String(err && err.message ? err.message : err) }));
+  try {
+    await env.CONTROL_DB.prepare(`INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'alphadog-v2-score-prep', 'score-prep', 'INFO', 'score_prep_debug_board_backfill_start', 'Board history backfill at run start', ?, CURRENT_TIMESTAMP)`)
+      .bind(requestId, JSON.stringify({ startCaptureResult }).slice(0, 3000)).run();
+  } catch (_) {}
   let recoveredResume = null;
   if (!batchId) {
     recoveredResume = await recoverResumeBatchForRequest(env, input);
