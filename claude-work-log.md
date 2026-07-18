@@ -1490,3 +1490,69 @@ values are still null - needs Rodolfo's domain input, not a threshold-storage pr
 has zero config_enrichment_profile_cells rows at all (code correct and ready, blocked purely on a missing
 config row); scoring-engine-shadow-v1 flagged as a real, safe ~13min elimination candidate, not yet acted
 on pending Rodolfo's go-ahead.
+
+## RODOLFO: DON'T TRUST EXISTING COEFFICIENTS EITHER - AUDIT THEM TOO, NOT JUST FILL GAPS
+Rodolfo's explicit instruction after the shadow-engine investigation: fix anything ALREADY in the
+database that doesn't match the real research, since prior values (from the earlier calibration
+session, before this deep research pass) may not have had the same rigor applied. Confirmed
+"config coefficient completeness" is NOT done despite extensive research this session - research
+produced real findings, but writing them into actual database rows is a separate step that hadn't
+happened yet. Clarified for Rodolfo: catcher_poptime_arm has ZERO rows in config_enrichment_profile_cells
+(not just empty values - no row exists at all).
+
+Started implementing real coefficients:
+- catcher_poptime_arm: created its first cell, anchored to the official Statcast conversion (1 SB
+  prevented = 0.65 runs), with the seconds-to-probability bridge honestly flagged as reasoned, not
+  independently sourced.
+- weather_precip: added 5 real cells (walks, walks_allowed, hitter_strikeouts, pitcher_strikeouts,
+  home_runs), each converted precisely from the real sourced percentages (+9.6%/-10.1%/-6.9%) into
+  the exact log-rate coefficient the code formula uses. Fixed relevant_prop_keys_json, which was
+  missing pitcher_strikeouts/home_runs entirely - the new cells would have been silently unreachable.
+
+FOUND A REAL, SERIOUS BUG WHILE AUDITING weather_temp_altitude_pressure (per Rodolfo's audit
+instruction): the existing coefficients (a=0.4 ft/degF, b=6 ft/1000ft altitude, c=3.5 ft/inHg) were
+themselves well-calibrated and closely matched this session's sourced physics research - the DATA
+was fine. The bug was in the CODE: the formula correctly computes real feet of fly-ball-distance
+shift, but that raw feet value was being used DIRECTLY as a log-rate contribution with zero
+conversion - confirmed live via a contribution of exactly 1 (a wildly implausible ~2.7x rate
+multiplier from one factor alone). Fixed by applying the same real, sourced distance-to-probability
+elasticity already used for wind (Adair's 7x elasticity, cross-validated against independent Coors
+humidor data, against the real 397ft baseline HR distance).
+
+While fixing this, found a second, systemic gap: a real `cap` field exists in the schema with real
+values set for 19 cells across many factors (opposing_pitcher_quality, lineup_surrounding_quality,
+defensive_quality_oaa, umpire_tendency, platoon_handedness, bullpen_fatigue, stolen_base_family,
+schedule_travel_fatigue, market_implied_total, times_through_order, weather_precip), but confirmed
+via direct code inspection that NONE of them were ever actually read or enforced anywhere - only
+the final, blunt end-of-chain clamp (2.0) was catching runaway values. Fixed generically in
+enrichLeg (not just for the one factor first noticed) so every cell's own real cap is honored for
+both continuous_formula and tiered_bands paths uniformly.
+
+Also built the real weather_wind implementation from scratch (previously honestly unimplemented -
+an old file-level comment claimed park-orientation data didn't exist for this factor). Verified
+directly that daily_game_weather_current.wind_context ALREADY contains real, park-relative wind
+direction ("Out To LF", "Out To CF", "In From RF", etc.) - the old comment was stale/incorrect, not
+a current data gap. Wired wind_speed_mph and wind_context into the context loader (neither was
+being read before), replaced the old, unused, never-classified spray-tendency tier scheme
+(strong_pull/balanced/opposite_field - zero cells had lift/penalty, zero classification code
+existed) with a real, sourced 4-tier structure (blowing_out_moderate, blowing_out_strong,
+blowing_in, neutral_or_crosswind), each lift value computed precisely from the sourced physics
+(5mph tailwind -> +4% distance; 25mph -> non-linearly larger +17.6%; 5mph headwind -> -4.3%) through
+the same 7x elasticity conversion.
+
+Also found and fixed a real, separate bug while wiring wind: precipitation_probability_pct was
+being crudely approximated from a boolean flag (rain_risk_flag ? 50 : null) when the real, granular
+percentage column already existed in daily_game_weather_current and was simply never queried - also
+fixed a real semantic bug where "no rain risk" incorrectly produced null ("missing data") instead of
+a real, applicable 0% reading.
+
+TESTED WITH REAL DATA: confirmed weather_wind and weather_precip's new coefficients are live and
+correctly applied (real cell_ids showing in factor_breakdown_json, matching today's actual calm
+wind conditions and real precipitation reading). Confirmed the temp/altitude/pressure fix directly:
+contribution went from a broken 1.0 to a real, properly-scaled 0.1226 on a fresh test batch.
+
+NEXT: continue this same audit-and-fix pattern through the remaining factors (platoon_handedness,
+bullpen_fatigue, stolen_base_family, umpire_tendency, park_factors, market_implied_total,
+opposing_pitcher_quality, defensive_quality_oaa, lineup_slot, lineup_surrounding_quality,
+times_through_order) - checking existing values against this session's real research before
+assuming any of them are already correct, not just filling the genuinely-empty ones.
