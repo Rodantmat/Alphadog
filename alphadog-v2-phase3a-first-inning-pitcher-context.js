@@ -7139,11 +7139,11 @@ async function refreshPitcherRunningGameIfStale(env, seasonYear) {
   const statements = [];
   let written = 0;
   for (const r of rows) {
-    const pid = intOrNull(r.id || r.player_id || r.pitcher);
+    const pid = intOrNull(r.player_id);
     if (!pid) continue;
     statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_pitcher_running_game (running_game_id, mlb_player_id, player_name, season_year, sb_opportunities, advances_prevented, stealing_runs, lead_distance_gained, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
-      `${pid}_${seasonYear}`, pid, r.name || r.last_name || null, seasonYear,
-      intOrNull(r.n || r.sb_opportunities), Number(r.pitcher_base_advances_prevented ?? r.advances_prevented) || null, Number(r.pitcher_stealing_runs ?? r.stealing_runs) || null, Number(r.lead_distance_gained) || null,
+      `${pid}_${seasonYear}`, pid, r.player_name || null, seasonYear,
+      intOrNull(r.n_init), Number(r.runs_prevented_on_running_attr) || null, Number(r.runs_prevented_on_running_attr) || null, Number(r.r_sec_minus_prim_lead) || null,
       "baseball_savant_pitcher_running_game_v0_1_0", safeJsonStringify({ csv_row: r })
     ));
     written++;
