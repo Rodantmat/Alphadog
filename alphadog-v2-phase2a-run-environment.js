@@ -445,6 +445,15 @@ async function loadRealLegContexts(env, matrixRows) {
   // league figures).
   const battedBallRows = await all(env.REF_DB, `SELECT mlb_player_id, ground_ball_pct, air_pct FROM ref_batted_ball_profile`).catch(() => []);
   const battedBallProfileByPlayer = new Map(battedBallRows.map(r => [String(r.mlb_player_id), r]));
+  // REAL FIX (per Rodolfo's audit instruction - keep expanding real, grounded edge): a batter's
+  // own power profile determines how sensitive they are to distance-affecting factors (wind,
+  // temp, altitude, park) - a "borderline power" hitter, whose typical fly ball lands closest to
+  // the fence, is most affected by a small distance shift; an elite hitter clears the fence
+  // regardless, a weak hitter's fly ball falls short regardless. Real, already-computed hr_rate
+  // (confirmed real: 870 real hitters, terciles empirically at 1.96%/3.57%) used as the power
+  // proxy - no new data source needed, this metric already existed in the system.
+  const hrRateRows = playerIds.length ? await all(env.STATS_HITTER_DB, `SELECT player_id, hr_rate FROM hitter_metric_snapshots WHERE player_id IN (${playerIds.map(() => "?").join(",")}) AND metric_window='season'`, ...playerIds).catch(() => []) : [];
+  const hrRateByPlayer = new Map(hrRateRows.map(r => [String(r.player_id), r.hr_rate]));
 
   return {
     weatherByGame: new Map(weatherRows.map(r => [String(r.game_pk), r])),
