@@ -1363,7 +1363,7 @@ function chooseBestGithubCandidate(candidates) {
   return usable[0];
 }
 
-async function fetchGithubJsonBySha(source, env) {
+async function fetchGithubJsonMultiSurfaceFallback(source, env) {
   const externalCalls = { count: 0 };
   const candidates = [];
   const metadataList = [];
