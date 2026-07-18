@@ -1701,6 +1701,14 @@ async function runBoardPrep(env, input) {
   }
 
   await ensureScoreTables(env);
+  // REAL FIX (moved from the cleanup step): prepared_row_id is a stable, deterministic key
+  // (same leg reappearing day to day reuses the same key), so the new batch's INSERT OR
+  // REPLACE overwrites the old row IN PLACE rather than the old and new coexisting as separate
+  // rows - confirmed live (only ever one distinct prep_batch_id present, even right before a
+  // fresh insert). This means capturing "before cleanup, after this run's insert" was already
+  // too late - the real fix is to capture whatever is CURRENTLY there, unconditionally, at the
+  // very start of this run, before this invocation writes anything at all.
+  await permanentlyRecordBoardLegs(env).catch(() => ({ copied: 0, checked: 0, error: true }));
   let recoveredResume = null;
   if (!batchId) {
     recoveredResume = await recoverResumeBatchForRequest(env, input);
