@@ -417,23 +417,34 @@ async function loadRealLegContexts(env, matrixRows) {
   const parkFactorsByVenue = new Map(parkFactorRows.map(r => [String(r.mlb_venue_id), r]));
   const OF_POSITIONS = new Set(["OF", "LF", "CF", "RF"]);
   const oaaRows = await all(env.REF_DB, `SELECT dq.outs_above_average, dq.primary_position, p.current_mlb_team_id FROM ref_defensive_quality dq JOIN ref_players p ON p.mlb_player_id = dq.mlb_player_id WHERE dq.active=1 AND p.current_mlb_team_id IS NOT NULL`).catch(() => []);
-  const oaaByTeam = new Map();
+  const oaaByTeamOF = new Map();
+  const oaaByTeamIF = new Map();
   for (const r of oaaRows) {
     const tid = String(r.current_mlb_team_id);
-    if (!oaaByTeam.has(tid)) oaaByTeam.set(tid, { runsSum: 0, count: 0 });
-    const bucket = oaaByTeam.get(tid);
     const isOutfield = OF_POSITIONS.has(String(r.primary_position || "").toUpperCase());
+    const bucketMap = isOutfield ? oaaByTeamOF : oaaByTeamIF;
+    if (!bucketMap.has(tid)) bucketMap.set(tid, { runsSum: 0, count: 0 });
+    const bucket = bucketMap.get(tid);
     const runsPerOut = isOutfield ? 0.9 : 0.75;
     bucket.runsSum += (Number(r.outs_above_average) || 0) * runsPerOut;
     bucket.count += 1;
   }
-  const oaaProbabilityDeltaByTeam = new Map();
-  for (const [tid, bucket] of oaaByTeam.entries()) {
-    // Same /200-equivalent probability-delta scale as before, now applied to real RUNS (already
-    // position-weighted) instead of raw, position-agnostic OAA counts - preserves the existing,
-    // already-reasonable overall magnitude while fixing the real position-weighting bug.
-    if (bucket.count > 0) oaaProbabilityDeltaByTeam.set(tid, (bucket.runsSum / bucket.count) / 180);
+  const oaaProbabilityDeltaByTeamOF = new Map();
+  for (const [tid, bucket] of oaaByTeamOF.entries()) {
+    if (bucket.count > 0) oaaProbabilityDeltaByTeamOF.set(tid, (bucket.runsSum / bucket.count) / 180);
   }
+  const oaaProbabilityDeltaByTeamIF = new Map();
+  for (const [tid, bucket] of oaaByTeamIF.entries()) {
+    if (bucket.count > 0) oaaProbabilityDeltaByTeamIF.set(tid, (bucket.runsSum / bucket.count) / 180);
+  }
+  // REAL FIX (per Rodolfo's audit instruction - keep expanding real, grounded edge): a batter's
+  // own ground-ball-vs-air contact profile determines which half of the opposing defense
+  // actually matters for their props - a groundball-heavy hitter is mechanically more exposed
+  // to infield OAA, a flyball-heavy hitter to outfield OAA. Real, mined data (Baseball Savant
+  // batted-ball-profile leaderboard, confirmed real: 331 players, avg air% matches published
+  // league figures).
+  const battedBallRows = await all(env.REF_DB, `SELECT mlb_player_id, ground_ball_pct, air_pct FROM ref_batted_ball_profile`).catch(() => []);
+  const battedBallProfileByPlayer = new Map(battedBallRows.map(r => [String(r.mlb_player_id), r]));
 
   return {
     weatherByGame: new Map(weatherRows.map(r => [String(r.game_pk), r])),
