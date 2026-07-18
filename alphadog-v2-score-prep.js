@@ -1563,6 +1563,11 @@ ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
   const cleanupStart = Date.now();
   if (totals.prepared_rows > 0 && totals.prepared_rows > 0) {
     await updatePrepBatchCheckpoint(env, batchId, "CLEANING_OLD_PREP_BATCHES", "SCORE_BOARD_PREP_CLEANING_OLD_BATCHES_AFTER_VERIFY", { prepared_rows: totals.prepared_rows, preserve_current_until_verified: true });
+    // REAL FIX (per Rodolfo's direct instruction, same class as weather/umpire/market history
+    // fixes): the real board actually offered each day was never permanently retained anywhere
+    // - this DELETE wipes the previous batch's real rows on every single run. Capture them into
+    // a permanent historical table first.
+    const permanentBoardBackfill = await permanentlyRecordBoardLegs(env, batchId).catch(() => ({ copied: 0, checked: 0, error: true }));
     await env.SCORE_DB.prepare("DELETE FROM score_board_prepared_current WHERE prep_batch_id <> ?").bind(batchId).run();
     await env.SCORE_DB.prepare("DELETE FROM score_board_prepared_stage WHERE prep_batch_id <> ?").bind(batchId).run();
   }
