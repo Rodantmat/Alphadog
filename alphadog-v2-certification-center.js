@@ -925,7 +925,9 @@ async function apiDossier(env, url) {
       END AS prop_family,
       COALESCE(json_extract(f.details_json, '$.game_context.home_team_name'), p.team_full_name, p.team) AS home_team_name,
       COALESCE(json_extract(f.details_json, '$.game_context.away_team_name'), p.opponent_full_name, p.opponent) AS away_team_name,
-      json_extract(f.details_json, '$.game_context.venue_name') AS venue_name,
+      COALESCE(json_extract(f.details_json_snapshot, '$.game_context.home_team_name'), p.team_full_name, p.team) AS home_team_name,
+      COALESCE(json_extract(f.details_json_snapshot, '$.game_context.away_team_name'), p.opponent_full_name, p.opponent) AS away_team_name,
+      json_extract(f.details_json_snapshot, '$.game_context.venue_name') AS venue_name,
       COALESCE(json_extract(p.row_payload_json, '$.source_line_type'), f.payout_variant, 'regular') AS source_line_type,
       CASE WHEN LOWER(COALESCE(f.payout_variant,''))='goblin' THEN 1 ELSE 0 END AS is_goblin,
       CASE WHEN LOWER(COALESCE(f.payout_variant,''))='demon' THEN 1 ELSE 0 END AS is_demon,
@@ -949,7 +951,7 @@ async function apiDossier(env, url) {
       0 AS missing_component_count,
       f.created_at,
       f.updated_at,
-      f.details_json AS details_json_snapshot,
+      f.details_json_snapshot,
       p.raw_source_json AS prepared_raw_source_json,
       p.row_payload_json AS prepared_row_payload_json
 
