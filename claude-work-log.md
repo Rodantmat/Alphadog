@@ -1771,6 +1771,27 @@ TESTED LIVE: confirmed fixed - elapsed_ms dropped from a hard 20000+ timeout to 
 data flowing (8,856 rows read, correctly chunking through via partial_continue as designed).
 Re-triggered a fresh daily_full_run (daily_full_run_retrigger_2) with both real fixes in place.
 
+## SECOND REAL UI BUG FOUND WHILE INVESTIGATING RODOLFO'S REPORTED ERROR
+Rodolfo reported a live UI error: "Board load failed: D1_ERROR: no such column: hit_probability_
+0_100 at offset 877". Investigated by reconstructing and directly testing the real query rather
+than guessing. Found a DIFFERENT but equally real bug in the process: 7 identical occurrences
+across the file of `ORDER BY datetime(updated_at) DESC LIMIT 1` against score_final_board_
+batches - confirmed via direct schema check that this table has no updated_at column at all,
+only started_at/finished_at. This would break every board-loading query path that depends on
+finding the latest batch, which is nearly all of them.
+Fixed all 7 occurrences (replaced with datetime(COALESCE(finished_at, started_at))). Verified via
+direct schema check that the other 2 remaining "updated_at" references elsewhere in the file
+(hp_board_batches, daily_lineups_current) are genuine - those tables really do have the column,
+correctly left alone.
+Could not independently reproduce the exact "hit_probability_0_100" wording Rodolfo saw - every
+use of that name in the code is either a correct JS object property read or a correct SQL output
+alias, never an invalid input reference. Given how similar in nature this is to the bug just
+found (both are column-mismatch errors against score_final_board_batches/current), this is
+plausibly the same root cause or a closely related one. Confirmed the real, full query now
+executes cleanly (0 rows, since Final Board hasn't been repopulated by today's re-triggered
+daily_full_run yet - not an error, expected given the empty table). Will re-verify with live
+data once that run reaches Final Board.
+
 ## FULL AUDIT PASS CLOSED - EVERY FACTOR NOW CHECKED AGAINST REAL RESEARCH
 Finished the last two: opposing_pitcher_quality and times_through_order. Both had the same real
 pattern found across this whole audit - existing coefficients that were technically non-null but
