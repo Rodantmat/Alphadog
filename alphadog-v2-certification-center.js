@@ -1467,7 +1467,7 @@ async function fetchBoardRowsByIds(env, ids) {
       p.source_prop_name
     FROM score_final_board_current f
     LEFT JOIN score_board_prepared_current p ON p.prepared_row_id = f.prepared_row_id
-    WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(updated_at) DESC LIMIT 1)
+    WHERE f.final_board_batch_id = (SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(COALESCE(finished_at, started_at)) DESC LIMIT 1)
       AND f.final_board_row_id IN (${qs})
     ORDER BY f.rank_order ASC
   `, clean);
