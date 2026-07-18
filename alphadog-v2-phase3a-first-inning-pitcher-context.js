@@ -6604,6 +6604,7 @@ async function runClassificationV6BaseSingleStep(env, input = {}) {
   // every chunked tick - each has its own ~20h self-gate anyway, so an occasional extra check
   // is harmless, but gating here avoids a real, unnecessary staleness-check on every one of
   // the many chunk ticks a full base rebuild takes.
+  let _debugBattedBall = null;
   if (comboIndex === 0 && Math.max(0, Number(input.cursor_offset || 0)) === 0) {
     const refYear = new Date().getUTCFullYear();
     await refreshPitcherArsenalIfStale(env, refYear).catch(() => ({ refreshed: false, error: true }));
