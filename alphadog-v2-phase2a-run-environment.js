@@ -260,6 +260,30 @@ async function loadRealLegContexts(env, matrixRows) {
     if (tendency) umpireTendencyByGame.set(String(r.game_pk), tendency);
   }
 
+  // REAL FIX (final 2 calibration factors, items 10/11): sprint speed (for stolen_base_family)
+  // and arm angle (for platoon_handedness's submarine/sidearm refinement, a real tier that
+  // already existed in config but was unusable without this data). Real fallback: if a player
+  // is missing from the current season's leaderboard (new callup, low sample not yet
+  // qualifying), fall back to last season's real value rather than leaving it null outright -
+  // a real, defensible bridge (most players' running speed/arm slot don't change season to
+  // season) rather than a fabricated default.
+  const currentSeasonYear = new Date().getUTCFullYear();
+  const sprintSpeedRows = playerIds.length ? await all(env.REF_DB, `SELECT mlb_player_id, sprint_speed_ft_per_sec, season_year FROM ref_sprint_speed WHERE mlb_player_id IN (${pph}) AND season_year IN (?, ?)`, ...playerIds, currentSeasonYear, currentSeasonYear - 1).catch(() => []) : [];
+  const sprintSpeedByPlayer = new Map();
+  for (const r of sprintSpeedRows) {
+    const pid = Number(r.mlb_player_id);
+    const existing = sprintSpeedByPlayer.get(pid);
+    if (!existing || Number(r.season_year) > existing.season_year) sprintSpeedByPlayer.set(pid, { value: r.sprint_speed_ft_per_sec, season_year: Number(r.season_year) });
+  }
+  const starterPlayerIdsForArm = [...new Set(starterRows.map(r => r.starter_player_id).filter(Boolean))];
+  const armAngleRows = starterPlayerIdsForArm.length ? await all(env.REF_DB, `SELECT mlb_player_id, arm_angle_degrees, season_year FROM ref_arm_angle WHERE mlb_player_id IN (${starterPlayerIdsForArm.map(() => "?").join(",")}) AND season_year IN (?, ?)`, ...starterPlayerIdsForArm, currentSeasonYear, currentSeasonYear - 1).catch(() => []) : [];
+  const armAngleByPitcher = new Map();
+  for (const r of armAngleRows) {
+    const pid = Number(r.mlb_player_id);
+    const existing = armAngleByPitcher.get(pid);
+    if (!existing || Number(r.season_year) > existing.season_year) armAngleByPitcher.set(pid, { value: r.arm_angle_degrees, season_year: Number(r.season_year) });
+  }
+
   // CRITICAL FIX: prop_matrix_current stores team_id/opponent_team_id as ABBREVIATIONS
   // (e.g. "CWS", "TOR"), but every daily-context table above (starters, bullpen, catcher) uses
   // the NUMERIC MLB team_id. This mismatch meant every one of these lookups
