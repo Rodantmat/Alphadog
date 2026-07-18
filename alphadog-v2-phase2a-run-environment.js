@@ -108,15 +108,11 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
       // same distance-to-probability elasticity used for wind (Adair, cross-validated against
       // independent Coors humidor data: each 1% distance change ~ 7% relative HR-probability
       // change), against the same real 397ft baseline HR distance (Nathan's carry-of-a-fly-
-      // ball reference). Also applies the cell's own `cap` field (existed in the schema,
-      // confirmed never actually read anywhere in code) as a real per-factor bound, not just
-      // relying on the global end-of-chain clamp to absorb an otherwise-uncapped value.
+      // ball reference). Per-cell cap enforcement now handled generically in enrichLeg.
       const BASELINE_HR_DISTANCE_FT = 397;
       const DISTANCE_TO_HR_PROB_ELASTICITY = 7;
       const pctDistanceChange = shiftFt / BASELINE_HR_DISTANCE_FT;
-      const rawLogRate = Math.log(1 + Math.max(-0.99, pctDistanceChange * DISTANCE_TO_HR_PROB_ELASTICITY));
-      const capValue = cell.cap != null ? Math.abs(cell.cap) : null;
-      return capValue != null ? Math.max(-capValue, Math.min(capValue, rawLogRate)) : rawLogRate;
+      return Math.log(1 + Math.max(-0.99, pctDistanceChange * DISTANCE_TO_HR_PROB_ELASTICITY));
     }
     case "catcher_framing": {
       if (ctx.catcher_framing_runs_per_game == null) return null;
