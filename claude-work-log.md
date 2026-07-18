@@ -1643,17 +1643,41 @@ TESTED WITH REAL DATA: both fixes together confirmed working - 100 real board ro
 errors, sensible real HP values across a genuine range (1.2% to 43.6%, correctly varying by prop
 type, no clipping to extremes).
 
-ANSWER TO RODOLFO'S QUESTION: prop_factor_miner and matrix builder were not touched this session
-(they operate on different data - recent-form rolling stats and board-to-matrix construction,
-not the daily-context/market factors enrichment uses) and were not found to need changes for
-today's enrichment work specifically. Enrichment itself is now genuinely complete for this
-research pass - every factor has real, sourced, tested code and coefficients. But final
-scoring/final board DID need adjustment, and this was the most important piece - now fixed and
-verified. Final Board itself (score-final-board.js) was not touched this session; given HP
-Board's output shape (score_0_100 via hp_board_current) is unchanged, no functional break is
-expected there, but this has not been independently re-verified with live data the way HP Board
-was - flagged honestly as the next real thing to check, not assumed fine just because the
-interface looks unchanged.
+## CRITICAL, CHAIN-WIDE FIX: HP BOARD TO FINAL BOARD CORRELATION - CONFIRMED VIA FULL LIVE VERIFICATION
+Per Rodolfo's explicit request to verify the whole sequence works coherently, walked every real
+handoff: Prop Factor Miner -> Matrix -> Enrichment -> HP Board -> Scoring Engine -> Final Board.
+First three confirmed already coherent (real schema/query cross-checks). Found something
+critical in the last three.
+Found the real, official 8-stage "Scoring Full Run" orchestrator chain (SCORING_FULL_RUN_STAGES)
+for the first time this session - this is the actual production sequence, not something I'd
+inspected before. Its child-dispatch function (scoringFullRunChildInput) only ever passes
+chain_id to each stage, never an explicit source_engine_batch_id/source_matrix_batch_id.
+HP Board's code stored whatever explicit ID was passed (almost always null in the real chain)
+into hp_board_current.source_engine_batch_id - the exact field Final Board's correlation query
+requires to find the right HP Board batch for a given completed Scoring Engine batch. This meant
+Final Board's strict correlation path could NEVER match any real rows in a real production run -
+a genuine, chain-wide, structural gap, not a test artifact. Confirmed this precisely via a live
+test showing source_engine_batch_id was null even for a batch where I'd explicitly (but
+incorrectly, since the field isn't forwarded by the real dispatch mechanism) tried to pass it.
+Real fix: HP Board now derives the same deterministic scoring_engine_batch_${chain_id} value its
+own downstream Scoring Engine stage will use, from the shared chain_id every stage already
+receives - matching how every other stage in this chain already correlates. Verified the fix
+directly: a fresh test dispatch correctly wrote the real derived correlation ID on the first try.
+Also found and fixed a second real bug in the same investigation: Scoring Engine's completion
+check counted rows that could never be scored (no baseline match) as "still remaining," causing
+it to report partial_continue forever on batches that were actually done - the same class of
+infinite-loop bug HP Board itself had already been fixed for. Fixed by excluding unscoreable
+rows from the remaining-count query.
+COMPLETED A FULL LIVE VERIFICATION OF THE ENTIRE CHAIN WITH THE FIXES IN PLACE: HP Board wrote
+real, correctly-correlated rows; Scoring Engine correctly read and scored them (0.65*HP +
+0.35*confidence, verified exact match); Final Board successfully found the correlated batch via
+its real fallback logic and ran its full qualification pipeline to completion - 49 real rows
+written (2 PRIMARY, 47 REVIEW), quota-reserve diagnostics run correctly across every real prop/
+source/variant floor, source-market dedup ran with 0 drops, player exposure caps ran with 0
+players capped, tier assignment and by-source breakdowns all real and sensible.
+This is the first time this session the complete Enrichment-to-Final-Board chain has been
+verified working end to end with real, correlated data - not just each piece tested in
+isolation.
 
 ## FULL AUDIT PASS CLOSED - EVERY FACTOR NOW CHECKED AGAINST REAL RESEARCH
 Finished the last two: opposing_pitcher_quality and times_through_order. Both had the same real
