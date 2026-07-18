@@ -414,7 +414,15 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
 
   return {
     temp_f: weather.temperature_f ?? null,
-    precipitation_probability_pct: weather.rain_risk_flag ? 50 : null,
+    // REAL FIX: precipitation_probability_pct was being crudely approximated from a boolean
+    // flag (rain_risk_flag ? 50 : null) - the real, granular percentage column already exists
+    // in daily_game_weather_current and was simply never queried. This also fixes a real
+    // semantic bug: the old approximation returned null (= "missing", not "applied with zero
+    // effect") for every game without a rain risk flag, when a real 0% precipitation reading
+    // is a genuine, applicable data point, not a missing one.
+    precipitation_probability_pct: weather.precipitation_probability_pct ?? (weather.rain_risk_flag ? 50 : null),
+    wind_speed_mph: weather.wind_speed_mph ?? null,
+    wind_context: weather.wind_context ?? null,
     roof_status: weather.roof_status ?? null,
     catcher_framing_runs_per_game: catcher.framing_runs_total ?? null,
     implied_team_total: market.derived_home_implied_runs ?? market.derived_away_implied_runs ?? null,
