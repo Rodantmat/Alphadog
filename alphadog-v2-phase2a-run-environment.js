@@ -565,6 +565,7 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
     umpire_runs_delta_vs_league: ctxMaps.umpireTendencyByGame.get(String(gamePk))?.runs_delta_vs_league ?? null,
     runner_sprint_speed_ft_per_sec: ctxMaps.sprintSpeedByPlayer.get(Number(playerId))?.value ?? null,
     opposing_catcher_pop_time_2b_sba: catcher.pop_time_2b_sba ?? null,
+    pitcher_lead_distance_gained: oppStarter.starter_player_id != null ? (ctxMaps.pitcherLeadDistanceByPitcherId.get(String(oppStarter.starter_player_id)) ?? null) : null,
     pitcher_arm_angle_degrees: oppStarter.starter_player_id != null ? (ctxMaps.armAngleByPitcher.get(Number(oppStarter.starter_player_id))?.value ?? null) : null,
   };
 }
