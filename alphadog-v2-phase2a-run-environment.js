@@ -530,6 +530,7 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
     implied_team_total: market.derived_home_implied_runs ?? market.derived_away_implied_runs ?? null,
     league_avg_implied_total: (marketThresholds && marketThresholds.league_avg_implied_total_runs) ?? 4.3,
     prop_key: matrixRow.canonical_prop_key || null,
+    batter_hr_rate: ctxMaps.hrRateByPlayer ? (ctxMaps.hrRateByPlayer.get(String(playerId)) ?? null) : null,
     ...parkFactorFields,
     batter_hand: lineup.bat_side ?? null,
     pitcher_hand: oppStarter.starter_hand ?? null,
