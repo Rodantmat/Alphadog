@@ -7083,6 +7083,36 @@ async function refreshSprintSpeedIfStale(env, seasonsToFetch) {
   return { total_rows_written: totalWritten, per_season: perSeasonResults };
 }
 
+async function refreshBattedBallProfileIfStale(env, seasonYear) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_batted_ball_profile (
+    profile_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
+    ground_ball_pct REAL, air_pct REAL, pulled_air_pct REAL, batted_ball_events INTEGER,
+    source_key TEXT, raw_json TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_batted_ball_profile WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/batted-ball?type=batter&year=${seasonYear}&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Batted-Ball-Profile-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
+  const rows = parseCsv(res.text);
+  const statements = [];
+  let written = 0;
+  for (const r of rows) {
+    const pid = intOrNull(r.player_id || r.batter);
+    if (!pid) continue;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_batted_ball_profile (profile_id, mlb_player_id, player_name, season_year, ground_ball_pct, air_pct, pulled_air_pct, batted_ball_events, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      `${pid}_${seasonYear}`, pid, r["last_name, first_name"] || r.player_name || null, seasonYear,
+      Number(r.gb_pct ?? r.ground_ball_pct) || null, Number(r.air_pct) || null, Number(r.pulled_air_pct) || null, intOrNull(r.bbe || r.batted_ball_events),
+      "baseball_savant_batted_ball_profile_v0_1_0", safeJsonStringify({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await env.REF_DB.batch(statements);
+  return { refreshed: true, rows_written: written, source_rows: rows.length };
+}
+
 async function refreshArmAngleIfStale(env, seasonsToFetch) {
   await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_arm_angle (
     arm_angle_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
