@@ -521,11 +521,11 @@ async function enrichLeg(env, matrixRow, config, legContext) {
     if (factor.variation_type === "continuous_formula") {
       const matchingCell = cells.find(c => c.prop_key === propKey) || cells[0];
       if (matchingCell) {
-        contribution = evaluateContinuousFactor(factor.factor_key, matchingCell, legContext);
+        contribution = evaluateContinuousFactor(factor.factor_key, matchingCell, legContext, config.thresholdsByFactor.get(factor.factor_key));
         cellUsed = matchingCell.cell_id;
       }
     } else if (factor.variation_type === "tiered_bands") {
-      const tier = classifyIntoTier(factor.factor_key, legContext);
+      const tier = classifyIntoTier(factor.factor_key, legContext, config.thresholdsByFactor.get(factor.factor_key));
       if (tier) {
         const matchingCell = cells.find(c => c.prop_key === propKey && c.tier_label === tier);
         if (matchingCell) { contribution = matchingCell.lift || -1 * (matchingCell.penalty || 0); cellUsed = matchingCell.cell_id; }
