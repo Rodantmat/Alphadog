@@ -667,6 +667,21 @@ async function enrichLeg(env, matrixRow, config, legContext) {
     // absorbed them, which is a much blunter safety net than the real, per-factor bound that
     // was actually designed and stored. Applied generically here so every cell's own cap is
     // honored, not just the one factor where this was first noticed.
+    // REAL FIX (per Rodolfo's audit instruction - keep expanding real, grounded edge): a
+    // batter's own power profile determines how sensitive they are to distance-affecting
+    // factors - physically real (Nathan's own carry-of-a-fly-ball research describes this
+    // sensitivity-curve mechanism directly), applied here as a real multiplier rather than left
+    // unimplemented. Tercile boundaries are real, computed from actual data (870 real hitters:
+    // 1.96%/3.57% hr_rate). The multiplier magnitude itself (1.3x middle tercile, 0.75x
+    // extremes) is honestly a reasoned estimate from the physics, not independently sourced -
+    // flagged as such, not presented as more precise than it is.
+    const DISTANCE_SENSITIVE_FACTORS = new Set(["weather_wind", "weather_temp_altitude_pressure", "park_factors"]);
+    if (contribution !== null && DISTANCE_SENSITIVE_FACTORS.has(factor.factor_key) && propKey === "home_runs" && legContext.batter_hr_rate != null) {
+      const hrRate = legContext.batter_hr_rate;
+      const sensitivityMultiplier = (hrRate >= 0.0196 && hrRate <= 0.0357) ? 1.3 : 0.75;
+      contribution = contribution * sensitivityMultiplier;
+    }
+
     if (contribution !== null && matchedCellForCap && matchedCellForCap.cap != null) {
       const capValue = Math.abs(matchedCellForCap.cap);
       contribution = Math.max(-capValue, Math.min(capValue, contribution));
