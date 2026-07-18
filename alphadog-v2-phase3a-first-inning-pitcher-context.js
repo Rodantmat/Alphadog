@@ -6611,6 +6611,7 @@ async function runClassificationV6BaseSingleStep(env, input = {}) {
     await refreshUmpireTendencyIfStale(env).catch(() => ({ refreshed: false, error: true }));
     await refreshSprintSpeedIfStale(env, [refYear, refYear - 1]).catch(() => ({ refreshed: false, error: true }));
     await refreshArmAngleIfStale(env, [refYear, refYear - 1]).catch(() => ({ refreshed: false, error: true }));
+    await refreshBattedBallProfileIfStale(env, refYear).catch(() => ({ refreshed: false, error: true }));
   }
   const cursorOffset = Math.max(0, Number(input.cursor_offset || 0));
   const batchId = String(input.batch_id || rid("classification_v6_base_batch"));
