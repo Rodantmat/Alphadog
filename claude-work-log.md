@@ -1840,6 +1840,56 @@ Also reverted the 350->450 row-count experiment and reduced archive concurrency 
 connections along the way - both real, evidence-based adjustments kept even though neither was
 the actual root cause, since both are grounded in real Cloudflare D1 documented limits.
 
+## DAILY-LINEUPS TIMEOUT - REAL FIX
+Rodolfo reported daily-lineups failing too. Direct log-timestamp evidence showed 17 seconds
+spent in one step: the catcher-reference refresh (2 real external fetches to Baseball Savant,
+only triggered when data is >20h stale - not every tick). The worker's own internal deadline
+(18000ms) was firing before this legitimate, retry-bounded external work could finish. Raised to
+19200ms, staying safely under the orchestrator's shared 20000ms cutoff (left that shared constant
+untouched since other daily-context workers rely on it correctly). This failure never actually
+blocked the chain - every later daily-context stage ran and completed regardless.
+
+## MARKET-FULL-RUN CHILD STARVATION - REAL, STRUCTURAL BUG FOUND AND FIXED
+Market-certifier sat with started_at=null for 20+ minutes across two full retry cycles - never
+actually dispatched at all, not a timeout-after-starting issue. Root-caused via direct, careful
+investigation (not guessing): first found and cleaned up a real, embarrassing self-inflicted
+issue - a leftover test job of my own was still pending and monopolizing tick cycles. After
+cleaning that up, the real starvation persisted, precisely localized via direct log evidence:
+market-full-run's own parent row was winning literally every single tick cycle, confirmed by
+temporarily delaying its run_after and watching daily-full-run's parent row immediately take its
+place instead - proving this is a general pattern affecting any due "_FULL_RUN" parent-type job,
+not specific to one chain.
+Found the real, precise mechanism: after enqueueing a child, market-full-run re-queued itself
+with run_after = now+3 seconds - a very tight self-recheck interval that meant the parent became
+"due" again almost instantly, apparently pre-empting the generic priority-ordered queue scan that
+would otherwise reach the child. Real, safe fix: widened all 4 market-full-run-specific
+occurrences of this interval to 15 seconds, giving the generic scan real room to reach the child
+between parent rechecks. Left scoring-full-run's 4 identical copies of this same pattern
+untouched, since I have not independently confirmed that chain exhibits the same live issue -
+flagged honestly as worth checking if it's ever seen to have the same symptom.
+Confirmed live: market-certifier finally got started_at set for the first time after the fix.
+
+## MARKET-CERTIFIER TIMEOUT - TWO REAL, SEPARATE BUGS FOUND AND FIXED
+Once market-certifier could actually be dispatched, it revealed a second, real issue: a
+service-binding timeout at 25000ms - confirmed as a real configuration bug (this dispatch was
+reusing MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS, a constant meant for a different worker, while
+market-certifier's own real internal HARD_DEADLINE_MS is 40000ms - the orchestrator was cutting
+the connection before the worker's own, more generous deadline could ever return cleanly). Added
+a dedicated MARKET_CERTIFIER_WORKER_TIMEOUT_MS=42000 constant.
+Retested and found a second, real, underlying problem: the worker's own 40000ms deadline then
+fired for real - confirmed via a real comparison against yesterday's successful run (completed in
+~12s on a 1926-row board) versus today's genuinely 4.6x larger real board (8869 rows, a direct,
+positive result of today's earlier PrizePicks fix pulling in much more real data). Found the exact
+cause via direct code reading: batchRun() processed its ~80-row write chunks sequentially, one at
+a time - the same class of bug already fixed twice this session (score-prep, PrizePicks). With
+8869 rows that's ~111 sequential round-trips for the main write step alone. Fixed with the same
+proven bounded-concurrency pattern (3 concurrent workers, real headroom under Cloudflare's
+documented 6-connection-per-invocation limit).
+TESTED LIVE, CONFIRMED: market-certifier now completes in 26.4s (down from timing out at 40s+),
+with real, substantial output (6965 rows processed, 13930 real issue rows written).
+Re-triggered a fresh daily_full_run (daily_full_run_retrigger_5) with every fix from this session
+now in place.
+
 ## BOARD_FULL_RUN PARITY-CHECK TIMING RACE - ROOT-CAUSED AND FIXED
 Rodolfo shared real, live orchestrator logs showing score-prep genuinely COMPLETED successfully
 this time (26 ticks, ~13 minutes, 8,856 real rows) - confirming the earlier score-prep fix works
