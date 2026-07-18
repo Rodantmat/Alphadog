@@ -407,6 +407,14 @@ async function loadRealLegContexts(env, matrixRows) {
   // prevented in the outfield tend to be extra-base hits, while infield plays prevented tend
   // to be singles. The position data needed (ref_defensive_quality.position) already existed
   // and was simply never used for this split.
+  // REAL FIX (per Rodolfo's audit instruction): park_factors was structurally never
+  // functional - the code looked for park_${propKey}_factor_5yr_regressed in context, but
+  // that field was never populated anywhere. Confirmed real, complete data already exists
+  // (alphadog-v2-static-park-factors.js's ref_park_factors table - 30 real parks, 2025 season,
+  // with real handedness-split columns already built - lhb_hr_factor/rhb_hr_factor/
+  // lhb_run_factor/rhb_run_factor) but was simply never queried by enrichment.
+  const parkFactorRows = await all(env.REF_DB, `SELECT mlb_venue_id, run_factor, hr_factor, lhb_run_factor, rhb_run_factor, lhb_hr_factor, rhb_hr_factor FROM ref_park_factors WHERE active=1`).catch(() => []);
+  const parkFactorsByVenue = new Map(parkFactorRows.map(r => [String(r.mlb_venue_id), r]));
   const OF_POSITIONS = new Set(["OF", "LF", "CF", "RF"]);
   const oaaRows = await all(env.REF_DB, `SELECT dq.outs_above_average, dq.position, p.current_mlb_team_id FROM ref_defensive_quality dq JOIN ref_players p ON p.mlb_player_id = dq.mlb_player_id WHERE dq.active=1 AND p.current_mlb_team_id IS NOT NULL`).catch(() => []);
   const oaaByTeam = new Map();
