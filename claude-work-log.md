@@ -1448,9 +1448,39 @@ Two things intentionally left as code-level constants (not calibration knobs): C
 and the final log-rate clamp=2.0 - these are hard safety ceilings preventing any single factor
 (correctly calibrated or not) from corrupting the final HP, a different concept from tunable
 tier boundaries.
-STILL OPEN (real, separate gaps, not part of this fix): config-coefficient completeness (most
-lift/penalty/formula_coefficient values are still null - needs Rodolfo's domain input, not a
-threshold-storage problem); catcher_poptime_arm has zero config_enrichment_profile_cells rows
-at all (code correct and ready, blocked purely on a missing config row); Issue #3 (singles/1.5
-low-sample sum-to-100); Issue #7 (duplicate legs, root cause upstream, but caught by Final
-Board's dedup before delivery).
+## ARCHITECTURE: MOVED 5 REFERENCE-DATA REFRESHES TO THE MORNING-ONLY RUN
+Rodolfo asked whether arsenal/OAA/sprint-speed/arm-angle/umpire-tendency refreshes were
+correctly living in the morning delta run (once-daily, season-level data) or the 3x/day daily
+full run. Checked precisely: confirmed via real chain_id lookups that daily-lineups.js (which
+hosted all 5 refreshes) is dispatched as part of chain_daily_full_run_*/chain_daily_context_
+full_run_* - the 3x/day chain, not incremental-morning-full-run. Not broken (each refresh has
+its own ~20h self-gate, so only the first of the 3 daily calls actually did real work) but not
+architecturally correct either.
+Rodolfo raised a sharp, important challenge before allowing the fix: are these factors
+actually daily-context-dependent, meaning they CAN'T run agnostically in the morning before
+board/lineups exist? Verified directly against the real function signatures rather than assume:
+all 5 take only (env)/(env, seasonYear)/(env, seasonsToFetch) - no matrix rows, no lineup data,
+reading/writing only REF_DB (arsenal, defensive quality, sprint speed, arm angle) or REF_DB+
+CONTEXT_DB+TEAM_DB permanent historical tables (umpire tendency) plus external Baseball Savant
+fetches. Confirmed genuinely agnostic - they were only ever co-located in daily-lineups.js for
+code convenience. One real exception correctly identified and left alone: the umpire
+ASSIGNMENT history backfill (a separate function in daily-usage-pulse.js) does need daily-
+context to have run first, since it reads daily_umpire_assignment_history - correctly stays
+where it is.
+Rodolfo then redirected the implementation approach: rather than building a new worker,
+certifier, and orchestrator chain registration for this, absorb the 5 functions directly into
+an EXISTING function already dispatched as part of incremental-morning-full-run - expand scope,
+don't add a new layer. Moved all 5 functions plus their helper dependencies (fetchTextWithTimeout,
+parseCsv/parseCsvLine, intOrNull, safeJsonStringify - none of which existed in the target file
+yet) into alphadog-v2-phase3a-first-inning-pitcher-context.js, wired into the existing
+runClassificationV6BaseSingleStep entry point (already dispatched via expansion-baseline-v2/
+expansion-baseline-full-run as part of the morning chain), gated to fire once per fresh base-
+rebuild cycle (comboIndex=0 && cursorOffset=0) rather than on every chunked tick. Verified
+REF_DB/CONTEXT_DB/TEAM_DB bindings already exist in this worker's wrangler config - no config
+changes needed. Removed the 5 calls (and their now-dangling debug log references) from daily-
+lineups.js's 3x/day path.
+TESTED WITH REAL DATA: dispatched classification_v6_base fresh at combo_index=0 - completed
+without error, classification logic proceeded normally afterward (rows_read:300, rows_written:281),
+confirming the migrated code compiles and executes correctly in its new home. Verified
+ref_umpire_tendency still shows 83 real umpires (matching pre-migration count) - data integrity
+confirmed, nothing lost in the move.
