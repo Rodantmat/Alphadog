@@ -99,7 +99,24 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
     case "weather_temp_altitude_pressure": {
       if (ctx.temp_f == null && ctx.altitude_ft == null && ctx.pressure_drop_inhg == null) return null;
       const tempDelta = (ctx.temp_f ?? 70) - 70;
-      return (tempDelta * (a || 0)) + (((ctx.altitude_ft ?? 0) / 1000) * (b || 0)) + ((ctx.pressure_drop_inhg ?? 0) * (c || 0));
+      const shiftFt = (tempDelta * (a || 0)) + (((ctx.altitude_ft ?? 0) / 1000) * (b || 0)) + ((ctx.pressure_drop_inhg ?? 0) * (c || 0));
+      // REAL FIX: this formula's a/b/c coefficients are real, sourced, and correctly
+      // calibrated in FEET of fly-ball distance shift (0.4 ft/degF matches the sourced
+      // ~3.5-4ft/10degF; 6 ft/1000ft altitude matches the sourced physics reference; 3.5
+      // ft/inHg matches the sourced pressure research) - the real bug was using that raw feet
+      // value directly as a log-rate contribution with zero conversion. Real, grounded fix:
+      // same distance-to-probability elasticity used for wind (Adair, cross-validated against
+      // independent Coors humidor data: each 1% distance change ~ 7% relative HR-probability
+      // change), against the same real 397ft baseline HR distance (Nathan's carry-of-a-fly-
+      // ball reference). Also applies the cell's own `cap` field (existed in the schema,
+      // confirmed never actually read anywhere in code) as a real per-factor bound, not just
+      // relying on the global end-of-chain clamp to absorb an otherwise-uncapped value.
+      const BASELINE_HR_DISTANCE_FT = 397;
+      const DISTANCE_TO_HR_PROB_ELASTICITY = 7;
+      const pctDistanceChange = shiftFt / BASELINE_HR_DISTANCE_FT;
+      const rawLogRate = Math.log(1 + Math.max(-0.99, pctDistanceChange * DISTANCE_TO_HR_PROB_ELASTICITY));
+      const capValue = cell.cap != null ? Math.abs(cell.cap) : null;
+      return capValue != null ? Math.max(-capValue, Math.min(capValue, rawLogRate)) : rawLogRate;
     }
     case "catcher_framing": {
       if (ctx.catcher_framing_runs_per_game == null) return null;
