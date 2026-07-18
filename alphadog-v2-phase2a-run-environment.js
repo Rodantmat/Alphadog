@@ -452,7 +452,7 @@ async function loadRealLegContexts(env, matrixRows) {
   // regardless, a weak hitter's fly ball falls short regardless. Real, already-computed hr_rate
   // (confirmed real: 870 real hitters, terciles empirically at 1.96%/3.57%) used as the power
   // proxy - no new data source needed, this metric already existed in the system.
-  const hrRateRows = playerIds.length ? await all(env.STATS_HITTER_DB, `SELECT player_id, hr_rate FROM hitter_metric_snapshots WHERE player_id IN (${playerIds.map(() => "?").join(",")}) AND metric_window='season'`, ...playerIds).catch(() => []) : [];
+  const hrRateRows = playerIds.length ? await all(env.STATS_HITTER_DB, `SELECT player_id, hr_rate FROM hitter_metric_snapshots WHERE player_id IN (${playerIds.map(() => "?").join(",")}) AND metric_window='season_to_date'`, ...playerIds).catch(() => []) : [];
   const hrRateByPlayer = new Map(hrRateRows.map(r => [String(r.player_id), r.hr_rate]));
 
   return {
