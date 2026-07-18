@@ -1612,7 +1612,11 @@ ORDER BY rows DESC`, [batchId]).then(rows => rows.map(r => ({
     // fixes): the real board actually offered each day was never permanently retained anywhere
     // - this DELETE wipes the previous batch's real rows on every single run. Capture them into
     // a permanent historical table first.
-    const permanentBoardBackfill = await permanentlyRecordBoardLegs(env, batchId).catch(() => ({ copied: 0, checked: 0, error: true }));
+    const permanentBoardBackfill = await permanentlyRecordBoardLegs(env, batchId).catch((err) => ({ copied: 0, checked: 0, error: true, error_message: String(err && err.message ? err.message : err) }));
+    try {
+      await run(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'alphadog-v2-score-prep', 'score-prep', 'INFO', 'score_prep_debug_board_backfill', 'Board history backfill debug', ?, CURRENT_TIMESTAMP)",
+        requestId || batchId, JSON.stringify({ permanentBoardBackfill, batchId })).catch(() => {});
+    } catch (_) {}
     await env.SCORE_DB.prepare("DELETE FROM score_board_prepared_current WHERE prep_batch_id <> ?").bind(batchId).run();
     await env.SCORE_DB.prepare("DELETE FROM score_board_prepared_stage WHERE prep_batch_id <> ?").bind(batchId).run();
   }
