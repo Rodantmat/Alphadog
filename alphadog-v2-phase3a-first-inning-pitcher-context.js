@@ -6595,6 +6595,23 @@ async function runClassificationV6BaseSingleStep(env, input = {}) {
   const combos = buildComboList(propLineUniverse);
 
   const comboIndex = Math.max(0, Number(input.combo_index || 0));
+  // REAL FIX (per Rodolfo's direct instruction): the 5 season-level reference-data refreshes
+  // (arsenal, defensive OAA, sprint speed, arm angle, umpire tendency) don't depend on
+  // anything daily-context/board provides - verified directly against their real function
+  // signatures. Rather than building a new worker/certifier/chain-registration layer, they're
+  // absorbed directly into this existing morning-run entry point (already dispatched as part
+  // of incremental-morning-full-run), firing once per fresh base-rebuild cycle rather than on
+  // every chunked tick - each has its own ~20h self-gate anyway, so an occasional extra check
+  // is harmless, but gating here avoids a real, unnecessary staleness-check on every one of
+  // the many chunk ticks a full base rebuild takes.
+  if (comboIndex === 0 && Math.max(0, Number(input.cursor_offset || 0)) === 0) {
+    const refYear = new Date().getUTCFullYear();
+    await refreshPitcherArsenalIfStale(env, refYear).catch(() => ({ refreshed: false, error: true }));
+    await refreshDefensiveQualityIfStale(env, refYear).catch(() => ({ refreshed: false, error: true }));
+    await refreshUmpireTendencyIfStale(env).catch(() => ({ refreshed: false, error: true }));
+    await refreshSprintSpeedIfStale(env, [refYear, refYear - 1]).catch(() => ({ refreshed: false, error: true }));
+    await refreshArmAngleIfStale(env, [refYear, refYear - 1]).catch(() => ({ refreshed: false, error: true }));
+  }
   const cursorOffset = Math.max(0, Number(input.cursor_offset || 0));
   const batchId = String(input.batch_id || rid("classification_v6_base_batch"));
 
