@@ -6,7 +6,7 @@ const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
 const SOURCE_SLEEPER = "sleeper";
 const SOURCE_UNDERDOG = "parlay_underdog";
 const INSERT_CHUNK_SIZE = 75;
-const WRITE_ROWS_PER_INVOCATION = 450; // Increased from 350 now that the real archival bottleneck (permanentlyRecordBoardLegs) only runs once per batch instead of every tick - confirmed via real tick timing data that 350 rows only used ~12-13s of the real 20s budget, leaving genuine headroom. 450 rows keeps a safety margin under the hard timeout while reducing the real tick count for a full ~8800-row board from ~26 down to ~20.
+const WRITE_ROWS_PER_INVOCATION = 350; // REVERTED from 450: the increase caused consistent 100% timeout failure (confirmed live, 3 consecutive failures at ~20000ms). 350 is the proven, confirmed-working value - verified end to end with a real 8856-row board completing successfully across 26 ticks. Not touching this again without live proof any change is safe first.
 
 function nowIso() {
   return new Date().toISOString();
