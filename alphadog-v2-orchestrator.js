@@ -5639,7 +5639,7 @@ async function processMarketHitterPropContextJob(env, row, runId, trigger) {
   let output;
   let httpStatus = null;
   try {
-    const resp = await serviceBindingFetch(env.MARKET_LINE_SHAPE_CLASSIFIER_WORKER, "https://internal.alphadog-v2-market-line-shape-classifier/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "market_line_shape_classifier", MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS);
+    const resp = await serviceBindingFetch(env.MARKET_LINE_SHAPE_CLASSIFIER_WORKER, "https://internal.alphadog-v2-market-line-shape-classifier/run", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(input) }, "market_line_shape_classifier", MARKET_LINE_SHAPE_CLASSIFIER_WORKER_TIMEOUT_MS);
     httpStatus = resp.status;
     const text = await resp.text();
     try { output = JSON.parse(text); } catch (_) { output = { ok:false, data_ok:false, version:SYSTEM_VERSION, processed_by:WORKER_NAME, worker_name:row.worker_name, job_key:row.job_key, status:"worker_non_json_response", http_status:httpStatus, response_preview:String(text || "").slice(0,900) }; }
