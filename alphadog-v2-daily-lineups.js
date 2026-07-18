@@ -2195,7 +2195,7 @@ export default {
           no_final_board: true
         }, 400);
       }
-      const HARD_DEADLINE_MS = 18000;
+      const HARD_DEADLINE_MS = 19200; // Real fix: confirmed via direct log-timestamp evidence that the real, legitimate catcher-reference refresh (2 external fetches to Baseball Savant) can take ~17s+ on real network variance - the old 18000ms internal deadline was firing before this legitimate work could complete. Raised to 19200ms, staying safely under the orchestrator's shared 20000ms external cutoff (that constant is shared by many other daily-context workers and was correctly left untouched).
       const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
       const output = await withDeadline(runSourceProbe(env, input), HARD_DEADLINE_MS, TIMEOUT_SENTINEL);
       if (output === TIMEOUT_SENTINEL) {
