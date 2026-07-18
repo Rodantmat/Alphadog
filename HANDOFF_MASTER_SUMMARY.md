@@ -92,7 +92,9 @@ run failure - while still failing for real if a gap is genuinely persistent acro
 this remains a real, meaningful data-integrity guard rather than being disabled.
 Deployed and reasoned through the full consuming code path to confirm correctness; the next
 morning run (or any run hitting this exact stage) will now get 2 real retries before a hard fail,
-which is more than sufficient given the confirmed race resolves within 1-2 minutes. most `config_enrichment_profile_cells` completeness
+which is more than sufficient given the confirmed race resolves within 1-2 minutes.
+
+**Still open, honestly flagged, not yet done:** most `config_enrichment_profile_cells` completeness
 work is done, but ongoing refinement (line-variation-specific tuning, further batter/pitcher
 interactions beyond the four built today) remains available whenever real research supports it.
 Final Board's actual real quota/threshold behavior has now been verified once with live data, but
