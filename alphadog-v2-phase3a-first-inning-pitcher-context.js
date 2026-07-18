@@ -7101,6 +7101,7 @@ async function refreshBattedBallProfileIfStale(env, seasonYear) {
   if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status, _debug_text_preview: String(res.text || "").slice(0, 300) };
   const rows = parseCsv(res.text);
   if (!rows.length) return { refreshed: false, reason: "zero_rows_parsed", _debug_text_preview: String(res.text || "").slice(0, 300) };
+  const _debugFirstRowKeys = rows.length ? Object.keys(rows[0]) : [];
   const statements = [];
   let written = 0;
   for (const r of rows) {
