@@ -1792,6 +1792,21 @@ executes cleanly (0 rows, since Final Board hasn't been repopulated by today's r
 daily_full_run yet - not an error, expected given the empty table). Will re-verify with live
 data once that run reaches Final Board.
 
+## EXACT ROOT CAUSE FOUND AND FIXED - CONFIRMED MATCH TO RODOLFO'S REPORTED ERROR
+Rodolfo reported the same exact error again after the first two fixes, meaning neither was the
+real cause of THIS specific message. Traced the frontend's actual load() function to find it
+calls /api/main-board/filters BEFORE /api/main-board/current - meaning apiFilters, not apiCurrent,
+was the real suspect, and hadn't been checked yet.
+Found a bare `details_json` reference (no "f." prefix) inside apiFilters that my earlier search
+pattern (which required the "f." prefix) had missed - fixed it. But the real, exact match to the
+reported error text was found right next to it: `CASE WHEN hit_probability_0_100 >= 80 THEN...`
+referenced hit_probability_0_100 as if it were a real column on score_final_board_current - it
+isn't, that name only ever exists as an OUTPUT ALIAS in other queries (buildCurrentSql's
+baseSelect). The real underlying column is estimated_hit_probability_0_100. This is a precise,
+confirmed match to the exact error Rodolfo saw twice.
+Fixed both, verified the real, exact query (reconstructed in full, not a simplified version)
+now executes cleanly with zero errors against the live database.
+
 ## FULL AUDIT PASS CLOSED - EVERY FACTOR NOW CHECKED AGAINST REAL RESEARCH
 Finished the last two: opposing_pitcher_quality and times_through_order. Both had the same real
 pattern found across this whole audit - existing coefficients that were technically non-null but
