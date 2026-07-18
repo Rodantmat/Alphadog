@@ -273,17 +273,27 @@ async function run(db, sql, ...binds) {
   return binds.length ? await stmt.bind(...binds).run() : await stmt.run();
 }
 async function batchRun(db, sql, bindRows, chunkSize = 75) {
+  // REAL FIX (same class of bug already found and fixed 4 times this session: score-prep,
+  // PrizePicks, market-certifier, market-normalizer): this previously processed chunks
+  // sequentially, one at a time. Fires chunks concurrently with a safe, bounded worker pool
+  // (3, leaving real headroom under Cloudflare's documented 6-simultaneous-connections-per-
+  // invocation limit), matching the same proven pattern used successfully elsewhere.
   const rows = Array.isArray(bindRows) ? bindRows : [];
   if (!rows.length) return { batches: 0, statements: 0 };
-  let batches = 0;
-  let statements = 0;
-  for (let i = 0; i < rows.length; i += chunkSize) {
-    const chunk = rows.slice(i, i + chunkSize);
-    await db.batch(chunk.map(binds => db.prepare(sql).bind(...binds)));
-    batches += 1;
-    statements += chunk.length;
+  const CONCURRENCY = 3;
+  const chunks = [];
+  for (let i = 0; i < rows.length; i += chunkSize) chunks.push(rows.slice(i, i + chunkSize));
+  let nextChunkIndex = 0;
+  async function runOneChunkWorker() {
+    while (nextChunkIndex < chunks.length) {
+      const idx = nextChunkIndex++;
+      const chunk = chunks[idx];
+      if (chunk.length) await db.batch(chunk.map(binds => db.prepare(sql).bind(...binds)));
+    }
   }
-  return { batches, statements };
+  const workerCount = Math.min(CONCURRENCY, chunks.length);
+  await Promise.all(Array.from({ length: workerCount }, runOneChunkWorker));
+  return { batches: chunks.length, statements: rows.length };
 }
 function ptDate(offsetDays = 0) {
   const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit" });
