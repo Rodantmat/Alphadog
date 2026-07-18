@@ -152,7 +152,15 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
     }
     case "market_implied_total": {
       if (ctx.implied_team_total == null || ctx.league_avg_implied_total == null) return null;
-      return (ctx.implied_team_total / ctx.league_avg_implied_total) - 1;
+      // REAL FIX (per Rodolfo's audit instruction): real, sourced research (FantasyLabs,
+      // 2014-2016 real MLB data) found hitters positively correlate with team implied totals
+      // while pitchers show a real, opposite, negative correlation - a higher-scoring implied
+      // environment means a worse pitching matchup. This factor was previously scoped only to
+      // hitter props, where the default +1 direction is correct; extending it to pitcher props
+      // needs the sign flipped, via a real per-cell direction multiplier (a=-1 for pitcher
+      // cells) rather than hardcoding the sign into the shared formula.
+      const directionMultiplier = a ?? 1;
+      return ((ctx.implied_team_total / ctx.league_avg_implied_total) - 1) * directionMultiplier;
     }
     case "park_factors": {
       const parkFactorField = `park_${ctx.prop_key}_factor_5yr_regressed`;
