@@ -1807,6 +1807,39 @@ confirmed match to the exact error Rodolfo saw twice.
 Fixed both, verified the real, exact query (reconstructed in full, not a simplified version)
 now executes cleanly with zero errors against the live database.
 
+## SCORE-PREP TIMEOUT - REAL, DEFINITIVE ROOT CAUSE FOUND AND FIXED (after several wrong guesses)
+Rodolfo explicitly, firmly told me to stop guessing and actually research this properly - fair,
+since several earlier attempts (row-count tuning, archive concurrency tuning) were tested live
+and did NOT fix it, and one (450 rows) made it actively worse. Researched Cloudflare D1's real,
+documented platform behavior directly (official limits page, community reports, real production
+write-ups) rather than continuing to guess: confirmed D1 allows max 6 simultaneous connections
+per Worker invocation, and confirmed real, documented per-round-trip latency variance.
+Found the real, exact, confirmed root cause via direct log-timestamp evidence (not another
+guess): ensureScoreTables() issues 9 SEPARATE sequential D1 round-trips (4 CREATE TABLE + 5
+CREATE INDEX statements), and was called THREE separate times per single invocation
+(runBoardPrep, markPrepBatchRunning, writePreparedRows) - roughly 27 sequential round-trips for
+schema setup alone, on every single tick, even though the schema never changes after the first
+successful run ever. Confirmed precisely: a ~14 second gap existed between orchestrator dispatch
+and score-prep's own first logged action, before any real work began - this lined up exactly.
+Real fix, matching Cloudflare's own documented best practice (batch multiple statements into one
+call to eliminate round trips) and the same pattern already proven elsewhere in this codebase:
+batched all 9 CREATE TABLE/INDEX statements into a single .batch() call, and removed the two
+redundant duplicate calls (kept only the one at the true start of the invocation).
+TESTED LIVE: the 14-second pre-work gap collapsed to the same second. Real work then completed
+in ~21s - just over the old 20000ms per-request timeout, confirmed via a legitimate success log
+message being cut off a moment before it could return. Applied the exact same proven pattern
+already used elsewhere in this file for exactly this situation (MARKET_PROP_CONTEXT_WORKER_
+TIMEOUT_MS=25000, "gives the worker's own internal timeout a moment to return cleanly") -
+raised SCORE_PREP_SERVICE_TIMEOUT_MS from 20000 to 24000ms, a small, safe margin over confirmed
+real completion time (not the risky 30s total-chain-ceiling that governs hot self-continuation,
+a completely separate, correctly-left-alone mechanism).
+TESTED LIVE, DEFINITIVE SUCCESS: http_status 200, elapsed_ms 6882 - not barely squeaking under
+budget, but with massive real headroom (down from 20-21+ seconds that used to fail). Re-triggered
+a fresh daily_full_run (daily_full_run_retrigger_4) with the real, confirmed fix in place.
+Also reverted the 350->450 row-count experiment and reduced archive concurrency from 6->3
+connections along the way - both real, evidence-based adjustments kept even though neither was
+the actual root cause, since both are grounded in real Cloudflare D1 documented limits.
+
 ## BOARD_FULL_RUN PARITY-CHECK TIMING RACE - ROOT-CAUSED AND FIXED
 Rodolfo shared real, live orchestrator logs showing score-prep genuinely COMPLETED successfully
 this time (26 ticks, ~13 minutes, 8,856 real rows) - confirming the earlier score-prep fix works
