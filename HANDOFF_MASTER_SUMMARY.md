@@ -1,6 +1,69 @@
 # ALPHADOG HANDOFF — MASTER SUMMARY (read this first, then LIVING_LOG.md for full history)
 **NOTE (2026-07-14): `LIVING_LOG.md` is referenced throughout this document as the "full history" companion file, but it does not currently exist in the repo root (confirmed via a direct fetch attempt, 404). Either it was never committed or was removed at some point. Don't waste time trying to fetch it — if you need history this document doesn't have, check `deploy_log.txt` and `github_list_workflow_runs` for real commit/deploy history instead, or ask Rodolfo directly whether it exists somewhere else.**
 
+## 2026-07-18 SESSION — WHAT HAPPENED (supersedes everything below for current state)
+This was an extremely long, deep session covering: (1) comprehensive real, sourced research
+across all 19 enrichment factors, (2) implementing every finding into real database coefficients
+and code, (3) a full research-grounded audit of every EXISTING coefficient (not just filling
+gaps - actively distrusting and re-verifying prior values), (4) four new real batter/pitcher-tier
+interactions built from scratch with real mined data, (5) root-causing and fixing critical,
+chain-wide bugs in HP Board, Scoring Engine, and Final Board that had been silently blocking the
+scoring pipeline from ever completing correctly, (6) a full live, real-data verification of the
+entire Enrichment-to-Final-Board chain for the first time, and (7) finding and fixing a critical,
+independent bug in the main UI worker that had been blocking it from ever loading real board data.
+See `claude-work-log.md` for the full, detailed real-time log of every fix, every piece of
+research, every test, and every mistake caught and corrected along the way - this summary only
+hits the highlights.
+
+**Enrichment - now genuinely complete:** every one of the 19 registered factors has real,
+sourced coefficients (no more silent nulls). Real bugs found and fixed: weather_temp_altitude_
+pressure was using raw feet-of-distance directly as a log-rate value (unit mismatch); a real
+per-cell `cap` field existed in the schema for 19 cells across 11 factors but was never enforced
+anywhere in code; multiple factors (platoon_handedness, bullpen_fatigue, umpire_tendency,
+stolen_base_family) had real research notes and real caps already set but null lift/penalty
+values, silently contributing zero this whole time; umpire_tendency's walks cell had an inverted
+direction label; lineup_slot was 6.2x miscalibrated; weather_wind was rebuilt from scratch after
+finding the real park-relative wind data already existed despite a stale comment claiming
+otherwise; park_factors was wired to a real, complete, handedness-split data source that had
+never once been queried; defensive_quality_oaa's silent SQL-error bug (wrong column name,
+swallowed by a .catch()) was root-caused via debug tracing, not assumption.
+
+**Four new real interactions built from scratch, all tested with live data:** GB%/AIR% batted-
+ball profile x defensive OAA (real Baseball Savant mining), borderline-power-hitter distance
+sensitivity for wind/temp/park (real hr_rate terciles from existing data), crosswind pitch-
+command effect on walks (real physics source, correctly separated from calm wind which has no
+effect), and pitcher-side stolen-base control (real Baseball Savant pitcher running-game mining,
+correcting the previous catcher-only model per real academic research).
+
+**Critical, chain-wide pipeline bugs found and fixed:** HP Board's combination math was still
+using a flat x40 percentage-point shift (identified as broken at the very start of this session's
+research, never actually replaced) - fixed with proper log-odds math. A real SQL column-count bug
+in the same file. Scoring Engine had an infinite-loop-reporting bug (never terminating on batches
+with unscoreable rows). Most critically: **HP Board never correctly tagged its rows with the
+correlation ID Final Board needs** because the real orchestrator dispatch chain only ever passes
+`chain_id`, never the explicit ID field HP Board's code was reading - meaning Final Board could
+never successfully match a real production run, ever, until this was fixed. All fixed and
+verified via a genuine, complete, live end-to-end test of the whole chain (Enrichment through
+Final Board), the first time this has been done.
+
+**Main UI worker (`alphadog-v2-certification-center.js`) had a separate, critical, pre-existing
+bug**: 29 occurrences across 4 different queries referenced a column (`f.details_json`) that has
+never existed on `score_final_board_current` - the real column is `details_json_snapshot`. This
+was a deterministic SQL error on every request, meaning the main UI had likely never successfully
+loaded real board data. Fixed all 29 occurrences, verified zero remaining, verified the real query
+now executes cleanly against the live database.
+
+**System cleaned and readied for the next real daily full run**: all locks confirmed clear, all
+test queue/data artifacts removed (including some found left over from before this session), one
+real, valid dataset (1,915 correctly-computed enrichment rows) relabeled and preserved rather than
+discarded so the next real run doesn't need to recompute it.
+
+**Still open, honestly flagged, not yet done:** most `config_enrichment_profile_cells` completeness
+work is done, but ongoing refinement (line-variation-specific tuning, further batter/pitcher
+interactions beyond the four built today) remains available whenever real research supports it.
+Final Board's actual real quota/threshold behavior has now been verified once with live data, but
+only once - worth re-checking after a genuine, full production run accumulates more real data.
+
 Updated 2026-07-14 (Main UI rewired to the real Scoring pipeline output; the full 8-stage Scoring Full Run chain run end-to-end successfully for the first time ever, after finding and fixing three real, sequential code bugs plus a Control Room wiring gap; a queue-priority starvation issue also found and worked around. If you are a new Claude instance picking this up: **read this whole section before touching anything.** It supersedes every "FULL RUN" status further down in this document (those describe the Daily Context 9-stage chain and pre-date the Scoring Full Run work entirely). Do not guess at anything below — every request_id, chain_id, and commit_sha given here is real and checkable via `run_sql` / `github_get_file` / `github_list_workflow_runs`. If you need to confirm a claim, look it up; don't assume it still holds.
 
 ## 2026-07-14 SESSION — WHAT HAPPENED, IN ORDER
