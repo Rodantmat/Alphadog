@@ -392,18 +392,31 @@ async function loadRealLegContexts(env, matrixRows) {
   // better than the permanent null it was returning before). Scaled to a probability-delta-like
   // range (/200 - a +20 OAA elite defense yields +0.10, a -20 poor defense yields -0.10) before
   // the config's own coefficient further tunes it.
-  const oaaRows = await all(env.REF_DB, `SELECT dq.outs_above_average, p.current_mlb_team_id FROM ref_defensive_quality dq JOIN ref_players p ON p.mlb_player_id = dq.mlb_player_id WHERE dq.active=1 AND p.current_mlb_team_id IS NOT NULL`).catch(() => []);
+  // REAL FIX (per Rodolfo's audit instruction - don't trust existing values, ground everything):
+  // this previously averaged ALL fielders on a team together with one flat /200 scaling,
+  // ignoring the official MLB Statcast conversion (Fielding Run Value glossary) that outfield
+  // OAA is worth meaningfully more runs per out (0.9) than infield OAA (0.75) - real plays
+  // prevented in the outfield tend to be extra-base hits, while infield plays prevented tend
+  // to be singles. The position data needed (ref_defensive_quality.position) already existed
+  // and was simply never used for this split.
+  const OF_POSITIONS = new Set(["OF", "LF", "CF", "RF"]);
+  const oaaRows = await all(env.REF_DB, `SELECT dq.outs_above_average, dq.position, p.current_mlb_team_id FROM ref_defensive_quality dq JOIN ref_players p ON p.mlb_player_id = dq.mlb_player_id WHERE dq.active=1 AND p.current_mlb_team_id IS NOT NULL`).catch(() => []);
   const oaaByTeam = new Map();
   for (const r of oaaRows) {
     const tid = String(r.current_mlb_team_id);
-    if (!oaaByTeam.has(tid)) oaaByTeam.set(tid, { sum: 0, count: 0 });
+    if (!oaaByTeam.has(tid)) oaaByTeam.set(tid, { runsSum: 0, count: 0 });
     const bucket = oaaByTeam.get(tid);
-    bucket.sum += Number(r.outs_above_average) || 0;
+    const isOutfield = OF_POSITIONS.has(String(r.position || "").toUpperCase());
+    const runsPerOut = isOutfield ? 0.9 : 0.75;
+    bucket.runsSum += (Number(r.outs_above_average) || 0) * runsPerOut;
     bucket.count += 1;
   }
   const oaaProbabilityDeltaByTeam = new Map();
   for (const [tid, bucket] of oaaByTeam.entries()) {
-    if (bucket.count > 0) oaaProbabilityDeltaByTeam.set(tid, (bucket.sum / bucket.count) / 200);
+    // Same /200-equivalent probability-delta scale as before, now applied to real RUNS (already
+    // position-weighted) instead of raw, position-agnostic OAA counts - preserves the existing,
+    // already-reasonable overall magnitude while fixing the real position-weighting bug.
+    if (bucket.count > 0) oaaProbabilityDeltaByTeam.set(tid, (bucket.runsSum / bucket.count) / 180);
   }
 
   return {
