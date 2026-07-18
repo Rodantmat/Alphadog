@@ -91,9 +91,10 @@ function safeJsonParse(text, fallback) {
 // templates (Section 2 of the design doc), reading actual numeric inputs from the leg's real
 // context and the factor's own real, DB-resident coefficients. Not a general expression
 // parser by design - keeps this auditable and avoids an eval() security surface.
-function evaluateContinuousFactor(factorKey, cell, legContext) {
+function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
   const a = cell.formula_coefficient_a, b = cell.formula_coefficient_b, c = cell.formula_coefficient_c;
   const ctx = legContext;
+  const t = thresholds || {};
   switch (factorKey) {
     case "weather_temp_altitude_pressure": {
       if (ctx.temp_f == null && ctx.altitude_ft == null && ctx.pressure_drop_inhg == null) return null;
