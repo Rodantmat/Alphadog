@@ -1697,8 +1697,28 @@ Left untouched, correctly: all real historical control_job_queue entries from pr
 (the 22 "blocked" rows dating back to May-July are real historical records, not test pollution);
 ref_batted_ball_profile and ref_pitcher_running_game (real, newly-mined reference data built this
 session, needed for tomorrow's real run).
-System confirmed ready: zero locks held, zero pending/running jobs, zero test data remaining in
-any production table, all real work product preserved.
+## CRITICAL: MAIN UI WORKER WAS BROKEN THIS WHOLE TIME - FOUND AND FIXED
+Per Rodolfo's request to wire the main UI to Final Board's data, checked rather than assumed the
+existing connection worked. Found a real, critical, pre-existing bug: alphadog-v2-certification-
+center.js (the main UI worker) referenced a column `f.details_json` that has never existed on
+score_final_board_current - the real column has always been named `details_json_snapshot`.
+Confirmed via direct SQL test: the exact query the UI runs failed with "no such column:
+f.details_json" - a deterministic SQL error that would fire on every single request. This means
+the main UI's board-loading endpoints have likely never successfully returned real board data.
+The bug was extensive - 29 separate occurrences across 4 different query definitions in the file
+(the shared main-board query template, and three separate inline queries in apiDossier's two
+lookups and a fourth endpoint), both as bare column references and inside json_extract() calls
+for game-context fields (game time, venue, team names, status).
+Fixed all 29 occurrences methodically, verifying each with SQL tests against the real schema
+along the way. Caught and immediately corrected a real mistake of my own mid-fix: one patch left
+old broken lines in place while adding new fixed ones instead of replacing them, creating
+duplicate column aliases - caught via re-verification before moving on, not left unnoticed.
+Verified the final state: zero remaining references to the non-existent column, exactly 3 clean
+occurrences of the home_team_name/venue_name block (matching the 3 real query definitions, no
+duplicates), and confirmed the exact real UI query now executes successfully against the live
+database with zero errors.
+This is a second, independent, critical find beyond today's scoring-pipeline fixes - the main UI
+itself needed real repair, not just wiring confirmation.
 
 ## FULL AUDIT PASS CLOSED - EVERY FACTOR NOW CHECKED AGAINST REAL RESEARCH
 Finished the last two: opposing_pitcher_quality and times_through_order. Both had the same real
