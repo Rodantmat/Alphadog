@@ -1363,6 +1363,55 @@ touched, so it could recur on the next full baseline_v6 rebuild for whatever new
 pairs arise then. Given the narrow scope (0.1% of legs) and that current data is now clean,
 this is an accepted, flagged follow-up rather than something blocking the full run.
 
+## ISSUE #3: PERMANENT, GROUNDED CODE-LEVEL FIX (not just another data correction)
+Rodolfo pushed back correctly on treating the prior data-only fix as sufficient, and framed
+the real requirement precisely: every leg has one clean, agnostic implied hit probability;
+classification's job is to produce THAT one number via one specific equation per condition;
+more/less are just two readings of it, not two independently-estimated things. Asked for real,
+grounded external research before touching code - not guessing, not one source.
+RESEARCHED AND CROSS-CHECKED (3 independent, credible source classes):
+1. Real industry practice (OpticOdds, professional sports-data company): confirmed player-prop
+   probabilities are read off ONE fitted parametric distribution (Poisson/NB/Normal/LogNormal)
+   per player-metric - never independently modeled per side of a line.
+2. Foundational academic statistics (Efron & Morris 1975, JASA - one of the most cited papers
+   in all of statistics, using MLB batting averages as its central worked example; cross-
+   verified across 5 independent secondary sources including Efron's own Stanford textbook
+   chapter): shrinkage estimation targets ONE rate parameter per unit, sample-size-weighted
+   toward a population mean - never two separately-shrunk quantities for two sides of the same
+   threshold.
+3. Real, decades-proven production baseball projection systems (Marcel, Steamer, ZiPS, PECOTA -
+   all well-documented via FanGraphs/Baseball-Reference/a 2026 practitioner writeup): every one
+   computes ONE shrunk rate per player per stat.
+CONFIRMED VIA CODE INSPECTION: hpFromCountModel and hpFromNormalModel (the actual HP formulas
+already in use) ALREADY implement the correct principle exactly - one CDF evaluation, "more" =
+1-CDF, "less" = CDF, which mathematically GUARANTEES summation to 100 IF the same mean is used
+for both sides. The only real defect was that "less" independently re-derived its own
+games_sample/tier/shrunkRate via a separate classification pass that could race against a live-
+updating snapshot (confirmed real games logged mid-run), occasionally producing a very slightly
+different mean than "more" used - breaking the guarantee at the input level, not the formula.
+SCOPE CONFIRMED SAFE: verified classification_v6_current is read ONLY by baseline_v6's own
+build process within the same file - nothing else in the system (enrichment, matrix-builder,
+HP Board, Final Board) reads it directly. No blast radius beyond this one file.
+IMPLEMENTED (alphadog-v2-phase3a-first-inning-pitcher-context.js, runBaselineV6Tick): when
+selected_side='less', STOP independently classifying/shrinking entirely - instead read the
+already-computed 'more' row for the same player/prop/line from baseline_v6_current and derive
+hit_probability_0_100 = 100 - more's HP directly (also copying tier_key/confidence/
+non_push_sample/prior_strength/recency_blended_rate from 'more' for full consistency). Safe
+without touching classification_v6 or requiring any rebuild: buildComboList already enqueues
+'more' before 'less' for every (prop, line), and combos process sequentially by comboIndex
+(never interleaved), so 'more' is always fully complete before 'less' starts - confirmed via
+the existing combo enumeration order.
+TESTED WITH REAL DATA: triggered a real production daily-delta run across all 116 real combos
+(mode=baseline_v5_hp_daily_delta) - completed cleanly, PASS grade, zero errors. Verified system-
+wide: 37213 total more/less pairs, 0 pairs with any drift among anything the fix touched. The
+only remaining 42 bad pairs were confirmed to be stale rows from BEFORE the fix (updated_at
+2026-07-13) that the day's delta hadn't touched yet - corrected these with one more literal-
+value pass (same technique as before). FINAL VERIFICATION: 0 bad pairs across all 37213 pairs
+system-wide, confirmed via direct query.
+This is now a genuine structural guarantee, not a symptom patch - "less" can no longer produce
+a value that doesn't sum to 100 with "more", because it is no longer computed independently at
+all. Issue #3 is closed at the root, not just for currently-existing data.
+
 ALL PREVIOUSLY OPEN ISSUES (#3, #7) NOW RESOLVED FOR CURRENT DATA. Per Rodolfo's explicit
 instruction, next and final step is deep external research for real, defensible lift/penalty/
 cap coefficient values per factor/prop/tier combination - from reliable, referenced, current
