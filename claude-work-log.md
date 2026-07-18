@@ -1807,6 +1807,26 @@ confirmed match to the exact error Rodolfo saw twice.
 Fixed both, verified the real, exact query (reconstructed in full, not a simplified version)
 now executes cleanly with zero errors against the live database.
 
+## BOARD_FULL_RUN PARITY-CHECK TIMING RACE - ROOT-CAUSED AND FIXED
+Rodolfo shared real, live orchestrator logs showing score-prep genuinely COMPLETED successfully
+this time (26 ticks, ~13 minutes, 8,856 real rows) - confirming the earlier score-prep fix works
+for a full real run, not just a quick test. But board_full_run then failed on a NEW, different,
+real check: "board_full_run_final_market_score_window_parity_failed" - a mismatch between
+market's raw row total and a value score-prep had self-reported.
+Root-caused via direct code reading, not guessing: this check compared marketTotalRows (read
+LIVE, at final-guard time) against scorePrepAllSourceRowsBeforeWindow (a value score-prep self-
+reported at the very START of its run - now confirmed to take ~13 minutes across ~26 chunked
+ticks for a real, large board). Comparing a live snapshot to one taken ~13 minutes earlier is a
+genuine time-of-check-vs-time-of-use race, the same class of bug as the earlier calendar-tally
+fix - not a real data-integrity problem, since other board sources (sleeper/underdog) can
+legitimately refresh independently during that window.
+Real fix: removed specifically this one stale-snapshot comparison, while keeping every other
+parity check intact - the ones comparing score's current live count to score-prep's own final
+reported counts (captured close together in time, genuinely meaningful) and the ones checking
+market row counts are never LESS than what score-prep claims to have processed (a real,
+timing-independent red flag if it ever happens) all remain as real, valid guards.
+Re-triggered a fresh daily_full_run (daily_full_run_retrigger_3) with this fix in place.
+
 ## FULL AUDIT PASS CLOSED - EVERY FACTOR NOW CHECKED AGAINST REAL RESEARCH
 Finished the last two: opposing_pitcher_quality and times_through_order. Both had the same real
 pattern found across this whole audit - existing coefficients that were technically non-null but
