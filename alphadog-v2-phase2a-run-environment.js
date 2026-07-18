@@ -418,7 +418,7 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
     roof_status: weather.roof_status ?? null,
     catcher_framing_runs_per_game: catcher.framing_runs_total ?? null,
     implied_team_total: market.derived_home_implied_runs ?? market.derived_away_implied_runs ?? null,
-    league_avg_implied_total: 4.3,
+    league_avg_implied_total: (marketThresholds && marketThresholds.league_avg_implied_total_runs) ?? 4.3,
     prop_key: matrixRow.canonical_prop_key || null,
     batter_hand: lineup.bat_side ?? null,
     pitcher_hand: oppStarter.starter_hand ?? null,
