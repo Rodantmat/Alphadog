@@ -352,8 +352,52 @@ async function ensureSchema(env) {
   ]);
 }
 
+// REAL FIX (same class as weather/umpire/market/board history fixes, per Rodolfo's direct
+// instruction): daily_player_availability_current_v1 is today/tomorrow-only, pruned after -
+// meaning the real point-in-time availability signal (active/IL/game-time-decision, as it was
+// KNOWN before the game, not just what happened) was never permanently retained anywhere.
+// Creates a new granular historical table and copies real rows before this run's own retention
+// prune wipes them. Idempotent via availability_key as primary key (INSERT OR IGNORE).
+async function permanentlyRecordPlayerAvailability(env) {
+  await env.ARCHIVE_DB.prepare(`CREATE TABLE IF NOT EXISTS archive_player_availability_history (
+    availability_key TEXT PRIMARY KEY,
+    official_date TEXT,
+    game_pk INTEGER,
+    mlb_player_id INTEGER,
+    player_name TEXT,
+    team_abbreviation TEXT,
+    team_mlb_id INTEGER,
+    availability_status TEXT,
+    roster_status TEXT,
+    availability_confidence TEXT,
+    active_roster_flag INTEGER,
+    injured_list_flag INTEGER,
+    transaction_summary TEXT,
+    reason TEXT,
+    data_source_level TEXT,
+    captured_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  const rows = await all(env.DAILY_DB, `SELECT availability_key, official_date, game_pk, mlb_player_id, player_name, team_abbreviation, team_mlb_id, availability_status, roster_status, availability_confidence, active_roster_flag, injured_list_flag, transaction_summary, reason, data_source_level FROM daily_player_availability_current_v1`).catch(() => []);
+  if (!rows.length) return { copied: 0, checked: 0 };
+  const statements = [];
+  for (const r of rows) {
+    statements.push(env.ARCHIVE_DB.prepare(`INSERT OR IGNORE INTO archive_player_availability_history (availability_key, official_date, game_pk, mlb_player_id, player_name, team_abbreviation, team_mlb_id, availability_status, roster_status, availability_confidence, active_roster_flag, injured_list_flag, transaction_summary, reason, data_source_level, captured_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      r.availability_key, r.official_date, r.game_pk, r.mlb_player_id, r.player_name, r.team_abbreviation, r.team_mlb_id, r.availability_status, r.roster_status, r.availability_confidence, r.active_roster_flag, r.injured_list_flag, r.transaction_summary, r.reason, r.data_source_level
+    ));
+  }
+  const CHUNK = 90;
+  let copied = 0;
+  for (let i = 0; i < statements.length; i += CHUNK) {
+    await env.ARCHIVE_DB.batch(statements.slice(i, i + CHUNK));
+    copied += statements.slice(i, i + CHUNK).length;
+  }
+  return { copied, checked: rows.length };
+}
+
 async function pruneAvailabilityRetention(env, retention, latestBatchId = null) {
   const out = [];
+  const permanentBackfill = await permanentlyRecordPlayerAvailability(env).catch(() => ({ copied: 0, checked: 0, error: true }));
+  out.push({ table: "archive_player_availability_history_permanent_backfill", changes: permanentBackfill.copied });
   const inClause = retention.dates.map(() => "?").join(",");
   async function del(table, sql, ...binds) {
     const r = await run(env.DAILY_DB, sql, ...binds);
