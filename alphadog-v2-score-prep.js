@@ -379,11 +379,19 @@ async function permanentlyRecordBoardLegs(env) {
     ));
   }
   const CHUNK = 90;
-  let copied = 0;
-  for (let i = 0; i < statements.length; i += CHUNK) {
-    await env.ARCHIVE_DB.batch(statements.slice(i, i + CHUNK));
-    copied += statements.slice(i, i + CHUNK).length;
+  const ARCHIVE_WRITE_CONCURRENCY = 6;
+  const chunks = [];
+  for (let i = 0; i < statements.length; i += CHUNK) chunks.push(statements.slice(i, i + CHUNK));
+  let nextChunkIndex = 0;
+  async function runOneChunkWorker() {
+    while (nextChunkIndex < chunks.length) {
+      const idx = nextChunkIndex++;
+      await env.ARCHIVE_DB.batch(chunks[idx]);
+    }
   }
+  const workerCount = Math.min(ARCHIVE_WRITE_CONCURRENCY, chunks.length);
+  await Promise.all(Array.from({ length: workerCount }, runOneChunkWorker));
+  const copied = statements.length;
   return { copied, checked: rows.length };
 }
 
