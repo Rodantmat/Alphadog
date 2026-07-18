@@ -1491,6 +1491,35 @@ has zero config_enrichment_profile_cells rows at all (code correct and ready, bl
 config row); scoring-engine-shadow-v1 flagged as a real, safe ~13min elimination candidate, not yet acted
 on pending Rodolfo's go-ahead.
 
+## RODOLFO: DEBUG PROPERLY, DON'T GUESS - ROOT-CAUSED THE defensive_quality_oaa BUG
+When defensive_quality_oaa kept showing "missing" despite the position-weighting fix looking
+correct by code review, Rodolfo's explicit instruction was: don't rush, debug properly, ground
+everything before moving on. Confirmed the underlying data was real and complete via direct SQL
+(494 players, 30 teams, real join success) and the team-ID normalization logic was correct by
+code inspection - meaning the bug had to be somewhere less obvious.
+Added real debug tracing (_debug_oaa field exposing oaaProbabilityDeltaByTeam's actual size and
+sample keys) rather than keep guessing. After working through real deploy-propagation delays and
+a busy global orchestrator lock (genuine production contention, not a code issue), got a live,
+conclusive result: oaaProbabilityDeltaByTeam_size: 0 across every single test, despite the
+identical query returning 494 real rows when run directly via SQL.
+Root cause found: the query referenced `dq.position`, but the real column in ref_defensive_quality
+is `dq.primary_position` - a column-name bug introduced in this session's own earlier fix, not a
+pre-existing issue. This threw a real SQL error on every call, silently swallowed by the
+`.catch(() => [])` fallback, which is exactly why this factor had NEVER once applied, before or
+after the position-weighting fix - the position-weighting logic itself was correct all along, it
+just never got real data to work with.
+Fixed the column name. TESTED WITH REAL DATA, not just deployed and assumed: confirmed defensive_
+quality_oaa went from 0 of 32 "hits" legs applying to 45 of 239 applying, with sensible real
+contribution values (e.g. 0.0027) flowing through correctly. Also incidentally confirmed the
+cap-enforcement fix from earlier is working correctly in the same test data - market_implied_total
+and park_factors both correctly hit their exact 0.25 caps rather than exceeding them.
+This is the standard this session is holding itself to going forward: find the real root cause
+via direct evidence (debug tracing, live data checks), not assumption or code-review-only
+confidence - and verify the fix with real data before calling it done.
+
+NEXT: continue the audit through opposing_pitcher_quality and times_through_order, the two
+factors not yet checked against this session's research.
+
 ## RODOLFO: DON'T TRUST EXISTING COEFFICIENTS EITHER - AUDIT THEM TOO, NOT JUST FILL GAPS
 Rodolfo's explicit instruction after the shadow-engine investigation: fix anything ALREADY in the
 database that doesn't match the real research, since prior values (from the earlier calibration
