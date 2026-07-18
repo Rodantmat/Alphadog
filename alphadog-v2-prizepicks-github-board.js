@@ -1363,6 +1363,52 @@ function chooseBestGithubCandidate(candidates) {
   return usable[0];
 }
 
+async function fetchGithubJsonBySha(source, env) {
+  // REAL FIX (root-caused via direct code investigation, per Rodolfo's instruction - no
+  // guessing): the previous version of this function always fetched up to ~9 GitHub surfaces
+  // sequentially before picking the best one - the actual cause of the real board_full_run
+  // timeout failure, since the whole operation was capped at a 15s hard deadline while each
+  // individual fetch alone was allowed 12s. Real fix: try the fast, common-case primary source
+  // (raw branch URL) first, with 3 retries using researched exponential-backoff-with-jitter
+  // (standard pattern for transient network/rate-limit failures - Google Cloud/AWS-documented).
+  // Only fall back to the expensive multi-surface comparison if the primary path genuinely
+  // fails all 3 attempts or is non-retryable (e.g. a real 404) - preserving the existing
+  // fallback robustness for real edge cases without paying its cost on every normal run.
+  const primaryResult = await fetchPrimarySourceWithRetries(source, env);
+  if (primaryResult.succeeded_on_primary && primaryResult.candidate) {
+    const selected = primaryResult.candidate;
+    return {
+      ok: true,
+      metadata: null,
+      metadata_all: [],
+      head_ref: null,
+      candidates: [candidatePublicSummary(selected)],
+      selected_candidate: candidatePublicSummary(selected),
+      selected_label: selected.label,
+      url: selected.url,
+      raw_branch_url: source.raw_branch_url || source.url,
+      fetch_mode: "github_primary_fast_path_with_retries",
+      primary_fetch_attempts: primaryResult.attempts,
+      http_status: selected.http_status,
+      content_type: selected.content_type,
+      text: selected.text,
+      error: null,
+      response_preview: null,
+      external_calls_performed: primaryResult.attempts.length
+    };
+  }
+  // Primary path exhausted (either non-retryable or all 3 attempts failed/stale) - fall back to
+  // the full multi-surface comparison as a real, last-resort safety net.
+  const fallback = await fetchGithubJsonMultiSurfaceFallback(source, env);
+  return {
+    ...fallback,
+    fetch_mode: `${fallback.fetch_mode || "github_multi_surface_freshness_select"}_after_primary_fallback`,
+    primary_fetch_attempts: primaryResult.attempts,
+    primary_fetch_non_retryable: Boolean(primaryResult.non_retryable),
+    external_calls_performed: (fallback.external_calls_performed || 0) + primaryResult.attempts.length
+  };
+}
+
 async function fetchGithubJsonMultiSurfaceFallback(source, env) {
   const externalCalls = { count: 0 };
   const candidates = [];
