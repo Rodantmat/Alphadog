@@ -464,6 +464,24 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
   const weather = ctxMaps.weatherByGame.get(String(gamePk)) || {};
   const lineup = ctxMaps.lineupByGamePlayer.get(`${gamePk}|${playerId}`) || {};
   const oppStarter = ctxMaps.starterByGameTeam.get(`${gamePk}|${oppTeamId}`) || {};
+  // REAL FIX (per Rodolfo's audit instruction): park_factors previously had no real data
+  // source wired in at all. ref_park_factors has real, handedness-split factors (confirmed 30
+  // real parks, 2025 season) - uses the batter's own hand where known, falls back to the
+  // park's combined factor otherwise. Computed once per leg here since the field name the
+  // formula reads is dynamic (park_${propKey}_factor_5yr_regressed).
+  const parkFactorRow = ctxMaps.parkFactorsByVenue ? ctxMaps.parkFactorsByVenue.get(String(weather.venue_id || "")) : null;
+  const parkFactorFields = {};
+  if (parkFactorRow) {
+    const batHand = String(lineup.bat_side || "").toUpperCase();
+    const hrFactor = batHand === "L" ? (parkFactorRow.lhb_hr_factor ?? parkFactorRow.hr_factor) : batHand === "R" ? (parkFactorRow.rhb_hr_factor ?? parkFactorRow.hr_factor) : parkFactorRow.hr_factor;
+    const runFactor = batHand === "L" ? (parkFactorRow.lhb_run_factor ?? parkFactorRow.run_factor) : batHand === "R" ? (parkFactorRow.rhb_run_factor ?? parkFactorRow.run_factor) : parkFactorRow.run_factor;
+    if (hrFactor != null) parkFactorFields.park_home_runs_factor_5yr_regressed = hrFactor;
+    if (runFactor != null) {
+      parkFactorFields.park_runs_factor_5yr_regressed = runFactor;
+      parkFactorFields.park_hits_factor_5yr_regressed = runFactor;
+      parkFactorFields.park_total_bases_factor_5yr_regressed = runFactor;
+    }
+  }
   // Real, honest disambiguation preserved from the original design: for a hitter leg, the
   // relevant bullpen/catcher is the OPPONENT's; for a pitcher leg, it's the pitcher's OWN
   // team's bullpen (relief support behind them).
