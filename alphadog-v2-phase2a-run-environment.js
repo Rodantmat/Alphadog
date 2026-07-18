@@ -562,21 +562,35 @@ async function enrichLeg(env, matrixRow, config, legContext) {
     const cells = config.cellsByFactor.get(factor.factor_key) || [];
     let contribution = null;
     let cellUsed = null;
+    let matchedCellForCap = null;
 
     if (factor.variation_type === "continuous_formula") {
       const matchingCell = cells.find(c => c.prop_key === propKey) || cells[0];
       if (matchingCell) {
         contribution = evaluateContinuousFactor(factor.factor_key, matchingCell, legContext, config.thresholdsByFactor.get(factor.factor_key));
         cellUsed = matchingCell.cell_id;
+        matchedCellForCap = matchingCell;
       }
     } else if (factor.variation_type === "tiered_bands") {
       const tier = classifyIntoTier(factor.factor_key, legContext, config.thresholdsByFactor.get(factor.factor_key));
       if (tier) {
         const matchingCell = cells.find(c => c.prop_key === propKey && c.tier_label === tier);
-        if (matchingCell) { contribution = matchingCell.lift || -1 * (matchingCell.penalty || 0); cellUsed = matchingCell.cell_id; }
+        if (matchingCell) { contribution = matchingCell.lift || -1 * (matchingCell.penalty || 0); cellUsed = matchingCell.cell_id; matchedCellForCap = matchingCell; }
       }
     } else if (factor.variation_type === "flat_gate") {
       contribution = evaluateFlatGate(factor.factor_key, cells, legContext);
+    }
+
+    // REAL FIX: a real, per-cell `cap` value exists in the schema for 19 real cells across
+    // many factors (both continuous_formula and tiered_bands), but was confirmed via direct
+    // code inspection to never actually be read or enforced anywhere - individual factor
+    // contributions could grow unbounded until only the final, global end-of-chain clamp
+    // absorbed them, which is a much blunter safety net than the real, per-factor bound that
+    // was actually designed and stored. Applied generically here so every cell's own cap is
+    // honored, not just the one factor where this was first noticed.
+    if (contribution !== null && matchedCellForCap && matchedCellForCap.cap != null) {
+      const capValue = Math.abs(matchedCellForCap.cap);
+      contribution = Math.max(-capValue, Math.min(capValue, contribution));
     }
 
     if (contribution === null) {
