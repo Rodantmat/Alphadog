@@ -1653,6 +1653,12 @@ async function runSourceProbe(env, input) {
   const pitcherArsenalRefreshResult = await refreshPitcherArsenalIfStale(env, catcherRefreshSeason);
   const defensiveQualityRefreshResult = await refreshDefensiveQualityIfStale(env, catcherRefreshSeason);
   const umpireTendencyRefreshResult = await refreshUmpireTendencyIfStale(env);
+  // REAL FIX (final 2 calibration factors, items 10/11): sprint speed and arm angle, same
+  // proven pattern. seasonsToFetch covers the live current season plus a real, free historical
+  // backfill (2025) - both free public leaderboards, unlike the paid Odds API market backfill.
+  const sprintSpeedSeasons = [catcherRefreshSeason, catcherRefreshSeason - 1];
+  const sprintSpeedRefreshResult = await refreshSprintSpeedIfStale(env, sprintSpeedSeasons);
+  const armAngleRefreshResult = await refreshArmAngleIfStale(env, sprintSpeedSeasons);
   _tm.after_arsenal_and_defense_refresh_ms = Date.now() - _t0;
   try {
     await execRun(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_umpire_tendency_refresh', 'Checkpoint after umpire tendency refresh', ?, CURRENT_TIMESTAMP)",
