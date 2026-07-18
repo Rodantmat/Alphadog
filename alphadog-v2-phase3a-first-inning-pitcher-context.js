@@ -7117,6 +7117,38 @@ async function refreshBattedBallProfileIfStale(env, seasonYear) {
   return { refreshed: true, rows_written: written, source_rows: rows.length };
 }
 
+async function refreshPitcherRunningGameIfStale(env, seasonYear) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_pitcher_running_game (
+    running_game_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
+    sb_opportunities INTEGER, advances_prevented REAL, stealing_runs REAL, lead_distance_gained REAL,
+    source_key TEXT, raw_json TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_pitcher_running_game WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/pitcher-running-game?type=Pitchers&game_type=Regular&season_start=${seasonYear}&season_end=${seasonYear}&min=1&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Pitcher-Running-Game-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
+  const rows = parseCsv(res.text);
+  if (!rows.length) return { refreshed: false, reason: "zero_rows_parsed", _debug_text_preview: String(res.text || "").slice(0, 300) };
+  const _debugFirstRowKeys = Object.keys(rows[0]);
+  const statements = [];
+  let written = 0;
+  for (const r of rows) {
+    const pid = intOrNull(r.id || r.player_id || r.pitcher);
+    if (!pid) continue;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_pitcher_running_game (running_game_id, mlb_player_id, player_name, season_year, sb_opportunities, advances_prevented, stealing_runs, lead_distance_gained, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      `${pid}_${seasonYear}`, pid, r.name || r.last_name || null, seasonYear,
+      intOrNull(r.n || r.sb_opportunities), Number(r.pitcher_base_advances_prevented ?? r.advances_prevented) || null, Number(r.pitcher_stealing_runs ?? r.stealing_runs) || null, Number(r.lead_distance_gained) || null,
+      "baseball_savant_pitcher_running_game_v0_1_0", safeJsonStringify({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await env.REF_DB.batch(statements);
+  return { refreshed: true, rows_written: written, source_rows: rows.length, _debug_first_row_keys: _debugFirstRowKeys };
+}
+
 async function refreshArmAngleIfStale(env, seasonsToFetch) {
   await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_arm_angle (
     arm_angle_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
