@@ -3764,7 +3764,16 @@ function childPassedIncrementalMorningFullRun(stage, child) {
     if (stage.source_repair_check_before_consumers === true && output.source_layer_blocking_gap_count != null) blockingGapCount = Number(output.source_layer_blocking_gap_count || 0);
     if (stage.source_repair_check_before_consumers === true && output.source_layer_missing_game_layer_count != null) missingGameLayerCount = Number(output.source_layer_missing_game_layer_count || 0);
     if (stage.require_zero_blocking_gaps && (blockingGapCount > 0 || missingGameLayerCount > 0 || (stage.source_repair_check_before_consumers !== true && hay.includes("with_blockers")))) {
-      return { pass: false, reason: "final_calendar_tally_has_blocking_gaps", blocking_gap_count: blockingGapCount, missing_game_layer_count: missingGameLayerCount, certification: cert, status, source_repair_check_source_only: stage.source_repair_check_before_consumers === true };
+      // REAL FIX (per Rodolfo's direct instruction, root-caused via deep SQL investigation):
+      // confirmed via direct timestamp evidence that a real run failure was caused by a same-
+      // run race condition, not genuinely missing data - the coverage-table write marking the
+      // just-completed baseline_v5_classification_daily_delta stage's rows "complete" landed
+      // seconds after this check's read, for every one of that day's games simultaneously.
+      // The existing transient-retry mechanism (used elsewhere in this same function) was never
+      // applied here, so a self-resolving timing gap had no chance to clear before failing the
+      // whole run. Marked transient so a fresh re-check gets a chance first; a genuinely
+      // persistent gap will still fail for real once retries are exhausted.
+      return { pass: false, reason: "final_calendar_tally_has_blocking_gaps", blocking_gap_count: blockingGapCount, missing_game_layer_count: missingGameLayerCount, certification: cert, status, source_repair_check_source_only: stage.source_repair_check_before_consumers === true, transient: true };
     }
     return { pass: true, certification: cert, status, data_ok: output.data_ok, rows_read: output.source_game_count || 0, rows_written: output.coverage_rows_written || 0, blocking_gap_count: blockingGapCount, missing_game_layer_count: missingGameLayerCount, output };
   }
