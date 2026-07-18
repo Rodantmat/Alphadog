@@ -243,7 +243,7 @@ async function loadRealLegContexts(env, matrixRows) {
   const lineupRows = playerIds.length ? await all(env.DAILY_DB, `SELECT game_pk, player_id, bat_side FROM daily_lineups_current WHERE game_pk IN (${gph}) AND player_id IN (${pph})`, ...gamePks, ...playerIds).catch(() => []) : [];
   const starterRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, starter_hand, starter_player_id FROM daily_starters_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   const bullpenRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, high_usage_reliever_count, back_to_back_reliever_count, bullpen_fatigue_score FROM daily_bullpen_availability_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
-  const catcherRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, framing_runs_total FROM daily_catcher_context_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
+  const catcherRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, framing_runs_total, pop_time_2b_sba FROM daily_catcher_context_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   const availRows = playerIds.length ? await all(env.DAILY_DB, `SELECT game_pk, mlb_player_id, availability_status FROM daily_player_availability_current_v1 WHERE game_pk IN (${gph}) AND mlb_player_id IN (${pph})`, ...gamePks, ...playerIds).catch(() => []) : [];
   const marketRows = await all(env.MARKET_DB, `SELECT game_pk, derived_home_implied_runs, derived_away_implied_runs FROM market_context_probe_game_market_summary WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   // REAL FIX: today's real umpire assignment (whichever tier produced it - official/RefMetrics/
