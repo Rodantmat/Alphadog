@@ -815,7 +815,7 @@ function buildCurrentSql(url) {
       0 AS missing_component_count,
       f.created_at,
       f.updated_at,
-      f.details_json AS details_json_snapshot,
+      f.details_json_snapshot,
       p.raw_source_json AS prepared_raw_source_json,
       p.row_payload_json AS prepared_row_payload_json`;
   const quotaEnabled = !url.searchParams.get('no_quotas');
