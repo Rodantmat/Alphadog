@@ -269,7 +269,7 @@ async function loadRealLegContexts(env, matrixRows) {
   const gph = gamePks.map(() => "?").join(",");
   const pph = playerIds.map(() => "?").join(",");
 
-  const weatherRows = await all(env.DAILY_DB, `SELECT game_pk, temperature_f, rain_risk_flag, roof_status FROM daily_game_weather_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
+  const weatherRows = await all(env.DAILY_DB, `SELECT game_pk, temperature_f, rain_risk_flag, precipitation_probability_pct, roof_status, wind_speed_mph, wind_context FROM daily_game_weather_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   const lineupRows = playerIds.length ? await all(env.DAILY_DB, `SELECT game_pk, player_id, bat_side FROM daily_lineups_current WHERE game_pk IN (${gph}) AND player_id IN (${pph})`, ...gamePks, ...playerIds).catch(() => []) : [];
   const starterRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, starter_hand, starter_player_id FROM daily_starters_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
   const bullpenRows = await all(env.DAILY_DB, `SELECT game_pk, team_id, high_usage_reliever_count, back_to_back_reliever_count, bullpen_fatigue_score FROM daily_bullpen_availability_current WHERE game_pk IN (${gph})`, ...gamePks).catch(() => []);
