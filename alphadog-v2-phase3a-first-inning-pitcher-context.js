@@ -6714,7 +6714,8 @@ async function runClassificationV6BaseSingleStep(env, input = {}) {
     rows_read: tickResult.rows_read, rows_written: tickResult.rows_written, reclassified_rows: tickResult.reclassified_rows,
     population_mean: tickResult.population_mean, population_stddev: tickResult.population_stddev, population_n: tickResult.population_n,
     no_daily_context: true, no_market_context: true, no_scoring_context: true,
-    _debug_batted_ball: _debugBattedBall
+    _debug_batted_ball: _debugBattedBall,
+    _debug_running_game: _debugRunningGame
   };
 
   if (!allDone) {
