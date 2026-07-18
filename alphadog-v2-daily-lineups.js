@@ -470,6 +470,104 @@ async function refreshUmpireTendencyIfStale(env) {
   return { refreshed: true, umpires_written: umpiresWritten, league_games_used: leagueGames, league_avg_strikeouts: leagueAvgK, league_avg_walks: leagueAvgBB, league_avg_runs: leagueAvgRuns };
 }
 
+// REAL FIX (final 2 calibration factors, items 10/11 per Rodolfo): sprint speed and arm angle
+// genuinely didn't exist anywhere in the system - confirmed via direct DB check. Unlike the
+// paid, credit-metered Odds API, these are free public Baseball Savant leaderboards with a
+// real year parameter, so a genuine multi-season backfill is possible at zero cost (not just
+// a "sample" like market odds had to be). seasonsToFetch lets one call cover both a live
+// current-season refresh and a one-time historical backfill (e.g. 2025) using the same code.
+async function refreshSprintSpeedIfStale(env, seasonsToFetch) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_sprint_speed (
+    sprint_id TEXT PRIMARY KEY,
+    mlb_player_id INTEGER,
+    player_name TEXT,
+    season_year INTEGER,
+    sprint_speed_ft_per_sec REAL,
+    competitive_runs INTEGER,
+    active INTEGER DEFAULT 1,
+    source_key TEXT,
+    raw_json TEXT,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  let totalWritten = 0;
+  const perSeasonResults = {};
+  for (const seasonYear of seasonsToFetch) {
+    const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_sprint_speed WHERE season_year=?`, seasonYear);
+    const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+    const ageMs = Date.now() - latest;
+    const isCurrentSeason = seasonYear === new Date().getUTCFullYear();
+    // Prior/historical seasons never need re-fetching once present at all - only the current
+    // season needs the ~daily self-gated refresh (a past season's sprint speed is final/fixed).
+    if (isCurrentSeason && ageMs < 20 * 60 * 60 * 1000) { perSeasonResults[seasonYear] = { refreshed: false, reason: "fresh_within_20h" }; continue; }
+    if (!isCurrentSeason && latest > 0) { perSeasonResults[seasonYear] = { refreshed: false, reason: "historical_season_already_present" }; continue; }
+    const url = `https://baseballsavant.mlb.com/leaderboard/sprint_speed?startYear=${seasonYear}&endYear=${seasonYear}&position=&team=&min=10&csv=true`;
+    const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Sprint-Speed-Reference/0.1");
+    if (!res.ok) { perSeasonResults[seasonYear] = { refreshed: false, reason: "source_failed", http_status: res.http_status }; continue; }
+    const rows = parseCsv(res.text);
+    const statements = [];
+    let written = 0;
+    for (const r of rows) {
+      const pid = intOrNull(r.player_id || r.id);
+      if (!pid) continue;
+      const speedVal = Number(r.sprint_speed ?? r.r_sprint_speed_top50percent ?? r.hp_to_1b ?? null);
+      statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_sprint_speed (sprint_id, mlb_player_id, player_name, season_year, sprint_speed_ft_per_sec, competitive_runs, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
+        `${pid}_${seasonYear}`, pid, r["last_name, first_name"] || r.name || null, seasonYear, Number.isFinite(speedVal) ? speedVal : null, intOrNull(r.competitive_runs), "baseball_savant_sprint_speed_v0_1_0", safeJsonStringify({ csv_row: r })
+      ));
+      written++;
+    }
+    if (statements.length) await env.REF_DB.batch(statements);
+    totalWritten += written;
+    perSeasonResults[seasonYear] = { refreshed: true, rows_written: written, source_rows: rows.length };
+  }
+  return { total_rows_written: totalWritten, per_season: perSeasonResults };
+}
+
+async function refreshArmAngleIfStale(env, seasonsToFetch) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_arm_angle (
+    arm_angle_id TEXT PRIMARY KEY,
+    mlb_player_id INTEGER,
+    player_name TEXT,
+    season_year INTEGER,
+    arm_angle_degrees REAL,
+    pitches_tracked INTEGER,
+    active INTEGER DEFAULT 1,
+    source_key TEXT,
+    raw_json TEXT,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  let totalWritten = 0;
+  const perSeasonResults = {};
+  for (const seasonYear of seasonsToFetch) {
+    const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_arm_angle WHERE season_year=?`, seasonYear);
+    const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+    const ageMs = Date.now() - latest;
+    const isCurrentSeason = seasonYear === new Date().getUTCFullYear();
+    if (isCurrentSeason && ageMs < 20 * 60 * 60 * 1000) { perSeasonResults[seasonYear] = { refreshed: false, reason: "fresh_within_20h" }; continue; }
+    if (!isCurrentSeason && latest > 0) { perSeasonResults[seasonYear] = { refreshed: false, reason: "historical_season_already_present" }; continue; }
+    // Real, verified-working URL shape (confirmed via a real, working external script using
+    // this exact query, not guessed from convention like the other 4 leaderboards had to be).
+    const url = `https://baseballsavant.mlb.com/leaderboard/pitcher-arm-angles?batSide=&dateStart=&dateEnd=&gameType=R&groupBy=&min=1&minGroupPitches=1&perspective=back&pitchHand=&pitchType=&season=${seasonYear}&size=small&sort=ascending&team=&csv=true`;
+    const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Arm-Angle-Reference/0.1");
+    if (!res.ok) { perSeasonResults[seasonYear] = { refreshed: false, reason: "source_failed", http_status: res.http_status }; continue; }
+    const rows = parseCsv(res.text);
+    const statements = [];
+    let written = 0;
+    for (const r of rows) {
+      const pid = intOrNull(r.pitcher || r.player_id || r.pitcher_id);
+      if (!pid) continue;
+      const angleVal = Number(r.ball_angle ?? r.arm_angle ?? r.avg_release_angle ?? null);
+      statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_arm_angle (arm_angle_id, mlb_player_id, player_name, season_year, arm_angle_degrees, pitches_tracked, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
+        `${pid}_${seasonYear}`, pid, r.pitcher_name || r["last_name, first_name"] || r.name || null, seasonYear, Number.isFinite(angleVal) ? angleVal : null, intOrNull(r.n_pitches || r.pitches), "baseball_savant_pitcher_arm_angles_v0_1_0", safeJsonStringify({ csv_row: r })
+      ));
+      written++;
+    }
+    if (statements.length) await env.REF_DB.batch(statements);
+    totalWritten += written;
+    perSeasonResults[seasonYear] = { refreshed: true, rows_written: written, source_rows: rows.length };
+  }
+  return { total_rows_written: totalWritten, per_season: perSeasonResults };
+}
+
 async function writeCatcherContext(env, batchId, gamePk, calendar, side, validation, refMap) {
   const mapped = Array.isArray(validation && validation.mapped_players) ? validation.mapped_players : [];
   const catcher = mapped.find(p => String(p.position) === "2");
