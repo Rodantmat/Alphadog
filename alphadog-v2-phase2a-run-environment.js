@@ -695,6 +695,7 @@ async function runEnrichment(env, input) {
 
   const ctxMaps = await loadRealLegContexts(env, matrixRows);
   const _debugUmpireInfo = { gamePks_sample: [...new Set(matrixRows.map(r => r.game_pk))].slice(0, 5), umpireTendencyByGame_size: ctxMaps.umpireTendencyByGame.size, umpireTendencyByGame_keys: [...ctxMaps.umpireTendencyByGame.keys()] };
+  const _debugOaaInfo = { oaaProbabilityDeltaByTeam_size: ctxMaps.oaaProbabilityDeltaByTeam.size, oaaProbabilityDeltaByTeam_keys_sample: [...ctxMaps.oaaProbabilityDeltaByTeam.keys()].slice(0, 5), sample_matrix_rows: matrixRows.slice(0, 3).map(r => ({ team_id: r.team_id, opponent_team_id: r.opponent_team_id, canonical_prop_key: r.canonical_prop_key })) };
 
   let written = 0;
   const statements = [];
