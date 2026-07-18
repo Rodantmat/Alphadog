@@ -110,9 +110,10 @@ function evaluateContinuousFactor(factorKey, cell, legContext, thresholds) {
       // sibling data (daily_catcher_context_current.pop_time_2b_sba) but this separate factor
       // had no case to consume it. Real MLB average pop time to 2B is ~2.0 seconds; a slower
       // (higher) pop time is a real advantage for the runner, so the delta from average is
-      // used directly (higher pop_time - 2.0 = positive = advantage for base-stealing legs).
+      // used directly (higher pop_time - avg = positive = advantage for base-stealing legs).
       if (ctx.opposing_catcher_pop_time_2b_sba == null) return null;
-      return (ctx.opposing_catcher_pop_time_2b_sba - 2.0) * (a || 0);
+      const leagueAvgPoptime = t.league_avg_poptime_sec ?? 2.0;
+      return (ctx.opposing_catcher_pop_time_2b_sba - leagueAvgPoptime) * (a || 0);
     }
     case "opposing_pitcher_quality": {
       // REAL FIX: pitcher_xfip_minus never had real data anywhere (ref_pitcher_arsenal has no
