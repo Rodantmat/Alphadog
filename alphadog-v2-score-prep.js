@@ -342,6 +342,51 @@ async function markPrepBatchRunning(env, batchId, input, startedAt) {
     .run();
 }
 
+// REAL FIX (same class as weather/umpire/market history fixes, per Rodolfo's direct
+// instruction): score_board_prepared_current gets fully wiped and rebuilt on every batch
+// (confirmed live: only today/tomorrow ever present, DELETE WHERE prep_batch_id <> ? runs on
+// every successful run) - meaning the real board actually offered each day (line, source,
+// player, prop) was never permanently retained anywhere. Creates a new granular historical
+// table (consistent with the other historical fixes this session - a real, queryable table,
+// not an opaque JSON blob) and copies real rows before this run's own cleanup wipes them.
+// Idempotent via prepared_row_id as primary key (INSERT OR IGNORE).
+async function permanentlyRecordBoardLegs(env, batchId) {
+  await env.ARCHIVE_DB.prepare(`CREATE TABLE IF NOT EXISTS archive_board_leg_history (
+    prepared_row_id TEXT PRIMARY KEY,
+    official_date TEXT,
+    source_key TEXT,
+    source_row_id TEXT,
+    player_name TEXT,
+    resolved_mlb_player_id INTEGER,
+    team TEXT,
+    opponent TEXT,
+    canonical_prop_key TEXT,
+    source_prop_name TEXT,
+    line_value REAL,
+    official_game_pk INTEGER,
+    official_game_time_utc TEXT,
+    pickable_safe INTEGER,
+    prep_status TEXT,
+    raw_source_json TEXT,
+    captured_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  const rows = await env.SCORE_DB.prepare(`SELECT prepared_row_id, official_date, source_key, source_row_id, player_name, resolved_mlb_player_id, team, opponent, canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, pickable_safe, prep_status, raw_source_json FROM score_board_prepared_current WHERE prep_batch_id <> ?`).bind(batchId).all().then(r => r.results || []).catch(() => []);
+  if (!rows.length) return { copied: 0, checked: 0 };
+  const statements = [];
+  for (const r of rows) {
+    statements.push(env.ARCHIVE_DB.prepare(`INSERT OR IGNORE INTO archive_board_leg_history (prepared_row_id, official_date, source_key, source_row_id, player_name, resolved_mlb_player_id, team, opponent, canonical_prop_key, source_prop_name, line_value, official_game_pk, official_game_time_utc, pickable_safe, prep_status, raw_source_json, captured_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      r.prepared_row_id, r.official_date, r.source_key, r.source_row_id, r.player_name, r.resolved_mlb_player_id, r.team, r.opponent, r.canonical_prop_key, r.source_prop_name, r.line_value, r.official_game_pk, r.official_game_time_utc, r.pickable_safe, r.prep_status, r.raw_source_json
+    ));
+  }
+  const CHUNK = 90;
+  let copied = 0;
+  for (let i = 0; i < statements.length; i += CHUNK) {
+    await env.ARCHIVE_DB.batch(statements.slice(i, i + CHUNK));
+    copied += statements.slice(i, i + CHUNK).length;
+  }
+  return { copied, checked: rows.length };
+}
+
 async function updatePrepBatchCheckpoint(env, batchId, status, certificationStatus, data = {}) {
   try {
     await env.SCORE_DB.prepare(`UPDATE score_board_prep_batches SET status=?, certification_status=?, certification_json=?, updated_at=CURRENT_TIMESTAMP WHERE batch_id=?`)
