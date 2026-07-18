@@ -1581,7 +1581,7 @@ async function apiPlayerProfile(env, url) {
   if (!p) return jsonResponse({ ok:false, error:"player not found", version:VERSION }, 404);
   const ids = [p.player_id, p.mlb_player_id].filter(v=>v!=null && String(v)!=="");
   const q = ids.map(()=>"?").join(",");
-  const legs = q ? await optionalQueryAll(env.SCORE_DB, `
+  const legs = q ? await queryAll(env.SCORE_DB, `
     SELECT final_board_row_id, source_key, rank_order, game_pk, official_date, official_game_time_utc, mlb_player_id AS player_id, player_name, NULL AS team_id, NULL AS opponent_team_id, canonical_prop_key, line_value, selected_side, estimated_hit_probability_0_100, probability_confidence_0_100, score_0_100, score_grade AS board_grade, board_tier AS board_lane
     FROM score_final_board_current
     WHERE final_board_batch_id = (SELECT final_board_batch_id FROM score_final_board_batches ORDER BY datetime(COALESCE(finished_at, started_at)) DESC LIMIT 1)
