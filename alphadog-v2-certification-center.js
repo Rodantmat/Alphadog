@@ -1589,7 +1589,7 @@ async function apiPlayerProfile(env, url) {
     ORDER BY rank_order ASC
     LIMIT 80
   `, ids) : [];
-  const lineup = q ? await optionalQueryAll(env.DAILY_DB, `
+  const lineup = q ? await queryAll(env.DAILY_DB, `
     SELECT game_pk, official_date, game_time_utc, team_name, lineup_slot, batting_order_code, bat_side, active_position, lineup_status, confidence_label, fetched_at_utc
     FROM daily_lineups_current
     WHERE player_id IN (${q})
