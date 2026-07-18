@@ -1890,6 +1890,33 @@ with real, substantial output (6965 rows processed, 13930 real issue rows writte
 Re-triggered a fresh daily_full_run (daily_full_run_retrigger_5) with every fix from this session
 now in place.
 
+## STARVATION BUG CONFIRMED SYSTEMIC ACROSS MULTIPLE CHAIN LEVELS - FIXED AT EACH
+Market-certifier finally completed once (confirmed live), but the chain still failed - direct
+investigation showed daily-full-run itself (the top-level parent) was now winning the scheduling
+race against its own grandchild, the exact same starvation pattern as market-full-run, just one
+level up. Confirmed this is a genuinely systemic pattern: board-full-run had the identical tight
+6-second self-recheck interval too. Fixed all three levels (board-full-run x2 occurrences,
+daily-full-run x1, market-full-run x4 total across this and the prior fix) by widening to 15s.
+Scoring-full-run and daily-context-full-run have the identical pattern in their own code,
+confirmed via direct search, but left untouched since I have not independently seen those chains
+exhibit the same live symptom - flagged honestly for future reference if it ever recurs there.
+TESTED LIVE, CONFIRMED: market-certifier completed cleanly in the real chain (24s, real output).
+
+## MARKET-NORMALIZER - SAME CLASS OF BUG, FOUND AND FIXED
+Chain progressed past market-certifier into market-normalizer (job_key market-teams), which then
+failed twice with the identical timeout-mismatch signature already fixed for market-certifier -
+reusing MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS (25000ms), a constant meant for a different worker.
+Unlike market-certifier, this worker has no internal HARD_DEADLINE_MS of its own at all, meaning
+a real timeout was a raw platform-level kill rather than a clean, catchable response.
+Also found and fixed the same sequential-chunk-write bug already fixed 3 times this session
+(score-prep, PrizePicks, market-certifier) in this worker's own batchRun function - real,
+confirmed contributor given today's genuinely larger real data volumes.
+Added a dedicated MARKET_NORMALIZER_WORKER_TIMEOUT_MS=35000 constant (separate from the shared
+one), and fixed the concurrency bug with the same proven bounded-worker-pool pattern.
+TESTED LIVE, CONFIRMED: completed in 17.5s with real, substantial output (2417 rows read, real
+Odds API data - 29 events seen, 4 mapped, 2692 rows written, 33 batches).
+Re-triggered a fresh daily_full_run (daily_full_run_retrigger_6) with every fix now in place.
+
 ## BOARD_FULL_RUN PARITY-CHECK TIMING RACE - ROOT-CAUSED AND FIXED
 Rodolfo shared real, live orchestrator logs showing score-prep genuinely COMPLETED successfully
 this time (26 ticks, ~13 minutes, 8,856 real rows) - confirming the earlier score-prep fix works
