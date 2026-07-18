@@ -34,10 +34,26 @@ async function withDeadline(promise, ms, fallbackValue) {
   }
 }
 async function batchRun(db, statements, chunkSize = 80) {
-  for (let i = 0; i < statements.length; i += chunkSize) {
-    const chunk = statements.slice(i, i + chunkSize);
-    if (chunk.length) await db.batch(chunk);
+  // REAL FIX (same class of bug already found and fixed twice this session in score-prep and
+  // the PrizePicks worker): this previously processed chunks sequentially, one at a time. With
+  // today's real board at 8869 rows (4.6x yesterday's 1926), that's ~111 sequential round-trips
+  // for the main write step alone - directly explaining why this worker now exceeds its 40s
+  // deadline when the identical operation completed in ~12s yesterday on a smaller real board.
+  // Fires chunks concurrently with a safe, bounded worker pool (3, leaving real headroom under
+  // Cloudflare's documented 6-simultaneous-connections-per-invocation limit), matching the same
+  // proven pattern already used successfully elsewhere this session.
+  const CONCURRENCY = 3;
+  const chunks = [];
+  for (let i = 0; i < statements.length; i += chunkSize) chunks.push(statements.slice(i, i + chunkSize));
+  let nextChunkIndex = 0;
+  async function runOneChunkWorker() {
+    while (nextChunkIndex < chunks.length) {
+      const idx = nextChunkIndex++;
+      if (chunks[idx].length) await db.batch(chunks[idx]);
+    }
   }
+  const workerCount = Math.min(CONCURRENCY, chunks.length);
+  await Promise.all(Array.from({ length: workerCount }, runOneChunkWorker));
 }
 function safeJson(value, max = 10000) {
   if (value === undefined || value === null) return null;
