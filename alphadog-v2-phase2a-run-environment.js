@@ -477,6 +477,7 @@ async function loadRealLegContexts(env, matrixRows) {
     oaaProbabilityDeltaByTeamIF,
     battedBallProfileByPlayer,
     hrRateByPlayer,
+    pitcherLeadDistanceByPitcherId,
     parkFactorsByVenue,
     umpireTendencyByGame,
     sprintSpeedByPlayer,
