@@ -271,7 +271,15 @@ export default {
     if (request.method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
       try {
-        const sourceMatrixBatchId = input.source_matrix_batch_id || input.source_engine_batch_id || null;
+        // REAL FIX (per Rodolfo's audit instruction, found via live end-to-end verification):
+        // the real orchestrator chain (scoringFullRunChildInput) only ever passes chain_id to
+        // this worker, never source_matrix_batch_id/source_engine_batch_id explicitly - meaning
+        // this value was always null in real production runs, and Final Board's correlation
+        // query (WHERE source_engine_batch_id = scoring_engine_batch_${chain_id}) could never
+        // match any real rows. Scoring Engine derives its own batch_id the same deterministic
+        // way from the same shared chain_id (scoring_engine_batch_${chain_id}) - deriving the
+        // same value here, as a fallback when not explicitly provided, closes the real gap.
+        const sourceMatrixBatchId = input.source_matrix_batch_id || input.source_engine_batch_id || (input.chain_id ? `scoring_engine_batch_${input.chain_id}` : null);
         const output = await runHitProbabilityBoard(env, input, sourceMatrixBatchId);
         return jsonResponse(output, output.ok ? 200 : 400);
       } catch (err) {
