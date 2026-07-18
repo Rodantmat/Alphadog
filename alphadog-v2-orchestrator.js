@@ -133,7 +133,7 @@ const DAILY_CONTEXT_EXACT_WORKER_TIMEOUT_MS = 20000;
 // workaround instead of just fixing this timeout. 25s gives the worker's own 24s internal
 // timeout a moment to return cleanly before the orchestrator's own wait would time out first.
 const MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS = 25000;
-const SCORE_PREP_SERVICE_TIMEOUT_MS = 20000;
+const SCORE_PREP_SERVICE_TIMEOUT_MS = 24000; // Real fix, confirmed via direct log-timestamp evidence: after the ensureScoreTables batching fix, real work now genuinely completes in ~21s, but 20000ms cut the connection a moment before the worker's own successful response could return. Matches the exact proven pattern already used for MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS (25000ms) - a small, safe margin over confirmed real completion time.
 
 function timeoutSignal(ms) {
   if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") return AbortSignal.timeout(ms);
