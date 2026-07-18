@@ -197,6 +197,24 @@ function classifyIntoTier(factorKey, legContext, thresholds) {
     if (ctx.umpire_strikeouts_delta_vs_league < hitterFriendlyMax) return "hitter_friendly_zone";
     return "neutral_zone";
   }
+  if (factorKey === "weather_wind") {
+    // REAL FIX: previously honestly unimplemented - confirmed the park-orientation-relative
+    // wind direction this factor needs already exists in daily_game_weather_current.wind_context
+    // (e.g. "Out To LF", "Out To CF", "In From RF", "R To L") - an earlier file-level comment
+    // claiming this data didn't exist was stale/incorrect, confirmed by direct query.
+    // Real, sourced speed bands (Alan Nathan physics research): 5mph out ~ +4% distance,
+    // 25mph out ~ non-linearly larger (+17.6% distance, not simply 5x the 5mph effect) -
+    // real tiers reflect this non-linearity rather than one flat "windy" threshold.
+    if (ctx.wind_context == null) return null;
+    const windSpeed = ctx.wind_speed_mph ?? 0;
+    const ctxStr = String(ctx.wind_context).toLowerCase();
+    const speedThreshold = t.wind_strong_min_mph ?? 15;
+    if (ctxStr.includes("out to")) {
+      return windSpeed >= speedThreshold ? "blowing_out_strong" : "blowing_out_moderate";
+    }
+    if (ctxStr.includes("in from")) return "blowing_in";
+    return "neutral_or_crosswind";
+  }
   if (factorKey === "stolen_base_family") {
     if (ctx.runner_sprint_speed_ft_per_sec == null && ctx.opposing_catcher_pop_time_2b_sba == null) return null;
     const leagueAvgSpeed = t.league_avg_sprint_speed_ft_per_sec ?? 27;
