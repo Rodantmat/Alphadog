@@ -320,7 +320,9 @@ async function controlRunHeartbeat(env, input, statusText, rowsRead = 0, rowsWri
 }
 
 async function markPrepBatchRunning(env, batchId, input, startedAt) {
-  await ensureScoreTables(env);
+  // REAL FIX: ensureScoreTables is already called once, unconditionally, at the true start of
+  // runBoardPrep - calling it again here was pure redundant overhead (9 more sequential/batched
+  // D1 round-trips for schema that never changes mid-invocation). Removed.
   await env.SCORE_DB.prepare(`INSERT OR REPLACE INTO score_board_prep_batches (
     batch_id, worker_name, worker_version, mode, status, certification_status, certification_grade,
     prizepicks_rows, sleeper_rows, underdog_rows, prepared_rows, pickable_safe_rows, blocked_rows,
