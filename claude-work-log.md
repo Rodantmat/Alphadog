@@ -1619,10 +1619,41 @@ influence is at least as strong as catcher's, not previously represented at all.
 TESTED WITH REAL DATA: confirmed no errors, stolen_base_family correctly showing "applied" with
 real cell matches on live stolen_bases legs.
 
-All four research-identified batter/pitcher-tier interactions flagged earlier this session are
-now built, tested, and confirmed working: GB%/AIR% x OAA, borderline-power-hitter distance
-sensitivity, crosswind pitch-command, and pitcher-side stolen-base control. Continuing to
-research and implement wherever real, grounded edge remains available.
+## CRITICAL: HP BOARD COMBINATION - THE GAP FLAGGED AT THE START OF THIS SESSION, NEVER CLOSED
+Rodolfo asked directly whether final scoring/final board need adjustments given all of today's
+enrichment work. Checked rather than assumed - found the answer was yes, and it was the single
+most important remaining gap: computeRealHitProbability in phase3c-certifier.js (HP Board) was
+STILL using the flat x40 percentage-point shift identified as broken at the very beginning of
+this whole research arc, never actually replaced despite everything else built today. Every
+carefully-fixed enrichment contribution has been feeding into a combination step that doesn't
+properly reflect the math.
+Fixed with the real, standard logistic/odds-ratio approach: convert baseline HP to odds, apply
+the real rate_multiplier (already correctly computed in log-rate space by Enrichment - exactly
+why that space was chosen), convert back to a probability. No arbitrary tuning constant needed.
+Verified the real difference at extremes before deploying: old formula clipped straight to hard
+bounds (90% baseline + 1.3x multiplier -> 99%, 8% baseline + 0.7x multiplier -> 1%), destroying
+real information regardless of the actual signal magnitude. New formula correctly compresses
+(90%->92.1%, 8%->5.7%).
+While testing this live, found and fixed a SECOND, completely separate, real, pre-existing bug:
+the HP Board INSERT statement's VALUES clause was missing one ? placeholder (33 present, 34
+needed to match the 36-column INSERT list) - a deterministic SQL error that would have broken
+every single HP Board write. Confirmed via the exact "35 values for 36 columns" error message,
+counted the real column list and bind arguments precisely rather than guess, fixed the exact gap.
+TESTED WITH REAL DATA: both fixes together confirmed working - 100 real board rows written, zero
+errors, sensible real HP values across a genuine range (1.2% to 43.6%, correctly varying by prop
+type, no clipping to extremes).
+
+ANSWER TO RODOLFO'S QUESTION: prop_factor_miner and matrix builder were not touched this session
+(they operate on different data - recent-form rolling stats and board-to-matrix construction,
+not the daily-context/market factors enrichment uses) and were not found to need changes for
+today's enrichment work specifically. Enrichment itself is now genuinely complete for this
+research pass - every factor has real, sourced, tested code and coefficients. But final
+scoring/final board DID need adjustment, and this was the most important piece - now fixed and
+verified. Final Board itself (score-final-board.js) was not touched this session; given HP
+Board's output shape (score_0_100 via hp_board_current) is unchanged, no functional break is
+expected there, but this has not been independently re-verified with live data the way HP Board
+was - flagged honestly as the next real thing to check, not assumed fine just because the
+interface looks unchanged.
 
 ## FULL AUDIT PASS CLOSED - EVERY FACTOR NOW CHECKED AGAINST REAL RESEARCH
 Finished the last two: opposing_pitcher_quality and times_through_order. Both had the same real
