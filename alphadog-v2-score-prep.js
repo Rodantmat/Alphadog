@@ -1023,7 +1023,27 @@ async function loadMarketRows(env) {
     const message = String(err && err.message ? err.message : err);
     if (!/no such table/i.test(message)) throw err;
   }
-  return { prizepicksRows, sleeperRows, underdogRows };
+  // REAL FIX (Issue #7, confirmed root cause: upstream source feeds occasionally re-serve the
+  // exact same projection under a different internal row ID, a genuine ingestion artifact, not
+  // a legitimate distinct offering - verified live via real duplicate rows that match even on
+  // goblin/demon/standard variant type, so this key cannot be conflating real variants).
+  // Deduplicates each source's raw rows before they ever reach board-prep, rather than relying
+  // solely on Final Board's downstream dedup to catch it after the fact.
+  function dedupeSourceRows(rows, keyFn) {
+    const bySignature = new Map();
+    for (const r of rows) {
+      const key = keyFn(r);
+      const existing = bySignature.get(key);
+      if (!existing || String(r.updated_at || r.promoted_at || "") > String(existing.updated_at || existing.promoted_at || "")) {
+        bySignature.set(key, r);
+      }
+    }
+    return [...bySignature.values()];
+  }
+  const dedupedPrizepicks = dedupeSourceRows(prizepicksRows, r => `${r.player_name}|${r.stat_type}|${r.line_score}|${r.is_goblin}|${r.is_demon}|${r.is_standard}|${r.game_id}`);
+  const dedupedSleeper = dedupeSourceRows(sleeperRows, r => `${r.player_name || r.player_id}|${r.stat_type || r.market_key}|${r.line_score || r.line_value}`);
+  const dedupedUnderdog = dedupeSourceRows(underdogRows || [], r => `${r.player_name || r.player_id}|${r.stat_type || r.market_key}|${r.line_score || r.line_value}`);
+  return { prizepicksRows: dedupedPrizepicks, sleeperRows: dedupedSleeper, underdogRows: dedupedUnderdog };
 }
 
 function collectCalendarDates(prizepicksRows, sleeperRows, underdogRows) {
