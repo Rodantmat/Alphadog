@@ -162,13 +162,24 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
     }
     return best ? { row: best, is_exact_line_match: bestDist === 0, line_distance: bestDist } : null;
   }
-  // FIX #1 (compound gap): matrix-builder's own prop_side may now be explicitly set
-  // (more_only->more, less_only->less); enrichment's prop_side is carried through unchanged
-  // if set. If both are still null (older data / two-sided with no stronger-side selection
-  // logic built yet), default to "more" explicitly here so the side used for baseline lookup
-  // always matches the side recorded on the row - no more silent mismatch.
-  function determineSide(matrixRow, er) {
-    return matrixRow.prop_side || er.prop_side || "more";
+  // REAL FIX (root-caused via direct data investigation, confirmed live: enrichment_leg_current.
+  // prop_side was ALWAYS "more" or NULL, never "less" - traced to matrix-builder hard-coding
+  // prop_side to "more" for every case except a "less_only" mode that never actually occurs in
+  // practice). This function now does what the comment above admitted was missing: for props
+  // that are NOT goblin/demon-locked (which are genuinely more-only by PrizePicks' own real
+  // product rules), look up BOTH real baseline sides and pick whichever is actually stronger,
+  // instead of silently defaulting to "more" regardless of which side the real data supports.
+  function determineSide(matrixRow, er, playerId, propKey, lineValue) {
+    const payload = safeJsonParse(matrixRow.matrix_payload_json, {});
+    const isGoblinOrDemon = Number(payload?.prepared?.is_goblin || 0) === 1 || Number(payload?.prepared?.is_demon || 0) === 1;
+    if (isGoblinOrDemon) return "more"; // Real PrizePicks rule: goblin/demon lines are genuinely more-only.
+    const moreBaseline = findBaseline(playerId, propKey, "more", lineValue);
+    const lessBaseline = findBaseline(playerId, propKey, "less", lineValue);
+    const moreHp = moreBaseline ? num(moreBaseline.row.hit_probability_0_100, null) : null;
+    const lessHp = lessBaseline ? num(lessBaseline.row.hit_probability_0_100, null) : null;
+    if (moreHp != null && lessHp != null) return lessHp > moreHp ? "less" : "more";
+    if (lessHp != null && moreHp == null) return "less";
+    return matrixRow.prop_side || er.prop_side || "more"; // Real fallback: no baseline for either side yet, preserve prior behavior rather than guess.
   }
 
   await run(env.SCORE_DB,
