@@ -1328,7 +1328,46 @@ blank - defensible since running speed/arm slot don't meaningfully change year t
 FOUND (not a bug): catcher_poptime_arm has ZERO config_enrichment_profile_cells rows at all
 (not just null coefficients like other factors - the row doesn't exist), so it correctly never
 gets invoked. Code is right and ready, blocked purely on a missing config row.
-ALL 11 ITEMS FROM RODOLFO'S ORIGINAL CALIBRATION LIST NOW CONFIRMED COMPLETE.
+## ISSUE #7 (DUPLICATE LEGS) FIXED AND CONFIRMED
+Added real deduplication in score-prep.js's loadMarketRows for all 3 sources (prizepicks,
+sleeper, underdog), keyed on player+prop+line+variant type (goblin/demon/standard) - confirmed
+via real data these are true upstream duplicates (same player/stat/line/variant appearing
+twice with different internal IDs from the source feed itself), not legitimate distinct
+offerings, so this key is safe and won't merge real variants. Tested with real data: zero
+duplicates remain in the fresh board (confirmed via direct query on the rebuilt
+score_board_prepared_current).
+
+## ISSUE #3 (SINGLES/1.5 SUM-TO-100) - DEEPER ROOT CAUSE FOUND, CURRENT DATA FIXED
+Investigated properly rather than patch blind. Found the root cause is DEEPER than the
+originally-suspected "independent shrinkage blending" theory: confirmed via direct query that
+the same player's "more" and "less" rows can have DIFFERENT non_push_sample counts for what
+should be the same underlying games (e.g. 90 vs 89, 97 vs 96), and in one case even different
+tier_key assignments (TIER_07_OF_10 vs TIER_06_OF_10) for the identical player/prop/line. This
+means the inconsistency traces back further than baseline_v6's shrinkage math - into
+classification_v6, where the same player's game count and tier can get computed slightly
+differently depending on which side (more/less) is being processed at that time. This is a
+genuinely deeper piece of the system than a quick patch should touch without focused review.
+Confirmed scope: exactly 45 of 588 singles/1.5 pairs system-wide (0 pairs in any other prop),
+matching the original finding's isolated scope closely.
+FIXED FOR CURRENT DATA: applied a real, principled correction (proportional renormalization -
+each side's HP scaled so they sum to exactly 100 while preserving their relative ratio, not
+arbitrarily favoring either side) via direct SQL. First attempt used a self-referencing
+correlated UPDATE and only partially worked (SQLite's row-by-corrected further hazard - some
+rows read the just-updated sibling value from earlier in the same UPDATE's execution order,
+under-correcting several pairs) - caught via re-verification rather than assuming success,
+fetched all remaining bad pairs' literal values and applied individually-computed corrections
+instead. VERIFIED: 0 bad pairs remain across the whole table.
+STILL OPEN: this is a one-time data correction, not a permanent code-level fix - the underlying
+classification_v6 per-side tier/sample inconsistency that CAUSES this drift has not been
+touched, so it could recur on the next full baseline_v6 rebuild for whatever new low-sample
+pairs arise then. Given the narrow scope (0.1% of legs) and that current data is now clean,
+this is an accepted, flagged follow-up rather than something blocking the full run.
+
+ALL PREVIOUSLY OPEN ISSUES (#3, #7) NOW RESOLVED FOR CURRENT DATA. Per Rodolfo's explicit
+instruction, next and final step is deep external research for real, defensible lift/penalty/
+cap coefficient values per factor/prop/tier combination - from reliable, referenced, current
+sabermetric sources, not fabricated internally. Starting only once Rodolfo confirms everything
+else is clear.
 
 ## RODOLFO'S ENRICHMENT-UNIVERSE AUDIT: FOUND A REAL, SYSTEMIC ARCHITECTURE GAP
 Rodolfo asked to verify the enrichment engine's core design principle - "if we calibrate
