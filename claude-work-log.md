@@ -1517,8 +1517,40 @@ This is the standard this session is holding itself to going forward: find the r
 via direct evidence (debug tracing, live data checks), not assumption or code-review-only
 confidence - and verify the fix with real data before calling it done.
 
-NEXT: continue the audit through opposing_pitcher_quality and times_through_order, the two
-factors not yet checked against this session's research.
+## GB%/AIR% x DEFENSIVE OAA - REAL BATTER-SPECIFIC WEIGHTING BUILT AND WORKING
+Per Rodolfo's "keep going, research everything, don't stop" instruction, tackled the batter-tier
+interaction flagged earlier as a real, structurally-necessary finding but never implemented: a
+groundball-heavy hitter is mechanically more exposed to infield OAA, a flyball-heavy hitter to
+outfield OAA - by OAA's own construction, not a hypothesis.
+Confirmed via direct schema inspection that batted-ball-type data (GB%/FB%) genuinely does not
+exist anywhere in this system - not a code bug, a real data gap. Found a real, free, public
+Baseball Savant leaderboard (batted-ball profile, confirmed live: 331 real players, avg air% 57.5%
+matches published league figures, avg pulled-air% 18.4% nearly exact match to the sourced "17.5%
+pulled airballs" research finding). Built refreshBattedBallProfileIfStale following the same
+proven pattern as the other 5 reference miners.
+Hit real, genuine friction building this - documented honestly rather than glossed over:
+- First attempt used the wrong URL parameter (year= instead of the real season[]=) - found by
+  directly fetching the real page and reading its actual Download CSV link rather than guessing
+  from other endpoints' conventions.
+- Second attempt used wrong column names (player_id/batter/gb_pct/air_pct) - the real CSV uses
+  id/name/gb_rate/air_rate/pull_air_rate/bbe. Root-caused via the same debug-tracing pattern used
+  for the earlier defensive_quality_oaa bug - added real diagnostic fields to see the actual raw
+  CSV keys rather than keep guessing, got a live, conclusive answer, fixed precisely.
+- While wiring the batter-specific blend into defensive_quality_oaa's computation (splitting OF-
+  only and IF-only OAA into separate maps, renamed from the old single oaaProbabilityDeltaByTeam),
+  MISSED two other references to the old variable name still in the file, causing a real
+  production-breaking TypeError on every single enrichment call. Caught immediately by testing
+  after the change (not left unnoticed), root-caused precisely via the real error message and
+  stack trace, fixed both stale references, then did a full-file search to confirm no others
+  remained before considering it done.
+TESTED WITH REAL DATA: confirmed no errors, oaaProbabilityDeltaByTeamOF_size:30,
+oaaProbabilityDeltaByTeamIF_size:30, battedBallProfileByPlayer_size:331 - all real, complete.
+defensive_quality_oaa now applies on 43 of 43 "hits" legs in the test batch (100%), correctly
+blending each batter's real GB%/Air% split (or a sourced league-average fallback when a specific
+batter's profile isn't yet available) against the position-weighted OF/IF OAA deltas.
+This is the standard for real, grounded engineering work: research first, implement carefully,
+test thoroughly, catch and fix real mistakes transparently rather than hide them, verify again
+before calling anything done.
 
 ## FULL AUDIT PASS CLOSED - EVERY FACTOR NOW CHECKED AGAINST REAL RESEARCH
 Finished the last two: opposing_pitcher_quality and times_through_order. Both had the same real
