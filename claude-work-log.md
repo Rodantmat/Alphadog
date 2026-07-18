@@ -1917,6 +1917,18 @@ TESTED LIVE, CONFIRMED: completed in 17.5s with real, substantial output (2417 r
 Odds API data - 29 events seen, 4 mapped, 2692 rows written, 33 batches).
 Re-triggered a fresh daily_full_run (daily_full_run_retrigger_6) with every fix now in place.
 
+## MARKET-LINE-SHAPE-CLASSIFIER - 4TH OCCURRENCE OF THE SAME BUG, FOUND PROACTIVELY
+Predicted this would happen and it did: the chain progressed past market-normalizer into
+market-line-shape-classifier (handles hitter/pitcher player-prop context, called twice per
+market-full-run), which failed twice with the identical timeout signature already fixed 3 times
+this session - reusing MARKET_PROP_CONTEXT_WORKER_TIMEOUT_MS (25000ms) meant for a different
+worker, and the same sequential batchRun bug, both fixed proactively before waiting for Rodolfo
+to report it again. Added a dedicated MARKET_LINE_SHAPE_CLASSIFIER_WORKER_TIMEOUT_MS=35000.
+TESTED LIVE, CONFIRMED: completed in 22.9s with real output (1969 rows read/written). Noted
+(not caused by this fix, pre-existing): ParlayAPI itself returns 401 for all books right now -
+a separate data-source auth issue, handled gracefully as a warning-grade result, not blocking.
+Re-triggered a fresh daily_full_run (daily_full_run_retrigger_7) with every fix now in place.
+
 ## BOARD_FULL_RUN PARITY-CHECK TIMING RACE - ROOT-CAUSED AND FIXED
 Rodolfo shared real, live orchestrator logs showing score-prep genuinely COMPLETED successfully
 this time (26 ticks, ~13 minutes, 8,856 real rows) - confirming the earlier score-prep fix works
