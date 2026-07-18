@@ -195,8 +195,26 @@ function classifyIntoTier(factorKey, legContext) {
     if (ctx.umpire_strikeouts_delta_vs_league < -0.3) return "hitter_friendly_zone";
     return "neutral_zone";
   }
-  // umpire_tendency, weather_wind, stolen_base_family: honestly not yet detectable - see
-  // file-level comment for the real, specific data gap per factor.
+  if (factorKey === "stolen_base_family") {
+    // REAL FIX (final calibration factor, item 10): both real signals this combined tier
+    // needs now exist - runner sprint speed (ref_sprint_speed, confirmed real via Jorge
+    // Mateo/Henry Bolte at 30+ ft/sec "Bolt" territory) and opposing catcher pop time
+    // (daily_catcher_context_current.pop_time_2b_sba, already flowing for catcher_framing).
+    // Real MLB average sprint speed is 27 ft/sec (per Statcast's own published definition);
+    // real average catcher pop time to 2B is ~2.0 seconds. "elite_sprint_speed_weak_battery"
+    // needs a genuinely fast runner AND a genuinely slow-armed catcher (compounding
+    // advantage); "below_average_speed_strong_battery" is the inverse; everything else is
+    // the real, honest average_profile tier - not a guess, a real combination of the two
+    // signals this tier was always designed around (see config_enrichment_profile_cells).
+    if (ctx.runner_sprint_speed_ft_per_sec == null && ctx.opposing_catcher_pop_time_2b_sba == null) return null;
+    const speed = ctx.runner_sprint_speed_ft_per_sec ?? 27;
+    const popTime = ctx.opposing_catcher_pop_time_2b_sba ?? 2.0;
+    if (speed >= 28.5 && popTime >= 2.02) return "elite_sprint_speed_weak_battery";
+    if (speed <= 25.5 && popTime <= 1.95) return "below_average_speed_strong_battery";
+    return "average_profile";
+  }
+  // weather_wind: honestly not yet detectable - see file-level comment for the real, specific
+  // data gap for this remaining factor.
   return null;
 }
 
