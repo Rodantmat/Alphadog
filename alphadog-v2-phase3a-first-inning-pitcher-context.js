@@ -7094,7 +7094,7 @@ async function refreshBattedBallProfileIfStale(env, seasonYear) {
   const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
   const ageMs = Date.now() - latest;
   if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
-  const url = `https://baseballsavant.mlb.com/leaderboard/batted-ball?type=batter&year=${seasonYear}&csv=true`;
+  const url = `https://baseballsavant.mlb.com/leaderboard/batted-ball?season[]=${seasonYear}&type=batter&csv=true`;
   const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Batted-Ball-Profile-Reference/0.1");
   if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
   const rows = parseCsv(res.text);
