@@ -234,7 +234,8 @@ function classifyIntoTier(factorKey, legContext, thresholds) {
       return windSpeed >= speedThreshold ? "blowing_out_strong" : "blowing_out_moderate";
     }
     if (ctxStr.includes("in from")) return "blowing_in";
-    return "neutral_or_crosswind";
+    if (ctxStr.includes(" to l") || ctxStr.includes(" to r") || ctxStr.includes("l to r") || ctxStr.includes("r to l")) return "crosswind";
+    return "calm";
   }
   if (factorKey === "stolen_base_family") {
     if (ctx.runner_sprint_speed_ft_per_sec == null && ctx.opposing_catcher_pop_time_2b_sba == null) return null;
