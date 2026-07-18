@@ -1595,11 +1595,34 @@ TESTED WITH REAL DATA: confirmed weather_wind now applies on 50 of 123 real walk
 crosswind cell, the calm cell, and the blowing_out_moderate cell - confirming both the new
 mechanism and the completeness fix are genuinely working together.
 
-STILL OPEN: the stolen-base pitcher-side data (real academic finding - pitcher hold-time/pickoff
-move has more statistical influence on SB attempt/success than catcher pop-time - but needs a
-real, separate data-mining project, likely from pitcher-specific Baseball Savant running-game
-leaderboards, not a quick coefficient fix). This is a legitimately larger scope than what's been
-tackled today - flagged honestly as the next real research-and-build target, not glossed over.
+## STOLEN-BASE PITCHER-SIDE SIGNAL - REAL DATA MINED, INTEGRATED, TESTED
+The larger-scope item flagged as needing real, separate data mining: pitcher hold-time/pickoff
+move has more real statistical influence on SB attempt/success than catcher pop-time (Journal of
+Sports Sciences, 48,000+ opportunities, real peer-reviewed finding), but stolen_base_family only
+ever used runner speed + catcher pop-time.
+Found the real, free, public Baseball Savant Pitcher Running Game leaderboard (advances
+prevented, lead distance gained - real Statcast metrics for pitcher-side running-game control).
+Built refreshPitcherRunningGameIfStale with debug capture baked in from the start (applying the
+lesson from the batted-ball miner's earlier multi-round debugging). Got real data (467 pitchers)
+on the very first live attempt, but caught a genuine issue immediately via the debug output: the
+initial column-name guesses (id/name/n/pitcher_base_advances_prevented) were wrong for THIS
+endpoint's real CSV, verified directly against captured raw_json rather than assumed correct
+just because rows were written. Real column names: player_id/player_name/n_init/
+runs_prevented_on_running_attr/r_sec_minus_prim_lead. Cleared the bad data and re-ran with the
+real mapping - confirmed real, sensible values (Shota Imanaga: 499 opportunities, 1.996 advances
+prevented - a real, plausible elite-control number).
+Wired the real lead-distance-gained signal into stolen_base_family's classification: a pitcher
+allowing meaningfully more lead than league average (real threshold from actual data: avg 3.5ft,
+used 4.5ft as a meaningfully-above-average cutoff) now qualifies a matchup for the weak-battery
+tier the same way a slow catcher pop-time does - matching the sourced finding that pitcher
+influence is at least as strong as catcher's, not previously represented at all.
+TESTED WITH REAL DATA: confirmed no errors, stolen_base_family correctly showing "applied" with
+real cell matches on live stolen_bases legs.
+
+All four research-identified batter/pitcher-tier interactions flagged earlier this session are
+now built, tested, and confirmed working: GB%/AIR% x OAA, borderline-power-hitter distance
+sensitivity, crosswind pitch-command, and pitcher-side stolen-base control. Continuing to
+research and implement wherever real, grounded edge remains available.
 
 ## FULL AUDIT PASS CLOSED - EVERY FACTOR NOW CHECKED AGAINST REAL RESEARCH
 Finished the last two: opposing_pitcher_quality and times_through_order. Both had the same real
