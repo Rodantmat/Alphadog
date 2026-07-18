@@ -7101,21 +7101,20 @@ async function refreshBattedBallProfileIfStale(env, seasonYear) {
   if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status, _debug_text_preview: String(res.text || "").slice(0, 300) };
   const rows = parseCsv(res.text);
   if (!rows.length) return { refreshed: false, reason: "zero_rows_parsed", _debug_text_preview: String(res.text || "").slice(0, 300) };
-  const _debugFirstRowKeys = rows.length ? Object.keys(rows[0]) : [];
   const statements = [];
   let written = 0;
   for (const r of rows) {
-    const pid = intOrNull(r.player_id || r.batter);
+    const pid = intOrNull(r.id);
     if (!pid) continue;
     statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_batted_ball_profile (profile_id, mlb_player_id, player_name, season_year, ground_ball_pct, air_pct, pulled_air_pct, batted_ball_events, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
-      `${pid}_${seasonYear}`, pid, r["last_name, first_name"] || r.player_name || null, seasonYear,
-      Number(r.gb_pct ?? r.ground_ball_pct) || null, Number(r.air_pct) || null, Number(r.pulled_air_pct) || null, intOrNull(r.bbe || r.batted_ball_events),
+      `${pid}_${seasonYear}`, pid, r.name || null, seasonYear,
+      Number(r.gb_rate) || null, Number(r.air_rate) || null, Number(r.pull_air_rate) || null, intOrNull(r.bbe),
       "baseball_savant_batted_ball_profile_v0_1_0", safeJsonStringify({ csv_row: r })
     ));
     written++;
   }
   if (statements.length) await env.REF_DB.batch(statements);
-  return { refreshed: true, rows_written: written, source_rows: rows.length, _debug_first_row_keys: _debugFirstRowKeys };
+  return { refreshed: true, rows_written: written, source_rows: rows.length };
 }
 
 async function refreshArmAngleIfStale(env, seasonsToFetch) {
