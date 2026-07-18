@@ -1267,3 +1267,42 @@ STILL OPEN: board itself (score_board_prepared_current / final board state) stil
 permanent archive - archive_slate_snapshots remains empty. This is a separate piece from market
 odds and needs the same fix pattern applied to whichever board worker/stage is appropriate -
 not yet done, next up if Rodolfo wants it before the full run.
+
+## ITEMS 6 (BOARD) AND 9 (PLAYER AVAILABILITY) HISTORY - BOTH BUILT, TESTED, CONFIRMED WORKING
+Per Rodolfo's direct instruction: implemented the same permanent-capture pattern for both
+remaining confirmed-live-but-unsaved data sources.
+
+ITEM 9 (player availability): built permanentlyRecordPlayerAvailability in
+alphadog-v2-daily-player-availability.js, new ARCHIVE_DB.archive_player_availability_history
+table, wired as the first step inside pruneAvailabilityRetention (before any deletes run).
+TESTED WITH REAL DATA on first attempt: 212 real day-of availability rows correctly captured
+and permanently saved (active/IL/roster status as it was actually known before the game, not
+just game-log outcomes after the fact).
+
+ITEM 6 (board): built permanentlyRecordBoardLegs in alphadog-v2-score-prep.js, new
+ARCHIVE_DB.archive_board_leg_history table (granular, real columns - not an opaque JSON blob,
+consistent with every other historical fix this session). FIRST 3 TEST ATTEMPTS ALL SHOWED
+0 ROWS COPIED despite no errors - investigated properly rather than assume success or give up:
+confirmed real board data existed and was being processed correctly each time, but the capture
+(originally placed at the pre-delete "cleanup" step, mirroring the weather/umpire/market
+pattern) kept finding zero rows to capture. ROOT CAUSE FOUND: prepared_row_id is a stable,
+deterministic key (the same leg reappearing day to day reuses the same key) - confirmed live
+via direct query that only ONE distinct prep_batch_id is EVER present in
+score_board_prepared_current, even immediately before a fresh insert. This means the new
+batch's INSERT OR REPLACE overwrites the old row IN PLACE (same primary key), it doesn't
+coexist as a separate row the way the other tables' UNIQUE-per-day patterns did - so capturing
+"before the cleanup delete, after this run's own insert" was already too late; the prior
+batch's true state had already been silently overwritten by this run's own write. FIXED: moved
+the capture to the very start of the run (right after ensureScoreTables, before this invocation
+writes anything at all) and removed the batch_id filter entirely - captures whatever is
+currently present unconditionally, which by definition is the prior run's true final state.
+RETESTED: confirmed 1053/1053 real board legs (line, source, player, prop, team/opponent)
+permanently captured on the very next test. This was a genuinely different bug class from the
+weather/umpire/market fixes (which all had real UNIQUE-per-day coexistence, not primary-key
+overwrite-in-place), caught by not accepting "0 copied, no error" as sufficient proof of success
+and instead directly verifying the underlying table's real behavior before concluding the fix
+was structurally sound.
+
+BOTH ITEMS 6 AND 9 NOW CONFIRMED COMPLETE. Remaining open items per Rodolfo's list: items 10
+(sprint speed) and 11 (arm-angle) still need fresh Baseball Savant mining from scratch - not
+yet started, to be discussed next per Rodolfo's explicit sequencing.
