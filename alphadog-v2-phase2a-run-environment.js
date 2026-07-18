@@ -235,7 +235,16 @@ async function loadEnrichmentConfig(env) {
     if (!cellsByFactor.has(cell.factor_key)) cellsByFactor.set(cell.factor_key, []);
     cellsByFactor.get(cell.factor_key).push(cell);
   }
-  return { factors, cellsByFactor };
+  // REAL FIX (per Rodolfo's explicit instruction): tier-classification boundaries (e.g. "what
+  // K-delta counts as pitcher-friendly", "what arm angle counts as submarine") were hardcoded
+  // as JS literals - meaning a calibration change required a code deploy, not a DB edit, which
+  // directly violates the system's core design principle. calibration_thresholds_json (new
+  // column) now holds these as real, DB-editable values per factor.
+  const thresholdsByFactor = new Map();
+  for (const factor of factors) {
+    thresholdsByFactor.set(factor.factor_key, safeJsonParse(factor.calibration_thresholds_json, {}));
+  }
+  return { factors, cellsByFactor, thresholdsByFactor };
 }
 
 function factorAppliesTo(factor, propKey) {
