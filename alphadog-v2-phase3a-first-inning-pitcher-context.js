@@ -6856,6 +6856,253 @@ function propCanGoNegative(propConfig) {
   return !!(propConfig && propConfig.weights && Object.values(propConfig.weights).some(w => Number(w) < 0));
 }
 
+const FETCH_TIMEOUT_MS_REF = 5000;
+function intOrNull(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+function safeJsonStringify(value) {
+  try { return JSON.stringify(value).slice(0, 3000); } catch (_) { return null; }
+}
+function parseCsvLine(line) {
+  const out = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuotes = false;
+      } else cur += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { out.push(cur); cur = ""; }
+      else cur += c;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+function parseCsv(text) {
+  const lines = String(text || "").split(/\r?\n/).filter(l => l.length);
+  if (!lines.length) return [];
+  const headers = parseCsvLine(lines[0]);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCsvLine(lines[i]);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = cols[idx]; });
+    rows.push(row);
+  }
+  return rows;
+}
+async function fetchTextWithTimeout(url, userAgent) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("timeout"), FETCH_TIMEOUT_MS_REF);
+  const started = Date.now();
+  try {
+    const headers = {};
+    if (userAgent) headers["user-agent"] = userAgent;
+    const resp = await fetch(url, { headers, signal: controller.signal });
+    const text = await resp.text();
+    return { ok: resp.ok, http_status: resp.status, elapsed_ms: Date.now() - started, text, response_bytes: text.length };
+  } catch (err) {
+    return { ok: false, http_status: null, elapsed_ms: Date.now() - started, error: String(err && err.message ? err.message : err), text: "", response_bytes: 0 };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// REAL FIX (per Rodolfo's direct instruction): these 5 reference-data refreshes were
+// originally built in daily-lineups.js purely for code-convenience (it already had the
+// proven staleness-check pattern), but they don't actually depend on anything daily-context
+// provides - verified directly: each takes only (env) / (env, seasonYear) / (env,
+// seasonsToFetch), reading/writing only REF_DB (and CONTEXT_DB/TEAM_DB historical tables for
+// umpire tendency) plus external Baseball Savant fetches. Per Rodolfo's direction, rather than
+// building new worker/certifier/chain-registration infrastructure, these are absorbed directly
+// into this file - which is already dispatched as part of incremental-morning-full-run via
+// expansion-baseline-full-run/expansion-baseline-v2 - expanding its existing scope, not adding
+// a new layer.
+async function refreshPitcherArsenalIfStale(env, seasonYear) {
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_pitcher_arsenal WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/pitch-arsenal-stats?type=pitcher&pitchType=&year=${seasonYear}&team=&min=1&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Pitcher-Arsenal-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
+  const rows = parseCsv(res.text);
+  const statements = [];
+  let written = 0;
+  for (const r of rows) {
+    const pid = intOrNull(r.pitcher_id || r.player_id);
+    if (!pid) continue;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_pitcher_arsenal (arsenal_id, mlb_player_id, player_name, season_year, pitch_type, pitch_usage_pct, run_value_per_100, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      `${pid}_${seasonYear}_${r.pitch_type || r.pitch_name || "unk"}`, pid, r["last_name, first_name"] || r.player_name || null, seasonYear, r.pitch_type || r.pitch_name || null,
+      Number(r.pitch_usage) || null, Number(r.run_value_per_100) || null, "baseball_savant_pitch_arsenal_v0_1_0", safeJsonStringify({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await env.REF_DB.batch(statements);
+  return { refreshed: true, rows_written: written, source_rows: rows.length };
+}
+
+async function refreshDefensiveQualityIfStale(env, seasonYear) {
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_defensive_quality WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/outs_above_average?type=Fielder&startYear=${seasonYear}&endYear=${seasonYear}&team=&min=1&pos=&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Defensive-Quality-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
+  const rows = parseCsv(res.text);
+  const statements = [];
+  let written = 0;
+  function pctFromFormatted(v) { if (v == null) return null; const n = Number(String(v).replace("%", "")); return Number.isFinite(n) ? n : null; }
+  for (const r of rows) {
+    const pid = intOrNull(r.player_id || r.entity_id);
+    if (!pid) continue;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_defensive_quality (dq_id, mlb_player_id, player_name, season_year, position, outs_above_average, actual_success_rate, adj_success_rate, diff_success_rate, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      `${pid}_${seasonYear}`, pid, r["last_name, first_name"] || r.player_name || null, seasonYear, r.primary_pos_formatted || r.pos || null, Number(r.outs_above_average) || null,
+      pctFromFormatted(r.actual_success_rate_formatted), pctFromFormatted(r.adj_estimated_success_rate_formatted), pctFromFormatted(r.diff_success_rate_formatted),
+      "baseball_savant_outs_above_average_v0_1_0", safeJsonStringify({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await env.REF_DB.batch(statements);
+  return { refreshed: true, rows_written: written, source_rows: rows.length };
+}
+
+async function refreshUmpireTendencyIfStale(env) {
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_umpire_tendency`).catch(() => null);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_umpire_tendency (
+    umpire_id INTEGER PRIMARY KEY, umpire_name TEXT, games_umpired INTEGER,
+    avg_strikeouts_per_game REAL, avg_walks_per_game REAL, avg_runs_per_game REAL,
+    strikeouts_delta_vs_league REAL, walks_delta_vs_league REAL, runs_delta_vs_league REAL,
+    source_key TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  const umpireGameRows = await all(env.CONTEXT_DB, `SELECT game_pk, home_plate_umpire_id, home_plate_umpire_name FROM context_history_game_umpire WHERE home_plate_umpire_id IS NOT NULL`).catch(() => []);
+  if (!umpireGameRows.length) return { refreshed: false, reason: "no_umpire_history_rows" };
+  const gamePks = [...new Set(umpireGameRows.map(r => r.game_pk).filter(Boolean))];
+  const CHUNK = 90;
+  const gameOutcomeByPk = new Map();
+  for (let i = 0; i < gamePks.length; i += CHUNK) {
+    const chunk = gamePks.slice(i, i + CHUNK);
+    const ph = chunk.map(() => "?").join(",");
+    const rows = await all(env.TEAM_DB, `SELECT game_pk, strikeouts, walks, runs FROM team_game_logs WHERE game_pk IN (${ph})`, ...chunk).catch(() => []);
+    for (const r of rows) {
+      const pk = Number(r.game_pk);
+      if (!gameOutcomeByPk.has(pk)) gameOutcomeByPk.set(pk, { k: 0, bb: 0, runs: 0 });
+      const g = gameOutcomeByPk.get(pk);
+      g.k += Number(r.strikeouts) || 0; g.bb += Number(r.walks) || 0; g.runs += Number(r.runs) || 0;
+    }
+  }
+  let leagueK = 0, leagueBB = 0, leagueRuns = 0, leagueGames = 0;
+  const byUmpire = new Map();
+  for (const r of umpireGameRows) {
+    const outcome = gameOutcomeByPk.get(Number(r.game_pk));
+    if (!outcome) continue;
+    leagueK += outcome.k; leagueBB += outcome.bb; leagueRuns += outcome.runs; leagueGames += 1;
+    const uid = Number(r.home_plate_umpire_id);
+    if (!byUmpire.has(uid)) byUmpire.set(uid, { name: r.home_plate_umpire_name, k: 0, bb: 0, runs: 0, games: 0 });
+    const u = byUmpire.get(uid);
+    u.k += outcome.k; u.bb += outcome.bb; u.runs += outcome.runs; u.games += 1;
+  }
+  if (leagueGames === 0) return { refreshed: false, reason: "no_matching_game_outcomes" };
+  const leagueAvgK = leagueK / leagueGames, leagueAvgBB = leagueBB / leagueGames, leagueAvgRuns = leagueRuns / leagueGames;
+  const umpireStatements = [];
+  let umpiresWritten = 0;
+  const MIN_GAMES_FOR_REAL_TENDENCY = 10;
+  for (const [uid, u] of byUmpire.entries()) {
+    if (u.games < MIN_GAMES_FOR_REAL_TENDENCY) continue;
+    const avgK = u.k / u.games, avgBB = u.bb / u.games, avgRuns = u.runs / u.games;
+    umpireStatements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_umpire_tendency (umpire_id, umpire_name, games_umpired, avg_strikeouts_per_game, avg_walks_per_game, avg_runs_per_game, strikeouts_delta_vs_league, walks_delta_vs_league, runs_delta_vs_league, source_key, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      uid, u.name, u.games, avgK, avgBB, avgRuns, avgK - leagueAvgK, avgBB - leagueAvgBB, avgRuns - leagueAvgRuns, "context_history_game_umpire+team_game_logs_v0_1_0"
+    ));
+    umpiresWritten++;
+  }
+  if (umpireStatements.length) await env.REF_DB.batch(umpireStatements);
+  return { refreshed: true, umpires_written: umpiresWritten, league_games_used: leagueGames, league_avg_strikeouts: leagueAvgK, league_avg_walks: leagueAvgBB, league_avg_runs: leagueAvgRuns };
+}
+
+async function refreshSprintSpeedIfStale(env, seasonsToFetch) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_sprint_speed (
+    sprint_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
+    sprint_speed_ft_per_sec REAL, competitive_runs INTEGER, active INTEGER DEFAULT 1,
+    source_key TEXT, raw_json TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  let totalWritten = 0;
+  const perSeasonResults = {};
+  for (const seasonYear of seasonsToFetch) {
+    const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_sprint_speed WHERE season_year=?`, seasonYear);
+    const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+    const ageMs = Date.now() - latest;
+    const isCurrentSeason = seasonYear === new Date().getUTCFullYear();
+    if (isCurrentSeason && ageMs < 20 * 60 * 60 * 1000) { perSeasonResults[seasonYear] = { refreshed: false, reason: "fresh_within_20h" }; continue; }
+    if (!isCurrentSeason && latest > 0) { perSeasonResults[seasonYear] = { refreshed: false, reason: "historical_season_already_present" }; continue; }
+    const url = `https://baseballsavant.mlb.com/leaderboard/sprint_speed?startYear=${seasonYear}&endYear=${seasonYear}&position=&team=&min=10&csv=true`;
+    const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Sprint-Speed-Reference/0.1");
+    if (!res.ok) { perSeasonResults[seasonYear] = { refreshed: false, reason: "source_failed", http_status: res.http_status }; continue; }
+    const rows = parseCsv(res.text);
+    const statements = [];
+    let written = 0;
+    for (const r of rows) {
+      const pid = intOrNull(r.player_id || r.id);
+      if (!pid) continue;
+      const speedVal = Number(r.sprint_speed ?? r.r_sprint_speed_top50percent ?? r.hp_to_1b ?? null);
+      statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_sprint_speed (sprint_id, mlb_player_id, player_name, season_year, sprint_speed_ft_per_sec, competitive_runs, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
+        `${pid}_${seasonYear}`, pid, r["last_name, first_name"] || r.name || null, seasonYear, Number.isFinite(speedVal) ? speedVal : null, intOrNull(r.competitive_runs), "baseball_savant_sprint_speed_v0_1_0", safeJsonStringify({ csv_row: r })
+      ));
+      written++;
+    }
+    if (statements.length) await env.REF_DB.batch(statements);
+    totalWritten += written;
+    perSeasonResults[seasonYear] = { refreshed: true, rows_written: written, source_rows: rows.length };
+  }
+  return { total_rows_written: totalWritten, per_season: perSeasonResults };
+}
+
+async function refreshArmAngleIfStale(env, seasonsToFetch) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_arm_angle (
+    arm_angle_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
+    arm_angle_degrees REAL, pitches_tracked INTEGER, active INTEGER DEFAULT 1,
+    source_key TEXT, raw_json TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  let totalWritten = 0;
+  const perSeasonResults = {};
+  for (const seasonYear of seasonsToFetch) {
+    const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_arm_angle WHERE season_year=?`, seasonYear);
+    const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+    const ageMs = Date.now() - latest;
+    const isCurrentSeason = seasonYear === new Date().getUTCFullYear();
+    if (isCurrentSeason && ageMs < 20 * 60 * 60 * 1000) { perSeasonResults[seasonYear] = { refreshed: false, reason: "fresh_within_20h" }; continue; }
+    if (!isCurrentSeason && latest > 0) { perSeasonResults[seasonYear] = { refreshed: false, reason: "historical_season_already_present" }; continue; }
+    const url = `https://baseballsavant.mlb.com/leaderboard/pitcher-arm-angles?batSide=&dateStart=&dateEnd=&gameType=R&groupBy=&min=1&minGroupPitches=1&perspective=back&pitchHand=&pitchType=&season=${seasonYear}&size=small&sort=ascending&team=&csv=true`;
+    const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Arm-Angle-Reference/0.1");
+    if (!res.ok) { perSeasonResults[seasonYear] = { refreshed: false, reason: "source_failed", http_status: res.http_status }; continue; }
+    const rows = parseCsv(res.text);
+    const statements = [];
+    let written = 0;
+    for (const r of rows) {
+      const pid = intOrNull(r.pitcher || r.player_id || r.pitcher_id);
+      if (!pid) continue;
+      const angleVal = Number(r.ball_angle ?? r.arm_angle ?? r.avg_release_angle ?? null);
+      statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_arm_angle (arm_angle_id, mlb_player_id, player_name, season_year, arm_angle_degrees, pitches_tracked, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
+        `${pid}_${seasonYear}`, pid, r.pitcher_name || r["last_name, first_name"] || r.name || null, seasonYear, Number.isFinite(angleVal) ? angleVal : null, intOrNull(r.n_pitches || r.pitches), "baseball_savant_pitcher_arm_angles_v0_1_0", safeJsonStringify({ csv_row: r })
+      ));
+      written++;
+    }
+    if (statements.length) await env.REF_DB.batch(statements);
+    totalWritten += written;
+    perSeasonResults[seasonYear] = { refreshed: true, rows_written: written, source_rows: rows.length };
+  }
+  return { total_rows_written: totalWritten, per_season: perSeasonResults };
+}
+
 async function runBaselineV6ComputeTierPriors(env, propKey, lineValue, side) {
   const rows = await all(env.ARCHIVE_DB,
     `SELECT tier_key, AVG(metric_value) avg_rate, COUNT(*) tier_n FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? GROUP BY tier_key`,
