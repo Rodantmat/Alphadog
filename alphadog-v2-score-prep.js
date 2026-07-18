@@ -1712,19 +1712,8 @@ async function runBoardPrep(env, input) {
   }
 
   await ensureScoreTables(env);
-  // REAL FIX (moved from the cleanup step): prepared_row_id is a stable, deterministic key
-  // (same leg reappearing day to day reuses the same key), so the new batch's INSERT OR
-  // REPLACE overwrites the old row IN PLACE rather than the old and new coexisting as separate
-  // rows - confirmed live (only ever one distinct prep_batch_id present, even right before a
-  // fresh insert). This means capturing "before cleanup, after this run's insert" was already
-  // too late - the real fix is to capture whatever is CURRENTLY there, unconditionally, at the
-  // very start of this run, before this invocation writes anything at all.
-  const startCaptureResult = await permanentlyRecordBoardLegs(env).catch((err) => ({ copied: 0, checked: 0, error: true, error_message: String(err && err.message ? err.message : err) }));
-  try {
-    await env.CONTROL_DB.prepare(`INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'alphadog-v2-score-prep', 'score-prep', 'INFO', 'score_prep_debug_board_backfill_start', 'Board history backfill at run start', ?, CURRENT_TIMESTAMP)`)
-      .bind(requestId, JSON.stringify({ startCaptureResult }).slice(0, 3000)).run();
-  } catch (_) {}
   let recoveredResume = null;
+  const isGenuinelyFreshStart = !batchId;
   if (!batchId) {
     recoveredResume = await recoverResumeBatchForRequest(env, input);
     if (recoveredResume && recoveredResume.batch_id) {
@@ -1735,6 +1724,24 @@ async function runBoardPrep(env, input) {
     }
   }
   if (!batchId) batchId = `score_board_prep_batch_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
+  // REAL FIX (root-caused via direct investigation, per Rodolfo's instruction - the earlier
+  // row-count reduction alone didn't resolve the real timeout): this real, one-time-per-run
+  // archival step was previously called unconditionally on every invocation, including every
+  // resume/retry of the same batch - reading and archiving the ENTIRE score_board_prepared_
+  // current table unchunked each time. With today's much larger real board (8528+1129 rows
+  // after the PrizePicks fix), this alone was likely exceeding the timeout before any of the
+  // actual chunked write logic even began, and every retry wastefully repeated the same full-
+  // table read+archive. Only run it on a genuinely fresh start (no incoming batch_id and no
+  // recovered resume batch) - resumes of the same batch correctly skip it, since the "current"
+  // board being archived didn't change between retries of the same run.
+  const startCaptureResult = (isGenuinelyFreshStart && !(recoveredResume && recoveredResume.batch_id))
+    ? await permanentlyRecordBoardLegs(env).catch((err) => ({ copied: 0, checked: 0, error: true, error_message: String(err && err.message ? err.message : err) }))
+    : { copied: 0, checked: 0, skipped_resume: true };
+  try {
+    await env.CONTROL_DB.prepare(`INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, 'alphadog-v2-score-prep', 'score-prep', 'INFO', 'score_prep_debug_board_backfill_start', 'Board history backfill at run start', ?, CURRENT_TIMESTAMP)`)
+      .bind(requestId, JSON.stringify({ startCaptureResult }).slice(0, 3000)).run();
+  } catch (_) {}
 
   await markPrepBatchRunning(env, batchId, input, startedAt);
   await controlLog(env, input, "INFO", "score_prep_worker_started", "Score Prep worker started with checkpointed batch row before source load", { batch_id: batchId, recovered_resume_batch: recoveredResume, write_offset: Number(input.score_prep_write_offset || input.write_offset || 0), bindings, preserve_current_until_verified: true });
