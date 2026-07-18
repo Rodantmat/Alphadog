@@ -1421,7 +1421,8 @@ async function writePreparedRows(env, batchId, rows, bySource, startedAt, input,
   const writeOffset = Math.max(0, Number(input.score_prep_write_offset ?? input.write_offset ?? 0) || 0);
   const writeEndExclusive = Math.min(rows.length, writeOffset + WRITE_ROWS_PER_INVOCATION);
   const partialWrite = writeEndExclusive < rows.length;
-  await ensureScoreTables(env);
+  // REAL FIX: ensureScoreTables already ran once at the true start of the invocation - removed
+  // this redundant duplicate call (9 more sequential/batched D1 round-trips for no reason).
 
   const insertSql = `INSERT OR REPLACE INTO score_board_prepared_stage (
     stage_row_id, prepared_row_id, prep_batch_id, source_key, source_row_id, source_event_id, projection_id,
