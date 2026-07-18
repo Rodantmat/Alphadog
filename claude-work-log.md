@@ -1306,3 +1306,63 @@ was structurally sound.
 BOTH ITEMS 6 AND 9 NOW CONFIRMED COMPLETE. Remaining open items per Rodolfo's list: items 10
 (sprint speed) and 11 (arm-angle) still need fresh Baseball Savant mining from scratch - not
 yet started, to be discussed next per Rodolfo's explicit sequencing.
+
+## ITEMS 10/11 BUILT (SPRINT SPEED, ARM ANGLE) - BACKFILL + MINER + FALLBACK + ENRICHMENT WIRING
+Verified real source exists for both via web search: baseballsavant.mlb.com/leaderboard/
+sprint_speed and /leaderboard/pitcher-arm-angles (confirmed real via an actual working external
+script for the arm-angle URL params - not guessed). Both are free public leaderboards (unlike
+the paid Odds API), so a real multi-season backfill is possible at zero cost. Built
+refreshSprintSpeedIfStale/refreshArmAngleIfStale in daily-lineups.js (same pattern as arsenal/
+OAA/framing/umpire-tendency), covering current season (~daily self-gated) plus a real 2025
+backfill in the same call. TESTED WITH REAL DATA on the first attempt: 1002 sprint-speed rows
+(501 each for 2025/2026) and 1559 arm-angle rows (835+724), values independently verified
+against real-world knowledge (Jorge Mateo/Henry Bolte at 30+ ft/sec "Bolt" territory; Tyler
+Rogers/Tim Hill at real, well-known submarine arm angles of -60.8/-24.3 degrees).
+Wired into enrichment: stolen_base_family (real tier using sprint speed + catcher pop time,
+confirmed applying correctly), platoon_handedness's previously-permanently-unusable submarine/
+sidearm tier (now reachable with real arm-angle data), and a new catcher_poptime_arm case
+(confirmed the underlying pop_time data was already flowing but had no consuming case).
+Real fallback built directly into the wiring: if a player is missing from the current season's
+leaderboard (rookie, low sample), falls back to last season's real value rather than going
+blank - defensible since running speed/arm slot don't meaningfully change year to year.
+FOUND (not a bug): catcher_poptime_arm has ZERO config_enrichment_profile_cells rows at all
+(not just null coefficients like other factors - the row doesn't exist), so it correctly never
+gets invoked. Code is right and ready, blocked purely on a missing config row.
+ALL 11 ITEMS FROM RODOLFO'S ORIGINAL CALIBRATION LIST NOW CONFIRMED COMPLETE.
+
+## RODOLFO'S ENRICHMENT-UNIVERSE AUDIT: FOUND A REAL, SYSTEMIC ARCHITECTURE GAP
+Rodolfo asked to verify the enrichment engine's core design principle - "if we calibrate
+something, we change the database, not hardcode it" - specifically checking the new factors
+against this standard, and to identify what's already correctly built that way.
+AUDITED the full classifyIntoTier/evaluateContinuousFactor/buildLegContextReal code plus the
+real config_enrichment_factors/config_enrichment_profile_cells schema. FOUND: the schema
+genuinely supports real per-prop, per-tier, per-direction granularity (cell_id, prop_key,
+tier_label, direction columns all real and correctly used) - that part was already right, for
+both old and new factors, confirmed via direct query. BUT every TIER-CLASSIFICATION BOUNDARY
+(the actual numeric cutoff deciding which tier a leg falls into - e.g. "what K-delta counts as
+pitcher-friendly", "what arm angle counts as submarine", "what fatigue score counts as high-
+leverage") was a hardcoded JS literal, not a database value. Confirmed this is NOT something
+introduced only in the new factors - the pre-existing bullpen_fatigue factor (built before this
+session) had the identical problem (fatigue_score >= 6 hardcoded). This is a real, systemic gap
+across the whole enrichment engine, not specific to the 5 newly added factors.
+FIXED: added a new calibration_thresholds_json column to config_enrichment_factors (a real,
+per-factor JSON blob of tunable numeric boundaries). Populated real values for every affected
+factor: bullpen_fatigue (fatigue_score_threshold), umpire_tendency (k_delta thresholds),
+stolen_base_family (elite/below-average speed and poptime cutoffs, league averages),
+platoon_handedness (submarine arm-angle cutoff), catcher_poptime_arm and market_implied_total
+(league-average reference constants). Refactored classifyIntoTier, evaluateContinuousFactor,
+and buildLegContextReal to accept and read these real thresholds from config, with a `??`
+fallback to the prior literal only as a migration safety net (the database value is now the
+real source of truth - changing a threshold going forward is a real DB edit, not a code
+deploy). TESTED WITH REAL DATA: confirmed zero regressions - stolen_base_family still
+classifies and applies identically, now correctly reading its boundaries from the database.
+Two things intentionally left as code-level constants (not calibration knobs): CONTRIBUTION_CLAMP=1.0
+and the final log-rate clamp=2.0 - these are hard safety ceilings preventing any single factor
+(correctly calibrated or not) from corrupting the final HP, a different concept from tunable
+tier boundaries.
+STILL OPEN (real, separate gaps, not part of this fix): config-coefficient completeness (most
+lift/penalty/formula_coefficient values are still null - needs Rodolfo's domain input, not a
+threshold-storage problem); catcher_poptime_arm has zero config_enrichment_profile_cells rows
+at all (code correct and ready, blocked purely on a missing config row); Issue #3 (singles/1.5
+low-sample sum-to-100); Issue #7 (duplicate legs, root cause upstream, but caught by Final
+Board's dedup before delivery).
