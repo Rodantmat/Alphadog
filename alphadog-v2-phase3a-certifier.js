@@ -146,7 +146,7 @@ async function runScoringEngine(env, input) {
   if (updateStatements.length) await env.SCORE_DB.batch(updateStatements);
   if (mirrorStatements.length) await env.SCORE_DB.batch(mirrorStatements);
 
-  const remainingRows = await all(env.SCORE_DB, `SELECT COUNT(*) as cnt FROM hp_board_current WHERE hp_board_batch_id=? AND score_0_100 IS NULL`, hpBatchId);
+  const remainingRows = await all(env.SCORE_DB, `SELECT COUNT(*) as cnt FROM hp_board_current WHERE hp_board_batch_id=? AND score_0_100 IS NULL AND estimated_hit_probability_0_100 IS NOT NULL`, hpBatchId);
   const stillRemaining = Number((remainingRows[0] && remainingRows[0].cnt) || 0);
   const isPartial = stillRemaining > 0;
   const status = isPartial ? "partial_continue" : "completed_scoring_current_rows_written";
