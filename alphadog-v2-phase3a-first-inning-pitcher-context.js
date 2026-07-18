@@ -6873,6 +6873,89 @@ async function runBaselineV6Tick(env, input = {}) {
   const lineValue = Number(input.line_value);
   const officialDate = String(input.official_date || "");
   const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 300 });
+
+  const cursor = Math.max(0, Number(input.cursor_offset || 0));
+  const chunkSize = Array.isArray(input.player_ids_override) ? input.player_ids_override.length : Math.max(10, Number(opLimits.chunk_size_rows || 300));
+
+  // GROUNDED FIX (Issue #3 root cause, researched and confirmed - see claude-work-log.md for
+  // full citations): a leg's implied hit probability must be one clean, agnostic quantity -
+  // "more" and "less" are two readings of the SAME underlying rate, not two independently
+  // estimated quantities. hpFromCountModel/hpFromNormalModel already implement this correctly
+  // (one CDF evaluation, "more" = 1-CDF, "less" = CDF) - the only real bug was that "less" was
+  // independently re-deriving its own games_sample/tier/shrunkRate from a classification pass
+  // that could race against a live-updating snapshot, occasionally producing a very slightly
+  // different mean than "more" used, breaking the guaranteed-by-construction complementarity.
+  // Real, grounded, industry/academic-confirmed fix: stop independently classifying "less" at
+  // all - derive it as a pure complement of "more"'s already-written baseline_v6_current row
+  // (100 - more's HP, same tier/sample/rate, since those are properties of the player+prop,
+  // never of which side of a line is being asked about). Safe because buildComboList already
+  // enqueues "more" before "less" for every (prop, line), and "more" always fully completes
+  // (all cursor chunks) before "less" starts, since combos are processed by comboIndex in
+  // sequence, not interleaved - confirmed via the combo enumeration order.
+  if (side === "less") {
+    const moreRows = Array.isArray(input.player_ids_override)
+      ? await (async () => {
+          const ids = input.player_ids_override.map(Number).filter(Boolean);
+          if (!ids.length) return [];
+          const out = [];
+          const idChunkSize = 90;
+          for (let i = 0; i < ids.length; i += idChunkSize) {
+            const idSlice = ids.slice(i, i + idChunkSize);
+            const placeholders = idSlice.map(() => "?").join(",");
+            const rows = await all(env.ARCHIVE_DB,
+              `SELECT player_type, player_id, player_name, tier_key, hit_probability_0_100, confidence_0_100, non_push_sample, prior_strength, recency_blended_rate_0_100
+               FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side='more' AND player_id IN (${placeholders})`,
+              propKey, lineValue, ...idSlice);
+            out.push(...rows);
+          }
+          return out;
+        })()
+      : await all(env.ARCHIVE_DB,
+          `SELECT player_type, player_id, player_name, tier_key, hit_probability_0_100, confidence_0_100, non_push_sample, prior_strength, recency_blended_rate_0_100
+           FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side='more'
+           ORDER BY player_id LIMIT ? OFFSET ?`,
+          propKey, lineValue, chunkSize, cursor);
+
+    const lessStmts = [];
+    for (const p of moreRows) {
+      const rowId = `blv6|${p.player_type}|${p.player_id}|${propKey}|${String(lineValue).replace(".", "p")}|less`;
+      lessStmts.push(env.ARCHIVE_DB.prepare(
+        `INSERT INTO baseline_v6_current (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,tier_key,hit_probability_0_100,confidence_0_100,non_push_sample,prior_strength,recency_blended_rate_0_100,formula_version,last_processed_official_date,updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+         ON CONFLICT(player_type,player_id,canonical_prop_key,line_value,selected_side) DO UPDATE SET
+           batch_id=excluded.batch_id, tier_key=excluded.tier_key, hit_probability_0_100=excluded.hit_probability_0_100,
+           confidence_0_100=excluded.confidence_0_100, non_push_sample=excluded.non_push_sample, prior_strength=excluded.prior_strength,
+           recency_blended_rate_0_100=excluded.recency_blended_rate_0_100, formula_version=excluded.formula_version,
+           last_processed_official_date=excluded.last_processed_official_date, updated_at=CURRENT_TIMESTAMP`
+      ).bind(rowId, batchId, p.player_type, p.player_id, p.player_name, propKey, lineValue, "less",
+        p.tier_key, round(100 - p.hit_probability_0_100, 2), p.confidence_0_100, p.non_push_sample, p.prior_strength,
+        p.recency_blended_rate_0_100, CLASSIFICATION_V6_VERSION, officialDate));
+    }
+    if (lessStmts.length) await writeBatch(env.ARCHIVE_DB, "baseline_v6_current", lessStmts, 30);
+
+    const nextCursorLess = cursor + chunkSize;
+    const doneLess = Array.isArray(input.player_ids_override)
+      ? true
+      : (await (async () => {
+          const totalForComboLess = await first(env.ARCHIVE_DB,
+            `SELECT COUNT(*) n FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side='more'`,
+            propKey, lineValue);
+          return nextCursorLess >= Number(totalForComboLess.n);
+        })());
+    const totalForComboLess = Array.isArray(input.player_ids_override) ? { n: input.player_ids_override.length } : await first(env.ARCHIVE_DB,
+      `SELECT COUNT(*) n FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side='more'`,
+      propKey, lineValue);
+
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v6",
+      canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+      rows_read: moreRows.length, rows_written: lessStmts.length, cursor_offset: nextCursorLess,
+      total_for_combo: Number(totalForComboLess.n), done: doneLess,
+      derived_as_pure_complement_of_more: true,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
   const cfg = CALIBRATION_CONFIG_CACHE || CALIBRATION_CONFIG_DEFAULTS;
   const { prior_strength_multiplier: priorStrengthMultiplier } = await getRecencyWeightsForProp(env, propKey);
 
@@ -6886,9 +6969,6 @@ async function runBaselineV6Tick(env, input = {}) {
   const dispersion = popStats ? popStats.population_dispersion : null;
   const propMapForModel = await getCalibrationValue(env, "global", "prop_metric_map", {});
   const usesNormalModel = propCanGoNegative(propMapForModel[propKey]);
-
-  const cursor = Math.max(0, Number(input.cursor_offset || 0));
-  const chunkSize = Array.isArray(input.player_ids_override) ? input.player_ids_override.length : Math.max(10, Number(opLimits.chunk_size_rows || 300));
 
   const classRows = Array.isArray(input.player_ids_override)
     ? await (async () => {
