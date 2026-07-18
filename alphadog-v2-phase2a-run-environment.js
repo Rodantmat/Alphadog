@@ -164,62 +164,49 @@ function evaluateContinuousFactor(factorKey, cell, legContext) {
 // Real, working tier-detection for the factors where real, complete data actually exists
 // today. Honestly returns null (no fabricated tier) for factors whose real underlying data
 // doesn't exist yet - see the file-level comment above for exactly which ones and why.
-function classifyIntoTier(factorKey, legContext) {
+// REAL FIX (per Rodolfo's explicit instruction): every classification boundary below now
+// reads from `thresholds` (config_enrichment_factors.calibration_thresholds_json) instead of
+// a hardcoded JS literal - a calibration change is now a real database edit, not a code
+// deploy. The `??` fallback to the old literal only protects against an not-yet-populated
+// config row; the real, intended source of truth is always the database value.
+function classifyIntoTier(factorKey, legContext, thresholds) {
   const ctx = legContext;
+  const t = thresholds || {};
   if (factorKey === "platoon_handedness") {
     if (!ctx.batter_hand || !ctx.pitcher_hand) return null;
     const sameHand = String(ctx.batter_hand).toUpperCase() === String(ctx.pitcher_hand).toUpperCase();
-    // REAL FIX: arm-angle data now exists (ref_arm_angle, confirmed real via Tyler Rogers at
-    // -60.8 degrees and Tim Hill at -24.3 - both well-known real submarine/sidearm relievers).
-    // A same-handed batter facing a real sidearm/submarine pitcher faces a much more extreme
-    // platoon disadvantage than against a standard arm slot - this tier already existed in
-    // config (sidearm_submarine_same_hand) but was permanently unusable without this data.
-    // Real Statcast convention: 0 degrees = sidearm, negative = submarine, ~90 = over-the-top;
-    // <=20 degrees is a defensible real threshold for "sidearm/submarine" (standard three-
-    // quarter arm slots are typically 40+ degrees).
-    if (sameHand && ctx.pitcher_arm_angle_degrees != null && ctx.pitcher_arm_angle_degrees <= 20) return "sidearm_submarine_same_hand";
+    // Real Statcast convention: 0 degrees = sidearm, negative = submarine, ~90 = over-the-top.
+    const submarineMaxDegrees = t.submarine_arm_angle_max_degrees ?? 20;
+    if (sameHand && ctx.pitcher_arm_angle_degrees != null && ctx.pitcher_arm_angle_degrees <= submarineMaxDegrees) return "sidearm_submarine_same_hand";
     if (sameHand) return "standard_arm_angle_same_hand";
     return "standard_arm_angle_opposite_hand";
   }
   if (factorKey === "bullpen_fatigue") {
     if (ctx.high_usage_reliever_count == null && ctx.bullpen_fatigue_score == null) return null;
-    const highLeverageFatigued = (ctx.high_usage_reliever_count ?? 0) > 0 || (ctx.back_to_back_reliever_count ?? 0) > 0 || (ctx.bullpen_fatigue_score ?? 0) >= 6;
+    const fatigueThreshold = t.fatigue_score_threshold ?? 6;
+    const highLeverageFatigued = (ctx.high_usage_reliever_count ?? 0) > 0 || (ctx.back_to_back_reliever_count ?? 0) > 0 || (ctx.bullpen_fatigue_score ?? 0) >= fatigueThreshold;
     return highLeverageFatigued ? "high_leverage_fatigued" : "low_leverage_arm";
   }
   if (factorKey === "umpire_tendency") {
-    // REAL FIX (final piece of the 5-factor calibration wiring): umpire_tendency now has a
-    // real historical signal (ref_umpire_tendency, computed from CONTEXT_DB.
-    // context_history_game_umpire joined with TEAM_DB.team_game_logs, confirmed live -
-    // 83 umpires with a real, stable tendency from 1899 historical games). Uses the real
-    // strikeouts-vs-league delta as the primary zone signal: a real, meaningfully K-heavy
-    // umpire (relative to league average) tends toward a pitcher-friendly zone (wider/more
-    // consistent strike calls), a real meaningfully low-K umpire toward a hitter-friendly
-    // zone; anything in between is genuinely neutral. +-0.3 K/game is a reasonable starting
-    // threshold given the real observed spread (~-0.2 to +0.8 across umpires with 25+ games)
-    // - not a precisely researched cutoff, but a defensible starting split pending Rodolfo's
-    // domain review of the actual lift/penalty values still needed in config (separate,
-    // already-known gap - this only fixes the classification, not the missing coefficients).
     if (ctx.umpire_strikeouts_delta_vs_league == null) return null;
-    if (ctx.umpire_strikeouts_delta_vs_league > 0.3) return "pitcher_friendly_zone";
-    if (ctx.umpire_strikeouts_delta_vs_league < -0.3) return "hitter_friendly_zone";
+    const pitcherFriendlyMin = t.k_delta_pitcher_friendly_min ?? 0.3;
+    const hitterFriendlyMax = t.k_delta_hitter_friendly_max ?? -0.3;
+    if (ctx.umpire_strikeouts_delta_vs_league > pitcherFriendlyMin) return "pitcher_friendly_zone";
+    if (ctx.umpire_strikeouts_delta_vs_league < hitterFriendlyMax) return "hitter_friendly_zone";
     return "neutral_zone";
   }
   if (factorKey === "stolen_base_family") {
-    // REAL FIX (final calibration factor, item 10): both real signals this combined tier
-    // needs now exist - runner sprint speed (ref_sprint_speed, confirmed real via Jorge
-    // Mateo/Henry Bolte at 30+ ft/sec "Bolt" territory) and opposing catcher pop time
-    // (daily_catcher_context_current.pop_time_2b_sba, already flowing for catcher_framing).
-    // Real MLB average sprint speed is 27 ft/sec (per Statcast's own published definition);
-    // real average catcher pop time to 2B is ~2.0 seconds. "elite_sprint_speed_weak_battery"
-    // needs a genuinely fast runner AND a genuinely slow-armed catcher (compounding
-    // advantage); "below_average_speed_strong_battery" is the inverse; everything else is
-    // the real, honest average_profile tier - not a guess, a real combination of the two
-    // signals this tier was always designed around (see config_enrichment_profile_cells).
     if (ctx.runner_sprint_speed_ft_per_sec == null && ctx.opposing_catcher_pop_time_2b_sba == null) return null;
-    const speed = ctx.runner_sprint_speed_ft_per_sec ?? 27;
-    const popTime = ctx.opposing_catcher_pop_time_2b_sba ?? 2.0;
-    if (speed >= 28.5 && popTime >= 2.02) return "elite_sprint_speed_weak_battery";
-    if (speed <= 25.5 && popTime <= 1.95) return "below_average_speed_strong_battery";
+    const leagueAvgSpeed = t.league_avg_sprint_speed_ft_per_sec ?? 27;
+    const leagueAvgPoptime = t.league_avg_poptime_sec ?? 2.0;
+    const speed = ctx.runner_sprint_speed_ft_per_sec ?? leagueAvgSpeed;
+    const popTime = ctx.opposing_catcher_pop_time_2b_sba ?? leagueAvgPoptime;
+    const eliteSpeedMin = t.elite_speed_min_ft_per_sec ?? 28.5;
+    const weakBatteryPoptimeMin = t.weak_battery_poptime_min_sec ?? 2.02;
+    const belowAvgSpeedMax = t.below_avg_speed_max_ft_per_sec ?? 25.5;
+    const strongBatteryPoptimeMax = t.strong_battery_poptime_max_sec ?? 1.95;
+    if (speed >= eliteSpeedMin && popTime >= weakBatteryPoptimeMin) return "elite_sprint_speed_weak_battery";
+    if (speed <= belowAvgSpeedMax && popTime <= strongBatteryPoptimeMax) return "below_average_speed_strong_battery";
     return "average_profile";
   }
   // weather_wind: honestly not yet detectable - see file-level comment for the real, specific
