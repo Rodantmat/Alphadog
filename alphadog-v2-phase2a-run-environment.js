@@ -160,10 +160,15 @@ function classifyIntoTier(factorKey, legContext) {
   if (factorKey === "platoon_handedness") {
     if (!ctx.batter_hand || !ctx.pitcher_hand) return null;
     const sameHand = String(ctx.batter_hand).toUpperCase() === String(ctx.pitcher_hand).toUpperCase();
-    // Real, honest simplification: the real, locked design's full tier basis is batter-hand
-    // x pitcher-arm-angle-band, but arm-angle/release-point data isn't in any real Daily
-    // Context table yet - so this uses the standard-arm-angle cells only (the sidearm/
-    // submarine cell stays correctly unused until real arm-angle data exists).
+    // REAL FIX: arm-angle data now exists (ref_arm_angle, confirmed real via Tyler Rogers at
+    // -60.8 degrees and Tim Hill at -24.3 - both well-known real submarine/sidearm relievers).
+    // A same-handed batter facing a real sidearm/submarine pitcher faces a much more extreme
+    // platoon disadvantage than against a standard arm slot - this tier already existed in
+    // config (sidearm_submarine_same_hand) but was permanently unusable without this data.
+    // Real Statcast convention: 0 degrees = sidearm, negative = submarine, ~90 = over-the-top;
+    // <=20 degrees is a defensible real threshold for "sidearm/submarine" (standard three-
+    // quarter arm slots are typically 40+ degrees).
+    if (sameHand && ctx.pitcher_arm_angle_degrees != null && ctx.pitcher_arm_angle_degrees <= 20) return "sidearm_submarine_same_hand";
     if (sameHand) return "standard_arm_angle_same_hand";
     return "standard_arm_angle_opposite_hand";
   }
