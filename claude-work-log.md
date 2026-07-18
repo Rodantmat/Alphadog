@@ -1520,6 +1520,39 @@ confidence - and verify the fix with real data before calling it done.
 NEXT: continue the audit through opposing_pitcher_quality and times_through_order, the two
 factors not yet checked against this session's research.
 
+## FULL AUDIT PASS CLOSED - EVERY FACTOR NOW CHECKED AGAINST REAL RESEARCH
+Finished the last two: opposing_pitcher_quality and times_through_order. Both had the same real
+pattern found across this whole audit - existing coefficients that were technically non-null but
+implausibly small once actually run through their real, sourced target ranges.
+opposing_pitcher_quality (0.003 -> 0.05): at a real elite pitcher's run_value_per_100 (~-3), the
+old coefficient produced under 1% relative hit-probability change. No single, precisely-sourced
+run-value-to-hit-probability elasticity was found in research - honestly flagged as a reasoned
+estimate (not fabricated precision), targeting a defensible ~14% relative reduction at the
+elite extreme, safely within the cell's 0.3 cap.
+times_through_order (0.0004 -> 0.005): at a real high-workload starter (28 batters faced/start),
+the old coefficient produced only ~1% relative shift, against the sourced real magnitude (OPS+
+91->117, a ~29% relative swing from 1st to 3rd time through a lineup, confirmed via a real,
+current 2026 study of 129 starters across 1.5M pitches). Corrected to reflect a meaningful
+fraction of that real swing, reasoned appropriately since this factor is a season-average proxy
+rather than a live in-game signal, while staying within the 0.15 cap.
+
+Every factor with a cell in config_enrichment_profile_cells has now been checked against this
+session's real, sourced research - not assumed correct just because a value existed. Summary of
+everything found and fixed in this full audit pass: a real unit-mismatch bug (weather_temp_
+altitude_pressure using raw feet directly as a log-rate value), a systemic gap where a real `cap`
+field existed for 19 cells across 11 factors but was never enforced anywhere in code, five factors
+(platoon_handedness, bullpen_fatigue, umpire_tendency, stolen_base_family) with real research
+notes and real caps already set but null lift/penalty values that were silently contributing
+zero this whole time, an inverted direction label on umpire_tendency's walks cell, a 6.2x
+miscalibrated lineup_slot coefficient, weather_wind built from scratch after finding the real
+park-relative wind data (wind_context) already existed despite a stale comment claiming
+otherwise, park_factors wired to a real, complete, handedness-split data source that had never
+once been queried, market_implied_total extended to pitcher props with the correct real inverted
+sign, and a root-caused, confirmed, tested fix for defensive_quality_oaa's silent SQL-error bug
+(wrong column name, swallowed by a .catch()) found via real debug tracing rather than assumption.
+Every single fix in this pass was verified with live production data before being considered
+done - not just deployed and assumed correct.
+
 ## RODOLFO: DON'T TRUST EXISTING COEFFICIENTS EITHER - AUDIT THEM TOO, NOT JUST FILL GAPS
 Rodolfo's explicit instruction after the shadow-engine investigation: fix anything ALREADY in the
 database that doesn't match the real research, since prior values (from the earlier calibration
