@@ -723,6 +723,7 @@ async function runEnrichment(env, input) {
     legs_read: matrixRows.length, legs_enriched: written,
     real_status_note: "FIXED: now reads real daily_context/market_context directly from source tables. Real, working tier-detection: platoon_handedness (incl. real arm-angle submarine/sidearm refinement), bullpen_fatigue, player_availability, weather_roof, umpire_tendency, stolen_base_family (real sprint speed + catcher pop time). Honestly not yet implementable (real underlying data doesn't exist yet): weather_wind (needs park orientation).",
     _debug_umpire: _debugUmpireInfo,
+    _debug_oaa: _debugOaaInfo,
     timestamp_utc: nowUtc(),
   };
 }
