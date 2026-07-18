@@ -1484,3 +1484,9 @@ without error, classification logic proceeded normally afterward (rows_read:300,
 confirming the migrated code compiles and executes correctly in its new home. Verified
 ref_umpire_tendency still shows 83 real umpires (matching pre-migration count) - data integrity
 confirmed, nothing lost in the move.
+
+STILL OPEN (real, separate gaps): config-coefficient completeness (most lift/penalty/formula_coefficient
+values are still null - needs Rodolfo's domain input, not a threshold-storage problem); catcher_poptime_arm
+has zero config_enrichment_profile_cells rows at all (code correct and ready, blocked purely on a missing
+config row); scoring-engine-shadow-v1 flagged as a real, safe ~13min elimination candidate, not yet acted
+on pending Rodolfo's go-ahead.
