@@ -602,7 +602,7 @@ async function runEnrichment(env, input) {
         factor_breakdown_json, created_at, updated_at)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
   for (const row of matrixRows) {
-    const legContext = buildLegContextReal(row, ctxMaps);
+    const legContext = buildLegContextReal(row, ctxMaps, config.thresholdsByFactor.get("market_implied_total"));
     const result = await enrichLeg(env, row, config, legContext);
     statements.push(env.SCORING_DB.prepare(insertSql).bind(
       `enr_${row.matrix_id}`, row.matrix_id, batchId, result.canonical_prop_key, row.mlb_player_id, row.board_line_value, row.prop_side,
