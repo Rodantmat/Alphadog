@@ -1134,7 +1134,7 @@ async function apiFilters(env) {
       CASE WHEN LOWER(COALESCE(payout_variant,''))='goblin' THEN 1 ELSE 0 END AS is_goblin,
       CASE WHEN LOWER(COALESCE(payout_variant,''))='demon' THEN 1 ELSE 0 END AS is_demon,
       CASE WHEN LOWER(COALESCE(payout_variant,'')) NOT IN ('goblin','demon') THEN 1 ELSE 0 END AS is_standard,
-      CASE WHEN hit_probability_0_100 >= 80 THEN '80+' WHEN hit_probability_0_100 >= 70 THEN '70+' WHEN hit_probability_0_100 >= 60 THEN '60+' ELSE '<60' END AS probability_band,
+      CASE WHEN estimated_hit_probability_0_100 >= 80 THEN '80+' WHEN estimated_hit_probability_0_100 >= 70 THEN '70+' WHEN estimated_hit_probability_0_100 >= 60 THEN '60+' ELSE '<60' END AS probability_band,
       board_lane AS board_tier,
       review_playable,
       live_playable,
