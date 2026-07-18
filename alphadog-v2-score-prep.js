@@ -6,7 +6,7 @@ const SOURCE_PRIZEPICKS_ALIAS_FALLBACK = "prizepicks_github";
 const SOURCE_SLEEPER = "sleeper";
 const SOURCE_UNDERDOG = "parlay_underdog";
 const INSERT_CHUNK_SIZE = 75;
-const WRITE_ROWS_PER_INVOCATION = 800; // Reduced from 20000 (which effectively disabled chunking) now that the outer SCORE_PREP_SERVICE_TIMEOUT_MS is correctly 20000ms instead of the old, platform-ceiling-exceeding 90000ms - this size reliably completes within the real budget, with partial_continue resume covering the remainder across invocations.
+const WRITE_ROWS_PER_INVOCATION = 350; // Reduced further from 800: today's real, newly-fixed board (8528 PrizePicks + 1129 underdog rows, up from a much smaller stale/partial board before the PrizePicks timeout fix) is substantially larger than whatever this was last validated against, causing real, confirmed 20000ms timeouts. The outer SCORE_PREP_SERVICE_TIMEOUT_MS previously hit a real platform ceiling at 90000ms (per the original comment here), so extending the outer timeout is not the safe fix - a smaller per-invocation row count is, letting the existing chunked-resume mechanism cover the larger real board across more invocations.
 
 function nowIso() {
   return new Date().toISOString();
