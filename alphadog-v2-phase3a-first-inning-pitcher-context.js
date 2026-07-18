@@ -6613,6 +6613,7 @@ async function runClassificationV6BaseSingleStep(env, input = {}) {
     await refreshSprintSpeedIfStale(env, [refYear, refYear - 1]).catch(() => ({ refreshed: false, error: true }));
     await refreshArmAngleIfStale(env, [refYear, refYear - 1]).catch(() => ({ refreshed: false, error: true }));
     _debugBattedBall = await refreshBattedBallProfileIfStale(env, refYear).catch((e) => ({ refreshed: false, error: true, message: String(e && e.message ? e.message : e) }));
+    _debugRunningGame = await refreshPitcherRunningGameIfStale(env, refYear).catch((e) => ({ refreshed: false, error: true, message: String(e && e.message ? e.message : e) }));
   }
   const cursorOffset = Math.max(0, Number(input.cursor_offset || 0));
   const batchId = String(input.batch_id || rid("classification_v6_base_batch"));
