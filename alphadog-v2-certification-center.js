@@ -1560,18 +1560,26 @@ async function apiPlayerSearch(env, url) {
   const q = String(url.searchParams.get("q") || "").trim();
   if (q.length < 3) return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/player-search", rows:[] });
   const like = `%${q.replace(/[%_]/g, "")}%`;
-  const rows = await queryAll(env.REF_DB, `
+  const rawRows = await queryAll(env.REF_DB, `
     SELECT player_id, mlb_player_id, COALESCE(full_name, player_name) AS player_name, current_mlb_team_id, primary_position, bat_side, throw_side, 'player' AS match_type
     FROM ref_players
     WHERE active = 1 AND (LOWER(COALESCE(full_name, player_name, '')) LIKE LOWER(?) OR LOWER(COALESCE(first_name,'')) LIKE LOWER(?) OR LOWER(COALESCE(last_name,'')) LIKE LOWER(?))
-    UNION
+    UNION ALL
     SELECT p.player_id, p.mlb_player_id, COALESCE(p.full_name, p.player_name) AS player_name, p.current_mlb_team_id, p.primary_position, p.bat_side, p.throw_side, 'alias' AS match_type
     FROM ref_player_aliases a
     JOIN ref_players p ON p.player_id = a.player_id
     WHERE a.active = 1 AND (LOWER(COALESCE(a.alias_name,'')) LIKE LOWER(?) OR LOWER(COALESCE(a.alias_normalized,'')) LIKE LOWER(?))
-    ORDER BY player_name
-    LIMIT 20
   `, [like, like, like, like, like]);
+  // REAL FIX: the same player can match both branches (a direct name match and a registered
+  // alias) - UNION alone doesn't merge them since match_type differs between the two rows.
+  // Deduplicate by player_id here, preferring the direct 'player' match when both exist.
+  const byPlayerId = new Map();
+  for (const r of rawRows) {
+    const key = r.player_id;
+    const existing = byPlayerId.get(key);
+    if (!existing || (existing.match_type === "alias" && r.match_type === "player")) byPlayerId.set(key, r);
+  }
+  const rows = Array.from(byPlayerId.values()).sort((a, b) => String(a.player_name || "").localeCompare(String(b.player_name || ""))).slice(0, 20);
   return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/player-search", rows });
 }
 async function apiPlayerProfile(env, url) {
