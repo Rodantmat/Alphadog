@@ -1148,7 +1148,7 @@ async function apiFilters(env) {
       AND review_playable=1
       AND COALESCE(live_playable,0)=0
       AND official_date >= date('now')
-      AND (json_extract(details_json, '$.game_context.game_time_utc') IS NULL OR json_extract(details_json, '$.game_context.game_time_utc') > strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+      AND (json_extract(details_json_snapshot, '$.game_context.game_time_utc') IS NULL OR json_extract(details_json_snapshot, '$.game_context.game_time_utc') > strftime('%Y-%m-%dT%H:%M:%SZ','now'))
     GROUP BY source_key, canonical_prop_key, prop_family, payout_variant, side_mode, is_goblin, is_demon, is_standard, probability_band, board_tier, review_playable, live_playable
     ORDER BY source_key, prop_family, canonical_prop_key, payout_variant
   `);
