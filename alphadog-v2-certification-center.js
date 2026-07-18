@@ -1018,9 +1018,9 @@ async function apiDossier(env, url) {
         WHEN f.canonical_prop_key LIKE 'pitcher_%' OR f.canonical_prop_key IN ('earned_runs','hits_allowed','walks_allowed','pitcher_outs','hits_allowed','runs_allowed','rfi_nrfi') THEN 'pitcher'
         ELSE 'hitter'
       END AS prop_family,
-      COALESCE(json_extract(f.details_json, '$.game_context.home_team_name'), p.team_full_name, p.team) AS home_team_name,
-      COALESCE(json_extract(f.details_json, '$.game_context.away_team_name'), p.opponent_full_name, p.opponent) AS away_team_name,
-      json_extract(f.details_json, '$.game_context.venue_name') AS venue_name,
+      COALESCE(json_extract(f.details_json_snapshot, '$.game_context.home_team_name'), p.team_full_name, p.team) AS home_team_name,
+      COALESCE(json_extract(f.details_json_snapshot, '$.game_context.away_team_name'), p.opponent_full_name, p.opponent) AS away_team_name,
+      json_extract(f.details_json_snapshot, '$.game_context.venue_name') AS venue_name,
       COALESCE(json_extract(p.row_payload_json, '$.source_line_type'), f.payout_variant, 'regular') AS source_line_type,
       CASE WHEN LOWER(COALESCE(f.payout_variant,''))='goblin' THEN 1 ELSE 0 END AS is_goblin,
       CASE WHEN LOWER(COALESCE(f.payout_variant,''))='demon' THEN 1 ELSE 0 END AS is_demon,
