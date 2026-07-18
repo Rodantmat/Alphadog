@@ -379,7 +379,7 @@ async function permanentlyRecordBoardLegs(env) {
     ));
   }
   const CHUNK = 90;
-  const ARCHIVE_WRITE_CONCURRENCY = 6;
+  const ARCHIVE_WRITE_CONCURRENCY = 3; // REAL FIX: Cloudflare's documented D1 limit is max 6 simultaneous connections per Worker invocation, total. Using all 6 here left zero headroom for any other D1 work in the same invocation, causing real connection-queueing contention - confirmed as the likely cause once timeouts got WORSE, not better, right after this concurrency fix was introduced. 3 keeps real concurrency benefit while leaving genuine headroom.
   const chunks = [];
   for (let i = 0; i < statements.length; i += CHUNK) chunks.push(statements.slice(i, i + CHUNK));
   let nextChunkIndex = 0;
