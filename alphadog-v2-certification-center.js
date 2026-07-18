@@ -1577,7 +1577,7 @@ async function apiPlayerSearch(env, url) {
 async function apiPlayerProfile(env, url) {
   const playerId = Number(url.searchParams.get("player_id") || 0);
   if (!playerId) return jsonResponse({ ok:false, error:"player_id required", version:VERSION }, 400);
-  const p = firstUseful(await optionalQueryAll(env.REF_DB, `SELECT * FROM ref_players WHERE player_id = ? OR mlb_player_id = ? LIMIT 1`, [playerId, playerId]));
+  const p = (await queryAll(env.REF_DB, `SELECT * FROM ref_players WHERE player_id = ? OR mlb_player_id = ? LIMIT 1`, [playerId, playerId]))[0] || null;
   if (!p) return jsonResponse({ ok:false, error:"player not found", version:VERSION }, 404);
   const ids = [p.player_id, p.mlb_player_id].filter(v=>v!=null && String(v)!=="");
   const q = ids.map(()=>"?").join(",");
