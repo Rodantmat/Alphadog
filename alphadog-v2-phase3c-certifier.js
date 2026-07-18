@@ -61,14 +61,22 @@ function gradeForProbability(p) {
   return "BIN_LOW";
 }
 
-// Real, honest, first-pass HP combination. baseline_v6's real hit_probability_0_100 is the
-// context-free starting point; the real rate_multiplier (already in log-rate space from
-// Enrichment) is converted to an honest, bounded percentage-point shift.
+// REAL FIX (per Rodolfo's audit instruction, closing the gap identified at the very start of
+// this session's research): the previous version used a flat x40 percentage-point shift, a
+// crude linear approximation with no real mathematical grounding - it doesn't compress
+// correctly at extremes (a 5% baseline and a 50% baseline would move by the same absolute
+// amount for the same rate change, which is not how probability works) and required an
+// arbitrary tuning constant. Real, standard fix (logistic regression / odds-ratio math,
+// the same approach used in ELO-style rating systems): convert baseline HP to odds, apply the
+// real rate_multiplier (already correctly computed in log-rate space by Enrichment - this is
+// exactly why that space was chosen), convert back to a probability. No arbitrary constant.
 function computeRealHitProbability(baselineHp, rateMultiplier) {
   if (baselineHp == null) return null;
-  const logShift = Math.log(Math.max(rateMultiplier ?? 1.0, 0.01));
-  const shift = logShift * 40;
-  return clamp(baselineHp + shift, 1, 99);
+  const clampedBaseline = clamp(baselineHp, 1, 99);
+  const baselineOdds = clampedBaseline / (100 - clampedBaseline);
+  const adjustedOdds = baselineOdds * Math.max(rateMultiplier ?? 1.0, 0.01);
+  const finalHp = 100 * adjustedOdds / (1 + adjustedOdds);
+  return clamp(finalHp, 1, 99);
 }
 
 // NEW per Rodolfo's spec: Final Confidence is computed here (not left as a raw carry-
