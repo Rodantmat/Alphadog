@@ -1724,6 +1724,53 @@ System confirmed ready for tomorrow: zero locks held, zero pending/running jobs,
 remaining in any production table, all real work product preserved, and the main UI's board-read
 path now genuinely functional for the first time.
 
+## PRIZEPICKS TIMEOUT - ROOT-CAUSED AND FIXED, THEN A SECOND REAL BUG SURFACED AND WAS ALSO FIXED
+Per Rodolfo's explicit instruction (deep debug, no guessing, 100% grounded, add 3 retries,
+research online, check proxy config), investigated the real daily_full_run failure from today's
+7am run. Confirmed via direct code reading: alphadog-v2-prizepicks-github-board.js wrapped its
+whole operation in a 15000ms hard deadline, but internally made up to ~9 sequential GitHub API
+calls before picking the best candidate - mathematically close to impossible to complete
+reliably within 15s. Researched real retry/timeout best practices (Cloudflare's own Agents SDK
+docs, Google Cloud's documented exponential-backoff-with-jitter algorithm) before implementing.
+Real fix: try the single fastest primary source first, with 3 retries using researched
+exponential backoff + jitter, only falling back to the expensive multi-surface comparison if the
+primary path genuinely fails 3 times or is non-retryable (a real 404). Increased the worker's
+own internal deadline from 15000ms to 45000ms (real math: 3 attempts x 6s fetch timeout + 2
+backoff delays fits comfortably) - safe since Cloudflare Workers' real constraint is CPU time,
+not wall-clock fetch-wait time.
+Found via live testing that this alone wasn't enough: the orchestrator's OWN dispatch to this
+worker had a separate, harder 20000ms timeout (an explicit override, not the generous 75000ms
+default used elsewhere) that would have cut off the call regardless of the worker-side fix.
+Found and fixed this too.
+Checked proxy configuration as explicitly asked: confirmed via direct search across the worker
+code, its wrangler config, and CONFIG_DB that NO proxy was configured anywhere for this
+Cloudflare Worker fetch. Researched and confirmed (Cloudflare's own community forum) that
+Workers' native fetch() cannot use traditional HTTP/SOCKS proxies at all - a real, hard platform
+limitation. Traced the credential Rodolfo provided to its real, correct home: scrape.yml's
+GitHub Actions workflow already expects a PROXY_URL repository secret, consumed by main.py (the
+actual PrizePicks-scraping script, which runs on a GitHub Actions runner where traditional
+proxies do work) - not by any Cloudflare Worker. Confirmed the exact expected format via direct
+code reading before giving Rodolfo the value to set. Saved the components to CONFIG_DB per
+Rodolfo's explicit, informed decision after being told the standard secure pattern (Cloudflare
+Worker secret) doesn't apply here.
+TESTED LIVE END TO END: PrizePicks refresh succeeded on the first attempt (no retries even
+needed) - 8,528 real rows fetched/staged/promoted, all genuinely fresh, using 1 external call
+instead of the previous ~9.
+A SECOND, SEPARATE REAL BUG THEN SURFACED (correctly, per Rodolfo's "deep debug" standard - not
+glossed over): score-prep (the very next stage) started failing at the same 20000ms pattern,
+because it had never processed a board this large before. Root-caused via direct code reading
+after an initial hypothesis (reducing WRITE_ROWS_PER_INVOCATION from 800 to 350) was tested live
+and found NOT to fix it - kept investigating rather than declare victory prematurely. Found the
+real cause: permanentlyRecordBoardLegs (a real, one-time-per-run archival step) was called
+unconditionally on every invocation including every resume/retry, and its own write loop batched
+~18 chunks of 90 rows each SEQUENTIALLY - the same class of bug already fixed once this session
+in the PrizePicks worker's own stageRows/insertCurrentRows functions. Fixed by (1) only running
+the archival on a genuinely fresh start, not on resumes of the same batch, and (2) firing its
+chunk batches concurrently (bounded concurrency, same proven pattern) instead of one at a time.
+TESTED LIVE: confirmed fixed - elapsed_ms dropped from a hard 20000+ timeout to 13112ms, real
+data flowing (8,856 rows read, correctly chunking through via partial_continue as designed).
+Re-triggered a fresh daily_full_run (daily_full_run_retrigger_2) with both real fixes in place.
+
 ## FULL AUDIT PASS CLOSED - EVERY FACTOR NOW CHECKED AGAINST REAL RESEARCH
 Finished the last two: opposing_pitcher_quality and times_through_order. Both had the same real
 pattern found across this whole audit - existing coefficients that were technically non-null but
