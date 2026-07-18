@@ -46,7 +46,10 @@ function deterministicStageId(batchId, projectionId, index) {
 }
 
 
-const GITHUB_FETCH_TIMEOUT_MS = 12000;
+const GITHUB_FETCH_TIMEOUT_MS = 6000;
+const PRIMARY_FETCH_MAX_RETRIES = 3;
+const PRIMARY_FETCH_BASE_DELAY_MS = 1000;
+const PRIMARY_FETCH_MAX_DELAY_MS = 4000;
 
 function timeoutSignal(ms) {
   // AbortSignal.timeout is native to the Workers runtime - no manual AbortController/setTimeout
@@ -54,6 +57,41 @@ function timeoutSignal(ms) {
   // previously had no timeout at all, so a single slow GitHub response could hang the entire
   // invocation indefinitely with nothing to bound it.
   return AbortSignal.timeout(ms);
+}
+
+function jitteredBackoffDelayMs(attemptIndex) {
+  // Real, standard exponential-backoff-with-jitter pattern (Google Cloud/AWS-documented
+  // approach): base * 2^attempt, capped, plus a random jitter component so retries from
+  // multiple concurrent invocations don't synchronize into a thundering herd.
+  const exponential = Math.min(PRIMARY_FETCH_MAX_DELAY_MS, PRIMARY_FETCH_BASE_DELAY_MS * Math.pow(2, attemptIndex));
+  const jitter = Math.random() * exponential * 0.3;
+  return Math.round(exponential + jitter);
+}
+
+function isRetryableGithubFailure(candidate) {
+  // Real, standard classification: retry transient failures (timeout/network/429/5xx), not a
+  // definitive 404 (file genuinely doesn't exist at this path/ref - retrying won't help).
+  if (!candidate) return true;
+  const status = candidate.http_status;
+  if (status === 404) return false;
+  if (status === 200 && candidate.summary && candidate.summary.json_parse_ok === false) return false; // malformed content, not transient
+  return true;
+}
+
+async function fetchPrimarySourceWithRetries(source, env) {
+  const attempts = [];
+  for (let attemptIndex = 0; attemptIndex < PRIMARY_FETCH_MAX_RETRIES; attemptIndex++) {
+    if (attemptIndex > 0) await sleep(jitteredBackoffDelayMs(attemptIndex - 1));
+    const candidate = await fetchTextCandidate(source.raw_branch_url || source.url, env, "raw_branch_primary", githubHeaders(env, "application/json, text/plain, */*"), { ref: source.branch, api_url: source.raw_branch_url || source.url, attempt: attemptIndex + 1 });
+    attempts.push({ attempt: attemptIndex + 1, ok: Boolean(candidate && candidate.ok), http_status: candidate ? candidate.http_status : null, error: candidate && candidate.error ? candidate.error : null });
+    if (candidate && candidate.ok && candidate.summary && Number(candidate.summary.future_pickable_rows || 0) > 0) {
+      return { candidate, attempts, succeeded_on_primary: true };
+    }
+    if (candidate && !isRetryableGithubFailure(candidate)) {
+      return { candidate, attempts, succeeded_on_primary: false, non_retryable: true };
+    }
+  }
+  return { candidate: null, attempts, succeeded_on_primary: false, non_retryable: false };
 }
 
 const D1_WRITE_CONCURRENCY = 6;
