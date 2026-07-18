@@ -208,7 +208,7 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
     const sideMode = payload?.side_context?.side_mode || null;
     const moreOnly = sideMode === "more_only";
 
-    const side = determineSide(matrixRow, er);
+    const side = determineSide(matrixRow, er, er.mlb_player_id, er.canonical_prop_key, er.board_line_value);
     const baselineMatch = findBaseline(er.mlb_player_id, er.canonical_prop_key, side, er.board_line_value);
     const baseline = baselineMatch ? baselineMatch.row : null;
     const baselineHp = baseline?.hit_probability_0_100 ?? null;
