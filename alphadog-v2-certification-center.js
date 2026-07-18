@@ -1604,7 +1604,7 @@ async function apiPlayerProfile(env, url) {
     ORDER BY datetime(updated_at) DESC
     LIMIT 20
   `, ids) : [];
-  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/player-profile", player:p, current_legs:usefulRows(legs), lineup_rows:usefulRows(lineup), note:"Player profile alpha uses static identity, current board legs, and current lineup rows only; deeper stat-table profile will be added after stat schemas are verified." });
+  return jsonResponse({ ok:true, data_ok:true, version:VERSION, route:"/api/player-profile", player:p, current_legs: Array.isArray(legs) ? legs : [], lineup_rows: Array.isArray(lineup) ? lineup : [], note:"Player profile alpha uses static identity, current board legs, and current lineup rows only; deeper stat-table profile will be added after stat schemas are verified." });
 }
 
 const MAIN_HTML = `<!doctype html>
