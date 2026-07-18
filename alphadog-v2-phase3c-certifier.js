@@ -175,8 +175,8 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
     if (isGoblinOrDemon) return "more"; // Real PrizePicks rule: goblin/demon lines are genuinely more-only.
     const moreBaseline = findBaseline(playerId, propKey, "more", lineValue);
     const lessBaseline = findBaseline(playerId, propKey, "less", lineValue);
-    const moreHp = moreBaseline ? num(moreBaseline.row.hit_probability_0_100, null) : null;
-    const lessHp = lessBaseline ? num(lessBaseline.row.hit_probability_0_100, null) : null;
+    const moreHp = moreBaseline && Number.isFinite(Number(moreBaseline.row.hit_probability_0_100)) ? Number(moreBaseline.row.hit_probability_0_100) : null;
+    const lessHp = lessBaseline && Number.isFinite(Number(lessBaseline.row.hit_probability_0_100)) ? Number(lessBaseline.row.hit_probability_0_100) : null;
     if (moreHp != null && lessHp != null) return lessHp > moreHp ? "less" : "more";
     if (lessHp != null && moreHp == null) return "less";
     return matrixRow.prop_side || er.prop_side || "more"; // Real fallback: no baseline for either side yet, preserve prior behavior rather than guess.
