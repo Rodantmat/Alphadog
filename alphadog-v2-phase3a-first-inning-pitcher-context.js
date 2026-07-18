@@ -7115,7 +7115,7 @@ async function refreshBattedBallProfileIfStale(env, seasonYear) {
     written++;
   }
   if (statements.length) await env.REF_DB.batch(statements);
-  return { refreshed: true, rows_written: written, source_rows: rows.length };
+  return { refreshed: true, rows_written: written, source_rows: rows.length, _debug_first_row_keys: _debugFirstRowKeys };
 }
 
 async function refreshArmAngleIfStale(env, seasonsToFetch) {
