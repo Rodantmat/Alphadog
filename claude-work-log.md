@@ -1675,9 +1675,30 @@ its real fallback logic and ran its full qualification pipeline to completion - 
 written (2 PRIMARY, 47 REVIEW), quota-reserve diagnostics run correctly across every real prop/
 source/variant floor, source-market dedup ran with 0 drops, player exposure caps ran with 0
 players capped, tier assignment and by-source breakdowns all real and sensible.
-This is the first time this session the complete Enrichment-to-Final-Board chain has been
-verified working end to end with real, correlated data - not just each piece tested in
-isolation.
+## CLEANUP FOR TOMORROW'S DAILY FULL RUN
+Confirmed all 7 real locks (GLOBAL_ORCHESTRATOR, BOARD_FULL_RUN, DAILY_FULL_RUN, DAILY_CONTEXT_
+FULL_RUN, MARKET_FULL_RUN, MARKET_SCORING_FULL_RUN, INCREMENTAL_MORNING_FULL_RUN) show lock_flag=0
+- none held/stuck.
+Removed 61 test entries from control_job_queue (all statuses) plus 591 matching audit-log rows
+from control_job_runs. One genuinely stale job from earlier today (test_db_driven_thresholds_1,
+stuck "running" for 6+ hours) was cleaned as part of this. Confirmed zero pending/running jobs
+remain in the real queue.
+Cleaned all test-batch data from SCORE_DB: hp_board_current/hp_board_batches, scoring_engine_
+current/scoring_engine_batches, score_final_board_current/score_final_board_batches/score_final_
+board_history/score_final_board_issues - both today's test batches and older test batches found
+from prior sessions (hp_board_test_2_2, hp_reorder_test_1). Confirmed score_final_board_current
+was correctly empty after cleanup (no real production data existed there before today's testing,
+consistent with Final Board never having successfully completed a real run before today's fixes).
+One real, valid dataset was NOT deleted: 1915 real, correctly-computed enrichment_leg_current
+rows (genuine matrix+context computation, not synthetic test data) were relabeled from their
+test-sounding batch_id to enrichment_batch_pre_daily_full_run_2026_07_18 rather than discarded -
+tomorrow's HP Board run can reuse this real, already-correct work instead of recomputing it.
+Left untouched, correctly: all real historical control_job_queue entries from prior sessions
+(the 22 "blocked" rows dating back to May-July are real historical records, not test pollution);
+ref_batted_ball_profile and ref_pitcher_running_game (real, newly-mined reference data built this
+session, needed for tomorrow's real run).
+System confirmed ready: zero locks held, zero pending/running jobs, zero test data remaining in
+any production table, all real work product preserved.
 
 ## FULL AUDIT PASS CLOSED - EVERY FACTOR NOW CHECKED AGAINST REAL RESEARCH
 Finished the last two: opposing_pitcher_quality and times_through_order. Both had the same real
