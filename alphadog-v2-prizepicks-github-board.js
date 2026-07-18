@@ -1880,7 +1880,7 @@ async function withDeadline(promise, ms, fallbackFactory) {
 
     if (method === "POST" && path === "/run") {
       const input = await readJsonSafe(request);
-      const HARD_DEADLINE_MS = 15000;
+      const HARD_DEADLINE_MS = 45000;
       const TIMEOUT_SENTINEL = { __hard_deadline_timeout__: true };
       const rawOutput = await withDeadline(runBoardParseStageCertify(env, input), HARD_DEADLINE_MS, () => TIMEOUT_SENTINEL);
       const output = rawOutput === TIMEOUT_SENTINEL ? {
