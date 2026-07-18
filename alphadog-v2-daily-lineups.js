@@ -1648,26 +1648,13 @@ async function runSourceProbe(env, input) {
   const catcherRefreshSeason = Number.isFinite(catcherRefreshSeasonOverride) && catcherRefreshSeasonOverride > 2000 ? catcherRefreshSeasonOverride : new Date().getUTCFullYear();
   const catcherRefreshResult = await refreshCatcherReferenceIfStale(env, catcherRefreshSeason);
   _tm.after_catcher_refresh_ms = Date.now() - _t0;
-  // REAL FIX: same staleness-gated pattern, now also covering pitcher arsenal and defensive
-  // quality - these previously had zero ongoing refresh anywhere in the system.
-  const pitcherArsenalRefreshResult = await refreshPitcherArsenalIfStale(env, catcherRefreshSeason);
-  const defensiveQualityRefreshResult = await refreshDefensiveQualityIfStale(env, catcherRefreshSeason);
-  const umpireTendencyRefreshResult = await refreshUmpireTendencyIfStale(env);
-  // REAL FIX (final 2 calibration factors, items 10/11): sprint speed and arm angle, same
-  // proven pattern. seasonsToFetch covers the live current season plus a real, free historical
-  // backfill (2025) - both free public leaderboards, unlike the paid Odds API market backfill.
-  const sprintSpeedSeasons = [catcherRefreshSeason, catcherRefreshSeason - 1];
-  const sprintSpeedRefreshResult = await refreshSprintSpeedIfStale(env, sprintSpeedSeasons);
-  const armAngleRefreshResult = await refreshArmAngleIfStale(env, sprintSpeedSeasons);
+  // REAL FIX (per Rodolfo's direct instruction): the arsenal/defensive-OAA/umpire-tendency/
+  // sprint-speed/arm-angle refreshes moved to alphadog-v2-phase3a-first-inning-pitcher-
+  // context.js, which is dispatched as part of the morning-only incremental-morning-full-run
+  // chain - these don't depend on anything daily-context provides, so running them here 3x/day
+  // was only ever a code-convenience artifact, not a functional requirement. Their own ~20h
+  // self-gates made this harmless in practice, but the correct home is the morning-only run.
   _tm.after_arsenal_and_defense_refresh_ms = Date.now() - _t0;
-  try {
-    await execRun(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_umpire_tendency_refresh', 'Checkpoint after umpire tendency refresh', ?, CURRENT_TIMESTAMP)",
-      _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ umpireTendencyRefreshResult })).catch(() => {});
-  } catch (_) {}
-  try {
-    await execRun(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_sprint_arm_refresh', 'Checkpoint after sprint speed/arm angle refresh', ?, CURRENT_TIMESTAMP)",
-      _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ sprintSpeedRefreshResult, armAngleRefreshResult })).catch(() => {});
-  } catch (_) {}
   try {
     await execRun(env.CONTROL_DB, "INSERT INTO control_worker_run_log (request_id, worker_name, job_key, level, event_key, message, data_json, created_at) VALUES (?, ?, ?, 'INFO', 'lineups_debug_after_arsenal_defense_refresh', 'Checkpoint after arsenal/defense refresh', ?, CURRENT_TIMESTAMP)",
       _requestId, WORKER_NAME, JOB_KEY, JSON.stringify({ pitcherArsenalRefreshResult, defensiveQualityRefreshResult })).catch(() => {});
