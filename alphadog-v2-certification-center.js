@@ -701,7 +701,7 @@ function buildCurrentSql(url) {
   const date = url.searchParams.get("date");
   if (!date) {
     where.push("f.official_date >= date('now')");
-    where.push("(json_extract(f.details_json, '$.game_context.game_time_utc') IS NULL OR json_extract(f.details_json, '$.game_context.game_time_utc') > strftime('%Y-%m-%dT%H:%M:%SZ','now'))");
+    where.push("(json_extract(f.details_json_snapshot, '$.game_context.game_time_utc') IS NULL OR json_extract(f.details_json_snapshot, '$.game_context.game_time_utc') > strftime('%Y-%m-%dT%H:%M:%SZ','now'))");
   }
   const limit = clampLimit(url.searchParams.get("limit"));
   function inClause(column, values) { if (!values.length) return; where.push(`${column} IN (${values.map(() => "?").join(",")})`); params.push(...values); }
