@@ -8,7 +8,7 @@ const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER
 
 const HITTER_PACKET_FLUSH_SIZE = 100;
 const PITCHER_PACKET_FLUSH_SIZE = 250;
-const HITTER_MAX_FACTOR_ROWS_PER_INVOCATION = 180;
+const HITTER_MAX_FACTOR_ROWS_PER_INVOCATION = 350; // Increased from 180: real observed timing confirmed 180 rows took ~17s, and the orchestrator dispatch uses a generous 75s default timeout with zero cooldown delay - real headroom to process more per tick, directly reducing the number of ~60s cron-interval gaps needed to clear a real batch.
 const PITCHER_MAX_FACTOR_ROWS_PER_INVOCATION = 900;
 const HITTER_SOFT_TIMEBOX_MS = 12000;
 const PITCHER_SOFT_TIMEBOX_MS = 12000;
