@@ -2148,9 +2148,9 @@ function propTrendCard(propKey,games,legsForProp,isP){
     +gameBars(games,propKey,line,isP)
     +'<div class="gameBarsCaption"><span>Oldest</span><span>Newest</span></div>'+'</div>';
 }
-function seasonSnapStrip(snapshots,isP){const season=snapshots.find(s=>s.metric_window==='season_to_date');if(!season)return '';const cells=isP
+function seasonSnapStrip(snapshots,isP){const season=snapshots.find(s=>s.metric_window==='season_to_date');if(!season)return '';const obp=season.pa_sum?((Number(season.hits_sum||0)+Number(season.walks_sum||0))/season.pa_sum):null;const iso=(season.slugging_percentage!=null&&season.batting_average!=null)?(Number(season.slugging_percentage)-Number(season.batting_average)):null;const cells=isP
   ?[['G',season.games_count],['IP',avgFmt(season.innings_pitched_sum)],['ERA',avgFmt(season.era_calculated)],['WHIP',avgFmt(season.whip_calculated)],['K',season.strikeouts_sum],['K%',pctNum(Number(season.k_rate_calculated||0)*100)]]
-  :[['G',season.games_count],['AVG',avgFmt(season.batting_average)],['SLG',avgFmt(season.slugging_percentage)],['HR',season.home_runs_sum],['RBI',season.rbi_sum],['SB',season.stolen_bases_sum]];
+  :[['G',season.games_count],['AVG',avgFmt(season.batting_average)],['OBP',avgFmt(obp)],['SLG',avgFmt(season.slugging_percentage)],['ISO',avgFmt(iso)],['HR',season.home_runs_sum],['RBI',season.rbi_sum],['SB',season.stolen_bases_sum]];
   return '<div class="snapStrip">'+cells.map(([k,v])=>'<div class="snapCell"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v??'—')+'</div></div>').join('')+'</div>'}
 function splitsBlock(splits,isP){const L=splits.find(s=>String(s.split_key).toLowerCase()==='vs_left'),R=splits.find(s=>String(s.split_key).toLowerCase()==='vs_right');if(!L&&!R)return '';
   const statsFor=s=>isP?[['AVG',s&&s.avg_against],['OBP',s&&s.obp_against],['SLG',s&&s.slg_against],['OPS',s&&s.ops_against]]:[['AVG',s&&s.avg],['OBP',s&&s.obp],['SLG',s&&s.slg],['OPS',s&&s.ops]];
