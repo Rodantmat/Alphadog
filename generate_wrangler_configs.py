@@ -70,6 +70,13 @@ def make_config(worker_name, include_services=False):
             {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
         ]
         cfg["compatibility_flags"] = ["nodejs_compat"]
+        # Native cron triggers for the Postgres weekly static differential (Monday 3am,
+        # matching the existing sched_static_weekly convention) and daily morning delta
+        # (8:45am, matching sched_daily_morning). Dispatched independently of the legacy
+        # orchestrator's hardcoded per-worker tick logic - see this worker's own
+        # scheduled() handler for the event.cron -> mode mapping. Must live in the
+        # generator or it gets wiped on every deploy before Wrangler even runs.
+        cfg["triggers"] = {"crons": ["0 3 * * 1", "45 8 * * *"]}
     if worker_name == "alphadog-v2-parlay-underdog-board":
         # Same reason as control-room/admin-sql above: worker-specific vars must live in the
         # generator or they get wiped on every deploy before Wrangler even runs. NOTE: the
