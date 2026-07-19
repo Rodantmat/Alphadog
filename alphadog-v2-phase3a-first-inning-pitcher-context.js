@@ -7826,28 +7826,39 @@ async function reconcileSubsetOfConstraints(env) {
   const constraints = await getCalibrationValue(env, "global", "subset_of_constraints", {});
   let totalClamped = 0;
   const results = [];
-  for (const [subsetKey, supersetKey] of Object.entries(constraints)) {
-    const [subProp, subLineRaw, subSide] = subsetKey.split("|");
-    const [supProp, supLineRaw, supSide] = supersetKey.split("|");
-    const subLine = Number(subLineRaw), supLine = Number(supLineRaw);
-    const res = await run(env.ARCHIVE_DB, `
-      UPDATE baseline_v6_current
-      SET hit_probability_0_100 = (
-        SELECT s.hit_probability_0_100 FROM baseline_v6_current s
-        WHERE s.player_id = baseline_v6_current.player_id
-          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
-      ),
-      formula_version = formula_version || '+subset_clamped'
-      WHERE canonical_prop_key = ? AND line_value = ? AND selected_side = ?
-        AND hit_probability_0_100 > (
+  // REAL FIX: a single pass isn't always sufficient - a superset prop (e.g. hits) can itself
+  // get clamped by its OWN constraint (hits->hits_runs_rbis) during the same pass, but a
+  // subset checked earlier in iteration order (e.g. singles->hits) won't see that updated
+  // value. Confirmed live: 10 real singles>hits violations remained after a single pass.
+  // Looping until stable (bounded at 5 passes for safety) closes this for real.
+  for (let pass = 0; pass < 5; pass++) {
+    let passClamped = 0;
+    for (const [subsetKey, supersetKey] of Object.entries(constraints)) {
+      const [subProp, subLineRaw, subSide] = subsetKey.split("|");
+      const [supProp, supLineRaw, supSide] = supersetKey.split("|");
+      const subLine = Number(subLineRaw), supLine = Number(supLineRaw);
+      const res = await run(env.ARCHIVE_DB, `
+        UPDATE baseline_v6_current
+        SET hit_probability_0_100 = (
           SELECT s.hit_probability_0_100 FROM baseline_v6_current s
           WHERE s.player_id = baseline_v6_current.player_id
             AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
-        )`,
-      supProp, supLine, supSide, subProp, subLine, subSide, supProp, supLine, supSide);
-    const changed = Number(res && res.meta && res.meta.changes || 0);
-    totalClamped += changed;
-    results.push({ subset: subsetKey, superset: supersetKey, rows_clamped: changed });
+        ),
+        formula_version = formula_version || '+subset_clamped'
+        WHERE canonical_prop_key = ? AND line_value = ? AND selected_side = ?
+          AND hit_probability_0_100 > (
+            SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+            WHERE s.player_id = baseline_v6_current.player_id
+              AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+          )`,
+        supProp, supLine, supSide, subProp, subLine, subSide, supProp, supLine, supSide);
+      const changed = Number(res && res.meta && res.meta.changes || 0);
+      totalClamped += changed;
+      passClamped += changed;
+      if (pass === 0) results.push({ subset: subsetKey, superset: supersetKey, rows_clamped: changed });
+      else if (changed > 0) results.push({ subset: subsetKey, superset: supersetKey, rows_clamped: changed, pass: pass + 1, note: "cascading_pass" });
+    }
+    if (passClamped === 0) break;
   }
   return { ok: true, total_clamped: totalClamped, per_constraint: results };
 }
