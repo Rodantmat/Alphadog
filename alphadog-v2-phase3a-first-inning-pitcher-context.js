@@ -7392,13 +7392,13 @@ async function runRemineSprintSpeedToPostgres(env, input) {
     if (!data.rows.length) return { ok: false, mode: "remine_sprint_speed_to_postgres", error: "no_data_extracted", html_sample: data.html_sample, pattern_used: data.pattern_used };
 
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
-    const rows = data.rows.filter(r => r.entity_id || r.player_id).map(r => ({
-      sprint_id: `savant_sprint_${year}_${r.entity_id || r.player_id}`,
-      mlb_player_id: Number(r.entity_id || r.player_id),
-      player_name: r.entity_name || r.name || null,
+    const rows = data.rows.filter(r => r.runner_id).map(r => ({
+      sprint_id: `savant_sprint_${year}_${r.runner_id}`,
+      mlb_player_id: Number(r.runner_id),
+      player_name: r.name_display_last_first || null,
       season_year: year,
-      sprint_speed_ft_per_sec: r.hp_to_1b != null ? null : (Number(r.sprint_speed) || null),
-      competitive_runs: r.competitive_runs != null ? Number(r.competitive_runs) : null,
+      sprint_speed_ft_per_sec: r.r_sprint_speed_top50percent != null ? Number(r.r_sprint_speed_top50percent) : null,
+      competitive_runs: r.n != null ? Number(r.n) : null,
       active: 1, source_key: "baseball_savant_sprint_speed_html_regex", raw_json: JSON.stringify(r)
     })).filter(r => r.mlb_player_id);
     if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_sprint_speed_to_postgres", error: "no_valid_rows_after_mapping", sample_raw_row: data.rows[0] || null }; }
