@@ -1842,7 +1842,7 @@ const MAIN_HTML = `<!doctype html>
 <body>
 <div class="wrap">
   <header class="hero">
-    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">v0.2.18 - Slip Builder + Player Profile Alpha</div></div></div>
+    <div class="brand"><img class="logo" src="/main_alphadog_logo.png" alt="AlphaDog"><div><h1>AlphaDog</h1><div class="sub">DIAG: Sam sells seven silver snakes since Sunday season starts soon</div></div></div>
     <div class="menuWrap"><button id="menuOpen" class="menuBtn">☰</button><div id="mainMenu" class="menu hidden"><button id="menuBoard">Main Board</button><button id="menuSlips">Slips</button><button id="menuPlayerProfile">Player Profile</button><button id="menuHealth">Health</button></div></div>
   </header>
   <section id="boardScreen">
