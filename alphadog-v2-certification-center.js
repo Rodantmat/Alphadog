@@ -171,7 +171,8 @@ function normalizeLineType(row) {
     if (sideMode === "more_only" || odds === "more_only" || payout === "more_only") return "more_only";
     return "regular";
   }
-  return payout || odds || sideMode || "regular";
+  if (sideMode === "more_only" || odds === "more_only") return "more_only";
+  return payout || "regular";
 }
 
 function displaySourceLabel(sourceKey) {
