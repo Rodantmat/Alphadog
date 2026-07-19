@@ -2084,7 +2084,7 @@ function renderPlayerProfileDream(j){
   const availBadge=availability&&availability.availability_status?'<span class="availBadge '+availabilityClass(availability.availability_status)+'">'+esc(availability.availability_status)+'</span>':'';
   let html='<div class="p2Hero"><div class="p2Avatar">'+esc(initials(name))+'</div><div><div class="p2Name">'+esc(name)+' '+availBadge+'</div><div class="p2Meta">'+heroBadges.map(b=>'<span class="p2Badge">'+esc(b)+'</span>').join('')+'</div>'+(nextGameLine?'<div class="p2Next">'+nextGameLine+'</div>':'')+'</div></div>';
   const seasonRow=snapshots.find(s=>s.metric_window==='season_to_date'),l5Row=snapshots.find(s=>s.metric_window==='last_5_games');
-  const trendKey=isP?'era':'batting_average';
+  const trendKey=isP?'era_calculated':'batting_average';
   const trend=seasonRow&&l5Row?trendArrow(l5Row[trendKey],seasonRow[trendKey],!isP):'';
   html+='<div class="sectionLabel" style="margin-top:14px">Season Snapshot '+trend+'</div>'+(seasonSnapStrip(snapshots,isP)||'<div class="small">No season snapshot available yet.</div>');
   const propKeys=propFamilyKeys(isP);
