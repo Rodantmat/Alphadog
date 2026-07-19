@@ -1955,23 +1955,23 @@ function toneFragment(r,seed){const hp=Number(r.estimated_hit_probability_0_100|
 }
 function propFragment(r,seed){const k=String(r.canonical_prop_key||''),side=String(r.selected_side||'').toLowerCase(),line=Number(r.line_value||0),lineT=Number.isFinite(line)?line:'';
   const banks={
-    hits_runs_rbis_more_low:[`HRRBI ${lineT} keeps three paths open — a hit, a run, or an RBI — so it can outrate a hits-only line when form and lineup context cooperate.`,`With three ways to get there (hit/run/RBI), a ${lineT} HRRBI line is naturally softer than it looks on the surface.`,`This is the broadest offensive prop on the board — hit, run, or RBI all satisfy it, which is exactly why it clears more often than raw batting average suggests.`],
-    hits_runs_rbis_more:[`HRRBI is broader than hits alone, but this line still needs multiple production events to clear.`,`Three stat categories feed this prop, but at this line it's asking for more than a token contribution.`],
-    hits_more_low:[`Hits ${lineT} is a clean contact leg — narrower than HRRBI, less dependent on slugging or a teammate converting.`,`Just needs one clean knock to clear ${lineT} — about as straightforward as a hitter prop gets.`,`A single line drive settles this one; contact rate matters more here than power.`],
-    hits_more:[`Multi-hit legs need volume plus contact quality, so the board wants stronger support before trusting this one.`,`Clearing this hits line takes a genuinely good day at the plate, not just a lucky bloop.`],
-    total_bases_more:[`Total bases needs actual damage, not just a ball in play — park, weather, and pitcher contact quality all matter more here.`,`This is a power-flavored line; a string of singles alone may not be enough to clear it.`,`Slug matters more than average for this one — look at how the ball's been carrying, not just whether hits are falling.`],
-    total_bases_less:[`Total-base unders improve when the damage path is muted, even if a clean single is still in play.`,`This still allows a base hit or two — it's the extra-base contact that needs to stay quiet.`],
-    walks_more:[`Walks need patience at the plate, a nibbling pitcher, or a friendly zone — raw hit form barely factors in.`,`This is a plate-discipline bet more than a hitting bet; the opposing arm's control matters as much as the batter.`],
-    walks_less:[`Walk unders like an attack-zone pitcher or an aggressive hitter who chases early.`,`Favors a pitcher who works ahead in the count rather than around the zone.`],
-    rbis_more:[`RBI needs opportunity in front of the hitter — lineup context matters as much as the batter's own form.`,`Someone has to be on base first; this leans on the whole lineup, not just this player's bat.`],
-    rbis_less:[`RBI unders can survive good individual contact when traffic on the bases stays thin.`],
-    runs_more:[`Runs need reaching base plus a lineup that converts behind the hitter — it's a two-part bet.`,`This depends on what happens after this player reaches, not just whether they reach.`],
-    runs_less:[`Runs stay under when lineup conversion or the overall scoring environment is muted.`],
-    singles_more:[`Singles are contact-specific and can actually lose to extra-base hits, so variance runs a bit higher than plain hits.`],
-    doubles_more:[`Doubles need real gap power and the right park shape — not just a better version of a hits prop.`],
-    home_runs_more:[`Home runs are rare, exit-velocity-driven outcomes; this needs real park and matchup support before it's trustworthy.`,`Power props like this live or die on a handful of well-struck balls — inherently streaky.`],
-    hitter_strikeouts:[`Strikeout props hinge on the specific pitcher's swing-and-miss stuff as much as the batter's own contact rate.`],
-    pitcher:[`Pitcher props lean on role length, opponent approach, umpire zone, and bullpen risk more than raw season-long form.`,`This depends on how deep the start goes and how the opposing lineup approaches at-bats, not just the pitcher's stat line.`]
+    hits_runs_rbis_more_low:["HRRBI "+lineT+" keeps three paths open — a hit, a run, or an RBI — so it can outrate a hits-only line when form and lineup context cooperate.","With three ways to get there (hit/run/RBI), a "+lineT+" HRRBI line is naturally softer than it looks on the surface.","This is the broadest offensive prop on the board — hit, run, or RBI all satisfy it, which is exactly why it clears more often than raw batting average suggests."],
+    hits_runs_rbis_more:["HRRBI is broader than hits alone, but this line still needs multiple production events to clear.","Three stat categories feed this prop, but at this line it's asking for more than a token contribution."],
+    hits_more_low:["Hits "+lineT+" is a clean contact leg — narrower than HRRBI, less dependent on slugging or a teammate converting.","Just needs one clean knock to clear "+lineT+" — about as straightforward as a hitter prop gets.","A single line drive settles this one; contact rate matters more here than power."],
+    hits_more:["Multi-hit legs need volume plus contact quality, so the board wants stronger support before trusting this one.","Clearing this hits line takes a genuinely good day at the plate, not just a lucky bloop."],
+    total_bases_more:["Total bases needs actual damage, not just a ball in play — park, weather, and pitcher contact quality all matter more here.","This is a power-flavored line; a string of singles alone may not be enough to clear it.","Slug matters more than average for this one — look at how the ball's been carrying, not just whether hits are falling."],
+    total_bases_less:["Total-base unders improve when the damage path is muted, even if a clean single is still in play.","This still allows a base hit or two — it's the extra-base contact that needs to stay quiet."],
+    walks_more:["Walks need patience at the plate, a nibbling pitcher, or a friendly zone — raw hit form barely factors in.","This is a plate-discipline bet more than a hitting bet; the opposing arm's control matters as much as the batter."],
+    walks_less:["Walk unders like an attack-zone pitcher or an aggressive hitter who chases early.","Favors a pitcher who works ahead in the count rather than around the zone."],
+    rbis_more:["RBI needs opportunity in front of the hitter — lineup context matters as much as the batter's own form.","Someone has to be on base first; this leans on the whole lineup, not just this player's bat."],
+    rbis_less:["RBI unders can survive good individual contact when traffic on the bases stays thin."],
+    runs_more:["Runs need reaching base plus a lineup that converts behind the hitter — it's a two-part bet.","This depends on what happens after this player reaches, not just whether they reach."],
+    runs_less:["Runs stay under when lineup conversion or the overall scoring environment is muted."],
+    singles_more:["Singles are contact-specific and can actually lose to extra-base hits, so variance runs a bit higher than plain hits."],
+    doubles_more:["Doubles need real gap power and the right park shape — not just a better version of a hits prop."],
+    home_runs_more:["Home runs are rare, exit-velocity-driven outcomes; this needs real park and matchup support before it's trustworthy.","Power props like this live or die on a handful of well-struck balls — inherently streaky."],
+    hitter_strikeouts:["Strikeout props hinge on the specific pitcher's swing-and-miss stuff as much as the batter's own contact rate."],
+    pitcher:["Pitcher props lean on role length, opponent approach, umpire zone, and bullpen risk more than raw season-long form.","This depends on how deep the start goes and how the opposing lineup approaches at-bats, not just the pitcher's stat line."]
   };
   let key=k;
   if((k==='hits_runs_rbis')&&side==='more')key=lineT<=0.5?'hits_runs_rbis_more_low':'hits_runs_rbis_more';
