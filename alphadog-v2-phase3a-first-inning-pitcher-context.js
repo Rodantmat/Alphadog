@@ -8254,6 +8254,163 @@ async function runDailyContextFullRun(env, input) {
   }
 }
 
+function ppGetDeepValue(obj, paths) {
+  for (const p of paths) {
+    const parts = p.split(".");
+    let cur = obj;
+    let ok = true;
+    for (const part of parts) {
+      if (cur && typeof cur === "object" && part in cur) cur = cur[part];
+      else { ok = false; break; }
+    }
+    if (ok && cur !== undefined && cur !== null && cur !== "") return cur;
+  }
+  return null;
+}
+function ppBuildIncludedIndex(json) {
+  const byKey = new Map(), byId = new Map();
+  const included = json && Array.isArray(json.included) ? json.included : [];
+  for (const item of included) {
+    if (!item || typeof item !== "object") continue;
+    const type = String(item.type || ""), id = String(item.id || "");
+    if (type && id) byKey.set(`${type}:${id}`, item);
+    if (id && !byId.has(id)) byId.set(id, item);
+  }
+  return { byKey, byId };
+}
+function ppFindRelationshipItem(row, index, names) {
+  const rels = row && row.relationships && typeof row.relationships === "object" ? row.relationships : {};
+  for (const name of names) {
+    const rel = rels[name]; const data = rel && rel.data;
+    if (!data) continue;
+    const candidate = Array.isArray(data) ? data[0] : data;
+    if (!candidate) continue;
+    const id = String(candidate.id || ""), type = String(candidate.type || "");
+    if (type && id && index.byKey.has(`${type}:${id}`)) return index.byKey.get(`${type}:${id}`);
+    if (id && index.byId.has(id)) return index.byId.get(id);
+  }
+  return null;
+}
+function ppBuildLeagueMap(json) {
+  const map = new Map();
+  const included = json && Array.isArray(json.included) ? json.included : [];
+  for (const item of included) {
+    if (!item || typeof item !== "object") continue;
+    const type = String(item.type || "").toLowerCase();
+    if (!type.includes("league") && !type.includes("sport")) continue;
+    const id = String(item.id || ""); const attrs = item.attributes || {};
+    const name = String(attrs.name || attrs.display_name || attrs.league || attrs.sport || attrs.abbreviation || "").toLowerCase();
+    if (id) map.set(id, name);
+  }
+  return map;
+}
+function ppRowLooksMlb(row, leagueMap) {
+  if (!row || typeof row !== "object") return false;
+  const haystack = [
+    ppGetDeepValue(row, ["league","sport","sport_name","league_name","attributes.league","attributes.sport","attributes.sport_name","attributes.league_name","attributes.league_abbreviation"]),
+    ppGetDeepValue(row, ["attributes.stat_type","attributes.description","attributes.name"])
+  ].filter(Boolean).map(v => String(v).toLowerCase());
+  if (haystack.some(v => v === "mlb" || v.includes("major league baseball") || v.includes("baseball"))) return true;
+  const leagueId = ppGetDeepValue(row, ["relationships.league.data.id","league_id","attributes.league_id"]);
+  if (leagueId && leagueMap.has(String(leagueId))) {
+    const name = leagueMap.get(String(leagueId));
+    if (name === "mlb" || name.includes("major league baseball") || name.includes("baseball")) return true;
+  }
+  return false;
+}
+function ppParseProjectionRow(row, index, leagueMap, slateDate) {
+  const attrs = row && row.attributes && typeof row.attributes === "object" ? row.attributes : {};
+  const projectionId = String(row && row.id || "");
+  const playerItem = ppFindRelationshipItem(row, index, ["new_player","player","participant","players","athlete"]);
+  const playerAttrs = playerItem && playerItem.attributes && typeof playerItem.attributes === "object" ? playerItem.attributes : {};
+  const statItem = ppFindRelationshipItem(row, index, ["stat_type","stat","market","projection_type"]);
+  const statAttrs = statItem && statItem.attributes && typeof statItem.attributes === "object" ? statItem.attributes : {};
+  const playerId = String(playerItem && playerItem.id || "") || String(ppGetDeepValue(row, ["relationships.new_player.data.id","relationships.player.data.id","player_id","attributes.player_id"]) || "");
+  const playerName = playerAttrs.name || playerAttrs.display_name || playerAttrs.full_name || playerAttrs.player_name || attrs.player_name || attrs.name || attrs.description || null;
+  const team = playerAttrs.team || playerAttrs.team_name || playerAttrs.team_abbreviation || playerAttrs.team_abbr || attrs.team || attrs.team_abbreviation || null;
+  const opponent = attrs.opponent || attrs.opponent_team || attrs.game_opponent || attrs.away_team || null;
+  const leagueId = ppGetDeepValue(row, ["relationships.league.data.id","league_id","attributes.league_id"]);
+  const leagueFromMap = leagueId && leagueMap.has(String(leagueId)) ? leagueMap.get(String(leagueId)) : null;
+  const league = attrs.league || attrs.league_name || attrs.league_abbreviation || leagueFromMap || (ppRowLooksMlb(row, leagueMap) ? "mlb" : null);
+  const statType = attrs.stat_type || attrs.stat_display_name || statAttrs.name || statAttrs.display_name || statAttrs.stat_type || null;
+  const lineRaw = attrs.line_score ?? attrs.flash_sale_line_score ?? attrs.score ?? attrs.line;
+  const lineScore = lineRaw === undefined || lineRaw === null || lineRaw === "" ? null : Number(lineRaw);
+  const description = attrs.description || attrs.board_label || attrs.name || null;
+  const startTime = attrs.start_time || attrs.board_time || attrs.end_time || null;
+  const boardTime = attrs.board_time || attrs.start_time || null;
+  const endTime = attrs.end_time || null;
+  const gameId = attrs.game_id || ppGetDeepValue(row, ["relationships.game.data.id","game_id"]) || null;
+  const eventType = attrs.event_type || null;
+  const boardStatus = attrs.status || null;
+  const projectionType = attrs.projection_type || null;
+  const oddsType = attrs.odds_type || null;
+  const variantHaystack = [attrs.projection_type, attrs.odds_type, attrs.description, attrs.stat_display_name, attrs.event_type, attrs.name].filter(Boolean).join(" ").toLowerCase();
+  const isGoblin = variantHaystack.includes("goblin") ? 1 : 0;
+  const isDemon = variantHaystack.includes("demon") ? 1 : 0;
+  const isStandard = (isGoblin || isDemon) ? 0 : 1;
+  const payoutVariant = isGoblin ? "goblin" : isDemon ? "demon" : (attrs.odds_type || attrs.projection_type || "standard");
+  const sourceLineType = attrs.projection_type || attrs.odds_type || attrs.event_type || null;
+  const normalizedStatus = String(boardStatus || "").toLowerCase();
+  const blockedByStatus = normalizedStatus === "removed" || normalizedStatus === "suspended";
+  const startTimeMs = startTime ? Date.parse(startTime) : NaN;
+  const blockedByStartTime = isNaN(startTimeMs) || startTimeMs <= Date.now();
+  const pickableFlag = (!blockedByStatus && !blockedByStartTime) ? 1 : 0;
+  if (!ppRowLooksMlb(row, leagueMap) && league !== "mlb") return null;
+  if (!playerId || !projectionId) return null;
+  return {
+    current_row_id: `pp_current_${projectionId}`, batch_id: `pp_batch_${Date.now()}`, source_key: "prizepicks_github_scraper",
+    slate_date: slateDate, projection_id: projectionId, player_id: playerId, player_name: playerName, team, opponent,
+    league: league || "mlb", stat_type: statType, line_score: lineScore, description, start_time: startTime, board_time: boardTime,
+    end_time: endTime, game_id: gameId, event_type: eventType, status: boardStatus, projection_type: projectionType, odds_type: oddsType,
+    source_line_type: sourceLineType, payout_variant: payoutVariant, is_goblin: isGoblin, is_demon: isDemon, is_standard: isStandard,
+    pickable_flag: pickableFlag, raw_projection_json: row, row_payload_json: { projection_id: projectionId, player_id: playerId, player_name: playerName }
+  };
+}
+
+async function runRemineePrizepicksBoardToPostgres(env, input) {
+  const slateDate = String(input.slate_date || new Date().toISOString().slice(0, 10));
+  try {
+    const owner = env.GITHUB_OWNER || "Rodantmat", repo = env.GITHUB_REPO || "Alphadog", branch = env.GITHUB_BRANCH || "main";
+    const path = env.GITHUB_PRIZEPICKS_PATH && env.GITHUB_PRIZEPICKS_PATH !== "SET_THIS_TO_PRIZEPICKS_OUTPUT_PATH" ? env.GITHUB_PRIZEPICKS_PATH : "prizepicks_mlb_current.json";
+    const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
+    const resp = await fetch(url, { headers: { accept: "application/json" } });
+    if (!resp.ok) return { ok: false, mode: "remine_prizepicks_board_to_postgres", error: `github_fetch_http_${resp.status}`, url };
+    const json = await resp.json().catch(() => null);
+    if (!json) return { ok: false, mode: "remine_prizepicks_board_to_postgres", error: "invalid_json_from_github", url };
+
+    const dataRows = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
+    const index = ppBuildIncludedIndex(json);
+    const leagueMap = ppBuildLeagueMap(json);
+    const parsed = [];
+    for (let i = 0; i < dataRows.length; i++) {
+      const r = ppParseProjectionRow(dataRows[i], index, leagueMap, slateDate);
+      if (r) parsed.push(r);
+    }
+    if (!parsed.length) return { ok: false, mode: "remine_prizepicks_board_to_postgres", error: "no_mlb_rows_parsed", total_data_rows: dataRows.length, url };
+
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
+    const dedupMap = new Map();
+    for (const r of parsed) dedupMap.set(r.current_row_id, r);
+    const rows = Array.from(dedupMap.values());
+    const cols = ["current_row_id","batch_id","source_key","slate_date","projection_id","player_id","player_name","team","opponent","league","stat_type","line_score","description","start_time","board_time","end_time","game_id","event_type","status","projection_type","odds_type","source_line_type","payout_variant","is_goblin","is_demon","is_standard","pickable_flag","raw_projection_json","row_payload_json"];
+    const WRITE_CHUNK = 300;
+    for (let i = 0; i < rows.length; i += WRITE_CHUNK) {
+      const chunk = rows.slice(i, i + WRITE_CHUNK);
+      await sql`
+        INSERT INTO market.prizepicks_board_current ${sql(chunk, ...cols)}
+        ON CONFLICT (current_row_id) DO UPDATE SET
+          line_score=excluded.line_score, status=excluded.status, pickable_flag=excluded.pickable_flag,
+          payout_variant=excluded.payout_variant, is_goblin=excluded.is_goblin, is_demon=excluded.is_demon,
+          raw_projection_json=excluded.raw_projection_json, updated_at=now()
+      `;
+    }
+    await sql.end();
+    return { ok: true, mode: "remine_prizepicks_board_to_postgres", total_data_rows: dataRows.length, mlb_rows_parsed: parsed.length, rows_written: rows.length, sample_row: { player_name: rows[0].player_name, stat_type: rows[0].stat_type, line_score: rows[0].line_score, team: rows[0].team } };
+  } catch (err) {
+    return { ok: false, mode: "remine_prizepicks_board_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -8264,6 +8421,7 @@ async function runMode(env,input={}){
   if(mode==="postgres_verify_count") return runPostgresVerifyCount(env,input);
   if(mode==="fix_raw_json_double_encoding") return runFixRawJsonDoubleEncoding(env,input);
   if(mode==="daily_context_full_run") return runDailyContextFullRun(env,input);
+  if(mode==="remine_prizepicks_board_to_postgres") return runRemineePrizepicksBoardToPostgres(env,input);
   if(mode==="diagnose_savant_csv_export") return runDiagnoseSavantCsvExport(env,input);
   if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgresV2(env,input);
   if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgresV2(env,input);
