@@ -2081,6 +2081,24 @@ All four fixes are DB-config-driven and/or shared-function-driven, confirmed via
 trace to extend automatically to both the full historical rebuild and daily incremental delta
 miner, per Rodolfo's explicit scoping instruction throughout this whole exercise.
 
+## CONTINUED FIXING PASS - ONE MORE REAL CASCADING FIX, TWO CORRECTLY-REJECTED FALSE POSITIVES
+Checked hits_runs_rbis against its individual real components now that it's properly populated.
+Found and fixed a real, valid, missed subset gap: hits (18 real players) and, by extension via
+the total_bases alias, total_bases (19 players) exceeded hits_runs_rbis - a genuine violation,
+since any hit alone always contributes to hits_runs_rbis>=1. Added both to subset_of_constraints,
+correctly ordered (hits/total_bases before singles/doubles/etc, which depend on hits' own
+corrected value) to avoid a stale-reference cascade bug within the same reconciliation pass.
+TESTED LIVE, CONFIRMED: 42 rows clamped on this run (18 hits, 19 total_bases, 5 additional
+singles caught after hits itself was corrected). Direct comprehensive re-check confirmed 0
+violations across all four relationships tested (hits<=hrrbi, total_bases<=hrrbi, singles<=hits,
+hits==total_bases still holding after the new clamp).
+Also correctly caught and rejected two invalid comparisons rather than force a fix: RBI is NOT a
+true logical subset of fantasy_score at the real 4.5 line, since fantasy_score is a weighted sum
+where an RBI alone only contributes 2 of the needed 5 points - no guaranteed subset relationship
+exists there to enforce. Same reasoning for pitcher_outs vs pitcher_strikeouts - recording outs
+doesn't logically guarantee any specific strikeout count. Left both alone rather than apply an
+incorrect clamp that would have introduced new, unjustified errors.
+
 ## BOARD_FULL_RUN PARITY-CHECK TIMING RACE - ROOT-CAUSED AND FIXED
 Rodolfo shared real, live orchestrator logs showing score-prep genuinely COMPLETED successfully
 this time (26 ticks, ~13 minutes, 8,856 real rows) - confirming the earlier score-prep fix works
