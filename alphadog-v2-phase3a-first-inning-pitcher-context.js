@@ -8157,6 +8157,103 @@ async function runReminePitcherArsenalToPostgresV2(env, input) {
   }
 }
 
+async function runDailyContextFullRun(env, input) {
+  const startDate = String(input.start_date || new Date().toISOString().slice(0, 10));
+  const endDate = String(input.end_date || new Date(Date.now() + 86400000).toISOString().slice(0, 10));
+  try {
+    const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "");
+    const headers = { accept: "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDogV2Postgres/0.1") };
+    const scheduleUrl = `${base}/schedule?sportId=1&gameTypes=R&startDate=${startDate}&endDate=${endDate}&hydrate=probablePitcher(note,person),team,linescore,game(content(summary))`;
+    const resp = await fetch(scheduleUrl, { headers });
+    const json = await resp.json().catch(() => null);
+    const dates = (json && Array.isArray(json.dates)) ? json.dates : [];
+
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
+    const probablePitcherRows = [], lineupRows = [], umpireRows = [];
+    let gamesSeen = 0, boxscoresFetched = 0;
+
+    for (const d of dates) {
+      for (const g of (d.games || [])) {
+        gamesSeen++;
+        const gamePk = g.gamePk;
+        const home = g.teams && g.teams.home, away = g.teams && g.teams.away;
+        const homePP = home && home.probablePitcher;
+        const awayPP = away && away.probablePitcher;
+        probablePitcherRows.push({
+          entry_id: `pp_${gamePk}`, game_key: String(gamePk), game_pk: Number(gamePk),
+          home_pitcher_id: homePP ? Number(homePP.id) : null, away_pitcher_id: awayPP ? Number(awayPP.id) : null,
+          confidence: (homePP && awayPP) ? "CONFIRMED_PROBABLE" : "PARTIAL_OR_TBD"
+        });
+
+        // For games that have started or finished, pull the confirmed lineup + umpire from the live boxscore.
+        const status = (g.status && (g.status.abstractGameState || "")) || "";
+        if (/live|final/i.test(status)) {
+          try {
+            const boxResp = await fetch(`${base}/game/${gamePk}/boxscore`, { headers });
+            const boxJson = await boxResp.json().catch(() => null);
+            boxscoresFetched++;
+            if (boxJson && boxJson.teams) {
+              for (const side of ["home", "away"]) {
+                const teamData = boxJson.teams[side];
+                if (!teamData || !teamData.players) continue;
+                const teamName = teamData.team && teamData.team.name;
+                for (const key of Object.keys(teamData.players)) {
+                  const p = teamData.players[key];
+                  const pid = p.person && p.person.id;
+                  const battingOrder = p.battingOrder;
+                  if (!pid || battingOrder == null) continue;
+                  const slot = Math.floor(Number(battingOrder) / 100);
+                  lineupRows.push({
+                    lineup_row_id: `${gamePk}_${pid}`, game_pk: Number(gamePk), player_id: Number(pid),
+                    team_name: teamName || null, lineup_slot: slot > 0 ? slot : null, batting_order_code: Number(battingOrder),
+                    bat_side: (p.person && p.person.batSide && p.person.batSide.code) || null,
+                    active_position: (p.position && p.position.abbreviation) || null,
+                    lineup_status: /final/i.test(status) ? "CONFIRMED_FINAL" : "CONFIRMED_LIVE",
+                    confidence_label: "HIGH_OFFICIAL_BOXSCORE"
+                  });
+                }
+              }
+            }
+            const liveUrl = `https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`;
+            const liveResp = await fetch(liveUrl, { headers });
+            const liveJson = await liveResp.json().catch(() => null);
+            const officials = liveJson && liveJson.liveData && liveJson.liveData.boxscore && liveJson.liveData.boxscore.officials;
+            const hp = Array.isArray(officials) ? officials.find(o => o.officialType === "Home Plate") : null;
+            if (hp && hp.official) {
+              umpireRows.push({
+                umpire_ctx_id: `ump_${gamePk}`, game_pk: Number(gamePk), home_plate_umpire_name: hp.official.fullName || null,
+                strike_zone_context_status: "ASSIGNED", run_environment_context_status: "ASSIGNED",
+                walk_context_status: "ASSIGNED", strikeout_context_status: "ASSIGNED", umpire_context_confidence: "HIGH_OFFICIAL_ASSIGNMENT",
+                home_team_id: home && home.team ? Number(home.team.id) : null, away_team_id: away && away.team ? Number(away.team.id) : null,
+                home_team_name: home && home.team ? home.team.name : null, away_team_name: away && away.team ? away.team.name : null,
+                game_time_utc: g.gameDate || null
+              });
+            }
+          } catch (e) { /* boxscore/live feed unavailable for this game, skip */ }
+        }
+      }
+    }
+
+    if (probablePitcherRows.length) await sql`
+      INSERT INTO daily.probable_pitchers ${sql(probablePitcherRows, "entry_id","game_key","game_pk","home_pitcher_id","away_pitcher_id","confidence")}
+      ON CONFLICT (entry_id) DO UPDATE SET home_pitcher_id=excluded.home_pitcher_id, away_pitcher_id=excluded.away_pitcher_id, confidence=excluded.confidence, updated_at=now()`;
+    if (lineupRows.length) await sql`
+      INSERT INTO daily.lineups_current ${sql(lineupRows, "lineup_row_id","game_pk","player_id","team_name","lineup_slot","batting_order_code","bat_side","active_position","lineup_status","confidence_label")}
+      ON CONFLICT (lineup_row_id) DO UPDATE SET lineup_slot=excluded.lineup_slot, batting_order_code=excluded.batting_order_code, lineup_status=excluded.lineup_status, updated_at=now()`;
+    if (umpireRows.length) await sql`
+      INSERT INTO daily.umpire_context_current ${sql(umpireRows, "umpire_ctx_id","game_pk","home_plate_umpire_name","strike_zone_context_status","run_environment_context_status","walk_context_status","strikeout_context_status","umpire_context_confidence","home_team_id","away_team_id","home_team_name","away_team_name","game_time_utc")}
+      ON CONFLICT (umpire_ctx_id) DO UPDATE SET home_plate_umpire_name=excluded.home_plate_umpire_name, updated_at=now()`;
+    await sql.end();
+    return {
+      ok: true, mode: "daily_context_full_run", date_range: [startDate, endDate],
+      games_seen: gamesSeen, boxscores_fetched: boxscoresFetched,
+      probable_pitchers_written: probablePitcherRows.length, lineup_rows_written: lineupRows.length, umpire_rows_written: umpireRows.length
+    };
+  } catch (err) {
+    return { ok: false, mode: "daily_context_full_run", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -8166,6 +8263,7 @@ async function runMode(env,input={}){
   if(mode==="postgres_migrate_table") return runPostgresMigrateTable(env,input);
   if(mode==="postgres_verify_count") return runPostgresVerifyCount(env,input);
   if(mode==="fix_raw_json_double_encoding") return runFixRawJsonDoubleEncoding(env,input);
+  if(mode==="daily_context_full_run") return runDailyContextFullRun(env,input);
   if(mode==="diagnose_savant_csv_export") return runDiagnoseSavantCsvExport(env,input);
   if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgresV2(env,input);
   if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgresV2(env,input);
