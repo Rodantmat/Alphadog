@@ -1,3 +1,4 @@
+import postgres from "postgres";
 const WORKER_NAME = "alphadog-v2-phase3a-first-inning-pitcher-context";
 const LOGICAL_WORKER_NAME = "alphadog-v2-expansion-baseline";
 const VERSION = "alphadog-v2-phase3a-first-inning-pitcher-context-v0.8.5-self-healing-coverage-reconcile";
