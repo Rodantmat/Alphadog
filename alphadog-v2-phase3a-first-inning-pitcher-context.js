@@ -8056,6 +8056,105 @@ async function runDiagnoseSavantCsvExport(env, input) {
   }
 }
 
+function parseSavantCsv(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length);
+  if (lines.length < 2) return [];
+  const parseLine = (line) => {
+    const cells = [];
+    let cur = "", inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQuotes = !inQuotes; continue; }
+      if (c === "," && !inQuotes) { cells.push(cur); cur = ""; continue; }
+      cur += c;
+    }
+    cells.push(cur);
+    return cells;
+  };
+  const headers = parseLine(lines[0]);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseLine(lines[i]);
+    const obj = {};
+    for (let j = 0; j < headers.length; j++) obj[headers[j]] = cells[j] !== undefined ? cells[j] : null;
+    rows.push(obj);
+  }
+  return rows;
+}
+async function fetchSavantCsv(path, params) {
+  const u = new URL(`https://baseballsavant.mlb.com${path}`);
+  u.searchParams.set("csv", "true");
+  for (const [k, v] of Object.entries(params)) u.searchParams.set(k, String(v));
+  const resp = await fetch(u.toString(), {
+    method: "GET",
+    headers: { "accept": "text/csv,application/csv,text/plain,*/*", "user-agent": "AlphaDogV2SavantMining/0.1 (+controlled-reference-refresh)" }
+  });
+  const text = await resp.text();
+  return { url: u.toString(), http_status: resp.status, rows: resp.ok ? parseSavantCsv(text) : [], raw_sample: text.slice(0, 500) };
+}
+
+async function runRemineArmAngleToPostgresV2(env, input) {
+  const year = Number(input.season_year || 2026);
+  try {
+    const fetched = await fetchSavantCsv("/leaderboard/pitcher-arm-angles", { year });
+    if (!fetched.rows.length) return { ok: false, mode: "remine_arm_angle_to_postgres", error: "no_csv_rows", raw_sample: fetched.raw_sample };
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const num = (v) => v != null && v !== "" ? Number(v) : null;
+    const rows = fetched.rows.filter(r => r.pitcher).map(r => ({
+      arm_angle_id: `savant_arm_${year}_${r.pitcher}`, mlb_player_id: Number(r.pitcher), player_name: r.pitcher_name || null, season_year: year,
+      arm_angle_degrees: num(r.ball_angle), pitches_tracked: r.n_pitches != null ? Number(r.n_pitches) : null,
+      active: 1, source_key: "baseball_savant_arm_angle_csv", raw_json: r
+    })).filter(r => r.mlb_player_id);
+    if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_arm_angle_to_postgres", error: "no_valid_rows" }; }
+    const cols = ["arm_angle_id","mlb_player_id","player_name","season_year","arm_angle_degrees","pitches_tracked","active","source_key","raw_json"];
+    await sql`
+      INSERT INTO ref.arm_angle ${sql(rows, ...cols)}
+      ON CONFLICT (arm_angle_id) DO UPDATE SET
+        player_name=excluded.player_name, arm_angle_degrees=excluded.arm_angle_degrees,
+        pitches_tracked=excluded.pitches_tracked, active=1, raw_json=excluded.raw_json, updated_at=now()
+    `;
+    await sql.end();
+    return { ok: true, mode: "remine_arm_angle_to_postgres", pitchers_written: rows.length, sample_raw_row: fetched.rows[0] };
+  } catch (err) {
+    return { ok: false, mode: "remine_arm_angle_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
+async function runReminePitcherArsenalToPostgresV2(env, input) {
+  const year = Number(input.season_year || 2026);
+  try {
+    const fetched = await fetchSavantCsv("/leaderboard/pitch-arsenal-stats", { year, type: "pitcher", min: "10" });
+    if (!fetched.rows.length) return { ok: false, mode: "remine_pitcher_arsenal_to_postgres", error: "no_csv_rows", raw_sample: fetched.raw_sample };
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const num = (v) => v != null && v !== "" ? Number(v) : null;
+    const rows = fetched.rows.filter(r => r.player_id).map((r, i) => ({
+      arsenal_id: `savant_arsenal_${year}_${r.player_id}_${(r.pitch_type || "p") + "_" + i}`,
+      mlb_player_id: Number(r.player_id), player_name: r["last_name, first_name"] || null, season_year: year,
+      pitch_name: r.pitch_name || r.pitch_type || null,
+      pitch_usage: num(r.pitch_usage), whiff_percent: num(r.whiff_percent), k_percent: num(r.k_percent),
+      hard_hit_percent: num(r.hard_hit_percent), est_woba: num(r.est_woba), run_value_per_100: num(r.run_value_per_100),
+      active: 1, source_key: "baseball_savant_pitch_arsenal_csv", raw_json: r
+    })).filter(r => r.mlb_player_id);
+    if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_pitcher_arsenal_to_postgres", error: "no_valid_rows" }; }
+    const cols = ["arsenal_id","mlb_player_id","player_name","season_year","pitch_name","pitch_usage","whiff_percent","k_percent","hard_hit_percent","est_woba","run_value_per_100","active","source_key","raw_json"];
+    const WRITE_CHUNK = 300;
+    for (let i = 0; i < rows.length; i += WRITE_CHUNK) {
+      const chunk = rows.slice(i, i + WRITE_CHUNK);
+      await sql`
+        INSERT INTO ref.pitcher_arsenal ${sql(chunk, ...cols)}
+        ON CONFLICT (arsenal_id) DO UPDATE SET
+          player_name=excluded.player_name, pitch_usage=excluded.pitch_usage, whiff_percent=excluded.whiff_percent,
+          k_percent=excluded.k_percent, hard_hit_percent=excluded.hard_hit_percent, est_woba=excluded.est_woba,
+          run_value_per_100=excluded.run_value_per_100, active=1, raw_json=excluded.raw_json, updated_at=now()
+      `;
+    }
+    await sql.end();
+    return { ok: true, mode: "remine_pitcher_arsenal_to_postgres", rows_written: rows.length, sample_raw_row: fetched.rows[0] };
+  } catch (err) {
+    return { ok: false, mode: "remine_pitcher_arsenal_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -8066,6 +8165,8 @@ async function runMode(env,input={}){
   if(mode==="postgres_verify_count") return runPostgresVerifyCount(env,input);
   if(mode==="fix_raw_json_double_encoding") return runFixRawJsonDoubleEncoding(env,input);
   if(mode==="diagnose_savant_csv_export") return runDiagnoseSavantCsvExport(env,input);
+  if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgresV2(env,input);
+  if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgresV2(env,input);
   if(mode==="weekly_static_differential_full_run") return runWeeklyStaticDifferentialFullRun(env,input);
   if(mode==="daily_morning_delta_full_run") return runDailyMorningDeltaFullRun(env,input);
   if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgres(env,input);
