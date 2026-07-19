@@ -1805,7 +1805,8 @@ async function apiPlayerProfile(env, url) {
       opposing_starter: opposingStarter, opposing_team: opposingTeamRow,
       opposing_starter_arsenal: opposingStarterArsenal
     } : null,
-    note: "Full player profile: identity, current board lines, last-20 game log with home/away split, L5/L10/L20/season snapshots, platoon splits, Statcast-tier advanced metrics (sprint speed, batted-ball profile, defensive quality, pitch arsenal, arm angle, running-game control, catcher framing/pop-time), availability status, and next-game micro-factor context including opposing starter arsenal."
+    note: "Full player profile: identity, current board lines, last-20 game log with home/away split, L5/L10/L20/season snapshots, platoon splits, Statcast-tier advanced metrics (sprint speed, batted-ball profile, defensive quality, pitch arsenal, arm angle, running-game control, catcher framing/pop-time), availability status, and next-game micro-factor context including opposing starter arsenal.",
+    diagnostic_test_string: "Sam sells seven silver snakes since Sunday season starts soon"
   });
 }
 
