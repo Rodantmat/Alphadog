@@ -7181,10 +7181,13 @@ async function runRemineHitterSplitsToPostgres(env, input) {
     }
 
     if (allRows.length) {
+      const dedupMap = new Map();
+      for (const r of allRows) dedupMap.set(r.split_id, r);
+      const dedupedRows = Array.from(dedupMap.values());
       const cols = ["split_id","player_id","season","split_key","pa","ab","hits","doubles","triples","home_runs","rbi","walks","strikeouts","avg","obp","slg","ops","babip","source_key","raw_json"];
       const WRITE_CHUNK = 300;
-      for (let i = 0; i < allRows.length; i += WRITE_CHUNK) {
-        const chunk = allRows.slice(i, i + WRITE_CHUNK);
+      for (let i = 0; i < dedupedRows.length; i += WRITE_CHUNK) {
+        const chunk = dedupedRows.slice(i, i + WRITE_CHUNK);
         await sql`
           INSERT INTO stats_hitter.splits ${sql(chunk, ...cols)}
           ON CONFLICT (split_id) DO UPDATE SET
