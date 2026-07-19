@@ -7211,6 +7211,80 @@ async function runRemineHitterSplitsToPostgres(env, input) {
   }
 }
 
+async function runReminePitcherSplitsToPostgres(env, input) {
+  const season = Number(input.season || 2026);
+  const PLAYERS_PER_INVOCATION = 60;
+  const TIME_BUDGET_MS = 22000;
+  const startedAt = Date.now();
+  const startOffset = Number(input.offset || 0);
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const playerRows = await sql`SELECT mlb_player_id FROM ref.players WHERE active=1 ORDER BY mlb_player_id LIMIT ${PLAYERS_PER_INVOCATION} OFFSET ${startOffset}`;
+    if (!playerRows.length) { await sql.end(); return { ok: true, mode: "remine_pitcher_splits_to_postgres", complete: true, note: "no more players at this offset" }; }
+
+    const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "");
+    const headers = { accept: "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDogV2Postgres/0.1") };
+    const allRows = [];
+    let playersActuallyProcessed = 0;
+    for (const p of playerRows) {
+      if (Date.now() - startedAt > TIME_BUDGET_MS) break;
+      const url = `${base}/people/${p.mlb_player_id}/stats?stats=statSplits&group=pitching&season=${season}&sitCodes=vl%2Cvr`;
+      const resp = await fetch(url, { headers });
+      const json = await resp.json().catch(() => null);
+      const splits = (json && Array.isArray(json.stats) && json.stats[0] && Array.isArray(json.stats[0].splits)) ? json.stats[0].splits : [];
+      for (const split of splits) {
+        const stat = split.stat || {};
+        const splitKey = (split.split && (split.split.code || split.split.description)) || null;
+        if (!splitKey) continue;
+        const ipRaw = String(stat.inningsPitched || "0");
+        const [ipWhole, ipThirds] = ipRaw.split(".");
+        const ipDecimal = Number(ipWhole || 0) + (Number(ipThirds || 0) / 3);
+        allRows.push({
+          split_id: `${p.mlb_player_id}_${season}_pitching_${splitKey}`,
+          player_id: Number(p.mlb_player_id), season, split_key: String(splitKey),
+          innings_pitched: ipDecimal,
+          batters_faced: stat.battersFaced != null ? Number(stat.battersFaced) : null,
+          hits_allowed: stat.hits != null ? Number(stat.hits) : null,
+          walks_allowed: stat.baseOnBalls != null ? Number(stat.baseOnBalls) : null,
+          strikeouts: stat.strikeOuts != null ? Number(stat.strikeOuts) : null,
+          avg_against: stat.avg || null, obp_against: stat.obp || null, slg_against: stat.slg || null, ops_against: stat.ops || null,
+          source_key: "mlb_statsapi_statsplits", raw_json: JSON.stringify(split)
+        });
+      }
+      playersActuallyProcessed++;
+    }
+
+    if (allRows.length) {
+      const dedupMap = new Map();
+      for (const r of allRows) dedupMap.set(r.split_id, r);
+      const dedupedRows = Array.from(dedupMap.values());
+      const cols = ["split_id","player_id","season","split_key","innings_pitched","batters_faced","hits_allowed","walks_allowed","strikeouts","avg_against","obp_against","slg_against","ops_against","source_key","raw_json"];
+      const WRITE_CHUNK = 300;
+      for (let i = 0; i < dedupedRows.length; i += WRITE_CHUNK) {
+        const chunk = dedupedRows.slice(i, i + WRITE_CHUNK);
+        await sql`
+          INSERT INTO stats_pitcher.splits ${sql(chunk, ...cols)}
+          ON CONFLICT (split_id) DO UPDATE SET
+            innings_pitched=excluded.innings_pitched, batters_faced=excluded.batters_faced, hits_allowed=excluded.hits_allowed,
+            walks_allowed=excluded.walks_allowed, strikeouts=excluded.strikeouts,
+            avg_against=excluded.avg_against, obp_against=excluded.obp_against, slg_against=excluded.slg_against, ops_against=excluded.ops_against,
+            raw_json=excluded.raw_json, updated_at=now()
+        `;
+      }
+    }
+    await sql.end();
+    const nextOffset = startOffset + playersActuallyProcessed;
+    return {
+      ok: true, mode: "remine_pitcher_splits_to_postgres", season,
+      players_processed_this_invocation: playersActuallyProcessed, next_offset: nextOffset,
+      splits_written_this_invocation: allRows.length,
+      complete: false, note: `call again with offset=${nextOffset} to continue`
+    };
+  } catch (err) {
+    return { ok: false, mode: "remine_pitcher_splits_to_postgres", offset: startOffset, error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -7225,6 +7299,7 @@ async function runMode(env,input={}){
   if(mode==="remine_hitter_game_logs_to_postgres") return runRemineHitterGameLogsToPostgres(env,input);
   if(mode==="remine_pitcher_game_logs_to_postgres") return runReminePitcherGameLogsToPostgres(env,input);
   if(mode==="remine_hitter_splits_to_postgres") return runRemineHitterSplitsToPostgres(env,input);
+  if(mode==="remine_pitcher_splits_to_postgres") return runReminePitcherSplitsToPostgres(env,input);
   if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
