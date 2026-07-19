@@ -1163,9 +1163,20 @@ async function apiDossier(env, url) {
       prizepicks_lines: [],
       sleeper_lines: [],
       prop_market_current_lines: [],
-      prop_market_evidence: []
+      prop_market_evidence: [],
+      hp_lines: [selectedRaw, ...legRows],
+      recent_form: recentForm,
+      recent_games: recentGames,
+      hitter_splits: hitterSplits,
+      starters: starters,
+      pitcher_form: pitcherForm,
+      pitcher_splits: pitcherSplits,
+      pitcher_profiles: pitcherProfiles,
+      bullpen: bullpen,
+      schedule_spot: scheduleSpot,
+      market_odds: marketOdds
     },
-    dossier_sections: ["leg_identity", "v3_shadow_final_board", "source_lines", "other_player_legs", "weather", "market", "umpire", "player_profile"],
+    dossier_sections: ["leg_identity", "v3_shadow_final_board", "source_lines", "other_player_legs", "weather", "market", "umpire", "player_profile", "recent_form", "recent_games", "splits", "starters", "pitcher_form", "bullpen", "schedule_spot"],
     writes_performed: 0,
     external_calls_performed: 0,
     timestamp_utc: nowUtc()
