@@ -840,6 +840,7 @@ function buildCurrentSql(url) {
        OR (quota_line_type='demon' AND quota_type_rank <= 10)
        OR (LOWER(COALESCE(source_key,''))='prizepicks' AND quota_line_type='regular' AND quota_source_type_rank <= 20)
        OR (LOWER(COALESCE(source_key,''))='sleeper' AND quota_line_type='regular' AND quota_source_type_rank <= 20)
+       OR (LOWER(COALESCE(source_key,'')) IN (${UNDERDOG_SOURCE_KEYS}) AND quota_line_type='regular' AND quota_source_type_rank <= 20)
        OR (LOWER(COALESCE(selected_side,''))='less' AND quota_side_rank <= 15)
        OR (LOWER(COALESCE(selected_side,''))='more' AND quota_side_rank <= 20)
     ORDER BY COALESCE(rank_order,999999) ASC
