@@ -6709,6 +6709,10 @@ const PG_TABLE_PLAN = {
   config_prop_taxonomy: {
     d1_binding: "CONFIG_DB", d1_table: "config_prop_taxonomy", pg_table: "config.prop_taxonomy",
     order_by: "prop_key", columns: ["prop_key","display_name","player_side","stat_family","primary_role","supported_market_sources","default_line_policy","over_under_policy","california_pickable","scoring_enabled","notes","updated_at"]
+  },
+  ref_umpire_tendency: {
+    d1_binding: "REF_DB", d1_table: "ref_umpire_tendency", pg_table: "ref.umpire_tendency",
+    order_by: "umpire_id", columns: ["umpire_id","umpire_name","games_umpired","avg_strikeouts_per_game","avg_walks_per_game","avg_runs_per_game","strikeouts_delta_vs_league","walks_delta_vs_league","runs_delta_vs_league","source_key","updated_at"]
   }
 };
 
