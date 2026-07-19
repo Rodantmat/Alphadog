@@ -591,6 +591,8 @@ function buildLegContextReal(matrixRow, ctxMaps, marketThresholds) {
     opposing_catcher_pop_time_2b_sba: catcher.pop_time_2b_sba ?? null,
     pitcher_lead_distance_gained: oppStarter.starter_player_id != null ? (ctxMaps.pitcherLeadDistanceByPitcherId.get(String(oppStarter.starter_player_id)) ?? null) : null,
     pitcher_arm_angle_degrees: oppStarter.starter_player_id != null ? (ctxMaps.armAngleByPitcher.get(Number(oppStarter.starter_player_id))?.value ?? null) : null,
+    eastward_travel_flag: scheduleSpot.eastward_travel_flag ?? null,
+    westward_travel_flag: scheduleSpot.westward_travel_flag ?? null,
   };
 }
 
