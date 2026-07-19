@@ -6838,6 +6838,104 @@ async function runRemineRefTeamsToPostgres(env, input) {
   }
 }
 
+async function runRemineRefPlayersToPostgres(env, input) {
+  try {
+    const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/+$/, "");
+    const headers = { accept: "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDogV2Postgres/0.1") };
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+
+    const teamRows = await sql`SELECT mlb_team_id, team_id FROM ref.teams WHERE active=1`;
+    if (!teamRows.length) { await sql.end(); return { ok: false, mode: "remine_ref_players_to_postgres", error: "no_teams_in_postgres_run_remine_ref_teams_first" }; }
+
+    const allPlayers = [];
+    const rosterFetches = [];
+    for (const t of teamRows) {
+      const url = `${base}/teams/${t.mlb_team_id}/roster/40Man`;
+      const resp = await fetch(url, { method: "GET", headers });
+      const bodyText = await resp.text();
+      let json = null;
+      try { json = JSON.parse(bodyText); } catch (_) { json = null; }
+      const roster = (json && Array.isArray(json.roster)) ? json.roster : [];
+      rosterFetches.push({ team_id: t.team_id, http_status: resp.status, roster_count: roster.length });
+      for (const item of roster) {
+        if (!item.person || !item.person.id) continue;
+        allPlayers.push({
+          mlb_player_id: Number(item.person.id),
+          full_name: String(item.person.fullName || "").trim(),
+          current_team_id: t.team_id,
+          current_mlb_team_id: Number(t.mlb_team_id),
+          primary_position: (item.position && (item.position.abbreviation || item.position.code)) || null,
+          raw_item: item
+        });
+      }
+    }
+    if (!allPlayers.length) { await sql.end(); return { ok: false, mode: "remine_ref_players_to_postgres", error: "no_players_found", roster_fetches: rosterFetches }; }
+
+    const ids = allPlayers.map(p => String(p.mlb_player_id));
+    const hydration = new Map();
+    const HYDRATION_IDS_PER_CALL = 100;
+    for (let i = 0; i < ids.length; i += HYDRATION_IDS_PER_CALL) {
+      const chunk = ids.slice(i, i + HYDRATION_IDS_PER_CALL);
+      const url = `${base}/people?personIds=${encodeURIComponent(chunk.join(","))}`;
+      const resp = await fetch(url, { method: "GET", headers });
+      const bodyText = await resp.text();
+      let json = null;
+      try { json = JSON.parse(bodyText); } catch (_) { json = null; }
+      if (resp.ok && json && Array.isArray(json.people)) {
+        for (const person of json.people) {
+          hydration.set(String(person.id), {
+            first_name: person.firstName || null,
+            last_name: person.lastName || null,
+            bat_side: (person.batSide && (person.batSide.code || person.batSide.description)) || null,
+            throw_side: (person.pitchHand && (person.pitchHand.code || person.pitchHand.description)) || null,
+            primary_role: (person.primaryPosition && person.primaryPosition.type) || null
+          });
+        }
+      }
+    }
+
+    const rows = allPlayers.map(p => {
+      const h = hydration.get(String(p.mlb_player_id)) || {};
+      return {
+        player_id: p.mlb_player_id,
+        mlb_player_id: p.mlb_player_id,
+        full_name: p.full_name,
+        first_name: h.first_name || null,
+        last_name: h.last_name || null,
+        current_team_id: p.current_team_id,
+        current_mlb_team_id: p.current_mlb_team_id,
+        primary_position: p.primary_position,
+        primary_role: h.primary_role || null,
+        bat_side: h.bat_side || null,
+        throw_side: h.throw_side || null,
+        active: 1,
+        source_key: "mlb_statsapi_40man_roster",
+        raw_json: JSON.stringify(p.raw_item)
+      };
+    });
+    const cols = ["player_id","mlb_player_id","full_name","first_name","last_name","current_team_id","current_mlb_team_id","primary_position","primary_role","bat_side","throw_side","active","source_key","raw_json"];
+    const CHUNK = 200;
+    let written = 0;
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      const chunk = rows.slice(i, i + CHUNK);
+      await sql`
+        INSERT INTO ref.players ${sql(chunk, ...cols)}
+        ON CONFLICT (player_id) DO UPDATE SET
+          full_name=excluded.full_name, first_name=excluded.first_name, last_name=excluded.last_name,
+          current_team_id=excluded.current_team_id, current_mlb_team_id=excluded.current_mlb_team_id,
+          primary_position=excluded.primary_position, primary_role=excluded.primary_role,
+          bat_side=excluded.bat_side, throw_side=excluded.throw_side, active=1,
+          source_key=excluded.source_key, raw_json=excluded.raw_json, updated_at=now()
+      `;
+      written += chunk.length;
+    }
+    await sql.end();
+    return { ok: true, mode: "remine_ref_players_to_postgres", teams_processed: teamRows.length, players_written: written, roster_fetches_sample: rosterFetches.slice(0, 3) };
+  } catch (err) {
+    return { ok: false, mode: "remine_ref_players_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -6847,6 +6945,7 @@ async function runMode(env,input={}){
   if(mode==="postgres_migrate_table") return runPostgresMigrateTable(env,input);
   if(mode==="postgres_verify_count") return runPostgresVerifyCount(env,input);
   if(mode==="remine_ref_teams_to_postgres") return runRemineRefTeamsToPostgres(env,input);
+  if(mode==="remine_ref_players_to_postgres") return runRemineRefPlayersToPostgres(env,input);
   if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
