@@ -7624,10 +7624,10 @@ async function runRemineCatcherFramingToPostgres(env, input) {
     if (!data.rows.length) return { ok: false, mode: "remine_catcher_framing_to_postgres", error: "no_data_extracted", html_sample: data.html_sample };
     const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
     const num = (v) => v != null && v !== "" ? Number(v) : null;
-    const rows = data.rows.filter(r => r.player_id || r.entity_id).map(r => ({
-      framing_id: `savant_framing_${year}_${r.player_id || r.entity_id}`,
-      player_id: Number(r.player_id || r.entity_id), season: year,
-      framing_runs_total: num(r.runs_extra_strikes ?? r.strike_rate_runs), framing_pct_total: num(r.strike_rate),
+    const rows = data.rows.filter(r => r.fielder_2 || r.id).map(r => ({
+      framing_id: `savant_framing_${year}_${r.fielder_2 || r.id}`,
+      player_id: Number(r.fielder_2 || r.id), season: year,
+      framing_runs_total: num(r.rv_tot), framing_pct_total: num(r.pct_tot),
       pop_time_2b_sba: null, pop_time_3b_sba: null,
       source_key: "baseball_savant_catcher_framing_html_regex", raw_json: r
     })).filter(r => r.player_id);
