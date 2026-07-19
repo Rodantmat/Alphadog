@@ -7204,6 +7204,61 @@ async function runBaselineV6Tick(env, input = {}) {
   const propKey = String(input.canonical_prop_key || "");
   const side = String(input.selected_side || "");
   const lineValue = Number(input.line_value);
+
+  // REAL, SCOPED FIX (confirmed via direct ground-truth data + league-wide validation): some
+  // (prop, line, side) combos are logically identical events to another, simpler combo (e.g.
+  // total_bases>=1 is the exact same event as hits>=1 - any hit produces >=1 total base, and
+  // total bases can only increase via a hit). Rather than let two independent models of the
+  // same real event diverge, directly copy the declared alias target's already-computed rows.
+  // Shared by both the full-rebuild and daily-delta paths (both call this same function), so
+  // this fix covers both automatically with no separate delta-path change needed.
+  const aliasMap = await getCalibrationValue(env, "global", "shared_threshold_aliases", {});
+  const aliasKey = `${propKey}|${lineValue}|${side}`;
+  if (aliasMap[aliasKey]) {
+    const [targetProp, targetLineRaw, targetSide] = String(aliasMap[aliasKey]).split("|");
+    const targetLine = Number(targetLineRaw);
+    const cursor = Math.max(0, Number(input.cursor_offset || 0));
+    const chunkSize = Array.isArray(input.player_ids_override) ? input.player_ids_override.length : 300;
+    const targetRows = Array.isArray(input.player_ids_override)
+      ? await (async () => {
+          const out = [];
+          for (let i = 0; i < input.player_ids_override.length; i += 90) {
+            const idSlice = input.player_ids_override.slice(i, i + 90);
+            const placeholders = idSlice.map(() => "?").join(",");
+            out.push(...await all(env.ARCHIVE_DB,
+              `SELECT * FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? AND player_id IN (${placeholders})`,
+              targetProp, targetLine, targetSide, ...idSlice));
+          }
+          return out;
+        })()
+      : await all(env.ARCHIVE_DB,
+          `SELECT * FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? ORDER BY player_id LIMIT ? OFFSET ?`,
+          targetProp, targetLine, targetSide, chunkSize, cursor);
+    const stmts = targetRows.map(t => {
+      const rowId = `blv6|${t.player_type}|${t.player_id}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+      return env.ARCHIVE_DB.prepare(
+        `INSERT INTO baseline_v6_current (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,tier_key,hit_probability_0_100,confidence_0_100,non_push_sample,prior_strength,recency_blended_rate_0_100,formula_version,last_processed_official_date,updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+         ON CONFLICT(player_type,player_id,canonical_prop_key,line_value,selected_side) DO UPDATE SET
+           batch_id=excluded.batch_id, tier_key=excluded.tier_key, hit_probability_0_100=excluded.hit_probability_0_100,
+           confidence_0_100=excluded.confidence_0_100, non_push_sample=excluded.non_push_sample, prior_strength=excluded.prior_strength,
+           recency_blended_rate_0_100=excluded.recency_blended_rate_0_100, formula_version=excluded.formula_version,
+           last_processed_official_date=excluded.last_processed_official_date, updated_at=CURRENT_TIMESTAMP`
+      ).bind(rowId, batchId, t.player_type, t.player_id, t.player_name, propKey, lineValue, side,
+        t.tier_key, t.hit_probability_0_100, t.confidence_0_100, t.non_push_sample, t.prior_strength,
+        t.recency_blended_rate_0_100, `${t.formula_version}+alias`, t.last_processed_official_date);
+    });
+    if (stmts.length) await writeBatch(env.ARCHIVE_DB, "baseline_v6_current", stmts, 30);
+    const nextCursor = cursor + chunkSize;
+    const totalForCombo = await first(env.ARCHIVE_DB, `SELECT COUNT(*) n FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?`, targetProp, targetLine, targetSide);
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v6", aliased_from: aliasMap[aliasKey],
+      canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+      rows_read: targetRows.length, rows_written: stmts.length, cursor_offset: nextCursor,
+      total_for_combo: Number(totalForCombo.n), done: Array.isArray(input.player_ids_override) ? true : nextCursor >= Number(totalForCombo.n),
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
   const officialDate = String(input.official_date || "");
   const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 300 });
 
