@@ -7973,6 +7973,66 @@ async function runRemineParkFactorsToPostgres(env, input) {
   }
 }
 
+async function runWeeklyStaticDifferentialFullRun(env, input) {
+  const TIME_BUDGET_MS = 240000; // Workers paid-plan wall-clock is effectively unbounded; this is a generous self-imposed ceiling with real margin
+  const startedAt = Date.now();
+  const steps = [
+    { key: "teams", fn: runRemineRefTeamsToPostgres },
+    { key: "players", fn: runRemineRefPlayersToPostgres },
+    { key: "stadiums", fn: runRemineRefStadiumsToPostgres },
+    { key: "park_factors", fn: runRemineParkFactorsToPostgres },
+    { key: "sprint_speed", fn: runRemineSprintSpeedToPostgres },
+    { key: "quality_of_contact", fn: runRemineQualityOfContactToPostgres },
+    { key: "batted_ball_profile", fn: runRemineBattedBallProfileToPostgres },
+    { key: "defensive_quality", fn: runRemineDefensiveQualityToPostgres },
+    { key: "catcher_framing", fn: runRemineCatcherFramingToPostgres },
+    { key: "pitcher_running_game", fn: runReminePitcherRunningGameToPostgres }
+  ];
+  const results = [];
+  const startAt = Number(input.resume_from_step || 0);
+  for (let i = startAt; i < steps.length; i++) {
+    if (Date.now() - startedAt > TIME_BUDGET_MS) {
+      return { ok: true, mode: "weekly_static_differential_full_run", partial: true, completed_steps: results, next_resume_from_step: i, note: `time budget reached, call again with resume_from_step=${i}` };
+    }
+    const step = steps[i];
+    try {
+      const res = await step.fn(env, input);
+      results.push({ step: step.key, ok: !!res.ok, summary: res });
+    } catch (err) {
+      results.push({ step: step.key, ok: false, error: String(err && err.message ? err.message : err) });
+    }
+  }
+  return { ok: true, mode: "weekly_static_differential_full_run", partial: false, complete: true, completed_steps: results };
+}
+
+async function runDailyMorningDeltaFullRun(env, input) {
+  const TIME_BUDGET_MS = 240000;
+  const startedAt = Date.now();
+  const steps = [
+    { key: "delta_game_logs", fn: runDailyDeltaGameLogsToPostgres },
+    { key: "team_game_logs", fn: runRemineTeamGameLogsToPostgres },
+    { key: "starter_history", fn: runDeriveStarterHistoryFromPostgres },
+    { key: "bullpen_history", fn: runDeriveBullpenHistoryFromPostgres },
+    { key: "hitter_metric_snapshots", fn: runDeriveHitterMetricSnapshotsFromPostgres },
+    { key: "pitcher_metric_snapshots", fn: runDerivePitcherMetricSnapshotsFromPostgres }
+  ];
+  const results = [];
+  const startAt = Number(input.resume_from_step || 0);
+  for (let i = startAt; i < steps.length; i++) {
+    if (Date.now() - startedAt > TIME_BUDGET_MS) {
+      return { ok: true, mode: "daily_morning_delta_full_run", partial: true, completed_steps: results, next_resume_from_step: i, note: `time budget reached, call again with resume_from_step=${i}` };
+    }
+    const step = steps[i];
+    try {
+      const res = await step.fn(env, input);
+      results.push({ step: step.key, ok: !!res.ok, summary: res });
+    } catch (err) {
+      results.push({ step: step.key, ok: false, error: String(err && err.message ? err.message : err) });
+    }
+  }
+  return { ok: true, mode: "daily_morning_delta_full_run", partial: false, complete: true, completed_steps: results };
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -7982,6 +8042,8 @@ async function runMode(env,input={}){
   if(mode==="postgres_migrate_table") return runPostgresMigrateTable(env,input);
   if(mode==="postgres_verify_count") return runPostgresVerifyCount(env,input);
   if(mode==="fix_raw_json_double_encoding") return runFixRawJsonDoubleEncoding(env,input);
+  if(mode==="weekly_static_differential_full_run") return runWeeklyStaticDifferentialFullRun(env,input);
+  if(mode==="daily_morning_delta_full_run") return runDailyMorningDeltaFullRun(env,input);
   if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgres(env,input);
   if(mode==="remine_defensive_quality_to_postgres") return runRemineDefensiveQualityToPostgres(env,input);
   if(mode==="remine_catcher_framing_to_postgres") return runRemineCatcherFramingToPostgres(env,input);
