@@ -60,7 +60,7 @@ const SYSTEM_VERSION = "alphadog-v2-enrichment-engine-v0.3.1-widened-clamp-plus-
 
 const REQUIRED_DB_BINDINGS = ["CONTROL_DB", "CONFIG_DB", "REF_DB", "STATS_HITTER_DB", "STATS_PITCHER_DB", "TEAM_DB", "DAILY_DB", "MARKET_DB", "CONTEXT_DB", "SCORE_DB", "ARCHIVE_DB", "SCORING_DB"];
 
-const MAX_LEGS_PER_INVOCATION = 100;
+const MAX_LEGS_PER_INVOCATION = 500; // Real fix: observed real timing showed 100 legs takes only ~3-5.5s of actual work (single unchunked SCORING_DB.batch() call), while ticks were spaced 20-40s apart by cron-interval polling - the wall-clock cost was almost entirely idle time between ticks, not processing. Orchestrator dispatch timeout for this job (ENRICHMENT_ENGINE_WORKER_TIMEOUT_MS) is 40000ms; 500 legs at the observed ~50ms/leg rate lands around 25s, leaving real margin while cutting the number of needed ticks (and thus total wall-clock time) by 5x.
 
 function nowUtc() { return new Date().toISOString(); }
 function jsonResponse(body, status = 200) {
