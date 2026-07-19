@@ -6673,10 +6673,122 @@ async function runSavantQualityOfContactMining(env, input = {}) {
     timestamp_utc: new Date().toISOString()
   };
 }
+const PG_TABLE_PLAN = {
+  market_historical_props_2025: {
+    d1_binding: "MARKET_DB", d1_table: "market_historical_props_2025", pg_table: "market.historical_props_2025",
+    order_by: "prop_id",
+    columns: ["prop_id","game_pk","player_name","canonical_prop_key","line_value","side","price","bookmaker","official_date","raw_json","created_at"]
+  },
+  archive_board_leg_history: {
+    d1_binding: "ARCHIVE_DB", d1_table: "archive_board_leg_history", pg_table: "archive.board_leg_history",
+    order_by: "history_id",
+    columns: ["history_id","final_board_row_id","mlb_player_id","canonical_prop_key","line_value","selected_side","estimated_hit_probability_0_100","score_0_100","outcome_result","official_date","archived_at"]
+  },
+  archive_player_availability_history: {
+    d1_binding: "ARCHIVE_DB", d1_table: "archive_player_availability_history", pg_table: "archive.player_availability_history",
+    order_by: "history_id", columns: ["history_id","mlb_player_id","official_date","availability_status","archived_at"]
+  },
+  config_system_settings: {
+    d1_binding: "CONFIG_DB", d1_table: "config_system_settings", pg_table: "config.system_settings",
+    order_by: "setting_key", columns: ["setting_key","setting_value","updated_at"]
+  },
+  calibration_config: {
+    d1_binding: "CONFIG_DB", d1_table: "calibration_config", pg_table: "config.calibration_config",
+    order_by: "config_key", columns: ["config_key","config_json","is_active","updated_at"]
+  },
+  config_worker_definitions: {
+    d1_binding: "CONFIG_DB", d1_table: "config_worker_definitions", pg_table: "config.worker_definitions",
+    order_by: "worker_name", columns: ["worker_name","definition_json","updated_at"]
+  },
+  config_worker_schedules: {
+    d1_binding: "CONFIG_DB", d1_table: "config_worker_schedules", pg_table: "config.worker_schedules",
+    order_by: "job_key", columns: ["job_key","schedule_json","updated_at"]
+  },
+  config_prop_taxonomy: {
+    d1_binding: "CONFIG_DB", d1_table: "config_prop_taxonomy", pg_table: "config.prop_taxonomy",
+    order_by: "canonical_prop_key", columns: ["canonical_prop_key","prop_family","display_label","updated_at"]
+  }
+};
+
+async function pgReadD1Chunk(env, binding, tableName, orderBy, whereClause, offset, limit) {
+  const where = whereClause ? `WHERE ${whereClause}` : "";
+  const sql = `SELECT * FROM ${tableName} ${where} ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
+  const stmt = env[binding].prepare(sql).bind(limit, offset);
+  const res = await stmt.all();
+  return res.results || [];
+}
+
+async function pgWriteChunk(sql, pgTable, columns, rows) {
+  if (!rows.length) return 0;
+  const conflictCol = columns[0];
+  await sql`
+    INSERT INTO ${sql(pgTable.split(".")[0])}.${sql(pgTable.split(".")[1])} ${sql(rows, ...columns)}
+    ON CONFLICT (${sql(conflictCol)}) DO NOTHING
+  `;
+  return rows.length;
+}
+
+async function runPostgresHealthCheck(env, input) {
+  let pgOk = false, pgError = null, pgVersion = null;
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const res = await sql`SELECT version()`;
+    pgVersion = res[0]?.version || null;
+    pgOk = true;
+    await sql.end();
+  } catch (err) { pgError = String(err && err.message ? err.message : err); }
+  return { ok: pgOk, mode: "postgres_health_check", hyperdrive_bound: !!env.HYPERDRIVE, postgres_connected: pgOk, postgres_version: pgVersion, error: pgError };
+}
+
+async function runPostgresApplySchema(env, input) {
+  const ddl = String(input.ddl || "");
+  if (!ddl || ddl.length < 50) return { ok: false, mode: "postgres_apply_schema", error: "missing_ddl_in_input.ddl" };
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    await sql.unsafe(ddl);
+    await sql.end();
+    return { ok: true, mode: "postgres_apply_schema", status: "schema_applied" };
+  } catch (err) {
+    return { ok: false, mode: "postgres_apply_schema", error: String(err && err.message ? err.message : err) };
+  }
+}
+
+async function runPostgresMigrateTable(env, input) {
+  const key = String(input.table || "");
+  const plan = PG_TABLE_PLAN[key];
+  if (!plan) return { ok: false, mode: "postgres_migrate_table", error: `unknown_table_key_${key}`, available: Object.keys(PG_TABLE_PLAN) };
+  const CHUNK_SIZE = 500, TIME_BUDGET_MS = 20000;
+  let offset = Number(input.offset || 0), totalWritten = 0, done = false;
+  const startedAt = Date.now();
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    while (!done) {
+      if (Date.now() - startedAt > TIME_BUDGET_MS) {
+        await sql.end();
+        return { ok: true, partial: true, mode: "postgres_migrate_table", table: key, rows_written_this_invocation: totalWritten, next_offset: offset,
+                 note: `Time budget reached - call again with table=${key}, offset=${offset} to continue.` };
+      }
+      const rows = await pgReadD1Chunk(env, plan.d1_binding, plan.d1_table, plan.order_by, plan.where, offset, CHUNK_SIZE);
+      if (!rows.length) { done = true; break; }
+      const written = await pgWriteChunk(sql, plan.pg_table, plan.columns, rows);
+      totalWritten += written;
+      offset += rows.length;
+      if (rows.length < CHUNK_SIZE) done = true;
+    }
+    await sql.end();
+    return { ok: true, partial: false, mode: "postgres_migrate_table", table: key, rows_written_total: totalWritten, complete: true };
+  } catch (err) {
+    return { ok: false, mode: "postgres_migrate_table", table: key, error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
   const mode=String(input.mode || input.expansion_mode || input.job_key || "expansion_baseline_full_run");
+  if(mode==="postgres_health_check") return runPostgresHealthCheck(env,input);
+  if(mode==="postgres_apply_schema") return runPostgresApplySchema(env,input);
+  if(mode==="postgres_migrate_table") return runPostgresMigrateTable(env,input);
   if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
