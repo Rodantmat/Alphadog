@@ -1723,7 +1723,7 @@ async function apiPlayerProfile(env, url) {
     isPitcher
       ? safeQuery(env.STATS_PITCHER_DB, `SELECT * FROM pitcher_splits WHERE player_id=? ORDER BY season DESC`, [mlbId])
       : safeQuery(env.STATS_HITTER_DB, `SELECT * FROM hitter_splits WHERE player_id=? ORDER BY season DESC`, [mlbId]),
-    safeOne(env.DAILY_DB, `SELECT game_pk, official_date:="" , game_time_utc, home_team_id, away_team_id FROM daily_slate_games WHERE (home_team_id=? OR away_team_id=?) AND datetime(game_time_utc) >= datetime('now','-4 hours') ORDER BY datetime(game_time_utc) ASC LIMIT 1`, [p.current_mlb_team_id || p.current_team_id, p.current_mlb_team_id || p.current_team_id]).catch(()=>null)
+    safeOne(env.DAILY_DB, `SELECT game_pk, game_time_utc, home_team_id, away_team_id FROM daily_slate_games WHERE (home_team_id=? OR away_team_id=?) AND datetime(game_time_utc) >= datetime('now','-4 hours') ORDER BY datetime(game_time_utc) ASC LIMIT 1`, [p.current_mlb_team_id || p.current_team_id, p.current_mlb_team_id || p.current_team_id]).catch(()=>null)
   ]);
 
   let nextGame = null, weatherRow = null, umpireRow = null, marketRow = null, bullpenRows = [], scheduleRows = [], opposingStarter = null, opposingTeamRow = null;
