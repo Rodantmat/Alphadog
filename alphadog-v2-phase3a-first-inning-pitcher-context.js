@@ -7746,10 +7746,12 @@ async function runBaselineV6DeltaDailySingleStep(env, input = {}) {
   const batchId = String(input.batch_id || rid("baseline_v6_delta_batch"));
 
   if (comboIndex >= combos.length) {
+    const reconcileResult = await reconcileSubsetOfConstraints(env).catch((e) => ({ ok: false, error: String(e && e.message ? e.message : e) }));
     return {
       ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_hp_daily_delta",
       status: "BASELINE_V5_HP_DAILY_DELTA_COMPLETED", certification: "BASELINE_V5_HP_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE",
       certification_grade: "PASS", total_combos: combos.length, official_date: officialDate, batch_id: batchId,
+      subset_constraint_reconcile: reconcileResult,
       no_daily_context: true, no_market_context: true, no_scoring_context: true
     };
   }
