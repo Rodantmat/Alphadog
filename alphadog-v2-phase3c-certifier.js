@@ -98,6 +98,28 @@ function computeFinalConfidence(baselineConfidence, enrichmentRow) {
   return Math.round(clamp(blended + adjustment, 30, 95));
 }
 
+// REAL, GROUNDED OPTIMIZATION (same proven pattern as phase3a's classification/baseline
+// wrappers tonight): runHitProbabilityBoard is already idempotent/resumable (it dedupes via
+// alreadyWrittenIds keyed on hp_board_batch_id), so calling it repeatedly with the same input
+// is safe. Only wired in after the dispatch-side timeout was explicitly fixed this session
+// (HIT_PROBABILITY_BOARD_WORKER_TIMEOUT_MS = 35000ms in orchestrator.js, replacing a reused
+// wrong-worker constant) - 24000ms internal budget keeps the same ~30% safety margin proven
+// safe for the classification/baseline wrappers (32000ms internal vs 45000ms caller timeout).
+async function runHitProbabilityBoardFastLoop(env, input, sourceMatrixBatchId) {
+  const startMs = Date.now();
+  const timeBudgetMs = 24000;
+  let lastOutput = null;
+  let tickCount = 0;
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runHitProbabilityBoard(env, input, sourceMatrixBatchId);
+    tickCount++;
+    if (!lastOutput.ok || !lastOutput.continuation_required) {
+      return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs };
+    }
+  }
+  return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs };
+}
+
 async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
   const hpBatchId = input && input.chain_id ? `hp_board_batch_${input.chain_id}` : rid("hp_board_batch");
 
