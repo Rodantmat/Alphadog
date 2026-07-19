@@ -7597,8 +7597,8 @@ async function runRemineDefensiveQualityToPostgres(env, input) {
     const rows = data.rows.filter(r => r.player_id || r.entity_id).map(r => ({
       defq_id: `savant_defq_${year}_${r.player_id || r.entity_id}`,
       mlb_player_id: Number(r.player_id || r.entity_id), primary_position: r.primary_pos_formatted || r.position || null, season_year: year,
-      outs_above_average: num(r.outs_above_average), fielding_runs_prevented: num(r.fielding_run_value),
-      oaa_vs_rhh: null, oaa_vs_lhh: null,
+      outs_above_average: num(r.outs_above_average), fielding_runs_prevented: num(r.fielding_runs_prevented),
+      oaa_vs_rhh: num(r.outs_above_average_rhh), oaa_vs_lhh: num(r.outs_above_average_lhh),
       active: 1, source_key: "baseball_savant_oaa_html_regex", raw_json: r
     })).filter(r => r.mlb_player_id);
     if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_defensive_quality_to_postgres", error: "no_valid_rows", sample_raw_row: data.rows[0] || null }; }
