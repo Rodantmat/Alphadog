@@ -6736,21 +6736,27 @@ async function runClassificationV6BaseSingleStep(env, input = {}) {
 // Looping wrapper: internally drives multiple single-step ticks per external call, up to a
 // wall-clock time budget, instead of returning after just one tick. Same contract to the
 // caller (partial_continue / next_input_json) — just does much more real work per round trip.
-// Useful for direct/manual invocation; orchestrator's own cadence still works fine with this too,
-// it'll just see fewer, chunkier partial_continue steps.
+// REAL, TESTED CHANGE (per Rodolfo's explicit instruction, scoped to this one function first):
+// direct back-to-back manual invocation tonight measured real per-call wall time of 28-31s even
+// with the old 18000ms target, because the loop only checks the budget before starting a new
+// tick, not after one finishes - it naturally overshoots by up to one tick's duration. Raised to
+// 45000ms to intentionally capture that real headroom instead of leaving it on the table,
+// while staying safely under Workers CPU/wall-clock limits for a single invocation.
 async function runClassificationV6Base(env, input = {}) {
   const startMs = Date.now();
-  const timeBudgetMs = 18000; // stay safely under Workers CPU/wall-clock limits per invocation
+  const timeBudgetMs = 45000;
   let currentInput = input;
   let lastOutput = null;
+  let tickCount = 0;
 
   while (Date.now() - startMs < timeBudgetMs) {
     lastOutput = await runClassificationV6BaseSingleStep(env, currentInput);
-    if (!lastOutput.ok) return lastOutput;
-    if (!lastOutput.partial_continue) return lastOutput; // fully done
+    tickCount++;
+    if (!lastOutput.ok) return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs };
+    if (!lastOutput.partial_continue) return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs }; // fully done
     currentInput = lastOutput.next_input_json;
   }
-  return lastOutput;
+  return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs };
 }
 
 // ==== BASELINE V6 — HP% and confidence, built on top of classification_v6 ====
