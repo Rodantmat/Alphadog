@@ -1720,9 +1720,9 @@ function friendlyGrade(g){return String(g||'').replace('A_PLUS','A+').replace(/_
 function qualityLetter(r){const hp=Number(r.estimated_hit_probability_0_100||0),conf=Number(r.probability_confidence_0_100||0),score=Number(r.score_0_100||0);if(hp>=92&&conf>=72&&score>=84)return 'A+';if(hp>=85&&conf>=68&&score>=78)return 'A';if(hp>=78&&conf>=58&&score>=72)return 'B+';if(hp>=70&&conf>=50)return 'B';return 'C'}
 function friendlyBand(b){const x=String(b||'').toUpperCase();if(x.includes('70'))return '70%+ HP lane';if(x.includes('60'))return '60%+ HP lane';return String(b||'HP lane').replace(/_/g,' ')}
 function contextLabel(s){const x=String(s||'').toLowerCase();if(x.includes('ready')&&!x.includes('warning'))return 'context ready';if(x.includes('warning'))return 'context warnings';if(x.includes('partial'))return 'partial context';return x?x.replace(/_/g,' '):'context available'}
-function sourceWeight(k){const x=String(k||'').toLowerCase();if(x==='prizepicks')return 1;if(x==='sleeper')return 2;return 9}
-function sourceShort(k){const x=String(k||'').toLowerCase();return x==='prizepicks'?'PP':(x==='sleeper'?'Sleeper':appLabel(k))}
-function appLabel(k){const x=String(k||'').toLowerCase();return x==='prizepicks'?'PrizePicks':(x==='sleeper'?'Sleeper':cap(k))}
+function sourceWeight(k){const x=String(k||'').toLowerCase();if(x==='prizepicks')return 1;if(x==='sleeper')return 2;if(x==='parlay_underdog'||x==='underdog')return 3;return 9}
+function sourceShort(k){const x=String(k||'').toLowerCase();if(x==='prizepicks')return 'PP';if(x==='sleeper')return 'Sleeper';if(x==='parlay_underdog'||x==='underdog')return 'Underdog';return appLabel(k)}
+function appLabel(k){const x=String(k||'').toLowerCase();if(x==='prizepicks')return 'PrizePicks';if(x==='sleeper')return 'Sleeper';if(x==='parlay_underdog'||x==='underdog')return 'Underdog';return cap(k)}
 function lineLabel(t){return String(t||'regular').replace(/_/g,' ').replace(/\\b\\w/g,c=>c.toUpperCase())}
 function qLabel(r){const hp=Number(r.estimated_hit_probability_0_100||0),conf=Number(r.probability_confidence_0_100||0),score=Number(r.score_0_100||0);if(hp>=88&&conf>=68&&score>=82)return 'Gold';if(hp>=78&&conf>=58&&score>=72)return 'Silver';return 'Bronze'}
 function qClass(q){return String(q).toLowerCase()}
