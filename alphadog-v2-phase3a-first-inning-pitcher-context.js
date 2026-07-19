@@ -6583,10 +6583,10 @@ async function runSavantQualityOfContactMining(env, input = {}) {
   const fetches = [];
   const expected = await fetchSavantLeaderboardHtml("/leaderboard/expected_statistics", { type: "batter", year, min: minPA });
   const expectedData = extractSavantVarData(expected.html);
-  fetches.push({ label: "expected_statistics", url: expected.url, http_status: expected.http_status, row_count: expectedData.rows.length, pattern_used: expectedData.pattern_used, html_sample: expectedData.rows.length ? null : expectedData.html_sample });
+  fetches.push({ label: "expected_statistics", url: expected.url, http_status: expected.http_status, row_count: expectedData.rows.length, pattern_used: expectedData.pattern_used, html_sample: expectedData.rows.length ? null : expectedData.html_sample, sample_raw_row: expectedData.rows[0] || null });
   const statcast = await fetchSavantLeaderboardHtml("/leaderboard/statcast", { type: "batter", year, min: minPA });
   const statcastData = extractSavantVarData(statcast.html);
-  fetches.push({ label: "statcast_exit_velo_barrels", url: statcast.url, http_status: statcast.http_status, row_count: statcastData.rows.length, pattern_used: statcastData.pattern_used, html_sample: statcastData.rows.length ? null : statcastData.html_sample });
+  fetches.push({ label: "statcast_exit_velo_barrels", url: statcast.url, http_status: statcast.http_status, row_count: statcastData.rows.length, pattern_used: statcastData.pattern_used, html_sample: statcastData.rows.length ? null : statcastData.html_sample, sample_raw_row: statcastData.rows[0] || null });
 
   if (!expectedData.rows.length && !statcastData.rows.length) {
     return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, mode: "savant_quality_of_contact_mining", status: "NO_DATA_EXTRACTED_DIAGNOSTIC_ONLY", fetches, rows_written: 0 };
