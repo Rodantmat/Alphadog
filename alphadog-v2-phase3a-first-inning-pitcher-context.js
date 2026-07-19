@@ -6703,7 +6703,7 @@ const PG_TABLE_PLAN = {
   },
   config_worker_schedules: {
     d1_binding: "CONFIG_DB", d1_table: "config_worker_schedules", pg_table: "config.worker_schedules",
-    order_by: "job_key", columns: ["job_key","schedule_json","updated_at"]
+    order_by: "schedule_key", columns: ["schedule_key","job_key","worker_name","phase_key","enabled","cron_expression","local_time_hint","timezone","cadence_notes","priority","cascade","updated_at"]
   },
   config_prop_taxonomy: {
     d1_binding: "CONFIG_DB", d1_table: "config_prop_taxonomy", pg_table: "config.prop_taxonomy",
