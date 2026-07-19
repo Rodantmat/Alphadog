@@ -6522,10 +6522,148 @@ async function fullRun(env,input={}){
   return deltaFullRun(env,input);
 }
 
+async function fetchSavantLeaderboardHtml(path, params) {
+  const u = new URL(`https://baseballsavant.mlb.com${path}`);
+  for (const [k, v] of Object.entries(params)) u.searchParams.set(k, String(v));
+  const resp = await fetch(u.toString(), {
+    method: "GET",
+    headers: {
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "accept-language": "en-US,en;q=0.9",
+      "cache-control": "no-cache",
+      "user-agent": "AlphaDogV2SavantQualityMining/0.1 (+controlled-reference-refresh)"
+    }
+  });
+  const html = await resp.text();
+  return { url: u.toString(), http_status: resp.status, html, ok: resp.ok };
+}
+function extractSavantVarData(html) {
+  const source = String(html || "");
+  const patterns = [
+    /var\s+data\s*=\s*(\[[\s\S]*?\]);/,
+    /let\s+data\s*=\s*(\[[\s\S]*?\]);/,
+    /const\s+data\s*=\s*(\[[\s\S]*?\]);/,
+    /data\s*=\s*(\[[\s\S]*?\]);/
+  ];
+  for (const pattern of patterns) {
+    const m = source.match(pattern);
+    if (m && m[1]) {
+      try { const parsed = JSON.parse(m[1]); if (Array.isArray(parsed)) return { rows: parsed, pattern_used: pattern.source }; } catch (e) {}
+    }
+  }
+  return { rows: [], pattern_used: null, html_length: source.length, html_sample: source.slice(0, 600) };
+}
+async function ensureSavantQualitySchema(env) {
+  await run(env.REF_DB, `CREATE TABLE IF NOT EXISTS ref_batter_quality_of_contact (
+    qoc_id TEXT PRIMARY KEY,
+    mlb_player_id INTEGER,
+    player_name TEXT,
+    season_year INTEGER,
+    xba REAL, xslg REAL, xwoba REAL, woba REAL, xobp REAL, xiso REAL, xwobacon REAL, wobacon REAL,
+    exit_velocity_avg REAL, launch_angle_avg REAL, sweet_spot_percent REAL,
+    barrel_batted_rate REAL, hard_hit_percent REAL, solidcontact_percent REAL,
+    pull_percent REAL, flareburner_percent REAL, poorly_topped_percent REAL, poorly_under_percent REAL,
+    whiff_percent REAL, k_percent REAL, bb_percent REAL,
+    active INTEGER DEFAULT 1,
+    source_key TEXT,
+    raw_json TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_batter_qoc_player_active ON ref_batter_quality_of_contact(mlb_player_id, active)");
+}
+function firstNum(row, keys) {
+  for (const k of keys) { if (row[k] !== undefined && row[k] !== null && row[k] !== "") { const n = Number(row[k]); if (Number.isFinite(n)) return n; } }
+  return null;
+}
+async function runSavantQualityOfContactMining(env, input = {}) {
+  await ensureSavantQualitySchema(env);
+  const year = Number(input.season_year || 2026);
+  const minPA = input.min_pa || "50";
+  const fetches = [];
+  const expected = await fetchSavantLeaderboardHtml("/leaderboard/expected_statistics", { type: "batter", year, min: minPA });
+  const expectedData = extractSavantVarData(expected.html);
+  fetches.push({ label: "expected_statistics", url: expected.url, http_status: expected.http_status, row_count: expectedData.rows.length, pattern_used: expectedData.pattern_used, html_sample: expectedData.rows.length ? null : expectedData.html_sample });
+  const statcast = await fetchSavantLeaderboardHtml("/leaderboard/statcast", { type: "batter", year, min: minPA });
+  const statcastData = extractSavantVarData(statcast.html);
+  fetches.push({ label: "statcast_exit_velo_barrels", url: statcast.url, http_status: statcast.http_status, row_count: statcastData.rows.length, pattern_used: statcastData.pattern_used, html_sample: statcastData.rows.length ? null : statcastData.html_sample });
+
+  if (!expectedData.rows.length && !statcastData.rows.length) {
+    return { ok: false, data_ok: false, version: VERSION, worker_name: WORKER_NAME, mode: "savant_quality_of_contact_mining", status: "NO_DATA_EXTRACTED_DIAGNOSTIC_ONLY", fetches, rows_written: 0 };
+  }
+
+  const byPlayer = new Map();
+  for (const r of expectedData.rows) {
+    const pid = firstNum(r, ["player_id", "batter", "mlb_id", "xba_player_id"]);
+    if (!pid) continue;
+    byPlayer.set(pid, { ...(byPlayer.get(pid) || {}), player_id: pid, player_name: r.player_name || r.last_name_first_name || r.name || null, ...r, _expected_raw: r });
+  }
+  for (const r of statcastData.rows) {
+    const pid = firstNum(r, ["player_id", "batter", "mlb_id"]);
+    if (!pid) continue;
+    byPlayer.set(pid, { ...(byPlayer.get(pid) || {}), player_id: pid, player_name: (byPlayer.get(pid) || {}).player_name || r.player_name || r.last_name_first_name || r.name || null, ...r, _statcast_raw: r });
+  }
+
+  const statements = [];
+  let written = 0;
+  for (const [pid, r] of byPlayer.entries()) {
+    const qocId = `savant_qoc_${year}_${pid}`;
+    const xba = firstNum(r, ["xba", "est_ba"]);
+    const xslg = firstNum(r, ["xslg", "est_slg"]);
+    const xwoba = firstNum(r, ["xwoba", "est_woba"]);
+    const woba = firstNum(r, ["woba"]);
+    const xobp = firstNum(r, ["xobp", "est_obp"]);
+    const xiso = firstNum(r, ["xiso", "est_iso"]);
+    const xwobacon = firstNum(r, ["xwobacon", "est_woba_minus_woba_diff", "xwoba_con"]);
+    const wobacon = firstNum(r, ["wobacon", "woba_con"]);
+    const ev = firstNum(r, ["exit_velocity_avg", "avg_hit_speed", "launch_speed"]);
+    const la = firstNum(r, ["launch_angle_avg", "avg_hit_angle"]);
+    const sweetSpot = firstNum(r, ["sweet_spot_percent", "sweetspot_percent"]);
+    const barrelRate = firstNum(r, ["barrel_batted_rate", "brl_percent"]);
+    const hardHit = firstNum(r, ["hard_hit_percent"]);
+    const solid = firstNum(r, ["solidcontact_percent"]);
+    const pull = firstNum(r, ["pull_percent"]);
+    const flare = firstNum(r, ["flareburner_percent"]);
+    const topped = firstNum(r, ["topped_percent"]);
+    const under = firstNum(r, ["under_percent"]);
+    const whiff = firstNum(r, ["whiff_percent"]);
+    const kpct = firstNum(r, ["k_percent"]);
+    const bbpct = firstNum(r, ["bb_percent"]);
+    statements.push(env.REF_DB.prepare(`INSERT INTO ref_batter_quality_of_contact
+      (qoc_id, mlb_player_id, player_name, season_year, xba, xslg, xwoba, woba, xobp, xiso, xwobacon, wobacon,
+       exit_velocity_avg, launch_angle_avg, sweet_spot_percent, barrel_batted_rate, hard_hit_percent, solidcontact_percent,
+       pull_percent, flareburner_percent, poorly_topped_percent, poorly_under_percent, whiff_percent, k_percent, bb_percent,
+       active, source_key, raw_json, updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)
+      ON CONFLICT(qoc_id) DO UPDATE SET
+        player_name=excluded.player_name, xba=excluded.xba, xslg=excluded.xslg, xwoba=excluded.xwoba, woba=excluded.woba,
+        xobp=excluded.xobp, xiso=excluded.xiso, xwobacon=excluded.xwobacon, wobacon=excluded.wobacon,
+        exit_velocity_avg=excluded.exit_velocity_avg, launch_angle_avg=excluded.launch_angle_avg, sweet_spot_percent=excluded.sweet_spot_percent,
+        barrel_batted_rate=excluded.barrel_batted_rate, hard_hit_percent=excluded.hard_hit_percent, solidcontact_percent=excluded.solidcontact_percent,
+        pull_percent=excluded.pull_percent, flareburner_percent=excluded.flareburner_percent, poorly_topped_percent=excluded.poorly_topped_percent,
+        poorly_under_percent=excluded.poorly_under_percent, whiff_percent=excluded.whiff_percent, k_percent=excluded.k_percent, bb_percent=excluded.bb_percent,
+        active=1, raw_json=excluded.raw_json, updated_at=CURRENT_TIMESTAMP`
+    ).bind(qocId, pid, r.player_name || null, year, xba, xslg, xwoba, woba, xobp, xiso, xwobacon, wobacon,
+      ev, la, sweetSpot, barrelRate, hardHit, solid, pull, flare, topped, under, whiff, kpct, bbpct,
+      "baseball_savant_quality_of_contact_html_regex", JSON.stringify({ expected: r._expected_raw || null, statcast: r._statcast_raw || null })));
+    written++;
+  }
+  if (statements.length) await env.REF_DB.batch(statements);
+
+  return {
+    ok: written > 0, data_ok: written > 0, version: VERSION, worker_name: WORKER_NAME,
+    mode: "savant_quality_of_contact_mining", status: written > 0 ? "COMPLETED_QOC_WRITTEN" : "NO_PLAYERS_MATCHED",
+    season_year: year, players_merged: byPlayer.size, rows_written: written,
+    fetches,
+    sample_row: written ? Array.from(byPlayer.values())[0] : null,
+    timestamp_utc: new Date().toISOString()
+  };
+}
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
   const mode=String(input.mode || input.expansion_mode || input.job_key || "expansion_baseline_full_run");
+  if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
   if(mode==="expansion_baseline_hp" || mode==="expansion-baseline-hp") return runHp(env,input);
