@@ -6799,6 +6799,45 @@ async function runPostgresVerifyCount(env, input) {
   }
 }
 
+async function runRemineRefTeamsToPostgres(env, input) {
+  try {
+    const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/+$/, "");
+    const url = `${base}/teams?sportId=1&activeStatus=Y`;
+    const headers = { accept: "application/json" };
+    if (env.MLB_API_USER_AGENT) headers["user-agent"] = String(env.MLB_API_USER_AGENT);
+    const resp = await fetch(url, { method: "GET", headers });
+    const text = await resp.text();
+    if (!resp.ok) return { ok: false, mode: "remine_ref_teams_to_postgres", error: `mlb_api_http_${resp.status}` };
+    let body;
+    try { body = JSON.parse(text); } catch (_) { return { ok: false, mode: "remine_ref_teams_to_postgres", error: "mlb_api_non_json_response" }; }
+    const teams = Array.isArray(body.teams) ? body.teams : [];
+    if (!teams.length) return { ok: false, mode: "remine_ref_teams_to_postgres", error: "no_teams_in_response" };
+
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const rows = teams.filter(t => t.id && t.abbreviation && t.name).map(t => ({
+      team_id: String(t.id),
+      mlb_team_id: Number(t.id),
+      full_name: String(t.name || "").trim(),
+      abbreviation: String(t.abbreviation || "").trim().toUpperCase(),
+      league: String((t.league && (t.league.name || t.league.abbreviation)) || "").trim(),
+      division: String((t.division && (t.division.name || t.division.abbreviation)) || "").trim(),
+      active: 1,
+      raw_json: JSON.stringify(t)
+    }));
+    const cols = ["team_id","mlb_team_id","full_name","abbreviation","league","division","active","raw_json"];
+    await sql`
+      INSERT INTO ref.teams ${sql(rows, ...cols)}
+      ON CONFLICT (team_id) DO UPDATE SET
+        mlb_team_id=excluded.mlb_team_id, full_name=excluded.full_name, abbreviation=excluded.abbreviation,
+        league=excluded.league, division=excluded.division, active=1, raw_json=excluded.raw_json, updated_at=now()
+    `;
+    await sql.end();
+    return { ok: true, mode: "remine_ref_teams_to_postgres", teams_fetched: teams.length, rows_written: rows.length, source: url };
+  } catch (err) {
+    return { ok: false, mode: "remine_ref_teams_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -6807,6 +6846,7 @@ async function runMode(env,input={}){
   if(mode==="postgres_apply_schema") return runPostgresApplySchema(env,input);
   if(mode==="postgres_migrate_table") return runPostgresMigrateTable(env,input);
   if(mode==="postgres_verify_count") return runPostgresVerifyCount(env,input);
+  if(mode==="remine_ref_teams_to_postgres") return runRemineRefTeamsToPostgres(env,input);
   if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
