@@ -1201,6 +1201,7 @@ async function apiDossier(env, url) {
       recent_form: recentForm,
       recent_games: recentGames,
       hitter_splits: hitterSplits,
+      quality_of_contact: qocRowD,
       starters: starters,
       pitcher_form: pitcherForm,
       pitcher_splits: pitcherSplits,
