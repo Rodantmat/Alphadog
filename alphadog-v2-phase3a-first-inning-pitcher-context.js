@@ -7363,6 +7363,27 @@ async function runDeriveStarterHistoryFromPostgres(env, input) {
   }
 }
 
+async function runDeriveBullpenHistoryFromPostgres(env, input) {
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    await sql`
+      INSERT INTO team.bullpen_history (history_id, game_pk, team_id, game_date, raw_json)
+      SELECT
+        'bullpen_' || game_pk || '_' || player_id,
+        game_pk, team_id, game_date, raw_json
+      FROM stats_pitcher.game_logs
+      WHERE (((raw_json#>>'{}')::jsonb)->'stat'->>'gamesStarted')::int = 0
+      ON CONFLICT (history_id) DO UPDATE SET
+        team_id=excluded.team_id, game_date=excluded.game_date, raw_json=excluded.raw_json, updated_at=now()
+    `;
+    const countRes = await sql`SELECT COUNT(*)::int AS cnt FROM team.bullpen_history`;
+    await sql.end();
+    return { ok: true, mode: "derive_bullpen_history_from_postgres", total_rows_now: countRes[0]?.cnt ?? null };
+  } catch (err) {
+    return { ok: false, mode: "derive_bullpen_history_from_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -7380,6 +7401,7 @@ async function runMode(env,input={}){
   if(mode==="remine_pitcher_splits_to_postgres") return runReminePitcherSplitsToPostgres(env,input);
   if(mode==="remine_team_game_logs_to_postgres") return runRemineTeamGameLogsToPostgres(env,input);
   if(mode==="derive_starter_history_from_postgres") return runDeriveStarterHistoryFromPostgres(env,input);
+  if(mode==="derive_bullpen_history_from_postgres") return runDeriveBullpenHistoryFromPostgres(env,input);
   if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
