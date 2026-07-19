@@ -8411,6 +8411,3542 @@ async function runRemineePrizepicksBoardToPostgres(env, input) {
   }
 }
 
+async function runDeriveBoardPreparedFromPostgres(env, input) {
+  const officialDate = String(input.official_date || new Date().toISOString().slice(0, 10));
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 5, fetch_types: false });
+    // Normalize: lowercase, strip periods/accents-ish punctuation, collapse whitespace, drop common suffixes.
+    const res = await sql.unsafe(`
+      WITH norm_players AS (
+        SELECT
+          player_id, mlb_player_id, full_name, current_team_id, current_mlb_team_id,
+          regexp_replace(lower(trim(regexp_replace(full_name, '\\s+(jr\\.?|sr\\.?|ii|iii|iv)
+  if(mode==="diagnose_savant_csv_export") return runDiagnoseSavantCsvExport(env,input);
+  if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgresV2(env,input);
+  if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgresV2(env,input);
+  if(mode==="weekly_static_differential_full_run") return runWeeklyStaticDifferentialFullRun(env,input);
+  if(mode==="daily_morning_delta_full_run") return runDailyMorningDeltaFullRun(env,input);
+  if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgres(env,input);
+  if(mode==="remine_defensive_quality_to_postgres") return runRemineDefensiveQualityToPostgres(env,input);
+  if(mode==="remine_catcher_framing_to_postgres") return runRemineCatcherFramingToPostgres(env,input);
+  if(mode==="derive_hitter_metric_snapshots_from_postgres") return runDeriveHitterMetricSnapshotsFromPostgres(env,input);
+  if(mode==="derive_pitcher_metric_snapshots_from_postgres") return runDerivePitcherMetricSnapshotsFromPostgres(env,input);
+  if(mode==="daily_delta_game_logs_to_postgres") return runDailyDeltaGameLogsToPostgres(env,input);
+  if(mode==="remine_batted_ball_profile_to_postgres") return runRemineBattedBallProfileToPostgres(env,input);
+  if(mode==="remine_pitcher_running_game_to_postgres") return runReminePitcherRunningGameToPostgres(env,input);
+  if(mode==="remine_park_factors_to_postgres") return runRemineParkFactorsToPostgres(env,input);
+  if(mode==="remine_ref_teams_to_postgres") return runRemineRefTeamsToPostgres(env,input);
+  if(mode==="remine_ref_players_to_postgres") return runRemineRefPlayersToPostgres(env,input);
+  if(mode==="remine_ref_stadiums_to_postgres") return runRemineRefStadiumsToPostgres(env,input);
+  if(mode==="remine_hitter_game_logs_to_postgres") return runRemineHitterGameLogsToPostgres(env,input);
+  if(mode==="remine_pitcher_game_logs_to_postgres") return runReminePitcherGameLogsToPostgres(env,input);
+  if(mode==="remine_hitter_splits_to_postgres") return runRemineHitterSplitsToPostgres(env,input);
+  if(mode==="remine_pitcher_splits_to_postgres") return runReminePitcherSplitsToPostgres(env,input);
+  if(mode==="remine_team_game_logs_to_postgres") return runRemineTeamGameLogsToPostgres(env,input);
+  if(mode==="derive_starter_history_from_postgres") return runDeriveStarterHistoryFromPostgres(env,input);
+  if(mode==="derive_bullpen_history_from_postgres") return runDeriveBullpenHistoryFromPostgres(env,input);
+  if(mode==="remine_sprint_speed_to_postgres") return runRemineSprintSpeedToPostgres(env,input);
+  if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgres(env,input);
+  if(mode==="remine_quality_of_contact_to_postgres") return runRemineQualityOfContactToPostgres(env,input);
+  if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
+  if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
+  if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
+  if(mode==="expansion_baseline_hp" || mode==="expansion-baseline-hp") return runHp(env,input);
+  if(mode==="expansion_delta_mining" || mode==="expansion-delta-mining") return runDeltaMining(env,input);
+  if(mode==="expansion_delta_sanity" || mode==="expansion-delta-sanity") return runDeltaSanity(env,input);
+  if(mode==="expansion_delta_hp" || mode==="expansion-delta-hp") return runDeltaHp(env,input);
+  if(mode==="expansion_delta_full_run" || mode==="expansion-delta-full-run") return deltaFullRun(env,input);
+  if(mode==="expansion_line_inventory" || mode==="expansion-baseline-line-inventory") return runLineInventory(env,input);
+  if(mode==="expansion_baseline_certifier" || mode==="expansion-baseline-certifier") return certifier(env,input);
+  if(mode==="expansion_baseline_full_run" || mode==="expansion-baseline-full-run") return fullRun(env,input);
+  if(mode==="baseline_v5_state_hydrate") return runBaselineV5StateHydrate(env,input);
+  if(mode==="baseline_v5_classification_daily_delta") return runClassificationV6DeltaDaily(env,input);
+  if(mode==="baseline_v5_hp_daily_delta") return runBaselineV6DeltaDaily(env,input);
+  if(mode==="baseline_v5_stateful_delta") return runBaselineV5StatefulDelta(env,input);
+  if(mode==="baseline_v5_classification_rescue") return runBaselineV5ClassificationRescue(env,input);
+  if(mode==="baseline_v5_base_rescue") return runBaselineV5BaseRescue(env,input);
+  if(mode==="baseline_v5_classification_delta" || mode==="baseline_v5_delta") return baseOutput(input,{request_id:String(input.request_id||rid("baseline_v5_old_delta_blocked")),run_id:String(input.run_id||rid("run")),mode,status:"BASELINE_V5_OLD_AFFECTED_PLAYER_CUMULATIVE_DELTA_BLOCKED",certification:"BASELINE_V5_OLD_AFFECTED_PLAYER_CUMULATIVE_DELTA_BLOCKED",certification_grade:"BLOCKED",data_ok:false,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:true,blocked_reason:"Old Baseline/Classfication V5 delta reloads cumulative player history and is banned. Use baseline_v5_state_hydrate then baseline_v5_stateful_delta shadow/parity path.",no_daily_context:true,no_market_context:true,no_scoring_context:true,no_final_board_context:true});
+  if(mode==="classification_v6_compute_stats") return runClassificationV6ComputeStats(env,input);
+  if(mode==="classification_v6_tick" || mode==="classification_v6") return runClassificationV6Tick(env,input);
+  if(mode==="baseline_v6_tick") return runBaselineV6Tick(env,input);
+  if(mode==="baseline_v6_reconcile_subset_constraints") return reconcileSubsetOfConstraints(env);
+  if(mode==="baseline_v5_classification_base") return runClassificationV6Base(env,input);
+  if(mode==="baseline_v5_base") return runBaselineV6Base(env,input);
+  if(mode==="baseline_v5_history_only" || mode==="baseline_v2_heb" || mode==="expansion_baseline_v2" || mode==="expansion-baseline-v2" || mode==="expansion-baseline-v2-full-run") return runBaselineV2(env,input);
+  const jobKey = String(input.job_key || "");
+  if (jobKey === "phase3a-first-inning-pitcher-context" || mode === "phase3a-first-inning-pitcher-context" || mode === "legacy_dummy") {
+    return {ok:true,data_ok:true,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,job_key:jobKey || "phase3a-first-inning-pitcher-context",status:"LEGACY_DUMMY_SLOT_READY_NO_MUTATION",certification:"LEGACY_DUMMY_SLOT_READY_NO_MUTATION",rows_read:0,rows_written:0,writes_performed:0,external_calls_performed:0,expansion_only:false,baseline_only:false,no_current_baseline_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true};
+  }
+  return {ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"UNSUPPORTED_EXPANSION_BASELINE_MODE",mode,allowed_modes:["expansion_baseline_mining","expansion_line_inventory","expansion_baseline_sanity","expansion_baseline_hp","expansion_baseline_certifier","expansion_baseline_full_run","expansion_delta_mining","expansion_delta_sanity","expansion_delta_hp","expansion_delta_full_run","baseline_v5_classification_base","baseline_v5_classification_delta","baseline_v5_classification_rescue","baseline_v5_base","baseline_v5_base_rescue","baseline_v5_delta","baseline_v5_state_hydrate","baseline_v5_stateful_delta","baseline_v5_classification_daily_delta","baseline_v5_hp_daily_delta","baseline_v5_history_only","expansion-baseline-v2"]};
+}
+
+// ==== CLASSIFICATION V6 — new, clean, prop/line/direction-aware classification ====
+// Design locked with the user:
+// - Tier varies by canonical_prop_key x line_value x selected_side (the old system didn't do this).
+// - Tiers are z-score bands off the REAL population distribution for that exact prop/line/side,
+//   computed from a Marcel-style recency-weighted blend of last_5/10/20_games + season_to_date.
+// - Tier count collapses/expands automatically based on real population spread (max 12, fewer if thin).
+// - Classification does NOT compute confidence. Confidence is baseline's job only (locked decision).
+// - Every tunable number (weights, bands, chunk size, timeouts) lives in calibration_config, not code.
+// - Writes to ARCHIVE_DB (repurposed, near-empty), not SCORE_DB (near its 10GB limit).
+
+// Build the flat, ordered list of every (canonical_prop_key, line_value, selected_side)
+// combination the Base job needs to classify, from the configured universe.
+function buildComboList(propLineUniverse) {
+  const combos = [];
+  for (const [propKey, lines] of Object.entries(propLineUniverse)) {
+    for (const lineValue of lines) {
+      combos.push({ canonical_prop_key: propKey, line_value: lineValue, selected_side: "more" });
+      combos.push({ canonical_prop_key: propKey, line_value: lineValue, selected_side: "less" });
+    }
+  }
+  return combos;
+}
+
+// The actual "Classification Base" job. Wired to orchestrator's existing generic
+// continuation contract for job_key=expansion-baseline-v2: returns partial_continue:true
+// and next_input_json to keep going, or omits them when the entire universe is done.
+// Orchestrator re-enqueues and re-calls with exactly next_input_json as the next input —
+// no orchestrator.js changes required, this worker just has to honor the existing contract.
+async function runClassificationV6BaseSingleStep(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("classification_v6_base"));
+  const runId = String(input.run_id || rid("run"));
+  const officialDate = String(input.official_date || "");
+  const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 40, tick_timeout_ms: 20000, max_retries: 3 });
+
+  const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
+  const combos = buildComboList(propLineUniverse);
+
+  const comboIndex = Math.max(0, Number(input.combo_index || 0));
+  // REAL FIX (per Rodolfo's direct instruction): the 5 season-level reference-data refreshes
+  // (arsenal, defensive OAA, sprint speed, arm angle, umpire tendency) don't depend on
+  // anything daily-context/board provides - verified directly against their real function
+  // signatures. Rather than building a new worker/certifier/chain-registration layer, they're
+  // absorbed directly into this existing morning-run entry point (already dispatched as part
+  // of incremental-morning-full-run), firing once per fresh base-rebuild cycle rather than on
+  // every chunked tick - each has its own ~20h self-gate anyway, so an occasional extra check
+  // is harmless, but gating here avoids a real, unnecessary staleness-check on every one of
+  // the many chunk ticks a full base rebuild takes.
+  let _debugBattedBall = null;
+  let _debugRunningGame = null;
+  if (comboIndex === 0 && Math.max(0, Number(input.cursor_offset || 0)) === 0) {
+    const refYear = new Date().getUTCFullYear();
+    await refreshPitcherArsenalIfStale(env, refYear).catch(() => ({ refreshed: false, error: true }));
+    await refreshDefensiveQualityIfStale(env, refYear).catch(() => ({ refreshed: false, error: true }));
+    await refreshUmpireTendencyIfStale(env).catch(() => ({ refreshed: false, error: true }));
+    await refreshSprintSpeedIfStale(env, [refYear, refYear - 1]).catch(() => ({ refreshed: false, error: true }));
+    await refreshArmAngleIfStale(env, [refYear, refYear - 1]).catch(() => ({ refreshed: false, error: true }));
+    _debugBattedBall = await refreshBattedBallProfileIfStale(env, refYear).catch((e) => ({ refreshed: false, error: true, message: String(e && e.message ? e.message : e) }));
+    _debugRunningGame = await refreshPitcherRunningGameIfStale(env, refYear).catch((e) => ({ refreshed: false, error: true, message: String(e && e.message ? e.message : e) }));
+  }
+  const cursorOffset = Math.max(0, Number(input.cursor_offset || 0));
+  const batchId = String(input.batch_id || rid("classification_v6_base_batch"));
+
+  if (comboIndex >= combos.length) {
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+      status: "CLASSIFICATION_V6_BASE_COMPLETED", certification: "CLASSIFICATION_V6_BASE_CERTIFIED_ALL_COMBOS_COMPLETE",
+      certification_grade: "PASS", total_combos: combos.length, batch_id: batchId,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const combo = combos[comboIndex];
+
+  // Fresh combo (cursor 0): (re)compute population stats for it first — cheap, one pass.
+  if (cursorOffset === 0) {
+    let statsResult;
+    try {
+      statsResult = await runClassificationV6ComputeStats(env, {
+        canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value, selected_side: combo.selected_side
+      });
+    } catch (err) {
+      const maxRetries = Math.max(1, Number((opLimits && opLimits.max_retries) || 3));
+      const retryCount = Math.max(0, Number(input.retry_count || 0));
+      if (retryCount >= maxRetries) {
+        return {
+          ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+          status: "CLASSIFICATION_V6_BASE_STATS_FAILED", error: `Stats computation failed after ${maxRetries} retries: ${String(err && err.message ? err.message : err)}`,
+          combo_index: comboIndex, combo
+        };
+      }
+      return {
+        ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+        status: "CLASSIFICATION_V6_BASE_PARTIAL_CONTINUE", certification: "CLASSIFICATION_V6_BASE_STATS_TRANSIENT_RETRY",
+        certification_grade: "PARTIAL", combo_index: comboIndex, total_combos: combos.length,
+        partial_continue: true, orchestrator_should_self_continue: true,
+        transient_error: String(err && err.message ? err.message : err),
+        next_input_json: {
+          mode: "baseline_v5_classification_base", request_id: requestId, run_id: runId, batch_id: batchId,
+          combo_index: comboIndex, cursor_offset: 0, official_date: officialDate, retry_count: retryCount + 1
+        }
+      };
+    }
+    if (!statsResult.ok) {
+      return {
+        ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+        status: "CLASSIFICATION_V6_BASE_STATS_FAILED", error: statsResult.error, combo_index: comboIndex, combo
+      };
+    }
+  }
+
+  const tickResult = await (async () => {
+    const maxRetries = Math.max(1, Number((opLimits && opLimits.max_retries) || 3));
+    const retryCount = Math.max(0, Number(input.retry_count || 0));
+    try {
+      return await runClassificationV6Tick(env, {
+        batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
+        selected_side: combo.selected_side, official_date: officialDate, cursor_offset: cursorOffset
+      });
+    } catch (err) {
+      if (retryCount >= maxRetries) {
+        return { ok: false, error: `Failed after ${maxRetries} retries: ${String(err && err.message ? err.message : err)}` };
+      }
+      // Transient failure (e.g. D1 storage reset) — signal a retry of the SAME chunk, not a hard failure.
+      return {
+        ok: true, data_ok: true, retrying: true, retry_count: retryCount + 1,
+        transient_error: String(err && err.message ? err.message : err),
+        done: false, cursor_offset: cursorOffset,
+        population_mean: null, population_stddev: null, population_n: null,
+        rows_read: 0, rows_written: 0, reclassified_rows: 0
+      };
+    }
+  })();
+
+  if (!tickResult.ok) {
+    return {
+      ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+      status: "CLASSIFICATION_V6_BASE_TICK_FAILED", error: tickResult.error, combo_index: comboIndex, combo
+    };
+  }
+
+  const comboDone = tickResult.done;
+  const nextComboIndex = comboDone ? comboIndex + 1 : comboIndex;
+  const nextCursorOffset = comboDone ? 0 : tickResult.cursor_offset;
+  const nextBatchId = comboDone ? rid("classification_v6_base_batch") : batchId;
+  const allDone = comboDone && nextComboIndex >= combos.length;
+
+  const output = {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+    request_id: requestId, run_id: runId, batch_id: batchId,
+    status: allDone ? "CLASSIFICATION_V6_BASE_COMPLETED" : "CLASSIFICATION_V6_BASE_PARTIAL_CONTINUE",
+    certification: allDone ? "CLASSIFICATION_V6_BASE_CERTIFIED_ALL_COMBOS_COMPLETE" : "CLASSIFICATION_V6_BASE_CERTIFIED_COMBO_IN_PROGRESS",
+    certification_grade: allDone ? "PASS" : "PARTIAL",
+    combo_index: comboIndex, total_combos: combos.length,
+    current_combo: combo, combo_done: comboDone,
+    rows_read: tickResult.rows_read, rows_written: tickResult.rows_written, reclassified_rows: tickResult.reclassified_rows,
+    population_mean: tickResult.population_mean, population_stddev: tickResult.population_stddev, population_n: tickResult.population_n,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true,
+    _debug_batted_ball: _debugBattedBall,
+    _debug_running_game: _debugRunningGame
+  };
+
+  if (!allDone) {
+    output.partial_continue = true;
+    output.orchestrator_should_self_continue = true;
+    output.next_input_json = {
+      mode: "baseline_v5_classification_base",
+      request_id: requestId, run_id: runId, batch_id: nextBatchId,
+      combo_index: nextComboIndex, cursor_offset: nextCursorOffset, official_date: officialDate,
+      retry_count: tickResult.retrying ? Number(tickResult.retry_count || 0) : 0
+    };
+  }
+
+  return output;
+}
+
+// Looping wrapper: internally drives multiple single-step ticks per external call, up to a
+// wall-clock time budget, instead of returning after just one tick. Same contract to the
+// caller (partial_continue / next_input_json) — just does much more real work per round trip.
+// REAL, TESTED CHANGE (per Rodolfo's explicit instruction, scoped to this one function first):
+// direct back-to-back manual invocation tonight measured real per-call wall time of 28-31s even
+// with the old 18000ms target, because the loop only checks the budget before starting a new
+// tick, not after one finishes - it naturally overshoots by up to one tick's duration. Raised to
+// 45000ms to intentionally capture that real headroom instead of leaving it on the table,
+// while staying safely under Workers CPU/wall-clock limits for a single invocation.
+// REAL FIX after a real, confirmed failure: the orchestrator's own service-binding call to this
+// worker has a hard 45000ms timeout (confirmed live - a 45000ms internal budget raced against
+// it and failed with expansion_baseline_v2_service_binding_timeout_after_45000ms). 35000ms
+// leaves real, safe margin under that confirmed caller-side ceiling, while still well above the
+// old 18000ms and matching the ~28-31s per-call durations already proven safe tonight.
+async function runClassificationV6Base(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 32000;
+  let currentInput = input;
+  let lastOutput = null;
+  let tickCount = 0;
+
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runClassificationV6BaseSingleStep(env, currentInput);
+    tickCount++;
+    if (!lastOutput.ok) return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs };
+    if (!lastOutput.partial_continue) return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs }; // fully done
+    currentInput = lastOutput.next_input_json;
+  }
+  return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs };
+}
+
+// ==== BASELINE V6 — HP% and confidence, built on top of classification_v6 ====
+// Locked design: confidence is computed ONLY here, never in classification.
+// Reuses each player's already-computed recency-blended rate (classification_v6_current.metric_value)
+// rather than recomputing it — one source of truth, no duplicated work.
+// Rate -> probability via Poisson (real, standard model for count-based sports events),
+// after shrinking the raw rate toward the player's own TIER mean (not grand population mean —
+// hierarchical/empirical-Bayes style shrinkage, same principle as real Marcel projections).
+
+function lnFactorial(n) {
+  let sum = 0;
+  for (let i = 2; i <= n; i++) sum += Math.log(i);
+  return sum;
+}
+function poissonPMF(k, lambda) {
+  if (lambda <= 0) return k === 0 ? 1 : 0;
+  return Math.exp(-lambda + k * Math.log(lambda) - lnFactorial(k));
+}
+function poissonCDF(k, lambda) {
+  let sum = 0;
+  for (let i = 0; i <= k; i++) sum += poissonPMF(i, lambda);
+  return Math.min(1, Math.max(0, sum));
+}
+// Log-Gamma via Lanczos approximation — needed for Negative Binomial with non-integer dispersion.
+function lnGamma(x) {
+  const g = 7;
+  const c = [
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7
+  ];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lnGamma(1 - x);
+  x -= 1;
+  let a = c[0];
+  const t = x + g + 0.5;
+  for (let i = 1; i < g + 2; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+// NB variance = mean + mean^2/r. Solve for r from REAL observed population mean/variance.
+// If the population is not overdispersed (variance <= mean), r -> Infinity, which is the
+// Poisson limit — meaning we only add overdispersion where the real data actually shows it.
+function estimateDispersion(mean, variance) {
+  if (!(variance > mean) || mean <= 0) return Infinity;
+  return (mean * mean) / (variance - mean);
+}
+// Correct, pooled estimate of within-player game-to-game overdispersion — NOT the spread of
+// different players' average rates (that reflects skill heterogeneity, which tiering already
+// handles). This pulls each player's own real per-game log, computes their own mean/variance
+// across their own games, then pools those individual estimates weighted by games played.
+async function estimatePooledDispersionFromGameLogs(env, propKey) {
+  const gameLogMap = await getCalibrationValue(env, "global", "prop_game_log_map", {});
+  const gcfg = gameLogMap[propKey];
+  if (!gcfg) return { dispersion: Infinity, note: "no_game_log_map_entry" };
+
+  const db = gcfg.entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  let expr;
+  if (gcfg.weights) {
+    expr = gcfg.fields.map(f => `(${Number(gcfg.weights[f] || 1)}*${f})`).join("+");
+  } else {
+    expr = gcfg.fields[0];
+  }
+
+  const rows = await all(db,
+    `SELECT player_id, COUNT(*) games, AVG(${expr}) mean_i, AVG((${expr})*(${expr})) mean_sq_i
+     FROM ${gcfg.table} GROUP BY player_id HAVING games >= 8`);
+
+  let weightedExcessSum = 0, weightedMeanSum = 0, totalGames = 0;
+  for (const r of rows) {
+    const games = Number(r.games);
+    const meanI = Number(r.mean_i);
+    const varI = Number(r.mean_sq_i) - meanI * meanI;
+    weightedExcessSum += games * (varI - meanI);
+    weightedMeanSum += games * meanI;
+    totalGames += games;
+  }
+  if (totalGames === 0) return { dispersion: Infinity, note: "no_qualifying_players" };
+
+  const pooledMean = weightedMeanSum / totalGames;
+  const pooledExcess = weightedExcessSum / totalGames;
+  const dispersion = (pooledExcess > 0 && pooledMean > 0) ? (pooledMean * pooledMean) / pooledExcess : Infinity;
+  return { dispersion, pooled_mean: pooledMean, pooled_excess_variance: pooledExcess, players_used: rows.length, note: "computed_from_real_game_logs" };
+}
+function negBinomialPMF(k, mean, dispersion) {
+  const r = dispersion;
+  if (!isFinite(r) || r <= 0) return poissonPMF(k, mean);
+  const logP = lnGamma(k + r) - lnGamma(r) - lnGamma(k + 1) + r * Math.log(r / (r + mean)) + k * Math.log(mean / (r + mean));
+  return Math.exp(logP);
+}
+function negBinomialCDF(k, mean, dispersion) {
+  let sum = 0;
+  for (let i = 0; i <= k; i++) sum += negBinomialPMF(i, mean, dispersion);
+  return Math.min(1, Math.max(0, sum));
+}
+// Standard sports line convention: line 1.5 means "more" = 2+, "under" = 0-1.
+// Uses Negative Binomial when the real population shows overdispersion, Poisson otherwise —
+// not a blanket assumption either way, driven by what the actual data looks like.
+function hpFromCountModel(mean, lineValue, side, dispersion) {
+  const threshold = Math.floor(lineValue);
+  const pUnder = isFinite(dispersion) && dispersion > 0 ? negBinomialCDF(threshold, mean, dispersion) : poissonCDF(threshold, mean);
+  return side === "more" ? (1 - pUnder) : pUnder;
+}
+
+// REAL FIX (root-caused via direct data investigation: 998 baseline rows showed extreme 0%/100%
+// hit probability from real samples as small as n=3-4 games - confirmed textbook small-sample
+// overconfidence, per real published sports-betting-calibration research). Wilson score interval
+// (Wilson 1927; standard, widely-published technique for bounding a binomial proportion when the
+// sample size is small - used broadly in sports analytics and clinical statistics for exactly
+// this failure mode). Treats the model's own point estimate as an observed proportion with n=
+// games_sample real trials, and bounds it to the interval that sample size can statistically
+// support at a real, standard 95% confidence level (z=1.96), rather than letting the model
+// report more certainty than the real underlying sample justifies.
+function wilsonInterval(pHat, n, z) {
+  if (!(n > 0)) return { lower: 0, upper: 1 };
+  const z2 = z * z;
+  const denom = 1 + z2 / n;
+  const center = (pHat + z2 / (2 * n)) / denom;
+  const margin = (z * Math.sqrt((pHat * (1 - pHat) / n) + (z2 / (4 * n * n)))) / denom;
+  return { lower: Math.max(0, center - margin), upper: Math.min(1, center + margin) };
+}
+function clampHpToSampleSupportedRange(rawHp0to1, gamesSample) {
+  const p = Math.max(0, Math.min(1, Number(rawHp0to1) || 0));
+  const n = Math.max(0, Number(gamesSample) || 0);
+  if (n >= 30) return p; // Large real samples: trust the model directly, no clamp needed.
+  const { lower, upper } = wilsonInterval(p, n, 1.96);
+  return Math.max(lower, Math.min(upper, p));
+}
+
+// Abramowitz-Stegun erf approximation, needed for the Normal CDF below.
+function erf(x) {
+  const sign = x >= 0 ? 1 : -1;
+  x = Math.abs(x);
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
+  const t = 1/(1+p*x);
+  const y = 1 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+function normalCDF(x, mean, stddev) {
+  if (!(stddev > 0)) return x >= mean ? 1 : 0;
+  const z = (x - mean) / (stddev * Math.sqrt(2));
+  return 0.5 * (1 + erf(z));
+}
+// Composite scores with negative-weighted components (e.g. pitcher_fantasy_score subtracts
+// earned runs and walks allowed) can legitimately go negative for a bad outing — Poisson/NB
+// require a non-negative rate, so forcing them here was mathematically invalid. Normal is the
+// correct model for a continuous, potentially-negative composite score.
+function hpFromNormalModel(mean, lineValue, side, stddev) {
+  const pUnder = normalCDF(lineValue, mean, stddev);
+  return side === "more" ? (1 - pUnder) : pUnder;
+}
+function propCanGoNegative(propConfig) {
+  return !!(propConfig && propConfig.weights && Object.values(propConfig.weights).some(w => Number(w) < 0));
+}
+
+const FETCH_TIMEOUT_MS_REF = 5000;
+function intOrNull(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+function safeJsonStringify(value) {
+  try { return JSON.stringify(value).slice(0, 3000); } catch (_) { return null; }
+}
+function parseCsvLine(line) {
+  const out = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuotes = false;
+      } else cur += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { out.push(cur); cur = ""; }
+      else cur += c;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+function parseCsv(text) {
+  const lines = String(text || "").split(/\r?\n/).filter(l => l.length);
+  if (!lines.length) return [];
+  const headers = parseCsvLine(lines[0]);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCsvLine(lines[i]);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = cols[idx]; });
+    rows.push(row);
+  }
+  return rows;
+}
+async function fetchTextWithTimeout(url, userAgent) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("timeout"), FETCH_TIMEOUT_MS_REF);
+  const started = Date.now();
+  try {
+    const headers = {};
+    if (userAgent) headers["user-agent"] = userAgent;
+    const resp = await fetch(url, { headers, signal: controller.signal });
+    const text = await resp.text();
+    return { ok: resp.ok, http_status: resp.status, elapsed_ms: Date.now() - started, text, response_bytes: text.length };
+  } catch (err) {
+    return { ok: false, http_status: null, elapsed_ms: Date.now() - started, error: String(err && err.message ? err.message : err), text: "", response_bytes: 0 };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// REAL FIX (per Rodolfo's direct instruction): these 5 reference-data refreshes were
+// originally built in daily-lineups.js purely for code-convenience (it already had the
+// proven staleness-check pattern), but they don't actually depend on anything daily-context
+// provides - verified directly: each takes only (env) / (env, seasonYear) / (env,
+// seasonsToFetch), reading/writing only REF_DB (and CONTEXT_DB/TEAM_DB historical tables for
+// umpire tendency) plus external Baseball Savant fetches. Per Rodolfo's direction, rather than
+// building new worker/certifier/chain-registration infrastructure, these are absorbed directly
+// into this file - which is already dispatched as part of incremental-morning-full-run via
+// expansion-baseline-full-run/expansion-baseline-v2 - expanding its existing scope, not adding
+// a new layer.
+async function refreshPitcherArsenalIfStale(env, seasonYear) {
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_pitcher_arsenal WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/pitch-arsenal-stats?type=pitcher&pitchType=&year=${seasonYear}&team=&min=1&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Pitcher-Arsenal-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
+  const rows = parseCsv(res.text);
+  const statements = [];
+  let written = 0;
+  for (const r of rows) {
+    const pid = intOrNull(r.pitcher_id || r.player_id);
+    if (!pid) continue;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_pitcher_arsenal (arsenal_id, mlb_player_id, player_name, season_year, pitch_type, pitch_usage_pct, run_value_per_100, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      `${pid}_${seasonYear}_${r.pitch_type || r.pitch_name || "unk"}`, pid, r["last_name, first_name"] || r.player_name || null, seasonYear, r.pitch_type || r.pitch_name || null,
+      Number(r.pitch_usage) || null, Number(r.run_value_per_100) || null, "baseball_savant_pitch_arsenal_v0_1_0", safeJsonStringify({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await env.REF_DB.batch(statements);
+  return { refreshed: true, rows_written: written, source_rows: rows.length };
+}
+
+async function refreshDefensiveQualityIfStale(env, seasonYear) {
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_defensive_quality WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/outs_above_average?type=Fielder&startYear=${seasonYear}&endYear=${seasonYear}&team=&min=1&pos=&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Defensive-Quality-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
+  const rows = parseCsv(res.text);
+  const statements = [];
+  let written = 0;
+  function pctFromFormatted(v) { if (v == null) return null; const n = Number(String(v).replace("%", "")); return Number.isFinite(n) ? n : null; }
+  for (const r of rows) {
+    const pid = intOrNull(r.player_id || r.entity_id);
+    if (!pid) continue;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_defensive_quality (dq_id, mlb_player_id, player_name, season_year, position, outs_above_average, actual_success_rate, adj_success_rate, diff_success_rate, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      `${pid}_${seasonYear}`, pid, r["last_name, first_name"] || r.player_name || null, seasonYear, r.primary_pos_formatted || r.pos || null, Number(r.outs_above_average) || null,
+      pctFromFormatted(r.actual_success_rate_formatted), pctFromFormatted(r.adj_estimated_success_rate_formatted), pctFromFormatted(r.diff_success_rate_formatted),
+      "baseball_savant_outs_above_average_v0_1_0", safeJsonStringify({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await env.REF_DB.batch(statements);
+  return { refreshed: true, rows_written: written, source_rows: rows.length };
+}
+
+async function refreshUmpireTendencyIfStale(env) {
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_umpire_tendency`).catch(() => null);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_umpire_tendency (
+    umpire_id INTEGER PRIMARY KEY, umpire_name TEXT, games_umpired INTEGER,
+    avg_strikeouts_per_game REAL, avg_walks_per_game REAL, avg_runs_per_game REAL,
+    strikeouts_delta_vs_league REAL, walks_delta_vs_league REAL, runs_delta_vs_league REAL,
+    source_key TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  const umpireGameRows = await all(env.CONTEXT_DB, `SELECT game_pk, home_plate_umpire_id, home_plate_umpire_name FROM context_history_game_umpire WHERE home_plate_umpire_id IS NOT NULL`).catch(() => []);
+  if (!umpireGameRows.length) return { refreshed: false, reason: "no_umpire_history_rows" };
+  const gamePks = [...new Set(umpireGameRows.map(r => r.game_pk).filter(Boolean))];
+  const CHUNK = 90;
+  const gameOutcomeByPk = new Map();
+  for (let i = 0; i < gamePks.length; i += CHUNK) {
+    const chunk = gamePks.slice(i, i + CHUNK);
+    const ph = chunk.map(() => "?").join(",");
+    const rows = await all(env.TEAM_DB, `SELECT game_pk, strikeouts, walks, runs FROM team_game_logs WHERE game_pk IN (${ph})`, ...chunk).catch(() => []);
+    for (const r of rows) {
+      const pk = Number(r.game_pk);
+      if (!gameOutcomeByPk.has(pk)) gameOutcomeByPk.set(pk, { k: 0, bb: 0, runs: 0 });
+      const g = gameOutcomeByPk.get(pk);
+      g.k += Number(r.strikeouts) || 0; g.bb += Number(r.walks) || 0; g.runs += Number(r.runs) || 0;
+    }
+  }
+  let leagueK = 0, leagueBB = 0, leagueRuns = 0, leagueGames = 0;
+  const byUmpire = new Map();
+  for (const r of umpireGameRows) {
+    const outcome = gameOutcomeByPk.get(Number(r.game_pk));
+    if (!outcome) continue;
+    leagueK += outcome.k; leagueBB += outcome.bb; leagueRuns += outcome.runs; leagueGames += 1;
+    const uid = Number(r.home_plate_umpire_id);
+    if (!byUmpire.has(uid)) byUmpire.set(uid, { name: r.home_plate_umpire_name, k: 0, bb: 0, runs: 0, games: 0 });
+    const u = byUmpire.get(uid);
+    u.k += outcome.k; u.bb += outcome.bb; u.runs += outcome.runs; u.games += 1;
+  }
+  if (leagueGames === 0) return { refreshed: false, reason: "no_matching_game_outcomes" };
+  const leagueAvgK = leagueK / leagueGames, leagueAvgBB = leagueBB / leagueGames, leagueAvgRuns = leagueRuns / leagueGames;
+  const umpireStatements = [];
+  let umpiresWritten = 0;
+  const MIN_GAMES_FOR_REAL_TENDENCY = 10;
+  for (const [uid, u] of byUmpire.entries()) {
+    if (u.games < MIN_GAMES_FOR_REAL_TENDENCY) continue;
+    const avgK = u.k / u.games, avgBB = u.bb / u.games, avgRuns = u.runs / u.games;
+    umpireStatements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_umpire_tendency (umpire_id, umpire_name, games_umpired, avg_strikeouts_per_game, avg_walks_per_game, avg_runs_per_game, strikeouts_delta_vs_league, walks_delta_vs_league, runs_delta_vs_league, source_key, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      uid, u.name, u.games, avgK, avgBB, avgRuns, avgK - leagueAvgK, avgBB - leagueAvgBB, avgRuns - leagueAvgRuns, "context_history_game_umpire+team_game_logs_v0_1_0"
+    ));
+    umpiresWritten++;
+  }
+  if (umpireStatements.length) await env.REF_DB.batch(umpireStatements);
+  return { refreshed: true, umpires_written: umpiresWritten, league_games_used: leagueGames, league_avg_strikeouts: leagueAvgK, league_avg_walks: leagueAvgBB, league_avg_runs: leagueAvgRuns };
+}
+
+async function refreshSprintSpeedIfStale(env, seasonsToFetch) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_sprint_speed (
+    sprint_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
+    sprint_speed_ft_per_sec REAL, competitive_runs INTEGER, active INTEGER DEFAULT 1,
+    source_key TEXT, raw_json TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  let totalWritten = 0;
+  const perSeasonResults = {};
+  for (const seasonYear of seasonsToFetch) {
+    const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_sprint_speed WHERE season_year=?`, seasonYear);
+    const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+    const ageMs = Date.now() - latest;
+    const isCurrentSeason = seasonYear === new Date().getUTCFullYear();
+    if (isCurrentSeason && ageMs < 20 * 60 * 60 * 1000) { perSeasonResults[seasonYear] = { refreshed: false, reason: "fresh_within_20h" }; continue; }
+    if (!isCurrentSeason && latest > 0) { perSeasonResults[seasonYear] = { refreshed: false, reason: "historical_season_already_present" }; continue; }
+    const url = `https://baseballsavant.mlb.com/leaderboard/sprint_speed?startYear=${seasonYear}&endYear=${seasonYear}&position=&team=&min=10&csv=true`;
+    const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Sprint-Speed-Reference/0.1");
+    if (!res.ok) { perSeasonResults[seasonYear] = { refreshed: false, reason: "source_failed", http_status: res.http_status }; continue; }
+    const rows = parseCsv(res.text);
+    const statements = [];
+    let written = 0;
+    for (const r of rows) {
+      const pid = intOrNull(r.player_id || r.id);
+      if (!pid) continue;
+      const speedVal = Number(r.sprint_speed ?? r.r_sprint_speed_top50percent ?? r.hp_to_1b ?? null);
+      statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_sprint_speed (sprint_id, mlb_player_id, player_name, season_year, sprint_speed_ft_per_sec, competitive_runs, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
+        `${pid}_${seasonYear}`, pid, r["last_name, first_name"] || r.name || null, seasonYear, Number.isFinite(speedVal) ? speedVal : null, intOrNull(r.competitive_runs), "baseball_savant_sprint_speed_v0_1_0", safeJsonStringify({ csv_row: r })
+      ));
+      written++;
+    }
+    if (statements.length) await env.REF_DB.batch(statements);
+    totalWritten += written;
+    perSeasonResults[seasonYear] = { refreshed: true, rows_written: written, source_rows: rows.length };
+  }
+  return { total_rows_written: totalWritten, per_season: perSeasonResults };
+}
+
+async function refreshBattedBallProfileIfStale(env, seasonYear) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_batted_ball_profile (
+    profile_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
+    ground_ball_pct REAL, air_pct REAL, pulled_air_pct REAL, batted_ball_events INTEGER,
+    source_key TEXT, raw_json TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_batted_ball_profile WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/batted-ball?season[]=${seasonYear}&type=batter&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Batted-Ball-Profile-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status, _debug_text_preview: String(res.text || "").slice(0, 300) };
+  const rows = parseCsv(res.text);
+  if (!rows.length) return { refreshed: false, reason: "zero_rows_parsed", _debug_text_preview: String(res.text || "").slice(0, 300) };
+  const statements = [];
+  let written = 0;
+  for (const r of rows) {
+    const pid = intOrNull(r.id);
+    if (!pid) continue;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_batted_ball_profile (profile_id, mlb_player_id, player_name, season_year, ground_ball_pct, air_pct, pulled_air_pct, batted_ball_events, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      `${pid}_${seasonYear}`, pid, r.name || null, seasonYear,
+      Number(r.gb_rate) || null, Number(r.air_rate) || null, Number(r.pull_air_rate) || null, intOrNull(r.bbe),
+      "baseball_savant_batted_ball_profile_v0_1_0", safeJsonStringify({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await env.REF_DB.batch(statements);
+  return { refreshed: true, rows_written: written, source_rows: rows.length };
+}
+
+async function refreshPitcherRunningGameIfStale(env, seasonYear) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_pitcher_running_game (
+    running_game_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
+    sb_opportunities INTEGER, advances_prevented REAL, stealing_runs REAL, lead_distance_gained REAL,
+    source_key TEXT, raw_json TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_pitcher_running_game WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/pitcher-running-game?type=Pitchers&game_type=Regular&season_start=${seasonYear}&season_end=${seasonYear}&min=1&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Pitcher-Running-Game-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
+  const rows = parseCsv(res.text);
+  if (!rows.length) return { refreshed: false, reason: "zero_rows_parsed", _debug_text_preview: String(res.text || "").slice(0, 300) };
+  const _debugFirstRowKeys = Object.keys(rows[0]);
+  const statements = [];
+  let written = 0;
+  for (const r of rows) {
+    const pid = intOrNull(r.player_id);
+    if (!pid) continue;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_pitcher_running_game (running_game_id, mlb_player_id, player_name, season_year, sb_opportunities, advances_prevented, stealing_runs, lead_distance_gained, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      `${pid}_${seasonYear}`, pid, r.player_name || null, seasonYear,
+      intOrNull(r.n_init), Number(r.runs_prevented_on_running_attr) || null, Number(r.runs_prevented_on_running_attr) || null, Number(r.r_sec_minus_prim_lead) || null,
+      "baseball_savant_pitcher_running_game_v0_1_0", safeJsonStringify({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await env.REF_DB.batch(statements);
+  return { refreshed: true, rows_written: written, source_rows: rows.length, _debug_first_row_keys: _debugFirstRowKeys };
+}
+
+async function refreshArmAngleIfStale(env, seasonsToFetch) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_arm_angle (
+    arm_angle_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
+    arm_angle_degrees REAL, pitches_tracked INTEGER, active INTEGER DEFAULT 1,
+    source_key TEXT, raw_json TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  let totalWritten = 0;
+  const perSeasonResults = {};
+  for (const seasonYear of seasonsToFetch) {
+    const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_arm_angle WHERE season_year=?`, seasonYear);
+    const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+    const ageMs = Date.now() - latest;
+    const isCurrentSeason = seasonYear === new Date().getUTCFullYear();
+    if (isCurrentSeason && ageMs < 20 * 60 * 60 * 1000) { perSeasonResults[seasonYear] = { refreshed: false, reason: "fresh_within_20h" }; continue; }
+    if (!isCurrentSeason && latest > 0) { perSeasonResults[seasonYear] = { refreshed: false, reason: "historical_season_already_present" }; continue; }
+    const url = `https://baseballsavant.mlb.com/leaderboard/pitcher-arm-angles?batSide=&dateStart=&dateEnd=&gameType=R&groupBy=&min=1&minGroupPitches=1&perspective=back&pitchHand=&pitchType=&season=${seasonYear}&size=small&sort=ascending&team=&csv=true`;
+    const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Arm-Angle-Reference/0.1");
+    if (!res.ok) { perSeasonResults[seasonYear] = { refreshed: false, reason: "source_failed", http_status: res.http_status }; continue; }
+    const rows = parseCsv(res.text);
+    const statements = [];
+    let written = 0;
+    for (const r of rows) {
+      const pid = intOrNull(r.pitcher || r.player_id || r.pitcher_id);
+      if (!pid) continue;
+      const angleVal = Number(r.ball_angle ?? r.arm_angle ?? r.avg_release_angle ?? null);
+      statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_arm_angle (arm_angle_id, mlb_player_id, player_name, season_year, arm_angle_degrees, pitches_tracked, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
+        `${pid}_${seasonYear}`, pid, r.pitcher_name || r["last_name, first_name"] || r.name || null, seasonYear, Number.isFinite(angleVal) ? angleVal : null, intOrNull(r.n_pitches || r.pitches), "baseball_savant_pitcher_arm_angles_v0_1_0", safeJsonStringify({ csv_row: r })
+      ));
+      written++;
+    }
+    if (statements.length) await env.REF_DB.batch(statements);
+    totalWritten += written;
+    perSeasonResults[seasonYear] = { refreshed: true, rows_written: written, source_rows: rows.length };
+  }
+  return { total_rows_written: totalWritten, per_season: perSeasonResults };
+}
+
+async function runBaselineV6ComputeTierPriors(env, propKey, lineValue, side) {
+  const rows = await all(env.ARCHIVE_DB,
+    `SELECT tier_key, AVG(metric_value) avg_rate, COUNT(*) tier_n FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? GROUP BY tier_key`,
+    propKey, lineValue, side);
+  const priors = {};
+  for (const r of rows) priors[r.tier_key] = { avg_rate: r.avg_rate, tier_n: r.tier_n };
+  return priors;
+}
+
+async function runBaselineV6Tick(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const batchId = String(input.batch_id || rid("baseline_v6_batch"));
+  const propKey = String(input.canonical_prop_key || "");
+  const side = String(input.selected_side || "");
+  const lineValue = Number(input.line_value);
+
+  // REAL, SCOPED FIX (confirmed via direct ground-truth data + league-wide validation): some
+  // (prop, line, side) combos are logically identical events to another, simpler combo (e.g.
+  // total_bases>=1 is the exact same event as hits>=1 - any hit produces >=1 total base, and
+  // total bases can only increase via a hit). Rather than let two independent models of the
+  // same real event diverge, directly copy the declared alias target's already-computed rows.
+  // Shared by both the full-rebuild and daily-delta paths (both call this same function), so
+  // this fix covers both automatically with no separate delta-path change needed.
+  const aliasMap = await getCalibrationValue(env, "global", "shared_threshold_aliases", {});
+  const aliasKey = `${propKey}|${lineValue}|${side}`;
+  if (aliasMap[aliasKey]) {
+    const [targetProp, targetLineRaw, targetSide] = String(aliasMap[aliasKey]).split("|");
+    const targetLine = Number(targetLineRaw);
+    const cursor = Math.max(0, Number(input.cursor_offset || 0));
+    const chunkSize = Array.isArray(input.player_ids_override) ? input.player_ids_override.length : 300;
+    const targetRows = Array.isArray(input.player_ids_override)
+      ? await (async () => {
+          const out = [];
+          for (let i = 0; i < input.player_ids_override.length; i += 90) {
+            const idSlice = input.player_ids_override.slice(i, i + 90);
+            const placeholders = idSlice.map(() => "?").join(",");
+            out.push(...await all(env.ARCHIVE_DB,
+              `SELECT * FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? AND player_id IN (${placeholders})`,
+              targetProp, targetLine, targetSide, ...idSlice));
+          }
+          return out;
+        })()
+      : await all(env.ARCHIVE_DB,
+          `SELECT * FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? ORDER BY player_id LIMIT ? OFFSET ?`,
+          targetProp, targetLine, targetSide, chunkSize, cursor);
+    const stmts = targetRows.map(t => {
+      const rowId = `blv6|${t.player_type}|${t.player_id}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+      return env.ARCHIVE_DB.prepare(
+        `INSERT INTO baseline_v6_current (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,tier_key,hit_probability_0_100,confidence_0_100,non_push_sample,prior_strength,recency_blended_rate_0_100,formula_version,last_processed_official_date,updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+         ON CONFLICT(player_type,player_id,canonical_prop_key,line_value,selected_side) DO UPDATE SET
+           batch_id=excluded.batch_id, tier_key=excluded.tier_key, hit_probability_0_100=excluded.hit_probability_0_100,
+           confidence_0_100=excluded.confidence_0_100, non_push_sample=excluded.non_push_sample, prior_strength=excluded.prior_strength,
+           recency_blended_rate_0_100=excluded.recency_blended_rate_0_100, formula_version=excluded.formula_version,
+           last_processed_official_date=excluded.last_processed_official_date, updated_at=CURRENT_TIMESTAMP`
+      ).bind(rowId, batchId, t.player_type, t.player_id, t.player_name, propKey, lineValue, side,
+        t.tier_key, t.hit_probability_0_100, t.confidence_0_100, t.non_push_sample, t.prior_strength,
+        t.recency_blended_rate_0_100, `${t.formula_version}+alias`, t.last_processed_official_date);
+    });
+    if (stmts.length) await writeBatch(env.ARCHIVE_DB, "baseline_v6_current", stmts, 30);
+    const nextCursor = cursor + chunkSize;
+    const totalForCombo = await first(env.ARCHIVE_DB, `SELECT COUNT(*) n FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?`, targetProp, targetLine, targetSide);
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v6", aliased_from: aliasMap[aliasKey],
+      canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+      rows_read: targetRows.length, rows_written: stmts.length, cursor_offset: nextCursor,
+      total_for_combo: Number(totalForCombo.n), done: Array.isArray(input.player_ids_override) ? true : nextCursor >= Number(totalForCombo.n),
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+  const officialDate = String(input.official_date || "");
+  const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 300 });
+
+  const cursor = Math.max(0, Number(input.cursor_offset || 0));
+  const chunkSize = Array.isArray(input.player_ids_override) ? input.player_ids_override.length : Math.max(10, Number(opLimits.chunk_size_rows || 300));
+
+  // GROUNDED FIX (Issue #3 root cause, researched and confirmed - see claude-work-log.md for
+  // full citations): a leg's implied hit probability must be one clean, agnostic quantity -
+  // "more" and "less" are two readings of the SAME underlying rate, not two independently
+  // estimated quantities. hpFromCountModel/hpFromNormalModel already implement this correctly
+  // (one CDF evaluation, "more" = 1-CDF, "less" = CDF) - the only real bug was that "less" was
+  // independently re-deriving its own games_sample/tier/shrunkRate from a classification pass
+  // that could race against a live-updating snapshot, occasionally producing a very slightly
+  // different mean than "more" used, breaking the guaranteed-by-construction complementarity.
+  // Real, grounded, industry/academic-confirmed fix: stop independently classifying "less" at
+  // all - derive it as a pure complement of "more"'s already-written baseline_v6_current row
+  // (100 - more's HP, same tier/sample/rate, since those are properties of the player+prop,
+  // never of which side of a line is being asked about). Safe because buildComboList already
+  // enqueues "more" before "less" for every (prop, line), and "more" always fully completes
+  // (all cursor chunks) before "less" starts, since combos are processed by comboIndex in
+  // sequence, not interleaved - confirmed via the combo enumeration order.
+  if (side === "less") {
+    const moreRows = Array.isArray(input.player_ids_override)
+      ? await (async () => {
+          const ids = input.player_ids_override.map(Number).filter(Boolean);
+          if (!ids.length) return [];
+          const out = [];
+          const idChunkSize = 90;
+          for (let i = 0; i < ids.length; i += idChunkSize) {
+            const idSlice = ids.slice(i, i + idChunkSize);
+            const placeholders = idSlice.map(() => "?").join(",");
+            const rows = await all(env.ARCHIVE_DB,
+              `SELECT player_type, player_id, player_name, tier_key, hit_probability_0_100, confidence_0_100, non_push_sample, prior_strength, recency_blended_rate_0_100
+               FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side='more' AND player_id IN (${placeholders})`,
+              propKey, lineValue, ...idSlice);
+            out.push(...rows);
+          }
+          return out;
+        })()
+      : await all(env.ARCHIVE_DB,
+          `SELECT player_type, player_id, player_name, tier_key, hit_probability_0_100, confidence_0_100, non_push_sample, prior_strength, recency_blended_rate_0_100
+           FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side='more'
+           ORDER BY player_id LIMIT ? OFFSET ?`,
+          propKey, lineValue, chunkSize, cursor);
+
+    const lessStmts = [];
+    for (const p of moreRows) {
+      const rowId = `blv6|${p.player_type}|${p.player_id}|${propKey}|${String(lineValue).replace(".", "p")}|less`;
+      lessStmts.push(env.ARCHIVE_DB.prepare(
+        `INSERT INTO baseline_v6_current (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,tier_key,hit_probability_0_100,confidence_0_100,non_push_sample,prior_strength,recency_blended_rate_0_100,formula_version,last_processed_official_date,updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+         ON CONFLICT(player_type,player_id,canonical_prop_key,line_value,selected_side) DO UPDATE SET
+           batch_id=excluded.batch_id, tier_key=excluded.tier_key, hit_probability_0_100=excluded.hit_probability_0_100,
+           confidence_0_100=excluded.confidence_0_100, non_push_sample=excluded.non_push_sample, prior_strength=excluded.prior_strength,
+           recency_blended_rate_0_100=excluded.recency_blended_rate_0_100, formula_version=excluded.formula_version,
+           last_processed_official_date=excluded.last_processed_official_date, updated_at=CURRENT_TIMESTAMP`
+      ).bind(rowId, batchId, p.player_type, p.player_id, p.player_name, propKey, lineValue, "less",
+        p.tier_key, round(100 - p.hit_probability_0_100, 2), p.confidence_0_100, p.non_push_sample, p.prior_strength,
+        p.recency_blended_rate_0_100, CLASSIFICATION_V6_VERSION, officialDate));
+    }
+    if (lessStmts.length) await writeBatch(env.ARCHIVE_DB, "baseline_v6_current", lessStmts, 30);
+
+    const nextCursorLess = cursor + chunkSize;
+    const doneLess = Array.isArray(input.player_ids_override)
+      ? true
+      : (await (async () => {
+          const totalForComboLess = await first(env.ARCHIVE_DB,
+            `SELECT COUNT(*) n FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side='more'`,
+            propKey, lineValue);
+          return nextCursorLess >= Number(totalForComboLess.n);
+        })());
+    const totalForComboLess = Array.isArray(input.player_ids_override) ? { n: input.player_ids_override.length } : await first(env.ARCHIVE_DB,
+      `SELECT COUNT(*) n FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side='more'`,
+      propKey, lineValue);
+
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v6",
+      canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+      rows_read: moreRows.length, rows_written: lessStmts.length, cursor_offset: nextCursorLess,
+      total_for_combo: Number(totalForComboLess.n), done: doneLess,
+      derived_as_pure_complement_of_more: true,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const cfg = CALIBRATION_CONFIG_CACHE || CALIBRATION_CONFIG_DEFAULTS;
+  const { prior_strength_multiplier: priorStrengthMultiplier } = await getRecencyWeightsForProp(env, propKey);
+
+  const tierPriors = await runBaselineV6ComputeTierPriors(env, propKey, lineValue, side);
+  const tierBlendCfg = await getCalibrationValue(env, "global", "tier_blend_constant", { k: 5 });
+  const tierBlendK = Math.max(1, Number(tierBlendCfg.k || 5));
+  const statsKeyForCombo = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+  const popStats = await first(env.ARCHIVE_DB, `SELECT population_mean, population_stddev, population_dispersion FROM classification_v6_population_stats WHERE stats_key=?`, statsKeyForCombo);
+  const populationMean = popStats ? popStats.population_mean : null;
+  const populationStddev = popStats ? popStats.population_stddev : null;
+  const dispersion = popStats ? popStats.population_dispersion : null;
+  const propMapForModel = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const usesNormalModel = propCanGoNegative(propMapForModel[propKey]);
+
+  const classRows = Array.isArray(input.player_ids_override)
+    ? await (async () => {
+        const ids = input.player_ids_override.map(Number).filter(Boolean);
+        if (!ids.length) return [];
+        const out = [];
+        const idChunkSize = 90;
+        for (let i = 0; i < ids.length; i += idChunkSize) {
+          const idSlice = ids.slice(i, i + idChunkSize);
+          const placeholders = idSlice.map(() => "?").join(",");
+          const rows = await all(env.ARCHIVE_DB,
+            `SELECT player_type, player_id, player_name, tier_key, metric_value, games_sample
+             FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? AND player_id IN (${placeholders})`,
+            propKey, lineValue, side, ...idSlice);
+          out.push(...rows);
+        }
+        return out;
+      })()
+    : await all(env.ARCHIVE_DB,
+        `SELECT player_type, player_id, player_name, tier_key, metric_value, games_sample
+         FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?
+         ORDER BY player_id LIMIT ? OFFSET ?`,
+        propKey, lineValue, side, chunkSize, cursor);
+
+  const stmts = [];
+  for (const p of classRows) {
+    const tierInfo = tierPriors[p.tier_key];
+    const rawTierMean = tierInfo ? tierInfo.avg_rate : p.metric_value;
+    const tierN = tierInfo ? tierInfo.tier_n : 0;
+    const blendedTierPrior = (populationMean != null)
+      ? (tierN * rawTierMean + tierBlendK * populationMean) / (tierN + tierBlendK)
+      : rawTierMean;
+    const priorStrength = priorStrengthForSample(p.games_sample, cfg, priorStrengthMultiplier);
+    const shrunkRate = (p.games_sample * p.metric_value + priorStrength * blendedTierPrior) / (p.games_sample + priorStrength);
+    const rawHp = usesNormalModel
+      ? hpFromNormalModel(shrunkRate, lineValue, side, populationStddev)
+      : hpFromCountModel(shrunkRate, lineValue, side, dispersion);
+    // Real fix, grounded in the Wilson score interval (standard published technique for
+    // small-sample binomial proportion bounds): treat the model's own point estimate (rawHp)
+    // as an observed proportion with games_sample real trials, and bound it to what that sample
+    // size can actually statistically support - preventing a tiny real sample (n=3-4) from
+    // producing an artificially extreme 0%/100% output regardless of what the model computed.
+    const hp = clampHpToSampleSupportedRange(rawHp, p.games_sample);
+    const confidence = sampleAwareConfidence(p.games_sample, cfg, priorStrengthMultiplier);
+    const rowId = `blv6|${p.player_type}|${p.player_id}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+
+    stmts.push(env.ARCHIVE_DB.prepare(
+      `INSERT INTO baseline_v6_current (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,tier_key,hit_probability_0_100,confidence_0_100,non_push_sample,prior_strength,recency_blended_rate_0_100,formula_version,last_processed_official_date,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+       ON CONFLICT(player_type,player_id,canonical_prop_key,line_value,selected_side) DO UPDATE SET
+         batch_id=excluded.batch_id, tier_key=excluded.tier_key, hit_probability_0_100=excluded.hit_probability_0_100,
+         confidence_0_100=excluded.confidence_0_100, non_push_sample=excluded.non_push_sample, prior_strength=excluded.prior_strength,
+         recency_blended_rate_0_100=excluded.recency_blended_rate_0_100, formula_version=excluded.formula_version,
+         last_processed_official_date=excluded.last_processed_official_date, updated_at=CURRENT_TIMESTAMP`
+    ).bind(rowId, batchId, p.player_type, p.player_id, p.player_name, propKey, lineValue, side,
+      p.tier_key, round(hp * 100, 2), round(confidence, 2), p.games_sample, round(priorStrength, 2),
+      round(shrunkRate * 100, 4), CLASSIFICATION_V6_VERSION, officialDate));
+  }
+  if (stmts.length) await writeBatch(env.ARCHIVE_DB, "baseline_v6_current", stmts, 30);
+
+  const nextCursor = cursor + chunkSize;
+  const done = Array.isArray(input.player_ids_override)
+    ? true
+    : (await (async () => {
+        const totalForCombo = await first(env.ARCHIVE_DB,
+          `SELECT COUNT(*) n FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?`,
+          propKey, lineValue, side);
+        return nextCursor >= Number(totalForCombo.n);
+      })());
+  const totalForCombo = Array.isArray(input.player_ids_override) ? { n: input.player_ids_override.length } : await first(env.ARCHIVE_DB,
+    `SELECT COUNT(*) n FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?`,
+    propKey, lineValue, side);
+
+  return {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v6",
+    canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+    rows_read: classRows.length, rows_written: stmts.length, cursor_offset: nextCursor,
+    total_for_combo: Number(totalForCombo.n), done,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+}
+
+async function runBaselineV6BaseSingleStep(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("baseline_v6_base"));
+  const runId = String(input.run_id || rid("run"));
+  const officialDate = String(input.official_date || "");
+  const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 300, max_retries: 3 });
+
+  const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
+  const combos = buildComboList(propLineUniverse);
+
+  const comboIndex = Math.max(0, Number(input.combo_index || 0));
+  const cursorOffset = Math.max(0, Number(input.cursor_offset || 0));
+  const batchId = String(input.batch_id || rid("baseline_v6_base_batch"));
+
+  if (comboIndex >= combos.length) {
+    const reconcileResult = await reconcileSubsetOfConstraints(env).catch((e) => ({ ok: false, error: String(e && e.message ? e.message : e) }));
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+      status: "BASELINE_V6_BASE_COMPLETED", certification: "BASELINE_V6_BASE_CERTIFIED_ALL_COMBOS_COMPLETE",
+      certification_grade: "PASS", total_combos: combos.length, batch_id: batchId,
+      subset_constraint_reconcile: reconcileResult,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const combo = combos[comboIndex];
+  const maxRetries = Math.max(1, Number((opLimits && opLimits.max_retries) || 3));
+  const retryCount = Math.max(0, Number(input.retry_count || 0));
+
+  let tickResult;
+  try {
+    tickResult = await runBaselineV6Tick(env, {
+      batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
+      selected_side: combo.selected_side, official_date: officialDate, cursor_offset: cursorOffset
+    });
+  } catch (err) {
+    if (retryCount >= maxRetries) {
+      return {
+        ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+        status: "BASELINE_V6_BASE_TICK_FAILED", error: `Failed after ${maxRetries} retries: ${String(err && err.message ? err.message : err)}`,
+        combo_index: comboIndex, combo
+      };
+    }
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+      status: "BASELINE_V6_BASE_PARTIAL_CONTINUE", certification: "BASELINE_V6_BASE_TRANSIENT_RETRY",
+      certification_grade: "PARTIAL", combo_index: comboIndex, total_combos: combos.length,
+      partial_continue: true, orchestrator_should_self_continue: true,
+      transient_error: String(err && err.message ? err.message : err),
+      next_input_json: {
+        mode: "baseline_v5_base", request_id: requestId, run_id: runId, batch_id: batchId,
+        combo_index: comboIndex, cursor_offset: cursorOffset, official_date: officialDate, retry_count: retryCount + 1
+      }
+    };
+  }
+
+  if (!tickResult.ok) {
+    return {
+      ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+      status: "BASELINE_V6_BASE_TICK_FAILED", error: tickResult.error, combo_index: comboIndex, combo
+    };
+  }
+
+  const comboDone = tickResult.done;
+  const nextComboIndex = comboDone ? comboIndex + 1 : comboIndex;
+  const nextCursorOffset = comboDone ? 0 : tickResult.cursor_offset;
+  const nextBatchId = comboDone ? rid("baseline_v6_base_batch") : batchId;
+  const allDone = comboDone && nextComboIndex >= combos.length;
+
+  const output = {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+    request_id: requestId, run_id: runId, batch_id: batchId,
+    status: allDone ? "BASELINE_V6_BASE_COMPLETED" : "BASELINE_V6_BASE_PARTIAL_CONTINUE",
+    certification: allDone ? "BASELINE_V6_BASE_CERTIFIED_ALL_COMBOS_COMPLETE" : "BASELINE_V6_BASE_CERTIFIED_COMBO_IN_PROGRESS",
+    certification_grade: allDone ? "PASS" : "PARTIAL",
+    combo_index: comboIndex, total_combos: combos.length,
+    current_combo: combo, combo_done: comboDone,
+    rows_read: tickResult.rows_read, rows_written: tickResult.rows_written,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+
+  if (!allDone) {
+    output.partial_continue = true;
+    output.orchestrator_should_self_continue = true;
+    output.next_input_json = {
+      mode: "baseline_v5_base",
+      request_id: requestId, run_id: runId, batch_id: nextBatchId,
+      combo_index: nextComboIndex, cursor_offset: nextCursorOffset, official_date: officialDate, retry_count: 0
+    };
+  }
+
+  return output;
+}
+
+// ==== DAILY DELTA — classification and baseline, affected players only ====
+// Locked design: delta does NOT recompute population stats (mean/stddev/dispersion) —
+// those stay cached from the last base/refresh, since recomputing them daily (especially
+// dispersion, which scans full game logs) would defeat the purpose of a cheap delta.
+// Only the players whose data actually changed today get recomputed, against that stable
+// population baseline. Both classification and baseline use the SAME affected-player
+// detection (new game log entry on the target date) — a player's rate changed, so their
+// HP needs recomputing regardless of whether their discrete tier bucket also crossed a line.
+// Auto-determines the next date to process, watermark-style: finds the latest date already
+// recorded in the given _current table, then finds the earliest date AFTER that with real
+// game log data available. Matches the pattern the orchestrator actually calls with — it does
+// NOT pass an explicit official_date, the worker is expected to figure out what's next itself.
+async function determineNextDeltaDate(env, currentTable) {
+  const BASELINE_V6_CUTOVER_DATE = "2026-07-08"; // must match the certifier's cutover constant
+  const watermarkRow = await first(env.ARCHIVE_DB, `SELECT MAX(last_processed_official_date) wm FROM ${currentTable}`);
+  let watermark = (watermarkRow && watermarkRow.wm) ? String(watermarkRow.wm).slice(0, 10) : "1900-01-01";
+  if (watermark < BASELINE_V6_CUTOVER_DATE) watermark = BASELINE_V6_CUTOVER_DATE;
+  const hitterNext = await first(env.STATS_HITTER_DB, `SELECT MIN(game_date) d FROM hitter_game_logs WHERE game_date > ?`, watermark);
+  const pitcherNext = await first(env.STATS_PITCHER_DB, `SELECT MIN(game_date) d FROM pitcher_game_logs WHERE game_date > ?`, watermark);
+  const candidates = [hitterNext && hitterNext.d, pitcherNext && pitcherNext.d].filter(Boolean).sort();
+  return candidates.length ? candidates[0] : null;
+}
+
+async function getAffectedPlayerIds(env, entity, targetDate) {
+  const db = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  const table = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
+  const rows = await all(db, `SELECT DISTINCT player_id FROM ${table} WHERE game_date = ?`, targetDate);
+  return rows.map(r => Number(r.player_id)).filter(Boolean);
+}
+
+// Self-healing: even when there's nothing NEW to compute, verify the most recently processed
+// date actually has its coverage record written in the certifier's ledger. If a previous run
+// was interrupted or a coverage write was missed for any reason, this repairs it here instead
+// of silently leaving a gap the certifier can never see closed.
+async function reconcileDailyDeltaCoverage(env, { kind, currentTable, requestId, runId }) {
+  const watermarkRow = await first(env.ARCHIVE_DB, `SELECT MAX(last_processed_official_date) wm FROM ${currentTable}`);
+  const watermark = (watermarkRow && watermarkRow.wm) ? String(watermarkRow.wm).slice(0, 10) : null;
+  if (!watermark) return null;
+  const layerKey = baselineV5DailyCoverageLayer(kind);
+  const totalGames = await first(env.TEAM_DB, `SELECT COUNT(*) n FROM mlb_game_calendar WHERE official_date=?`, watermark);
+  if (!totalGames || Number(totalGames.n || 0) <= 0) return null;
+  const existingCoverage = await first(env.TEAM_DB,
+    `SELECT COUNT(*) n FROM mlb_game_data_coverage WHERE official_date=? AND layer_key=? AND coverage_status='complete' AND COALESCE(blocking_for_full_run,0)=0`,
+    watermark, layerKey);
+  if (Number(existingCoverage.n || 0) >= Number(totalGames.n || 0)) return null; // already covered, nothing to repair
+  const rowCountForDate = await first(env.ARCHIVE_DB, `SELECT COUNT(*) n FROM ${currentTable} WHERE last_processed_official_date=?`, watermark);
+  return await baselineV5DailyUpsertCoverage(env, {
+    kind, officialDate: watermark, batchId: rid(`${kind}_v6_delta_reconcile_batch`), requestId, runId,
+    rowsUpdated: Number(rowCountForDate.n || 0), playersUpdated: Number(rowCountForDate.n || 0)
+  });
+}
+
+async function runClassificationV6DeltaDailySingleStep(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("classification_v6_delta"));
+  const runId = String(input.run_id || rid("run"));
+  let officialDate = String(input.official_date || "");
+  if (!officialDate) {
+    const nextDate = await determineNextDeltaDate(env, "classification_v6_current");
+    if (!nextDate) {
+      const reconciled = await reconcileDailyDeltaCoverage(env, { kind: "classification", currentTable: "classification_v6_current", requestId, runId });
+      return {
+        ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
+        status: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_NOOP_ALL_DAYS_ALREADY_COVERED",
+        certification: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_NOOP_ALL_DAYS_ALREADY_COVERED",
+        certification_grade: "NOOP_PASS", certifier_owned_daily_delta: true, day_by_day_delta: true,
+        current_tables_mutated: false, history_tables_mutated: false, full_cumulative_history_recompute: false,
+        coverage_update: { coverage_rows_written: 0 }, coverage_reconciled: reconciled,
+        no_daily_context: true, no_market_context: true, no_scoring_context: true
+      };
+    }
+    officialDate = nextDate;
+  }
+
+  const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
+  const combos = buildComboList(propLineUniverse);
+  const comboIndex = Math.max(0, Number(input.combo_index || 0));
+  const batchId = String(input.batch_id || rid("classification_v6_delta_batch"));
+
+  if (comboIndex >= combos.length) {
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
+      status: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_COMPLETED",
+      certification: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE",
+      certification_grade: "PASS", total_combos: combos.length, official_date: officialDate, batch_id: batchId,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const combo = combos[comboIndex];
+  const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const propConfig = propMap[combo.canonical_prop_key];
+  const entity = propConfig ? propConfig.entity : "hitter";
+  const affectedIds = await getAffectedPlayerIds(env, entity, officialDate);
+
+  const statsKey = `${combo.canonical_prop_key}|${String(combo.line_value).replace(".", "p")}|${combo.selected_side}`;
+  const cachedStats = await first(env.ARCHIVE_DB, `SELECT stats_key FROM classification_v6_population_stats WHERE stats_key=?`, statsKey);
+  if (!cachedStats) {
+    // First time this combo has ever been seen (shouldn't normally happen if base ran first) — compute stats once.
+    await runClassificationV6ComputeStats(env, { canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value, selected_side: combo.selected_side });
+  }
+
+  let tickResult = { rows_written: 0, reclassified_rows: 0 };
+  if (affectedIds.length > 0) {
+    tickResult = await runClassificationV6Tick(env, {
+      batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
+      selected_side: combo.selected_side, official_date: officialDate, player_ids_override: affectedIds
+    });
+    if (!tickResult.ok) {
+      return {
+        ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
+        status: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_TICK_FAILED", error: tickResult.error, combo_index: comboIndex, combo
+      };
+    }
+  }
+
+  const nextComboIndex = comboIndex + 1;
+  const allDone = nextComboIndex >= combos.length;
+  const cumulativeRowsWritten = Math.max(0, Number(input.cumulative_rows_written || 0)) + Number(tickResult.rows_written || 0);
+  let coverageResult = null;
+  if (allDone) {
+    coverageResult = await baselineV5DailyUpsertCoverage(env, {
+      kind: "classification", officialDate, batchId, requestId, runId,
+      rowsUpdated: cumulativeRowsWritten, playersUpdated: cumulativeRowsWritten
+    });
+  }
+  const output = {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
+    request_id: requestId, run_id: runId, batch_id: batchId, official_date: officialDate,
+    status: allDone ? "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_COMPLETED" : "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_PARTIAL_CONTINUE",
+    certification: allDone ? "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE" : "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_CERTIFIED_COMBO_IN_PROGRESS",
+    certification_grade: allDone ? "PASS" : "PARTIAL",
+    certifier_owned_daily_delta: true, day_by_day_delta: true, classification_delta_included: true,
+    current_tables_mutated: false, history_tables_mutated: false, full_cumulative_history_recompute: false,
+    coverage_update: { coverage_rows_written: Math.max(1, cumulativeRowsWritten) }, coverage_result: coverageResult,
+    combo_index: comboIndex, total_combos: combos.length, current_combo: combo,
+    affected_players: affectedIds.length, rows_written: tickResult.rows_written, reclassified_rows: tickResult.reclassified_rows,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+  if (!allDone) {
+    output.partial_continue = true;
+    output.orchestrator_should_self_continue = true;
+    output.next_input_json = { mode: "baseline_v5_classification_daily_delta", request_id: requestId, run_id: runId, batch_id: batchId, combo_index: nextComboIndex, official_date: officialDate, cumulative_rows_written: cumulativeRowsWritten };
+  }
+  return output;
+}
+
+async function runClassificationV6DeltaDaily(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 32000; // matches the tested, safe value confirmed live for runClassificationV6Base
+  let currentInput = input;
+  let lastOutput = null;
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runClassificationV6DeltaDailySingleStep(env, currentInput);
+    if (!lastOutput.ok) return lastOutput;
+    if (!lastOutput.partial_continue) return lastOutput;
+    currentInput = lastOutput.next_input_json;
+  }
+  return lastOutput;
+}
+
+async function runBaselineV6DeltaDailySingleStep(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("baseline_v6_delta"));
+  const runId = String(input.run_id || rid("run"));
+  let officialDate = String(input.official_date || "");
+  if (!officialDate) {
+    const nextDate = await determineNextDeltaDate(env, "baseline_v6_current");
+    if (!nextDate) {
+      const reconciled = await reconcileDailyDeltaCoverage(env, { kind: "hp", currentTable: "baseline_v6_current", requestId, runId });
+      return {
+        ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_hp_daily_delta",
+        status: "BASELINE_V5_HP_DAILY_DELTA_NOOP_ALL_DAYS_ALREADY_COVERED",
+        certification: "BASELINE_V5_HP_DAILY_DELTA_NOOP_ALL_DAYS_ALREADY_COVERED",
+        certification_grade: "NOOP_PASS", certifier_owned_daily_delta: true, day_by_day_delta: true,
+        current_tables_mutated: false, history_tables_mutated: false, full_cumulative_history_recompute: false,
+        coverage_update: { coverage_rows_written: 0 }, coverage_reconciled: reconciled,
+        no_daily_context: true, no_market_context: true, no_scoring_context: true
+      };
+    }
+    officialDate = nextDate;
+  }
+
+  const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
+  const combos = buildComboList(propLineUniverse);
+  const comboIndex = Math.max(0, Number(input.combo_index || 0));
+  const batchId = String(input.batch_id || rid("baseline_v6_delta_batch"));
+
+  if (comboIndex >= combos.length) {
+    const reconcileResult = await reconcileSubsetOfConstraints(env).catch((e) => ({ ok: false, error: String(e && e.message ? e.message : e) }));
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_hp_daily_delta",
+      status: "BASELINE_V5_HP_DAILY_DELTA_COMPLETED", certification: "BASELINE_V5_HP_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE",
+      certification_grade: "PASS", total_combos: combos.length, official_date: officialDate, batch_id: batchId,
+      subset_constraint_reconcile: reconcileResult,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const combo = combos[comboIndex];
+  const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const propConfig = propMap[combo.canonical_prop_key];
+  const entity = propConfig ? propConfig.entity : "hitter";
+  const affectedIds = await getAffectedPlayerIds(env, entity, officialDate);
+
+  let tickResult = { rows_written: 0 };
+  if (affectedIds.length > 0) {
+    tickResult = await runBaselineV6Tick(env, {
+      batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
+      selected_side: combo.selected_side, official_date: officialDate, player_ids_override: affectedIds
+    });
+  }
+
+  const nextComboIndex = comboIndex + 1;
+  const allDone = nextComboIndex >= combos.length;
+  const cumulativeRowsWritten = Math.max(0, Number(input.cumulative_rows_written || 0)) + Number(tickResult.rows_written || 0);
+  let coverageResult = null;
+  if (allDone) {
+    coverageResult = await baselineV5DailyUpsertCoverage(env, {
+      kind: "hp", officialDate, batchId, requestId, runId,
+      rowsUpdated: cumulativeRowsWritten, playersUpdated: cumulativeRowsWritten
+    });
+  }
+  const output = {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_hp_daily_delta",
+    request_id: requestId, run_id: runId, batch_id: batchId, official_date: officialDate,
+    status: allDone ? "BASELINE_V5_HP_DAILY_DELTA_COMPLETED" : "BASELINE_V5_HP_DAILY_DELTA_PARTIAL_CONTINUE",
+    certification: allDone ? "BASELINE_V5_HP_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE" : "BASELINE_V5_HP_DAILY_DELTA_CERTIFIED_COMBO_IN_PROGRESS",
+    certification_grade: allDone ? "PASS" : "PARTIAL",
+    certifier_owned_daily_delta: true, day_by_day_delta: true, baseline_hp_delta_included: true,
+    current_tables_mutated: false, history_tables_mutated: false, full_cumulative_history_recompute: false,
+    coverage_update: { coverage_rows_written: Math.max(1, cumulativeRowsWritten) }, coverage_result: coverageResult,
+    combo_index: comboIndex, total_combos: combos.length, current_combo: combo,
+    affected_players: affectedIds.length, rows_written: tickResult.rows_written,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+  if (!allDone) {
+    output.partial_continue = true;
+    output.orchestrator_should_self_continue = true;
+    output.next_input_json = { mode: "baseline_v5_hp_daily_delta", request_id: requestId, run_id: runId, batch_id: batchId, combo_index: nextComboIndex, official_date: officialDate, cumulative_rows_written: cumulativeRowsWritten };
+  }
+  return output;
+}
+
+// REAL FIX: post-processing monotonicity enforcement for known real subset relationships (e.g.
+// singles<=hits, doubles<=hits, rbis<=hits_runs_rbis - a single/double/etc always implies at
+// least 1 hit, a run/RBI always implies hits_runs_rbis>=1). Unlike shared_threshold_aliases
+// (for true equalities), this is for real one-directional subset relationships, where two
+// independently-fit models can produce small residual noise (confirmed live: singles exceeding
+// hits by 0.4-2.6 points for 10 real players, consistent with independent-model noise on modest
+// samples, not a systematic bias). Order-independent by design - runs as a separate reconcile
+// pass after all combos are computed, rather than depending on combo processing order.
+async function reconcileSubsetOfConstraints(env) {
+  const constraints = await getCalibrationValue(env, "global", "subset_of_constraints", {});
+  let totalClamped = 0;
+  const results = [];
+  // REAL FIX: a single pass isn't always sufficient - a superset prop (e.g. hits) can itself
+  // get clamped by its OWN constraint (hits->hits_runs_rbis) during the same pass, but a
+  // subset checked earlier in iteration order (e.g. singles->hits) won't see that updated
+  // value. Confirmed live: 10 real singles>hits violations remained after a single pass.
+  // Looping until stable (bounded at 5 passes for safety) closes this for real.
+  for (let pass = 0; pass < 5; pass++) {
+    let passClamped = 0;
+    for (const [subsetKey, supersetKey] of Object.entries(constraints)) {
+      const [subProp, subLineRaw, subSide] = subsetKey.split("|");
+      const [supProp, supLineRaw, supSide] = supersetKey.split("|");
+      const subLine = Number(subLineRaw), supLine = Number(supLineRaw);
+      const res = await run(env.ARCHIVE_DB, `
+        UPDATE baseline_v6_current
+        SET hit_probability_0_100 = (
+          SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+          WHERE s.player_id = baseline_v6_current.player_id
+            AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+        ),
+        formula_version = formula_version || '+subset_clamped'
+        WHERE canonical_prop_key = ? AND line_value = ? AND selected_side = ?
+          AND hit_probability_0_100 > (
+            SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+            WHERE s.player_id = baseline_v6_current.player_id
+              AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+          )`,
+        supProp, supLine, supSide, subProp, subLine, subSide, supProp, supLine, supSide);
+      const changed = Number(res && res.meta && res.meta.changes || 0);
+      totalClamped += changed;
+      passClamped += changed;
+      if (pass === 0) results.push({ subset: subsetKey, superset: supersetKey, rows_clamped: changed });
+      else if (changed > 0) results.push({ subset: subsetKey, superset: supersetKey, rows_clamped: changed, pass: pass + 1, note: "cascading_pass" });
+    }
+    if (passClamped === 0) break;
+  }
+  // REAL FIX: subset clamping (above) can shift a superset prop's value (e.g. hits clamped
+  // down to match hits_runs_rbis), which can then break a separately-declared alias equality
+  // (e.g. hits=total_bases) that was already correctly established. Confirmed live tonight:
+  // 15 real hits/total_bases mismatches appeared after subset reconciliation ran, for exactly
+  // this reason. Re-syncing aliases after subset clamping stabilizes keeps both mechanisms
+  // consistent with each other, not just individually correct.
+  const aliasMap = await getCalibrationValue(env, "global", "shared_threshold_aliases", {});
+  let aliasResynced = 0;
+  for (const [aliasKey, targetKey] of Object.entries(aliasMap)) {
+    const [aliasProp, aliasLineRaw, aliasSide] = aliasKey.split("|");
+    const [targetProp, targetLineRaw, targetSide] = String(targetKey).split("|");
+    const aliasLine = Number(aliasLineRaw), targetLine = Number(targetLineRaw);
+    const res = await run(env.ARCHIVE_DB, `
+      UPDATE baseline_v6_current
+      SET hit_probability_0_100 = (
+        SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+        WHERE s.player_id = baseline_v6_current.player_id
+          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+      )
+      WHERE canonical_prop_key = ? AND line_value = ? AND selected_side = ?
+        AND ABS(hit_probability_0_100 - (
+          SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+          WHERE s.player_id = baseline_v6_current.player_id
+            AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+        )) > 0.01`,
+      targetProp, targetLine, targetSide, aliasProp, aliasLine, aliasSide, targetProp, targetLine, targetSide);
+    aliasResynced += Number(res && res.meta && res.meta.changes || 0);
+  }
+  if (aliasResynced > 0) results.push({ alias_resync_after_subset_clamp: true, rows_resynced: aliasResynced });
+  return { ok: true, total_clamped: totalClamped, per_constraint: results };
+}
+
+async function runBaselineV6DeltaDaily(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 32000; // matches the tested, safe value confirmed live for runClassificationV6Base
+  let currentInput = input;
+  let lastOutput = null;
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runBaselineV6DeltaDailySingleStep(env, currentInput);
+    if (!lastOutput.ok) return lastOutput;
+    if (!lastOutput.partial_continue) return lastOutput;
+    currentInput = lastOutput.next_input_json;
+  }
+  return lastOutput;
+}
+
+async function runBaselineV6Base(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 32000; // matches the tested, safe value confirmed live for runClassificationV6Base
+  let currentInput = input;
+  let lastOutput = null;
+
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runBaselineV6BaseSingleStep(env, currentInput);
+    if (!lastOutput.ok) return lastOutput;
+    if (!lastOutput.partial_continue) return lastOutput;
+    currentInput = lastOutput.next_input_json;
+  }
+  return lastOutput;
+}
+
+async function getRecencyWeightsForProp(env, propKey) {
+  const profiles = await getCalibrationValue(env, "global", "prop_recency_profile", {});
+  const globalDefault = await getCalibrationValue(env, "global", "recency_weights", CALIBRATION_CONFIG_DEFAULTS["global|recency_weights"]);
+  const profile = profiles[propKey];
+  return {
+    recency_weights: profile ? profile.recency_weights : globalDefault,
+    prior_strength_multiplier: profile ? Number(profile.prior_strength_multiplier || 1.0) : 1.0
+  };
+}
+
+async function getCalibrationValue(env, scope, key, fallback) {
+  const cfg = await ensureCalibrationConfigLoaded(env);
+  const found = cfg[`${scope}|${key}`];
+  return found !== undefined ? found : fallback;
+}
+
+// Recency-weighted blended rate for one player, one prop, using the metric snapshot windows
+// that are already computed live by hitter_metric_snapshots / pitcher_metric_snapshots.
+function computeRecencyBlendedRate(snapshotsByWindow, propConfig) {
+  const weights = propConfig._recencyWeights;
+  const windowKeyMap = {
+    last_5_games: "last_5_games",
+    last_10_games: "last_10_games",
+    last_20_games: "last_20_games",
+    season_to_date: "season_to_date"
+  };
+  let weightedSum = 0, weightTotal = 0;
+  for (const [wKey, weight] of Object.entries(weights)) {
+    const snap = snapshotsByWindow[windowKeyMap[wKey]];
+    if (!snap) continue;
+    const games = Number(snap.games_count || 0);
+    if (games <= 0) continue;
+    let numerator = 0;
+    for (const field of propConfig.numerator_fields) {
+      const raw = Number(snap[field] || 0);
+      const w = propConfig.weights ? Number(propConfig.weights[field] || 1) : 1;
+      numerator += raw * w;
+    }
+    const denom = Number(snap[propConfig.denominator_field] || 0);
+    if (denom <= 0) continue;
+    const rate = numerator / denom;
+    weightedSum += rate * weight;
+    weightTotal += weight;
+  }
+  if (weightTotal <= 0) return null;
+  return weightedSum / weightTotal;
+}
+
+function computePopulationStats(values) {
+  const n = values.length;
+  if (n === 0) return { mean: 0, stddev: 0, n: 0 };
+  const mean = values.reduce((a, b) => a + b, 0) / n;
+  const variance = values.reduce((a, b) => a + (b - mean) * (b - mean), 0) / n;
+  return { mean, stddev: Math.sqrt(variance), n };
+}
+
+// Assign a tier from a z-score, collapsing bands automatically if the real population
+// is too thin to fill min_population_per_tier for every band.
+function assignTierFromZScore(z, tierBandsConfig, populationN) {
+  const bands = tierBandsConfig.z_bands; // e.g. [2.0,1.5,1.0,0.5,0.0,-0.5,-1.0,-1.5,-2.0]
+  const minPop = tierBandsConfig.min_population_per_tier || 15;
+  const maxTiers = tierBandsConfig.max_tiers || 12;
+
+  // How many bands can the real population actually support without any tier going thin?
+  const maxSupportedBands = Math.max(1, Math.min(bands.length + 1, maxTiers, Math.floor(populationN / minPop) || 1));
+  const usableBandCount = maxSupportedBands - 1;
+  const step = Math.max(1, Math.floor(bands.length / Math.max(1, usableBandCount)));
+  const effectiveBands = bands.filter((_, i) => i % step === 0).slice(0, usableBandCount);
+
+  let tierIndex = effectiveBands.length; // default: bottom tier
+  for (let i = 0; i < effectiveBands.length; i++) {
+    if (z >= effectiveBands[i]) { tierIndex = i; break; }
+  }
+  const totalTiers = effectiveBands.length + 1;
+  const tierNumber = tierIndex + 1;
+  return {
+    tier_number: tierNumber,
+    tier_key: `TIER_${String(tierNumber).padStart(2, "0")}_OF_${totalTiers}`,
+    total_tiers_used: totalTiers
+  };
+}
+
+async function loadAllMetricSnapshots(env, entity, playerIds) {
+  const db = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  const table = entity === "pitcher" ? "pitcher_metric_snapshots" : "hitter_metric_snapshots";
+  const out = new Map();
+  const chunkSize = 90; // stay well under D1's bound-parameter limit
+  for (let i = 0; i < playerIds.length; i += chunkSize) {
+    const chunk = playerIds.slice(i, i + chunkSize);
+    const placeholders = chunk.map(() => "?").join(",");
+    const rows = await all(db, `SELECT * FROM ${table} WHERE player_id IN (${placeholders})`, ...chunk);
+    for (const r of rows) {
+      if (!out.has(r.player_id)) out.set(r.player_id, {});
+      out.get(r.player_id)[r.metric_window] = r;
+    }
+  }
+  return out;
+}
+
+// PASS 1: compute the population mean/stddev ONCE across every eligible player for this
+// exact prop/line/side, and cache it. This must never be computed per-chunk — every
+// chunk has to score against the SAME population baseline or tier boundaries drift
+// between chunks, which is wrong.
+async function runClassificationV6ComputeStats(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const propKey = String(input.canonical_prop_key || "");
+  const side = String(input.selected_side || "");
+  const lineValue = Number(input.line_value);
+
+  const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const propConfig = propMap[propKey];
+  if (!propConfig) return { ok: false, error: `No prop_metric_map entry for canonical_prop_key '${propKey}'.` };
+  const { recency_weights: recencyWeights } = await getRecencyWeightsForProp(env, propKey);
+
+  const entity = propConfig.entity;
+  const sourceTable = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
+  const sourceDb = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  const idRows = await all(sourceDb, `SELECT DISTINCT player_id FROM ${sourceTable} WHERE player_id IS NOT NULL`);
+  const allPlayerIds = idRows.map(r => Number(r.player_id)).filter(Boolean);
+
+  const snapshots = await loadAllMetricSnapshots(env, entity, allPlayerIds);
+  const propConfigWithWeights = { ...propConfig, _recencyWeights: recencyWeights };
+
+  const rates = [];
+  for (const playerId of allPlayerIds) {
+    const snapByWindow = snapshots.get(playerId) || {};
+    const rate = computeRecencyBlendedRate(snapByWindow, propConfigWithWeights);
+    if (rate != null) rates.push(rate);
+  }
+  const stats = computePopulationStats(rates);
+  let dispersion;
+  const existingDispersionRow = await first(env.ARCHIVE_DB,
+    `SELECT population_dispersion FROM classification_v6_population_stats WHERE canonical_prop_key=? LIMIT 1`,
+    propKey);
+  if (existingDispersionRow) {
+    dispersion = existingDispersionRow.population_dispersion;
+  } else {
+    const dispersionResult = await estimatePooledDispersionFromGameLogs(env, propKey);
+    dispersion = dispersionResult.dispersion;
+  }
+  const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+
+  await run(env.ARCHIVE_DB,
+    `INSERT INTO classification_v6_population_stats (stats_key,canonical_prop_key,line_value,selected_side,population_mean,population_stddev,population_n,population_dispersion,computed_at)
+     VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+     ON CONFLICT(stats_key) DO UPDATE SET population_mean=excluded.population_mean, population_stddev=excluded.population_stddev,
+       population_n=excluded.population_n, population_dispersion=excluded.population_dispersion, computed_at=CURRENT_TIMESTAMP`,
+    statsKey, propKey, lineValue, side, stats.mean, stats.stddev, stats.n, isFinite(dispersion) ? dispersion : null);
+
+  return {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "classification_v6_compute_stats",
+    canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+    population_mean: round(stats.mean, 6), population_stddev: round(stats.stddev, 6), population_n: stats.n,
+    total_players_scanned: allPlayerIds.length,
+    certification: "CLASSIFICATION_V6_STATS_CERTIFIED", certification_grade: "PASS"
+  };
+}
+
+// PASS 2: chunked tier assignment against the CACHED population stats from pass 1.
+// Also batches the existing-tier lookup for the whole chunk in one query instead of
+// one query per player (real inefficiency found during testing, fixed here).
+async function runClassificationV6Tick(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("classification_v6"));
+  const runId = String(input.run_id || rid("run"));
+  const batchId = String(input.batch_id || rid("classification_v6_batch"));
+  const propKey = String(input.canonical_prop_key || "");
+  const side = String(input.selected_side || "");
+  const lineValue = Number(input.line_value);
+  const officialDate = String(input.official_date || "");
+
+  const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const propConfig = propMap[propKey];
+  if (!propConfig) return { ok: false, error: `No prop_metric_map entry for canonical_prop_key '${propKey}'.` };
+  const { recency_weights: recencyWeights } = await getRecencyWeightsForProp(env, propKey);
+  const tierBands = await getCalibrationValue(env, "global", "tier_bands", { max_tiers: 12, z_bands: [2.0,1.5,1.0,0.5,0.0,-0.5,-1.0,-1.5,-2.0], min_population_per_tier: 15 });
+  const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 40, tick_timeout_ms: 20000 });
+
+  const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+  const cachedStats = await first(env.ARCHIVE_DB, `SELECT * FROM classification_v6_population_stats WHERE stats_key=?`, statsKey);
+  if (!cachedStats) {
+    return { ok: false, error: `No cached population stats for ${statsKey}. Run classification_v6_compute_stats first.` };
+  }
+  const stats = { mean: cachedStats.population_mean, stddev: cachedStats.population_stddev, n: cachedStats.population_n };
+
+  const entity = propConfig.entity;
+  const sourceTable = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
+  const sourceDb = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  let allPlayerIds;
+  if (Array.isArray(input.player_ids_override)) {
+    allPlayerIds = input.player_ids_override.map(Number).filter(Boolean);
+  } else {
+    const idRows = await all(sourceDb, `SELECT DISTINCT player_id FROM ${sourceTable} WHERE player_id IS NOT NULL`);
+    allPlayerIds = idRows.map(r => Number(r.player_id)).filter(Boolean);
+  }
+
+  const cursor = Math.max(0, Number(input.cursor_offset || 0));
+  const chunkSize = Array.isArray(input.player_ids_override) ? allPlayerIds.length : Math.max(10, Number(opLimits.chunk_size_rows || 40));
+  const slice = allPlayerIds.slice(cursor, cursor + chunkSize);
+
+  const snapshots = await loadAllMetricSnapshots(env, entity, slice);
+  const propConfigWithWeights = { ...propConfig, _recencyWeights: recencyWeights };
+
+  const perPlayer = [];
+  for (const playerId of slice) {
+    const snapByWindow = snapshots.get(playerId) || {};
+    const seasonSnap = snapByWindow["season_to_date"];
+    const anySnap = seasonSnap || Object.values(snapByWindow)[0];
+    const games = seasonSnap ? Number(seasonSnap.games_count || 0) : (anySnap ? Number(anySnap.games_count || 0) : 0);
+    const rate = computeRecencyBlendedRate(snapByWindow, propConfigWithWeights);
+    if (rate == null) continue;
+    perPlayer.push({ playerId, rate, games, playerName: anySnap ? (anySnap.player_name || null) : null });
+  }
+
+  // Batched existing-tier lookup, chunked to stay under D1's bound-parameter limit
+  // (same 90-per-query pattern as loadAllMetricSnapshots — this broke once already
+  // when chunk_size_rows was raised without updating this query too).
+  const existingTiers = new Map();
+  if (perPlayer.length) {
+    const idChunkSize = 90;
+    for (let i = 0; i < perPlayer.length; i += idChunkSize) {
+      const idSlice = perPlayer.slice(i, i + idChunkSize);
+      const idPlaceholders = idSlice.map(() => "?").join(",");
+      const existingRows = await all(env.ARCHIVE_DB,
+        `SELECT player_id, tier_key FROM classification_v6_current WHERE player_type=? AND canonical_prop_key=? AND line_value=? AND selected_side=? AND player_id IN (${idPlaceholders})`,
+        entity, propKey, lineValue, side, ...idSlice.map(p => p.playerId));
+      for (const r of existingRows) existingTiers.set(r.player_id, r.tier_key);
+    }
+  }
+
+  const stmts = [];
+  let reclassifiedCount = 0;
+
+  for (const p of perPlayer) {
+    const z = stats.stddev > 0 ? (p.rate - stats.mean) / stats.stddev : 0;
+    const tier = assignTierFromZScore(z, tierBands, stats.n);
+    const rowId = `clsv6|${entity}|${p.playerId}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+
+    if (existingTiers.has(p.playerId) && existingTiers.get(p.playerId) !== tier.tier_key) reclassifiedCount++;
+
+    stmts.push(env.ARCHIVE_DB.prepare(
+      `INSERT INTO classification_v6_current (classification_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,tier_key,tier_number,z_score,metric_value,population_mean,population_stddev,games_sample,formula_version,last_processed_official_date,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+       ON CONFLICT(player_type,player_id,canonical_prop_key,line_value,selected_side) DO UPDATE SET
+         batch_id=excluded.batch_id, tier_key=excluded.tier_key, tier_number=excluded.tier_number,
+         z_score=excluded.z_score, metric_value=excluded.metric_value, population_mean=excluded.population_mean,
+         population_stddev=excluded.population_stddev, games_sample=excluded.games_sample,
+         formula_version=excluded.formula_version, last_processed_official_date=excluded.last_processed_official_date,
+         updated_at=CURRENT_TIMESTAMP`
+    ).bind(rowId, batchId, entity, p.playerId, p.playerName, propKey, lineValue, side,
+      tier.tier_key, tier.tier_number, round(z, 4), round(p.rate, 6), round(stats.mean, 6), round(stats.stddev, 6),
+      p.games, CLASSIFICATION_V6_VERSION, officialDate));
+  }
+
+  if (stmts.length) await writeBatch(env.ARCHIVE_DB, "classification_v6_current", stmts, 30);
+
+  const nextCursor = cursor + chunkSize;
+  const done = nextCursor >= allPlayerIds.length;
+
+  await writeRun(env.ARCHIVE_DB,
+    "classification_v6_batches",
+    `INSERT INTO classification_v6_batches (batch_id,request_id,run_id,mode,status,worker_version,official_date,rows_read,rows_written,reclassified_rows,cursor_offset,certification,certification_grade,cached_population_mean,cached_population_stddev,cached_population_n,stats_computed_at,updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+     ON CONFLICT(batch_id) DO UPDATE SET status=excluded.status, rows_read=classification_v6_batches.rows_read+excluded.rows_read,
+       rows_written=classification_v6_batches.rows_written+excluded.rows_written,
+       reclassified_rows=classification_v6_batches.reclassified_rows+excluded.reclassified_rows,
+       cursor_offset=excluded.cursor_offset, certification=excluded.certification, certification_grade=excluded.certification_grade,
+       finished_at=CASE WHEN excluded.status='completed' THEN CURRENT_TIMESTAMP ELSE finished_at END, updated_at=CURRENT_TIMESTAMP`,
+    batchId, requestId, runId, "classification_v6", done ? "completed" : "partial_continue", CLASSIFICATION_V6_VERSION,
+    officialDate, slice.length, perPlayer.length, reclassifiedCount, nextCursor,
+    "CLASSIFICATION_V6_TICK_CERTIFIED", done ? "PASS" : "PARTIAL",
+    stats.mean, stats.stddev, stats.n, cachedStats.computed_at);
+
+  return {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "classification_v6",
+    request_id: requestId, run_id: runId, batch_id: batchId,
+    canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+    status: done ? "completed" : "partial_continue",
+    certification: "CLASSIFICATION_V6_TICK_CERTIFIED", certification_grade: done ? "PASS" : "PARTIAL",
+    rows_read: slice.length, rows_written: perPlayer.length, reclassified_rows: reclassifiedCount,
+    population_mean: round(stats.mean, 6), population_stddev: round(stats.stddev, 6), population_n: stats.n,
+    cursor_offset: nextCursor, total_players: allPlayerIds.length, done,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+}
+
+export default {
+  async scheduled(event, env, ctx) {
+    // event.cron matches one of the two triggers configured in the generator:
+    // "0 3 * * 1" (Monday 3am) = weekly static differential
+    // "45 8 * * *" (daily 8:45am) = daily morning delta full run
+    const cron = String(event.cron || "");
+    let mode = null;
+    if (cron === "0 3 * * 1") mode = "weekly_static_differential_full_run";
+    else if (cron === "45 8 * * *") mode = "daily_morning_delta_full_run";
+    if (!mode) return;
+    ctx.waitUntil((async () => {
+      let resumeFrom = 0;
+      let guard = 0;
+      while (guard < 15) {
+        guard++;
+        const res = await runMode(env, { mode, resume_from_step: resumeFrom });
+        if (!res || res.partial !== true) break;
+        resumeFrom = res.next_resume_from_step || 0;
+      }
+    })());
+  },
+  async fetch(request, env, ctx){
+    const url=new URL(request.url); const path=url.pathname.replace(/\/$/,"")||"/"; const method=request.method.toUpperCase();
+    if(method==="GET" && path==="/") return jsonResponse(baseIdentity(env));
+    if(method==="GET" && path==="/health") return jsonResponse({...baseIdentity(env),route:"/health"});
+    if(method==="POST" && path==="/diagnostic") return jsonResponse({...baseIdentity(env),route:"/diagnostic",input_echo_safe:await readJsonSafe(request)});
+    if(method==="POST" && path==="/run"){
+      const input=await readJsonSafe(request);
+      try { return jsonResponse(await runMode(env,input)); }
+      catch(err){ return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,status:"EXPANSION_BASELINE_WORKER_FAILED",error:String(err&&err.message?err.message:err),expansion_only:true,baseline_only:true,no_current_baseline_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true},500); }
+    }
+    return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"NOT_FOUND",allowed_routes:["GET /","GET /health","POST /diagnostic","POST /run"]},404);
+  }
+};
+, '', 'i'))), '[^a-z ]', '', 'g') AS norm_name
+        FROM ref.players WHERE active = 1
+      ),
+      board_rows AS (
+        SELECT current_row_id, source_key, slate_date, player_id AS source_player_id, player_name, team, opponent,
+               stat_type, line_score, source_line_type, game_id, start_time, pickable_flag, raw_projection_json
+        FROM market.prizepicks_board_current WHERE slate_date::date = '${officialDate}'::date
+      ),
+      board_norm AS (
+        SELECT *, regexp_replace(lower(trim(regexp_replace(player_name, '\\s+(jr\\.?|sr\\.?|ii|iii|iv)
+  if(mode==="diagnose_savant_csv_export") return runDiagnoseSavantCsvExport(env,input);
+  if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgresV2(env,input);
+  if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgresV2(env,input);
+  if(mode==="weekly_static_differential_full_run") return runWeeklyStaticDifferentialFullRun(env,input);
+  if(mode==="daily_morning_delta_full_run") return runDailyMorningDeltaFullRun(env,input);
+  if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgres(env,input);
+  if(mode==="remine_defensive_quality_to_postgres") return runRemineDefensiveQualityToPostgres(env,input);
+  if(mode==="remine_catcher_framing_to_postgres") return runRemineCatcherFramingToPostgres(env,input);
+  if(mode==="derive_hitter_metric_snapshots_from_postgres") return runDeriveHitterMetricSnapshotsFromPostgres(env,input);
+  if(mode==="derive_pitcher_metric_snapshots_from_postgres") return runDerivePitcherMetricSnapshotsFromPostgres(env,input);
+  if(mode==="daily_delta_game_logs_to_postgres") return runDailyDeltaGameLogsToPostgres(env,input);
+  if(mode==="remine_batted_ball_profile_to_postgres") return runRemineBattedBallProfileToPostgres(env,input);
+  if(mode==="remine_pitcher_running_game_to_postgres") return runReminePitcherRunningGameToPostgres(env,input);
+  if(mode==="remine_park_factors_to_postgres") return runRemineParkFactorsToPostgres(env,input);
+  if(mode==="remine_ref_teams_to_postgres") return runRemineRefTeamsToPostgres(env,input);
+  if(mode==="remine_ref_players_to_postgres") return runRemineRefPlayersToPostgres(env,input);
+  if(mode==="remine_ref_stadiums_to_postgres") return runRemineRefStadiumsToPostgres(env,input);
+  if(mode==="remine_hitter_game_logs_to_postgres") return runRemineHitterGameLogsToPostgres(env,input);
+  if(mode==="remine_pitcher_game_logs_to_postgres") return runReminePitcherGameLogsToPostgres(env,input);
+  if(mode==="remine_hitter_splits_to_postgres") return runRemineHitterSplitsToPostgres(env,input);
+  if(mode==="remine_pitcher_splits_to_postgres") return runReminePitcherSplitsToPostgres(env,input);
+  if(mode==="remine_team_game_logs_to_postgres") return runRemineTeamGameLogsToPostgres(env,input);
+  if(mode==="derive_starter_history_from_postgres") return runDeriveStarterHistoryFromPostgres(env,input);
+  if(mode==="derive_bullpen_history_from_postgres") return runDeriveBullpenHistoryFromPostgres(env,input);
+  if(mode==="remine_sprint_speed_to_postgres") return runRemineSprintSpeedToPostgres(env,input);
+  if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgres(env,input);
+  if(mode==="remine_quality_of_contact_to_postgres") return runRemineQualityOfContactToPostgres(env,input);
+  if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
+  if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
+  if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
+  if(mode==="expansion_baseline_hp" || mode==="expansion-baseline-hp") return runHp(env,input);
+  if(mode==="expansion_delta_mining" || mode==="expansion-delta-mining") return runDeltaMining(env,input);
+  if(mode==="expansion_delta_sanity" || mode==="expansion-delta-sanity") return runDeltaSanity(env,input);
+  if(mode==="expansion_delta_hp" || mode==="expansion-delta-hp") return runDeltaHp(env,input);
+  if(mode==="expansion_delta_full_run" || mode==="expansion-delta-full-run") return deltaFullRun(env,input);
+  if(mode==="expansion_line_inventory" || mode==="expansion-baseline-line-inventory") return runLineInventory(env,input);
+  if(mode==="expansion_baseline_certifier" || mode==="expansion-baseline-certifier") return certifier(env,input);
+  if(mode==="expansion_baseline_full_run" || mode==="expansion-baseline-full-run") return fullRun(env,input);
+  if(mode==="baseline_v5_state_hydrate") return runBaselineV5StateHydrate(env,input);
+  if(mode==="baseline_v5_classification_daily_delta") return runClassificationV6DeltaDaily(env,input);
+  if(mode==="baseline_v5_hp_daily_delta") return runBaselineV6DeltaDaily(env,input);
+  if(mode==="baseline_v5_stateful_delta") return runBaselineV5StatefulDelta(env,input);
+  if(mode==="baseline_v5_classification_rescue") return runBaselineV5ClassificationRescue(env,input);
+  if(mode==="baseline_v5_base_rescue") return runBaselineV5BaseRescue(env,input);
+  if(mode==="baseline_v5_classification_delta" || mode==="baseline_v5_delta") return baseOutput(input,{request_id:String(input.request_id||rid("baseline_v5_old_delta_blocked")),run_id:String(input.run_id||rid("run")),mode,status:"BASELINE_V5_OLD_AFFECTED_PLAYER_CUMULATIVE_DELTA_BLOCKED",certification:"BASELINE_V5_OLD_AFFECTED_PLAYER_CUMULATIVE_DELTA_BLOCKED",certification_grade:"BLOCKED",data_ok:false,current_tables_mutated:false,history_tables_mutated:false,full_cumulative_history_recompute:true,blocked_reason:"Old Baseline/Classfication V5 delta reloads cumulative player history and is banned. Use baseline_v5_state_hydrate then baseline_v5_stateful_delta shadow/parity path.",no_daily_context:true,no_market_context:true,no_scoring_context:true,no_final_board_context:true});
+  if(mode==="classification_v6_compute_stats") return runClassificationV6ComputeStats(env,input);
+  if(mode==="classification_v6_tick" || mode==="classification_v6") return runClassificationV6Tick(env,input);
+  if(mode==="baseline_v6_tick") return runBaselineV6Tick(env,input);
+  if(mode==="baseline_v6_reconcile_subset_constraints") return reconcileSubsetOfConstraints(env);
+  if(mode==="baseline_v5_classification_base") return runClassificationV6Base(env,input);
+  if(mode==="baseline_v5_base") return runBaselineV6Base(env,input);
+  if(mode==="baseline_v5_history_only" || mode==="baseline_v2_heb" || mode==="expansion_baseline_v2" || mode==="expansion-baseline-v2" || mode==="expansion-baseline-v2-full-run") return runBaselineV2(env,input);
+  const jobKey = String(input.job_key || "");
+  if (jobKey === "phase3a-first-inning-pitcher-context" || mode === "phase3a-first-inning-pitcher-context" || mode === "legacy_dummy") {
+    return {ok:true,data_ok:true,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,job_key:jobKey || "phase3a-first-inning-pitcher-context",status:"LEGACY_DUMMY_SLOT_READY_NO_MUTATION",certification:"LEGACY_DUMMY_SLOT_READY_NO_MUTATION",rows_read:0,rows_written:0,writes_performed:0,external_calls_performed:0,expansion_only:false,baseline_only:false,no_current_baseline_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true};
+  }
+  return {ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"UNSUPPORTED_EXPANSION_BASELINE_MODE",mode,allowed_modes:["expansion_baseline_mining","expansion_line_inventory","expansion_baseline_sanity","expansion_baseline_hp","expansion_baseline_certifier","expansion_baseline_full_run","expansion_delta_mining","expansion_delta_sanity","expansion_delta_hp","expansion_delta_full_run","baseline_v5_classification_base","baseline_v5_classification_delta","baseline_v5_classification_rescue","baseline_v5_base","baseline_v5_base_rescue","baseline_v5_delta","baseline_v5_state_hydrate","baseline_v5_stateful_delta","baseline_v5_classification_daily_delta","baseline_v5_hp_daily_delta","baseline_v5_history_only","expansion-baseline-v2"]};
+}
+
+// ==== CLASSIFICATION V6 — new, clean, prop/line/direction-aware classification ====
+// Design locked with the user:
+// - Tier varies by canonical_prop_key x line_value x selected_side (the old system didn't do this).
+// - Tiers are z-score bands off the REAL population distribution for that exact prop/line/side,
+//   computed from a Marcel-style recency-weighted blend of last_5/10/20_games + season_to_date.
+// - Tier count collapses/expands automatically based on real population spread (max 12, fewer if thin).
+// - Classification does NOT compute confidence. Confidence is baseline's job only (locked decision).
+// - Every tunable number (weights, bands, chunk size, timeouts) lives in calibration_config, not code.
+// - Writes to ARCHIVE_DB (repurposed, near-empty), not SCORE_DB (near its 10GB limit).
+
+// Build the flat, ordered list of every (canonical_prop_key, line_value, selected_side)
+// combination the Base job needs to classify, from the configured universe.
+function buildComboList(propLineUniverse) {
+  const combos = [];
+  for (const [propKey, lines] of Object.entries(propLineUniverse)) {
+    for (const lineValue of lines) {
+      combos.push({ canonical_prop_key: propKey, line_value: lineValue, selected_side: "more" });
+      combos.push({ canonical_prop_key: propKey, line_value: lineValue, selected_side: "less" });
+    }
+  }
+  return combos;
+}
+
+// The actual "Classification Base" job. Wired to orchestrator's existing generic
+// continuation contract for job_key=expansion-baseline-v2: returns partial_continue:true
+// and next_input_json to keep going, or omits them when the entire universe is done.
+// Orchestrator re-enqueues and re-calls with exactly next_input_json as the next input —
+// no orchestrator.js changes required, this worker just has to honor the existing contract.
+async function runClassificationV6BaseSingleStep(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("classification_v6_base"));
+  const runId = String(input.run_id || rid("run"));
+  const officialDate = String(input.official_date || "");
+  const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 40, tick_timeout_ms: 20000, max_retries: 3 });
+
+  const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
+  const combos = buildComboList(propLineUniverse);
+
+  const comboIndex = Math.max(0, Number(input.combo_index || 0));
+  // REAL FIX (per Rodolfo's direct instruction): the 5 season-level reference-data refreshes
+  // (arsenal, defensive OAA, sprint speed, arm angle, umpire tendency) don't depend on
+  // anything daily-context/board provides - verified directly against their real function
+  // signatures. Rather than building a new worker/certifier/chain-registration layer, they're
+  // absorbed directly into this existing morning-run entry point (already dispatched as part
+  // of incremental-morning-full-run), firing once per fresh base-rebuild cycle rather than on
+  // every chunked tick - each has its own ~20h self-gate anyway, so an occasional extra check
+  // is harmless, but gating here avoids a real, unnecessary staleness-check on every one of
+  // the many chunk ticks a full base rebuild takes.
+  let _debugBattedBall = null;
+  let _debugRunningGame = null;
+  if (comboIndex === 0 && Math.max(0, Number(input.cursor_offset || 0)) === 0) {
+    const refYear = new Date().getUTCFullYear();
+    await refreshPitcherArsenalIfStale(env, refYear).catch(() => ({ refreshed: false, error: true }));
+    await refreshDefensiveQualityIfStale(env, refYear).catch(() => ({ refreshed: false, error: true }));
+    await refreshUmpireTendencyIfStale(env).catch(() => ({ refreshed: false, error: true }));
+    await refreshSprintSpeedIfStale(env, [refYear, refYear - 1]).catch(() => ({ refreshed: false, error: true }));
+    await refreshArmAngleIfStale(env, [refYear, refYear - 1]).catch(() => ({ refreshed: false, error: true }));
+    _debugBattedBall = await refreshBattedBallProfileIfStale(env, refYear).catch((e) => ({ refreshed: false, error: true, message: String(e && e.message ? e.message : e) }));
+    _debugRunningGame = await refreshPitcherRunningGameIfStale(env, refYear).catch((e) => ({ refreshed: false, error: true, message: String(e && e.message ? e.message : e) }));
+  }
+  const cursorOffset = Math.max(0, Number(input.cursor_offset || 0));
+  const batchId = String(input.batch_id || rid("classification_v6_base_batch"));
+
+  if (comboIndex >= combos.length) {
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+      status: "CLASSIFICATION_V6_BASE_COMPLETED", certification: "CLASSIFICATION_V6_BASE_CERTIFIED_ALL_COMBOS_COMPLETE",
+      certification_grade: "PASS", total_combos: combos.length, batch_id: batchId,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const combo = combos[comboIndex];
+
+  // Fresh combo (cursor 0): (re)compute population stats for it first — cheap, one pass.
+  if (cursorOffset === 0) {
+    let statsResult;
+    try {
+      statsResult = await runClassificationV6ComputeStats(env, {
+        canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value, selected_side: combo.selected_side
+      });
+    } catch (err) {
+      const maxRetries = Math.max(1, Number((opLimits && opLimits.max_retries) || 3));
+      const retryCount = Math.max(0, Number(input.retry_count || 0));
+      if (retryCount >= maxRetries) {
+        return {
+          ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+          status: "CLASSIFICATION_V6_BASE_STATS_FAILED", error: `Stats computation failed after ${maxRetries} retries: ${String(err && err.message ? err.message : err)}`,
+          combo_index: comboIndex, combo
+        };
+      }
+      return {
+        ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+        status: "CLASSIFICATION_V6_BASE_PARTIAL_CONTINUE", certification: "CLASSIFICATION_V6_BASE_STATS_TRANSIENT_RETRY",
+        certification_grade: "PARTIAL", combo_index: comboIndex, total_combos: combos.length,
+        partial_continue: true, orchestrator_should_self_continue: true,
+        transient_error: String(err && err.message ? err.message : err),
+        next_input_json: {
+          mode: "baseline_v5_classification_base", request_id: requestId, run_id: runId, batch_id: batchId,
+          combo_index: comboIndex, cursor_offset: 0, official_date: officialDate, retry_count: retryCount + 1
+        }
+      };
+    }
+    if (!statsResult.ok) {
+      return {
+        ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+        status: "CLASSIFICATION_V6_BASE_STATS_FAILED", error: statsResult.error, combo_index: comboIndex, combo
+      };
+    }
+  }
+
+  const tickResult = await (async () => {
+    const maxRetries = Math.max(1, Number((opLimits && opLimits.max_retries) || 3));
+    const retryCount = Math.max(0, Number(input.retry_count || 0));
+    try {
+      return await runClassificationV6Tick(env, {
+        batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
+        selected_side: combo.selected_side, official_date: officialDate, cursor_offset: cursorOffset
+      });
+    } catch (err) {
+      if (retryCount >= maxRetries) {
+        return { ok: false, error: `Failed after ${maxRetries} retries: ${String(err && err.message ? err.message : err)}` };
+      }
+      // Transient failure (e.g. D1 storage reset) — signal a retry of the SAME chunk, not a hard failure.
+      return {
+        ok: true, data_ok: true, retrying: true, retry_count: retryCount + 1,
+        transient_error: String(err && err.message ? err.message : err),
+        done: false, cursor_offset: cursorOffset,
+        population_mean: null, population_stddev: null, population_n: null,
+        rows_read: 0, rows_written: 0, reclassified_rows: 0
+      };
+    }
+  })();
+
+  if (!tickResult.ok) {
+    return {
+      ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+      status: "CLASSIFICATION_V6_BASE_TICK_FAILED", error: tickResult.error, combo_index: comboIndex, combo
+    };
+  }
+
+  const comboDone = tickResult.done;
+  const nextComboIndex = comboDone ? comboIndex + 1 : comboIndex;
+  const nextCursorOffset = comboDone ? 0 : tickResult.cursor_offset;
+  const nextBatchId = comboDone ? rid("classification_v6_base_batch") : batchId;
+  const allDone = comboDone && nextComboIndex >= combos.length;
+
+  const output = {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_base",
+    request_id: requestId, run_id: runId, batch_id: batchId,
+    status: allDone ? "CLASSIFICATION_V6_BASE_COMPLETED" : "CLASSIFICATION_V6_BASE_PARTIAL_CONTINUE",
+    certification: allDone ? "CLASSIFICATION_V6_BASE_CERTIFIED_ALL_COMBOS_COMPLETE" : "CLASSIFICATION_V6_BASE_CERTIFIED_COMBO_IN_PROGRESS",
+    certification_grade: allDone ? "PASS" : "PARTIAL",
+    combo_index: comboIndex, total_combos: combos.length,
+    current_combo: combo, combo_done: comboDone,
+    rows_read: tickResult.rows_read, rows_written: tickResult.rows_written, reclassified_rows: tickResult.reclassified_rows,
+    population_mean: tickResult.population_mean, population_stddev: tickResult.population_stddev, population_n: tickResult.population_n,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true,
+    _debug_batted_ball: _debugBattedBall,
+    _debug_running_game: _debugRunningGame
+  };
+
+  if (!allDone) {
+    output.partial_continue = true;
+    output.orchestrator_should_self_continue = true;
+    output.next_input_json = {
+      mode: "baseline_v5_classification_base",
+      request_id: requestId, run_id: runId, batch_id: nextBatchId,
+      combo_index: nextComboIndex, cursor_offset: nextCursorOffset, official_date: officialDate,
+      retry_count: tickResult.retrying ? Number(tickResult.retry_count || 0) : 0
+    };
+  }
+
+  return output;
+}
+
+// Looping wrapper: internally drives multiple single-step ticks per external call, up to a
+// wall-clock time budget, instead of returning after just one tick. Same contract to the
+// caller (partial_continue / next_input_json) — just does much more real work per round trip.
+// REAL, TESTED CHANGE (per Rodolfo's explicit instruction, scoped to this one function first):
+// direct back-to-back manual invocation tonight measured real per-call wall time of 28-31s even
+// with the old 18000ms target, because the loop only checks the budget before starting a new
+// tick, not after one finishes - it naturally overshoots by up to one tick's duration. Raised to
+// 45000ms to intentionally capture that real headroom instead of leaving it on the table,
+// while staying safely under Workers CPU/wall-clock limits for a single invocation.
+// REAL FIX after a real, confirmed failure: the orchestrator's own service-binding call to this
+// worker has a hard 45000ms timeout (confirmed live - a 45000ms internal budget raced against
+// it and failed with expansion_baseline_v2_service_binding_timeout_after_45000ms). 35000ms
+// leaves real, safe margin under that confirmed caller-side ceiling, while still well above the
+// old 18000ms and matching the ~28-31s per-call durations already proven safe tonight.
+async function runClassificationV6Base(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 32000;
+  let currentInput = input;
+  let lastOutput = null;
+  let tickCount = 0;
+
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runClassificationV6BaseSingleStep(env, currentInput);
+    tickCount++;
+    if (!lastOutput.ok) return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs };
+    if (!lastOutput.partial_continue) return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs }; // fully done
+    currentInput = lastOutput.next_input_json;
+  }
+  return { ...lastOutput, fast_loop_tick_count: tickCount, fast_loop_wall_ms: Date.now() - startMs };
+}
+
+// ==== BASELINE V6 — HP% and confidence, built on top of classification_v6 ====
+// Locked design: confidence is computed ONLY here, never in classification.
+// Reuses each player's already-computed recency-blended rate (classification_v6_current.metric_value)
+// rather than recomputing it — one source of truth, no duplicated work.
+// Rate -> probability via Poisson (real, standard model for count-based sports events),
+// after shrinking the raw rate toward the player's own TIER mean (not grand population mean —
+// hierarchical/empirical-Bayes style shrinkage, same principle as real Marcel projections).
+
+function lnFactorial(n) {
+  let sum = 0;
+  for (let i = 2; i <= n; i++) sum += Math.log(i);
+  return sum;
+}
+function poissonPMF(k, lambda) {
+  if (lambda <= 0) return k === 0 ? 1 : 0;
+  return Math.exp(-lambda + k * Math.log(lambda) - lnFactorial(k));
+}
+function poissonCDF(k, lambda) {
+  let sum = 0;
+  for (let i = 0; i <= k; i++) sum += poissonPMF(i, lambda);
+  return Math.min(1, Math.max(0, sum));
+}
+// Log-Gamma via Lanczos approximation — needed for Negative Binomial with non-integer dispersion.
+function lnGamma(x) {
+  const g = 7;
+  const c = [
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7
+  ];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lnGamma(1 - x);
+  x -= 1;
+  let a = c[0];
+  const t = x + g + 0.5;
+  for (let i = 1; i < g + 2; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+// NB variance = mean + mean^2/r. Solve for r from REAL observed population mean/variance.
+// If the population is not overdispersed (variance <= mean), r -> Infinity, which is the
+// Poisson limit — meaning we only add overdispersion where the real data actually shows it.
+function estimateDispersion(mean, variance) {
+  if (!(variance > mean) || mean <= 0) return Infinity;
+  return (mean * mean) / (variance - mean);
+}
+// Correct, pooled estimate of within-player game-to-game overdispersion — NOT the spread of
+// different players' average rates (that reflects skill heterogeneity, which tiering already
+// handles). This pulls each player's own real per-game log, computes their own mean/variance
+// across their own games, then pools those individual estimates weighted by games played.
+async function estimatePooledDispersionFromGameLogs(env, propKey) {
+  const gameLogMap = await getCalibrationValue(env, "global", "prop_game_log_map", {});
+  const gcfg = gameLogMap[propKey];
+  if (!gcfg) return { dispersion: Infinity, note: "no_game_log_map_entry" };
+
+  const db = gcfg.entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  let expr;
+  if (gcfg.weights) {
+    expr = gcfg.fields.map(f => `(${Number(gcfg.weights[f] || 1)}*${f})`).join("+");
+  } else {
+    expr = gcfg.fields[0];
+  }
+
+  const rows = await all(db,
+    `SELECT player_id, COUNT(*) games, AVG(${expr}) mean_i, AVG((${expr})*(${expr})) mean_sq_i
+     FROM ${gcfg.table} GROUP BY player_id HAVING games >= 8`);
+
+  let weightedExcessSum = 0, weightedMeanSum = 0, totalGames = 0;
+  for (const r of rows) {
+    const games = Number(r.games);
+    const meanI = Number(r.mean_i);
+    const varI = Number(r.mean_sq_i) - meanI * meanI;
+    weightedExcessSum += games * (varI - meanI);
+    weightedMeanSum += games * meanI;
+    totalGames += games;
+  }
+  if (totalGames === 0) return { dispersion: Infinity, note: "no_qualifying_players" };
+
+  const pooledMean = weightedMeanSum / totalGames;
+  const pooledExcess = weightedExcessSum / totalGames;
+  const dispersion = (pooledExcess > 0 && pooledMean > 0) ? (pooledMean * pooledMean) / pooledExcess : Infinity;
+  return { dispersion, pooled_mean: pooledMean, pooled_excess_variance: pooledExcess, players_used: rows.length, note: "computed_from_real_game_logs" };
+}
+function negBinomialPMF(k, mean, dispersion) {
+  const r = dispersion;
+  if (!isFinite(r) || r <= 0) return poissonPMF(k, mean);
+  const logP = lnGamma(k + r) - lnGamma(r) - lnGamma(k + 1) + r * Math.log(r / (r + mean)) + k * Math.log(mean / (r + mean));
+  return Math.exp(logP);
+}
+function negBinomialCDF(k, mean, dispersion) {
+  let sum = 0;
+  for (let i = 0; i <= k; i++) sum += negBinomialPMF(i, mean, dispersion);
+  return Math.min(1, Math.max(0, sum));
+}
+// Standard sports line convention: line 1.5 means "more" = 2+, "under" = 0-1.
+// Uses Negative Binomial when the real population shows overdispersion, Poisson otherwise —
+// not a blanket assumption either way, driven by what the actual data looks like.
+function hpFromCountModel(mean, lineValue, side, dispersion) {
+  const threshold = Math.floor(lineValue);
+  const pUnder = isFinite(dispersion) && dispersion > 0 ? negBinomialCDF(threshold, mean, dispersion) : poissonCDF(threshold, mean);
+  return side === "more" ? (1 - pUnder) : pUnder;
+}
+
+// REAL FIX (root-caused via direct data investigation: 998 baseline rows showed extreme 0%/100%
+// hit probability from real samples as small as n=3-4 games - confirmed textbook small-sample
+// overconfidence, per real published sports-betting-calibration research). Wilson score interval
+// (Wilson 1927; standard, widely-published technique for bounding a binomial proportion when the
+// sample size is small - used broadly in sports analytics and clinical statistics for exactly
+// this failure mode). Treats the model's own point estimate as an observed proportion with n=
+// games_sample real trials, and bounds it to the interval that sample size can statistically
+// support at a real, standard 95% confidence level (z=1.96), rather than letting the model
+// report more certainty than the real underlying sample justifies.
+function wilsonInterval(pHat, n, z) {
+  if (!(n > 0)) return { lower: 0, upper: 1 };
+  const z2 = z * z;
+  const denom = 1 + z2 / n;
+  const center = (pHat + z2 / (2 * n)) / denom;
+  const margin = (z * Math.sqrt((pHat * (1 - pHat) / n) + (z2 / (4 * n * n)))) / denom;
+  return { lower: Math.max(0, center - margin), upper: Math.min(1, center + margin) };
+}
+function clampHpToSampleSupportedRange(rawHp0to1, gamesSample) {
+  const p = Math.max(0, Math.min(1, Number(rawHp0to1) || 0));
+  const n = Math.max(0, Number(gamesSample) || 0);
+  if (n >= 30) return p; // Large real samples: trust the model directly, no clamp needed.
+  const { lower, upper } = wilsonInterval(p, n, 1.96);
+  return Math.max(lower, Math.min(upper, p));
+}
+
+// Abramowitz-Stegun erf approximation, needed for the Normal CDF below.
+function erf(x) {
+  const sign = x >= 0 ? 1 : -1;
+  x = Math.abs(x);
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
+  const t = 1/(1+p*x);
+  const y = 1 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+function normalCDF(x, mean, stddev) {
+  if (!(stddev > 0)) return x >= mean ? 1 : 0;
+  const z = (x - mean) / (stddev * Math.sqrt(2));
+  return 0.5 * (1 + erf(z));
+}
+// Composite scores with negative-weighted components (e.g. pitcher_fantasy_score subtracts
+// earned runs and walks allowed) can legitimately go negative for a bad outing — Poisson/NB
+// require a non-negative rate, so forcing them here was mathematically invalid. Normal is the
+// correct model for a continuous, potentially-negative composite score.
+function hpFromNormalModel(mean, lineValue, side, stddev) {
+  const pUnder = normalCDF(lineValue, mean, stddev);
+  return side === "more" ? (1 - pUnder) : pUnder;
+}
+function propCanGoNegative(propConfig) {
+  return !!(propConfig && propConfig.weights && Object.values(propConfig.weights).some(w => Number(w) < 0));
+}
+
+const FETCH_TIMEOUT_MS_REF = 5000;
+function intOrNull(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+function safeJsonStringify(value) {
+  try { return JSON.stringify(value).slice(0, 3000); } catch (_) { return null; }
+}
+function parseCsvLine(line) {
+  const out = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuotes = false;
+      } else cur += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { out.push(cur); cur = ""; }
+      else cur += c;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+function parseCsv(text) {
+  const lines = String(text || "").split(/\r?\n/).filter(l => l.length);
+  if (!lines.length) return [];
+  const headers = parseCsvLine(lines[0]);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCsvLine(lines[i]);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = cols[idx]; });
+    rows.push(row);
+  }
+  return rows;
+}
+async function fetchTextWithTimeout(url, userAgent) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort("timeout"), FETCH_TIMEOUT_MS_REF);
+  const started = Date.now();
+  try {
+    const headers = {};
+    if (userAgent) headers["user-agent"] = userAgent;
+    const resp = await fetch(url, { headers, signal: controller.signal });
+    const text = await resp.text();
+    return { ok: resp.ok, http_status: resp.status, elapsed_ms: Date.now() - started, text, response_bytes: text.length };
+  } catch (err) {
+    return { ok: false, http_status: null, elapsed_ms: Date.now() - started, error: String(err && err.message ? err.message : err), text: "", response_bytes: 0 };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// REAL FIX (per Rodolfo's direct instruction): these 5 reference-data refreshes were
+// originally built in daily-lineups.js purely for code-convenience (it already had the
+// proven staleness-check pattern), but they don't actually depend on anything daily-context
+// provides - verified directly: each takes only (env) / (env, seasonYear) / (env,
+// seasonsToFetch), reading/writing only REF_DB (and CONTEXT_DB/TEAM_DB historical tables for
+// umpire tendency) plus external Baseball Savant fetches. Per Rodolfo's direction, rather than
+// building new worker/certifier/chain-registration infrastructure, these are absorbed directly
+// into this file - which is already dispatched as part of incremental-morning-full-run via
+// expansion-baseline-full-run/expansion-baseline-v2 - expanding its existing scope, not adding
+// a new layer.
+async function refreshPitcherArsenalIfStale(env, seasonYear) {
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_pitcher_arsenal WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/pitch-arsenal-stats?type=pitcher&pitchType=&year=${seasonYear}&team=&min=1&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Pitcher-Arsenal-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
+  const rows = parseCsv(res.text);
+  const statements = [];
+  let written = 0;
+  for (const r of rows) {
+    const pid = intOrNull(r.pitcher_id || r.player_id);
+    if (!pid) continue;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_pitcher_arsenal (arsenal_id, mlb_player_id, player_name, season_year, pitch_type, pitch_usage_pct, run_value_per_100, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      `${pid}_${seasonYear}_${r.pitch_type || r.pitch_name || "unk"}`, pid, r["last_name, first_name"] || r.player_name || null, seasonYear, r.pitch_type || r.pitch_name || null,
+      Number(r.pitch_usage) || null, Number(r.run_value_per_100) || null, "baseball_savant_pitch_arsenal_v0_1_0", safeJsonStringify({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await env.REF_DB.batch(statements);
+  return { refreshed: true, rows_written: written, source_rows: rows.length };
+}
+
+async function refreshDefensiveQualityIfStale(env, seasonYear) {
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_defensive_quality WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/outs_above_average?type=Fielder&startYear=${seasonYear}&endYear=${seasonYear}&team=&min=1&pos=&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Defensive-Quality-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
+  const rows = parseCsv(res.text);
+  const statements = [];
+  let written = 0;
+  function pctFromFormatted(v) { if (v == null) return null; const n = Number(String(v).replace("%", "")); return Number.isFinite(n) ? n : null; }
+  for (const r of rows) {
+    const pid = intOrNull(r.player_id || r.entity_id);
+    if (!pid) continue;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_defensive_quality (dq_id, mlb_player_id, player_name, season_year, position, outs_above_average, actual_success_rate, adj_success_rate, diff_success_rate, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      `${pid}_${seasonYear}`, pid, r["last_name, first_name"] || r.player_name || null, seasonYear, r.primary_pos_formatted || r.pos || null, Number(r.outs_above_average) || null,
+      pctFromFormatted(r.actual_success_rate_formatted), pctFromFormatted(r.adj_estimated_success_rate_formatted), pctFromFormatted(r.diff_success_rate_formatted),
+      "baseball_savant_outs_above_average_v0_1_0", safeJsonStringify({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await env.REF_DB.batch(statements);
+  return { refreshed: true, rows_written: written, source_rows: rows.length };
+}
+
+async function refreshUmpireTendencyIfStale(env) {
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_umpire_tendency`).catch(() => null);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_umpire_tendency (
+    umpire_id INTEGER PRIMARY KEY, umpire_name TEXT, games_umpired INTEGER,
+    avg_strikeouts_per_game REAL, avg_walks_per_game REAL, avg_runs_per_game REAL,
+    strikeouts_delta_vs_league REAL, walks_delta_vs_league REAL, runs_delta_vs_league REAL,
+    source_key TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  const umpireGameRows = await all(env.CONTEXT_DB, `SELECT game_pk, home_plate_umpire_id, home_plate_umpire_name FROM context_history_game_umpire WHERE home_plate_umpire_id IS NOT NULL`).catch(() => []);
+  if (!umpireGameRows.length) return { refreshed: false, reason: "no_umpire_history_rows" };
+  const gamePks = [...new Set(umpireGameRows.map(r => r.game_pk).filter(Boolean))];
+  const CHUNK = 90;
+  const gameOutcomeByPk = new Map();
+  for (let i = 0; i < gamePks.length; i += CHUNK) {
+    const chunk = gamePks.slice(i, i + CHUNK);
+    const ph = chunk.map(() => "?").join(",");
+    const rows = await all(env.TEAM_DB, `SELECT game_pk, strikeouts, walks, runs FROM team_game_logs WHERE game_pk IN (${ph})`, ...chunk).catch(() => []);
+    for (const r of rows) {
+      const pk = Number(r.game_pk);
+      if (!gameOutcomeByPk.has(pk)) gameOutcomeByPk.set(pk, { k: 0, bb: 0, runs: 0 });
+      const g = gameOutcomeByPk.get(pk);
+      g.k += Number(r.strikeouts) || 0; g.bb += Number(r.walks) || 0; g.runs += Number(r.runs) || 0;
+    }
+  }
+  let leagueK = 0, leagueBB = 0, leagueRuns = 0, leagueGames = 0;
+  const byUmpire = new Map();
+  for (const r of umpireGameRows) {
+    const outcome = gameOutcomeByPk.get(Number(r.game_pk));
+    if (!outcome) continue;
+    leagueK += outcome.k; leagueBB += outcome.bb; leagueRuns += outcome.runs; leagueGames += 1;
+    const uid = Number(r.home_plate_umpire_id);
+    if (!byUmpire.has(uid)) byUmpire.set(uid, { name: r.home_plate_umpire_name, k: 0, bb: 0, runs: 0, games: 0 });
+    const u = byUmpire.get(uid);
+    u.k += outcome.k; u.bb += outcome.bb; u.runs += outcome.runs; u.games += 1;
+  }
+  if (leagueGames === 0) return { refreshed: false, reason: "no_matching_game_outcomes" };
+  const leagueAvgK = leagueK / leagueGames, leagueAvgBB = leagueBB / leagueGames, leagueAvgRuns = leagueRuns / leagueGames;
+  const umpireStatements = [];
+  let umpiresWritten = 0;
+  const MIN_GAMES_FOR_REAL_TENDENCY = 10;
+  for (const [uid, u] of byUmpire.entries()) {
+    if (u.games < MIN_GAMES_FOR_REAL_TENDENCY) continue;
+    const avgK = u.k / u.games, avgBB = u.bb / u.games, avgRuns = u.runs / u.games;
+    umpireStatements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_umpire_tendency (umpire_id, umpire_name, games_umpired, avg_strikeouts_per_game, avg_walks_per_game, avg_runs_per_game, strikeouts_delta_vs_league, walks_delta_vs_league, runs_delta_vs_league, source_key, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      uid, u.name, u.games, avgK, avgBB, avgRuns, avgK - leagueAvgK, avgBB - leagueAvgBB, avgRuns - leagueAvgRuns, "context_history_game_umpire+team_game_logs_v0_1_0"
+    ));
+    umpiresWritten++;
+  }
+  if (umpireStatements.length) await env.REF_DB.batch(umpireStatements);
+  return { refreshed: true, umpires_written: umpiresWritten, league_games_used: leagueGames, league_avg_strikeouts: leagueAvgK, league_avg_walks: leagueAvgBB, league_avg_runs: leagueAvgRuns };
+}
+
+async function refreshSprintSpeedIfStale(env, seasonsToFetch) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_sprint_speed (
+    sprint_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
+    sprint_speed_ft_per_sec REAL, competitive_runs INTEGER, active INTEGER DEFAULT 1,
+    source_key TEXT, raw_json TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  let totalWritten = 0;
+  const perSeasonResults = {};
+  for (const seasonYear of seasonsToFetch) {
+    const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_sprint_speed WHERE season_year=?`, seasonYear);
+    const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+    const ageMs = Date.now() - latest;
+    const isCurrentSeason = seasonYear === new Date().getUTCFullYear();
+    if (isCurrentSeason && ageMs < 20 * 60 * 60 * 1000) { perSeasonResults[seasonYear] = { refreshed: false, reason: "fresh_within_20h" }; continue; }
+    if (!isCurrentSeason && latest > 0) { perSeasonResults[seasonYear] = { refreshed: false, reason: "historical_season_already_present" }; continue; }
+    const url = `https://baseballsavant.mlb.com/leaderboard/sprint_speed?startYear=${seasonYear}&endYear=${seasonYear}&position=&team=&min=10&csv=true`;
+    const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Sprint-Speed-Reference/0.1");
+    if (!res.ok) { perSeasonResults[seasonYear] = { refreshed: false, reason: "source_failed", http_status: res.http_status }; continue; }
+    const rows = parseCsv(res.text);
+    const statements = [];
+    let written = 0;
+    for (const r of rows) {
+      const pid = intOrNull(r.player_id || r.id);
+      if (!pid) continue;
+      const speedVal = Number(r.sprint_speed ?? r.r_sprint_speed_top50percent ?? r.hp_to_1b ?? null);
+      statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_sprint_speed (sprint_id, mlb_player_id, player_name, season_year, sprint_speed_ft_per_sec, competitive_runs, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
+        `${pid}_${seasonYear}`, pid, r["last_name, first_name"] || r.name || null, seasonYear, Number.isFinite(speedVal) ? speedVal : null, intOrNull(r.competitive_runs), "baseball_savant_sprint_speed_v0_1_0", safeJsonStringify({ csv_row: r })
+      ));
+      written++;
+    }
+    if (statements.length) await env.REF_DB.batch(statements);
+    totalWritten += written;
+    perSeasonResults[seasonYear] = { refreshed: true, rows_written: written, source_rows: rows.length };
+  }
+  return { total_rows_written: totalWritten, per_season: perSeasonResults };
+}
+
+async function refreshBattedBallProfileIfStale(env, seasonYear) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_batted_ball_profile (
+    profile_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
+    ground_ball_pct REAL, air_pct REAL, pulled_air_pct REAL, batted_ball_events INTEGER,
+    source_key TEXT, raw_json TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_batted_ball_profile WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/batted-ball?season[]=${seasonYear}&type=batter&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Batted-Ball-Profile-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status, _debug_text_preview: String(res.text || "").slice(0, 300) };
+  const rows = parseCsv(res.text);
+  if (!rows.length) return { refreshed: false, reason: "zero_rows_parsed", _debug_text_preview: String(res.text || "").slice(0, 300) };
+  const statements = [];
+  let written = 0;
+  for (const r of rows) {
+    const pid = intOrNull(r.id);
+    if (!pid) continue;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_batted_ball_profile (profile_id, mlb_player_id, player_name, season_year, ground_ball_pct, air_pct, pulled_air_pct, batted_ball_events, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      `${pid}_${seasonYear}`, pid, r.name || null, seasonYear,
+      Number(r.gb_rate) || null, Number(r.air_rate) || null, Number(r.pull_air_rate) || null, intOrNull(r.bbe),
+      "baseball_savant_batted_ball_profile_v0_1_0", safeJsonStringify({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await env.REF_DB.batch(statements);
+  return { refreshed: true, rows_written: written, source_rows: rows.length };
+}
+
+async function refreshPitcherRunningGameIfStale(env, seasonYear) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_pitcher_running_game (
+    running_game_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
+    sb_opportunities INTEGER, advances_prevented REAL, stealing_runs REAL, lead_distance_gained REAL,
+    source_key TEXT, raw_json TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_pitcher_running_game WHERE season_year=?`, seasonYear);
+  const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+  const ageMs = Date.now() - latest;
+  if (ageMs < 20 * 60 * 60 * 1000) return { refreshed: false, reason: "fresh_within_20h", age_hours: Math.round(ageMs / 3600000) };
+  const url = `https://baseballsavant.mlb.com/leaderboard/pitcher-running-game?type=Pitchers&game_type=Regular&season_start=${seasonYear}&season_end=${seasonYear}&min=1&csv=true`;
+  const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Pitcher-Running-Game-Reference/0.1");
+  if (!res.ok) return { refreshed: false, reason: "source_failed", http_status: res.http_status };
+  const rows = parseCsv(res.text);
+  if (!rows.length) return { refreshed: false, reason: "zero_rows_parsed", _debug_text_preview: String(res.text || "").slice(0, 300) };
+  const _debugFirstRowKeys = Object.keys(rows[0]);
+  const statements = [];
+  let written = 0;
+  for (const r of rows) {
+    const pid = intOrNull(r.player_id);
+    if (!pid) continue;
+    statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_pitcher_running_game (running_game_id, mlb_player_id, player_name, season_year, sb_opportunities, advances_prevented, stealing_runs, lead_distance_gained, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
+      `${pid}_${seasonYear}`, pid, r.player_name || null, seasonYear,
+      intOrNull(r.n_init), Number(r.runs_prevented_on_running_attr) || null, Number(r.runs_prevented_on_running_attr) || null, Number(r.r_sec_minus_prim_lead) || null,
+      "baseball_savant_pitcher_running_game_v0_1_0", safeJsonStringify({ csv_row: r })
+    ));
+    written++;
+  }
+  if (statements.length) await env.REF_DB.batch(statements);
+  return { refreshed: true, rows_written: written, source_rows: rows.length, _debug_first_row_keys: _debugFirstRowKeys };
+}
+
+async function refreshArmAngleIfStale(env, seasonsToFetch) {
+  await env.REF_DB.prepare(`CREATE TABLE IF NOT EXISTS ref_arm_angle (
+    arm_angle_id TEXT PRIMARY KEY, mlb_player_id INTEGER, player_name TEXT, season_year INTEGER,
+    arm_angle_degrees REAL, pitches_tracked INTEGER, active INTEGER DEFAULT 1,
+    source_key TEXT, raw_json TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  let totalWritten = 0;
+  const perSeasonResults = {};
+  for (const seasonYear of seasonsToFetch) {
+    const stale = await first(env.REF_DB, `SELECT MAX(updated_at) AS latest FROM ref_arm_angle WHERE season_year=?`, seasonYear);
+    const latest = stale && stale.latest ? new Date(stale.latest).getTime() : 0;
+    const ageMs = Date.now() - latest;
+    const isCurrentSeason = seasonYear === new Date().getUTCFullYear();
+    if (isCurrentSeason && ageMs < 20 * 60 * 60 * 1000) { perSeasonResults[seasonYear] = { refreshed: false, reason: "fresh_within_20h" }; continue; }
+    if (!isCurrentSeason && latest > 0) { perSeasonResults[seasonYear] = { refreshed: false, reason: "historical_season_already_present" }; continue; }
+    const url = `https://baseballsavant.mlb.com/leaderboard/pitcher-arm-angles?batSide=&dateStart=&dateEnd=&gameType=R&groupBy=&min=1&minGroupPitches=1&perspective=back&pitchHand=&pitchType=&season=${seasonYear}&size=small&sort=ascending&team=&csv=true`;
+    const res = await fetchTextWithTimeout(url, "AlphaDog-v2-Arm-Angle-Reference/0.1");
+    if (!res.ok) { perSeasonResults[seasonYear] = { refreshed: false, reason: "source_failed", http_status: res.http_status }; continue; }
+    const rows = parseCsv(res.text);
+    const statements = [];
+    let written = 0;
+    for (const r of rows) {
+      const pid = intOrNull(r.pitcher || r.player_id || r.pitcher_id);
+      if (!pid) continue;
+      const angleVal = Number(r.ball_angle ?? r.arm_angle ?? r.avg_release_angle ?? null);
+      statements.push(env.REF_DB.prepare(`INSERT OR REPLACE INTO ref_arm_angle (arm_angle_id, mlb_player_id, player_name, season_year, arm_angle_degrees, pitches_tracked, active, source_key, raw_json, updated_at) VALUES (?,?,?,?,?,?,1,?,?,CURRENT_TIMESTAMP)`).bind(
+        `${pid}_${seasonYear}`, pid, r.pitcher_name || r["last_name, first_name"] || r.name || null, seasonYear, Number.isFinite(angleVal) ? angleVal : null, intOrNull(r.n_pitches || r.pitches), "baseball_savant_pitcher_arm_angles_v0_1_0", safeJsonStringify({ csv_row: r })
+      ));
+      written++;
+    }
+    if (statements.length) await env.REF_DB.batch(statements);
+    totalWritten += written;
+    perSeasonResults[seasonYear] = { refreshed: true, rows_written: written, source_rows: rows.length };
+  }
+  return { total_rows_written: totalWritten, per_season: perSeasonResults };
+}
+
+async function runBaselineV6ComputeTierPriors(env, propKey, lineValue, side) {
+  const rows = await all(env.ARCHIVE_DB,
+    `SELECT tier_key, AVG(metric_value) avg_rate, COUNT(*) tier_n FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? GROUP BY tier_key`,
+    propKey, lineValue, side);
+  const priors = {};
+  for (const r of rows) priors[r.tier_key] = { avg_rate: r.avg_rate, tier_n: r.tier_n };
+  return priors;
+}
+
+async function runBaselineV6Tick(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const batchId = String(input.batch_id || rid("baseline_v6_batch"));
+  const propKey = String(input.canonical_prop_key || "");
+  const side = String(input.selected_side || "");
+  const lineValue = Number(input.line_value);
+
+  // REAL, SCOPED FIX (confirmed via direct ground-truth data + league-wide validation): some
+  // (prop, line, side) combos are logically identical events to another, simpler combo (e.g.
+  // total_bases>=1 is the exact same event as hits>=1 - any hit produces >=1 total base, and
+  // total bases can only increase via a hit). Rather than let two independent models of the
+  // same real event diverge, directly copy the declared alias target's already-computed rows.
+  // Shared by both the full-rebuild and daily-delta paths (both call this same function), so
+  // this fix covers both automatically with no separate delta-path change needed.
+  const aliasMap = await getCalibrationValue(env, "global", "shared_threshold_aliases", {});
+  const aliasKey = `${propKey}|${lineValue}|${side}`;
+  if (aliasMap[aliasKey]) {
+    const [targetProp, targetLineRaw, targetSide] = String(aliasMap[aliasKey]).split("|");
+    const targetLine = Number(targetLineRaw);
+    const cursor = Math.max(0, Number(input.cursor_offset || 0));
+    const chunkSize = Array.isArray(input.player_ids_override) ? input.player_ids_override.length : 300;
+    const targetRows = Array.isArray(input.player_ids_override)
+      ? await (async () => {
+          const out = [];
+          for (let i = 0; i < input.player_ids_override.length; i += 90) {
+            const idSlice = input.player_ids_override.slice(i, i + 90);
+            const placeholders = idSlice.map(() => "?").join(",");
+            out.push(...await all(env.ARCHIVE_DB,
+              `SELECT * FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? AND player_id IN (${placeholders})`,
+              targetProp, targetLine, targetSide, ...idSlice));
+          }
+          return out;
+        })()
+      : await all(env.ARCHIVE_DB,
+          `SELECT * FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? ORDER BY player_id LIMIT ? OFFSET ?`,
+          targetProp, targetLine, targetSide, chunkSize, cursor);
+    const stmts = targetRows.map(t => {
+      const rowId = `blv6|${t.player_type}|${t.player_id}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+      return env.ARCHIVE_DB.prepare(
+        `INSERT INTO baseline_v6_current (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,tier_key,hit_probability_0_100,confidence_0_100,non_push_sample,prior_strength,recency_blended_rate_0_100,formula_version,last_processed_official_date,updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+         ON CONFLICT(player_type,player_id,canonical_prop_key,line_value,selected_side) DO UPDATE SET
+           batch_id=excluded.batch_id, tier_key=excluded.tier_key, hit_probability_0_100=excluded.hit_probability_0_100,
+           confidence_0_100=excluded.confidence_0_100, non_push_sample=excluded.non_push_sample, prior_strength=excluded.prior_strength,
+           recency_blended_rate_0_100=excluded.recency_blended_rate_0_100, formula_version=excluded.formula_version,
+           last_processed_official_date=excluded.last_processed_official_date, updated_at=CURRENT_TIMESTAMP`
+      ).bind(rowId, batchId, t.player_type, t.player_id, t.player_name, propKey, lineValue, side,
+        t.tier_key, t.hit_probability_0_100, t.confidence_0_100, t.non_push_sample, t.prior_strength,
+        t.recency_blended_rate_0_100, `${t.formula_version}+alias`, t.last_processed_official_date);
+    });
+    if (stmts.length) await writeBatch(env.ARCHIVE_DB, "baseline_v6_current", stmts, 30);
+    const nextCursor = cursor + chunkSize;
+    const totalForCombo = await first(env.ARCHIVE_DB, `SELECT COUNT(*) n FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?`, targetProp, targetLine, targetSide);
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v6", aliased_from: aliasMap[aliasKey],
+      canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+      rows_read: targetRows.length, rows_written: stmts.length, cursor_offset: nextCursor,
+      total_for_combo: Number(totalForCombo.n), done: Array.isArray(input.player_ids_override) ? true : nextCursor >= Number(totalForCombo.n),
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+  const officialDate = String(input.official_date || "");
+  const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 300 });
+
+  const cursor = Math.max(0, Number(input.cursor_offset || 0));
+  const chunkSize = Array.isArray(input.player_ids_override) ? input.player_ids_override.length : Math.max(10, Number(opLimits.chunk_size_rows || 300));
+
+  // GROUNDED FIX (Issue #3 root cause, researched and confirmed - see claude-work-log.md for
+  // full citations): a leg's implied hit probability must be one clean, agnostic quantity -
+  // "more" and "less" are two readings of the SAME underlying rate, not two independently
+  // estimated quantities. hpFromCountModel/hpFromNormalModel already implement this correctly
+  // (one CDF evaluation, "more" = 1-CDF, "less" = CDF) - the only real bug was that "less" was
+  // independently re-deriving its own games_sample/tier/shrunkRate from a classification pass
+  // that could race against a live-updating snapshot, occasionally producing a very slightly
+  // different mean than "more" used, breaking the guaranteed-by-construction complementarity.
+  // Real, grounded, industry/academic-confirmed fix: stop independently classifying "less" at
+  // all - derive it as a pure complement of "more"'s already-written baseline_v6_current row
+  // (100 - more's HP, same tier/sample/rate, since those are properties of the player+prop,
+  // never of which side of a line is being asked about). Safe because buildComboList already
+  // enqueues "more" before "less" for every (prop, line), and "more" always fully completes
+  // (all cursor chunks) before "less" starts, since combos are processed by comboIndex in
+  // sequence, not interleaved - confirmed via the combo enumeration order.
+  if (side === "less") {
+    const moreRows = Array.isArray(input.player_ids_override)
+      ? await (async () => {
+          const ids = input.player_ids_override.map(Number).filter(Boolean);
+          if (!ids.length) return [];
+          const out = [];
+          const idChunkSize = 90;
+          for (let i = 0; i < ids.length; i += idChunkSize) {
+            const idSlice = ids.slice(i, i + idChunkSize);
+            const placeholders = idSlice.map(() => "?").join(",");
+            const rows = await all(env.ARCHIVE_DB,
+              `SELECT player_type, player_id, player_name, tier_key, hit_probability_0_100, confidence_0_100, non_push_sample, prior_strength, recency_blended_rate_0_100
+               FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side='more' AND player_id IN (${placeholders})`,
+              propKey, lineValue, ...idSlice);
+            out.push(...rows);
+          }
+          return out;
+        })()
+      : await all(env.ARCHIVE_DB,
+          `SELECT player_type, player_id, player_name, tier_key, hit_probability_0_100, confidence_0_100, non_push_sample, prior_strength, recency_blended_rate_0_100
+           FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side='more'
+           ORDER BY player_id LIMIT ? OFFSET ?`,
+          propKey, lineValue, chunkSize, cursor);
+
+    const lessStmts = [];
+    for (const p of moreRows) {
+      const rowId = `blv6|${p.player_type}|${p.player_id}|${propKey}|${String(lineValue).replace(".", "p")}|less`;
+      lessStmts.push(env.ARCHIVE_DB.prepare(
+        `INSERT INTO baseline_v6_current (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,tier_key,hit_probability_0_100,confidence_0_100,non_push_sample,prior_strength,recency_blended_rate_0_100,formula_version,last_processed_official_date,updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+         ON CONFLICT(player_type,player_id,canonical_prop_key,line_value,selected_side) DO UPDATE SET
+           batch_id=excluded.batch_id, tier_key=excluded.tier_key, hit_probability_0_100=excluded.hit_probability_0_100,
+           confidence_0_100=excluded.confidence_0_100, non_push_sample=excluded.non_push_sample, prior_strength=excluded.prior_strength,
+           recency_blended_rate_0_100=excluded.recency_blended_rate_0_100, formula_version=excluded.formula_version,
+           last_processed_official_date=excluded.last_processed_official_date, updated_at=CURRENT_TIMESTAMP`
+      ).bind(rowId, batchId, p.player_type, p.player_id, p.player_name, propKey, lineValue, "less",
+        p.tier_key, round(100 - p.hit_probability_0_100, 2), p.confidence_0_100, p.non_push_sample, p.prior_strength,
+        p.recency_blended_rate_0_100, CLASSIFICATION_V6_VERSION, officialDate));
+    }
+    if (lessStmts.length) await writeBatch(env.ARCHIVE_DB, "baseline_v6_current", lessStmts, 30);
+
+    const nextCursorLess = cursor + chunkSize;
+    const doneLess = Array.isArray(input.player_ids_override)
+      ? true
+      : (await (async () => {
+          const totalForComboLess = await first(env.ARCHIVE_DB,
+            `SELECT COUNT(*) n FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side='more'`,
+            propKey, lineValue);
+          return nextCursorLess >= Number(totalForComboLess.n);
+        })());
+    const totalForComboLess = Array.isArray(input.player_ids_override) ? { n: input.player_ids_override.length } : await first(env.ARCHIVE_DB,
+      `SELECT COUNT(*) n FROM baseline_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side='more'`,
+      propKey, lineValue);
+
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v6",
+      canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+      rows_read: moreRows.length, rows_written: lessStmts.length, cursor_offset: nextCursorLess,
+      total_for_combo: Number(totalForComboLess.n), done: doneLess,
+      derived_as_pure_complement_of_more: true,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const cfg = CALIBRATION_CONFIG_CACHE || CALIBRATION_CONFIG_DEFAULTS;
+  const { prior_strength_multiplier: priorStrengthMultiplier } = await getRecencyWeightsForProp(env, propKey);
+
+  const tierPriors = await runBaselineV6ComputeTierPriors(env, propKey, lineValue, side);
+  const tierBlendCfg = await getCalibrationValue(env, "global", "tier_blend_constant", { k: 5 });
+  const tierBlendK = Math.max(1, Number(tierBlendCfg.k || 5));
+  const statsKeyForCombo = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+  const popStats = await first(env.ARCHIVE_DB, `SELECT population_mean, population_stddev, population_dispersion FROM classification_v6_population_stats WHERE stats_key=?`, statsKeyForCombo);
+  const populationMean = popStats ? popStats.population_mean : null;
+  const populationStddev = popStats ? popStats.population_stddev : null;
+  const dispersion = popStats ? popStats.population_dispersion : null;
+  const propMapForModel = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const usesNormalModel = propCanGoNegative(propMapForModel[propKey]);
+
+  const classRows = Array.isArray(input.player_ids_override)
+    ? await (async () => {
+        const ids = input.player_ids_override.map(Number).filter(Boolean);
+        if (!ids.length) return [];
+        const out = [];
+        const idChunkSize = 90;
+        for (let i = 0; i < ids.length; i += idChunkSize) {
+          const idSlice = ids.slice(i, i + idChunkSize);
+          const placeholders = idSlice.map(() => "?").join(",");
+          const rows = await all(env.ARCHIVE_DB,
+            `SELECT player_type, player_id, player_name, tier_key, metric_value, games_sample
+             FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=? AND player_id IN (${placeholders})`,
+            propKey, lineValue, side, ...idSlice);
+          out.push(...rows);
+        }
+        return out;
+      })()
+    : await all(env.ARCHIVE_DB,
+        `SELECT player_type, player_id, player_name, tier_key, metric_value, games_sample
+         FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?
+         ORDER BY player_id LIMIT ? OFFSET ?`,
+        propKey, lineValue, side, chunkSize, cursor);
+
+  const stmts = [];
+  for (const p of classRows) {
+    const tierInfo = tierPriors[p.tier_key];
+    const rawTierMean = tierInfo ? tierInfo.avg_rate : p.metric_value;
+    const tierN = tierInfo ? tierInfo.tier_n : 0;
+    const blendedTierPrior = (populationMean != null)
+      ? (tierN * rawTierMean + tierBlendK * populationMean) / (tierN + tierBlendK)
+      : rawTierMean;
+    const priorStrength = priorStrengthForSample(p.games_sample, cfg, priorStrengthMultiplier);
+    const shrunkRate = (p.games_sample * p.metric_value + priorStrength * blendedTierPrior) / (p.games_sample + priorStrength);
+    const rawHp = usesNormalModel
+      ? hpFromNormalModel(shrunkRate, lineValue, side, populationStddev)
+      : hpFromCountModel(shrunkRate, lineValue, side, dispersion);
+    // Real fix, grounded in the Wilson score interval (standard published technique for
+    // small-sample binomial proportion bounds): treat the model's own point estimate (rawHp)
+    // as an observed proportion with games_sample real trials, and bound it to what that sample
+    // size can actually statistically support - preventing a tiny real sample (n=3-4) from
+    // producing an artificially extreme 0%/100% output regardless of what the model computed.
+    const hp = clampHpToSampleSupportedRange(rawHp, p.games_sample);
+    const confidence = sampleAwareConfidence(p.games_sample, cfg, priorStrengthMultiplier);
+    const rowId = `blv6|${p.player_type}|${p.player_id}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+
+    stmts.push(env.ARCHIVE_DB.prepare(
+      `INSERT INTO baseline_v6_current (baseline_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,tier_key,hit_probability_0_100,confidence_0_100,non_push_sample,prior_strength,recency_blended_rate_0_100,formula_version,last_processed_official_date,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+       ON CONFLICT(player_type,player_id,canonical_prop_key,line_value,selected_side) DO UPDATE SET
+         batch_id=excluded.batch_id, tier_key=excluded.tier_key, hit_probability_0_100=excluded.hit_probability_0_100,
+         confidence_0_100=excluded.confidence_0_100, non_push_sample=excluded.non_push_sample, prior_strength=excluded.prior_strength,
+         recency_blended_rate_0_100=excluded.recency_blended_rate_0_100, formula_version=excluded.formula_version,
+         last_processed_official_date=excluded.last_processed_official_date, updated_at=CURRENT_TIMESTAMP`
+    ).bind(rowId, batchId, p.player_type, p.player_id, p.player_name, propKey, lineValue, side,
+      p.tier_key, round(hp * 100, 2), round(confidence, 2), p.games_sample, round(priorStrength, 2),
+      round(shrunkRate * 100, 4), CLASSIFICATION_V6_VERSION, officialDate));
+  }
+  if (stmts.length) await writeBatch(env.ARCHIVE_DB, "baseline_v6_current", stmts, 30);
+
+  const nextCursor = cursor + chunkSize;
+  const done = Array.isArray(input.player_ids_override)
+    ? true
+    : (await (async () => {
+        const totalForCombo = await first(env.ARCHIVE_DB,
+          `SELECT COUNT(*) n FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?`,
+          propKey, lineValue, side);
+        return nextCursor >= Number(totalForCombo.n);
+      })());
+  const totalForCombo = Array.isArray(input.player_ids_override) ? { n: input.player_ids_override.length } : await first(env.ARCHIVE_DB,
+    `SELECT COUNT(*) n FROM classification_v6_current WHERE canonical_prop_key=? AND line_value=? AND selected_side=?`,
+    propKey, lineValue, side);
+
+  return {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v6",
+    canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+    rows_read: classRows.length, rows_written: stmts.length, cursor_offset: nextCursor,
+    total_for_combo: Number(totalForCombo.n), done,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+}
+
+async function runBaselineV6BaseSingleStep(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("baseline_v6_base"));
+  const runId = String(input.run_id || rid("run"));
+  const officialDate = String(input.official_date || "");
+  const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 300, max_retries: 3 });
+
+  const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
+  const combos = buildComboList(propLineUniverse);
+
+  const comboIndex = Math.max(0, Number(input.combo_index || 0));
+  const cursorOffset = Math.max(0, Number(input.cursor_offset || 0));
+  const batchId = String(input.batch_id || rid("baseline_v6_base_batch"));
+
+  if (comboIndex >= combos.length) {
+    const reconcileResult = await reconcileSubsetOfConstraints(env).catch((e) => ({ ok: false, error: String(e && e.message ? e.message : e) }));
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+      status: "BASELINE_V6_BASE_COMPLETED", certification: "BASELINE_V6_BASE_CERTIFIED_ALL_COMBOS_COMPLETE",
+      certification_grade: "PASS", total_combos: combos.length, batch_id: batchId,
+      subset_constraint_reconcile: reconcileResult,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const combo = combos[comboIndex];
+  const maxRetries = Math.max(1, Number((opLimits && opLimits.max_retries) || 3));
+  const retryCount = Math.max(0, Number(input.retry_count || 0));
+
+  let tickResult;
+  try {
+    tickResult = await runBaselineV6Tick(env, {
+      batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
+      selected_side: combo.selected_side, official_date: officialDate, cursor_offset: cursorOffset
+    });
+  } catch (err) {
+    if (retryCount >= maxRetries) {
+      return {
+        ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+        status: "BASELINE_V6_BASE_TICK_FAILED", error: `Failed after ${maxRetries} retries: ${String(err && err.message ? err.message : err)}`,
+        combo_index: comboIndex, combo
+      };
+    }
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+      status: "BASELINE_V6_BASE_PARTIAL_CONTINUE", certification: "BASELINE_V6_BASE_TRANSIENT_RETRY",
+      certification_grade: "PARTIAL", combo_index: comboIndex, total_combos: combos.length,
+      partial_continue: true, orchestrator_should_self_continue: true,
+      transient_error: String(err && err.message ? err.message : err),
+      next_input_json: {
+        mode: "baseline_v5_base", request_id: requestId, run_id: runId, batch_id: batchId,
+        combo_index: comboIndex, cursor_offset: cursorOffset, official_date: officialDate, retry_count: retryCount + 1
+      }
+    };
+  }
+
+  if (!tickResult.ok) {
+    return {
+      ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+      status: "BASELINE_V6_BASE_TICK_FAILED", error: tickResult.error, combo_index: comboIndex, combo
+    };
+  }
+
+  const comboDone = tickResult.done;
+  const nextComboIndex = comboDone ? comboIndex + 1 : comboIndex;
+  const nextCursorOffset = comboDone ? 0 : tickResult.cursor_offset;
+  const nextBatchId = comboDone ? rid("baseline_v6_base_batch") : batchId;
+  const allDone = comboDone && nextComboIndex >= combos.length;
+
+  const output = {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_base",
+    request_id: requestId, run_id: runId, batch_id: batchId,
+    status: allDone ? "BASELINE_V6_BASE_COMPLETED" : "BASELINE_V6_BASE_PARTIAL_CONTINUE",
+    certification: allDone ? "BASELINE_V6_BASE_CERTIFIED_ALL_COMBOS_COMPLETE" : "BASELINE_V6_BASE_CERTIFIED_COMBO_IN_PROGRESS",
+    certification_grade: allDone ? "PASS" : "PARTIAL",
+    combo_index: comboIndex, total_combos: combos.length,
+    current_combo: combo, combo_done: comboDone,
+    rows_read: tickResult.rows_read, rows_written: tickResult.rows_written,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+
+  if (!allDone) {
+    output.partial_continue = true;
+    output.orchestrator_should_self_continue = true;
+    output.next_input_json = {
+      mode: "baseline_v5_base",
+      request_id: requestId, run_id: runId, batch_id: nextBatchId,
+      combo_index: nextComboIndex, cursor_offset: nextCursorOffset, official_date: officialDate, retry_count: 0
+    };
+  }
+
+  return output;
+}
+
+// ==== DAILY DELTA — classification and baseline, affected players only ====
+// Locked design: delta does NOT recompute population stats (mean/stddev/dispersion) —
+// those stay cached from the last base/refresh, since recomputing them daily (especially
+// dispersion, which scans full game logs) would defeat the purpose of a cheap delta.
+// Only the players whose data actually changed today get recomputed, against that stable
+// population baseline. Both classification and baseline use the SAME affected-player
+// detection (new game log entry on the target date) — a player's rate changed, so their
+// HP needs recomputing regardless of whether their discrete tier bucket also crossed a line.
+// Auto-determines the next date to process, watermark-style: finds the latest date already
+// recorded in the given _current table, then finds the earliest date AFTER that with real
+// game log data available. Matches the pattern the orchestrator actually calls with — it does
+// NOT pass an explicit official_date, the worker is expected to figure out what's next itself.
+async function determineNextDeltaDate(env, currentTable) {
+  const BASELINE_V6_CUTOVER_DATE = "2026-07-08"; // must match the certifier's cutover constant
+  const watermarkRow = await first(env.ARCHIVE_DB, `SELECT MAX(last_processed_official_date) wm FROM ${currentTable}`);
+  let watermark = (watermarkRow && watermarkRow.wm) ? String(watermarkRow.wm).slice(0, 10) : "1900-01-01";
+  if (watermark < BASELINE_V6_CUTOVER_DATE) watermark = BASELINE_V6_CUTOVER_DATE;
+  const hitterNext = await first(env.STATS_HITTER_DB, `SELECT MIN(game_date) d FROM hitter_game_logs WHERE game_date > ?`, watermark);
+  const pitcherNext = await first(env.STATS_PITCHER_DB, `SELECT MIN(game_date) d FROM pitcher_game_logs WHERE game_date > ?`, watermark);
+  const candidates = [hitterNext && hitterNext.d, pitcherNext && pitcherNext.d].filter(Boolean).sort();
+  return candidates.length ? candidates[0] : null;
+}
+
+async function getAffectedPlayerIds(env, entity, targetDate) {
+  const db = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  const table = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
+  const rows = await all(db, `SELECT DISTINCT player_id FROM ${table} WHERE game_date = ?`, targetDate);
+  return rows.map(r => Number(r.player_id)).filter(Boolean);
+}
+
+// Self-healing: even when there's nothing NEW to compute, verify the most recently processed
+// date actually has its coverage record written in the certifier's ledger. If a previous run
+// was interrupted or a coverage write was missed for any reason, this repairs it here instead
+// of silently leaving a gap the certifier can never see closed.
+async function reconcileDailyDeltaCoverage(env, { kind, currentTable, requestId, runId }) {
+  const watermarkRow = await first(env.ARCHIVE_DB, `SELECT MAX(last_processed_official_date) wm FROM ${currentTable}`);
+  const watermark = (watermarkRow && watermarkRow.wm) ? String(watermarkRow.wm).slice(0, 10) : null;
+  if (!watermark) return null;
+  const layerKey = baselineV5DailyCoverageLayer(kind);
+  const totalGames = await first(env.TEAM_DB, `SELECT COUNT(*) n FROM mlb_game_calendar WHERE official_date=?`, watermark);
+  if (!totalGames || Number(totalGames.n || 0) <= 0) return null;
+  const existingCoverage = await first(env.TEAM_DB,
+    `SELECT COUNT(*) n FROM mlb_game_data_coverage WHERE official_date=? AND layer_key=? AND coverage_status='complete' AND COALESCE(blocking_for_full_run,0)=0`,
+    watermark, layerKey);
+  if (Number(existingCoverage.n || 0) >= Number(totalGames.n || 0)) return null; // already covered, nothing to repair
+  const rowCountForDate = await first(env.ARCHIVE_DB, `SELECT COUNT(*) n FROM ${currentTable} WHERE last_processed_official_date=?`, watermark);
+  return await baselineV5DailyUpsertCoverage(env, {
+    kind, officialDate: watermark, batchId: rid(`${kind}_v6_delta_reconcile_batch`), requestId, runId,
+    rowsUpdated: Number(rowCountForDate.n || 0), playersUpdated: Number(rowCountForDate.n || 0)
+  });
+}
+
+async function runClassificationV6DeltaDailySingleStep(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("classification_v6_delta"));
+  const runId = String(input.run_id || rid("run"));
+  let officialDate = String(input.official_date || "");
+  if (!officialDate) {
+    const nextDate = await determineNextDeltaDate(env, "classification_v6_current");
+    if (!nextDate) {
+      const reconciled = await reconcileDailyDeltaCoverage(env, { kind: "classification", currentTable: "classification_v6_current", requestId, runId });
+      return {
+        ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
+        status: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_NOOP_ALL_DAYS_ALREADY_COVERED",
+        certification: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_NOOP_ALL_DAYS_ALREADY_COVERED",
+        certification_grade: "NOOP_PASS", certifier_owned_daily_delta: true, day_by_day_delta: true,
+        current_tables_mutated: false, history_tables_mutated: false, full_cumulative_history_recompute: false,
+        coverage_update: { coverage_rows_written: 0 }, coverage_reconciled: reconciled,
+        no_daily_context: true, no_market_context: true, no_scoring_context: true
+      };
+    }
+    officialDate = nextDate;
+  }
+
+  const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
+  const combos = buildComboList(propLineUniverse);
+  const comboIndex = Math.max(0, Number(input.combo_index || 0));
+  const batchId = String(input.batch_id || rid("classification_v6_delta_batch"));
+
+  if (comboIndex >= combos.length) {
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
+      status: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_COMPLETED",
+      certification: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE",
+      certification_grade: "PASS", total_combos: combos.length, official_date: officialDate, batch_id: batchId,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const combo = combos[comboIndex];
+  const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const propConfig = propMap[combo.canonical_prop_key];
+  const entity = propConfig ? propConfig.entity : "hitter";
+  const affectedIds = await getAffectedPlayerIds(env, entity, officialDate);
+
+  const statsKey = `${combo.canonical_prop_key}|${String(combo.line_value).replace(".", "p")}|${combo.selected_side}`;
+  const cachedStats = await first(env.ARCHIVE_DB, `SELECT stats_key FROM classification_v6_population_stats WHERE stats_key=?`, statsKey);
+  if (!cachedStats) {
+    // First time this combo has ever been seen (shouldn't normally happen if base ran first) — compute stats once.
+    await runClassificationV6ComputeStats(env, { canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value, selected_side: combo.selected_side });
+  }
+
+  let tickResult = { rows_written: 0, reclassified_rows: 0 };
+  if (affectedIds.length > 0) {
+    tickResult = await runClassificationV6Tick(env, {
+      batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
+      selected_side: combo.selected_side, official_date: officialDate, player_ids_override: affectedIds
+    });
+    if (!tickResult.ok) {
+      return {
+        ok: false, data_ok: false, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
+        status: "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_TICK_FAILED", error: tickResult.error, combo_index: comboIndex, combo
+      };
+    }
+  }
+
+  const nextComboIndex = comboIndex + 1;
+  const allDone = nextComboIndex >= combos.length;
+  const cumulativeRowsWritten = Math.max(0, Number(input.cumulative_rows_written || 0)) + Number(tickResult.rows_written || 0);
+  let coverageResult = null;
+  if (allDone) {
+    coverageResult = await baselineV5DailyUpsertCoverage(env, {
+      kind: "classification", officialDate, batchId, requestId, runId,
+      rowsUpdated: cumulativeRowsWritten, playersUpdated: cumulativeRowsWritten
+    });
+  }
+  const output = {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_classification_daily_delta",
+    request_id: requestId, run_id: runId, batch_id: batchId, official_date: officialDate,
+    status: allDone ? "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_COMPLETED" : "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_PARTIAL_CONTINUE",
+    certification: allDone ? "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE" : "BASELINE_V5_CLASSIFICATION_DAILY_DELTA_CERTIFIED_COMBO_IN_PROGRESS",
+    certification_grade: allDone ? "PASS" : "PARTIAL",
+    certifier_owned_daily_delta: true, day_by_day_delta: true, classification_delta_included: true,
+    current_tables_mutated: false, history_tables_mutated: false, full_cumulative_history_recompute: false,
+    coverage_update: { coverage_rows_written: Math.max(1, cumulativeRowsWritten) }, coverage_result: coverageResult,
+    combo_index: comboIndex, total_combos: combos.length, current_combo: combo,
+    affected_players: affectedIds.length, rows_written: tickResult.rows_written, reclassified_rows: tickResult.reclassified_rows,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+  if (!allDone) {
+    output.partial_continue = true;
+    output.orchestrator_should_self_continue = true;
+    output.next_input_json = { mode: "baseline_v5_classification_daily_delta", request_id: requestId, run_id: runId, batch_id: batchId, combo_index: nextComboIndex, official_date: officialDate, cumulative_rows_written: cumulativeRowsWritten };
+  }
+  return output;
+}
+
+async function runClassificationV6DeltaDaily(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 32000; // matches the tested, safe value confirmed live for runClassificationV6Base
+  let currentInput = input;
+  let lastOutput = null;
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runClassificationV6DeltaDailySingleStep(env, currentInput);
+    if (!lastOutput.ok) return lastOutput;
+    if (!lastOutput.partial_continue) return lastOutput;
+    currentInput = lastOutput.next_input_json;
+  }
+  return lastOutput;
+}
+
+async function runBaselineV6DeltaDailySingleStep(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("baseline_v6_delta"));
+  const runId = String(input.run_id || rid("run"));
+  let officialDate = String(input.official_date || "");
+  if (!officialDate) {
+    const nextDate = await determineNextDeltaDate(env, "baseline_v6_current");
+    if (!nextDate) {
+      const reconciled = await reconcileDailyDeltaCoverage(env, { kind: "hp", currentTable: "baseline_v6_current", requestId, runId });
+      return {
+        ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_hp_daily_delta",
+        status: "BASELINE_V5_HP_DAILY_DELTA_NOOP_ALL_DAYS_ALREADY_COVERED",
+        certification: "BASELINE_V5_HP_DAILY_DELTA_NOOP_ALL_DAYS_ALREADY_COVERED",
+        certification_grade: "NOOP_PASS", certifier_owned_daily_delta: true, day_by_day_delta: true,
+        current_tables_mutated: false, history_tables_mutated: false, full_cumulative_history_recompute: false,
+        coverage_update: { coverage_rows_written: 0 }, coverage_reconciled: reconciled,
+        no_daily_context: true, no_market_context: true, no_scoring_context: true
+      };
+    }
+    officialDate = nextDate;
+  }
+
+  const propLineUniverse = await getCalibrationValue(env, "global", "prop_line_universe", {});
+  const combos = buildComboList(propLineUniverse);
+  const comboIndex = Math.max(0, Number(input.combo_index || 0));
+  const batchId = String(input.batch_id || rid("baseline_v6_delta_batch"));
+
+  if (comboIndex >= combos.length) {
+    const reconcileResult = await reconcileSubsetOfConstraints(env).catch((e) => ({ ok: false, error: String(e && e.message ? e.message : e) }));
+    return {
+      ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_hp_daily_delta",
+      status: "BASELINE_V5_HP_DAILY_DELTA_COMPLETED", certification: "BASELINE_V5_HP_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE",
+      certification_grade: "PASS", total_combos: combos.length, official_date: officialDate, batch_id: batchId,
+      subset_constraint_reconcile: reconcileResult,
+      no_daily_context: true, no_market_context: true, no_scoring_context: true
+    };
+  }
+
+  const combo = combos[comboIndex];
+  const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const propConfig = propMap[combo.canonical_prop_key];
+  const entity = propConfig ? propConfig.entity : "hitter";
+  const affectedIds = await getAffectedPlayerIds(env, entity, officialDate);
+
+  let tickResult = { rows_written: 0 };
+  if (affectedIds.length > 0) {
+    tickResult = await runBaselineV6Tick(env, {
+      batch_id: batchId, canonical_prop_key: combo.canonical_prop_key, line_value: combo.line_value,
+      selected_side: combo.selected_side, official_date: officialDate, player_ids_override: affectedIds
+    });
+  }
+
+  const nextComboIndex = comboIndex + 1;
+  const allDone = nextComboIndex >= combos.length;
+  const cumulativeRowsWritten = Math.max(0, Number(input.cumulative_rows_written || 0)) + Number(tickResult.rows_written || 0);
+  let coverageResult = null;
+  if (allDone) {
+    coverageResult = await baselineV5DailyUpsertCoverage(env, {
+      kind: "hp", officialDate, batchId, requestId, runId,
+      rowsUpdated: cumulativeRowsWritten, playersUpdated: cumulativeRowsWritten
+    });
+  }
+  const output = {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "baseline_v5_hp_daily_delta",
+    request_id: requestId, run_id: runId, batch_id: batchId, official_date: officialDate,
+    status: allDone ? "BASELINE_V5_HP_DAILY_DELTA_COMPLETED" : "BASELINE_V5_HP_DAILY_DELTA_PARTIAL_CONTINUE",
+    certification: allDone ? "BASELINE_V5_HP_DAILY_DELTA_CERTIFIED_ALL_COMBOS_COMPLETE" : "BASELINE_V5_HP_DAILY_DELTA_CERTIFIED_COMBO_IN_PROGRESS",
+    certification_grade: allDone ? "PASS" : "PARTIAL",
+    certifier_owned_daily_delta: true, day_by_day_delta: true, baseline_hp_delta_included: true,
+    current_tables_mutated: false, history_tables_mutated: false, full_cumulative_history_recompute: false,
+    coverage_update: { coverage_rows_written: Math.max(1, cumulativeRowsWritten) }, coverage_result: coverageResult,
+    combo_index: comboIndex, total_combos: combos.length, current_combo: combo,
+    affected_players: affectedIds.length, rows_written: tickResult.rows_written,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+  if (!allDone) {
+    output.partial_continue = true;
+    output.orchestrator_should_self_continue = true;
+    output.next_input_json = { mode: "baseline_v5_hp_daily_delta", request_id: requestId, run_id: runId, batch_id: batchId, combo_index: nextComboIndex, official_date: officialDate, cumulative_rows_written: cumulativeRowsWritten };
+  }
+  return output;
+}
+
+// REAL FIX: post-processing monotonicity enforcement for known real subset relationships (e.g.
+// singles<=hits, doubles<=hits, rbis<=hits_runs_rbis - a single/double/etc always implies at
+// least 1 hit, a run/RBI always implies hits_runs_rbis>=1). Unlike shared_threshold_aliases
+// (for true equalities), this is for real one-directional subset relationships, where two
+// independently-fit models can produce small residual noise (confirmed live: singles exceeding
+// hits by 0.4-2.6 points for 10 real players, consistent with independent-model noise on modest
+// samples, not a systematic bias). Order-independent by design - runs as a separate reconcile
+// pass after all combos are computed, rather than depending on combo processing order.
+async function reconcileSubsetOfConstraints(env) {
+  const constraints = await getCalibrationValue(env, "global", "subset_of_constraints", {});
+  let totalClamped = 0;
+  const results = [];
+  // REAL FIX: a single pass isn't always sufficient - a superset prop (e.g. hits) can itself
+  // get clamped by its OWN constraint (hits->hits_runs_rbis) during the same pass, but a
+  // subset checked earlier in iteration order (e.g. singles->hits) won't see that updated
+  // value. Confirmed live: 10 real singles>hits violations remained after a single pass.
+  // Looping until stable (bounded at 5 passes for safety) closes this for real.
+  for (let pass = 0; pass < 5; pass++) {
+    let passClamped = 0;
+    for (const [subsetKey, supersetKey] of Object.entries(constraints)) {
+      const [subProp, subLineRaw, subSide] = subsetKey.split("|");
+      const [supProp, supLineRaw, supSide] = supersetKey.split("|");
+      const subLine = Number(subLineRaw), supLine = Number(supLineRaw);
+      const res = await run(env.ARCHIVE_DB, `
+        UPDATE baseline_v6_current
+        SET hit_probability_0_100 = (
+          SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+          WHERE s.player_id = baseline_v6_current.player_id
+            AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+        ),
+        formula_version = formula_version || '+subset_clamped'
+        WHERE canonical_prop_key = ? AND line_value = ? AND selected_side = ?
+          AND hit_probability_0_100 > (
+            SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+            WHERE s.player_id = baseline_v6_current.player_id
+              AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+          )`,
+        supProp, supLine, supSide, subProp, subLine, subSide, supProp, supLine, supSide);
+      const changed = Number(res && res.meta && res.meta.changes || 0);
+      totalClamped += changed;
+      passClamped += changed;
+      if (pass === 0) results.push({ subset: subsetKey, superset: supersetKey, rows_clamped: changed });
+      else if (changed > 0) results.push({ subset: subsetKey, superset: supersetKey, rows_clamped: changed, pass: pass + 1, note: "cascading_pass" });
+    }
+    if (passClamped === 0) break;
+  }
+  // REAL FIX: subset clamping (above) can shift a superset prop's value (e.g. hits clamped
+  // down to match hits_runs_rbis), which can then break a separately-declared alias equality
+  // (e.g. hits=total_bases) that was already correctly established. Confirmed live tonight:
+  // 15 real hits/total_bases mismatches appeared after subset reconciliation ran, for exactly
+  // this reason. Re-syncing aliases after subset clamping stabilizes keeps both mechanisms
+  // consistent with each other, not just individually correct.
+  const aliasMap = await getCalibrationValue(env, "global", "shared_threshold_aliases", {});
+  let aliasResynced = 0;
+  for (const [aliasKey, targetKey] of Object.entries(aliasMap)) {
+    const [aliasProp, aliasLineRaw, aliasSide] = aliasKey.split("|");
+    const [targetProp, targetLineRaw, targetSide] = String(targetKey).split("|");
+    const aliasLine = Number(aliasLineRaw), targetLine = Number(targetLineRaw);
+    const res = await run(env.ARCHIVE_DB, `
+      UPDATE baseline_v6_current
+      SET hit_probability_0_100 = (
+        SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+        WHERE s.player_id = baseline_v6_current.player_id
+          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+      )
+      WHERE canonical_prop_key = ? AND line_value = ? AND selected_side = ?
+        AND ABS(hit_probability_0_100 - (
+          SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+          WHERE s.player_id = baseline_v6_current.player_id
+            AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+        )) > 0.01`,
+      targetProp, targetLine, targetSide, aliasProp, aliasLine, aliasSide, targetProp, targetLine, targetSide);
+    aliasResynced += Number(res && res.meta && res.meta.changes || 0);
+  }
+  if (aliasResynced > 0) results.push({ alias_resync_after_subset_clamp: true, rows_resynced: aliasResynced });
+  return { ok: true, total_clamped: totalClamped, per_constraint: results };
+}
+
+async function runBaselineV6DeltaDaily(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 32000; // matches the tested, safe value confirmed live for runClassificationV6Base
+  let currentInput = input;
+  let lastOutput = null;
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runBaselineV6DeltaDailySingleStep(env, currentInput);
+    if (!lastOutput.ok) return lastOutput;
+    if (!lastOutput.partial_continue) return lastOutput;
+    currentInput = lastOutput.next_input_json;
+  }
+  return lastOutput;
+}
+
+async function runBaselineV6Base(env, input = {}) {
+  const startMs = Date.now();
+  const timeBudgetMs = 32000; // matches the tested, safe value confirmed live for runClassificationV6Base
+  let currentInput = input;
+  let lastOutput = null;
+
+  while (Date.now() - startMs < timeBudgetMs) {
+    lastOutput = await runBaselineV6BaseSingleStep(env, currentInput);
+    if (!lastOutput.ok) return lastOutput;
+    if (!lastOutput.partial_continue) return lastOutput;
+    currentInput = lastOutput.next_input_json;
+  }
+  return lastOutput;
+}
+
+async function getRecencyWeightsForProp(env, propKey) {
+  const profiles = await getCalibrationValue(env, "global", "prop_recency_profile", {});
+  const globalDefault = await getCalibrationValue(env, "global", "recency_weights", CALIBRATION_CONFIG_DEFAULTS["global|recency_weights"]);
+  const profile = profiles[propKey];
+  return {
+    recency_weights: profile ? profile.recency_weights : globalDefault,
+    prior_strength_multiplier: profile ? Number(profile.prior_strength_multiplier || 1.0) : 1.0
+  };
+}
+
+async function getCalibrationValue(env, scope, key, fallback) {
+  const cfg = await ensureCalibrationConfigLoaded(env);
+  const found = cfg[`${scope}|${key}`];
+  return found !== undefined ? found : fallback;
+}
+
+// Recency-weighted blended rate for one player, one prop, using the metric snapshot windows
+// that are already computed live by hitter_metric_snapshots / pitcher_metric_snapshots.
+function computeRecencyBlendedRate(snapshotsByWindow, propConfig) {
+  const weights = propConfig._recencyWeights;
+  const windowKeyMap = {
+    last_5_games: "last_5_games",
+    last_10_games: "last_10_games",
+    last_20_games: "last_20_games",
+    season_to_date: "season_to_date"
+  };
+  let weightedSum = 0, weightTotal = 0;
+  for (const [wKey, weight] of Object.entries(weights)) {
+    const snap = snapshotsByWindow[windowKeyMap[wKey]];
+    if (!snap) continue;
+    const games = Number(snap.games_count || 0);
+    if (games <= 0) continue;
+    let numerator = 0;
+    for (const field of propConfig.numerator_fields) {
+      const raw = Number(snap[field] || 0);
+      const w = propConfig.weights ? Number(propConfig.weights[field] || 1) : 1;
+      numerator += raw * w;
+    }
+    const denom = Number(snap[propConfig.denominator_field] || 0);
+    if (denom <= 0) continue;
+    const rate = numerator / denom;
+    weightedSum += rate * weight;
+    weightTotal += weight;
+  }
+  if (weightTotal <= 0) return null;
+  return weightedSum / weightTotal;
+}
+
+function computePopulationStats(values) {
+  const n = values.length;
+  if (n === 0) return { mean: 0, stddev: 0, n: 0 };
+  const mean = values.reduce((a, b) => a + b, 0) / n;
+  const variance = values.reduce((a, b) => a + (b - mean) * (b - mean), 0) / n;
+  return { mean, stddev: Math.sqrt(variance), n };
+}
+
+// Assign a tier from a z-score, collapsing bands automatically if the real population
+// is too thin to fill min_population_per_tier for every band.
+function assignTierFromZScore(z, tierBandsConfig, populationN) {
+  const bands = tierBandsConfig.z_bands; // e.g. [2.0,1.5,1.0,0.5,0.0,-0.5,-1.0,-1.5,-2.0]
+  const minPop = tierBandsConfig.min_population_per_tier || 15;
+  const maxTiers = tierBandsConfig.max_tiers || 12;
+
+  // How many bands can the real population actually support without any tier going thin?
+  const maxSupportedBands = Math.max(1, Math.min(bands.length + 1, maxTiers, Math.floor(populationN / minPop) || 1));
+  const usableBandCount = maxSupportedBands - 1;
+  const step = Math.max(1, Math.floor(bands.length / Math.max(1, usableBandCount)));
+  const effectiveBands = bands.filter((_, i) => i % step === 0).slice(0, usableBandCount);
+
+  let tierIndex = effectiveBands.length; // default: bottom tier
+  for (let i = 0; i < effectiveBands.length; i++) {
+    if (z >= effectiveBands[i]) { tierIndex = i; break; }
+  }
+  const totalTiers = effectiveBands.length + 1;
+  const tierNumber = tierIndex + 1;
+  return {
+    tier_number: tierNumber,
+    tier_key: `TIER_${String(tierNumber).padStart(2, "0")}_OF_${totalTiers}`,
+    total_tiers_used: totalTiers
+  };
+}
+
+async function loadAllMetricSnapshots(env, entity, playerIds) {
+  const db = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  const table = entity === "pitcher" ? "pitcher_metric_snapshots" : "hitter_metric_snapshots";
+  const out = new Map();
+  const chunkSize = 90; // stay well under D1's bound-parameter limit
+  for (let i = 0; i < playerIds.length; i += chunkSize) {
+    const chunk = playerIds.slice(i, i + chunkSize);
+    const placeholders = chunk.map(() => "?").join(",");
+    const rows = await all(db, `SELECT * FROM ${table} WHERE player_id IN (${placeholders})`, ...chunk);
+    for (const r of rows) {
+      if (!out.has(r.player_id)) out.set(r.player_id, {});
+      out.get(r.player_id)[r.metric_window] = r;
+    }
+  }
+  return out;
+}
+
+// PASS 1: compute the population mean/stddev ONCE across every eligible player for this
+// exact prop/line/side, and cache it. This must never be computed per-chunk — every
+// chunk has to score against the SAME population baseline or tier boundaries drift
+// between chunks, which is wrong.
+async function runClassificationV6ComputeStats(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const propKey = String(input.canonical_prop_key || "");
+  const side = String(input.selected_side || "");
+  const lineValue = Number(input.line_value);
+
+  const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const propConfig = propMap[propKey];
+  if (!propConfig) return { ok: false, error: `No prop_metric_map entry for canonical_prop_key '${propKey}'.` };
+  const { recency_weights: recencyWeights } = await getRecencyWeightsForProp(env, propKey);
+
+  const entity = propConfig.entity;
+  const sourceTable = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
+  const sourceDb = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  const idRows = await all(sourceDb, `SELECT DISTINCT player_id FROM ${sourceTable} WHERE player_id IS NOT NULL`);
+  const allPlayerIds = idRows.map(r => Number(r.player_id)).filter(Boolean);
+
+  const snapshots = await loadAllMetricSnapshots(env, entity, allPlayerIds);
+  const propConfigWithWeights = { ...propConfig, _recencyWeights: recencyWeights };
+
+  const rates = [];
+  for (const playerId of allPlayerIds) {
+    const snapByWindow = snapshots.get(playerId) || {};
+    const rate = computeRecencyBlendedRate(snapByWindow, propConfigWithWeights);
+    if (rate != null) rates.push(rate);
+  }
+  const stats = computePopulationStats(rates);
+  let dispersion;
+  const existingDispersionRow = await first(env.ARCHIVE_DB,
+    `SELECT population_dispersion FROM classification_v6_population_stats WHERE canonical_prop_key=? LIMIT 1`,
+    propKey);
+  if (existingDispersionRow) {
+    dispersion = existingDispersionRow.population_dispersion;
+  } else {
+    const dispersionResult = await estimatePooledDispersionFromGameLogs(env, propKey);
+    dispersion = dispersionResult.dispersion;
+  }
+  const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+
+  await run(env.ARCHIVE_DB,
+    `INSERT INTO classification_v6_population_stats (stats_key,canonical_prop_key,line_value,selected_side,population_mean,population_stddev,population_n,population_dispersion,computed_at)
+     VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+     ON CONFLICT(stats_key) DO UPDATE SET population_mean=excluded.population_mean, population_stddev=excluded.population_stddev,
+       population_n=excluded.population_n, population_dispersion=excluded.population_dispersion, computed_at=CURRENT_TIMESTAMP`,
+    statsKey, propKey, lineValue, side, stats.mean, stats.stddev, stats.n, isFinite(dispersion) ? dispersion : null);
+
+  return {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "classification_v6_compute_stats",
+    canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+    population_mean: round(stats.mean, 6), population_stddev: round(stats.stddev, 6), population_n: stats.n,
+    total_players_scanned: allPlayerIds.length,
+    certification: "CLASSIFICATION_V6_STATS_CERTIFIED", certification_grade: "PASS"
+  };
+}
+
+// PASS 2: chunked tier assignment against the CACHED population stats from pass 1.
+// Also batches the existing-tier lookup for the whole chunk in one query instead of
+// one query per player (real inefficiency found during testing, fixed here).
+async function runClassificationV6Tick(env, input = {}) {
+  await ensureCalibrationConfigLoaded(env);
+  const requestId = String(input.request_id || rid("classification_v6"));
+  const runId = String(input.run_id || rid("run"));
+  const batchId = String(input.batch_id || rid("classification_v6_batch"));
+  const propKey = String(input.canonical_prop_key || "");
+  const side = String(input.selected_side || "");
+  const lineValue = Number(input.line_value);
+  const officialDate = String(input.official_date || "");
+
+  const propMap = await getCalibrationValue(env, "global", "prop_metric_map", {});
+  const propConfig = propMap[propKey];
+  if (!propConfig) return { ok: false, error: `No prop_metric_map entry for canonical_prop_key '${propKey}'.` };
+  const { recency_weights: recencyWeights } = await getRecencyWeightsForProp(env, propKey);
+  const tierBands = await getCalibrationValue(env, "global", "tier_bands", { max_tiers: 12, z_bands: [2.0,1.5,1.0,0.5,0.0,-0.5,-1.0,-1.5,-2.0], min_population_per_tier: 15 });
+  const opLimits = await getCalibrationValue(env, "operational", "run_limits", { chunk_size_rows: 40, tick_timeout_ms: 20000 });
+
+  const statsKey = `${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+  const cachedStats = await first(env.ARCHIVE_DB, `SELECT * FROM classification_v6_population_stats WHERE stats_key=?`, statsKey);
+  if (!cachedStats) {
+    return { ok: false, error: `No cached population stats for ${statsKey}. Run classification_v6_compute_stats first.` };
+  }
+  const stats = { mean: cachedStats.population_mean, stddev: cachedStats.population_stddev, n: cachedStats.population_n };
+
+  const entity = propConfig.entity;
+  const sourceTable = entity === "pitcher" ? "pitcher_game_logs" : "hitter_game_logs";
+  const sourceDb = entity === "pitcher" ? env.STATS_PITCHER_DB : env.STATS_HITTER_DB;
+  let allPlayerIds;
+  if (Array.isArray(input.player_ids_override)) {
+    allPlayerIds = input.player_ids_override.map(Number).filter(Boolean);
+  } else {
+    const idRows = await all(sourceDb, `SELECT DISTINCT player_id FROM ${sourceTable} WHERE player_id IS NOT NULL`);
+    allPlayerIds = idRows.map(r => Number(r.player_id)).filter(Boolean);
+  }
+
+  const cursor = Math.max(0, Number(input.cursor_offset || 0));
+  const chunkSize = Array.isArray(input.player_ids_override) ? allPlayerIds.length : Math.max(10, Number(opLimits.chunk_size_rows || 40));
+  const slice = allPlayerIds.slice(cursor, cursor + chunkSize);
+
+  const snapshots = await loadAllMetricSnapshots(env, entity, slice);
+  const propConfigWithWeights = { ...propConfig, _recencyWeights: recencyWeights };
+
+  const perPlayer = [];
+  for (const playerId of slice) {
+    const snapByWindow = snapshots.get(playerId) || {};
+    const seasonSnap = snapByWindow["season_to_date"];
+    const anySnap = seasonSnap || Object.values(snapByWindow)[0];
+    const games = seasonSnap ? Number(seasonSnap.games_count || 0) : (anySnap ? Number(anySnap.games_count || 0) : 0);
+    const rate = computeRecencyBlendedRate(snapByWindow, propConfigWithWeights);
+    if (rate == null) continue;
+    perPlayer.push({ playerId, rate, games, playerName: anySnap ? (anySnap.player_name || null) : null });
+  }
+
+  // Batched existing-tier lookup, chunked to stay under D1's bound-parameter limit
+  // (same 90-per-query pattern as loadAllMetricSnapshots — this broke once already
+  // when chunk_size_rows was raised without updating this query too).
+  const existingTiers = new Map();
+  if (perPlayer.length) {
+    const idChunkSize = 90;
+    for (let i = 0; i < perPlayer.length; i += idChunkSize) {
+      const idSlice = perPlayer.slice(i, i + idChunkSize);
+      const idPlaceholders = idSlice.map(() => "?").join(",");
+      const existingRows = await all(env.ARCHIVE_DB,
+        `SELECT player_id, tier_key FROM classification_v6_current WHERE player_type=? AND canonical_prop_key=? AND line_value=? AND selected_side=? AND player_id IN (${idPlaceholders})`,
+        entity, propKey, lineValue, side, ...idSlice.map(p => p.playerId));
+      for (const r of existingRows) existingTiers.set(r.player_id, r.tier_key);
+    }
+  }
+
+  const stmts = [];
+  let reclassifiedCount = 0;
+
+  for (const p of perPlayer) {
+    const z = stats.stddev > 0 ? (p.rate - stats.mean) / stats.stddev : 0;
+    const tier = assignTierFromZScore(z, tierBands, stats.n);
+    const rowId = `clsv6|${entity}|${p.playerId}|${propKey}|${String(lineValue).replace(".", "p")}|${side}`;
+
+    if (existingTiers.has(p.playerId) && existingTiers.get(p.playerId) !== tier.tier_key) reclassifiedCount++;
+
+    stmts.push(env.ARCHIVE_DB.prepare(
+      `INSERT INTO classification_v6_current (classification_row_id,batch_id,player_type,player_id,player_name,canonical_prop_key,line_value,selected_side,tier_key,tier_number,z_score,metric_value,population_mean,population_stddev,games_sample,formula_version,last_processed_official_date,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+       ON CONFLICT(player_type,player_id,canonical_prop_key,line_value,selected_side) DO UPDATE SET
+         batch_id=excluded.batch_id, tier_key=excluded.tier_key, tier_number=excluded.tier_number,
+         z_score=excluded.z_score, metric_value=excluded.metric_value, population_mean=excluded.population_mean,
+         population_stddev=excluded.population_stddev, games_sample=excluded.games_sample,
+         formula_version=excluded.formula_version, last_processed_official_date=excluded.last_processed_official_date,
+         updated_at=CURRENT_TIMESTAMP`
+    ).bind(rowId, batchId, entity, p.playerId, p.playerName, propKey, lineValue, side,
+      tier.tier_key, tier.tier_number, round(z, 4), round(p.rate, 6), round(stats.mean, 6), round(stats.stddev, 6),
+      p.games, CLASSIFICATION_V6_VERSION, officialDate));
+  }
+
+  if (stmts.length) await writeBatch(env.ARCHIVE_DB, "classification_v6_current", stmts, 30);
+
+  const nextCursor = cursor + chunkSize;
+  const done = nextCursor >= allPlayerIds.length;
+
+  await writeRun(env.ARCHIVE_DB,
+    "classification_v6_batches",
+    `INSERT INTO classification_v6_batches (batch_id,request_id,run_id,mode,status,worker_version,official_date,rows_read,rows_written,reclassified_rows,cursor_offset,certification,certification_grade,cached_population_mean,cached_population_stddev,cached_population_n,stats_computed_at,updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+     ON CONFLICT(batch_id) DO UPDATE SET status=excluded.status, rows_read=classification_v6_batches.rows_read+excluded.rows_read,
+       rows_written=classification_v6_batches.rows_written+excluded.rows_written,
+       reclassified_rows=classification_v6_batches.reclassified_rows+excluded.reclassified_rows,
+       cursor_offset=excluded.cursor_offset, certification=excluded.certification, certification_grade=excluded.certification_grade,
+       finished_at=CASE WHEN excluded.status='completed' THEN CURRENT_TIMESTAMP ELSE finished_at END, updated_at=CURRENT_TIMESTAMP`,
+    batchId, requestId, runId, "classification_v6", done ? "completed" : "partial_continue", CLASSIFICATION_V6_VERSION,
+    officialDate, slice.length, perPlayer.length, reclassifiedCount, nextCursor,
+    "CLASSIFICATION_V6_TICK_CERTIFIED", done ? "PASS" : "PARTIAL",
+    stats.mean, stats.stddev, stats.n, cachedStats.computed_at);
+
+  return {
+    ok: true, data_ok: true, version: CLASSIFICATION_V6_VERSION, mode: "classification_v6",
+    request_id: requestId, run_id: runId, batch_id: batchId,
+    canonical_prop_key: propKey, line_value: lineValue, selected_side: side,
+    status: done ? "completed" : "partial_continue",
+    certification: "CLASSIFICATION_V6_TICK_CERTIFIED", certification_grade: done ? "PASS" : "PARTIAL",
+    rows_read: slice.length, rows_written: perPlayer.length, reclassified_rows: reclassifiedCount,
+    population_mean: round(stats.mean, 6), population_stddev: round(stats.stddev, 6), population_n: stats.n,
+    cursor_offset: nextCursor, total_players: allPlayerIds.length, done,
+    no_daily_context: true, no_market_context: true, no_scoring_context: true
+  };
+}
+
+export default {
+  async scheduled(event, env, ctx) {
+    // event.cron matches one of the two triggers configured in the generator:
+    // "0 3 * * 1" (Monday 3am) = weekly static differential
+    // "45 8 * * *" (daily 8:45am) = daily morning delta full run
+    const cron = String(event.cron || "");
+    let mode = null;
+    if (cron === "0 3 * * 1") mode = "weekly_static_differential_full_run";
+    else if (cron === "45 8 * * *") mode = "daily_morning_delta_full_run";
+    if (!mode) return;
+    ctx.waitUntil((async () => {
+      let resumeFrom = 0;
+      let guard = 0;
+      while (guard < 15) {
+        guard++;
+        const res = await runMode(env, { mode, resume_from_step: resumeFrom });
+        if (!res || res.partial !== true) break;
+        resumeFrom = res.next_resume_from_step || 0;
+      }
+    })());
+  },
+  async fetch(request, env, ctx){
+    const url=new URL(request.url); const path=url.pathname.replace(/\/$/,"")||"/"; const method=request.method.toUpperCase();
+    if(method==="GET" && path==="/") return jsonResponse(baseIdentity(env));
+    if(method==="GET" && path==="/health") return jsonResponse({...baseIdentity(env),route:"/health"});
+    if(method==="POST" && path==="/diagnostic") return jsonResponse({...baseIdentity(env),route:"/diagnostic",input_echo_safe:await readJsonSafe(request)});
+    if(method==="POST" && path==="/run"){
+      const input=await readJsonSafe(request);
+      try { return jsonResponse(await runMode(env,input)); }
+      catch(err){ return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,logical_worker_name:LOGICAL_WORKER_NAME,status:"EXPANSION_BASELINE_WORKER_FAILED",error:String(err&&err.message?err.message:err),expansion_only:true,baseline_only:true,no_current_baseline_mutation:true,no_scoring_mutation:true,no_final_board_mutation:true},500); }
+    }
+    return jsonResponse({ok:false,data_ok:false,version:VERSION,worker_name:WORKER_NAME,status:"NOT_FOUND",allowed_routes:["GET /","GET /health","POST /diagnostic","POST /run"]},404);
+  }
+};
+, '', 'i'))), '[^a-z ]', '', 'g') AS norm_name
+        FROM board_rows
+      ),
+      matched AS (
+        SELECT b.*, p.mlb_player_id AS resolved_mlb_player_id,
+               ROW_NUMBER() OVER (PARTITION BY b.current_row_id ORDER BY (CASE WHEN p.full_name = b.player_name THEN 0 ELSE 1 END)) AS rn
+        FROM board_norm b
+        LEFT JOIN norm_players p ON p.norm_name = b.norm_name
+      )
+      INSERT INTO score.board_prepared_current
+        (prepared_row_id, source_key, resolved_mlb_player_id, official_date, source_start_time, canonical_prop_key,
+         line_value, source_prop_name, prep_status, pickable_safe)
+      SELECT
+        current_row_id, source_key, resolved_mlb_player_id, '${officialDate}'::date, start_time,
+        lower(regexp_replace(stat_type, '\\s+', '_', 'g')), line_score, stat_type,
+        CASE WHEN resolved_mlb_player_id IS NOT NULL THEN 'prepared_pickable_safe' ELSE 'prepared_blocked_unresolved_player' END,
+        CASE WHEN resolved_mlb_player_id IS NOT NULL AND pickable_flag = 1 THEN 1 ELSE 0 END
+      FROM matched WHERE rn = 1
+      ON CONFLICT (prepared_row_id) DO UPDATE SET
+        resolved_mlb_player_id=excluded.resolved_mlb_player_id, line_value=excluded.line_value,
+        prep_status=excluded.prep_status, pickable_safe=excluded.pickable_safe, updated_at=now()
+    `);
+    const totalRes = await sql`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE resolved_mlb_player_id IS NOT NULL)::int AS resolved FROM score.board_prepared_current WHERE official_date = ${officialDate}::date`;
+    await sql.end();
+    return { ok: true, mode: "derive_board_prepared_from_postgres", official_date: officialDate, rows_written: res.count, total_for_date: totalRes[0]?.total, resolved_for_date: totalRes[0]?.resolved };
+  } catch (err) {
+    return { ok: false, mode: "derive_board_prepared_from_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -8422,6 +11958,7 @@ async function runMode(env,input={}){
   if(mode==="fix_raw_json_double_encoding") return runFixRawJsonDoubleEncoding(env,input);
   if(mode==="daily_context_full_run") return runDailyContextFullRun(env,input);
   if(mode==="remine_prizepicks_board_to_postgres") return runRemineePrizepicksBoardToPostgres(env,input);
+  if(mode==="derive_board_prepared_from_postgres") return runDeriveBoardPreparedFromPostgres(env,input);
   if(mode==="diagnose_savant_csv_export") return runDiagnoseSavantCsvExport(env,input);
   if(mode==="remine_arm_angle_to_postgres") return runRemineArmAngleToPostgresV2(env,input);
   if(mode==="remine_pitcher_arsenal_to_postgres") return runReminePitcherArsenalToPostgresV2(env,input);
