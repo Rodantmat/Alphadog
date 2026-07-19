@@ -6707,7 +6707,7 @@ const PG_TABLE_PLAN = {
   },
   config_prop_taxonomy: {
     d1_binding: "CONFIG_DB", d1_table: "config_prop_taxonomy", pg_table: "config.prop_taxonomy",
-    order_by: "canonical_prop_key", columns: ["canonical_prop_key","prop_family","display_label","updated_at"]
+    order_by: "prop_key", columns: ["prop_key","display_name","player_side","stat_family","primary_role","supported_market_sources","default_line_policy","over_under_policy","california_pickable","scoring_enabled","notes","updated_at"]
   }
 };
 
