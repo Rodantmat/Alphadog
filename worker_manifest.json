@@ -119,6 +119,7 @@
     "alphadog-v2-score-audit",
     "alphadog-v2-tail-logger",
     "alphadog-v2-gbdt-auto-trigger",
+    "alphadog-v2-postgres-migration",
     "alphadog-v2-orchestrator"
   ]
 }
