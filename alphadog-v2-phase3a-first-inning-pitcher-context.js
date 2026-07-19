@@ -6749,7 +6749,7 @@ async function runClassificationV6BaseSingleStep(env, input = {}) {
 // old 18000ms and matching the ~28-31s per-call durations already proven safe tonight.
 async function runClassificationV6Base(env, input = {}) {
   const startMs = Date.now();
-  const timeBudgetMs = 35000;
+  const timeBudgetMs = 32000;
   let currentInput = input;
   let lastOutput = null;
   let tickCount = 0;
