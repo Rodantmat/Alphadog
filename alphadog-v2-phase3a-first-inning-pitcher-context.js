@@ -7860,6 +7860,35 @@ async function reconcileSubsetOfConstraints(env) {
     }
     if (passClamped === 0) break;
   }
+  // REAL FIX: subset clamping (above) can shift a superset prop's value (e.g. hits clamped
+  // down to match hits_runs_rbis), which can then break a separately-declared alias equality
+  // (e.g. hits=total_bases) that was already correctly established. Confirmed live tonight:
+  // 15 real hits/total_bases mismatches appeared after subset reconciliation ran, for exactly
+  // this reason. Re-syncing aliases after subset clamping stabilizes keeps both mechanisms
+  // consistent with each other, not just individually correct.
+  const aliasMap = await getCalibrationValue(env, "global", "shared_threshold_aliases", {});
+  let aliasResynced = 0;
+  for (const [aliasKey, targetKey] of Object.entries(aliasMap)) {
+    const [aliasProp, aliasLineRaw, aliasSide] = aliasKey.split("|");
+    const [targetProp, targetLineRaw, targetSide] = String(targetKey).split("|");
+    const aliasLine = Number(aliasLineRaw), targetLine = Number(targetLineRaw);
+    const res = await run(env.ARCHIVE_DB, `
+      UPDATE baseline_v6_current
+      SET hit_probability_0_100 = (
+        SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+        WHERE s.player_id = baseline_v6_current.player_id
+          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+      )
+      WHERE canonical_prop_key = ? AND line_value = ? AND selected_side = ?
+        AND ABS(hit_probability_0_100 - (
+          SELECT s.hit_probability_0_100 FROM baseline_v6_current s
+          WHERE s.player_id = baseline_v6_current.player_id
+            AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+        )) > 0.01`,
+      targetProp, targetLine, targetSide, aliasProp, aliasLine, aliasSide, targetProp, targetLine, targetSide);
+    aliasResynced += Number(res && res.meta && res.meta.changes || 0);
+  }
+  if (aliasResynced > 0) results.push({ alias_resync_after_subset_clamp: true, rows_resynced: aliasResynced });
   return { ok: true, total_clamped: totalClamped, per_constraint: results };
 }
 
