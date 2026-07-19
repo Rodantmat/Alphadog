@@ -7986,7 +7986,9 @@ async function runWeeklyStaticDifferentialFullRun(env, input) {
     { key: "batted_ball_profile", fn: runRemineBattedBallProfileToPostgres },
     { key: "defensive_quality", fn: runRemineDefensiveQualityToPostgres },
     { key: "catcher_framing", fn: runRemineCatcherFramingToPostgres },
-    { key: "pitcher_running_game", fn: runReminePitcherRunningGameToPostgres }
+    { key: "pitcher_running_game", fn: runReminePitcherRunningGameToPostgres },
+    { key: "arm_angle", fn: runRemineArmAngleToPostgresV2 },
+    { key: "pitcher_arsenal", fn: runReminePitcherArsenalToPostgresV2 }
   ];
   const results = [];
   const startAt = Number(input.resume_from_step || 0);
