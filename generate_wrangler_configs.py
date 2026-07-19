@@ -66,6 +66,7 @@ def make_config(worker_name, include_services=False):
         cfg["hyperdrive"] = [
             {"binding": "HYPERDRIVE", "id": "f6c6e778ebfe4dfa8e17d7effbeaff8b"}
         ]
+        cfg["compatibility_flags"] = ["nodejs_compat"]
     if worker_name == "alphadog-v2-parlay-underdog-board":
         # Same reason as control-room/admin-sql above: worker-specific vars must live in the
         # generator or they get wiped on every deploy before Wrangler even runs. NOTE: the
