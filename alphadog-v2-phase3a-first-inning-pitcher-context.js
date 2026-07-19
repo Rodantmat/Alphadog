@@ -6742,9 +6742,14 @@ async function runClassificationV6BaseSingleStep(env, input = {}) {
 // tick, not after one finishes - it naturally overshoots by up to one tick's duration. Raised to
 // 45000ms to intentionally capture that real headroom instead of leaving it on the table,
 // while staying safely under Workers CPU/wall-clock limits for a single invocation.
+// REAL FIX after a real, confirmed failure: the orchestrator's own service-binding call to this
+// worker has a hard 45000ms timeout (confirmed live - a 45000ms internal budget raced against
+// it and failed with expansion_baseline_v2_service_binding_timeout_after_45000ms). 35000ms
+// leaves real, safe margin under that confirmed caller-side ceiling, while still well above the
+// old 18000ms and matching the ~28-31s per-call durations already proven safe tonight.
 async function runClassificationV6Base(env, input = {}) {
   const startMs = Date.now();
-  const timeBudgetMs = 45000;
+  const timeBudgetMs = 35000;
   let currentInput = input;
   let lastOutput = null;
   let tickCount = 0;
