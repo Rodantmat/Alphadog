@@ -7868,7 +7868,7 @@ async function runBaselineV6DeltaDaily(env, input = {}) {
 
 async function runBaselineV6Base(env, input = {}) {
   const startMs = Date.now();
-  const timeBudgetMs = 18000;
+  const timeBudgetMs = 32000; // matches the tested, safe value confirmed live for runClassificationV6Base
   let currentInput = input;
   let lastOutput = null;
 
