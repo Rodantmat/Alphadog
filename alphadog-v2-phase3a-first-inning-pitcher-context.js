@@ -7285,6 +7285,60 @@ async function runReminePitcherSplitsToPostgres(env, input) {
   }
 }
 
+async function runRemineTeamGameLogsToPostgres(env, input) {
+  const season = Number(input.season || 2026);
+  const startDate = String(input.start_date || `${season}-03-01`);
+  const endDate = String(input.end_date || new Date().toISOString().slice(0, 10));
+  try {
+    const base = String(env.MLB_API_BASE_URL || "https://statsapi.mlb.com/api/v1").replace(/\/$/, "");
+    const headers = { accept: "application/json", "user-agent": String(env.MLB_API_USER_AGENT || "AlphaDogV2Postgres/0.1") };
+    const url = `${base}/schedule?sportId=1&gameTypes=R&startDate=${startDate}&endDate=${endDate}`;
+    const resp = await fetch(url, { headers });
+    const json = await resp.json().catch(() => null);
+    const dates = (json && Array.isArray(json.dates)) ? json.dates : [];
+
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const rows = [];
+    for (const d of dates) {
+      const games = Array.isArray(d.games) ? d.games : [];
+      for (const g of games) {
+        const status = (g.status && (g.status.abstractGameState || g.status.detailedState || "")) || "";
+        if (!/final|game over/i.test(status)) continue;
+        const home = g.teams && g.teams.home, away = g.teams && g.teams.away;
+        if (!home || !away || !home.team || !away.team) continue;
+        rows.push({
+          log_id: `${home.team.id}_${g.gamePk}`, team_id: String(home.team.id), game_pk: Number(g.gamePk),
+          game_date: String(g.officialDate || d.date).slice(0, 10), opponent_team_id: String(away.team.id),
+          is_home: 1, runs_scored: home.score != null ? Number(home.score) : null, runs_allowed: away.score != null ? Number(away.score) : null,
+          raw_json: JSON.stringify(g)
+        });
+        rows.push({
+          log_id: `${away.team.id}_${g.gamePk}`, team_id: String(away.team.id), game_pk: Number(g.gamePk),
+          game_date: String(g.officialDate || d.date).slice(0, 10), opponent_team_id: String(home.team.id),
+          is_home: 0, runs_scored: away.score != null ? Number(away.score) : null, runs_allowed: home.score != null ? Number(home.score) : null,
+          raw_json: JSON.stringify(g)
+        });
+      }
+    }
+    if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_team_game_logs_to_postgres", error: "no_final_games_found", date_range: [startDate, endDate] }; }
+
+    const cols = ["log_id","team_id","game_pk","game_date","opponent_team_id","is_home","runs_scored","runs_allowed","raw_json"];
+    const WRITE_CHUNK = 300;
+    for (let i = 0; i < rows.length; i += WRITE_CHUNK) {
+      const chunk = rows.slice(i, i + WRITE_CHUNK);
+      await sql`
+        INSERT INTO team.game_logs ${sql(chunk, ...cols)}
+        ON CONFLICT (log_id) DO UPDATE SET
+          runs_scored=excluded.runs_scored, runs_allowed=excluded.runs_allowed, raw_json=excluded.raw_json, updated_at=now()
+      `;
+    }
+    await sql.end();
+    return { ok: true, mode: "remine_team_game_logs_to_postgres", date_range: [startDate, endDate], games_written: rows.length };
+  } catch (err) {
+    return { ok: false, mode: "remine_team_game_logs_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -7300,6 +7354,7 @@ async function runMode(env,input={}){
   if(mode==="remine_pitcher_game_logs_to_postgres") return runReminePitcherGameLogsToPostgres(env,input);
   if(mode==="remine_hitter_splits_to_postgres") return runRemineHitterSplitsToPostgres(env,input);
   if(mode==="remine_pitcher_splits_to_postgres") return runReminePitcherSplitsToPostgres(env,input);
+  if(mode==="remine_team_game_logs_to_postgres") return runRemineTeamGameLogsToPostgres(env,input);
   if(mode==="savant_quality_of_contact_mining") return runSavantQualityOfContactMining(env,input);
   if(mode==="expansion_baseline_mining" || mode==="expansion-baseline-mining") return mineFirstInningContext(env,input);
   if(mode==="expansion_baseline_sanity" || mode==="expansion-baseline-sanity") return runSanity(env,input);
