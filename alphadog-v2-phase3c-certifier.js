@@ -284,11 +284,38 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
 }
 
 async function reconcileHpBoardSubsetConstraints(env, hpBatchId) {
+  const aliasRows = await all(env.CONFIG_DB, `SELECT config_json FROM calibration_config WHERE config_key='shared_threshold_aliases' AND is_active=1`);
+  const aliasCfg = (aliasRows[0]) ? safeJsonParse(aliasRows[0].config_json, {}) : {};
   const cfgRows = await all(env.CONFIG_DB, `SELECT config_json FROM calibration_config WHERE config_key='subset_of_constraints' AND is_active=1`);
   const cfgRow = cfgRows[0] || null;
   const constraints = cfgRow ? safeJsonParse(cfgRow.config_json, {}) : {};
   let totalClamped = 0;
   const results = [];
+  // REAL FIX (found via live debugging): true-equality aliases (e.g. hits=total_bases) need a
+  // direct copy, not a one-directional clamp - applied first since subset constraints below may
+  // reference an aliased prop and should see its already-reconciled value.
+  for (const [aliasKeySide, targetKeySide] of Object.entries(aliasCfg)) {
+    const [aliasProp, aliasLineRaw, aliasSide] = aliasKeySide.split("|");
+    const [targetProp, targetLineRaw, targetSide] = String(targetKeySide).split("|");
+    const aliasLine = Number(aliasLineRaw), targetLine = Number(targetLineRaw);
+    const res = await run(env.SCORE_DB, `
+      UPDATE hp_board_current AS h
+      SET estimated_hit_probability_0_100 = (
+        SELECT s.estimated_hit_probability_0_100 FROM hp_board_current s
+        WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
+          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ? AND s.source_key = h.source_key
+      )
+      WHERE h.hp_board_batch_id = ? AND h.canonical_prop_key = ? AND h.line_value = ? AND h.selected_side = ?
+        AND EXISTS (
+          SELECT 1 FROM hp_board_current s
+          WHERE s.mlb_player_id = h.mlb_player_id AND s.hp_board_batch_id = h.hp_board_batch_id
+            AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ? AND s.source_key = h.source_key
+        )`,
+      targetProp, targetLine, targetSide, hpBatchId, aliasProp, aliasLine, aliasSide, targetProp, targetLine, targetSide);
+    const changed = Number(res && res.meta && res.meta.changes || 0);
+    totalClamped += changed;
+    results.push({ alias: aliasKeySide, target: targetKeySide, rows_synced: changed });
+  }
   for (const [subsetKey, supersetKey] of Object.entries(constraints)) {
     const [subProp, subLineRaw, subSide] = subsetKey.split("|");
     const [supProp, supLineRaw, supSide] = supersetKey.split("|");
