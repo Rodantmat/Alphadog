@@ -1134,6 +1134,8 @@ async function apiDossier(env, url) {
     safeQuery(env.DAILY_DB, `SELECT * FROM daily_team_schedule_spot_current WHERE game_pk=?`, [gamePk]),
     safeQuery(env.MARKET_DB, `SELECT * FROM market_context_probe_game_odds WHERE game_pk=? AND market_key IN ('h2h','spreads','totals')`, [gamePk])
   ]);
+
+  return jsonResponse({
     ok: true,
     data_ok: true,
     version: VERSION,
