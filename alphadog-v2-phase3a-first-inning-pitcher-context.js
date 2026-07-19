@@ -7517,6 +7517,39 @@ async function runRemineQualityOfContactToPostgres(env, input) {
   }
 }
 
+const RAW_JSON_TABLES = [
+  { table: "ref.teams", col: "raw_json" }, { table: "ref.players", col: "raw_json" },
+  { table: "ref.stadiums", col: "raw_json" }, { table: "ref.sprint_speed", col: "raw_json" },
+  { table: "ref.batter_quality_of_contact", col: "raw_json" },
+  { table: "stats_hitter.game_logs", col: "raw_json" }, { table: "stats_hitter.splits", col: "raw_json" },
+  { table: "stats_pitcher.game_logs", col: "raw_json" }, { table: "stats_pitcher.splits", col: "raw_json" },
+  { table: "team.game_logs", col: "raw_json" }, { table: "team.starter_history", col: "raw_json" },
+  { table: "team.bullpen_history", col: "raw_json" },
+  { table: "market.historical_props_2025", col: "raw_json" },
+  { table: "archive.board_leg_history", col: "raw_source_json" },
+];
+async function runFixRawJsonDoubleEncoding(env, input) {
+  const results = [];
+  try {
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    for (const t of RAW_JSON_TABLES) {
+      try {
+        const res = await sql.unsafe(
+          `UPDATE ${t.table} SET ${t.col} = (${t.col}#>>'{}')::jsonb
+           WHERE jsonb_typeof(${t.col}) = 'string'`
+        );
+        results.push({ table: t.table, fixed_rows: res.count });
+      } catch (err) {
+        results.push({ table: t.table, error: String(err && err.message ? err.message : err) });
+      }
+    }
+    await sql.end();
+    return { ok: true, mode: "fix_raw_json_double_encoding", results };
+  } catch (err) {
+    return { ok: false, mode: "fix_raw_json_double_encoding", error: String(err && err.message ? err.message : err), results };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -7525,6 +7558,7 @@ async function runMode(env,input={}){
   if(mode==="postgres_apply_schema") return runPostgresApplySchema(env,input);
   if(mode==="postgres_migrate_table") return runPostgresMigrateTable(env,input);
   if(mode==="postgres_verify_count") return runPostgresVerifyCount(env,input);
+  if(mode==="fix_raw_json_double_encoding") return runFixRawJsonDoubleEncoding(env,input);
   if(mode==="remine_ref_teams_to_postgres") return runRemineRefTeamsToPostgres(env,input);
   if(mode==="remine_ref_players_to_postgres") return runRemineRefPlayersToPostgres(env,input);
   if(mode==="remine_ref_stadiums_to_postgres") return runRemineRefStadiumsToPostgres(env,input);
