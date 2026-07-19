@@ -1775,7 +1775,7 @@ async function apiPlayerProfile(env, url) {
   }
 
   // Advanced Statcast-tier metrics (season-long, player identity — not game-specific)
-  const [availabilityRow, sprintRow, battedBallRow, defQualRow, arsenalRows, armAngleRow, runningGameRow, catcherRow] = await Promise.all([
+  const [availabilityRow, sprintRow, battedBallRow, defQualRow, arsenalRows, armAngleRow, runningGameRow, catcherRow, qocRow] = await Promise.all([
     safeOne(env.DAILY_DB, `SELECT availability_status, roster_status_description, confidence_label FROM daily_player_availability_current WHERE player_id=? ORDER BY datetime(updated_at) DESC LIMIT 1`, [mlbId]),
     safeOne(env.REF_DB, `SELECT sprint_speed_ft_per_sec, competitive_runs FROM ref_sprint_speed WHERE mlb_player_id=? AND active=1 ORDER BY season_year DESC LIMIT 1`, [mlbId]),
     safeOne(env.REF_DB, `SELECT ground_ball_pct, air_pct, pulled_air_pct, batted_ball_events FROM ref_batted_ball_profile WHERE mlb_player_id=? ORDER BY season_year DESC LIMIT 1`, [mlbId]),
