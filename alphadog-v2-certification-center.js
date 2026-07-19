@@ -2096,7 +2096,6 @@ function renderPlayerProfileDream(j){
   const seasonRow=snapshots.find(s=>s.metric_window==='season_to_date'),l5Row=snapshots.find(s=>s.metric_window==='last_5_games');
   const trendKey=isP?'era_calculated':'batting_average';
   const trend=seasonRow&&l5Row?trendArrow(l5Row[trendKey],seasonRow[trendKey],!isP):'';
-  html+='<div class="dSection wide" style="margin-top:10px"><h3>Diagnostic Test (temporary)</h3><div class="infoRow"><div class="infoKey">Raw literal, bypasses cleanVal</div><div class="infoVal">Sam sells seven silver snakes since Sunday season starts soon</div></div><div class="infoRow"><div class="infoKey">Via cleanVal</div><div class="infoVal">'+esc(cleanVal('Sam sells seven silver snakes since Sunday season starts soon'))+'</div></div><div class="infoRow"><div class="infoKey">Via esc only</div><div class="infoVal">'+esc('Sam sells seven silver snakes since Sunday season starts soon')+'</div></div></div>';
   html+='<div class="sectionLabel" style="margin-top:14px">Season Snapshot '+trend+'</div>'+(seasonSnapStrip(snapshots,isP)||'<div class="small">No season snapshot available yet.</div>');
   const propKeys=propFamilyKeys(isP);
   const legsByProp={};for(const l of legs){const k=String(l.canonical_prop_key||'');(legsByProp[k]=legsByProp[k]||[]).push(l)}
