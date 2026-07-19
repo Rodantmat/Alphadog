@@ -6594,32 +6594,32 @@ async function runSavantQualityOfContactMining(env, input = {}) {
 
   const byPlayer = new Map();
   for (const r of expectedData.rows) {
-    const pid = firstNum(r, ["player_id", "batter", "mlb_id", "xba_player_id"]);
+    const pid = firstNum(r, ["entity_id", "player_id", "batter", "mlb_id"]);
     if (!pid) continue;
-    byPlayer.set(pid, { ...(byPlayer.get(pid) || {}), player_id: pid, player_name: r.player_name || r.last_name_first_name || r.name || null, ...r, _expected_raw: r });
+    byPlayer.set(pid, { ...(byPlayer.get(pid) || {}), player_id: pid, player_name: r.entity_name || r.player_name || null, ...r, _expected_raw: r });
   }
   for (const r of statcastData.rows) {
-    const pid = firstNum(r, ["player_id", "batter", "mlb_id"]);
+    const pid = firstNum(r, ["entity_id", "player_id", "batter", "mlb_id"]);
     if (!pid) continue;
-    byPlayer.set(pid, { ...(byPlayer.get(pid) || {}), player_id: pid, player_name: (byPlayer.get(pid) || {}).player_name || r.player_name || r.last_name_first_name || r.name || null, ...r, _statcast_raw: r });
+    byPlayer.set(pid, { ...(byPlayer.get(pid) || {}), player_id: pid, player_name: (byPlayer.get(pid) || {}).player_name || r.entity_name || r.player_name || null, ...r, _statcast_raw: r });
   }
 
   const statements = [];
   let written = 0;
   for (const [pid, r] of byPlayer.entries()) {
     const qocId = `savant_qoc_${year}_${pid}`;
-    const xba = firstNum(r, ["xba", "est_ba"]);
-    const xslg = firstNum(r, ["xslg", "est_slg"]);
-    const xwoba = firstNum(r, ["xwoba", "est_woba"]);
+    const xba = firstNum(r, ["est_ba", "xba"]);
+    const xslg = firstNum(r, ["est_slg", "xslg"]);
+    const xwoba = firstNum(r, ["est_woba", "xwoba"]);
     const woba = firstNum(r, ["woba"]);
-    const xobp = firstNum(r, ["xobp", "est_obp"]);
-    const xiso = firstNum(r, ["xiso", "est_iso"]);
-    const xwobacon = firstNum(r, ["xwobacon", "est_woba_minus_woba_diff", "xwoba_con"]);
-    const wobacon = firstNum(r, ["wobacon", "woba_con"]);
-    const ev = firstNum(r, ["exit_velocity_avg", "avg_hit_speed", "launch_speed"]);
+    const xobp = firstNum(r, ["est_obp", "xobp"]);
+    const xiso = firstNum(r, ["est_iso", "xiso"]);
+    const xwobacon = firstNum(r, ["est_wobacon", "xwobacon"]);
+    const wobacon = firstNum(r, ["wobacon"]);
+    const ev = firstNum(r, ["exit_velocity_avg", "avg_hit_speed"]);
     const la = firstNum(r, ["launch_angle_avg", "avg_hit_angle"]);
     const sweetSpot = firstNum(r, ["sweet_spot_percent", "sweetspot_percent"]);
-    const barrelRate = firstNum(r, ["barrel_batted_rate", "brl_percent"]);
+    const barrelRate = firstNum(r, ["barrels_per_bip", "brl_percent"]);
     const hardHit = firstNum(r, ["hard_hit_percent"]);
     const solid = firstNum(r, ["solidcontact_percent"]);
     const pull = firstNum(r, ["pull_percent"]);
