@@ -2077,12 +2077,16 @@ function advancedMetricsBlock(adv,isP){adv=adv||{};const items=[];
 function trendArrow(l5,ref,higherIsBetter){if(l5==null||ref==null)return '';const diff=higherIsBetter?(l5-ref):(ref-l5);if(Math.abs(diff)<0.01)return '<span class="trendArrow flat">→</span>';return diff>0?'<span class="trendArrow up">▲</span>':'<span class="trendArrow down">▼</span>'}
 async function loadPlayerProfile(id){$('playerProfileBody').innerHTML='<div class="empty">Loading player profile...</div>';const j=await (await fetch('/api/player-profile?player_id='+encodeURIComponent(id)+'&t='+Date.now(),{cache:'no-store'})).json();if(!j.ok){$('playerProfileBody').innerHTML='<div class="empty err">Profile failed: '+esc(j.error||'unknown')+'</div>';return}renderPlayerProfileDream(j)}
 function renderPlayerProfileDream(j){
-  const p=j.player||{},team=j.team||{},isP=j.is_pitcher||isPitcherPos(p.primary_position),legs=j.current_legs||[],games=j.recent_games||[],snapshots=j.metric_snapshots||[],splits=j.splits||[],nextGame=j.next_game,nextCtx=j.next_game_context;
+  const p=j.player||{},team=j.team||{},isP=j.is_pitcher||isPitcherPos(p.primary_position),legs=j.current_legs||[],games=j.recent_games||[],homeGames=j.home_games||[],awayGames=j.away_games||[],snapshots=j.metric_snapshots||[],splits=j.splits||[],nextGame=j.next_game,nextCtx=j.next_game_context,advanced=j.advanced||{},availability=j.availability;
   const name=p.full_name||p.player_name||'Player';
   const heroBadges=[team.full_name||('Team '+(p.current_mlb_team_id||'—')),p.primary_position||p.primary_role||'—','Bats '+(p.bat_side||p.bats||'—'),'Throws '+(p.throw_side||p.throws||'—')];
   const nextGameLine=nextGame?('Next: '+(nextGame.is_home?'vs ':'@ ')+esc(nextGame.opponent_team_name||'TBD')+' • '+esc(fmtDate(nextGame.game_time_utc))):'';
-  let html='<div class="p2Hero"><div class="p2Avatar">'+esc(initials(name))+'</div><div><div class="p2Name">'+esc(name)+'</div><div class="p2Meta">'+heroBadges.map(b=>'<span class="p2Badge">'+esc(b)+'</span>').join('')+'</div>'+(nextGameLine?'<div class="p2Next">'+nextGameLine+'</div>':'')+'</div></div>';
-  html+='<div class="sectionLabel" style="margin-top:14px">Season Snapshot</div>'+(seasonSnapStrip(snapshots,isP)||'<div class="small">No season snapshot available yet.</div>');
+  const availBadge=availability&&availability.availability_status?'<span class="availBadge '+availabilityClass(availability.availability_status)+'">'+esc(availability.availability_status)+'</span>':'';
+  let html='<div class="p2Hero"><div class="p2Avatar">'+esc(initials(name))+'</div><div><div class="p2Name">'+esc(name)+' '+availBadge+'</div><div class="p2Meta">'+heroBadges.map(b=>'<span class="p2Badge">'+esc(b)+'</span>').join('')+'</div>'+(nextGameLine?'<div class="p2Next">'+nextGameLine+'</div>':'')+'</div></div>';
+  const seasonRow=snapshots.find(s=>s.metric_window==='season_to_date'),l5Row=snapshots.find(s=>s.metric_window==='last_5_games');
+  const trendKey=isP?'era':'batting_average';
+  const trend=seasonRow&&l5Row?trendArrow(l5Row[trendKey],seasonRow[trendKey],!isP):'';
+  html+='<div class="sectionLabel" style="margin-top:14px">Season Snapshot '+trend+'</div>'+(seasonSnapStrip(snapshots,isP)||'<div class="small">No season snapshot available yet.</div>');
   const propKeys=propFamilyKeys(isP);
   const legsByProp={};for(const l of legs){const k=String(l.canonical_prop_key||'');(legsByProp[k]=legsByProp[k]||[]).push(l)}
   const propCards=propKeys.map(k=>propTrendCard(k,games,legsByProp[k]||[],isP)).filter(Boolean);
@@ -2090,9 +2094,12 @@ function renderPlayerProfileDream(j){
   extraProps.forEach(k=>{const c=propTrendCard(k,games,legsByProp[k]||[],isP);if(c)propCards.push(c)});
   html+='<div class="sectionLabel" style="margin-top:16px">Prop Trends — Last 5 / 10 / 20</div>'+(propCards.length?'<div class="cards">'+propCards.join('')+'</div>':'<div class="small">No recent game log or current lines available for this player yet.</div>');
   html+=splitsBlock(splits,isP);
+  html+=homeAwayBlock(homeGames,awayGames,isP);
+  html+=advancedMetricsBlock(advanced,isP);
   if(nextGame&&nextCtx){
     html+='<div class="sectionLabel" style="margin-top:16px">Next Game — Micro Factors</div><div class="microFactors">';
     if(nextCtx.opposing_starter)html+=microFactor('⚾','Opposing Starter',[['Pitcher',nextCtx.opposing_starter.full_name||'TBD'],['Throws',nextCtx.opposing_starter.throw_side],['Confidence',nextCtx.opposing_starter.confidence]],true);
+    if(nextCtx.opposing_starter_arsenal&&nextCtx.opposing_starter_arsenal.length)html+='<details class="microFactor" open><summary>🎯 Opposing Starter Arsenal</summary><div class="microBody">'+arsenalTable(nextCtx.opposing_starter_arsenal)+'</div></details>';
     html+=microFactor('🌤️','Weather & Park',weatherRows(nextCtx),false);
     html+=microFactor('🔥','Bullpen',(nextCtx.bullpen||[]).flatMap(r=>[['Team',r.team_name],['Status',r.bullpen_status],['Risk',r.bullpen_risk_level],['Fatigue Score',r.bullpen_fatigue_score],['Pitches (3d)',r.bullpen_pitches_last_3_days],['Rested Relievers',r.rested_reliever_count]]),false);
     html+=microFactor('📅','Schedule Spot',(nextCtx.schedule_spot||[]).flatMap(r=>[['Team',r.team_name],['Rest Days',r.days_rest],['Games Last 3d',r.games_last_3_days],['Travel',yesNo(r.travel_required_flag)],['Risk',r.schedule_risk_level]]),false);
