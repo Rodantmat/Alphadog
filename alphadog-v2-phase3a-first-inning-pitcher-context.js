@@ -9876,6 +9876,26 @@ async function runClassificationV6Tick(env, input = {}) {
 }
 
 export default {
+  async scheduled(event, env, ctx) {
+    // event.cron matches one of the two triggers configured in the generator:
+    // "0 3 * * 1" (Monday 3am) = weekly static differential
+    // "45 8 * * *" (daily 8:45am) = daily morning delta full run
+    const cron = String(event.cron || "");
+    let mode = null;
+    if (cron === "0 3 * * 1") mode = "weekly_static_differential_full_run";
+    else if (cron === "45 8 * * *") mode = "daily_morning_delta_full_run";
+    if (!mode) return;
+    ctx.waitUntil((async () => {
+      let resumeFrom = 0;
+      let guard = 0;
+      while (guard < 15) {
+        guard++;
+        const res = await runMode(env, { mode, resume_from_step: resumeFrom });
+        if (!res || res.partial !== true) break;
+        resumeFrom = res.next_resume_from_step || 0;
+      }
+    })());
+  },
   async fetch(request, env, ctx){
     const url=new URL(request.url); const path=url.pathname.replace(/\/$/,"")||"/"; const method=request.method.toUpperCase();
     if(method==="GET" && path==="/") return jsonResponse(baseIdentity(env));
