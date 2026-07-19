@@ -1676,7 +1676,7 @@ const MAIN_HTML = `<!doctype html>
         <div class="filterBox"><div class="filterTitle"><input id="pitcherGroup" type="checkbox"> Pitcher Prop Lines</div><div id="pitcherProps" class="checkGrid"></div></div>
       </div>
       <div class="filterCol right">
-        <div class="filterBox"><div class="filterTitle"><input id="ppGroup" type="checkbox"> PrizePicks</div><div id="ppTypes" class="checkGrid source"></div><div class="filterTitle" style="margin-top:8px"><input id="sleeperGroup" type="checkbox"> Sleeper</div><div id="sleeperTypes" class="checkGrid source"></div></div>
+        <div class="filterBox"><div class="filterTitle"><input id="ppGroup" type="checkbox"> PrizePicks</div><div id="ppTypes" class="checkGrid source"></div><div class="filterTitle" style="margin-top:8px"><input id="sleeperGroup" type="checkbox"> Sleeper</div><div id="sleeperTypes" class="checkGrid source"></div><div class="filterTitle" style="margin-top:8px"><input id="underdogGroup" type="checkbox"> Underdog</div><div id="underdogTypes" class="checkGrid source"></div></div>
         <div class="trio">
           <div class="filterBox tight"><div class="filterTitle selectTitle">Hit Prob</div><select id="hpFilter" class="select"><option value="0">All HP</option></select></div>
           <div class="filterBox tight"><div class="filterTitle selectTitle">Overall Score</div><select id="scoreFilter" class="select"><option value="0">All Scores</option></select></div>
