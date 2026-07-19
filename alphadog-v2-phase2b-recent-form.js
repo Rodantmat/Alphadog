@@ -958,11 +958,11 @@ async function insertPacketAndIssueRows(env, family, batchId, packets, issues) {
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`).bind(
     p.packet_id, batchId, p.row.prepared_row_id, p.source_line_id, p.row.source_key, p.row.official_game_pk, p.row.official_date, p.row.official_game_time_utc, p.row.resolved_mlb_player_id || p.row.resolved_player_id, p.row.player_name, String(p.team_id || ""), String(p.opponent_team_id || ""), p.is_home, p.row.canonical_prop_key, p.classification.normalized_lane, p.row.line_value, p.factor_status, p.factor_grade, p.readiness_status, p.market_context_status, p.daily_context_status, p.base_metric_status, p.missing_factor_count, p.warning_count, p.blocker_count, JSON.stringify(p.payload), JSON.stringify({ source_prop_name: p.row.source_prop_name, warnings: p.warnings, missing: p.missing })
   ));
-  await batch(env.SCORING_DB, packetStmts, 25);
+  await batch(env.SCORING_DB, packetStmts, 200);
   const issueStmts = issues.map(i => env.SCORING_DB.prepare(`INSERT OR REPLACE INTO prop_factor_issues (issue_id,batch_id,factor_family,packet_id,prepared_row_id,game_pk,mlb_player_id,canonical_prop_key,severity,issue_type,reason,details_json,official_date,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`).bind(
     i.issue_id, batchId, i.factor_family, i.packet_id || null, i.prepared_row_id || null, i.game_pk || null, i.mlb_player_id || null, i.canonical_prop_key || null, i.severity, i.issue_type, i.reason, JSON.stringify(i.details || {}), i.official_date || null
   ));
-  await batch(env.SCORING_DB, issueStmts, 25);
+  await batch(env.SCORING_DB, issueStmts, 200);
 }
 
 async function insertCoverageRows(env, batchId, coverageRows) {
