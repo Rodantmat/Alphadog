@@ -6572,6 +6572,10 @@ async function ensureSavantQualitySchema(env) {
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
   await run(env.REF_DB, "CREATE INDEX IF NOT EXISTS idx_ref_batter_qoc_player_active ON ref_batter_quality_of_contact(mlb_player_id, active)");
+  const addCols = ["ba REAL", "slg REAL", "ba_minus_xba_diff REAL", "slg_minus_xslg_diff REAL", "woba_minus_xwoba_diff REAL"];
+  for (const col of addCols) {
+    try { await run(env.REF_DB, `ALTER TABLE ref_batter_quality_of_contact ADD COLUMN ${col}`); } catch (e) { /* column already exists */ }
+  }
 }
 function firstNum(row, keys) {
   for (const k of keys) { if (row[k] !== undefined && row[k] !== null && row[k] !== "") { const n = Number(row[k]); if (Number.isFinite(n)) return n; } }
