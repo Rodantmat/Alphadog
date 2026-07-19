@@ -252,6 +252,19 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
 
   const isPartial = candidateRows.length > chunkRows.length || chunkRows.length >= MAX_LEGS_PER_INVOCATION;
   const status = isPartial ? "partial_continue" : "completed_hit_probability_current_estimates_written";
+
+  // REAL FIX (confirmed live: hits_runs_rbis was still exceeded by hits for 5 real players on
+  // the actual board even after the baseline-level fix, because this HP-board stage recombines
+  // baseline HP with its own independent per-leg enrichment factors - reintroducing the same
+  // class of monotonicity violation the baseline fix eliminated at its own layer). Applies the
+  // same subset_of_constraints config already used at baseline, directly to hp_board_current,
+  // for this hp_board_batch_id only. Only runs once the full pass is done, not on every partial
+  // chunk, since intermediate chunks may not have both sides of a constraint pair written yet.
+  let subsetReconcile = null;
+  if (!isPartial) {
+    subsetReconcile = await reconcileHpBoardSubsetConstraints(env, hpBatchId).catch((e) => ({ ok: false, error: String(e && e.message ? e.message : e) }));
+  }
+
   await run(env.SCORE_DB,
     `UPDATE hp_board_batches SET status=?, certification_status=?, certification_grade=?, board_rows_written=?, primary_rows=?, review_rows=?, updated_at=CURRENT_TIMESTAMP WHERE hp_board_batch_id=?`,
     status, "HP_BOARD_CERTIFIED_REAL_SKELETON", "PASS_REAL_SKELETON", written, primaryRows, reviewRows, hpBatchId);
@@ -263,10 +276,42 @@ async function runHitProbabilityBoard(env, input, sourceMatrixBatchId) {
     continuation_required: isPartial, orchestrator_should_self_continue: isPartial,
     matrix_rows_read: chunkRows.length, board_rows_written: written, primary_rows: primaryRows, review_rows: reviewRows,
     primary_hp_threshold: PRIMARY_HP_THRESHOLD,
+    subset_constraint_reconcile: subsetReconcile,
     reordered_note: "This worker now runs BEFORE Scoring Engine (reads matrix+enrichment directly, no longer depends on Scoring Engine's output). Computes final HP AND final Confidence. score_0_100 intentionally left null for the reordered Scoring Engine stage to fill in.",
-    fixes_applied: ["direction_bug_side_keyed_baseline_lookup", "nearest_line_fallback", "player_name_from_dedicated_column", "goblin_demon_more_only_carried_in_calibration_json"],
+    fixes_applied: ["direction_bug_side_keyed_baseline_lookup", "nearest_line_fallback", "player_name_from_dedicated_column", "goblin_demon_more_only_carried_in_calibration_json", "hp_board_subset_constraint_reconcile"],
     timestamp_utc: nowUtc(),
   };
+}
+
+async function reconcileHpBoardSubsetConstraints(env, hpBatchId) {
+  const cfgRow = await first(env.CONFIG_DB, `SELECT config_json FROM calibration_config WHERE config_key='subset_of_constraints' AND is_active=1`);
+  const constraints = cfgRow ? safeJsonParse(cfgRow.config_json, {}) : {};
+  let totalClamped = 0;
+  const results = [];
+  for (const [subsetKey, supersetKey] of Object.entries(constraints)) {
+    const [subProp, subLineRaw, subSide] = subsetKey.split("|");
+    const [supProp, supLineRaw, supSide] = supersetKey.split("|");
+    const subLine = Number(subLineRaw), supLine = Number(supLineRaw);
+    const res = await run(env.SCORE_DB, `
+      UPDATE hp_board_current
+      SET estimated_hit_probability_0_100 = (
+        SELECT s.estimated_hit_probability_0_100 FROM hp_board_current s
+        WHERE s.mlb_player_id = hp_board_current.mlb_player_id AND s.hp_board_batch_id = hp_board_current.hp_board_batch_id
+          AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+      )
+      WHERE hp_board_batch_id = ? AND canonical_prop_key = ? AND line_value = ? AND selected_side = ?
+        AND EXISTS (
+          SELECT 1 FROM hp_board_current s
+          WHERE s.mlb_player_id = hp_board_current.mlb_player_id AND s.hp_board_batch_id = hp_board_current.hp_board_batch_id
+            AND s.canonical_prop_key = ? AND s.line_value = ? AND s.selected_side = ?
+            AND estimated_hit_probability_0_100 > s.estimated_hit_probability_0_100
+        )`,
+      supProp, supLine, supSide, hpBatchId, subProp, subLine, subSide, supProp, supLine, supSide);
+    const changed = Number(res && res.meta && res.meta.changes || 0);
+    totalClamped += changed;
+    results.push({ subset: subsetKey, superset: supersetKey, rows_clamped: changed });
+  }
+  return { ok: true, total_clamped: totalClamped, per_constraint: results };
 }
 
 function identity(env) {
