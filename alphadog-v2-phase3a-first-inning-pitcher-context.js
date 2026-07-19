@@ -7872,6 +7872,103 @@ async function runDailyDeltaGameLogsToPostgres(env, input) {
   }
 }
 
+async function runRemineBattedBallProfileToPostgres(env, input) {
+  const year = Number(input.season_year || 2026);
+  try {
+    const fetched = await fetchSavantLeaderboardHtml("/leaderboard/batted-ball", { type: "batter", year, min: "50" });
+    const data = extractSavantVarData(fetched.html);
+    if (!data.rows.length) return { ok: false, mode: "remine_batted_ball_profile_to_postgres", error: "no_data_extracted", html_sample: data.html_sample };
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const num = (v) => v != null && v !== "" ? Number(v) : null;
+    const rows = data.rows.filter(r => r.entity_id).map(r => ({
+      profile_id: `savant_bbp_${year}_${r.entity_id}`, mlb_player_id: Number(r.entity_id), player_name: r.entity_name || null, season_year: year,
+      ground_ball_pct: num(r.gb_percent), air_pct: num(r.air_percent), pulled_air_pct: num(r.pull_air_percent),
+      batted_ball_events: r.bip != null ? Number(r.bip) : null,
+      source_key: "baseball_savant_batted_ball_html_regex", raw_json: r
+    })).filter(r => r.mlb_player_id);
+    if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_batted_ball_profile_to_postgres", error: "no_valid_rows", sample_raw_row: data.rows[0] || null }; }
+    const cols = ["profile_id","mlb_player_id","player_name","season_year","ground_ball_pct","air_pct","pulled_air_pct","batted_ball_events","source_key","raw_json"];
+    await sql`
+      INSERT INTO ref.batted_ball_profile ${sql(rows, ...cols)}
+      ON CONFLICT (profile_id) DO UPDATE SET
+        player_name=excluded.player_name, ground_ball_pct=excluded.ground_ball_pct, air_pct=excluded.air_pct,
+        pulled_air_pct=excluded.pulled_air_pct, batted_ball_events=excluded.batted_ball_events, raw_json=excluded.raw_json, updated_at=now()
+    `;
+    await sql.end();
+    return { ok: true, mode: "remine_batted_ball_profile_to_postgres", rows_written: rows.length, sample_raw_row: data.rows[0] };
+  } catch (err) {
+    return { ok: false, mode: "remine_batted_ball_profile_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
+async function runReminePitcherRunningGameToPostgres(env, input) {
+  const year = Number(input.season_year || 2026);
+  try {
+    const fetched = await fetchSavantLeaderboardHtml("/leaderboard/pitcher-running-game", { year, min: "1" });
+    const data = extractSavantVarData(fetched.html);
+    if (!data.rows.length) return { ok: false, mode: "remine_pitcher_running_game_to_postgres", error: "no_data_extracted", html_sample: data.html_sample };
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const num = (v) => v != null && v !== "" ? Number(v) : null;
+    const rows = data.rows.filter(r => r.entity_id || r.pitcher_id).map(r => ({
+      running_game_id: `savant_running_${year}_${r.entity_id || r.pitcher_id}`,
+      mlb_player_id: Number(r.entity_id || r.pitcher_id), player_name: r.entity_name || r.pitcher_name || null, season_year: year,
+      sb_opportunities: r.n_sb_opps != null ? Number(r.n_sb_opps) : (r.n != null ? Number(r.n) : null),
+      advances_prevented: num(r.pitcher_advances_prevented ?? r.advances_prevented),
+      stealing_runs: num(r.pitcher_stealing_runs ?? r.stealing_runs),
+      lead_distance_gained: num(r.lead_distance_gained),
+      source_key: "baseball_savant_pitcher_running_game_html_regex", raw_json: r
+    })).filter(r => r.mlb_player_id);
+    if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_pitcher_running_game_to_postgres", error: "no_valid_rows", sample_raw_row: data.rows[0] || null }; }
+    const cols = ["running_game_id","mlb_player_id","player_name","season_year","sb_opportunities","advances_prevented","stealing_runs","lead_distance_gained","source_key","raw_json"];
+    await sql`
+      INSERT INTO ref.pitcher_running_game ${sql(rows, ...cols)}
+      ON CONFLICT (running_game_id) DO UPDATE SET
+        player_name=excluded.player_name, sb_opportunities=excluded.sb_opportunities, advances_prevented=excluded.advances_prevented,
+        stealing_runs=excluded.stealing_runs, lead_distance_gained=excluded.lead_distance_gained, raw_json=excluded.raw_json, updated_at=now()
+    `;
+    await sql.end();
+    return { ok: true, mode: "remine_pitcher_running_game_to_postgres", rows_written: rows.length, sample_raw_row: data.rows[0] };
+  } catch (err) {
+    return { ok: false, mode: "remine_pitcher_running_game_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
+async function runRemineParkFactorsToPostgres(env, input) {
+  const year = Number(input.season_year || 2026);
+  try {
+    const fetched = await fetchSavantLeaderboardHtml("/leaderboard/statcast-park-factors", { type: "year", year, batSide: "", stat: "index_wOBA", condition: "All", rolling: "3" });
+    const data = extractSavantVarData(fetched.html);
+    if (!data.rows.length) return { ok: false, mode: "remine_park_factors_to_postgres", error: "no_data_extracted", html_sample: data.html_sample };
+    const sql = postgres(env.HYPERDRIVE.connectionString, { max: 3, fetch_types: false });
+    const num = (v) => v != null && v !== "" ? Number(v) : null;
+    const teamRows = await sql`SELECT mlb_team_id, team_id FROM ref.teams WHERE active=1`;
+    const teamById = new Map(teamRows.map(t => [Number(t.mlb_team_id), t.team_id]));
+    const rows = data.rows.filter(r => r.team_id || r.venue_id).map(r => {
+      const mlbTeamId = Number(r.team_id);
+      return {
+        park_factor_id: `savant_park_${year}_${r.venue_id || mlbTeamId}`,
+        stadium_id: r.venue_id != null ? String(r.venue_id) : null,
+        team_id: teamById.get(mlbTeamId) || null, mlb_venue_id: r.venue_id != null ? Number(r.venue_id) : null, season_year: year,
+        run_factor: num(r.index_wOBA ?? r.index_woba), hr_factor: num(r.index_HR ?? r.index_hr),
+        lhb_run_factor: null, rhb_run_factor: null, lhb_hr_factor: null, rhb_hr_factor: null,
+        factor_scale: "100_NEUTRAL", source_key: "baseball_savant_park_factors_html_regex", active: 1, raw_json: r
+      };
+    }).filter(r => r.park_factor_id);
+    if (!rows.length) { await sql.end(); return { ok: false, mode: "remine_park_factors_to_postgres", error: "no_valid_rows", sample_raw_row: data.rows[0] || null }; }
+    const cols = ["park_factor_id","stadium_id","team_id","mlb_venue_id","season_year","run_factor","hr_factor","lhb_run_factor","rhb_run_factor","lhb_hr_factor","rhb_hr_factor","factor_scale","source_key","active","raw_json"];
+    await sql`
+      INSERT INTO ref.park_factors ${sql(rows, ...cols)}
+      ON CONFLICT (park_factor_id) DO UPDATE SET
+        team_id=excluded.team_id, run_factor=excluded.run_factor, hr_factor=excluded.hr_factor,
+        active=1, raw_json=excluded.raw_json, updated_at=now()
+    `;
+    await sql.end();
+    return { ok: true, mode: "remine_park_factors_to_postgres", rows_written: rows.length, sample_raw_row: data.rows[0] };
+  } catch (err) {
+    return { ok: false, mode: "remine_park_factors_to_postgres", error: String(err && err.message ? err.message : err) };
+  }
+}
+
 async function runMode(env,input={}){
   await ensureSchema(env);
   await ensureCalibrationConfigLoaded(env);
@@ -7887,6 +7984,9 @@ async function runMode(env,input={}){
   if(mode==="derive_hitter_metric_snapshots_from_postgres") return runDeriveHitterMetricSnapshotsFromPostgres(env,input);
   if(mode==="derive_pitcher_metric_snapshots_from_postgres") return runDerivePitcherMetricSnapshotsFromPostgres(env,input);
   if(mode==="daily_delta_game_logs_to_postgres") return runDailyDeltaGameLogsToPostgres(env,input);
+  if(mode==="remine_batted_ball_profile_to_postgres") return runRemineBattedBallProfileToPostgres(env,input);
+  if(mode==="remine_pitcher_running_game_to_postgres") return runReminePitcherRunningGameToPostgres(env,input);
+  if(mode==="remine_park_factors_to_postgres") return runRemineParkFactorsToPostgres(env,input);
   if(mode==="remine_ref_teams_to_postgres") return runRemineRefTeamsToPostgres(env,input);
   if(mode==="remine_ref_players_to_postgres") return runRemineRefPlayersToPostgres(env,input);
   if(mode==="remine_ref_stadiums_to_postgres") return runRemineRefStadiumsToPostgres(env,input);
